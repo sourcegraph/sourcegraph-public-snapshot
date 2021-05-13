@@ -1,16 +1,20 @@
 import { proxy, Remote } from 'comlink'
-import { sortBy } from 'lodash'
+import { noop, sortBy } from 'lodash'
 import { BehaviorSubject, ReplaySubject } from 'rxjs'
 import { debounceTime, mapTo } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 
+import { Location, MarkupKind, Position, Range, Selection } from '@sourcegraph/extension-api-classes'
+
 import { asError } from '../../util/errors'
-import { MainThreadAPI } from '../contract'
+import { ClientAPI } from '../client/api/api'
 import { syncRemoteSubscription } from '../util'
 
 import { createStatusBarItemType } from './api/codeEditor'
 import { proxySubscribable } from './api/common'
 import { createDecorationType } from './api/decorations'
+import { DocumentHighlightKind } from './api/documentHighlights'
+import { InitData, updateContext } from './extensionHost'
 import { NotificationType, PanelViewData } from './extensionHostApi'
 import { ExtensionHostState } from './extensionHostState'
 import { addWithRollback } from './util'
@@ -31,7 +35,27 @@ export interface InitResult {
     app: typeof sourcegraph['app']
 }
 
-export function createExtensionAPI(state: ExtensionHostState, mainAPI: Remote<MainThreadAPI>): InitResult {
+/**
+ * Creates a factory function to create extension API objects. This factory function should be called
+ * when an extension is activated and the resulting extension API object should be passed to `replaceAPIRequire`.
+ *
+ * Methods shared between all API instances are implemented when the factory function is created.
+ * Methods scoped to an API instance (e.g. `sourcegraph.app.log`) are implemented when the factory function is called.
+ */
+export function createExtensionAPIFactory(
+    state: ExtensionHostState,
+    clientAPI: Remote<ClientAPI>,
+    initData: Pick<InitData, 'clientApplication' | 'sourcegraphURL'>
+): (
+    extensionID: string
+) => typeof sourcegraph & {
+    // Backcompat definitions that were removed from sourcegraph.d.ts but are still defined (as
+    // noops with a log message), to avoid completely breaking extensions that use them.
+    languages: {
+        registerTypeDefinitionProvider: any
+        registerImplementationProvider: any
+    }
+} {
     // Configuration
     const getConfiguration = <C extends object>(): sourcegraph.Configuration<C> => {
         const snapshot = state.settings.value.final as Readonly<C>
@@ -39,11 +63,14 @@ export function createExtensionAPI(state: ExtensionHostState, mainAPI: Remote<Ma
         const configuration: sourcegraph.Configuration<C> & { toJSON: any } = {
             value: snapshot,
             get: key => snapshot[key],
-            update: (key, value) => mainAPI.applySettingsEdit({ path: [key as string | number], value }),
+            update: (key, value) => clientAPI.applySettingsEdit({ path: [key as string | number], value }),
             toJSON: () => snapshot,
         }
         return configuration
     }
+    const configuration: typeof sourcegraph['configuration'] = Object.assign(state.settings.pipe(mapTo(undefined)), {
+        get: getConfiguration,
+    })
 
     // Workspace
     const workspace: typeof sourcegraph['workspace'] = {
@@ -134,8 +161,8 @@ export function createExtensionAPI(state: ExtensionHostState, mainAPI: Remote<Ma
         },
 
         showProgress: options => createProgressReporter(options),
-        showMessage: message => mainAPI.showMessage(message),
-        showInputBox: options => mainAPI.showInputBox(options),
+        showMessage: message => clientAPI.showMessage(message),
+        showInputBox: options => clientAPI.showInputBox(options),
     }
 
     const app: typeof sourcegraph['app'] = {
@@ -209,13 +236,15 @@ export function createExtensionAPI(state: ExtensionHostState, mainAPI: Remote<Ma
         },
         createDecorationType,
         createStatusBarItemType,
+        // `log` is implemented on extension activation
+        log: noop,
     }
 
     // Commands
     const commands: typeof sourcegraph['commands'] = {
-        executeCommand: (command, ...args) => mainAPI.executeCommand(command, args),
+        executeCommand: (command, ...args) => clientAPI.executeCommand(command, args),
         registerCommand: (command, callback) =>
-            syncRemoteSubscription(mainAPI.registerCommand(command, proxy(callback))),
+            syncRemoteSubscription(clientAPI.registerCommand(command, proxy(callback))),
     }
 
     // Search
@@ -269,7 +298,7 @@ export function createExtensionAPI(state: ExtensionHostState, mainAPI: Remote<Ma
 
     // GraphQL
     const graphQL: typeof sourcegraph['graphQL'] = {
-        execute: (query, variables) => mainAPI.requestGraphQL(query, variables),
+        execute: (query, variables) => clientAPI.requestGraphQL(query, variables),
     }
 
     // Content
@@ -278,16 +307,51 @@ export function createExtensionAPI(state: ExtensionHostState, mainAPI: Remote<Ma
             addWithRollback(state.linkPreviewProviders, { urlMatchPattern, provider }),
     }
 
-    return {
-        configuration: Object.assign(state.settings.pipe(mapTo(undefined)), {
-            get: getConfiguration,
-        }),
-        workspace,
-        commands,
-        search,
-        languages,
-        graphQL,
-        content,
-        app,
+    // For debugging/tests.
+    const sync = async (): Promise<void> => {
+        await clientAPI.ping()
+    }
+
+    return function extensionAPIFactory(extensionID) {
+        return {
+            URI: URL,
+            Position,
+            Range,
+            Selection,
+            Location,
+            MarkupKind,
+            NotificationType,
+            DocumentHighlightKind,
+            app: {
+                ...app,
+                log: (...data) => {
+                    if (state.activeLoggers.has(extensionID)) {
+                        // Use a light gray background to differentiate extension ID from the message
+                        clientAPI
+                            .logExtensionMessage(`🧩 %c${extensionID}`, 'background-color: lightgrey;', ...data)
+                            .catch(error => {
+                                console.error('Error sending extension message to main thread:', error)
+                            })
+                    }
+                },
+            },
+
+            workspace,
+            configuration,
+
+            languages,
+
+            search,
+            commands,
+            graphQL,
+            content,
+
+            internal: {
+                sync: () => sync(),
+                updateContext: (updates: sourcegraph.ContextValues) => updateContext(updates, state),
+                sourcegraphURL: new URL(initData.sourcegraphURL),
+                clientApplication: initData.clientApplication,
+            },
+        }
     }
 }

@@ -127,7 +127,11 @@ interface MonacoEditorWithKeybindingsService extends Monaco.editor.IStandaloneCo
         }
     }
     _standaloneKeybindingService: {
-        addDynamicKeybinding(keybinding: string): void
+        addDynamicKeybinding(
+            commandId: string,
+            _keybinding: number | undefined,
+            handler: Monaco.editor.ICommandHandler
+        ): void
     }
 }
 
@@ -139,24 +143,6 @@ const hasKeybindingService = (
     hasProperty('_standaloneKeybindingService')(editor) &&
     typeof (editor._standaloneKeybindingService as MonacoEditorWithKeybindingsService['_standaloneKeybindingService'])
         .addDynamicKeybinding === 'function'
-
-/**
- * HACK: this interface and the below type guard are used to add a custom command
- * to the editor. There is no public API to add a command with a specified ID and handler,
- * hence we need to use the private _commandService API.
- *
- * See upstream issue:
- * - https://github.com/Microsoft/monaco-editor/issues/900#issue-327455729
- * */
-interface MonacoEditorWithCommandService extends Monaco.editor.IStandaloneCodeEditor {
-    _commandService: {
-        addCommand: (command: { id: string; handler: () => void }) => void
-    }
-}
-
-const hasCommandService = (editor: Monaco.editor.IStandaloneCodeEditor): editor is MonacoEditorWithCommandService =>
-    hasProperty('_commandService')(editor) &&
-    typeof (editor._commandService as MonacoEditorWithCommandService['_commandService']).addCommand === 'function'
 
 /**
  * A search query input backed by the Monaco editor, allowing it to provide
@@ -192,8 +178,9 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     }, [editor, container])
 
     const fetchSuggestionsWithContext = useCallback(
-        (query: string) => fetchSuggestions(appendContextFilter(query, props.selectedSearchContextSpec)),
-        [props.selectedSearchContextSpec]
+        (query: string) =>
+            fetchSuggestions(appendContextFilter(query, props.selectedSearchContextSpec, props.versionContext)),
+        [props.selectedSearchContextSpec, props.versionContext]
     )
 
     const [isRedesignEnabled] = useRedesignToggle()
@@ -253,14 +240,8 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
         if (!editor || !onCompletionItemSelected) {
             return
         }
-        if (!hasCommandService(editor)) {
-            throw new Error('Could not call onCompletionItemSelected: editor has no commandService')
-        }
 
-        editor._commandService.addCommand({
-            id: 'completionItemSelected',
-            handler: onCompletionItemSelected,
-        })
+        Monaco.editor.registerCommand('completionItemSelected', onCompletionItemSelected)
     }, [editor, onCompletionItemSelected])
 
     // Disable default Monaco keybindings
@@ -279,11 +260,11 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
                 continue
             }
             // Prefixing action ids with `-` to unbind the default actions.
-            editor._standaloneKeybindingService.addDynamicKeybinding(`-${action}`)
+            editor._standaloneKeybindingService.addDynamicKeybinding(`-${action}`, undefined, () => {})
         }
         // Free CMD+L keybinding, which is part of Monaco's CoreNavigationCommands, and
         // not exposed on editor._actions.
-        editor._standaloneKeybindingService.addDynamicKeybinding('-expandLineSelection')
+        editor._standaloneKeybindingService.addDynamicKeybinding('-expandLineSelection', undefined, () => {})
     }, [editor])
 
     // Accessibility: allow tab usage to move focus to
@@ -358,7 +339,7 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
         return () => disposable.dispose()
     }, [editor, onSubmit])
 
-    const options: Monaco.editor.IEditorOptions = {
+    const options: Monaco.editor.IStandaloneEditorConstructionOptions = {
         readOnly: false,
         lineNumbers: 'off',
         lineHeight: 16,

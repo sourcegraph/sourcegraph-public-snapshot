@@ -1,4 +1,3 @@
-/* eslint-disable react/jsx-no-bind */
 import classNames from 'classnames'
 import React from 'react'
 import 'storybook-addon-designs'

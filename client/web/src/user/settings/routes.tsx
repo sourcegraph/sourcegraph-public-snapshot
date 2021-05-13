@@ -117,7 +117,7 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
         path: '/code-hosts',
         render: props => (
             <UserAddCodeHostsPageContainer
-                userID={props.user.id}
+                user={{ id: props.authenticatedUser.id, tags: props.authenticatedUser.tags }}
                 context={window.context}
                 routingPrefix={props.user.url + '/settings'}
                 onUserRepositoriesUpdate={props.onUserRepositoriesUpdate}

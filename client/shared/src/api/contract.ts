@@ -208,4 +208,11 @@ export interface MainThreadAPI {
      * Log an event (by sending it to the server).
      */
     logEvent: (eventName: string, eventProperties?: any) => void
+
+    /**
+     * Log messages from extensions in the main thread. Makes it easier to debug extensions for applications
+     * in which extensions run in a different page from the main thread
+     * (e.g. browser extensions, where extensions run in the background page).
+     */
+    logExtensionMessage(message?: any, ...optionalParameters: any[]): void
 }

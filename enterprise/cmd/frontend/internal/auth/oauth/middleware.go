@@ -118,7 +118,7 @@ func getExtraScopes(ctx context.Context, db dbutil.DB, serviceType string) ([]st
 	case extsvc.TypeGitHub:
 		return []string{"repo"}, nil
 	case extsvc.TypeGitLab:
-		return []string{"api"}, nil
+		return []string{}, nil
 	default:
 		return nil, errors.Errorf("unknown service type: %q", serviceType)
 	}

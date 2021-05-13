@@ -101,10 +101,12 @@ func TestHandle(t *testing.T) {
 	expectedPackageReferencesDumpID := 42
 	expectedPackageReferences := []semantic.PackageReference{
 		{
-			Scheme:  "scheme A",
-			Name:    "pkg A",
-			Version: "v0.1.0",
-			Filter:  filter,
+			Package: semantic.Package{
+				Scheme:  "scheme A",
+				Name:    "pkg A",
+				Version: "v0.1.0",
+			},
+			Filter: filter,
 		},
 	}
 	if len(mockDBStore.UpdatePackageReferencesFunc.History()) != 1 {

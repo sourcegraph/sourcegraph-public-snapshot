@@ -15,7 +15,6 @@ export const RedesignToggleStorybook = (): ReactElement => {
             key="redesign-toolbar"
             active={isRedesignEnabled}
             title={isRedesignEnabled ? 'Disable redesign theme' : 'Enable redesign theme'}
-            // eslint-disable-next-line react/jsx-no-bind
             onClick={handleRedesignToggle}
         >
             <Icons icon="beaker" />

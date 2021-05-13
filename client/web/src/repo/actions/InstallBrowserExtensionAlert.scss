@@ -3,6 +3,10 @@
         max-width: 42rem;
         // stylelint-disable-next-line declaration-property-unit-whitelist
         margin-left: calc(0.75rem - 2px);
+
+        .theme-redesign & {
+            margin-left: 0;
+        }
     }
 
     &__icon {

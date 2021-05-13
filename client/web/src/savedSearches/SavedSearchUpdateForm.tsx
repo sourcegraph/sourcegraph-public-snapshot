@@ -115,7 +115,6 @@ export class SavedSearchUpdateForm extends React.Component<Props, State> {
             <div>
                 {this.state.savedSearchOrError === LOADING && <LoadingSpinner className="icon-inline" />}
                 {this.props.authenticatedUser && savedSearch && (
-                    /* eslint-disable react/jsx-no-bind */
                     <SavedSearchForm
                         {...this.props}
                         submitLabel="Update saved search"
@@ -134,7 +133,6 @@ export class SavedSearchUpdateForm extends React.Component<Props, State> {
                         }
                         error={isErrorLike(this.state.updatedOrError) ? this.state.updatedOrError : undefined}
                     />
-                    /* eslint-enable react/jsx-no-bind */
                 )}
                 {this.state.updatedOrError === true && (
                     <p className="alert alert-success user-settings-profile-page__alert">Updated!</p>

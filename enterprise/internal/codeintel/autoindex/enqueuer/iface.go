@@ -6,12 +6,15 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )
 
 type Enqueuer interface {
 	QueueIndex(ctx context.Context, repositoryID int) (err error)
 	ForceQueueIndex(ctx context.Context, repositoryID int) (err error)
+	QueueIndexesForPackages(ctx context.Context, packages []semantic.PackageReference) error
 }
 
 type DBStore interface {
@@ -51,4 +54,5 @@ type GitserverClient interface {
 	ListFiles(ctx context.Context, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error)
 	FileExists(ctx context.Context, repositoryID int, commit, file string) (bool, error)
 	RawContents(ctx context.Context, repositoryID int, commit, file string) ([]byte, error)
+	ResolveRevision(ctx context.Context, repositoryID int, versionString string) (api.CommitID, error)
 }

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -59,7 +58,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	ref := req.TargetRef
 
 	var (
-		remoteURL *url.URL
+		remoteURL *vcs.URL
 		err       error
 	)
 

@@ -37,13 +37,14 @@ export interface TogglesProps
 export const getFullQuery = (
     query: string,
     searchContextSpec: string,
+    versionContext: string | undefined,
     caseSensitive: boolean,
     patternType: SearchPatternType
 ): string => {
     const finalQuery = [query, `patternType:${patternType}`, caseSensitive ? 'case:yes' : '']
         .filter(queryPart => !!queryPart)
         .join(' ')
-    return appendContextFilter(finalQuery, searchContextSpec)
+    return appendContextFilter(finalQuery, searchContextSpec, versionContext)
 }
 
 /**
@@ -131,7 +132,13 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
         submitOnToggle({ newPatternType })
     }, [patternType, setPatternType, settingsCascade.final, submitOnToggle])
 
-    const fullQuery = getFullQuery(navbarSearchQuery, selectedSearchContextSpec || '', caseSensitive, patternType)
+    const fullQuery = getFullQuery(
+        navbarSearchQuery,
+        selectedSearchContextSpec || '',
+        versionContext,
+        caseSensitive,
+        patternType
+    )
 
     return (
         <div className={classNames('toggle-container', className)}>

@@ -20,10 +20,10 @@
     }
 
     .theme-redesign & {
-        background-color: var(--color-bg-1);
+        background-color: var(--code-bg);
         border: 1px solid var(--border-color-2);
         border-radius: var(--border-radius);
-        padding: 0.5rem;
+        padding: 0.25rem 0;
     }
 
     pre,

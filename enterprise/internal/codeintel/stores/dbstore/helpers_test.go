@@ -211,10 +211,12 @@ func insertPackageReferences(t testing.TB, store *Store, packageReferences []lsi
 	for _, packageReference := range packageReferences {
 		if err := store.UpdatePackageReferences(context.Background(), packageReference.DumpID, []semantic.PackageReference{
 			{
-				Scheme:  packageReference.Scheme,
-				Name:    packageReference.Name,
-				Version: packageReference.Version,
-				Filter:  packageReference.Filter,
+				Package: semantic.Package{
+					Scheme:  packageReference.Scheme,
+					Name:    packageReference.Name,
+					Version: packageReference.Version,
+				},
+				Filter: packageReference.Filter,
 			},
 		}); err != nil {
 			t.Fatalf("unexpected error updating package references: %s", err)
