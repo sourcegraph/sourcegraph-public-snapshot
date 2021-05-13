@@ -40,25 +40,18 @@
         box-shadow: none;
         .text {
             padding: 0.125rem;
-            outline: 1px solid transparent;
-            box-shadow: 0 0 0 2px var(--primary-2);
             @media (--md-breakpoint-down) {
                 padding: 0 0.125rem;
-            }
-        }
-        .icon {
-            @media (--md-breakpoint-down) {
-                outline: 1px solid transparent;
-                box-shadow: 0 0 0 2px var(--primary-2);
-            }
-            @media (--sm-breakpoint-down) {
-                outline: none;
-                box-shadow: none;
             }
         }
         .icon-included {
             margin-left: 0.125rem;
             margin-right: -0.125rem;
+        }
+        .link-content {
+            outline: 1px solid transparent;
+            box-shadow: 0 0 0 2px var(--primary-2);
+            border-radius: var(--border-radius);
         }
     }
     &:hover:not(.active) {
@@ -105,7 +98,7 @@
 
 .icon {
     color: var(--header-icon-color);
-    border-radius: 3px;
+    border-radius: var(--border-radius);
     @media (--md-breakpoint-down) {
         color: var(--icon-color);
     }
