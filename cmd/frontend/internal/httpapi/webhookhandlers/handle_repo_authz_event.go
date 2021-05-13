@@ -49,7 +49,7 @@ func scheduleRepoUpdate(ctx context.Context, repo *gh.Repository) error {
 	}
 
 	// 🚨 SECURITY: we want to be able to find any private repo here, so set internal actor
-	ctx = actor.WithActor(ctx, &actor.Actor{Internal: true})
+	ctx = actor.WithInternalActor(ctx)
 	r, err := database.GlobalRepos.GetByName(ctx, api.RepoName("github.com/"+repo.GetFullName()))
 	if err != nil {
 		return err
