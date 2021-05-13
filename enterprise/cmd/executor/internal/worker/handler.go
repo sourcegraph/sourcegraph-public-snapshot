@@ -22,6 +22,7 @@ import (
 
 type handler struct {
 	idSet         *IDSet
+	store         workerutil.Store
 	options       Options
 	operations    *command.Operations
 	runnerFactory func(dir string, logger *command.Logger, options command.Options, operations *command.Operations) command.Runner
@@ -31,7 +32,7 @@ var _ workerutil.Handler = &handler{}
 
 // Handle clones the target code into a temporary directory, invokes the target indexer in a
 // fresh docker container, and uploads the results to the external frontend API.
-func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workerutil.Record) (err error) {
+func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err error) {
 	job := record.(executor.Job)
 	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(h.options.MaximumRuntimePerJob))
 	defer cancel()
@@ -62,7 +63,7 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 			// Perform this outside of the task execution context. If there is a timeout or
 			// cancellation error we don't want to skip uploading these logs as users will
 			// often want to see how far something progressed prior to a timeout.
-			if err := s.AddExecutionLogEntry(context.Background(), record.RecordID(), entry); err != nil {
+			if err := h.store.AddExecutionLogEntry(context.Background(), record.RecordID(), entry); err != nil {
 				log15.Warn("Failed to upload executor log entry for job", "id", record.RecordID(), "err", err)
 			}
 		}

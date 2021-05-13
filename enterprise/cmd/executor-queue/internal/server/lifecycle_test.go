@@ -19,10 +19,11 @@ func TestHeartbeat(t *testing.T) {
 		return apiclient.Job{ID: record.RecordID()}, nil
 	}
 
-	store1.DequeueWithIndependentTransactionContextFunc.PushReturn(testRecord{ID: 41}, store1, true, nil)
-	store1.DequeueWithIndependentTransactionContextFunc.PushReturn(testRecord{ID: 42}, store1, true, nil)
-	store2.DequeueWithIndependentTransactionContextFunc.PushReturn(testRecord{ID: 42}, store2, true, nil)
-	store2.DequeueWithIndependentTransactionContextFunc.PushReturn(testRecord{ID: 43}, store2, true, nil)
+	var cancel1, cancel2 int
+	store1.DequeueFunc.PushReturn(testRecord{ID: 41}, func() { cancel1++ } /* store1 */, true, nil)
+	store1.DequeueFunc.PushReturn(testRecord{ID: 42}, func() { cancel1++ } /* store1 */, true, nil)
+	store2.DequeueFunc.PushReturn(testRecord{ID: 42}, func() { cancel2++ } /* store2 */, true, nil)
+	store2.DequeueFunc.PushReturn(testRecord{ID: 43}, func() { cancel2++ } /* store2 */, true, nil)
 
 	options := Options{
 		QueueOptions: map[string]QueueOptions{
@@ -44,11 +45,11 @@ func TestHeartbeat(t *testing.T) {
 	}
 
 	assertDoneCounts := func(c1, c2 int) {
-		if value := len(store1.DoneFunc.History()); value != c1 {
-			t.Fatalf("unexpected number of calls to Done. want=%d have=%d", c1, value)
+		if cancel1 != c1 {
+			t.Fatalf("unexpected number of calls to cancel (store 1). want=%d have=%d", c1, cancel1)
 		}
-		if value := len(store2.DoneFunc.History()); value != c2 {
-			t.Fatalf("unexpected number of calls to Done. want=%d have=%d", c2, value)
+		if cancel2 != c2 {
+			t.Fatalf("unexpected number of calls to cancel (store 2). want=%d have=%d", c2, cancel2)
 		}
 	}
 
@@ -100,10 +101,11 @@ func TestCleanup(t *testing.T) {
 		return apiclient.Job{ID: record.RecordID()}, nil
 	}
 
-	store1.DequeueWithIndependentTransactionContextFunc.PushReturn(testRecord{ID: 41}, store1, true, nil)
-	store1.DequeueWithIndependentTransactionContextFunc.PushReturn(testRecord{ID: 42}, store1, true, nil)
-	store2.DequeueWithIndependentTransactionContextFunc.PushReturn(testRecord{ID: 42}, store2, true, nil)
-	store2.DequeueWithIndependentTransactionContextFunc.PushReturn(testRecord{ID: 43}, store2, true, nil)
+	var cancel1, cancel2 int
+	store1.DequeueFunc.PushReturn(testRecord{ID: 41}, func() { cancel1++ } /* store1 */, true, nil)
+	store1.DequeueFunc.PushReturn(testRecord{ID: 42}, func() { cancel1++ } /* store1 */, true, nil)
+	store2.DequeueFunc.PushReturn(testRecord{ID: 42}, func() { cancel2++ } /* store2 */, true, nil)
+	store2.DequeueFunc.PushReturn(testRecord{ID: 43}, func() { cancel2++ } /* store2 */, true, nil)
 
 	options := Options{
 		QueueOptions: map[string]QueueOptions{
@@ -136,10 +138,10 @@ func TestCleanup(t *testing.T) {
 		t.Fatalf("unexpected error performing cleanup: %s", err)
 	}
 
-	if value := len(store1.DoneFunc.History()); value != 1 {
-		t.Fatalf("unexpected number of calls to Done. want=%d have=%d", 1, value)
+	if cancel1 != 1 {
+		t.Fatalf("unexpected number of calls to cancel (store 1). want=%d have=%d", 1, cancel1)
 	}
-	if value := len(store2.DoneFunc.History()); value != 1 {
-		t.Fatalf("unexpected number of calls to Done. want=%d have=%d", 1, value)
+	if cancel2 != 1 {
+		t.Fatalf("unexpected number of calls to cancel (store 2). want=%d have=%d", 1, cancel2)
 	}
 }
