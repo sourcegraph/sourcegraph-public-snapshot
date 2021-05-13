@@ -59,6 +59,7 @@ export const batchSpecFragment = gql`
         diffStat {
             ...DiffStatFields
         }
+        originalInput
         applyPreview {
             stats {
                 close

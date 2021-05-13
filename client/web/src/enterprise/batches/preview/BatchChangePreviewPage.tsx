@@ -24,6 +24,7 @@ import {
     BatchChangeTabsList,
 } from '../BatchChangeTabs'
 import { Description } from '../Description'
+import { BatchSpecTab } from '../detail/BatchSpecTab'
 import { SupersedingBatchSpecAlert } from '../detail/SupersedingBatchSpecAlert'
 
 import { fetchBatchSpecById as _fetchBatchSpecById } from './backend'
@@ -152,8 +153,7 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
                         />
                     </BatchChangeTabPanel>
                     <BatchChangeTabPanel>
-                        Test
-                        {/* <BatchSpecTab batchChange={batchChange} originalInput={batchChange.currentSpec.originalInput} /> */}
+                        <BatchSpecTab originalInput={spec.originalInput} />
                     </BatchChangeTabPanel>
                 </BatchChangeTabPanels>
             </BatchChangeTabs>

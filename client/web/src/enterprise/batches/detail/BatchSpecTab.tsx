@@ -11,7 +11,7 @@ import { BatchChangeFields } from '../../../graphql-operations'
 import styles from './BatchSpecTab.module.scss'
 
 export interface BatchSpecTabProps {
-    batchChange: Pick<BatchChangeFields, 'name' | 'createdAt' | 'lastApplier' | 'lastAppliedAt'>
+    batchChange?: Pick<BatchChangeFields, 'name' | 'createdAt' | 'lastApplier' | 'lastAppliedAt'>
     originalInput: BatchChangeFields['currentSpec']['originalInput']
 }
 
@@ -25,10 +25,7 @@ const isJSON = (string: string): boolean => {
     }
 }
 
-export const BatchSpecTab: React.FunctionComponent<BatchSpecTabProps> = ({
-    batchChange: { name: batchChangeName, createdAt, lastApplier, lastAppliedAt },
-    originalInput,
-}) => {
+export const BatchSpecTab: React.FunctionComponent<BatchSpecTabProps> = ({ batchChange, originalInput }) => {
     const downloadUrl = useMemo(() => 'data:text/plain;charset=utf-8,' + encodeURIComponent(originalInput), [
         originalInput,
     ])
@@ -42,25 +39,33 @@ export const BatchSpecTab: React.FunctionComponent<BatchSpecTabProps> = ({
         originalInput,
     ])
 
+    const meta = batchChange ? (
+        <div className="d-flex flex-wrap justify-content-between align-items-baseline mb-2 test-batches-spec">
+            <p className={classNames(styles.batchSpecTabHeaderCol, 'mb-2')}>
+                {batchChange.lastApplier ? (
+                    <Link to={batchChange.lastApplier.url}>{batchChange.lastApplier.username}</Link>
+                ) : (
+                    'A deleted user'
+                )}{' '}
+                {batchChange.createdAt === batchChange.lastAppliedAt ? 'created' : 'updated'} this batch change{' '}
+                <Timestamp date={batchChange.lastAppliedAt} /> by applying the following batch spec:
+            </p>
+            <div className={styles.batchSpecTabHeaderCol}>
+                <a
+                    download={`${batchChange.name}.batch.yaml`}
+                    href={downloadUrl}
+                    className="text-right btn btn-secondary text-nowrap"
+                    data-tooltip={`Download ${batchChange.name}.batch.yaml`}
+                >
+                    <FileDownloadIcon className="icon-inline" /> Download YAML
+                </a>
+            </div>
+        </div>
+    ) : null
+
     return (
         <>
-            <div className="d-flex flex-wrap justify-content-between align-items-baseline mb-2 test-batches-spec">
-                <p className={classNames(styles.batchSpecTabHeaderCol, 'mb-2')}>
-                    {lastApplier ? <Link to={lastApplier.url}>{lastApplier.username}</Link> : 'A deleted user'}{' '}
-                    {createdAt === lastAppliedAt ? 'created' : 'updated'} this batch change{' '}
-                    <Timestamp date={lastAppliedAt} /> by applying the following batch spec:
-                </p>
-                <div className={styles.batchSpecTabHeaderCol}>
-                    <a
-                        download={`${batchChangeName}.batch.yaml`}
-                        href={downloadUrl}
-                        className="text-right btn btn-secondary text-nowrap"
-                        data-tooltip={`Download ${batchChangeName}.batch.yaml`}
-                    >
-                        <FileDownloadIcon className="icon-inline" /> Download YAML
-                    </a>
-                </div>
-            </div>
+            {meta}
             <CodeSnippet code={input} language={inputIsJSON ? 'json' : 'yaml'} className="mb-3" />
         </>
     )
