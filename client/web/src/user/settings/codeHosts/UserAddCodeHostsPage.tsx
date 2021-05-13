@@ -62,7 +62,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     onUserRepositoriesUpdate,
 }) => {
     const [statusOrError, setStatusOrError] = useState<Status>()
-    const [oauthRequestFor, setOauthRequestFor] = useState<ExternalServiceKind>()
+    // const [oauthRequestFor, setOauthRequestFor] = useState<ExternalServiceKind>()
 
     const fetchExternalServices = useCallback(async () => {
         setStatusOrError('loading')
@@ -186,38 +186,39 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         [authProvidersByKind]
     )
 
-    const codeHostOAuthButtons = isServicesByKind(statusOrError)
-        ? Object.values(codeHostExternalServices).reduce(
-              (accumulator: JSX.Element[], { kind, defaultDisplayName, icon: Icon }) => {
-                  if (!statusOrError[kind] && authProvidersByKind[kind]) {
-                      accumulator.push(
-                          <button
-                              key={kind}
-                              type="button"
-                              onClick={() => {
-                                  eventLogger.log('UserAttemptConnectCodeHost', { kind })
-                                  setOauthRequestFor(kind)
-                                  ifNotNavigated(() => {
-                                      setOauthRequestFor(undefined)
-                                  })
-                                  navigateToAuthProvider(kind)
-                              }}
-                              className={`btn mr-2 ${
-                                  kind === 'GITLAB' ? 'user-code-hosts-page__btn--gitlab' : 'btn-dark'
-                              }`}
-                          >
-                              {/* will use dark theme for the spinner because buttons are dark */}
-                              {oauthRequestFor === kind && <LoadingSpinner className="icon-inline mr-2 theme-dark" />}
-                              <Icon className="icon-inline " /> {defaultDisplayName}
-                          </button>
-                      )
-                  }
+    // temporarily disable OAuth buttons
+    // const codeHostOAuthButtons = isServicesByKind(statusOrError)
+    //     ? Object.values(codeHostExternalServices).reduce(
+    //           (accumulator: JSX.Element[], { kind, defaultDisplayName, icon: Icon }) => {
+    //               if (!statusOrError[kind] && authProvidersByKind[kind]) {
+    //                   accumulator.push(
+    //                       <button
+    //                           key={kind}
+    //                           type="button"
+    //                           onClick={() => {
+    //                               eventLogger.log('UserAttemptConnectCodeHost', { kind })
+    //                               setOauthRequestFor(kind)
+    //                               ifNotNavigated(() => {
+    //                                   setOauthRequestFor(undefined)
+    //                               })
+    //                               navigateToAuthProvider(kind)
+    //                           }}
+    //                           className={`btn mr-2 ${
+    //                               kind === 'GITLAB' ? 'user-code-hosts-page__btn--gitlab' : 'btn-dark'
+    //                           }`}
+    //                       >
+    //                           {/* will use dark theme for the spinner because buttons are dark */}
+    //                           {oauthRequestFor === kind && <LoadingSpinner className="icon-inline mr-2 theme-dark" />}
+    //                           <Icon className="icon-inline " /> {defaultDisplayName}
+    //                       </button>
+    //                   )
+    //               }
 
-                  return accumulator
-              },
-              []
-          )
-        : []
+    //               return accumulator
+    //           },
+    //           []
+    //       )
+    //     : []
 
     return (
         <div className="user-code-hosts-page">
@@ -245,12 +246,12 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 
             {codeHostExternalServices && isServicesByKind(statusOrError) ? (
                 <>
-                    {codeHostOAuthButtons.length > 0 && (
+                    {/* temporarily disable OAuth buttons */}
+                    {/* {codeHostOAuthButtons.length > 0 && (
                         <div className="border rounded p-4 mb-4">
                             <b>Connect with code host</b>
                             <div className="container">
                                 <div className="row pt-3">{codeHostOAuthButtons}</div>
-                                {/* temporarily hide the link until the docs are ready */}
                                 <div className="row d-none">
                                     <span className="text-muted">
                                         Learn more about{' '}
@@ -261,8 +262,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                                 </div>
                             </div>
                         </div>
-                    )}
-
+                    )} */}
                     <ul className="list-group">
                         {Object.entries(codeHostExternalServices).map(([id, { kind, defaultDisplayName, icon }]) =>
                             authProvidersByKind[kind] ? (
