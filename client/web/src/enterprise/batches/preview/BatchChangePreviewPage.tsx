@@ -1,5 +1,5 @@
 import * as H from 'history'
-import { isEqual, reduce } from 'lodash'
+import { isEqual } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
@@ -23,8 +23,8 @@ import {
     BatchChangeTabs,
     BatchChangeTabsList,
 } from '../BatchChangeTabs'
+import { BatchSpec, BatchSpecMeta } from '../BatchSpec'
 import { Description } from '../Description'
-import { BatchSpecTab } from '../detail/BatchSpecTab'
 import { SupersedingBatchSpecAlert } from '../detail/SupersedingBatchSpecAlert'
 
 import { fetchBatchSpecById as _fetchBatchSpecById } from './backend'
@@ -146,7 +146,14 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
                         />
                     </BatchChangeTabPanel>
                     <BatchChangeTabPanel>
-                        <BatchSpecTab originalInput={spec.originalInput} />
+                        <BatchSpecMeta
+                            createdAt={spec.createdAt}
+                            lastApplier={spec.creator}
+                            lastAppliedAt={spec.createdAt}
+                            name={spec.description.name}
+                            originalInput={spec.originalInput}
+                        />
+                        <BatchSpec originalInput={spec.originalInput} />
                     </BatchChangeTabPanel>
                 </BatchChangeTabPanels>
             </BatchChangeTabs>
