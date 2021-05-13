@@ -1,5 +1,4 @@
 import { render, RenderResult, fireEvent } from '@testing-library/react'
-import { createMemoryHistory } from 'history'
 import React from 'react'
 import * as sinon from 'sinon'
 
@@ -11,7 +10,6 @@ import { FeedbackPrompt, HAPPINESS_FEEDBACK_OPTIONS } from './FeedbackPrompt'
 
 let mockResponse: MutationResult<SubmitHappinessFeedbackResult> = { loading: false }
 const mockSubmitFn = sinon.spy((parameters: SubmitHappinessFeedbackVariables) => undefined)
-const history = createMemoryHistory()
 
 jest.mock('../../hooks', () => ({
     useMutation: () => [mockSubmitFn, mockResponse],
