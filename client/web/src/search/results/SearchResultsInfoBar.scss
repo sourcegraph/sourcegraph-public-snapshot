@@ -22,6 +22,12 @@
         height: 100%;
         flex: 1 0 auto;
         text-align: right;
+
+        .theme-redesign & {
+            justify-content: flex-start;
+            align-items: flex-start;
+            text-align: left;
+        }
     }
 
     &__notice {
@@ -42,6 +48,10 @@
                 display: none;
             }
         }
+    }
+
+    &__show-filters-button {
+        margin-bottom: 0.75rem;
     }
 
     .theme-redesign & {

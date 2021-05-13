@@ -29,7 +29,7 @@ export const StreamingProgressCount: React.FunctionComponent<
 > = ({ progress, state, showTrace, className = '' }) => (
     <>
         <small
-            className={classNames(className, 'streaming-progress__count d-flex align-items-center', {
+            className={classNames(className, 'streaming-progress__count d-flex align-items-center mr-2', {
                 'streaming-progress__count--in-progress': state === 'loading',
             })}
         >

@@ -1,5 +1,14 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
 .search-sidebar {
     padding: 0.5rem 1rem;
     width: 17.5rem;
     flex-shrink: 0;
+
+    &__sticky-box {
+        @media (--md-breakpoint-down) {
+            // Sidebar shouldn't be sticky in smaller screens
+            position: static !important;
+        }
+    }
 }
