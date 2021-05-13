@@ -63,6 +63,7 @@ const batchSpec = (): BatchSpecFields => ({
         totalCount: 0,
         nodes: [],
     },
+    originalInput: 'name: awesome-batch-change\ndescription: somestring',
     applyPreview: {
         stats: {
             close: 10,
@@ -79,6 +80,7 @@ const batchSpec = (): BatchSpecFields => ({
             modified: 10,
             removed: 3,
         },
+        totalCount: 18,
     },
 })
 
