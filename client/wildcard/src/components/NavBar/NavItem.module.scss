@@ -38,8 +38,7 @@
     &:focus-visible {
         outline: none;
         box-shadow: none;
-        .text {
-            padding: 0.125rem;
+        .link-content {
             outline: 1px solid transparent;
             box-shadow: 0 0 0 2px var(--primary-2);
             @media (--md-breakpoint-down) {

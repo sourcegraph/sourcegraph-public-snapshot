@@ -148,7 +148,7 @@ export const NavLinks: React.FunctionComponent<Props> = props => {
             )}
             {authenticatedUser && (
                 <li className="nav-item">
-                    <FeedbackPrompt history={history} routes={routes} />
+                    <FeedbackPrompt routes={routes} />
                 </li>
             )}
             {!authenticatedUser &&
