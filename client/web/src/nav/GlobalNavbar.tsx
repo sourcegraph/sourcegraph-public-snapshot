@@ -273,7 +273,11 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                             <>
                                 {showDotComMarketing && (
                                     <NavAction>
-                                        <Link className="global-navbar__link" to="/help" target="_blank">
+                                        <Link
+                                            className="global-navbar__link font-weight-medium"
+                                            to="/help"
+                                            target="_blank"
+                                        >
                                             Docs
                                         </Link>
                                     </NavAction>
@@ -293,7 +297,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                         )}
                         {props.authenticatedUser && (
                             <NavAction>
-                                <FeedbackPrompt history={history} routes={props.routes} />
+                                <FeedbackPrompt routes={props.routes} />
                             </NavAction>
                         )}
                         <NavAction>
@@ -324,17 +328,17 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                         {!props.authenticatedUser ? (
                             <>
                                 <NavAction>
-                                    <Link className="btn btn-sm btn-outline-secondary" to="/sign-in">
-                                        Log in
-                                    </Link>
-                                </NavAction>
-                                <NavAction>
-                                    <Link
-                                        className="btn btn-sm btn-outline-secondary global-navbar__sign-up"
-                                        to="/sign-up"
-                                    >
-                                        Sign up
-                                    </Link>
+                                    <div>
+                                        <Link className="btn btn-sm btn-outline-secondary mr-1" to="/sign-in">
+                                            Log in
+                                        </Link>
+                                        <Link
+                                            className="btn btn-sm btn-outline-secondary global-navbar__sign-up"
+                                            to="/sign-up"
+                                        >
+                                            Sign up
+                                        </Link>
+                                    </div>
                                 </NavAction>
                             </>
                         ) : (

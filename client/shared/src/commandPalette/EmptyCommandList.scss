@@ -18,16 +18,13 @@
         bottom: 1rem;
         right: 1rem;
     }
+    .theme-redesign & {
+        background-color: var(--color-bg-1);
+    }
 }
 
 .theme-dark {
     .empty-command-list {
         color: $gray-06;
-    }
-}
-
-.theme-redesign {
-    .empty-command-list {
-        background-color: var(--color-bg-1);
     }
 }
