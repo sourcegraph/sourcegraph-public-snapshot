@@ -26,7 +26,7 @@ describe('FeedbackPrompt', () => {
     })
 
     beforeEach(() => {
-        queries = render(<FeedbackPrompt history={history} routes={routes} />)
+        queries = render(<FeedbackPrompt routes={routes} />)
     })
 
     test('Renders heading correctly', () => {
