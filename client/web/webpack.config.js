@@ -208,7 +208,13 @@ const config = {
         // CSS rule for monaco-editor and other external plain CSS (skip SASS and PostCSS for build perf)
         test: /\.css$/,
         include: monacoEditorPaths,
-        use: ['style-loader', { loader: 'css-loader', options: { url: false } }],
+        use: ['style-loader', { loader: 'css-loader' }],
+      },
+      {
+        // TTF rule for monaco-editor
+        test: /\.ttf$/,
+        include: monacoEditorPaths,
+        use: ['file-loader'],
       },
       {
         test: extensionHostWorker,
