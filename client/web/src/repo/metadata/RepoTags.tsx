@@ -194,7 +194,7 @@ export const RepoTags: React.FunctionComponent<RepoTagsProps> = ({ repo: { id, v
     const onUpdate = useCallback(() => update(), [update])
 
     if (tagsOrError === undefined) {
-        return <span />
+        return <LoadingSpinner className="icon-inline" />
     }
     if (isErrorLike(tagsOrError)) {
         return <ErrorAlert error={tagsOrError} prefix="Error fetching repository tags" />
