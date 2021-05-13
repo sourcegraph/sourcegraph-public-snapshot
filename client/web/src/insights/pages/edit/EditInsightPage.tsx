@@ -20,7 +20,7 @@ import { EditLangStatsInsight } from './components/EditLangStatsInsight'
 import { EditSearchBasedInsight } from './components/EditSearchInsight'
 import styles from './EditInsightPage.module.scss'
 
-interface EditInsightPageProps extends SettingsCascadeProps, PlatformContextProps<'updateSettings'> {
+export interface EditInsightPageProps extends SettingsCascadeProps, PlatformContextProps<'updateSettings'> {
     insightID: string
 
     /**
