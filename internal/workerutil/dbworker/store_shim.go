@@ -37,14 +37,13 @@ func (s *storeShim) QueuedCount(ctx context.Context, extraArguments interface{})
 }
 
 // Dequeue calls into the inner store.
-func (s *storeShim) Dequeue(ctx context.Context, extraArguments interface{}) (workerutil.Record, workerutil.Store, bool, error) {
+func (s *storeShim) Dequeue(ctx context.Context, extraArguments interface{}) (workerutil.Record, context.CancelFunc, bool, error) {
 	conditions, err := convertArguments(extraArguments)
 	if err != nil {
 		return nil, nil, false, err
 	}
 
-	record, tx, dequeued, err := s.Store.Dequeue(ctx, conditions)
-	return record, newStoreShim(tx), dequeued, err
+	return s.Store.Dequeue(ctx, conditions)
 }
 
 // ErrNotConditions occurs when a PreDequeue handler returns non-sql query extra arguments.
