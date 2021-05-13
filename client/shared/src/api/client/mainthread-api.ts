@@ -171,6 +171,7 @@ export const initMainThreadAPI = (
             return proxySubscribable(getEnabledExtensions(platformContext))
         },
         logEvent: (eventName, eventProperties) => platformContext.telemetryService?.log(eventName, eventProperties),
+        logExtensionMessage: (...data) => console.log(...data),
     }
 
     return { api, exposedToClient, subscription }

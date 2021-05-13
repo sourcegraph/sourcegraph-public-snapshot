@@ -20,16 +20,16 @@ func TestUpdatePackageReferences(t *testing.T) {
 	insertUploads(t, db, Upload{ID: 42})
 
 	if err := store.UpdatePackageReferences(context.Background(), 42, []semantic.PackageReference{
-		{Scheme: "s0", Name: "n0", Version: "v0"},
-		{Scheme: "s1", Name: "n1", Version: "v1"},
-		{Scheme: "s2", Name: "n2", Version: "v2"},
-		{Scheme: "s3", Name: "n3", Version: "v3"},
-		{Scheme: "s4", Name: "n4", Version: "v4"},
-		{Scheme: "s5", Name: "n5", Version: "v5"},
-		{Scheme: "s6", Name: "n6", Version: "v6"},
-		{Scheme: "s7", Name: "n7", Version: "v7"},
-		{Scheme: "s8", Name: "n8", Version: "v8"},
-		{Scheme: "s9", Name: "n9", Version: "v9"},
+		{Package: semantic.Package{Scheme: "s0", Name: "n0", Version: "v0"}},
+		{Package: semantic.Package{Scheme: "s1", Name: "n1", Version: "v1"}},
+		{Package: semantic.Package{Scheme: "s2", Name: "n2", Version: "v2"}},
+		{Package: semantic.Package{Scheme: "s3", Name: "n3", Version: "v3"}},
+		{Package: semantic.Package{Scheme: "s4", Name: "n4", Version: "v4"}},
+		{Package: semantic.Package{Scheme: "s5", Name: "n5", Version: "v5"}},
+		{Package: semantic.Package{Scheme: "s6", Name: "n6", Version: "v6"}},
+		{Package: semantic.Package{Scheme: "s7", Name: "n7", Version: "v7"}},
+		{Package: semantic.Package{Scheme: "s8", Name: "n8", Version: "v8"}},
+		{Package: semantic.Package{Scheme: "s9", Name: "n9", Version: "v9"}},
 	}); err != nil {
 		t.Fatalf("unexpected error updating references: %s", err)
 	}
@@ -74,23 +74,23 @@ func TestUpdatePackageReferencesWithDuplicates(t *testing.T) {
 	insertUploads(t, db, Upload{ID: 42})
 
 	if err := store.UpdatePackageReferences(context.Background(), 42, []semantic.PackageReference{
-		{Scheme: "s0", Name: "n0", Version: "v0"},
-		{Scheme: "s1", Name: "n1", Version: "v1"},
-		{Scheme: "s2", Name: "n2", Version: "v2"},
-		{Scheme: "s3", Name: "n3", Version: "v3"},
+		{Package: semantic.Package{Scheme: "s0", Name: "n0", Version: "v0"}},
+		{Package: semantic.Package{Scheme: "s1", Name: "n1", Version: "v1"}},
+		{Package: semantic.Package{Scheme: "s2", Name: "n2", Version: "v2"}},
+		{Package: semantic.Package{Scheme: "s3", Name: "n3", Version: "v3"}},
 	}); err != nil {
 		t.Fatalf("unexpected error updating references: %s", err)
 	}
 
 	if err := store.UpdatePackageReferences(context.Background(), 42, []semantic.PackageReference{
-		{Scheme: "s0", Name: "n0", Version: "v0"}, // two copies
-		{Scheme: "s2", Name: "n2", Version: "v2"}, // two copies
-		{Scheme: "s4", Name: "n4", Version: "v4"},
-		{Scheme: "s5", Name: "n5", Version: "v5"},
-		{Scheme: "s6", Name: "n6", Version: "v6"},
-		{Scheme: "s7", Name: "n7", Version: "v7"},
-		{Scheme: "s8", Name: "n8", Version: "v8"},
-		{Scheme: "s9", Name: "n9", Version: "v9"},
+		{Package: semantic.Package{Scheme: "s0", Name: "n0", Version: "v0"}}, // two copies
+		{Package: semantic.Package{Scheme: "s2", Name: "n2", Version: "v2"}}, // two copies
+		{Package: semantic.Package{Scheme: "s4", Name: "n4", Version: "v4"}},
+		{Package: semantic.Package{Scheme: "s5", Name: "n5", Version: "v5"}},
+		{Package: semantic.Package{Scheme: "s6", Name: "n6", Version: "v6"}},
+		{Package: semantic.Package{Scheme: "s7", Name: "n7", Version: "v7"}},
+		{Package: semantic.Package{Scheme: "s8", Name: "n8", Version: "v8"}},
+		{Package: semantic.Package{Scheme: "s9", Name: "n9", Version: "v9"}},
 	}); err != nil {
 		t.Fatalf("unexpected error updating references: %s", err)
 	}

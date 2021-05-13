@@ -162,7 +162,7 @@ func (u *IndexabilityUpdater) queueRepository(ctx context.Context, repoUsageStat
 
 	matched := false
 	for name, handler := range inference.Recognizers {
-		matched = handler.CanIndex(paths, gitserverClient)
+		matched = handler.CanIndexRepo(paths, gitserverClient)
 		traceLog(log.Bool(fmt.Sprintf("%s.CanIndex", name), matched))
 
 		if matched {

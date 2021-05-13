@@ -60,7 +60,6 @@ export function App(): ReactElement {
                     }
                 >
                     <Switch>
-                        {/* eslint-disable react/jsx-no-bind */}
                         {routes.map(({ render, ...route }) => (
                             <Route
                                 {...route}
@@ -76,7 +75,6 @@ export function App(): ReactElement {
                         ))}
 
                         <Redirect to="/insights" />
-                        {/* eslint-enable react/jsx-no-bind */}
                     </Switch>
                 </Suspense>
             </InsightsApiContext.Provider>

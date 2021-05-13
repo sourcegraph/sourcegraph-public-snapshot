@@ -89,3 +89,39 @@ You can run unit tests via `yarn test` (to run all) or `yarn test --watch` (to r
 ### E2E tests
 
 See [testing.md](../../how-to/testing.md).
+
+### Local development
+
+Basic commands for local development can be found [here](../../getting-started/quickstart_6_start_server.md).
+Commands specifically useful for the web team can be found in the root [package.json](https://github.com/sourcegraph/sourcegraph/blob/main/package.json).
+Also, check out the web app [README](https://github.com/sourcegraph/sourcegraph/blob/main/client/web/README.md).
+
+1. Regenerate GraphQL schema, Typescript types for GraphQL operations, and start a development server for the web app.
+
+   ```sh
+   yarn dev-web
+   ```
+
+2. Same as the previous one, but skip initial code generation task.
+
+   ```sh
+   yarn unsafeDev-web
+   ```
+
+3. Start all backend services and the frontend server with enterprise functionality.
+
+   ```sh
+   ./enterprise/dev/start.sh
+   ```
+
+4. Start the web server only and point it to any deployed API instance. See more info in the web app [README](https://github.com/sourcegraph/sourcegraph/blob/main/client/web/README.md).
+
+  ```sh
+  sg run web-standalone
+  ```
+
+  For enterprise version:
+
+  ```sh
+  sg run enterprise-web-standalone
+  ```

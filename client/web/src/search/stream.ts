@@ -2,6 +2,7 @@
 import { Observable, fromEvent, Subscription, OperatorFunction, pipe, Subscriber, Notification } from 'rxjs'
 import { defaultIfEmpty, map, materialize, scan } from 'rxjs/operators'
 
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
@@ -262,7 +263,7 @@ export function toGQLRepositoryMatch(repo: RepositoryMatch): GQL.IRepository {
     // We only need to return the subset defined in IGenericSearchResultInterface
     const gqlRepo: unknown = {
         __typename: 'Repository',
-        label: toMarkdown(`[${label}](${url})`),
+        label: toMarkdown(`[${displayRepoName(label)}](${url})`),
         url,
         detail: toMarkdown('Repository match'),
         matches: [],

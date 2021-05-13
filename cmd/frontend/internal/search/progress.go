@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	sgapi "github.com/sourcegraph/sourcegraph/internal/api"
 	searchshared "github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
@@ -23,7 +22,7 @@ type progressAggregator struct {
 	Dirty bool
 }
 
-func (p *progressAggregator) Update(event graphqlbackend.SearchEvent) {
+func (p *progressAggregator) Update(event streaming.SearchEvent) {
 	if len(event.Results) == 0 && event.Stats.Zero() {
 		return
 	}

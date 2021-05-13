@@ -14,7 +14,6 @@ const history = createMemoryHistory()
 const commonProps = {
     history,
     animate: !isChromatic(),
-    location: history.location,
     viewID: '1',
     telemetryService: NOOP_TELEMETRY_SERVICE,
 }

@@ -453,7 +453,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                             </section>
                         )}
                     </ActionsContainer>
-                    {/* eslint-enable react/jsx-no-bind */}
+
                     <div className="tree-page__section">
                         <h3 className="tree-page__section-header">Changes</h3>
                         <FilteredConnection<GitCommitFields, Pick<GitCommitNodeProps, 'className' | 'compact'>>
@@ -473,7 +473,6 @@ export const TreePage: React.FunctionComponent<Props> = ({
                             useURLQuery={false}
                             hideSearch={true}
                             emptyElement={emptyElement}
-                            // eslint-disable-next-line react/jsx-no-bind
                             totalCountSummaryComponent={TotalCountSummary}
                         />
                     </div>
