@@ -11,8 +11,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -289,7 +288,7 @@ func (h *UploadHandler) handleEnqueueMultipartUpload(r *http.Request, upload sto
 		return nil, err
 	}
 	if _, err := h.uploadStore.Upload(ctx, fmt.Sprintf("upload-%d.%d.lsif.gz", upload.ID, partIndex), r.Body); err != nil {
-		h.markUploadAsFailed(context.Background(), upload.ID, err)
+		h.markUploadAsFailed(context.Background(), tx, upload.ID, err)
 		return nil, err
 	}
 
@@ -321,7 +320,7 @@ func (h *UploadHandler) handleEnqueueMultipartFinalize(r *http.Request, upload s
 
 	size, err := h.uploadStore.Compose(ctx, fmt.Sprintf("upload-%d.lsif.gz", upload.ID), sources...)
 	if err != nil {
-		h.markUploadAsFailed(context.Background(), upload.ID, err)
+		h.markUploadAsFailed(context.Background(), tx, upload.ID, err)
 		return nil, err
 	}
 
@@ -339,7 +338,7 @@ func (h *UploadHandler) handleEnqueueMultipartFinalize(r *http.Request, upload s
 //
 // This method does not return an error as it's best-effort cleanup. If an error occurs when
 // trying to modify the record, it will be logged but will not be directly visible to the user.
-func (h *UploadHandler) markUploadAsFailed(ctx context.Context, uploadID int, err error) {
+func (h *UploadHandler) markUploadAsFailed(ctx context.Context, tx DBStore, uploadID int, err error) {
 	var reason string
 
 	if _, ok := err.(*ClientError); ok {
@@ -347,10 +346,10 @@ func (h *UploadHandler) markUploadAsFailed(ctx context.Context, uploadID int, er
 	} else if awsErr := formatAWSError(err); awsErr != "" {
 		reason = fmt.Sprintf("object store error:\n* %s", awsErr)
 	} else {
-		return
+		reason = fmt.Sprintf("unknown error:\n* %s", err)
 	}
 
-	if markErr := h.dbStore.MarkFailed(ctx, uploadID, reason); markErr != nil {
+	if markErr := tx.MarkFailed(ctx, uploadID, reason); markErr != nil {
 		log15.Error("Failed to mark upload as failed", "error", markErr)
 	}
 }
@@ -429,23 +428,10 @@ func ensureRepoAndCommitExist(ctx context.Context, w http.ResponseWriter, repoNa
 // formatAWSError returns the unwrapped, root AWS/S3 error. This method returns
 // an empty string when the given error value is neither an AWS nor an S3 error.
 func formatAWSError(err error) string {
-	var awsErr awserr.Error
-	if !errors.As(err, &awsErr) {
-		// Not an AWS error
+	var multipartErr manager.MultiUploadFailure
+	if !errors.As(err, &multipartErr) {
 		return ""
 	}
 
-	var s3Err s3manager.MultiUploadFailure
-	if !errors.As(awsErr, &s3Err) {
-		// Regular AWS error
-		return awsErr.Message()
-	}
-
-	if s3Err.OrigErr() != nil {
-		// Wrapped S3 error
-		return s3Err.OrigErr().Error()
-	}
-
-	// Regular S3 error
-	return s3Err.Error()
+	return multipartErr.Error()
 }

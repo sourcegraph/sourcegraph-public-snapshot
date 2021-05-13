@@ -14,7 +14,6 @@ require (
 	github.com/aphistic/sweet-junit v0.2.0 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20200907205600-7a23bdc65eef // indirect
 	github.com/avelino/slugify v0.0.0-20180501145920-855f152bd774
-	github.com/aws/aws-sdk-go v1.37.11
 	github.com/aws/aws-sdk-go-v2 v1.2.1
 	github.com/aws/aws-sdk-go-v2/config v1.1.2
 	github.com/aws/aws-sdk-go-v2/credentials v1.1.2
