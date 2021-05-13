@@ -22,7 +22,7 @@ export const InsightCardMenu: React.FunctionComponent<InsightCardMenuProps> = pr
                 <DotsVerticalIcon size={16} />
             </MenuButton>
             <MenuPopover portal={true}>
-                <ul className={styles.menuPanel}>
+                <ul className={classnames('dropdown-menu', styles.menuPanel)}>
                     <li>
                         <button
                             onClick={onDelete}
