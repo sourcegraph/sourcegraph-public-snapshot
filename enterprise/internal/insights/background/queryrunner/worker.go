@@ -67,6 +67,7 @@ func createDBWorkerStore(s *basestore.Store) dbworkerstore.Store {
 		//
 		// If you change this, be sure to adjust the interval that work is enqueued in
 		// enterprise/internal/insights/background:newInsightEnqueuer.
+		HeartbeatInterval: 15 * time.Second,
 		StalledMaxAge:     60 * time.Second,
 		RetryAfter:        10 * time.Second,
 		MaxNumRetries:     3,

@@ -14,11 +14,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
-	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-var _ dbworker.Handler = &workHandler{}
+var _ workerutil.Handler = &workHandler{}
 
 // workHandler implements the dbworker.Handler interface by executing search queries and
 // inserting insights about them to the insights Timescale database.
@@ -27,7 +25,7 @@ type workHandler struct {
 	insightsStore   *store.Store
 }
 
-func (r *workHandler) Handle(ctx context.Context, workerStore dbworkerstore.Store, record workerutil.Record) (err error) {
+func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err error) {
 	defer func() {
 		if err != nil {
 			log15.Error("insights.queryrunner.workHandler", "error", err)
