@@ -6,7 +6,11 @@ import { Link } from 'react-router-dom'
 import { ConfiguredRegistryExtension, splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
+import {
+    ExtensionHeaderColor,
+    ExtensionManifest,
+    EXTENSION_HEADER_COLORS,
+} from '@sourcegraph/shared/src/schema/extensionSchema'
 import { SettingsCascadeProps, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
@@ -188,6 +192,15 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
         []
     )
 
+    // Determine header color classname (either defined in manifest, or pseudorandom).
+    const headerColorClassName = useMemo(() => {
+        if (manifest?.headerColor && EXTENSION_HEADER_COLORS.has(manifest?.headerColor)) {
+            return manifest.headerColor
+        }
+
+        return headerColorFromExtensionID(extension.id)
+    }, [manifest?.headerColor, extension.id])
+
     return (
         <div className="d-flex">
             <div
@@ -206,7 +219,7 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                     <div
                         className={classNames(
                             'extension-card__background-section d-flex align-items-center',
-                            manifest?.headerColor ? headerColorStyles[manifest.headerColor] : headerColorStyles.blue // Default color is blue
+                            headerColorStyles[headerColorClassName]
                         )}
                     >
                         {icon ? (
@@ -344,4 +357,17 @@ function areEqual(oldProps: Props, newProps: Props): boolean {
         )
     }
     return oldProps.enabled === newProps.enabled && oldProps.isLightTheme === newProps.isLightTheme
+}
+
+const extensionHeaderColors = [...EXTENSION_HEADER_COLORS]
+
+/**
+ * Pseudorandom header color for extensions that haven't set `headerColor` in their manifest.
+ */
+function headerColorFromExtensionID(extensionID: string): ExtensionHeaderColor {
+    const dividend = [...extensionID].reduce((sum, character) => (sum += character.charCodeAt(0)), 0)
+    const divisor = extensionHeaderColors.length
+    const remainder = dividend % divisor
+
+    return extensionHeaderColors[remainder] || 'blue' // Fallback, but should never reach this state
 }
