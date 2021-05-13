@@ -2,8 +2,8 @@ import { proxy } from 'comlink'
 import { BehaviorSubject } from 'rxjs'
 
 import { SettingsCascade } from '../../../settings/settings'
+import { ClientAPI } from '../../client/api/api'
 import { SettingsEdit } from '../../client/services/settings'
-import { MainThreadAPI } from '../../contract'
 import { pretendRemote } from '../../util'
 import { proxySubscribable } from '../api/common'
 
@@ -21,8 +21,9 @@ describe('ExtensionHost: Configuration', () => {
                 {
                     initialSettings: initialSettings({ a: 'a' }),
                     clientApplication: 'sourcegraph',
+                    sourcegraphURL: 'https://example.com/',
                 },
-                pretendRemote<MainThreadAPI>({
+                pretendRemote<ClientAPI>({
                     getScriptURLForExtension: proxy(() => undefined),
                     getEnabledExtensions: () => proxySubscribable(new BehaviorSubject([])),
                 })
@@ -40,8 +41,9 @@ describe('ExtensionHost: Configuration', () => {
                 {
                     initialSettings: initialSettings({ a: 'a' }),
                     clientApplication: 'sourcegraph',
+                    sourcegraphURL: 'https://example.com/',
                 },
-                pretendRemote<MainThreadAPI>({
+                pretendRemote<ClientAPI>({
                     getScriptURLForExtension: proxy(() => undefined),
                     getEnabledExtensions: () => proxySubscribable(new BehaviorSubject([])),
                 })
@@ -57,8 +59,9 @@ describe('ExtensionHost: Configuration', () => {
                 {
                     initialSettings: initialSettings({ a: 'a' }),
                     clientApplication: 'sourcegraph',
+                    sourcegraphURL: 'https://example.com/',
                 },
-                pretendRemote<MainThreadAPI>({
+                pretendRemote<ClientAPI>({
                     getScriptURLForExtension: proxy(() => undefined),
                     getEnabledExtensions: () => proxySubscribable(new BehaviorSubject([])),
                 })
@@ -76,8 +79,9 @@ describe('ExtensionHost: Configuration', () => {
                 {
                     initialSettings: initialSettings({ a: 'b' }),
                     clientApplication: 'sourcegraph',
+                    sourcegraphURL: 'https://example.com/',
                 },
-                pretendRemote<MainThreadAPI>({
+                pretendRemote<ClientAPI>({
                     getScriptURLForExtension: proxy(() => undefined),
                     getEnabledExtensions: () => proxySubscribable(new BehaviorSubject([])),
                 })
@@ -98,8 +102,9 @@ describe('ExtensionHost: Configuration', () => {
                 {
                     initialSettings: initialSettings({ a: 'b' }),
                     clientApplication: 'sourcegraph',
+                    sourcegraphURL: 'https://example.com/',
                 },
-                pretendRemote<MainThreadAPI>({
+                pretendRemote<ClientAPI>({
                     getScriptURLForExtension: proxy(() => undefined),
                     getEnabledExtensions: () => proxySubscribable(new BehaviorSubject([])),
                     applySettingsEdit: edit =>

@@ -6,15 +6,15 @@ import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
 
 import { SettingsCascade } from '../../../settings/settings'
+import { ClientAPI } from '../../client/api/api'
 import { HoverMerged } from '../../client/types/hover'
-import { MainThreadAPI } from '../../contract'
 import { pretendProxySubscribable, pretendRemote } from '../../util'
 
 import { initializeExtensionHostTest } from './test-helpers'
 
 describe('getHover from ExtensionHost API, it aims to have more e2e feel', () => {
     // integration(ish) tests for scenarios not covered by providers tests
-    const noopMain = pretendRemote<MainThreadAPI>({
+    const noopMain = pretendRemote<ClientAPI>({
         getEnabledExtensions: () => pretendProxySubscribable(of([])),
         getScriptURLForExtension: () => undefined,
     })
@@ -41,7 +41,7 @@ describe('getHover from ExtensionHost API, it aims to have more e2e feel', () =>
         const typescriptFileUri = 'file:///f.ts'
 
         const { extensionHostAPI, extensionAPI } = initializeExtensionHostTest(
-            { initialSettings, clientApplication: 'sourcegraph' },
+            { initialSettings, clientApplication: 'sourcegraph', sourcegraphURL: 'https://example.com/' },
             noopMain
         )
 
