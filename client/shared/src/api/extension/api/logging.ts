@@ -28,5 +28,5 @@ export function getActiveLoggersFromSettings(settings: Settings): Set<string> {
         return new Set<string>()
     }
 
-    return new Set<string>([...activeLoggers])
+    return new Set<string>(activeLoggers)
 }
