@@ -469,11 +469,11 @@ describe('Batches', () => {
                 await driver.page.waitForSelector('.test-file-diff-node')
 
                 // Switch to view burndown chart.
-                await driver.page.click('.test-batches-chart-tab')
+                await driver.page.click('[data-reach-tab-list] button:nth-child(2)')
                 await driver.page.waitForSelector('.test-batches-chart')
 
                 // Switch to view spec file.
-                await driver.page.click('.test-batches-spec-tab')
+                await driver.page.click('[data-reach-tab-list] button:nth-child(3)')
                 await driver.page.waitForSelector('.test-batches-spec')
 
                 // Go to close page via button.

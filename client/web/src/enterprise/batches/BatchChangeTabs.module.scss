@@ -3,9 +3,11 @@
     .nav-link {
         border-bottom: 0;
     }
+
     [data-reach-tab],
     [data-reach-tab]:hover,
     [data-reach-tab][data-selected] {
+        // stylelint-disable-next-line declaration-property-unit-whitelist
         margin-bottom: -1px;
         border-bottom: 0;
         padding: 0;
