@@ -14,19 +14,50 @@ Common use cases include:
 ## Adding labels
 
 ### Manually
+
 You can add labels manually from the repository page.
 <img src="https://sourcegraphstatic.com/batch-change-labels-add.png" class="screenshot">
 
-### With a query
-You can also create labels automatically, for example by loading metadata from an external service, with a GraphQL query:
+### Via `src`
+
+You can add labels from `src`:
+
+```bash
+src repos tags add github.com/sourcegraph/sourcegraph team/sourcegraph language/typescript language/go
 ```
-TODO: query
+
+### With a query
+
+You can also create labels automatically, for example by loading metadata from an external service, with a GraphQL mutation:
+
+```
+mutation AddRepoTag($repo: ID!, $tag: String!) {
+  setTag(node: $repo, tag: $tag, present: true) {
+    alwaysNil
+  }
+}
+```
+
+The repository ID can be retrieved given a name with this query:
+
+```
+query RepoID($name: String!) {
+  repository(name: $name) {
+    id
+  }
+}
 ```
 
 ## Removing labels
-You can remove labels from the GUI, or with a query:
+
+You can remove labels from the GUI, using the `src repos tags delete` command, or with a GraphQL mutation:
+
 ```
-TODO: query
+mutation DeleteRepoTag($repo: ID!, $tag: String!) {
+  setTag(node: $repo, tag: $tag, present: false) {
+    alwaysNil
+  }
+}
 ```
 
 
