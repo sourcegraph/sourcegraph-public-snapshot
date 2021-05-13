@@ -70,8 +70,9 @@ func createBulkOperationDBWorkerStore(s *store.Store) dbworkerstore.Store {
 
 		OrderByExpression: sqlf.Sprintf("changeset_jobs.state = 'errored', changeset_jobs.updated_at DESC"),
 
-		StalledMaxAge: 60 * time.Second,
-		MaxNumResets:  bulkProcessorMaxNumResets,
+		HeartbeatInterval: 15 * time.Second,
+		StalledMaxAge:     60 * time.Second,
+		MaxNumResets:      bulkProcessorMaxNumResets,
 
 		RetryAfter:    5 * time.Second,
 		MaxNumRetries: bulkProcessorMaxNumRetries,
@@ -91,11 +92,17 @@ type bulkProcessorWorker struct {
 	sourcer sources.Sourcer
 }
 
-func (b *bulkProcessorWorker) HandlerFunc() dbworker.HandlerFunc {
-	return func(ctx context.Context, tx dbworkerstore.Store, record workerutil.Record) error {
+func (b *bulkProcessorWorker) HandlerFunc() workerutil.HandlerFunc {
+	return func(ctx context.Context, record workerutil.Record) (err error) {
+		tx, err := b.store.Transact(ctx)
+		if err != nil {
+			return err
+		}
+		defer func() { err = tx.Done(err) }()
+
 		processor := &bulkProcessor{
 			sourcer: b.sourcer,
-			store:   b.store.With(tx),
+			store:   tx,
 		}
 		return processor.process(ctx, record.(*btypes.ChangesetJob))
 	}
