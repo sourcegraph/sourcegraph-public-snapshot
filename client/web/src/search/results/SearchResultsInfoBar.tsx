@@ -160,7 +160,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                     <button
                         type="button"
                         className={classNames(
-                            'btn btn-sm btn-outline-secondary mr-2 d-flex d-lg-none search-results-info-bar__show-filters-button',
+                            'btn btn-sm btn-outline-secondary d-flex d-lg-none',
                             showFilters && 'active'
                         )}
                         aria-pressed={showFilters}
@@ -177,6 +177,8 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                 )}
                 {props.stats}
                 <QuotesInterpretedLiterallyNotice {...props} />
+
+                <div className="flex-grow-1" />
 
                 <ul className={classNames('nav align-items-center', !isRedesignEnabled && 'justify-content-end')}>
                     <ActionsNavItems

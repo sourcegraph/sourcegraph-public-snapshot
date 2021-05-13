@@ -19,6 +19,7 @@
         display: flex;
         flex-wrap: wrap;
         justify-content: flex-end;
+        gap: 0.5rem;
         height: 100%;
         flex: 1 0 auto;
         text-align: right;
@@ -48,10 +49,6 @@
                 display: none;
             }
         }
-    }
-
-    &__show-filters-button {
-        margin-bottom: 0.75rem;
     }
 
     .theme-redesign & {
