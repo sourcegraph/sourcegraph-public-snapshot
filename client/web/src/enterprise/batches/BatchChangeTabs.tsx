@@ -12,6 +12,14 @@ import React, { useCallback } from 'react'
 
 import styles from './BatchChangeTabs.module.scss'
 
+export enum BatchChangeTabName {
+    CHANGESETS = 'changesets',
+    CHART = 'chart',
+    SPEC = 'spec',
+    ARCHIVED = 'archived',
+    BULK_OPERATIONS = 'bulkoperations',
+}
+
 const BATCH_CHANGE_TAB_NAMES = ['changesets', 'chart', 'spec', 'archived'] as const
 
 interface BatchChangeTabsProps {
