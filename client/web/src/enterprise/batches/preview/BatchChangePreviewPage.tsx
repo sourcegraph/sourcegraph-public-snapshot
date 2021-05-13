@@ -1,6 +1,8 @@
 import * as H from 'history'
-import { isEqual } from 'lodash'
+import { isEqual, reduce } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
+import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import React, { useEffect, useMemo } from 'react'
 import { delay, distinctUntilChanged, repeatWhen } from 'rxjs/operators'
 
@@ -14,6 +16,13 @@ import { AuthenticatedUser } from '../../../auth'
 import { BatchChangesIcon } from '../../../batches/icons'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
+import {
+    BatchChangeTab,
+    BatchChangeTabPanel,
+    BatchChangeTabPanels,
+    BatchChangeTabs,
+    BatchChangeTabsList,
+} from '../BatchChangeTabs'
 import { Description } from '../Description'
 import { SupersedingBatchSpecAlert } from '../detail/SupersedingBatchSpecAlert'
 
@@ -111,16 +120,43 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
                 telemetryService={telemetryService}
             />
             <Description description={spec.description.description} />
-            <PreviewList
-                batchSpecID={specID}
-                history={history}
-                location={location}
-                authenticatedUser={authenticatedUser}
-                isLightTheme={isLightTheme}
-                queryChangesetApplyPreview={queryChangesetApplyPreview}
-                queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
-                expandChangesetDescriptions={expandChangesetDescriptions}
-            />
+            <BatchChangeTabs history={history} location={location}>
+                <BatchChangeTabsList>
+                    <BatchChangeTab index={0}>
+                        <SourceBranchIcon className="icon-inline text-muted mr-1" />
+                        Changesets{' '}
+                        <span className="badge badge-pill badge-secondary ml-1">
+                            {/* TODO: This doesn't seem to yield the right sum (saw 2 when it should be 1), also should this be added as a GraphQL field like it is for BatchChange stats? */}
+                            {reduce(
+                                spec.applyPreview.stats,
+                                (sum, statValue, statKey) => (statKey === 'archive' ? sum : sum + statValue),
+                                0
+                            )}
+                        </span>
+                    </BatchChangeTab>
+                    <BatchChangeTab index={1}>
+                        <FileDocumentIcon className="icon-inline text-muted mr-1" /> Spec
+                    </BatchChangeTab>
+                </BatchChangeTabsList>
+                <BatchChangeTabPanels>
+                    <BatchChangeTabPanel>
+                        <PreviewList
+                            batchSpecID={specID}
+                            history={history}
+                            location={location}
+                            authenticatedUser={authenticatedUser}
+                            isLightTheme={isLightTheme}
+                            queryChangesetApplyPreview={queryChangesetApplyPreview}
+                            queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
+                            expandChangesetDescriptions={expandChangesetDescriptions}
+                        />
+                    </BatchChangeTabPanel>
+                    <BatchChangeTabPanel>
+                        Test
+                        {/* <BatchSpecTab batchChange={batchChange} originalInput={batchChange.currentSpec.originalInput} /> */}
+                    </BatchChangeTabPanel>
+                </BatchChangeTabPanels>
+            </BatchChangeTabs>
         </div>
     )
 }
