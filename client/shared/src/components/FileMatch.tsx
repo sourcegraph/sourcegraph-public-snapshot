@@ -119,7 +119,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
                             ? `${props.repoDisplayName}${revDisplayName ? `@${revDisplayName}` : ''}`
                             : undefined
                     }
-                    className={isRedesignEnabled ? 'ml-1' : ''}
+                    className={isRedesignEnabled ? 'ml-1' : undefined}
                 />
             </>
         )

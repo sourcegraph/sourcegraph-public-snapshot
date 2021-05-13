@@ -40,9 +40,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                 className="result-container__header-title test-search-result-label"
                 data-testid="result-container-header"
               >
-                <div
-                  className=""
-                >
+                <div>
                   <a
                     href="/github.com/foo/bar"
                   >
@@ -270,9 +268,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                 className="result-container__header-title test-search-result-label"
                 data-testid="result-container-header"
               >
-                <div
-                  className=""
-                >
+                <div>
                   <a
                     href="/github.com/foo/bar"
                   >
@@ -450,9 +446,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                 className="result-container__header-title test-search-result-label"
                 data-testid="result-container-header"
               >
-                <div
-                  className=""
-                >
+                <div>
                   <a
                     href="/github.com/foo/bar"
                   >
