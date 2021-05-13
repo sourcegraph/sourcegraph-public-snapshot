@@ -1,8 +1,9 @@
 import * as H from 'history'
+import AlphaSBoxIcon from 'mdi-react/AlphaSBoxIcon'
+import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import FileIcon from 'mdi-react/FileIcon'
 import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
-import SourceRepositoryMultipleIcon from 'mdi-react/SourceRepositoryMultipleIcon'
 import React, { useCallback, useEffect, useState } from 'react'
 import { Observable } from 'rxjs'
 
@@ -73,7 +74,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                         <FileMatch
                             location={location}
                             eventLogger={eventLogger}
-                            icon={result.lineMatches && result.lineMatches.length > 0 ? SourceRepositoryIcon : FileIcon}
+                            icon={getFileMatchIcon(result)}
                             result={result}
                             onSelect={logSearchResultClicked}
                             expanded={false}
@@ -90,6 +91,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                         <SearchResult
                             icon={SourceCommitIcon}
                             result={result}
+                            repoName={result.commit.repository.name}
                             isLightTheme={isLightTheme}
                             history={history}
                         />
@@ -97,8 +99,9 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                 case 'Repository':
                     return (
                         <SearchResult
-                            icon={SourceRepositoryMultipleIcon}
+                            icon={SourceRepositoryIcon}
                             result={result}
+                            repoName={result.name}
                             isLightTheme={isLightTheme}
                             history={history}
                         />
@@ -131,4 +134,14 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
             {itemsToShow >= (results?.results.length || 0) && <StreamingSearchResultFooter results={results} />}
         </>
     )
+}
+
+function getFileMatchIcon(result: GQL.IFileMatch): React.ComponentType<{ className?: string }> {
+    if (result.lineMatches && result.lineMatches.length > 0) {
+        return FileDocumentIcon
+    }
+    if (result.symbols && result.symbols.length > 0) {
+        return AlphaSBoxIcon
+    }
+    return FileIcon
 }

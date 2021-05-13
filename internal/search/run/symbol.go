@@ -1,4 +1,4 @@
-package graphqlbackend
+package run
 
 import (
 	"context"
@@ -20,16 +20,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
-var mockSearchSymbols func(ctx context.Context, args *search.TextParameters, limit int) (res []*result.FileMatch, stats *streaming.Stats, err error)
+var MockSearchSymbols func(ctx context.Context, args *search.TextParameters, limit int) (res []*result.FileMatch, stats *streaming.Stats, err error)
 
-// searchSymbols searches the given repos in parallel for symbols matching the given search query
+// SearchSymbols searches the given repos in parallel for symbols matching the given search query
 // it can be used for both search suggestions and search results
 //
 // May return partial results and an error
-func searchSymbols(ctx context.Context, args *search.TextParameters, limit int, stream Sender) (err error) {
-	if mockSearchSymbols != nil {
-		results, stats, err := mockSearchSymbols(ctx, args, limit)
-		stream.Send(SearchEvent{
+func SearchSymbols(ctx context.Context, args *search.TextParameters, limit int, stream streaming.Sender) (err error) {
+	if MockSearchSymbols != nil {
+		results, stats, err := MockSearchSymbols(ctx, args, limit)
+		stream.Send(streaming.SearchEvent{
 			Results: fileMatchesToMatches(results),
 			Stats:   statsDeref(stats),
 		})
@@ -51,7 +51,7 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int, 
 		return nil
 	}
 
-	ctx, stream, cancel := WithLimit(ctx, stream, limit)
+	ctx, stream, cancel := streaming.WithLimit(ctx, stream, limit)
 	defer cancel()
 
 	indexed, err := newIndexedSearchRequest(ctx, args, symbolRequest, stream)
@@ -90,7 +90,7 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int, 
 
 			matches, err := searchSymbolsInRepo(ctx, repoRevs, args.PatternInfo, limit)
 			stats, err := handleRepoSearchResult(repoRevs, len(matches) > limit, false, err)
-			stream.Send(SearchEvent{
+			stream.Send(streaming.SearchEvent{
 				Results: fileMatchesToMatches(matches),
 				Stats:   stats,
 			})
@@ -106,37 +106,6 @@ func searchSymbols(ctx context.Context, args *search.TextParameters, limit int, 
 	}
 
 	return run.Wait()
-}
-
-// limitSymbolResults returns a new version of res containing no more than limit symbol matches.
-func limitSymbolResults(res []*FileMatchResolver, limit int) []*FileMatchResolver {
-	res2 := make([]*FileMatchResolver, 0, len(res))
-	nsym := 0
-	for _, r := range res {
-		symbols := r.FileMatch.Symbols
-		if nsym+len(symbols) > limit {
-			symbols = symbols[:limit-nsym]
-		}
-		if len(symbols) > 0 {
-			r2 := *r
-			r2.FileMatch.Symbols = symbols
-			res2 = append(res2, &r2)
-		}
-		nsym += len(symbols)
-		if nsym >= limit {
-			return res2
-		}
-	}
-	return res2
-}
-
-// symbolCount returns the total number of symbols in a slice of fileMatchResolvers.
-func symbolCount(fmrs []*FileMatchResolver) int {
-	nsym := 0
-	for _, fmr := range fmrs {
-		nsym += len(fmr.FileMatch.Symbols)
-	}
-	return nsym
 }
 
 func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, limit int) (res []*result.FileMatch, err error) {

@@ -55,7 +55,6 @@ export class VirtualList<TItem, TExtraItemProps = undefined> extends React.PureC
             <div className={this.props.className} ref={this.props.onRef}>
                 {this.props.items.slice(0, this.props.itemsToShow).map((item, index) => (
                     <VisibilitySensor
-                        // eslint-disable-next-line react/jsx-no-bind
                         onChange={isVisible => this.onChangeVisibility(isVisible, index)}
                         key={this.props.itemKey(item)}
                         containment={this.props.containment}

@@ -1,7 +1,7 @@
 import classnames from 'classnames'
 import React, { ReactElement, useState } from 'react'
 
-import { DataSeries } from '../../types'
+import { DataSeries } from '../../../../../core/backend/types'
 import { FormSeriesInput } from '../form-series-input/FormSeriesInput'
 
 import styles from './FormSeries.module.scss'
@@ -63,7 +63,6 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
     // In case if we don't have series we have to skip series list ui (components below)
     // and render simple series form component.
     if (series.length === 0) {
-        /* eslint-disable react/jsx-no-bind */
         return <FormSeriesInput autofocus={false} className="card card-body p-3" onSubmit={handleSubmitNewSeries} />
     }
 
@@ -117,7 +116,7 @@ interface SeriesCardProps {
     /** Query value of series. */
     query: string
     /** Color value of series. */
-    color: string
+    stroke: string
     /** Custom class name for root button element. */
     className?: string
     /** Edit handler. */
@@ -130,7 +129,7 @@ interface SeriesCardProps {
  * Renders series card component, visual list item of series (name, color, query)
  * */
 function SeriesCard(props: SeriesCardProps): ReactElement {
-    const { name, query, color, className, onEdit } = props
+    const { name, query, stroke: color, className, onEdit } = props
 
     return (
         <button

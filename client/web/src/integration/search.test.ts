@@ -438,7 +438,7 @@ describe('Search', () => {
                 )
             )
             expect(results).toEqual([
-                'github.com/sourcegraph/sourcegraph',
+                'sourcegraph/sourcegraph',
                 'sourcegraph/sourcegraph › stream.ts',
                 'sourcegraph/sourcegraph@abcd › stream.ts',
                 'sourcegraph/sourcegraph@test/branch › stream.ts',
@@ -744,6 +744,12 @@ describe('Search', () => {
             })
             await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
             expect(await getSelectedSearchContextSpec()).toStrictEqual('context:global')
+        })
+
+        test('Disable dropdown if version context is active', async () => {
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp&c=version-context-1')
+            await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
+            expect(await isSearchContextDropdownDisabled()).toBeTruthy()
         })
 
         test('Convert version context', async () => {

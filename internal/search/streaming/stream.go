@@ -1,4 +1,4 @@
-package graphqlbackend
+package streaming
 
 import (
 	"context"
@@ -6,67 +6,26 @@ import (
 
 	"go.uber.org/atomic"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type SearchEvent struct {
 	Results []result.Match
-	Stats   streaming.Stats
+	Stats   Stats
 }
 
 type Sender interface {
 	Send(SearchEvent)
 }
 
-// Temporary conversion function from []result.Match to []SearchResultResolver
-func MatchesToResolvers(db dbutil.DB, matches []result.Match) []SearchResultResolver {
-	type repoKey struct {
-		Name types.RepoName
-		Rev  string
-	}
-	repoResolvers := make(map[repoKey]*RepositoryResolver, 10)
-	getRepoResolver := func(repoName types.RepoName, rev string) *RepositoryResolver {
-		if existing, ok := repoResolvers[repoKey{repoName, rev}]; ok {
-			return existing
-		}
-		resolver := NewRepositoryResolver(db, repoName.ToRepo())
-		resolver.RepoMatch.Rev = rev
-		repoResolvers[repoKey{repoName, rev}] = resolver
-		return resolver
-	}
-
-	resolvers := make([]SearchResultResolver, 0, len(matches))
-	for _, match := range matches {
-		switch v := match.(type) {
-		case *result.FileMatch:
-			resolvers = append(resolvers, &FileMatchResolver{
-				db:           db,
-				FileMatch:    *v,
-				RepoResolver: getRepoResolver(v.Repo, ""),
-			})
-		case *result.RepoMatch:
-			resolvers = append(resolvers, getRepoResolver(v.RepoName(), v.Rev))
-		case *result.CommitMatch:
-			resolvers = append(resolvers, &CommitSearchResultResolver{
-				db:          db,
-				CommitMatch: *v,
-			})
-		}
-	}
-	return resolvers
-}
-
-type limitStream struct {
+type LimitStream struct {
 	s         Sender
 	cancel    context.CancelFunc
 	remaining atomic.Int64
 }
 
-func (s *limitStream) Send(event SearchEvent) {
+func (s *LimitStream) Send(event SearchEvent) {
 	s.s.Send(event)
 
 	var count int64
@@ -86,7 +45,7 @@ func (s *limitStream) Send(event SearchEvent) {
 	// multiple times, but this is fine. Want to avoid lots of noop events
 	// after the first IsLimitHit.
 	if old >= 0 && s.remaining.Load() < 0 {
-		s.s.Send(SearchEvent{Stats: streaming.Stats{IsLimitHit: true}})
+		s.s.Send(SearchEvent{Stats: Stats{IsLimitHit: true}})
 		s.cancel()
 	}
 }
@@ -101,7 +60,7 @@ func (s *limitStream) Send(event SearchEvent) {
 // Stream are complete.
 func WithLimit(ctx context.Context, parent Sender, limit int) (context.Context, Sender, context.CancelFunc) {
 	ctx, cancel := context.WithCancel(ctx)
-	stream := &limitStream{cancel: cancel, s: parent}
+	stream := &LimitStream{cancel: cancel, s: parent}
 	stream.remaining.Store(int64(limit))
 	return ctx, stream, cancel
 }
@@ -112,7 +71,7 @@ func WithSelect(parent Sender, s filter.SelectPath) Sender {
 	var mux sync.Mutex
 	dedup := result.NewDeduper()
 
-	return MatchStreamFunc(func(e SearchEvent) {
+	return StreamFunc(func(e SearchEvent) {
 		mux.Lock()
 
 		selected := e.Results[:0]
@@ -142,22 +101,22 @@ func WithSelect(parent Sender, s filter.SelectPath) Sender {
 	})
 }
 
-type MatchStreamFunc func(SearchEvent)
+type StreamFunc func(SearchEvent)
 
-func (f MatchStreamFunc) Send(se SearchEvent) {
+func (f StreamFunc) Send(se SearchEvent) {
 	f(se)
 }
 
-// collectStream will call search and aggregates all events it sends. It then
+// CollectStream will call search and aggregates all events it sends. It then
 // returns the aggregate event and any error it returns.
-func collectStream(search func(Sender) error) ([]result.Match, streaming.Stats, error) {
+func CollectStream(search func(Sender) error) ([]result.Match, Stats, error) {
 	var (
 		mu      sync.Mutex
 		results []result.Match
-		stats   streaming.Stats
+		stats   Stats
 	)
 
-	err := search(MatchStreamFunc(func(event SearchEvent) {
+	err := search(StreamFunc(func(event SearchEvent) {
 		mu.Lock()
 		results = append(results, event.Results...)
 		stats.Update(&event.Stats)

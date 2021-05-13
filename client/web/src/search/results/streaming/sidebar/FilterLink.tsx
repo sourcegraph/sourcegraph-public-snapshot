@@ -1,9 +1,5 @@
 import classNames from 'classnames'
-import { MdiReactIconProps } from 'mdi-react'
-import BitbucketIcon from 'mdi-react/BitbucketIcon'
-import GithubIcon from 'mdi-react/GithubIcon'
-import GitlabIcon from 'mdi-react/GitlabIcon'
-import React, { ComponentType } from 'react'
+import React from 'react'
 
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -11,6 +7,7 @@ import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/s
 import { SyntaxHighlightedSearchQuery } from '../../../../components/SyntaxHighlightedSearchQuery'
 import { Settings } from '../../../../schema/settings.schema'
 import { Filter } from '../../../stream'
+import { getRepoIcon } from '../getRepoIcon'
 
 import styles from './SearchSidebarSection.module.scss'
 
@@ -51,16 +48,7 @@ export const getRepoFilterLinks = (
     onFilterChosen: (value: string) => void
 ): React.ReactElement[] => {
     function repoLabelConverter(label: string): JSX.Element {
-        let RepoIcon: ComponentType<MdiReactIconProps> | undefined
-        if (label.startsWith('github.com/')) {
-            RepoIcon = GithubIcon
-        }
-        if (label.startsWith('gitlab.com/')) {
-            RepoIcon = GitlabIcon
-        }
-        if (label.startsWith('bitbucket.com/')) {
-            RepoIcon = BitbucketIcon
-        }
+        const RepoIcon = getRepoIcon(label)
 
         return (
             <span className={classNames('text-monospace search-query-link', styles.sidebarSectionListItemBreakWords)}>

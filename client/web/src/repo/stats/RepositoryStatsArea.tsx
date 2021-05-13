@@ -49,7 +49,6 @@ export const RepositoryStatsArea: React.FunctionComponent<Props> = ({
         <div className="repository-stats-area container mt-3">
             {showNavbar && <RepositoryStatsNavbar className="mb-3" repo={props.repo.name} />}
             <Switch>
-                {/* eslint-disable react/jsx-no-bind */}
                 <Route
                     path={`${props.match.url}/contributors`}
                     key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
@@ -59,7 +58,6 @@ export const RepositoryStatsArea: React.FunctionComponent<Props> = ({
                     )}
                 />
                 <Route key="hardcoded-key" component={NotFoundPage} />
-                {/* eslint-enable react/jsx-no-bind */}
             </Switch>
         </div>
     )
