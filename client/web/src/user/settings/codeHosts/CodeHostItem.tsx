@@ -116,12 +116,10 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                             Connect
                         </DropdownToggle>
                         <DropdownMenu right={true}>
-                            {user.tags?.includes('AllowUserExternalServicePrivate') && (
-                                <DropdownItem toggle={false} onClick={toAuthProvider}>
-                                    Connect with {name}
-                                    {oauthInFlight && <LoadingSpinner className="icon-inline ml-2" />}
-                                </DropdownItem>
-                            )}
+                            <DropdownItem toggle={false} onClick={toAuthProvider}>
+                                Connect with {name}
+                                {oauthInFlight && <LoadingSpinner className="icon-inline ml-2" />}
+                            </DropdownItem>
                             <DropdownItem onClick={toggleAddConnectionModal}>Connect with access token</DropdownItem>
                         </DropdownMenu>
                     </ButtonDropdown>

@@ -245,7 +245,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 
             {codeHostExternalServices && isServicesByKind(statusOrError) ? (
                 <>
-                    {user.tags?.includes('AllowUserExternalServicePrivate') && codeHostOAuthButtons.length > 0 && (
+                    {codeHostOAuthButtons.length > 0 && (
                         <div className="border rounded p-4 mb-4">
                             <b>Connect with code host</b>
                             <div className="container">
