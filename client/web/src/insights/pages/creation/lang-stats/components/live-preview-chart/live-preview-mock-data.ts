@@ -1,7 +1,7 @@
 import { random } from 'lodash'
 import { PieChartContent } from 'sourcegraph'
 
-export const DEFAULT_PREVIEW_MOCK = {
+export const DEFAULT_PREVIEW_MOCK: PieChartContent<any> = {
     chart: 'pie' as const,
     pies: [
         {
