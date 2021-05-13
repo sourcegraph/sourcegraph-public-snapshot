@@ -4,7 +4,7 @@ import (
 	"io"
 	"sync/atomic"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/internal/reader"
+	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/reader"
 )
 
 type Validator struct {
