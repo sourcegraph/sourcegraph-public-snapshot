@@ -25,10 +25,21 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Indexed search failed when the `master` branch needed indexing but was not the default. [#20260](https://github.com/sourcegraph/sourcegraph/pull/20260)
 - `repo:contains(...)` built-in did not respect parameters that affect repo filtering (e.g., `repogroup`, `fork`). It now respects these. [#20339](https://github.com/sourcegraph/sourcegraph/pull/20339)
+- An issue where duplicate results would render for certain `or`-expressions. [#20480](https://github.com/sourcegraph/sourcegraph/pull/20480)
+- Issue where the search query bar suggests that some `lang` values are not valid. [#20534](https://github.com/sourcegraph/sourcegraph/pull/20534)
+- Pull request event webhooks received from GitHub with unexpected actions no longer cause panics. [#20571](https://github.com/sourcegraph/sourcegraph/pull/20571)
+- Repository search patterns like `^repo/(prefix-suffix|prefix)$` now correctly match both `repo/prefix-suffix` and `repo/prefix`. [#20389](https://github.com/sourcegraph/sourcegraph/issues/20389)
+- Ephemeral storage requests and limits now match the default cache size to avoid Symbols pods being evicted. The symbols pod now requires 10GB of ephemeral space as a minimum to scheduled. [#2369](https://github.com/sourcegraph/deploy-sourcegraph/pull/2369)
 
 ### Removed
 
 -
+
+## 3.27.5
+
+### Fixed
+
+- Fix scp style VCS url parsing. [#20799](https://github.com/sourcegraph/sourcegraph/pull/20799)
 
 ## 3.27.4
 
