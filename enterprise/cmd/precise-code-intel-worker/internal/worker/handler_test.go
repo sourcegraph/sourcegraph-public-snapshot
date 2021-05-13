@@ -58,12 +58,14 @@ func TestHandle(t *testing.T) {
 	gitserverClient.CommitDateFunc.SetDefaultReturn(expectedCommitDate, nil)
 
 	handler := &handler{
+		dbStore:         mockDBStore,
+		workerStore:     mockWorkerStore,
 		lsifStore:       mockLSIFStore,
 		uploadStore:     mockUploadStore,
 		gitserverClient: gitserverClient,
 	}
 
-	requeued, err := handler.handle(context.Background(), mockWorkerStore, mockDBStore, upload)
+	requeued, err := handler.handle(context.Background(), upload)
 	if err != nil {
 		t.Fatalf("unexpected error handling upload: %s", err)
 	} else if requeued {
@@ -172,12 +174,14 @@ func TestHandleError(t *testing.T) {
 	mockDBStore.MarkRepositoryAsDirtyFunc.SetDefaultReturn(fmt.Errorf("uh-oh!"))
 
 	handler := &handler{
+		dbStore:         mockDBStore,
+		workerStore:     mockWorkerStore,
 		lsifStore:       mockLSIFStore,
 		uploadStore:     mockUploadStore,
 		gitserverClient: gitserverClient,
 	}
 
-	requeued, err := handler.handle(context.Background(), mockWorkerStore, mockDBStore, upload)
+	requeued, err := handler.handle(context.Background(), upload)
 	if err == nil {
 		t.Fatalf("unexpected nil error handling upload")
 	} else if !strings.Contains(err.Error(), "uh-oh!") {
@@ -226,11 +230,13 @@ func TestHandleCloneInProgress(t *testing.T) {
 	gitserverClient := NewMockGitserverClient()
 
 	handler := &handler{
+		dbStore:         mockDBStore,
+		workerStore:     mockWorkerStore,
 		uploadStore:     mockUploadStore,
 		gitserverClient: gitserverClient,
 	}
 
-	requeued, err := handler.handle(context.Background(), mockWorkerStore, mockDBStore, upload)
+	requeued, err := handler.handle(context.Background(), upload)
 	if err != nil {
 		t.Fatalf("unexpected error handling upload: %s", err)
 	} else if !requeued {

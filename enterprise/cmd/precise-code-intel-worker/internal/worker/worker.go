@@ -28,6 +28,7 @@ func NewWorker(
 
 	handler := &handler{
 		dbStore:         dbStore,
+		workerStore:     workerStore,
 		lsifStore:       lsifStore,
 		uploadStore:     uploadStore,
 		enqueuer:        enqueuer,
