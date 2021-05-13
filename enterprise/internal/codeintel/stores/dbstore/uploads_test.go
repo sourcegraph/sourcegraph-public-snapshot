@@ -558,10 +558,10 @@ func TestMarkFailed(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
 
-	insertUploads(t, dbconn.Global, Upload{ID: 1, State: "uploading"})
+	insertUploads(t, db, Upload{ID: 1, State: "uploading"})
 
 	failureReason := "didn't like it"
 	if err := store.MarkFailed(context.Background(), 1, failureReason); err != nil {
