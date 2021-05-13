@@ -8,7 +8,6 @@ interface ConnectionNodesSummaryProps {
     displayShowMoreButton?: boolean
     onShowMore?: () => void
     showMoreClassName?: string
-    hasNextPage?: boolean
     className?: string
 }
 
@@ -17,7 +16,6 @@ export const ConnectionNodesSummary: React.FunctionComponent<ConnectionNodesSumm
     displayShowMoreButton,
     showMoreClassName,
     onShowMore,
-    hasNextPage,
     className,
 }) => {
     const [isRedesignEnabled] = useRedesignToggle()
@@ -31,7 +29,6 @@ export const ConnectionNodesSummary: React.FunctionComponent<ConnectionNodesSumm
                 showMoreClassName
             )}
             onClick={onShowMore}
-            disabled={!hasNextPage}
         >
             Show more
         </button>
