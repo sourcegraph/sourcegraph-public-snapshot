@@ -199,6 +199,27 @@ add('Missing credentials', () => (
     </EnterpriseWebStory>
 ))
 
+add('Spec file', () => (
+    <EnterpriseWebStory initialEntries={['/users/alice/batch-changes/awesome-batch-change?tab=spec']}>
+        {props => (
+            <BatchChangePreviewPage
+                {...props}
+                expandChangesetDescriptions={true}
+                batchSpecID="123123"
+                fetchBatchSpecById={fetchBatchSpecCreate}
+                queryChangesetApplyPreview={queryChangesetApplyPreview}
+                queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
+                authenticatedUser={{
+                    url: '/users/alice',
+                    displayName: 'Alice',
+                    username: 'alice',
+                    email: 'alice@email.test',
+                }}
+            />
+        )}
+    </EnterpriseWebStory>
+))
+
 add('No changesets', () => (
     <EnterpriseWebStory>
         {props => (
