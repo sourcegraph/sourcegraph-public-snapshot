@@ -3,14 +3,13 @@
 .theme-redesign {
     .alert-info {
         --alert-border-color: var(--info);
+        --alert-icon-color: var(--info-3);
 
         @include theme-light-rules {
-            --alert-icon-color: var(--info-3);
             --alert-icon-background-color: var(--info-4);
         }
 
         @include theme-dark-rules {
-            --alert-icon-color: var(--info);
             --alert-icon-background-color: var(--info-3);
         }
     }
@@ -18,14 +17,7 @@
     .alert-primary {
         --alert-border-color: var(--primary);
         --alert-icon-background-color: var(--primary-4);
-
-        @include theme-light-rules {
-            --alert-icon-color: var(--primary-3);
-        }
-
-        @include theme-dark-rules {
-            --alert-icon-color: var(--primary);
-        }
+        --alert-icon-color: var(--primary-3);
     }
 
     .alert-secondary {
@@ -57,14 +49,7 @@
     .alert-warning {
         --alert-border-color: var(--warning);
         --alert-icon-background-color: var(--warning-4);
-
-        @include theme-light-rules {
-            --alert-icon-color: var(--warning-3);
-        }
-
-        @include theme-dark-rules {
-            --alert-icon-color: var(--warning);
-        }
+        --alert-icon-color: var(--warning-3);
 
         &::after {
             // Icon: mdi-react/Alert
@@ -77,14 +62,7 @@
     .alert-danger {
         --alert-border-color: var(--danger);
         --alert-icon-background-color: var(--danger-4);
-
-        @include theme-light-rules {
-            --alert-icon-color: var(--danger-3);
-        }
-
-        @include theme-dark-rules {
-            --alert-icon-color: var(--danger);
-        }
+        --alert-icon-color: var(--danger-3);
 
         &::after {
             // Icon: mdi-react/AlertCircle
@@ -97,14 +75,7 @@
     .alert-success {
         --alert-border-color: var(--success);
         --alert-icon-background-color: var(--success-4);
-
-        @include theme-light-rules {
-            --alert-icon-color: var(--success-3);
-        }
-
-        @include theme-dark-rules {
-            --alert-icon-color: var(--success);
-        }
+        --alert-icon-color: var(--success-3);
 
         &::after {
             // Icon: mdi-react/CheckCircle
@@ -117,14 +88,7 @@
     .alert-merged {
         --alert-border-color: var(--merged);
         --alert-icon-background-color: var(--merged-4);
-
-        @include theme-light-rules {
-            --alert-icon-color: var(--merged-3);
-        }
-
-        @include theme-dark-rules {
-            --alert-icon-color: var(--merged);
-        }
+        --alert-icon-color: var(--merged-3);
 
         &::after {
             // Icon: mdi-react/SourceMerge
