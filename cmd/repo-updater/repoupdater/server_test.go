@@ -453,7 +453,7 @@ func testServerEnqueueRepoUpdate(t *testing.T, store *repos.Store) func(t *testi
 				name:  "missing repo",
 				store: store,
 				repo:  "foo",
-				err:   `repo "foo" not found in store`,
+				err:   `repo foo not found with response: repo "foo" not found in store`,
 			},
 			func() testCase {
 				repo := repo.Clone()

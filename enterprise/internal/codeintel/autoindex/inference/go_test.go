@@ -1,6 +1,7 @@
 package inference
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"testing"
@@ -8,6 +9,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/config"
+	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 )
 
 func TestLSIFGoJobRecognizerCanIndex(t *testing.T) {
@@ -135,6 +138,62 @@ func TestLSIFGoJobRecognizerPatterns(t *testing.T) {
 
 		if !match {
 			t.Error(fmt.Sprintf("failed to match %s", path))
+		}
+	}
+}
+
+func TestLSIFGoPackages(t *testing.T) {
+	recognizer := lsifGoJobRecognizer{}
+	packages := []semantic.Package{
+		{
+			Scheme:  "gomod",
+			Name:    "github.com/sourcegraph/sourcegraph",
+			Version: "v2.3.2",
+		},
+		{
+			Scheme:  "gomod",
+			Name:    "github.com/aws/aws-sdk-go-v2/credentials",
+			Version: "v0.1.0",
+		},
+		{
+			Scheme:  "gomod",
+			Name:    "github.com/sourcegraph/sourcegraph",
+			Version: "v0.0.0-de0123456789",
+		},
+	}
+
+	repoUpdater := NewMockRepoUpdaterClient()
+	repoUpdater.EnqueueRepoUpdateFunc.SetDefaultReturn(&protocol.RepoUpdateResponse{ID: 42}, nil)
+	gitserver := NewMockGitserverClient()
+	gitserver.ResolveRevisionFunc.SetDefaultReturn("c42", nil)
+
+	for _, pkg := range packages {
+		recognizer.EnsurePackageRepo(context.Background(), pkg, repoUpdater, gitserver)
+	}
+
+	if len(repoUpdater.EnqueueRepoUpdateFunc.history) != 3 {
+		t.Errorf("unexpected number of calls to EnqueueRepoUpdate, want %v, got %v", 2, len(repoUpdater.EnqueueRepoUpdateFunc.history))
+	} else {
+		expectedRepoNames := []string{"github.com/sourcegraph/sourcegraph", "github.com/aws/aws-sdk-go-v2", "github.com/sourcegraph/sourcegraph"}
+		var calledRepoNames []string
+		for _, hist := range repoUpdater.EnqueueRepoUpdateFunc.history {
+			calledRepoNames = append(calledRepoNames, string(hist.Arg1))
+		}
+		if diff := cmp.Diff(expectedRepoNames, calledRepoNames); diff != "" {
+			t.Errorf("unexpected repo names (-want +got):\n%s", diff)
+		}
+	}
+
+	if len(gitserver.ResolveRevisionFunc.history) != 3 {
+		t.Errorf("unexpected number of calls to ResolveRevision, want %v, got %v", 2, len(gitserver.ResolveRevisionFunc.history))
+	} else {
+		expectedCommitNames := []string{"v2.3.2", "v0.1.0", "de0123456789"}
+		var calledCommitNames []string
+		for _, hist := range gitserver.ResolveRevisionFunc.history {
+			calledCommitNames = append(calledCommitNames, hist.Arg2)
+		}
+		if diff := cmp.Diff(expectedCommitNames, calledCommitNames); diff != "" {
+			t.Errorf("unexpected commit names (-want +got):\n%s", diff)
 		}
 	}
 }
