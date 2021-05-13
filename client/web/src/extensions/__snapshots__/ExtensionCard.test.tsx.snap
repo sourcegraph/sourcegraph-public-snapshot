@@ -68,6 +68,34 @@ exports[`ExtensionCard renders 1`] = `
             Disabled
           </span>
         </div>
+        <div
+          className="px-1 mt-2"
+        >
+          <span
+            className="text-muted"
+          >
+            Not enabled
+             for all users
+          </span>
+          <button
+            aria-checked={false}
+            className="toggle mx-2"
+            data-test="extension-toggle-x/y"
+            disabled={false}
+            onClick={[Function]}
+            role="switch"
+            title="Click to enable"
+            type="button"
+            value={0}
+          >
+            <span
+              className="toggle__bar"
+            />
+            <span
+              className="toggle__knob"
+            />
+          </button>
+        </div>
       </div>
     </div>
   </div>
