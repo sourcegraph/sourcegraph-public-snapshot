@@ -6,18 +6,30 @@ import { Link } from 'react-router-dom'
 import { ConfiguredRegistryExtension, splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
+import {
+    ExtensionHeaderColor,
+    ExtensionManifest,
+    EXTENSION_HEADER_COLORS,
+} from '@sourcegraph/shared/src/schema/extensionSchema'
 import { SettingsCascadeProps, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { isEncodedImage } from '@sourcegraph/shared/src/util/icon'
 import { useTimeoutManager } from '@sourcegraph/shared/src/util/useTimeoutManager'
 
+import { AuthenticatedUser } from '../auth'
+
 import { isExtensionAdded } from './extension/extension'
 import { ExtensionConfigurationState } from './extension/ExtensionConfigurationState'
 import { ExtensionStatusBadge } from './extension/ExtensionStatusBadge'
+import headerColorStyles from './ExtensionHeader.module.scss'
 import { ExtensionToggle, OptimisticUpdateFailure } from './ExtensionToggle'
-import { DefaultIconEnabled, DefaultIcon, SourcegraphExtensionIcon } from './icons'
+import {
+    DefaultExtensionIcon,
+    DefaultSourcegraphExtensionIcon,
+    DefaultSourcegraphExtensionIconEnabled,
+    SourcegraphExtensionIcon,
+} from './icons'
 
 interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettings'>, ThemeProps {
     node: Pick<
@@ -31,8 +43,13 @@ interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettin
     >
     subject: Pick<GQL.SettingsSubject, 'id' | 'viewerCanAdminister'>
     viewerSubject: SettingsSubject | undefined
+    siteSubject: SettingsSubject | undefined
     enabled: boolean
+    /** Displayed to site admins to toggle enablement for all users. */
+    enabledForAllUsers: boolean
     settingsURL: string | null | undefined
+    /** The currently authenticated user. */
+    authenticatedUser: AuthenticatedUser | null
 }
 
 /** ms after which to remove visual feedback */
@@ -45,9 +62,12 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
     platformContext,
     subject,
     enabled,
+    enabledForAllUsers,
     settingsURL,
     isLightTheme,
     viewerSubject,
+    siteSubject,
+    authenticatedUser,
 }) {
     const manifest: ExtensionManifest | undefined =
         extension.manifest && !isErrorLike(extension.manifest) ? extension.manifest : undefined
@@ -157,6 +177,30 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
         [startAnimationManager, endAnimationManager, feedbackManager, optimisticFailureManager]
     )
 
+    const renderUserToggleText = useCallback(
+        (enabled: boolean) => (
+            <span className="text-muted">
+                {enabled ? 'Enabled' : 'Disabled'}
+                {authenticatedUser?.siteAdmin && ' for me'}
+            </span>
+        ),
+        [authenticatedUser?.siteAdmin]
+    )
+
+    const renderAdminExtensionToggleText = useCallback(
+        (enabled: boolean) => <span className="text-muted">{enabled ? 'Enabled' : 'Not enabled'} for all users</span>,
+        []
+    )
+
+    // Determine header color classname (either defined in manifest, or pseudorandom).
+    const headerColorClassName = useMemo(() => {
+        if (manifest?.headerColor && EXTENSION_HEADER_COLORS.has(manifest?.headerColor)) {
+            return manifest.headerColor
+        }
+
+        return headerColorFromExtensionID(extension.id)
+    }, [manifest?.headerColor, extension.id])
+
     return (
         <div className="d-flex">
             <div
@@ -170,55 +214,58 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                         'extension-card__shadow--show': showShadow,
                     })}
                 />
-                <div className="card-body extension-card__body d-flex position-relative">
-                    {/* Item 1: Icon */}
-                    <div className="flex-shrink-0 mr-2">
+                <div className="card-body p-0 extension-card__body d-flex flex-column position-relative">
+                    {/* Section 1: Icon w/ background */}
+                    <div
+                        className={classNames(
+                            'extension-card__background-section d-flex align-items-center',
+                            headerColorStyles[headerColorClassName]
+                        )}
+                    >
                         {icon ? (
                             <img className="extension-card__icon" src={icon} alt="" />
                         ) : isSourcegraphExtension ? (
                             change === 'enabled' ? (
-                                <DefaultIconEnabled isLightTheme={isLightTheme} />
+                                <DefaultSourcegraphExtensionIconEnabled
+                                    isLightTheme={isLightTheme}
+                                    className="extension-card__icon"
+                                />
                             ) : (
-                                <DefaultIcon />
+                                <DefaultSourcegraphExtensionIcon className="extension-card__icon" />
                             )
-                        ) : null}
+                        ) : (
+                            <DefaultExtensionIcon className="extension-card__icon" />
+                        )}
+                        {extension.registryExtension?.isWorkInProgress && (
+                            <ExtensionStatusBadge
+                                viewerCanAdminister={extension.registryExtension.viewerCanAdminister}
+                                className="extension-card__badge"
+                            />
+                        )}
                     </div>
-                    {/* Item 2: Text */}
-                    <div className="text-truncate w-100">
-                        <div className="d-flex align-items-center">
-                            <span className="mb-0 mr-1 text-truncate flex-1">
+                    {/* Section 2: Extension details. This should be the section that grows to fill remaining space. */}
+                    <div className="w-100 mx-2 my-1 flex-grow-1">
+                        <div className="mb-2">
+                            <h3 className="mb-0 mr-1 text-truncate flex-1">
                                 <Link
                                     to={`/extensions/${extension.id}`}
                                     className={classNames('font-weight-bold', change === 'enabled' ? 'alert-link' : '')}
                                 >
                                     {name}
                                 </Link>
-                                <span
-                                    className={classNames({
-                                        'text-muted': change !== 'enabled',
-                                    })}
-                                >
-                                    {' '}
-                                    by{' '}
-                                    <span
-                                        className={classNames({
-                                            'font-weight-bold': isSourcegraphExtension,
-                                        })}
-                                    >
-                                        {publisher}
-                                    </span>
-                                </span>
+                            </h3>
+                            <span
+                                className={classNames({
+                                    'text-muted': change !== 'enabled',
+                                })}
+                            >
+                                by {publisher}
                                 {isSourcegraphExtension && (
                                     <SourcegraphExtensionIcon className="icon-inline extension-card__logo" />
                                 )}
                             </span>
-                            {extension.registryExtension?.isWorkInProgress && (
-                                <ExtensionStatusBadge
-                                    viewerCanAdminister={extension.registryExtension.viewerCanAdminister}
-                                />
-                            )}
                         </div>
-                        <div className="mt-1">
+                        <div className="mt-3 mb-2 extension-card__description mr-3">
                             {extension.manifest ? (
                                 isErrorLike(extension.manifest) ? (
                                     <span className="text-danger small" title={extension.manifest.message}>
@@ -226,7 +273,7 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                                     </span>
                                 ) : (
                                     extension.manifest.description && (
-                                        <div className="text-truncate">{extension.manifest.description}</div>
+                                        <span className="">{extension.manifest.description}</span>
                                     )
                                 )
                             ) : (
@@ -236,38 +283,54 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                             )}
                         </div>
                     </div>
-                    {/* Item 3: Toggle */}
-                    {subject &&
-                        (subject.viewerCanAdminister && viewerSubject ? (
-                            <ExtensionToggle
-                                extensionID={extension.id}
-                                enabled={enabled}
-                                settingsCascade={settingsCascade}
-                                platformContext={platformContext}
-                                className="extension-card__toggle flex-shrink-0 align-self-start"
-                                onToggleChange={onToggleChange}
-                                onToggleError={onToggleError}
-                                subject={viewerSubject}
-                            />
-                        ) : (
-                            <ExtensionConfigurationState
-                                isAdded={isExtensionAdded(settingsCascade.final, extension.id)}
-                                isEnabled={enabled}
-                                enabledIconOnly={true}
-                                className="small"
-                            />
-                        ))}
+                    {/* Item 3: Toggle(s) */}
+                    <div className="extension-card__toggles-section d-flex flex-column align-items-end py-2 mt-1">
+                        <div className="px-1">
+                            {/* User toggle */}
+                            {subject &&
+                                (subject.viewerCanAdminister && viewerSubject ? (
+                                    <ExtensionToggle
+                                        extensionID={extension.id}
+                                        enabled={enabled}
+                                        settingsCascade={settingsCascade}
+                                        platformContext={platformContext}
+                                        onToggleChange={onToggleChange}
+                                        onToggleError={onToggleError}
+                                        subject={viewerSubject}
+                                        className="mx-2"
+                                        renderText={renderUserToggleText}
+                                    />
+                                ) : (
+                                    <ExtensionConfigurationState
+                                        isAdded={isExtensionAdded(settingsCascade.final, extension.id)}
+                                        isEnabled={enabled}
+                                        enabledIconOnly={true}
+                                        className="small"
+                                    />
+                                ))}
+                        </div>
+                        {/* Site admin toggle */}
+                        {authenticatedUser?.siteAdmin && siteSubject && (
+                            <div className="px-1 mt-2">
+                                <ExtensionToggle
+                                    extensionID={extension.id}
+                                    enabled={enabledForAllUsers}
+                                    settingsCascade={settingsCascade}
+                                    platformContext={platformContext}
+                                    onToggleChange={onToggleChange}
+                                    onToggleError={onToggleError}
+                                    subject={siteSubject}
+                                    className="mx-2"
+                                    renderText={renderAdminExtensionToggleText}
+                                />
+                            </div>
+                        )}
+                    </div>
                 </div>
 
-                {/* Visual feedback: alert when extension is disabled */}
-                {change === 'disabled' && (
-                    <div className="alert alert-secondary px-2 py-1 extension-card__disabled-feedback">
-                        <span className="font-weight-medium">{name}</span> is disabled
-                    </div>
-                )}
                 {/* Visual feedback: alert when optimistic update fails */}
                 {optimisticFailure && (
-                    <div className="alert alert-danger px-2 py-1 extension-card__disabled-feedback">
+                    <div className="alert alert-danger px-2 py-1 extension-card__alert">
                         <span className="font-weight-medium">Error:</span>{' '}
                         {actionableErrorMessage(optimisticFailure.error)}
                     </div>
@@ -278,7 +341,33 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
 },
 areEqual)
 
-/** Custom compareFunction for ExtensionCard */
+/**
+ * Custom compareFunction for ExtensionCard.
+ *
+ * Rendering all ExtensionCards on settings changes significantly affects performance,
+ * so only render when necessary.
+ */
 function areEqual(oldProps: Props, newProps: Props): boolean {
+    if (newProps.authenticatedUser?.siteAdmin) {
+        // Also check if the extension is enabled for all users if the user is a site admin
+        return (
+            oldProps.enabledForAllUsers === newProps.enabledForAllUsers &&
+            oldProps.enabled === newProps.enabled &&
+            oldProps.isLightTheme === newProps.isLightTheme
+        )
+    }
     return oldProps.enabled === newProps.enabled && oldProps.isLightTheme === newProps.isLightTheme
+}
+
+const extensionHeaderColors = [...EXTENSION_HEADER_COLORS]
+
+/**
+ * Pseudorandom header color for extensions that haven't set `headerColor` in their manifest.
+ */
+function headerColorFromExtensionID(extensionID: string): ExtensionHeaderColor {
+    const dividend = [...extensionID].reduce((sum, character) => (sum += character.charCodeAt(0)), 0)
+    const divisor = extensionHeaderColors.length
+    const remainder = dividend % divisor
+
+    return extensionHeaderColors[remainder] || 'blue' // Fallback, but should never reach this state
 }

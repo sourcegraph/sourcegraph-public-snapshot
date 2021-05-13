@@ -1,14 +1,68 @@
 @import '../../../branded/src/components/Toggle.scss';
 
+// TODO: change to module and re-export the necessary OC-colors with appropriate names
+
+.theme-dark {
+    .extension-card {
+        &__background-section {
+            &::before {
+                opacity: 0.15;
+            }
+        }
+    }
+}
+
 .extension-card {
+    &__background-section {
+        height: 4.25rem;
+        position: relative;
+
+        // To manipulate opacity of hex color without affecting children
+        &::before {
+            background-color: $oc-indigo-3;
+            opacity: 0.1;
+            height: 100%;
+            width: 100%;
+            content: '';
+        }
+    }
+
     &__icon {
         width: 3rem;
         height: 3rem;
         object-fit: contain;
+
+        position: absolute;
+        left: 0;
+        margin-left: 0.75rem;
+    }
+
+    &__badge {
+        position: absolute;
+        right: 0;
+        top: 0;
+        margin: 0.75rem;
+    }
+
+    &__toggles-section {
+        border-top: 1px solid var(--border-color-2);
     }
 
     &__footer {
         background: unset;
+    }
+
+    &__description {
+        // Truncation for multiple lines
+        // stylelint-disable-next-line value-no-vendor-prefix
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+
+        &--featured {
+            -webkit-line-clamp: 3;
+        }
     }
 
     &--enabled {
@@ -47,7 +101,7 @@
         flex: 0 0 auto;
     }
 
-    &__disabled-feedback {
+    &__alert {
         position: absolute;
         top: -1.625rem;
         // feedback is centered on top of toggle, so right is pr (0.5rem) + 50% of toggle width

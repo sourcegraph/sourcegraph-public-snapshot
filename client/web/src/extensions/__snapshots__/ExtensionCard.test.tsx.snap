@@ -11,10 +11,10 @@ exports[`ExtensionCard renders 1`] = `
       className="extension-card__shadow rounded"
     />
     <div
-      className="card-body extension-card__body d-flex position-relative"
+      className="card-body p-0 extension-card__body d-flex flex-column position-relative"
     >
       <div
-        className="flex-shrink-0 mr-2"
+        className="extension-card__background-section d-flex align-items-center blue"
       >
         <img
           alt=""
@@ -23,12 +23,12 @@ exports[`ExtensionCard renders 1`] = `
         />
       </div>
       <div
-        className="text-truncate w-100"
+        className="w-100 mx-2 my-1 flex-grow-1"
       >
         <div
-          className="d-flex align-items-center"
+          className="mb-2"
         >
-          <span
+          <h3
             className="mb-0 mr-1 text-truncate flex-1"
           >
             <a
@@ -38,35 +38,65 @@ exports[`ExtensionCard renders 1`] = `
             >
               y
             </a>
-            <span
-              className="text-muted"
-            >
-               
-              by
-               
-              <span
-                className=""
-              >
-                x
-              </span>
-            </span>
+          </h3>
+          <span
+            className="text-muted"
+          >
+            by 
+            x
           </span>
         </div>
         <div
-          className="mt-1"
+          className="mt-3 mb-2 extension-card__description mr-3"
         >
-          <div
-            className="text-truncate"
+          <span
+            className=""
           >
             d
-          </div>
+          </span>
         </div>
       </div>
-      <span
-        className="text-muted small"
+      <div
+        className="extension-card__toggles-section d-flex flex-column align-items-end py-2 mt-1"
       >
-        Disabled
-      </span>
+        <div
+          className="px-1"
+        >
+          <span
+            className="text-muted small"
+          >
+            Disabled
+          </span>
+        </div>
+        <div
+          className="px-1 mt-2"
+        >
+          <span
+            className="text-muted"
+          >
+            Not enabled
+             for all users
+          </span>
+          <button
+            aria-checked={false}
+            className="toggle mx-2"
+            data-test="extension-toggle-x/y"
+            disabled={false}
+            onClick={[Function]}
+            role="switch"
+            title="Click to enable"
+            type="button"
+            value={0}
+          >
+            <span
+              className="toggle__bar"
+            />
+            <span
+              className="toggle__knob"
+            />
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
