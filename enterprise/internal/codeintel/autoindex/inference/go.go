@@ -93,7 +93,8 @@ func (lsifGoJobRecognizer) EnsurePackageRepo(ctx context.Context, pkg semantic.P
 		versionString = matches[2]
 	}
 
-	repoName := api.RepoName(pkg.Name)
+	splitRepo := strings.Split(pkg.Name, "/")
+	repoName := api.RepoName(splitRepo[0] + "/" + splitRepo[1] + "/" + splitRepo[2])
 	repoUpdateResponse, err := repoUpdater.EnqueueRepoUpdate(ctx, repoName)
 	if err != nil {
 		if errcode.IsNotFound(err) {
