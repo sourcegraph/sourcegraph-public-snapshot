@@ -27,6 +27,8 @@ const LangStatsInsightCreationLazyPage = lazyComponent(
     'LangStatsInsightCreationPage'
 )
 
+const EditInsightLazyPage = lazyComponent(() => import('./pages/edit/EditInsightPage'), 'EditInsightPage')
+
 /**
  * Feature flag for new code insights creation UI.
  * */
@@ -72,6 +74,19 @@ export const InsightsRouter: React.FunctionComponent<InsightsRouterProps> = prop
                     />
 
                     <Route path={`${match.url}/create-intro`} component={IntroCreationLazyPage} />
+
+                    <Route
+                        path={`${match.url}/edit/:insightID`}
+                        /* eslint-disable-next-line react/jsx-no-bind */
+                        render={(props: RouteComponentProps<{ insightID: string }>) => (
+                            <EditInsightLazyPage
+                                platformContext={outerProps.platformContext}
+                                authenticatedUser={outerProps.authenticatedUser}
+                                settingsCascade={outerProps.settingsCascade}
+                                insightID={props.match.params.insightID}
+                            />
+                        )}
+                    />
                 </>
             )}
 

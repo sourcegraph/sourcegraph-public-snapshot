@@ -15,7 +15,7 @@ import { FeedbackBadge } from '../../../components/FeedbackBadge'
 import { Page } from '../../../components/Page'
 import { InsightsIcon, InsightsViewGrid, InsightsViewGridProps } from '../../components'
 import { InsightsApiContext } from '../../core/backend/api-provider'
-import { defaultFormattingOptions } from '../../core/jsonc-settings'
+import { removeInsightFromSetting } from '../../core/jsonc-operation'
 
 import { useDeleteInsight } from './hooks/use-delete-insight'
 
