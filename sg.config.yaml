@@ -194,12 +194,14 @@ commands:
 
   web-standalone:
     cmd: yarn workspace @sourcegraph/web serve:dev
+    install: yarn --no-progress
     env:
       WEBPACK_SERVE_INDEX: true
       SOURCEGRAPH_API_URL: https://k8s.sgdev.org
 
   enterprise-web-standalone:
     cmd: yarn workspace @sourcegraph/web serve:dev
+    install: yarn --no-progress
     env:
       ENTERPRISE: 1
       WEBPACK_SERVE_INDEX: true

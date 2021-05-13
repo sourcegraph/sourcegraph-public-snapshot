@@ -1,9 +1,8 @@
-package graphqlbackend
+package run
 
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -13,12 +12,14 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -107,8 +108,9 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	}
 }
 
-func (r *CommitSearchResultResolver) String() string {
-	return fmt.Sprintf("{commit: %+v diffPreview: %+v messagePreview: %+v}", r.Commit(), r.DiffPreview(), r.MessagePreview())
+func resetMocks() {
+	database.Mocks = database.MockStores{}
+	backend.Mocks = backend.MockServices{}
 }
 
 func TestExpandUsernamesToEmails(t *testing.T) {
@@ -297,7 +299,7 @@ func Benchmark_highlightMatches(b *testing.B) {
 // searchCommitsInRepo is a blocking version of searchCommitsInRepoStream.
 func searchCommitsInRepo(ctx context.Context, db dbutil.DB, op search.CommitParameters) (results []*result.CommitMatch, limitHit, timedOut bool, err error) {
 	var matches []result.Match
-	err = searchCommitsInRepoStream(ctx, db, op, MatchStreamFunc(func(event SearchEvent) {
+	err = SearchCommitsInRepoStream(ctx, db, op, streaming.StreamFunc(func(event streaming.SearchEvent) {
 		matches = append(matches, event.Results...)
 		timedOut = timedOut || event.Stats.Status.Any(search.RepoStatusTimedout)
 		limitHit = limitHit || event.Stats.Status.Any(search.RepoStatusLimitHit)

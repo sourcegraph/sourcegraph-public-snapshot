@@ -13,6 +13,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/graph-gophers/graphql-go/introspection"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/graph-gophers/graphql-go/trace"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
@@ -510,6 +511,18 @@ func (r *schemaResolver) Repository(ctx context.Context, args *struct {
 		return nil, nil
 	}
 	return resolver.repo, nil
+}
+
+func (r *schemaResolver) repositoryByID(ctx context.Context, id graphql.ID) (*RepositoryResolver, error) {
+	var repoID api.RepoID
+	if err := relay.UnmarshalSpec(id, &repoID); err != nil {
+		return nil, err
+	}
+	repo, err := database.Repos(r.db).Get(ctx, repoID)
+	if err != nil {
+		return nil, err
+	}
+	return NewRepositoryResolver(r.db, repo), nil
 }
 
 type RedirectResolver struct {

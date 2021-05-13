@@ -1,4 +1,4 @@
-package graphqlbackend
+package run
 
 import (
 	"context"
@@ -90,7 +90,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 		Zoekt:        zoekt,
 		SearcherURLs: endpoint.Static("test"),
 	}
-	matches, common, err := searchFilesInReposBatch(context.Background(), args)
+	matches, common, err := SearchFilesInReposBatch(context.Background(), args)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -121,7 +121,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 		SearcherURLs: endpoint.Static("test"),
 	}
 
-	_, _, err = searchFilesInReposBatch(context.Background(), args)
+	_, _, err = SearchFilesInReposBatch(context.Background(), args)
 	if !gitserver.IsRevisionNotFound(errors.Cause(err)) {
 		t.Fatalf("searching non-existent rev expected to fail with RevisionNotFoundError got: %v", err)
 	}
@@ -178,7 +178,7 @@ func TestSearchFilesInReposStream(t *testing.T) {
 		SearcherURLs: endpoint.Static("test"),
 	}
 
-	matches, _, err := searchFilesInReposBatch(context.Background(), args)
+	matches, _, err := SearchFilesInReposBatch(context.Background(), args)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -201,14 +201,6 @@ func assertReposStatus(t *testing.T, repoNames map[api.RepoID]string, got search
 	if diff := cmp.Diff(want, gotM); diff != "" {
 		t.Errorf("RepoStatusMap mismatch (-want +got):\n%s", diff)
 	}
-}
-
-func mkStatusMap(m map[string]search.RepoStatus) search.RepoStatusMap {
-	var rsm search.RepoStatusMap
-	for name, status := range m {
-		rsm.Update(mkRepos(name)[0].ID, status)
-	}
-	return rsm
 }
 
 func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
@@ -255,7 +247,7 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 	repos[0].ListRefs = func(context.Context, api.RepoName) ([]git.Ref, error) {
 		return []git.Ref{{Name: "refs/heads/branch3"}, {Name: "refs/heads/branch4"}}, nil
 	}
-	matches, _, err := searchFilesInReposBatch(context.Background(), args)
+	matches, _, err := SearchFilesInReposBatch(context.Background(), args)
 	if err != nil {
 		t.Fatal(err)
 	}

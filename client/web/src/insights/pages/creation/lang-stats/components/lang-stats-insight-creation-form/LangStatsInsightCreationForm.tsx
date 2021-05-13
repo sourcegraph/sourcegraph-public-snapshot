@@ -33,7 +33,7 @@ export interface LangStatsCreationFormFields {
     visibility: 'personal' | 'organization'
 }
 
-const INITIAL_VALUES: Partial<LangStatsCreationFormFields> = {
+const INITIAL_VALUES: LangStatsCreationFormFields = {
     repository: '',
     title: '',
     threshold: 3,

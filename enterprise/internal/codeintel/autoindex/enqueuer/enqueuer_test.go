@@ -9,8 +9,12 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/inference"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 )
 
 func TestIndexEnqueuerUpdateIndexConfigurationInDatabase(t *testing.T) {
@@ -373,5 +377,88 @@ func TestIndexEnqueuerUpdateIndexConfigurationInferredTooLarge(t *testing.T) {
 
 	if len(mockDBStore.InsertIndexFunc.History()) != 0 {
 		t.Errorf("unexpected number of calls to InsertIndex. want=%d have=%d", 0, len(mockDBStore.InsertIndexFunc.History()))
+	}
+}
+
+func TestIndexEnqueuerOnPackages(t *testing.T) {
+	mockDBStore := NewMockDBStore()
+	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
+	mockDBStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
+	mockDBStore.IsQueuedFunc.SetDefaultReturn(false, nil)
+
+	mockGitserverClient := NewMockGitserverClient()
+	mockGitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, repoID int, versionString string) (api.CommitID, error) {
+		if repoID != 42 || versionString != "4e7eeb0f8a96" {
+
+			t.Errorf("unexpected (repoID, versionString) (%v, %v) supplied to EnqueueRepoUpdate", repoID, versionString)
+		}
+		return "c42", nil
+	})
+	mockGitserverClient.ListFilesFunc.SetDefaultReturn([]string{"go.mod"}, nil)
+
+	mockRepoUpdater := inference.NewMockRepoUpdaterClient()
+	mockRepoUpdater.EnqueueRepoUpdateFunc.SetDefaultHook(func(ctx context.Context, repoName api.RepoName) (*protocol.RepoUpdateResponse, error) {
+		if repoName != "github.com/sourcegraph/sourcegraph" {
+			t.Errorf("unexpected repo %v supplied to EnqueueRepoUpdate", repoName)
+		}
+		return &protocol.RepoUpdateResponse{ID: 42}, nil
+	})
+
+	scheduler := &IndexEnqueuer{
+		dbStore:          mockDBStore,
+		gitserverClient:  mockGitserverClient,
+		repoUpdater:      mockRepoUpdater,
+		maxJobsPerCommit: defaultMaxJobsPerCommit,
+		operations:       newOperations(&observation.TestContext),
+	}
+
+	_ = scheduler.QueueIndexesForPackages(context.Background(), []semantic.PackageReference{
+		{Package: semantic.Package{
+			Scheme:  "gomod",
+			Name:    "github.com/sourcegraph/sourcegraph",
+			Version: "v3.26.0-4e7eeb0f8a96",
+		}},
+	})
+
+	if len(mockDBStore.IsQueuedFunc.History()) != 1 {
+		t.Errorf("unexpected number of calls to IsQueued. want=%d have=%d", 1, len(mockDBStore.IsQueuedFunc.History()))
+	} else {
+		var commits []string
+		for _, call := range mockDBStore.IsQueuedFunc.History() {
+			commits = append(commits, call.Arg2)
+		}
+		sort.Strings(commits)
+
+		if diff := cmp.Diff([]string{"c42"}, commits); diff != "" {
+			t.Errorf("unexpected commits (-want +got):\n%s", diff)
+		}
+	}
+
+	if len(mockDBStore.InsertIndexFunc.History()) != 1 {
+		t.Errorf("unexpected number of calls to InsertIndex. want=%d have=%d", 1, len(mockDBStore.InsertIndexFunc.History()))
+	} else {
+		var indexes []store.Index
+		for _, call := range mockDBStore.InsertIndexFunc.History() {
+			indexes = append(indexes, call.Arg1)
+		}
+
+		expectedIndexes := []store.Index{
+			{
+				RepositoryID: 42,
+				Commit:       "c42",
+				State:        "queued",
+				DockerSteps: []store.DockerStep{
+					{
+						Image:    "sourcegraph/lsif-go:latest",
+						Commands: []string{"go mod download"},
+					},
+				},
+				Indexer:     "sourcegraph/lsif-go:latest",
+				IndexerArgs: []string{"lsif-go", "--no-animation"},
+			},
+		}
+		if diff := cmp.Diff(expectedIndexes, indexes); diff != "" {
+			t.Errorf("unexpected indexes (-want +got):\n%s", diff)
+		}
 	}
 }

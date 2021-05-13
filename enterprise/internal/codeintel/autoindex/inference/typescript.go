@@ -7,6 +7,7 @@ import (
 	"regexp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/config"
+	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
 )
 
 const (
@@ -28,7 +29,7 @@ type packageJSONEngine struct {
 	} `json:"engines"`
 }
 
-func (r lsifTscJobRecognizer) CanIndex(paths []string, gitserver GitserverClientWrapper) bool {
+func (r lsifTscJobRecognizer) CanIndexRepo(paths []string, gitserver GitserverClientWrapper) bool {
 	for _, path := range paths {
 		if r.canIndexPath(path) {
 			return true
@@ -159,3 +160,11 @@ func (r lsifTscJobRecognizer) canIndexPath(path string) bool {
 var tscSegmentBlockList = append([]string{
 	"node_modules",
 }, segmentBlockList...)
+
+func (lsifTscJobRecognizer) EnsurePackageRepo(ctx context.Context, pkg semantic.Package, repoUpdater RepoUpdaterClient, gitserver GitserverClient) (int, string, bool, error) {
+	return 0, "", false, nil
+}
+
+func (r lsifTscJobRecognizer) InferPackageIndexJobs(ctx context.Context, pkg semantic.Package, gitserver GitserverClientWrapper) ([]config.IndexJob, error) {
+	return nil, nil
+}

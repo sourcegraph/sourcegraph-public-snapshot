@@ -2,12 +2,12 @@ package server
 
 import (
 	"context"
-	"net/url"
 	"os/exec"
 	"path"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -28,7 +28,7 @@ func buildCustomFetchMappings(c []*schema.CustomGitFetchMapping) map[string][]st
 	return cgm
 }
 
-func customFetchCmd(ctx context.Context, remoteURL *url.URL) *exec.Cmd {
+func customFetchCmd(ctx context.Context, remoteURL *vcs.URL) *exec.Cmd {
 	cgm := customGitFetch().(map[string][]string)
 	if len(cgm) == 0 {
 		return nil

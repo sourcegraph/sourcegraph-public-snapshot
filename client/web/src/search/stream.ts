@@ -2,6 +2,7 @@
 import { Observable, fromEvent, Subscription, OperatorFunction, pipe, Subscriber, Notification } from 'rxjs'
 import { defaultIfEmpty, map, materialize, scan } from 'rxjs/operators'
 
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
@@ -262,7 +263,7 @@ export function toGQLRepositoryMatch(repo: RepositoryMatch): GQL.IRepository {
     // We only need to return the subset defined in IGenericSearchResultInterface
     const gqlRepo: unknown = {
         __typename: 'Repository',
-        label: toMarkdown(`[${label}](${url})`),
+        label: toMarkdown(`[${displayRepoName(label)}](${url})`),
         url,
         detail: toMarkdown('Repository match'),
         matches: [],
@@ -285,17 +286,25 @@ function toGQLCommitMatch(commit: CommitMatch): GQL.ICommitSearchResult {
         })),
     }
 
+    const gqlCommit: Partial<GQL.IGitCommit> = {
+        __typename: 'GitCommit',
+        repository: toGQLRepositoryMatch({
+            type: 'repo',
+            repository: commit.repository,
+        }),
+    }
+
     // We only need to return the subset defined in IGenericSearchResultInterface
-    const gqlCommit: Partial<GQL.ICommitSearchResult> = {
+    const gqlCommitResult: Partial<GQL.ICommitSearchResult> = {
         __typename: 'CommitSearchResult',
         label: toMarkdown(commit.label),
         url: commit.url,
         detail: toMarkdown(commit.detail),
-        repository: commit.repository,
+        commit: gqlCommit as GQL.IGitCommit,
         matches: [match],
     }
 
-    return gqlCommit as GQL.ICommitSearchResult
+    return gqlCommitResult as GQL.ICommitSearchResult
 }
 
 export type StreamingResultsState = 'loading' | 'error' | 'complete'

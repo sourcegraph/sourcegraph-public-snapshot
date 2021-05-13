@@ -237,7 +237,6 @@ export const RepoHeader: React.FunctionComponent<Props> = ({
                 location={props.location}
                 // To be clear to users that this isn't an error reported by extensions
                 // about e.g. the code they're viewing.
-                // eslint-disable-next-line react/jsx-no-bind
                 render={error => (
                     <ul className="navbar-nav">
                         <li className="nav-item repo-header__action-list-item">
