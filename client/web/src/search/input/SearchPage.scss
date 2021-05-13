@@ -8,6 +8,8 @@
 @import './SearchOnboardingTour';
 @import '../panels/HomePanels.scss';
 
+$max-homepage-container-width: 60rem;
+
 .search-page {
     justify-content: flex-start;
     width: 100%;
@@ -27,11 +29,9 @@
     &__search-container {
         flex: 1 1 auto;
         margin-top: 1.5rem;
-        width: 49rem;
-        max-width: 90%;
+        width: 100%;
+        max-width: $max-homepage-container-width;
         position: relative;
-        padding-left: 0.5rem;
-        padding-right: 0.5rem;
 
         &--with-content-below {
             flex-grow: 0;
@@ -51,13 +51,14 @@
     }
 
     &__repogroup-content {
-        max-width: 90%;
+        width: 100%;
+        max-width: $max-homepage-container-width;
     }
 
     &__repogroup-list {
         &-cards {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
             grid-auto-rows: minmax(4rem, auto);
             gap: $spacer * 0.75;
         }
@@ -79,9 +80,27 @@
     }
 
     &__help-content {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+
+        &-example-searches {
+            min-width: 10rem;
+            word-break: break-all;
+
+            .search-query-link {
+                font-size: 0.75rem;
+            }
+        }
+
         &-subheading {
             margin-bottom: 1rem;
         }
+    }
+
+    &__cta {
+        max-width: 38rem;
+        flex-direction: column;
     }
 
     &__repogroup-listing-title {
@@ -90,5 +109,9 @@
 
     &__footer {
         margin-top: 2rem;
+    }
+
+    &__inline-code {
+        border-radius: 3px;
     }
 }
