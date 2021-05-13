@@ -237,12 +237,16 @@ func (s *Store) CountChangesets(ctx context.Context, opts CountChangesetsOpts) (
 
 var countChangesetsQueryFmtstr = `
 -- source: enterprise/internal/batches/store.go:CountChangesets
-SELECT COUNT(changesets.id)
+SELECT COUNT(DISTINCT changesets.id)
 FROM changesets
 INNER JOIN repo ON repo.id = changesets.repo_id
-INNER JOIN repo_tags ON repo_tags.repo_id = changesets.repo_id
+LEFT JOIN (
+	SELECT repo_id, tag
+	FROM repo_tags
+	WHERE deleted_at IS NULL
+) repo_tags ON repo_tags.repo_id = changesets.repo_id
 %s -- optional LEFT JOIN to changeset_specs if required
-WHERE %s AND repo_tags.deleted_at IS NULL
+WHERE %s
 `
 
 func countChangesetsQuery(opts *CountChangesetsOpts, authzConds *sqlf.Query) *sqlf.Query {
@@ -509,9 +513,14 @@ var listChangesetsQueryFmtstr = `
 -- source: enterprise/internal/batches/store.go:ListChangesets
 SELECT %s FROM changesets
 INNER JOIN repo ON repo.id = changesets.repo_id
-INNER JOIN repo_tags ON repo_tags.repo_id = changesets.repo_id
+LEFT JOIN (
+	SELECT repo_id, tag
+	FROM repo_tags
+	WHERE deleted_at IS NULL
+) repo_tags ON repo_tags.repo_id = changesets.repo_id
 %s -- optional LEFT JOIN to changeset_specs if required
-WHERE %s AND repo_tags.deleted_at IS NULL
+WHERE %s
+GROUP BY changesets.id
 ORDER BY id ASC
 `
 

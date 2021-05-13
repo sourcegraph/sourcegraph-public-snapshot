@@ -9,7 +9,7 @@ import {
 } from '@sourcegraph/shared/src/backend/errors'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
-import { IRepositoryMetadataTag } from '@sourcegraph/shared/src/graphql/schema'
+import { IPageInfo, IRepositoryMetadataTag } from '@sourcegraph/shared/src/graphql/schema'
 import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
 import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 import {
@@ -313,11 +313,13 @@ interface FetchRepoTagsArguments {
     after?: string
 }
 
+export interface FetchRepoTagsResult {
+    nodes: Pick<IRepositoryMetadataTag, 'id' | 'tag'>[]
+    pageInfo: Pick<IPageInfo, 'endCursor' | 'hasNextPage'>
+}
+
 export const fetchRepoTags = memoizeObservable(
-    (
-        { id, first, after }: FetchRepoTagsArguments,
-        force?: boolean
-    ): Observable<Pick<IRepositoryMetadataTag, 'id' | 'tag'>[]> =>
+    ({ id, first, after }: FetchRepoTagsArguments, force?: boolean): Observable<FetchRepoTagsResult> =>
         requestGraphQL<RepoTagsResult, RepoTagsVariables>(
             gql`
                 query RepoTags($id: ID!, $first: Int, $after: String) {
@@ -328,6 +330,10 @@ export const fetchRepoTags = memoizeObservable(
                                     id
                                     tag
                                 }
+                                pageInfo {
+                                    endCursor
+                                    hasNextPage
+                                }
                             }
                         }
                     }
@@ -337,11 +343,11 @@ export const fetchRepoTags = memoizeObservable(
         ).pipe(
             tap(({ data }) => console.log('tap', data)),
             map(({ data, errors }) => {
-                const nodes = data?.node?.metadataTags.nodes
-                if (!nodes) {
+                const metadataTags = data?.node?.metadataTags
+                if (!metadataTags) {
                     throw createAggregateError(errors)
                 }
-                return nodes
+                return metadataTags
             })
         ),
     ({ id, first, after }) => `${id}-${first || ''}-${after || ''}`

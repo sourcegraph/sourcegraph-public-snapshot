@@ -11,6 +11,11 @@ CREATE TABLE IF NOT EXISTS repo_tags (
 );
 
 CREATE INDEX IF NOT EXISTS
+    repo_tags_deleted_at_idx
+ON
+    repo_tags (deleted_at);
+
+CREATE INDEX IF NOT EXISTS
     repo_tags_tag_trgm
 ON
     repo_tags

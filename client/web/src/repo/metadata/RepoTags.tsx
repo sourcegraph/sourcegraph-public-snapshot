@@ -10,7 +10,7 @@ import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/er
 
 import { ErrorAlert } from '../../components/alerts'
 import { TreePageRepositoryFields } from '../../graphql-operations'
-import { addRepoTag, deleteRepoTag, fetchRepoTags } from '../backend'
+import { addRepoTag, deleteRepoTag, fetchRepoTags, FetchRepoTagsResult } from '../backend'
 
 interface AddRepoTagInputProps {
     onCancel: () => void
@@ -129,7 +129,12 @@ const AddRepoTag: React.FunctionComponent<AddRepoTagProps> = ({ id, onUpdate }) 
         case State.Ready:
             return (
                 <span className="badge badge-secondary">
-                    <button className="btn btn-icon d-inline" onClick={onAdd} type="button">
+                    <button
+                        className="btn btn-icon d-inline"
+                        onClick={onAdd}
+                        type="button"
+                        data-tooltip="Add repository tag"
+                    >
                         <AddIcon className="icon-inline" />
                     </button>
                 </span>
@@ -150,7 +155,7 @@ const AddRepoTag: React.FunctionComponent<AddRepoTagProps> = ({ id, onUpdate }) 
     }
 }
 
-type GetRepoTagsResult = Pick<IRepositoryMetadataTag, 'id' | 'tag'>[] | ErrorLike
+type GetRepoTagsResult = FetchRepoTagsResult | ErrorLike
 
 const getRepoTags = async (id: string): Promise<GetRepoTagsResult> =>
     fetchRepoTags({ id }, true)
@@ -170,6 +175,7 @@ export const RepoTags: React.FunctionComponent<RepoTagsProps> = ({ repo: { id, v
     // possible RxJS here and just convert it back to a promise as quickly as
     // possible so that we can use standard React from there.
 
+    const [after, setAfter] = useState<string | undefined>(undefined)
     const [tagsOrError, setTagsOrError] = useState<GetRepoTagsResult | undefined>(undefined)
 
     const update = useCallback(async () => {
@@ -202,7 +208,7 @@ export const RepoTags: React.FunctionComponent<RepoTagsProps> = ({ repo: { id, v
 
     return (
         <span className="ml-2">
-            {tagsOrError.map(tag => (
+            {tagsOrError.nodes.map(tag => (
                 <span className="badge badge-secondary mr-2" key={tag.id}>
                     {tag.tag}
                     {viewerCanAdminister && (
