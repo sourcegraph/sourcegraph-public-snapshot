@@ -12,6 +12,65 @@ import { ErrorAlert } from '../../components/alerts'
 import { TreePageRepositoryFields } from '../../graphql-operations'
 import { addRepoTag, deleteRepoTag, fetchRepoTags } from '../backend'
 
+interface AddRepoTagInputProps {
+    onCancel: () => void
+    onSubmit: (tag: string) => void
+}
+
+const AddRepoTagInput: React.FunctionComponent<AddRepoTagInputProps> = props => {
+    const reference = useRef<HTMLInputElement | null>(null)
+
+    const submit = useCallback(() => {
+        const value = reference.current?.value
+        if (value === undefined) {
+            props.onCancel()
+        } else {
+            props.onSubmit(value)
+        }
+    }, [props])
+
+    const onKeyDown = useCallback(
+        (event: React.KeyboardEvent<HTMLInputElement>) => {
+            if (event.key === 'Escape') {
+                event.stopPropagation()
+                props.onCancel()
+            } else if (event.key === 'Enter') {
+                event.stopPropagation()
+                submit()
+            }
+        },
+        [props, submit]
+    )
+
+    const onCancel = useCallback(
+        (event: React.MouseEvent) => {
+            event.preventDefault()
+            props.onCancel()
+        },
+        [props]
+    )
+
+    const onSubmit = useCallback(
+        (event: React.MouseEvent) => {
+            event.preventDefault()
+            submit()
+        },
+        [submit]
+    )
+
+    return (
+        <span>
+            <input ref={reference} autoFocus={true} onKeyDown={onKeyDown} />
+            <button className="btn btn-icon d-inline ml-1" onClick={onSubmit} type="button">
+                <CheckIcon className="icon-inline" />
+            </button>
+            <button className="btn btn-icon d-inline ml-1" onClick={onCancel} type="button">
+                <CloseIcon className="icon-inline" />
+            </button>
+        </span>
+    )
+}
+
 interface AddRepoTagProps {
     id: string
     onUpdate?: () => void
@@ -24,34 +83,6 @@ const AddRepoTag: React.FunctionComponent<AddRepoTagProps> = ({ id, onUpdate }) 
         Saving,
     }
     const [state, setState] = useState<State | Error>(State.Ready)
-
-    const tagElement = useRef<HTMLInputElement | null>(null)
-
-    const submit = useCallback(async () => {
-        const tag = tagElement?.current?.value
-        if (tag === undefined) {
-            // This shouldn't happen, since the callback we're in can
-            // only fire if there is an input with its ref set to
-            // tagElement. Shrug.
-            setState(State.Ready)
-            return
-        }
-        if (tag.trim() === '') {
-            // No point submitting a blank tag.
-            setState(State.Ready)
-            return
-        }
-
-        setState(State.Saving)
-
-        try {
-            await addRepoTag(id, tag)
-            setState(State.Ready)
-        } catch (error) {
-            setState(asError(error))
-        }
-        onUpdate?.()
-    }, [State.Ready, State.Saving, id, onUpdate])
 
     const onAdd = useCallback(
         (event: React.MouseEvent) => {
@@ -69,33 +100,29 @@ const AddRepoTag: React.FunctionComponent<AddRepoTagProps> = ({ id, onUpdate }) 
         [State.Ready]
     )
 
-    const onInputCancel = useCallback(
-        (event: React.MouseEvent) => {
-            event.preventDefault()
-            setState(State.Ready)
-        },
-        [State.Ready]
-    )
+    const onInputCancel = useCallback(() => {
+        setState(State.Ready)
+    }, [State.Ready])
 
     const onInputSubmit = useCallback(
-        async (event: React.MouseEvent) => {
-            event.preventDefault()
-            await submit()
-        },
-        [submit]
-    )
-
-    const onKeyDown = useCallback(
-        async (event: React.KeyboardEvent<HTMLInputElement>) => {
-            if (event.key === 'Escape') {
+        async (tag: string) => {
+            if (tag.trim() === '') {
+                // No point submitting a blank tag.
                 setState(State.Ready)
-                event.stopPropagation()
-            } else if (event.key === 'Enter') {
-                event.stopPropagation()
-                await submit()
+                return
             }
+
+            setState(State.Saving)
+
+            try {
+                await addRepoTag(id, tag)
+                setState(State.Ready)
+            } catch (error) {
+                setState(asError(error))
+            }
+            onUpdate?.()
         },
-        [State.Ready, submit]
+        [State.Ready, State.Saving, id, onUpdate]
     )
 
     switch (state) {
@@ -108,17 +135,7 @@ const AddRepoTag: React.FunctionComponent<AddRepoTagProps> = ({ id, onUpdate }) 
                 </span>
             )
         case State.Editable:
-            return (
-                <span>
-                    <input ref={tagElement} autoFocus={true} onKeyDown={onKeyDown} />
-                    <button className="btn btn-icon d-inline ml-1" onClick={onInputSubmit} type="button">
-                        <CheckIcon className="icon-inline" />
-                    </button>
-                    <button className="btn btn-icon d-inline ml-1" onClick={onInputCancel} type="button">
-                        <CloseIcon className="icon-inline" />
-                    </button>
-                </span>
-            )
+            return <AddRepoTagInput onCancel={onInputCancel} onSubmit={tag => onInputSubmit(tag)} />
         case State.Saving:
             return <LoadingSpinner className="icon-inline" />
         default:
