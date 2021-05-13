@@ -354,12 +354,25 @@ export interface ExecutableExtension extends Pick<ConfiguredExtension, 'id' | 'm
 /**
  * Make `import 'sourcegraph'` or `require('sourcegraph')` return the extension API.
  *
+ * Because `require` is replaced on each extension activation with the API created for that extension,
+ * the API can only be imported once to prevent extensions importing APIs created for other extensions.
+ *
  * @param extensionAPI The extension API instance for the extension to be activated.
+ * @throws error to give extension authors feedback if they try to import an API instance that was
+ * already imported (e.g. if they asynchronously import the extension API and the current `require` was
+ * called by another extension)
  */
 export function replaceAPIRequire(extensionAPI: typeof sourcegraph): void {
+    let alreadyImported = false
+
     globalThis.require = ((modulePath: string): any => {
         if (modulePath === 'sourcegraph') {
-            return extensionAPI
+            if (!alreadyImported) {
+                alreadyImported = true
+                return extensionAPI
+            }
+
+            throw new Error('require: Sourcegraph extension API can only be imported once')
         }
         // All other requires/imports in the extension's code should not reach here because their JS
         // bundler should have resolved them locally.
