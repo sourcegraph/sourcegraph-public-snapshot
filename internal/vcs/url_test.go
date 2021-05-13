@@ -190,20 +190,6 @@ func TestParseURL(t *testing.T) {
 			"user-1234@host.xz:path/to/repo.git/", "",
 		),
 		newParseURLTest(
-<<<<<<< HEAD
-=======
-			"user@host.xz:path/to/repo@domain.git/",
-			formatRsync, "", "user", "host.xz", "path/to/repo@domain.git/",
-			"user@host.xz:path/to/repo@domain.git/", "",
-		),
-		newParseURLTest(
-			"sourcegraph@gitolite.company.internal:service-config/runtime@east-cluster/action@test-5524",
-			formatRsync, "", "sourcegraph", "gitolite.company.internal", "service-config/runtime@east-cluster/action@test-5524",
-			"sourcegraph@gitolite.company.internal:service-config/runtime@east-cluster/action@test-5524", "",
-		),
-
-		newParseURLTest(
->>>>>>> 68803ea071... attempt to fix scp style VCS url parsing (#20799)
 			"/path/to/repo.git/",
 			formatLocal, "file", "", "", "/path/to/repo.git/",
 			"file:///path/to/repo.git/", "",
