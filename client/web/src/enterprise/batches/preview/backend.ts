@@ -77,6 +77,7 @@ export const batchSpecFragment = gql`
                 modified
                 removed
             }
+            totalCount
         }
         supersedingBatchSpec {
             ...SupersedingBatchSpecFields

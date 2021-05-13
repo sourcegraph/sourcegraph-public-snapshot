@@ -126,14 +126,7 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
                     <BatchChangeTab index={0}>
                         <SourceBranchIcon className="icon-inline text-muted mr-1" />
                         Changesets{' '}
-                        <span className="badge badge-pill badge-secondary ml-1">
-                            {/* TODO: This doesn't seem to yield the right sum (saw 2 when it should be 1), also should this be added as a GraphQL field like it is for BatchChange stats? */}
-                            {reduce(
-                                spec.applyPreview.stats,
-                                (sum, statValue, statKey) => (statKey === 'archive' ? sum : sum + statValue),
-                                0
-                            )}
-                        </span>
+                        <span className="badge badge-pill badge-secondary ml-1">{spec.applyPreview.totalCount}</span>
                     </BatchChangeTab>
                     <BatchChangeTab index={1}>
                         <FileDocumentIcon className="icon-inline text-muted mr-1" /> Spec
