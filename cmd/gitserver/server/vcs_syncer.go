@@ -15,6 +15,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
 // VCSSyncer describes whether and how to sync content from a VCS remote to
@@ -300,5 +301,96 @@ func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir
 // RemoteShowCommand returns the command to be executed for showing Git remote of a Perforce depot.
 func (s *PerforceDepotSyncer) RemoteShowCommand(ctx context.Context, remoteURL *vcs.URL) (cmd *exec.Cmd, err error) {
 	// Remote info is encoded as in the current repository
+	return exec.CommandContext(ctx, "git", "remote", "show", "./"), nil
+}
+
+type MavenArtifactSyncer struct {
+}
+
+var _ VCSSyncer = &MavenArtifactSyncer{}
+
+func (s MavenArtifactSyncer) Type() string {
+	return "maven"
+}
+
+// IsCloneable checks to see if the VCS remote URL is cloneable. Any non-nil
+// error indicates there is a problem.
+func (s MavenArtifactSyncer) IsCloneable(ctx context.Context, remoteURL *url.URL) error {
+	mavenRepo := remoteURL.Host
+	mavenArtifact := strings.ReplaceAll(remoteURL.Path, "/", ":")
+	var versions []string = coursier.Run(mavenRepo, "complete "+mavenArtifact+":")
+	if len(versions) > 0 {
+		return nil
+	}
+	return errors.New("repo not found")
+}
+
+// CloneCommand returns the command to be executed for cloning from remote.
+func (s MavenArtifactSyncer) CloneCommand(ctx context.Context, remoteURL *url.URL, tmpPath string) (cmd *exec.Cmd, err error) {
+	mavenRepo := remoteURL.Host
+	mavenArtifact := strings.ReplaceAll(remoteURL.Path, "/", ":")
+	var versions []string = coursier.Run(mavenRepo, "complete "+mavenArtifact+":")
+	var urls []string
+	for _, version := range versions {
+		urls = append(urls, mavenArtifact+":"+version)
+	}
+	paths, err := s.fetchCoursierVersions(ctx, mavenRepo, urls)
+	if err != nil {
+		return nil, err
+	}
+
+	exec.CommandContext(ctx, "git", "init")
+	s.commitJars(ctx, GitDir(tmpPath), paths, versions)
+
+	// TODO
+	return nil, nil
+}
+
+var versionPattern = lazyregexp.New(`refs/heads/(.+)$`)
+// Fetch tries to fetch updates from the remote to given directory.
+func (s MavenArtifactSyncer) Fetch(ctx context.Context, remoteURL *url.URL, dir GitDir) error {
+	mavenRepo := remoteURL.Host
+	mavenArtifact := strings.ReplaceAll(remoteURL.Path, "/", ":")
+	var coursierVersions []string = coursier.Run(mavenRepo, "complete "+mavenArtifact+":")
+	var gitVersionsRaw []string = exec.CommandContext(ctx, "git", "show-branch")
+	gitVersions := make(map[string]struct{})
+	for _, rawVersion := range gitVersionsRaw {
+		gitVersions[versionPattern.FindStringSubmatch(rawVersion)[1]] = struct{}{}
+	}
+	var filteredCoursierVersions []string
+	for _, version := range coursierVersions {
+		if _, exists := gitVersions[version]; !exists {
+			filteredCoursierVersions = append(filteredCoursierVersions, version)
+		}
+	}
+
+	var urls []string
+	for _, version := range filteredCoursierVersions {
+		urls = append(urls, mavenArtifact+":"+version)
+	}
+	paths, err := s.fetchCoursierVersions(ctx, mavenRepo, urls)
+	if err != nil {
+		return err
+	}
+
+	s.commitJars(ctx, dir, paths, filteredCoursierVersions)
+}
+
+func (s MavenArtifactSyncer) commitJars(ctx context.Context, dir GitDir, paths, versions []string) {
+	for idx, path := range paths {
+		exec.CommandContext(ctx, "git", "checkout", "--orphan", versions[idx])
+		exec.CommandContext(ctx, "git", "reset")
+		exec.CommandContext(ctx, "git", "clean", "-d", "-f")
+		exec.CommandContext(ctx, "unzip", path, "-d", "./")
+		exec.CommandContext(ctx, "git", "add", "*")
+		exec.CommandContext(ctx, "git", "commit", "-m", versions[idx])
+	}
+}
+
+func (s MavenArtifactSyncer) fetchCoursierVersions(ctx context.Context, mavenRepo string, urls []string) ([]string, error) {
+}
+
+// RemoteShowCommand returns the command to be executed for showing remote.
+func (s MavenArtifactSyncer) RemoteShowCommand(ctx context.Context, remoteURL *url.URL) (cmd *exec.Cmd, err error) {
 	return exec.CommandContext(ctx, "git", "remote", "show", "./"), nil
 }

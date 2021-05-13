@@ -137,6 +137,8 @@ func main() {
 				return &server.PerforceDepotSyncer{
 					MaxChanges: int(c.MaxChanges),
 				}, nil
+			case extsvc.TypeMaven:
+				return &server.MavenArtifactSyncer{}, nil
 			}
 			return &server.GitRepoSyncer{}, nil
 		},
