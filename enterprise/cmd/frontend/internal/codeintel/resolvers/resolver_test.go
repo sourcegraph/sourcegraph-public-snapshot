@@ -7,7 +7,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/autoindex/enqueuer"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/inference"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -67,7 +68,8 @@ func TestFallbackIndexConfiguration(t *testing.T) {
 	mockLSIFStore := NewMockLSIFStore()
 	mockGitserverClient := NewMockGitserverClient()
 	gitServerClient := enqueuer.NewMockGitserverClient()
-	indexEnqueuer := enqueuer.NewIndexEnqueuer(mockEnqueuerDBStore, gitServerClient, &observation.TestContext)
+	mockRepoUpdater := inference.NewMockRepoUpdaterClient()
+	indexEnqueuer := enqueuer.NewIndexEnqueuer(mockEnqueuerDBStore, gitServerClient, mockRepoUpdater, &observation.TestContext)
 
 	mockDBStore.GetIndexConfigurationByRepositoryIDFunc.SetDefaultReturn(dbstore.IndexConfiguration{}, false, nil)
 	gitServerClient.HeadFunc.SetDefaultReturn("deadbeef", nil)

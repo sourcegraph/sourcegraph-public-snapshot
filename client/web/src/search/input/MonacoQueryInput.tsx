@@ -192,8 +192,9 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     }, [editor, container])
 
     const fetchSuggestionsWithContext = useCallback(
-        (query: string) => fetchSuggestions(appendContextFilter(query, props.selectedSearchContextSpec)),
-        [props.selectedSearchContextSpec]
+        (query: string) =>
+            fetchSuggestions(appendContextFilter(query, props.selectedSearchContextSpec, props.versionContext)),
+        [props.selectedSearchContextSpec, props.versionContext]
     )
 
     const [isRedesignEnabled] = useRedesignToggle()

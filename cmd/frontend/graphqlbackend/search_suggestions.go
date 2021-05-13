@@ -20,6 +20,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/search/run"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
 
 const maxSearchSuggestions = 100
@@ -368,8 +370,8 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
 		defer cancel()
 
-		fileMatches, _, err := collectStream(func(stream Sender) error {
-			return searchSymbols(ctx, r.db, &search.TextParameters{
+		fileMatches, _, err := streaming.CollectStream(func(stream streaming.Sender) error {
+			return run.SearchSymbols(ctx, &search.TextParameters{
 				PatternInfo:  p,
 				RepoPromise:  (&search.Promise{}).Resolve(resolved.RepoRevs),
 				Query:        r.Query,
@@ -383,33 +385,42 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 
 		results = make([]SearchSuggestionResolver, 0)
 		for _, match := range fileMatches {
-			fileMatch, ok := match.ToFileMatch()
+			fileMatch, ok := match.(*result.FileMatch)
 			if !ok {
 				continue
 			}
-			for _, sr := range fileMatch.Symbols() {
+			for _, sm := range fileMatch.Symbols {
 				score := 20
-				if sr.Symbol.Parent == "" {
+				if sm.Symbol.Parent == "" {
 					score++
 				}
-				if len(sr.Symbol.Name) < 12 {
+				if len(sm.Symbol.Name) < 12 {
 					score++
 				}
-				switch sr.Symbol.LSPKind() {
+				switch sm.Symbol.LSPKind() {
 				case lsp.SKFunction, lsp.SKMethod:
 					score += 2
 				case lsp.SKClass:
 					score += 3
 				}
-				repoName := strings.ToLower(string(sr.File.Repo.Name))
-				fileName := strings.ToLower(sr.File.Path)
-				symbolName := strings.ToLower(sr.Symbol.Name)
-				if len(sr.Symbol.Name) >= 4 && strings.Contains(repoName+fileName, symbolName) {
+				repoName := strings.ToLower(string(sm.File.Repo.Name))
+				fileName := strings.ToLower(sm.File.Path)
+				symbolName := strings.ToLower(sm.Symbol.Name)
+				if len(sm.Symbol.Name) >= 4 && strings.Contains(repoName+fileName, symbolName) {
 					score++
 				}
 				results = append(results, symbolSuggestionResolver{
-					symbol: sr,
-					score:  score,
+					symbol: symbolResolver{
+						db: r.db,
+						commit: toGitCommitResolver(
+							NewRepositoryResolver(r.db, fileMatch.Repo.ToRepo()),
+							r.db,
+							fileMatch.CommitID,
+							nil,
+						),
+						SymbolMatch: sm,
+					},
+					score: score,
 				})
 			}
 		}
@@ -450,10 +461,13 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 				}
 				suggestions = make([]SearchSuggestionResolver, 0, len(results.SearchResults))
 				for i, res := range results.SearchResults {
-					if fm, ok := res.ToFileMatch(); ok {
-						entryResolver := fm.File()
+					if fm, ok := res.(*result.FileMatch); ok {
+						fmResolver := &FileMatchResolver{
+							FileMatch:    *fm,
+							RepoResolver: NewRepositoryResolver(r.db, fm.Repo.ToRepo()),
+						}
 						suggestions = append(suggestions, gitTreeSuggestionResolver{
-							gitTreeEntry: entryResolver,
+							gitTreeEntry: fmResolver.File(),
 							score:        len(results.SearchResults) - i,
 						})
 					}

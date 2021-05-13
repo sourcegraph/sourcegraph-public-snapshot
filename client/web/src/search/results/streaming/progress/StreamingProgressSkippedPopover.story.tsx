@@ -1,5 +1,4 @@
 import { storiesOf } from '@storybook/react'
-import { createMemoryHistory } from 'history'
 import * as React from 'react'
 
 import { WebStory } from '../../../../components/WebStory'
@@ -7,7 +6,6 @@ import { Progress } from '../../../stream'
 
 import { StreamingProgressSkippedPopover } from './StreamingProgressSkippedPopover'
 
-const history = createMemoryHistory()
 const { add } = storiesOf(
     'web/search/results/streaming/progress/StreamingProgressSkippedPopover',
     module
@@ -66,11 +64,7 @@ add('popover', () => {
         ],
     }
 
-    return (
-        <WebStory>
-            {() => <StreamingProgressSkippedPopover progress={progress} onSearchAgain={() => {}} history={history} />}
-        </WebStory>
-    )
+    return <WebStory>{() => <StreamingProgressSkippedPopover progress={progress} onSearchAgain={() => {}} />}</WebStory>
 })
 
 add('only info, all should be closed', () => {
@@ -102,11 +96,7 @@ add('only info, all should be closed', () => {
         ],
     }
 
-    return (
-        <WebStory>
-            {() => <StreamingProgressSkippedPopover progress={progress} onSearchAgain={() => {}} history={history} />}
-        </WebStory>
-    )
+    return <WebStory>{() => <StreamingProgressSkippedPopover progress={progress} onSearchAgain={() => {}} />}</WebStory>
 })
 
 add('only one info, should be open', () => {
@@ -128,9 +118,5 @@ add('only one info, should be open', () => {
         ],
     }
 
-    return (
-        <WebStory>
-            {() => <StreamingProgressSkippedPopover progress={progress} onSearchAgain={() => {}} history={history} />}
-        </WebStory>
-    )
+    return <WebStory>{() => <StreamingProgressSkippedPopover progress={progress} onSearchAgain={() => {}} />}</WebStory>
 })

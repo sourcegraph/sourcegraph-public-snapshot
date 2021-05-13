@@ -52,7 +52,6 @@ export const InsightsRouter: React.FunctionComponent<InsightsRouterProps> = prop
     return (
         <Switch>
             <Route
-                /* eslint-disable-next-line react/jsx-no-bind */
                 render={props => (
                     <InsightsLazyPage isCreationUIEnabled={isCreationUIEnabled} {...outerProps} {...props} />
                 )}
@@ -64,13 +63,11 @@ export const InsightsRouter: React.FunctionComponent<InsightsRouterProps> = prop
                 <>
                     <Route
                         path={`${match.url}/create-search-insight`}
-                        /* eslint-disable-next-line react/jsx-no-bind */
                         render={props => <SearchInsightCreationLazyPage {...outerProps} {...props} />}
                     />
 
                     <Route
                         path={`${match.url}/create-lang-stats-insight`}
-                        /* eslint-disable-next-line react/jsx-no-bind */
                         render={props => <LangStatsInsightCreationLazyPage {...outerProps} {...props} />}
                     />
 

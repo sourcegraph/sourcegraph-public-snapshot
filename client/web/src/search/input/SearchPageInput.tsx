@@ -156,12 +156,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                     </div>
                 )}
                 <QuickLinks quickLinks={quickLinks} className="search-page__input-sub-container" />
-                <Notices
-                    className="my-3"
-                    location="home"
-                    settingsCascade={props.settingsCascade}
-                    history={props.history}
-                />
+                <Notices className="my-3" location="home" settingsCascade={props.settingsCascade} />
             </Form>
         </div>
     )

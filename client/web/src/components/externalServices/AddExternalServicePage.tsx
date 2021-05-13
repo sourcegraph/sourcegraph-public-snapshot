@@ -112,10 +112,7 @@ export const AddExternalServicePage: React.FunctionComponent<Props> = ({
                     </div>
                     <div className="alert alert-warning">
                         <h4>Warning</h4>
-                        <Markdown
-                            dangerousInnerHTML={renderMarkdown(createdExternalService.warning)}
-                            history={history}
-                        />
+                        <Markdown dangerousInnerHTML={renderMarkdown(createdExternalService.warning)} />
                     </div>
                 </div>
             ) : (

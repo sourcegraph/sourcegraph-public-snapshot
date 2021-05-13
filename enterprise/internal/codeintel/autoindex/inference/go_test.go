@@ -27,7 +27,7 @@ func TestLSIFGoJobRecognizerCanIndex(t *testing.T) {
 		name := strings.Join(testCase.paths, ", ")
 
 		t.Run(name, func(t *testing.T) {
-			if value := recognizer.CanIndex(testCase.paths, NewMockGitserverClientWrapper()); value != testCase.expected {
+			if value := recognizer.CanIndexRepo(testCase.paths, NewMockGitserverClientWrapper()); value != testCase.expected {
 				t.Errorf("unexpected result from CanIndex. want=%v have=%v", testCase.expected, value)
 			}
 		})

@@ -43,7 +43,6 @@ export const RegistryArea: React.FunctionComponent<Props> = ({
     return (
         <div className="registry-area">
             <Switch>
-                {/* eslint-disable react/jsx-no-bind */}
                 <Route
                     path={`${match.url}/new`}
                     key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
@@ -52,7 +51,7 @@ export const RegistryArea: React.FunctionComponent<Props> = ({
                         <RegistryNewExtensionPage {...routeComponentProps} {...transferProps} />
                     )}
                 />
-                {/* eslint-enable react/jsx-no-bind */}
+
                 <Route key="hardcoded-key" component={NotFoundPage} />
             </Switch>
         </div>

@@ -264,6 +264,28 @@ func (c *Client) ListFiles(ctx context.Context, repositoryID int, commit string,
 	return matching, nil
 }
 
+// ListFiles returns a list of root-relative file paths matching the given pattern in a particular
+// commit of a repository.
+func (c *Client) ResolveRevision(ctx context.Context, repositoryID int, versionString string) (commitID api.CommitID, err error) {
+	ctx, endObservation := c.operations.resolveRevision.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+		log.String("versionString", versionString),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	repoName, err := c.repositoryIDToRepo(ctx, repositoryID)
+	if err != nil {
+		return "", err
+	}
+	commitID, err = git.ResolveRevision(ctx, repoName, versionString, git.ResolveRevisionOptions{})
+
+	if err != nil {
+		return "", errors.Wrap(err, "git.ResolveRevision")
+	}
+
+	return commitID, nil
+}
+
 // execGitCommand executes a git command for the given repository by identifier.
 func (c *Client) execGitCommand(ctx context.Context, repositoryID int, args ...string) (string, error) {
 	return c.execResolveRevGitCommand(ctx, repositoryID, "", args...)
