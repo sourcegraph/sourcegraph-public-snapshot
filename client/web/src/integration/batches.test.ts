@@ -571,6 +571,7 @@ describe('Batches', () => {
                                       },
                             supersedingBatchSpec: null,
                             viewerCanAdminister: true,
+                            originalInput: 'name: awesome-batch-change\ndescription: somestring',
                             applyPreview: {
                                 stats: {
                                     close: 10,
@@ -587,6 +588,7 @@ describe('Batches', () => {
                                     modified: 10,
                                     removed: 3,
                                 },
+                                totalCount: 10,
                             },
                             viewerBatchChangesCodeHosts: {
                                 totalCount: 0,
