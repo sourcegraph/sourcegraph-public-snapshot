@@ -1,6 +1,6 @@
 import { subDays } from 'date-fns'
 import * as H from 'history'
-import { isEqual } from 'lodash'
+import { isEqual, values } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import ArchiveIcon from 'mdi-react/ArchiveIcon'
 import ChartLineVariantIcon from 'mdi-react/ChartLineVariantIcon'
@@ -44,7 +44,6 @@ import { BatchChangeBurndownChart } from './BatchChangeBurndownChart'
 import { BatchChangeDetailsActionSection } from './BatchChangeDetailsActionSection'
 import { BatchChangeInfoByline } from './BatchChangeInfoByline'
 import { BatchChangeStatsCard } from './BatchChangeStatsCard'
-import { BatchSpecTab } from './BatchSpecTab'
 import { BulkOperationsAlerts } from './BulkOperationsAlerts'
 import { BulkOperationsTab } from './BulkOperationsTab'
 import { BatchChangeChangesets } from './changesets/BatchChangeChangesets'
@@ -52,6 +51,16 @@ import { ChangesetsArchivedNotice } from './ChangesetsArchivedNotice'
 import { ClosedNotice } from './ClosedNotice'
 import { SupersedingBatchSpecAlert } from './SupersedingBatchSpecAlert'
 import { UnpublishedNotice } from './UnpublishedNotice'
+
+export const TAB_NAMES = {
+    changesets: 'changesets',
+    chart: 'chart',
+    spec: 'spec',
+    archived: 'archived',
+    bulkOperations: 'bulkoperations',
+} as const
+
+const TAB_NAME_VALUES = values(TAB_NAMES) as [string, string, ...string[]]
 
 export interface BatchChangeDetailsPageProps
     extends ThemeProps,
@@ -178,7 +187,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                 className="mb-3"
             />
             <Description description={batchChange.description} />
-            <BatchChangeTabs history={history} location={location}>
+            <BatchChangeTabs history={history} location={location} tabNames={TAB_NAME_VALUES}>
                 <BatchChangeTabsList>
                     <BatchChangeTab index={0}>
                         <SourceBranchIcon className="icon-inline text-muted mr-1" />

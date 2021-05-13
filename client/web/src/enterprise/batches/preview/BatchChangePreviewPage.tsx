@@ -35,6 +35,8 @@ import { queryChangesetSpecFileDiffs, queryChangesetApplyPreview } from './list/
 import { PreviewList } from './list/PreviewList'
 import { MissingCredentialsAlert } from './MissingCredentialsAlert'
 
+const TAB_NAMES = ['changesets', 'spec'] as const
+
 export type PreviewPageAuthenticatedUser = Pick<AuthenticatedUser, 'url' | 'displayName' | 'username' | 'email'>
 
 export interface BatchChangePreviewPageProps extends ThemeProps, TelemetryProps {
@@ -121,7 +123,7 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
                 telemetryService={telemetryService}
             />
             <Description description={spec.description.description} />
-            <BatchChangeTabs history={history} location={location}>
+            <BatchChangeTabs history={history} location={location} tabNames={TAB_NAMES}>
                 <BatchChangeTabsList>
                     <BatchChangeTab index={0}>
                         <SourceBranchIcon className="icon-inline text-muted mr-1" />

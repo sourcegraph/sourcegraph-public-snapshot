@@ -12,32 +12,34 @@ import React, { useCallback } from 'react'
 
 import styles from './BatchChangeTabs.module.scss'
 
-export enum BatchChangeTabName {
-    CHANGESETS = 'changesets',
-    CHART = 'chart',
-    SPEC = 'spec',
-    ARCHIVED = 'archived',
-    BULK_OPERATIONS = 'bulkoperations',
-}
-
-const BATCH_CHANGE_TAB_NAMES = ['changesets', 'chart', 'spec', 'archived'] as const
-
 interface BatchChangeTabsProps {
     history: H.History
     location: H.Location
+    /** The ordered, short names for each tab, used to read and write from the URL parameter `?tab=xxx` */
+    tabNames: readonly [string, string, ...string[]]
 }
 
-export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({ children, history, location }) => {
+export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
+    children,
+    history,
+    location,
+    tabNames,
+}) => {
+    const defaultTab = tabNames[0]
+    const urlParameters = new URLSearchParams(location.search)
+    const tabParameter = urlParameters.get('tab') || defaultTab
+    const initialTabIndex = tabNames.indexOf(tabParameter) || 0
+
     const onChange = useCallback(
         (newIndex: number): void => {
-            const newTab = BATCH_CHANGE_TAB_NAMES[newIndex]
+            const newTab = tabNames[newIndex]
 
             const urlParameters = new URLSearchParams(location.search)
             urlParameters.delete('visible')
             urlParameters.delete('first')
             urlParameters.delete('after')
 
-            if (newTab === 'changesets') {
+            if (newTab === defaultTab) {
                 urlParameters.delete('tab')
             } else {
                 urlParameters.set('tab', newTab)
@@ -47,11 +49,11 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({
                 history.replace({ ...location, search: urlParameters.toString() })
             }
         },
-        [history, location]
+        [defaultTab, history, location, tabNames]
     )
 
     return (
-        <Tabs className={styles.batchChangeTabs} onChange={onChange}>
+        <Tabs className={styles.batchChangeTabs} defaultIndex={initialTabIndex} onChange={onChange}>
             {children}
         </Tabs>
     )
