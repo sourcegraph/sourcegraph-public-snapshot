@@ -94,8 +94,6 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
     let categorySections: JSX.Element[]
 
     if (selectedCategory === 'All') {
-        // TODO: fake pagination for now, implement soon.
-
         const filteredExtensionIDsByCategory = createRecord(ORDERED_EXTENSION_CATEGORIES, category => {
             if (enablementFilter === 'all') {
                 return extensionIDsByCategory[category].primaryExtensionIDs
