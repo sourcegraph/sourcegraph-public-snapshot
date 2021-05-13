@@ -16,6 +16,7 @@ const { add } = storiesOf('web/search/results/streaming/sidebar/SearchSidebar', 
         type: 'figma',
         url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/?node-id=1018%3A13883',
     },
+    chromatic: { viewports: [544, 577, 993] },
 })
 
 const defaultProps: SearchSidebarProps = {
