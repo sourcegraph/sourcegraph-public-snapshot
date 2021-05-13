@@ -190,7 +190,7 @@ func TestLSIFGoPackages(t *testing.T) {
 		expectedCommitNames := []string{"v2.3.2", "v0.1.0", "de0123456789"}
 		var calledCommitNames []string
 		for _, hist := range gitserver.ResolveRevisionFunc.history {
-			calledCommitNames = append(calledCommitNames, string(hist.Arg2))
+			calledCommitNames = append(calledCommitNames, hist.Arg2)
 		}
 		if diff := cmp.Diff(expectedCommitNames, calledCommitNames); diff != "" {
 			t.Errorf("unexpected commit names (-want +got):\n%s", diff)
