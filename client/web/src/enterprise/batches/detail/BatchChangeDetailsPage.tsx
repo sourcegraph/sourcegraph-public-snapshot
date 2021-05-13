@@ -29,6 +29,7 @@ import {
     BatchChangeTabs,
     BatchChangeTabsList,
 } from '../BatchChangeTabs'
+import { BatchSpec, BatchSpecMeta } from '../BatchSpec'
 import { Description } from '../Description'
 
 import {
@@ -229,7 +230,14 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                         />
                     </BatchChangeTabPanel>
                     <BatchChangeTabPanel>
-                        <BatchSpecTab batchChange={batchChange} originalInput={batchChange.currentSpec.originalInput} />
+                        <BatchSpecMeta
+                            createdAt={batchChange.createdAt}
+                            lastApplier={batchChange.lastApplier}
+                            lastAppliedAt={batchChange.lastAppliedAt}
+                            name={batchChange.name}
+                            originalInput={batchChange.currentSpec.originalInput}
+                        />
+                        <BatchSpec originalInput={batchChange.currentSpec.originalInput} />
                     </BatchChangeTabPanel>
                     <BatchChangeTabPanel>
                         <BatchChangeChangesets
