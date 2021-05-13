@@ -135,15 +135,7 @@ export class ConnectionNodes<C extends Connection<N>, N, NP = {}, HP = {}> exten
                     <p className="filtered-connection__summary" data-testid="summary">
                         <small>
                             <span>
-                                {totalCount} {pluralize(this.props.noun, totalCount, this.props.pluralNoun)}{' '}
-                                {this.props.connectionQuery ? (
-                                    <span>
-                                        {' '}
-                                        matching <strong>{this.props.connectionQuery}</strong>
-                                    </span>
-                                ) : (
-                                    'total'
-                                )}
+                                {totalCount} {pluralize(this.props.noun, totalCount, this.props.pluralNoun)} total
                             </span>{' '}
                             {this.props.connection.nodes.length < totalCount &&
                                 `(showing first ${this.props.connection.nodes.length})`}
@@ -155,14 +147,7 @@ export class ConnectionNodes<C extends Connection<N>, N, NP = {}, HP = {}> exten
             } else if (totalCount === 0) {
                 summary = this.props.emptyElement || (
                     <p className="filtered-connection__summary" data-testid="summary">
-                        <small>
-                            No {this.props.pluralNoun}{' '}
-                            {this.props.connectionQuery && (
-                                <span>
-                                    matching <strong>{this.props.connectionQuery}</strong>
-                                </span>
-                            )}
-                        </small>
+                        <small>No {this.props.pluralNoun} found</small>
                     </p>
                 )
             }

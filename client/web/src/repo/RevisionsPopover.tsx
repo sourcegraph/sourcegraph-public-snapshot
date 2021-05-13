@@ -28,6 +28,7 @@ import { eventLogger } from '../tracking/eventLogger'
 import { replaceRevisionInURL } from '../util/url'
 
 import { GitReferenceNode, queryGitReferences } from './GitReference'
+import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 const fetchRepositoryCommits = memoizeObservable(
     (
@@ -215,7 +216,7 @@ export const RevisionsPopover: React.FunctionComponent<Props> = props => {
 
     const [tabIndex, setTabIndex] = useLocalStorage(LAST_TAB_STORAGE_KEY, 0)
     const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
-
+    const [isRedesignEnabled] = useRedesignToggle()
     const queryGitBranches = (args: FilteredConnectionQueryArguments): Observable<GitRefConnectionFields> =>
         queryGitReferences({ ...args, repo: props.repo, type: GitRefType.GIT_BRANCH, withBehindAhead: false })
 
@@ -241,7 +242,7 @@ export const RevisionsPopover: React.FunctionComponent<Props> = props => {
         autoFocus: true,
         history: props.history,
         location: props.location,
-        noSummaryIfAllNodesVisible: true,
+        noSummaryIfAllNodesVisible: isRedesignEnabled ? false : true,
         useURLQuery: false,
     }
 

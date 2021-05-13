@@ -1,5 +1,6 @@
 $compact-summary-padding: 0.5rem 0.75rem;
 $compact-summary-divider: solid 1px var(--border-color-2);
+$compact-summary-min-height: 2.75rem;
 
 .filtered-connection-filter-control {
     display: flex;
@@ -33,8 +34,10 @@ $compact-summary-divider: solid 1px var(--border-color-2);
         flex: 0 0;
 
         .theme-redesign & {
+            // Consistent with the summary to avoid layout shifting
             border-top: $compact-summary-divider;
             padding: $compact-summary-padding;
+            min-height: $compact-summary-min-height;
         }
     }
     &--compact &__error {
@@ -53,12 +56,23 @@ $compact-summary-divider: solid 1px var(--border-color-2);
             flex-direction: row;
             justify-content: space-between;
             align-items: center;
+            min-height: $compact-summary-min-height;
         }
     }
     &--compact &__summary-container {
         .theme-redesign & {
             padding: $compact-summary-padding;
             border-top: $compact-summary-divider;
+
+            // No need to display summary twice in compact mode
+            &--top {
+                display: none;
+            }
+
+            // Ensure bottom is aligned to bottom of container
+            &--bottom {
+                margin-top: auto;
+            }
         }
     }
     &--noncompact &__summary-container {
@@ -105,6 +119,8 @@ $compact-summary-divider: solid 1px var(--border-color-2);
 
     &__show-more {
         flex: 0 0 auto;
-        margin-left: auto;
+        .theme-redesign & {
+            margin-left: auto;
+        }
     }
 }
