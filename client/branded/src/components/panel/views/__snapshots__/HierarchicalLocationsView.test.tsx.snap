@@ -20,8 +20,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
             data-testid="result-container"
           >
             <div
-              className="result-container__header result-container__header--collapsible"
-              onClick={[Function]}
+              className="result-container__header"
             >
               <svg
                 className="mdi-icon icon-inline"
@@ -41,9 +40,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                 className="result-container__header-title test-search-result-label"
                 data-testid="result-container-header"
               >
-                <span
-                  onClick={[Function]}
-                >
+                <div>
                   <a
                     href="/github.com/foo/bar"
                   >
@@ -58,13 +55,15 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                       
                     </strong>
                   </a>
-                </span>
+                </div>
                 <span
                   className="ml-2"
                 />
               </div>
-              <small
-                className="result-container__toggle-matches-container"
+              <button
+                className="result-container__toggle-matches-container btn btn-sm btn-link px-1 py-0"
+                onClick={[Function]}
+                type="button"
               >
                 <svg
                   className="mdi-icon icon-inline"
@@ -77,7 +76,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                     d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
                   />
                 </svg>
-              </small>
+              </button>
             </div>
             <div
               className="file-match-children"
@@ -249,8 +248,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
             data-testid="result-container"
           >
             <div
-              className="result-container__header result-container__header--collapsible"
-              onClick={[Function]}
+              className="result-container__header"
             >
               <svg
                 className="mdi-icon icon-inline"
@@ -270,9 +268,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                 className="result-container__header-title test-search-result-label"
                 data-testid="result-container-header"
               >
-                <span
-                  onClick={[Function]}
-                >
+                <div>
                   <a
                     href="/github.com/foo/bar"
                   >
@@ -287,13 +283,15 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                       file1.txt
                     </strong>
                   </a>
-                </span>
+                </div>
                 <span
                   className="ml-2"
                 />
               </div>
-              <small
-                className="result-container__toggle-matches-container"
+              <button
+                className="result-container__toggle-matches-container btn btn-sm btn-link px-1 py-0"
+                onClick={[Function]}
+                type="button"
               >
                 <svg
                   className="mdi-icon icon-inline"
@@ -306,7 +304,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                     d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
                   />
                 </svg>
-              </small>
+              </button>
             </div>
             <div
               className="file-match-children"
@@ -428,8 +426,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
             data-testid="result-container"
           >
             <div
-              className="result-container__header result-container__header--collapsible"
-              onClick={[Function]}
+              className="result-container__header"
             >
               <svg
                 className="mdi-icon icon-inline"
@@ -449,9 +446,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                 className="result-container__header-title test-search-result-label"
                 data-testid="result-container-header"
               >
-                <span
-                  onClick={[Function]}
-                >
+                <div>
                   <a
                     href="/github.com/foo/bar"
                   >
@@ -466,13 +461,15 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                       
                     </strong>
                   </a>
-                </span>
+                </div>
                 <span
                   className="ml-2"
                 />
               </div>
-              <small
-                className="result-container__toggle-matches-container"
+              <button
+                className="result-container__toggle-matches-container btn btn-sm btn-link px-1 py-0"
+                onClick={[Function]}
+                type="button"
               >
                 <svg
                   className="mdi-icon icon-inline"
@@ -485,7 +482,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                     d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
                   />
                 </svg>
-              </small>
+              </button>
             </div>
             <div
               className="file-match-children"
