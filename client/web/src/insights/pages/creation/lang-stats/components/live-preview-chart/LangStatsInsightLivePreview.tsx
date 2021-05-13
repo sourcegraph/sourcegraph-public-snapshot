@@ -1,18 +1,16 @@
 import classnames from 'classnames'
 import RefreshIcon from 'mdi-react/RefreshIcon'
-import React, { useContext, useEffect, useMemo, useState } from 'react'
+import React, { useMemo } from 'react'
 import { useHistory } from 'react-router-dom'
-import type { PieChartContent } from 'sourcegraph'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { useDebounce } from '@sourcegraph/wildcard/src'
+import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { ErrorAlert } from '../../../../../../components/alerts'
 import { ChartViewContent } from '../../../../../../views/ChartViewContent/ChartViewContent'
-import { InsightsApiContext } from '../../../../../core/backend/api-provider'
 
+import { useLangStatsPreviewContent } from './hooks/use-lang-stats-preview-content'
 import styles from './LangStatsInsightLivePreview.module.scss'
 import { DEFAULT_PREVIEW_MOCK } from './live-preview-mock-data'
 
@@ -39,14 +37,8 @@ export const LangStatsInsightLivePreview: React.FunctionComponent<LangStatsInsig
     const { repository = '', threshold, disabled = false, className } = props
 
     const history = useHistory()
-    const { getLangStatsInsightContent } = useContext(InsightsApiContext)
 
-    const [loading, setLoading] = useState<boolean>(false)
-    const [dataOrError, setDataOrError] = useState<PieChartContent<any> | Error | undefined>()
-    // Synthetic deps to trigger dry run for fetching live preview data
-    const [lastPreviewVersion, setLastPreviewVersion] = useState(0)
-
-    const liveSettings = useMemo(
+    const previewSetting = useMemo(
         () => ({
             repository: repository.trim(),
             threshold: threshold / 100,
@@ -54,36 +46,15 @@ export const LangStatsInsightLivePreview: React.FunctionComponent<LangStatsInsig
         [repository, threshold]
     )
 
-    const liveDebouncedSettings = useDebounce(liveSettings, 500)
-
-    useEffect(() => {
-        let hasRequestCanceled = false
-        setLoading(true)
-        setDataOrError(undefined)
-
-        if (disabled) {
-            setLoading(false)
-
-            return
-        }
-
-        getLangStatsInsightContent(liveDebouncedSettings)
-            .then(data => !hasRequestCanceled && setDataOrError(data))
-            .catch(error => !hasRequestCanceled && setDataOrError(asError(error)))
-            .finally(() => !hasRequestCanceled && setLoading(false))
-
-        return () => {
-            hasRequestCanceled = true
-        }
-    }, [disabled, lastPreviewVersion, getLangStatsInsightContent, liveDebouncedSettings])
+    const { loading, dataOrError, update } = useLangStatsPreviewContent({ disabled, previewSetting })
 
     return (
         <div className={classnames(styles.livePreview, className)}>
             <button
                 type="button"
                 disabled={disabled}
-                className={classnames('btn btn-light', styles.livePreviewUpdateButton)}
-                onClick={() => setLastPreviewVersion(version => version + 1)}
+                className={classnames('btn btn-secondary', styles.livePreviewUpdateButton)}
+                onClick={update}
             >
                 Update live preview
                 <RefreshIcon size="1rem" className={styles.livePreviewUpdateButtonIcon} />
@@ -106,7 +77,7 @@ export const LangStatsInsightLivePreview: React.FunctionComponent<LangStatsInsig
                 <div className={styles.livePreviewChartContainer}>
                     <ChartViewContent
                         className={classnames(styles.livePreviewChart, {
-                            [styles.livePreviewChartLoading]: !dataOrError,
+                            [styles.livePreviewChartWithMockData]: !dataOrError,
                         })}
                         history={history}
                         viewID="search-insight-live-preview"

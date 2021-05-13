@@ -29,7 +29,9 @@ export interface SearchInsightSettings {
 }
 
 export interface LangStatsInsightsSettings {
+    /** URL of git repository from which statistics will be collected */
     repository: string
+    /** The threshold below which a language is counted as part of 'Other' */
     threshold: number
 }
 

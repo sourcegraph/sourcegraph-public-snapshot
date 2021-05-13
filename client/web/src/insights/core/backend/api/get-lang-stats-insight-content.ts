@@ -14,7 +14,7 @@ const isLinguistLanguage = (language: string): language is keyof typeof linguist
  * This logic is a simplified copy of fetch logic of lang-stats-based code insight extension.
  * In order to have live preview for creation UI we had to copy this logic from
  * extension.
- *
+ * See https://github.com/sourcegraph/sourcegraph-code-stats-insights/blob/master/src/code-stats-insights.ts
  * */
 export async function getLangStatsInsightContent(settings: LangStatsInsightsSettings): Promise<PieChartContent<any>> {
     const { repository, threshold = 0.03 } = settings
