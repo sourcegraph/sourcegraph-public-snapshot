@@ -3,7 +3,7 @@ import H from 'history'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import MenuIcon from 'mdi-react/MenuIcon'
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { LinkProps, NavLink as RouterLink } from 'react-router-dom'
 
 import navActionStyles from './NavAction.module.scss'
@@ -32,6 +32,26 @@ interface NavLinkProps extends NavItemProps, Pick<LinkProps<H.LocationState>, 't
     external?: boolean
 }
 
+const useOutsideClickDetector = (
+    reference: React.RefObject<HTMLDivElement>
+): [boolean, React.Dispatch<React.SetStateAction<boolean>>] => {
+    const [outsideClick, setOutsideClick] = useState(true)
+
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent): void {
+            if (reference.current && !reference.current.contains(event.target as Node | null)) {
+                setOutsideClick(false)
+            }
+        }
+        document.addEventListener('mouseup', handleClickOutside)
+        return () => {
+            document.removeEventListener('mouseup', handleClickOutside)
+        }
+    }, [reference, setOutsideClick])
+
+    return [outsideClick, setOutsideClick]
+}
+
 export const NavBar = ({ children, logo }: NavBarProps): JSX.Element => (
     <nav aria-label="Main Menu" className={navBarStyles.navbar}>
         <h1 className={navBarStyles.logo}>
@@ -43,21 +63,22 @@ export const NavBar = ({ children, logo }: NavBarProps): JSX.Element => (
 )
 
 export const NavGroup = ({ children }: NavGroupProps): JSX.Element => {
-    const [open, setOpen] = useState(true)
+    const menuReference = useRef<HTMLDivElement>(null)
+    const [open, setOpen] = useOutsideClickDetector(menuReference)
 
     return (
-        <>
+        <div className={navBarStyles.menu} ref={menuReference}>
             <button
                 className={classNames('btn', navBarStyles.menuButton)}
                 type="button"
-                onClick={() => setOpen(() => !open)}
+                onClick={() => setOpen(!open)}
                 aria-label="Sections Navigation"
             >
                 <MenuIcon className="icon-inline" />
-                {open ? <ChevronDownIcon className="icon-inline" /> : <ChevronUpIcon className="icon-inline" />}
+                {!open ? <ChevronDownIcon className="icon-inline" /> : <ChevronUpIcon className="icon-inline" />}
             </button>
-            <ul className={classNames(navBarStyles.list, { [navBarStyles.menuClose]: open })}>{children}</ul>
-        </>
+            <ul className={classNames(navBarStyles.list, { [navBarStyles.menuClose]: !open })}>{children}</ul>
+        </div>
     )
 }
 
