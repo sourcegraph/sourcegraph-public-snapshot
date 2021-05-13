@@ -107,6 +107,7 @@ func createDBWorkerStoreForTriggerJobs(s *cm.Store) dbworkerstore.Store {
 		TableName:         "cm_trigger_jobs",
 		ColumnExpressions: cm.TriggerJobsColumns,
 		Scan:              cm.ScanTriggerJobs,
+		HeartbeatInterval: 15 * time.Second,
 		StalledMaxAge:     60 * time.Second,
 		RetryAfter:        10 * time.Second,
 		MaxNumRetries:     3,
@@ -120,6 +121,7 @@ func createDBWorkerStoreForActionJobs(s *cm.Store) dbworkerstore.Store {
 		TableName:         "cm_action_jobs",
 		ColumnExpressions: cm.ActionJobsColumns,
 		Scan:              cm.ScanActionJobs,
+		HeartbeatInterval: 15 * time.Second,
 		StalledMaxAge:     60 * time.Second,
 		RetryAfter:        10 * time.Second,
 		MaxNumRetries:     3,
@@ -131,14 +133,18 @@ type queryRunner struct {
 	*cm.Store
 }
 
-func (r *queryRunner) Handle(ctx context.Context, workerStore dbworkerstore.Store, record workerutil.Record) (err error) {
+func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err error) {
 	defer func() {
 		if err != nil {
 			log15.Error("queryRunner.Handle", "error", err)
 		}
 	}()
 
-	s := r.Store.With(workerStore)
+	s, err := r.Store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = s.Done(err) }()
 
 	var q *cm.MonitorQuery
 	q, err = s.GetQueryByRecordID(ctx, record.RecordID())
@@ -182,7 +188,7 @@ type actionRunner struct {
 	*cm.Store
 }
 
-func (r *actionRunner) Handle(ctx context.Context, workerStore dbworkerstore.Store, record workerutil.Record) (err error) {
+func (r *actionRunner) Handle(ctx context.Context, record workerutil.Record) (err error) {
 	log15.Info("actionRunner.Handle starting")
 	defer func() {
 		if err != nil {
@@ -190,7 +196,11 @@ func (r *actionRunner) Handle(ctx context.Context, workerStore dbworkerstore.Sto
 		}
 	}()
 
-	s := r.Store.With(workerStore)
+	s, err := r.Store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = s.Done(err) }()
 
 	var (
 		j    *cm.ActionJob
