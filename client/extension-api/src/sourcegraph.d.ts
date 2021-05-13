@@ -1165,6 +1165,9 @@ declare module 'sourcegraph' {
          * Log a message to the console if logs for the extension are enabled in user settings.
          *
          * Messages are automatically prefixed by the extension's ID.
+         *
+         * Note that messages may be transferred via the structured clone algorithm. Ensure that your messages are
+         * [cloneable](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm#things_that_dont_work_with_structured_clone)
          */
         export function log(message?: any, ...optionalParams: any[]): void
     }

@@ -327,7 +327,11 @@ export function createExtensionAPIFactory(
                 log: (...data) => {
                     if (state.activeLoggers.has(extensionID)) {
                         // Use a light gray background to differentiate extension ID from the message
-                        console.log(`🧩 %c${extensionID}`, 'background-color: lightgrey;', ...data)
+                        clientAPI
+                            .logExtensionMessage(`🧩 %c${extensionID}`, 'background-color: lightgrey;', ...data)
+                            .catch(error => {
+                                console.error('Error sending extension message to main thread:', error)
+                            })
                     }
                 },
             },
