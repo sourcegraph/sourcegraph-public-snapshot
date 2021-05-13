@@ -264,6 +264,12 @@ const repoTagsCreateQueryFmtstr = `
 -- source: internal/database/repo_tags.go:Create
 INSERT INTO repo_tags (repo_id, tag)
 VALUES (%s, %s)
+ON CONFLICT
+	(repo_id, tag)
+WHERE
+	deleted_at IS NULL
+DO UPDATE
+	SET updated_at = NOW()
 RETURNING %s
 `
 

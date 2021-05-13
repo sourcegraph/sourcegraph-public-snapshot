@@ -6,9 +6,15 @@ CREATE TABLE IF NOT EXISTS repo_tags (
     tag VARCHAR(100) NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    deleted_at TIMESTAMP WITH TIME ZONE,
-    CONSTRAINT repo_tag UNIQUE (repo_id, tag, deleted_at)
+    deleted_at TIMESTAMP WITH TIME ZONE
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS
+    repo_tags_tag_unique_idx
+ON
+    repo_tags (repo_id, tag)
+WHERE
+    deleted_at IS NULL;
 
 CREATE INDEX IF NOT EXISTS
     repo_tags_deleted_at_idx
