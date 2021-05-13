@@ -29,24 +29,10 @@ export const ConnectionNodesSummaryShowMore: React.FunctionComponent<ConnectionN
     )
 }
 
-interface ConnectionNodesSummaryProps {
-    summary: React.ReactFragment | undefined
-    className?: string
-}
-
-export const ConnectionNodesSummary: React.FunctionComponent<ConnectionNodesSummaryProps> = ({
-    summary,
-    className,
-    children,
-}) => {
-    if (!summary && !children) {
+export const ConnectionNodesSummary: React.FunctionComponent = ({ children }) => {
+    if (!children) {
         return null
     }
 
-    return (
-        <div className={classNames('filtered-connection__summary-container', className)}>
-            {summary}
-            {children}
-        </div>
-    )
+    return <div className="filtered-connection__summary-container">{children}</div>
 }
