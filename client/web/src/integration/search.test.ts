@@ -3,7 +3,7 @@ import { test } from 'mocha'
 import { Key } from 'ts-key-enum'
 
 import { SharedGraphQlOperations, SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
-import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
+import { Driver, createDriverForTest, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import {
@@ -128,13 +128,14 @@ describe('Search', () => {
     const getSearchFieldValue = (driver: Driver): Promise<string | undefined> =>
         driver.page.evaluate(() => document.querySelector<HTMLTextAreaElement>('#monaco-query-input textarea')?.value)
 
-    test('Styled correctly on results page', async () => {
+    test('Styled correctly on GraphQL search results page', async () => {
         testContext.overrideGraphQL({
             ...commonSearchGraphQLResults,
         })
         await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=foo')
         await driver.page.waitForSelector('#monaco-query-input')
-        await percySnapshotWithVariants(driver.page, 'Search results page')
+        // GraphQL search is not supported with redesign enabled so no need to take snapshots of variants
+        await percySnapshot(driver.page, 'Search results page')
     })
 
     describe('Search filters', () => {
