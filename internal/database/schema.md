@@ -1361,6 +1361,7 @@ Indexes:
 Indexes:
     "repo_tags_pkey" PRIMARY KEY, btree (id)
     "repo_tag" UNIQUE CONSTRAINT, btree (repo_id, tag, deleted_at)
+    "repo_tags_deleted_at_idx" btree (deleted_at)
     "repo_tags_tag_trgm" gin (lower(tag::text) gin_trgm_ops)
 Foreign-key constraints:
     "repo_tags_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON UPDATE CASCADE ON DELETE RESTRICT
