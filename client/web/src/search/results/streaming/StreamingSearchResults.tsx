@@ -196,42 +196,59 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
 
     const [isRedesignEnabled] = useRedesignToggle()
 
+    const infobar = (
+        <SearchResultsInfoBar
+            {...props}
+            query={query}
+            resultsFound={results ? results.results.length > 0 : false}
+            className={classNames(
+                'flex-grow-1',
+                { 'border-bottom': !isRedesignEnabled },
+                styles.streamingSearchResultsInfobar
+            )}
+            allExpanded={allExpanded}
+            onExpandAllResultsToggle={onExpandAllResultsToggle}
+            onSaveQueryClick={onSaveQueryClick}
+            stats={
+                <StreamingProgress
+                    progress={results?.progress || { durationMs: 0, matchCount: 0, skipped: [] }}
+                    state={results?.state || 'loading'}
+                    onSearchAgain={onSearchAgain}
+                    showTrace={!!trace}
+                />
+            }
+        />
+    )
+
     return (
         <div className={classNames('test-search-results search-results', styles.streamingSearchResults)}>
             <PageTitle key="page-title" title={query} />
 
             {isRedesignEnabled ? (
-                <SearchSidebar {...props} query={props.navbarSearchQueryState.query} filters={results?.filters} />
+                <>
+                    <SearchSidebar
+                        {...props}
+                        className={styles.streamingSearchResultsSidebar}
+                        query={props.navbarSearchQueryState.query}
+                        filters={results?.filters}
+                    />
+                    {infobar}
+                </>
             ) : (
                 <StreamingSearchResultsFilterBars {...props} results={results} />
             )}
             <div className={classNames('search-results-list', styles.streamingSearchResultsContainer)}>
                 <div className="d-lg-flex mb-2 align-items-end flex-wrap">
                     {!isRedesignEnabled && (
-                        <SearchResultTypeTabs
-                            {...props}
-                            query={props.navbarSearchQueryState.query}
-                            className="search-results-list__tabs"
-                        />
-                    )}
-
-                    <SearchResultsInfoBar
-                        {...props}
-                        query={query}
-                        resultsFound={results ? results.results.length > 0 : false}
-                        className={classNames('flex-grow-1', { 'border-bottom': !isRedesignEnabled })}
-                        allExpanded={allExpanded}
-                        onExpandAllResultsToggle={onExpandAllResultsToggle}
-                        onSaveQueryClick={onSaveQueryClick}
-                        stats={
-                            <StreamingProgress
-                                progress={results?.progress || { durationMs: 0, matchCount: 0, skipped: [] }}
-                                state={results?.state || 'loading'}
-                                onSearchAgain={onSearchAgain}
-                                showTrace={!!trace}
+                        <>
+                            <SearchResultTypeTabs
+                                {...props}
+                                query={props.navbarSearchQueryState.query}
+                                className="search-results-list__tabs"
                             />
-                        }
-                    />
+                            {infobar}
+                        </>
+                    )}
                 </div>
 
                 {showVersionContextWarning && (
