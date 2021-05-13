@@ -5,6 +5,7 @@ import { fromEvent, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 
 import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { replaceRevisionInURL } from '../../util/url'
 import { RepoHeaderContext } from '../RepoHeader'
@@ -27,7 +28,8 @@ export class GoToPermalinkAction extends React.PureComponent<
 
         location: H.Location
         history: H.History
-    } & RepoHeaderContext
+    } & RepoHeaderContext &
+        TelemetryProps
 > {
     private subscriptions = new Subscription()
 
@@ -64,7 +66,11 @@ export class GoToPermalinkAction extends React.PureComponent<
 
         if (this.props.actionType === 'dropdown') {
             return (
-                <ButtonLink className="nav-link repo-header__file-action" to={this.permalinkURL}>
+                <ButtonLink
+                    className="nav-link repo-header__file-action"
+                    to={this.permalinkURL}
+                    onSelect={this.onClick.bind(this)}
+                >
                     <LinkIcon className="icon-inline" />
                     <span>Permalink (with full Git commit SHA)</span>
                 </ButtonLink>
@@ -72,10 +78,21 @@ export class GoToPermalinkAction extends React.PureComponent<
         }
 
         return (
-            <ButtonLink to={this.permalinkURL} data-tooltip="Permalink (with full Git commit SHA)">
+            <ButtonLink
+                to={this.permalinkURL}
+                data-tooltip="Permalink (with full Git commit SHA)"
+                onSelect={this.onClick.bind(this)}
+            >
                 <LinkIcon className="icon-inline" />
             </ButtonLink>
         )
+    }
+
+    private onClick(): void {
+        this.props.telemetryService.log('PermalinkClicked', {
+            repoName: this.props.repoName,
+            commitID: this.props.commitID,
+        })
     }
 
     private get permalinkURL(): string {
