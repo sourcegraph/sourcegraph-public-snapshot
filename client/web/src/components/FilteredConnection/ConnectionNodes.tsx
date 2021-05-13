@@ -4,7 +4,11 @@ import * as React from 'react'
 
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
+<<<<<<< HEAD
 import { ConnectionNodesSummaryShowMore } from './ConnectionNodesSummary'
+=======
+import { ConnectionNodesSummary, ConnectionNodesSummaryShowMore } from './ConnectionNodesSummary'
+>>>>>>> f7f5061c41 (this is fun)
 import { Connection } from './ConnectionType'
 import { hasID } from './utils'
 
@@ -133,9 +137,15 @@ export class ConnectionNodes<C extends Connection<N>, N, NP = {}, HP = {}> exten
                 ) : (
                     <p className="filtered-connection__summary" data-testid="summary">
                         <small>
-                            <span>
-                                {totalCount} {pluralize(this.props.noun, totalCount, this.props.pluralNoun)} total
-                            </span>{' '}
+                            {totalCount} {pluralize(this.props.noun, totalCount, this.props.pluralNoun)}{' '}
+                            {this.props.connectionQuery ? (
+                                <span>
+                                    {' '}
+                                    matching <strong>{this.props.connectionQuery}</strong>
+                                </span>
+                            ) : (
+                                'total'
+                            )}
                             {this.props.connection.nodes.length < totalCount &&
                                 `(showing first ${this.props.connection.nodes.length})`}
                         </small>
@@ -146,7 +156,14 @@ export class ConnectionNodes<C extends Connection<N>, N, NP = {}, HP = {}> exten
             } else if (totalCount === 0) {
                 summary = this.props.emptyElement || (
                     <p className="filtered-connection__summary" data-testid="summary">
-                        <small>No {this.props.pluralNoun} found</small>
+                        <small>
+                            No {this.props.pluralNoun}{' '}
+                            {this.props.connectionQuery && (
+                                <span>
+                                    matching <strong>{this.props.connectionQuery}</strong>
+                                </span>
+                            )}
+                        </small>
                     </p>
                 )
             }

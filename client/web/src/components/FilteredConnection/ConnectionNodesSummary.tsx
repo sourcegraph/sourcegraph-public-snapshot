@@ -3,24 +3,18 @@ import * as React from 'react'
 
 import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
-interface ConnectionNodesSummaryProps {
-    summary: React.ReactFragment | undefined
-    displayShowMoreButton?: boolean
+interface ConnectionNodesSummaryShowMoreProps {
     onShowMore?: () => void
     showMoreClassName?: string
-    className?: string
 }
 
-export const ConnectionNodesSummary: React.FunctionComponent<ConnectionNodesSummaryProps> = ({
-    summary,
-    displayShowMoreButton,
-    showMoreClassName,
+export const ConnectionNodesSummaryShowMore: React.FunctionComponent<ConnectionNodesSummaryShowMoreProps> = ({
     onShowMore,
-    className,
+    showMoreClassName,
 }) => {
     const [isRedesignEnabled] = useRedesignToggle()
 
-    const showMoreButton = displayShowMoreButton && (
+    return (
         <button
             type="button"
             className={classNames(
@@ -33,11 +27,26 @@ export const ConnectionNodesSummary: React.FunctionComponent<ConnectionNodesSumm
             Show more
         </button>
     )
+}
+
+interface ConnectionNodesSummaryProps {
+    summary: React.ReactFragment | undefined
+    className?: string
+}
+
+export const ConnectionNodesSummary: React.FunctionComponent<ConnectionNodesSummaryProps> = ({
+    summary,
+    className,
+    children,
+}) => {
+    if (!summary && !children) {
+        return null
+    }
 
     return (
         <div className={classNames('filtered-connection__summary-container', className)}>
             {summary}
-            {showMoreButton}
+            {children}
         </div>
     )
 }

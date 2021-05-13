@@ -63,16 +63,6 @@ $compact-summary-min-height: 2.75rem;
             padding: $compact-summary-padding;
             border-top: $compact-summary-divider;
             min-height: $compact-summary-min-height;
-
-            // No need to display summary twice in compact mode
-            &--top {
-                display: none;
-            }
-
-            // Ensure bottom is aligned to bottom of container
-            &--bottom {
-                margin-top: auto;
-            }
         }
     }
     &--noncompact &__summary-container {
