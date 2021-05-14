@@ -2,11 +2,17 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"testing"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/errors"
 	"github.com/graph-gophers/graphql-go/gqltesting"
+
+	"github.com/sourcegraph/sourcegraph/schema"
+
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -135,7 +141,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		})
 	})
 
-	t.Run("authenticated as different user who is a site-admin", func(t *testing.T) {
+	t.Run("authenticated as different user who is a site-admin. Default config", func(t *testing.T) {
 		resetMocks()
 		const differentSiteAdminUID = 234
 		mockAccessTokensCreate(t, differentSiteAdminUID, []string{authz.ScopeUserAll})
@@ -143,6 +149,42 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 			return &types.User{ID: differentSiteAdminUID, SiteAdmin: true}, nil
 		}
 		defer func() { database.Mocks.Users.GetByCurrentAuthUser = nil }()
+
+		gqltesting.RunTests(t, []*gqltesting.Test{
+			{
+				Context: actor.WithActor(context.Background(), &actor.Actor{UID: differentSiteAdminUID}),
+				Schema:  mustParseGraphQLSchema(t),
+				Query: `
+				mutation {
+					createAccessToken(user: "` + uid1GQLID + `", scopes: ["user:all"], note: "n") {
+						id
+						token
+					}
+				}
+			`,
+				ExpectedResult: `null`,
+				ExpectedErrors: []*errors.QueryError{
+					{
+						Path:          []interface{}{"createAccessToken"},
+						Message:       "Must be authenticated as user with id 1",
+						ResolverError: &backend.InsufficientAuthorizationError{Message: fmt.Sprintf("Must be authenticated as user with id %d", 1)},
+					},
+				},
+			},
+		})
+	})
+
+	t.Run("authenticated as different user who is a site-admin. Admin allowed", func(t *testing.T) {
+		resetMocks()
+		const differentSiteAdminUID = 234
+		mockAccessTokensCreate(t, differentSiteAdminUID, []string{authz.ScopeUserAll})
+		database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
+			return &types.User{ID: differentSiteAdminUID, SiteAdmin: true}, nil
+		}
+		defer func() { database.Mocks.Users.GetByCurrentAuthUser = nil }()
+
+		conf.Get().AuthAccessTokens = &schema.AuthAccessTokens{Allow: string(conf.AccessTokensAdmin)}
+		defer func() { conf.Get().AuthAccessTokens = nil }()
 
 		gqltesting.RunTests(t, []*gqltesting.Test{
 			{
