@@ -20,6 +20,12 @@
     margin: 0 0.5rem;
     padding: 0;
     height: 100%;
+    &:first-of-type {
+        margin-left: 0;
+    }
+    &:last-of-type {
+        margin-right: 0;
+    }
 }
 
 // Global rule is necessary because the elements used as action items are handling margin/padding as part of their own styles.

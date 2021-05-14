@@ -8,10 +8,10 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/config"
-	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
 )
 
 const lsifGoImage = "sourcegraph/lsif-go:latest"
@@ -93,7 +93,8 @@ func (lsifGoJobRecognizer) EnsurePackageRepo(ctx context.Context, pkg semantic.P
 		versionString = matches[2]
 	}
 
-	repoName := api.RepoName(pkg.Name)
+	splitRepo := strings.Split(pkg.Name, "/")
+	repoName := api.RepoName(splitRepo[0] + "/" + splitRepo[1] + "/" + splitRepo[2])
 	repoUpdateResponse, err := repoUpdater.EnqueueRepoUpdate(ctx, repoName)
 	if err != nil {
 		if errcode.IsNotFound(err) {

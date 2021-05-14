@@ -9,9 +9,9 @@ import (
 	"time"
 
 	dbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
-	semantic "github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	semantic "github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
 )
 
 // MockDBStore is a mock implementation of the DBStore interface (from the
