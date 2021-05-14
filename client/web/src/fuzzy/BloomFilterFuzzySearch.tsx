@@ -60,6 +60,7 @@ export class BloomFilterFuzzySearch extends FuzzySearch {
         files: SearchValue[],
         BUCKET_SIZE: number = DEFAULT_BUCKET_SIZE
     ): BloomFilterFuzzySearch {
+        files.sort((a, b) => a.value.length - b.value.length)
         const buckets = []
         let buffer: SearchValue[] = []
         for (const file of files) {
