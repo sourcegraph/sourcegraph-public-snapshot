@@ -1,15 +1,5 @@
 @import '../../../branded/src/components/Toggle.scss';
 
-.theme-dark {
-    .extension-card {
-        &__background-section {
-            &::before {
-                opacity: 0.15;
-            }
-        }
-    }
-}
-
 .extension-card {
     &__background-section {
         height: 4.25rem;
@@ -22,6 +12,10 @@
             height: 100%;
             width: 100%;
             content: '';
+
+            .theme-dark & {
+                opacity: 0.15;
+            }
         }
     }
 
@@ -64,34 +58,9 @@
     }
 
     &--enabled {
-        .theme-light & {
-            background-color: rgba($success, 0.2);
-        }
-        .theme-dark & {
-            background-color: rgba($success, 0.2);
-        }
-    }
-
-    &__shadow {
-        position: absolute;
-        top: 0;
-        right: 0;
-        bottom: 0;
-        left: 0;
-
-        opacity: 0;
-        transition: opacity 500ms;
-
-        .theme-light & {
-            box-shadow: 0 0 0 6px rgba($success, 0.7);
-        }
-        .theme-dark & {
-            box-shadow: 0 0 0 6px rgba($success, 0.7);
-        }
-    }
-
-    &__shadow--show {
-        opacity: 1;
+        animation: extension-card__glow 2s ease-out;
+        background-color: rgba($success, 0.2);
+        color: var(--alert-success-text-color);
     }
 
     &__logo {
@@ -106,5 +75,30 @@
         right: 0.5rem + ($toggle-width / 2);
         transform: translateX(50%);
         z-index: 1;
+    }
+}
+
+// 2 second glow after enabling extension.
+@keyframes extension-card__glow {
+    0% {
+        box-shadow: none;
+    }
+
+    // 300ms delay. We could use `animation-delay`, but the
+    // percentages are cleaner with 2s vs 1.7s.
+    15% {
+        box-shadow: none;
+    }
+
+    40% {
+        box-shadow: 0 0 0 6px rgba($success, 0.17);
+    }
+
+    75% {
+        box-shadow: 0 0 0 6px rgba($success, 0.17);
+    }
+
+    100% {
+        box-shadow: none;
     }
 }

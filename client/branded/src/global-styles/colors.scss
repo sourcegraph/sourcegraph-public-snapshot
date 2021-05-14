@@ -126,6 +126,7 @@ $text-muted: var(--text-muted);
     --web-content-link-color: #1c7cd6;
     --disabled-action-bg-color: #{$oc-gray-3};
     --disabled-action-text-color: #{$oc-gray-5};
+    --alert-success-text-color: #20612e;
 }
 .theme-dark {
     // Affects default browser styles
@@ -162,6 +163,7 @@ $text-muted: var(--text-muted);
     --web-content-link-color: #329af0;
     --disabled-action-bg-color: #{$oc-gray-8};
     --disabled-action-text-color: #{$oc-gray-9};
+    --alert-success-text-color: #d7f0db;
 }
 
 // Load redesign styles
