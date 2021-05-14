@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	semantic "github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
+	semantic "github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )
