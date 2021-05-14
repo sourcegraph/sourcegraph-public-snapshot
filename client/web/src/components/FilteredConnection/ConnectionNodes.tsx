@@ -93,23 +93,20 @@ interface ConnectionNodesProps<C extends Connection<N>, N, NP = {}, HP = {}>
     onShowMore: () => void
 }
 
-export const getTotalCount = <N,>(connection: Connection<N>, first: number): number | null => {
-    if (typeof connection.totalCount === 'number') {
-        return connection.totalCount
+export const getTotalCount = <N,>({ totalCount, nodes, pageInfo }: Connection<N>, first: number): number | null => {
+    if (typeof totalCount === 'number') {
+        return totalCount
     }
 
     if (
         // TODO(sqs): this line below is wrong because `first` might've just been changed and
-        // `connection.nodes` is still the data fetched from before `first` was changed.
+        // `nodes` is still the data fetched from before `first` was changed.
         // this causes the UI to incorrectly show "N items total" even when the count is indeterminate right
         // after the user clicks "Show more" but before the new data is loaded.
-        connection.nodes.length < first ||
-        (connection.nodes.length === first &&
-            connection.pageInfo &&
-            typeof connection.pageInfo.hasNextPage === 'boolean' &&
-            !connection.pageInfo.hasNextPage)
+        nodes.length < first ||
+        (nodes.length === first && pageInfo && typeof pageInfo.hasNextPage === 'boolean' && !pageInfo.hasNextPage)
     ) {
-        return connection.nodes.length
+        return nodes.length
     }
 
     return null
