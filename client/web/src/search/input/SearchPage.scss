@@ -30,12 +30,28 @@ $max-homepage-container-width: 60rem;
         flex: 1 1 auto;
         margin-top: 1.5rem;
         width: 100%;
-        max-width: $max-homepage-container-width;
+
+        max-width: 90%;
+        @media (--xl-breakpoint-up) {
+            max-width: $max-homepage-container-width;
+        }
+
         position: relative;
 
         &--with-content-below {
             flex-grow: 0;
             margin-bottom: 5rem;
+        }
+    }
+
+    &__literal-search-code-excerpt {
+        background-color: var(--color-bg-1);
+        border: 1px solid var(--border-color);
+        padding: 0.25rem;
+        border-radius: 0.25rem;
+
+        .code-excerpt {
+            white-space: nowrap;
         }
     }
 
@@ -52,7 +68,10 @@ $max-homepage-container-width: 60rem;
 
     &__repogroup-content {
         width: 100%;
-        max-width: $max-homepage-container-width;
+        max-width: 90%;
+        @media (--xl-breakpoint-up) {
+            max-width: $max-homepage-container-width;
+        }
     }
 
     &__repogroup-list {

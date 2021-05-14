@@ -11,7 +11,7 @@ export const SignUpCta: React.FunctionComponent<Props> = ({ className }) => (
         className={className}
         icon={<MagnifyingGlassIllustration />}
         title="Improve your workflow"
-        bodyText="Add your public repos to search open source and personal code code in one powerful interface, monitor searches for changes, and access additional search features."
+        bodyText="Sign up to add your code, monitor searches for changes, and access additional search features."
         linkText="Sign up"
         href="https://sourcegraph.test:3443/sign-up"
         googleAnalytics={true}
