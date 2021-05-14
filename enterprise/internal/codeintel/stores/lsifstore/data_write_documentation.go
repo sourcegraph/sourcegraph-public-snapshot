@@ -12,9 +12,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
 )
 
-// WriteDocumentation is called (transactionally) from the precise-code-intel-worker.
-func (s *Store) WriteDocumentation(ctx context.Context, bundleID int, documentationPages chan semantic.DocumentationPageData) (err error) {
-	ctx, traceLog, endObservation := s.operations.writeReferences.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+// WriteDocumentationPages is called (transactionally) from the precise-code-intel-worker.
+func (s *Store) WriteDocumentationPages(ctx context.Context, bundleID int, documentationPages chan *semantic.DocumentationPageData) (err error) {
+	ctx, traceLog, endObservation := s.operations.writeDocumentationPages.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -75,6 +75,6 @@ CREATE TEMPORARY TABLE t_lsif_data_documentation_pages (
 const writeDocumentationPagesInsertQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/data_write_documentation.go:WriteDocumentationPages
 INSERT INTO lsif_data_documentation_pages (dump_id, path_id, data)
-SELECT %s, source.idx, source.data
+SELECT %s, source.path_id, source.data
 FROM t_lsif_data_documentation_pages source
 `
