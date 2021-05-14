@@ -2,7 +2,7 @@ import { Duration } from 'date-fns'
 
 import { DataSeries } from './backend/types'
 
-export enum InsightTypeSuffix {
+export enum InsightTypePrefix {
     search = 'searchInsights.insight',
     langStats = 'codeStatsInsights.insight',
 }
@@ -72,9 +72,9 @@ export interface LangStatsInsightOrigin {
 }
 
 export function isSearchBasedInsight(insight: Insight): insight is SearchBasedInsight {
-    return insight.id.startsWith(InsightTypeSuffix.search)
+    return insight.id.startsWith(InsightTypePrefix.search)
 }
 
 export function isLangStatsInsight(insight: Insight): insight is LangStatsInsight {
-    return insight.id.startsWith(InsightTypeSuffix.langStats)
+    return insight.id.startsWith(InsightTypePrefix.langStats)
 }

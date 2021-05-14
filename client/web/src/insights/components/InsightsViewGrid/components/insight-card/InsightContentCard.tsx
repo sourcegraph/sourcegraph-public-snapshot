@@ -11,7 +11,7 @@ import { ErrorAlert } from '../../../../../components/alerts'
 import { ErrorBoundary } from '../../../../../components/ErrorBoundary'
 import { ViewContent, ViewContentProps } from '../../../../../views/ViewContent'
 import { ViewInsightProviderResult, ViewInsightProviderSourceType } from '../../../../core/backend/types'
-import { InsightTypeSuffix } from '../../../../core/types'
+import { InsightTypePrefix } from '../../../../core/types'
 
 import { InsightDescription } from './components/insight-card-description/InsightCardDescription'
 import { InsightCardMenu } from './components/insight-card-menu/InsightCardMenu'
@@ -49,7 +49,7 @@ export const InsightContentCard: React.FunctionComponent<InsightCardProps> = pro
     // We support actions only over search and lang insights and not able to edit or delete
     // custom insight or backend insight.
     const hasMenu =
-        hasContextMenu && (id.startsWith(InsightTypeSuffix.search) || id.startsWith(InsightTypeSuffix.langStats))
+        hasContextMenu && (id.startsWith(InsightTypePrefix.search) || id.startsWith(InsightTypePrefix.langStats))
 
     const handleDelete = async (): Promise<void> => {
         setDeletingState(true)
@@ -98,7 +98,7 @@ export const InsightContentCard: React.FunctionComponent<InsightCardProps> = pro
                             {view.subtitle && <div className={styles.insightCardSubtitle}>{view.subtitle}</div>}
                         </div>
 
-                        {hasMenu && <InsightCardMenu onDelete={handleDelete} />}
+                        {hasMenu && <InsightCardMenu insightID={id} onDelete={handleDelete} />}
                     </header>
 
                     <ViewContent {...props} viewContent={view.content} viewID={id} />

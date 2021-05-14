@@ -5,7 +5,7 @@ import { Settings } from '@sourcegraph/shared/src/settings/settings'
 
 import { SubmissionErrors } from '../../../components/form/hooks/useForm'
 import { LangStatsInsight } from '../../../core/types'
-import { LangStatsInsightCreationForm } from '../../creation/lang-stats/components/lang-stats-insight-creation-form/LangStatsInsightCreationForm'
+import { LangStatsInsightCreationContent } from '../../creation/lang-stats/components/lang-stats-insight-creation-content/LangStatsInsightCreationContent'
 import { LangStatsCreationFormFields } from '../../creation/lang-stats/types'
 import { getSanitizedLangStatsInsight } from '../../creation/lang-stats/utils/insight-sanitizer'
 
@@ -41,14 +41,12 @@ export const EditLangStatsInsight: React.FunctionComponent<EditLangStatsInsightP
     }
 
     return (
-        <LangStatsInsightCreationForm
+        <LangStatsInsightCreationContent
             mode="edit"
             className="pb-5"
             initialValues={insightFormValues}
             settings={finalSettings}
-            /* eslint-disable-next-line react/jsx-no-bind */
             onSubmit={handleSubmit}
-            /* eslint-disable-next-line react/jsx-no-bind */
             onCancel={handleCancel}
         />
     )

@@ -1,6 +1,6 @@
 import { camelCase } from 'lodash'
 
-import { InsightTypeSuffix, LangStatsInsight } from '../../../../core/types'
+import { InsightTypePrefix, LangStatsInsight } from '../../../../core/types'
 import { LangStatsCreationFormFields } from '../types'
 
 /**
@@ -9,7 +9,7 @@ import { LangStatsCreationFormFields } from '../types'
 export const getSanitizedLangStatsInsight = (values: LangStatsCreationFormFields): LangStatsInsight => ({
     // ID generated according to our naming insight convention
     // <Type of insight>.insight.<name of insight>
-    id: `${InsightTypeSuffix.langStats}.${camelCase(values.title)}`,
+    id: `${InsightTypePrefix.langStats}.${camelCase(values.title)}`,
     visibility: values.visibility,
     title: values.title.trim(),
     repository: values.repository.trim(),

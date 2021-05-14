@@ -9,7 +9,7 @@ import { SubmissionErrors, useForm } from '../../../../../components/form/hooks/
 import { useTitleValidator } from '../../../../../components/form/hooks/useTitleValidator'
 import { createRequiredValidator } from '../../../../../components/form/validators'
 import { DataSeries } from '../../../../../core/backend/types'
-import { InsightTypeSuffix } from '../../../../../core/types'
+import { InsightTypePrefix } from '../../../../../core/types'
 import { CreateInsightFormFields } from '../../types'
 import { SearchInsightLivePreview } from '../live-preview-chart/SearchInsightLivePreview'
 import { SearchInsightCreationForm } from '../search-insight-creation-form/SearchInsightCreationForm'
@@ -61,7 +61,7 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
     })
 
     // We can't have two or more insights with the same name, since we rely on name as on id of insights.
-    const titleValidator = useTitleValidator({ settings, insightType: InsightTypeSuffix.search })
+    const titleValidator = useTitleValidator({ settings, insightType: InsightTypePrefix.search })
 
     const title = useField('title', formAPI, titleValidator)
     const repositories = useField('repositories', formAPI, repositoriesFieldValidator)

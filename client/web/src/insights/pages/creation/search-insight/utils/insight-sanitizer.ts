@@ -1,7 +1,7 @@
 import { camelCase } from 'lodash'
 
 import { DataSeries } from '../../../../core/backend/types'
-import { InsightTypeSuffix, SearchBasedInsight } from '../../../../core/types'
+import { InsightTypePrefix, SearchBasedInsight } from '../../../../core/types'
 import { CreateInsightFormFields } from '../types'
 
 export function getSanitizedRepositories(rawRepositories: string): string[] {
@@ -27,7 +27,7 @@ export function getSanitizedSearchInsight(rawInsight: CreateInsightFormFields): 
     return {
         // ID generated according to our naming insight convention
         // <Type of insight>.insight.<name of insight>
-        id: `${InsightTypeSuffix.search}.${camelCase(rawInsight.title)}`,
+        id: `${InsightTypePrefix.search}.${camelCase(rawInsight.title)}`,
         visibility: rawInsight.visibility,
         title: rawInsight.title,
         repositories: getSanitizedRepositories(rawInsight.repositories),
