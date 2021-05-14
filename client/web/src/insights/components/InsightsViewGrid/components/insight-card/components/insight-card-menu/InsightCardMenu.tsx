@@ -1,7 +1,7 @@
 import { Menu, MenuButton, MenuList, MenuItem } from '@reach/menu-button'
 import classnames from 'classnames'
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
-import React, { useMemo } from 'react'
+import React from 'react'
 import { Link } from 'react-router-dom'
 
 import styles from './InsightCardMenu.module.scss'
@@ -22,7 +22,7 @@ export const InsightCardMenu: React.FunctionComponent<InsightCardMenuProps> = pr
     // <type>.<name>.<render view = insight page | directory | home page>
     // You can see insight id generation at extension codebase like here
     // https://github.com/sourcegraph/sourcegraph-search-insights/blob/master/src/search-insights.ts#L86
-    const normalizedInsightID = useMemo(() => insightID.split('.').slice(0, -1).join('.'), [insightID])
+    const normalizedInsightID = insightID.split('.').slice(0, -1).join('.')
 
     return (
         <Menu>

@@ -21,6 +21,7 @@ import { EditSearchBasedInsight } from './components/EditSearchInsight'
 import styles from './EditInsightPage.module.scss'
 
 export interface EditInsightPageProps extends SettingsCascadeProps, PlatformContextProps<'updateSettings'> {
+    /** Normalized insight id <type insight>.insight.<name of insight> */
     insightID: string
 
     /**
