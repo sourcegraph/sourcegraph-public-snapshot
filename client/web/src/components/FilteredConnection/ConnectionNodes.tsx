@@ -4,7 +4,7 @@ import * as React from 'react'
 
 import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
-import { ConnectionNodesSummaryShowMore, ConnectionNodesSummary } from './ConnectionNodesSummary'
+import { ConnectionNodesSummary } from './ConnectionNodesSummary'
 import { Connection } from './ConnectionType'
 import { hasID } from './utils'
 
