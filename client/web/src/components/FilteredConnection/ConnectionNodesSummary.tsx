@@ -1,29 +1,20 @@
 import classNames from 'classnames'
 import * as React from 'react'
 
-interface ConnectionNodesSummaryProps {
-    summary: React.ReactFragment | undefined
-    displayShowMoreButton?: boolean
+interface ConnectionNodesSummaryShowMoreProps {
     onShowMore?: () => void
     showMoreClassName?: string
 }
 
-export const ConnectionNodesSummary: React.FunctionComponent<ConnectionNodesSummaryProps> = ({
-    summary,
-    displayShowMoreButton,
-    showMoreClassName,
+export const ConnectionNodesSummaryShowMore: React.FunctionComponent<ConnectionNodesSummaryShowMoreProps> = ({
     onShowMore,
+    showMoreClassName,
 }) => (
-    <>
-        {summary}
-        {displayShowMoreButton && (
-            <button
-                type="button"
-                className={classNames('btn btn-sm btn-secondary filtered-connection__show-more', showMoreClassName)}
-                onClick={onShowMore}
-            >
-                Show more
-            </button>
-        )}
-    </>
+    <button
+        type="button"
+        className={classNames('btn btn-sm filtered-connection__show-more btn-secondary', showMoreClassName)}
+        onClick={onShowMore}
+    >
+        Show more
+    </button>
 )

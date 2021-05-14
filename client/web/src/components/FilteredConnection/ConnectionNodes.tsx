@@ -4,7 +4,7 @@ import * as React from 'react'
 
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
-import { ConnectionNodesSummary } from './ConnectionNodesSummary'
+import { ConnectionNodesSummaryShowMore } from './ConnectionNodesSummary'
 import { Connection } from './ConnectionType'
 import { hasID } from './utils'
 
@@ -173,7 +173,7 @@ export class ConnectionNodes<C extends Connection<N>, N, NP = {}, HP = {}> exten
 
         return (
             <>
-                {this.props.connectionQuery && <ConnectionNodesSummary summary={summary} />}
+                {this.props.connectionQuery && summary}
                 {this.props.connection.nodes.length > 0 && (
                     <ListComponent
                         className={classNames('filtered-connection__nodes', this.props.listClassName)}
@@ -190,12 +190,11 @@ export class ConnectionNodes<C extends Connection<N>, N, NP = {}, HP = {}> exten
                         {FootComponent && <FootComponent nodes={this.props.connection.nodes} />}
                     </ListComponent>
                 )}
-                {!this.props.connectionQuery && (
-                    <ConnectionNodesSummary
-                        summary={summary}
-                        displayShowMoreButton={!this.props.loading && !this.props.noShowMore && hasNextPage}
-                        showMoreClassName={this.props.showMoreClassName}
+                {!this.props.connectionQuery && summary}
+                {!this.props.loading && !this.props.noShowMore && hasNextPage && (
+                    <ConnectionNodesSummaryShowMore
                         onShowMore={this.props.onShowMore}
+                        showMoreClassName={this.props.showMoreClassName}
                     />
                 )}
             </>
