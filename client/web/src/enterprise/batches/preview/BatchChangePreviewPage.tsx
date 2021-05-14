@@ -23,7 +23,7 @@ import {
     BatchChangeTabs,
     BatchChangeTabsList,
 } from '../BatchChangeTabs'
-import { BatchSpec, BatchSpecMeta } from '../BatchSpec'
+import { BatchSpec, BatchSpecDownloadLink } from '../BatchSpec'
 import { Description } from '../Description'
 import { SupersedingBatchSpecAlert } from '../detail/SupersedingBatchSpecAlert'
 
@@ -148,13 +148,9 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
                         />
                     </BatchChangeTabPanel>
                     <BatchChangeTabPanel>
-                        <BatchSpecMeta
-                            createdAt={spec.createdAt}
-                            lastApplier={spec.creator}
-                            lastAppliedAt={spec.createdAt}
-                            name={spec.description.name}
-                            originalInput={spec.originalInput}
-                        />
+                        <div className="d-flex mb-2 justify-content-end">
+                            <BatchSpecDownloadLink originalInput={spec.originalInput} />
+                        </div>
                         <BatchSpec originalInput={spec.originalInput} />
                     </BatchChangeTabPanel>
                 </BatchChangeTabPanels>

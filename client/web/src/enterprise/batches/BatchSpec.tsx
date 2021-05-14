@@ -37,37 +37,29 @@ export const BatchSpec: React.FunctionComponent<BatchSpecProps> = ({ originalInp
     return <CodeSnippet code={input} language={inputIsJSON ? 'json' : 'yaml'} className="mb-3" />
 }
 
-type BatchSpecMetaProps = Pick<BatchChangeFields, 'createdAt' | 'lastApplier' | 'lastAppliedAt' | 'name'> &
-    BatchSpecProps
+export const BatchSpecDownloadLink: React.FunctionComponent<BatchSpecProps> = ({ originalInput }) => (
+    <a
+        download={`${name}.batch.yaml`}
+        href={'data:text/plain;charset=utf-8,' + encodeURIComponent(originalInput)}
+        className="text-right btn btn-secondary text-nowrap"
+        data-tooltip={`Download ${name}.batch.yaml`}
+    >
+        <FileDownloadIcon className="icon-inline" /> Download YAML
+    </a>
+)
+
+type BatchSpecMetaProps = Pick<BatchChangeFields, 'createdAt' | 'lastApplier' | 'lastAppliedAt'>
 
 export const BatchSpecMeta: React.FunctionComponent<BatchSpecMetaProps> = ({
     createdAt,
     lastApplier,
     lastAppliedAt,
-    name,
-    originalInput,
 }) => {
-    const downloadUrl = useMemo(() => 'data:text/plain;charset=utf-8,' + encodeURIComponent(originalInput), [
-        originalInput,
-    ])
-
     return (
-        <div className="d-flex flex-wrap justify-content-between align-items-baseline mb-2 test-batches-spec">
-            <p className={classNames(styles.batchSpecTabHeaderCol, 'mb-2')}>
-                {lastApplier ? <Link to={lastApplier.url}>{lastApplier.username}</Link> : 'A deleted user'}{' '}
-                {createdAt === lastAppliedAt ? 'created' : 'updated'} this batch change{' '}
-                <Timestamp date={lastAppliedAt} /> by applying the following batch spec:
-            </p>
-            <div className={styles.batchSpecTabHeaderCol}>
-                <a
-                    download={`${name}.batch.yaml`}
-                    href={downloadUrl}
-                    className="text-right btn btn-secondary text-nowrap"
-                    data-tooltip={`Download ${name}.batch.yaml`}
-                >
-                    <FileDownloadIcon className="icon-inline" /> Download YAML
-                </a>
-            </div>
-        </div>
+        <p className="mb-2">
+            {lastApplier ? <Link to={lastApplier.url}>{lastApplier.username}</Link> : 'A deleted user'}{' '}
+            {createdAt === lastAppliedAt ? 'created' : 'updated'} this batch change <Timestamp date={lastAppliedAt} />{' '}
+            by applying the following batch spec:
+        </p>
     )
 }

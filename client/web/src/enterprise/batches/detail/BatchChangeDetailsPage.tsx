@@ -29,7 +29,7 @@ import {
     BatchChangeTabs,
     BatchChangeTabsList,
 } from '../BatchChangeTabs'
-import { BatchSpec, BatchSpecMeta } from '../BatchSpec'
+import { BatchSpec, BatchSpecDownloadLink, BatchSpecMeta } from '../BatchSpec'
 import { Description } from '../Description'
 
 import {
@@ -239,13 +239,14 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                         />
                     </BatchChangeTabPanel>
                     <BatchChangeTabPanel>
-                        <BatchSpecMeta
-                            createdAt={batchChange.createdAt}
-                            lastApplier={batchChange.lastApplier}
-                            lastAppliedAt={batchChange.lastAppliedAt}
-                            name={batchChange.name}
-                            originalInput={batchChange.currentSpec.originalInput}
-                        />
+                        <div className="d-flex flex-wrap justify-content-between align-items-baseline mb-2 test-batches-spec">
+                            <BatchSpecMeta
+                                createdAt={batchChange.createdAt}
+                                lastApplier={batchChange.lastApplier}
+                                lastAppliedAt={batchChange.lastAppliedAt}
+                            />
+                            <BatchSpecDownloadLink originalInput={batchChange.currentSpec.originalInput} />
+                        </div>
                         <BatchSpec originalInput={batchChange.currentSpec.originalInput} />
                     </BatchChangeTabPanel>
                     <BatchChangeTabPanel>
