@@ -44,7 +44,7 @@ require (
 	github.com/efritz/go-mockgen v0.0.0-20200916004441-cfcabc111002
 	github.com/efritz/pentimento v0.0.0-20190429011147-ade47d831101
 	github.com/evanphx/json-patch v4.9.0+incompatible // indirect
-	github.com/fatih/color v1.10.0
+	github.com/fatih/color v1.11.0
 	github.com/fatih/structs v1.1.0
 	github.com/felixge/fgprof v0.9.1
 	github.com/felixge/httpsnoop v1.0.1
@@ -75,7 +75,7 @@ require (
 	github.com/google/go-github/v31 v31.0.0
 	github.com/google/go-querystring v1.0.0
 	github.com/google/gofuzz v1.1.0 // indirect
-	github.com/google/uuid v1.1.2
+	github.com/google/uuid v1.2.0
 	github.com/google/zoekt v0.0.0-20200720095054-b48e35d16e83
 	github.com/googleapis/gnostic v0.4.0 // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
@@ -99,13 +99,13 @@ require (
 	github.com/hexops/autogold v1.3.0
 	github.com/honeycombio/libhoney-go v1.14.0
 	github.com/imdario/mergo v0.3.11 // indirect
-	github.com/inconshreveable/log15 v0.0.0-20200109203555-b30bc20e4fd1
+	github.com/inconshreveable/log15 v0.0.0-20201112154412-8562bdadbbac
 	github.com/jackc/pgconn v1.8.0
 	github.com/jackc/pgx/v4 v4.10.0
 	github.com/jmoiron/sqlx v1.2.1-0.20190826204134-d7d95172beb5
 	github.com/joho/godotenv v1.3.0
 	github.com/jordan-wright/email v4.0.1-0.20200824153738-3f5bafa1cd84+incompatible
-	github.com/json-iterator/go v1.1.10
+	github.com/json-iterator/go v1.1.11
 	github.com/karrick/godirwalk v1.16.1
 	github.com/keegancsmith/rpc v1.3.0
 	github.com/keegancsmith/sqlf v1.1.0
