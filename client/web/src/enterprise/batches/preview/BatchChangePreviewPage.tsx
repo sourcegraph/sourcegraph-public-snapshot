@@ -149,7 +149,7 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
                     </BatchChangeTabPanel>
                     <BatchChangeTabPanel>
                         <div className="d-flex mb-2 justify-content-end">
-                            <BatchSpecDownloadLink originalInput={spec.originalInput} />
+                            <BatchSpecDownloadLink name={spec.description.name} originalInput={spec.originalInput} />
                         </div>
                         <BatchSpec originalInput={spec.originalInput} />
                     </BatchChangeTabPanel>

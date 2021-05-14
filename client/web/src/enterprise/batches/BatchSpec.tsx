@@ -34,7 +34,10 @@ export const BatchSpec: React.FunctionComponent<BatchSpecProps> = ({ originalInp
     return <CodeSnippet code={input} language={inputIsJSON ? 'json' : 'yaml'} className="mb-3" />
 }
 
-export const BatchSpecDownloadLink: React.FunctionComponent<BatchSpecProps> = ({ originalInput }) => (
+export const BatchSpecDownloadLink: React.FunctionComponent<BatchSpecProps & Pick<BatchChangeFields, 'name'>> = ({
+    name,
+    originalInput,
+}) => (
     <a
         download={`${name}.batch.yaml`}
         href={'data:text/plain;charset=utf-8,' + encodeURIComponent(originalInput)}

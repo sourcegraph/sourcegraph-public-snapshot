@@ -245,7 +245,10 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                                 lastApplier={batchChange.lastApplier}
                                 lastAppliedAt={batchChange.lastAppliedAt}
                             />
-                            <BatchSpecDownloadLink originalInput={batchChange.currentSpec.originalInput} />
+                            <BatchSpecDownloadLink
+                                name={batchChange.name}
+                                originalInput={batchChange.currentSpec.originalInput}
+                            />
                         </div>
                         <BatchSpec originalInput={batchChange.currentSpec.originalInput} />
                     </BatchChangeTabPanel>
