@@ -7,7 +7,11 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { AuthenticatedUser } from '../auth'
-import { FilteredConnection, FilteredConnectionFilter, FilterValue } from '../components/FilteredConnection'
+import {
+    FilteredConnection,
+    FilteredConnectionFilter,
+    FilteredConnectionFilterValue,
+} from '../components/FilteredConnection'
 import {
     ListSearchContextsResult,
     ListSearchContextsVariables,
@@ -54,7 +58,7 @@ export const SearchContextsListTab: React.FunctionComponent<SearchContextsListTa
 
     const autoDefinedSearchContexts = useObservable(fetchAutoDefinedSearchContexts.pipe(catchError(() => [])))
 
-    const ownerNamespaceFilterValues: FilterValue[] = authenticatedUser
+    const ownerNamespaceFilterValues: FilteredConnectionFilterValue[] = authenticatedUser
         ? [
               {
                   value: authenticatedUser.id,
