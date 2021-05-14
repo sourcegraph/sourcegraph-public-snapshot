@@ -1,4 +1,3 @@
-import classNames from 'classnames'
 import FileDownloadIcon from 'mdi-react/FileDownloadIcon'
 import React, { useMemo } from 'react'
 
@@ -8,9 +7,7 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { Timestamp } from '../../components/time/Timestamp'
 import { BatchChangeFields } from '../../graphql-operations'
 
-import styles from './BatchSpec.module.scss'
-
-/** Reports whether str is a valid JSON document. */
+/** Reports whether `string` is a valid JSON document. */
 const isJSON = (string: string): boolean => {
     try {
         JSON.parse(string)
@@ -54,12 +51,10 @@ export const BatchSpecMeta: React.FunctionComponent<BatchSpecMetaProps> = ({
     createdAt,
     lastApplier,
     lastAppliedAt,
-}) => {
-    return (
-        <p className="mb-2">
-            {lastApplier ? <Link to={lastApplier.url}>{lastApplier.username}</Link> : 'A deleted user'}{' '}
-            {createdAt === lastAppliedAt ? 'created' : 'updated'} this batch change <Timestamp date={lastAppliedAt} />{' '}
-            by applying the following batch spec:
-        </p>
-    )
-}
+}) => (
+    <p className="mb-2">
+        {lastApplier ? <Link to={lastApplier.url}>{lastApplier.username}</Link> : 'A deleted user'}{' '}
+        {createdAt === lastAppliedAt ? 'created' : 'updated'} this batch change <Timestamp date={lastAppliedAt} /> by
+        applying the following batch spec:
+    </p>
+)
