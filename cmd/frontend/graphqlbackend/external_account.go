@@ -7,6 +7,7 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -59,9 +60,10 @@ func (r *externalAccountResolver) RefreshURL() *string {
 }
 
 func (r *externalAccountResolver) AccountData(ctx context.Context) (*JSONValue, error) {
-	// 🚨 SECURITY: Only the site admins can view this information, because the auth provider might
-	// provide sensitive information that is not known to the user.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	// 🚨 SECURITY: Only the site admins and the user can view this information.
+	// TODO(jchen): Only allow the authenticated user getting back accountData for
+	// GitHub and GitLab, https://github.com/sourcegraph/sourcegraph/issues/20978
+	if err := backend.CheckSiteAdminOrSameUser(ctx, actor.FromContext(ctx).UID); err != nil {
 		return nil, err
 	}
 
