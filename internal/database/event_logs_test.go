@@ -560,7 +560,7 @@ func TestEventLogs_AggregatedSparseSearchEvents(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	expectedEvents := []types.AggregatedEvent{
+	expectedEvents := []types.SearchAggregatedEvent{
 		{
 			Name:           "search.latencies.structural",
 			Month:          time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
@@ -643,7 +643,7 @@ func TestEventLogs_AggregatedSearchEvents(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	expectedEvents := []types.AggregatedEvent{
+	expectedEvents := []types.SearchAggregatedEvent{
 		{
 			Name:           "search.latencies.literal",
 			Month:          time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),

@@ -1316,9 +1316,9 @@ type SiteUsageSummary struct {
 	MonitorUniquesWeek      int32
 }
 
-// AggregatedEvent represents the total events, unique users, and
-// latencies over the current month, week, and day for a single event.
-type AggregatedEvent struct {
+// SearchAggregatedEvent represents the total events, unique users, and
+// latencies over the current month, week, and day for a single search event.
+type SearchAggregatedEvent struct {
 	Name           string
 	Month          time.Time
 	Week           time.Time

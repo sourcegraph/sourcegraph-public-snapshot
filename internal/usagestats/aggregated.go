@@ -165,7 +165,7 @@ func GetAggregatedSearchStats(ctx context.Context, db dbutil.DB) (*types.SearchU
 // Sourcegraph's Postgres table) and returns a SearchUsageStatistics data type
 // that ends up being stored in BigQuery. SearchUsageStatistics corresponds to
 // the target DB schema.
-func groupAggregatedSearchStats(events []types.AggregatedEvent) *types.SearchUsageStatistics {
+func groupAggregatedSearchStats(events []types.SearchAggregatedEvent) *types.SearchUsageStatistics {
 	searchUsageStats := &types.SearchUsageStatistics{
 		Daily:   []*types.SearchUsagePeriod{newSearchEventPeriod()},
 		Weekly:  []*types.SearchUsagePeriod{newSearchEventPeriod()},
@@ -205,7 +205,7 @@ var searchExtractors = map[string]func(p *types.SearchUsagePeriod) *types.Search
 // value that it contains that corresponds to that event type.
 //
 // (4) Populate that SearchEventStatistics object in the SearchUsagePeriod object with usage stats (latencies, etc).
-func populateSearchEventStatistics(event types.AggregatedEvent, statistics *types.SearchUsageStatistics) {
+func populateSearchEventStatistics(event types.SearchAggregatedEvent, statistics *types.SearchUsageStatistics) {
 	extractor, ok := searchExtractors[event.Name]
 	if !ok {
 		return
