@@ -21,10 +21,14 @@ func collectDocumentationPages(ctx context.Context, state *State) chan *semantic
 		detailID := state.DocumentationStringDetail[documentationResult]
 		documentation := state.DocumentationResultsData[documentationResult]
 		this := &semantic.DocumentationNode{
-			PathID:        pathID + "/" + documentation.Slug,
 			Documentation: documentation,
 			Label:         state.DocumentationStringsData[labelID],
 			Detail:        state.DocumentationStringsData[detailID],
+		}
+		if isRoot {
+			this.PathID = "/"
+		} else {
+			this.PathID = pathID + "/" + documentation.Slug
 		}
 		if isRoot || this.Documentation.NewPage {
 			if current != nil {
@@ -42,7 +46,11 @@ func collectDocumentationPages(ctx context.Context, state *State) chan *semantic
 
 		children := state.DocumentationChildren[documentationResult]
 		for _, child := range children {
-			walk(child, false, this.PathID)
+			if isRoot {
+				walk(child, false, "")
+			} else {
+				walk(child, false, this.PathID)
+			}
 		}
 		if isRoot {
 			close(ch)
