@@ -1,6 +1,8 @@
 import classnames from 'classnames'
 import React, { forwardRef, InputHTMLAttributes, ReactNode } from 'react'
 
+import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput';
+
 interface FormInputProps extends InputHTMLAttributes<HTMLInputElement> {
     /** Title of input. */
     title?: string
@@ -13,6 +15,7 @@ interface FormInputProps extends InputHTMLAttributes<HTMLInputElement> {
     errorInputState?: boolean
     /** Valid sign to show valid state on input. */
     valid?: boolean
+    loading?: boolean
     /** Turn on or turn off autofocus for input. */
     autofocus?: boolean
     /** Custom class name for input element. */
@@ -32,6 +35,7 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>((props, re
         inputSymbol,
         valid,
         error,
+        loading = false,
         errorInputState,
         ...otherProps
     } = props
@@ -40,7 +44,7 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>((props, re
         <label className={classnames(className)}>
             {title && <div className="mb-2">{title}</div>}
 
-            <div className="d-flex">
+            <LoaderInput className="d-flex" loading={loading}>
                 <input
                     type={type}
                     className={classnames(inputClassName, 'form-control', {
@@ -52,7 +56,7 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>((props, re
                 />
 
                 {inputSymbol}
-            </div>
+            </LoaderInput>
 
             {error && (
                 <small className="text-danger form-text" role="alert">

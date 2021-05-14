@@ -7,16 +7,13 @@ import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { useField } from '../../../../../components/form/hooks/useField'
 import { SubmissionErrors, useForm } from '../../../../../components/form/hooks/useForm'
 import { useTitleValidator } from '../../../../../components/form/hooks/useTitleValidator'
-import { createRequiredValidator } from '../../../../../components/form/validators'
 import { InsightTypePrefix } from '../../../../../core/types'
 import { LangStatsCreationFormFields } from '../../types'
 import { LangStatsInsightCreationForm } from '../lang-stats-insight-creation-form/LangStatsInsightCreationForm'
 import { LangStatsInsightLivePreview } from '../live-preview-chart/LangStatsInsightLivePreview'
 
 import styles from './LangStatsInsightCreationContent.module.scss'
-
-const repositoriesFieldValidator = createRequiredValidator('Repositories is a required field for code insight.')
-const thresholdFieldValidator = createRequiredValidator('Threshold is a required field for code insight.')
+import { repositoriesFieldValidator, repositoryFieldAsyncValidator, thresholdFieldValidator } from './validators';
 
 const INITIAL_VALUES: LangStatsCreationFormFields = {
     repository: '',
@@ -56,9 +53,12 @@ export const LangStatsInsightCreationContent: React.FunctionComponent<LangStatsI
     // We can't have two or more insights with the same name, since we rely on name as on id of insights.
     const titleValidator = useTitleValidator({ settings, insightType: InsightTypePrefix.langStats })
 
-    const repository = useField('repository', formAPI, repositoriesFieldValidator)
-    const title = useField('title', formAPI, titleValidator)
-    const threshold = useField('threshold', formAPI, thresholdFieldValidator)
+    const repository = useField('repository', formAPI, {
+        sync: repositoriesFieldValidator,
+        async: repositoryFieldAsyncValidator,
+    })
+    const title = useField('title', formAPI, { sync: titleValidator })
+    const threshold = useField('threshold', formAPI, { sync: thresholdFieldValidator })
     const visibility = useField('visibility', formAPI)
 
     // If some fields that needed to run live preview  are invalid
