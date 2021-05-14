@@ -52,8 +52,8 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
             }),
     })
 
-    const nameField = useField('seriesName', formAPI, requiredNameField)
-    const queryField = useField('seriesQuery', formAPI, validQuery)
+    const nameField = useField('seriesName', formAPI, { sync: requiredNameField})
+    const queryField = useField('seriesQuery', formAPI, { sync: validQuery })
     const colorField = useField('seriesColor', formAPI)
 
     return (
