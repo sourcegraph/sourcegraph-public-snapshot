@@ -3,8 +3,8 @@ package validation
 import (
 	"strings"
 
-	lsifReader "github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/internal/reader"
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/protocol/reader"
+	lsifReader "github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/reader"
 )
 
 // validateContainsEdge ensures that a range edge attaches a document to a set of ranges.

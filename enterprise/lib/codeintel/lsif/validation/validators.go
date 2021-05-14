@@ -1,6 +1,6 @@
 package validation
 
-import "github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/internal/reader"
+import "github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/reader"
 
 // ElementValidator validates specific properties of a single vertex or edge element.
 type ElementValidator func(ctx *ValidationContext, lineContext reader.LineContext) bool

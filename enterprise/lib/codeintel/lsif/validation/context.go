@@ -4,7 +4,7 @@ import (
 	"net/url"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/internal/reader"
+	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/reader"
 )
 
 // ValidationContext holds shared state about the current validation.

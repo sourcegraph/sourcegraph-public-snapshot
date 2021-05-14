@@ -3,8 +3,8 @@ package validation
 import (
 	"sort"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/internal/reader"
 	protocolReader "github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/protocol/reader"
+	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/reader"
 )
 
 var reachabilityIgnoreList = []string{"metaData", "project", "document", "$event"}
