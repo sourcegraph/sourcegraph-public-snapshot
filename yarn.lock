@@ -4236,10 +4236,10 @@
   dependencies:
     "@types/react" "*"
 
-"@types/marked@1.2.1":
-  version "1.2.1"
-  resolved "https://registry.npmjs.org/@types/marked/-/marked-1.2.1.tgz#9864ecc10d0edb72e7be4e94acb5fcc607c15eed"
-  integrity sha512-d5adCgRHB+NAme23hkiTkvpfZUDqoNtL2Sr2nZBJqSj3zyHLxsfFWsGQ2sK2z9aX6L1xkJzon2c0jTPcsEjpaQ==
+"@types/marked@2.0.2":
+  version "2.0.2"
+  resolved "https://registry.npmjs.org/@types/marked/-/marked-2.0.2.tgz#33a15106383f6e42cd6bdd38093e6b19904e29e1"
+  integrity sha512-P4zanhCQKs4tiWPPBGpB7lHflgFCP9DFGNI5YtpW9MALKoy2qs9rHNWJ+z55cegD9uCfnmsKuaosq9FNvbxrOw==
 
 "@types/mdast@^3.0.0":
   version "3.0.3"
@@ -15455,10 +15455,10 @@ marked@1.0.0:
   resolved "https://registry.npmjs.org/marked/-/marked-1.0.0.tgz#d35784245a04871e5988a491e28867362e941693"
   integrity sha512-Wo+L1pWTVibfrSr+TTtMuiMfNzmZWiOPeO7rZsQUY5bgsxpHesBEcIWJloWVTFnrMXnf/TL30eTFSGJddmQAng==
 
-marked@^1.2.7:
-  version "1.2.7"
-  resolved "https://registry.npmjs.org/marked/-/marked-1.2.7.tgz#6e14b595581d2319cdcf033a24caaf41455a01fb"
-  integrity sha512-No11hFYcXr/zkBvL6qFmAp1z6BKY3zqLMHny/JN/ey+al7qwCM2+CMBL9BOgqMxZU36fz4cCWfn2poWIf7QRXA==
+marked@^2.0.3:
+  version "2.0.3"
+  resolved "https://registry.npmjs.org/marked/-/marked-2.0.3.tgz#3551c4958c4da36897bda2a16812ef1399c8d6b0"
+  integrity sha512-5otztIIcJfPc2qGTN8cVtOJEjNJZ0jwa46INMagrYfk0EvqtRuEHLsEe0LrFS0/q+ZRKT0+kXK7P2T1AN5lWRA==
 
 marky@^1.2.0:
   version "1.2.1"
