@@ -3,10 +3,13 @@ import { HighlightedTextProps } from './HighlightedText'
 export interface FuzzySearchParameters {
     value: string
     maxResults: number
+    createUrl?: (value: string) => string
 }
 export interface FuzzySearchResult {
     values: HighlightedTextProps[]
     isComplete: boolean
+    elapsedMilliseconds?: number
+    falsePositiveRatio?: number
 }
 
 /**
@@ -21,6 +24,6 @@ export interface FuzzySearchResult {
  * your personal preferences :)
  */
 export abstract class FuzzySearch {
+    public abstract totalFileCount: number
     public abstract search(parameters: FuzzySearchParameters): FuzzySearchResult
-    public abstract serialize(): string | undefined
 }

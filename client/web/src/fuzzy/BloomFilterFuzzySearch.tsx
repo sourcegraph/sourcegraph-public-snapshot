@@ -1,8 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
 import { BloomFilter } from './BloomFilter'
 import { FuzzySearch, FuzzySearchParameters, FuzzySearchResult } from './FuzzySearch'
 import { Hasher } from './Hasher'
@@ -13,8 +8,9 @@ import { HighlightedTextProps, RangePosition } from './HighlightedText'
  */
 const MAX_VALUE_LENGTH = 100
 
-const DEFAULT_BLOOM_FILTER_HASH_FUNCTION_COUNT = 8
+const DEFAULT_BLOOM_FILTER_HASH_FUNCTION_COUNT = 1
 const DEFAULT_BLOOM_FILTER_SIZE = 2 << 17
+const DEFAULT_BUCKET_SIZE = 50
 
 /**
  * Returns true if the given query fuzzy matches the given value.
@@ -24,11 +20,21 @@ export function fuzzyMatchesQuery(query: string, value: string): RangePosition[]
 }
 
 export interface SearchValue {
-    value: string
-    url?: string
+    text: string
 }
 
-const DEFAULT_BUCKET_SIZE = 500
+export interface Indexing {
+    key: 'indexing'
+    indexedFileCount: number
+    totalFileCount: number
+    partialValue: BloomFilterFuzzySearch
+    continue: () => Promise<FuzzySearchLoader>
+}
+export interface Ready {
+    key: 'ready'
+    value: BloomFilterFuzzySearch
+}
+export type FuzzySearchLoader = Indexing | Ready
 
 /**
  * Fuzzy search that uses bloom filters to improve performance in very large repositories.
@@ -53,53 +59,62 @@ const DEFAULT_BUCKET_SIZE = 500
  * serialized so that the indexing step only runs once per repoName/commitID pair.
  */
 export class BloomFilterFuzzySearch extends FuzzySearch {
-    constructor(public readonly buckets: Bucket[], public readonly BUCKET_SIZE: number = DEFAULT_BUCKET_SIZE) {
+    public totalFileCount = 0
+    constructor(public readonly buckets: Bucket[]) {
         super()
+        for (const bucket of buckets) {
+            this.totalFileCount += bucket.files.length
+        }
     }
-    public static fromSearchValues(
+
+    public static fromSearchValuesAsync(
         files: SearchValue[],
-        BUCKET_SIZE: number = DEFAULT_BUCKET_SIZE
-    ): BloomFilterFuzzySearch {
-        files.sort((a, b) => a.value.length - b.value.length)
-        const buckets = []
-        let buffer: SearchValue[] = []
-        for (const file of files) {
-            buffer.push(file)
-            if (buffer.length >= BUCKET_SIZE) {
-                buckets.push(Bucket.fromSearchValues(buffer))
-                buffer = []
+        bucketSize: number = DEFAULT_BUCKET_SIZE
+    ): FuzzySearchLoader {
+        files.sort((a, b) => a.text.length - b.text.length)
+        const indexer = new Indexer(files, bucketSize)
+        function loop(): FuzzySearchLoader {
+            if (indexer.isDone()) {
+                return { key: 'ready', value: indexer.complete() }
+            }
+            indexer.processBuckets(25000)
+            return {
+                key: 'indexing',
+                indexedFileCount: indexer.indexedFileCount(),
+                totalFileCount: indexer.totalFileCount(),
+                partialValue: indexer.complete(),
+                continue: () => new Promise(resolve => resolve(loop())),
             }
         }
-        if (buffer) {
-            buckets.push(Bucket.fromSearchValues(buffer))
-        }
-        return new BloomFilterFuzzySearch(buckets, BUCKET_SIZE)
+        return loop()
     }
 
-    public serialize(): any {
-        return {
-            buckets: this.buckets.map(b => b.serialize()),
-            BUCKET_SIZE: this.BUCKET_SIZE,
+    public static fromSearchValues(
+        files: SearchValue[],
+        bucketSize: number = DEFAULT_BUCKET_SIZE
+    ): BloomFilterFuzzySearch {
+        const indexer = new Indexer(files, bucketSize)
+        while (!indexer.isDone()) {
+            indexer.processBuckets(bucketSize)
         }
-    }
-
-    public static fromSerializedString(text: string): BloomFilterFuzzySearch {
-        const json = JSON.parse(text)
-        return new BloomFilterFuzzySearch(
-            json.buckets.map((bucket: any) => Bucket.fromSerializedString(bucket)),
-            json.BUCKET_SIZE
-        )
+        return indexer.complete()
     }
 
     public search(query: FuzzySearchParameters): FuzzySearchResult {
         if (query.value.length === 0) {
             return this.emptyResult(query)
         }
+        let falsePositives = 0
         const result: HighlightedTextProps[] = []
         const hashParts = allQueryHashParts(query.value)
-        const complete = (isComplete: boolean): FuzzySearchResult => this.sorted({ values: result, isComplete })
+        const queryParts = allFuzzyParts(query.value, true)
+        const complete = (isComplete: boolean): FuzzySearchResult =>
+            this.sorted({ values: result, isComplete, falsePositiveRatio: falsePositives / this.buckets.length })
         for (const bucket of this.buckets) {
-            const matches = bucket.matches(query.value, hashParts)
+            const matches = bucket.matches(query, queryParts, hashParts)
+            if (!matches.skipped && matches.value.length === 0) {
+                falsePositives++
+            }
             for (const value of matches.value) {
                 if (result.length >= query.maxResults) {
                     return complete(false)
@@ -136,7 +151,9 @@ export class BloomFilterFuzzySearch extends FuzzySearch {
                 return complete(false)
             }
             for (const value of bucket.files) {
-                result.push(new HighlightedTextProps(value.value, [], value.url))
+                result.push(
+                    new HighlightedTextProps(value.text, [], query.createUrl ? query.createUrl(value.text) : undefined)
+                )
                 if (result.length > query.maxResults) {
                     return complete(false)
                 }
@@ -171,11 +188,14 @@ export function allFuzzyParts(value: string, includeDelimeters: boolean): string
     return buf
 }
 
+function isDigit(value: string): boolean {
+    return value >= '0' && value <= '9'
+}
 function isLowercaseCharacter(value: string): boolean {
     return isLowercase(value) && !isDelimeter(value)
 }
 function isLowercase(value: string): boolean {
-    return value.toLowerCase() === value && value !== value.toUpperCase()
+    return isDigit(value) || (value.toLowerCase() === value && value !== value.toUpperCase())
 }
 
 function isUppercaseCharacter(value: string): boolean {
@@ -203,47 +223,74 @@ function isDelimeter(character: string): boolean {
 }
 
 function fuzzyMatches(queries: string[], value: string): RangePosition[] {
-    const lowercaseValue = value.toLowerCase()
     const result: RangePosition[] = []
-    let queryIndex = 0
-    let start = 0
-    function query(): string {
-        return queries[queryIndex]
-    }
-    function isCaseInsensitive(): boolean {
-        return isLowercase(query())
-    }
-    function isQueryDelimeter(): boolean {
-        return isDelimeter(query())
-    }
-    function indexOfDelimeter(delim: string, start: number): number {
-        const index = value.indexOf(delim, start)
-        return index < 0 ? value.length : index
-    }
-    while (queryIndex < queries.length && start < value.length) {
-        const isCurrentQueryDelimeter = isQueryDelimeter()
-        while (!isQueryDelimeter() && isDelimeter(value[start])) {
-            start++
+    const matcher = new FuzzyMatcher(queries, value)
+    while (!matcher.isDone()) {
+        const isCurrentQueryDelimeter = matcher.isQueryDelimeter()
+        while (!matcher.isQueryDelimeter() && matcher.isStartDelimeter()) {
+            matcher.start++
         }
-        const caseInsensitive = isCaseInsensitive()
-        const compareValue = caseInsensitive ? lowercaseValue : value
-        if (compareValue.startsWith(query(), start) && (!caseInsensitive || isCapitalizedPart(value, start, query()))) {
-            const end = start + query().length
-            result.push({
-                startOffset: start,
-                endOffset: end,
-                isExact: end >= value.length || startsNewWord(value, end),
-            })
-            queryIndex++
+        if (matcher.matchesFromStart()) {
+            result.push(matcher.rangePositionFromStart())
+            matcher.queryIndex++
         }
-        const nextStart = isCurrentQueryDelimeter ? start : start + 1
-        let end = isQueryDelimeter() ? indexOfDelimeter(query(), nextStart) : nextFuzzyPart(value, nextStart)
-        while (end < value.length && !isQueryDelimeter && isDelimeter(value[end])) {
+        matcher.start = matcher.nextStart(isCurrentQueryDelimeter)
+    }
+    return matcher.queryIndex >= queries.length ? result : []
+}
+
+class FuzzyMatcher {
+    public queryIndex = 0
+    public start = 0
+    private lowercaseValue: string
+    constructor(private readonly queries: string[], private readonly value: string) {
+        this.lowercaseValue = value.toLowerCase()
+    }
+    public nextStart(isCurrentQueryDelimeter: boolean): number {
+        const offset = isCurrentQueryDelimeter ? this.start : this.start + 1
+        let end = this.isQueryDelimeter()
+            ? this.indexOfDelimeter(this.query(), offset)
+            : nextFuzzyPart(this.value, offset)
+        while (end < this.value.length && !this.isQueryDelimeter() && isDelimeter(this.value[end])) {
             end++
         }
-        start = end
+        return end
     }
-    return queryIndex >= queries.length ? result : []
+    public rangePositionFromStart(): RangePosition {
+        const end = this.start + this.query().length
+        return {
+            startOffset: this.start,
+            endOffset: end,
+            isExact: end >= this.value.length || startsNewWord(this.value, end),
+        }
+    }
+    public matchesFromStart(): boolean {
+        const caseInsensitive = this.isCaseInsensitive()
+        const compareValue = caseInsensitive ? this.lowercaseValue : this.value
+        return (
+            compareValue.startsWith(this.query(), this.start) &&
+            (!caseInsensitive || isCapitalizedPart(this.value, this.start, this.query()))
+        )
+    }
+    public isStartDelimeter(): boolean {
+        return isDelimeter(this.value[this.start])
+    }
+    public isDone(): boolean {
+        return this.queryIndex >= this.queries.length || this.start >= this.value.length
+    }
+    public query(): string {
+        return this.queries[this.queryIndex]
+    }
+    public isCaseInsensitive(): boolean {
+        return isLowercase(this.query())
+    }
+    public isQueryDelimeter(): boolean {
+        return isDelimeter(this.query())
+    }
+    public indexOfDelimeter(delim: string, start: number): number {
+        const index = this.value.indexOf(delim, start)
+        return index < 0 ? this.value.length : index
+    }
 }
 
 function startsNewWord(value: string, index: number): boolean {
@@ -285,8 +332,8 @@ function nextFuzzyPart(value: string, start: number): number {
 function populateBloomFilter(values: SearchValue[]): BloomFilter {
     const hashes = new BloomFilter(DEFAULT_BLOOM_FILTER_SIZE, DEFAULT_BLOOM_FILTER_HASH_FUNCTION_COUNT)
     for (const value of values) {
-        if (value.value.length < MAX_VALUE_LENGTH) {
-            updateHashParts(value.value, hashes)
+        if (value.text.length < MAX_VALUE_LENGTH) {
+            updateHashParts(value.text, hashes)
         }
     }
     return hashes
@@ -295,14 +342,13 @@ function populateBloomFilter(values: SearchValue[]): BloomFilter {
 function allQueryHashParts(query: string): number[] {
     const fuzzyParts = allFuzzyParts(query, false)
     const result: number[] = []
-    const H = new Hasher()
+    const hasher = new Hasher()
     for (const part of fuzzyParts) {
-        H.reset()
+        hasher.reset()
         for (const character of part) {
-            H.update(character)
+            hasher.update(character)
+            result.push(hasher.digest())
         }
-        const digest = H.digest()
-        result.push(digest)
     }
     return result
 }
@@ -353,35 +399,74 @@ class Bucket {
         public readonly id: number
     ) {}
     public static fromSearchValues(files: SearchValue[]): Bucket {
-        files.sort((a, b) => a.value.length - b.value.length)
+        files.sort((a, b) => a.text.length - b.text.length)
         return new Bucket(files, populateBloomFilter(files), Math.random())
-    }
-    public static fromSerializedString(json: any): Bucket {
-        return new Bucket(json.files, new BloomFilter(json.filter, DEFAULT_BLOOM_FILTER_HASH_FUNCTION_COUNT), json.id)
-    }
-    public serialize(): any {
-        return {
-            files: this.files,
-            filter: [].slice.call(this.filter.buckets),
-        }
     }
 
     private matchesMaybe(hashParts: number[]): boolean {
-        return hashParts.every(number => this.filter.test(number))
+        for (const part of hashParts) {
+            if (!this.filter.test(part)) {
+                return false
+            }
+        }
+        return true
     }
-    public matches(query: string, hashParts: number[]): BucketResult {
+    public matches(query: FuzzySearchParameters, queryParts: string[], hashParts: number[]): BucketResult {
         const matchesMaybe = this.matchesMaybe(hashParts)
         if (!matchesMaybe) {
             return { skipped: true, value: [] }
         }
         const result: HighlightedTextProps[] = []
-        const queryParts = allFuzzyParts(query, true)
         for (const file of this.files) {
-            const positions = fuzzyMatches(queryParts, file.value)
+            const positions = fuzzyMatches(queryParts, file.text)
             if (positions.length > 0) {
-                result.push(new HighlightedTextProps(file.value, positions, file.url))
+                result.push(
+                    new HighlightedTextProps(
+                        file.text,
+                        positions,
+                        query.createUrl ? query.createUrl(file.text) : undefined
+                    )
+                )
             }
         }
         return { skipped: false, value: result }
+    }
+}
+
+class Indexer {
+    private buffer: SearchValue[] = []
+    private buckets: Bucket[] = []
+    private index = 0
+    constructor(private readonly files: SearchValue[], private readonly bucketSize: number) {
+        this.files.sort((a, b) => a.text.length - b.text.length)
+    }
+
+    public complete(): BloomFilterFuzzySearch {
+        return new BloomFilterFuzzySearch(this.buckets)
+    }
+
+    public isDone(): boolean {
+        return this.index >= this.files.length
+    }
+    public totalFileCount(): number {
+        return this.files.length
+    }
+    public indexedFileCount(): number {
+        return this.index
+    }
+    public processBuckets(fileCount: number): void {
+        let bucketCount = fileCount / this.bucketSize
+        while (bucketCount > 0 && !this.isDone()) {
+            const endIndex = Math.min(this.files.length, this.index + this.bucketSize)
+            while (this.index < endIndex) {
+                this.buffer.push(this.files[this.index])
+                this.index++
+            }
+            if (this.buffer) {
+                this.buckets.push(Bucket.fromSearchValues(this.buffer))
+                this.buffer = []
+            }
+            bucketCount--
+        }
     }
 }

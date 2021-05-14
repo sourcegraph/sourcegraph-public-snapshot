@@ -52,7 +52,7 @@ export const HighlightedText: React.FunctionComponent<HighlightedTextPropsInstan
             return
         }
         const text = props.text.slice(startOffset, endOffset)
-        const key = `${text}-${className}`
+        const key = `${startOffset}-${endOffset}`
         const span = (
             <span key={key} className={className}>
                 {text}

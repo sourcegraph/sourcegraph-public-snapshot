@@ -15,7 +15,7 @@ const all = [
     'test/WorkspaceSymbolProvider.scala',
 ]
 
-const fuzzy = BloomFilterFuzzySearch.fromSearchValues(all.map(value => ({ value })))
+const fuzzy = BloomFilterFuzzySearch.fromSearchValues(all.map(text => ({ text })))
 
 function checkSearch(query: string, expected: string[]) {
     test(`search-${query}`, () => {
@@ -23,7 +23,7 @@ function checkSearch(query: string, expected: string[]) {
         const actual = fuzzy.search(queryProps).values.map(highlightedText => highlightedText.text)
         expect(actual).toStrictEqual(expected)
         for (const result of expected) {
-            const individualFuzzy = BloomFilterFuzzySearch.fromSearchValues([{ value: result }])
+            const individualFuzzy = BloomFilterFuzzySearch.fromSearchValues([{ text: result }])
             const individualActual = individualFuzzy
                 .search(queryProps)
                 .values.map(highlightedText => highlightedText.text)
@@ -75,9 +75,10 @@ checkSearch('readme', ['t1/README.md', 't2/Readme.md', 't1/READMES.md'])
 checkSearch('README', ['t1/README.md', 't1/READMES.md'])
 checkSearch('Readme', ['t2/Readme.md'])
 checkSearch('WSProvider', ['test/WorkspaceSymbolProvider.scala'])
+checkFuzzyMatch('digits', 't2', 't2/Readme.md', ['t2'])
+checkSearch('t2', ['t2/Readme.md'])
 
-// Known caveat: bloom filters only contain the words "site" and "Config" so
-// "sitecon" doesn't have any matches.
+// // Known caveat: the bloom filter fuzzy finder is quite strict with capitalization
 checkSearch('sitecon', [])
 checkFuzzyMatch('sitecon', 'sitecon', 'website/siteConfig.js', [])
 

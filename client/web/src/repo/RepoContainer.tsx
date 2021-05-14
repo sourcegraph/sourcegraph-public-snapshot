@@ -1,3 +1,4 @@
+import { Shortcut } from '@slimsag/react-shortcuts'
 import * as H from 'history'
 import { escapeRegExp } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
@@ -37,7 +38,12 @@ import { BreadcrumbSetters, BreadcrumbsProps } from '../components/Breadcrumbs'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
 import { ActionItemsBarProps, useWebActionItems } from '../extensions/components/ActionItemsBar'
+import { FuzzyModal } from '../fuzzy/FuzzyModal'
 import { ExternalLinkFields, RepositoryFields } from '../graphql-operations'
+import {
+    KEYBOARD_SHORTCUT_CLOSE_FUZZY_FILES,
+    KEYBOARD_SHORTCUT_FUZZY_FILES,
+} from '../keyboardShortcuts/keyboardShortcuts'
 import { IS_CHROME } from '../marketing/util'
 import { Settings } from '../schema/settings.schema'
 import {
@@ -64,12 +70,6 @@ import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
 
 import { redirectToExternalHost } from '.'
-import { Shortcut } from '@slimsag/react-shortcuts'
-import {
-    KEYBOARD_SHORTCUT_CLOSE_FUZZY_FILES,
-    KEYBOARD_SHORTCUT_FUZZY_FILES,
-} from '../keyboardShortcuts/keyboardShortcuts'
-import { FuzzyModal } from '../fuzzy/FuzzyModal'
 
 /**
  * Props passed to sub-routes of {@link RepoContainer}.
@@ -394,7 +394,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                 {...KEYBOARD_SHORTCUT_FUZZY_FILES.keybindings[0]}
                 onMatch={() => {
                     setIsFuzzyModalVisible(true)
-                    const input = document.getElementById('fuzzy-modal-input') as any
+                    const input = document.querySelector('#fuzzy-modal-input') as any
                     input?.focus()
                     input?.select()
                 }}

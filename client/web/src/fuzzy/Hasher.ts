@@ -19,6 +19,10 @@ export class Hasher {
     public digest(): number {
         return this.currentHash
     }
+    public resetWith(character: string): void {
+        this.reset()
+        this.update(character)
+    }
     public reset(): void {
         this.currentHash = 0
     }

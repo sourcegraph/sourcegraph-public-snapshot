@@ -4,19 +4,20 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable jsx-a11y/no-noninteractive-element-interactions */
-/* eslint-disable jsx-a11y/click-events-have-key-events */
 import React from 'react'
 
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 
 import { requestGraphQL } from '../backend/graphql'
 
-import { BloomFilterFuzzySearch } from './BloomFilterFuzzySearch'
+import { BloomFilterFuzzySearch, Indexing as FuzzyIndexing } from './BloomFilterFuzzySearch'
 import { FuzzySearch, FuzzySearchResult } from './FuzzySearch'
 import { HighlightedText, HighlightedTextProps } from './HighlightedText'
 import { useEphemeralState, useLocalStorage, State } from './useLocalStorage'
 
 const DEFAULT_MAX_RESULTS = 100
+
+const IS_DEBUG = window.location.href.toString().includes('debug=true')
 
 export interface FuzzyModalProps {
     isVisible: boolean
@@ -97,8 +98,9 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
     }
 
     return (
-        <div role="navigation" className="fuzzy-modal" onClick={() => props.onClose()}>
-            <div role="navigation" className="fuzzy-modal-content" onClick={event => event.stopPropagation()}>
+        // Use 'onMouseDown' instead of 'onClick' to allow selecting the text and mouse up outside the modal
+        <div role="navigation" className="fuzzy-modal" onMouseDown={() => props.onClose()}>
+            <div role="navigation" className="fuzzy-modal-content" onMouseDown={event => event.stopPropagation()}>
                 <div className="fuzzy-modal-header">
                     <div className="fuzzy-modal-cursor">
                         <input
@@ -121,9 +123,42 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
                     <button type="button" className="btn btn-secondary" onClick={() => props.onClose()}>
                         Close
                     </button>
+                    {fuzzyFooter(loaded.value, files)}
                 </div>
             </div>
         </div>
+    )
+}
+
+function plural(what: string, count: number, isComplete: boolean): string {
+    return count.toLocaleString() + (isComplete ? '' : '+') + ' ' + what + (count === 1 ? '' : 's')
+}
+
+function fuzzyFooter(loaded: Loaded, files: RenderedFiles): JSX.Element {
+    return IS_DEBUG ? (
+        <>
+            <span>{files.falsePositiveRatio && Math.round(files.falsePositiveRatio * 100)}fp</span>
+            <span>{files.elapsedMilliseconds && Math.round(files.elapsedMilliseconds).toLocaleString()}ms</span>
+        </>
+    ) : (
+        <>
+            <span>{plural('result', files.results.length, files.isComplete)}</span>
+            <span>
+                {loaded.key === 'indexing' && indexingProgressBar(loaded)}
+                {plural('total file', files.totalFileCount, true)}
+            </span>
+        </>
+    )
+}
+
+function indexingProgressBar(indexing: Indexing): JSX.Element {
+    const indexedFiles = indexing.loader.indexedFileCount
+    const totalFiles = indexing.loader.totalFileCount
+    const percentage = Math.round((indexedFiles / totalFiles) * 100)
+    return (
+        <progress value={indexedFiles} max={totalFiles}>
+            {percentage}%
+        </progress>
     )
 }
 
@@ -131,31 +166,40 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
  * The fuzzy finder modal is implemented as a state machine with the following transitions:
  *
  * ```
- * Empty ──> Loading ──> Indexing ──> Ready
- *            ╰─────────────────────> Failed
+ *   ╭────[cached]───────────────────────╮  ╭──╮
+ *   │                                   v  │  v
+ * Empty ─[uncached]───> Downloading ──> Indexing ──> Ready
+ *                       ╰──────────────────────> Failed
  * ```
  *
  * - Empty: start state.
- * - Loading: downloading filenames from the remote server.
+ * - Downloading: downloading filenames from the remote server. The filenames
+ *                are cached using the browser's CacheStorage, if available.
  * - Indexing: processing the downloaded filenames. This step is usually
- * instant, unless the repo is HUGE.
- * - Ready: user can fuzzy find filenames.
- * - Failed: error, the user can't fuzzy find files.
+ *             instant, unless the repo is very large (>100k source files).
+ *             In the torvalds/linux repo (~70k files), this step takes <1s
+ *             on my computer but the chromium/chromium repo (~360k files)
+ *             it takes ~3-5 seconds. This step is async so that the user can
+ *             query against partially indexed results.
+ * - Ready: all filenames have been indexed.
+ * - Failed: something unexpected happened, the user can't fuzzy find files.
  */
-type Loaded = Empty | Loading | Indexing | Ready | Failed
+type Loaded = Empty | Downloading | Indexing | Ready | Failed
 interface Empty {
     key: 'empty'
 }
-interface Loading {
-    key: 'loading'
+interface Downloading {
+    key: 'downloading'
 }
 interface Indexing {
     key: 'indexing'
-    filenames: string[]
+    loader: FuzzyIndexing
+    totalFileCount: number
 }
 interface Ready {
     key: 'ready'
     fuzzy: FuzzySearch
+    totalFileCount: number
 }
 interface Failed {
     key: 'failed'
@@ -165,6 +209,10 @@ interface Failed {
 interface RenderedFiles {
     element: JSX.Element
     results: HighlightedTextProps[]
+    isComplete: boolean
+    totalFileCount: number
+    elapsedMilliseconds?: number
+    falsePositiveRatio?: number
 }
 
 // Cache for the last fuzzy query. This value is only used to avoid redoing the
@@ -183,11 +231,17 @@ function renderFiles(
         return {
             element,
             results: [],
+            isComplete: true,
+            totalFileCount: 0,
         }
     }
 
-    function onError(error: any): void {
-        loaded.set({ key: 'failed', errorMessage: JSON.stringify(error) })
+    function onError(what: string): (error: any) => void {
+        return error => {
+            error.what = what
+            loaded.set({ key: 'failed', errorMessage: JSON.stringify(error) })
+            throw new Error(what)
+        }
     }
 
     const usuallyFast =
@@ -195,41 +249,56 @@ function renderFiles(
 
     switch (loaded.value.key) {
         case 'empty':
-            handleEmpty(props, loaded).then(() => {}, onError)
+            handleEmpty(props, loaded).then(() => {}, onError('onEmpty'))
             return empty(<></>)
-        case 'loading':
+        case 'downloading':
             return empty(<p>Downloading... {usuallyFast}</p>)
         case 'failed':
             return empty(<p>Error: {loaded.value.errorMessage}</p>)
-        case 'indexing':
-            handleIndexing(props, loaded.value.filenames).then(next => loaded.set(next), onError)
-            return empty(<p>Indexing... {usuallyFast}</p>)
+        case 'indexing': {
+            const loader = loaded.value.loader
+            later()
+                .then(() => continueIndexing(props, loader))
+                .then(next => loaded.set(next), onError('onIndexing'))
+            return renderReady(props, query, focusIndex, maxResults, loaded.value.loader.partialValue, loaded.value)
+        }
         case 'ready':
-            return renderReady(query, focusIndex, maxResults, loaded.value.fuzzy)
+            return renderReady(props, query, focusIndex, maxResults, loaded.value.fuzzy, loaded.value)
         default:
             return empty(<p>ERROR</p>)
     }
 }
+
 function renderReady(
+    props: FuzzyModalProps,
     query: State<string>,
     focusIndex: State<number>,
     maxResults: State<number>,
-    fuzzy: FuzzySearch
+    fuzzy: FuzzySearch,
+    ready: Ready | Indexing
 ): RenderedFiles {
-    const cacheKey = `${query.value}-${maxResults.value}`
+    const indexedFileCount = ready.key === 'indexing' ? ready.loader.indexedFileCount : ''
+    const cacheKey = `${query.value}-${maxResults.value}${indexedFileCount}`
     let fuzzyResult = lastFuzzySearchResult.get(cacheKey)
     if (!fuzzyResult) {
+        const start = window.performance.now()
         fuzzyResult = fuzzy.search({
             value: query.value,
             maxResults: maxResults.value,
+            createUrl: filename => `/${props.repoName}@${props.commitID}/-/blob/${filename}`,
         })
+        fuzzyResult.elapsedMilliseconds = window.performance.now() - start
         lastFuzzySearchResult.clear() // Only cache the last query.
         lastFuzzySearchResult.set(cacheKey, fuzzyResult)
     }
     const matchingFiles = fuzzyResult.values
-
     if (matchingFiles.length === 0) {
-        return { element: <p>No files matching '{query.value}'</p>, results: [] }
+        return {
+            element: <p>No files matching '{query.value}'</p>,
+            results: [],
+            totalFileCount: fuzzy.totalFileCount,
+            isComplete: fuzzyResult.isComplete,
+        }
     }
     const filesToRender = matchingFiles.slice(0, maxResults.value)
     return {
@@ -249,8 +318,7 @@ function renderReady(
                         <button
                             type="button"
                             onClick={() => {
-                                console.log('EXPAND')
-                                maxResults.set(maxResults.value * 2)
+                                maxResults.set(maxResults.value + DEFAULT_MAX_RESULTS)
                             }}
                         >
                             (...truncated, click to show more results){' '}
@@ -260,6 +328,10 @@ function renderReady(
             </ul>
         ),
         results: filesToRender,
+        totalFileCount: fuzzy.totalFileCount,
+        isComplete: fuzzyResult.isComplete,
+        elapsedMilliseconds: fuzzyResult.elapsedMilliseconds,
+        falsePositiveRatio: fuzzyResult.falsePositiveRatio,
     }
 }
 
@@ -271,48 +343,54 @@ function openCaches(): Promise<Cache> {
     return caches.open('fuzzy-modal')
 }
 
-async function handleIndexing(props: FuzzyModalProps, files: string[]): Promise<Ready> {
-    const result = await new Promise<Ready>(resolve =>
-        setTimeout(
-            () =>
-                resolve({
-                    key: 'ready',
-                    fuzzy: BloomFilterFuzzySearch.fromSearchValues(
-                        files.map(file => ({ value: file, url: `/${props.repoName}@${props.commitID}/-/blob/${file}` }))
-                    ),
-                }),
-            0
-        )
-    )
-    const cache = await openCaches()
-    const text = serializeIndex(result)
-    if (text) {
-        await cache.put(new Request(filesCacheKey(props)), text)
-    }
-    return result
+async function later(): Promise<void> {
+    return new Promise(resolve => setTimeout(() => resolve(), 0))
 }
 
-async function deserializeIndex(ready: Response): Promise<Ready> {
+async function continueIndexing(props: FuzzyModalProps, indexing: FuzzyIndexing): Promise<Loaded> {
+    const next = await indexing.continue()
+    if (next.key === 'indexing') {
+        return { key: 'indexing', loader: next, totalFileCount: next.totalFileCount }
+    }
     return {
         key: 'ready',
-        fuzzy: BloomFilterFuzzySearch.fromSerializedString(await ready.text()),
+        fuzzy: next.value,
+        totalFileCount: next.value.totalFileCount,
     }
 }
 
-function serializeIndex(ready: Ready): Response | undefined {
-    const serializable = ready.fuzzy.serialize()
-    return serializable ? new Response(JSON.stringify(serializable)) : undefined
+async function loadCachedIndex(props: FuzzyModalProps): Promise<Loaded | undefined> {
+    const cacheAvailable = 'caches' in self
+    if (!cacheAvailable) {
+        return Promise.resolve(undefined)
+    }
+    const cacheKey = filesCacheKey(props)
+    const cache = await openCaches()
+    const cacheRequest = new Request(cacheKey)
+    const fromCache = await cache.match(cacheRequest)
+    if (!fromCache) {
+        return undefined
+    }
+    const filenames = JSON.parse(await fromCache.text())
+    return handleFilenames(props, filenames)
+}
+
+async function cacheFilenames(props: FuzzyModalProps, filenames: string[]): Promise<void> {
+    const cacheAvailable = 'caches' in self
+    if (!cacheAvailable) {
+        return Promise.resolve()
+    }
+    const cacheKey = filesCacheKey(props)
+    const cache = await openCaches()
+    await cache.put(cacheKey, new Response(JSON.stringify(filenames)))
 }
 
 async function handleEmpty(props: FuzzyModalProps, files: State<Loaded>): Promise<void> {
-    const cache = await openCaches()
-    const cacheKey = filesCacheKey(props)
-    const cacheRequest = new Request(cacheKey)
-    const fromCache = await cache.match(cacheRequest)
+    const fromCache = await loadCachedIndex(props)
     if (fromCache) {
-        files.set(await deserializeIndex(fromCache))
+        files.set(fromCache)
     } else {
-        files.set({ key: 'loading' })
+        files.set({ key: 'downloading' })
         try {
             const next: any = await requestGraphQL(
                 gql`
@@ -333,13 +411,15 @@ async function handleEmpty(props: FuzzyModalProps, files: State<Loaded>): Promis
                     commit: props.commitID,
                 }
             ).toPromise()
-            const response = next.data?.repository?.commit?.tree?.files?.map((file: any) => file.path)
-            if (response) {
-                files.set({
-                    key: 'indexing',
-                    filenames: response,
-                })
-                await cache.put(cacheRequest, new Response(JSON.stringify(response)))
+            const filenames = next.data?.repository?.commit?.tree?.files?.map((file: any) => file.path) as
+                | string[]
+                | undefined
+            if (filenames) {
+                files.set(handleFilenames(props, filenames))
+                cacheFilenames(props, filenames).then(
+                    () => {},
+                    () => {}
+                )
             } else {
                 files.set({
                     key: 'failed',
@@ -352,5 +432,20 @@ async function handleEmpty(props: FuzzyModalProps, files: State<Loaded>): Promis
                 errorMessage: JSON.stringify(error),
             })
         }
+    }
+}
+function handleFilenames(props: FuzzyModalProps, filenames: string[]): Loaded {
+    const loader = BloomFilterFuzzySearch.fromSearchValuesAsync(filenames.map(file => ({ text: file })))
+    if (loader.key === 'ready') {
+        return {
+            key: 'ready',
+            fuzzy: loader.value,
+            totalFileCount: loader.value.totalFileCount,
+        }
+    }
+    return {
+        key: 'indexing',
+        loader,
+        totalFileCount: loader.totalFileCount,
     }
 }
