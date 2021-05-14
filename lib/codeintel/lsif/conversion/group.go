@@ -32,6 +32,7 @@ func groupBundleData(ctx context.Context, state *State) (*semantic.GroupedBundle
 	resultChunks := serializeResultChunks(ctx, state, numResultChunks)
 	definitionRows := gatherMonikersLocations(ctx, state, state.DefinitionData, func(r Range) int { return r.DefinitionResultID })
 	referenceRows := gatherMonikersLocations(ctx, state, state.ReferenceData, func(r Range) int { return r.ReferenceResultID })
+	documentationPagesRows := collectDocumentationPages(ctx, state)
 	packages := gatherPackages(state)
 	packageReferences, err := gatherPackageReferences(state)
 	if err != nil {
@@ -39,13 +40,14 @@ func groupBundleData(ctx context.Context, state *State) (*semantic.GroupedBundle
 	}
 
 	return &semantic.GroupedBundleDataChans{
-		Meta:              meta,
-		Documents:         documents,
-		ResultChunks:      resultChunks,
-		Definitions:       definitionRows,
-		References:        referenceRows,
-		Packages:          packages,
-		PackageReferences: packageReferences,
+		Meta:               meta,
+		Documents:          documents,
+		ResultChunks:       resultChunks,
+		Definitions:        definitionRows,
+		References:         referenceRows,
+		DocumentationPages: documentationPagesRows,
+		Packages:           packages,
+		PackageReferences:  packageReferences,
 	}, nil
 }
 

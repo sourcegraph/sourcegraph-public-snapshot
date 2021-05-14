@@ -1,5 +1,7 @@
 package semantic
 
+import "github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol"
+
 type ID string
 
 // MetaData contains data describing the overall structure of a bundle.
@@ -131,6 +133,29 @@ type IndexedResultChunkData struct {
 	ResultChunk ResultChunkData
 }
 
+// DocumentationNodeChild represents a child of a node.
+type DocumentationNodeChild struct {
+	// Node is non-nil if this child is another (non-new-page) node.
+	Node *DocumentationNode
+
+	// PathID is a non-empty string if this child is itself a new page.
+	PathID string
+}
+
+// DocumentationNode describes one node in a tree of hierarchial documentation.
+type DocumentationNode struct {
+	// PathID is the path ID of this node itself.
+	PathID        string
+	Documentation protocol.Documentation
+	Label, Detail protocol.MarkupContent
+	Children      []DocumentationNodeChild
+}
+
+// DocumentationPageData describes a single page of documentation.
+type DocumentationPageData struct {
+	Tree *DocumentationNode
+}
+
 // Package pairs a package name and the dump that provides it.
 type Package struct {
 	Scheme  string
@@ -150,13 +175,14 @@ type PackageReference struct {
 // and parallelizing the work, while the Maps version can be modified for e.g. local development
 // via the REPL or patching for incremental indexing.
 type GroupedBundleDataChans struct {
-	Meta              MetaData
-	Documents         chan KeyedDocumentData
-	ResultChunks      chan IndexedResultChunkData
-	Definitions       chan MonikerLocations
-	References        chan MonikerLocations
-	Packages          []Package
-	PackageReferences []PackageReference
+	Meta               MetaData
+	Documents          chan KeyedDocumentData
+	ResultChunks       chan IndexedResultChunkData
+	Definitions        chan MonikerLocations
+	References         chan MonikerLocations
+	Packages           []Package
+	PackageReferences  []PackageReference
+	DocumentationPages chan *DocumentationPageData
 }
 
 type GroupedBundleDataMaps struct {
