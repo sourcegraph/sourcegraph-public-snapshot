@@ -158,6 +158,13 @@ export function allFuzzyParts(value: string, includeDelimeters: boolean): string
     return buf
 }
 
+function isLowercase(str: string): boolean {
+    return str.toLowerCase() === str && str !== str.toUpperCase()
+}
+
+function isUppercaseCharacter(str: string): boolean {
+    return isUppercase(str) && !isDelimeter(str)
+}
 function isUppercase(str: string): boolean {
     return str.toUpperCase() === str && str !== str.toLowerCase()
 }
@@ -180,10 +187,14 @@ function isDelimeter(ch: string): boolean {
 }
 
 function fuzzyMatches(queries: string[], value: string): RangePosition[] {
+    const lowercaseValue = value.toLowerCase()
     const result: RangePosition[] = []
     var queryIndex = 0
     function query(): string {
         return queries[queryIndex]
+    }
+    function isCaseInsensitive(): boolean {
+        return isLowercase(query())
     }
     function isQueryDelimeter(): boolean {
         return isDelimeter(query())
@@ -196,7 +207,9 @@ function fuzzyMatches(queries: string[], value: string): RangePosition[] {
     while (queryIndex < queries.length && start < value.length) {
         const isCurrentQueryDelimeter = isQueryDelimeter()
         while (!isQueryDelimeter() && isDelimeter(value[start])) start++
-        if (value.startsWith(query(), start)) {
+        const caseInsensitive = isCaseInsensitive()
+        const compareValue = caseInsensitive ? lowercaseValue : value
+        if (compareValue.startsWith(query(), start) && (!caseInsensitive || isCapitalizedPart(value, start, query()))) {
             const end = start + query().length
             result.push({
                 startOffset: start,
@@ -211,6 +224,25 @@ function fuzzyMatches(queries: string[], value: string): RangePosition[] {
         start = end
     }
     return queryIndex >= queries.length ? result : []
+}
+
+/**
+ * Returns true if value.substring(start, start + query.length) is "properly capitalized".
+ *
+ * The string is properly capitalized as long it contains no lowercase character
+ * that is followed by an uppercase character.  For example:
+ *
+ * - Not properly capitalized: "InnerClasses" "innerClasses"
+ * - Properly capitalized: "Innerclasses" "INnerclasses"
+ */
+function isCapitalizedPart(value: string, start: number, query: string) {
+    let previousIsLowercase = false
+    for (var i = start; i < value.length && i - start < query.length; i++) {
+        const nextIsLowercase = isLowercase(value[i])
+        if (previousIsLowercase && !nextIsLowercase) return false
+        previousIsLowercase = nextIsLowercase
+    }
+    return true
 }
 
 function nextFuzzyPart(value: string, start: number): number {
@@ -246,17 +278,34 @@ function allQueryHashParts(query: string): number[] {
 }
 
 function updateHashParts(value: string, buf: BloomFilter): void {
-    let H = new Hasher()
+    let H = new Hasher(),
+        L = new Hasher()
 
     for (var i = 0; i < value.length; i++) {
         const ch = value[i]
         if (isDelimeterOrUppercase(ch)) {
             H.reset()
+            L.reset()
+            if (isUppercaseCharacter(ch) && (i === 0 || !isUppercaseCharacter(value[i - 1]))) {
+                let j = i
+                const upper = []
+                while (j < value.length && isUppercaseCharacter(value[j])) {
+                    upper.push(value[j])
+                    L.update(value[j].toLowerCase())
+                    buf.add(L.digest())
+                    j++
+                }
+                L.reset()
+            }
         }
         if (isDelimeter(ch)) continue
         H.update(ch)
-        const digest = H.digest()
-        buf.add(digest)
+        L.update(ch.toLowerCase())
+
+        buf.add(H.digest())
+        if (H.digest() !== L.digest()) {
+            buf.add(L.digest())
+        }
     }
 }
 
