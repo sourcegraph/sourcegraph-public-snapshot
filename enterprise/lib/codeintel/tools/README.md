@@ -92,6 +92,10 @@ go run . --indexer "lsif-clang compile_commands.json" --dir "/path/to/test_direc
 - `--indexer` is the set of commands to actually run the indexer
 - `--dir` is the root directory that contains an `lsif_tests` directory.
 
+## lsif-repl
+
+Documentation coming soon.
+
 ## lsif-semantic-diff
 
 Documentation coming soon.
