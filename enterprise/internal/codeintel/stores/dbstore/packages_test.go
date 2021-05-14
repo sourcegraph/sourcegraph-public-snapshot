@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
 )
 
 func TestUpdatePackages(t *testing.T) {

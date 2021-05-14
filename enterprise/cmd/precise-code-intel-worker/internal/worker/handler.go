@@ -17,8 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -26,6 +24,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
 )
 
 type handler struct {
