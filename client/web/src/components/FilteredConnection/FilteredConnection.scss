@@ -112,4 +112,9 @@ $compact-summary-min-height: 2.75rem;
             margin-left: auto;
         }
     }
+    &__noncompact &__show-more {
+        .theme-redesign & {
+            margin-bottom: 1rem;
+        }
+    }
 }
