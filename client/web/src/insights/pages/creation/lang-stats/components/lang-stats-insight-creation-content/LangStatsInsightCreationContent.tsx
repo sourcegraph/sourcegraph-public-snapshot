@@ -8,7 +8,7 @@ import { useField } from '../../../../../components/form/hooks/useField'
 import { SubmissionErrors, useForm } from '../../../../../components/form/hooks/useForm'
 import { useTitleValidator } from '../../../../../components/form/hooks/useTitleValidator'
 import { createRequiredValidator } from '../../../../../components/form/validators'
-import { InsightTypeSuffix } from '../../../../../core/types'
+import { InsightTypePrefix } from '../../../../../core/types'
 import { LangStatsCreationFormFields } from '../../types'
 import { LangStatsInsightCreationForm } from '../lang-stats-insight-creation-form/LangStatsInsightCreationForm'
 import { LangStatsInsightLivePreview } from '../live-preview-chart/LangStatsInsightLivePreview'
@@ -26,6 +26,12 @@ const INITIAL_VALUES: LangStatsCreationFormFields = {
 }
 
 export interface LangStatsInsightCreationContentProps {
+    /**
+     * This component might be used in two different modes for creation and
+     * edit mode. In edit mode we change some text keys for form and trigger
+     * validation on form fields immediately.
+     * */
+    mode?: 'creation' | 'edit'
     /** Final settings cascade. Used for title field validation. */
     settings?: Settings | null
     /** Initial value for all form fields. */
@@ -39,15 +45,16 @@ export interface LangStatsInsightCreationContentProps {
 }
 
 export const LangStatsInsightCreationContent: React.FunctionComponent<LangStatsInsightCreationContentProps> = props => {
-    const { settings, initialValues = INITIAL_VALUES, className, onSubmit, onCancel = noop } = props
+    const { mode = 'creation', settings, initialValues = INITIAL_VALUES, className, onSubmit, onCancel = noop } = props
 
     const { handleSubmit, formAPI, ref } = useForm<LangStatsCreationFormFields>({
         initialValues,
         onSubmit,
+        touched: mode === 'edit',
     })
 
     // We can't have two or more insights with the same name, since we rely on name as on id of insights.
-    const titleValidator = useTitleValidator({ settings, insightType: InsightTypeSuffix.langStats })
+    const titleValidator = useTitleValidator({ settings, insightType: InsightTypePrefix.langStats })
 
     const repository = useField('repository', formAPI, repositoriesFieldValidator)
     const title = useField('title', formAPI, titleValidator)
@@ -61,6 +68,7 @@ export const LangStatsInsightCreationContent: React.FunctionComponent<LangStatsI
     return (
         <div className={classnames(styles.content, className)}>
             <LangStatsInsightCreationForm
+                mode={mode}
                 innerRef={ref}
                 handleSubmit={handleSubmit}
                 submitErrors={formAPI.submitErrors}

@@ -13,6 +13,7 @@ import { LangStatsCreationFormFields } from '../../types'
 import styles from './LangStatsInsightCreationForm.module.scss'
 
 export interface LangStatsInsightCreationFormProps {
+    mode?: 'creation' | 'edit'
     innerRef: RefObject<any>
     handleSubmit: FormEventHandler
     submitErrors: SubmissionErrors
@@ -29,6 +30,7 @@ export interface LangStatsInsightCreationFormProps {
 
 export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsightCreationFormProps> = props => {
     const {
+        mode = 'creation',
         innerRef,
         handleSubmit,
         submitErrors,
@@ -40,6 +42,8 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
         visibility,
         onCancel,
     } = props
+
+    const isEditMode = mode === 'edit'
 
     return (
         // eslint-disable-next-line react/forbid-elements
@@ -124,7 +128,7 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
                 <LoaderButton
                     alwaysShowLabel={true}
                     loading={submitting}
-                    label={submitting ? 'Submitting' : 'Create code insight'}
+                    label={submitting ? 'Submitting' : isEditMode ? 'Edit insight' : 'Create code insight'}
                     type="submit"
                     disabled={submitting}
                     className="btn btn-primary mr-2"
