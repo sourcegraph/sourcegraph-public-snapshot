@@ -8,6 +8,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/honeycombio/libhoney-go"
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
@@ -19,6 +20,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/lsif/conversion"
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/honey"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
@@ -76,6 +79,13 @@ func (h *handler) getSize(record workerutil.Record) int64 {
 // handle converts a raw upload into a dump within the given transaction context. Returns true if the
 // upload record was requeued and false otherwise.
 func (h *handler) handle(ctx context.Context, workerStore dbworkerstore.Store, dbStore DBStore, upload store.Upload) (requeued bool, err error) {
+	start := time.Now()
+	defer func() {
+		if honey.Enabled() {
+			_ = createHoneyEvent(ctx, upload, err, time.Since(start)).Send()
+		}
+	}()
+
 	if requeued, err := requeueIfCloning(ctx, workerStore, upload); err != nil || requeued {
 		return requeued, err
 	}
@@ -94,6 +104,8 @@ func (h *handler) handle(ctx context.Context, workerStore dbworkerstore.Store, d
 			return errors.Wrap(err, "conversion.Correlate")
 		}
 
+		// Note: this is writing to a different database than the block below, so the same comments
+		// do not apply here.
 		if err := writeData(ctx, h.lsifStore, upload.ID, groupedBundleData); err != nil {
 			return err
 		}
@@ -255,4 +267,28 @@ func writeData(ctx context.Context, lsifStore LSIFStore, id int, groupedBundleDa
 	}
 
 	return nil
+}
+
+func createHoneyEvent(ctx context.Context, upload store.Upload, err error, duration time.Duration) *libhoney.Event {
+	fields := map[string]interface{}{
+		"duration_ms":    duration.Milliseconds(),
+		"uploadID":       upload.ID,
+		"repositoryID":   upload.RepositoryID,
+		"repositoryName": upload.RepositoryName,
+		"commit":         upload.Commit,
+		"root":           upload.Root,
+		"indexer":        upload.Indexer,
+	}
+
+	if err != nil {
+		fields["error"] = err.Error()
+	}
+	if upload.UploadSize != nil {
+		fields["uploadSize"] = upload.UploadSize
+	}
+	if spanURL := trace.SpanURLFromContext(ctx); spanURL != "" {
+		fields["trace"] = spanURL
+	}
+
+	return honey.EventWithFields("codeintel-worker", fields)
 }
