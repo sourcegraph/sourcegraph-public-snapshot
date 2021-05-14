@@ -3,19 +3,19 @@ package rewirer
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/global"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type ChangesetRewirer struct {
 	// The mappings need to be hydrated for the ChangesetRewirer to consume them.
-	mappings      store.RewirerMappings
+	mappings      btypes.RewirerMappings
 	batchChangeID int64
 }
 
-func New(mappings store.RewirerMappings, batchChangeID int64) *ChangesetRewirer {
+func New(mappings btypes.RewirerMappings, batchChangeID int64) *ChangesetRewirer {
 	return &ChangesetRewirer{
 		mappings:      mappings,
 		batchChangeID: batchChangeID,
@@ -26,8 +26,8 @@ func New(mappings store.RewirerMappings, batchChangeID int64) *ChangesetRewirer 
 // for consumption by the background reconciler.
 //
 // It also updates the ChangesetIDs on the batch change.
-func (r *ChangesetRewirer) Rewire() (changesets []*batches.Changeset, err error) {
-	changesets = []*batches.Changeset{}
+func (r *ChangesetRewirer) Rewire() (changesets []*btypes.Changeset, err error) {
+	changesets = []*btypes.Changeset{}
 
 	for _, m := range r.mappings {
 		// If a Changeset that's currently attached to the batch change wasn't matched to a ChangesetSpec, it needs to be closed/detached.
@@ -65,7 +65,7 @@ func (r *ChangesetRewirer) Rewire() (changesets []*batches.Changeset, err error)
 			return nil, err
 		}
 
-		var changeset *batches.Changeset
+		var changeset *btypes.Changeset
 
 		if m.Changeset != nil {
 			changeset = m.Changeset
@@ -87,31 +87,31 @@ func (r *ChangesetRewirer) Rewire() (changesets []*batches.Changeset, err error)
 	return changesets, nil
 }
 
-func (r *ChangesetRewirer) createChangesetForSpec(repo *types.Repo, spec *batches.ChangesetSpec) *batches.Changeset {
-	newChangeset := &batches.Changeset{
+func (r *ChangesetRewirer) createChangesetForSpec(repo *types.Repo, spec *btypes.ChangesetSpec) *btypes.Changeset {
+	newChangeset := &btypes.Changeset{
 		RepoID:              spec.RepoID,
 		ExternalServiceType: repo.ExternalRepo.ServiceType,
 
-		BatchChanges:         []batches.BatchChangeAssoc{{BatchChangeID: r.batchChangeID}},
+		BatchChanges:         []btypes.BatchChangeAssoc{{BatchChangeID: r.batchChangeID}},
 		OwnedByBatchChangeID: r.batchChangeID,
-		CurrentSpecID:        spec.ID,
 
-		PublicationState: batches.ChangesetPublicationStateUnpublished,
-		ReconcilerState:  batches.ReconcilerStateQueued,
+		PublicationState: btypes.ChangesetPublicationStateUnpublished,
 	}
 
-	// Copy over diff stat from the spec.
-	diffStat := spec.DiffStat()
-	newChangeset.SetDiffStat(&diffStat)
+	newChangeset.SetCurrentSpec(spec)
+
+	// Set up the initial queue state of the changeset.
+	newChangeset.ResetReconcilerState(global.DefaultReconcilerEnqueueState())
 
 	return newChangeset
 }
 
-func (r *ChangesetRewirer) updateChangesetToNewSpec(c *batches.Changeset, spec *batches.ChangesetSpec) {
-	if c.ReconcilerState == batches.ReconcilerStateCompleted {
+func (r *ChangesetRewirer) updateChangesetToNewSpec(c *btypes.Changeset, spec *btypes.ChangesetSpec) {
+	if c.ReconcilerState == btypes.ReconcilerStateCompleted {
 		c.PreviousSpecID = c.CurrentSpecID
 	}
-	c.CurrentSpecID = spec.ID
+
+	c.SetCurrentSpec(spec)
 
 	// Ensure that the changeset is attached to the batch change
 	c.Attach(r.batchChangeID)
@@ -119,39 +119,39 @@ func (r *ChangesetRewirer) updateChangesetToNewSpec(c *batches.Changeset, spec *
 	// We need to enqueue it for the changeset reconciler, so the
 	// reconciler wakes up, compares old and new spec and, if
 	// necessary, updates the changesets accordingly.
-	c.ResetQueued()
+	c.ResetReconcilerState(global.DefaultReconcilerEnqueueState())
 }
 
-func (r *ChangesetRewirer) createTrackingChangeset(repo *types.Repo, externalID string) *batches.Changeset {
-	newChangeset := &batches.Changeset{
+func (r *ChangesetRewirer) createTrackingChangeset(repo *types.Repo, externalID string) *btypes.Changeset {
+	newChangeset := &btypes.Changeset{
 		RepoID:              repo.ID,
 		ExternalServiceType: repo.ExternalRepo.ServiceType,
 
-		BatchChanges: []batches.BatchChangeAssoc{{BatchChangeID: r.batchChangeID}},
+		BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: r.batchChangeID}},
 		ExternalID:   externalID,
 		// Note: no CurrentSpecID, because we merely track this one
 
-		PublicationState: batches.ChangesetPublicationStateUnpublished,
+		PublicationState: btypes.ChangesetPublicationStateUnpublished,
 
 		// Enqueue it so the reconciler syncs it.
-		ReconcilerState: batches.ReconcilerStateQueued,
+		ReconcilerState: btypes.ReconcilerStateQueued,
 	}
 
 	return newChangeset
 }
 
-func (r *ChangesetRewirer) attachTrackingChangeset(changeset *batches.Changeset) {
+func (r *ChangesetRewirer) attachTrackingChangeset(changeset *btypes.Changeset) {
 	// We already have a changeset with the given repoID and
 	// externalID, so we can track it.
 	changeset.Attach(r.batchChangeID)
 
 	// If it's errored and not created by another batch change, we re-enqueue it.
-	if changeset.OwnedByBatchChangeID == 0 && (changeset.ReconcilerState == batches.ReconcilerStateErrored || changeset.ReconcilerState == batches.ReconcilerStateFailed) {
-		changeset.ResetQueued()
+	if changeset.OwnedByBatchChangeID == 0 && (changeset.ReconcilerState == btypes.ReconcilerStateErrored || changeset.ReconcilerState == btypes.ReconcilerStateFailed) {
+		changeset.ResetReconcilerState(global.DefaultReconcilerEnqueueState())
 	}
 }
 
-func (r *ChangesetRewirer) closeChangeset(changeset *batches.Changeset) {
+func (r *ChangesetRewirer) closeChangeset(changeset *btypes.Changeset) {
 	reset := false
 	if changeset.CurrentSpecID != 0 && changeset.OwnedByBatchChangeID == r.batchChangeID && changeset.Published() {
 		// If we have a current spec ID and the changeset was created by
@@ -178,7 +178,7 @@ func (r *ChangesetRewirer) closeChangeset(changeset *batches.Changeset) {
 		// when somebody re-attaches it it's (prev: B, curr: C).
 		// But we only rotate the spec, if applying the currentSpecID was
 		// successful:
-		if changeset.ReconcilerState == batches.ReconcilerStateCompleted {
+		if changeset.ReconcilerState == btypes.ReconcilerStateCompleted {
 			changeset.PreviousSpecID = changeset.CurrentSpecID
 		}
 
@@ -202,7 +202,7 @@ func (r *ChangesetRewirer) closeChangeset(changeset *batches.Changeset) {
 	}
 
 	if reset {
-		changeset.ResetQueued()
+		changeset.ResetReconcilerState(global.DefaultReconcilerEnqueueState())
 	}
 }
 
@@ -226,7 +226,7 @@ var _ error = ErrRepoNotSupported{}
 // checkRepoSupported checks whether the given repository is supported by batch
 // changes and if not it returns an error.
 func checkRepoSupported(repo *types.Repo) error {
-	if batches.IsRepoSupported(&repo.ExternalRepo) {
+	if btypes.IsRepoSupported(&repo.ExternalRepo) {
 		return nil
 	}
 

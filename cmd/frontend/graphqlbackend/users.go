@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -76,23 +77,28 @@ func (r *userConnectionResolver) compute(ctx context.Context) ([]*types.User, in
 			return
 		}
 
-		r.users, err = database.GlobalUsers.List(ctx, &r.opt)
+		r.users, err = database.Users(r.db).List(ctx, &r.opt)
 		if err != nil {
 			r.err = err
 			return
 		}
-		r.totalCount, r.err = database.GlobalUsers.Count(ctx, &r.opt)
+		r.totalCount, r.err = database.Users(r.db).Count(ctx, &r.opt)
 	})
 	return r.users, r.totalCount, r.err
 }
 
 func (r *userConnectionResolver) Nodes(ctx context.Context) ([]*UserResolver, error) {
+	// 🚨 SECURITY: Only site admins can list users.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
 	var users []*types.User
 	var err error
 	if r.useCache() {
 		users, _, err = r.compute(ctx)
 	} else {
-		users, err = database.GlobalUsers.List(ctx, &r.opt)
+		users, err = database.Users(r.db).List(ctx, &r.opt)
 	}
 	if err != nil {
 		return nil, err
@@ -109,12 +115,17 @@ func (r *userConnectionResolver) Nodes(ctx context.Context) ([]*UserResolver, er
 }
 
 func (r *userConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+	// 🚨 SECURITY: Only site admins can count users.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return 0, err
+	}
+
 	var count int
 	var err error
 	if r.useCache() {
 		_, count, err = r.compute(ctx)
 	} else {
-		count, err = database.GlobalUsers.Count(ctx, &r.opt)
+		count, err = database.Users(r.db).Count(ctx, &r.opt)
 	}
 	return int32(count), err
 }

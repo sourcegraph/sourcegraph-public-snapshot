@@ -1,4 +1,5 @@
 import { storiesOf } from '@storybook/react'
+import classNames from 'classnames'
 import React from 'react'
 import { of } from 'rxjs'
 
@@ -12,10 +13,11 @@ import {
 } from '../../../../graphql-operations'
 import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
 
+import styles from './PreviewList.module.scss'
 import { VisibleChangesetApplyPreviewNode } from './VisibleChangesetApplyPreviewNode'
 
 const { add } = storiesOf('web/batches/preview/VisibleChangesetApplyPreviewNode', module).addDecorator(story => (
-    <div className="p-3 container web-content preview-list__grid">{story()}</div>
+    <div className={classNames(styles.previewListGrid, 'p-3 container web-content')}>{story()}</div>
 ))
 
 const testRepo = { name: 'github.com/sourcegraph/testrepo', url: 'https://test.test/repo' }
@@ -159,6 +161,10 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
                 id: '123123',
                 title: 'the old title',
                 state: ChangesetState.OPEN,
+                externalID: '123',
+                externalURL: {
+                    url: 'http://test.test/123',
+                },
                 currentSpec: {
                     description: {
                         __typename: 'GitBranchChangesetDescription',
@@ -210,6 +216,10 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
                 id: '123123',
                 title: 'the old title',
                 state: ChangesetState.OPEN,
+                externalID: '123',
+                externalURL: {
+                    url: 'http://test.test/123',
+                },
                 currentSpec: {
                     description: {
                         __typename: 'GitBranchChangesetDescription',
@@ -261,6 +271,10 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
                 id: '123123',
                 title: 'Le draft changeset',
                 state: ChangesetState.OPEN,
+                externalID: '123',
+                externalURL: {
+                    url: 'http://test.test/123',
+                },
                 currentSpec: {
                     description: {
                         __typename: 'GitBranchChangesetDescription',
@@ -312,6 +326,10 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
                 id: '123123',
                 title: 'Le closed changeset',
                 state: ChangesetState.OPEN,
+                externalID: '123',
+                externalURL: {
+                    url: 'http://test.test/123',
+                },
                 currentSpec: {
                     description: {
                         __typename: 'GitBranchChangesetDescription',
@@ -363,6 +381,10 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
                 title: 'Le open changeset',
                 state: ChangesetState.OPEN,
                 repository: testRepo,
+                externalID: '123',
+                externalURL: {
+                    url: 'http://test.test/123',
+                },
                 diffStat: {
                     added: 2,
                     changed: 8,
@@ -390,6 +412,10 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
                 title: 'Le open changeset',
                 state: ChangesetState.OPEN,
                 repository: testRepo,
+                externalID: '123',
+                externalURL: {
+                    url: 'http://test.test/123',
+                },
                 diffStat: {
                     added: 2,
                     changed: 8,
@@ -417,6 +443,10 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
                 id: '123123',
                 title: 'Change base ref',
                 state: ChangesetState.OPEN,
+                externalID: '123',
+                externalURL: {
+                    url: 'http://test.test/123',
+                },
                 currentSpec: {
                     description: {
                         __typename: 'GitBranchChangesetDescription',
@@ -468,6 +498,10 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
                 id: '123123',
                 title: 'Change base ref',
                 state: ChangesetState.OPEN,
+                externalID: '123',
+                externalURL: {
+                    url: 'http://test.test/123',
+                },
                 currentSpec: {
                     description: {
                         __typename: 'GitBranchChangesetDescription',
@@ -519,6 +553,10 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
                 id: '123123',
                 title: 'the old title',
                 state: ChangesetState.OPEN,
+                externalID: '123',
+                externalURL: {
+                    url: 'http://test.test/123',
+                },
                 currentSpec: {
                     description: {
                         __typename: 'GitBranchChangesetDescription',
@@ -570,6 +608,10 @@ export const visibleChangesetApplyPreviewNodeStories: Record<string, VisibleChan
                 id: '123123',
                 title: 'the old title',
                 state: ChangesetState.OPEN,
+                externalID: '123',
+                externalURL: {
+                    url: 'http://test.test/123',
+                },
                 currentSpec: {
                     description: {
                         __typename: 'GitBranchChangesetDescription',

@@ -7,12 +7,13 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 )
 
 func testStoreSiteCredentials(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
-	credentials := make([]*SiteCredential, 0, 3)
+	credentials := make([]*btypes.SiteCredential, 0, 3)
 	// Make sure these are sorted alphabetically.
 	externalServiceTypes := []string{
 		extsvc.TypeBitbucketServer,
@@ -20,15 +21,19 @@ func testStoreSiteCredentials(t *testing.T, ctx context.Context, s *Store, clock
 		extsvc.TypeGitLab,
 	}
 
+	// TODO(batch-changes-site-credential-encryption): remove after migration is
+	// complete, since all fields should be exported again.
+	diffOpts := []cmp.Option{cmp.AllowUnexported(btypes.SiteCredential{})}
+
 	t.Run("Create", func(t *testing.T) {
 		for i := 0; i < cap(credentials); i++ {
-			cred := &SiteCredential{
+			cred := &btypes.SiteCredential{
 				ExternalServiceType: externalServiceTypes[i],
 				ExternalServiceID:   "https://someurl.test",
-				Credential:          &auth.OAuthBearerToken{Token: "123"},
 			}
+			token := &auth.OAuthBearerToken{Token: "123"}
 
-			if err := s.CreateSiteCredential(ctx, cred); err != nil {
+			if err := s.CreateSiteCredential(ctx, cred, token); err != nil {
 				t.Fatal(err)
 			}
 			if cred.ID == 0 {
@@ -54,7 +59,7 @@ func testStoreSiteCredentials(t *testing.T, ctx context.Context, s *Store, clock
 				t.Fatal(err)
 			}
 
-			if diff := cmp.Diff(have, want); diff != "" {
+			if diff := cmp.Diff(have, want, diffOpts...); diff != "" {
 				t.Fatal(diff)
 			}
 		})
@@ -71,7 +76,7 @@ func testStoreSiteCredentials(t *testing.T, ctx context.Context, s *Store, clock
 				t.Fatal(err)
 			}
 
-			if diff := cmp.Diff(have, want); diff != "" {
+			if diff := cmp.Diff(have, want, diffOpts...); diff != "" {
 				t.Fatal(diff)
 			}
 		})
@@ -103,7 +108,7 @@ func testStoreSiteCredentials(t *testing.T, ctx context.Context, s *Store, clock
 				t.Fatalf("listed %d site credentials, want: %d", len(have), len(want))
 			}
 
-			if diff := cmp.Diff(have, want); diff != "" {
+			if diff := cmp.Diff(have, want, diffOpts...); diff != "" {
 				t.Fatal(diff)
 			}
 		})
@@ -132,10 +137,50 @@ func testStoreSiteCredentials(t *testing.T, ctx context.Context, s *Store, clock
 						t.Fatalf("listed %d site credentials, want: %d", len(have), len(want))
 					}
 
-					if diff := cmp.Diff(have, want); diff != "" {
+					if diff := cmp.Diff(have, want, diffOpts...); diff != "" {
 						t.Fatal(diff)
 					}
 				}
+			}
+		})
+	})
+
+	t.Run("Update", func(t *testing.T) {
+		t.Run("Found", func(t *testing.T) {
+			for _, cred := range credentials {
+				if err := cred.SetAuthenticator(ctx, &auth.BasicAuthWithSSH{
+					BasicAuth: auth.BasicAuth{
+						Username: "foo",
+						Password: "bar",
+					},
+					PrivateKey: "so private",
+					PublicKey:  "so public",
+					Passphrase: "probably written on a post-it",
+				}); err != nil {
+					t.Fatal(err)
+				}
+
+				if err := s.UpdateSiteCredential(ctx, cred); err != nil {
+					t.Errorf("unexpected error: %+v", err)
+				}
+
+				if have, err := s.GetSiteCredential(ctx, GetSiteCredentialOpts{
+					ID: cred.ID,
+				}); err != nil {
+					t.Errorf("error retrieving credential: %+v", err)
+				} else if diff := cmp.Diff(have, cred, diffOpts...); diff != "" {
+					t.Errorf("unexpected difference in credentials (-have +want):\n%s", diff)
+				}
+			}
+		})
+		t.Run("NotFound", func(t *testing.T) {
+			cred := &btypes.SiteCredential{
+				ID: 0xdeadbeef,
+			}
+			if err := s.UpdateSiteCredential(ctx, cred); err == nil {
+				t.Errorf("unexpected nil error")
+			} else if err != ErrNoResults {
+				t.Errorf("unexpected error: have=%v want=%v", err, ErrNoResults)
 			}
 		})
 	})

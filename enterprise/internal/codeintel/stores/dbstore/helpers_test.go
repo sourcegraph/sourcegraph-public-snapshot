@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -17,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
@@ -211,10 +211,12 @@ func insertPackageReferences(t testing.TB, store *Store, packageReferences []lsi
 	for _, packageReference := range packageReferences {
 		if err := store.UpdatePackageReferences(context.Background(), packageReference.DumpID, []semantic.PackageReference{
 			{
-				Scheme:  packageReference.Scheme,
-				Name:    packageReference.Name,
-				Version: packageReference.Version,
-				Filter:  packageReference.Filter,
+				Package: semantic.Package{
+					Scheme:  packageReference.Scheme,
+					Name:    packageReference.Name,
+					Version: packageReference.Version,
+				},
+				Filter: packageReference.Filter,
 			},
 		}); err != nil {
 			t.Fatalf("unexpected error updating package references: %s", err)
@@ -349,7 +351,7 @@ func normalizeVisibleUploads(uploadMetas map[string][]commitgraph.UploadMeta) ma
 	return uploadMetas
 }
 
-func getStates(ids ...int) (map[int]string, error) {
+func getUploadStates(db dbutil.DB, ids ...int) (map[int]string, error) {
 	if len(ids) == 0 {
 		return nil, nil
 	}
@@ -359,7 +361,20 @@ func getStates(ids ...int) (map[int]string, error) {
 		sqlf.Join(intsToQueries(ids), ", "),
 	)
 
-	return scanStates(dbconn.Global.Query(q.Query(sqlf.PostgresBindVar), q.Args()...))
+	return scanStates(db.QueryContext(context.Background(), q.Query(sqlf.PostgresBindVar), q.Args()...))
+}
+
+func getIndexStates(db dbutil.DB, ids ...int) (map[int]string, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+
+	q := sqlf.Sprintf(
+		`SELECT id, state FROM lsif_indexes WHERE id IN (%s)`,
+		sqlf.Join(intsToQueries(ids), ", "),
+	)
+
+	return scanStates(db.QueryContext(context.Background(), q.Query(sqlf.PostgresBindVar), q.Args()...))
 }
 
 // scanStates scans pairs of id/states from the return value of `*Store.query`.
@@ -377,7 +392,7 @@ func scanStates(rows *sql.Rows, queryErr error) (_ map[int]string, err error) {
 			return nil, err
 		}
 
-		states[id] = state
+		states[id] = strings.ToLower(state)
 	}
 
 	return states, nil

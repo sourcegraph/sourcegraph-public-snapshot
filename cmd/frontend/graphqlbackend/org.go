@@ -19,7 +19,7 @@ import (
 )
 
 func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name string }) (*OrgResolver, error) {
-	org, err := database.GlobalOrgs.GetByName(ctx, args.Name)
+	org, err := database.Orgs(r.db).GetByName(ctx, args.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +43,7 @@ func OrgByID(ctx context.Context, db dbutil.DB, id graphql.ID) (*OrgResolver, er
 }
 
 func OrgByIDInt32(ctx context.Context, db dbutil.DB, orgID int32) (*OrgResolver, error) {
-	org, err := database.GlobalOrgs.GetByID(ctx, orgID)
+	org, err := database.Orgs(db).GetByID(ctx, orgID)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +86,7 @@ func (o *OrgResolver) CreatedAt() DateTime { return DateTime{Time: o.org.Created
 
 func (o *OrgResolver) Members(ctx context.Context) (*staticUserConnectionResolver, error) {
 	// 🚨 SECURITY: Only org members can list the org members.
-	if err := backend.CheckOrgAccess(ctx, o.db, o.org.ID); err != nil {
+	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, o.db, o.org.ID); err != nil {
 		if err == backend.ErrNotAnOrgMember {
 			return nil, errors.New("must be a member of this organization to view members")
 		}
@@ -99,7 +99,7 @@ func (o *OrgResolver) Members(ctx context.Context) (*staticUserConnectionResolve
 	}
 	users := make([]*types.User, len(memberships))
 	for i, membership := range memberships {
-		user, err := database.GlobalUsers.GetByID(ctx, membership.UserID)
+		user, err := database.Users(o.db).GetByID(ctx, membership.UserID)
 		if err != nil {
 			return nil, err
 		}
@@ -115,11 +115,11 @@ func (o *OrgResolver) settingsSubject() api.SettingsSubject {
 func (o *OrgResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
 	// 🚨 SECURITY: Only organization members and site admins may access the settings, because they
 	// may contains secrets or other sensitive data.
-	if err := backend.CheckOrgAccess(ctx, o.db, o.org.ID); err != nil {
+	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, o.db, o.org.ID); err != nil {
 		return nil, err
 	}
 
-	settings, err := database.GlobalSettings.GetLatest(ctx, o.settingsSubject())
+	settings, err := database.Settings(o.db).GetLatest(ctx, o.settingsSubject())
 	if err != nil {
 		return nil, err
 	}
@@ -150,7 +150,7 @@ func (o *OrgResolver) ViewerPendingInvitation(ctx context.Context) (*organizatio
 }
 
 func (o *OrgResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
-	if err := backend.CheckOrgAccess(ctx, o.db, o.org.ID); err == backend.ErrNotAuthenticated || err == backend.ErrNotAnOrgMember {
+	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, o.db, o.org.ID); err == backend.ErrNotAuthenticated || err == backend.ErrNotAnOrgMember {
 		return false, nil
 	} else if err != nil {
 		return false, err
@@ -202,7 +202,7 @@ func (r *schemaResolver) CreateOrganization(ctx context.Context, args *struct {
 	if err := suspiciousnames.CheckNameAllowedForUserOrOrganization(args.Name); err != nil {
 		return nil, err
 	}
-	newOrg, err := database.GlobalOrgs.Create(ctx, args.Name, args.DisplayName)
+	newOrg, err := database.Orgs(r.db).Create(ctx, args.Name, args.DisplayName)
 	if err != nil {
 		return nil, err
 	}
@@ -227,11 +227,11 @@ func (r *schemaResolver) UpdateOrganization(ctx context.Context, args *struct {
 
 	// 🚨 SECURITY: Check that the current user is a member
 	// of the org that is being modified.
-	if err := backend.CheckOrgAccess(ctx, r.db, orgID); err != nil {
+	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgID); err != nil {
 		return nil, err
 	}
 
-	updatedOrg, err := database.GlobalOrgs.Update(ctx, orgID, args.DisplayName)
+	updatedOrg, err := database.Orgs(r.db).Update(ctx, orgID, args.DisplayName)
 	if err != nil {
 		return nil, err
 	}
@@ -254,7 +254,7 @@ func (r *schemaResolver) RemoveUserFromOrganization(ctx context.Context, args *s
 
 	// 🚨 SECURITY: Check that the current user is a member of the org that is being modified, or a
 	// site admin.
-	if err := backend.CheckOrgAccess(ctx, r.db, orgID); err != nil {
+	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgID); err != nil {
 		return nil, err
 	}
 

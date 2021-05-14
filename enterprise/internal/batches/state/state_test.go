@@ -7,7 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 
-	"github.com/sourcegraph/sourcegraph/internal/batches"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -19,14 +19,14 @@ func TestComputeGithubCheckState(t *testing.T) {
 	t.Parallel()
 
 	now := timeutil.Now()
-	commitEvent := func(minutesSinceSync int, context, state string) *batches.ChangesetEvent {
+	commitEvent := func(minutesSinceSync int, context, state string) *btypes.ChangesetEvent {
 		commit := &github.CommitStatus{
 			Context:    context,
 			State:      state,
 			ReceivedAt: now.Add(time.Duration(minutesSinceSync) * time.Minute),
 		}
-		event := &batches.ChangesetEvent{
-			Kind:     batches.ChangesetEventKindCommitStatus,
+		event := &btypes.ChangesetEvent{
+			Kind:     btypes.ChangesetEventKindCommitStatus,
 			Metadata: commit,
 		}
 		return event
@@ -38,7 +38,7 @@ func TestComputeGithubCheckState(t *testing.T) {
 			Conclusion: conclusion,
 		}
 	}
-	checkSuiteEvent := func(minutesSinceSync int, id, status, conclusion string, runs ...github.CheckRun) *batches.ChangesetEvent {
+	checkSuiteEvent := func(minutesSinceSync int, id, status, conclusion string, runs ...github.CheckRun) *btypes.ChangesetEvent {
 		suite := &github.CheckSuite{
 			ID:         id,
 			Status:     status,
@@ -46,8 +46,8 @@ func TestComputeGithubCheckState(t *testing.T) {
 			ReceivedAt: now.Add(time.Duration(minutesSinceSync) * time.Minute),
 		}
 		suite.CheckRuns.Nodes = runs
-		event := &batches.ChangesetEvent{
-			Kind:     batches.ChangesetEventKindCheckSuite,
+		event := &btypes.ChangesetEvent{
+			Kind:     btypes.ChangesetEventKindCheckSuite,
 			Metadata: suite,
 		}
 		return event
@@ -58,98 +58,98 @@ func TestComputeGithubCheckState(t *testing.T) {
 
 	tests := []struct {
 		name   string
-		events []*batches.ChangesetEvent
-		want   batches.ChangesetCheckState
+		events []*btypes.ChangesetEvent
+		want   btypes.ChangesetCheckState
 	}{
 		{
 			name:   "empty slice",
 			events: nil,
-			want:   batches.ChangesetCheckStateUnknown,
+			want:   btypes.ChangesetCheckStateUnknown,
 		},
 		{
 			name: "single success",
-			events: []*batches.ChangesetEvent{
+			events: []*btypes.ChangesetEvent{
 				commitEvent(1, "ctx1", "SUCCESS"),
 			},
-			want: batches.ChangesetCheckStatePassed,
+			want: btypes.ChangesetCheckStatePassed,
 		},
 		{
 			name: "success status and suite",
-			events: []*batches.ChangesetEvent{
+			events: []*btypes.ChangesetEvent{
 				commitEvent(1, "ctx1", "SUCCESS"),
 				checkSuiteEvent(1, "cs1", "COMPLETED", "SUCCESS", checkRun("cr1", "COMPLETED", "SUCCESS")),
 			},
-			want: batches.ChangesetCheckStatePassed,
+			want: btypes.ChangesetCheckStatePassed,
 		},
 		{
 			name: "single pending",
-			events: []*batches.ChangesetEvent{
+			events: []*btypes.ChangesetEvent{
 				commitEvent(1, "ctx1", "PENDING"),
 			},
-			want: batches.ChangesetCheckStatePending,
+			want: btypes.ChangesetCheckStatePending,
 		},
 		{
 			name: "single error",
-			events: []*batches.ChangesetEvent{
+			events: []*btypes.ChangesetEvent{
 				commitEvent(1, "ctx1", "ERROR"),
 			},
-			want: batches.ChangesetCheckStateFailed,
+			want: btypes.ChangesetCheckStateFailed,
 		},
 		{
 			name: "pending + error",
-			events: []*batches.ChangesetEvent{
+			events: []*btypes.ChangesetEvent{
 				commitEvent(1, "ctx1", "PENDING"),
 				commitEvent(1, "ctx2", "ERROR"),
 			},
-			want: batches.ChangesetCheckStatePending,
+			want: btypes.ChangesetCheckStatePending,
 		},
 		{
 			name: "pending + success",
-			events: []*batches.ChangesetEvent{
+			events: []*btypes.ChangesetEvent{
 				commitEvent(1, "ctx1", "PENDING"),
 				commitEvent(1, "ctx2", "SUCCESS"),
 			},
-			want: batches.ChangesetCheckStatePending,
+			want: btypes.ChangesetCheckStatePending,
 		},
 		{
 			name: "success + error",
-			events: []*batches.ChangesetEvent{
+			events: []*btypes.ChangesetEvent{
 				commitEvent(1, "ctx1", "SUCCESS"),
 				commitEvent(1, "ctx2", "ERROR"),
 			},
-			want: batches.ChangesetCheckStateFailed,
+			want: btypes.ChangesetCheckStateFailed,
 		},
 		{
 			name: "success x2",
-			events: []*batches.ChangesetEvent{
+			events: []*btypes.ChangesetEvent{
 				commitEvent(1, "ctx1", "SUCCESS"),
 				commitEvent(1, "ctx2", "SUCCESS"),
 			},
-			want: batches.ChangesetCheckStatePassed,
+			want: btypes.ChangesetCheckStatePassed,
 		},
 		{
 			name: "later events have precedence",
-			events: []*batches.ChangesetEvent{
+			events: []*btypes.ChangesetEvent{
 				commitEvent(1, "ctx1", "PENDING"),
 				commitEvent(1, "ctx1", "SUCCESS"),
 			},
-			want: batches.ChangesetCheckStatePassed,
+			want: btypes.ChangesetCheckStatePassed,
 		},
 		{
 			name: "queued suites with zero runs should be ignored",
-			events: []*batches.ChangesetEvent{
+			events: []*btypes.ChangesetEvent{
 				commitEvent(1, "ctx1", "SUCCESS"),
 				checkSuiteEvent(1, "cs1", "QUEUED", ""),
 			},
-			want: batches.ChangesetCheckStatePassed,
+			want: btypes.ChangesetCheckStatePassed,
 		},
 		{
 			name: "completed suites with zero runs should be ignored",
-			events: []*batches.ChangesetEvent{
+			events: []*btypes.ChangesetEvent{
 				commitEvent(1, "ctx1", "ERROR"),
 				checkSuiteEvent(1, "cs1", "COMPLETED", ""),
 			},
-			want: batches.ChangesetCheckStateFailed,
+			want: btypes.ChangesetCheckStateFailed,
 		},
 	}
 
@@ -168,7 +168,7 @@ func TestComputeBitbucketBuildStatus(t *testing.T) {
 
 	now := timeutil.Now()
 	sha := "abcdef"
-	statusEvent := func(minutesSinceSync int, key, state string) *batches.ChangesetEvent {
+	statusEvent := func(minutesSinceSync int, key, state string) *btypes.ChangesetEvent {
 		commit := &bitbucketserver.CommitStatus{
 			Commit: sha,
 			Status: bitbucketserver.BuildStatus{
@@ -177,8 +177,8 @@ func TestComputeBitbucketBuildStatus(t *testing.T) {
 				DateAdded: now.Add(1*time.Second).Unix() * 1000,
 			},
 		}
-		event := &batches.ChangesetEvent{
-			Kind:     batches.ChangesetEventKindBitbucketServerCommitStatus,
+		event := &btypes.ChangesetEvent{
+			Kind:     btypes.ChangesetEventKindBitbucketServerCommitStatus,
 			Metadata: commit,
 		}
 		return event
@@ -195,74 +195,74 @@ func TestComputeBitbucketBuildStatus(t *testing.T) {
 
 	tests := []struct {
 		name   string
-		events []*batches.ChangesetEvent
-		want   batches.ChangesetCheckState
+		events []*btypes.ChangesetEvent
+		want   btypes.ChangesetCheckState
 	}{
 		{
 			name:   "empty slice",
 			events: nil,
-			want:   batches.ChangesetCheckStateUnknown,
+			want:   btypes.ChangesetCheckStateUnknown,
 		},
 		{
 			name: "single success",
-			events: []*batches.ChangesetEvent{
+			events: []*btypes.ChangesetEvent{
 				statusEvent(1, "ctx1", "SUCCESSFUL"),
 			},
-			want: batches.ChangesetCheckStatePassed,
+			want: btypes.ChangesetCheckStatePassed,
 		},
 		{
 			name: "single pending",
-			events: []*batches.ChangesetEvent{
+			events: []*btypes.ChangesetEvent{
 				statusEvent(1, "ctx1", "INPROGRESS"),
 			},
-			want: batches.ChangesetCheckStatePending,
+			want: btypes.ChangesetCheckStatePending,
 		},
 		{
 			name: "single error",
-			events: []*batches.ChangesetEvent{
+			events: []*btypes.ChangesetEvent{
 				statusEvent(1, "ctx1", "FAILED"),
 			},
-			want: batches.ChangesetCheckStateFailed,
+			want: btypes.ChangesetCheckStateFailed,
 		},
 		{
 			name: "pending + error",
-			events: []*batches.ChangesetEvent{
+			events: []*btypes.ChangesetEvent{
 				statusEvent(1, "ctx1", "INPROGRESS"),
 				statusEvent(1, "ctx2", "FAILED"),
 			},
-			want: batches.ChangesetCheckStatePending,
+			want: btypes.ChangesetCheckStatePending,
 		},
 		{
 			name: "pending + success",
-			events: []*batches.ChangesetEvent{
+			events: []*btypes.ChangesetEvent{
 				statusEvent(1, "ctx1", "INPROGRESS"),
 				statusEvent(1, "ctx2", "SUCCESSFUL"),
 			},
-			want: batches.ChangesetCheckStatePending,
+			want: btypes.ChangesetCheckStatePending,
 		},
 		{
 			name: "success + error",
-			events: []*batches.ChangesetEvent{
+			events: []*btypes.ChangesetEvent{
 				statusEvent(1, "ctx1", "SUCCESSFUL"),
 				statusEvent(1, "ctx2", "FAILED"),
 			},
-			want: batches.ChangesetCheckStateFailed,
+			want: btypes.ChangesetCheckStateFailed,
 		},
 		{
 			name: "success x2",
-			events: []*batches.ChangesetEvent{
+			events: []*btypes.ChangesetEvent{
 				statusEvent(1, "ctx1", "SUCCESSFUL"),
 				statusEvent(1, "ctx2", "SUCCESSFUL"),
 			},
-			want: batches.ChangesetCheckStatePassed,
+			want: btypes.ChangesetCheckStatePassed,
 		},
 		{
 			name: "later events have precedence",
-			events: []*batches.ChangesetEvent{
+			events: []*btypes.ChangesetEvent{
 				statusEvent(1, "ctx1", "INPROGRESS"),
 				statusEvent(1, "ctx1", "SUCCESSFUL"),
 			},
-			want: batches.ChangesetCheckStatePassed,
+			want: btypes.ChangesetCheckStatePassed,
 		},
 	}
 
@@ -282,11 +282,11 @@ func TestComputeGitLabCheckState(t *testing.T) {
 	t.Run("no events", func(t *testing.T) {
 		for name, tc := range map[string]struct {
 			mr   *gitlab.MergeRequest
-			want batches.ChangesetCheckState
+			want btypes.ChangesetCheckState
 		}{
 			"no pipelines at all": {
 				mr:   &gitlab.MergeRequest{},
-				want: batches.ChangesetCheckStateUnknown,
+				want: btypes.ChangesetCheckStateUnknown,
 			},
 			"only a head pipeline": {
 				mr: &gitlab.MergeRequest{
@@ -294,7 +294,7 @@ func TestComputeGitLabCheckState(t *testing.T) {
 						Status: gitlab.PipelineStatusPending,
 					},
 				},
-				want: batches.ChangesetCheckStatePending,
+				want: btypes.ChangesetCheckStatePending,
 			},
 			"one pipeline only": {
 				mr: &gitlab.MergeRequest{
@@ -308,7 +308,7 @@ func TestComputeGitLabCheckState(t *testing.T) {
 						},
 					},
 				},
-				want: batches.ChangesetCheckStateFailed,
+				want: btypes.ChangesetCheckStateFailed,
 			},
 			"two pipelines in the expected order": {
 				mr: &gitlab.MergeRequest{
@@ -326,7 +326,7 @@ func TestComputeGitLabCheckState(t *testing.T) {
 						},
 					},
 				},
-				want: batches.ChangesetCheckStateFailed,
+				want: btypes.ChangesetCheckStateFailed,
 			},
 			"two pipelines in an unexpected order": {
 				mr: &gitlab.MergeRequest{
@@ -344,7 +344,7 @@ func TestComputeGitLabCheckState(t *testing.T) {
 						},
 					},
 				},
-				want: batches.ChangesetCheckStatePassed,
+				want: btypes.ChangesetCheckStatePassed,
 			},
 		} {
 			t.Run(name, func(t *testing.T) {
@@ -363,16 +363,16 @@ func TestComputeGitLabCheckState(t *testing.T) {
 			},
 		}
 
-		events := []*batches.ChangesetEvent{
+		events := []*btypes.ChangesetEvent{
 			{
-				Kind: batches.ChangesetEventKindGitLabPipeline,
+				Kind: btypes.ChangesetEventKindGitLabPipeline,
 				Metadata: &gitlab.Pipeline{
 					CreatedAt: gitlab.Time{Time: time.Unix(5, 0)},
 					Status:    gitlab.PipelineStatusSuccess,
 				},
 			},
 			{
-				Kind: batches.ChangesetEventKindGitLabPipeline,
+				Kind: btypes.ChangesetEventKindGitLabPipeline,
 				Metadata: &gitlab.Pipeline{
 					CreatedAt: gitlab.Time{Time: time.Unix(4, 0)},
 					Status:    gitlab.PipelineStatusFailed,
@@ -381,19 +381,19 @@ func TestComputeGitLabCheckState(t *testing.T) {
 		}
 
 		for name, tc := range map[string]struct {
-			events     []*batches.ChangesetEvent
+			events     []*btypes.ChangesetEvent
 			lastSynced time.Time
-			want       batches.ChangesetCheckState
+			want       btypes.ChangesetCheckState
 		}{
 			"older events only": {
 				events:     events,
 				lastSynced: time.Unix(10, 0),
-				want:       batches.ChangesetCheckStatePending,
+				want:       btypes.ChangesetCheckStatePending,
 			},
 			"newer events only": {
 				events:     events,
 				lastSynced: time.Unix(3, 0),
-				want:       batches.ChangesetCheckStatePassed,
+				want:       btypes.ChangesetCheckStatePassed,
 			},
 		} {
 			t.Run(name, func(t *testing.T) {
@@ -414,61 +414,61 @@ func TestComputeReviewState(t *testing.T) {
 
 	tests := []struct {
 		name      string
-		changeset *batches.Changeset
+		changeset *btypes.Changeset
 		history   []changesetStatesAtTime
-		want      batches.ChangesetReviewState
+		want      btypes.ChangesetReviewState
 	}{
 		{
 			name:      "github - no events",
 			changeset: githubChangeset(daysAgo(10), "OPEN"),
 			history:   []changesetStatesAtTime{},
-			want:      batches.ChangesetReviewStatePending,
+			want:      btypes.ChangesetReviewStatePending,
 		},
 		{
 			name:      "github - changeset older than events",
 			changeset: githubChangeset(daysAgo(10), "OPEN"),
 			history: []changesetStatesAtTime{
-				{t: daysAgo(0), reviewState: batches.ChangesetReviewStateApproved},
+				{t: daysAgo(0), reviewState: btypes.ChangesetReviewStateApproved},
 			},
-			want: batches.ChangesetReviewStateApproved,
+			want: btypes.ChangesetReviewStateApproved,
 		},
 		{
 			name:      "github - changeset newer than events",
 			changeset: githubChangeset(daysAgo(0), "OPEN"),
 			history: []changesetStatesAtTime{
-				{t: daysAgo(10), reviewState: batches.ChangesetReviewStateApproved},
+				{t: daysAgo(10), reviewState: btypes.ChangesetReviewStateApproved},
 			},
-			want: batches.ChangesetReviewStateApproved,
+			want: btypes.ChangesetReviewStateApproved,
 		},
 		{
 			name:      "bitbucketserver - no events",
 			changeset: bitbucketChangeset(daysAgo(10), "OPEN", "NEEDS_WORK"),
 			history:   []changesetStatesAtTime{},
-			want:      batches.ChangesetReviewStateChangesRequested,
+			want:      btypes.ChangesetReviewStateChangesRequested,
 		},
 
 		{
 			name:      "bitbucketserver - changeset older than events",
 			changeset: bitbucketChangeset(daysAgo(10), "OPEN", "NEEDS_WORK"),
 			history: []changesetStatesAtTime{
-				{t: daysAgo(0), reviewState: batches.ChangesetReviewStateApproved},
+				{t: daysAgo(0), reviewState: btypes.ChangesetReviewStateApproved},
 			},
-			want: batches.ChangesetReviewStateApproved,
+			want: btypes.ChangesetReviewStateApproved,
 		},
 
 		{
 			name:      "bitbucketserver - changeset newer than events",
 			changeset: bitbucketChangeset(daysAgo(0), "OPEN", "NEEDS_WORK"),
 			history: []changesetStatesAtTime{
-				{t: daysAgo(10), reviewState: batches.ChangesetReviewStateApproved},
+				{t: daysAgo(10), reviewState: btypes.ChangesetReviewStateApproved},
 			},
-			want: batches.ChangesetReviewStateChangesRequested,
+			want: btypes.ChangesetReviewStateChangesRequested,
 		},
 		{
 			name:      "gitlab - no events, no approvals",
 			changeset: gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateOpened, []*gitlab.Note{}),
 			history:   []changesetStatesAtTime{},
-			want:      batches.ChangesetReviewStatePending,
+			want:      btypes.ChangesetReviewStatePending,
 		},
 		{
 			name: "gitlab - no events, one approval",
@@ -479,7 +479,7 @@ func TestComputeReviewState(t *testing.T) {
 				},
 			}),
 			history: []changesetStatesAtTime{},
-			want:    batches.ChangesetReviewStateApproved,
+			want:    btypes.ChangesetReviewStateApproved,
 		},
 		{
 			name: "gitlab - no events, one unapproval",
@@ -490,7 +490,7 @@ func TestComputeReviewState(t *testing.T) {
 				},
 			}),
 			history: []changesetStatesAtTime{},
-			want:    batches.ChangesetReviewStateChangesRequested,
+			want:    btypes.ChangesetReviewStateChangesRequested,
 		},
 		{
 			name: "gitlab - no events, several notes",
@@ -507,7 +507,7 @@ func TestComputeReviewState(t *testing.T) {
 				},
 			}),
 			history: []changesetStatesAtTime{},
-			want:    batches.ChangesetReviewStateChangesRequested,
+			want:    btypes.ChangesetReviewStateChangesRequested,
 		},
 		{
 			name: "gitlab - changeset older than events",
@@ -518,9 +518,9 @@ func TestComputeReviewState(t *testing.T) {
 				},
 			}),
 			history: []changesetStatesAtTime{
-				{t: daysAgo(0), reviewState: batches.ChangesetReviewStateApproved},
+				{t: daysAgo(0), reviewState: btypes.ChangesetReviewStateApproved},
 			},
-			want: batches.ChangesetReviewStateApproved,
+			want: btypes.ChangesetReviewStateApproved,
 		},
 		{
 			name: "gitlab - changeset newer than events",
@@ -531,9 +531,9 @@ func TestComputeReviewState(t *testing.T) {
 				},
 			}),
 			history: []changesetStatesAtTime{
-				{t: daysAgo(10), reviewState: batches.ChangesetReviewStateApproved},
+				{t: daysAgo(10), reviewState: btypes.ChangesetReviewStateApproved},
 			},
-			want: batches.ChangesetReviewStateChangesRequested,
+			want: btypes.ChangesetReviewStateChangesRequested,
 		},
 	}
 
@@ -561,159 +561,159 @@ func TestComputeExternalState(t *testing.T) {
 
 	tests := []struct {
 		name      string
-		changeset *batches.Changeset
+		changeset *btypes.Changeset
 		history   []changesetStatesAtTime
-		want      batches.ChangesetExternalState
+		want      btypes.ChangesetExternalState
 	}{
 		{
 			name:      "github - no events",
 			changeset: githubChangeset(daysAgo(10), "OPEN"),
 			history:   []changesetStatesAtTime{},
-			want:      batches.ChangesetExternalStateOpen,
+			want:      btypes.ChangesetExternalStateOpen,
 		},
 		{
 			name:      "github - changeset older than events",
 			changeset: githubChangeset(daysAgo(10), "OPEN"),
 			history: []changesetStatesAtTime{
-				{t: daysAgo(0), externalState: batches.ChangesetExternalStateClosed},
+				{t: daysAgo(0), externalState: btypes.ChangesetExternalStateClosed},
 			},
-			want: batches.ChangesetExternalStateClosed,
+			want: btypes.ChangesetExternalStateClosed,
 		},
 		{
 			name:      "github - changeset newer than events",
 			changeset: githubChangeset(daysAgo(0), "OPEN"),
 			history: []changesetStatesAtTime{
-				{t: daysAgo(10), externalState: batches.ChangesetExternalStateClosed},
+				{t: daysAgo(10), externalState: btypes.ChangesetExternalStateClosed},
 			},
-			want: batches.ChangesetExternalStateOpen,
+			want: btypes.ChangesetExternalStateOpen,
 		},
 		{
 			name:      "github - changeset newer and deleted",
 			changeset: setDeletedAt(githubChangeset(daysAgo(0), "OPEN"), daysAgo(0)),
 			history: []changesetStatesAtTime{
-				{t: daysAgo(10), externalState: batches.ChangesetExternalStateClosed},
+				{t: daysAgo(10), externalState: btypes.ChangesetExternalStateClosed},
 			},
-			want: batches.ChangesetExternalStateDeleted,
+			want: btypes.ChangesetExternalStateDeleted,
 		},
 		{
 			name:      "github draft - no events",
 			changeset: setDraft(githubChangeset(daysAgo(10), "OPEN")),
 			history:   []changesetStatesAtTime{},
-			want:      batches.ChangesetExternalStateDraft,
+			want:      btypes.ChangesetExternalStateDraft,
 		},
 		{
 			name:      "github draft - changeset older than events",
 			changeset: githubChangeset(daysAgo(10), "OPEN"),
 			history: []changesetStatesAtTime{
-				{t: daysAgo(0), externalState: batches.ChangesetExternalStateDraft},
+				{t: daysAgo(0), externalState: btypes.ChangesetExternalStateDraft},
 			},
-			want: batches.ChangesetExternalStateDraft,
+			want: btypes.ChangesetExternalStateDraft,
 		},
 		{
 			name:      "github draft - changeset newer than events",
 			changeset: setDraft(githubChangeset(daysAgo(0), "OPEN")),
 			history: []changesetStatesAtTime{
-				{t: daysAgo(10), externalState: batches.ChangesetExternalStateClosed},
+				{t: daysAgo(10), externalState: btypes.ChangesetExternalStateClosed},
 			},
-			want: batches.ChangesetExternalStateDraft,
+			want: btypes.ChangesetExternalStateDraft,
 		},
 		{
 			name:      "github draft closed",
 			changeset: setDraft(githubChangeset(daysAgo(1), "CLOSED")),
-			history:   []changesetStatesAtTime{{t: daysAgo(2), externalState: batches.ChangesetExternalStateClosed}},
-			want:      batches.ChangesetExternalStateClosed,
+			history:   []changesetStatesAtTime{{t: daysAgo(2), externalState: btypes.ChangesetExternalStateClosed}},
+			want:      btypes.ChangesetExternalStateClosed,
 		},
 		{
 			name:      "bitbucketserver - no events",
 			changeset: bitbucketChangeset(daysAgo(10), "OPEN", "NEEDS_WORK"),
 			history:   []changesetStatesAtTime{},
-			want:      batches.ChangesetExternalStateOpen,
+			want:      btypes.ChangesetExternalStateOpen,
 		},
 		{
 			name:      "bitbucketserver - changeset older than events",
 			changeset: bitbucketChangeset(daysAgo(10), "OPEN", "NEEDS_WORK"),
 			history: []changesetStatesAtTime{
-				{t: daysAgo(0), externalState: batches.ChangesetExternalStateClosed},
+				{t: daysAgo(0), externalState: btypes.ChangesetExternalStateClosed},
 			},
-			want: batches.ChangesetExternalStateClosed,
+			want: btypes.ChangesetExternalStateClosed,
 		},
 		{
 			name:      "bitbucketserver - changeset newer than events",
 			changeset: bitbucketChangeset(daysAgo(0), "OPEN", "NEEDS_WORK"),
 			history: []changesetStatesAtTime{
-				{t: daysAgo(10), externalState: batches.ChangesetExternalStateClosed},
+				{t: daysAgo(10), externalState: btypes.ChangesetExternalStateClosed},
 			},
-			want: batches.ChangesetExternalStateOpen,
+			want: btypes.ChangesetExternalStateOpen,
 		},
 		{
 			name:      "bitbucketserver - changeset newer and deleted",
 			changeset: setDeletedAt(bitbucketChangeset(daysAgo(0), "OPEN", "NEEDS_WORK"), daysAgo(0)),
 			history: []changesetStatesAtTime{
-				{t: daysAgo(10), externalState: batches.ChangesetExternalStateClosed},
+				{t: daysAgo(10), externalState: btypes.ChangesetExternalStateClosed},
 			},
-			want: batches.ChangesetExternalStateDeleted,
+			want: btypes.ChangesetExternalStateDeleted,
 		},
 		{
 			name:      "gitlab - no events, opened",
 			changeset: gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateOpened, nil),
 			history:   []changesetStatesAtTime{},
-			want:      batches.ChangesetExternalStateOpen,
+			want:      btypes.ChangesetExternalStateOpen,
 		},
 		{
 			name:      "gitlab - no events, closed",
 			changeset: gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateClosed, nil),
 			history:   []changesetStatesAtTime{},
-			want:      batches.ChangesetExternalStateClosed,
+			want:      btypes.ChangesetExternalStateClosed,
 		},
 		{
 			name:      "gitlab - no events, locked",
 			changeset: gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateLocked, nil),
 			history:   []changesetStatesAtTime{},
-			want:      batches.ChangesetExternalStateClosed,
+			want:      btypes.ChangesetExternalStateClosed,
 		},
 		{
 			name:      "gitlab - no events, merged",
 			changeset: gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateMerged, nil),
 			history:   []changesetStatesAtTime{},
-			want:      batches.ChangesetExternalStateMerged,
+			want:      btypes.ChangesetExternalStateMerged,
 		},
 		{
 			name:      "gitlab - changeset older than events",
 			changeset: gitLabChangeset(daysAgo(10), gitlab.MergeRequestStateMerged, nil),
 			history: []changesetStatesAtTime{
-				{t: daysAgo(0), externalState: batches.ChangesetExternalStateClosed},
+				{t: daysAgo(0), externalState: btypes.ChangesetExternalStateClosed},
 			},
-			want: batches.ChangesetExternalStateClosed,
+			want: btypes.ChangesetExternalStateClosed,
 		},
 		{
 			name:      "gitlab - changeset newer than events",
 			changeset: gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateMerged, nil),
 			history: []changesetStatesAtTime{
-				{t: daysAgo(10), externalState: batches.ChangesetExternalStateClosed},
+				{t: daysAgo(10), externalState: btypes.ChangesetExternalStateClosed},
 			},
-			want: batches.ChangesetExternalStateMerged,
+			want: btypes.ChangesetExternalStateMerged,
 		},
 		{
 			name:      "gitlab draft - no events",
 			changeset: setDraft(gitLabChangeset(daysAgo(10), gitlab.MergeRequestStateOpened, nil)),
 			history:   []changesetStatesAtTime{},
-			want:      batches.ChangesetExternalStateDraft,
+			want:      btypes.ChangesetExternalStateDraft,
 		},
 		{
 			name:      "gitlab draft - changeset older than events",
 			changeset: gitLabChangeset(daysAgo(10), gitlab.MergeRequestStateOpened, nil),
 			history: []changesetStatesAtTime{
-				{t: daysAgo(0), externalState: batches.ChangesetExternalStateDraft},
+				{t: daysAgo(0), externalState: btypes.ChangesetExternalStateDraft},
 			},
-			want: batches.ChangesetExternalStateDraft,
+			want: btypes.ChangesetExternalStateDraft,
 		},
 		{
 			name:      "gitlab draft - changeset newer than events",
 			changeset: setDraft(gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateOpened, nil)),
 			history: []changesetStatesAtTime{
-				{t: daysAgo(10), externalState: batches.ChangesetExternalStateClosed},
+				{t: daysAgo(10), externalState: btypes.ChangesetExternalStateClosed},
 			},
-			want: batches.ChangesetExternalStateDraft,
+			want: btypes.ChangesetExternalStateDraft,
 		},
 	}
 
@@ -737,9 +737,9 @@ func TestComputeLabels(t *testing.T) {
 	t.Parallel()
 
 	now := timeutil.Now()
-	labelEvent := func(name string, kind batches.ChangesetEventKind, when time.Time) *batches.ChangesetEvent {
-		removed := kind == batches.ChangesetEventKindGitHubUnlabeled
-		return &batches.ChangesetEvent{
+	labelEvent := func(name string, kind btypes.ChangesetEventKind, when time.Time) *btypes.ChangesetEvent {
+		removed := kind == btypes.ChangesetEventKindGitHubUnlabeled
+		return &btypes.ChangesetEvent{
 			Kind:      kind,
 			UpdatedAt: when,
 			Metadata: &github.LabelEvent{
@@ -752,31 +752,31 @@ func TestComputeLabels(t *testing.T) {
 			},
 		}
 	}
-	changeset := func(names []string, updated time.Time) *batches.Changeset {
+	changeset := func(names []string, updated time.Time) *btypes.Changeset {
 		meta := &github.PullRequest{}
 		for _, name := range names {
 			meta.Labels.Nodes = append(meta.Labels.Nodes, github.Label{
 				Name: name,
 			})
 		}
-		return &batches.Changeset{
+		return &btypes.Changeset{
 			UpdatedAt: updated,
 			Metadata:  meta,
 		}
 	}
-	labels := func(names ...string) []batches.ChangesetLabel {
-		var ls []batches.ChangesetLabel
+	labels := func(names ...string) []btypes.ChangesetLabel {
+		var ls []btypes.ChangesetLabel
 		for _, name := range names {
-			ls = append(ls, batches.ChangesetLabel{Name: name})
+			ls = append(ls, btypes.ChangesetLabel{Name: name})
 		}
 		return ls
 	}
 
 	tests := []struct {
 		name      string
-		changeset *batches.Changeset
+		changeset *btypes.Changeset
 		events    ChangesetEvents
-		want      []batches.ChangesetLabel
+		want      []btypes.ChangesetLabel
 	}{
 		{
 			name: "zero values",
@@ -791,15 +791,15 @@ func TestComputeLabels(t *testing.T) {
 			name:      "remove event",
 			changeset: changeset([]string{"label1"}, time.Time{}),
 			events: ChangesetEvents{
-				labelEvent("label1", batches.ChangesetEventKindGitHubUnlabeled, now),
+				labelEvent("label1", btypes.ChangesetEventKindGitHubUnlabeled, now),
 			},
-			want: []batches.ChangesetLabel{},
+			want: []btypes.ChangesetLabel{},
 		},
 		{
 			name:      "add event",
 			changeset: changeset([]string{"label1"}, time.Time{}),
 			events: ChangesetEvents{
-				labelEvent("label2", batches.ChangesetEventKindGitHubLabeled, now),
+				labelEvent("label2", btypes.ChangesetEventKindGitHubLabeled, now),
 			},
 			want: labels("label1", "label2"),
 		},
@@ -807,7 +807,7 @@ func TestComputeLabels(t *testing.T) {
 			name:      "old add event",
 			changeset: changeset([]string{"label1"}, now.Add(5*time.Minute)),
 			events: ChangesetEvents{
-				labelEvent("label2", batches.ChangesetEventKindGitHubLabeled, now),
+				labelEvent("label2", btypes.ChangesetEventKindGitHubLabeled, now),
 			},
 			want: labels("label1"),
 		},
@@ -815,8 +815,8 @@ func TestComputeLabels(t *testing.T) {
 			name:      "sorting",
 			changeset: changeset([]string{"label4", "label3"}, time.Time{}),
 			events: ChangesetEvents{
-				labelEvent("label2", batches.ChangesetEventKindGitHubLabeled, now),
-				labelEvent("label1", batches.ChangesetEventKindGitHubLabeled, now.Add(5*time.Minute)),
+				labelEvent("label2", btypes.ChangesetEventKindGitHubLabeled, now),
+				labelEvent("label1", btypes.ChangesetEventKindGitHubLabeled, now.Add(5*time.Minute)),
 			},
 			want: labels("label1", "label2", "label3", "label4"),
 		},
@@ -833,8 +833,8 @@ func TestComputeLabels(t *testing.T) {
 	}
 }
 
-func bitbucketChangeset(updatedAt time.Time, state, reviewStatus string) *batches.Changeset {
-	return &batches.Changeset{
+func bitbucketChangeset(updatedAt time.Time, state, reviewStatus string) *btypes.Changeset {
+	return &btypes.Changeset{
 		ExternalServiceType: extsvc.TypeBitbucketServer,
 		UpdatedAt:           updatedAt,
 		Metadata: &bitbucketserver.PullRequest{
@@ -846,16 +846,16 @@ func bitbucketChangeset(updatedAt time.Time, state, reviewStatus string) *batche
 	}
 }
 
-func githubChangeset(updatedAt time.Time, state string) *batches.Changeset {
-	return &batches.Changeset{
+func githubChangeset(updatedAt time.Time, state string) *btypes.Changeset {
+	return &btypes.Changeset{
 		ExternalServiceType: extsvc.TypeGitHub,
 		UpdatedAt:           updatedAt,
 		Metadata:            &github.PullRequest{State: state},
 	}
 }
 
-func gitLabChangeset(updatedAt time.Time, state gitlab.MergeRequestState, notes []*gitlab.Note) *batches.Changeset {
-	return &batches.Changeset{
+func gitLabChangeset(updatedAt time.Time, state gitlab.MergeRequestState, notes []*gitlab.Note) *btypes.Changeset {
+	return &btypes.Changeset{
 		ExternalServiceType: extsvc.TypeGitLab,
 		UpdatedAt:           updatedAt,
 		Metadata: &gitlab.MergeRequest{
@@ -865,7 +865,7 @@ func gitLabChangeset(updatedAt time.Time, state gitlab.MergeRequestState, notes 
 	}
 }
 
-func setDeletedAt(c *batches.Changeset, deletedAt time.Time) *batches.Changeset {
+func setDeletedAt(c *btypes.Changeset, deletedAt time.Time) *btypes.Changeset {
 	c.ExternalDeletedAt = deletedAt
 	return c
 }

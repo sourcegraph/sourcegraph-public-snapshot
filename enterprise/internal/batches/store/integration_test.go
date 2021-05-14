@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 )
 
 func TestIntegration(t *testing.T) {
@@ -16,18 +18,29 @@ func TestIntegration(t *testing.T) {
 	db := dbtesting.GetDB(t)
 
 	t.Run("Store", func(t *testing.T) {
-		t.Run("BatchChanges", storeTest(db, testStoreBatchChanges))
-		t.Run("Changesets", storeTest(db, testStoreChangesets))
-		t.Run("ChangesetEvents", storeTest(db, testStoreChangesetEvents))
-		t.Run("ListChangesetSyncData", storeTest(db, testStoreListChangesetSyncData))
-		t.Run("ListChangesetsTextSearch", storeTest(db, testStoreListChangesetsTextSearch))
-		t.Run("BatchSpecs", storeTest(db, testStoreBatchSpecs))
-		t.Run("ChangesetSpecs", storeTest(db, testStoreChangesetSpecs))
-		t.Run("ChangesetSpecsCurrentState", storeTest(db, testStoreChangesetSpecsCurrentState))
-		t.Run("ChangesetSpecsCurrentStateAndTextSearch", storeTest(db, testStoreChangesetSpecsCurrentStateAndTextSearch))
-		t.Run("ChangesetSpecsTextSearch", storeTest(db, testStoreChangesetSpecsTextSearch))
-		t.Run("CodeHosts", storeTest(db, testStoreCodeHost))
-		t.Run("UserDeleteCascades", storeTest(db, testUserDeleteCascades))
-		t.Run("SiteCredentials", storeTest(db, testStoreSiteCredentials))
+		t.Run("BatchChanges", storeTest(db, nil, testStoreBatchChanges))
+		t.Run("Changesets", storeTest(db, nil, testStoreChangesets))
+		t.Run("ChangesetEvents", storeTest(db, nil, testStoreChangesetEvents))
+		t.Run("ChangesetScheduling", storeTest(db, nil, testStoreChangesetScheduling))
+		t.Run("ListChangesetSyncData", storeTest(db, nil, testStoreListChangesetSyncData))
+		t.Run("ListChangesetsTextSearch", storeTest(db, nil, testStoreListChangesetsTextSearch))
+		t.Run("BatchSpecs", storeTest(db, nil, testStoreBatchSpecs))
+		t.Run("ChangesetSpecs", storeTest(db, nil, testStoreChangesetSpecs))
+		t.Run("ChangesetSpecsCurrentState", storeTest(db, nil, testStoreChangesetSpecsCurrentState))
+		t.Run("ChangesetSpecsCurrentStateAndTextSearch", storeTest(db, nil, testStoreChangesetSpecsCurrentStateAndTextSearch))
+		t.Run("ChangesetSpecsTextSearch", storeTest(db, nil, testStoreChangesetSpecsTextSearch))
+		t.Run("CodeHosts", storeTest(db, nil, testStoreCodeHost))
+		t.Run("UserDeleteCascades", storeTest(db, nil, testUserDeleteCascades))
+		t.Run("ChangesetJobs", storeTest(db, nil, testStoreChangesetJobs))
+		t.Run("BulkOperations", storeTest(db, nil, testStoreBulkOperations))
+
+		for name, key := range map[string]encryption.Key{
+			"no key":   nil,
+			"test key": &et.TestKey{},
+		} {
+			t.Run(name, func(t *testing.T) {
+				t.Run("SiteCredentials", storeTest(db, key, testStoreSiteCredentials))
+			})
+		}
 	})
 }

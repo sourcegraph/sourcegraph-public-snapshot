@@ -30,6 +30,7 @@ import {
 
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
+import { percySnapshotWithVariants } from './utils'
 
 const batchChangeListNode: ListBatchChange = {
     id: 'batch123',
@@ -403,6 +404,8 @@ describe('Batches', () => {
                 await driver.page.evaluate(() => document.querySelector<HTMLAnchorElement>('.test-batches-link')?.href),
                 testContext.driver.sourcegraphBaseUrl + '/users/alice/batch-changes/test-batch-change'
             )
+
+            await percySnapshotWithVariants(driver.page, 'Batch Changes List')
         })
 
         it('lists user batch changes', async () => {

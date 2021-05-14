@@ -11,6 +11,7 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { FileDiffFields } from '../../graphql-operations'
+import { DiffMode } from '../../repo/commit/RepositoryCommitPage'
 import { dirname } from '../../util/path'
 
 import { DiffStat } from './DiffStat'
@@ -39,6 +40,7 @@ export interface FileDiffNodeProps extends ThemeProps {
 
     /** Reflect selected line in url */
     persistLines?: boolean
+    diffMode?: DiffMode
 }
 
 /** A file diff. */
@@ -51,6 +53,7 @@ export const FileDiffNode: React.FunctionComponent<FileDiffNodeProps> = ({
     className,
     extensionInfo,
     persistLines,
+    diffMode = 'unified',
 }) => {
     const [expanded, setExpanded] = useState<boolean>(true)
     const [renderDeleted, setRenderDeleted] = useState<boolean>(false)
@@ -174,6 +177,7 @@ export const FileDiffNode: React.FunctionComponent<FileDiffNodeProps> = ({
                             }
                             hunks={node.hunks}
                             lineNumbers={lineNumbers}
+                            diffMode={diffMode}
                         />
                     ))}
             </div>

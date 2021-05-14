@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 )
@@ -11,9 +10,21 @@ import (
 // return an error if not running in enterprise mode. The actual resolvers can be found in
 // enterprise/internal/insights/resolvers
 
+// InsightsResolver is the root resolver.
+type InsightsResolver interface {
+	Insights(ctx context.Context) (InsightConnectionResolver, error)
+}
+
 type InsightsDataPointResolver interface {
 	DateTime() DateTime
 	Value() float64
+}
+
+type InsightStatusResolver interface {
+	TotalPoints() int32
+	PendingJobs() int32
+	CompletedJobs() int32
+	FailedJobs() int32
 }
 
 type InsightsPointsArgs struct {
@@ -24,6 +35,7 @@ type InsightsPointsArgs struct {
 type InsightSeriesResolver interface {
 	Label() string
 	Points(ctx context.Context, args *InsightsPointsArgs) ([]InsightsDataPointResolver, error)
+	Status(ctx context.Context) (InsightStatusResolver, error)
 }
 
 type InsightResolver interface {
@@ -37,18 +49,3 @@ type InsightConnectionResolver interface {
 	TotalCount(ctx context.Context) (int32, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
-
-// InsightsResolver is the root resolver.
-type InsightsResolver interface {
-	Insights(ctx context.Context) (InsightConnectionResolver, error)
-}
-
-var insightsOnlyInEnterprise = errors.New("insights are only available in enterprise")
-
-type defaultInsightsResolver struct{}
-
-func (defaultInsightsResolver) Insights(ctx context.Context) (InsightConnectionResolver, error) {
-	return nil, insightsOnlyInEnterprise
-}
-
-var DefaultInsightsResolver InsightsResolver = defaultInsightsResolver{}

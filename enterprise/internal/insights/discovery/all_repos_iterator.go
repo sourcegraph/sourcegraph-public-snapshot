@@ -10,9 +10,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-// DefaultRepoStore is a subset of the API exposed by the database.DefaultRepos() store.
-type DefaultRepoStore interface {
-	List(ctx context.Context) ([]*types.RepoName, error)
+// DefaultRepoLister is a subset of the API exposed by the backend.CachedDefaultRepoLister.
+type DefaultRepoLister interface {
+	List(ctx context.Context) ([]types.RepoName, error)
 }
 
 // RepoStore is a subset of the API exposed by the database.Repos() store.
@@ -26,7 +26,7 @@ type RepoStore interface {
 // It caches multiple consecutive uses in order to ensure repository lists (which can be quite
 // large, e.g. 500,000+ repositories) are only fetched as frequently as needed.
 type AllReposIterator struct {
-	DefaultRepoStore      DefaultRepoStore
+	DefaultRepoLister     DefaultRepoLister
 	RepoStore             RepoStore
 	Clock                 func() time.Time
 	SourcegraphDotComMode bool // result of envvar.SourcegraphDotComMode()
@@ -63,9 +63,9 @@ func (a *AllReposIterator) ForEach(ctx context.Context, forEach func(repoName st
 			// We shouldn't try to fill historical data for ALL repos on Sourcegraph.com, it would take
 			// forever. Instead, we use the same list of default repositories used when you do a global
 			// search on Sourcegraph.com.
-			res, err := a.DefaultRepoStore.List(ctx)
+			res, err := a.DefaultRepoLister.List(ctx)
 			if err != nil {
-				return errors.Wrap(err, "DefaultRepoStore.List")
+				return errors.Wrap(err, "DefaultRepoLister.List")
 			}
 			for _, r := range res {
 				a.cachedRepoNames = append(a.cachedRepoNames, string(r.Name))

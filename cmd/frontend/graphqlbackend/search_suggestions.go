@@ -17,10 +17,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/gituri"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/search/run"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
 
 const maxSearchSuggestions = 100
@@ -118,8 +119,8 @@ func (s symbolSuggestionResolver) Label() string {
 func (s symbolSuggestionResolver) ToSymbol() (*symbolResolver, bool) { return &s.symbol, true }
 func (s symbolSuggestionResolver) Key() suggestionKey {
 	return suggestionKey{
-		uri:    s.symbol.URI(),
 		symbol: s.symbol.Symbol.Name + s.symbol.Symbol.Parent,
+		url:    s.symbol.CanonicalURL(),
 	}
 }
 
@@ -164,7 +165,7 @@ type suggestionKey struct {
 	file     string
 	symbol   string
 	lang     string
-	uri      *gituri.URI
+	url      string
 }
 
 type searchSuggestionsArgs struct {
@@ -223,10 +224,14 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		// * If query contains only a single term (or 1 repogroup: token and a single term), treat it as a repo field here and ignore the other repo queries.
 		// * If only repo fields (except 1 term in query), show repo suggestions.
 
+		hasSingleField := len(r.Query.Fields()) == 1
+		hasTwoFields := len(r.Query.Fields()) == 2
+		hasSingleContextField := len(r.Query.Values(query.FieldContext)) == 1
+		hasSingleRepoGroupField := len(r.Query.Values(query.FieldRepoGroup)) == 1
 		var effectiveRepoFieldValues []string
-		if len(r.Query.Values(query.FieldDefault)) == 1 && (len(r.Query.Fields()) == 1 || (len(r.Query.Fields()) == 2 && len(r.Query.Values(query.FieldRepoGroup)) == 1)) {
+		if len(r.Query.Values(query.FieldDefault)) == 1 && (hasSingleField || (hasTwoFields && (hasSingleRepoGroupField || hasSingleContextField))) {
 			effectiveRepoFieldValues = append(effectiveRepoFieldValues, r.Query.Values(query.FieldDefault)[0].ToString())
-		} else if len(r.Query.Values(query.FieldRepo)) > 0 && ((len(r.Query.Values(query.FieldRepoGroup)) > 0 && len(r.Query.Fields()) == 2) || (len(r.Query.Values(query.FieldRepoGroup)) == 0 && len(r.Query.Fields()) == 1)) {
+		} else if len(r.Query.Values(query.FieldRepo)) > 0 && ((len(r.Query.Values(query.FieldRepoGroup)) > 0 && hasTwoFields) || (len(r.Query.Values(query.FieldRepoGroup)) == 0 && hasSingleField)) {
 			effectiveRepoFieldValues, _ = r.Query.Repositories()
 		}
 
@@ -240,7 +245,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		}
 		effectiveRepoFieldValues = effectiveRepoFieldValues[:i]
 
-		if len(effectiveRepoFieldValues) > 0 {
+		if len(effectiveRepoFieldValues) > 0 || hasSingleContextField {
 			resolved, err := r.resolveRepositories(ctx, effectiveRepoFieldValues)
 
 			resolvers := make([]SearchSuggestionResolver, 0, len(resolved.RepoRevs))
@@ -365,8 +370,8 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
 		defer cancel()
 
-		fileMatches, _, err := collectStream(func(stream Sender) error {
-			return searchSymbols(ctx, r.db, &search.TextParameters{
+		fileMatches, _, err := streaming.CollectStream(func(stream streaming.Sender) error {
+			return run.SearchSymbols(ctx, &search.TextParameters{
 				PatternInfo:  p,
 				RepoPromise:  (&search.Promise{}).Resolve(resolved.RepoRevs),
 				Query:        r.Query,
@@ -380,30 +385,42 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 
 		results = make([]SearchSuggestionResolver, 0)
 		for _, match := range fileMatches {
-			fileMatch, ok := match.ToFileMatch()
+			fileMatch, ok := match.(*result.FileMatch)
 			if !ok {
 				continue
 			}
-			for _, sr := range fileMatch.Symbols() {
+			for _, sm := range fileMatch.Symbols {
 				score := 20
-				if sr.Symbol.Parent == "" {
+				if sm.Symbol.Parent == "" {
 					score++
 				}
-				if len(sr.Symbol.Name) < 12 {
+				if len(sm.Symbol.Name) < 12 {
 					score++
 				}
-				switch ctagsKindToLSPSymbolKind(sr.Symbol.Kind) {
+				switch sm.Symbol.LSPKind() {
 				case lsp.SKFunction, lsp.SKMethod:
 					score += 2
 				case lsp.SKClass:
 					score += 3
 				}
-				if len(sr.Symbol.Name) >= 4 && strings.Contains(strings.ToLower(sr.URI().String()), strings.ToLower(sr.Symbol.Name)) {
+				repoName := strings.ToLower(string(sm.File.Repo.Name))
+				fileName := strings.ToLower(sm.File.Path)
+				symbolName := strings.ToLower(sm.Symbol.Name)
+				if len(sm.Symbol.Name) >= 4 && strings.Contains(repoName+fileName, symbolName) {
 					score++
 				}
 				results = append(results, symbolSuggestionResolver{
-					symbol: sr,
-					score:  score,
+					symbol: symbolResolver{
+						db: r.db,
+						commit: toGitCommitResolver(
+							NewRepositoryResolver(r.db, fileMatch.Repo.ToRepo()),
+							r.db,
+							fileMatch.CommitID,
+							nil,
+						),
+						SymbolMatch: sm,
+					},
+					score: score,
 				})
 			}
 		}
@@ -444,10 +461,13 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 				}
 				suggestions = make([]SearchSuggestionResolver, 0, len(results.SearchResults))
 				for i, res := range results.SearchResults {
-					if fm, ok := res.ToFileMatch(); ok {
-						entryResolver := fm.File()
+					if fm, ok := res.(*result.FileMatch); ok {
+						fmResolver := &FileMatchResolver{
+							FileMatch:    *fm,
+							RepoResolver: NewRepositoryResolver(r.db, fm.Repo.ToRepo()),
+						}
 						suggestions = append(suggestions, gitTreeSuggestionResolver{
-							gitTreeEntry: entryResolver,
+							gitTreeEntry: fmResolver.File(),
 							score:        len(results.SearchResults) - i,
 						})
 					}

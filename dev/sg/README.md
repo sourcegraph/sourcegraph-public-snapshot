@@ -1,5 +1,30 @@
 # sg - the Sourcegraph developer tool
 
+```
+          _____                    _____
+         /\    \                  /\    \
+        /::\    \                /::\    \
+       /::::\    \              /::::\    \
+      /::::::\    \            /::::::\    \
+     /:::/\:::\    \          /:::/\:::\    \
+    /:::/__\:::\    \        /:::/  \:::\    \
+    \:::\   \:::\    \      /:::/    \:::\    \
+  ___\:::\   \:::\    \    /:::/    / \:::\    \
+ /\   \:::\   \:::\    \  /:::/    /   \:::\ ___\
+/::\   \:::\   \:::\____\/:::/____/  ___\:::|    |
+\:::\   \:::\   \::/    /\:::\    \ /\  /:::|____|
+ \:::\   \:::\   \/____/  \:::\    /::\ \::/    /
+  \:::\   \:::\    \       \:::\   \:::\ \/____/
+   \:::\   \:::\____\       \:::\   \:::\____\
+    \:::\  /:::/    /        \:::\  /:::/    /
+     \:::\/:::/    /          \:::\/:::/    /
+      \::::::/    /            \::::::/    /
+       \::::/    /              \::::/    /
+        \::/    /                \::/____/
+         \/____/
+
+```
+
 `sg` is the CLI tool that Sourcegraph developers can use to develop Sourcegraph.
 
 - [Quickstart](#quickstart)
@@ -16,13 +41,31 @@
 
 ## Quickstart
 
-Run the following to install `sg` from the `main` branch:
+Run the following to install `sg` from inside `sourcegraph/sourcegraph`:
 
 ```
-go install github.com/sourcegraph/sourcegraph/dev/sg@latest
+./dev/sg/install.sh
 ```
 
 Make sure that `$HOME/go/bin` is in your `$PATH`. (If you use `$GOPATH` then `$GOPATH/bin` needs to be in the `$PATH`)
+
+**Note for Linux users:** A command called [sg](https://www.man7.org/linux/man-pages/man1/sg.1.html) is already available at `/usr/bin/sg`. To use the Sourcegraph `sg` CLI, you need to make sure that its location comes first in `PATH`. For example, by prepending `$GOPATH/bin`:
+
+```
+export PATH=$GOPATH/bin:$PATH
+```
+
+Instead of the more conventional:
+
+```
+export PATH=$PATH:$GOPATH/bin
+```
+
+Or you may add an alias to your `.bashrc`:
+
+```
+alias sg=$HOME/go/bin/sg
+```
 
 Then, in the root of `sourcegraph/sourcegraph`, run:
 
@@ -169,8 +212,8 @@ commands:
     install: go install github.com/sourcegraph/sourcegraph/cmd/searcher -o .bin/gitserver
 
   caddy:
-    install_doc.darwin: 'use brew install'
-    install_doc.linux: 'use apt install'
+    installDoc.darwin: 'use brew install'
+    installDoc.linux: 'use apt install'
 
   web:
     cmd: ./node_modules/.bin/gulp --silent --color dev

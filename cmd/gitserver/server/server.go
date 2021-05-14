@@ -12,7 +12,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -305,8 +304,7 @@ func (s *Server) Handler() http.Handler {
 // background goroutine.
 func (s *Server) Janitor(interval time.Duration) {
 	for {
-		addrs := conf.Get().ServiceConnections.GitServers
-		s.cleanupRepos(addrs)
+		s.cleanupRepos()
 		time.Sleep(interval)
 	}
 }
@@ -502,7 +500,7 @@ func (s *Server) serverContext() (context.Context, context.CancelFunc) {
 	}
 }
 
-func (s *Server) getRemoteURL(ctx context.Context, name api.RepoName) (*url.URL, error) {
+func (s *Server) getRemoteURL(ctx context.Context, name api.RepoName) (*vcs.URL, error) {
 	if s.GetRemoteURLFunc == nil {
 		return nil, errors.New("gitserver GetRemoteURLFunc is unset")
 	}
@@ -765,7 +763,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 	var stdoutN, stderrN int64
 	var status string
 	var execErr error
-	var ensureRevisionStatus string
+	ensureRevisionStatus := "noop"
 
 	req.Repo = protocol.NormalizeRepo(req.Repo)
 
@@ -858,6 +856,14 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 
 	dir := s.dir(req.Repo)
 	if !repoCloned(dir) {
+		if conf.Get().DisableAutoGitUpdates {
+			log15.Debug("not cloning on demand as DisableAutoGitUpdates is set")
+			status = "repo-not-found"
+			w.WriteHeader(http.StatusNotFound)
+			_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{})
+			return
+		}
+
 		cloneProgress, cloneInProgress := s.locker.Status(dir)
 		if cloneInProgress {
 			status = "clone-in-progress"
@@ -886,11 +892,12 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 		return
 	}
 
-	didUpdate := s.ensureRevision(ctx, req.Repo, req.EnsureRevision, dir)
-	if didUpdate {
-		ensureRevisionStatus = "fetched"
-	} else {
-		ensureRevisionStatus = "noop"
+	if !conf.Get().DisableAutoGitUpdates {
+		// ensureRevision may kick off a git fetch operation which we don't want if we've
+		// configured DisableAutoGitUpdates.
+		if s.ensureRevision(ctx, req.Repo, req.EnsureRevision, dir) {
+			ensureRevisionStatus = "fetched"
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/octet-stream")
@@ -1436,7 +1443,7 @@ type urlRedactor struct {
 
 // newURLRedactor returns a new urlRedactor that redacts
 // credentials found in rawurl, and the rawurl itself.
-func newURLRedactor(parsedURL *url.URL) *urlRedactor {
+func newURLRedactor(parsedURL *vcs.URL) *urlRedactor {
 	var sensitive []string
 	pw, _ := parsedURL.User.Password()
 	u := parsedURL.User.Username()
@@ -1493,7 +1500,7 @@ func scanCRLF(data []byte, atEOF bool) (advance int, token []byte, err error) {
 
 // testGitRepoExists is a test fixture that overrides the return value for
 // GitRepoSyncer.IsCloneable when it is set.
-var testGitRepoExists func(ctx context.Context, remoteURL *url.URL) error
+var testGitRepoExists func(ctx context.Context, remoteURL *vcs.URL) error
 
 var (
 	execRunning = promauto.NewGaugeVec(prometheus.GaugeOpts{
@@ -1718,7 +1725,7 @@ func ensureHEAD(dir GitDir) {
 
 // setHEAD configures git repo defaults (such as what HEAD is) which are
 // needed for git commands to work.
-func setHEAD(ctx context.Context, dir GitDir, syncer VCSSyncer, repo api.RepoName, remoteURL *url.URL) error {
+func setHEAD(ctx context.Context, dir GitDir, syncer VCSSyncer, repo api.RepoName, remoteURL *vcs.URL) error {
 	// Verify that there is a HEAD file within the repo, and that it is of
 	// non-zero length.
 	ensureHEAD(dir)

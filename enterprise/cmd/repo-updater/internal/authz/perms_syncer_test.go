@@ -15,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
@@ -123,11 +123,11 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 		}
 		return nil
 	}
-	database.Mocks.Repos.ListRepoNames = func(v0 context.Context, args database.ReposListOptions) ([]*types.RepoName, error) {
+	database.Mocks.Repos.ListRepoNames = func(v0 context.Context, args database.ReposListOptions) ([]types.RepoName, error) {
 		if !args.OnlyPrivate {
 			return nil, errors.New("OnlyPrivate want true but got false")
 		}
-		return []*types.RepoName{{ID: 1}}, nil
+		return []types.RepoName{{ID: 1}}, nil
 	}
 	database.Mocks.UserEmails.ListByUser = func(ctx context.Context, opt database.UserEmailsListOptions) ([]*database.UserEmail, error) {
 		return nil, nil
@@ -138,7 +138,7 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	}()
 
 	permsStore := edb.Perms(nil, timeutil.Now)
-	s := NewPermsSyncer(repos.NewStore(dbconn.Global, sql.TxOptions{}), permsStore, timeutil.Now, nil)
+	s := NewPermsSyncer(repos.NewStore(&dbtesting.MockDB{}, sql.TxOptions{}), permsStore, timeutil.Now, nil)
 
 	tests := []struct {
 		name     string
@@ -195,11 +195,11 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 	edb.Mocks.Perms.SetUserPermissions = func(_ context.Context, p *authz.UserPermissions) error {
 		return nil
 	}
-	database.Mocks.Repos.ListRepoNames = func(v0 context.Context, args database.ReposListOptions) ([]*types.RepoName, error) {
+	database.Mocks.Repos.ListRepoNames = func(v0 context.Context, args database.ReposListOptions) ([]types.RepoName, error) {
 		if !args.OnlyPrivate {
 			return nil, errors.New("OnlyPrivate want true but got false")
 		}
-		return []*types.RepoName{{ID: 1}}, nil
+		return []types.RepoName{{ID: 1}}, nil
 	}
 	database.Mocks.UserEmails.ListByUser = func(ctx context.Context, opt database.UserEmailsListOptions) ([]*database.UserEmail, error) {
 		return nil, nil
@@ -210,7 +210,7 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 	}()
 
 	permsStore := edb.Perms(nil, timeutil.Now)
-	s := NewPermsSyncer(repos.NewStore(dbconn.Global, sql.TxOptions{}), permsStore, timeutil.Now, nil)
+	s := NewPermsSyncer(repos.NewStore(&dbtesting.MockDB{}, sql.TxOptions{}), permsStore, timeutil.Now, nil)
 
 	t.Run("invalid token", func(t *testing.T) {
 		calledTouchExpired := false
@@ -286,7 +286,7 @@ func TestPermsSyncer_syncUserPerms_prefixSpecs(t *testing.T) {
 	edb.Mocks.Perms.SetUserPermissions = func(_ context.Context, p *authz.UserPermissions) error {
 		return nil
 	}
-	database.Mocks.Repos.ListRepoNames = func(v0 context.Context, args database.ReposListOptions) ([]*types.RepoName, error) {
+	database.Mocks.Repos.ListRepoNames = func(v0 context.Context, args database.ReposListOptions) ([]types.RepoName, error) {
 		if !args.OnlyPrivate {
 			return nil, errors.New("OnlyPrivate want true but got false")
 		} else if len(args.ExternalRepoIncludePrefixes) == 0 {
@@ -294,7 +294,7 @@ func TestPermsSyncer_syncUserPerms_prefixSpecs(t *testing.T) {
 		} else if len(args.ExternalRepoExcludePrefixes) == 0 {
 			return nil, errors.New("ExternalRepoExcludePrefixes want non-zero but got zero")
 		}
-		return []*types.RepoName{{ID: 1}}, nil
+		return []types.RepoName{{ID: 1}}, nil
 	}
 	database.Mocks.UserEmails.ListByUser = func(ctx context.Context, opt database.UserEmailsListOptions) ([]*database.UserEmail, error) {
 		return nil, nil
@@ -305,7 +305,7 @@ func TestPermsSyncer_syncUserPerms_prefixSpecs(t *testing.T) {
 	}()
 
 	permsStore := edb.Perms(nil, timeutil.Now)
-	s := NewPermsSyncer(repos.NewStore(dbconn.Global, sql.TxOptions{}), permsStore, timeutil.Now, nil)
+	s := NewPermsSyncer(repos.NewStore(&dbtesting.MockDB{}, sql.TxOptions{}), permsStore, timeutil.Now, nil)
 
 	p.fetchUserPerms = func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error) {
 		return &authz.ExternalUserPermissions{
@@ -350,7 +350,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 			database.Mocks.Repos = database.MockRepos{}
 		}()
 
-		s := newPermsSyncer(repos.NewStore(dbconn.Global, sql.TxOptions{}))
+		s := newPermsSyncer(repos.NewStore(&dbtesting.MockDB{}, sql.TxOptions{}))
 
 		err := s.syncRepoPerms(context.Background(), 1, false)
 		if err != nil {
@@ -424,7 +424,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 			database.Mocks.Repos = database.MockRepos{}
 		}()
 
-		s := newPermsSyncer(repos.NewStore(dbconn.Global, sql.TxOptions{}))
+		s := newPermsSyncer(repos.NewStore(&dbtesting.MockDB{}, sql.TxOptions{}))
 
 		err := s.syncRepoPerms(context.Background(), 1, false)
 		if err != nil {
@@ -486,7 +486,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 		database.Mocks.Repos = database.MockRepos{}
 	}()
 
-	s := newPermsSyncer(repos.NewStore(dbconn.Global, sql.TxOptions{}))
+	s := newPermsSyncer(repos.NewStore(&dbtesting.MockDB{}, sql.TxOptions{}))
 
 	tests := []struct {
 		name     string

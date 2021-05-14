@@ -21,9 +21,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -32,12 +33,12 @@ import (
 )
 
 func TestNullIDResilience(t *testing.T) {
-	mockRSAKeygen(t)
+	ct.MockRSAKeygen(t)
 
 	db := dbtesting.GetDB(t)
-	sr := New(store.New(db))
+	sr := New(store.New(db, nil))
 
-	s, err := graphqlbackend.NewSchema(db, sr, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, sr, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -51,6 +52,7 @@ func TestNullIDResilience(t *testing.T) {
 		marshalChangesetSpecRandID(""),
 		marshalBatchChangesCredentialID(0, false),
 		marshalBatchChangesCredentialID(0, true),
+		marshalBulkOperationID(""),
 	}
 
 	for _, id := range ids {
@@ -77,6 +79,8 @@ func TestNullIDResilience(t *testing.T) {
 		fmt.Sprintf(`mutation { createBatchChangesCredential(externalServiceKind: GITHUB, externalServiceURL: "http://test", credential: "123123", user: %q) { id } }`, graphqlbackend.MarshalUserID(0)),
 		fmt.Sprintf(`mutation { deleteBatchChangesCredential(batchChangesCredential: %q) { alwaysNil } }`, marshalBatchChangesCredentialID(0, false)),
 		fmt.Sprintf(`mutation { deleteBatchChangesCredential(batchChangesCredential: %q) { alwaysNil } }`, marshalBatchChangesCredentialID(0, true)),
+		fmt.Sprintf(`mutation { createChangesetComments(batchChange: %q, changesets: [], body: "test") { id } }`, marshalBatchChangeID(0)),
+		fmt.Sprintf(`mutation { createChangesetComments(batchChange: %q, changesets: [%q], body: "test") { id } }`, marshalBatchChangeID(1), marshalChangesetID(0)),
 	}
 
 	for _, m := range mutations {
@@ -102,7 +106,7 @@ func TestCreateBatchSpec(t *testing.T) {
 	user := ct.CreateTestUser(t, db, true)
 	userID := user.ID
 
-	cstore := store.New(db)
+	cstore := store.New(db, nil)
 	repoStore := database.ReposWith(cstore)
 	esStore := database.ExternalServicesWith(cstore)
 
@@ -112,10 +116,10 @@ func TestCreateBatchSpec(t *testing.T) {
 	}
 
 	// Create enough changeset specs to hit the licence check.
-	changesetSpecs := make([]*batches.ChangesetSpec, maxUnlicensedChangesets+1)
+	changesetSpecs := make([]*btypes.ChangesetSpec, maxUnlicensedChangesets+1)
 	for i := range changesetSpecs {
-		changesetSpecs[i] = &batches.ChangesetSpec{
-			Spec: &batches.ChangesetSpecDescription{
+		changesetSpecs[i] = &btypes.ChangesetSpec{
+			Spec: &btypes.ChangesetSpecDescription{
 				BaseRepository: graphqlbackend.MarshalRepositoryID(repo.ID),
 			},
 			RepoID: repo.ID,
@@ -127,7 +131,7 @@ func TestCreateBatchSpec(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -136,7 +140,7 @@ func TestCreateBatchSpec(t *testing.T) {
 	rawSpec := ct.TestRawBatchSpec
 
 	for name, tc := range map[string]struct {
-		changesetSpecs []*batches.ChangesetSpec
+		changesetSpecs []*btypes.ChangesetSpec
 		hasLicenseFor  map[licensing.Feature]struct{}
 		wantErr        bool
 	}{
@@ -282,7 +286,7 @@ func TestCreateChangesetSpec(t *testing.T) {
 
 	userID := ct.CreateTestUser(t, db, true).ID
 
-	cstore := store.New(db)
+	cstore := store.New(db, nil)
 	repoStore := database.ReposWith(cstore)
 	esStore := database.ExternalServicesWith(cstore)
 
@@ -292,7 +296,7 @@ func TestCreateChangesetSpec(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -353,11 +357,15 @@ func TestApplyBatchChange(t *testing.T) {
 	ctx := context.Background()
 	db := dbtesting.GetDB(t)
 
+	// Ensure our site configuration doesn't have rollout windows so we get a
+	// consistent initial state.
+	ct.MockConfig(t, &conf.Unified{})
+
 	userID := ct.CreateTestUser(t, db, true).ID
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	cstore := store.NewWithClock(db, clock)
+	cstore := store.NewWithClock(db, nil, clock)
 	repoStore := database.ReposWith(cstore)
 	esStore := database.ExternalServicesWith(cstore)
 
@@ -368,16 +376,16 @@ func TestApplyBatchChange(t *testing.T) {
 
 	repoAPIID := graphqlbackend.MarshalRepositoryID(repo.ID)
 
-	batchSpec := &batches.BatchSpec{
+	batchSpec := &btypes.BatchSpec{
 		RawSpec: ct.TestRawBatchSpec,
-		Spec: batches.BatchSpecFields{
+		Spec: btypes.BatchSpecFields{
 			Name:        "my-batch-change",
 			Description: "My description",
-			ChangesetTemplate: batches.ChangesetTemplate{
+			ChangesetTemplate: btypes.ChangesetTemplate{
 				Title:  "Hello there",
 				Body:   "This is the body",
 				Branch: "my-branch",
-				Commit: batches.CommitTemplate{
+				Commit: btypes.CommitTemplate{
 					Message: "Add hello world",
 				},
 				Published: overridable.FromBoolOrString(false),
@@ -390,9 +398,9 @@ func TestApplyBatchChange(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	changesetSpec := &batches.ChangesetSpec{
+	changesetSpec := &btypes.ChangesetSpec{
 		BatchSpecID: batchSpec.ID,
-		Spec: &batches.ChangesetSpecDescription{
+		Spec: &btypes.ChangesetSpecDescription{
 			BaseRepository: repoAPIID,
 		},
 		RepoID: repo.ID,
@@ -403,7 +411,7 @@ func TestApplyBatchChange(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -438,7 +446,7 @@ func TestApplyBatchChange(t *testing.T) {
 		LastAppliedAt:  marshalDateTime(t, now),
 		Changesets: apitest.ChangesetConnection{
 			Nodes: []apitest.Changeset{
-				{Typename: "ExternalChangeset", State: string(batches.ChangesetStateProcessing)},
+				{Typename: "ExternalChangeset", State: string(btypes.ChangesetStateProcessing)},
 			},
 			TotalCount: 1,
 		},
@@ -512,11 +520,11 @@ func TestCreateBatchChange(t *testing.T) {
 
 	userID := ct.CreateTestUser(t, db, true).ID
 
-	cstore := store.New(db)
+	cstore := store.New(db, nil)
 
-	batchSpec := &batches.BatchSpec{
+	batchSpec := &btypes.BatchSpec{
 		RawSpec: ct.TestRawBatchSpec,
-		Spec: batches.BatchSpecFields{
+		Spec: btypes.BatchSpecFields{
 			Name:        "my-batch-change",
 			Description: "My description",
 		},
@@ -528,7 +536,7 @@ func TestCreateBatchChange(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -578,9 +586,9 @@ func TestMoveBatchChange(t *testing.T) {
 	orgName := "move-batch-change-test"
 	orgID := ct.InsertTestOrg(t, db, orgName)
 
-	cstore := store.New(db)
+	cstore := store.New(db, nil)
 
-	batchSpec := &batches.BatchSpec{
+	batchSpec := &btypes.BatchSpec{
 		RawSpec:         ct.TestRawBatchSpec,
 		UserID:          userID,
 		NamespaceUserID: userID,
@@ -589,7 +597,7 @@ func TestMoveBatchChange(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	batchChange := &batches.BatchChange{
+	batchChange := &btypes.BatchChange{
 		BatchSpecID:      batchSpec.ID,
 		Name:             "old-name",
 		InitialApplierID: userID,
@@ -602,7 +610,7 @@ func TestMoveBatchChange(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -667,14 +675,16 @@ mutation($batchChange: ID!, $newName: String, $newNamespace: ID){
 
 func TestListChangesetOptsFromArgs(t *testing.T) {
 	var wantFirst int32 = 10
-	wantPublicationStates := []batches.ChangesetPublicationState{
+	wantPublicationStates := []btypes.ChangesetPublicationState{
 		"PUBLISHED",
 		"INVALID",
 	}
-	wantStates := []batches.ChangesetState{"OPEN", "INVALID"}
-	wantExternalStates := []batches.ChangesetExternalState{"OPEN"}
-	wantReviewStates := []batches.ChangesetReviewState{"APPROVED", "INVALID"}
-	wantCheckStates := []batches.ChangesetCheckState{"PENDING", "INVALID"}
+	haveStates := []string{"OPEN", "INVALID"}
+	haveReviewStates := []string{"APPROVED", "INVALID"}
+	haveCheckStates := []string{"PENDING", "INVALID"}
+	wantExternalStates := []btypes.ChangesetExternalState{"OPEN"}
+	wantReviewStates := []btypes.ChangesetReviewState{"APPROVED", "INVALID"}
+	wantCheckStates := []btypes.ChangesetCheckState{"PENDING", "INVALID"}
 	truePtr := func() *bool { val := true; return &val }()
 	wantSearches := []search.TextSearchTerm{{Term: "foo"}, {Term: "bar", Not: true}}
 	var batchChangeID int64 = 1
@@ -702,26 +712,26 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 		// Setting state is safe and transferred to opts.
 		{
 			args: &graphqlbackend.ListChangesetsArgs{
-				State: &wantStates[0],
+				State: &haveStates[0],
 			},
 			wantSafe: true,
 			wantParsed: store.ListChangesetsOpts{
 				ExternalState:    &wantExternalStates[0],
 				PublicationState: &wantPublicationStates[0],
-				ReconcilerStates: []batches.ReconcilerState{batches.ReconcilerStateCompleted},
+				ReconcilerStates: []btypes.ReconcilerState{btypes.ReconcilerStateCompleted},
 			},
 		},
 		// Setting invalid state fails.
 		{
 			args: &graphqlbackend.ListChangesetsArgs{
-				State: &wantStates[1],
+				State: &haveStates[1],
 			},
 			wantErr: "changeset state not valid",
 		},
 		// Setting review state is not safe and transferred to opts.
 		{
 			args: &graphqlbackend.ListChangesetsArgs{
-				ReviewState: &wantReviewStates[0],
+				ReviewState: &haveReviewStates[0],
 			},
 			wantSafe:   false,
 			wantParsed: store.ListChangesetsOpts{ExternalReviewState: &wantReviewStates[0]},
@@ -729,14 +739,14 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 		// Setting invalid review state fails.
 		{
 			args: &graphqlbackend.ListChangesetsArgs{
-				ReviewState: &wantReviewStates[1],
+				ReviewState: &haveReviewStates[1],
 			},
 			wantErr: "changeset review state not valid",
 		},
 		// Setting check state is not safe and transferred to opts.
 		{
 			args: &graphqlbackend.ListChangesetsArgs{
-				CheckState: &wantCheckStates[0],
+				CheckState: &haveCheckStates[0],
 			},
 			wantSafe:   false,
 			wantParsed: store.ListChangesetsOpts{ExternalCheckState: &wantCheckStates[0]},
@@ -744,7 +754,7 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 		// Setting invalid check state fails.
 		{
 			args: &graphqlbackend.ListChangesetsArgs{
-				CheckState: &wantCheckStates[1],
+				CheckState: &haveCheckStates[1],
 			},
 			wantErr: "changeset check state not valid",
 		},
@@ -830,19 +840,19 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 		t.Skip()
 	}
 
-	mockRSAKeygen(t)
+	ct.MockRSAKeygen(t)
 
 	ctx := context.Background()
 	db := dbtesting.GetDB(t)
 
-	pruneUserCredentials(t, db)
+	pruneUserCredentials(t, db, nil)
 
 	userID := ct.CreateTestUser(t, db, true).ID
 
-	cstore := store.New(db)
+	cstore := store.New(db, nil)
 
 	r := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -960,16 +970,16 @@ func TestDeleteBatchChangesCredential(t *testing.T) {
 		t.Skip()
 	}
 
-	mockRSAKeygen(t)
+	ct.MockRSAKeygen(t)
 
 	ctx := context.Background()
 	db := dbtesting.GetDB(t)
 
-	pruneUserCredentials(t, db)
+	pruneUserCredentials(t, db, nil)
 
 	userID := ct.CreateTestUser(t, db, true).ID
 
-	cstore := store.New(db)
+	cstore := store.New(db, nil)
 
 	authenticator := &auth.OAuthBearerToken{Token: "SOSECRET"}
 	userCred, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
@@ -981,17 +991,16 @@ func TestDeleteBatchChangesCredential(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	siteCred := &store.SiteCredential{
+	siteCred := &btypes.SiteCredential{
 		ExternalServiceType: extsvc.TypeGitHub,
 		ExternalServiceID:   "https://github.com/",
-		Credential:          authenticator,
 	}
-	if err := cstore.CreateSiteCredential(ctx, siteCred); err != nil {
+	if err := cstore.CreateSiteCredential(ctx, siteCred, authenticator); err != nil {
 		t.Fatal(err)
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1044,6 +1053,107 @@ func TestDeleteBatchChangesCredential(t *testing.T) {
 const mutationDeleteCredential = `
 mutation($batchChangesCredential: ID!) {
   deleteBatchChangesCredential(batchChangesCredential: $batchChangesCredential) { alwaysNil }
+}
+`
+
+func TestCreateChangesetComments(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := context.Background()
+	db := dbtesting.GetDB(t)
+	cstore := store.New(db, nil)
+
+	userID := ct.CreateTestUser(t, db, true).ID
+	batchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test-comments", userID)
+	otherBatchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test-comments-other", userID)
+	batchChange := ct.CreateBatchChange(t, ctx, cstore, "test-comments", userID, batchSpec.ID)
+	otherBatchChange := ct.CreateBatchChange(t, ctx, cstore, "test-comments-other", userID, otherBatchSpec.ID)
+	repos, _ := ct.CreateTestRepos(t, context.Background(), db, 1)
+	repo := repos[0]
+	changeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+		Repo:             repo.ID,
+		BatchChange:      batchChange.ID,
+		PublicationState: btypes.ChangesetPublicationStatePublished,
+	})
+	otherChangeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+		Repo:             repo.ID,
+		BatchChange:      otherBatchChange.ID,
+		PublicationState: btypes.ChangesetPublicationStatePublished,
+	})
+
+	r := &Resolver{store: cstore}
+	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	generateInput := func() map[string]interface{} {
+		return map[string]interface{}{
+			"batchChange": marshalBatchChangeID(batchChange.ID),
+			"changesets":  []string{string(marshalChangesetID(changeset.ID))},
+			"body":        "test-body",
+		}
+	}
+
+	var response struct {
+		CreateChangesetComments apitest.BulkOperation
+	}
+	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+
+	t.Run("empty body fails", func(t *testing.T) {
+		input := generateInput()
+		input["body"] = ""
+		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateChangesetComments)
+
+		if len(errs) != 1 {
+			t.Fatalf("expected single errors, but got none")
+		}
+		if have, want := errs[0].Message, "empty comment body is not allowed"; have != want {
+			t.Fatalf("wrong error. want=%q, have=%q", want, have)
+		}
+	})
+
+	t.Run("0 changesets fails", func(t *testing.T) {
+		input := generateInput()
+		input["changesets"] = []string{}
+		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateChangesetComments)
+
+		if len(errs) != 1 {
+			t.Fatalf("expected single errors, but got none")
+		}
+		if have, want := errs[0].Message, "specify at least one changeset"; have != want {
+			t.Fatalf("wrong error. want=%q, have=%q", want, have)
+		}
+	})
+
+	t.Run("changeset in different batch change fails", func(t *testing.T) {
+		input := generateInput()
+		input["changesets"] = []string{string(marshalChangesetID(otherChangeset.ID))}
+		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateChangesetComments)
+
+		if len(errs) != 1 {
+			t.Fatalf("expected single errors, but got none")
+		}
+		if have, want := errs[0].Message, "some changesets could not be found"; have != want {
+			t.Fatalf("wrong error. want=%q, have=%q", want, have)
+		}
+	})
+
+	t.Run("runs successfully", func(t *testing.T) {
+		input := generateInput()
+		apitest.MustExec(actorCtx, t, s, input, &response, mutationCreateChangesetComments)
+
+		if response.CreateChangesetComments.ID == "" {
+			t.Fatalf("expected bulk operation to be created, but was not")
+		}
+	})
+}
+
+const mutationCreateChangesetComments = `
+mutation($batchChange: ID!, $changesets: [ID!]!, $body: String!) {
+    createChangesetComments(batchChange: $batchChange, changesets: $changesets, body: $body) { id }
 }
 `
 

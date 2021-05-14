@@ -71,6 +71,7 @@ export function getReturnTo(location: H.Location): string {
     const searchParameters = new URLSearchParams(location.search)
     const returnTo = searchParameters.get('returnTo') || '/search'
     const newURL = new URL(returnTo, window.location.href)
+
     newURL.searchParams.append('toast', 'integrations')
     return newURL.pathname + newURL.search + newURL.hash
 }

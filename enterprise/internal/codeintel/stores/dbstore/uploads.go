@@ -11,6 +11,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -135,7 +136,12 @@ func (s *Store) GetUploadByID(ctx context.Context, id int) (_ Upload, _ bool, er
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return scanFirstUpload(s.Store.Query(ctx, sqlf.Sprintf(getUploadByIDQuery, id)))
+	authzConds, err := database.AuthzQueryConds(ctx, s.Store.Handle().DB())
+	if err != nil {
+		return Upload{}, false, err
+	}
+
+	return scanFirstUpload(s.Store.Query(ctx, sqlf.Sprintf(getUploadByIDQuery, id, authzConds)))
 }
 
 const uploadRankQueryFragment = `
@@ -172,20 +178,9 @@ SELECT
 FROM lsif_uploads_with_repository_name u
 LEFT JOIN (` + uploadRankQueryFragment + `) s
 ON u.id = s.id
-WHERE u.state != 'deleted' AND u.id = %s
+JOIN repo ON repo.id = u.repository_id
+WHERE u.state != 'deleted' AND u.id = %s AND %s
 `
-
-type GetUploadsOptions struct {
-	RepositoryID   int
-	State          string
-	Term           string
-	VisibleAtTip   bool
-	UploadedBefore *time.Time
-	UploadedAfter  *time.Time
-	OldestFirst    bool
-	Limit          int
-	Offset         int
-}
 
 // DeleteUploadsStuckUploading soft deletes any upload record that has been uploading since the given time.
 func (s *Store) DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (_ int, err error) {
@@ -213,6 +208,18 @@ WITH deleted AS (
 )
 SELECT count(*) FROM deleted
 `
+
+type GetUploadsOptions struct {
+	RepositoryID   int
+	State          string
+	Term           string
+	VisibleAtTip   bool
+	UploadedBefore *time.Time
+	UploadedAfter  *time.Time
+	OldestFirst    bool
+	Limit          int
+	Offset         int
+}
 
 // GetUploads returns a list of uploads and the total count of records matching the given conditions.
 func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upload, _ int, err error) {
@@ -257,6 +264,12 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 		conds = append(conds, sqlf.Sprintf("u.uploaded_at > %s", *opts.UploadedAfter))
 	}
 
+	authzConds, err := database.AuthzQueryConds(ctx, tx.Store.Handle().DB())
+	if err != nil {
+		return nil, 0, err
+	}
+	conds = append(conds, authzConds)
+
 	totalCount, _, err := basestore.ScanFirstInt(tx.Store.Query(
 		ctx,
 		sqlf.Sprintf(getUploadsCountQuery, sqlf.Join(conds, " AND ")),
@@ -286,7 +299,9 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 
 const getUploadsCountQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:GetUploads
-SELECT COUNT(*) FROM lsif_uploads_with_repository_name u WHERE %s
+SELECT COUNT(*) FROM lsif_uploads_with_repository_name u
+JOIN repo ON repo.id = u.repository_id
+WHERE %s
 `
 
 const getUploadsQuery = `
@@ -315,18 +330,19 @@ SELECT
 FROM lsif_uploads_with_repository_name u
 LEFT JOIN (` + uploadRankQueryFragment + `) s
 ON u.id = s.id
+JOIN repo ON repo.id = u.repository_id
 WHERE %s ORDER BY %s LIMIT %d OFFSET %d
 `
 
 // makeSearchCondition returns a disjunction of LIKE clauses against all searchable columns of an upload.
 func makeSearchCondition(term string) *sqlf.Query {
 	searchableColumns := []string{
-		"(u.state)::text",
-		`u.repository_name`,
 		"u.commit",
 		"u.root",
-		"u.indexer",
+		"(u.state)::text",
 		"u.failure_message",
+		`u.repository_name`,
+		"u.indexer",
 	}
 
 	var termConds []*sqlf.Query
@@ -598,6 +614,40 @@ WITH u AS (
 		RETURNING id, repository_id
 )
 SELECT u.repository_id, count(*) FROM u GROUP BY u.repository_id
+`
+
+// GetOldestCommitDate returns the oldest commit date for all uploads for the given repository. If there are no
+// non-nil values, a false-valued flag is returned.
+func (s *Store) GetOldestCommitDate(ctx context.Context, repositoryID int) (_ time.Time, _ bool, err error) {
+	ctx, _, endObservation := s.operations.getOldestCommitDate.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	return basestore.ScanFirstTime(s.Query(ctx, sqlf.Sprintf(getOldestCommitDateQuery, repositoryID)))
+}
+
+// Note: we check against '-infinity' here, as the backfill operation will use this sentinel value in the case
+// that the commit is no longer know by gitserver. This allows the backfill migration to make progress without
+// having pristine database.
+const getOldestCommitDateQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:GetOldestCommitDate
+SELECT committed_at FROM lsif_uploads WHERE repository_id = %s AND state = 'completed' AND committed_at IS NOT NULL AND committed_at != '-infinity' ORDER BY committed_at LIMIT 1
+`
+
+// UpdateCommitedAt updates the commit date for the given repository.
+func (s *Store) UpdateCommitedAt(ctx context.Context, uploadID int, committedAt time.Time) (err error) {
+	ctx, _, endObservation := s.operations.updateCommitedAt.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("uploadID", uploadID),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	return s.Exec(ctx, sqlf.Sprintf(updateCommitedAtQuery, committedAt, uploadID))
+}
+
+const updateCommitedAtQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:UpdateCommitedAt
+UPDATE lsif_uploads SET committed_at = %s WHERE id = %s
 `
 
 func intsToString(vs []int) string {

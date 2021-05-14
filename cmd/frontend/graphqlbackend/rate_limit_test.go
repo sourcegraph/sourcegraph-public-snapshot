@@ -1,6 +1,7 @@
 package graphqlbackend
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -8,6 +9,7 @@ import (
 	"github.com/throttled/throttled/v2"
 	"github.com/throttled/throttled/v2/store/memstore"
 
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -568,7 +570,7 @@ func TestRatelimitFromConfig(t *testing.T) {
 			if !tc.enabled {
 				return
 			}
-			limited, result, err := rl.RateLimit(tc.uid, tc.isIP, tc.cost)
+			limited, result, err := rl.RateLimit(tc.uid, tc.cost, LimiterArgs{IsIP: tc.isIP})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -579,5 +581,85 @@ func TestRatelimitFromConfig(t *testing.T) {
 				t.Fatal(diff)
 			}
 		})
+	}
+}
+
+func TestBasicLimiterEnabled(t *testing.T) {
+	tests := []struct {
+		limit       int
+		wantEnabled bool
+	}{
+		{
+			limit:       1,
+			wantEnabled: true,
+		},
+		{
+			limit:       100,
+			wantEnabled: true,
+		},
+		{
+			limit:       0,
+			wantEnabled: false,
+		},
+		{
+			limit:       -1,
+			wantEnabled: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("limit:%d", tt.limit), func(t *testing.T) {
+			store, err := memstore.New(1)
+			if err != nil {
+				t.Fatal(err)
+			}
+			bl := BasicLimitWatcher{store: store}
+			bl.updateFromConfig(tt.limit)
+
+			_, enabled := bl.Get()
+
+			if got := enabled; got != tt.wantEnabled {
+				t.Fatalf("got %t, want %t", got, tt.wantEnabled)
+			}
+		})
+	}
+}
+
+func TestBasicLimiter(t *testing.T) {
+	store, err := memstore.New(1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	bl := BasicLimitWatcher{store: store}
+	bl.updateFromConfig(1)
+
+	limiter, enabled := bl.Get()
+	if !enabled {
+		t.Fatalf("got %t, want true", enabled)
+	}
+
+	// These arguments correspond to call we want to limit.
+	limiterArgs := LimiterArgs{
+		Anonymous:     true,
+		RequestName:   "unknown",
+		RequestSource: trace.SourceOther,
+	}
+
+	// 1st call should not be limited.
+	limited, _, err := limiter.RateLimit("", 1, limiterArgs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if limited {
+		t.Fatalf("got %t, want false", limited)
+	}
+
+	// 2nd call should be limited.
+	limited, _, err = limiter.RateLimit("", 1, limiterArgs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !limited {
+		t.Fatalf("got %t, want true", limited)
 	}
 }

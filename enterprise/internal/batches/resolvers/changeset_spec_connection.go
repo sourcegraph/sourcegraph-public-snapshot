@@ -8,8 +8,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -23,7 +23,7 @@ type changesetSpecConnectionResolver struct {
 
 	// Cache results because they are used by multiple fields
 	once           sync.Once
-	changesetSpecs batches.ChangesetSpecs
+	changesetSpecs btypes.ChangesetSpecs
 	reposByID      map[api.RepoID]*types.Repo
 	next           int64
 	err            error
@@ -74,7 +74,7 @@ func (r *changesetSpecConnectionResolver) Nodes(ctx context.Context) ([]graphqlb
 	return resolvers, nil
 }
 
-func (r *changesetSpecConnectionResolver) compute(ctx context.Context) (batches.ChangesetSpecs, map[api.RepoID]*types.Repo, int64, error) {
+func (r *changesetSpecConnectionResolver) compute(ctx context.Context) (btypes.ChangesetSpecs, map[api.RepoID]*types.Repo, int64, error) {
 	r.once.Do(func() {
 		opts := r.opts
 		opts.BatchSpecID = r.batchSpecID

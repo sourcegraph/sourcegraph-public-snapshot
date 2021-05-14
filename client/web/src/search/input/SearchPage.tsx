@@ -1,6 +1,6 @@
 import classNames from 'classnames'
 import * as H from 'history'
-import React, { useCallback, useEffect, useMemo } from 'react'
+import React, { useCallback, useContext, useEffect, useMemo } from 'react'
 import { EMPTY, from } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 
@@ -30,9 +30,8 @@ import {
 import { AuthenticatedUser } from '../../auth'
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
-import { getCombinedViews } from '../../insights/backend'
+import { InsightsApiContext, InsightsViewGrid } from '../../insights'
 import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
-import { ViewGrid } from '../../repo/tree/ViewGrid'
 import { repogroupList, homepageLanguageList } from '../../repogroups/HomepageConfig'
 import { Settings } from '../../schema/settings.schema'
 import { VersionContext } from '../../schema/site.schema'
@@ -57,7 +56,10 @@ export interface SearchPageProps
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
         CopyQueryButtonProps,
         VersionContextProps,
-        SearchContextProps,
+        Omit<
+            SearchContextProps,
+            'convertVersionContextToSearchContext' | 'isSearchContextSpecAvailable' | 'fetchSearchContext'
+        >,
         RepogroupHomepageProps,
         OnboardingTourProps,
         HomePanelsProps,
@@ -97,6 +99,7 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
         !!props.settingsCascade.final?.experimentalFeatures?.codeInsights &&
         props.settingsCascade.final['insights.displayLocation.homepage'] !== false
 
+    const { getCombinedViews } = useContext(InsightsApiContext)
     const views = useObservable(
         useMemo(
             () =>
@@ -107,7 +110,7 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
                           )
                       )
                     : EMPTY,
-            [showCodeInsights, props.extensionsController]
+            [getCombinedViews, showCodeInsights, props.extensionsController]
         )
     )
     return (
@@ -121,7 +124,7 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
                 })}
             >
                 <SearchPageInput {...props} source="home" />
-                {views && <ViewGrid {...props} className="mt-5" views={views} />}
+                {views && <InsightsViewGrid {...props} className="mt-5" views={views} />}
             </div>
             {props.isSourcegraphDotCom &&
                 props.showRepogroupHomepage &&

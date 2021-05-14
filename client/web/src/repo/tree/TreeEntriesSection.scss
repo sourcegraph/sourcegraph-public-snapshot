@@ -11,13 +11,13 @@
         column-rule: 1px solid var(--border-color);
         border-right: solid 1px var(--border-color);
 
-        @media (max-width: $media-sm) {
+        @media (--sm-breakpoint-up) {
             column-count: 1;
         }
-        @media (max-width: $media-md) {
+        @media (--md-breakpoint-up) {
             column-count: 3;
         }
-        @media (min-width: $media-md) {
+        @media (--md-breakpoint-down) {
             column-count: 4;
         }
     }

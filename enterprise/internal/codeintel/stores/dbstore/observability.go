@@ -28,6 +28,7 @@ type operations struct {
 	getIndexByID                           *observation.Operation
 	getIndexConfigurationByRepositoryID    *observation.Operation
 	getIndexes                             *observation.Operation
+	getOldestCommitDate                    *observation.Operation
 	getRepositoriesWithIndexConfiguration  *observation.Operation
 	getUploadByID                          *observation.Operation
 	getUploads                             *observation.Operation
@@ -49,12 +50,15 @@ type operations struct {
 	markRepositoryAsDirty                  *observation.Operation
 	queueSize                              *observation.Operation
 	referenceIDsAndFilters                 *observation.Operation
+	refreshCommitResolvability             *observation.Operation
 	repoName                               *observation.Operation
 	repoUsageStatistics                    *observation.Operation
 	requeue                                *observation.Operation
 	requeueIndex                           *observation.Operation
 	resetIndexableRepositories             *observation.Operation
 	softDeleteOldUploads                   *observation.Operation
+	staleSourcedCommits                    *observation.Operation
+	updateCommitedAt                       *observation.Operation
 	updateIndexableRepository              *observation.Operation
 	updateIndexConfigurationByRepositoryID *observation.Operation
 	updatePackageReferences                *observation.Operation
@@ -112,6 +116,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		getIndexByID:                           op("GetIndexByID"),
 		getIndexConfigurationByRepositoryID:    op("GetIndexConfigurationByRepositoryID"),
 		getIndexes:                             op("GetIndexes"),
+		getOldestCommitDate:                    op("GetOldestCommitDate"),
 		getRepositoriesWithIndexConfiguration:  op("GetRepositoriesWithIndexConfiguration"),
 		getUploadByID:                          op("GetUploadByID"),
 		getUploads:                             op("GetUploads"),
@@ -133,12 +138,15 @@ func newOperations(observationContext *observation.Context) *operations {
 		markRepositoryAsDirty:                  op("MarkRepositoryAsDirty"),
 		queueSize:                              op("QueueSize"),
 		referenceIDsAndFilters:                 op("ReferenceIDsAndFilters"),
+		refreshCommitResolvability:             op("RefreshCommitResolvability"),
 		repoName:                               op("RepoName"),
 		repoUsageStatistics:                    op("RepoUsageStatistics"),
 		requeue:                                op("Requeue"),
 		requeueIndex:                           op("RequeueIndex"),
 		resetIndexableRepositories:             op("ResetIndexableRepositories"),
 		softDeleteOldUploads:                   op("SoftDeleteOldUploads"),
+		staleSourcedCommits:                    op("StaleSourcedCommits"),
+		updateCommitedAt:                       op("UpdateCommitedAt"),
 		updateIndexableRepository:              op("UpdateIndexableRepository"),
 		updateIndexConfigurationByRepositoryID: op("UpdateIndexConfigurationByRepositoryID"),
 		updatePackageReferences:                op("UpdatePackageReferences"),

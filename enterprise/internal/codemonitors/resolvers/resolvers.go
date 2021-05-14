@@ -36,6 +36,27 @@ func (r *Resolver) Now() time.Time {
 	return r.store.Now()
 }
 
+func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
+	return map[string]graphqlbackend.NodeByIDFunc{
+		MonitorKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+			return r.MonitorByID(ctx, id)
+		},
+		// TODO: These kinds are currently not implemented, but need a node resolver.
+		// monitorTriggerQueryKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+		// 	return r.MonitorTriggerQueryByID(ctx, id)
+		// },
+		// monitorTriggerEventKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+		// 	return r.MonitorTriggerEventByID(ctx, id)
+		// },
+		// monitorActionEmailKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+		// 	return r.MonitorActionEmailByID(ctx, id)
+		// },
+		// monitorActionEventKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+		// 	return r.MonitorActionEventByID(ctx, id)
+		// },
+	}
+}
+
 func (r *Resolver) Monitors(ctx context.Context, userID int32, args *graphqlbackend.ListMonitorsArgs) (graphqlbackend.MonitorConnectionResolver, error) {
 	// Request one extra to determine if there are more pages
 	newArgs := *args
@@ -405,7 +426,7 @@ func (r *Resolver) isAllowedToCreate(ctx context.Context, owner graphql.ID) erro
 	case "User":
 		return backend.CheckSiteAdminOrSameUser(ctx, ownerInt32)
 	case "Org":
-		return backend.CheckOrgAccess(ctx, r.store.Handle().DB(), ownerInt32)
+		return backend.CheckOrgAccessOrSiteAdmin(ctx, r.store.Handle().DB(), ownerInt32)
 	default:
 		return fmt.Errorf("provided ID is not a namespace")
 	}

@@ -1,7 +1,8 @@
 import * as path from 'path'
 
+import CssMinimizerWebpackPlugin from 'css-minimizer-webpack-plugin'
 import MiniCssExtractPlugin from 'mini-css-extract-plugin'
-import OptimizeCssAssetsPlugin from 'optimize-css-assets-webpack-plugin'
+import TerserPlugin from 'terser-webpack-plugin'
 import * as webpack from 'webpack'
 
 const buildEntry = (...files: string[]): string[] => files.map(file => path.join(__dirname, file))
@@ -21,6 +22,23 @@ const babelLoader = {
 }
 
 const extensionHostWorker = /main\.worker\.ts$/
+const rootPath = path.resolve(__dirname, '../../../../')
+
+const getCSSLoaders = (...loaders: webpack.RuleSetUseItem[]): webpack.RuleSetUse => [
+    MiniCssExtractPlugin.loader,
+    ...loaders,
+    {
+        loader: 'postcss-loader',
+    },
+    {
+        loader: 'sass-loader',
+        options: {
+            sassOptions: {
+                includePaths: [path.resolve(rootPath, 'node_modules'), path.resolve(rootPath, 'client')],
+            },
+        },
+    },
+]
 
 export const config: webpack.Configuration = {
     entry: {
@@ -49,10 +67,24 @@ export const config: webpack.Configuration = {
         chunkFilename: '[id].chunk.js',
     },
     devtool: 'inline-cheap-module-source-map',
+    optimization: {
+        minimizer: [
+            new TerserPlugin({
+                sourceMap: true,
+                terserOptions: {
+                    compress: {
+                        // // Don't inline functions, which causes name collisions with uglify-es:
+                        // https://github.com/mishoo/UglifyJS2/issues/2842
+                        inline: 1,
+                    },
+                },
+            }),
+            new CssMinimizerWebpackPlugin(),
+        ],
+    },
 
     plugins: [
         new MiniCssExtractPlugin({ filename: '../css/[name].bundle.css' }),
-        new OptimizeCssAssetsPlugin(),
         // Code splitting doesn't make sense/work in the browser extension, but we still want to use dynamic import()
         new webpack.optimize.LimitChunkCountPlugin({ maxChunks: 1 }),
     ],
@@ -69,23 +101,23 @@ export const config: webpack.Configuration = {
             {
                 // SCSS rule for our own styles and Bootstrap
                 test: /\.(css|sass|scss)$/,
-                use: [
-                    MiniCssExtractPlugin.loader,
-                    {
-                        loader: 'css-loader',
-                    },
-                    {
-                        loader: 'postcss-loader',
-                    },
-                    {
-                        loader: 'sass-loader',
-                        options: {
-                            sassOptions: {
-                                includePaths: [path.resolve(__dirname, '../../../node_modules')],
-                            },
+                exclude: /\.module\.(sass|scss)$/,
+                use: getCSSLoaders({ loader: 'css-loader', options: { url: false } }),
+            },
+            {
+                test: /\.(css|sass|scss)$/,
+                include: /\.module\.(sass|scss)$/,
+                use: getCSSLoaders({
+                    loader: 'css-loader',
+                    options: {
+                        sourceMap: false,
+                        modules: {
+                            exportLocalsConvention: 'camelCase',
+                            localIdentName: '[name]__[local]_[hash:base64:5]',
                         },
+                        url: false,
                     },
-                ],
+                }),
             },
             {
                 test: extensionHostWorker,

@@ -18,26 +18,29 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-
-	"github.com/inconshreveable/log15"
 )
 
 const (
-	// repoTTL is how often we should reclone a repository
+	// repoTTL is how often we should re-clone a repository.
 	repoTTL = time.Hour * 24 * 45
-	// repoTTLGC is how often we should reclone a repository once it is
+	// repoTTLGC is how often we should re-clone a repository once it is
 	// reporting git gc issues.
 	repoTTLGC = time.Hour * 24 * 2
+
+	// gitConfigMaybeCorrupt is a key we add to git config to signal that a repo may be
+	// corrupt on disk.
+	gitConfigMaybeCorrupt = "sourcegraph.maybeCorruptRepo"
 )
 
 // EnableGCAuto is a temporary flag that allows us to control whether or not
@@ -52,7 +55,7 @@ var (
 	})
 	reposRecloned = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "src_gitserver_repos_recloned",
-		Help: "number of repos removed and recloned due to age",
+		Help: "number of repos removed and re-cloned due to age",
 	})
 	reposRemovedDiskPressure = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "src_gitserver_repos_removed_disk_pressure",
@@ -72,12 +75,15 @@ const reposStatsName = "repos-stats.json"
 
 // cleanupRepos walks the repos directory and performs maintenance tasks:
 //
-// 1. Remove corrupt repos.
-// 2. Remove stale lock files.
-// 3. Remove repos based on disk pressure.
-// 4. Reclone repos after a while. (simulate git gc)
-// 5. Remove repos on disk that don't belong in this shard
-func (s *Server) cleanupRepos(addrs []string) {
+// 1. Compute the amount of space used by the repo
+// 2. Remove corrupt repos.
+// 3. Remove stale lock files.
+// 4. Ensure correct git attributes
+// 5. Scrub remote URLs
+// 6. Perform garbage collection
+// 7. Re-clone repos after a while. (simulate git gc)
+// 8. Remove repos based on disk pressure.
+func (s *Server) cleanupRepos() {
 	janitorRunning.Set(1)
 	defer janitorRunning.Set(0)
 
@@ -132,14 +138,13 @@ func (s *Server) cleanupRepos(addrs []string) {
 			return false, err
 		}
 
-		// Add a jitter to spread out recloning of repos cloned at the same
-		// time.
+		// Add a jitter to spread out re-cloning of repos cloned at the same time.
 		var reason string
 		const maybeCorrupt = "maybeCorrupt"
-		if maybeCorrupt, _ := gitConfigGet(dir, "sourcegraph.maybeCorruptRepo"); maybeCorrupt != "" {
+		if maybeCorrupt, _ := gitConfigGet(dir, gitConfigMaybeCorrupt); maybeCorrupt != "" {
 			reason = maybeCorrupt
-			// unset flag to stop constantly recloning if it fails.
-			_ = gitConfigUnset(dir, "sourcegraph.maybeCorruptRepo")
+			// unset flag to stop constantly re-cloning if it fails.
+			_ = gitConfigUnset(dir, gitConfigMaybeCorrupt)
 		}
 		if time.Since(recloneTime) > repoTTL+jitterDuration(string(dir), repoTTL/4) {
 			reason = "old"
@@ -151,7 +156,7 @@ func (s *Server) cleanupRepos(addrs []string) {
 		}
 
 		// We believe converting a Perforce depot to a Git repository is generally a
-		// very expensive operation, therefore we do not try to reclone/redo the
+		// very expensive operation, therefore we do not try to re-clone/redo the
 		// conversion only because it is old or slow to do "git gc".
 		if repoType == "perforce" && reason != maybeCorrupt {
 			reason = ""
@@ -166,14 +171,13 @@ func (s *Server) cleanupRepos(addrs []string) {
 
 		// name is the relative path to ReposDir, but without the .git suffix.
 		repo := s.name(dir)
-		log15.Info("recloning expired repo", "repo", repo, "cloned", recloneTime, "reason", reason)
+		log15.Info("re-cloning expired repo", "repo", repo, "cloned", recloneTime, "reason", reason)
 
-		// update the reclone time so that we don't constantly reclone if
-		// cloning fails. For example if a repo fails to clone due to being
-		// large, we will constantly be doing a clone which uses up lots of
-		// resources.
+		// update the re-clone time so that we don't constantly re-clone if cloning fails.
+		// For example if a repo fails to clone due to being large, we will constantly be
+		// doing a clone which uses up lots of resources.
 		if err := setRecloneTime(dir, recloneTime.Add(time.Since(recloneTime)/2)); err != nil {
-			log15.Warn("setting backed off reclone time failed", "repo", repo, "cloned", recloneTime, "reason", reason, "error", err)
+			log15.Warn("setting backed off re-clone time failed", "repo", repo, "cloned", recloneTime, "reason", reason, "error", err)
 		}
 
 		if _, err := s.cloneRepo(ctx, repo, &cloneOptions{Block: true, Overwrite: true}); err != nil {
@@ -228,6 +232,7 @@ func (s *Server) cleanupRepos(addrs []string) {
 		Do   func(GitDir) (bool, error)
 	}
 	cleanups := []cleanupFn{
+		// Compute the amount of space used by the repo
 		{"compute statistics", computeStats},
 		// Do some sanity checks on the repository.
 		{"maybe remove corrupt", maybeRemoveCorrupt},
@@ -239,17 +244,24 @@ func (s *Server) cleanupRepos(addrs []string) {
 		// 2021-03-01 (tomas,keegan) we used to store an authenticated remote URL on
 		// disk. We no longer need it so we can scrub it.
 		{"scrub remote URL", scrubRemoteURL},
-		// Old git clones accumulate loose git objects that waste space and slow down git
-		// operations. Periodically do a fresh clone to avoid these problems. git gc is
-		// slow and resource intensive. It is cheaper and faster to just reclone the
-		// repository.
-		{"maybe reclone", maybeReclone},
 		// Runs a number of housekeeping tasks within the current repository, such as
 		// compressing file revisions (to reduce disk space and increase performance),
 		// removing unreachable objects which may have been created from prior
 		// invocations of git add, packing refs, pruning reflog, rerere metadata or stale
 		// working trees. May also update ancillary indexes such as the commit-graph.
 		{"garbage collect", performGC},
+	}
+
+	if !conf.Get().DisableAutoGitUpdates {
+		// Old git clones accumulate loose git objects that waste space and slow down git
+		// operations. Periodically do a fresh clone to avoid these problems. git gc is
+		// slow and resource intensive. It is cheaper and faster to just re-clone the
+		// repository. We don't do this if DisableAutoGitUpdates is set as it could
+		// potentially kick off a clone operation.
+		cleanups = append(cleanups, cleanupFn{
+			Name: "maybe re-clone",
+			Do:   maybeReclone,
+		})
 	}
 
 	err := bestEffortWalk(s.ReposDir, func(dir string, fi os.FileInfo) error {
@@ -642,10 +654,10 @@ func setRecloneTime(dir GitDir, now time.Time) error {
 }
 
 // getRecloneTime returns an approximate time a repository is cloned. If the
-// value is not stored in the repository, the reclone time for the repository
-// is set to now.
+// value is not stored in the repository, the re-clone time for the repository is
+// set to now.
 func getRecloneTime(dir GitDir) (time.Time, error) {
-	// We store the time we recloned the repository. If the value is missing,
+	// We store the time we re-cloned the repository. If the value is missing,
 	// we store the current time. This decouples this timestamp from the
 	// different ways a clone can appear in gitserver.
 	update := func() (time.Time, error) {
@@ -686,11 +698,11 @@ func checkMaybeCorruptRepo(repo api.RepoName, dir GitDir, stderr string) {
 		return
 	}
 
-	log15.Warn("marking repo for recloning due to stderr output indicating repo corruption", "repo", repo, "stderr", stderr)
+	log15.Warn("marking repo for re-cloning due to stderr output indicating repo corruption", "repo", repo, "stderr", stderr)
 
-	// We set a flag in the config for the cleanup janitor job to fix. The
-	// janitor runs every minute.
-	err := gitConfigSet(dir, "sourcegraph.maybeCorruptRepo", strconv.FormatInt(time.Now().Unix(), 10))
+	// We set a flag in the config for the cleanup janitor job to fix. The janitor
+	// runs every minute.
+	err := gitConfigSet(dir, gitConfigMaybeCorrupt, strconv.FormatInt(time.Now().Unix(), 10))
 	if err != nil {
 		log15.Error("failed to set maybeCorruptRepo config", repo, "repo", "error", err)
 	}

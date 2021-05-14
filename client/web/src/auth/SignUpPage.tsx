@@ -16,7 +16,10 @@ interface SignUpPageProps {
     location: H.Location
     history: H.History
     authenticatedUser: AuthenticatedUser | null
-    context: Pick<SourcegraphContext, 'allowSignup' | 'authProviders' | 'sourcegraphDotComMode' | 'xhrHeaders'>
+    context: Pick<
+        SourcegraphContext,
+        'allowSignup' | 'experimentalFeatures' | 'authProviders' | 'sourcegraphDotComMode' | 'xhrHeaders'
+    >
 }
 
 export class SignUpPage extends React.Component<SignUpPageProps> {
@@ -78,7 +81,15 @@ export class SignUpPage extends React.Component<SignUpPageProps> {
             if (response.status !== 200) {
                 return response.text().then(text => Promise.reject(new Error(text)))
             }
-            window.location.replace(getReturnTo(this.props.location))
+
+            // if sign up is successful and enablePostSignupFlow feature is ON -
+            // redirect user to the /post-sign-up page
+            if (this.props.context.experimentalFeatures.enablePostSignupFlow) {
+                window.location.replace(new URL('/post-sign-up', window.location.href).pathname)
+            } else {
+                window.location.replace(getReturnTo(this.props.location))
+            }
+
             return Promise.resolve()
         })
 }

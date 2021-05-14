@@ -968,8 +968,8 @@ func TestSubstituteCountAll(t *testing.T) {
 		return toString(q)
 	}
 
-	autogold.Want("all", `(and "count:999999" "foo")`).Equal(t, test("foo count:all"))
-	autogold.Want("ALL", `(and "count:999999" "foo")`).Equal(t, test("foo count:ALL"))
+	autogold.Want("all", `(and "count:99999999" "foo")`).Equal(t, test("foo count:all"))
+	autogold.Want("ALL", `(and "count:99999999" "foo")`).Equal(t, test("foo count:ALL"))
 	autogold.Want("with integer count", `(and "count:3" "foo")`).Equal(t, test("foo count:3"))
-	autogold.Want("subexpressions", `(or (and "count:3" "foo") (and "count:999999" "bar"))`).Equal(t, test("(foo count:3) or (bar count:all)"))
+	autogold.Want("subexpressions", `(or (and "count:3" "foo") (and "count:99999999" "bar"))`).Equal(t, test("(foo count:3) or (bar count:all)"))
 }

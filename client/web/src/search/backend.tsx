@@ -239,7 +239,9 @@ const searchContextFragment = gql`
         id
         spec
         description
+        public
         autoDefined
+        updatedAt
         repositories {
             __typename
             repository {
@@ -285,15 +287,43 @@ export const fetchAutoDefinedSearchContexts = defer(() =>
     refCount()
 )
 
-export function fetchSearchContexts(
-    first: number,
-    query?: string,
+export function fetchSearchContexts({
+    first,
+    namespaceFilterType,
+    namespace,
+    query,
+    after,
+    orderBy,
+    descending,
+}: {
+    first: number
+    query?: string
+    namespace?: Scalars['ID']
+    namespaceFilterType?: GQL.SearchContextsNamespaceFilterType
     after?: string
-): Observable<ListSearchContextsResult['searchContexts']> {
+    orderBy?: GQL.SearchContextsOrderBy
+    descending?: boolean
+}): Observable<ListSearchContextsResult['searchContexts']> {
     return requestGraphQL<ListSearchContextsResult, ListSearchContextsVariables>(
         gql`
-            query ListSearchContexts($first: Int!, $after: String, $query: String) {
-                searchContexts(first: $first, after: $after, query: $query) {
+            query ListSearchContexts(
+                $first: Int!
+                $after: String
+                $query: String
+                $namespaceFilterType: SearchContextsNamespaceFilterType
+                $namespace: ID
+                $orderBy: SearchContextsOrderBy
+                $descending: Boolean
+            ) {
+                searchContexts(
+                    first: $first
+                    after: $after
+                    query: $query
+                    namespaceFilterType: $namespaceFilterType
+                    namespace: $namespace
+                    orderBy: $orderBy
+                    descending: $descending
+                ) {
                     nodes {
                         ...SearchContextFields
                     }
@@ -306,7 +336,15 @@ export function fetchSearchContexts(
             }
             ${searchContextFragment}
         `,
-        { first, after: after ?? null, query: query ?? null }
+        {
+            first,
+            after: after ?? null,
+            query: query ?? null,
+            namespaceFilterType: namespaceFilterType ?? null,
+            namespace: namespace ?? null,
+            orderBy: orderBy ?? GQL.SearchContextsOrderBy.SEARCH_CONTEXT_SPEC,
+            descending: descending ?? false,
+        }
     ).pipe(
         map(dataOrThrowErrors),
         map(data => data.searchContexts)

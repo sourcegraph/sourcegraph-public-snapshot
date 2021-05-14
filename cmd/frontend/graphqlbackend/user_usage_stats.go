@@ -77,11 +77,12 @@ func (*schemaResolver) LogUserEvent(ctx context.Context, args *struct {
 }
 
 func (r *schemaResolver) LogEvent(ctx context.Context, args *struct {
-	Event        string
-	UserCookieID string
-	URL          string
-	Source       string
-	Argument     *string
+	Event          string
+	UserCookieID   string
+	FirstSourceURL *string
+	URL            string
+	Source         string
+	Argument       *string
 }) (*EmptyResponse, error) {
 	if !conf.EventLoggingEnabled() {
 		return nil, nil
@@ -103,12 +104,13 @@ func (r *schemaResolver) LogEvent(ctx context.Context, args *struct {
 
 	actor := actor.FromContext(ctx)
 	return nil, usagestats.LogEvent(ctx, r.db, usagestats.Event{
-		EventName:    args.Event,
-		URL:          args.URL,
-		UserID:       actor.UID,
-		UserCookieID: args.UserCookieID,
-		Source:       args.Source,
-		Argument:     payload,
+		EventName:      args.Event,
+		URL:            args.URL,
+		UserID:         actor.UID,
+		UserCookieID:   args.UserCookieID,
+		FirstSourceURL: args.FirstSourceURL,
+		Source:         args.Source,
+		Argument:       payload,
 	})
 }
 

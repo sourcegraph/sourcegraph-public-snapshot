@@ -25,17 +25,27 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
+	"github.com/sourcegraph/sourcegraph/ui/assets"
 )
 
 func TestRedirects(t *testing.T) {
-	check := func(t *testing.T, path string, wantStatusCode int, wantRedirectLocation string, userAgent string) {
+	assets.MockLoadWebpackManifest = func() (*assets.WebpackManifest, error) {
+		return &assets.WebpackManifest{}, nil
+	}
+	defer func() { assets.MockLoadWebpackManifest = nil }()
+
+	check := func(t *testing.T, path string, wantStatusCode int, wantRedirectLocation, userAgent string) {
 		t.Helper()
 
 		db := new(dbtesting.MockDB)
 
 		InitRouter(db)
 		rw := httptest.NewRecorder()
-		req, _ := http.NewRequest("GET", path, nil)
+		req, err := http.NewRequest("GET", path, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		req.Header.Set("User-Agent", userAgent)
 		uirouter.Router.ServeHTTP(rw, req)
 		if rw.Code != wantStatusCode {
@@ -94,6 +104,11 @@ func TestRepoShortName(t *testing.T) {
 }
 
 func TestNewCommon_repo_error(t *testing.T) {
+	assets.MockLoadWebpackManifest = func() (*assets.WebpackManifest, error) {
+		return &assets.WebpackManifest{}, nil
+	}
+	defer func() { assets.MockLoadWebpackManifest = nil }()
+
 	cases := []struct {
 		name string
 		rev  string

@@ -9,8 +9,6 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -37,21 +35,14 @@ func externalServiceByID(ctx context.Context, db dbutil.DB, gqlID graphql.ID) (*
 		return nil, err
 	}
 
-	es, err := database.GlobalExternalServices.GetByID(ctx, id)
+	es, err := database.ExternalServices(db).GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Only site admins may read all or a user's external services.
-	// Otherwise, the authenticated user can only read external services under the same namespace.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		if es.NamespaceUserID == 0 {
-			return nil, err
-		} else if actor.FromContext(ctx).UID != es.NamespaceUserID {
-			return nil, errors.New("the authenticated user does not have access to this external service")
-		}
+	if err := checkExternalServiceAccess(ctx, es.NamespaceUserID); err != nil {
+		return nil, err
 	}
-
 	return &externalServiceResolver{db: db, externalService: es}, nil
 }
 
@@ -96,12 +87,16 @@ func (r *externalServiceResolver) UpdatedAt() DateTime {
 	return DateTime{Time: r.externalService.UpdatedAt}
 }
 
-func (r *externalServiceResolver) Namespace() *graphql.ID {
+func (r *externalServiceResolver) Namespace(ctx context.Context) (*NamespaceResolver, error) {
 	if r.externalService.NamespaceUserID == 0 {
-		return nil
+		return nil, nil
 	}
 	userID := MarshalUserID(r.externalService.NamespaceUserID)
-	return &userID
+	n, err := NamespaceByID(ctx, r.db, userID)
+	if err != nil {
+		return nil, err
+	}
+	return &NamespaceResolver{n}, nil
 }
 
 func (r *externalServiceResolver) WebhookURL() (*string, error) {
@@ -144,7 +139,7 @@ func (r *externalServiceResolver) Warning() *string {
 }
 
 func (r *externalServiceResolver) LastSyncError(ctx context.Context) (*string, error) {
-	latestError, err := database.GlobalExternalServices.GetLastSyncError(ctx, r.externalService.ID)
+	latestError, err := database.ExternalServices(r.db).GetLastSyncError(ctx, r.externalService.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -155,13 +150,19 @@ func (r *externalServiceResolver) LastSyncError(ctx context.Context) (*string, e
 }
 
 func (r *externalServiceResolver) RepoCount(ctx context.Context) (int32, error) {
-	return database.GlobalExternalServices.RepoCount(ctx, r.externalService.ID)
+	return database.ExternalServices(r.db).RepoCount(ctx, r.externalService.ID)
 }
 
-func (r *externalServiceResolver) LastSyncAt() DateTime {
-	return DateTime{Time: r.externalService.LastSyncAt}
+func (r *externalServiceResolver) LastSyncAt() *DateTime {
+	if r.externalService.LastSyncAt.IsZero() {
+		return nil
+	}
+	return &DateTime{Time: r.externalService.LastSyncAt}
 }
 
-func (r *externalServiceResolver) NextSyncAt() DateTime {
-	return DateTime{Time: r.externalService.NextSyncAt}
+func (r *externalServiceResolver) NextSyncAt() *DateTime {
+	if r.externalService.NextSyncAt.IsZero() {
+		return nil
+	}
+	return &DateTime{Time: r.externalService.NextSyncAt}
 }

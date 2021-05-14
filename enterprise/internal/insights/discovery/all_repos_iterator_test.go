@@ -16,7 +16,7 @@ import (
 // TestAllReposIterator tests the AllReposIterator in the common use cases.
 func TestAllReposIterator(t *testing.T) {
 	ctx := context.Background()
-	defaultRepoStore := NewMockDefaultRepoStore()
+	defaultRepoLister := NewMockDefaultRepoLister()
 	repoStore := NewMockRepoStore()
 	var timeOffset time.Duration
 	clock := func() time.Time { return time.Now().Add(timeOffset) }
@@ -40,7 +40,7 @@ func TestAllReposIterator(t *testing.T) {
 	})
 
 	iter := &AllReposIterator{
-		DefaultRepoStore:        defaultRepoStore,
+		DefaultRepoLister:       defaultRepoLister,
 		RepoStore:               repoStore,
 		Clock:                   clock,
 		RepositoryListCacheTime: 15 * time.Minute,
@@ -158,7 +158,7 @@ func TestAllReposIterator(t *testing.T) {
 // this cruft.)
 func TestAllReposIterator_DotCom(t *testing.T) {
 	ctx := context.Background()
-	defaultRepoStore := NewMockDefaultRepoStore()
+	defaultRepoLister := NewMockDefaultRepoLister()
 	repoStore := NewMockRepoStore()
 	var timeOffset time.Duration
 	clock := func() time.Time { return time.Now().Add(timeOffset) }
@@ -168,18 +168,18 @@ func TestAllReposIterator_DotCom(t *testing.T) {
 		defaultRepoStoreListCalls int // There is no pagination with this store! We'll probably want that, eventually.
 		nextRepoID                api.RepoID
 	)
-	defaultRepoStore.ListFunc.SetDefaultHook(func(ctx context.Context) ([]*types.RepoName, error) {
+	defaultRepoLister.ListFunc.SetDefaultHook(func(ctx context.Context) ([]types.RepoName, error) {
 		defaultRepoStoreListCalls++
-		var result []*types.RepoName
+		var result []types.RepoName
 		for i := 0; i < 9; i++ {
 			nextRepoID++
-			result = append(result, &types.RepoName{ID: nextRepoID, Name: api.RepoName(fmt.Sprint(nextRepoID))})
+			result = append(result, types.RepoName{ID: nextRepoID, Name: api.RepoName(fmt.Sprint(nextRepoID))})
 		}
 		return result, nil
 	})
 
 	iter := &AllReposIterator{
-		DefaultRepoStore:        defaultRepoStore,
+		DefaultRepoLister:       defaultRepoLister,
 		RepoStore:               repoStore,
 		Clock:                   clock,
 		SourcegraphDotComMode:   true,

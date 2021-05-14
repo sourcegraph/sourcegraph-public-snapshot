@@ -2,13 +2,13 @@ import React, { FunctionComponent, useCallback, useEffect } from 'react'
 import { RouteComponentProps } from 'react-router'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { PageHeader } from '@sourcegraph/wildcard'
 
 import {
     FilteredConnection,
     FilteredConnectionFilter,
     FilteredConnectionQueryArguments,
 } from '../../../components/FilteredConnection'
-import { PageHeader } from '../../../components/PageHeader'
 import { PageTitle } from '../../../components/PageTitle'
 import { LsifIndexFields, LSIFIndexState } from '../../../graphql-operations'
 
@@ -46,6 +46,12 @@ const filters: FilteredConnectionFilter[] = [
                 args: { state: LSIFIndexState.ERRORED },
             },
             {
+                label: 'Processing',
+                value: 'processing',
+                tooltip: 'Show processing indexes only',
+                args: { state: LSIFIndexState.PROCESSING },
+            },
+            {
                 label: 'Queued',
                 value: 'queued',
                 tooltip: 'Show queued indexes only',
@@ -73,15 +79,16 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
         <div className="code-intel-indexes web-content">
             <PageTitle title="Precise code intelligence auto-index records" />
             <PageHeader
+                className="mb-3"
                 path={[{ text: 'Precise code intelligence auto-index records' }]}
-                byline={
-                    <p>
+                description={
+                    <>
                         Popular repositories are indexed automatically on{' '}
                         <a href="https://sourcegraph.com" target="_blank" rel="noreferrer noopener">
                             Sourcegraph.com
                         </a>
                         .
-                    </p>
+                    </>
                 }
             />
             <div className="list-group position-relative">

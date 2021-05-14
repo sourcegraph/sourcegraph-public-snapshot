@@ -9,6 +9,7 @@ import { RegistryExtensionFieldsForList } from '../graphql-operations'
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { siteGQLID, siteID } from './jscontext'
+import { percySnapshotWithVariants } from './utils'
 
 const typescriptRawManifest = JSON.stringify({
     activationEvents: ['*'],
@@ -170,6 +171,24 @@ describe('Extension Registry', () => {
                     final: JSON.stringify({}),
                 },
             }),
+            CurrentAuthState: () => ({
+                currentUser: {
+                    __typename: 'User',
+                    id: 'TestGQLUserID',
+                    databaseID: 1,
+                    username: 'testusername',
+                    avatarURL: null,
+                    email: 'test@test.com',
+                    displayName: 'test',
+                    siteAdmin: true,
+                    tags: [],
+                    url: '/users/test',
+                    settingsURL: '/users/test/settings',
+                    organizations: { nodes: [] },
+                    session: { canSignOut: true },
+                    viewerCanAdminister: true,
+                },
+            }),
             RegistryExtensions: () => ({
                 extensionRegistry: {
                     extensions: {
@@ -198,6 +217,16 @@ describe('Extension Registry', () => {
             response.type('application/javascript; charset=utf-8').send('exports.activate = () => {}')
         })
     }
+
+    it('is styled correctly', async () => {
+        overrideGraphQLExtensionRegistry({ enabled: false })
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/extensions')
+
+        //  wait for initial set of extensions
+        await driver.page.waitForSelector('[data-test="extension-toggle-sqs/word-count"]')
+
+        await percySnapshotWithVariants(driver.page, 'Extension registry page')
+    })
 
     describe('filtering by category', () => {
         it('does not show language extensions until user clicks show more', async () => {

@@ -2,6 +2,7 @@ package sources
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -10,68 +11,89 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestExtractCloneURL(t *testing.T) {
-	t.Parallel()
-
 	tcs := []struct {
-		name      string
-		want      string
-		cloneURLs []string
+		name            string
+		want            string
+		configs         []string
+		overrideRepoURL string
 	}{
 		{
-			name:      "https",
-			want:      "https://secrettoken@github.com/sourcegraph/sourcegraph",
-			cloneURLs: []string{"https://secrettoken@github.com/sourcegraph/sourcegraph"},
+			name: "https",
+			want: "https://secrettoken@github.com/sourcegraph/sourcegraph",
+			configs: []string{
+				`{"url": "https://github.com", "token": "secrettoken", "authorization": {}}`,
+			},
 		},
 		{
-			name:      "https user password",
-			want:      "https://git:secrettoken@github.com/sourcegraph/sourcegraph",
-			cloneURLs: []string{"https://git:secrettoken@github.com/sourcegraph/sourcegraph"},
-		},
-		{
-			name:      "ssh no protocol specified",
-			want:      "ssh://git@github.com/sourcegraph/sourcegraph.git",
-			cloneURLs: []string{"git@github.com:sourcegraph/sourcegraph.git"},
-		},
-		{
-			name:      "ssh protocol specified",
-			want:      "ssh://git@github.com/sourcegraph/sourcegraph.git",
-			cloneURLs: []string{"ssh://git@github.com/sourcegraph/sourcegraph.git"},
+			name: "ssh",
+			want: "git@github.com:sourcegraph/sourcegraph.git",
+			configs: []string{
+				`{"url": "https://github.com", "gitURLType": "ssh", "authorization": {}}`,
+			},
 		},
 		{
 			name: "https and ssh, favoring https",
 			want: "https://secrettoken@github.com/sourcegraph/sourcegraph",
-			cloneURLs: []string{
-				"https://secrettoken@github.com/sourcegraph/sourcegraph",
-				"git@github.com:sourcegraph/sourcegraph.git",
-				"ssh://git@github.com/sourcegraph/sourcegraph.git",
+			configs: []string{
+				`{"url": "https://github.com", "token": "secrettoken", "authorization": {}}`,
+				`{"url": "https://github.com", "gitURLType": "ssh", "authorization": {}}`,
 			},
 		},
 		{
 			name: "https and ssh, favoring https different order",
 			want: "https://secrettoken@github.com/sourcegraph/sourcegraph",
-			cloneURLs: []string{
-				"git@github.com:sourcegraph/sourcegraph.git",
-				"ssh://git@github.com/sourcegraph/sourcegraph.git",
-				"https://secrettoken@github.com/sourcegraph/sourcegraph",
+			configs: []string{
+				`{"url": "https://github.com", "gitURLType": "ssh", "authorization": {}}`,
+				`{"url": "https://github.com", "token": "secrettoken", "authorization": {}}`,
 			},
 		},
 	}
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
 			repo := &types.Repo{
-				Sources: map[string]*types.SourceInfo{},
+				Name:    api.RepoName("github.com/sourcegraph/sourcegraph"),
+				URI:     "github.com/sourcegraph/sourcegraph",
+				Sources: make(map[string]*types.SourceInfo),
+				Metadata: &github.Repository{
+					NameWithOwner: "sourcegraph/sourcegraph",
+					URL:           "https://github.com/sourcegraph/sourcegraph",
+				},
 			}
-			for _, cloneURL := range tc.cloneURLs {
-				repo.Sources[cloneURL] = &types.SourceInfo{
-					CloneURL: cloneURL,
+			if tc.overrideRepoURL != "" {
+				repo.Metadata.(*github.Repository).URL = tc.overrideRepoURL
+			}
+
+			for idx := range tc.configs {
+				repo.Sources[fmt.Sprintf("%d", idx)] = &types.SourceInfo{
+					ID: fmt.Sprintf("::%d", idx), // see SourceInfo.ExternalServiceID
 				}
 			}
-			have, err := extractCloneURL(repo)
+
+			database.Mocks.ExternalServices.List = func(opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+				services := make([]*types.ExternalService, 0, len(opt.IDs))
+				for _, id := range opt.IDs {
+					services = append(services, &types.ExternalService{
+						ID:     id,
+						Kind:   extsvc.KindGitHub,
+						Config: tc.configs[int(id)],
+					})
+				}
+
+				return services, nil
+			}
+			t.Cleanup(func() {
+				database.Mocks.ExternalServices.List = nil
+			})
+
+			have, err := extractCloneURL(context.Background(), &database.ExternalServiceStore{}, repo)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -183,9 +205,7 @@ func TestLoadExternalService(t *testing.T) {
 	}
 }
 
-func TestBatchesSource_GitserverPushConfig(t *testing.T) {
-	t.Parallel()
-
+func TestGitserverPushConfig(t *testing.T) {
 	oauthHTTPSAuthenticator := auth.OAuthBearerToken{Token: "bearer-test"}
 	oauthSSHAuthenticator := auth.OAuthBearerTokenWithSSH{
 		OAuthBearerToken: oauthHTTPSAuthenticator,
@@ -202,8 +222,10 @@ func TestBatchesSource_GitserverPushConfig(t *testing.T) {
 	}
 	tcs := []struct {
 		name                string
+		repoName            string
 		externalServiceType string
-		cloneURL            string
+		config              string
+		repoMetadata        interface{}
 		authenticator       auth.Authenticator
 		wantPushConfig      *protocol.PushConfig
 		wantErr             error
@@ -211,56 +233,115 @@ func TestBatchesSource_GitserverPushConfig(t *testing.T) {
 		// Without authenticator:
 		{
 			name:                "GitHub HTTPS no token",
+			repoName:            "github.com/sourcegraph/sourcegraph",
 			externalServiceType: extsvc.TypeGitHub,
-			cloneURL:            "https://github.com/sourcegraph/sourcegraph",
+			config:              `{"url": "https://github.com", "authorization": {}}`,
+			repoMetadata: &github.Repository{
+				NameWithOwner: "sourcegraph/sourcegraph",
+				URL:           "https://github.com/sourcegraph/sourcegraph",
+			},
 			wantPushConfig: &protocol.PushConfig{
 				RemoteURL: "https://github.com/sourcegraph/sourcegraph",
 			},
 		},
 		{
 			name:                "GitHub HTTPS token",
+			repoName:            "github.com/sourcegraph/sourcegraph",
 			externalServiceType: extsvc.TypeGitHub,
-			cloneURL:            "https://token@github.com/sourcegraph/sourcegraph",
+			config:              `{"url": "https://github.com", "token": "token", "authorization": {}}`,
+			repoMetadata: &github.Repository{
+				NameWithOwner: "sourcegraph/sourcegraph",
+				URL:           "https://github.com/sourcegraph/sourcegraph",
+			},
 			wantPushConfig: &protocol.PushConfig{
 				RemoteURL: "https://token@github.com/sourcegraph/sourcegraph",
 			},
 		},
 		{
 			name:                "GitHub SSH",
+			repoName:            "github.com/sourcegraph/sourcegraph",
 			externalServiceType: extsvc.TypeGitHub,
-			cloneURL:            "git@github.com:sourcegraph/sourcegraph.git",
+			config:              `{"url": "https://github.com", "gitURLType": "ssh", "authorization": {}}`,
+			repoMetadata: &github.Repository{
+				NameWithOwner: "sourcegraph/sourcegraph",
+				URL:           "https://github.com/sourcegraph/sourcegraph",
+			},
 			wantPushConfig: &protocol.PushConfig{
-				RemoteURL: "ssh://git@github.com/sourcegraph/sourcegraph.git",
+				RemoteURL: "git@github.com:sourcegraph/sourcegraph.git",
 			},
 		},
 		{
 			name:                "GitLab HTTPS no token",
+			repoName:            "sourcegraph/sourcegraph",
 			externalServiceType: extsvc.TypeGitLab,
-			cloneURL:            "https://gitlab.com/sourcegraph/sourcegraph",
+			config:              `{}`,
+			repoMetadata: &gitlab.Project{
+				ProjectCommon: gitlab.ProjectCommon{
+					ID:                1,
+					PathWithNamespace: "sourcegraph/sourcegraph",
+					HTTPURLToRepo:     "https://gitlab.com/sourcegraph/sourcegraph",
+				}},
 			wantPushConfig: &protocol.PushConfig{
 				RemoteURL: "https://gitlab.com/sourcegraph/sourcegraph",
 			},
 		},
 		{
 			name:                "GitLab HTTPS token",
+			repoName:            "sourcegraph/sourcegraph",
 			externalServiceType: extsvc.TypeGitLab,
-			cloneURL:            "https://git:token@gitlab.com/sourcegraph/sourcegraph",
+			config:              `{}`,
+			repoMetadata: &gitlab.Project{
+				ProjectCommon: gitlab.ProjectCommon{
+					ID:                1,
+					PathWithNamespace: "sourcegraph/sourcegraph",
+					HTTPURLToRepo:     "https://git:token@gitlab.com/sourcegraph/sourcegraph",
+				}},
 			wantPushConfig: &protocol.PushConfig{
 				RemoteURL: "https://git:token@gitlab.com/sourcegraph/sourcegraph",
 			},
 		},
 		{
 			name:                "GitLab SSH",
+			repoName:            "sourcegraph/sourcegraph",
 			externalServiceType: extsvc.TypeGitLab,
-			cloneURL:            "git@gitlab.com:sourcegraph/sourcegraph.git",
+			config:              `{"gitURLType": "ssh"}`,
+			repoMetadata: &gitlab.Project{
+				ProjectCommon: gitlab.ProjectCommon{
+					ID:                1,
+					PathWithNamespace: "sourcegraph/sourcegraph",
+					SSHURLToRepo:      "git@gitlab.com:sourcegraph/sourcegraph.git",
+				}},
 			wantPushConfig: &protocol.PushConfig{
-				RemoteURL: "ssh://git@gitlab.com/sourcegraph/sourcegraph.git",
+				RemoteURL: "git@gitlab.com:sourcegraph/sourcegraph.git",
 			},
 		},
 		{
 			name:                "Bitbucket server HTTPS no token",
 			externalServiceType: extsvc.TypeBitbucketServer,
-			cloneURL:            "https://bitbucket.sgdev.org/sourcegraph/sourcegraph",
+			config:              `{}`,
+			repoMetadata: &bitbucketserver.Repo{
+				ID:   1,
+				Slug: "sourcegraph/sourcegraph",
+				Project: &bitbucketserver.Project{
+					Key: "sourcegraph/sourcegraph",
+				},
+				Links: struct {
+					Clone []struct {
+						Href string `json:"href"`
+						Name string `json:"name"`
+					} `json:"clone"`
+					Self []struct {
+						Href string `json:"href"`
+					} `json:"self"`
+				}{
+					Clone: []struct {
+						Href string "json:\"href\""
+						Name string "json:\"name\""
+					}{
+						{Name: "http", Href: "https://bitbucket.sgdev.org/sourcegraph/sourcegraph"},
+					},
+				},
+			},
 			wantPushConfig: &protocol.PushConfig{
 				RemoteURL: "https://bitbucket.sgdev.org/sourcegraph/sourcegraph",
 			},
@@ -268,7 +349,30 @@ func TestBatchesSource_GitserverPushConfig(t *testing.T) {
 		{
 			name:                "Bitbucket server HTTPS token",
 			externalServiceType: extsvc.TypeBitbucketServer,
-			cloneURL:            "https://token@bitbucket.sgdev.org/sourcegraph/sourcegraph",
+			config:              `{}`,
+			repoMetadata: &bitbucketserver.Repo{
+				ID:   1,
+				Slug: "sourcegraph/sourcegraph",
+				Project: &bitbucketserver.Project{
+					Key: "sourcegraph/sourcegraph",
+				},
+				Links: struct {
+					Clone []struct {
+						Href string `json:"href"`
+						Name string `json:"name"`
+					} `json:"clone"`
+					Self []struct {
+						Href string `json:"href"`
+					} `json:"self"`
+				}{
+					Clone: []struct {
+						Href string "json:\"href\""
+						Name string "json:\"name\""
+					}{
+						{Name: "http", Href: "https://token@bitbucket.sgdev.org/sourcegraph/sourcegraph"},
+					},
+				},
+			},
 			wantPushConfig: &protocol.PushConfig{
 				RemoteURL: "https://token@bitbucket.sgdev.org/sourcegraph/sourcegraph",
 			},
@@ -276,7 +380,30 @@ func TestBatchesSource_GitserverPushConfig(t *testing.T) {
 		{
 			name:                "Bitbucket server SSH",
 			externalServiceType: extsvc.TypeBitbucketServer,
-			cloneURL:            "ssh://git@bitbucket.sgdev.org:7999/sourcegraph/sourcegraph",
+			config:              `{"gitURLType": "ssh"}`,
+			repoMetadata: &bitbucketserver.Repo{
+				ID:   1,
+				Slug: "sourcegraph/sourcegraph",
+				Project: &bitbucketserver.Project{
+					Key: "sourcegraph/sourcegraph",
+				},
+				Links: struct {
+					Clone []struct {
+						Href string `json:"href"`
+						Name string `json:"name"`
+					} `json:"clone"`
+					Self []struct {
+						Href string `json:"href"`
+					} `json:"self"`
+				}{
+					Clone: []struct {
+						Href string "json:\"href\""
+						Name string "json:\"name\""
+					}{
+						{Name: "ssh", Href: "ssh://git@bitbucket.sgdev.org:7999/sourcegraph/sourcegraph"},
+					},
+				},
+			},
 			wantPushConfig: &protocol.PushConfig{
 				RemoteURL: "ssh://git@bitbucket.sgdev.org:7999/sourcegraph/sourcegraph",
 			},
@@ -284,58 +411,94 @@ func TestBatchesSource_GitserverPushConfig(t *testing.T) {
 		// With authenticator:
 		{
 			name:                "GitHub HTTPS no token with authenticator",
+			repoName:            "github.com/sourcegraph/sourcegraph",
 			externalServiceType: extsvc.TypeGitHub,
-			cloneURL:            "https://github.com/sourcegraph/sourcegraph",
+			config:              `{"url": "https://github.com", "authorization": {}}`,
 			authenticator:       &oauthHTTPSAuthenticator,
+			repoMetadata: &github.Repository{
+				NameWithOwner: "sourcegraph/sourcegraph",
+				URL:           "https://github.com/sourcegraph/sourcegraph",
+			},
 			wantPushConfig: &protocol.PushConfig{
 				RemoteURL: "https://bearer-test@github.com/sourcegraph/sourcegraph",
 			},
 		},
 		{
 			name:                "GitHub HTTPS token with authenticator",
+			repoName:            "github.com/sourcegraph/sourcegraph",
 			externalServiceType: extsvc.TypeGitHub,
-			cloneURL:            "https://token@github.com/sourcegraph/sourcegraph",
+			config:              `{"url": "https://github.com", "token": "token", "authorization": {}}`,
 			authenticator:       &oauthHTTPSAuthenticator,
+			repoMetadata: &github.Repository{
+				NameWithOwner: "sourcegraph/sourcegraph",
+				URL:           "https://github.com/sourcegraph/sourcegraph",
+			},
 			wantPushConfig: &protocol.PushConfig{
 				RemoteURL: "https://bearer-test@github.com/sourcegraph/sourcegraph",
 			},
 		},
 		{
 			name:                "GitHub SSH with authenticator",
+			repoName:            "github.com/sourcegraph/sourcegraph",
 			externalServiceType: extsvc.TypeGitHub,
-			cloneURL:            "git@github.com:sourcegraph/sourcegraph.git",
+			config:              `{"url": "https://github.com", "gitURLType": "ssh", "authorization": {}}`,
 			authenticator:       &oauthSSHAuthenticator,
+			repoMetadata: &github.Repository{
+				NameWithOwner: "sourcegraph/sourcegraph",
+				URL:           "https://github.com/sourcegraph/sourcegraph",
+			},
 			wantPushConfig: &protocol.PushConfig{
-				RemoteURL:  "ssh://git@github.com/sourcegraph/sourcegraph.git",
+				RemoteURL:  "git@github.com:sourcegraph/sourcegraph.git",
 				PrivateKey: "private-key",
 				Passphrase: "passphrase",
 			},
 		},
 		{
 			name:                "GitLab HTTPS no token with authenticator",
+			repoName:            "sourcegraph/sourcegraph",
 			externalServiceType: extsvc.TypeGitLab,
-			cloneURL:            "https://gitlab.com/sourcegraph/sourcegraph",
+			config:              `{}`,
 			authenticator:       &oauthHTTPSAuthenticator,
+			repoMetadata: &gitlab.Project{
+				ProjectCommon: gitlab.ProjectCommon{
+					ID:                1,
+					PathWithNamespace: "sourcegraph/sourcegraph",
+					HTTPURLToRepo:     "https://gitlab.com/sourcegraph/sourcegraph",
+				}},
 			wantPushConfig: &protocol.PushConfig{
 				RemoteURL: "https://git:bearer-test@gitlab.com/sourcegraph/sourcegraph",
 			},
 		},
 		{
 			name:                "GitLab HTTPS token with authenticator",
+			repoName:            "sourcegraph/sourcegraph",
 			externalServiceType: extsvc.TypeGitLab,
-			cloneURL:            "https://git:token@gitlab.com/sourcegraph/sourcegraph",
+			config:              `{}`,
 			authenticator:       &oauthHTTPSAuthenticator,
+			repoMetadata: &gitlab.Project{
+				ProjectCommon: gitlab.ProjectCommon{
+					ID:                1,
+					PathWithNamespace: "sourcegraph/sourcegraph",
+					HTTPURLToRepo:     "https://git:token@gitlab.com/sourcegraph/sourcegraph",
+				}},
 			wantPushConfig: &protocol.PushConfig{
 				RemoteURL: "https://git:bearer-test@gitlab.com/sourcegraph/sourcegraph",
 			},
 		},
 		{
 			name:                "GitLab SSH with authenticator",
+			repoName:            "sourcegraph/sourcegraph",
 			externalServiceType: extsvc.TypeGitLab,
-			cloneURL:            "git@gitlab.com:sourcegraph/sourcegraph.git",
+			config:              `{"gitURLType": "ssh"}`,
 			authenticator:       &oauthSSHAuthenticator,
+			repoMetadata: &gitlab.Project{
+				ProjectCommon: gitlab.ProjectCommon{
+					ID:                1,
+					PathWithNamespace: "sourcegraph/sourcegraph",
+					SSHURLToRepo:      "git@gitlab.com:sourcegraph/sourcegraph.git",
+				}},
 			wantPushConfig: &protocol.PushConfig{
-				RemoteURL:  "ssh://git@gitlab.com/sourcegraph/sourcegraph.git",
+				RemoteURL:  "git@gitlab.com:sourcegraph/sourcegraph.git",
 				PrivateKey: "private-key",
 				Passphrase: "passphrase",
 			},
@@ -343,8 +506,31 @@ func TestBatchesSource_GitserverPushConfig(t *testing.T) {
 		{
 			name:                "Bitbucket server HTTPS no token with authenticator",
 			externalServiceType: extsvc.TypeBitbucketServer,
-			cloneURL:            "https://bitbucket.sgdev.org/sourcegraph/sourcegraph",
+			config:              `{}`,
 			authenticator:       &basicHTTPSAuthenticator,
+			repoMetadata: &bitbucketserver.Repo{
+				ID:   1,
+				Slug: "sourcegraph/sourcegraph",
+				Project: &bitbucketserver.Project{
+					Key: "sourcegraph/sourcegraph",
+				},
+				Links: struct {
+					Clone []struct {
+						Href string `json:"href"`
+						Name string `json:"name"`
+					} `json:"clone"`
+					Self []struct {
+						Href string `json:"href"`
+					} `json:"self"`
+				}{
+					Clone: []struct {
+						Href string "json:\"href\""
+						Name string "json:\"name\""
+					}{
+						{Name: "http", Href: "https://bitbucket.sgdev.org/sourcegraph/sourcegraph"},
+					},
+				},
+			},
 			wantPushConfig: &protocol.PushConfig{
 				RemoteURL: "https://basic:pw@bitbucket.sgdev.org/sourcegraph/sourcegraph",
 			},
@@ -352,8 +538,31 @@ func TestBatchesSource_GitserverPushConfig(t *testing.T) {
 		{
 			name:                "Bitbucket server HTTPS token with authenticator",
 			externalServiceType: extsvc.TypeBitbucketServer,
-			cloneURL:            "https://token@bitbucket.sgdev.org/sourcegraph/sourcegraph",
+			config:              `{}`,
 			authenticator:       &basicHTTPSAuthenticator,
+			repoMetadata: &bitbucketserver.Repo{
+				ID:   1,
+				Slug: "sourcegraph/sourcegraph",
+				Project: &bitbucketserver.Project{
+					Key: "sourcegraph/sourcegraph",
+				},
+				Links: struct {
+					Clone []struct {
+						Href string `json:"href"`
+						Name string `json:"name"`
+					} `json:"clone"`
+					Self []struct {
+						Href string `json:"href"`
+					} `json:"self"`
+				}{
+					Clone: []struct {
+						Href string "json:\"href\""
+						Name string "json:\"name\""
+					}{
+						{Name: "http", Href: "https://token@bitbucket.sgdev.org/sourcegraph/sourcegraph"},
+					},
+				},
+			},
 			wantPushConfig: &protocol.PushConfig{
 				RemoteURL: "https://basic:pw@bitbucket.sgdev.org/sourcegraph/sourcegraph",
 			},
@@ -361,10 +570,33 @@ func TestBatchesSource_GitserverPushConfig(t *testing.T) {
 		{
 			name:                "Bitbucket server SSH with authenticator",
 			externalServiceType: extsvc.TypeBitbucketServer,
-			cloneURL:            "ssh://git@bitbucket.sgdev.org:7999/sourcegraph/sourcegraph",
+			config:              `{"gitURLType": "ssh"}`,
 			authenticator:       &basicSSHAuthenticator,
+			repoMetadata: &bitbucketserver.Repo{
+				ID:   1,
+				Slug: "sourcegraph/sourcegraph",
+				Project: &bitbucketserver.Project{
+					Key: "sourcegraph/sourcegraph",
+				},
+				Links: struct {
+					Clone []struct {
+						Href string `json:"href"`
+						Name string `json:"name"`
+					} `json:"clone"`
+					Self []struct {
+						Href string `json:"href"`
+					} `json:"self"`
+				}{
+					Clone: []struct {
+						Href string "json:\"href\""
+						Name string "json:\"name\""
+					}{
+						{Name: "ssh", Href: "ssh://git@bitbucket.sgdev.org:7999/sourcegraph/sourcegraph.git"},
+					},
+				},
+			},
 			wantPushConfig: &protocol.PushConfig{
-				RemoteURL:  "ssh://git@bitbucket.sgdev.org:7999/sourcegraph/sourcegraph",
+				RemoteURL:  "ssh://git@bitbucket.sgdev.org:7999/sourcegraph/sourcegraph.git",
 				PrivateKey: "private-key",
 				Passphrase: "passphrase",
 			},
@@ -373,30 +605,97 @@ func TestBatchesSource_GitserverPushConfig(t *testing.T) {
 		{
 			name:                "Bitbucket server SSH no keypair",
 			externalServiceType: extsvc.TypeBitbucketServer,
-			cloneURL:            "ssh://git@bitbucket.sgdev.org:7999/sourcegraph/sourcegraph",
+			config:              `{"gitURLType": "ssh"}`,
 			authenticator:       &basicHTTPSAuthenticator,
-			wantErr:             ErrNoSSHCredential,
+			repoMetadata: &bitbucketserver.Repo{
+				ID:   1,
+				Slug: "sourcegraph/sourcegraph",
+				Project: &bitbucketserver.Project{
+					Key: "sourcegraph/sourcegraph",
+				},
+				Links: struct {
+					Clone []struct {
+						Href string `json:"href"`
+						Name string `json:"name"`
+					} `json:"clone"`
+					Self []struct {
+						Href string `json:"href"`
+					} `json:"self"`
+				}{
+					Clone: []struct {
+						Href string "json:\"href\""
+						Name string "json:\"name\""
+					}{
+						{Name: "ssh", Href: "ssh://git@bitbucket.sgdev.org:7999/sourcegraph/sourcegraph.git"},
+					},
+				},
+			},
+			wantErr: ErrNoSSHCredential,
 		},
 		{
 			name:                "Invalid credential type",
-			externalServiceType: extsvc.TypeGitHub,
-			cloneURL:            "https://github.com/sourcegraph/sourcegraph",
+			externalServiceType: extsvc.TypeBitbucketServer,
+			config:              `{}`,
 			authenticator:       &auth.OAuthClient{},
-			wantErr:             ErrNoPushCredentials{CredentialsType: "*auth.OAuthClient"},
+			repoMetadata: &bitbucketserver.Repo{
+				ID:   1,
+				Slug: "sourcegraph/sourcegraph",
+				Project: &bitbucketserver.Project{
+					Key: "sourcegraph/sourcegraph",
+				},
+				Links: struct {
+					Clone []struct {
+						Href string `json:"href"`
+						Name string `json:"name"`
+					} `json:"clone"`
+					Self []struct {
+						Href string `json:"href"`
+					} `json:"self"`
+				}{
+					Clone: []struct {
+						Href string "json:\"href\""
+						Name string "json:\"name\""
+					}{
+						{Name: "ssh", Href: "ssh://git@bitbucket.sgdev.org:7999/sourcegraph/sourcegraph.git"},
+					},
+				},
+			},
+			wantErr: ErrNoPushCredentials{CredentialsType: "*auth.OAuthClient"},
 		},
 	}
 	for _, tt := range tcs {
 		t.Run(tt.name, func(t *testing.T) {
-			src := &BatchesSource{
-				au: tt.authenticator,
-			}
 			repo := &types.Repo{
 				ExternalRepo: api.ExternalRepoSpec{
 					ServiceType: tt.externalServiceType,
 				},
-				Sources: map[string]*types.SourceInfo{tt.cloneURL: {CloneURL: tt.cloneURL}},
+				Name:     api.RepoName(tt.repoName),
+				URI:      tt.repoName,
+				Sources:  make(map[string]*types.SourceInfo),
+				Metadata: tt.repoMetadata,
 			}
-			havePushConfig, haveErr := src.GitserverPushConfig(repo)
+
+			repo.Sources["1"] = &types.SourceInfo{
+				ID: "::1", // see SourceInfo.ExternalServiceID
+			}
+
+			database.Mocks.ExternalServices.List = func(opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+				services := make([]*types.ExternalService, 0, len(opt.IDs))
+				for _, id := range opt.IDs {
+					services = append(services, &types.ExternalService{
+						ID:     id,
+						Kind:   extsvc.TypeToKind(tt.externalServiceType),
+						Config: tt.config,
+					})
+				}
+
+				return services, nil
+			}
+			t.Cleanup(func() {
+				database.Mocks.ExternalServices.List = nil
+			})
+
+			havePushConfig, haveErr := gitserverPushConfig(context.Background(), &database.ExternalServiceStore{}, repo, tt.authenticator)
 			if haveErr != tt.wantErr {
 				t.Fatalf("invalid error returned, want=%v have=%v", tt.wantErr, haveErr)
 			}

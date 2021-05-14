@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import React, { useCallback, useMemo, useState, useEffect } from 'react'
 import { combineLatest, from, NEVER, Observable, of, ReplaySubject, Subscription } from 'rxjs'
@@ -18,6 +19,7 @@ import { FileDiffFields } from '../../graphql-operations'
 import { diffDomFunctions } from '../../repo/compare/dom-functions'
 
 import { DiffHunk } from './DiffHunk'
+import { DiffSplitHunk } from './DiffSplitHunk'
 import { ExtensionInfo } from './FileDiffConnection'
 
 export interface FileHunksProps extends ThemeProps {
@@ -51,19 +53,20 @@ export interface FileHunksProps extends ThemeProps {
     history: H.History
     /** Reflect selected line in url */
     persistLines?: boolean
+    diffMode: string
 }
 
 /** Displays hunks in a unified file diff. */
 export const FileDiffHunks: React.FunctionComponent<FileHunksProps> = ({
     className,
     fileDiffAnchor,
-    history,
     hunks,
     isLightTheme,
     lineNumbers,
     location,
     extensionInfo,
     persistLines,
+    diffMode,
 }) => {
     /**
      * Decorations for the file at the two revisions of the diff
@@ -143,8 +146,16 @@ export const FileDiffHunks: React.FunctionComponent<FileHunksProps> = ({
                 map(([baseStatusBarItems, headStatusBarItems]) => {
                     if (baseStatusBarItems && headStatusBarItems) {
                         return [
-                            ...baseStatusBarItems.map(({ text, ...rest }) => ({ text: `base: ${text}`, ...rest })),
-                            ...headStatusBarItems.map(({ text, ...rest }) => ({ text: `head: ${text}`, ...rest })),
+                            ...baseStatusBarItems.map(({ text, key, ...rest }) => ({
+                                text: `base: ${text}`,
+                                key: `base-${key}`,
+                                ...rest,
+                            })),
+                            ...headStatusBarItems.map(({ text, key, ...rest }) => ({
+                                text: `head: ${text}`,
+                                key: `head-${key}`,
+                                ...rest,
+                            })),
                         ]
                     }
 
@@ -229,28 +240,53 @@ export const FileDiffHunks: React.FunctionComponent<FileHunksProps> = ({
                     <div className="text-muted m-2">No changes</div>
                 ) : (
                     <div className="file-diff-hunks__container" ref={nextCodeElement}>
-                        <table className="file-diff-hunks__table">
+                        <table
+                            className={classNames('file-diff-hunks__table file-diff-hunks__table', {
+                                'diff-hunk--split': diffMode === 'split',
+                            })}
+                        >
                             {lineNumbers && (
                                 <colgroup>
-                                    <col width="40" />
-                                    <col width="40" />
-                                    <col />
+                                    {diffMode === 'split' ? (
+                                        <>
+                                            <col width="40" />
+                                            <col />
+                                            <col width="40" />
+                                            <col />
+                                        </>
+                                    ) : (
+                                        <>
+                                            <col width="40" />
+                                            <col width="40" />
+                                            <col />
+                                        </>
+                                    )}
                                 </colgroup>
                             )}
                             <tbody>
-                                {hunks.map((hunk, index) => (
-                                    <DiffHunk
-                                        fileDiffAnchor={fileDiffAnchor}
-                                        history={history}
-                                        isLightTheme={isLightTheme}
-                                        lineNumbers={lineNumbers}
-                                        location={location}
-                                        persistLines={persistLines}
-                                        key={index}
-                                        hunk={hunk}
-                                        decorations={decorations}
-                                    />
-                                ))}
+                                {hunks.map((hunk, index) =>
+                                    diffMode === 'split' ? (
+                                        <DiffSplitHunk
+                                            fileDiffAnchor={fileDiffAnchor}
+                                            isLightTheme={isLightTheme}
+                                            lineNumbers={lineNumbers}
+                                            persistLines={persistLines}
+                                            key={hunk.oldRange.startLine}
+                                            hunk={hunk}
+                                            decorations={decorations}
+                                        />
+                                    ) : (
+                                        <DiffHunk
+                                            fileDiffAnchor={fileDiffAnchor}
+                                            isLightTheme={isLightTheme}
+                                            lineNumbers={lineNumbers}
+                                            persistLines={persistLines}
+                                            key={hunk.oldRange.startLine}
+                                            hunk={hunk}
+                                            decorations={decorations}
+                                        />
+                                    )
+                                )}
                             </tbody>
                         </table>
                     </div>

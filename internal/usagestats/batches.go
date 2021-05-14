@@ -6,12 +6,12 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // GetBatchChangesUsageStatistics returns the current site's batch changes usage.
-func GetBatchChangesUsageStatistics(ctx context.Context) (*types.BatchChangesUsageStatistics, error) {
+func GetBatchChangesUsageStatistics(ctx context.Context, db dbutil.DB) (*types.BatchChangesUsageStatistics, error) {
 	stats := types.BatchChangesUsageStatistics{}
 
 	const batchChangesCountsQuery = `
@@ -20,7 +20,7 @@ SELECT
     COUNT(*) FILTER (WHERE closed_at IS NOT NULL) AS batch_changes_closed_count
 FROM batch_changes;
 `
-	if err := dbconn.Global.QueryRowContext(ctx, batchChangesCountsQuery).Scan(
+	if err := db.QueryRowContext(ctx, batchChangesCountsQuery).Scan(
 		&stats.BatchChangesCount,
 		&stats.BatchChangesClosedCount,
 	); err != nil {
@@ -42,7 +42,7 @@ SELECT
     COUNT(*) FILTER (WHERE owned_by_batch_change_id IS NULL AND external_state = 'MERGED') AS manual_changesets_merged
 FROM changesets;
 `
-	if err := dbconn.Global.QueryRowContext(ctx, changesetCountsQuery).Scan(
+	if err := db.QueryRowContext(ctx, changesetCountsQuery).Scan(
 		&stats.PublishedChangesetsUnpublishedCount,
 		&stats.PublishedChangesetsCount,
 		&stats.PublishedChangesetsDiffStatAddedSum,
@@ -69,7 +69,7 @@ FROM event_logs
 WHERE name IN ('BatchSpecCreated', 'ViewBatchChangeApplyPage', 'ViewBatchChangeDetailsPageAfterCreate', 'ViewBatchChangeDetailsPageAfterUpdate');
 `
 
-	if err := dbconn.Global.QueryRowContext(ctx, eventLogsCountsQuery).Scan(
+	if err := db.QueryRowContext(ctx, eventLogsCountsQuery).Scan(
 		&stats.BatchSpecsCreatedCount,
 		&stats.ChangesetSpecsCreatedCount,
 		&stats.ViewBatchChangeApplyPageCount,
@@ -85,7 +85,7 @@ WHERE name IN ('BatchSpecCreated', 'ViewBatchChangeApplyPage', 'ViewBatchChangeD
 			sqlf.Join(events, ","),
 		)
 
-		return dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+		return db.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	}
 
 	var contributorEvents = []*sqlf.Query{
@@ -168,7 +168,7 @@ ORDER BY batch_change_counts.creation_week ASC
 `
 
 	stats.BatchChangesCohorts = []*types.BatchChangesCohort{}
-	rows, err := dbconn.Global.QueryContext(ctx, batchChangesCohortQuery)
+	rows, err := db.QueryContext(ctx, batchChangesCohortQuery)
 	if err != nil {
 		return nil, err
 	}

@@ -7,7 +7,7 @@
 
     &__item {
         width: 32%;
-        @media (max-width: $media-md) {
+        @media (--md-breakpoint-up) {
             width: 100%;
             margin-bottom: 1rem;
         }

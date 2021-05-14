@@ -14,12 +14,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -33,13 +34,14 @@ func TestPermissionLevels(t *testing.T) {
 		t.Skip()
 	}
 
-	mockRSAKeygen(t)
+	ct.MockRSAKeygen(t)
 
 	db := dbtesting.GetDB(t)
+	key := et.TestKey{}
 
-	cstore := store.New(db)
+	cstore := store.New(db, key)
 	sr := New(cstore)
-	s, err := graphqlbackend.NewSchema(db, sr, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, sr, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -64,7 +66,7 @@ func TestPermissionLevels(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	changeset := &batches.Changeset{
+	changeset := &btypes.Changeset{
 		RepoID:              repo.ID,
 		ExternalServiceType: "github",
 		ExternalID:          "1234",
@@ -76,7 +78,7 @@ func TestPermissionLevels(t *testing.T) {
 	createBatchChange := func(t *testing.T, s *store.Store, name string, userID int32, batchSpecID int64) (batchChangeID int64) {
 		t.Helper()
 
-		c := &batches.BatchChange{
+		c := &btypes.BatchChange{
 			Name:             name,
 			InitialApplierID: userID,
 			NamespaceUserID:  userID,
@@ -89,12 +91,12 @@ func TestPermissionLevels(t *testing.T) {
 		}
 
 		// We attach the changeset to the batch change so we can test syncChangeset
-		changeset.BatchChanges = append(changeset.BatchChanges, batches.BatchChangeAssoc{BatchChangeID: c.ID})
+		changeset.BatchChanges = append(changeset.BatchChanges, btypes.BatchChangeAssoc{BatchChangeID: c.ID})
 		if err := s.UpdateChangeset(ctx, changeset); err != nil {
 			t.Fatal(err)
 		}
 
-		cs := &batches.BatchSpec{UserID: userID, NamespaceUserID: userID}
+		cs := &btypes.BatchSpec{UserID: userID, NamespaceUserID: userID}
 		if err := s.CreateBatchSpec(ctx, cs); err != nil {
 			t.Fatal(err)
 		}
@@ -105,7 +107,7 @@ func TestPermissionLevels(t *testing.T) {
 	createBatchSpec := func(t *testing.T, s *store.Store, userID int32) (randID string, id int64) {
 		t.Helper()
 
-		cs := &batches.BatchSpec{UserID: userID, NamespaceUserID: userID}
+		cs := &btypes.BatchSpec{UserID: userID, NamespaceUserID: userID}
 		if err := s.CreateBatchSpec(ctx, cs); err != nil {
 			t.Fatal(err)
 		}
@@ -286,7 +288,7 @@ func TestPermissionLevels(t *testing.T) {
 
 			for _, tc := range tests {
 				t.Run(tc.name, func(t *testing.T) {
-					pruneUserCredentials(t, db)
+					pruneUserCredentials(t, db, key)
 					pruneSiteCredentials(t, cstore)
 
 					graphqlID := string(graphqlbackend.MarshalUserID(tc.user))
@@ -353,7 +355,7 @@ func TestPermissionLevels(t *testing.T) {
 
 			for _, tc := range tests {
 				t.Run(tc.name, func(t *testing.T) {
-					pruneUserCredentials(t, db)
+					pruneUserCredentials(t, db, key)
 					pruneSiteCredentials(t, cstore)
 
 					var graphqlID graphql.ID
@@ -369,12 +371,12 @@ func TestPermissionLevels(t *testing.T) {
 						}
 						graphqlID = marshalBatchChangesCredentialID(cred.ID, false)
 					} else {
-						cred := &store.SiteCredential{
+						cred := &btypes.SiteCredential{
 							ExternalServiceID:   "https://github.com/",
 							ExternalServiceType: extsvc.TypeGitHub,
-							Credential:          &auth.OAuthBearerToken{Token: "SOSECRET"},
 						}
-						if err := cstore.CreateSiteCredential(ctx, cred); err != nil {
+						token := &auth.OAuthBearerToken{Token: "SOSECRET"}
+						if err := cstore.CreateSiteCredential(ctx, cred, token); err != nil {
 							t.Fatal(err)
 						}
 						graphqlID = marshalBatchChangesCredentialID(cred.ID, true)
@@ -449,7 +451,7 @@ func TestPermissionLevels(t *testing.T) {
 
 			for _, tc := range tests {
 				t.Run(tc.name, func(t *testing.T) {
-					pruneUserCredentials(t, db)
+					pruneUserCredentials(t, db, key)
 					pruneSiteCredentials(t, cstore)
 
 					var res struct {
@@ -542,7 +544,7 @@ func TestPermissionLevels(t *testing.T) {
 
 			for _, tc := range tests {
 				t.Run(tc.name, func(t *testing.T) {
-					pruneUserCredentials(t, db)
+					pruneUserCredentials(t, db, key)
 					pruneSiteCredentials(t, cstore)
 
 					var batchChangesCredentialID graphql.ID
@@ -558,12 +560,12 @@ func TestPermissionLevels(t *testing.T) {
 						}
 						batchChangesCredentialID = marshalBatchChangesCredentialID(cred.ID, false)
 					} else {
-						cred := &store.SiteCredential{
+						cred := &btypes.SiteCredential{
 							ExternalServiceID:   "https://github.com/",
 							ExternalServiceType: extsvc.TypeGitHub,
-							Credential:          &auth.OAuthBearerToken{Token: "SOSECRET"},
 						}
-						if err := cstore.CreateSiteCredential(ctx, cred); err != nil {
+						token := &auth.OAuthBearerToken{Token: "SOSECRET"}
+						if err := cstore.CreateSiteCredential(ctx, cred, token); err != nil {
 							t.Fatal(err)
 						}
 						batchChangesCredentialID = marshalBatchChangesCredentialID(cred.ID, true)
@@ -728,6 +730,12 @@ func TestPermissionLevels(t *testing.T) {
 					return fmt.Sprintf(`mutation { moveBatchChange(batchChange: %q, newName: "foobar") { id } }`, batchChangeID)
 				},
 			},
+			{
+				name: "createChangesetComments",
+				mutationFunc: func(batchChangeID, changesetID, batchSpecID string) string {
+					return fmt.Sprintf(`mutation { createChangesetComments(batchChange: %q, changesets: [%q], body: "test") { id } }`, batchChangeID, changesetID)
+				},
+			},
 		}
 
 		for _, m := range mutations {
@@ -777,7 +785,7 @@ func TestPermissionLevels(t *testing.T) {
 							// matter for the addChangesetsToBatchChange mutation,
 							// since that is idempotent and we want to solely
 							// check for auth errors.
-							changeset.BatchChanges = []batches.BatchChangeAssoc{{BatchChangeID: batchChagneID}}
+							changeset.BatchChanges = []btypes.BatchChangeAssoc{{BatchChangeID: batchChagneID}}
 							if err := cstore.UpdateChangeset(ctx, changeset); err != nil {
 								t.Fatal(err)
 							}
@@ -919,9 +927,9 @@ func TestRepositoryPermissions(t *testing.T) {
 
 	db := dbtesting.GetDB(t)
 
-	cstore := store.New(db)
+	cstore := store.New(db, nil)
 	sr := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(db, sr, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, sr, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -955,17 +963,17 @@ func TestRepositoryPermissions(t *testing.T) {
 		mockRepoComparison(t, changesetBaseRefOid, changesetHeadRefOid, testDiff)
 		changesetDiffStat := apitest.DiffStat{Added: 0, Changed: 2, Deleted: 0}
 
-		changesets := make([]*batches.Changeset, 0, len(repos))
+		changesets := make([]*btypes.Changeset, 0, len(repos))
 		for _, r := range repos {
-			c := &batches.Changeset{
+			c := &btypes.Changeset{
 				RepoID:              r.ID,
 				ExternalServiceType: extsvc.TypeGitHub,
 				ExternalID:          fmt.Sprintf("external-%d", r.ID),
-				ExternalState:       batches.ChangesetExternalStateOpen,
-				ExternalCheckState:  batches.ChangesetCheckStatePassed,
-				ExternalReviewState: batches.ChangesetReviewStateChangesRequested,
-				PublicationState:    batches.ChangesetPublicationStatePublished,
-				ReconcilerState:     batches.ReconcilerStateCompleted,
+				ExternalState:       btypes.ChangesetExternalStateOpen,
+				ExternalCheckState:  btypes.ChangesetCheckStatePassed,
+				ExternalReviewState: btypes.ChangesetReviewStateChangesRequested,
+				PublicationState:    btypes.ChangesetPublicationStatePublished,
+				ReconcilerState:     btypes.ReconcilerStateCompleted,
 				Metadata: &github.PullRequest{
 					BaseRefOid: changesetBaseRefOid,
 					HeadRefOid: changesetHeadRefOid,
@@ -978,7 +986,7 @@ func TestRepositoryPermissions(t *testing.T) {
 			changesets = append(changesets, c)
 		}
 
-		spec := &batches.BatchSpec{
+		spec := &btypes.BatchSpec{
 			NamespaceUserID: userID,
 			UserID:          userID,
 		}
@@ -986,7 +994,7 @@ func TestRepositoryPermissions(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		batchChange := &batches.BatchChange{
+		batchChange := &btypes.BatchChange{
 			Name:             "my batch change",
 			InitialApplierID: userID,
 			NamespaceUserID:  userID,
@@ -999,7 +1007,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		}
 		// We attach the two changesets to the batch change
 		for _, c := range changesets {
-			c.BatchChanges = []batches.BatchChangeAssoc{{BatchChangeID: batchChange.ID}}
+			c.BatchChanges = []btypes.BatchChangeAssoc{{BatchChangeID: batchChange.ID}}
 			if err := cstore.UpdateChangeset(ctx, c); err != nil {
 				t.Fatal(err)
 			}
@@ -1063,7 +1071,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		// hidden changesets.
 		input = map[string]interface{}{
 			"batchChange": string(marshalBatchChangeID(batchChange.ID)),
-			"checkState":  string(batches.ChangesetCheckStatePassed),
+			"checkState":  string(btypes.ChangesetCheckStatePassed),
 		}
 		wantCheckStateResponse := want
 		wantCheckStateResponse.changesetsCount = 1
@@ -1075,25 +1083,25 @@ func TestRepositoryPermissions(t *testing.T) {
 
 		input = map[string]interface{}{
 			"batchChange": string(marshalBatchChangeID(batchChange.ID)),
-			"reviewState": string(batches.ChangesetReviewStateChangesRequested),
+			"reviewState": string(btypes.ChangesetReviewStateChangesRequested),
 		}
 		wantReviewStateResponse := wantCheckStateResponse
 		testBatchChangeResponse(t, s, userCtx, input, wantReviewStateResponse)
 	})
 
 	t.Run("BatchSpec and changesetSpecs", func(t *testing.T) {
-		batchSpec := &batches.BatchSpec{
+		batchSpec := &btypes.BatchSpec{
 			UserID:          userID,
 			NamespaceUserID: userID,
-			Spec:            batches.BatchSpecFields{Name: "batch-spec-and-changeset-specs"},
+			Spec:            btypes.BatchSpecFields{Name: "batch-spec-and-changeset-specs"},
 		}
 		if err := cstore.CreateBatchSpec(ctx, batchSpec); err != nil {
 			t.Fatal(err)
 		}
 
-		changesetSpecs := make([]*batches.ChangesetSpec, 0, len(repos))
+		changesetSpecs := make([]*btypes.ChangesetSpec, 0, len(repos))
 		for _, r := range repos {
-			c := &batches.ChangesetSpec{
+			c := &btypes.ChangesetSpec{
 				RepoID:          r.ID,
 				UserID:          userID,
 				BatchSpecID:     batchSpec.ID,
@@ -1242,7 +1250,7 @@ func testChangesetResponse(t *testing.T, s *graphql.Schema, ctx context.Context,
 		t.Fatalf("changeset has wrong typename. want=%q, have=%q", want, have)
 	}
 
-	if have, want := res.Node.State, string(batches.ChangesetStateOpen); have != want {
+	if have, want := res.Node.State, string(btypes.ChangesetStateOpen); have != want {
 		t.Fatalf("changeset has wrong state. want=%q, have=%q", want, have)
 	}
 

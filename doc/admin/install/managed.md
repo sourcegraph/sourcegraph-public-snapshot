@@ -43,6 +43,10 @@ As part of this service you will receive a number of benefits from our team, inc
 - Instance performance and health [monitored](../observability/index.md) by our team's on-call engineers.
 - [Responding to support requests and maintaining SLAs](https://about.sourcegraph.com/handbook/ce/support#for-customers-with-managed-instances)
 
+## Backup and Restore
+
+- Snapshots are taken every week and kept for 90 days. 
+
 ## Training, feedback, and engagement
 
 As with any Sourcegraph enterprise customer, you will also receive support from us with:

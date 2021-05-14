@@ -7,7 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
 
@@ -28,16 +28,16 @@ func testStoreChangesetEvents(t *testing.T, ctx context.Context, s *Store, clock
 		IncludesCreatedEdit: false,
 	}
 
-	events := make([]*batches.ChangesetEvent, 0, 3)
-	kinds := []batches.ChangesetEventKind{
-		batches.ChangesetEventKindGitHubCommented,
-		batches.ChangesetEventKindGitHubClosed,
-		batches.ChangesetEventKindGitHubAssigned,
+	events := make([]*btypes.ChangesetEvent, 0, 3)
+	kinds := []btypes.ChangesetEventKind{
+		btypes.ChangesetEventKindGitHubCommented,
+		btypes.ChangesetEventKindGitHubClosed,
+		btypes.ChangesetEventKindGitHubAssigned,
 	}
 
 	t.Run("Upsert", func(t *testing.T) {
 		for i := 0; i < cap(events); i++ {
-			e := &batches.ChangesetEvent{
+			e := &btypes.ChangesetEvent{
 				ChangesetID: int64(i + 1),
 				Kind:        kinds[i],
 				Key:         issueComment.Key(),
@@ -187,7 +187,7 @@ func testStoreChangesetEvents(t *testing.T, ctx context.Context, s *Store, clock
 
 		t.Run("ByKinds", func(t *testing.T) {
 			for _, k := range kinds {
-				opts := ListChangesetEventsOpts{Kinds: []batches.ChangesetEventKind{k}}
+				opts := ListChangesetEventsOpts{Kinds: []btypes.ChangesetEventKind{k}}
 
 				ts, next, err := s.ListChangesetEvents(ctx, opts)
 				if err != nil {
@@ -208,7 +208,7 @@ func testStoreChangesetEvents(t *testing.T, ctx context.Context, s *Store, clock
 			}
 
 			{
-				opts := ListChangesetEventsOpts{Kinds: []batches.ChangesetEventKind{}}
+				opts := ListChangesetEventsOpts{Kinds: []btypes.ChangesetEventKind{}}
 
 				for _, e := range events {
 					opts.Kinds = append(opts.Kinds, e.Kind)

@@ -1,0 +1,55 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.external-changeset-node {
+    &__statuses {
+        @media (--xs-breakpoint-down) {
+            // Use up remaining width of the row.
+            grid-column: 1 / -1;
+        }
+        @media (--sm-breakpoint-down) {
+            // Use up remaining width of the row.
+            grid-column: 2 / -1;
+        }
+    }
+    &__bg-expanded {
+        background-color: var(--oc-blue-0);
+    }
+    &__expanded-section {
+        // Make it full width in the current row.
+        grid-column: 2 / -1;
+        @media (--xs-breakpoint-down) {
+            grid-column: 1 / -1;
+        }
+    }
+    &__state,
+    &__information {
+        @media (--xs-breakpoint-down) {
+            grid-column: 1 / -1;
+        }
+    }
+    &__show-details {
+        @media (--xs-breakpoint-down) {
+            // Make it full width in the current row.
+            grid-column: 1 / -1;
+        }
+    }
+    &__retry {
+        &--spinning {
+            animation: 1s linear spin infinite;
+            @keyframes spin {
+                0% {
+                    transform: rotate(0deg);
+                }
+                100% {
+                    transform: rotate(360deg);
+                }
+            }
+        }
+    }
+}
+
+:global(.theme-dark) .external-changeset-node {
+    &__bg-expanded {
+        background-color: var(--oc-gray-9);
+    }
+}

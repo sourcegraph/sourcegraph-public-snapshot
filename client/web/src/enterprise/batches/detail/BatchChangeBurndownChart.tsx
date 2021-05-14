@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import { getYear, parseISO } from 'date-fns'
 import * as H from 'history'
 import React, { useCallback, useMemo, useState } from 'react'
@@ -19,6 +20,7 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { ChangesetCountsOverTimeFields, Scalars } from '../../../graphql-operations'
 
 import { queryChangesetCountsOverTime as _queryChangesetCountsOverTime } from './backend'
+import styles from './BatchChangeBurndownChart.module.scss'
 
 interface Props {
     batchChangeID: Scalars['ID']
@@ -118,7 +120,7 @@ export const BatchChangeBurndownChart: React.FunctionComponent<Props> = ({
     }
 
     return (
-        <div className="d-flex batch-change-burndown-chart__container align-items-center">
+        <div className={classNames(styles.batchChangeBurndownChartContainer, 'd-flex align-items-center')}>
             <ResponsiveContainer width={width} height={300} className="test-batches-chart">
                 <ComposedChart
                     data={changesetCountsOverTime.map(snapshot => ({ ...snapshot, date: Date.parse(snapshot.date) }))}
@@ -215,7 +217,7 @@ const LegendLabel: React.FunctionComponent<{
                 style={{
                     backgroundColor: fill,
                 }}
-                className="batch-change-burndown-chart-legend__color-box mr-2"
+                className={classNames(styles.batchChangeBurndownChartLegendColorBox, 'mr-2')}
             />
             <input id={stateKey} type="checkbox" className="mr-2" checked={checked} onChange={onChangeCheckbox} />
             <label htmlFor={stateKey} className="mb-0">

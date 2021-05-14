@@ -9,25 +9,25 @@ import (
 )
 
 func TestProductLicenses_Create(t *testing.T) {
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
-	u, err := database.GlobalUsers.Create(ctx, database.NewUser{Username: "u"})
+	u, err := database.Users(db).Create(ctx, database.NewUser{Username: "u"})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	ps0, err := dbSubscriptions{}.Create(ctx, u.ID)
+	ps0, err := dbSubscriptions{db: db}.Create(ctx, u.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	pl0, err := dbLicenses{}.Create(ctx, ps0, "k")
+	pl0, err := dbLicenses{db: db}.Create(ctx, ps0, "k")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	got, err := dbLicenses{}.GetByID(ctx, pl0)
+	got, err := dbLicenses{db: db}.GetByID(ctx, pl0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -41,7 +41,7 @@ func TestProductLicenses_Create(t *testing.T) {
 		t.Errorf("got %q, want %q", got.LicenseKey, want)
 	}
 
-	ts, err := dbLicenses{}.List(ctx, dbLicensesListOptions{ProductSubscriptionID: ps0})
+	ts, err := dbLicenses{db: db}.List(ctx, dbLicensesListOptions{ProductSubscriptionID: ps0})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,7 +49,7 @@ func TestProductLicenses_Create(t *testing.T) {
 		t.Errorf("got %d product licenses, want %d", len(ts), want)
 	}
 
-	ts, err = dbLicenses{}.List(ctx, dbLicensesListOptions{ProductSubscriptionID: "69da12d5-323c-4e42-9d44-cc7951639bca" /* invalid */})
+	ts, err = dbLicenses{db: db}.List(ctx, dbLicensesListOptions{ProductSubscriptionID: "69da12d5-323c-4e42-9d44-cc7951639bca" /* invalid */})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -62,42 +62,42 @@ func TestProductLicenses_List(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
-	u1, err := database.GlobalUsers.Create(ctx, database.NewUser{Username: "u1"})
+	u1, err := database.Users(db).Create(ctx, database.NewUser{Username: "u1"})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	ps0, err := dbSubscriptions{}.Create(ctx, u1.ID)
+	ps0, err := dbSubscriptions{db: db}.Create(ctx, u1.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	ps1, err := dbSubscriptions{}.Create(ctx, u1.ID)
+	ps1, err := dbSubscriptions{db: db}.Create(ctx, u1.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = dbLicenses{}.Create(ctx, ps0, "k")
+	_, err = dbLicenses{db: db}.Create(ctx, ps0, "k")
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = dbLicenses{}.Create(ctx, ps0, "n1")
+	_, err = dbLicenses{db: db}.Create(ctx, ps0, "n1")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	{
 		// List all product licenses.
-		ts, err := dbLicenses{}.List(ctx, dbLicensesListOptions{})
+		ts, err := dbLicenses{db: db}.List(ctx, dbLicensesListOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}
 		if want := 2; len(ts) != want {
 			t.Errorf("got %d product licenses, want %d", len(ts), want)
 		}
-		count, err := dbLicenses{}.Count(ctx, dbLicensesListOptions{})
+		count, err := dbLicenses{db: db}.Count(ctx, dbLicensesListOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -108,7 +108,7 @@ func TestProductLicenses_List(t *testing.T) {
 
 	{
 		// List ps0's product licenses.
-		ts, err := dbLicenses{}.List(ctx, dbLicensesListOptions{ProductSubscriptionID: ps0})
+		ts, err := dbLicenses{db: db}.List(ctx, dbLicensesListOptions{ProductSubscriptionID: ps0})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -119,7 +119,7 @@ func TestProductLicenses_List(t *testing.T) {
 
 	{
 		// List ps1's product licenses.
-		ts, err := dbLicenses{}.List(ctx, dbLicensesListOptions{ProductSubscriptionID: ps1})
+		ts, err := dbLicenses{db: db}.List(ctx, dbLicensesListOptions{ProductSubscriptionID: ps1})
 		if err != nil {
 			t.Fatal(err)
 		}

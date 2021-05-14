@@ -12,7 +12,7 @@ To publish a changeset, you need:
 
 1. [admin permissions for the batch change](../explanations/permissions_in_batch_changes.md#permission-levels-for-batch-changes),
 1. write access to the changeset's repository (on the code host), and
-1. a personal access token [configured in Sourcegraph for your code host(s)](configuring_user_credentials.md).  
+1. a personal access token [configured in Sourcegraph for your code host(s)](configuring_credentials.md).  
 
 For more information, see "[Code host interactions in Batch Changes](../explanations/permissions_in_batch_changes.md#code-host-interactions-in-batch-changes)".
 [Forking the repository](../explanations/introduction_to_batch_changes.md#known-issues) is not yet supported.
@@ -59,8 +59,9 @@ Instead of publishing all changesets at the same time, you can also publish some
 changesetTemplate:
   # ...
   published:
-    - github.com/sourcegraph/sourcegraph: true
-    - github.com/sourcegraph/src-cli: false
+    - github.com/sourcegraph/src-cli: true
+    - github.com/sourcegraph/*: true
+    - github.com/sourcegraph-private/*: false
 ```
 
 See [`changesetTemplate.published`](../references/batch_spec_yaml_reference.md#changesettemplate-published) in the batch spec reference for more details.

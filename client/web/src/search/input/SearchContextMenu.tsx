@@ -71,7 +71,14 @@ const SearchContextMenuItem: React.FunctionComponent<{
 }
 
 export interface SearchContextMenuProps
-    extends Omit<SearchContextProps, 'showSearchContext' | 'setSelectedSearchContextSpec'> {
+    extends Omit<
+        SearchContextProps,
+        | 'showSearchContext'
+        | 'setSelectedSearchContextSpec'
+        | 'convertVersionContextToSearchContext'
+        | 'isSearchContextSpecAvailable'
+        | 'fetchSearchContext'
+    > {
     closeMenu: () => void
     selectSearchContextSpec: (spec: string) => void
 }
@@ -193,7 +200,14 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
                 // Do not debounce the initial load
                 debounce(({ cursor, query }) => (!cursor && query === '' ? timer(0) : timer(300))),
                 switchMap(({ cursor, query }) =>
-                    combineLatest([of(cursor), fetchSearchContexts(searchContextsPerPageToLoad, query, cursor)])
+                    combineLatest([
+                        of(cursor),
+                        fetchSearchContexts({
+                            first: searchContextsPerPageToLoad,
+                            query,
+                            after: cursor,
+                        }),
+                    ])
                 ),
                 tap(([, searchContextsResult]) => setLastPageInfo(searchContextsResult.pageInfo)),
                 catchError(error => [asError(error)])
@@ -216,12 +230,16 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
         return () => subscription.unsubscribe()
     }, [loadNextPageUpdates, setSearchContexts, setLastPageInfo, fetchSearchContexts])
 
-    const autoDefinedSearchContexts = useObservable(fetchAutoDefinedSearchContexts)
+    const autoDefinedSearchContexts = useObservable(
+        fetchAutoDefinedSearchContexts.pipe(catchError(error => [asError(error)]))
+    )
     const filteredAutoDefinedSearchContexts = useMemo(
         () =>
-            autoDefinedSearchContexts?.filter(context =>
-                context.spec.toLowerCase().includes(searchFilter.toLowerCase())
-            ) ?? [],
+            autoDefinedSearchContexts && !isErrorLike(autoDefinedSearchContexts)
+                ? autoDefinedSearchContexts.filter(context =>
+                      context.spec.toLowerCase().includes(searchFilter.toLowerCase())
+                  )
+                : [],
         [autoDefinedSearchContexts, searchFilter]
     )
 

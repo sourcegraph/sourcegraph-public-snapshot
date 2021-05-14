@@ -1,6 +1,27 @@
 $toggle-width: 2rem;
+$box-shadow-spacing: 0 0 0 1px var(--body-bg);
 
 .toggle {
+    --toggle-bar-bg: var(--text-muted);
+    --toggle-bar-bg-on: var(--primary);
+    --toggle-knob-bg: var(--text-muted);
+    --toggle-knob-bg-on: var(--primary);
+    --toggle-bar-opacity: 0.2;
+    --toggle-bar-focus-opacity: 0.5;
+    --toggle-knob-disabled-opacity: 0.2;
+    --toggle-bar-focus-box-shadow: #{$box-shadow-spacing}, 0 0 0 0.1875rem var(--primary);
+
+    .theme-redesign & {
+        --toggle-bar-bg: var(--icon-color);
+        --toggle-bar-bg-on: var(--primary);
+        --toggle-knob-bg: var(--body-bg);
+        --toggle-knob-bg-on: var(--body-bg);
+        --toggle-bar-opacity: 1;
+        --toggle-bar-focus-opacity: 1;
+        --toggle-knob-disabled-opacity: 1;
+        --toggle-bar-focus-box-shadow: #{$box-shadow-spacing}, 0 0 0 0.1875rem var(--primary-2);
+    }
+
     background: none;
     border: none;
     display: inline-block;
@@ -9,55 +30,36 @@ $toggle-width: 2rem;
     position: relative;
     width: $toggle-width;
 
-    &__bar,
-    &__bar-shadow {
+    &:focus-visible {
+        // Move focus style to the rounded bar
+        box-shadow: none;
+    }
+
+    &:focus-visible &__bar {
+        box-shadow: var(--toggle-bar-focus-box-shadow);
+    }
+
+    &__bar {
         border-radius: 1rem;
         top: 2px;
         left: 0;
         height: 1rem;
         width: 100%;
         position: absolute;
-    }
 
-    &__bar {
-        opacity: 0.2;
-        background-color: var(--text-muted);
+        opacity: var(--toggle-bar-opacity);
+        background-color: var(--toggle-bar-bg);
+
         transition: all 0.3s;
         transition-property: opacity;
 
         &--on {
-            background-color: var(--primary);
-        }
-    }
-
-    &:hover:enabled &__bar {
-        opacity: 0.5;
-    }
-
-    &:focus-visible &__bar {
-        opacity: 0.5;
-        background-color: var(--text-muted);
-
-        &--on {
-            background-color: var(--primary);
-        }
-    }
-
-    &__bar-shadow {
-        background-color: transparent;
-    }
-
-    &:focus-visible &__bar-shadow {
-        opacity: 0.2;
-        box-shadow: 0 0 0 0.1875rem var(--text-muted);
-
-        &--on {
-            box-shadow: 0 0 0 0.1875rem var(--primary);
+            background-color: var(--toggle-bar-bg-on);
         }
     }
 
     &__knob {
-        background-color: var(--text-muted);
+        background-color: var(--toggle-knob-bg);
 
         border-radius: 0.375rem;
         display: block;
@@ -70,12 +72,23 @@ $toggle-width: 2rem;
         position: relative;
 
         &--on {
-            background-color: var(--primary);
+            background-color: var(--toggle-knob-bg-on);
             transform: translate3d(1rem, 0, 0);
         }
     }
 
+    &:hover:enabled &__bar {
+        opacity: var(--toggle-bar-focus-opacity);
+    }
+
+    .theme-redesign &:disabled {
+        --toggle-knob-bg: var(--icon-color);
+        --toggle-knob-bg-on: var(--icon-color);
+        --toggle-bar-bg: var(--input-disabled-bg);
+        --toggle-bar-bg-on: var(--input-disabled-bg);
+    }
+
     &:disabled &__knob {
-        opacity: 0.2;
+        opacity: var(--toggle-knob-disabled-opacity);
     }
 }

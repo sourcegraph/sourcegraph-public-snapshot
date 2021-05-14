@@ -22,14 +22,14 @@ import (
 )
 
 func getUserToInviteToOrganization(ctx context.Context, db dbutil.DB, username string, orgID int32) (userToInvite *types.User, userEmailAddress string, err error) {
-	userToInvite, err = database.GlobalUsers.GetByUsername(ctx, username)
+	userToInvite, err = database.Users(db).GetByUsername(ctx, username)
 	if err != nil {
 		return nil, "", err
 	}
 
 	if conf.CanSendEmail() {
 		// Look up user's email address so we can send them an email (if needed).
-		email, verified, err := database.GlobalUserEmails.GetPrimaryEmail(ctx, userToInvite.ID)
+		email, verified, err := database.UserEmails(db).GetPrimaryEmail(ctx, userToInvite.ID)
 		if err != nil && !errcode.IsNotFound(err) {
 			return nil, "", errors.WithMessage(err, "looking up invited user's primary email address")
 		}
@@ -65,16 +65,16 @@ func (r *schemaResolver) InviteUserToOrganization(ctx context.Context, args *str
 	}
 	// 🚨 SECURITY: Check that the current user is a member of the org that the user is being
 	// invited to.
-	if err := backend.CheckOrgAccess(ctx, r.db, orgID); err != nil {
+	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgID); err != nil {
 		return nil, err
 	}
 
 	// Create the invitation.
-	org, err := database.GlobalOrgs.GetByID(ctx, orgID)
+	org, err := database.Orgs(r.db).GetByID(ctx, orgID)
 	if err != nil {
 		return nil, err
 	}
-	sender, err := database.GlobalUsers.GetByCurrentAuthUser(ctx)
+	sender, err := database.Users(r.db).GetByCurrentAuthUser(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +92,7 @@ func (r *schemaResolver) InviteUserToOrganization(ctx context.Context, args *str
 	// Send a notification to the recipient. If disabled, the frontend will still show the
 	// invitation link.
 	if conf.CanSendEmail() && recipientEmail != "" {
-		if err := sendOrgInvitationNotification(ctx, org, sender, recipientEmail); err != nil {
+		if err := sendOrgInvitationNotification(ctx, r.db, org, sender, recipientEmail); err != nil {
 			return nil, errors.WithMessage(err, "sending notification to invitation recipient")
 		}
 		result.sentInvitationEmail = true
@@ -154,7 +154,7 @@ func (r *schemaResolver) ResendOrganizationInvitationNotification(ctx context.Co
 	}
 
 	// 🚨 SECURITY: Check that the current user is a member of the org that the invite is for.
-	if err := backend.CheckOrgAccess(ctx, r.db, orgInvitation.v.OrgID); err != nil {
+	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgInvitation.v.OrgID); err != nil {
 		return nil, err
 	}
 
@@ -171,22 +171,22 @@ func (r *schemaResolver) ResendOrganizationInvitationNotification(ctx context.Co
 		return nil, errors.New("unable to send notification for invitation because sending emails is not enabled")
 	}
 
-	org, err := database.GlobalOrgs.GetByID(ctx, orgInvitation.v.OrgID)
+	org, err := database.Orgs(r.db).GetByID(ctx, orgInvitation.v.OrgID)
 	if err != nil {
 		return nil, err
 	}
-	sender, err := database.GlobalUsers.GetByCurrentAuthUser(ctx)
+	sender, err := database.Users(r.db).GetByCurrentAuthUser(ctx)
 	if err != nil {
 		return nil, err
 	}
-	recipientEmail, recipientEmailVerified, err := database.GlobalUserEmails.GetPrimaryEmail(ctx, orgInvitation.v.RecipientUserID)
+	recipientEmail, recipientEmailVerified, err := database.UserEmails(r.db).GetPrimaryEmail(ctx, orgInvitation.v.RecipientUserID)
 	if err != nil {
 		return nil, err
 	}
 	if !recipientEmailVerified {
 		return nil, errors.New("refusing to send notification because recipient has no verified email address")
 	}
-	if err := sendOrgInvitationNotification(ctx, org, sender, recipientEmail); err != nil {
+	if err := sendOrgInvitationNotification(ctx, r.db, org, sender, recipientEmail); err != nil {
 		return nil, err
 	}
 	return &EmptyResponse{}, nil
@@ -201,7 +201,7 @@ func (r *schemaResolver) RevokeOrganizationInvitation(ctx context.Context, args 
 	}
 
 	// 🚨 SECURITY: Check that the current user is a member of the org that the invite is for.
-	if err := backend.CheckOrgAccess(ctx, r.db, orgInvitation.v.OrgID); err != nil {
+	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgInvitation.v.OrgID); err != nil {
 		return nil, err
 	}
 
@@ -218,12 +218,12 @@ func orgInvitationURL(org *types.Org) *url.URL {
 // sendOrgInvitationNotification sends an email to the recipient of an org invitation with a link to
 // respond to the invitation. Callers should check conf.CanSendEmail() if they want to return a nice
 // error if sending email is not enabled.
-func sendOrgInvitationNotification(ctx context.Context, org *types.Org, sender *types.User, recipientEmail string) error {
+func sendOrgInvitationNotification(ctx context.Context, db dbutil.DB, org *types.Org, sender *types.User, recipientEmail string) error {
 	if envvar.SourcegraphDotComMode() {
 		// Basic abuse prevention for Sourcegraph.com.
 
 		// Only allow email-verified users to send invites.
-		if _, senderEmailVerified, err := database.GlobalUserEmails.GetPrimaryEmail(ctx, sender.ID); err != nil {
+		if _, senderEmailVerified, err := database.UserEmails(db).GetPrimaryEmail(ctx, sender.ID); err != nil {
 			return err
 		} else if !senderEmailVerified {
 			return errors.New("must verify your email address to invite a user to an organization")
@@ -233,7 +233,7 @@ func sendOrgInvitationNotification(ctx context.Context, org *types.Org, sender *
 		//
 		// There is no user invite quota for on-prem instances because we assume they can
 		// trust their users to not abuse invites.
-		if ok, err := database.GlobalUsers.CheckAndDecrementInviteQuota(ctx, sender.ID); err != nil {
+		if ok, err := database.Users(db).CheckAndDecrementInviteQuota(ctx, sender.ID); err != nil {
 			return err
 		} else if !ok {
 			return errors.New("invite quota exceeded (contact support to increase the quota)")

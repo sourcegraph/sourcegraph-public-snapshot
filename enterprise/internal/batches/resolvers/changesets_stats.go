@@ -2,11 +2,11 @@ package resolvers
 
 import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 )
 
 type changesetsStatsResolver struct {
-	stats batches.ChangesetsStats
+	stats btypes.ChangesetsStats
 }
 
 var _ graphqlbackend.ChangesetsStatsResolver = &changesetsStatsResolver{}
@@ -16,6 +16,9 @@ func (r *changesetsStatsResolver) Retrying() int32 {
 }
 func (r *changesetsStatsResolver) Failed() int32 {
 	return r.stats.Failed
+}
+func (r *changesetsStatsResolver) Scheduled() int32 {
+	return r.stats.Scheduled
 }
 func (r *changesetsStatsResolver) Processing() int32 {
 	return r.stats.Processing

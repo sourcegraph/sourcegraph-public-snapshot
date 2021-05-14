@@ -72,6 +72,7 @@ const (
 	routeSubscriptions  = "subscriptions"
 	routeStats          = "stats"
 	routeViews          = "views"
+	routeDevToolTime    = "devtooltime"
 
 	routeSearchQueryBuilder = "search.query-builder"
 	routeSearchStream       = "search.stream"
@@ -157,11 +158,12 @@ func newRouter() *mux.Router {
 	r.PathPrefix("/subscriptions").Methods("GET").Name(routeSubscriptions)
 	r.PathPrefix("/stats").Methods("GET").Name(routeStats)
 	r.PathPrefix("/views").Methods("GET").Name(routeViews)
+	r.PathPrefix("/devtooltime").Methods("GET").Name(routeDevToolTime)
 	r.Path("/ping-from-self-hosted").Methods("GET", "OPTIONS").Name(uirouter.RoutePingFromSelfHosted)
 
 	// Repogroup pages. Must mirror web/src/Layout.tsx
 	if envvar.SourcegraphDotComMode() {
-		repogroups := []string{"refactor-python2-to-3", "kubernetes", "golang", "react-hooks", "android", "stanford"}
+		repogroups := []string{"refactor-python2-to-3", "kubernetes", "golang", "react-hooks", "android", "stanford", "stackstorm"}
 		r.Path("/{Path:(?:" + strings.Join(repogroups, "|") + ")}").Methods("GET").Name(routeRepoGroups)
 		r.Path("/cncf").Methods("GET").Name(routeCncf)
 	}
@@ -300,6 +302,7 @@ func initRouter(db dbutil.DB, router *mux.Router) {
 		router.Get(routeRepoGroups).Handler(handler(serveBrandedPageString("Repogroup", nil)))
 		cncfDescription := "Search all repositories in the Cloud Native Computing Foundation (CNCF)."
 		router.Get(routeCncf).Handler(handler(serveBrandedPageString("CNCF code search", &cncfDescription)))
+		router.Get(routeDevToolTime).Handler(staticRedirectHandler("https://info.sourcegraph.com/dev-tool-time", http.StatusMovedPermanently))
 	}
 
 	// repo
@@ -486,11 +489,12 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, err error, status
 		// Stub out serveError to newCommon so that it is not reentrant.
 		commonServeErr = err
 	})
-	common.Error = pageErrorContext
 	if commonErr == nil && commonServeErr == nil {
 		if common == nil {
 			return // request handled by newCommon
 		}
+
+		common.Error = pageErrorContext
 		fancyErr := renderTemplate(w, "app.html", &struct {
 			*Common
 		}{

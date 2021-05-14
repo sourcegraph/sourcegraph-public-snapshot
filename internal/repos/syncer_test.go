@@ -98,6 +98,7 @@ func testSyncerSync(t *testing.T, s *repos.Store) func(*testing.T) {
 			ServiceID:   "https://git-host.com/",
 			ServiceType: extsvc.TypeOther,
 		},
+		Metadata: &types.OtherRepoMetadata{},
 	}).With(
 		types.Opt.RepoSources(otherService.URN()),
 	)

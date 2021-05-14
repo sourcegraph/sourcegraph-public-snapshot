@@ -13,6 +13,7 @@ import { kubernetes } from './repogroups/Kubernetes'
 import { python2To3Metadata } from './repogroups/Python2To3'
 import { reactHooks } from './repogroups/ReactHooks'
 import { RepogroupPage } from './repogroups/RepogroupPage'
+import { stackStorm } from './repogroups/StackStorm'
 import { stanford } from './repogroups/Stanford'
 import { StreamingSearchResults } from './search/results/streaming/StreamingSearchResults'
 import { isMacPlatform, UserRepositoriesUpdateProps } from './util'
@@ -25,6 +26,7 @@ const ExtensionsArea = lazyComponent(() => import('./extensions/ExtensionsArea')
 const SearchConsolePage = lazyComponent(() => import('./search/SearchConsolePage'), 'SearchConsolePage')
 const SignInPage = lazyComponent(() => import('./auth/SignInPage'), 'SignInPage')
 const SignUpPage = lazyComponent(() => import('./auth/SignUpPage'), 'SignUpPage')
+const PostSignUpPage = lazyComponent(() => import('./auth/PostSignUpPage'), 'PostSignUpPage')
 const SiteInitPage = lazyComponent(() => import('./site-admin/init/SiteInitPage'), 'SiteInitPage')
 
 interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof RouteParameters]?: string }>
@@ -126,6 +128,11 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         exact: true,
     },
     {
+        path: '/post-sign-up',
+        render: props => <PostSignUpPage {...props} context={window.context} />,
+        exact: true,
+    },
+    {
         path: '/settings',
         render: lazyComponent(() => import('./user/settings/RedirectToUserSettings'), 'RedirectToUserSettings'),
     },
@@ -190,8 +197,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     },
     {
         path: '/insights',
-        exact: true,
-        render: lazyComponent(() => import('./insights/InsightsPage'), 'InsightsPage'),
+        render: lazyComponent(() => import('./insights/InsightsRouter'), 'InsightsRouter'),
         condition: props =>
             !isErrorLike(props.settingsCascade.final) &&
             !!props.settingsCascade.final?.experimentalFeatures?.codeInsights &&
@@ -211,6 +217,19 @@ export const routes: readonly LayoutRouteProps<any>[] = [
             !!props.settingsCascade.final?.experimentalFeatures?.showSearchContextManagement,
     },
     {
+        path: '/contexts/convert-version-contexts',
+        render: lazyComponent(
+            () => import('./searchContexts/ConvertVersionContextsPage'),
+            'ConvertVersionContextsPage'
+        ),
+        exact: true,
+        condition: props =>
+            !isErrorLike(props.settingsCascade.final) &&
+            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContext &&
+            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContextManagement &&
+            !!props.authenticatedUser?.siteAdmin,
+    },
+    {
         path: '/contexts/:id',
         render: lazyComponent(() => import('./searchContexts/SearchContextPage'), 'SearchContextPage'),
         condition: props =>
@@ -226,6 +245,11 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/kubernetes',
         render: props => <RepogroupPage {...props} repogroupMetadata={kubernetes} />,
+        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
+    },
+    {
+        path: '/stackstorm',
+        render: props => <RepogroupPage {...props} repogroupMetadata={stackStorm} />,
         condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
     },
     {

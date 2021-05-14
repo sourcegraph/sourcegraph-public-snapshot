@@ -1,0 +1,17 @@
+.streaming-search-results {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+
+    :global(.theme-redesign) & {
+        flex-direction: row;
+        height: min-content;
+    }
+
+    &-container {
+        :global(.theme-redesign) & {
+            overflow-y: visible;
+            overflow-x: hidden;
+        }
+    }
+}

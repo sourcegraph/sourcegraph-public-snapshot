@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
@@ -28,12 +29,12 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	db := dbtesting.GetDB(t)
 
-	pruneUserCredentials(t, db)
+	pruneUserCredentials(t, db, nil)
 
 	userID := ct.CreateTestUser(t, db, true).ID
 	userAPIID := string(graphqlbackend.MarshalUserID(userID))
 
-	cstore := store.New(db)
+	cstore := store.New(db, nil)
 
 	ghRepos, _ := ct.CreateTestRepos(t, ctx, db, 1)
 	ghRepo := ghRepos[0]
@@ -42,18 +43,18 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 	bbsRepos, _ := ct.CreateBbsTestRepos(t, ctx, db, 1)
 	bbsRepo := bbsRepos[0]
 
-	s, err := graphqlbackend.NewSchema(db, &Resolver{store: cstore}, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	t.Run("Query.BatchChangesCodeHosts", func(t *testing.T) {
-		cred := &store.SiteCredential{
+		cred := &btypes.SiteCredential{
 			ExternalServiceID:   ghRepo.ExternalRepo.ServiceID,
 			ExternalServiceType: ghRepo.ExternalRepo.ServiceType,
-			Credential:          &auth.OAuthBearerToken{Token: "SOSECRET"},
 		}
-		if err := cstore.CreateSiteCredential(ctx, cred); err != nil {
+		token := &auth.OAuthBearerToken{Token: "SOSECRET"}
+		if err := cstore.CreateSiteCredential(ctx, cred, token); err != nil {
 			t.Fatal(err)
 		}
 
@@ -162,12 +163,12 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		siteCred := &store.SiteCredential{
+		siteCred := &btypes.SiteCredential{
 			ExternalServiceID:   bbsRepo.ExternalRepo.ServiceID,
 			ExternalServiceType: bbsRepo.ExternalRepo.ServiceType,
-			Credential:          &auth.OAuthBearerToken{Token: "SOSECRET"},
 		}
-		if err := cstore.CreateSiteCredential(ctx, siteCred); err != nil {
+		token := &auth.OAuthBearerToken{Token: "SOSECRET"}
+		if err := cstore.CreateSiteCredential(ctx, siteCred, token); err != nil {
 			t.Fatal(err)
 		}
 

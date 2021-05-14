@@ -586,54 +586,6 @@ func TestSources_ListRepos(t *testing.T) {
 	{
 		svcs := types.ExternalServices{
 			{
-				Kind: extsvc.KindAWSCodeCommit,
-				Config: marshalJSON(t, &schema.AWSCodeCommitConnection{
-					AccessKeyID:     getAWSEnv("AWS_ACCESS_KEY_ID"),
-					SecretAccessKey: getAWSEnv("AWS_SECRET_ACCESS_KEY"),
-					Region:          "us-west-1",
-					GitCredentials: schema.AWSCodeCommitGitCredentials{
-						Username: "git-username",
-						Password: "git-password",
-					},
-				}),
-			},
-		}
-
-		testCases = append(testCases, testCase{
-			name: "yielded repos have authenticated CloneURLs",
-			svcs: svcs,
-			assert: func(s *types.ExternalService) types.ReposAssertion {
-				return func(t testing.TB, rs types.Repos) {
-					t.Helper()
-
-					urls := []string{}
-					for _, r := range rs {
-						urls = append(urls, r.CloneURLs()...)
-					}
-
-					switch s.Kind {
-					case extsvc.KindAWSCodeCommit:
-						want := []string{
-							"https://git-username:git-password@git-codecommit.us-west-1.amazonaws.com/v1/repos/empty-repo",
-							"https://git-username:git-password@git-codecommit.us-west-1.amazonaws.com/v1/repos/stripe-go",
-							"https://git-username:git-password@git-codecommit.us-west-1.amazonaws.com/v1/repos/test2",
-							"https://git-username:git-password@git-codecommit.us-west-1.amazonaws.com/v1/repos/__WARNING_DO_NOT_PUT_ANY_PRIVATE_CODE_IN_HERE",
-							"https://git-username:git-password@git-codecommit.us-west-1.amazonaws.com/v1/repos/test",
-						}
-
-						if have := urls; !reflect.DeepEqual(have, want) {
-							t.Error(cmp.Diff(have, want))
-						}
-					}
-				}
-			},
-			err: "<nil>",
-		})
-	}
-
-	{
-		svcs := types.ExternalServices{
-			{
 				Kind: extsvc.KindPhabricator,
 				Config: marshalJSON(t, &schema.PhabricatorConnection{
 					Url:   "https://secure.phabricator.com",

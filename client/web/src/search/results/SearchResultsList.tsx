@@ -467,7 +467,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                     {results.matchCount === 0 && !results.alert && (
                                         <div className="alert alert-info d-flex m-2">
                                             <h3 className="m-0">
-                                                <SearchIcon className="icon-inline" /> No results
+                                                <SearchIcon className="redesign-d-none icon-inline" /> No results
                                             </h3>
                                         </div>
                                     )}
@@ -530,6 +530,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                     <SearchResult
                         icon={SourceCommitIcon}
                         result={result}
+                        repoName={result.commit.repository.name}
                         isLightTheme={this.props.isLightTheme}
                         history={this.props.history}
                     />
@@ -539,6 +540,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                     <SearchResult
                         icon={SourceRepositoryMultipleIcon}
                         result={result}
+                        repoName={result.name}
                         isLightTheme={this.props.isLightTheme}
                         history={this.props.history}
                     />

@@ -62,7 +62,7 @@ This table is maintained as an authoritative resource for users, Sales, and Cust
       </tr>
       <tr>
         <td><a href="https://github.com/sourcegraph/lsif-java">lsif-java</a></td>
-        <td><img src="https://img.shields.io/badge/status-development-white" alt="Development"></td>
+        <td><img src="https://img.shields.io/badge/status-ready-green" alt="Ready"></td>
         <td class="indexer-implemented-y">✓</td> <!-- M1 -->
         <td class="indexer-implemented-y">✓</td> <!-- M2 -->
         <td class="indexer-implemented-y">✓</td> <!-- M3 -->
@@ -200,15 +200,14 @@ We may lack the language expertise or bandwidth to implement certain features on
 
 #### lsif-clang
 
-- lsif-clang sometimes outputs nonsensical data when trying to index template usages or definitions.
-
-- C/C++ build system ecosystem is extremely fragmented and difficult to support out of the box. We have decided that integrated build tool support will not be a short-term goal of lsif-clang.
+- Supports all build systems.
+- lsif-clang sometimes fails to correctly index templates and macros.
+- It is not on our roadmap to support autoindexing for C/C++ repositories due to tooling ecosystem fragmentation.
 
 #### lsif-java
 
-- Undergoing a large-scale rewrite not yet on the master branch.
-- Native Gradle integration supported in the rewrite.
-- Maven support planned after Gradle integration work has concluded.
+- Supports Gradle and Maven.
+- Supports Java 8 and Java 11.
 
 #### lsif-cpp
 

@@ -15,9 +15,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -113,7 +113,39 @@ func logBackendEvent(ctx context.Context, db dbutil.DB, name string, args interf
 	return usagestats.LogBackendEvent(db, actor.UID, name, jsonArg)
 }
 
-func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbackend.ChangesetResolver, error) {
+func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
+	return map[string]graphqlbackend.NodeByIDFunc{
+		"Campaign": func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+			return r.campaignByID(ctx, id)
+		},
+		batchChangeIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+			return r.batchChangeByID(ctx, id)
+		},
+		"CampaignSpec": func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+			return r.campaignSpecByID(ctx, id)
+		},
+		batchSpecIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+			return r.batchSpecByID(ctx, id)
+		},
+		changesetSpecIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+			return r.changesetSpecByID(ctx, id)
+		},
+		changesetIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+			return r.changesetByID(ctx, id)
+		},
+		"CampaignsCredential": func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+			return r.campaignsCredentialByID(ctx, id)
+		},
+		batchChangesCredentialIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+			return r.batchChangesCredentialByID(ctx, id)
+		},
+		bulkOperationIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+			return r.bulkOperationByID(ctx, id)
+		},
+	}
+}
+
+func (r *Resolver) changesetByID(ctx context.Context, id graphql.ID) (graphqlbackend.ChangesetResolver, error) {
 	if err := batchChangesEnabled(ctx); err != nil {
 		return nil, err
 	}
@@ -145,7 +177,7 @@ func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbac
 	return NewChangesetResolver(r.store, changeset, repo), nil
 }
 
-func (r *Resolver) BatchChangeByID(ctx context.Context, id graphql.ID) (graphqlbackend.BatchChangeResolver, error) {
+func (r *Resolver) batchChangeByID(ctx context.Context, id graphql.ID) (graphqlbackend.BatchChangeResolver, error) {
 	if err := batchChangesEnabled(ctx); err != nil {
 		return nil, err
 	}
@@ -193,7 +225,7 @@ func (r *Resolver) BatchChange(ctx context.Context, args *graphqlbackend.BatchCh
 	return &batchChangeResolver{store: r.store, batchChange: batchChange}, nil
 }
 
-func (r *Resolver) BatchSpecByID(ctx context.Context, id graphql.ID) (graphqlbackend.BatchSpecResolver, error) {
+func (r *Resolver) batchSpecByID(ctx context.Context, id graphql.ID) (graphqlbackend.BatchSpecResolver, error) {
 	if err := batchChangesEnabled(ctx); err != nil {
 		return nil, err
 	}
@@ -219,7 +251,7 @@ func (r *Resolver) BatchSpecByID(ctx context.Context, id graphql.ID) (graphqlbac
 	return &batchSpecResolver{store: r.store, batchSpec: batchSpec}, nil
 }
 
-func (r *Resolver) ChangesetSpecByID(ctx context.Context, id graphql.ID) (graphqlbackend.ChangesetSpecResolver, error) {
+func (r *Resolver) changesetSpecByID(ctx context.Context, id graphql.ID) (graphqlbackend.ChangesetSpecResolver, error) {
 	if err := batchChangesEnabled(ctx); err != nil {
 		return nil, err
 	}
@@ -245,7 +277,7 @@ func (r *Resolver) ChangesetSpecByID(ctx context.Context, id graphql.ID) (graphq
 	return NewChangesetSpecResolver(ctx, r.store, changesetSpec)
 }
 
-func (r *Resolver) BatchChangesCredentialByID(ctx context.Context, id graphql.ID) (graphqlbackend.BatchChangesCredentialResolver, error) {
+func (r *Resolver) batchChangesCredentialByID(ctx context.Context, id graphql.ID) (graphqlbackend.BatchChangesCredentialResolver, error) {
 	if err := batchChangesEnabled(ctx); err != nil {
 		return nil, err
 	}
@@ -297,6 +329,34 @@ func (r *Resolver) batchChangesSiteCredentialByID(ctx context.Context, id int64)
 	}
 
 	return &batchChangesSiteCredentialResolver{credential: cred}, nil
+}
+
+func (r *Resolver) bulkOperationByID(ctx context.Context, id graphql.ID) (graphqlbackend.BulkOperationResolver, error) {
+	if err := batchChangesEnabled(ctx); err != nil {
+		return nil, err
+	}
+
+	dbID, err := unmarshalBulkOperationID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	if dbID == "" {
+		return nil, nil
+	}
+
+	return r.bulkOperationByIDString(ctx, dbID)
+}
+
+func (r *Resolver) bulkOperationByIDString(ctx context.Context, id string) (graphqlbackend.BulkOperationResolver, error) {
+	bulkOperation, err := r.store.GetBulkOperation(ctx, store.GetBulkOperationOpts{ID: id})
+	if err != nil {
+		if err == store.ErrNoResults {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &bulkOperationResolver{store: r.store, bulkOperation: bulkOperation}, nil
 }
 
 func (r *Resolver) CreateBatchChange(ctx context.Context, args *graphqlbackend.CreateBatchChangeArgs) (graphqlbackend.BatchChangeResolver, error) {
@@ -680,59 +740,61 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, batchCha
 	}
 
 	if args.State != nil {
-		state := *args.State
+		state := btypes.ChangesetState(*args.State)
 		if !state.Valid() {
 			return opts, false, errors.New("changeset state not valid")
 		}
 
 		switch state {
-		case batches.ChangesetStateOpen:
-			externalState := batches.ChangesetExternalStateOpen
-			publicationState := batches.ChangesetPublicationStatePublished
+		case btypes.ChangesetStateOpen:
+			externalState := btypes.ChangesetExternalStateOpen
+			publicationState := btypes.ChangesetPublicationStatePublished
 			opts.ExternalState = &externalState
-			opts.ReconcilerStates = []batches.ReconcilerState{batches.ReconcilerStateCompleted}
+			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateCompleted}
 			opts.PublicationState = &publicationState
-		case batches.ChangesetStateDraft:
-			externalState := batches.ChangesetExternalStateDraft
-			publicationState := batches.ChangesetPublicationStatePublished
+		case btypes.ChangesetStateDraft:
+			externalState := btypes.ChangesetExternalStateDraft
+			publicationState := btypes.ChangesetPublicationStatePublished
 			opts.ExternalState = &externalState
-			opts.ReconcilerStates = []batches.ReconcilerState{batches.ReconcilerStateCompleted}
+			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateCompleted}
 			opts.PublicationState = &publicationState
-		case batches.ChangesetStateClosed:
-			externalState := batches.ChangesetExternalStateClosed
-			publicationState := batches.ChangesetPublicationStatePublished
+		case btypes.ChangesetStateClosed:
+			externalState := btypes.ChangesetExternalStateClosed
+			publicationState := btypes.ChangesetPublicationStatePublished
 			opts.ExternalState = &externalState
-			opts.ReconcilerStates = []batches.ReconcilerState{batches.ReconcilerStateCompleted}
+			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateCompleted}
 			opts.PublicationState = &publicationState
-		case batches.ChangesetStateMerged:
-			externalState := batches.ChangesetExternalStateMerged
-			publicationState := batches.ChangesetPublicationStatePublished
+		case btypes.ChangesetStateMerged:
+			externalState := btypes.ChangesetExternalStateMerged
+			publicationState := btypes.ChangesetPublicationStatePublished
 			opts.ExternalState = &externalState
-			opts.ReconcilerStates = []batches.ReconcilerState{batches.ReconcilerStateCompleted}
+			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateCompleted}
 			opts.PublicationState = &publicationState
-		case batches.ChangesetStateDeleted:
-			externalState := batches.ChangesetExternalStateDeleted
-			publicationState := batches.ChangesetPublicationStatePublished
+		case btypes.ChangesetStateDeleted:
+			externalState := btypes.ChangesetExternalStateDeleted
+			publicationState := btypes.ChangesetPublicationStatePublished
 			opts.ExternalState = &externalState
-			opts.ReconcilerStates = []batches.ReconcilerState{batches.ReconcilerStateCompleted}
+			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateCompleted}
 			opts.PublicationState = &publicationState
-		case batches.ChangesetStateUnpublished:
-			publicationState := batches.ChangesetPublicationStateUnpublished
-			opts.ReconcilerStates = []batches.ReconcilerState{batches.ReconcilerStateCompleted}
+		case btypes.ChangesetStateUnpublished:
+			publicationState := btypes.ChangesetPublicationStateUnpublished
+			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateCompleted}
 			opts.PublicationState = &publicationState
-		case batches.ChangesetStateProcessing:
-			opts.ReconcilerStates = []batches.ReconcilerState{batches.ReconcilerStateQueued, batches.ReconcilerStateProcessing}
-		case batches.ChangesetStateRetrying:
-			opts.ReconcilerStates = []batches.ReconcilerState{batches.ReconcilerStateErrored}
-		case batches.ChangesetStateFailed:
-			opts.ReconcilerStates = []batches.ReconcilerState{batches.ReconcilerStateFailed}
+		case btypes.ChangesetStateProcessing:
+			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateQueued, btypes.ReconcilerStateProcessing}
+		case btypes.ChangesetStateRetrying:
+			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateErrored}
+		case btypes.ChangesetStateFailed:
+			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateFailed}
+		case btypes.ChangesetStateScheduled:
+			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateScheduled}
 		default:
 			return opts, false, errors.Errorf("changeset state %q not supported in filtering", state)
 		}
 	}
 
 	if args.ReviewState != nil {
-		state := *args.ReviewState
+		state := btypes.ChangesetReviewState(*args.ReviewState)
 		if !state.Valid() {
 			return opts, false, errors.New("changeset review state not valid")
 		}
@@ -742,7 +804,7 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, batchCha
 		safe = false
 	}
 	if args.CheckState != nil {
-		state := *args.CheckState
+		state := btypes.ChangesetCheckState(*args.CheckState)
 		if !state.Valid() {
 			return opts, false, errors.New("changeset check state not valid")
 		}
@@ -752,7 +814,7 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, batchCha
 		safe = false
 	}
 	if args.OnlyPublishedByThisCampaign != nil || args.OnlyPublishedByThisBatchChange != nil {
-		published := batches.ChangesetPublicationStatePublished
+		published := btypes.ChangesetPublicationStatePublished
 
 		opts.OwnedByBatchChangeID = batchChangeID
 		opts.PublicationState = &published
@@ -962,12 +1024,11 @@ func (r *Resolver) createBatchChangesSiteCredential(ctx context.Context, externa
 	if err != nil {
 		return nil, err
 	}
-	cred := &store.SiteCredential{
+	cred := &btypes.SiteCredential{
 		ExternalServiceID:   externalServiceURL,
 		ExternalServiceType: externalServiceType,
-		Credential:          a,
 	}
-	if err := r.store.CreateSiteCredential(ctx, cred); err != nil {
+	if err := r.store.CreateSiteCredential(ctx, cred, a); err != nil {
 		return nil, err
 	}
 
@@ -1074,7 +1135,7 @@ func (r *Resolver) deleteBatchChangesSiteCredential(ctx context.Context, credent
 }
 
 func (r *Resolver) DetachChangesets(ctx context.Context, args *graphqlbackend.DetachChangesetsArgs) (_ *graphqlbackend.EmptyResponse, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.DetachChangesets", fmt.Sprintf("BatchChange: %q, Changesets: %s", args.BatchChange, args.Changesets))
+	tr, ctx := trace.New(ctx, "Resolver.DetachChangesets", fmt.Sprintf("BatchChange: %q, len(Changesets): %d", args.BatchChange, len(args.Changesets)))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -1115,17 +1176,76 @@ func (r *Resolver) DetachChangesets(ctx context.Context, args *graphqlbackend.De
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
-func parseBatchChangeState(s *string) (batches.BatchChangeState, error) {
+func (r *Resolver) CreateChangesetComments(ctx context.Context, args *graphqlbackend.CreateChangesetCommentsArgs) (_ graphqlbackend.BulkOperationResolver, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.CreateChangesetComments", fmt.Sprintf("BatchChange: %q, len(Changesets): %d", args.BatchChange, len(args.Changesets)))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+	if err := batchChangesEnabled(ctx); err != nil {
+		return nil, err
+	}
+
+	if args.Body == "" {
+		return nil, errors.New("empty comment body is not allowed")
+	}
+
+	batchChangeID, err := unmarshalBatchChangeID(args.BatchChange)
+	if err != nil {
+		return nil, err
+	}
+
+	if batchChangeID == 0 {
+		return nil, ErrIDIsZero{}
+	}
+
+	var changesetIDs []int64
+	for _, raw := range args.Changesets {
+		id, err := unmarshalChangesetID(raw)
+		if err != nil {
+			return nil, err
+		}
+
+		if id == 0 {
+			return nil, ErrIDIsZero{}
+		}
+
+		changesetIDs = append(changesetIDs, id)
+	}
+
+	if len(changesetIDs) == 0 {
+		return nil, errors.New("specify at least one changeset")
+	}
+
+	// 🚨 SECURITY: CreateChangesetJobs checks whether current user is authorized.
+	svc := service.New(r.store)
+	bulkGroupID, err := svc.CreateChangesetJobs(
+		ctx,
+		batchChangeID,
+		changesetIDs,
+		btypes.ChangesetJobTypeComment,
+		&btypes.ChangesetJobCommentPayload{
+			Message: args.Body,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return r.bulkOperationByIDString(ctx, bulkGroupID)
+}
+
+func parseBatchChangeState(s *string) (btypes.BatchChangeState, error) {
 	if s == nil {
-		return batches.BatchChangeStateAny, nil
+		return btypes.BatchChangeStateAny, nil
 	}
 	switch *s {
 	case "OPEN":
-		return batches.BatchChangeStateOpen, nil
+		return btypes.BatchChangeStateOpen, nil
 	case "CLOSED":
-		return batches.BatchChangeStateClosed, nil
+		return btypes.BatchChangeStateClosed, nil
 	default:
-		return batches.BatchChangeStateAny, fmt.Errorf("unknown state %q", *s)
+		return btypes.BatchChangeStateAny, fmt.Errorf("unknown state %q", *s)
 	}
 }
 

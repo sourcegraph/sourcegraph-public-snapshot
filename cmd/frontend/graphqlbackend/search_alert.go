@@ -17,13 +17,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
+	"github.com/sourcegraph/sourcegraph/internal/search/run"
+	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
 
@@ -119,7 +119,7 @@ func (r *searchResolver) reposExist(ctx context.Context, options searchrepos.Opt
 	repositoryResolver := &searchrepos.Resolver{
 		DB:               r.db,
 		Zoekt:            r.zoekt,
-		DefaultReposFunc: database.DefaultRepos(r.db).List,
+		DefaultReposFunc: backend.Repos.ListDefault,
 	}
 	resolved, err := repositoryResolver.Resolve(ctx, options)
 	return err == nil && len(resolved.RepoRevs) > 0
@@ -321,7 +321,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 	case len(repoGroupFilters) == 0 && len(repoFilters) == 1:
 		isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx) == nil
 		if !envvar.SourcegraphDotComMode() {
-			if needsRepoConfig, err := needsRepositoryConfiguration(ctx); err == nil && needsRepoConfig {
+			if needsRepoConfig, err := needsRepositoryConfiguration(ctx, r.db); err == nil && needsRepoConfig {
 				if isSiteAdmin {
 					return &searchAlert{
 						title:       "No repositories or code hosts configured",
@@ -549,7 +549,7 @@ func (*missingRepoRevsError) Error() string {
 	return "missing repo revs"
 }
 
-func alertForMissingRepoRevs(patternType query.SearchType, missingRepoRevs []*search.RepositoryRevisions) *searchAlert {
+func alertForMissingRepoRevs(missingRepoRevs []*search.RepositoryRevisions) *searchAlert {
 	var description string
 	if len(missingRepoRevs) == 1 {
 		if len(missingRepoRevs[0].RevSpecs()) == 1 {
@@ -558,11 +558,23 @@ func alertForMissingRepoRevs(patternType query.SearchType, missingRepoRevs []*se
 			description = fmt.Sprintf("The repository %s matched by your repo: filter could not be searched because it has multiple specified revisions: @%s.", missingRepoRevs[0].Repo.Name, strings.Join(missingRepoRevs[0].RevSpecs(), ","))
 		}
 	} else {
-		repoRevs := make([]string, 0, len(missingRepoRevs))
-		for _, r := range missingRepoRevs {
+		sampleSize := 10
+		if sampleSize > len(missingRepoRevs) {
+			sampleSize = len(missingRepoRevs)
+		}
+		repoRevs := make([]string, 0, sampleSize)
+		for _, r := range missingRepoRevs[:sampleSize] {
 			repoRevs = append(repoRevs, string(r.Repo.Name)+"@"+strings.Join(r.RevSpecs(), ","))
 		}
-		description = fmt.Sprintf("%d repositories matched by your repo: filter could not be searched because the following revisions do not exist, or differ but were specified for the same repository: %s.", len(missingRepoRevs), strings.Join(repoRevs, ", "))
+		b := strings.Builder{}
+		_, _ = fmt.Fprintf(&b, "%d repositories matched by your repo: filter could not be searched because the following revisions do not exist, or differ but were specified for the same repository:", len(missingRepoRevs))
+		for _, rr := range repoRevs {
+			_, _ = fmt.Fprintf(&b, "\n* %s", rr)
+		}
+		if sampleSize < len(missingRepoRevs) {
+			b.WriteString("\n* ...")
+		}
+		description = b.String()
 	}
 	return &searchAlert{
 		prometheusType: "missing_repo_revs",
@@ -623,8 +635,8 @@ func (alertSearchImplementer) Suggestions(context.Context, *searchSuggestionsArg
 	return nil, nil
 }
 func (alertSearchImplementer) Stats(context.Context) (*searchResultsStats, error) { return nil, nil }
-func (alertSearchImplementer) Inputs() SearchInputs {
-	return SearchInputs{}
+func (alertSearchImplementer) Inputs() run.SearchInputs {
+	return run.SearchInputs{}
 }
 
 // capFirst capitalizes the first rune in the given string. It can be safely
@@ -640,7 +652,7 @@ func capFirst(s string) string {
 	}, s)
 }
 
-func alertForError(err error, inputs *SearchInputs) *searchAlert {
+func alertForError(err error, inputs *run.SearchInputs) *searchAlert {
 	var (
 		alert *searchAlert
 		rErr  *RepoLimitError
@@ -649,7 +661,7 @@ func alertForError(err error, inputs *SearchInputs) *searchAlert {
 	)
 
 	if errors.As(err, &mErr) {
-		alert = alertForMissingRepoRevs(inputs.PatternType, mErr.Missing)
+		alert = alertForMissingRepoRevs(mErr.Missing)
 		alert.priority = 6
 	} else if strings.Contains(err.Error(), "Worker_oomed") || strings.Contains(err.Error(), "Worker_exited_abnormally") {
 		alert = &searchAlert{
@@ -685,7 +697,7 @@ func alertForError(err error, inputs *SearchInputs) *searchAlert {
 
 type alertObserver struct {
 	// Inputs are used to generate alert messages based on the query.
-	Inputs *SearchInputs
+	Inputs *run.SearchInputs
 
 	// Update state.
 	hasResults bool
@@ -697,7 +709,7 @@ type alertObserver struct {
 }
 
 // Update AlertObserver's state based on event.
-func (o *alertObserver) Update(event SearchEvent) {
+func (o *alertObserver) Update(event streaming.SearchEvent) {
 	if len(event.Results) > 0 {
 		o.hasResults = true
 	}

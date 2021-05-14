@@ -4,7 +4,7 @@
 
 Welcome, new batch change developer! This section will give you a rough overview of what Batch Changes is and how it works.
 
-> NOTE: Never hesitate to ask in `#batch-changes-team` for help!
+> NOTE: Never hesitate to ask in [`#batch-changes-team`](https://sourcegraph.slack.com/archives/C01LJ9DK8ES) for help!
 
 ### What are batch changes?
 
@@ -87,7 +87,7 @@ Batch changes introduce a lot of new names, GraphQL queries & mutations, and dat
 
 The following is a list of Go packages in the [`sourcegraph/sourcegraph`](https://github.com/sourcegraph/sourcegraph) repository and short explanations of what each package does:
 
-- `internal/batches`:
+- `enterprise/internal/batches/types`:
 
     Type definitions of common `batches` types, such as `BatchChange`, `BatchSpec`, `Changeset`, etc. A few helper functions and methods, but no real business logic.
 - `enterprise/internal/batches`:
@@ -131,13 +131,16 @@ The following is a list of Go packages in the [`sourcegraph/sourcegraph`](https:
     These `webhooks` endpoints are injected by `InitFrontend` into the `frontend` and implement the `cmd/frontend/webhooks` interfaces.
 - `enterprise/internal/batches/store`:
 
-    This is the batch changes `Store` that takes `internal/batches` types and writes/reads them to/from the database. This contains everything related to SQL and database persistence, even some complex business logic queries.
+    This is the batch changes `Store` that takes `enterprise/internal/batches/types` types and writes/reads them to/from the database. This contains everything related to SQL and database persistence, even some complex business logic queries.
+- `enterprise/internal/batches/sources`:
+
+    This package contains the abstraction layer of code host APIs that live in [`internal/extsvc/*`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/internal/extsvc). It provides a generalized interface [`ChangesetSource`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/batches/sources/common.go#L40:6) and implementations for each of our supported code hosts.
 
 ## Diving into the code as a backend developer
 
-1. Read through `./cmd/frontend/graphqlbackend/batch_changes.go` to get an overview of the batch changes GraphQL API.
-1. Read through `./internal/batches/*.go` to see all batch changes related type definitions.
-1. Compare that with the GraphQL definitions in `./cmd/frontend/graphqlbackend/schema.graphql`.
+1. Read through [`./cmd/frontend/graphqlbackend/batches.go`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/cmd/frontend/graphqlbackend/batches.go) to get an overview of the batch changes GraphQL API.
+1. Read through [`./enterprise/internal/batches/types/*.go`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/enterprise/internal/batches/types) to see all batch changes related type definitions.
+1. Compare that with the GraphQL definitions in `./cmd/frontend/graphqlbackend/batches.graphql`.
 1. Start reading through `./enterprise/internal/batches/resolvers/resolver.go` to see how the main mutations are implemented (look at `CreateBatchChange` and `ApplyBatchChange` to see how the two main operations are implemented).
 1. Then start from the other end, `enterprise/cmd/repo-updater/main.go`. `enterpriseInit()` creates two sets of batch change goroutines:
 1. `batches.NewSyncRegistry` creates a pool of _syncers_ to pull changes from code hosts.

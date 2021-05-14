@@ -121,6 +121,7 @@ body,
 @import './user/UserAvatar';
 @import './user/area/UserArea';
 @import './org/OrgsArea';
+@import './insights/pages/dashboard/InsightsPage';
 @import './components/Badge';
 @import './components/Collapsible';
 @import './components/DismissibleAlert';
@@ -139,7 +140,6 @@ body,
 @import '../../branded/src/components/LoaderInput';
 
 @import '../../shared/src/index';
-@import '../../wildcard/src/index';
 
 :root {
     // Skip Reach UI styles. See https://reacttraining.com/reach-ui/styling/.

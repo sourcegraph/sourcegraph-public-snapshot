@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 
@@ -53,6 +54,9 @@ func TestHandle(t *testing.T) {
 		"": {"foo.go", "bar.go"},
 	}, nil)
 
+	expectedCommitDate := time.Unix(1587396557, 0).UTC()
+	gitserverClient.CommitDateFunc.SetDefaultReturn(expectedCommitDate, nil)
+
 	handler := &handler{
 		lsifStore:       mockLSIFStore,
 		uploadStore:     mockUploadStore,
@@ -64,6 +68,14 @@ func TestHandle(t *testing.T) {
 		t.Fatalf("unexpected error handling upload: %s", err)
 	} else if requeued {
 		t.Errorf("unexpected requeue")
+	}
+
+	if calls := mockDBStore.UpdateCommitedAtFunc.History(); len(calls) != 1 {
+		t.Errorf("unexpected number of UpdateCommitedAt calls. want=%d have=%d", 1, len(mockDBStore.UpdatePackagesFunc.History()))
+	} else if calls[0].Arg1 != 42 {
+		t.Errorf("unexpected UpdateCommitedAt upload id. want=%d have=%d", 42, calls[0].Arg1)
+	} else if calls[0].Arg2 != expectedCommitDate {
+		t.Errorf("unexpected UpdateCommitedAt commit date. want=%s have=%s", expectedCommitDate, calls[0].Arg2)
 	}
 
 	expectedPackagesDumpID := 42
@@ -89,10 +101,12 @@ func TestHandle(t *testing.T) {
 	expectedPackageReferencesDumpID := 42
 	expectedPackageReferences := []semantic.PackageReference{
 		{
-			Scheme:  "scheme A",
-			Name:    "pkg A",
-			Version: "v0.1.0",
-			Filter:  filter,
+			Package: semantic.Package{
+				Scheme:  "scheme A",
+				Name:    "pkg A",
+				Version: "v0.1.0",
+			},
+			Filter: filter,
 		},
 	}
 	if len(mockDBStore.UpdatePackageReferencesFunc.History()) != 1 {

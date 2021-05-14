@@ -1,4 +1,11 @@
 // @ts-check
+const path = require('path')
+
+require('ts-node').register({
+  transpileOnly: true,
+  // Use config with "module": "commonjs" because not all modules involved in tasks are esnext modules.
+  project: path.resolve(__dirname, './dev/tsconfig.json'),
+})
 
 const log = require('fancy-log')
 const gulp = require('gulp')
@@ -100,18 +107,29 @@ async function webpackDevelopmentServer() {
   })
 }
 
+// Ensure the typings that TypeScript depends on are build to avoid first-time-run errors
+const codeGen = gulp.parallel(schema, graphQlOperations, graphQlSchema)
+
+// Watches code generation only, rebuilds on file changes
+const watchCodeGen = gulp.parallel(watchSchema, watchGraphQlSchema, watchGraphQlOperations)
+
 /**
  * Builds everything.
  */
-const build = gulp.series(gulp.parallel(schema, graphQlOperations, graphQlSchema), webpack)
+const build = gulp.series(codeGen, webpack)
 
 /**
- * Starts a development server, watches everything and rebuilds on file changes.
+ * Starts a development server without initial code generation, watches everything and rebuilds on file changes.
+ */
+const developmentWithoutInitialCodeGen = gulp.parallel(watchCodeGen, webpackDevelopmentServer)
+
+/**
+ * Runs code generation first, then starts a development server, watches everything and rebuilds on file changes.
  */
 const development = gulp.series(
   // Ensure the typings that TypeScript depends on are build to avoid first-time-run errors
-  gulp.parallel(schema, graphQlOperations, graphQlSchema),
-  gulp.parallel(watchSchema, watchGraphQlSchema, watchGraphQlOperations, webpackDevelopmentServer)
+  codeGen,
+  developmentWithoutInitialCodeGen
 )
 
 /**
@@ -120,14 +138,15 @@ const development = gulp.series(
  */
 const watch = gulp.series(
   // Ensure the typings that TypeScript depends on are build to avoid first-time-run errors
-  gulp.parallel(schema, graphQlOperations, graphQlSchema),
-  gulp.parallel(watchSchema, watchGraphQlSchema, watchGraphQlOperations, watchWebpack)
+  codeGen,
+  gulp.parallel(watchCodeGen, watchWebpack)
 )
 
 module.exports = {
   build,
   watch,
   dev: development,
+  unsafeDev: developmentWithoutInitialCodeGen,
   webpackDevServer: webpackDevelopmentServer,
   webpack,
   watchWebpack,

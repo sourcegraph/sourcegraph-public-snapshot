@@ -8,22 +8,22 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/internal/batches"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 )
 
 // GetChangesetEventOpts captures the query options needed for getting a ChangesetEvent
 type GetChangesetEventOpts struct {
 	ID          int64
 	ChangesetID int64
-	Kind        batches.ChangesetEventKind
+	Kind        btypes.ChangesetEventKind
 	Key         string
 }
 
 // GetChangesetEvent gets a changeset matching the given options.
-func (s *Store) GetChangesetEvent(ctx context.Context, opts GetChangesetEventOpts) (*batches.ChangesetEvent, error) {
+func (s *Store) GetChangesetEvent(ctx context.Context, opts GetChangesetEventOpts) (*btypes.ChangesetEvent, error) {
 	q := getChangesetEventQuery(&opts)
 
-	var c batches.ChangesetEvent
+	var c btypes.ChangesetEvent
 	err := s.query(ctx, q, func(sc scanner) error {
 		return scanChangesetEvent(&c, sc)
 	})
@@ -79,17 +79,17 @@ func getChangesetEventQuery(opts *GetChangesetEventOpts) *sqlf.Query {
 type ListChangesetEventsOpts struct {
 	LimitOpts
 	ChangesetIDs []int64
-	Kinds        []batches.ChangesetEventKind
+	Kinds        []btypes.ChangesetEventKind
 	Cursor       int64
 }
 
 // ListChangesetEvents lists ChangesetEvents with the given filters.
-func (s *Store) ListChangesetEvents(ctx context.Context, opts ListChangesetEventsOpts) (cs []*batches.ChangesetEvent, next int64, err error) {
+func (s *Store) ListChangesetEvents(ctx context.Context, opts ListChangesetEventsOpts) (cs []*btypes.ChangesetEvent, next int64, err error) {
 	q := listChangesetEventsQuery(&opts)
 
-	cs = make([]*batches.ChangesetEvent, 0, opts.DBLimit())
+	cs = make([]*btypes.ChangesetEvent, 0, opts.DBLimit())
 	err = s.query(ctx, q, func(sc scanner) (err error) {
-		var c batches.ChangesetEvent
+		var c btypes.ChangesetEvent
 		if err = scanChangesetEvent(&c, sc); err != nil {
 			return err
 		}
@@ -182,7 +182,7 @@ func countChangesetEventsQuery(opts *CountChangesetEventsOpts) *sqlf.Query {
 }
 
 // UpsertChangesetEvents creates or updates the given ChangesetEvents.
-func (s *Store) UpsertChangesetEvents(ctx context.Context, cs ...*batches.ChangesetEvent) (err error) {
+func (s *Store) UpsertChangesetEvents(ctx context.Context, cs ...*btypes.ChangesetEvent) (err error) {
 	q, err := s.upsertChangesetEventsQuery(cs)
 	if err != nil {
 		return err
@@ -259,7 +259,7 @@ changed AS (
 )
 ` + batchChangesetEventsQuerySuffix
 
-func (s *Store) upsertChangesetEventsQuery(es []*batches.ChangesetEvent) (*sqlf.Query, error) {
+func (s *Store) upsertChangesetEventsQuery(es []*btypes.ChangesetEvent) (*sqlf.Query, error) {
 	now := s.now()
 	for _, e := range es {
 		if e.CreatedAt.IsZero() {
@@ -273,7 +273,7 @@ func (s *Store) upsertChangesetEventsQuery(es []*batches.ChangesetEvent) (*sqlf.
 	return batchChangesetEventsQuery(upsertChangesetEventsQueryFmtstr, es)
 }
 
-func batchChangesetEventsQuery(fmtstr string, es []*batches.ChangesetEvent) (*sqlf.Query, error) {
+func batchChangesetEventsQuery(fmtstr string, es []*btypes.ChangesetEvent) (*sqlf.Query, error) {
 	type record struct {
 		ID          int64           `json:"id"`
 		ChangesetID int64           `json:"changeset_id"`
@@ -311,7 +311,7 @@ func batchChangesetEventsQuery(fmtstr string, es []*batches.ChangesetEvent) (*sq
 	return sqlf.Sprintf(fmtstr, string(batch)), nil
 }
 
-func scanChangesetEvent(e *batches.ChangesetEvent, s scanner) error {
+func scanChangesetEvent(e *btypes.ChangesetEvent, s scanner) error {
 	var metadata json.RawMessage
 
 	err := s.Scan(
@@ -327,7 +327,7 @@ func scanChangesetEvent(e *batches.ChangesetEvent, s scanner) error {
 		return err
 	}
 
-	e.Metadata, err = batches.NewChangesetEventMetadata(e.Kind)
+	e.Metadata, err = btypes.NewChangesetEventMetadata(e.Kind)
 	if err != nil {
 		return err
 	}

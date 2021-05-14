@@ -46,7 +46,10 @@ interface Props
         CopyQueryButtonProps,
         Pick<SubmitSearchParameters, 'source'>,
         VersionContextProps,
-        SearchContextProps,
+        Omit<
+            SearchContextProps,
+            'convertVersionContextToSearchContext' | 'isSearchContextSpecAvailable' | 'fetchSearchContext'
+        >,
         OnboardingTourProps {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
@@ -141,6 +144,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                         onChange={setUserQueryState}
                         onSubmit={onSubmit}
                         autoFocus={showOnboardingTour ? shouldFocusQueryInput : props.autoFocus !== false}
+                        showSearchContextHighlightTourStep={true}
                     />
                     <SearchButton />
                 </div>
@@ -152,12 +156,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                     </div>
                 )}
                 <QuickLinks quickLinks={quickLinks} className="search-page__input-sub-container" />
-                <Notices
-                    className="my-3"
-                    location="home"
-                    settingsCascade={props.settingsCascade}
-                    history={props.history}
-                />
+                <Notices className="my-3" location="home" settingsCascade={props.settingsCascade} />
             </Form>
         </div>
     )

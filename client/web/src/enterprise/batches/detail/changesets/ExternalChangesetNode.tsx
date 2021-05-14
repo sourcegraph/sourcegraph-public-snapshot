@@ -29,6 +29,7 @@ import { ChangesetReviewStatusCell } from './ChangesetReviewStatusCell'
 import { ChangesetStatusCell } from './ChangesetStatusCell'
 import { DownloadDiffButton } from './DownloadDiffButton'
 import { ExternalChangesetInfoCell } from './ExternalChangesetInfoCell'
+import styles from './ExternalChangesetNode.module.scss'
 
 export interface ExternalChangesetNodeProps extends ThemeProps {
     node: ExternalChangesetFields
@@ -82,6 +83,18 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
 
     return (
         <>
+            <button
+                type="button"
+                className="btn btn-icon test-batches-expand-changeset d-none d-sm-block"
+                aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
+                onClick={toggleIsExpanded}
+            >
+                {isExpanded ? (
+                    <ChevronDownIcon className="icon-inline" aria-label="Close section" />
+                ) : (
+                    <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
+                )}
+            </button>
             {enableSelect && (
                 <div className="p-2">
                     <input
@@ -95,30 +108,23 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                     />
                 </div>
             )}
-            <button
-                type="button"
-                className="btn btn-icon test-batches-expand-changeset d-none d-sm-block"
-                aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
-                onClick={toggleIsExpanded}
-            >
-                {isExpanded ? (
-                    <ChevronDownIcon className="icon-inline" aria-label="Close section" />
-                ) : (
-                    <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
-                )}
-            </button>
             <ChangesetStatusCell
+                id={node.id}
                 state={node.state}
-                className="p-2 align-self-stretch text-muted external-changeset-node__state d-block d-sm-flex"
+                className={classNames(
+                    styles.externalChangesetNodeState,
+                    'p-2 align-self-stretch text-muted d-block d-sm-flex'
+                )}
             />
             <ExternalChangesetInfoCell
                 node={node}
                 viewerCanAdminister={viewerCanAdminister}
-                className="p-2 align-self-stretch external-changeset-node__information"
+                className={classNames(styles.externalChangesetNodeInformation, 'p-2 align-self-stretch')}
             />
             <div
                 className={classNames(
-                    'd-flex d-md-none justify-content-start external-changeset-node__statuses',
+                    styles.externalChangesetNodeStatuses,
+                    'd-flex d-md-none justify-content-start',
                     (node.checkState || node.reviewState || node.diffStat) && 'p-2'
                 )}
             >
@@ -155,7 +161,10 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                 type="button"
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
-                className="external-changeset-node__show-details btn btn-outline-secondary d-block d-sm-none test-batches-expand-changeset"
+                className={classNames(
+                    styles.externalChangesetNodeShowDetails,
+                    'btn btn-outline-secondary d-block d-sm-none test-batches-expand-changeset'
+                )}
             >
                 {isExpanded ? (
                     <ChevronDownIcon className="icon-inline" aria-label="Close section" />
@@ -166,8 +175,14 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
             </button>
             {isExpanded && (
                 <>
-                    <div className="external-changeset-node__bg-expanded align-self-stretch" />
-                    <div className="external-changeset-node__expanded-section external-changeset-node__bg-expanded p-2">
+                    <div className={classNames(styles.externalChangesetNodeBgExpanded, 'align-self-stretch')} />
+                    <div
+                        className={classNames(
+                            styles.externalChangesetNodeExpandedSection,
+                            styles.externalChangesetNodeBgExpanded,
+                            'p-2'
+                        )}
+                    >
                         <div className="d-flex justify-content-end">
                             {viewerCanAdminister && node.state === ChangesetState.FAILED && node.error && (
                                 <RetryChangesetButton
@@ -203,8 +218,8 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
 const SyncerError: React.FunctionComponent<{ syncerError: string }> = ({ syncerError }) => (
     <div className="alert alert-danger" role="alert">
         <h4 className="alert-heading">
-            <AlertCircleIcon className="icon icon-inline" /> Encountered error during last attempt to sync changeset
-            data from code host
+            <AlertCircleIcon className="redesign-d-none icon icon-inline" /> Encountered error during last attempt to
+            sync changeset data from code host
         </h4>
         <ErrorMessage error={syncerError} />
         <hr className="my-2" />
@@ -224,7 +239,7 @@ const ChangesetError: React.FunctionComponent<{
     return (
         <div className="alert alert-danger" role="alert">
             <h4 className="alert-heading">
-                <AlertCircleIcon className="icon icon-inline" /> Failed to run operations on changeset
+                <AlertCircleIcon className="redesign-d-none icon icon-inline" /> Failed to run operations on changeset
             </h4>
             <ErrorMessage error={node.error} />
         </div>
@@ -257,7 +272,7 @@ const RetryChangesetButton: React.FunctionComponent<{
                 <SyncIcon
                     className={classNames(
                         'icon-inline',
-                        isLoading === true && 'external-changeset-node__retry--spinning'
+                        isLoading === true && styles.externalChangesetNodeRetrySpinning
                     )}
                 />{' '}
                 Retry

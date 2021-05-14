@@ -34,6 +34,25 @@ env:
   GLOBAL_SETTINGS_FILE: ./dev/global-settings.json
   GLOBAL_SETTINGS_ALLOW_EDITS: true
 
+  # Point codeintel to the `frontend` database in development
+  CODEINTEL_PGPORT: $PGPORT
+  CODEINTEL_PGHOST: $PGHOST
+  CODEINTEL_PGUSER: $PGUSER
+  CODEINTEL_PGPASSWORD: $PGPASSWORD
+  CODEINTEL_PGDATABASE: $PGDATABASE
+  CODEINTEL_PGSSLMODE: $PGSSLMODE
+  CODEINTEL_PGDATASOURCE: $PGDATASOURCE
+  CODEINTEL_PG_ALLOW_SINGLE_DB: true
+
+  # Required for `frontend` and `web` commands
+  SOURCEGRAPH_HTTPS_DOMAIN: sourcegraph.test
+  SOURCEGRAPH_HTTPS_PORT: 3443
+
+  # Required for `web` commands
+  NODE_OPTIONS: "--max_old_space_size=4096"
+  # Default `NODE_ENV` to `development`
+  NODE_ENV: development
+
 commands:
   frontend:
     cmd: ulimit -n 10000 && .bin/frontend
@@ -138,6 +157,8 @@ commands:
       - cmd/searcher
 
   caddy:
+    ignoreStdout: true
+    ignoreStderr: true
     cmd: .bin/caddy run --watch --config=dev/Caddyfile
     install: |
       case "$(go env GOOS)" in
@@ -160,25 +181,48 @@ commands:
       fi
     env:
       CADDY_VERSION: 2.3.0
-      SOURCEGRAPH_HTTPS_DOMAIN: sourcegraph.test
-      SOURCEGRAPH_HTTPS_PORT: 3443
 
   web:
     cmd: ./node_modules/.bin/gulp --silent --color dev
     install: yarn --no-progress
-    env:
-      WEBPACK_DEV_SERVER: 1
-      NODE_ENV: development
-      NODE_OPTIONS: "--max_old_space_size=4096"
 
   enterprise-web:
     cmd: ./node_modules/.bin/gulp --silent --color dev
     install: yarn --no-progress
     env:
       ENTERPRISE: 1
-      WEBPACK_DEV_SERVER: 1
-      NODE_ENV: development
-      NODE_OPTIONS: "--max_old_space_size=4096"
+
+  web-standalone:
+    cmd: yarn workspace @sourcegraph/web serve:dev
+    install: yarn --no-progress
+    env:
+      WEBPACK_SERVE_INDEX: true
+      SOURCEGRAPH_API_URL: https://k8s.sgdev.org
+
+  enterprise-web-standalone:
+    cmd: yarn workspace @sourcegraph/web serve:dev
+    install: yarn --no-progress
+    env:
+      ENTERPRISE: 1
+      WEBPACK_SERVE_INDEX: true
+      SOURCEGRAPH_API_URL: https://k8s.sgdev.org
+
+  web-standalone-prod:
+    cmd: yarn workspace @sourcegraph/web serve:prod
+    install: yarn workspace @sourcegraph/web run build
+    env:
+      NODE_ENV: production
+      WEBPACK_SERVE_INDEX: true
+      SOURCEGRAPH_API_URL: https://k8s.sgdev.org
+
+  enterprise-web-standalone-prod:
+    cmd: yarn workspace @sourcegraph/web serve:prod
+    install: yarn workspace @sourcegraph/web run build
+    env:
+      ENTERPRISE: 1
+      NODE_ENV: production
+      WEBPACK_SERVE_INDEX: true
+      SOURCEGRAPH_API_URL: https://k8s.sgdev.org
 
   docsite:
     cmd: .bin/docsite_${VERSION} -config doc/docsite.json serve -http=localhost:5080
@@ -190,10 +234,12 @@ commands:
       VERSION: v1.7.0
 
   syntect_server:
+    ignoreStdout: true
+    ignoreStderr: true
     cmd: |
       docker run --name=syntect_server --rm -p9238:9238 \
       -e WORKERS=1 -e ROCKET_ADDRESS=0.0.0.0 \
-      sourcegraph/syntect_server:9089f98@sha256:83ff65809e6647b466bd400de4c438a32feeabe8e791b12e15c67c84529ad2de
+      sourcegraph/syntect_server:dd97058@sha256:d7163842f41388f41d19ce04833ac5f6d4e41d212869e7d2aea9c38ba6e77261
     install: docker inspect syntect_server >/dev/null 2>&1 && docker rm -f syntect_server || true
     env:
       # This is not needed actually
@@ -217,6 +263,8 @@ commands:
       go install github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver
     env:
       GOGC: 50
+      CTAGS_COMMAND: cmd/symbols/universal-ctags-dev
+      PATH: .bin:$PATH
 
   zoekt-indexserver-1:
     cmd: |
@@ -238,6 +286,8 @@ commands:
       go install github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver
     env:
       GOGC: 50
+      CTAGS_COMMAND: cmd/symbols/universal-ctags-dev
+      PATH: .bin:$PATH
 
   zoekt-webserver-0:
     cmd: |
@@ -250,6 +300,7 @@ commands:
     env:
       JAEGER_DISABLED: false
       GOGC: 50
+      PATH: .bin:$PATH
 
   zoekt-webserver-1:
     cmd: |
@@ -262,6 +313,7 @@ commands:
     env:
       JAEGER_DISABLED: false
       GOGC: 50
+      PATH: .bin:$PATH
 
 commandsets:
   default:
@@ -301,7 +353,9 @@ commandsets:
 tests:
   # These can be run with `sg test [name]`
   backend:
-    cmd: go test ./...
+    cmd: go test
+    defaultArgs: ./...
+
   backend-integration:
     cmd: cd dev/gqltest && go test -long -base-url $BASE_URL -email $EMAIL -username $USERNAME -password $PASSWORD ./gqltest
     env:
@@ -310,8 +364,10 @@ tests:
       BASE_URL: "http://localhost:3080"
       EMAIL: "joe@sourcegraph.com"
       PASSWORD: "12345"
+
   frontend:
     cmd: yarn run jest --testPathIgnorePatterns end-to-end regression integration storybook
+
   frontend-e2e:
     cmd: yarn run mocha ./client/web/src/end-to-end/end-to-end.test.ts
     env:

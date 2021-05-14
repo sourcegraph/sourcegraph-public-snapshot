@@ -8,29 +8,27 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/stripeutil"
 )
 
-func init() {
-	// TODO(efritz) - de-globalize assignments in this function
-	graphqlbackend.UserURLForSiteAdminBilling = func(ctx context.Context, userID int32) (*string, error) {
-		// 🚨 SECURITY: Only site admins may view the billing URL, because it may contain sensitive
-		// data or identifiers.
-		if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-			return nil, err
-		}
-		custID, err := dbBilling{}.getUserBillingCustomerID(ctx, nil, userID)
-		if err != nil {
-			return nil, err
-		}
-		if custID != nil {
-			u := CustomerURL(*custID)
-			return &u, nil
-		}
-		return nil, nil
+func (r BillingResolver) UserURLForSiteAdminBilling(ctx context.Context, userID int32) (*string, error) {
+	// 🚨 SECURITY: Only site admins may view the billing URL, because it may contain sensitive
+	// data or identifiers.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
 	}
+	custID, err := dbBilling{db: r.DB}.getUserBillingCustomerID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	if custID != nil {
+		u := stripeutil.CustomerURL(*custID)
+		return &u, nil
+	}
+	return nil, nil
 }
 
-func (BillingResolver) SetUserBilling(ctx context.Context, args *graphqlbackend.SetUserBillingArgs) (*graphqlbackend.EmptyResponse, error) {
+func (r BillingResolver) SetUserBilling(ctx context.Context, args *graphqlbackend.SetUserBillingArgs) (*graphqlbackend.EmptyResponse, error) {
 	// 🚨 SECURITY: Only site admins may set a user's billing info.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
@@ -48,7 +46,7 @@ func (BillingResolver) SetUserBilling(ctx context.Context, args *graphqlbackend.
 		}
 	}
 
-	if err := (dbBilling{}).setUserBillingCustomerID(ctx, nil, userID, args.BillingCustomerID); err != nil {
+	if err := (dbBilling{db: r.DB}).setUserBillingCustomerID(ctx, userID, args.BillingCustomerID); err != nil {
 		return nil, err
 	}
 	return &graphqlbackend.EmptyResponse{}, nil

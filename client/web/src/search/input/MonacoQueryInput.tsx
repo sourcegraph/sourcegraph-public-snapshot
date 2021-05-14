@@ -1,14 +1,17 @@
 import * as H from 'history'
 import { isPlainObject } from 'lodash'
 import * as Monaco from 'monaco-editor'
-import React, { useEffect, useLayoutEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { Subscription, Observable, Unsubscribable, ReplaySubject } from 'rxjs'
 import { Omit } from 'utility-types'
 
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { getProviders } from '@sourcegraph/shared/src/search/query/providers'
+import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
+import { SearchSuggestion } from '@sourcegraph/shared/src/search/suggestions'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { hasProperty } from '@sourcegraph/shared/src/util/types'
+import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { CaseSensitivityProps, PatternTypeProps, CopyQueryButtonProps, SearchContextProps } from '..'
 import { MonacoEditor } from '../../components/MonacoEditor'
@@ -26,10 +29,14 @@ export interface MonacoQueryInputProps
         ThemeProps,
         CaseSensitivityProps,
         PatternTypeProps,
-        SearchContextProps,
+        Omit<
+            SearchContextProps,
+            'convertVersionContextToSearchContext' | 'isSearchContextSpecAvailable' | 'fetchSearchContext'
+        >,
         CopyQueryButtonProps {
     location: H.Location
     history: H.History
+    isSourcegraphDotCom: boolean // significant for query suggestions
     queryState: QueryState
     onChange: (newState: QueryState) => void
     onSubmit: () => void
@@ -67,11 +74,13 @@ const toUnsubscribable = (disposable: Monaco.IDisposable): Unsubscribable => ({
 export function addSourcegraphSearchCodeIntelligence(
     monaco: typeof Monaco,
     searchQueries: Observable<string>,
+    fetchSuggestions: (query: string) => Observable<SearchSuggestion[]>,
     options: {
         patternType: SearchPatternType
         globbing: boolean
         interpretComments?: boolean
         enableSmartQuery: boolean
+        isSourcegraphDotCom?: boolean
     }
 ): Subscription {
     const subscriptions = new Subscription()
@@ -182,6 +191,14 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
         return () => subscription.unsubscribe()
     }, [editor, container])
 
+    const fetchSuggestionsWithContext = useCallback(
+        (query: string) =>
+            fetchSuggestions(appendContextFilter(query, props.selectedSearchContextSpec, props.versionContext)),
+        [props.selectedSearchContextSpec, props.versionContext]
+    )
+
+    const [isRedesignEnabled] = useRedesignToggle()
+
     // Register themes and code intelligence providers. The providers are passed
     // a ReplaySubject of search queries to avoid registering new providers on
     // every query change. The ReplaySubject is updated with useLayoutEffect
@@ -194,19 +211,34 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     useLayoutEffect(() => {
         searchQueries.next(queryState.query)
     }, [queryState.query, searchQueries])
-    const { patternType, globbing, enableSmartQuery, interpretComments } = props
+    const { patternType, globbing, enableSmartQuery, interpretComments, isSourcegraphDotCom } = props
     useEffect(() => {
         if (!monacoInstance) {
             return
         }
-        const subscription = addSourcegraphSearchCodeIntelligence(monacoInstance, searchQueries, {
-            patternType,
-            globbing,
-            enableSmartQuery,
-            interpretComments,
-        })
+        const subscription = addSourcegraphSearchCodeIntelligence(
+            monacoInstance,
+            searchQueries,
+            fetchSuggestionsWithContext,
+            {
+                patternType,
+                globbing,
+                enableSmartQuery,
+                interpretComments,
+                isSourcegraphDotCom,
+            }
+        )
         return () => subscription.unsubscribe()
-    }, [monacoInstance, searchQueries, patternType, globbing, enableSmartQuery, interpretComments])
+    }, [
+        monacoInstance,
+        searchQueries,
+        fetchSuggestionsWithContext,
+        patternType,
+        globbing,
+        enableSmartQuery,
+        interpretComments,
+        isSourcegraphDotCom,
+    ])
 
     // Register suggestions handle
     useEffect(() => {
@@ -378,6 +410,7 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
                             options={options}
                             border={false}
                             keyboardShortcutForFocus={KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR}
+                            isRedesignEnabled={isRedesignEnabled}
                             className="test-query-input"
                         />
                     </div>

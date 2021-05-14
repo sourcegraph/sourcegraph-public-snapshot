@@ -39,6 +39,11 @@ export const externalServiceFragment = gql`
         nextSyncAt
         updatedAt
         createdAt
+        namespace {
+            id
+            namespaceName
+            url
+        }
     }
 `
 
@@ -193,6 +198,11 @@ export const listExternalServiceFragment = gql`
         nextSyncAt
         updatedAt
         createdAt
+        namespace {
+            id
+            namespaceName
+            url
+        }
     }
 `
 

@@ -9,14 +9,18 @@ import SourcePullIcon from 'mdi-react/SourcePullIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import React from 'react'
 
-import { ChangesetFields, ChangesetState } from '../../../../graphql-operations'
+import { ChangesetFields, ChangesetState, Scalars } from '../../../../graphql-operations'
+
+import { ChangesetStatusScheduled } from './ChangesetStatusScheduled'
 
 export interface ChangesetStatusCellProps {
     className?: string
+    id?: Scalars['ID']
     state: ChangesetFields['state']
 }
 
 export const ChangesetStatusCell: React.FunctionComponent<ChangesetStatusCellProps> = ({
+    id,
     state,
     className = 'd-flex',
 }) => {
@@ -25,6 +29,8 @@ export const ChangesetStatusCell: React.FunctionComponent<ChangesetStatusCellPro
             return <ChangesetStatusError className={className} />
         case ChangesetState.RETRYING:
             return <ChangesetStatusRetrying className={className} />
+        case ChangesetState.SCHEDULED:
+            return <ChangesetStatusScheduled className={className} id={id} />
         case ChangesetState.PROCESSING:
             return <ChangesetStatusProcessing className={className} />
         case ChangesetState.UNPUBLISHED:
@@ -116,6 +122,7 @@ export const ChangesetStatusRetrying: React.FunctionComponent<{ label?: JSX.Elem
         {label}
     </div>
 )
+
 export const ChangesetStatusProcessing: React.FunctionComponent<{ label?: JSX.Element; className?: string }> = ({
     label = <span>Processing</span>,
     className,

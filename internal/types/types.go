@@ -371,7 +371,7 @@ func (r *RepoName) ToRepo() *Repo {
 }
 
 // RepoNames is an utility type with convenience methods for operating on lists of repo names
-type RepoNames []*RepoName
+type RepoNames []RepoName
 
 func (rs RepoNames) Len() int           { return len(rs) }
 func (rs RepoNames) Less(i, j int) bool { return rs[i].ID < rs[j].ID }
@@ -1447,11 +1447,11 @@ type ExtensionUsageStatistics struct {
 }
 
 type CodeInsightsUsageStatistics struct {
-	UsageStatisticsByInsight       []*InsightUsageStatistics
-	InsightsPageViews              *int32
-	InsightsUniquePageViews        *int32
-	InsightConfigureClick          *int32
-	InsightAddMoreClick            *int32
+	WeeklyUsageStatisticsByInsight []*InsightUsageStatistics
+	WeeklyInsightsPageViews        *int32
+	WeeklyInsightsUniquePageViews  *int32
+	WeeklyInsightConfigureClick    *int32
+	WeeklyInsightAddMoreClick      *int32
 	WeekStart                      time.Time
 	WeeklyInsightCreators          *int32
 	WeeklyFirstTimeInsightCreators *int32
@@ -1513,6 +1513,7 @@ type SearchContext struct {
 	Public          bool
 	NamespaceUserID int32 // if non-zero, the owner is this user. NamespaceUserID/NamespaceOrgID are mutually exclusive.
 	NamespaceOrgID  int32 // if non-zero, the owner is this organization. NamespaceUserID/NamespaceOrgID are mutually exclusive.
+	UpdatedAt       time.Time
 
 	// We cache namespace names to avoid separate database lookups when constructing the search context spec
 
@@ -1527,6 +1528,6 @@ type SearchContext struct {
 // converted when needed. We could use search.RepositoryRevisions directly instead, but it
 // introduces an import cycle with `internal/vcs/git` package when used in `internal/database/search_contexts.go`.
 type SearchContextRepositoryRevisions struct {
-	Repo      *RepoName
+	Repo      RepoName
 	Revisions []string
 }

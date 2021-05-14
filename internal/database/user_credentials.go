@@ -4,14 +4,14 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
@@ -23,14 +23,71 @@ type UserCredential struct {
 	UserID              int32
 	ExternalServiceType string
 	ExternalServiceID   string
-	Credential          auth.Authenticator
+	EncryptedCredential []byte
+	EncryptionKeyID     string
 	CreatedAt           time.Time
 	UpdatedAt           time.Time
+
+	// TODO(batch-change-credential-encryption): On or after Sourcegraph 3.30,
+	// we should remove the credential and SSHMigrationApplied fields.
+	SSHMigrationApplied bool
+
+	key encryption.Key
 }
 
-// This const block contains the valid domain values for user credentials.
+// Authenticator decrypts and creates the authenticator associated with the user
+// credential.
+func (uc *UserCredential) Authenticator(ctx context.Context) (auth.Authenticator, error) {
+	// The record includes a field indicating the encryption key ID. We don't
+	// really have a way to look up a key by ID right now, so this is used as a
+	// marker of whether we should expect a key or not.
+	if uc.EncryptionKeyID == "" {
+		return UnmarshalAuthenticator(string(uc.EncryptedCredential))
+	}
+	if uc.key == nil {
+		return nil, errors.New("user credential is encrypted, but no key is available to decrypt it")
+	}
+
+	secret, err := uc.key.Decrypt(ctx, uc.EncryptedCredential)
+	if err != nil {
+		return nil, errors.Wrap(err, "decrypting credential")
+	}
+
+	a, err := UnmarshalAuthenticator(secret.Secret())
+	if err != nil {
+		return nil, errors.Wrap(err, "unmarshalling authenticator")
+	}
+
+	return a, nil
+}
+
+// SetAuthenticator encrypts and sets the authenticator within the user
+// credential.
+func (uc *UserCredential) SetAuthenticator(ctx context.Context, a auth.Authenticator) error {
+	// Set the key ID. This is cargo culted from external_accounts.go, and the
+	// key ID doesn't appear to be actually useful as anything other than a
+	// marker of whether the data is expected to be encrypted or not.
+	id, err := keyID(ctx, uc.key)
+	if err != nil {
+		return errors.Wrap(err, "getting key version")
+	}
+
+	secret, err := EncryptAuthenticator(ctx, uc.key, a)
+	if err != nil {
+		return errors.Wrap(err, "encrypting authenticator")
+	}
+
+	uc.EncryptedCredential = secret
+	uc.EncryptionKeyID = id
+
+	return nil
+}
+
 const (
+	// Valid domain values for user credentials.
 	UserCredentialDomainBatches = "batches"
+
+	UserCredentialPlaceholderEncryptionKeyID = "previously-migrated"
 )
 
 // UserCredentialNotFoundErr is returned when a credential cannot be found from
@@ -48,17 +105,23 @@ func (UserCredentialNotFoundErr) NotFound() bool {
 // UserCredentialsStore provides access to the `user_credentials` table.
 type UserCredentialsStore struct {
 	*basestore.Store
-	once sync.Once
+	key encryption.Key
 }
 
 // NewUserStoreWithDB instantiates and returns a new UserCredentialsStore with prepared statements.
-func UserCredentials(db dbutil.DB) *UserCredentialsStore {
-	return &UserCredentialsStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+func UserCredentials(db dbutil.DB, key encryption.Key) *UserCredentialsStore {
+	return &UserCredentialsStore{
+		Store: basestore.NewWithDB(db, sql.TxOptions{}),
+		key:   key,
+	}
 }
 
 // NewUserStoreWith instantiates and returns a new UserCredentialsStore using the other store handle.
-func UserCredentialsWith(other basestore.ShareableStore) *UserCredentialsStore {
-	return &UserCredentialsStore{Store: basestore.NewWithHandle(other.Handle())}
+func UserCredentialsWith(other basestore.ShareableStore, key encryption.Key) *UserCredentialsStore {
+	return &UserCredentialsStore{
+		Store: basestore.NewWithHandle(other.Handle()),
+		key:   key,
+	}
 }
 
 func (s *UserCredentialsStore) With(other basestore.ShareableStore) *UserCredentialsStore {
@@ -66,21 +129,8 @@ func (s *UserCredentialsStore) With(other basestore.ShareableStore) *UserCredent
 }
 
 func (s *UserCredentialsStore) Transact(ctx context.Context) (*UserCredentialsStore, error) {
-	s.ensureStore()
-
 	txBase, err := s.Store.Transact(ctx)
 	return &UserCredentialsStore{Store: txBase}, err
-}
-
-// ensureStore instantiates a basestore.Store if necessary, using the dbconn.Global handle.
-// This function ensures access to dbconn happens after the rest of the code or tests have
-// initialized it.
-func (s *UserCredentialsStore) ensureStore() {
-	s.once.Do(func() {
-		if s.Store == nil {
-			s.Store = basestore.NewWithDB(dbconn.Global, sql.TxOptions{})
-		}
-	})
 }
 
 // UserCredentialScope represents the unique scope for a credential. Only one
@@ -99,7 +149,16 @@ func (s *UserCredentialsStore) Create(ctx context.Context, scope UserCredentialS
 	if Mocks.UserCredentials.Create != nil {
 		return Mocks.UserCredentials.Create(ctx, scope, credential)
 	}
-	s.ensureStore()
+
+	id, err := keyID(ctx, s.key)
+	if err != nil {
+		return nil, err
+	}
+
+	enc, err := EncryptAuthenticator(ctx, s.key, credential)
+	if err != nil {
+		return nil, err
+	}
 
 	q := sqlf.Sprintf(
 		userCredentialsCreateQueryFmtstr,
@@ -107,11 +166,12 @@ func (s *UserCredentialsStore) Create(ctx context.Context, scope UserCredentialS
 		scope.UserID,
 		scope.ExternalServiceType,
 		scope.ExternalServiceID,
-		&NullAuthenticator{A: &credential},
+		enc,
+		id,
 		sqlf.Join(userCredentialsColumns, ", "),
 	)
 
-	cred := UserCredential{}
+	cred := UserCredential{key: s.key}
 	row := s.QueryRow(ctx, q)
 	if err := scanUserCredential(&cred, row); err != nil {
 		return nil, err
@@ -121,12 +181,11 @@ func (s *UserCredentialsStore) Create(ctx context.Context, scope UserCredentialS
 }
 
 // Update updates a user credential in the database. If the credential cannot be found,
-// an error ist returned
+// an error is returned.
 func (s *UserCredentialsStore) Update(ctx context.Context, credential *UserCredential) error {
 	if Mocks.UserCredentials.Update != nil {
 		return Mocks.UserCredentials.Update(ctx, credential)
 	}
-	s.ensureStore()
 
 	credential.UpdatedAt = timeutil.Now()
 
@@ -136,8 +195,10 @@ func (s *UserCredentialsStore) Update(ctx context.Context, credential *UserCrede
 		credential.UserID,
 		credential.ExternalServiceType,
 		credential.ExternalServiceID,
-		&NullAuthenticator{A: &credential.Credential},
+		credential.EncryptedCredential,
+		credential.EncryptionKeyID,
 		credential.UpdatedAt,
+		credential.SSHMigrationApplied,
 		credential.ID,
 		sqlf.Join(userCredentialsColumns, ", "),
 	)
@@ -157,7 +218,6 @@ func (s *UserCredentialsStore) Delete(ctx context.Context, id int64) error {
 	if Mocks.UserCredentials.Delete != nil {
 		return Mocks.UserCredentials.Delete(ctx, id)
 	}
-	s.ensureStore()
 
 	q := sqlf.Sprintf("DELETE FROM user_credentials WHERE id = %s", id)
 	res, err := s.ExecResult(ctx, q)
@@ -180,7 +240,6 @@ func (s *UserCredentialsStore) GetByID(ctx context.Context, id int64) (*UserCred
 	if Mocks.UserCredentials.GetByID != nil {
 		return Mocks.UserCredentials.GetByID(ctx, id)
 	}
-	s.ensureStore()
 
 	q := sqlf.Sprintf(
 		"SELECT %s FROM user_credentials WHERE id = %s",
@@ -188,7 +247,7 @@ func (s *UserCredentialsStore) GetByID(ctx context.Context, id int64) (*UserCred
 		id,
 	)
 
-	cred := UserCredential{}
+	cred := UserCredential{key: s.key}
 	row := s.QueryRow(ctx, q)
 	if err := scanUserCredential(&cred, row); err == sql.ErrNoRows {
 		return nil, UserCredentialNotFoundErr{args: []interface{}{id}}
@@ -205,7 +264,6 @@ func (s *UserCredentialsStore) GetByScope(ctx context.Context, scope UserCredent
 	if Mocks.UserCredentials.GetByScope != nil {
 		return Mocks.UserCredentials.GetByScope(ctx, scope)
 	}
-	s.ensureStore()
 
 	q := sqlf.Sprintf(
 		userCredentialsGetByScopeQueryFmtstr,
@@ -216,7 +274,7 @@ func (s *UserCredentialsStore) GetByScope(ctx context.Context, scope UserCredent
 		scope.ExternalServiceID,
 	)
 
-	cred := UserCredential{}
+	cred := UserCredential{key: s.key}
 	row := s.QueryRow(ctx, q)
 	if err := scanUserCredential(&cred, row); err == sql.ErrNoRows {
 		return nil, UserCredentialNotFoundErr{args: []interface{}{scope}}
@@ -231,9 +289,20 @@ func (s *UserCredentialsStore) GetByScope(ctx context.Context, scope UserCredent
 // least one field in Scope must be set.
 type UserCredentialsListOpts struct {
 	*LimitOffset
-	Scope             UserCredentialScope
-	AuthenticatorType []AuthenticatorType
-	ForUpdate         bool
+	Scope     UserCredentialScope
+	ForUpdate bool
+
+	// TODO(batch-change-credential-encryption): this should be removed once the
+	// OOB SSH migration is removed.
+	SSHMigrationApplied *bool
+
+	// TODO(batch-change-credential-encryption): this should be removed once the
+	// OOB user credential migration is removed.
+	RequiresMigration bool
+
+	// TODO(batch-change-credential-encryption): this should be removed once the
+	// OOB user credential migration is removed.
+	OnlyEncrypted bool
 }
 
 // sql overrides LimitOffset.SQL() to give a LIMIT clause with one extra value
@@ -251,7 +320,6 @@ func (s *UserCredentialsStore) List(ctx context.Context, opts UserCredentialsLis
 	if Mocks.UserCredentials.List != nil {
 		return Mocks.UserCredentials.List(ctx, opts)
 	}
-	s.ensureStore()
 
 	preds := []*sqlf.Query{}
 	if opts.Scope.Domain != "" {
@@ -266,13 +334,16 @@ func (s *UserCredentialsStore) List(ctx context.Context, opts UserCredentialsLis
 	if opts.Scope.ExternalServiceID != "" {
 		preds = append(preds, sqlf.Sprintf("external_service_id = %s", opts.Scope.ExternalServiceID))
 	}
-	if len(opts.AuthenticatorType) > 0 {
-		values := make([]*sqlf.Query, 0, len(opts.AuthenticatorType))
-		for _, t := range opts.AuthenticatorType {
-			// The JSON text fields are quoted, so we need to quote the type here too.
-			values = append(values, sqlf.Sprintf(`%s`, fmt.Sprintf(`"%s"`, t)))
-		}
-		preds = append(preds, sqlf.Sprintf("(credential::json->'Type')::text IN (%s)", sqlf.Join(values, ",")))
+	// TODO(batch-change-credential-encryption): remove the remaining predicates
+	// once the OOB SSH migration is removed.
+	if opts.SSHMigrationApplied != nil {
+		preds = append(preds, sqlf.Sprintf("ssh_migration_applied = %s", *opts.SSHMigrationApplied))
+	}
+	if opts.RequiresMigration {
+		preds = append(preds, sqlf.Sprintf("encryption_key_id IN ('', %s)", UserCredentialPlaceholderEncryptionKeyID))
+	}
+	if opts.OnlyEncrypted {
+		preds = append(preds, sqlf.Sprintf("encryption_key_id <> ''"))
 	}
 
 	if len(preds) == 0 {
@@ -300,7 +371,7 @@ func (s *UserCredentialsStore) List(ctx context.Context, opts UserCredentialsLis
 
 	var creds []*UserCredential
 	for rows.Next() {
-		cred := UserCredential{}
+		cred := UserCredential{key: s.key}
 		if err := scanUserCredential(&cred, rows); err != nil {
 			return nil, 0, err
 		}
@@ -329,8 +400,10 @@ var userCredentialsColumns = []*sqlf.Query{
 	sqlf.Sprintf("external_service_type"),
 	sqlf.Sprintf("external_service_id"),
 	sqlf.Sprintf("credential"),
+	sqlf.Sprintf("encryption_key_id"),
 	sqlf.Sprintf("created_at"),
 	sqlf.Sprintf("updated_at"),
+	sqlf.Sprintf("ssh_migration_applied"),
 }
 
 // The more unwieldy queries are below rather than inline in the above methods
@@ -366,8 +439,10 @@ INSERT INTO
 		external_service_type,
 		external_service_id,
 		credential,
+		encryption_key_id,
 		created_at,
-		updated_at
+		updated_at,
+		ssh_migration_applied
 	)
 	VALUES (
 		%s,
@@ -375,8 +450,10 @@ INSERT INTO
 		%s,
 		%s,
 		%s,
+		%s,
 		NOW(),
-		NOW()
+		NOW(),
+		TRUE
 	)
 	RETURNING %s
 `
@@ -390,7 +467,9 @@ SET
 	external_service_type = %s,
 	external_service_id = %s,
 	credential = %s,
-	updated_at = %s
+	encryption_key_id = %s,
+	updated_at = %s,
+	ssh_migration_applied = %s
 WHERE
 	id = %s
 RETURNING %s
@@ -410,8 +489,22 @@ func scanUserCredential(cred *UserCredential, s interface {
 		&cred.UserID,
 		&cred.ExternalServiceType,
 		&cred.ExternalServiceID,
-		&NullAuthenticator{A: &cred.Credential},
+		&cred.EncryptedCredential,
+		&cred.EncryptionKeyID,
 		&cred.CreatedAt,
 		&cred.UpdatedAt,
+		&cred.SSHMigrationApplied,
 	)
+}
+
+func keyID(ctx context.Context, key encryption.Key) (string, error) {
+	if key != nil {
+		version, err := key.Version(ctx)
+		if err != nil {
+			return "", errors.Wrap(err, "getting key version")
+		}
+		return version.JSON(), nil
+	}
+
+	return "", nil
 }

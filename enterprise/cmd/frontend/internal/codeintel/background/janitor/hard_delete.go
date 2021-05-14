@@ -12,13 +12,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
-type HardDeleter struct {
+type hardDeleter struct {
 	dbStore   DBStore
 	lsifStore LSIFStore
 	metrics   *metrics
 }
 
-var _ goroutine.Handler = &HardDeleter{}
+var _ goroutine.Handler = &hardDeleter{}
 
 // NewHardDeleter returns a background routine that periodically hard-deletes all
 // soft-deleted upload records. Each upload record marked as soft-deleted in the
@@ -30,7 +30,7 @@ var _ goroutine.Handler = &HardDeleter{}
 // cleanup routine instead ensures we delete unreachable data as soon as it's no longer
 // referenceable.
 func NewHardDeleter(dbStore DBStore, lsifStore LSIFStore, interval time.Duration, metrics *metrics) goroutine.BackgroundRoutine {
-	return goroutine.NewPeriodicGoroutine(context.Background(), interval, &HardDeleter{
+	return goroutine.NewPeriodicGoroutine(context.Background(), interval, &hardDeleter{
 		dbStore:   dbStore,
 		lsifStore: lsifStore,
 		metrics:   metrics,
@@ -39,7 +39,7 @@ func NewHardDeleter(dbStore DBStore, lsifStore LSIFStore, interval time.Duration
 
 const uploadsBatchSize = 100
 
-func (d *HardDeleter) Handle(ctx context.Context) error {
+func (d *hardDeleter) Handle(ctx context.Context) error {
 	options := store.GetUploadsOptions{
 		State: "deleted",
 		Limit: uploadsBatchSize,
@@ -71,12 +71,12 @@ func (d *HardDeleter) Handle(ctx context.Context) error {
 	return nil
 }
 
-func (d *HardDeleter) HandleError(err error) {
+func (d *hardDeleter) HandleError(err error) {
 	d.metrics.numErrors.Inc()
 	log15.Error("Failed to hard delete upload records", "error", err)
 }
 
-func (d *HardDeleter) deleteBatch(ctx context.Context, ids []int) (err error) {
+func (d *hardDeleter) deleteBatch(ctx context.Context, ids []int) (err error) {
 	tx, err := d.dbStore.Transact(ctx)
 	if err != nil {
 		return err

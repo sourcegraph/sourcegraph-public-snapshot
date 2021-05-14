@@ -16,6 +16,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 
 	"github.com/graph-gophers/graphql-go/gqltesting"
 	"github.com/inconshreveable/log15"
@@ -112,7 +113,10 @@ func TestMain(m *testing.M) {
 
 func TestAffiliatedRepositories(t *testing.T) {
 	resetMocks()
-	database.Mocks.Users.HasTag = func(ctx context.Context, userID int32, tag string) (bool, error) { return true, nil }
+	rcache.SetupForTest(t)
+	database.Mocks.Users.Tags = func(ctx context.Context, userID int32) (map[string]bool, error) {
+		return map[string]bool{}, nil
+	}
 	database.Mocks.ExternalServices.List = func(opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 		return []*types.ExternalService{
 			{
@@ -164,28 +168,34 @@ func TestAffiliatedRepositories(t *testing.T) {
 				buf := &bytes.Buffer{}
 				enc := json.NewEncoder(buf)
 				switch r.URL.Path {
-				case "/api/graphql": //github
-					enc.Encode(repoResponse{
-						Data: data{
-							Viewer: viewer{
-								Repositories: repositories{
-									Nodes: []githubRepository{
-										{
-											NameWithOwner: "test-user/test",
-											IsPrivate:     false,
-										},
-									},
-								},
+				case "/api/v3/user/repos": // github
+					page := r.URL.Query().Get("page")
+					if page == "1" {
+						if err := enc.Encode([]githubRepository{
+							{
+								FullName: "test-user/test",
+								Private:  false,
 							},
-						},
-					})
+						}); err != nil {
+							t.Fatal(err)
+						}
+					}
+					// Stop on the second page
+					if page == "2" {
+						if err := enc.Encode([]githubRepository{}); err != nil {
+							t.Fatal(err)
+						}
+					}
+
 				case "/api/v4/projects": //gitlab
-					enc.Encode([]gitlabRepository{
+					if err := enc.Encode([]gitlabRepository{
 						{
 							PathWithNamespace: "test-user2/test2",
 							Visibility:        "public",
 						},
-					})
+					}); err != nil {
+						t.Fatal(err)
+					}
 				default:
 					t.Fatalf("unexpected path: %s", r.URL.Path)
 				}
@@ -256,23 +266,8 @@ func (f roundTripFunc) RoundTrip(r *http.Request) (*http.Response, error) {
 
 // copied from the github client, just the fields we need
 type githubRepository struct {
-	NameWithOwner string
-	IsPrivate     bool
-}
-
-type repoResponse struct {
-	Data data `json:"data"`
-}
-type data struct {
-	Viewer viewer `json:"viewer"`
-}
-
-type viewer struct {
-	Repositories repositories `json:"repositories"`
-}
-
-type repositories struct {
-	Nodes []githubRepository `json:"nodes"`
+	FullName string `json:"full_name"`
+	Private  bool   `json:"private"`
 }
 
 type gitlabRepository struct {

@@ -516,6 +516,44 @@ This panel indicates index enqueuer errors every 5m.
 
 <br />
 
+### Frontend: Out of band migrations
+
+#### frontend: out_of_band_migrations_up_99th_percentile_duration
+
+This panel indicates 99th percentile successful out-of-band up migration invocation (single batch processed) duration over 5m.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### frontend: out_of_band_migrations_up_errors
+
+This panel indicates out-of-band up migration errors every 5m.
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-out-of-band-migrations-up-errors).
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### frontend: out_of_band_migrations_down_99th_percentile_duration
+
+This panel indicates 99th percentile successful out-of-band down migration invocation (single batch processed) duration over 5m.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### frontend: out_of_band_migrations_down_errors
+
+This panel indicates out-of-band down migration errors every 5m.
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-out-of-band-migrations-down-errors).
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
 ### Frontend: Internal service requests
 
 #### frontend: internal_indexed_search_error_responses
@@ -703,6 +741,78 @@ This panel indicates percentage pods available.
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-pods-available-percentage).
 
 <sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+### Frontend: Sentinel queries (only on sourcegraph.com)
+
+#### frontend: mean_successful_sentinel_duration_5m
+
+This panel indicates mean successful sentinel search duration over 5m.
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-mean-successful-sentinel-duration-5m).
+
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+
+<br />
+
+#### frontend: mean_sentinel_stream_latency_5m
+
+This panel indicates mean sentinel stream latency over 5m.
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-mean-sentinel-stream-latency-5m).
+
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+
+<br />
+
+#### frontend: 90th_percentile_successful_sentinel_duration_5m
+
+This panel indicates 90th percentile successful sentinel search duration over 5m.
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-90th-percentile-successful-sentinel-duration-5m).
+
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+
+<br />
+
+#### frontend: 90th_percentile_sentinel_stream_latency_5m
+
+This panel indicates 90th percentile sentinel stream latency over 5m.
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-90th-percentile-sentinel-stream-latency-5m).
+
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+
+<br />
+
+#### frontend: mean_successful_sentinel_duration_by_query_5m
+
+This panel indicates mean successful sentinel search duration by query over 5m.
+
+- The mean search duration for sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.
+
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+
+<br />
+
+#### frontend: mean_sentinel_stream_latency_by_query_5m
+
+This panel indicates mean sentinel stream latency by query over 5m.
+
+- The mean streaming search latency for sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.
+
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+
+<br />
+
+#### frontend: unsuccessful_status_rate_5m
+
+This panel indicates unsuccessful status rate per 5m.
+
+- The rate of unsuccessful sentinel query, broken down by failure type
+
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
 
 <br />
 

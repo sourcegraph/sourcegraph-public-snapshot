@@ -10,19 +10,22 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestGetUploadByID(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
+	ctx := context.Background()
 
 	// Upload does not exist initially
-	if _, exists, err := store.GetUploadByID(context.Background(), 1); err != nil {
+	if _, exists, err := store.GetUploadByID(ctx, 1); err != nil {
 		t.Fatalf("unexpected error getting upload: %s", err)
 	} else if exists {
 		t.Fatal("unexpected record")
@@ -48,24 +51,41 @@ func TestGetUploadByID(t *testing.T) {
 		Rank:           nil,
 	}
 
-	insertUploads(t, dbconn.Global, expected)
-	insertVisibleAtTip(t, dbconn.Global, 123, 1)
+	insertUploads(t, db, expected)
+	insertVisibleAtTip(t, db, 123, 1)
 
-	if upload, exists, err := store.GetUploadByID(context.Background(), 1); err != nil {
+	if upload, exists, err := store.GetUploadByID(ctx, 1); err != nil {
 		t.Fatalf("unexpected error getting upload: %s", err)
 	} else if !exists {
 		t.Fatal("expected record to exist")
 	} else if diff := cmp.Diff(expected, upload); diff != "" {
 		t.Errorf("unexpected upload (-want +got):\n%s", diff)
 	}
+
+	t.Run("enforce repository permissions", func(t *testing.T) {
+		// Enable permissions user mapping forces checking repository permissions
+		// against permissions tables in the database, which should effectively block
+		// all access because permissions tables are empty.
+		before := globals.PermissionsUserMapping()
+		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
+		defer globals.SetPermissionsUserMapping(before)
+
+		_, exists, err := store.GetUploadByID(ctx, 1)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if exists {
+			t.Fatalf("exists: want false but got %v", exists)
+		}
+	})
 }
 
 func TestGetUploadByIDDeleted(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
 
 	// Upload does not exist initially
 	if _, exists, err := store.GetUploadByID(context.Background(), 1); err != nil {
@@ -94,7 +114,7 @@ func TestGetUploadByIDDeleted(t *testing.T) {
 		Rank:           nil,
 	}
 
-	insertUploads(t, dbconn.Global, expected)
+	insertUploads(t, db, expected)
 
 	// Should still not be queryable
 	if _, exists, err := store.GetUploadByID(context.Background(), 1); err != nil {
@@ -108,8 +128,8 @@ func TestGetQueuedUploadRank(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
 
 	t1 := time.Unix(1587396557, 0).UTC()
 	t2 := t1.Add(+time.Minute * 6)
@@ -119,7 +139,7 @@ func TestGetQueuedUploadRank(t *testing.T) {
 	t6 := t1.Add(+time.Minute * 2)
 	t7 := t1.Add(+time.Minute * 5)
 
-	insertUploads(t, dbconn.Global,
+	insertUploads(t, db,
 		Upload{ID: 1, UploadedAt: t1, State: "queued"},
 		Upload{ID: 2, UploadedAt: t2, State: "queued"},
 		Upload{ID: 3, UploadedAt: t3, State: "queued"},
@@ -160,8 +180,8 @@ func TestDeleteUploadsStuckUploading(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
 
 	t1 := time.Unix(1587396557, 0).UTC()
 	t2 := t1.Add(time.Minute * 1)
@@ -169,7 +189,7 @@ func TestDeleteUploadsStuckUploading(t *testing.T) {
 	t4 := t1.Add(time.Minute * 3)
 	t5 := t1.Add(time.Minute * 4)
 
-	insertUploads(t, dbconn.Global,
+	insertUploads(t, db,
 		Upload{ID: 1, Commit: makeCommit(1111), UploadedAt: t1, State: "queued"},    // not uploading
 		Upload{ID: 2, Commit: makeCommit(1112), UploadedAt: t2, State: "uploading"}, // deleted
 		Upload{ID: 3, Commit: makeCommit(1113), UploadedAt: t3, State: "uploading"}, // deleted
@@ -210,8 +230,9 @@ func TestGetUploads(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
+	ctx := context.Background()
 
 	t1 := time.Unix(1587396557, 0).UTC()
 	t2 := t1.Add(-time.Minute * 1)
@@ -225,7 +246,7 @@ func TestGetUploads(t *testing.T) {
 	t10 := t1.Add(-time.Minute * 9)
 	failureMessage := "unlucky 333"
 
-	insertUploads(t, dbconn.Global,
+	insertUploads(t, db,
 		Upload{ID: 1, Commit: makeCommit(3331), UploadedAt: t1, Root: "sub1/", State: "queued"},
 		Upload{ID: 2, UploadedAt: t2, State: "errored", FailureMessage: &failureMessage, Indexer: "lsif-tsc"},
 		Upload{ID: 3, Commit: makeCommit(3333), UploadedAt: t3, Root: "sub2/", State: "queued"},
@@ -242,7 +263,7 @@ func TestGetUploads(t *testing.T) {
 		Upload{ID: 12, UploadedAt: t2, State: "deleted", FailureMessage: &failureMessage, Indexer: "lsif-tsc"},
 		Upload{ID: 13, Commit: makeCommit(3333), UploadedAt: t3, Root: "sub2/", State: "deleted"},
 	)
-	insertVisibleAtTip(t, dbconn.Global, 50, 2, 5, 7, 8)
+	insertVisibleAtTip(t, db, 50, 2, 5, 7, 8)
 
 	testCases := []struct {
 		repositoryID   int
@@ -286,7 +307,7 @@ func TestGetUploads(t *testing.T) {
 			)
 
 			t.Run(name, func(t *testing.T) {
-				uploads, totalCount, err := store.GetUploads(context.Background(), GetUploadsOptions{
+				uploads, totalCount, err := store.GetUploads(ctx, GetUploadsOptions{
 					RepositoryID:   testCase.repositoryID,
 					State:          testCase.state,
 					Term:           testCase.term,
@@ -315,16 +336,37 @@ func TestGetUploads(t *testing.T) {
 			})
 		}
 	}
+
+	t.Run("enforce repository permissions", func(t *testing.T) {
+		// Enable permissions user mapping forces checking repository permissions
+		// against permissions tables in the database, which should effectively block
+		// all access because permissions tables are empty.
+		before := globals.PermissionsUserMapping()
+		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
+		defer globals.SetPermissionsUserMapping(before)
+
+		uploads, totalCount, err := store.GetUploads(ctx,
+			GetUploadsOptions{
+				Limit: 1,
+			},
+		)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(uploads) > 0 || totalCount > 0 {
+			t.Fatalf("Want no upload but got %d uploads with totalCount %d", len(uploads), totalCount)
+		}
+	})
 }
 
 func TestInsertUploadUploading(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
 
-	insertRepo(t, dbconn.Global, 50, "")
+	insertRepo(t, db, 50, "")
 
 	id, err := store.InsertUpload(context.Background(), Upload{
 		Commit:       makeCommit(1),
@@ -373,10 +415,10 @@ func TestInsertUploadQueued(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
 
-	insertRepo(t, dbconn.Global, 50, "")
+	insertRepo(t, db, 50, "")
 
 	id, err := store.InsertUpload(context.Background(), Upload{
 		Commit:        makeCommit(1),
@@ -428,10 +470,10 @@ func TestInsertUploadWithAssociatedIndexID(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
 
-	insertRepo(t, dbconn.Global, 50, "")
+	insertRepo(t, db, 50, "")
 
 	associatedIndexIDArg := 42
 	id, err := store.InsertUpload(context.Background(), Upload{
@@ -487,10 +529,10 @@ func TestMarkQueued(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
 
-	insertUploads(t, dbconn.Global, Upload{ID: 1, State: "uploading"})
+	insertUploads(t, db, Upload{ID: 1, State: "uploading"})
 
 	uploadSize := int64(300)
 	if err := store.MarkQueued(context.Background(), 1, &uploadSize); err != nil {
@@ -512,10 +554,10 @@ func TestAddUploadPart(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
 
-	insertUploads(t, dbconn.Global, Upload{ID: 1, State: "uploading"})
+	insertUploads(t, db, Upload{ID: 1, State: "uploading"})
 
 	for _, part := range []int{1, 5, 2, 3, 2, 2, 1, 6} {
 		if err := store.AddUploadPart(context.Background(), 1, part); err != nil {
@@ -538,10 +580,10 @@ func TestDeleteUploadByID(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
 
-	insertUploads(t, dbconn.Global,
+	insertUploads(t, db,
 		Upload{ID: 1, RepositoryID: 50},
 	)
 
@@ -552,7 +594,7 @@ func TestDeleteUploadByID(t *testing.T) {
 	}
 
 	// Ensure record was deleted
-	if states, err := getStates(1); err != nil {
+	if states, err := getUploadStates(db, 1); err != nil {
 		t.Fatalf("unexpected error getting states: %s", err)
 	} else if diff := cmp.Diff(map[int]string{1: "deleted"}, states); diff != "" {
 		t.Errorf("unexpected dump (-want +got):\n%s", diff)
@@ -578,8 +620,8 @@ func TestDeleteUploadByIDMissingRow(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
 
 	if found, err := store.DeleteUploadByID(context.Background(), 1); err != nil {
 		t.Fatalf("unexpected error deleting upload: %s", err)
@@ -592,8 +634,8 @@ func TestDeleteUploadsWithoutRepository(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
 
 	var uploads []Upload
 	for i := 0; i < 25; i++ {
@@ -601,7 +643,7 @@ func TestDeleteUploadsWithoutRepository(t *testing.T) {
 			uploads = append(uploads, Upload{ID: len(uploads) + 1, RepositoryID: 50 + i})
 		}
 	}
-	insertUploads(t, dbconn.Global, uploads...)
+	insertUploads(t, db, uploads...)
 
 	t1 := time.Unix(1587396557, 0).UTC()
 	t2 := t1.Add(-DeletedRepositoryGracePeriod + time.Minute)
@@ -615,7 +657,7 @@ func TestDeleteUploadsWithoutRepository(t *testing.T) {
 	for repositoryID, deletedAt := range deletions {
 		query := sqlf.Sprintf(`UPDATE repo SET deleted_at=%s WHERE id=%s`, deletedAt, repositoryID)
 
-		if _, err := dbconn.Global.Query(query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+		if _, err := db.Query(query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 			t.Fatalf("Failed to update repository: %s", err)
 		}
 	}
@@ -640,7 +682,7 @@ func TestDeleteUploadsWithoutRepository(t *testing.T) {
 	}
 
 	// Ensure records were deleted
-	if states, err := getStates(uploadIDs...); err != nil {
+	if states, err := getUploadStates(db, uploadIDs...); err != nil {
 		t.Fatalf("unexpected error getting states: %s", err)
 	} else {
 		deletedStates := 0
@@ -665,17 +707,17 @@ func TestHardDeleteUploadByID(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
 
-	insertUploads(t, dbconn.Global, Upload{ID: 1, State: "deleted"})
+	insertUploads(t, db, Upload{ID: 1, State: "deleted"})
 
 	if err := store.HardDeleteUploadByID(context.Background(), 1); err != nil {
 		t.Fatalf("unexpected error deleting upload: %s", err)
 	}
 
 	// Ensure records were deleted
-	if states, err := getStates(1); err != nil {
+	if states, err := getUploadStates(db, 1); err != nil {
 		t.Fatalf("unexpected error getting states: %s", err)
 	} else if len(states) != 0 {
 		t.Fatalf("unexpected record")
@@ -686,15 +728,15 @@ func TestSoftDeleteOldUploads(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := testStore()
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
 
 	t1 := time.Unix(1587396557, 0).UTC()
 	t2 := t1.Add(time.Minute)
 	t3 := t1.Add(time.Minute * 4)
 	t4 := t1.Add(time.Minute * 6)
 
-	insertUploads(t, dbconn.Global,
+	insertUploads(t, db,
 		Upload{ID: 1, State: "completed", FinishedAt: &t1},
 		Upload{ID: 2, State: "completed", FinishedAt: &t2}, // visible
 		Upload{ID: 3, State: "errored", FinishedAt: &t2},
@@ -705,7 +747,7 @@ func TestSoftDeleteOldUploads(t *testing.T) {
 		Upload{ID: 8, State: "uploaded", UploadedAt: t3},
 		Upload{ID: 9, State: "uploaded", UploadedAt: t4}, // too new
 	)
-	insertVisibleAtTip(t, dbconn.Global, 50, 2, 4)
+	insertVisibleAtTip(t, db, 50, 2, 4)
 
 	if count, err := store.SoftDeleteOldUploads(context.Background(), time.Minute, t1.Add(time.Minute*6)); err != nil {
 		t.Fatalf("unexpected error pruning uploads: %s", err)
@@ -726,7 +768,7 @@ func TestSoftDeleteOldUploads(t *testing.T) {
 	}
 
 	// Ensure record was deleted
-	if states, err := getStates(1, 2, 3, 4, 5, 6, 7, 8, 9); err != nil {
+	if states, err := getUploadStates(db, 1, 2, 3, 4, 5, 6, 7, 8, 9); err != nil {
 		t.Fatalf("unexpected error getting states: %s", err)
 	} else if diff := cmp.Diff(expectedStates, states); diff != "" {
 		t.Errorf("unexpected upload (-want +got):\n%s", diff)
@@ -746,5 +788,109 @@ func TestSoftDeleteOldUploads(t *testing.T) {
 
 	if len(keys) != 1 || keys[0] != 50 {
 		t.Errorf("expected repository to be marked dirty")
+	}
+}
+
+func TestGetOldestCommitDate(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
+
+	t1 := time.Unix(1587396557, 0).UTC()
+	t2 := t1.Add(time.Minute)
+	t3 := t1.Add(time.Minute * 4)
+	t4 := t1.Add(time.Minute * 6)
+
+	insertUploads(t, db,
+		Upload{ID: 1, State: "completed"},
+		Upload{ID: 2, State: "completed"},
+		Upload{ID: 3, State: "completed"},
+		Upload{ID: 4, State: "errored"},
+		Upload{ID: 5, State: "completed"},
+		Upload{ID: 6, State: "completed", RepositoryID: 51},
+		Upload{ID: 7, State: "completed", RepositoryID: 51},
+		Upload{ID: 8, State: "completed", RepositoryID: 51},
+	)
+
+	if _, err := db.Exec("UPDATE lsif_uploads SET committed_at = '-infinity' WHERE id = 3"); err != nil {
+		t.Fatalf("unexpected error updating commit date %s", err)
+	}
+
+	for uploadID, commitDate := range map[int]time.Time{
+		1: t3,
+		2: t4,
+		4: t1,
+		6: t2,
+	} {
+		if err := store.UpdateCommitedAt(context.Background(), uploadID, commitDate); err != nil {
+			t.Fatalf("unexpected error updating commit date %s", err)
+		}
+	}
+
+	if commitDate, ok, err := store.GetOldestCommitDate(context.Background(), 50); err != nil {
+		t.Fatalf("unexpected error getting oldest commit date: %s", err)
+	} else if !ok {
+		t.Fatalf("expected commit date for repository")
+	} else if !commitDate.Equal(t3) {
+		t.Fatalf("unexpected commit date. want=%s have=%s", t3, commitDate)
+	}
+
+	if commitDate, ok, err := store.GetOldestCommitDate(context.Background(), 51); err != nil {
+		t.Fatalf("unexpected error getting oldest commit date: %s", err)
+	} else if !ok {
+		t.Fatalf("expected commit date for repository")
+	} else if !commitDate.Equal(t2) {
+		t.Fatalf("unexpected commit date. want=%s have=%s", t2, commitDate)
+	}
+
+	if _, ok, err := store.GetOldestCommitDate(context.Background(), 52); err != nil {
+		t.Fatalf("unexpected error getting oldest commit date: %s", err)
+	} else if ok {
+		t.Fatalf("unexpected commit date for repository")
+	}
+}
+
+func TestUpdateCommitedAt(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
+
+	t1 := time.Unix(1587396557, 0).UTC()
+	t2 := t1.Add(time.Minute)
+	t3 := t1.Add(time.Minute * 4)
+	t4 := t1.Add(time.Minute * 6)
+
+	insertUploads(t, db,
+		Upload{ID: 1, State: "completed"},
+		Upload{ID: 2, State: "completed"},
+		Upload{ID: 3, State: "completed"},
+		Upload{ID: 4, State: "completed"},
+		Upload{ID: 5, State: "completed"},
+		Upload{ID: 6, State: "completed"},
+		Upload{ID: 7, State: "completed"},
+		Upload{ID: 8, State: "completed"},
+	)
+
+	for uploadID, commitDate := range map[int]time.Time{
+		1: t3,
+		2: t4,
+		4: t1,
+		6: t2,
+	} {
+		if err := store.UpdateCommitedAt(context.Background(), uploadID, commitDate); err != nil {
+			t.Fatalf("unexpected error updating commit date %s", err)
+		}
+	}
+
+	commitDates, err := basestore.ScanTimes(db.Query("SELECT committed_at FROM lsif_uploads WHERE id IN (1, 2, 4, 6) ORDER BY id"))
+	if err != nil {
+		t.Fatalf("unexpected error querying commit dates: %s", err)
+	}
+	if diff := cmp.Diff([]time.Time{t3, t4, t1, t2}, commitDates); diff != "" {
+		t.Errorf("unexpected commit dates(-want +got):\n%s", diff)
 	}
 }

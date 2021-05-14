@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -263,6 +264,28 @@ func (c *Client) ListFiles(ctx context.Context, repositoryID int, commit string,
 	return matching, nil
 }
 
+// ListFiles returns a list of root-relative file paths matching the given pattern in a particular
+// commit of a repository.
+func (c *Client) ResolveRevision(ctx context.Context, repositoryID int, versionString string) (commitID api.CommitID, err error) {
+	ctx, endObservation := c.operations.resolveRevision.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+		log.String("versionString", versionString),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	repoName, err := c.repositoryIDToRepo(ctx, repositoryID)
+	if err != nil {
+		return "", err
+	}
+	commitID, err = git.ResolveRevision(ctx, repoName, versionString, git.ResolveRevisionOptions{})
+
+	if err != nil {
+		return "", errors.Wrap(err, "git.ResolveRevision")
+	}
+
+	return commitID, nil
+}
+
 // execGitCommand executes a git command for the given repository by identifier.
 func (c *Client) execGitCommand(ctx context.Context, repositoryID int, args ...string) (string, error) {
 	return c.execResolveRevGitCommand(ctx, repositoryID, "", args...)
@@ -284,10 +307,11 @@ func (c *Client) execResolveRevGitCommand(ctx context.Context, repositoryID int,
 		return string(bytes.TrimSpace(out)), nil
 	}
 
-	if revision != "" {
-		// If we're returning an error, try to resolve revision that was the
-		// target of the command (if any). If the revision fails to resolve,
-		// we return a RevisionNotFoundError error instead of an "exit 128".
+	// If the repo doesn't exist don't bother trying to resolve the commit. Otherwise,
+	// if we're returning an error, try to resolve revision that was the target of the
+	// command (if any). If the revision fails to resolve, we return an instance of a
+	// RevisionNotFoundError error instead of an "exit 128".
+	if revision != "" && !vcs.IsRepoNotExist(err) {
 		if _, err := git.ResolveRevision(ctx, repo, revision, git.ResolveRevisionOptions{}); err != nil {
 			return "", errors.Wrap(err, "git.ResolveRevision")
 		}

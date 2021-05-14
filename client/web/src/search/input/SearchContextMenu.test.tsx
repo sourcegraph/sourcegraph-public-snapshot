@@ -2,9 +2,10 @@ import { mount } from 'enzyme'
 import React, { ChangeEvent } from 'react'
 import { act } from 'react-dom/test-utils'
 import { DropdownItem, DropdownMenu, UncontrolledDropdown } from 'reactstrap'
-import { of } from 'rxjs'
+import { Observable, of, throwError } from 'rxjs'
 import sinon from 'sinon'
 
+import { Scalars, SearchContextsNamespaceFilterType } from '@sourcegraph/shared/src/graphql-operations'
 import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/util/MockIntersectionObserver'
 
@@ -21,6 +22,8 @@ const mockFetchAutoDefinedSearchContexts = () =>
             autoDefined: true,
             description: 'All repositories on Sourcegraph',
             repositories: [],
+            public: true,
+            updatedAt: '2021-03-15T19:39:11Z',
         },
         {
             __typename: 'SearchContext',
@@ -29,17 +32,33 @@ const mockFetchAutoDefinedSearchContexts = () =>
             autoDefined: true,
             description: 'Your repositories on Sourcegraph',
             repositories: [],
+            public: true,
+            updatedAt: '2021-03-15T19:39:11Z',
         },
     ] as ISearchContext[])
 
-const mockFetchSearchContexts = (first: number, query?: string, after?: string) => {
+const mockFetchSearchContexts = ({
+    first,
+    namespaceFilterType,
+    namespace,
+    query,
+    after,
+}: {
+    first: number
+    query?: string
+    namespace?: Scalars['ID']
+    namespaceFilterType?: SearchContextsNamespaceFilterType
+    after?: string
+}) => {
     const nodes = [
         {
             __typename: 'SearchContext',
             id: '3',
             spec: '@username/test-version-1.5',
             autoDefined: false,
+            public: true,
             description: 'Only code in version 1.5',
+            updatedAt: '2021-03-15T19:39:11Z',
             repositories: [],
         },
         {
@@ -47,7 +66,9 @@ const mockFetchSearchContexts = (first: number, query?: string, after?: string) 
             id: '4',
             spec: '@org/test-version-1.6',
             autoDefined: false,
+            public: true,
             description: 'Only code in version 1.6',
+            updatedAt: '2021-03-15T19:39:11Z',
             repositories: [],
         },
     ].filter(context => !query || context.spec.toLowerCase().includes(query.toLowerCase())) as SearchContextFields[]
@@ -234,5 +255,31 @@ describe('SearchContextMenu', () => {
 
         const items = root.find(DropdownItem)
         expect(items.at(items.length - 1).text()).toBe('Error occured while loading search contexts')
+    })
+
+    it('should default to empty array if fetching auto-defined contexts fails', () => {
+        const errorFetchAutoDefinedSearchContexts: () => Observable<ISearchContext[]> = () =>
+            throwError(new Error('unknown error'))
+
+        const root = mount(
+            <UncontrolledDropdown>
+                <DropdownMenu>
+                    <SearchContextMenu
+                        {...defaultProps}
+                        fetchAutoDefinedSearchContexts={errorFetchAutoDefinedSearchContexts()}
+                    />
+                </DropdownMenu>
+            </UncontrolledDropdown>
+        )
+
+        act(() => {
+            // Wait for debounce
+            clock.tick(50)
+        })
+        root.update()
+
+        const items = root.find(DropdownItem)
+        // With no auto-defined contexts, the first context should be a user-defined context
+        expect(items.at(0).text()).toBe('@username/test-version-1.5 Only code in version 1.5')
     })
 })

@@ -364,5 +364,56 @@ func TestUpdateMergeRequest(t *testing.T) {
 			t.Errorf("unexpected non-nil error: %+v", err)
 		}
 	})
+}
 
+func TestCreateMergeRequestNote(t *testing.T) {
+	ctx := context.Background()
+	empty := &MergeRequest{}
+	project := &Project{}
+
+	t.Run("error status code", func(t *testing.T) {
+		client := newTestClient(t)
+		client.httpClient = &mockHTTPEmptyResponse{http.StatusNotFound}
+
+		err := client.CreateMergeRequestNote(ctx, project, empty, "test-comment")
+		if err == nil {
+			t.Error("unexpected nil error")
+		}
+	})
+
+	t.Run("malformed response", func(t *testing.T) {
+		client := newTestClient(t)
+		client.httpClient = &mockHTTPResponseBody{
+			responseBody: `this is not valid JSON`,
+		}
+
+		err := client.CreateMergeRequestNote(ctx, project, empty, "test-comment")
+		if err == nil {
+			t.Error("unexpected nil error")
+		}
+	})
+
+	t.Run("invalid response", func(t *testing.T) {
+		client := newTestClient(t)
+		client.httpClient = &mockHTTPResponseBody{
+			responseBody: `{"id":"the id cannot be a string"}`,
+		}
+
+		err := client.CreateMergeRequestNote(ctx, project, empty, "test-comment")
+		if err == nil {
+			t.Error("unexpected nil error")
+		}
+	})
+
+	t.Run("success", func(t *testing.T) {
+		client := newTestClient(t)
+		client.httpClient = &mockHTTPResponseBody{
+			responseBody: `{"body":"test-comment"}`,
+		}
+
+		err := client.CreateMergeRequestNote(ctx, project, empty, "test-comment")
+		if err != nil {
+			t.Errorf("unexpected non-nil error: %+v", err)
+		}
+	})
 }

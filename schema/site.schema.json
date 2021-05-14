@@ -49,6 +49,11 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "rateLimitAnonymous": {
+          "description": "Configures the hourly rate limits for anonymous calls to the GraphQL API. Setting limit to 0 disables the limiter. This is only relevant if unauthenticated calls to the API are permitted.",
+          "type": "integer",
+          "default": 500
+        },
         "eventLogging": {
           "description": "Enables user event logging inside of the Sourcegraph instance. This will allow admins to have greater visibility of user activity, such as frequently viewed pages, frequent searches, and more. These event logs (and any specific user actions) are only stored locally, and never leave this Sourcegraph instance.",
           "type": "string",
@@ -235,6 +240,12 @@
           "type": "boolean",
           "default": false,
           "!go": { "pointer": false }
+        },
+        "enablePostSignupFlow": {
+          "description": "Enables post sign-up user flow to add code hosts and sync code",
+          "type": "boolean",
+          "default": false,
+          "!go": { "pointer": false }
         }
       },
       "examples": [
@@ -298,7 +309,7 @@
               { "type": "number", "minimum": 0, "maximum": 0 },
               {
                 "type": "string",
-                "pattern": "^(?i)(unlimited|[0-9]+/(sec|secs|second|seconds|min|mins|minute|minutes|hr|hrs|hour|hours))$"
+                "pattern": "^(unlimited|[0-9]+\\/(sec|secs|second|seconds|min|mins|minute|minutes|hr|hrs|hour|hours))$"
               }
             ]
           },
@@ -317,7 +328,7 @@
             "type": "array",
             "items": {
               "type": "string",
-              "pattern": "^(?i)(mon(day)?|tue(s|sday)?|wed(nesday)?|thu(r|rs|rsday)?|fri(day)?|sat(urday)?|sun(day)?)$"
+              "pattern": "^([mM]on(day)?|[tT]ue(s|sday)?|[wW]ed(nesday)?|[tT]hu(r|rs|rsday)?|[fF]ri(day)?|[sS]at(urday)?|[sS]un(day)?)$"
             }
           }
         },
@@ -354,6 +365,12 @@
     },
     "disableAutoGitUpdates": {
       "description": "Disable periodically fetching git contents for existing repositories.",
+      "type": "boolean",
+      "default": false,
+      "group": "External services"
+    },
+    "disableAutoCodeHostSyncs": {
+      "description": "Disable periodic syncs of configured code host connections (repository metadata, permissions, batch changes changesets, etc)",
       "type": "boolean",
       "default": false,
       "group": "External services"
@@ -516,6 +533,11 @@
         { "allow": "none" }
       ],
       "group": "Security"
+    },
+    "authz.enforceForSiteAdmins": {
+      "description": "When true, site admins will only be able to see private code they have access to via our authz system.",
+      "type": "boolean",
+      "default": false
     },
     "externalService.userMode": {
       "description": "Enable to allow users to add external services for public and private repositories to the Sourcegraph instance.",
@@ -965,6 +987,19 @@
       "description": "Configuration for encryption keys used to encrypt data at rest in the database.",
       "type": "object",
       "properties": {
+        "enableCache": {
+          "description": "enable LRU cache for decryption APIs",
+          "type": "boolean",
+          "default": false
+        },
+        "cacheSize": {
+          "description": "number of values to keep in LRU cache",
+          "type": "integer",
+          "default": 2048
+        },
+        "batchChangesCredentialKey": {
+          "$ref": "#/definitions/EncryptionKey"
+        },
         "externalServiceKey": {
           "$ref": "#/definitions/EncryptionKey"
         },
@@ -1429,6 +1464,9 @@
           "const": "cloudkms"
         },
         "keyname": {
+          "type": "string"
+        },
+        "credentialsFile": {
           "type": "string"
         }
       }

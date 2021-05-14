@@ -1,21 +1,12 @@
 @import '../../branded/src/global-styles/colors';
 
 // Bootstrap configuration before Bootstrap is imported
-$border-radius: 2px;
-$border-radius-sm: 1px;
-$border-radius-lg: 4px;
+$border-radius: var(--border-radius);
+$border-radius-sm: var(--border-radius-sm);
+$border-radius-lg: var(--border-radius-lg);
+
 $font-size-base: 0.875rem;
 $line-height-base: (20/14);
-
-// Media breakpoints
-$media-sm: 576px;
-$media-md: 768px;
-$media-lg: 992px;
-$media-xl: 1200px;
-
-$theme-colors-light: (
-    'secondary': $secondary-light,
-);
 
 :root {
     --border-color: rgba(0, 0, 0, 0.125);

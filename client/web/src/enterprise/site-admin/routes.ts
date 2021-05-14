@@ -1,6 +1,7 @@
 import { siteAdminAreaRoutes } from '../../site-admin/routes'
 import { SiteAdminAreaRoute } from '../../site-admin/SiteAdminArea'
 import { lazyComponent } from '../../util/lazyComponent'
+import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
 
 export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
     ...siteAdminAreaRoutes,
@@ -18,6 +19,7 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
             () => import('./dotcom/customers/SiteAdminCustomersPage'),
             'SiteAdminProductCustomersPage'
         ),
+        condition: () => SHOW_BUSINESS_FEATURES,
         exact: true,
     },
     {
@@ -26,6 +28,7 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
             () => import('./dotcom/productSubscriptions/SiteAdminCreateProductSubscriptionPage'),
             'SiteAdminCreateProductSubscriptionPage'
         ),
+        condition: () => SHOW_BUSINESS_FEATURES,
         exact: true,
     },
     {
@@ -34,6 +37,7 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
             () => import('./dotcom/productSubscriptions/SiteAdminProductSubscriptionPage'),
             'SiteAdminProductSubscriptionPage'
         ),
+        condition: () => SHOW_BUSINESS_FEATURES,
         exact: true,
     },
     {
@@ -42,6 +46,7 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
             () => import('./dotcom/productSubscriptions/SiteAdminProductSubscriptionsPage'),
             'SiteAdminProductSubscriptionsPage'
         ),
+        condition: () => SHOW_BUSINESS_FEATURES,
         exact: true,
     },
     {
@@ -50,6 +55,7 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
             () => import('./dotcom/productSubscriptions/SiteAdminProductLicensesPage'),
             'SiteAdminProductLicensesPage'
         ),
+        condition: () => SHOW_BUSINESS_FEATURES,
         exact: true,
     },
     {

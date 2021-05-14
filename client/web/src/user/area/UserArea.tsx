@@ -56,10 +56,6 @@ export const UserAreaGQLFragment = gql`
                 name
             }
         }
-        permissionsInfo @include(if: $siteAdmin) {
-            syncedAt
-            updatedAt
-        }
         tags @include(if: $siteAdmin)
         ...EditUserProfilePage
     }
@@ -221,7 +217,6 @@ export const UserArea: React.FunctionComponent<UserAreaProps> = ({
                                 ({ path, exact, render, condition = () => true }) =>
                                     condition(context) && (
                                         <Route
-                                            // eslint-disable-next-line react/jsx-no-bind
                                             render={routeComponentProps =>
                                                 render({ ...context, ...routeComponentProps })
                                             }

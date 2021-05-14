@@ -2,6 +2,8 @@ import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { Observable, of } from 'rxjs'
 
+import { Scalars, SearchContextsNamespaceFilterType } from '@sourcegraph/shared/src/graphql-operations'
+
 import { WebStory } from '../../components/WebStory'
 import { ListSearchContextsResult } from '../../graphql-operations'
 import { mockFetchAutoDefinedSearchContexts, mockFetchSearchContexts } from '../../searchContexts/testHelpers'
@@ -24,29 +26,20 @@ const { add } = storiesOf('web/search/input/SearchContextMenu', module)
 
 const defaultProps: SearchContextMenuProps = {
     showSearchContextManagement: false,
-    fetchAutoDefinedSearchContexts: of([
-        {
-            __typename: 'SearchContext',
-            id: '1',
-            spec: 'global',
-            autoDefined: true,
-            description: 'All repositories on Sourcegraph',
-            repositories: [],
-        },
-        {
-            __typename: 'SearchContext',
-            id: '2',
-            spec: '@username',
-            autoDefined: true,
-            description: 'Your repositories on Sourcegraph',
-            repositories: [],
-        },
-    ]),
-    fetchSearchContexts: (
-        first: number,
-        query?: string,
+    fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(2),
+    fetchSearchContexts: ({
+        first,
+        namespaceFilterType,
+        namespace,
+        query,
+        after,
+    }: {
+        first: number
+        query?: string
+        namespace?: Scalars['ID']
+        namespaceFilterType?: SearchContextsNamespaceFilterType
         after?: string
-    ): Observable<ListSearchContextsResult['searchContexts']> =>
+    }): Observable<ListSearchContextsResult['searchContexts']> =>
         of({
             nodes: [
                 {
@@ -54,7 +47,9 @@ const defaultProps: SearchContextMenuProps = {
                     id: '3',
                     spec: '@username/test-version-1.5',
                     autoDefined: false,
+                    public: true,
                     description: 'Only code in version 1.5',
+                    updatedAt: '2021-03-15T19:39:11Z',
                     repositories: [],
                 },
             ],

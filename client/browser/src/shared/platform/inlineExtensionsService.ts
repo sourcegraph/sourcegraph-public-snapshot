@@ -3,9 +3,9 @@ import { Subscribable, from } from 'rxjs'
 import { ExecutableExtension } from '@sourcegraph/shared/src/api/extension/activation'
 import { checkOk } from '@sourcegraph/shared/src/backend/fetch'
 import { ExtensionManifest } from '@sourcegraph/shared/src/extensions/extensionManifest'
+import { isFirefox } from '@sourcegraph/shared/src/util/browserDetection'
 
 import { isExtension } from '../context'
-import { isFirefox } from '../util/context'
 
 /**
  * Determine if inline extensions should be loaded.

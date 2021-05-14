@@ -1,5 +1,6 @@
 import { boolean } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
+import classNames from 'classnames'
 import { addHours } from 'date-fns'
 import React from 'react'
 import { of } from 'rxjs'
@@ -12,10 +13,11 @@ import {
 } from '../../../../graphql-operations'
 import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
 
+import gridStyles from './BatchChangeChangesets.module.scss'
 import { ExternalChangesetNode } from './ExternalChangesetNode'
 
 const { add } = storiesOf('web/batches/ExternalChangesetNode', module).addDecorator(story => (
-    <div className="p-3 container web-content batch-change-changesets__grid">{story()}</div>
+    <div className={classNames(gridStyles.batchChangeChangesetsGrid, 'p-3 container web-content')}>{story()}</div>
 ))
 
 add('All states', () => {
@@ -51,7 +53,13 @@ add('All states', () => {
                                         changed: 20,
                                         deleted: 8,
                                     },
-                                    labels: [],
+                                    labels: [
+                                        {
+                                            color: '93ba13',
+                                            description: 'Very awesome description',
+                                            text: 'Some label',
+                                        },
+                                    ],
                                     repository: {
                                         id: 'repoid',
                                         name: 'github.com/sourcegraph/sourcegraph',
@@ -117,7 +125,7 @@ add('Unpublished', () => {
                             changed: 20,
                             deleted: 8,
                         },
-                        labels: [],
+                        labels: [{ color: '93ba13', description: 'Very awesome description', text: 'Some label' }],
                         repository: {
                             id: 'repoid',
                             name: 'github.com/sourcegraph/sourcegraph',
@@ -178,7 +186,7 @@ add('Importing', () => {
                         externalID: '12345',
                         externalURL: null,
                         diffStat: null,
-                        labels: [],
+                        labels: [{ color: '93ba13', description: 'Very awesome description', text: 'Some label' }],
                         repository: {
                             id: 'repoid',
                             name: 'github.com/sourcegraph/sourcegraph',
@@ -232,7 +240,7 @@ add('Importing failed', () => {
                         externalID: '99999',
                         externalURL: null,
                         diffStat: null,
-                        labels: [],
+                        labels: [{ color: '93ba13', description: 'Very awesome description', text: 'Some label' }],
                         repository: {
                             id: 'repoid',
                             name: 'github.com/sourcegraph/sourcegraph',
@@ -276,7 +284,7 @@ add('Sync failed', () => {
                         externalID: '99999',
                         externalURL: null,
                         diffStat: null,
-                        labels: [],
+                        labels: [{ color: '93ba13', description: 'Very awesome description', text: 'Some label' }],
                         repository: {
                             id: 'repoid',
                             name: 'github.com/sourcegraph/sourcegraph',

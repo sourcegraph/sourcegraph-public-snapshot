@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
@@ -310,7 +311,7 @@ func TestExternalAccounts_Encryption(t *testing.T) {
 	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
-	store := ExternalAccounts(db).WithEncryptionKey(testKey{})
+	store := ExternalAccounts(db).WithEncryptionKey(et.TestKey{})
 
 	spec := extsvc.AccountSpec{
 		ServiceType: "xa",

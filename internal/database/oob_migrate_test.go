@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
+	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -27,7 +28,7 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 
 	setupKey := func() func() {
 		keyring.MockDefault(keyring.Ring{
-			ExternalServiceKey: testKey{},
+			ExternalServiceKey: et.TestKey{},
 		})
 
 		return func() {
@@ -40,6 +41,7 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 
 		migrator := NewExternalServiceConfigMigratorWithDB(db)
 		migrator.BatchSize = 2
+		migrator.AllowDecrypt = true
 
 		requireProgressEqual := func(want float64) {
 			t.Helper()
@@ -144,7 +146,7 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 		}
 		defer rows.Close()
 
-		key := testKey{}
+		key := et.TestKey{}
 
 		var i int
 		for rows.Next() {
@@ -184,6 +186,7 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 
 		migrator := NewExternalServiceConfigMigratorWithDB(db)
 		migrator.BatchSize = 10
+		migrator.AllowDecrypt = true
 
 		// Create 10 external services
 		svcs := types.GenerateExternalServices(10, types.MakeExternalServices()...)
@@ -270,6 +273,67 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 			t.Fatal(err)
 		}
 	})
+
+	t.Run("Down/Disabled Decryption", func(t *testing.T) {
+		db := dbtesting.GetDB(t)
+
+		migrator := NewExternalServiceConfigMigratorWithDB(db)
+		migrator.BatchSize = 10
+
+		// Create 10 external services
+		svcs := types.GenerateExternalServices(10, types.MakeExternalServices()...)
+		confGet := func() *conf.Unified {
+			return &conf.Unified{}
+		}
+		for _, svc := range svcs {
+			if err := ExternalServices(db).Create(ctx, confGet, svc); err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		// setup key after storing the services
+		defer setupKey()()
+
+		// migrate the services
+		if err := migrator.Up(ctx); err != nil {
+			t.Fatal(err)
+		}
+
+		// revert the migration
+		if err := migrator.Down(ctx); err != nil {
+			t.Fatal(err)
+		}
+
+		// was the config actually reverted?
+		rows, err := db.Query("SELECT config, encryption_key_id FROM external_services ORDER BY id")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer rows.Close()
+
+		var i int
+		for rows.Next() {
+			var config, keyID string
+
+			err = rows.Scan(&config, &keyID)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if keyID == "" {
+				t.Fatalf("data was decrypted")
+			}
+
+			if config == svcs[i].Config {
+				t.Fatalf("stored config was decrypted")
+			}
+
+			i++
+		}
+		if rows.Err() != nil {
+			t.Fatal(err)
+		}
+	})
 }
 
 // invalidKey is an encryption.Key that just base64 encodes the plaintext,
@@ -300,7 +364,7 @@ func TestExternalAccountsMigrator(t *testing.T) {
 
 	setupKey := func() func() {
 		keyring.MockDefault(keyring.Ring{
-			UserExternalAccountKey: testKey{},
+			UserExternalAccountKey: et.TestKey{},
 		})
 
 		return func() {
@@ -342,6 +406,7 @@ func TestExternalAccountsMigrator(t *testing.T) {
 
 		migrator := NewExternalAccountsMigratorWithDB(db)
 		migrator.BatchSize = 2
+		migrator.AllowDecrypt = true
 
 		requireProgressEqual := func(want float64) {
 			t.Helper()
@@ -430,7 +495,7 @@ func TestExternalAccountsMigrator(t *testing.T) {
 		}
 		defer rows.Close()
 
-		key := &testKey{}
+		key := &et.TestKey{}
 
 		var i int
 		for rows.Next() {
@@ -468,6 +533,7 @@ func TestExternalAccountsMigrator(t *testing.T) {
 
 		migrator := NewExternalAccountsMigratorWithDB(db)
 		migrator.BatchSize = 10
+		migrator.AllowDecrypt = true
 
 		// Create 10 accounts
 		accounts := createAccounts(db, 10)
@@ -535,6 +601,59 @@ func TestExternalAccountsMigrator(t *testing.T) {
 			t.Fatal("migrating the service with an invalid key should fail")
 		}
 		if err.Error() != "invalid encryption round-trip" {
+			t.Fatal(err)
+		}
+	})
+
+	t.Run("Down/Disabled Decryption", func(t *testing.T) {
+		db := dbtesting.GetDB(t)
+
+		migrator := NewExternalAccountsMigratorWithDB(db)
+		migrator.BatchSize = 10
+
+		// Create 10 accounts
+		accounts := createAccounts(db, 10)
+
+		// setup key after storing the accounts
+		defer setupKey()()
+
+		// migrate the accounts
+		if err := migrator.Up(ctx); err != nil {
+			t.Fatal(err)
+		}
+
+		// revert the migration
+		if err := migrator.Down(ctx); err != nil {
+			t.Fatal(err)
+		}
+
+		// was the config actually reverted?
+		rows, err := db.Query("SELECT auth_data, account_data, encryption_key_id FROM user_external_accounts ORDER BY id")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer rows.Close()
+
+		var i int
+		for rows.Next() {
+			var authData, data, keyID string
+
+			err = rows.Scan(&authData, &data, &keyID)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if keyID == "" {
+				t.Fatalf("data was decrypted")
+			}
+
+			if authData == string(*accounts[i].AuthData) {
+				t.Fatalf("stored data was decrypted")
+			}
+
+			i++
+		}
+		if rows.Err() != nil {
 			t.Fatal(err)
 		}
 	})

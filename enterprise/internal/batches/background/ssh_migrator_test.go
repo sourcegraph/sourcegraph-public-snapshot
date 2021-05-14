@@ -8,6 +8,7 @@ import (
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 )
@@ -17,7 +18,9 @@ func TestSSHMigrator(t *testing.T) {
 	db := dbtesting.GetDB(t)
 	user := ct.CreateTestUser(t, db, false)
 
-	cstore := store.New(db)
+	ct.MockRSAKeygen(t)
+
+	cstore := store.New(db, et.TestKey{})
 
 	migrator := &sshMigrator{cstore}
 	progress, err := migrator.Progress(ctx)
@@ -36,6 +39,14 @@ func TestSSHMigrator(t *testing.T) {
 		ExternalServiceID:   "https://github.com/",
 	}, oauth)
 	if err != nil {
+		t.Fatal(err)
+	}
+
+	// By default, UserCredentials().Create() will set the migration flag to
+	// true (since it _is_ true for new records), but since we want to test the
+	// migration, we need to explicitly override it here.
+	credential.SSHMigrationApplied = false
+	if err := cstore.UserCredentials().Update(ctx, credential); err != nil {
 		t.Fatal(err)
 	}
 
@@ -82,7 +93,15 @@ func TestSSHMigrator(t *testing.T) {
 		if have, want := migratedCredential.UserID, credential.UserID; have != want {
 			t.Fatalf("invalid UserID after migration, want=%d have=%d", want, have)
 		}
-		switch c := migratedCredential.Credential.(type) {
+		if !migratedCredential.SSHMigrationApplied {
+			t.Fatalf("invalid migration flag: have=%v want=%v", migratedCredential.SSHMigrationApplied, true)
+		}
+
+		a, err := migratedCredential.Authenticator(ctx)
+		if err != nil {
+			t.Fatalf("unexpected error getting authenticator: %v", err)
+		}
+		switch c := a.(type) {
 		case *auth.OAuthBearerTokenWithSSH:
 			if have, want := c.Token, oauth.Token; have != want {
 				t.Fatalf("invalid token stored in migrated credential, want=%q have=%q", want, have)
@@ -91,7 +110,7 @@ func TestSSHMigrator(t *testing.T) {
 				t.Fatal("ssh keypair is not complete")
 			}
 		default:
-			t.Fatalf("invalid type of migrated credential: %T", migratedCredential.Credential)
+			t.Fatalf("invalid type of migrated credential: %T", a)
 		}
 	}
 
@@ -130,13 +149,21 @@ func TestSSHMigrator(t *testing.T) {
 		if have, want := migratedCredential.UserID, credential.UserID; have != want {
 			t.Fatalf("invalid UserID after down migration, want=%d have=%d", want, have)
 		}
-		switch c := migratedCredential.Credential.(type) {
+		if migratedCredential.SSHMigrationApplied {
+			t.Fatalf("invalid migration flag: have=%v want=%v", migratedCredential.SSHMigrationApplied, false)
+		}
+
+		a, err := migratedCredential.Authenticator(ctx)
+		if err != nil {
+			t.Fatalf("unexpected error getting authenticator: %v", err)
+		}
+		switch c := a.(type) {
 		case *auth.OAuthBearerToken:
 			if have, want := c.Token, oauth.Token; have != want {
 				t.Fatalf("invalid token stored in migrated credential, want=%q have=%q", want, have)
 			}
 		default:
-			t.Fatalf("invalid type of migrated credential: %T", migratedCredential.Credential)
+			t.Fatalf("invalid type of migrated credential: %T", a)
 		}
 	}
 }

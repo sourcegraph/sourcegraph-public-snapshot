@@ -2,13 +2,13 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 
 	"github.com/graph-gophers/graphql-go"
 
+	"github.com/sourcegraph/sourcegraph/lib/batches"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
 )
 
 // TODO(campaigns-deprecation)
@@ -95,7 +95,7 @@ type CampaignsCredentialResolver interface {
 	ID() graphql.ID
 	ExternalServiceKind() string
 	ExternalServiceURL() string
-	SSHPublicKey() *string
+	SSHPublicKey(ctx context.Context) (*string, error)
 	CreatedAt() DateTime
 }
 
@@ -157,11 +157,13 @@ type ChangesetSpecsConnectionArgs struct {
 }
 
 type ChangesetApplyPreviewConnectionArgs struct {
-	First        int32
-	After        *string
-	Search       *string
-	CurrentState *batches.ChangesetState
-	Action       *batches.ReconcilerOperation
+	First  int32
+	After  *string
+	Search *string
+	// CurrentState is a value of type btypes.ChangesetState.
+	CurrentState *string
+	// Action is a value of type btypes.ReconcilerOperation.
+	Action *string
 }
 
 type BatchChangeArgs struct {
@@ -202,6 +204,17 @@ type DetachChangesetsArgs struct {
 	Changesets  []graphql.ID
 }
 
+type ListBatchChangeBulkOperationArgs struct {
+	First int32
+	After *string
+}
+
+type CreateChangesetCommentsArgs struct {
+	BatchChange graphql.ID
+	Changesets  []graphql.ID
+	Body        string
+}
+
 type BatchChangesResolver interface {
 	//
 	// MUTATIONS
@@ -229,27 +242,42 @@ type BatchChangesResolver interface {
 	SyncChangeset(ctx context.Context, args *SyncChangesetArgs) (*EmptyResponse, error)
 	ReenqueueChangeset(ctx context.Context, args *ReenqueueChangesetArgs) (ChangesetResolver, error)
 	DetachChangesets(ctx context.Context, args *DetachChangesetsArgs) (*EmptyResponse, error)
+	CreateChangesetComments(ctx context.Context, args *CreateChangesetCommentsArgs) (BulkOperationResolver, error)
 
 	// Queries
 
 	// TODO(campaigns-deprecation)
 	Campaign(ctx context.Context, args *BatchChangeArgs) (BatchChangeResolver, error)
 	Campaigns(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error)
-	CampaignByID(ctx context.Context, id graphql.ID) (BatchChangeResolver, error)
-	CampaignSpecByID(ctx context.Context, id graphql.ID) (BatchSpecResolver, error)
-	CampaignsCredentialByID(ctx context.Context, id graphql.ID) (CampaignsCredentialResolver, error)
 	CampaignsCodeHosts(ctx context.Context, args *ListCampaignsCodeHostsArgs) (CampaignsCodeHostConnectionResolver, error)
 	// New:
 	BatchChange(ctx context.Context, args *BatchChangeArgs) (BatchChangeResolver, error)
-	BatchChangeByID(ctx context.Context, id graphql.ID) (BatchChangeResolver, error)
 	BatchChanges(cx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error)
-	BatchSpecByID(ctx context.Context, id graphql.ID) (BatchSpecResolver, error)
 
-	ChangesetByID(ctx context.Context, id graphql.ID) (ChangesetResolver, error)
-	ChangesetSpecByID(ctx context.Context, id graphql.ID) (ChangesetSpecResolver, error)
-
-	BatchChangesCredentialByID(ctx context.Context, id graphql.ID) (BatchChangesCredentialResolver, error)
 	BatchChangesCodeHosts(ctx context.Context, args *ListBatchChangesCodeHostsArgs) (BatchChangesCodeHostConnectionResolver, error)
+
+	NodeResolvers() map[string]NodeByIDFunc
+}
+
+type BulkOperationConnectionResolver interface {
+	TotalCount(ctx context.Context) (int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+	Nodes(ctx context.Context) ([]BulkOperationResolver, error)
+}
+
+type BulkOperationResolver interface {
+	ID() graphql.ID
+	Type() (string, error)
+	State() string
+	Progress() float64
+	Errors(ctx context.Context) ([]ChangesetJobErrorResolver, error)
+	CreatedAt() DateTime
+	FinishedAt() *DateTime
+}
+
+type ChangesetJobErrorResolver interface {
+	Changeset() ChangesetResolver
+	Error() *string
 }
 
 type BatchSpecResolver interface {
@@ -302,13 +330,15 @@ type ChangesetApplyPreviewResolver interface {
 }
 
 type VisibleChangesetApplyPreviewResolver interface {
-	Operations(ctx context.Context) ([]batches.ReconcilerOperation, error)
+	// Operations returns a slice of btypes.ReconcilerOperation.
+	Operations(ctx context.Context) ([]string, error)
 	Delta(ctx context.Context) (ChangesetSpecDeltaResolver, error)
 	Targets() VisibleApplyPreviewTargetsResolver
 }
 
 type HiddenChangesetApplyPreviewResolver interface {
-	Operations(ctx context.Context) ([]batches.ReconcilerOperation, error)
+	// Operations returns a slice of btypes.ReconcilerOperation.
+	Operations(ctx context.Context) ([]string, error)
 	Delta(ctx context.Context) (ChangesetSpecDeltaResolver, error)
 	Targets() HiddenApplyPreviewTargetsResolver
 }
@@ -381,7 +411,8 @@ type ChangesetSpecConnectionResolver interface {
 
 type ChangesetSpecResolver interface {
 	ID() graphql.ID
-	Type() batches.ChangesetSpecDescriptionType
+	// Type returns a value of type btypes.ChangesetSpecDescriptionType.
+	Type() string
 	ExpiresAt() *DateTime
 
 	ToHiddenChangesetSpec() (HiddenChangesetSpecResolver, bool)
@@ -463,7 +494,7 @@ type BatchChangesCredentialResolver interface {
 	ID() graphql.ID
 	ExternalServiceKind() string
 	ExternalServiceURL() string
-	SSHPublicKey() *string
+	SSHPublicKey(ctx context.Context) (*string, error)
 	CreatedAt() DateTime
 	IsSiteCredential() bool
 }
@@ -475,14 +506,20 @@ type ChangesetCountsArgs struct {
 }
 
 type ListChangesetsArgs struct {
-	First            int32
-	After            *string
-	PublicationState *batches.ChangesetPublicationState
-	ReconcilerState  *[]batches.ReconcilerState
-	ExternalState    *batches.ChangesetExternalState
-	State            *batches.ChangesetState
-	ReviewState      *batches.ChangesetReviewState
-	CheckState       *batches.ChangesetCheckState
+	First int32
+	After *string
+	// PublicationState is a value of type *btypes.ChangesetPublicationState.
+	PublicationState *string
+	// ReconcilerState is a slice of *btypes.ReconcilerState.
+	ReconcilerState *[]string
+	// ExternalState is a value of type *btypes.ChangesetExternalState.
+	ExternalState *string
+	// State is a value of type *btypes.ChangesetState.
+	State *string
+	// ReviewState is a value of type *btypes.ChangesetReviewState.
+	ReviewState *string
+	// CheckState is a value of type *btypes.ChangesetCheckState.
+	CheckState *string
 	// old
 	OnlyPublishedByThisCampaign *bool
 	//new
@@ -511,6 +548,7 @@ type BatchChangeResolver interface {
 	ClosedAt() *DateTime
 	DiffStat(ctx context.Context) (*DiffStat, error)
 	CurrentSpec(ctx context.Context) (BatchSpecResolver, error)
+	BulkOperations(ctx context.Context, args *ListBatchChangeBulkOperationArgs) (BulkOperationConnectionResolver, error)
 
 	// TODO(campaigns-deprecation): This should be removed once we remove batches.
 	// It's here so that in the NodeResolver we can have the same resolver,
@@ -527,6 +565,7 @@ type BatchChangesConnectionResolver interface {
 type ChangesetsStatsResolver interface {
 	Retrying() int32
 	Failed() int32
+	Scheduled() int32
 	Processing() int32
 	Unpublished() int32
 	Draft() int32
@@ -558,10 +597,14 @@ type ChangesetResolver interface {
 	CreatedAt() DateTime
 	UpdatedAt() DateTime
 	NextSyncAt(ctx context.Context) (*DateTime, error)
-	PublicationState() batches.ChangesetPublicationState
-	ReconcilerState() batches.ReconcilerState
-	ExternalState() *batches.ChangesetExternalState
-	State() (batches.ChangesetState, error)
+	// PublicationState returns a value of type btypes.ChangesetPublicationState.
+	PublicationState() string
+	// ReconcilerState returns a value of type btypes.ReconcilerState.
+	ReconcilerState() string
+	// ExternalState returns a value of type *btypes.ChangesetExternalState.
+	ExternalState() *string
+	// State returns a value of type *btypes.ChangesetState.
+	State() (string, error)
 	BatchChanges(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error)
 
 	ToExternalChangeset() (ExternalChangesetResolver, bool)
@@ -591,8 +634,10 @@ type ExternalChangesetResolver interface {
 	Body(context.Context) (*string, error)
 	Author() (*PersonResolver, error)
 	ExternalURL() (*externallink.Resolver, error)
-	ReviewState(context.Context) *batches.ChangesetReviewState
-	CheckState() *batches.ChangesetCheckState
+	// ReviewState returns a value of type *btypes.ChangesetReviewState.
+	ReviewState(context.Context) *string
+	// CheckState returns a value of type *btypes.ChangesetCheckState.
+	CheckState() *string
 	Repository(ctx context.Context) *RepositoryResolver
 
 	Events(ctx context.Context, args *ChangesetEventsConnectionArgs) (ChangesetEventsConnectionResolver, error)
@@ -602,6 +647,7 @@ type ExternalChangesetResolver interface {
 
 	Error() *string
 	SyncerError() *string
+	ScheduleEstimateAt(ctx context.Context) (*DateTime, error)
 
 	CurrentSpec(ctx context.Context) (VisibleChangesetSpecResolver, error)
 }
@@ -628,162 +674,4 @@ type ChangesetCountsResolver interface {
 	OpenApproved() int32
 	OpenChangesRequested() int32
 	OpenPending() int32
-}
-
-var batchChangesOnlyInEnterprise = errors.New("batch changes are only available in enterprise")
-
-type defaultBatchChangesResolver struct{}
-
-var DefaultBatchChangesResolver BatchChangesResolver = defaultBatchChangesResolver{}
-
-// Mutations
-// TODO(campaigns-deprecation):
-func (defaultBatchChangesResolver) CreateCampaign(ctx context.Context, args *CreateCampaignArgs) (BatchChangeResolver, error) {
-	return nil, batchChangesOnlyInEnterprise
-}
-
-// TODO(campaigns-deprecation):
-func (defaultBatchChangesResolver) CreateCampaignSpec(ctx context.Context, args *CreateCampaignSpecArgs) (BatchSpecResolver, error) {
-	return nil, batchChangesOnlyInEnterprise
-}
-
-// TODO(campaigns-deprecation):
-func (defaultBatchChangesResolver) ApplyCampaign(ctx context.Context, args *ApplyCampaignArgs) (BatchChangeResolver, error) {
-	return nil, batchChangesOnlyInEnterprise
-}
-
-// TODO(campaigns-deprecation):
-func (defaultBatchChangesResolver) CloseCampaign(ctx context.Context, args *CloseCampaignArgs) (BatchChangeResolver, error) {
-	return nil, batchChangesOnlyInEnterprise
-}
-
-// TODO(campaigns-deprecation):
-func (defaultBatchChangesResolver) MoveCampaign(ctx context.Context, args *MoveCampaignArgs) (BatchChangeResolver, error) {
-	return nil, batchChangesOnlyInEnterprise
-}
-
-// TODO(campaigns-deprecation):
-func (defaultBatchChangesResolver) DeleteCampaign(ctx context.Context, args *DeleteCampaignArgs) (*EmptyResponse, error) {
-	return nil, batchChangesOnlyInEnterprise
-}
-
-// TODO(campaigns-deprecation)
-func (defaultBatchChangesResolver) CreateCampaignsCredential(ctx context.Context, args *CreateCampaignsCredentialArgs) (CampaignsCredentialResolver, error) {
-	return nil, batchChangesOnlyInEnterprise
-}
-
-// TODO(campaigns-deprecation)
-func (defaultBatchChangesResolver) DeleteCampaignsCredential(ctx context.Context, args *DeleteCampaignsCredentialArgs) (*EmptyResponse, error) {
-	return nil, batchChangesOnlyInEnterprise
-}
-
-func (defaultBatchChangesResolver) CreateBatchChange(ctx context.Context, args *CreateBatchChangeArgs) (BatchChangeResolver, error) {
-	return nil, batchChangesOnlyInEnterprise
-}
-
-func (defaultBatchChangesResolver) CreateBatchSpec(ctx context.Context, args *CreateBatchSpecArgs) (BatchSpecResolver, error) {
-	return nil, batchChangesOnlyInEnterprise
-}
-
-func (defaultBatchChangesResolver) ApplyBatchChange(ctx context.Context, args *ApplyBatchChangeArgs) (BatchChangeResolver, error) {
-	return nil, batchChangesOnlyInEnterprise
-}
-
-func (defaultBatchChangesResolver) CreateChangesetSpec(ctx context.Context, args *CreateChangesetSpecArgs) (ChangesetSpecResolver, error) {
-	return nil, batchChangesOnlyInEnterprise
-}
-
-func (defaultBatchChangesResolver) CloseBatchChange(ctx context.Context, args *CloseBatchChangeArgs) (BatchChangeResolver, error) {
-	return nil, batchChangesOnlyInEnterprise
-}
-
-func (defaultBatchChangesResolver) MoveBatchChange(ctx context.Context, args *MoveBatchChangeArgs) (BatchChangeResolver, error) {
-	return nil, batchChangesOnlyInEnterprise
-}
-
-func (defaultBatchChangesResolver) DeleteBatchChange(ctx context.Context, args *DeleteBatchChangeArgs) (*EmptyResponse, error) {
-	return nil, batchChangesOnlyInEnterprise
-}
-
-func (defaultBatchChangesResolver) SyncChangeset(ctx context.Context, args *SyncChangesetArgs) (*EmptyResponse, error) {
-	return nil, batchChangesOnlyInEnterprise
-}
-
-func (defaultBatchChangesResolver) ReenqueueChangeset(ctx context.Context, args *ReenqueueChangesetArgs) (ChangesetResolver, error) {
-	return nil, batchChangesOnlyInEnterprise
-}
-
-func (defaultBatchChangesResolver) CreateBatchChangesCredential(ctx context.Context, args *CreateBatchChangesCredentialArgs) (BatchChangesCredentialResolver, error) {
-	return nil, batchChangesOnlyInEnterprise
-}
-
-func (defaultBatchChangesResolver) DeleteBatchChangesCredential(ctx context.Context, args *DeleteBatchChangesCredentialArgs) (*EmptyResponse, error) {
-	return nil, batchChangesOnlyInEnterprise
-}
-
-func (defaultBatchChangesResolver) DetachChangesets(ctx context.Context, args *DetachChangesetsArgs) (*EmptyResponse, error) {
-	return nil, batchChangesOnlyInEnterprise
-}
-
-// Queries
-// TODO(campaigns-deprecation)
-func (defaultBatchChangesResolver) Campaigns(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error) {
-	return nil, batchChangesOnlyInEnterprise
-}
-
-// TODO(campaigns-deprecation)
-func (defaultBatchChangesResolver) Campaign(ctx context.Context, args *BatchChangeArgs) (BatchChangeResolver, error) {
-	return nil, batchChangesOnlyInEnterprise
-}
-
-// TODO(campaigns-deprecation)
-func (defaultBatchChangesResolver) CampaignSpecByID(ctx context.Context, id graphql.ID) (BatchSpecResolver, error) {
-	return nil, batchChangesOnlyInEnterprise
-}
-
-// TODO(campaigns-deprecation)
-func (defaultBatchChangesResolver) CampaignByID(ctx context.Context, id graphql.ID) (BatchChangeResolver, error) {
-	return nil, batchChangesOnlyInEnterprise
-}
-
-// TODO(campaigns-deprecation)
-func (defaultBatchChangesResolver) CampaignsCredentialByID(ctx context.Context, id graphql.ID) (CampaignsCredentialResolver, error) {
-	return nil, batchChangesOnlyInEnterprise
-}
-
-// TODO(campaigns-deprecation)
-func (defaultBatchChangesResolver) CampaignsCodeHosts(ctx context.Context, args *ListCampaignsCodeHostsArgs) (CampaignsCodeHostConnectionResolver, error) {
-	return nil, batchChangesOnlyInEnterprise
-}
-
-func (defaultBatchChangesResolver) BatchChangeByID(ctx context.Context, id graphql.ID) (BatchChangeResolver, error) {
-	return nil, batchChangesOnlyInEnterprise
-}
-
-func (defaultBatchChangesResolver) BatchChange(ctx context.Context, args *BatchChangeArgs) (BatchChangeResolver, error) {
-	return nil, batchChangesOnlyInEnterprise
-}
-
-func (defaultBatchChangesResolver) BatchChanges(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error) {
-	return nil, batchChangesOnlyInEnterprise
-}
-
-func (defaultBatchChangesResolver) BatchSpecByID(ctx context.Context, id graphql.ID) (BatchSpecResolver, error) {
-	return nil, batchChangesOnlyInEnterprise
-}
-
-func (defaultBatchChangesResolver) ChangesetByID(ctx context.Context, id graphql.ID) (ChangesetResolver, error) {
-	return nil, batchChangesOnlyInEnterprise
-}
-
-func (defaultBatchChangesResolver) ChangesetSpecByID(ctx context.Context, id graphql.ID) (ChangesetSpecResolver, error) {
-	return nil, batchChangesOnlyInEnterprise
-}
-
-func (defaultBatchChangesResolver) BatchChangesCredentialByID(ctx context.Context, id graphql.ID) (BatchChangesCredentialResolver, error) {
-	return nil, batchChangesOnlyInEnterprise
-}
-
-func (defaultBatchChangesResolver) BatchChangesCodeHosts(ctx context.Context, args *ListBatchChangesCodeHostsArgs) (BatchChangesCodeHostConnectionResolver, error) {
-	return nil, batchChangesOnlyInEnterprise
 }

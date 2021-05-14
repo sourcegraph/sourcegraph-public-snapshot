@@ -25,39 +25,48 @@ func (sp SelectPath) String() string {
 	return string(sp.Type)
 }
 
-var validSelectors = map[SelectType]map[string]interface{}{
-	Commit:     {},
+type Object map[string]interface{}
+
+var empty = struct{}{}
+
+var validSelectors = map[SelectType]Object{
+	Commit: {
+		"diff": Object{
+			"added":   empty,
+			"removed": empty,
+		},
+	},
 	Content:    {},
 	File:       {},
 	Repository: {},
 	Symbol: {
 		/* cf. SymbolKind https://microsoft.github.io/language-server-protocol/specification */
-		"file":           struct{}{},
-		"module":         struct{}{},
-		"namespace":      struct{}{},
-		"package":        struct{}{},
-		"class":          struct{}{},
-		"method":         struct{}{},
-		"property":       struct{}{},
-		"field":          struct{}{},
-		"constructor":    struct{}{},
-		"enum":           struct{}{},
-		"interface":      struct{}{},
-		"function":       struct{}{},
-		"variable":       struct{}{},
-		"constant":       struct{}{},
-		"string":         struct{}{},
-		"number":         struct{}{},
-		"boolean":        struct{}{},
-		"array":          struct{}{},
-		"object":         struct{}{},
-		"key":            struct{}{},
-		"null":           struct{}{},
-		"enum-member":    struct{}{},
-		"struct":         struct{}{},
-		"event":          struct{}{},
-		"operator":       struct{}{},
-		"type-parameter": struct{}{},
+		"file":           empty,
+		"module":         empty,
+		"namespace":      empty,
+		"package":        empty,
+		"class":          empty,
+		"method":         empty,
+		"property":       empty,
+		"field":          empty,
+		"constructor":    empty,
+		"enum":           empty,
+		"interface":      empty,
+		"function":       empty,
+		"variable":       empty,
+		"constant":       empty,
+		"string":         empty,
+		"number":         empty,
+		"boolean":        empty,
+		"array":          empty,
+		"object":         empty,
+		"key":            empty,
+		"null":           empty,
+		"enum-member":    empty,
+		"struct":         empty,
+		"event":          empty,
+		"operator":       empty,
+		"type-parameter": empty,
 	},
 }
 

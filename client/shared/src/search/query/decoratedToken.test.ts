@@ -1044,6 +1044,34 @@ describe('getMonacoTokens()', () => {
         `)
     })
 
+    test('do not decorate regex syntax when filter value is quoted', () => {
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:"^do-not-attempt$" file:\'.*\'')), true))
+            .toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 23,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 24,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 29,
+                "scopes": "identifier"
+              }
+            ]
+        `)
+    })
+
     test('decorate repo revision syntax, path with wildcard and negation', () => {
         expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:foo@*refs/heads/*:*!refs/heads/release*')), true))
             .toMatchInlineSnapshot(`
@@ -1238,7 +1266,7 @@ describe('getMonacoTokens()', () => {
         `)
     })
 
-    test('highlight recognized predicate', () => {
+    test('highlight recognized predicate with body as regexp', () => {
         expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:contains.file(README.md)')), true))
             .toMatchInlineSnapshot(`
             [
@@ -1267,7 +1295,75 @@ describe('getMonacoTokens()', () => {
                 "scopes": "identifier"
               },
               {
+                "startIndex": 25,
+                "scopes": "metaRegexpCharacterSet"
+              },
+              {
+                "startIndex": 26,
+                "scopes": "identifier"
+              },
+              {
                 "startIndex": 28,
+                "scopes": "metaPredicateParenthesis"
+              }
+            ]
+        `)
+    })
+
+    test('highlight recognized predicate with multiple fields', () => {
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:contains(file:README.md content:^fix$)')), true))
+            .toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "metaPredicateNameAccess"
+              },
+              {
+                "startIndex": 13,
+                "scopes": "metaPredicateParenthesis"
+              },
+              {
+                "startIndex": 14,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 19,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 25,
+                "scopes": "metaRegexpCharacterSet"
+              },
+              {
+                "startIndex": 26,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 28,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 29,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 37,
+                "scopes": "metaRegexpAssertion"
+              },
+              {
+                "startIndex": 38,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 41,
+                "scopes": "metaRegexpAssertion"
+              },
+              {
+                "startIndex": 42,
                 "scopes": "metaPredicateParenthesis"
               }
             ]

@@ -18,7 +18,7 @@
    "Sources": {
     "extsvc:bitbucketcloud:1": {
      "ID": "extsvc:bitbucketcloud:1",
-     "CloneURL": "https://alice:secret@bitbucket.org/sg/go-langserver.git"
+     "CloneURL": "https://jchen@bitbucket.org/sg/go-langserver.git"
     }
    },
    "Metadata": {
@@ -66,7 +66,7 @@
    "Sources": {
     "extsvc:bitbucketcloud:1": {
      "ID": "extsvc:bitbucketcloud:1",
-     "CloneURL": "https://alice:secret@bitbucket.org/sg/python-langserver.git"
+     "CloneURL": "https://jchen@bitbucket.org/sg/python-langserver.git"
     }
    },
    "Metadata": {
@@ -114,7 +114,7 @@
    "Sources": {
     "extsvc:bitbucketcloud:1": {
      "ID": "extsvc:bitbucketcloud:1",
-     "CloneURL": "https://alice:secret@bitbucket.org/sg/python-langserver-fork.git"
+     "CloneURL": "https://jchen@bitbucket.org/sg/python-langserver-fork.git"
     }
    },
    "Metadata": {

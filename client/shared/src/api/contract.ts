@@ -45,6 +45,7 @@ export interface FlatExtensionHostAPI {
     removeWorkspaceRoot: (uri: string) => void
 
     setVersionContext: (versionContext: string | undefined) => void
+    setSearchContext: (searchContext: string | undefined) => void
 
     // Search
     transformSearchQuery: (query: string) => ProxySubscribable<string>
@@ -202,4 +203,9 @@ export interface MainThreadAPI {
         | (((bundleURLs: string[]) => Promise<(string | ErrorLike)[]>) & ProxyMarked)
 
     getEnabledExtensions: () => ProxySubscribable<(ConfiguredExtension | ExecutableExtension)[]>
+
+    /**
+     * Log an event (by sending it to the server).
+     */
+    logEvent: (eventName: string, eventProperties?: any) => void
 }

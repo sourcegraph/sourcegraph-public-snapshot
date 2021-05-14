@@ -17,7 +17,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -294,18 +296,20 @@ func TestExternalServicesStore_Create(t *testing.T) {
 		{
 			name: "without authorization",
 			externalService: &types.ExternalService{
-				Kind:        extsvc.KindGitHub,
-				DisplayName: "GITHUB #1",
-				Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+				Kind:            extsvc.KindGitHub,
+				DisplayName:     "GITHUB #1",
+				Config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+				NamespaceUserID: user.ID,
 			},
-			wantUnrestricted: true,
+			wantUnrestricted: false,
 		},
 		{
 			name: "with authorization",
 			externalService: &types.ExternalService{
-				Kind:        extsvc.KindGitHub,
-				DisplayName: "GITHUB #2",
-				Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
+				Kind:            extsvc.KindGitHub,
+				DisplayName:     "GITHUB #2",
+				Config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
+				NamespaceUserID: user.ID,
 			},
 			wantUnrestricted: false,
 		},
@@ -321,12 +325,13 @@ func TestExternalServicesStore_Create(t *testing.T) {
 	"token": "abc",
 	// "authorization": {}
 }`,
+				NamespaceUserID: user.ID,
 			},
-			wantUnrestricted: true,
+			wantUnrestricted: false,
 		},
 
 		{
-			name: "Cloud: auto-add authorization to user code host connections for GitHub",
+			name: "Cloud: auto-add authorization to code host connections for GitHub",
 			externalService: &types.ExternalService{
 				Kind:            extsvc.KindGitHub,
 				DisplayName:     "GITHUB #4",
@@ -336,7 +341,7 @@ func TestExternalServicesStore_Create(t *testing.T) {
 			wantUnrestricted: false,
 		},
 		{
-			name: "Cloud: auto-add authorization to user code host connections for GitLab",
+			name: "Cloud: auto-add authorization to code host connections for GitLab",
 			externalService: &types.ExternalService{
 				Kind:            extsvc.KindGitLab,
 				DisplayName:     "GITLAB #1",
@@ -366,6 +371,11 @@ func TestExternalServicesStore_Create(t *testing.T) {
 			if test.wantUnrestricted != got.Unrestricted {
 				t.Fatalf("Want unrestricted = %v, but got %v", test.wantUnrestricted, got.Unrestricted)
 			}
+
+			err = ExternalServices(db).Delete(ctx, test.externalService.ID)
+			if err != nil {
+				t.Fatal(err)
+			}
 		})
 	}
 }
@@ -384,9 +394,10 @@ func TestExternalServicesStore_CreateWithTierEnforcement(t *testing.T) {
 		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
 	}
 	store := ExternalServices(db)
-	store.PreCreateExternalService = func(ctx context.Context) error {
+	BeforeCreateExternalService = func(ctx context.Context, db dbutil.DB) error {
 		return errcode.NewPresentationError("test plan limit exceeded")
 	}
+	t.Cleanup(func() { BeforeCreateExternalService = nil })
 	if err := store.Create(ctx, confGet, es); err == nil {
 		t.Fatal("expected an error, got none")
 	}
@@ -399,6 +410,9 @@ func TestExternalServicesStore_Update(t *testing.T) {
 	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
+	envvar.MockSourcegraphDotComMode(true)
+	defer envvar.MockSourcegraphDotComMode(false)
+
 	// Create a new external service
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
@@ -406,7 +420,7 @@ func TestExternalServicesStore_Update(t *testing.T) {
 	es := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GITHUB #1",
-		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
 	}
 	err := ExternalServices(db).Create(ctx, confGet, es)
 	if err != nil {
@@ -417,6 +431,7 @@ func TestExternalServicesStore_Update(t *testing.T) {
 	tests := []struct {
 		name             string
 		update           *ExternalServiceUpdate
+		wantError        bool
 		wantUnrestricted bool
 		wantCloudDefault bool
 	}{
@@ -435,7 +450,8 @@ func TestExternalServicesStore_Update(t *testing.T) {
 				DisplayName: strptr("GITHUB (updated) #2"),
 				Config:      strptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
 			},
-			wantUnrestricted: true,
+			wantError:        true,
+			wantUnrestricted: false,
 			wantCloudDefault: false,
 		},
 		{
@@ -450,7 +466,8 @@ func TestExternalServicesStore_Update(t *testing.T) {
 	// "authorization": {}
 }`),
 			},
-			wantUnrestricted: true,
+			wantError:        true,
+			wantUnrestricted: false,
 			wantCloudDefault: false,
 		},
 		{
@@ -463,18 +480,24 @@ func TestExternalServicesStore_Update(t *testing.T) {
 	"url": "https://github.com",
 	"repositoryQuery": ["none"],
 	"token": "def",
-	// "authorization": {}
+	"authorization": {}
 }`),
 			},
-			wantUnrestricted: true,
+			wantUnrestricted: false,
 			wantCloudDefault: true,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			err = ExternalServices(db).Update(ctx, nil, es.ID, test.update)
-			if err != nil {
+			if err != nil && !test.wantError {
 				t.Fatal(err)
+			} else if err == nil && test.wantError {
+				t.Fatal("Want error but got nil")
+			}
+
+			if err != nil {
+				return // No point to continue if error is expected for update
 			}
 
 			// Get and verify update
@@ -702,7 +725,7 @@ func TestExternalServicesStore_GetByID_Encrypted(t *testing.T) {
 		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
 	}
 
-	store := ExternalServices(db).WithEncryptionKey(testKey{})
+	store := ExternalServices(db).WithEncryptionKey(et.TestKey{})
 
 	err := store.Create(ctx, confGet, es)
 	if err != nil {
@@ -715,7 +738,7 @@ func TestExternalServicesStore_GetByID_Encrypted(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// if the testKey worked, the config should just be a base64 encoded version
+	// if the TestKey worked, the config should just be a base64 encoded version
 	if encrypted.Config != base64.StdEncoding.EncodeToString([]byte(es.Config)) {
 		t.Fatalf("expected base64 encoded config, got %s", encrypted.Config)
 	}
@@ -1323,7 +1346,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 	})
 
 	t.Run("with encryption key", func(t *testing.T) {
-		tx, err := ExternalServices(db).WithEncryptionKey(testKey{}).Transact(ctx)
+		tx, err := ExternalServices(db).WithEncryptionKey(et.TestKey{}).Transact(ctx)
 		if err != nil {
 			t.Fatalf("Transact error: %s", err)
 		}
@@ -1352,7 +1375,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			// if the testKey worked, the config should just be a base64 encoded version
+			// if the TestKey worked, the config should just be a base64 encoded version
 			if encrypted.Config != base64.StdEncoding.EncodeToString([]byte(e.Config)) {
 				t.Fatalf("expected base64 encoded config, got %s", encrypted.Config)
 			}
@@ -1503,23 +1526,4 @@ func TestExternalServicesStore_OneCloudDefaultPerKind(t *testing.T) {
 			t.Fatal("Expected an error")
 		}
 	})
-}
-
-// testKey is an encryption.Key that just base64 encodes the plaintext,
-// to make sure the data is actually transformed, so as to be unreadable
-// by misconfigured Stores, but doesn't do any encryption.
-type testKey struct{}
-
-func (k testKey) Encrypt(ctx context.Context, plaintext []byte) ([]byte, error) {
-	return []byte(base64.StdEncoding.EncodeToString(plaintext)), nil
-}
-
-func (k testKey) Decrypt(ctx context.Context, ciphertext []byte) (*encryption.Secret, error) {
-	decoded, err := base64.StdEncoding.DecodeString(string(ciphertext))
-	s := encryption.NewSecret(string(decoded))
-	return &s, err
-}
-
-func (k testKey) Version(ctx context.Context) (encryption.KeyVersion, error) {
-	return encryption.KeyVersion{Type: "testkey"}, nil
 }

@@ -360,8 +360,9 @@ const (
 	ExternalServiceModeAll      ExternalServiceMode = 2
 )
 
-// ExternalServiceUserMode returns the mode describing if users are allowed to add external services
-// for public and private repositories.
+// ExternalServiceUserMode returns the site level mode describing if users are
+// allowed to add external services for public and private repositories. It does
+// NOT take into account permissions granted to the current user.
 func ExternalServiceUserMode() ExternalServiceMode {
 	switch Get().ExternalServiceUserMode {
 	case "public":

@@ -66,6 +66,7 @@ import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { URLToFileContext } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { isFirefox } from '@sourcegraph/shared/src/util/browserDetection'
 import { asError } from '@sourcegraph/shared/src/util/errors'
 import { asObservable } from '@sourcegraph/shared/src/util/rxjs/asObservable'
 import { isDefined, isInstanceOf, property } from '@sourcegraph/shared/src/util/types'
@@ -90,7 +91,7 @@ import { isExtension, isInPage } from '../../context'
 import { SourcegraphIntegrationURLs, BrowserPlatformContext } from '../../platform/context'
 import { resolveRevision, retryWhenCloneInProgressError } from '../../repo/backend'
 import { EventLogger, ConditionalTelemetryService } from '../../tracking/eventLogger'
-import { isFirefox, observeSourcegraphURL } from '../../util/context'
+import { observeSourcegraphURL } from '../../util/context'
 import { MutationRecordLike, querySelectorOrSelf } from '../../util/dom'
 import { featureFlags } from '../../util/featureFlags'
 import { shouldOverrideSendTelemetry, observeOptionFlag } from '../../util/optionFlags'
@@ -761,7 +762,6 @@ export function handleCodeHost({
                         repoExistsOrError={repoExistsOrError}
                         showSignInButton={showSignInButton}
                         // The bound function is constant
-                        // eslint-disable-next-line react/jsx-no-bind
                         onSignInClose={nextSignInClose}
                         onConfigureSourcegraphClick={isInPage ? undefined : onConfigureSourcegraphClick}
                     />,
@@ -817,7 +817,6 @@ export function handleCodeHost({
                                     extensionsController={extensionsController}
                                     buttonProps={codeViewEvent.toolbarButtonProps}
                                     // The bound function is constant
-                                    // eslint-disable-next-line react/jsx-no-bind
                                     onSignInClose={nextSignInClose}
                                     location={H.createLocation(window.location)}
                                 />,
@@ -1154,7 +1153,6 @@ export function handleCodeHost({
                             location={H.createLocation(window.location)}
                             scope={scopeEditor}
                             // The bound function is constant
-                            // eslint-disable-next-line react/jsx-no-bind
                             onSignInClose={nextSignInClose}
                         />,
                         mount

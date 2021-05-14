@@ -2,12 +2,15 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
@@ -36,7 +39,7 @@ func TestSearch(t *testing.T) {
 				"sgtest/go-diff",
 				"sgtest/appdash",
 				"sgtest/sourcegraph-typescript",
-				"sgtest/private",
+				"sgtest/private",  // Private
 				"sgtest/mux",      // Fork
 				"sgtest/archived", // Archived
 			},
@@ -59,7 +62,7 @@ func TestSearch(t *testing.T) {
 		"github.com/sgtest/go-diff",
 		"github.com/sgtest/appdash",
 		"github.com/sgtest/sourcegraph-typescript",
-		"github.com/sgtest/private",
+		"github.com/sgtest/private",  // Private
 		"github.com/sgtest/mux",      // Fork
 		"github.com/sgtest/archived", // Archived
 	)
@@ -73,6 +76,11 @@ func TestSearch(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	t.Run("search contexts", func(t *testing.T) {
+		testSearchContextsCRUD(t, client)
+		testListingSearchContexts(t, client)
+	})
 
 	t.Run("graphql", func(t *testing.T) {
 		testSearchClient(t, client)
@@ -957,8 +965,8 @@ func testSearchClient(t *testing.T, client searchClient) {
 				counts: counts{Repo: 1},
 			},
 			{
-				name:   `repo contains content default`,
-				query:  `repo:contains(nextFileFirstLine)`,
+				name:   `repo contains content scoped predicate`,
+				query:  `repo:contains.content(nextFileFirstLine)`,
 				counts: counts{Repo: 1},
 			},
 			{
@@ -977,6 +985,11 @@ func testSearchClient(t *testing.T, client searchClient) {
 				counts: counts{Content: 61},
 			},
 			{
+				name:   `repo contains file scoped predicate`,
+				query:  `repo:contains.file(go.mod) count:100 fmt`,
+				counts: counts{Content: 61},
+			},
+			{
 				name:   `repo contains with matching repo filter`,
 				query:  `repo:go-diff repo:contains(file:diff.proto)`,
 				counts: counts{Repo: 1},
@@ -985,6 +998,11 @@ func testSearchClient(t *testing.T, client searchClient) {
 				name:   `repo contains with non-matching repo filter`,
 				query:  `repo:nonexist repo:contains(file:diff.proto)`,
 				counts: counts{Repo: 0},
+			},
+			{
+				`repo contains respects parameters that affect repo search (fork)`,
+				`repo:sgtest/mux fork:yes repo:contains.file(README)`,
+				counts{Repo: 1},
 			},
 			{
 				name:   `commit results without repo filter`,
@@ -1089,11 +1107,26 @@ func testSearchClient(t *testing.T, client searchClient) {
 				query:  `repo:go-diff patterntype:literal type:symbol HunkNoChunksize select:symbol`,
 				counts: counts{Symbol: 1},
 			},
+			{
+				name:   `search diffs with file start anchor`,
+				query:  `repo:go-diff patterntype:literal type:diff file:^README.md$ installing`,
+				counts: counts{Commit: 1},
+			},
+			{
+				name:   `select diffs with added lines containing pattern`,
+				query:  `repo:go-diff patterntype:literal type:diff select:commit.diff.added sample_binary_inline`,
+				counts: counts{Commit: 1},
+			},
+			{
+				name:   `select diffs with removed lines containing pattern`,
+				query:  `repo:go-diff patterntype:literal type:diff select:commit.diff.removed sample_binary_inline`,
+				counts: counts{Commit: 0},
+			},
 		}
 
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
-				if test.name == "or statement merges file" || test.name == "select symbol" {
+				if test.name == "select symbol" {
 					t.Skip("streaming not supported yet")
 				}
 
@@ -1143,11 +1176,37 @@ func testSearchClient(t *testing.T, client searchClient) {
 // which are not replicated in the streaming API (statistics and suggestions).
 func testSearchOther(t *testing.T) {
 	t.Run("Suggestions", func(t *testing.T) {
+		repo1, err := client.Repository("github.com/sgtest/java-langserver")
+		if err != nil {
+			t.Fatal(err)
+		}
+		repo2, err := client.Repository("github.com/sgtest/jsonrpc2")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		scID, err := client.CreateSearchContext(
+			gqltestutil.CreateSearchContextInput{Name: "SuggestionSearchContext", Public: true},
+			[]gqltestutil.SearchContextRepositoryRevisionsInput{
+				{RepositoryID: repo1.ID, Revisions: []string{"HEAD"}},
+				{RepositoryID: repo2.ID, Revisions: []string{"HEAD"}},
+			})
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer func() {
+			err = client.DeleteSearchContext(scID)
+			if err != nil {
+				t.Fatal(err)
+			}
+		}()
+
 		tests := []struct {
 			query           string
 			suggestionCount int
 		}{
 			{query: `repo:sourcegraph-typescript$ type:file file:deploy`, suggestionCount: 11},
+			{query: `context:SuggestionSearchContext repo:`, suggestionCount: 2},
 		}
 
 		for _, test := range tests {
@@ -1200,4 +1259,105 @@ func testSearchOther(t *testing.T) {
 			t.Fatal(err, "lastResult:", lastResult)
 		}
 	})
+}
+
+func testSearchContextsCRUD(t *testing.T, client *gqltestutil.Client) {
+	repo1, err := client.Repository("github.com/sgtest/java-langserver")
+	require.NoError(t, err)
+	repo2, err := client.Repository("github.com/sgtest/jsonrpc2")
+	require.NoError(t, err)
+
+	// Create a search context
+	scName := "TestSearchContext" + strconv.Itoa(int(rand.Int31()))
+	scID, err := client.CreateSearchContext(
+		gqltestutil.CreateSearchContextInput{Name: scName, Description: "test description", Public: true},
+		[]gqltestutil.SearchContextRepositoryRevisionsInput{
+			{RepositoryID: repo1.ID, Revisions: []string{"HEAD"}},
+			{RepositoryID: repo2.ID, Revisions: []string{"HEAD"}},
+		},
+	)
+	require.NoError(t, err)
+	defer client.DeleteSearchContext(scID)
+
+	// Retrieve the search context and check that it has the correct fields
+	resultContext, err := client.GetSearchContext(scID)
+	require.NoError(t, err)
+	require.Equal(t, scName, resultContext.Spec)
+	require.Equal(t, "test description", resultContext.Description)
+
+	// Update the search context
+	updatedSCName := "TestUpdated" + strconv.Itoa(int(rand.Int31()))
+	scID, err = client.UpdateSearchContext(
+		scID,
+		gqltestutil.UpdateSearchContextInput{
+			Name:        updatedSCName,
+			Public:      false,
+			Description: "Updated description",
+		},
+		[]gqltestutil.SearchContextRepositoryRevisionsInput{
+			{RepositoryID: repo1.ID, Revisions: []string{"HEAD"}},
+		},
+	)
+	require.NoError(t, err)
+
+	// Retrieve the search context and check that it has the updated fields
+	resultContext, err = client.GetSearchContext(scID)
+	require.NoError(t, err)
+	require.Equal(t, updatedSCName, resultContext.Spec)
+	require.Equal(t, "Updated description", resultContext.Description)
+
+	// Delete the context
+	err = client.DeleteSearchContext(scID)
+	require.NoError(t, err)
+
+	// Check that retrieving the deleted search context fails
+	_, err = client.GetSearchContext(scID)
+	require.Error(t, err)
+}
+
+func testListingSearchContexts(t *testing.T, client *gqltestutil.Client) {
+	numSearchContexts := 10
+	searchContextIDs := make([]string, 0, numSearchContexts)
+	for i := 0; i < numSearchContexts; i++ {
+		scID, err := client.CreateSearchContext(
+			gqltestutil.CreateSearchContextInput{Name: fmt.Sprintf("SearchContext%d", i), Public: true},
+			[]gqltestutil.SearchContextRepositoryRevisionsInput{},
+		)
+		require.NoError(t, err)
+		searchContextIDs = append(searchContextIDs, scID)
+	}
+	defer func() {
+		for i := 0; i < numSearchContexts; i++ {
+			err := client.DeleteSearchContext(searchContextIDs[i])
+			require.NoError(t, err)
+		}
+	}()
+
+	orderBySpec := gqltestutil.SearchContextsOrderBySpec
+	resultFirstPage, err := client.ListSearchContexts(gqltestutil.ListSearchContextsOptions{
+		First:      5,
+		OrderBy:    &orderBySpec,
+		Descending: true,
+	})
+	require.NoError(t, err)
+	if len(resultFirstPage.Nodes) != 5 {
+		t.Fatalf("expected 5 search contexts, got %d", len(resultFirstPage.Nodes))
+	}
+	if resultFirstPage.Nodes[0].Spec != "SearchContext9" {
+		t.Fatalf("expected first page first search context spec to be SearchContext9, got %s", resultFirstPage.Nodes[0].Spec)
+	}
+
+	resultSecondPage, err := client.ListSearchContexts(gqltestutil.ListSearchContextsOptions{
+		First:      5,
+		After:      resultFirstPage.PageInfo.EndCursor,
+		OrderBy:    &orderBySpec,
+		Descending: true,
+	})
+	require.NoError(t, err)
+	if len(resultSecondPage.Nodes) != 5 {
+		t.Fatalf("expected 5 search contexts, got %d", len(resultSecondPage.Nodes))
+	}
+	if resultSecondPage.Nodes[0].Spec != "SearchContext4" {
+		t.Fatalf("expected second page search context spec to be SearchContext4, got %s", resultSecondPage.Nodes[0].Spec)
+	}
 }

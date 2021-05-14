@@ -2,7 +2,6 @@ import * as H from 'history'
 import * as Monaco from 'monaco-editor'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { BehaviorSubject, concat, NEVER, of } from 'rxjs'
-import { Omit } from 'utility-types'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -15,7 +14,7 @@ import { MonacoEditor } from '../components/MonacoEditor'
 import { PageTitle } from '../components/PageTitle'
 import { SearchPatternType } from '../graphql-operations'
 
-import { search, shouldDisplayPerformanceWarning } from './backend'
+import { fetchSuggestions, search, shouldDisplayPerformanceWarning } from './backend'
 import { addSourcegraphSearchCodeIntelligence } from './input/MonacoQueryInput'
 import { SearchResultsList, SearchResultsListProps } from './results/SearchResultsList'
 
@@ -98,7 +97,7 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
         if (!monacoInstance) {
             return
         }
-        const subscription = addSourcegraphSearchCodeIntelligence(monacoInstance, searchQuery, {
+        const subscription = addSourcegraphSearchCodeIntelligence(monacoInstance, searchQuery, fetchSuggestions, {
             patternType,
             globbing,
             enableSmartQuery: true,

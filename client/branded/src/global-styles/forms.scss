@@ -11,6 +11,11 @@
     --input-group-addon-color: var(--body-color);
     --input-group-addon-bg: var(--color-bg-4);
     --input-group-addon-border-color: var(--color-bg-4);
+    --input-focus-border-color: var(--primary);
+    --input-focus-box-shadow: 0 0 0 2px #{rgba($primary, 0.25)};
+
+    // Checkbox margins
+    --form-check-input-margin-y: 0.2rem;
 }
 
 .theme-light {
@@ -22,6 +27,43 @@
     --input-group-addon-color: var(--body-color);
     --input-group-addon-bg: var(--color-bg-4);
     --input-group-addon-border-color: var(--color-bg-4);
+    --input-focus-border-color: var(--primary);
+    --input-focus-box-shadow: 0 0 0 2px #{rgba($primary, 0.25)};
+
+    // Checkbox margins
+    --form-check-input-margin-y: 0.2rem;
+}
+
+.theme-light.theme-redesign {
+    --input-bg: #{$white};
+    --input-disabled-bg: #{$redesign-gray-04};
+    --input-border-color: #{$redesign-gray-04};
+    --input-color: #{$redesign-gray-09};
+    --input-placeholder-color: #{$redesign-gray-07};
+    --input-group-addon-color: #{$redesign-gray-08};
+    --input-group-addon-bg: #{$redesign-gray-03};
+    --input-group-addon-border-color: #{$redesign-gray-03};
+    --input-focus-border-color: var(--border-active-color);
+    --input-focus-box-shadow: var(--focus-box-shadow);
+
+    // Checkbox margins
+    --form-check-input-margin-y: 0.3rem;
+}
+
+.theme-dark.theme-redesign {
+    --input-bg: #{$redesign-gray-10};
+    --input-disabled-bg: #{$redesign-gray-08};
+    --input-border-color: #{$redesign-gray-08};
+    --input-color: #{$redesign-gray-04};
+    --input-placeholder-color: #{$redesign-gray-05};
+    --input-group-addon-color: #{$redesign-gray-01};
+    --input-group-addon-bg: #{$redesign-gray-08};
+    --input-group-addon-border-color: #{$redesign-gray-08};
+    --input-focus-border-color: var(--border-active-color);
+    --input-focus-box-shadow: var(--focus-box-shadow);
+
+    // Checkbox margins
+    --form-check-input-margin-y: 0.3rem;
 }
 
 // Prevent Firefox's default red outline for inputs
@@ -30,4 +72,99 @@
 }
 :not(output):-moz-ui-invalid:-moz-focusring:not(:focus) {
     box-shadow: none;
+}
+
+// Add an additional feedback class to add context to form controls without requiring a valid state
+.field-message {
+    @extend .valid-feedback;
+    display: block;
+    color: var(--text-muted);
+}
+
+.was-validated :valid.form-control,
+.was-validated :invalid.form-control,
+.is-valid.form-control,
+.is-invalid.form-control,
+.custom-select {
+    // Adjust icon padding
+    background-position: right 0.75rem center;
+
+    &-sm {
+        background-position: right 0.5rem center;
+    }
+}
+
+// Overrides
+.theme-redesign {
+    // Input feedback messages
+    .valid-feedback {
+        color: var(--text-muted);
+    }
+    .invalid-feedback {
+        color: var(--danger);
+    }
+    .form-check-input {
+        ~ .field-message,
+        ~ .valid-feedback,
+        ~ .invalid-feedback {
+            // Adjust spacing for radio/checkboxes
+            margin-top: 0;
+        }
+    }
+
+    // Valid form inputs and selects
+    .was-validated .form-control:valid,
+    .was-validated .custom-select:valid,
+    .form-control.is-valid,
+    .custom-select.is-valid {
+        border-color: var(--success);
+
+        &:focus {
+            @at-root #{selector-append('.theme-light', &)} {
+                box-shadow: 0 0 0 2px var(--success-2);
+            }
+            @at-root #{selector-append('.theme-dark', &)} {
+                box-shadow: 0 0 0 2px var(--success-3);
+            }
+        }
+    }
+
+    // Invalid form inputs and selects
+    .was-validated .form-control:invalid,
+    .was-validated .custom-select:invalid,
+    .form-control.is-invalid,
+    .custom-select.is-invalid {
+        border-color: var(--danger);
+
+        &:focus {
+            @at-root #{selector-append('.theme-light', &)} {
+                box-shadow: 0 0 0 2px var(--danger-2);
+            }
+            @at-root #{selector-append('.theme-dark', &)} {
+                box-shadow: 0 0 0 2px var(--danger-3);
+            }
+        }
+    }
+
+    // Valid Radio/checkbox labels
+    .was-validated .form-check-input:valid,
+    .form-check-input.is-valid {
+        ~ .form-check-label {
+            color: var(--success);
+        }
+    }
+
+    // Invalid Radio/checkbox labels
+    .was-validated .form-check-input:invalid,
+    .form-check-input.is-invalid {
+        ~ .form-check-label {
+            color: var(--danger);
+        }
+    }
+
+    // Remove feedback icon for <select> and <textarea>
+    select.form-control,
+    textarea.form-control {
+        background-image: none;
+    }
 }

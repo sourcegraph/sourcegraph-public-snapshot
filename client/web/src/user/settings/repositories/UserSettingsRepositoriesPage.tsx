@@ -1,3 +1,4 @@
+import { isAfter, parseISO } from 'date-fns'
 import AddIcon from 'mdi-react/AddIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -28,6 +29,7 @@ import {
     ListExternalServiceFields,
 } from '../../../graphql-operations'
 import { listUserRepositories } from '../../../site-admin/backend'
+import { eventLogger } from '../../../tracking/eventLogger'
 
 import { RepositoryNode } from './RepositoryNode'
 
@@ -135,7 +137,6 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                                 let repoCount = 0
 
                                 for (const node of result.nodes) {
-                                    const nextSyncAt = new Date(node.nextSyncAt)
                                     repoCount += node.repoCount
 
                                     // when the service was just added both
@@ -145,8 +146,10 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                                     }
 
                                     // if the next sync is in the future we must not be syncing
-                                    if (now > nextSyncAt) {
-                                        pending = 'pending'
+                                    if (node.nextSyncAt) {
+                                        if (isAfter(now, parseISO(node.nextSyncAt))) {
+                                            pending = 'pending'
+                                        }
                                     }
                                 }
 
@@ -258,6 +261,9 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
         },
         []
     )
+    const logManageRepositoriesClick = useCallback(() => {
+        eventLogger.log('UserSettingsRepositoriesManageRepositoriesClick')
+    }, [])
 
     useEffect(() => {
         telemetryService.logViewEvent('UserSettingsRepositories')
@@ -275,7 +281,11 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
             <PageTitle title="Repositories" />
             <div className="d-flex justify-content-between align-items-center">
                 <h2 className="mb-2">Repositories</h2>
-                <Link className="btn btn-primary" to={`${routingPrefix}/repositories/manage`}>
+                <Link
+                    className="btn btn-primary"
+                    to={`${routingPrefix}/repositories/manage`}
+                    onClick={logManageRepositoriesClick}
+                >
                     {(hasRepos && <>Manage Repositories</>) || (
                         <>
                             <AddIcon className="icon-inline" /> Add repositories

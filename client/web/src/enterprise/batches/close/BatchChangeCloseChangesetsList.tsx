@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import React, { useCallback, useMemo, useEffect } from 'react'
 import { Subject } from 'rxjs'
@@ -27,6 +28,7 @@ import {
 } from '../detail/backend'
 import { getLSPTextDocumentPositionParameters } from '../utils'
 
+import styles from './BatchChangeCloseChangesetsList.module.scss'
 import {
     BatchChangeCloseHeaderWillCloseChangesets,
     BatchChangeCloseHeaderWillKeepChangesets,
@@ -145,6 +147,7 @@ export const BatchChangeCloseChangesetsList: React.FunctionComponent<Props> = ({
             <FilteredConnection<
                 ChangesetFields,
                 Omit<ChangesetCloseNodeProps, 'node'>,
+                {},
                 (BatchChangeChangesetsResult['node'] & { __typename: 'BatchChange' })['changesets']
             >
                 className="mt-2"
@@ -167,7 +170,7 @@ export const BatchChangeCloseChangesetsList: React.FunctionComponent<Props> = ({
                 location={location}
                 useURLQuery={true}
                 listComponent="div"
-                listClassName="batch-change-close-changesets-list__grid mb-3"
+                listClassName={classNames(styles.batchChangeCloseChangesetsListGrid, 'mb-3')}
                 headComponent={
                     willClose ? BatchChangeCloseHeaderWillCloseChangesets : BatchChangeCloseHeaderWillKeepChangesets
                 }

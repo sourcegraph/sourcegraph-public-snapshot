@@ -34,5 +34,17 @@
         height: 1rem;
         border-right: 1px solid var(--border-color);
         margin: 0 0.5rem;
+
+        .theme-redesign & {
+            margin-left: 0;
+
+            &:first-child {
+                display: none;
+            }
+        }
+    }
+
+    .theme-redesign & {
+        padding-left: 0;
     }
 }
