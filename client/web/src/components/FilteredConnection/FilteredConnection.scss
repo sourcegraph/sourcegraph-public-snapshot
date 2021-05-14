@@ -70,11 +70,6 @@ $compact-summary-min-height: 2.75rem;
             min-height: $compact-summary-min-height;
         }
     }
-    &--noncompact &__summary-container {
-        .theme-redesign & {
-            margin-bottom: 1rem;
-        }
-    }
 
     &__summary {
         .theme-redesign & {
