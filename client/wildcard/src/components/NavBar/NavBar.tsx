@@ -124,7 +124,7 @@ export const NavLink: React.FunctionComponent<NavLinkProps> = ({ icon: Icon, chi
 
     if (external) {
         return (
-            <a href={to as string} className={navItemStyles.link}>
+            <a href={to as string} rel="noreferrer noopener" target="_blank" className={navItemStyles.link}>
                 {content}
             </a>
         )

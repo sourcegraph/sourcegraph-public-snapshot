@@ -546,7 +546,42 @@ func TestMarkQueued(t *testing.T) {
 	} else if upload.State != "queued" {
 		t.Errorf("unexpected state. want=%q have=%q", "queued", upload.State)
 	} else if upload.UploadSize == nil || *upload.UploadSize != 300 {
-		t.Errorf("unexpected upload size. want=%v have=%v", 300, upload.UploadSize)
+		if upload.UploadSize == nil {
+			t.Errorf("unexpected upload size. want=%v have=%v", 300, upload.UploadSize)
+		} else {
+			t.Errorf("unexpected upload size. want=%v have=%v", 300, *upload.UploadSize)
+		}
+	}
+}
+
+func TestMarkFailed(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
+
+	insertUploads(t, db, Upload{ID: 1, State: "uploading"})
+
+	failureReason := "didn't like it"
+	if err := store.MarkFailed(context.Background(), 1, failureReason); err != nil {
+		t.Fatalf("unexpected error marking upload as failed: %s", err)
+	}
+
+	if upload, exists, err := store.GetUploadByID(context.Background(), 1); err != nil {
+		t.Fatalf("unexpected error getting upload: %s", err)
+	} else if !exists {
+		t.Fatal("expected record to exist")
+	} else if upload.State != "failed" {
+		t.Errorf("unexpected state. want=%q have=%q", "failed", upload.State)
+	} else if upload.NumFailures != 1 {
+		t.Errorf("unexpected num failures. want=%v have=%v", 1, upload.NumFailures)
+	} else if upload.FailureMessage == nil || *upload.FailureMessage != failureReason {
+		if upload.FailureMessage == nil {
+			t.Errorf("unexpected failure message. want='%s' have='%v'", failureReason, upload.FailureMessage)
+		} else {
+			t.Errorf("unexpected failure message. want='%s' have='%v'", failureReason, *upload.FailureMessage)
+		}
 	}
 }
 

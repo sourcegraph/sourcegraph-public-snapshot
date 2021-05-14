@@ -18,6 +18,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Added `select:commit.diff.added` and `select:commit.diff.removed` for `type:diff` search queries. These selectors return commit diffs only if a pattern matches in `added` (respespectively, `removed`) lines. [#20328](https://github.com/sourcegraph/sourcegraph/pull/20328)
 - Additional language autocompletions for the `lang:` filter in the search bar. [#20535](https://github.com/sourcegraph/sourcegraph/pull/20535)
 - Steps in batch specs can now have an `if:` attribute to enable conditional execution of different steps. [#20701](https://github.com/sourcegraph/sourcegraph/pull/20701)
+- Extensions can now log messages through `sourcegraph.app.log` to aid debugging user issues. [#20474](https://github.com/sourcegraph/sourcegraph/pull/20474)
 
 ### Changed
 
@@ -41,6 +42,12 @@ All notable changes to Sourcegraph are documented in this file.
 ### Removed
 
 -
+
+## 3.27.5
+
+### Fixed
+
+- Fix scp style VCS url parsing. [#20799](https://github.com/sourcegraph/sourcegraph/pull/20799)
 
 ## 3.27.4
 

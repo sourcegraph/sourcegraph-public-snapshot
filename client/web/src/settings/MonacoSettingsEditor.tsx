@@ -1,4 +1,5 @@
 import * as jsonc from '@sqs/jsonc-parser'
+import classNames from 'classnames'
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
 import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
@@ -98,7 +99,7 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
         return (
             <MonacoEditor
                 id={this.props.id}
-                className={this.props.className}
+                className={classNames('monaco-settings-editor', this.props.className)}
                 language={this.props.language || 'json'}
                 height={this.props.height || 400}
                 isLightTheme={this.props.isLightTheme}
@@ -110,7 +111,6 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
                     minimap: { enabled: false },
                     formatOnType: true,
                     formatOnPaste: true,
-                    autoIndent: true,
                     renderIndentGuides: false,
                     glyphMargin: false,
                     folding: false,
@@ -243,8 +243,14 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
                     // TODO: This is buggy. See
                     // https://github.com/sourcegraph/sourcegraph/issues/2756.
                     selection = monaco.Selection.fromPositions(
-                        monacoEdits[0].range.getStartPosition(),
-                        monacoEdits[monacoEdits.length - 1].range.getEndPosition()
+                        {
+                            lineNumber: monacoEdits[0].range.startLineNumber,
+                            column: monacoEdits[0].range.startColumn,
+                        },
+                        {
+                            lineNumber: monacoEdits[monacoEdits.length - 1].range.endLineNumber,
+                            column: monacoEdits[monacoEdits.length - 1].range.endColumn,
+                        }
                     )
                 }
                 editor.executeEdits(id, monacoEdits, [selection])
@@ -260,7 +266,7 @@ function setDiagnosticsOptions(editor: typeof monaco, jsonSchema: any): void {
         allowComments: true,
         schemas: [
             {
-                uri: 'root#', // doesn't matter as long as it doesn't collide
+                uri: 'file:///root',
                 schema: jsonSchema,
                 fileMatch: ['*'],
             },

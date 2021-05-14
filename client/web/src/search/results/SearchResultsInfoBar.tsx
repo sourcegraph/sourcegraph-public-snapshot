@@ -1,6 +1,8 @@
 import classNames from 'classnames'
 import * as H from 'history'
+import ArrowCollapseUpIcon from 'mdi-react/ArrowCollapseUpIcon'
 import ArrowCollapseVerticalIcon from 'mdi-react/ArrowCollapseVerticalIcon'
+import ArrowExpandDownIcon from 'mdi-react/ArrowExpandDownIcon'
 import ArrowExpandVerticalIcon from 'mdi-react/ArrowExpandVerticalIcon'
 import DownloadIcon from 'mdi-react/DownloadIcon'
 import FormatQuoteOpenIcon from 'mdi-react/FormatQuoteOpenIcon'
@@ -172,7 +174,13 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                                     data-tooltip={`${props.allExpanded ? 'Hide' : 'Show'} more matches on all results`}
                                 >
                                     {props.allExpanded ? (
-                                        <ArrowCollapseVerticalIcon className="icon-inline" />
+                                        isRedesignEnabled ? (
+                                            <ArrowCollapseUpIcon className="icon-inline" />
+                                        ) : (
+                                            <ArrowCollapseVerticalIcon className="icon-inline" />
+                                        )
+                                    ) : isRedesignEnabled ? (
+                                        <ArrowExpandDownIcon className="icon-inline" />
                                     ) : (
                                         <ArrowExpandVerticalIcon className="icon-inline" />
                                     )}
