@@ -192,7 +192,10 @@ export class ConnectionNodes<C extends Connection<N>, N, NP = {}, HP = {}> exten
                 )}
                 {!this.props.connectionQuery && summary}
                 {!this.props.loading && !this.props.noShowMore && hasNextPage && (
-                    <ConnectionNodesSummaryShowMore onShowMore={this.props.onShowMore} loading={this.props.loading} />
+                    <ConnectionNodesSummaryShowMore
+                        onShowMore={this.props.onShowMore}
+                        showMoreClassName={this.props.showMoreClassName}
+                    />
                 )}
             </>
         )
