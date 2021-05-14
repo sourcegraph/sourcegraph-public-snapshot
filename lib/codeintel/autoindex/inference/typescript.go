@@ -6,8 +6,7 @@ import (
 	"path/filepath"
 	"regexp"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/config"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
 
 const (
@@ -15,23 +14,9 @@ const (
 	nMuslCommand = "N_NODE_MIRROR=https://unofficial-builds.nodejs.org/download/release n --arch x64-musl auto"
 )
 
-type lsifTscJobRecognizer struct{}
-
-var _ IndexJobRecognizer = lsifTscJobRecognizer{}
-
-type lernaConfig struct {
-	NPMClient string `json:"npmClient"`
-}
-
-type packageJSONEngine struct {
-	Engines *struct {
-		Node *string `json:"node"`
-	} `json:"engines"`
-}
-
-func (r lsifTscJobRecognizer) CanIndexRepo(paths []string, gitserver GitserverClientWrapper) bool {
+func CanIndexTypeScriptRepo(gitclient GitClient, paths []string) bool {
 	for _, path := range paths {
-		if r.canIndexPath(path) {
+		if canIndexTypeScriptPath(path) {
 			return true
 		}
 	}
@@ -39,14 +24,14 @@ func (r lsifTscJobRecognizer) CanIndexRepo(paths []string, gitserver GitserverCl
 	return false
 }
 
-func (r lsifTscJobRecognizer) InferIndexJobs(paths []string, gitserver GitserverClientWrapper) (indexes []config.IndexJob) {
+func InferTypeScriptIndexJobs(gitclient GitClient, paths []string) (indexes []config.IndexJob) {
 	for _, path := range paths {
-		if !r.canIndexPath(path) {
+		if !canIndexTypeScriptPath(path) {
 			continue
 		}
 
 		// check first if anywhere along the ancestor path there is a lerna.json
-		isYarn := checkLernaFile(path, paths, gitserver)
+		isYarn := checkLernaFile(gitclient, path, paths)
 
 		var dockerSteps []config.DockerStep
 
@@ -71,7 +56,7 @@ func (r lsifTscJobRecognizer) InferIndexJobs(paths []string, gitserver Gitserver
 
 		var localSteps []string
 
-		if checkCanDeriveNodeVersion(path, paths, gitserver) {
+		if checkCanDeriveNodeVersion(gitclient, path, paths) {
 			for i, step := range dockerSteps {
 				step.Commands = append([]string{nMuslCommand}, step.Commands...)
 				dockerSteps[i] = step
@@ -97,13 +82,13 @@ func (r lsifTscJobRecognizer) InferIndexJobs(paths []string, gitserver Gitserver
 	return indexes
 }
 
-func checkCanDeriveNodeVersion(path string, paths []string, gitserver GitserverClientWrapper) bool {
+func checkCanDeriveNodeVersion(gitclient GitClient, path string, paths []string) bool {
 	for _, dir := range ancestorDirs(path) {
 		packageJSONPath := filepath.Join(dir, "package.json")
 		nvmrcPath := filepath.Join(dir, ".nvmrc")
 		nodeVersionPath := filepath.Join(dir, ".node-version")
 		nnodeVersionPath := filepath.Join(dir, ".n-node-version")
-		if (contains(paths, packageJSONPath) && hasEnginesField(packageJSONPath, gitserver)) ||
+		if (contains(paths, packageJSONPath) && hasEnginesField(gitclient, packageJSONPath)) ||
 			contains(paths, nvmrcPath) ||
 			contains(paths, nodeVersionPath) ||
 			contains(paths, nnodeVersionPath) {
@@ -113,9 +98,15 @@ func checkCanDeriveNodeVersion(path string, paths []string, gitserver GitserverC
 	return false
 }
 
-func hasEnginesField(packageJSONPath string, gitserver GitserverClientWrapper) (hasField bool) {
+func hasEnginesField(gitclient GitClient, packageJSONPath string) (hasField bool) {
+	type packageJSONEngine struct {
+		Engines *struct {
+			Node *string `json:"node"`
+		} `json:"engines"`
+	}
+
 	packageJSON := &packageJSONEngine{}
-	if b, err := gitserver.RawContents(context.TODO(), packageJSONPath); err == nil {
+	if b, err := gitclient.RawContents(context.TODO(), packageJSONPath); err == nil {
 		if err := json.Unmarshal(b, packageJSON); err == nil {
 			if packageJSON.Engines != nil && packageJSON.Engines.Node != nil {
 				return true
@@ -125,11 +116,15 @@ func hasEnginesField(packageJSONPath string, gitserver GitserverClientWrapper) (
 	return
 }
 
-func checkLernaFile(path string, paths []string, gitserver GitserverClientWrapper) (isYarn bool) {
+func checkLernaFile(gitclient GitClient, path string, paths []string) (isYarn bool) {
+	type lernaConfig struct {
+		NPMClient string `json:"npmClient"`
+	}
+
 	for _, dir := range ancestorDirs(path) {
 		lernaPath := filepath.Join(dir, "lerna.json")
 		if contains(paths, lernaPath) && !isYarn {
-			if b, err := gitserver.RawContents(context.TODO(), lernaPath); err == nil {
+			if b, err := gitclient.RawContents(context.TODO(), lernaPath); err == nil {
 				var c lernaConfig
 				if err := json.Unmarshal(b, &c); err == nil {
 					isYarn = c.NPMClient == "yarn"
@@ -140,7 +135,7 @@ func checkLernaFile(path string, paths []string, gitserver GitserverClientWrappe
 	return
 }
 
-func (lsifTscJobRecognizer) Patterns() []*regexp.Regexp {
+func TypeScriptPatterns() []*regexp.Regexp {
 	return []*regexp.Regexp{
 		suffixPattern("tsconfig.json"),
 		suffixPattern("package.json"),
@@ -152,7 +147,7 @@ func (lsifTscJobRecognizer) Patterns() []*regexp.Regexp {
 	}
 }
 
-func (r lsifTscJobRecognizer) canIndexPath(path string) bool {
+func canIndexTypeScriptPath(path string) bool {
 	// TODO(efritz) - check for javascript files
 	return filepath.Base(path) == "tsconfig.json" && containsNoSegments(path, tscSegmentBlockList...)
 }
@@ -160,11 +155,3 @@ func (r lsifTscJobRecognizer) canIndexPath(path string) bool {
 var tscSegmentBlockList = append([]string{
 	"node_modules",
 }, segmentBlockList...)
-
-func (lsifTscJobRecognizer) EnsurePackageRepo(ctx context.Context, pkg semantic.Package, repoUpdater RepoUpdaterClient, gitserver GitserverClient) (int, string, bool, error) {
-	return 0, "", false, nil
-}
-
-func (r lsifTscJobRecognizer) InferPackageIndexJobs(ctx context.Context, pkg semantic.Package, gitserver GitserverClientWrapper) ([]config.IndexJob, error) {
-	return nil, nil
-}

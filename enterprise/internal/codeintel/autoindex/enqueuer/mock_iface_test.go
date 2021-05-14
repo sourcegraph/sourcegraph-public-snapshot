@@ -11,7 +11,7 @@ import (
 	dbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	semantic "github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	protocol "github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 )
 
 // MockDBStore is a mock implementation of the DBStore interface (from the
@@ -1468,380 +1468,6 @@ func (c DBStoreUpdateIndexableRepositoryFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// MockEnqueuer is a mock implementation of the Enqueuer interface (from the
-// package
-// github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer)
-// used for unit testing.
-type MockEnqueuer struct {
-	// ForceQueueIndexFunc is an instance of a mock function object
-	// controlling the behavior of the method ForceQueueIndex.
-	ForceQueueIndexFunc *EnqueuerForceQueueIndexFunc
-	// QueueIndexFunc is an instance of a mock function object controlling
-	// the behavior of the method QueueIndex.
-	QueueIndexFunc *EnqueuerQueueIndexFunc
-	// QueueIndexesForPackagesFunc is an instance of a mock function object
-	// controlling the behavior of the method QueueIndexesForPackages.
-	QueueIndexesForPackagesFunc *EnqueuerQueueIndexesForPackagesFunc
-}
-
-// NewMockEnqueuer creates a new mock of the Enqueuer interface. All methods
-// return zero values for all results, unless overwritten.
-func NewMockEnqueuer() *MockEnqueuer {
-	return &MockEnqueuer{
-		ForceQueueIndexFunc: &EnqueuerForceQueueIndexFunc{
-			defaultHook: func(context.Context, int) error {
-				return nil
-			},
-		},
-		QueueIndexFunc: &EnqueuerQueueIndexFunc{
-			defaultHook: func(context.Context, int) error {
-				return nil
-			},
-		},
-		QueueIndexesForPackagesFunc: &EnqueuerQueueIndexesForPackagesFunc{
-			defaultHook: func(context.Context, []semantic.PackageReference) error {
-				return nil
-			},
-		},
-	}
-}
-
-// NewMockEnqueuerFrom creates a new mock of the MockEnqueuer interface. All
-// methods delegate to the given implementation, unless overwritten.
-func NewMockEnqueuerFrom(i Enqueuer) *MockEnqueuer {
-	return &MockEnqueuer{
-		ForceQueueIndexFunc: &EnqueuerForceQueueIndexFunc{
-			defaultHook: i.ForceQueueIndex,
-		},
-		QueueIndexFunc: &EnqueuerQueueIndexFunc{
-			defaultHook: i.QueueIndex,
-		},
-		QueueIndexesForPackagesFunc: &EnqueuerQueueIndexesForPackagesFunc{
-			defaultHook: i.QueueIndexesForPackages,
-		},
-	}
-}
-
-// EnqueuerForceQueueIndexFunc describes the behavior when the
-// ForceQueueIndex method of the parent MockEnqueuer instance is invoked.
-type EnqueuerForceQueueIndexFunc struct {
-	defaultHook func(context.Context, int) error
-	hooks       []func(context.Context, int) error
-	history     []EnqueuerForceQueueIndexFuncCall
-	mutex       sync.Mutex
-}
-
-// ForceQueueIndex delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockEnqueuer) ForceQueueIndex(v0 context.Context, v1 int) error {
-	r0 := m.ForceQueueIndexFunc.nextHook()(v0, v1)
-	m.ForceQueueIndexFunc.appendCall(EnqueuerForceQueueIndexFuncCall{v0, v1, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the ForceQueueIndex
-// method of the parent MockEnqueuer instance is invoked and the hook queue
-// is empty.
-func (f *EnqueuerForceQueueIndexFunc) SetDefaultHook(hook func(context.Context, int) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// ForceQueueIndex method of the parent MockEnqueuer instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *EnqueuerForceQueueIndexFunc) PushHook(hook func(context.Context, int) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
-func (f *EnqueuerForceQueueIndexFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
-func (f *EnqueuerForceQueueIndexFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int) error {
-		return r0
-	})
-}
-
-func (f *EnqueuerForceQueueIndexFunc) nextHook() func(context.Context, int) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *EnqueuerForceQueueIndexFunc) appendCall(r0 EnqueuerForceQueueIndexFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of EnqueuerForceQueueIndexFuncCall objects
-// describing the invocations of this function.
-func (f *EnqueuerForceQueueIndexFunc) History() []EnqueuerForceQueueIndexFuncCall {
-	f.mutex.Lock()
-	history := make([]EnqueuerForceQueueIndexFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// EnqueuerForceQueueIndexFuncCall is an object that describes an invocation
-// of method ForceQueueIndex on an instance of MockEnqueuer.
-type EnqueuerForceQueueIndexFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c EnqueuerForceQueueIndexFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c EnqueuerForceQueueIndexFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// EnqueuerQueueIndexFunc describes the behavior when the QueueIndex method
-// of the parent MockEnqueuer instance is invoked.
-type EnqueuerQueueIndexFunc struct {
-	defaultHook func(context.Context, int) error
-	hooks       []func(context.Context, int) error
-	history     []EnqueuerQueueIndexFuncCall
-	mutex       sync.Mutex
-}
-
-// QueueIndex delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockEnqueuer) QueueIndex(v0 context.Context, v1 int) error {
-	r0 := m.QueueIndexFunc.nextHook()(v0, v1)
-	m.QueueIndexFunc.appendCall(EnqueuerQueueIndexFuncCall{v0, v1, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the QueueIndex method of
-// the parent MockEnqueuer instance is invoked and the hook queue is empty.
-func (f *EnqueuerQueueIndexFunc) SetDefaultHook(hook func(context.Context, int) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// QueueIndex method of the parent MockEnqueuer instance invokes the hook at
-// the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *EnqueuerQueueIndexFunc) PushHook(hook func(context.Context, int) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
-func (f *EnqueuerQueueIndexFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
-func (f *EnqueuerQueueIndexFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int) error {
-		return r0
-	})
-}
-
-func (f *EnqueuerQueueIndexFunc) nextHook() func(context.Context, int) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *EnqueuerQueueIndexFunc) appendCall(r0 EnqueuerQueueIndexFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of EnqueuerQueueIndexFuncCall objects
-// describing the invocations of this function.
-func (f *EnqueuerQueueIndexFunc) History() []EnqueuerQueueIndexFuncCall {
-	f.mutex.Lock()
-	history := make([]EnqueuerQueueIndexFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// EnqueuerQueueIndexFuncCall is an object that describes an invocation of
-// method QueueIndex on an instance of MockEnqueuer.
-type EnqueuerQueueIndexFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c EnqueuerQueueIndexFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c EnqueuerQueueIndexFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// EnqueuerQueueIndexesForPackagesFunc describes the behavior when the
-// QueueIndexesForPackages method of the parent MockEnqueuer instance is
-// invoked.
-type EnqueuerQueueIndexesForPackagesFunc struct {
-	defaultHook func(context.Context, []semantic.PackageReference) error
-	hooks       []func(context.Context, []semantic.PackageReference) error
-	history     []EnqueuerQueueIndexesForPackagesFuncCall
-	mutex       sync.Mutex
-}
-
-// QueueIndexesForPackages delegates to the next hook function in the queue
-// and stores the parameter and result values of this invocation.
-func (m *MockEnqueuer) QueueIndexesForPackages(v0 context.Context, v1 []semantic.PackageReference) error {
-	r0 := m.QueueIndexesForPackagesFunc.nextHook()(v0, v1)
-	m.QueueIndexesForPackagesFunc.appendCall(EnqueuerQueueIndexesForPackagesFuncCall{v0, v1, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the
-// QueueIndexesForPackages method of the parent MockEnqueuer instance is
-// invoked and the hook queue is empty.
-func (f *EnqueuerQueueIndexesForPackagesFunc) SetDefaultHook(hook func(context.Context, []semantic.PackageReference) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// QueueIndexesForPackages method of the parent MockEnqueuer instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *EnqueuerQueueIndexesForPackagesFunc) PushHook(hook func(context.Context, []semantic.PackageReference) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
-func (f *EnqueuerQueueIndexesForPackagesFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, []semantic.PackageReference) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
-func (f *EnqueuerQueueIndexesForPackagesFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, []semantic.PackageReference) error {
-		return r0
-	})
-}
-
-func (f *EnqueuerQueueIndexesForPackagesFunc) nextHook() func(context.Context, []semantic.PackageReference) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *EnqueuerQueueIndexesForPackagesFunc) appendCall(r0 EnqueuerQueueIndexesForPackagesFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of EnqueuerQueueIndexesForPackagesFuncCall
-// objects describing the invocations of this function.
-func (f *EnqueuerQueueIndexesForPackagesFunc) History() []EnqueuerQueueIndexesForPackagesFuncCall {
-	f.mutex.Lock()
-	history := make([]EnqueuerQueueIndexesForPackagesFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// EnqueuerQueueIndexesForPackagesFuncCall is an object that describes an
-// invocation of method QueueIndexesForPackages on an instance of
-// MockEnqueuer.
-type EnqueuerQueueIndexesForPackagesFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 []semantic.PackageReference
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c EnqueuerQueueIndexesForPackagesFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c EnqueuerQueueIndexesForPackagesFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
 // MockGitserverClient is a mock implementation of the GitserverClient
 // interface (from the package
 // github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer)
@@ -2485,5 +2111,151 @@ func (c GitserverClientResolveRevisionFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverClientResolveRevisionFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// MockRepoUpdaterClient is a mock implementation of the RepoUpdaterClient
+// interface (from the package
+// github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer)
+// used for unit testing.
+type MockRepoUpdaterClient struct {
+	// EnqueueRepoUpdateFunc is an instance of a mock function object
+	// controlling the behavior of the method EnqueueRepoUpdate.
+	EnqueueRepoUpdateFunc *RepoUpdaterClientEnqueueRepoUpdateFunc
+}
+
+// NewMockRepoUpdaterClient creates a new mock of the RepoUpdaterClient
+// interface. All methods return zero values for all results, unless
+// overwritten.
+func NewMockRepoUpdaterClient() *MockRepoUpdaterClient {
+	return &MockRepoUpdaterClient{
+		EnqueueRepoUpdateFunc: &RepoUpdaterClientEnqueueRepoUpdateFunc{
+			defaultHook: func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error) {
+				return nil, nil
+			},
+		},
+	}
+}
+
+// NewMockRepoUpdaterClientFrom creates a new mock of the
+// MockRepoUpdaterClient interface. All methods delegate to the given
+// implementation, unless overwritten.
+func NewMockRepoUpdaterClientFrom(i RepoUpdaterClient) *MockRepoUpdaterClient {
+	return &MockRepoUpdaterClient{
+		EnqueueRepoUpdateFunc: &RepoUpdaterClientEnqueueRepoUpdateFunc{
+			defaultHook: i.EnqueueRepoUpdate,
+		},
+	}
+}
+
+// RepoUpdaterClientEnqueueRepoUpdateFunc describes the behavior when the
+// EnqueueRepoUpdate method of the parent MockRepoUpdaterClient instance is
+// invoked.
+type RepoUpdaterClientEnqueueRepoUpdateFunc struct {
+	defaultHook func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error)
+	hooks       []func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error)
+	history     []RepoUpdaterClientEnqueueRepoUpdateFuncCall
+	mutex       sync.Mutex
+}
+
+// EnqueueRepoUpdate delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockRepoUpdaterClient) EnqueueRepoUpdate(v0 context.Context, v1 api.RepoName) (*protocol.RepoUpdateResponse, error) {
+	r0, r1 := m.EnqueueRepoUpdateFunc.nextHook()(v0, v1)
+	m.EnqueueRepoUpdateFunc.appendCall(RepoUpdaterClientEnqueueRepoUpdateFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the EnqueueRepoUpdate
+// method of the parent MockRepoUpdaterClient instance is invoked and the
+// hook queue is empty.
+func (f *RepoUpdaterClientEnqueueRepoUpdateFunc) SetDefaultHook(hook func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// EnqueueRepoUpdate method of the parent MockRepoUpdaterClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *RepoUpdaterClientEnqueueRepoUpdateFunc) PushHook(hook func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *RepoUpdaterClientEnqueueRepoUpdateFunc) SetDefaultReturn(r0 *protocol.RepoUpdateResponse, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *RepoUpdaterClientEnqueueRepoUpdateFunc) PushReturn(r0 *protocol.RepoUpdateResponse, r1 error) {
+	f.PushHook(func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error) {
+		return r0, r1
+	})
+}
+
+func (f *RepoUpdaterClientEnqueueRepoUpdateFunc) nextHook() func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RepoUpdaterClientEnqueueRepoUpdateFunc) appendCall(r0 RepoUpdaterClientEnqueueRepoUpdateFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of RepoUpdaterClientEnqueueRepoUpdateFuncCall
+// objects describing the invocations of this function.
+func (f *RepoUpdaterClientEnqueueRepoUpdateFunc) History() []RepoUpdaterClientEnqueueRepoUpdateFuncCall {
+	f.mutex.Lock()
+	history := make([]RepoUpdaterClientEnqueueRepoUpdateFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RepoUpdaterClientEnqueueRepoUpdateFuncCall is an object that describes an
+// invocation of method EnqueueRepoUpdate on an instance of
+// MockRepoUpdaterClient.
+type RepoUpdaterClientEnqueueRepoUpdateFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *protocol.RepoUpdateResponse
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RepoUpdaterClientEnqueueRepoUpdateFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RepoUpdaterClientEnqueueRepoUpdateFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
