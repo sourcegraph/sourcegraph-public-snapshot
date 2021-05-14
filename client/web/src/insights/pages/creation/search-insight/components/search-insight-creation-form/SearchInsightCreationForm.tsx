@@ -81,6 +81,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                 required={true}
                 description="Create a list of repositories to run your search over. Separate them with commas."
                 placeholder="Add or search for repositories"
+                loading={repositories.meta.validState === 'CHECKING'}
                 valid={repositories.meta.touched && repositories.meta.validState === 'VALID'}
                 error={repositories.meta.touched && repositories.meta.error}
                 {...repositories.input}

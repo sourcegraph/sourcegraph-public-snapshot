@@ -5,6 +5,7 @@ import { noop } from 'rxjs'
 export const FORM_ERROR = 'useForm/submissionErrors'
 
 export type SubmissionErrors = Record<string, any> | undefined
+export type ValidationResult = string | undefined | void
 
 interface UseFormProps<FormValues extends object> {
     /**
