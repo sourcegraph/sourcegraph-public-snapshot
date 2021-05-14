@@ -10,7 +10,6 @@ Common use cases include:
 - Adding a `team/team-name` label, and then track progress of a batch change by team or organisation
 - Adding a `build-tool/version` label, and then track progress of a batch change by build tool version<Demo video>
 
-< demo video >
 ## Adding labels
 
 ### Manually
