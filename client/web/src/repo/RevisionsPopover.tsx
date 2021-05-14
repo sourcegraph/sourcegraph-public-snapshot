@@ -13,6 +13,7 @@ import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
+import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { requestGraphQL } from '../backend/graphql'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../components/FilteredConnection'
@@ -28,7 +29,6 @@ import { eventLogger } from '../tracking/eventLogger'
 import { replaceRevisionInURL } from '../util/url'
 
 import { GitReferenceNode, queryGitReferences } from './GitReference'
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 const fetchRepositoryCommits = memoizeObservable(
     (
@@ -243,7 +243,7 @@ export const RevisionsPopover: React.FunctionComponent<Props> = props => {
         autoFocus: true,
         history: props.history,
         location: props.location,
-        noSummaryIfAllNodesVisible: isRedesignEnabled ? false : true,
+        noSummaryIfAllNodesVisible: !isRedesignEnabled,
         useURLQuery: false,
     }
 
