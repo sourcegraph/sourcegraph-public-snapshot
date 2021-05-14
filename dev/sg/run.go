@@ -382,3 +382,41 @@ func runTest(ctx context.Context, cmd Command, args []string) error {
 
 	return c.Run()
 }
+
+func runChecks(ctx context.Context, checks map[string]Check) error {
+	root, err := root.RepositoryRoot()
+	if err != nil {
+		return err
+	}
+
+	for _, check := range checks {
+		commandCtx, cancel := context.WithCancel(ctx)
+		defer cancel()
+
+		c := exec.CommandContext(commandCtx, "bash", "-c", check.Cmd)
+		c.Dir = root
+		c.Env = makeEnv(conf.Env)
+
+		p := out.Pending(output.Linef(output.EmojiLightbulb, output.StylePending, "Running check %q...", check.Name))
+
+		if cmdOut, err := c.CombinedOutput(); err != nil {
+			p.Complete(output.Linef(output.EmojiFailure, output.StyleWarning, "Check %q failed: %s", check.Name, err))
+
+			out.WriteLine(output.Linef("", output.StyleWarning, "%s", check.FailMessage))
+			if len(cmdOut) != 0 {
+				out.WriteLine(output.Linef("", output.StyleWarning, "Check produced the following output:"))
+				separator := strings.Repeat("-", 80)
+				line := output.Linef(
+					"", output.StyleWarning,
+					"%s\n%s%s%s%s%s",
+					separator, output.StyleReset, cmdOut, output.StyleWarning, separator, output.StyleReset,
+				)
+				out.WriteLine(line)
+			}
+		} else {
+			p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Check %q success!", check.Name))
+		}
+	}
+
+	return nil
+}

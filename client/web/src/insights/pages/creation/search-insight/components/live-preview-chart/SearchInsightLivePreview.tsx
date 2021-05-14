@@ -90,7 +90,7 @@ export const SearchInsightLivePreview: React.FunctionComponent<SearchInsightLive
             <button
                 type="button"
                 disabled={disabled}
-                className={classnames('btn btn-light', styles.livePreviewUpdateButton)}
+                className={classnames('btn btn-secondary', styles.livePreviewUpdateButton)}
                 onClick={() => setLastPreviewVersion(version => version + 1)}
             >
                 Update live preview

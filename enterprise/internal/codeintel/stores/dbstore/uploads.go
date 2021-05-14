@@ -82,7 +82,7 @@ func scanUploads(rows *sql.Rows, queryErr error) (_ []Upload, err error) {
 			return nil, err
 		}
 
-		var uploadedParts = []int{}
+		uploadedParts := make([]int, 0, len(rawUploadedParts))
 		for _, uploadedPart := range rawUploadedParts {
 			uploadedParts = append(uploadedParts, int(uploadedPart.Int32))
 		}
@@ -429,6 +429,29 @@ func (s *Store) MarkQueued(ctx context.Context, id int, uploadSize *int64) (err 
 const markQueuedQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:MarkQueued
 UPDATE lsif_uploads SET state = 'queued', upload_size = %s WHERE id = %s
+`
+
+// MarkFailed updates the state of the upload to failed, increments the num_failures column and sets the finished_at time
+func (s *Store) MarkFailed(ctx context.Context, id int, reason string) (err error) {
+	ctx, endObservation := s.operations.markFailed.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("id", id),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	return s.Store.Exec(ctx, sqlf.Sprintf(markFailedQuery, reason, id))
+}
+
+const markFailedQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:MarkFailed
+UPDATE
+	lsif_uploads
+SET
+	state = 'failed',
+	finished_at = clock_timestamp(),
+	failure_message = %s,
+	num_failures = num_failures + 1
+WHERE
+	id = %s
 `
 
 var uploadColumnsWithNullRank = []*sqlf.Query{

@@ -4154,13 +4154,17 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                      
                   </small>
                 </p>
-                <button
-                  className="btn btn-secondary btn-sm filtered-connection__show-more"
-                  onClick={[Function]}
-                  type="button"
+                <ConnectionNodesSummaryShowMore
+                  onShowMore={[Function]}
                 >
-                  Show more
-                </button>
+                  <button
+                    className="btn btn-sm filtered-connection__show-more btn-secondary"
+                    onClick={[Function]}
+                    type="button"
+                  >
+                    Show more
+                  </button>
+                </ConnectionNodesSummaryShowMore>
               </ConnectionNodes>
             </div>
           </FilteredConnection>

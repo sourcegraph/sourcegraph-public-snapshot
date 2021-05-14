@@ -32,7 +32,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
     const nonCriticalTelemetryDisabled = window.context.site.disableNonCriticalTelemetry === true
     const updatesDisabled = window.context.site['update.channel'] !== 'release'
 
-    const options: Monaco.editor.IEditorOptions = {
+    const options: Monaco.editor.IStandaloneEditorConstructionOptions = {
         readOnly: true,
         minimap: {
             enabled: false,

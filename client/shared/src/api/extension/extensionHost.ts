@@ -3,18 +3,16 @@ import { isMatch } from 'lodash'
 import { Subscription, Unsubscribable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 
-import { Location, MarkupKind, Position, Range, Selection } from '@sourcegraph/extension-api-classes'
-
 import { EndpointPair } from '../../platform/context'
 import { SettingsCascade } from '../../settings/settings'
 import { ClientAPI } from '../client/api/api'
 import { registerComlinkTransferHandlers } from '../util'
 
-import { activateExtensions } from './activation'
+import { activateExtensions, replaceAPIRequire } from './activation'
 import { ExtensionHostAPI, ExtensionHostAPIFactory } from './api/api'
-import { DocumentHighlightKind } from './api/documentHighlights'
-import { createExtensionAPI } from './extensionApi'
-import { createExtensionHostAPI, NotificationType } from './extensionHostApi'
+import { setActiveLoggers } from './api/logging'
+import { createExtensionAPIFactory } from './extensionApi'
+import { createExtensionHostAPI } from './extensionHostApi'
 import { createExtensionHostState, ExtensionHostState } from './extensionHostState'
 
 /**
@@ -92,15 +90,8 @@ function initializeExtensionHost(
     )
     subscription.add(apiSubscription)
 
-    // Make `import 'sourcegraph'` or `require('sourcegraph')` return the extension API.
-    globalThis.require = ((modulePath: string): any => {
-        if (modulePath === 'sourcegraph') {
-            return extensionAPI
-        }
-        // All other requires/imports in the extension's code should not reach here because their JS
-        // bundler should have resolved them locally.
-        throw new Error(`require: module not found: ${modulePath}`)
-    }) as any
+    // Make `import 'sourcegraph'` or `require('sourcegraph')` return the default extension API (for testing).
+    replaceAPIRequire(extensionAPI)
     subscription.add(() => {
         globalThis.require = (() => {
             // Prevent callers from attempting to access the extension API after it was
@@ -125,22 +116,18 @@ function createExtensionAndExtensionHostAPIs(
     /** Proxy to main thread */
     const proxy = comlink.wrap<ClientAPI>(endpoints.proxy)
 
-    // For debugging/tests.
-    const sync = async (): Promise<void> => {
-        await proxy.ping()
-    }
-
     // Create extension host state
     const extensionHostState = createExtensionHostState(initData, proxy)
     // Create extension host API
     const extensionHostAPINew = createExtensionHostAPI(extensionHostState)
-    // Create extension API
-    const { configuration, workspace, commands, search, languages, graphQL, content, app } = createExtensionAPI(
-        extensionHostState,
-        proxy
-    )
-    // Activate extensions
-    subscription.add(activateExtensions(extensionHostState, proxy))
+    // Create extension API factory
+    const createExtensionAPI = createExtensionAPIFactory(extensionHostState, proxy, initData)
+
+    // Activate extensions. Create extension APIs on extension activation.
+    subscription.add(activateExtensions(extensionHostState, proxy, createExtensionAPI))
+
+    // Observe settings and update active loggers state
+    subscription.add(setActiveLoggers(extensionHostState))
 
     // Expose the extension host API to the client (main thread)
     const extensionHostAPI: ExtensionHostAPI = {
@@ -150,45 +137,8 @@ function createExtensionAndExtensionHostAPIs(
         ...extensionHostAPINew,
     }
 
-    // Expose the extension API to extensions
-    // "redefines" everything instead of exposing internal Ext* classes directly so as to:
-    // - Avoid exposing private methods to extensions
-    // - Avoid exposing proxy.* to extensions, which gives access to the main thread
-    const extensionAPI: typeof sourcegraph & {
-        // Backcompat definitions that were removed from sourcegraph.d.ts but are still defined (as
-        // noops with a log message), to avoid completely breaking extensions that use them.
-        languages: {
-            registerTypeDefinitionProvider: any
-            registerImplementationProvider: any
-        }
-    } = {
-        URI: URL,
-        Position,
-        Range,
-        Selection,
-        Location,
-        MarkupKind,
-        NotificationType,
-        DocumentHighlightKind,
-        app,
-
-        workspace,
-        configuration,
-
-        languages,
-
-        search,
-        commands,
-        graphQL,
-        content,
-
-        internal: {
-            sync: () => sync(),
-            updateContext: (updates: sourcegraph.ContextValues) => updateContext(updates, extensionHostState),
-            sourcegraphURL: new URL(initData.sourcegraphURL),
-            clientApplication: initData.clientApplication,
-        },
-    }
+    // Create a default extension API (for testing)
+    const extensionAPI = createExtensionAPI('DEFAULT')
 
     return { extensionHostAPI, extensionAPI, subscription }
 }

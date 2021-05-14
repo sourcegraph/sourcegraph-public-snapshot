@@ -39,7 +39,7 @@ const rootPath = path.resolve(__dirname, '..', '..')
 const nodeModulesPath = path.resolve(rootPath, 'node_modules')
 const monacoEditorPaths = [path.resolve(nodeModulesPath, 'monaco-editor')]
 
-const isEnterpriseBuild = !!process.env.ENTERPRISE
+const isEnterpriseBuild = process.env.ENTERPRISE && Boolean(JSON.parse(process.env.ENTERPRISE))
 const enterpriseDirectory = path.resolve(__dirname, 'src', 'enterprise')
 
 const babelLoader = {
@@ -141,7 +141,7 @@ const config = {
     ...(shouldAnalyze ? [new BundleAnalyzerPlugin()] : []),
   ],
   resolve: {
-    extensions: ['.mjs', '.ts', '.tsx', '.js'],
+    extensions: ['.mjs', '.ts', '.tsx', '.js', '.json'],
     mainFields: ['es2015', 'module', 'browser', 'main'],
     alias: {
       // react-visibility-sensor's main field points to a UMD bundle instead of ESM
@@ -208,7 +208,13 @@ const config = {
         // CSS rule for monaco-editor and other external plain CSS (skip SASS and PostCSS for build perf)
         test: /\.css$/,
         include: monacoEditorPaths,
-        use: ['style-loader', { loader: 'css-loader', options: { url: false } }],
+        use: ['style-loader', { loader: 'css-loader' }],
+      },
+      {
+        // TTF rule for monaco-editor
+        test: /\.ttf$/,
+        include: monacoEditorPaths,
+        use: ['file-loader'],
       },
       {
         test: extensionHostWorker,

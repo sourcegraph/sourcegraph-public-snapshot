@@ -43,7 +43,7 @@ export function useField<FormValues, FieldValueKey extends keyof FormAPI<FormVal
     formApi: FormAPI<FormValues>,
     validator: Validator<FormValues[FieldValueKey]> = noop
 ): useFieldAPI<FormValues[FieldValueKey]> {
-    const { setFieldState, initialValues, submitted } = formApi
+    const { setFieldState, initialValues, submitted, touched: formTouched } = formApi
 
     const inputReference = useRef<HTMLInputElement & HTMLFieldSetElement>(null)
     const [state, setState] = useState<FieldState<FormValues[FieldValueKey]>>({
@@ -116,7 +116,7 @@ export function useField<FormValues, FieldValueKey extends keyof FormAPI<FormVal
         },
         meta: {
             ...state,
-            touched: state.touched || submitted,
+            touched: state.touched || submitted || formTouched,
         },
     }
 }

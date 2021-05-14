@@ -14,6 +14,7 @@ type DBStore interface {
 	InsertUpload(ctx context.Context, upload dbstore.Upload) (int, error)
 	AddUploadPart(ctx context.Context, uploadID, partIndex int) error
 	MarkQueued(ctx context.Context, id int, uploadSize *int64) error
+	MarkFailed(ctx context.Context, id int, reason string) error
 }
 
 type DBStoreShim struct {
