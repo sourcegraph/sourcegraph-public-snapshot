@@ -316,13 +316,17 @@ commands:
       PATH: .bin:$PATH
 
 checks:
+  docker:
+    cmd: docker -v
+    failMessage: "Failed to run 'docker -v'. Please make sure Docker is running."
+
   redis:
     cmd: echo "PING" | nc localhost 6379
     failMessage: "Failed to connect to Redis on port 6379. Please make sure Redis is running."
 
-  docker:
-    cmd: docker -v
-    failMessage: "Failed to run 'docker -v'. Please make sure Docker is running."
+  postgres:
+    cmd: psql -c 'SELECT 1;'
+    failMessage: "Failed to connect to Postgres database. Make sure environment variables are setup correctly so that psql can connect."
 
 commandsets:
   default:

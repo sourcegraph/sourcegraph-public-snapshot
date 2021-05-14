@@ -22,7 +22,7 @@ var (
 		ShortHelp:  "Run the given command.",
 		FlagSet:    runFlagSet,
 		Exec:       runExec,
-		UsageFunc:  runUsage,
+		UsageFunc:  printRunUsage,
 	}
 
 	runSetFlagSet = flag.NewFlagSet("sg run-set", flag.ExitOnError)
@@ -32,7 +32,7 @@ var (
 		ShortHelp:  "Run the given command set.",
 		FlagSet:    runSetFlagSet,
 		Exec:       runSetExec,
-		UsageFunc:  runSetUsage,
+		UsageFunc:  printRunSetUsage,
 	}
 
 	startFlagSet = flag.NewFlagSet("sg start", flag.ExitOnError)
@@ -42,7 +42,7 @@ var (
 		ShortHelp:  "Runs the commandset with the name 'start'.",
 		FlagSet:    startFlagSet,
 		Exec:       startExec,
-		UsageFunc:  startUsage,
+		UsageFunc:  printStartUsage,
 	}
 
 	testFlagSet = flag.NewFlagSet("sg test", flag.ExitOnError)
@@ -52,7 +52,7 @@ var (
 		ShortHelp:  "Run the given test suite.",
 		FlagSet:    testFlagSet,
 		Exec:       testExec,
-		UsageFunc:  testUsage,
+		UsageFunc:  printTestUsage,
 	}
 
 	doctorFlagSet = flag.NewFlagSet("sg doctor", flag.ExitOnError)
@@ -62,7 +62,7 @@ var (
 		ShortHelp:  "Run the checks defined in the config file to make sure your system is healthy.",
 		FlagSet:    doctorFlagSet,
 		Exec:       doctorExec,
-		UsageFunc:  doctorUsage,
+		UsageFunc:  printDoctorUsage,
 	}
 )
 
@@ -238,11 +238,10 @@ func runExec(ctx context.Context, args []string) error {
 }
 
 func doctorExec(ctx context.Context, args []string) error {
-	out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: is someone here a doctor?"))
-	return flag.ErrHelp
+	return runChecks(ctx, conf.Checks)
 }
 
-func runUsage(c *ffcli.Command) string {
+func printRunUsage(c *ffcli.Command) string {
 	var out strings.Builder
 
 	fmt.Fprintf(&out, "USAGE\n")
@@ -264,7 +263,7 @@ func runUsage(c *ffcli.Command) string {
 	return out.String()
 }
 
-func testUsage(c *ffcli.Command) string {
+func printTestUsage(c *ffcli.Command) string {
 	var out strings.Builder
 
 	fmt.Fprintf(&out, "USAGE\n")
@@ -286,7 +285,7 @@ func testUsage(c *ffcli.Command) string {
 	return out.String()
 }
 
-func runSetUsage(c *ffcli.Command) string {
+func printRunSetUsage(c *ffcli.Command) string {
 	var out strings.Builder
 
 	fmt.Fprintf(&out, "USAGE\n")
@@ -307,7 +306,7 @@ func runSetUsage(c *ffcli.Command) string {
 	return out.String()
 }
 
-func startUsage(c *ffcli.Command) string {
+func printStartUsage(c *ffcli.Command) string {
 	var out strings.Builder
 
 	fmt.Fprintf(&out, "USAGE\n")
@@ -316,7 +315,7 @@ func startUsage(c *ffcli.Command) string {
 	return out.String()
 }
 
-func doctorUsage(c *ffcli.Command) string {
+func printDoctorUsage(c *ffcli.Command) string {
 	var out strings.Builder
 
 	fmt.Fprintf(&out, "USAGE\n")
