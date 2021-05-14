@@ -35,6 +35,11 @@ func ParseConfigFile(name string) (*Config, error) {
 		conf.Tests[name] = cmd
 	}
 
+	for name, check := range conf.Checks {
+		check.Name = name
+		conf.Checks[name] = check
+	}
+
 	return &conf, nil
 }
 
@@ -107,11 +112,18 @@ func equal(a, b []string) bool {
 	return true
 }
 
+type Check struct {
+	Name        string `yaml:"-"`
+	Cmd         string `yaml:"cmd"`
+	FailMessage string `yaml:"failMessage"`
+}
+
 type Config struct {
 	Env         map[string]string   `yaml:"env"`
 	Commands    map[string]Command  `yaml:"commands"`
 	Commandsets map[string][]string `yaml:"commandsets"`
 	Tests       map[string]Command  `yaml:"tests"`
+	Checks      map[string]Check    `yaml:"checks"`
 }
 
 // Merges merges the top-level entries of two Config objects, with the receiver
