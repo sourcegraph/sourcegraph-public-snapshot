@@ -1,4 +1,4 @@
-import React, { useLayoutEffect } from 'react'
+import React, { useLayoutEffect, useState } from 'react'
 import { MemoryRouter, MemoryRouterProps } from 'react-router'
 import { useDarkMode } from 'storybook-dark-mode'
 
@@ -30,7 +30,7 @@ export const BrandedStory: React.FunctionComponent<
         styles?: string
     }
 > = ({ children: Children, styles = brandedStyles, ...memoryRouterProps }) => {
-    const isLightTheme = !useDarkMode()
+    const [isLightTheme, setIsLightTheme] = useState(!useDarkMode())
 
     useLayoutEffect(() => {
         const styleTag = prependCSSToDocumentHead(styles)
@@ -39,6 +39,14 @@ export const BrandedStory: React.FunctionComponent<
             styleTag.remove()
         }
     }, [styles])
+
+    useLayoutEffect(() => {
+        const listener = ((event: CustomEvent<boolean>): void => {
+            setIsLightTheme(event.detail)
+        }) as EventListener
+        window.addEventListener('theme-changed', listener)
+        return () => window.removeEventListener('theme-changed', listener)
+    })
 
     return (
         <MemoryRouter {...memoryRouterProps}>

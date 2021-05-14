@@ -28,8 +28,7 @@ export const createChromaticStory = (options: CreateChromaticStoryOptions): Stor
         // 'storybook-dark-mode' doesn't expose any API to toggle dark/light theme programmatically, so we do it manually.
         document.body.classList.toggle(THEME_DARK_CLASS, isDarkModeEnabled)
         document.body.classList.toggle(THEME_LIGHT_CLASS, !isDarkModeEnabled)
-        const channel = addons.getChannel()
-        channel.emit(DARK_MODE_EVENT_NAME, isDarkModeEnabled)
+        window.dispatchEvent(new CustomEvent('theme-changed', { detail: !isDarkModeEnabled }))
 
         return () => {
             // Do not enable redesign theme if it was disabled before this story was opened.
@@ -40,7 +39,7 @@ export const createChromaticStory = (options: CreateChromaticStoryOptions): Stor
             // Always toggle dark mode back to the previous value because otherwise, it might be out of sync with the toolbar toggle.
             document.body.classList.toggle(THEME_DARK_CLASS, isDarkModeEnabledInitially)
             document.body.classList.toggle(THEME_LIGHT_CLASS, !isDarkModeEnabledInitially)
-            channel.emit(DARK_MODE_EVENT_NAME, !isDarkModeEnabled)
+            window.dispatchEvent(new CustomEvent('theme-changed', { detail: isDarkModeEnabled }))
         }
         // We need to execute `useEffect` callback once to take snapshot in Chromatic, so we can omit dependencies here.
         // eslint-disable-next-line react-hooks/exhaustive-deps
