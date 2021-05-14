@@ -6,16 +6,16 @@ Assumes a working Go installation:
 
 ```
 # lsif-index-tester
-go get github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/tools/lsif-index-tester
+go get github.com/sourcegraph/sourcegraph/lib/codeintel/tools/lsif-index-tester
 
 # lsif-semantic-diff
-go get github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/tools/lsif-semantic-diff
+go get github.com/sourcegraph/sourcegraph/lib/codeintel/tools/lsif-semantic-diff
 
 # lsif-validate
-go get github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/tools/lsif-validate
+go get github.com/sourcegraph/sourcegraph/lib/codeintel/tools/lsif-validate
 
 # lsif-visualize
-go get github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/tools/lsif-visualize
+go get github.com/sourcegraph/sourcegraph/lib/codeintel/tools/lsif-visualize
 ```
 
 Resulting binary should then be in your `$GOPATH/bin` (conventionally `$HOME/go/bin`), so make sure thats in your `$PATH` or else invoke using absolute/relative location.
