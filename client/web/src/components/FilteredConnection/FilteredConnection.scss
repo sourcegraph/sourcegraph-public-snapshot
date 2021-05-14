@@ -110,6 +110,10 @@ $compact-summary-min-height: 2.75rem;
     &__loader {
         display: flex;
         justify-content: center;
+
+        .theme-redesign & {
+            align-items: center;
+        }
     }
 
     &__show-more {
