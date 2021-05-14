@@ -1,7 +1,7 @@
 import { MdiReactIconComponentType } from 'mdi-react'
 import DatabaseIcon from 'mdi-react/DatabaseIcon'
 import PuzzleIcon from 'mdi-react/PuzzleIcon'
-import React, { useMemo } from 'react'
+import React, { useState } from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -13,19 +13,22 @@ import { ViewContent, ViewContentProps } from '../../../../../views/ViewContent'
 import { ViewInsightProviderResult, ViewInsightProviderSourceType } from '../../../../core/backend/types'
 import { InsightTypeSuffix } from '../../../../core/types'
 
-import { InsightDescription } from './components/description /InsightCardDescription'
-import { InsightCardMenu } from './components/menu/InsightCardMenu'
+import { InsightDescription } from './components/insight-card-description/InsightCardDescription'
+import { InsightCardMenu } from './components/insight-card-menu/InsightCardMenu'
 import styles from './InsightCard.module.scss'
 
 export interface InsightCardProps extends Omit<ViewContentProps, 'viewContent' | 'viewID'>, TelemetryProps {
     /** Insight data (title, chart content) */
     insight: ViewInsightProviderResult
 
-    /** Setting for showing deleting state. */
-    deleting: boolean
-
     /** Deleting handler fires when the user clicks delete in the insight menu. */
-    onDelete: (id: string) => void
+    onDelete: (id: string) => Promise<void>
+
+    /**
+     * Prop for enabling and disabling insight context menu.
+     * Now only insight page has insights with context menu.
+     * */
+    hasContextMenu?: boolean
 }
 
 /**
@@ -35,16 +38,26 @@ export const InsightContentCard: React.FunctionComponent<InsightCardProps> = pro
     const {
         insight: { id, view, source },
         location,
+        hasContextMenu,
         onDelete,
-        deleting,
     } = props
+
+    // We should disable delete and any other actions if we already have started
+    // operation over some insight.
+    const [isDeleting, setDeletingState] = useState(false)
 
     // We support actions only over search and lang insights and not able to edit or delete
     // custom insight or backend insight.
-    const hasMenu = useMemo(
-        () => id.startsWith(InsightTypeSuffix.search) || id.startsWith(InsightTypeSuffix.langStats),
-        [id]
-    )
+    const hasMenu =
+        hasContextMenu && (id.startsWith(InsightTypeSuffix.search) || id.startsWith(InsightTypeSuffix.langStats))
+
+    const handleDelete = async (): Promise<void> => {
+        setDeletingState(true)
+
+        await onDelete(id)
+
+        setDeletingState(false)
+    }
 
     return (
         <ErrorBoundary
@@ -57,10 +70,10 @@ export const InsightContentCard: React.FunctionComponent<InsightCardProps> = pro
             }
             className="pt-0"
         >
-            {view === undefined || deleting ? (
+            {view === undefined || isDeleting ? (
                 <>
                     <div className="flex-grow-1 d-flex flex-column align-items-center justify-content-center">
-                        <LoadingSpinner /> {deleting ? 'Deleting code insight' : 'Loading code insight'}
+                        <LoadingSpinner /> {isDeleting ? 'Deleting code insight' : 'Loading code insight'}
                     </div>
                     <InsightDescription
                         className={styles.insightCardDescription}
@@ -85,12 +98,7 @@ export const InsightContentCard: React.FunctionComponent<InsightCardProps> = pro
                             {view.subtitle && <div className={styles.insightCardSubtitle}>{view.subtitle}</div>}
                         </div>
 
-                        {hasMenu && (
-                            <InsightCardMenu
-                                /* eslint-disable-next-line react/jsx-no-bind */
-                                onDelete={() => onDelete(id)}
-                            />
-                        )}
+                        {hasMenu && <InsightCardMenu onDelete={handleDelete} />}
                     </header>
 
                     <ViewContent {...props} viewContent={view.content} viewID={id} />

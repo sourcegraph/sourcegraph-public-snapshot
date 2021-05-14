@@ -1,14 +1,12 @@
-import * as jsonc from '@sqs/jsonc-parser'
 import GearIcon from 'mdi-react/GearIcon'
 import PlusIcon from 'mdi-react/PlusIcon'
-import React, { useCallback, useEffect, useMemo, useContext, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useContext } from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { PageHeader } from '@sourcegraph/wildcard'
 
@@ -16,7 +14,8 @@ import { FeedbackBadge } from '../../../components/FeedbackBadge'
 import { Page } from '../../../components/Page'
 import { InsightsIcon, InsightsViewGrid, InsightsViewGridProps } from '../../components'
 import { InsightsApiContext } from '../../core/backend/api-provider'
-import { defaultFormattingOptions } from '../../core/jsonc-settings'
+
+import { useDeleteInsight } from './hooks/use-delete-insight'
 
 export interface InsightsPageProps
     extends ExtensionsControllerProps,
@@ -31,7 +30,7 @@ export interface InsightsPageProps
  */
 export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props => {
     const { isCreationUIEnabled, settingsCascade, platformContext } = props
-    const { getInsightCombinedViews, getSubjectSettings, updateSubjectSettings } = useContext(InsightsApiContext)
+    const { getInsightCombinedViews } = useContext(InsightsApiContext)
 
     const views = useObservable(
         useMemo(() => getInsightCombinedViews(props.extensionsController?.extHostAPI), [
@@ -40,53 +39,7 @@ export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props =>
         ])
     )
 
-    // We should disable delete and any other actions if we already have started operation
-    // over some particular insight
-    const [processingInsights, setProcessingInsights] = useState({})
-
-    const handleDelete = useCallback(
-        async (id: string) => {
-            // According to our naming convention of insight
-            // <type>.<name>.<render view = insight page | directory | home page>
-            const insightID = id.split('.').slice(0, -1).join('.')
-            const subjects = settingsCascade.subjects
-
-            const subjectID = subjects?.find(
-                ({ settings }) => settings && !isErrorLike(settings) && !!settings[insightID]
-            )?.subject?.id
-
-            if (!subjectID) {
-                return
-            }
-
-            setProcessingInsights(insights => ({ ...insights, [id]: true }))
-
-            try {
-                // Fetch the settings of particular subject which the insight belongs to
-                const settings = await getSubjectSettings(subjectID).toPromise()
-
-                // Remove insight settings from subject (user/org settings)
-                const edits = jsonc.modify(
-                    settings.contents,
-                    // According to our naming convention <type>.insight.<name>
-                    [`${insightID}`],
-                    undefined,
-                    { formattingOptions: defaultFormattingOptions }
-                )
-
-                const editedSettings = jsonc.applyEdits(settings.contents, edits)
-
-                // Update local settings of application with new settings without insight
-                await updateSubjectSettings(platformContext, subjectID, editedSettings).toPromise()
-            } catch (error) {
-                // TODO [VK] Improve error UI for deleting
-                console.error(error)
-            }
-
-            setProcessingInsights(insights => ({ ...insights, [id]: false }))
-        },
-        [platformContext, settingsCascade, getSubjectSettings, updateSubjectSettings]
-    )
+    const { handleDelete } = useDeleteInsight({ settingsCascade, platformContext })
 
     // Tracking handlers and logic
     useEffect(() => {
@@ -133,7 +86,7 @@ export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props =>
                     <InsightsViewGrid
                         {...props}
                         views={views}
-                        processingInsights={processingInsights}
+                        hasContextMenu={isCreationUIEnabled}
                         onDelete={handleDelete}
                     />
                 )}

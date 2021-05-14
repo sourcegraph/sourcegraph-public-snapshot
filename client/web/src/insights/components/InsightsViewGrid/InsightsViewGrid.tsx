@@ -1,7 +1,6 @@
 import classNames from 'classnames'
 import React, { useCallback, useMemo } from 'react'
 import { Layout as ReactGridLayout, Layouts as ReactGridLayouts, Responsive, WidthProvider } from 'react-grid-layout'
-import { noop } from 'rxjs'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { isFirefox } from '@sourcegraph/shared/src/util/browserDetection'
@@ -60,17 +59,19 @@ export interface InsightsViewGridProps
      */
     views: ViewInsightProviderResult[]
 
-    /**
-     * Map with insights on which the deletion was started.
-     * Used below to render deleting state.
-     */
-    processingInsights?: Record<string, boolean>
-
     /** Custom classname for root element of the grid. */
     className?: string
 
     /** Delete handler which calls when a user clicks delete item in a insight menu. */
-    onDelete?: (id: string) => void
+    onDelete?: (id: string) => Promise<void>
+
+    /**
+     * Prop for enabling and disabling insight context menu.
+     * Now only insight page has insights with context menu but
+     * there are other place like Home page, Directory and Global
+     * pages
+     * */
+    hasContextMenu?: boolean
 }
 
 /**
@@ -78,7 +79,7 @@ export interface InsightsViewGridProps
  * (backend, search based, lang stats)
  */
 export const InsightsViewGrid: React.FunctionComponent<InsightsViewGridProps> = props => {
-    const { onDelete = noop, processingInsights = {} } = props
+    const { hasContextMenu, onDelete = () => Promise.resolve() } = props
 
     const onResizeOrDragStart: ReactGridLayout.ItemCallback = useCallback(
         (_layout, item) => {
@@ -120,8 +121,8 @@ export const InsightsViewGrid: React.FunctionComponent<InsightsViewGridProps> = 
                     <section key={view.id} className="card insights-view-grid__item">
                         <InsightContentCard
                             {...props}
+                            hasContextMenu={hasContextMenu}
                             insight={view}
-                            deleting={processingInsights[view.id]}
                             containerClassName="insights-view-grid__item"
                             onDelete={onDelete}
                         />

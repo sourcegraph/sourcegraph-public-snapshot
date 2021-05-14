@@ -18,7 +18,7 @@ export const InsightCardMenu: React.FunctionComponent<InsightCardMenuProps> = pr
 
     return (
         <Menu>
-            <MenuButton className={classnames(className, 'btn btn-light p-1')}>
+            <MenuButton className={classnames(className, 'btn btn-outline p-1')}>
                 <DotsVerticalIcon size={16} />
             </MenuButton>
             <MenuPopover portal={true}>
@@ -26,7 +26,7 @@ export const InsightCardMenu: React.FunctionComponent<InsightCardMenuProps> = pr
                     <li>
                         <button
                             onClick={onDelete}
-                            className={classnames('btn btn-light', styles.menuItemButton)}
+                            className={classnames('btn btn-outline', styles.menuItemButton)}
                             type="button"
                         >
                             Delete
