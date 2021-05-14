@@ -435,8 +435,11 @@ output4=integration-test-batch-change`,
 
 			cache := newInMemoryExecutionCache()
 			creator := workspace.NewCreator(context.Background(), "bind", testTempDir, testTempDir, []batches.Step{})
-			opts := Opts{
+			opts := NewExecutorOpts{
+				Cache:       cache,
 				Creator:     creator,
+				Client:      client,
+				Features:    featuresAllEnabled(),
 				TempDir:     testTempDir,
 				Parallelism: runtime.GOMAXPROCS(0),
 				Timeout:     tc.executorTimeout,
@@ -452,8 +455,7 @@ output4=integration-test-batch-change`,
 			// executor. We'll run this multiple times to cover both the cache
 			// and non-cache code paths.
 			execute := func(t *testing.T) {
-				executor := New(opts, client, featuresAllEnabled())
-				executor.cache = cache
+				executor := New(opts)
 				executor.fetcher = repoFetcher
 
 				for i := range tc.steps {

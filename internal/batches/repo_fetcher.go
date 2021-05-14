@@ -184,6 +184,7 @@ func (rz *repoZip) Close() error {
 	defer rz.mu.Unlock()
 
 	rz.uses -= 1
+
 	if rz.uses == 0 && rz.checkouts == 0 && rz.deleteOnClose {
 		for _, addFile := range rz.additionalFiles {
 			if addFile.fetched {

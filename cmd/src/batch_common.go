@@ -295,19 +295,41 @@ func executeBatchSpec(ctx context.Context, opts executeBatchSpecOpts) error {
 	}
 	batchCompletePending(pending, fmt.Sprintf("Found %d workspaces with steps to execute", len(tasks)))
 
-	execOpts := executor.Opts{
+	// EXECUTION OF TASKS
+
+	svc.InitCache(opts.flags.cacheDir)
+	svc.InitExecutor(ctx, executor.NewExecutorOpts{
 		CacheDir:      opts.flags.cacheDir,
-		ClearCache:    opts.flags.clearCache,
 		CleanArchives: opts.flags.cleanArchives,
 		Creator:       workspaceCreator,
 		Parallelism:   opts.flags.parallelism,
 		Timeout:       opts.flags.timeout,
 		KeepLogs:      opts.flags.keepLogs,
 		TempDir:       opts.flags.tempDir,
+	})
+
+	pending = batchCreatePending(opts.out, "Checking cache for changeset specs")
+	uncachedTasks, cachedSpecs, err := svc.CheckCache(ctx, tasks, opts.flags.clearCache)
+	if err != nil {
+		return err
+	}
+	var specsFoundMessage string
+	if len(cachedSpecs) == 1 {
+		specsFoundMessage = "Found 1 cached changeset spec"
+	} else {
+		specsFoundMessage = fmt.Sprintf("Found %d cached changeset specs", len(cachedSpecs))
+	}
+	switch len(uncachedTasks) {
+	case 0:
+		batchCompletePending(pending, fmt.Sprintf("%s; no tasks need to be executed", specsFoundMessage))
+	case 1:
+		batchCompletePending(pending, fmt.Sprintf("%s; %d task needs to be executed", specsFoundMessage, len(uncachedTasks)))
+	default:
+		batchCompletePending(pending, fmt.Sprintf("%s; %d tasks need to be executed", specsFoundMessage, len(uncachedTasks)))
 	}
 
 	p := newBatchProgressPrinter(opts.out, *verbose, opts.flags.parallelism)
-	specs, logFiles, err := svc.RunExecutor(ctx, execOpts, tasks, batchSpec, p.PrintStatuses, opts.flags.skipErrors)
+	freshSpecs, logFiles, err := svc.RunExecutor(ctx, uncachedTasks, batchSpec, p.PrintStatuses, opts.flags.skipErrors)
 	if err != nil && !opts.flags.skipErrors {
 		return err
 	}
@@ -327,6 +349,8 @@ func executeBatchSpec(ctx context.Context, opts executeBatchSpecOpts) error {
 			}
 		}()
 	}
+
+	specs := append(cachedSpecs, freshSpecs...)
 
 	err = svc.ValidateChangesetSpecs(repos, specs)
 	if err != nil {
