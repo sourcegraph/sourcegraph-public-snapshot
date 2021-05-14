@@ -215,6 +215,8 @@ func Main(enterpriseInit EnterpriseInit) {
 				if strings.HasPrefix(c.Url, "https://gitlab.com") && c.Token != "" {
 					server.GitLabDotComSource, err = repos.NewGitLabSource(e, cf)
 				}
+			case *schema.MavenConnection:
+				server.MavenSource, err = repos.NewMavenSource(e)
 			}
 
 			if err != nil {

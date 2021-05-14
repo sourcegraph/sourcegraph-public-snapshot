@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/maven"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -16,8 +17,9 @@ import (
 // A MavenSource yields depots from a single Maven connection configured
 // in Sourcegraph via the external services configuration.
 type MavenSource struct {
-	svc    *types.ExternalService
-	config *schema.MavenConnection
+	svc      *types.ExternalService
+	config   *schema.MavenConnection
+	coursier *maven.CoursierClient
 }
 
 // NewMavenSource returns a new MavenSource from the given external
@@ -48,55 +50,80 @@ func (s MavenSource) ListRepos(ctx context.Context, results chan SourceResult) {
 }
 
 func (s MavenSource) listAllRepos(ctx context.Context, results chan SourceResult) {
-	var orgs []string = coursier.Run("complete ''")
-	for _, org := range orgs {
-		var artifacts []string = coursier.Run("complete " + org)
-		for _, artifact := range artifacts {
+	groupIDs := s.coursier.ListGroupIDs()
+	for _, groupID := range groupIDs {
+		artifactIDs := s.coursier.ListArtifactIDs(groupID)
+		for _, artifactID := range artifactIDs {
 			results <- SourceResult{
 				Source: s,
-				Repo: s.makeRepo(org, artifact),
+				Repo:   s.makeRepo(groupID, artifactID),
 			}
 		}
 	}
 }
 
 func (s MavenSource) listDependentRepos(ctx context.Context, results chan SourceResult) {
-	// select blah from blah
 }
 
-func (s MavenSource) makeRepo(org, artifact string) *types.Repo {
-	artifactID := org + ":" + artifact
-	artifactPath := org + "/" + artifact
+func (s MavenSource) GetRepo(ctx context.Context, artifactPath string) (*types.Repo, error) {
+	groupID, artifactID := reposource.DecomposeMavenPath(artifactPath)
+
+	if !s.coursier.Exists(groupID, artifactID) {
+		return nil, &mavenArtifactNotFound{
+			groupID:    groupID,
+			artifactID: artifactID,
+		}
+	}
+
+	return s.makeRepo(groupID, artifactID), nil
+}
+
+type mavenArtifactNotFound struct {
+	groupID    string
+	artifactID string
+}
+
+func (mavenArtifactNotFound) NotFound() bool {
+	return true
+}
+
+func (e *mavenArtifactNotFound) Error() string {
+	return "maven artifact "
+}
+
+func (s MavenSource) makeRepo(groupID, artifactID string) *types.Repo {
+	fullArtifactID := groupID + ":" + artifactID
+	artifactPath := groupID + "/" + fullArtifactID
 
 	urn := s.svc.URN()
 	cloneURL := url.URL{
 		Scheme: "maven",
-		Host: s.config.Url,
-		Path: artifactPath,
+		Host:   s.config.Url,
+		Path:   artifactPath,
 	}
 	return &types.Repo{
 		Name: reposource.MavenRepoName(
 			s.config.RepositoryPathPattern,
-			artifactID,
+			fullArtifactID,
 		),
 		URI: string(reposource.MavenRepoName(
 			s.config.RepositoryPathPattern,
 			artifactPath,
 		)),
 		ExternalRepo: api.ExternalRepoSpec{
-			ID:          artifactID,
+			ID:          fullArtifactID,
 			ServiceType: extsvc.TypeMaven,
 			ServiceID:   s.config.Url,
 		},
-		// TODO
-		Private: true,
+		// TODO: codeintel
+		Private: false,
 		Sources: map[string]*types.SourceInfo{
 			urn: {
 				ID:       urn,
 				CloneURL: cloneURL.String(),
 			},
 		},
-		// TODO
+		// TODO: codeintel
 		Metadata: nil,
 	}
 }

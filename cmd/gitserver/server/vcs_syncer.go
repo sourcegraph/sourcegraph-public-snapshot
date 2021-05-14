@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/maven"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 
 	"github.com/pkg/errors"
@@ -305,6 +307,7 @@ func (s *PerforceDepotSyncer) RemoteShowCommand(ctx context.Context, remoteURL *
 }
 
 type MavenArtifactSyncer struct {
+	coursier *maven.CoursierClient
 }
 
 var _ VCSSyncer = &MavenArtifactSyncer{}
@@ -313,28 +316,29 @@ func (s MavenArtifactSyncer) Type() string {
 	return "maven"
 }
 
+func decomposeMavenURL(url *vcs.URL) (groupID, artifactID string) {
+	pathIdx := strings.Index(url.String(), "maven2")
+	path := url.String()[pathIdx + len("maven2") + 1:]
+	return reposource.DecomposeMavenPath(path)
+}
+
 // IsCloneable checks to see if the VCS remote URL is cloneable. Any non-nil
 // error indicates there is a problem.
-func (s MavenArtifactSyncer) IsCloneable(ctx context.Context, remoteURL *url.URL) error {
-	mavenRepo := remoteURL.Host
-	mavenArtifact := strings.ReplaceAll(remoteURL.Path, "/", ":")
-	var versions []string = coursier.Run(mavenRepo, "complete "+mavenArtifact+":")
-	if len(versions) > 0 {
+func (s MavenArtifactSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL) error {
+	groupID, artifactID := decomposeMavenURL(remoteURL)
+	if s.coursier.Exists(groupID, artifactID) {
 		return nil
 	}
+
 	return errors.New("repo not found")
 }
 
 // CloneCommand returns the command to be executed for cloning from remote.
-func (s MavenArtifactSyncer) CloneCommand(ctx context.Context, remoteURL *url.URL, tmpPath string) (cmd *exec.Cmd, err error) {
-	mavenRepo := remoteURL.Host
-	mavenArtifact := strings.ReplaceAll(remoteURL.Path, "/", ":")
-	var versions []string = coursier.Run(mavenRepo, "complete "+mavenArtifact+":")
-	var urls []string
-	for _, version := range versions {
-		urls = append(urls, mavenArtifact+":"+version)
-	}
-	paths, err := s.fetchCoursierVersions(ctx, mavenRepo, urls)
+func (s MavenArtifactSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL, tmpPath string) (cmd *exec.Cmd, err error) {
+	groupID, artifactID := decomposeMavenURL(remoteURL)
+	versions := s.coursier.ListVersions(groupID, artifactID)
+
+	paths := s.coursier.FetchVersions(groupID, artifactID, versions)
 	if err != nil {
 		return nil, err
 	}
@@ -342,16 +346,17 @@ func (s MavenArtifactSyncer) CloneCommand(ctx context.Context, remoteURL *url.UR
 	exec.CommandContext(ctx, "git", "init")
 	s.commitJars(ctx, GitDir(tmpPath), paths, versions)
 
-	// TODO
+	// TODO: codeintel
 	return nil, nil
 }
 
 var versionPattern = lazyregexp.New(`refs/heads/(.+)$`)
 // Fetch tries to fetch updates from the remote to given directory.
-func (s MavenArtifactSyncer) Fetch(ctx context.Context, remoteURL *url.URL, dir GitDir) error {
-	mavenRepo := remoteURL.Host
-	mavenArtifact := strings.ReplaceAll(remoteURL.Path, "/", ":")
-	var coursierVersions []string = coursier.Run(mavenRepo, "complete "+mavenArtifact+":")
+func (s MavenArtifactSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir GitDir) error {
+	groupID, artifactID := decomposeMavenURL(remoteURL)
+	coursierVersions := s.coursier.ListVersions(groupID, artifactID)
+
+	// TODO: codeintel
 	var gitVersionsRaw []string = exec.CommandContext(ctx, "git", "show-branch")
 	gitVersions := make(map[string]struct{})
 	for _, rawVersion := range gitVersionsRaw {
@@ -364,16 +369,11 @@ func (s MavenArtifactSyncer) Fetch(ctx context.Context, remoteURL *url.URL, dir 
 		}
 	}
 
-	var urls []string
-	for _, version := range filteredCoursierVersions {
-		urls = append(urls, mavenArtifact+":"+version)
-	}
-	paths, err := s.fetchCoursierVersions(ctx, mavenRepo, urls)
-	if err != nil {
-		return err
-	}
+	paths := s.coursier.FetchVersions(groupID, artifactID, filteredCoursierVersions)
 
 	s.commitJars(ctx, dir, paths, filteredCoursierVersions)
+
+	return nil
 }
 
 func (s MavenArtifactSyncer) commitJars(ctx context.Context, dir GitDir, paths, versions []string) {
@@ -387,10 +387,7 @@ func (s MavenArtifactSyncer) commitJars(ctx context.Context, dir GitDir, paths, 
 	}
 }
 
-func (s MavenArtifactSyncer) fetchCoursierVersions(ctx context.Context, mavenRepo string, urls []string) ([]string, error) {
-}
-
 // RemoteShowCommand returns the command to be executed for showing remote.
-func (s MavenArtifactSyncer) RemoteShowCommand(ctx context.Context, remoteURL *url.URL) (cmd *exec.Cmd, err error) {
-	return exec.CommandContext(ctx, "git", "remote", "show", "./"), nil
+func (s MavenArtifactSyncer) RemoteShowCommand(ctx context.Context, remoteURL *vcs.URL) (cmd *exec.Cmd, err error) {
+	// TODO: codeintel
 }
