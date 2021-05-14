@@ -47,7 +47,7 @@ export interface InsightsRouterProps
     extends RouteComponentProps,
         Omit<InsightsPageProps, 'isCreationUIEnabled'>,
         SearchInsightCreationPageProps,
-        EditInsightPageProps {
+        Omit<EditInsightPageProps, 'insightID'> {
     /**
      * Authenticated user info, Used to decide where code insight will appears
      * in personal dashboard (private) or in organisation dashboard (public)
