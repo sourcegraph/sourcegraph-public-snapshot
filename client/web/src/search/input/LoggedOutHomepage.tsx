@@ -18,19 +18,6 @@ const exampleQueries = [
     { query: 'lang:Python return :[v.], :[v.]', patternType: 'structural' },
 ]
 
-const literalSearchCodeExample = `
-<code class="code-excerpt">
-<table>
-    <tbody>
-        <tr class="selected"><td class="line" data-line="12"></td><td class="code annotated"><div><span class="hl-source hl-js hl-react"><span class="hl-meta hl-function-call hl-method hl-js"><span class="hl-variable hl-other hl-readwrite hl-js"><span><span><span><span>wsServer</span></span></span></span></span><span class="hl-punctuation hl-accessor hl-js"><span><span><span><span>.</span></span></span></span></span><span class="hl-variable hl-function hl-js"><span><span><span><span>on</span></span></span></span></span><span class="hl-meta hl-group hl-js"><span class="hl-punctuation hl-section hl-group hl-begin hl-js"><span><span><span><span>(</span></span></span></span></span><span class="hl-meta hl-string hl-js"><span class="hl-string hl-quoted hl-double hl-js"><span class="hl-punctuation hl-definition hl-string hl-begin hl-js"><span><span><span><span>"</span></span></span></span></span><span><span><span><span>connection</span></span></span></span><span class="hl-punctuation hl-definition hl-string hl-end hl-js"><span><span><span><span>"</span></span></span></span></span></span></span><span class="hl-punctuation hl-separator hl-comma hl-js"><span><span><span><span>,</span></span></span></span></span><span> </span><span class="hl-meta hl-function hl-js"></span><span class="hl-meta hl-function hl-declaration hl-js"><span class="hl-punctuation hl-section hl-group hl-begin hl-js"><span><span><span><span>(</span></span></span></span></span><span class="hl-meta hl-binding hl-name hl-js"><span class="hl-variable hl-parameter hl-function hl-js"><span><span><span><span>ws</span></span></span></span></span></span><span class="hl-punctuation hl-separator hl-parameter hl-function hl-js"><span><span><span><span>,</span></span></span></span></span><span> </span><span class="hl-meta hl-binding hl-name hl-js"><span class="hl-variable hl-parameter hl-function hl-js"><span><span><span><span>req</span></span></span></span></span></span><span class="hl-punctuation hl-section hl-group hl-end hl-js"><span><span><span><span>)</span></span></span></span></span><span> </span><span class="hl-storage hl-type hl-function hl-arrow hl-js"><span><span><span><span>=</span></span></span></span><span><span><span><span><span>&gt;</span></span></span></span></span></span></span><span class="hl-meta hl-function hl-js"><span> </span><span class="hl-meta hl-block hl-js"><span class="hl-punctuation hl-section hl-block hl-begin hl-js"><span><span><span><span>{</span></span></span></span></span><span></span></span></span></span></span></span></div></td></tr>
-        <tr class="selected"><td class="line" data-line="13"></td><td class="code annotated"><div><span class="hl-source hl-js hl-react"><span class="hl-meta hl-function-call hl-method hl-js"><span class="hl-meta hl-group hl-js"><span class="hl-meta hl-function hl-js"><span class="hl-meta hl-block hl-js"><span>	</span><span class="hl-meta hl-function-call hl-method hl-js"><span class="hl-support hl-type hl-object hl-console hl-js selection-highlight"><span><span><span><span>console</span></span></span></span></span><span class="hl-punctuation hl-accessor hl-js selection-highlight"><span><span><span><span>.</span></span></span></span></span><span class="hl-support hl-function hl-console hl-js selection-highlight"><span><span><span><span>log</span></span></span></span></span><span class="hl-meta hl-group hl-js"><span class="hl-punctuation hl-section hl-group hl-begin hl-js selection-highlight"><span><span><span><span>(</span></span></span></span></span><span class="hl-meta hl-string hl-js"><span class="hl-string hl-quoted hl-double hl-js"><span class="hl-punctuation hl-definition hl-string hl-begin hl-js selection-highlight"><span><span><span><span>"</span></span></span></span></span><span><span><span><span>Connected</span></span></span></span><span class="hl-punctuation hl-definition hl-string hl-end hl-js"><span><span><span><span>"</span></span></span></span></span></span></span><span class="hl-punctuation hl-section hl-group hl-end hl-js"><span><span><span><span>)</span></span></span></span></span></span></span><span class="hl-punctuation hl-terminator hl-statement hl-js"><span><span><span><span>;</span></span></span></span></span><span></span></span></span></span></span></span></div></td></tr>
-        <tr class="selected"><td class="line" data-line="14"></td><td class="code annotated"><div><span class="hl-source hl-js hl-react"><span class="hl-meta hl-function-call hl-method hl-js"><span class="hl-meta hl-group hl-js"><span class="hl-meta hl-function hl-js"><span class="hl-meta hl-block hl-js"></span></span></span></span></span></div></td></tr>
-        <tr class="selected"><td class="line" data-line="15"></td><td class="code annotated"><div><span class="hl-source hl-js hl-react"><span class="hl-meta hl-function-call hl-method hl-js"><span class="hl-meta hl-group hl-js"><span class="hl-meta hl-function hl-js"><span class="hl-meta hl-block hl-js"><span></span><span class="hl-meta hl-function-call hl-method hl-js"><span class="hl-variable hl-other hl-readwrite hl-js"><span><span>ws</span></span></span><span class="hl-punctuation hl-accessor hl-js"><span><span>.</span></span></span><span class="hl-variable hl-function hl-js"><span><span>on</span></span></span><span class="hl-meta hl-group hl-js"><span class="hl-punctuation hl-section hl-group hl-begin hl-js"><span><span>(</span></span></span><span class="hl-meta hl-string hl-js"><span class="hl-string hl-quoted hl-double hl-js"><span class="hl-punctuation hl-definition hl-string hl-begin hl-js"><span><span>"</span></span></span><span><span>message</span></span><span class="hl-punctuation hl-definition hl-string hl-end hl-js"><span><span>"</span></span></span></span></span><span class="hl-punctuation hl-separator hl-comma hl-js"><span><span>,</span></span></span><span> </span><span class="hl-meta hl-function hl-js"></span><span class="hl-meta hl-function hl-declaration hl-js"><span class="hl-punctuation hl-section hl-group hl-begin hl-js"><span><span>(</span></span></span><span class="hl-meta hl-binding hl-name hl-js"><span class="hl-variable hl-parameter hl-function hl-js"><span><span>data</span></span></span></span><span class="hl-punctuation hl-section hl-group hl-end hl-js"><span><span>)</span></span></span><span> </span><span class="hl-storage hl-type hl-function hl-arrow hl-js"><span><span>=</span></span><span><span><span>&gt;</span></span></span></span></span><span class="hl-meta hl-function hl-js"><span> </span><span class="hl-meta hl-block hl-js"><span class="hl-punctuation hl-section hl-block hl-begin hl-js"><span><span>{</span></span></span><span></span></span></span></span></span></span></span></span></span></span></div></td></tr>
-    </tbody>
-    </table>
-</code>
-`
-
 export interface LoggedOutHomepageProps extends TelemetryProps {}
 
 export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> = props => {
@@ -73,10 +60,7 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
                                 <span className="search-page__inline-code text-code bg-code p-1">console.log("</span>{' '}
                                 results in:
                             </div>
-                            <div
-                                className="search-page__literal-search-code-excerpt"
-                                dangerouslySetInnerHTML={{ __html: literalSearchCodeExample }}
-                            />
+                            <LiteralCodeSearchExample />
                         </div>
                     </div>
                 </div>
@@ -123,3 +107,418 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
         </>
     )
 }
+
+const LiteralCodeSearchExample = React.memo(() => (
+    <div className="search-page__literal-search-code-excerpt">
+        <code className="code-excerpt">
+            <table>
+                <tbody>
+                    <tr>
+                        <td className="line" data-line="12" />
+                        <td className="code annotated">
+                            <div>
+                                <span className="hl-source hl-js hl-react">
+                                    <span className="hl-meta hl-function-call hl-method hl-js">
+                                        <span className="hl-variable hl-other hl-readwrite hl-js">
+                                            <span>
+                                                <span>
+                                                    <span>
+                                                        <span>wsServer</span>
+                                                    </span>
+                                                </span>
+                                            </span>
+                                        </span>
+                                        <span className="hl-punctuation hl-accessor hl-js">
+                                            <span>
+                                                <span>
+                                                    <span>
+                                                        <span>.</span>
+                                                    </span>
+                                                </span>
+                                            </span>
+                                        </span>
+                                        <span className="hl-variable hl-function hl-js">
+                                            <span>
+                                                <span>
+                                                    <span>
+                                                        <span>on</span>
+                                                    </span>
+                                                </span>
+                                            </span>
+                                        </span>
+                                        <span className="hl-meta hl-group hl-js">
+                                            <span className="hl-punctuation hl-section hl-group hl-begin hl-js">
+                                                <span>
+                                                    <span>
+                                                        <span>
+                                                            <span>(</span>
+                                                        </span>
+                                                    </span>
+                                                </span>
+                                            </span>
+                                            <span className="hl-meta hl-string hl-js">
+                                                <span className="hl-string hl-quoted hl-double hl-js">
+                                                    <span className="hl-punctuation hl-definition hl-string hl-begin hl-js">
+                                                        <span>
+                                                            <span>
+                                                                <span>
+                                                                    <span>"</span>
+                                                                </span>
+                                                            </span>
+                                                        </span>
+                                                    </span>
+                                                    <span>
+                                                        <span>
+                                                            <span>
+                                                                <span>connection</span>
+                                                            </span>
+                                                        </span>
+                                                    </span>
+                                                    <span className="hl-punctuation hl-definition hl-string hl-end hl-js">
+                                                        <span>
+                                                            <span>
+                                                                <span>
+                                                                    <span>"</span>
+                                                                </span>
+                                                            </span>
+                                                        </span>
+                                                    </span>
+                                                </span>
+                                            </span>
+                                            <span className="hl-punctuation hl-separator hl-comma hl-js">
+                                                <span>
+                                                    <span>
+                                                        <span>
+                                                            <span>,</span>
+                                                        </span>
+                                                    </span>
+                                                </span>
+                                            </span>
+                                            <span> </span>
+                                            <span className="hl-meta hl-function hl-js" />
+                                            <span className="hl-meta hl-function hl-declaration hl-js">
+                                                <span className="hl-punctuation hl-section hl-group hl-begin hl-js">
+                                                    <span>
+                                                        <span>
+                                                            <span>
+                                                                <span>(</span>
+                                                            </span>
+                                                        </span>
+                                                    </span>
+                                                </span>
+                                                <span className="hl-meta hl-binding hl-name hl-js">
+                                                    <span className="hl-variable hl-parameter hl-function hl-js">
+                                                        <span>
+                                                            <span>
+                                                                <span>
+                                                                    <span>ws</span>
+                                                                </span>
+                                                            </span>
+                                                        </span>
+                                                    </span>
+                                                </span>
+                                                <span className="hl-punctuation hl-separator hl-parameter hl-function hl-js">
+                                                    <span>
+                                                        <span>
+                                                            <span>
+                                                                <span>,</span>
+                                                            </span>
+                                                        </span>
+                                                    </span>
+                                                </span>
+                                                <span> </span>
+                                                <span className="hl-meta hl-binding hl-name hl-js">
+                                                    <span className="hl-variable hl-parameter hl-function hl-js">
+                                                        <span>
+                                                            <span>
+                                                                <span>
+                                                                    <span>req</span>
+                                                                </span>
+                                                            </span>
+                                                        </span>
+                                                    </span>
+                                                </span>
+                                                <span className="hl-punctuation hl-section hl-group hl-end hl-js">
+                                                    <span>
+                                                        <span>
+                                                            <span>
+                                                                <span>)</span>
+                                                            </span>
+                                                        </span>
+                                                    </span>
+                                                </span>
+                                                <span> </span>
+                                                <span className="hl-storage hl-type hl-function hl-arrow hl-js">
+                                                    <span>
+                                                        <span>
+                                                            <span>
+                                                                <span>=</span>
+                                                            </span>
+                                                        </span>
+                                                    </span>
+                                                    <span>
+                                                        <span>
+                                                            <span>
+                                                                <span>
+                                                                    <span>&gt;</span>
+                                                                </span>
+                                                            </span>
+                                                        </span>
+                                                    </span>
+                                                </span>
+                                            </span>
+                                            <span className="hl-meta hl-function hl-js">
+                                                <span> </span>
+                                                <span className="hl-meta hl-block hl-js">
+                                                    <span className="hl-punctuation hl-section hl-block hl-begin hl-js">
+                                                        <span>
+                                                            <span>
+                                                                <span>
+                                                                    <span>&#123;</span>
+                                                                </span>
+                                                            </span>
+                                                        </span>
+                                                    </span>
+                                                    <span />
+                                                </span>
+                                            </span>
+                                        </span>
+                                    </span>
+                                </span>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td className="line" data-line="13" />
+                        <td className="code annotated">
+                            <div>
+                                <span className="hl-source hl-js hl-react">
+                                    <span className="hl-meta hl-function-call hl-method hl-js">
+                                        <span className="hl-meta hl-group hl-js">
+                                            <span className="hl-meta hl-function hl-js">
+                                                <span className="hl-meta hl-block hl-js">
+                                                    <span> </span>
+                                                    <span className="hl-meta hl-function-call hl-method hl-js">
+                                                        <span className="hl-support hl-type hl-object hl-console hl-js selection-highlight">
+                                                            <span>
+                                                                <span>
+                                                                    <span>
+                                                                        <span>console</span>
+                                                                    </span>
+                                                                </span>
+                                                            </span>
+                                                        </span>
+                                                        <span className="hl-punctuation hl-accessor hl-js selection-highlight">
+                                                            <span>
+                                                                <span>
+                                                                    <span>
+                                                                        <span>.</span>
+                                                                    </span>
+                                                                </span>
+                                                            </span>
+                                                        </span>
+                                                        <span className="hl-support hl-function hl-console hl-js selection-highlight">
+                                                            <span>
+                                                                <span>
+                                                                    <span>
+                                                                        <span>log</span>
+                                                                    </span>
+                                                                </span>
+                                                            </span>
+                                                        </span>
+                                                        <span className="hl-meta hl-group hl-js">
+                                                            <span className="hl-punctuation hl-section hl-group hl-begin hl-js selection-highlight">
+                                                                <span>
+                                                                    <span>
+                                                                        <span>
+                                                                            <span>(</span>
+                                                                        </span>
+                                                                    </span>
+                                                                </span>
+                                                            </span>
+                                                            <span className="hl-meta hl-string hl-js">
+                                                                <span className="hl-string hl-quoted hl-double hl-js">
+                                                                    <span className="hl-punctuation hl-definition hl-string hl-begin hl-js selection-highlight">
+                                                                        <span>
+                                                                            <span>
+                                                                                <span>
+                                                                                    <span>"</span>
+                                                                                </span>
+                                                                            </span>
+                                                                        </span>
+                                                                    </span>
+                                                                    <span>
+                                                                        <span>
+                                                                            <span>
+                                                                                <span>Connected</span>
+                                                                            </span>
+                                                                        </span>
+                                                                    </span>
+                                                                    <span className="hl-punctuation hl-definition hl-string hl-end hl-js">
+                                                                        <span>
+                                                                            <span>
+                                                                                <span>
+                                                                                    <span>"</span>
+                                                                                </span>
+                                                                            </span>
+                                                                        </span>
+                                                                    </span>
+                                                                </span>
+                                                            </span>
+                                                            <span className="hl-punctuation hl-section hl-group hl-end hl-js">
+                                                                <span>
+                                                                    <span>
+                                                                        <span>
+                                                                            <span>)</span>
+                                                                        </span>
+                                                                    </span>
+                                                                </span>
+                                                            </span>
+                                                        </span>
+                                                    </span>
+                                                    <span className="hl-punctuation hl-terminator hl-statement hl-js">
+                                                        <span>
+                                                            <span>
+                                                                <span>
+                                                                    <span>;</span>
+                                                                </span>
+                                                            </span>
+                                                        </span>
+                                                    </span>
+                                                    <span />
+                                                </span>
+                                            </span>
+                                        </span>
+                                    </span>
+                                </span>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td className="line" data-line="14" />
+                        <td className="code annotated">
+                            <div>
+                                <span className="hl-source hl-js hl-react">
+                                    <span className="hl-meta hl-function-call hl-method hl-js">
+                                        <span className="hl-meta hl-group hl-js">
+                                            <span className="hl-meta hl-function hl-js">
+                                                <span className="hl-meta hl-block hl-js" />
+                                            </span>
+                                        </span>
+                                    </span>
+                                </span>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td className="line" data-line="15" />
+                        <td className="code annotated">
+                            <div>
+                                <span className="hl-source hl-js hl-react">
+                                    <span className="hl-meta hl-function-call hl-method hl-js">
+                                        <span className="hl-meta hl-group hl-js">
+                                            <span className="hl-meta hl-function hl-js">
+                                                <span className="hl-meta hl-block hl-js">
+                                                    <span />
+                                                    <span className="hl-meta hl-function-call hl-method hl-js">
+                                                        <span className="hl-variable hl-other hl-readwrite hl-js">
+                                                            <span>
+                                                                <span>ws</span>
+                                                            </span>
+                                                        </span>
+                                                        <span className="hl-punctuation hl-accessor hl-js">
+                                                            <span>
+                                                                <span>.</span>
+                                                            </span>
+                                                        </span>
+                                                        <span className="hl-variable hl-function hl-js">
+                                                            <span>
+                                                                <span>on</span>
+                                                            </span>
+                                                        </span>
+                                                        <span className="hl-meta hl-group hl-js">
+                                                            <span className="hl-punctuation hl-section hl-group hl-begin hl-js">
+                                                                <span>
+                                                                    <span>(</span>
+                                                                </span>
+                                                            </span>
+                                                            <span className="hl-meta hl-string hl-js">
+                                                                <span className="hl-string hl-quoted hl-double hl-js">
+                                                                    <span className="hl-punctuation hl-definition hl-string hl-begin hl-js">
+                                                                        <span>
+                                                                            <span>"</span>
+                                                                        </span>
+                                                                    </span>
+                                                                    <span>
+                                                                        <span>message</span>
+                                                                    </span>
+                                                                    <span className="hl-punctuation hl-definition hl-string hl-end hl-js">
+                                                                        <span>
+                                                                            <span>"</span>
+                                                                        </span>
+                                                                    </span>
+                                                                </span>
+                                                            </span>
+                                                            <span className="hl-punctuation hl-separator hl-comma hl-js">
+                                                                <span>
+                                                                    <span>,</span>
+                                                                </span>
+                                                            </span>
+                                                            <span> </span>
+                                                            <span className="hl-meta hl-function hl-js" />
+                                                            <span className="hl-meta hl-function hl-declaration hl-js">
+                                                                <span className="hl-punctuation hl-section hl-group hl-begin hl-js">
+                                                                    <span>
+                                                                        <span>(</span>
+                                                                    </span>
+                                                                </span>
+                                                                <span className="hl-meta hl-binding hl-name hl-js">
+                                                                    <span className="hl-variable hl-parameter hl-function hl-js">
+                                                                        <span>
+                                                                            <span>data</span>
+                                                                        </span>
+                                                                    </span>
+                                                                </span>
+                                                                <span className="hl-punctuation hl-section hl-group hl-end hl-js">
+                                                                    <span>
+                                                                        <span>)</span>
+                                                                    </span>
+                                                                </span>
+                                                                <span> </span>
+                                                                <span className="hl-storage hl-type hl-function hl-arrow hl-js">
+                                                                    <span>
+                                                                        <span>=</span>
+                                                                    </span>
+                                                                    <span>
+                                                                        <span>
+                                                                            <span>&gt;</span>
+                                                                        </span>
+                                                                    </span>
+                                                                </span>
+                                                            </span>
+                                                            <span className="hl-meta hl-function hl-js">
+                                                                <span> </span>
+                                                                <span className="hl-meta hl-block hl-js">
+                                                                    <span className="hl-punctuation hl-section hl-block hl-begin hl-js">
+                                                                        <span>
+                                                                            <span>&#123;</span>
+                                                                        </span>
+                                                                    </span>
+                                                                    <span />
+                                                                </span>
+                                                            </span>
+                                                        </span>
+                                                    </span>
+                                                </span>
+                                            </span>
+                                        </span>
+                                    </span>
+                                </span>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </code>
+    </div>
+))
