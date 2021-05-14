@@ -3,7 +3,7 @@ import { test } from 'mocha'
 import { Key } from 'ts-key-enum'
 
 import { SharedGraphQlOperations, SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
-import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
+import { Driver, createDriverForTest, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import {
@@ -128,13 +128,14 @@ describe('Search', () => {
     const getSearchFieldValue = (driver: Driver): Promise<string | undefined> =>
         driver.page.evaluate(() => document.querySelector<HTMLTextAreaElement>('#monaco-query-input textarea')?.value)
 
-    test('Styled correctly on results page', async () => {
+    test('Styled correctly on GraphQL search results page', async () => {
         testContext.overrideGraphQL({
             ...commonSearchGraphQLResults,
         })
         await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=foo')
         await driver.page.waitForSelector('#monaco-query-input')
-        await percySnapshotWithVariants(driver.page, 'Search results page')
+        // GraphQL search is not supported with redesign enabled so no need to take snapshots of variants
+        await percySnapshot(driver.page, 'Search results page')
     })
 
     describe('Search filters', () => {
@@ -236,7 +237,7 @@ describe('Search', () => {
             await driver.findElementWithText('github.com/auth0/go-jwt-middleware', {
                 action: 'click',
                 wait: { timeout: 5000 },
-                selector: '.monaco-query-input-container .suggest-widget.visible span',
+                selector: '.monaco-query-input-container .suggest-widget.visible a.label-name',
             })
             expect(await getSearchFieldValue(driver)).toStrictEqual('repo:^github\\.com/auth0/go-jwt-middleware$ ')
 
@@ -744,6 +745,12 @@ describe('Search', () => {
             })
             await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
             expect(await getSelectedSearchContextSpec()).toStrictEqual('context:global')
+        })
+
+        test('Disable dropdown if version context is active', async () => {
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp&c=version-context-1')
+            await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
+            expect(await isSearchContextDropdownDisabled()).toBeTruthy()
         })
 
         test('Convert version context', async () => {

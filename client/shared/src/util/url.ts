@@ -611,7 +611,7 @@ export function buildSearchURLQuery(
     }
 
     if (searchContextSpec) {
-        queryParameter = appendContextFilter(queryParameter, searchContextSpec)
+        queryParameter = appendContextFilter(queryParameter, searchContextSpec, versionContext)
     }
 
     searchParameters.set('q', queryParameter)

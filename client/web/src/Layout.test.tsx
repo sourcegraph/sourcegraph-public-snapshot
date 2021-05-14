@@ -35,6 +35,16 @@ describe('Layout', () => {
         platformContext: { forceUpdateTooltip: () => {}, settings: NEVER },
     } as unknown) as LayoutProps
 
+    beforeAll(() => {
+        Object.defineProperty(window, 'matchMedia', {
+            writable: true,
+            value: () => ({
+                matches: false,
+                addEventListener: () => {},
+            }),
+        })
+    })
+
     beforeEach(() => {
         const root = document.createElement('div')
         root.id = 'root'

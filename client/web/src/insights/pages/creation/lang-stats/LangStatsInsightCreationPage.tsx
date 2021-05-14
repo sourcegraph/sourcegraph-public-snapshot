@@ -14,21 +14,16 @@ import { Page } from '../../../../components/Page'
 import { PageTitle } from '../../../../components/PageTitle'
 import { FORM_ERROR } from '../../../components/form/hooks/useForm'
 import { InsightsApiContext } from '../../../core/backend/api-provider'
+import { defaultFormattingOptions } from '../../../core/jsonc-settings'
 import { InsightTypeSuffix } from '../../../core/types'
 
 import {
-    LangStatsInsightCreationForm,
-    LangStatsInsightCreationFormProps,
-} from './components/lang-stats-insight-creation-form/LangStatsInsightCreationForm'
+    LangStatsInsightCreationContent,
+    LangStatsInsightCreationContentProps,
+} from './components/lang-stats-insight-creation-content/LangStatsInsightCreationContent'
 import styles from './LangStatsInsightCreationPage.module.scss'
 
 const DEFAULT_FINAL_SETTINGS = {}
-
-const defaultFormattingOptions: jsonc.FormattingOptions = {
-    eol: '\n',
-    insertSpaces: true,
-    tabSize: 2,
-}
 
 export interface LangStatsInsightCreationPageProps
     extends PlatformContextProps<'updateSettings'>,
@@ -45,7 +40,7 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
     const { history, authenticatedUser, settingsCascade, platformContext } = props
     const { getSubjectSettings, updateSubjectSettings } = useContext(InsightsApiContext)
 
-    const handleSubmit = useCallback<LangStatsInsightCreationFormProps['onSubmit']>(
+    const handleSubmit = useCallback<LangStatsInsightCreationContentProps['onSubmit']>(
         async values => {
             if (!authenticatedUser) {
                 return
@@ -103,7 +98,7 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
     }
 
     return (
-        <Page className={classnames(styles.creationPage, 'col-8')}>
+        <Page className={classnames(styles.creationPage, 'col-10')}>
             <PageTitle title="Create new code insight" />
 
             <div className="mb-5">
@@ -121,7 +116,7 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
                 </p>
             </div>
 
-            <LangStatsInsightCreationForm
+            <LangStatsInsightCreationContent
                 className="pb-5"
                 settings={settingsCascade.final ?? DEFAULT_FINAL_SETTINGS}
                 onSubmit={handleSubmit}

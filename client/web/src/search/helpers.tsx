@@ -61,7 +61,7 @@ export function submitSearch({
     // Go to search results page
     const path = '/search?' + searchQueryParameter
     eventLogger.log('SearchSubmitted', {
-        query: appendContextFilter(query, selectedSearchContextSpec),
+        query: appendContextFilter(query, selectedSearchContextSpec, versionContext),
         source,
     })
     history.push(path, { ...history.location.state, query })

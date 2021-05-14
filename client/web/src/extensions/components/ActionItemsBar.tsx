@@ -211,7 +211,6 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(props => {
     return (
         <div className="action-items__bar p-0 border-left position-relative d-flex flex-column" ref={barReference}>
             {/* To be clear to users that this isn't an error reported by extensions about e.g. the code they're viewing. */}
-            {/* eslint-disable-next-line react/jsx-no-bind */}
             <ErrorBoundary location={props.location} render={error => <span>Component error: {error.message}</span>}>
                 <ActionItemsDivider />
                 {canScrollNegative && (

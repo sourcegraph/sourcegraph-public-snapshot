@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -26,7 +27,7 @@ func TestSearchPagination_unmarshalSearchCursor(t *testing.T) {
 		t.Fatal("expected got == nil && err == nil for nil input")
 	}
 
-	want := &searchCursor{
+	want := &run.SearchCursor{
 		RepositoryOffset: 1,
 		ResultOffset:     2,
 	}
@@ -299,18 +300,18 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 	tests := []struct {
 		name                string
 		executor            executor
-		request             *searchPaginationInfo
+		request             *run.SearchPaginationInfo
 		wantSearchedBatches [][]*search.RepositoryRevisions
-		wantCursor          *searchCursor
+		wantCursor          *run.SearchCursor
 		wantResults         []result.Match
 		wantCommon          *streaming.Stats
 		wantErr             error
 	}{
 		{
 			name: "first request",
-			request: &searchPaginationInfo{
-				cursor: &searchCursor{},
-				limit:  10,
+			request: &run.SearchPaginationInfo{
+				Cursor: &run.SearchCursor{},
+				Limit:  10,
 			},
 			wantSearchedBatches: [][]*search.RepositoryRevisions{
 				{
@@ -320,7 +321,7 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 					repoRevs("4", "master"),
 				},
 			},
-			wantCursor: &searchCursor{RepositoryOffset: 2, ResultOffset: 4},
+			wantCursor: &run.SearchCursor{RepositoryOffset: 2, ResultOffset: 4},
 			wantResults: []result.Match{
 				matchResult(repoName("1"), "some/file0.go", "master"),
 				matchResult(repoName("1"), "some/file1.go", "master"),
@@ -339,9 +340,9 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 		},
 		{
 			name: "second request",
-			request: &searchPaginationInfo{
-				cursor: &searchCursor{RepositoryOffset: 2, ResultOffset: 4},
-				limit:  10,
+			request: &run.SearchPaginationInfo{
+				Cursor: &run.SearchCursor{RepositoryOffset: 2, ResultOffset: 4},
+				Limit:  10,
 			},
 			wantSearchedBatches: [][]*search.RepositoryRevisions{
 				{
@@ -350,7 +351,7 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 					repoRevs("5", "master"),
 				},
 			},
-			wantCursor: &searchCursor{RepositoryOffset: 5, ResultOffset: 0, Finished: true},
+			wantCursor: &run.SearchCursor{RepositoryOffset: 5, ResultOffset: 0, Finished: true},
 			wantResults: []result.Match{
 				matchResult(repoName("3"), "some/file1.go", "feature"),
 				matchResult(repoName("3"), "some/file2.go", "feature"),
@@ -367,9 +368,9 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 		},
 		{
 			name: "small limit, first request",
-			request: &searchPaginationInfo{
-				cursor: &searchCursor{},
-				limit:  1,
+			request: &run.SearchPaginationInfo{
+				Cursor: &run.SearchCursor{},
+				Limit:  1,
 			},
 			wantSearchedBatches: [][]*search.RepositoryRevisions{
 				{
@@ -379,7 +380,7 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 					repoRevs("4", "master"),
 				},
 			},
-			wantCursor: &searchCursor{RepositoryOffset: 0, ResultOffset: 1},
+			wantCursor: &run.SearchCursor{RepositoryOffset: 0, ResultOffset: 1},
 			wantResults: []result.Match{
 				matchResult(repoName("1"), "some/file0.go", "master"),
 			},
@@ -389,9 +390,9 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 		},
 		{
 			name: "small limit, second request",
-			request: &searchPaginationInfo{
-				cursor: &searchCursor{RepositoryOffset: 0, ResultOffset: 1},
-				limit:  1,
+			request: &run.SearchPaginationInfo{
+				Cursor: &run.SearchCursor{RepositoryOffset: 0, ResultOffset: 1},
+				Limit:  1,
 			},
 			wantSearchedBatches: [][]*search.RepositoryRevisions{
 				{
@@ -401,7 +402,7 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 					repoRevs("4", "master"),
 				},
 			},
-			wantCursor: &searchCursor{RepositoryOffset: 0, ResultOffset: 2},
+			wantCursor: &run.SearchCursor{RepositoryOffset: 0, ResultOffset: 2},
 			wantResults: []result.Match{
 				matchResult(repoName("1"), "some/file1.go", "master"),
 			},
@@ -412,11 +413,11 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 		{
 			name:     "no results",
 			executor: noResultsExecutor,
-			request: &searchPaginationInfo{
-				cursor: &searchCursor{},
-				limit:  1,
+			request: &run.SearchPaginationInfo{
+				Cursor: &run.SearchCursor{},
+				Limit:  1,
 			},
-			wantCursor: &searchCursor{RepositoryOffset: 1, ResultOffset: 0, Finished: true},
+			wantCursor: &run.SearchCursor{RepositoryOffset: 1, ResultOffset: 0, Finished: true},
 			wantCommon: &streaming.Stats{
 				Repos: reposMap(),
 			},
@@ -506,18 +507,18 @@ func TestSearchPagination_issue_6287(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		request     *searchPaginationInfo
-		wantCursor  *searchCursor
+		request     *run.SearchPaginationInfo
+		wantCursor  *run.SearchCursor
 		wantResults []result.Match
 		wantErr     error
 	}{
 		{
 			name: "request 1",
-			request: &searchPaginationInfo{
-				cursor: &searchCursor{},
-				limit:  3,
+			request: &run.SearchPaginationInfo{
+				Cursor: &run.SearchCursor{},
+				Limit:  3,
 			},
-			wantCursor: &searchCursor{RepositoryOffset: 1, ResultOffset: 1},
+			wantCursor: &run.SearchCursor{RepositoryOffset: 1, ResultOffset: 1},
 			wantResults: []result.Match{
 				mkFileMatch(repoName("1"), "a.go"),
 				mkFileMatch(repoName("1"), "b.go"),
@@ -526,11 +527,11 @@ func TestSearchPagination_issue_6287(t *testing.T) {
 		},
 		{
 			name: "request 2",
-			request: &searchPaginationInfo{
-				cursor: &searchCursor{RepositoryOffset: 1, ResultOffset: 1},
-				limit:  3,
+			request: &run.SearchPaginationInfo{
+				Cursor: &run.SearchCursor{RepositoryOffset: 1, ResultOffset: 1},
+				Limit:  3,
 			},
-			wantCursor: &searchCursor{RepositoryOffset: 1, ResultOffset: 4},
+			wantCursor: &run.SearchCursor{RepositoryOffset: 1, ResultOffset: 4},
 			wantResults: []result.Match{
 				mkFileMatch(repoName("2"), "b.go"),
 				mkFileMatch(repoName("2"), "c.go"),
@@ -539,11 +540,11 @@ func TestSearchPagination_issue_6287(t *testing.T) {
 		},
 		{
 			name: "request 3",
-			request: &searchPaginationInfo{
-				cursor: &searchCursor{RepositoryOffset: 1, ResultOffset: 4},
-				limit:  3,
+			request: &run.SearchPaginationInfo{
+				Cursor: &run.SearchCursor{RepositoryOffset: 1, ResultOffset: 4},
+				Limit:  3,
 			},
-			wantCursor: &searchCursor{RepositoryOffset: 2, ResultOffset: 0, Finished: true},
+			wantCursor: &run.SearchCursor{RepositoryOffset: 2, ResultOffset: 0, Finished: true},
 			wantResults: []result.Match{
 				mkFileMatch(repoName("2"), "e.go"),
 			},
@@ -643,20 +644,20 @@ func TestSearchPagination_cloning_missing(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		request     *searchPaginationInfo
+		request     *run.SearchPaginationInfo
 		searchRepos []*search.RepositoryRevisions
-		wantCursor  *searchCursor
+		wantCursor  *run.SearchCursor
 		wantResults []result.Match
 		wantCommon  *streaming.Stats
 		wantErr     error
 	}{
 		{
 			name: "repo a",
-			request: &searchPaginationInfo{
-				cursor: &searchCursor{},
-				limit:  1,
+			request: &run.SearchPaginationInfo{
+				Cursor: &run.SearchCursor{},
+				Limit:  1,
 			},
-			wantCursor: &searchCursor{RepositoryOffset: 1, ResultOffset: 0},
+			wantCursor: &run.SearchCursor{RepositoryOffset: 1, ResultOffset: 0},
 			wantResults: []result.Match{
 				mkFileMatch(repoName("a"), "a.go"),
 			},
@@ -666,11 +667,11 @@ func TestSearchPagination_cloning_missing(t *testing.T) {
 		},
 		{
 			name: "missing repo b, repo c",
-			request: &searchPaginationInfo{
-				cursor: &searchCursor{RepositoryOffset: 1, ResultOffset: 0},
-				limit:  1,
+			request: &run.SearchPaginationInfo{
+				Cursor: &run.SearchCursor{RepositoryOffset: 1, ResultOffset: 0},
+				Limit:  1,
 			},
-			wantCursor: &searchCursor{RepositoryOffset: 3, ResultOffset: 0},
+			wantCursor: &run.SearchCursor{RepositoryOffset: 3, ResultOffset: 0},
 			wantResults: []result.Match{
 				mkFileMatch(repoName("c"), "a.go"),
 			},
@@ -684,11 +685,11 @@ func TestSearchPagination_cloning_missing(t *testing.T) {
 		},
 		{
 			name: "repo a, missing repo b, repo c",
-			request: &searchPaginationInfo{
-				cursor: &searchCursor{},
-				limit:  2,
+			request: &run.SearchPaginationInfo{
+				Cursor: &run.SearchCursor{},
+				Limit:  2,
 			},
-			wantCursor: &searchCursor{RepositoryOffset: 3, ResultOffset: 0},
+			wantCursor: &run.SearchCursor{RepositoryOffset: 3, ResultOffset: 0},
 			wantResults: []result.Match{
 				mkFileMatch(repoName("a"), "a.go"),
 				mkFileMatch(repoName("c"), "a.go"),
@@ -702,11 +703,11 @@ func TestSearchPagination_cloning_missing(t *testing.T) {
 		},
 		{
 			name: "all",
-			request: &searchPaginationInfo{
-				cursor: &searchCursor{},
-				limit:  3,
+			request: &run.SearchPaginationInfo{
+				Cursor: &run.SearchCursor{},
+				Limit:  3,
 			},
-			wantCursor: &searchCursor{RepositoryOffset: 6, ResultOffset: 0, Finished: true},
+			wantCursor: &run.SearchCursor{RepositoryOffset: 6, ResultOffset: 0, Finished: true},
 			wantResults: []result.Match{
 				mkFileMatch(repoName("a"), "a.go"),
 				mkFileMatch(repoName("c"), "a.go"),

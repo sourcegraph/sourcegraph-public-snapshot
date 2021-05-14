@@ -17,6 +17,7 @@ import {
     ListSearchContextsVariables,
     SearchContextFields,
     SearchContextsNamespaceFilterType,
+    SearchContextsOrderBy,
 } from '../graphql-operations'
 import { SearchContextProps } from '../search'
 
@@ -36,9 +37,11 @@ export const SearchContextsListTab: React.FunctionComponent<SearchContextsListTa
 }) => {
     const queryConnection = useCallback(
         (args: Partial<ListSearchContextsVariables>) => {
-            const { namespace, namespaceFilterType } = args as {
+            const { namespace, namespaceFilterType, orderBy, descending } = args as {
                 namespace: string | undefined
                 namespaceFilterType: SearchContextsNamespaceFilterType | undefined
+                orderBy: SearchContextsOrderBy
+                descending: boolean
             }
             return fetchSearchContexts({
                 first: args.first ?? 10,
@@ -46,6 +49,8 @@ export const SearchContextsListTab: React.FunctionComponent<SearchContextsListTa
                 after: args.after ?? undefined,
                 namespace,
                 namespaceFilterType,
+                orderBy,
+                descending,
             })
         },
         [fetchSearchContexts]
@@ -91,6 +96,46 @@ export const SearchContextsListTab: React.FunctionComponent<SearchContextsListTa
                     },
                 },
                 ...ownerNamespaceFilterValues,
+            ],
+        },
+        {
+            label: 'Order by',
+            type: 'select',
+            id: 'order',
+            tooltip: 'Order search contexts',
+            values: [
+                {
+                    value: 'spec-asc',
+                    label: 'Spec (ascending)',
+                    args: {
+                        orderBy: SearchContextsOrderBy.SEARCH_CONTEXT_SPEC,
+                        descending: false,
+                    },
+                },
+                {
+                    value: 'spec-desc',
+                    label: 'Spec (descending)',
+                    args: {
+                        orderBy: SearchContextsOrderBy.SEARCH_CONTEXT_SPEC,
+                        descending: true,
+                    },
+                },
+                {
+                    value: 'updated-at-asc',
+                    label: 'Last update (ascending)',
+                    args: {
+                        orderBy: SearchContextsOrderBy.SEARCH_CONTEXT_UPDATED_AT,
+                        descending: false,
+                    },
+                },
+                {
+                    value: 'updated-at-desc',
+                    label: 'Last update (descending)',
+                    args: {
+                        orderBy: SearchContextsOrderBy.SEARCH_CONTEXT_UPDATED_AT,
+                        descending: true,
+                    },
+                },
             ],
         },
     ]

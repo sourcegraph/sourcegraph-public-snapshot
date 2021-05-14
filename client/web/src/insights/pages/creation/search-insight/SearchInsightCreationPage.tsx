@@ -14,19 +14,15 @@ import { Page } from '../../../../components/Page'
 import { PageTitle } from '../../../../components/PageTitle'
 import { FORM_ERROR } from '../../../components/form/hooks/useForm'
 import { InsightsApiContext } from '../../../core/backend/api-provider'
+import { defaultFormattingOptions } from '../../../core/jsonc-settings'
 import { InsightTypeSuffix } from '../../../core/types'
 
 import {
-    SearchInsightCreationForm,
-    CreationSearchInsightFormProps,
-} from './components/search-insight-creation-form/SearchInsightCreationForm'
+    SearchInsightCreationContent,
+    SearchInsightCreationContentProps,
+} from './components/search-insight-creation-content/SearchInsightCreationContent'
 import styles from './SearchInsightCreationPage.module.scss'
-
-const defaultFormattingOptions: jsonc.FormattingOptions = {
-    eol: '\n',
-    insertSpaces: true,
-    tabSize: 2,
-}
+import { getSanitizedInsight } from './utils/insight-sanitizer'
 
 export interface SearchInsightCreationPageProps
     extends PlatformContextProps<'updateSettings'>,
@@ -44,7 +40,7 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
     const { platformContext, authenticatedUser, history, settingsCascade } = props
     const { updateSubjectSettings, getSubjectSettings } = useContext(InsightsApiContext)
 
-    const handleSubmit = useCallback<CreationSearchInsightFormProps['onSubmit']>(
+    const handleSubmit = useCallback<SearchInsightCreationContentProps['onSubmit']>(
         async values => {
             if (!authenticatedUser) {
                 return
@@ -62,24 +58,7 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
 
             try {
                 const settings = await getSubjectSettings(subjectID).toPromise()
-
-                const newSettingsString = {
-                    title: values.title,
-                    repositories: values.repositories.trim().split(/\s*,\s*/),
-                    series: values.series.map(line => ({
-                        name: line.name,
-                        // Query field is a reg exp field for code insight query setting
-                        // Native html input element adds escape symbols by itself
-                        // to prevent this behavior below we replace double escaping
-                        // with just one series of escape characters e.g. - //
-                        query: line.query.replace(/\\\\/g, '\\'),
-                        stroke: line.color,
-                    })),
-                    step: {
-                        [values.step]: +values.stepValue,
-                    },
-                }
-
+                const newSettingsString = getSanitizedInsight(values)
                 const edits = jsonc.modify(
                     settings.contents,
                     // According to our naming convention <type>.insight.<name>
@@ -112,7 +91,7 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
     }
 
     return (
-        <Page className={classnames('col-8', styles.creationPage)}>
+        <Page className={classnames('col-10', styles.creationPage)}>
             <PageTitle title="Create new code insight" />
 
             <div className="mb-5">
@@ -130,7 +109,7 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
                 </p>
             </div>
 
-            <SearchInsightCreationForm
+            <SearchInsightCreationContent
                 className="pb-5"
                 settings={settingsCascade.final}
                 onSubmit={handleSubmit}

@@ -60,7 +60,6 @@ export const AuthenticatedCodeMonitoringArea = withAuthenticatedUser<Authenticat
     return (
         <div className="w-100">
             <Page>
-                {/* eslint-disable react/jsx-no-bind */}
                 <Switch>
                     <Route
                         render={props => <CodeMonitoringPage {...outerProps} {...props} />}
