@@ -44,6 +44,7 @@ const defaultProps: MonacoQueryInputProps = {
     onSubmit: () => {},
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
+    isSearchOnboardingTourActive: false,
 }
 
 add(

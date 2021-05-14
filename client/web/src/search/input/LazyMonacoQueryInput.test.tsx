@@ -49,6 +49,7 @@ describe('PlainQueryInput', () => {
                                 totalCount: 0,
                             })
                         }
+                        isSearchOnboardingTourActive={false}
                     />
                 )
                 .toJSON()
@@ -93,6 +94,7 @@ describe('PlainQueryInput', () => {
                                 totalCount: 0,
                             })
                         }
+                        isSearchOnboardingTourActive={false}
                     />
                 )
                 .toJSON()

@@ -55,6 +55,8 @@ export interface MonacoQueryInputProps
 
     // Whether comments are parsed and highlighted
     interpretComments?: boolean
+
+    isSearchOnboardingTourActive: boolean
 }
 
 const SOURCEGRAPH_SEARCH = 'sourcegraphSearch' as const

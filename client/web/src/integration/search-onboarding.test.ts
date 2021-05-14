@@ -90,7 +90,6 @@ describe('Search onboarding', () => {
 
     const resetOnboardingTour = async () => {
         await driver.page.evaluate(() => {
-            localStorage.setItem('has-seen-onboarding-tour', 'false')
             localStorage.setItem('has-cancelled-onboarding-tour', 'false')
             localStorage.setItem('has-completed-onboarding-tour', 'false')
             location.reload()
@@ -115,8 +114,8 @@ describe('Search onboarding', () => {
             await resetOnboardingTour()
             await waitAndFocusInput()
             await driver.page.waitForSelector('.tour-card')
-            await driver.page.waitForSelector('.test-tour-language-button')
-            await driver.page.click('.test-tour-language-button')
+            await driver.page.waitForSelector('.tour-language-button')
+            await driver.page.click('.tour-language-button')
             await driver.page.waitForSelector('#monaco-query-input')
             const inputContents = await driver.page.evaluate(
                 () => document.querySelector('#monaco-query-input .view-lines')?.textContent
@@ -133,8 +132,6 @@ describe('Search onboarding', () => {
 
             await driver.page.waitForSelector('.test-tour-step-4')
             await driver.page.click('.test-search-button')
-            await driver.page.waitForSelector('.test-tour-step-5')
-            await driver.page.click('.test-search-help-dropdown-button-icon')
         })
 
         it('displays all steps in the repo onboarding flow', async () => {
@@ -142,8 +139,8 @@ describe('Search onboarding', () => {
             await resetOnboardingTour()
             await waitAndFocusInput()
             await driver.page.waitForSelector('.tour-card')
-            await driver.page.waitForSelector('.test-tour-repo-button')
-            await driver.page.click('.test-tour-repo-button')
+            await driver.page.waitForSelector('.tour-repo-button')
+            await driver.page.click('.tour-repo-button')
             await driver.page.waitForSelector('#monaco-query-input')
             const inputContents = await driver.page.evaluate(
                 () => document.querySelector('#monaco-query-input .view-lines')?.textContent
@@ -156,16 +153,15 @@ describe('Search onboarding', () => {
             await driver.page.keyboard.type('test')
             await driver.page.waitForSelector('.test-tour-step-4')
             await driver.page.click('.test-search-button')
-            await driver.page.waitForSelector('.test-tour-step-5')
-            await driver.page.click('.test-search-help-dropdown-button-icon')
         })
+
         it('advances filter-lang when an autocomplete suggestion is selected', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
             await resetOnboardingTour()
             await waitAndFocusInput()
             await driver.page.waitForSelector('.tour-card')
-            await driver.page.waitForSelector('.test-tour-language-button')
-            await driver.page.click('.test-tour-language-button')
+            await driver.page.waitForSelector('.tour-language-button')
+            await driver.page.click('.tour-language-button')
             await driver.page.waitForSelector('#monaco-query-input')
             const inputContents = await driver.page.evaluate(
                 () => document.querySelector('#monaco-query-input .view-lines')?.textContent
@@ -184,13 +180,14 @@ describe('Search onboarding', () => {
             tourStep2 = await driver.page.evaluate(() => document.querySelector('.test-tour-step-2'))
             expect(tourStep3).toBeTruthy()
         })
+
         it('advances filter-repository when an autocomplete suggestion is selected', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
             await resetOnboardingTour()
             await waitAndFocusInput()
             await driver.page.waitForSelector('.tour-card')
-            await driver.page.waitForSelector('.test-tour-repo-button')
-            await driver.page.click('.test-tour-repo-button')
+            await driver.page.waitForSelector('.tour-repo-button')
+            await driver.page.click('.tour-repo-button')
             await driver.page.waitForSelector('#monaco-query-input')
             const inputContents = await driver.page.evaluate(
                 () => document.querySelector('#monaco-query-input .view-lines')?.textContent
@@ -215,8 +212,8 @@ describe('Search onboarding', () => {
             await resetOnboardingTour()
             await waitAndFocusInput()
             await driver.page.waitForSelector('.tour-card')
-            await driver.page.waitForSelector('.test-tour-repo-button')
-            await driver.page.click('.test-tour-repo-button')
+            await driver.page.waitForSelector('.tour-repo-button')
+            await driver.page.click('.tour-repo-button')
             await driver.page.waitForSelector('#monaco-query-input')
             const inputContents = await driver.page.evaluate(
                 () => document.querySelector('#monaco-query-input .view-lines')?.textContent
@@ -234,72 +231,6 @@ describe('Search onboarding', () => {
             tourStep3 = await driver.page.evaluate(() => document.querySelector('.test-tour-step-3'))
             tourStep2 = await driver.page.evaluate(() => document.querySelector('.test-tour-step-2'))
             expect(tourStep3).toBeTruthy()
-        })
-
-        it('Removes onboardingTour query parameter when the query reference step is advanced', async () => {
-            await driver.page.goto(
-                driver.sourcegraphBaseUrl + '/search?q=lang:go+test&patternType=literal&onboardingTour=true'
-            )
-            await resetOnboardingTour()
-            await waitAndFocusInput()
-            await driver.page.waitForSelector('.tour-card')
-            await driver.page.waitForSelector('.test-tour-step-5')
-            await driver.page.waitForSelector('.search-help-dropdown-button')
-            await driver.page.click('.search-help-dropdown-button')
-            expect(await driver.page.evaluate(() => document.querySelectorAll('.test-tour-step-5').length)).toBe(0)
-            await driver.assertWindowLocation('/search?q=lang%3Ago+test&patternType=literal')
-        })
-
-        it('Removes onboardingTour query parameter when the query reference step is cancelled', async () => {
-            await driver.page.goto(
-                driver.sourcegraphBaseUrl + '/search?q=lang:go+test&patternType=literal&onboardingTour=true'
-            )
-            await resetOnboardingTour()
-            await waitAndFocusInput()
-            await driver.page.waitForSelector('.tour-card')
-            await driver.page.waitForSelector('.test-tour-step-5')
-            await driver.page.waitForSelector('.test-tour-close-button')
-            await driver.page.click('.test-tour-close-button')
-            expect(await driver.page.evaluate(() => document.querySelectorAll('.test-tour-step-5').length)).toBe(0)
-            await driver.assertWindowLocation('/search?q=lang%3Ago+test&patternType=literal')
-        })
-
-        it('Does not display tour step when re-visiting a page with onboardingTour query after already completing ', async () => {
-            await driver.page.goto(
-                driver.sourcegraphBaseUrl + '/search?q=lang:go+test&patternType=literal&onboardingTour=true'
-            )
-            await resetOnboardingTour()
-            await waitAndFocusInput()
-            await driver.page.waitForSelector('.tour-card')
-            await driver.page.waitForSelector('.test-tour-step-5')
-            await driver.page.waitForSelector('.search-help-dropdown-button')
-            await driver.page.click('.search-help-dropdown-button')
-            expect(await driver.page.evaluate(() => document.querySelectorAll('.test-tour-step-5').length)).toBe(0)
-            await driver.assertWindowLocation('/search?q=lang%3Ago+test&patternType=literal')
-            await driver.page.goto(
-                driver.sourcegraphBaseUrl + '/search?q=lang:go+test&patternType=literal&onboardingTour=true'
-            )
-            await driver.page.waitForSelector('.search-help-dropdown-button')
-            expect(await driver.page.evaluate(() => document.querySelectorAll('.test-tour-step-5').length)).toBe(0)
-        })
-
-        it('Does not display tour step when re-visiting a page with onboardingTour query after already closing tour ', async () => {
-            await driver.page.goto(
-                driver.sourcegraphBaseUrl + '/search?q=lang:go+test&patternType=literal&onboardingTour=true'
-            )
-            await resetOnboardingTour()
-            await waitAndFocusInput()
-            await driver.page.waitForSelector('.tour-card')
-            await driver.page.waitForSelector('.test-tour-step-5')
-            await driver.page.waitForSelector('.test-tour-close-button')
-            await driver.page.click('.test-tour-close-button')
-            expect(await driver.page.evaluate(() => document.querySelectorAll('.test-tour-step-5').length)).toBe(0)
-            await driver.assertWindowLocation('/search?q=lang%3Ago+test&patternType=literal')
-            await driver.page.goto(
-                driver.sourcegraphBaseUrl + '/search?q=lang:go+test&patternType=literal&onboardingTour=true'
-            )
-            await driver.page.waitForSelector('.search-help-dropdown-button')
-            expect(await driver.page.evaluate(() => document.querySelectorAll('.test-tour-step-5').length)).toBe(0)
         })
     })
 })

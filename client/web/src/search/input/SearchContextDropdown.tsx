@@ -30,6 +30,7 @@ export interface SearchContextDropdownProps
     submitSearchOnSearchContextChange?: boolean
     query: string
     history: H.History
+    isSearchOnboardingTourActive: boolean
 }
 
 const tourOptions: Shepherd.Tour.TourOptions = {
@@ -92,6 +93,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         fetchSearchContexts,
         showSearchContextHighlightTourStep = false,
         submitSearchOnSearchContextChange = true,
+        isSearchOnboardingTourActive,
     } = props
 
     const [hasSeenHighlightTourStep, setHasSeenHighlightTourStep] = useLocalStorage(
@@ -105,19 +107,23 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
             {
                 id: 'search-contexts-start-tour',
                 text: getHighlightTourStep(() => tour.cancel()),
+                classes: 'tour-card--arrow-left-up',
                 attachTo: {
                     element: '.search-context-dropdown__button',
                     on: 'bottom',
+                },
+                popperOptions: {
+                    modifiers: [{ name: 'offset', options: { offset: [140, 16] } }],
                 },
             },
         ])
     }, [tour])
 
     useEffect(() => {
-        if (showSearchContextHighlightTourStep && !hasSeenHighlightTourStep) {
+        if (showSearchContextHighlightTourStep && !isSearchOnboardingTourActive && !hasSeenHighlightTourStep) {
             tour.start()
         }
-    }, [showSearchContextHighlightTourStep, hasSeenHighlightTourStep, tour])
+    }, [showSearchContextHighlightTourStep, isSearchOnboardingTourActive, hasSeenHighlightTourStep, tour])
 
     useEffect(() => {
         const onCanceled = (): void => {

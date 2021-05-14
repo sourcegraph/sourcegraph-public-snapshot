@@ -18,7 +18,6 @@ import { submitSearch, QueryState } from '../helpers'
 
 import { LazyMonacoQueryInput } from './LazyMonacoQueryInput'
 import { SearchButton } from './SearchButton'
-import { useSearchOnboardingTour } from './SearchOnboardingTour'
 
 interface Props
     extends ActivationProps,
@@ -56,12 +55,6 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
         },
         [props]
     )
-    const onboardingTourQueryInputProps = useSearchOnboardingTour({
-        ...props,
-        inputLocation: 'global-navbar',
-        queryState: props.navbarSearchState,
-        setQueryState: props.onChange,
-    })
 
     return (
         <Form
@@ -70,12 +63,12 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
         >
             <LazyMonacoQueryInput
                 {...props}
-                {...onboardingTourQueryInputProps}
                 hasGlobalQueryBehavior={true}
                 queryState={props.navbarSearchState}
                 onSubmit={onSubmit}
                 autoFocus={autoFocus}
                 showSearchContextHighlightTourStep={true}
+                isSearchOnboardingTourActive={false}
             />
             <SearchButton />
         </Form>
