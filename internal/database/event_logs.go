@@ -748,7 +748,7 @@ SELECT
 	(SELECT count FROM active_repositories_with_upload) AS repositories_with_uploads
 `
 
-// AggregatedCodeIntelEvents calculates AggregatedEvent for each every unique event type related to code intel.
+// AggregatedCodeIntelEvents calculates CodeIntelAggregatedEvent for each every unique event type related to code intel.
 func (l *EventLogStore) AggregatedCodeIntelEvents(ctx context.Context) ([]types.CodeIntelAggregatedEvent, error) {
 	return l.aggregatedCodeIntelEvents(ctx, time.Now().UTC())
 }
@@ -825,12 +825,12 @@ SELECT
 FROM events GROUP BY name, current_week, language_id;
 `
 
-// AggregatedSearchEvents calculates AggregatedEvent for each every unique event type related to search.
-func (l *EventLogStore) AggregatedSearchEvents(ctx context.Context) ([]types.AggregatedEvent, error) {
+// AggregatedSearchEvents calculates SearchAggregatedEvent for each every unique event type related to search.
+func (l *EventLogStore) AggregatedSearchEvents(ctx context.Context) ([]types.SearchAggregatedEvent, error) {
 	return l.aggregatedSearchEvents(ctx, time.Now().UTC())
 }
 
-func (l *EventLogStore) aggregatedSearchEvents(ctx context.Context, now time.Time) (events []types.AggregatedEvent, err error) {
+func (l *EventLogStore) aggregatedSearchEvents(ctx context.Context, now time.Time) (events []types.SearchAggregatedEvent, err error) {
 	query := sqlf.Sprintf(aggregatedSearchEventsQuery, now, now, now, now)
 
 	rows, err := l.Query(ctx, query)
@@ -840,7 +840,7 @@ func (l *EventLogStore) aggregatedSearchEvents(ctx context.Context, now time.Tim
 	defer rows.Close()
 
 	for rows.Next() {
-		var event types.AggregatedEvent
+		var event types.SearchAggregatedEvent
 		err := rows.Scan(
 			&event.Name,
 			&event.Month,
@@ -870,7 +870,7 @@ func (l *EventLogStore) aggregatedSearchEvents(ctx context.Context, now time.Tim
 	return events, nil
 }
 
-var searchEventNames = []string{
+var searchLatencyEventNames = []string{
 	"'search.latencies.literal'",
 	"'search.latencies.regexp'",
 	"'search.latencies.structural'",
@@ -898,7 +898,7 @@ WITH events AS (
   FROM event_logs
   WHERE
     timestamp >= ` + makeDateTruncExpression("month", "%s::timestamp") + `
-    AND name IN (` + strings.Join(searchEventNames, ", ") + `)
+    AND name IN (` + strings.Join(searchLatencyEventNames, ", ") + `)
 )
 SELECT
   name,
