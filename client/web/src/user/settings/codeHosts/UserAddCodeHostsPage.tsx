@@ -20,7 +20,7 @@ type AuthProvider = SourcegraphContext['authProviders'][0]
 type AuthProvidersByKind = Partial<Record<ExternalServiceKind, AuthProvider>>
 
 export interface UserAddCodeHostsPageProps extends UserRepositoriesUpdateProps {
-    userID: Scalars['ID']
+    user: { id: Scalars['ID']; tags: string[] }
     codeHostExternalServices: Record<string, AddExternalServiceOptions>
     routingPrefix: string
     context: Pick<SourcegraphContext, 'authProviders'>
@@ -55,7 +55,7 @@ export const ifNotNavigated = (callback: () => void, waitMS: number = 2000): voi
 }
 
 export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageProps> = ({
-    userID,
+    user,
     codeHostExternalServices,
     routingPrefix,
     context,
@@ -68,7 +68,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         setStatusOrError('loading')
 
         const { nodes: fetchedServices } = await queryExternalServices({
-            namespace: userID,
+            namespace: user.id,
             first: null,
             after: null,
         }).toPromise()
@@ -83,7 +83,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 
         const repoCount = fetchedServices.reduce((sum, codeHost) => sum + codeHost.repoCount, 0)
         onUserRepositoriesUpdate(repoCount)
-    }, [userID, onUserRepositoriesUpdate])
+    }, [user.id, onUserRepositoriesUpdate])
 
     useEffect(() => {
         eventLogger.logViewEvent('UserSettingsCodeHostConnections')
@@ -250,7 +250,6 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                             <b>Connect with code host</b>
                             <div className="container">
                                 <div className="row pt-3">{codeHostOAuthButtons}</div>
-                                {/* temporarily hide the link until the docs are ready */}
                                 <div className="row d-none">
                                     <span className="text-muted">
                                         Learn more about{' '}
@@ -262,14 +261,13 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                             </div>
                         </div>
                     )}
-
                     <ul className="list-group">
                         {Object.entries(codeHostExternalServices).map(([id, { kind, defaultDisplayName, icon }]) =>
                             authProvidersByKind[kind] ? (
                                 <li key={id} className="list-group-item">
                                     <CodeHostItem
                                         service={isServicesByKind(statusOrError) ? statusOrError[kind] : undefined}
-                                        userID={userID}
+                                        user={user}
                                         kind={kind}
                                         name={defaultDisplayName}
                                         navigateToAuthProvider={navigateToAuthProvider}

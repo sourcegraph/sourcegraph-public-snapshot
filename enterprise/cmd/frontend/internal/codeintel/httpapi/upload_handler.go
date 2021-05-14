@@ -4,12 +4,14 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 
+	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -185,35 +187,15 @@ func (h *UploadHandler) handleEnqueueErr(w http.ResponseWriter, r *http.Request,
 
 // handleEnqueueSinglePayload handles a non-multipart upload. This creates an upload record
 // with state 'queued', proxies the data to the bundle manager, and returns the generated ID.
-func (h *UploadHandler) handleEnqueueSinglePayload(r *http.Request, uploadArgs UploadArgs) (_ interface{}, err error) {
+func (h *UploadHandler) handleEnqueueSinglePayload(r *http.Request, uploadArgs UploadArgs) (interface{}, error) {
 	ctx := r.Context()
 
-	// Newer versions of src-cli will do this same check before uploading the file. However,
-	// older versions of src-cli will not guarantee that the index name query parameter is
-	// sent. Requiring it now will break valid workflows. We only need ot maintain backwards
-	// compatibility on single-payload uploads, as everything else is as new as the version
-	// of src-cli that always sends the indexer name.
 	if uploadArgs.Indexer == "" {
-		// Tee all reads from the body into a buffer so that we don't destructively consume
-		// any data from the body payload.
-		var buf bytes.Buffer
-		teeReader := io.TeeReader(r.Body, &buf)
-
-		gzipReader, err := gzip.NewReader(teeReader)
+		indexer, err := inferIndexer(r)
 		if err != nil {
 			return nil, err
 		}
-
-		name, err := codeintelutils.ReadIndexerName(gzipReader)
-		if err != nil {
-			return nil, err
-		}
-		uploadArgs.Indexer = name
-
-		// Replace the body of the request with a reader that will produce all of the same
-		// content: all of the data that was already read from r.Body, plus the remaining
-		// content from r.Body.
-		r.Body = ioutil.NopCloser(io.MultiReader(bytes.NewReader(buf.Bytes()), r.Body))
+		uploadArgs.Indexer = indexer
 	}
 
 	tx, err := h.dbStore.Transact(ctx)
@@ -291,7 +273,7 @@ func (h *UploadHandler) handleEnqueueMultipartSetup(r *http.Request, uploadArgs 
 
 // handleEnqueueMultipartUpload handles a partial upload in a multipart upload. This proxies the
 // data to the bundle manager and marks the part index in the upload record.
-func (h *UploadHandler) handleEnqueueMultipartUpload(r *http.Request, upload store.Upload, partIndex int) (_ interface{}, err error) {
+func (h *UploadHandler) handleEnqueueMultipartUpload(r *http.Request, upload store.Upload, partIndex int) (interface{}, error) {
 	ctx := r.Context()
 
 	tx, err := h.dbStore.Transact(ctx)
@@ -306,6 +288,7 @@ func (h *UploadHandler) handleEnqueueMultipartUpload(r *http.Request, upload sto
 		return nil, err
 	}
 	if _, err := h.uploadStore.Upload(ctx, fmt.Sprintf("upload-%d.%d.lsif.gz", upload.ID, partIndex), r.Body); err != nil {
+		h.markUploadAsFailed(context.Background(), tx, upload.ID, err)
 		return nil, err
 	}
 
@@ -315,7 +298,7 @@ func (h *UploadHandler) handleEnqueueMultipartUpload(r *http.Request, upload sto
 // handleEnqueueMultipartFinalize handles the final request of a multipart upload. This transitions the
 // upload from 'uploading' to 'queued', then instructs the bundle manager to concatenate all of the part
 // files together.
-func (h *UploadHandler) handleEnqueueMultipartFinalize(r *http.Request, upload store.Upload) (_ interface{}, err error) {
+func (h *UploadHandler) handleEnqueueMultipartFinalize(r *http.Request, upload store.Upload) (interface{}, error) {
 	ctx := r.Context()
 
 	if len(upload.UploadedParts) != upload.NumParts {
@@ -337,6 +320,7 @@ func (h *UploadHandler) handleEnqueueMultipartFinalize(r *http.Request, upload s
 
 	size, err := h.uploadStore.Compose(ctx, fmt.Sprintf("upload-%d.lsif.gz", upload.ID), sources...)
 	if err != nil {
+		h.markUploadAsFailed(context.Background(), tx, upload.ID, err)
 		return nil, err
 	}
 
@@ -345,6 +329,64 @@ func (h *UploadHandler) handleEnqueueMultipartFinalize(r *http.Request, upload s
 	}
 
 	return nil, nil
+}
+
+// markUploadAsFailed attempts to mark the given upload as failed, extracting a human-meaningful
+// error message from the given error. We assume this method to whenever an error occurs when
+// interacting with the upload store so that the status of the upload is accurately reflected in
+// the UI.
+//
+// This method does not return an error as it's best-effort cleanup. If an error occurs when
+// trying to modify the record, it will be logged but will not be directly visible to the user.
+func (h *UploadHandler) markUploadAsFailed(ctx context.Context, tx DBStore, uploadID int, err error) {
+	var reason string
+
+	if _, ok := err.(*ClientError); ok {
+		reason = fmt.Sprintf("client misbehaving:\n* %s", err)
+	} else if awsErr := formatAWSError(err); awsErr != "" {
+		reason = fmt.Sprintf("object store error:\n* %s", awsErr)
+	} else {
+		reason = fmt.Sprintf("unknown error:\n* %s", err)
+	}
+
+	if markErr := tx.MarkFailed(ctx, uploadID, reason); markErr != nil {
+		log15.Error("Failed to mark upload as failed", "error", markErr)
+	}
+}
+
+// inferIndexer returns the tool name from the metadata vertex at the start of the the given
+// input stream. This method must destructively read the request body, but will re-assign the
+// Body field with a reader that holds the same information as the original request.
+//
+// Newer versions of src-cli will do this same check before uploading the file. However, older
+// versions of src-cli will not guarantee that the index name query parameter is sent. Requiring
+// it now will break valid workflows. We only need ot maintain backwards compatibility on single
+// payload uploads, as everything else is as new as the version of src-cli that always sends the
+// indexer name.
+func inferIndexer(r *http.Request) (string, error) {
+	// Tee all reads from the body into a buffer so that we don't destructively consume
+	// any data from the body payload.
+	var buf bytes.Buffer
+	teeReader := io.TeeReader(r.Body, &buf)
+
+	gzipReader, err := gzip.NewReader(teeReader)
+	if err != nil {
+		return "", err
+	}
+
+	// Read from the stream until we extract a tool name. This method is careful not to
+	// take too much resident memory in the case of a malformed bundle.
+	name, err := codeintelutils.ReadIndexerName(gzipReader)
+	if err != nil {
+		return "", err
+	}
+
+	// Replace the body of the request with a reader that will produce all of the same
+	// content: all of the data that was already read from r.Body, plus the remaining
+	// content from r.Body.
+	r.Body = ioutil.NopCloser(io.MultiReader(bytes.NewReader(buf.Bytes()), r.Body))
+
+	return name, nil
 }
 
 // 🚨 SECURITY: It is critical to call this function after necessary authz check
@@ -381,4 +423,15 @@ func ensureRepoAndCommitExist(ctx context.Context, w http.ResponseWriter, repoNa
 	}
 
 	return repo, true
+}
+
+// formatAWSError returns the unwrapped, root AWS/S3 error. This method returns
+// an empty string when the given error value is neither an AWS nor an S3 error.
+func formatAWSError(err error) string {
+	var multipartErr manager.MultiUploadFailure
+	if !errors.As(err, &multipartErr) {
+		return ""
+	}
+
+	return multipartErr.Error()
 }

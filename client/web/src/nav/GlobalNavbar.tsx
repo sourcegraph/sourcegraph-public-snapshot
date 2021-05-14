@@ -267,26 +267,37 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                                 <ActivationDropdown activation={props.activation} history={history} />
                             </NavItem>
                         )}
+                    </NavGroup>
+                    <NavActions>
                         {!props.authenticatedUser && (
                             <>
                                 {showDotComMarketing && (
-                                    <NavItem>
-                                        <NavLink to="/help">Docs</NavLink>
-                                    </NavItem>
+                                    <NavAction>
+                                        <Link
+                                            className="global-navbar__link font-weight-medium"
+                                            to="/help"
+                                            target="_blank"
+                                        >
+                                            Docs
+                                        </Link>
+                                    </NavAction>
                                 )}
 
-                                <NavItem>
-                                    <NavLink to="https://about.sourcegraph.com" external={true}>
+                                <NavAction>
+                                    <Link
+                                        className="global-navbar__link"
+                                        to="https://about.sourcegraph.com"
+                                        rel="noreferrer noopener"
+                                        target="_blank"
+                                    >
                                         About
-                                    </NavLink>
-                                </NavItem>
+                                    </Link>
+                                </NavAction>
                             </>
                         )}
-                    </NavGroup>
-                    <NavActions>
                         {props.authenticatedUser && (
                             <NavAction>
-                                <FeedbackPrompt history={history} routes={props.routes} />
+                                <FeedbackPrompt routes={props.routes} />
                             </NavAction>
                         )}
                         <NavAction>
@@ -317,17 +328,17 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                         {!props.authenticatedUser ? (
                             <>
                                 <NavAction>
-                                    <Link className="btn btn-sm btn-outline-secondary" to="/sign-in">
-                                        Log in
-                                    </Link>
-                                </NavAction>
-                                <NavAction>
-                                    <Link
-                                        className="btn btn-sm btn-outline-secondary global-navbar__sign-up"
-                                        to="/sign-up"
-                                    >
-                                        Sign up
-                                    </Link>
+                                    <div>
+                                        <Link className="btn btn-sm btn-outline-secondary mr-1" to="/sign-in">
+                                            Log in
+                                        </Link>
+                                        <Link
+                                            className="btn btn-sm btn-outline-secondary global-navbar__sign-up"
+                                            to="/sign-up"
+                                        >
+                                            Sign up
+                                        </Link>
+                                    </div>
                                 </NavAction>
                             </>
                         ) : (
@@ -350,7 +361,21 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                         )}
                     </NavActions>
                 </NavBar>
-                {showSearchBox && <div className="d-flex w-100 px-3 py-2 border-bottom">{searchNavBar}</div>}
+                {showSearchBox && (
+                    <div className="d-flex w-100 flex-row px-3 py-2 border-bottom">
+                        <VersionContextDropdown
+                            history={history}
+                            navbarSearchQuery={navbarSearchQueryState.query}
+                            caseSensitive={caseSensitive}
+                            patternType={patternType}
+                            versionContext={versionContext}
+                            setVersionContext={setVersionContext}
+                            availableVersionContexts={availableVersionContexts}
+                            selectedSearchContextSpec={props.selectedSearchContextSpec}
+                        />
+                        {searchNavBar}
+                    </div>
+                )}
             </>
         )
     }

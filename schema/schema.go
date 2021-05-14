@@ -1237,6 +1237,8 @@ type Settings struct {
 	ExperimentalFeatures *SettingsExperimentalFeatures `json:"experimentalFeatures,omitempty"`
 	// Extensions description: The Sourcegraph extensions to use. Enable an extension by adding a property `"my/extension": true` (where `my/extension` is the extension ID). Override a previously enabled extension and disable it by setting its value to `false`.
 	Extensions map[string]bool `json:"extensions,omitempty"`
+	// ExtensionsActiveLoggers description: The Sourcegraph extensions, by ID (e.g. `my/extension`), whose logs should be visible in the console.
+	ExtensionsActiveLoggers []string `json:"extensions.activeLoggers,omitempty"`
 	// Insights description: EXPERIMENTAL: Code Insights
 	Insights                            []*Insight `json:"insights,omitempty"`
 	InsightsDisplayLocationDirectory    *bool      `json:"insights.displayLocation.directory,omitempty"`

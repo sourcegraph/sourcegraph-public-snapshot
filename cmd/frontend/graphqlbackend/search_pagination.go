@@ -20,59 +20,32 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	searchresult "github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-// searchCursor represents a decoded search pagination cursor. From an API
-// consumer standpoint, it is an encoded opaque string.
-type searchCursor struct {
-	// RepositoryOffset indicates how many repositories (which are globally
-	// sorted and ordered) to offset by.
-	RepositoryOffset int32
-
-	// ResultOffset indicates how many results within the first repository we
-	// would search in to further offset by. This is so that we can paginate
-	// results within e.g. a single large repository.
-	ResultOffset int32
-
-	// Finished tells if there are more results for the query or if we've
-	// consumed them all.
-	Finished bool
-}
-
 const searchCursorKind = "SearchCursor"
 
 // marshalSearchCursor marshals a search pagination cursor.
-func marshalSearchCursor(c *searchCursor) string {
+func marshalSearchCursor(c *run.SearchCursor) string {
 	return string(relay.MarshalID(searchCursorKind, c))
 }
 
 // unmarshalSearchCursor unmarshals a search pagination cursor.
-func unmarshalSearchCursor(cursor *string) (*searchCursor, error) {
+func unmarshalSearchCursor(cursor *string) (*run.SearchCursor, error) {
 	if cursor == nil {
 		return nil, nil
 	}
 	if kind := relay.UnmarshalKind(graphql.ID(*cursor)); kind != searchCursorKind {
 		return nil, fmt.Errorf("cannot unmarshal search cursor type: %q", kind)
 	}
-	var spec *searchCursor
+	var spec *run.SearchCursor
 	if err := relay.UnmarshalSpec(graphql.ID(*cursor), &spec); err != nil {
 		return nil, err
 	}
 	return spec, nil
-}
-
-// searchPaginationInfo describes information around a paginated search
-// request.
-type searchPaginationInfo struct {
-	// cursor indicates where to resume searching from (see docstrings on
-	// searchCursor) or nil when requesting the first page of results.
-	cursor *searchCursor
-
-	// limit indicates at max how many search results to return.
-	limit int32
 }
 
 func (r *SearchResultsResolver) PageInfo() *graphqlutil.PageInfo {
@@ -100,23 +73,23 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 	}
 
 	tr, ctx := trace.New(ctx, "graphql.SearchResults.paginatedResults", r.rawQuery())
-	if r.Pagination.cursor != nil {
+	if r.Pagination.Cursor != nil {
 		tr.LogFields(
-			otlog.Int("Cursor.RepositoryOffset", int(r.Pagination.cursor.RepositoryOffset)),
-			otlog.Int("Cursor.ResultOffset", int(r.Pagination.cursor.ResultOffset)),
-			otlog.Bool("Cursor.Finished", r.Pagination.cursor.Finished),
+			otlog.Int("Cursor.RepositoryOffset", int(r.Pagination.Cursor.RepositoryOffset)),
+			otlog.Int("Cursor.ResultOffset", int(r.Pagination.Cursor.ResultOffset)),
+			otlog.Bool("Cursor.Finished", r.Pagination.Cursor.Finished),
 		)
 		log15.Info("paginated search continue request",
 			"query", fmt.Sprintf("%q", r.rawQuery()),
-			"RepositoryOffset", int(r.Pagination.cursor.RepositoryOffset),
-			"ResultOffset", int(r.Pagination.cursor.ResultOffset),
-			"Finished", r.Pagination.cursor.Finished,
+			"RepositoryOffset", int(r.Pagination.Cursor.RepositoryOffset),
+			"ResultOffset", int(r.Pagination.Cursor.ResultOffset),
+			"Finished", r.Pagination.Cursor.Finished,
 		)
 	} else {
 		tr.LogFields(otlog.String("Cursor", "nil"))
 		log15.Info("paginated search begin request", "query", fmt.Sprintf("%q", r.rawQuery()))
 	}
-	tr.LogFields(otlog.Int("Limit", int(r.Pagination.limit)))
+	tr.LogFields(otlog.Int("Limit", int(r.Pagination.Limit)))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -245,7 +218,7 @@ func repoIsLess(i, j types.RepoName) bool {
 //    top of the penalty we incur from the larger `count:` mentioned in point
 //    2 above (in the worst case scenario).
 //
-func paginatedSearchFilesInRepos(ctx context.Context, db dbutil.DB, args *search.TextParameters, pagination *searchPaginationInfo) (*searchCursor, []result.Match, *streaming.Stats, error) {
+func paginatedSearchFilesInRepos(ctx context.Context, db dbutil.DB, args *search.TextParameters, pagination *run.SearchPaginationInfo) (*run.SearchCursor, []result.Match, *streaming.Stats, error) {
 	repos, err := getRepos(ctx, args.RepoPromise)
 	if err != nil {
 		return nil, nil, nil, err
@@ -261,7 +234,7 @@ func paginatedSearchFilesInRepos(ctx context.Context, db dbutil.DB, args *search
 	return plan.execute(ctx, database.Repos(db), func(batch []*search.RepositoryRevisions) ([]result.Match, *streaming.Stats, error) {
 		batchArgs := *args
 		batchArgs.RepoPromise = (&search.Promise{}).Resolve(batch)
-		fileMatches, fileCommon, err := searchFilesInReposBatch(ctx, &batchArgs)
+		fileMatches, fileCommon, err := run.SearchFilesInReposBatch(ctx, &batchArgs)
 		// Timeouts are reported through Stats so don't report an error for them
 		if err != nil && !(err == context.DeadlineExceeded || err == context.Canceled) {
 			return nil, nil, err
@@ -271,6 +244,15 @@ func paginatedSearchFilesInRepos(ctx context.Context, db dbutil.DB, args *search
 		sort.Sort(result.Matches(matches))
 		return matches, &fileCommon, nil
 	})
+}
+
+func fileMatchesToMatches(fms []*result.FileMatch) []result.Match {
+	matches := make([]result.Match, 0, len(fms))
+	for _, fm := range fms {
+		newFm := fm
+		matches = append(matches, newFm)
+	}
+	return matches
 }
 
 // repoPaginationPlan describes a plan for executing a search function that
@@ -284,7 +266,7 @@ func paginatedSearchFilesInRepos(ctx context.Context, db dbutil.DB, args *search
 // batches.
 type repoPaginationPlan struct {
 	// pagination is the pagination request we're trying to fulfill.
-	pagination *searchPaginationInfo
+	pagination *run.SearchPaginationInfo
 
 	// repositories is the exhaustive and complete list of sorted repositories
 	// to be searched over multiple requests.
@@ -332,7 +314,7 @@ func repoOfMatch(match result.Match) string {
 //
 // If the executor returns any error, the search will be cancelled and the error
 // returned.
-func (p *repoPaginationPlan) execute(ctx context.Context, repoStore *database.RepoStore, exec executor) (c *searchCursor, results []result.Match, common *streaming.Stats, err error) {
+func (p *repoPaginationPlan) execute(ctx context.Context, repoStore *database.RepoStore, exec executor) (c *run.SearchCursor, results []result.Match, common *streaming.Stats, err error) {
 	// Determine how large the batches of repositories we will search over will be.
 	var totalRepos int
 	if p.mockNumTotalRepos != nil {
@@ -347,7 +329,7 @@ func (p *repoPaginationPlan) execute(ctx context.Context, repoStore *database.Re
 		repos                          = p.repositories
 		repositoryOffset, resultOffset int
 	)
-	if cursor := p.pagination.cursor; cursor != nil {
+	if cursor := p.pagination.Cursor; cursor != nil {
 		resultOffset = int(cursor.ResultOffset)
 
 		// Clamping is required here because the repositories the user has
@@ -387,14 +369,14 @@ func (p *repoPaginationPlan) execute(ctx context.Context, repoStore *database.Re
 		results = append(results, batchResults...)
 		common.Update(batchCommon)
 
-		if len(results) >= resultOffset+int(p.pagination.limit) {
+		if len(results) >= resultOffset+int(p.pagination.Limit) {
 			break
 		}
 	}
 	// If we found more results than the user wanted, discard the remaining
 	// ones.
-	sliced := sliceSearchResults(results, common, resultOffset, int(p.pagination.limit))
-	nextCursor := &searchCursor{ResultOffset: sliced.resultOffset}
+	sliced := sliceSearchResults(results, common, resultOffset, int(p.pagination.Limit))
+	nextCursor := &run.SearchCursor{ResultOffset: sliced.resultOffset}
 
 	if len(sliced.results) > 0 {
 		// First, identify what repository corresponds to the last result.

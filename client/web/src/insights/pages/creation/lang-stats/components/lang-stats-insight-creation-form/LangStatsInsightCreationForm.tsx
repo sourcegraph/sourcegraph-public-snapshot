@@ -1,65 +1,50 @@
 import classnames from 'classnames'
-import React from 'react'
-
-import { Settings } from '@sourcegraph/shared/src/settings/settings'
+import React, { FormEventHandler, RefObject } from 'react'
 
 import { ErrorAlert } from '../../../../../../components/alerts'
 import { LoaderButton } from '../../../../../../components/LoaderButton'
 import { FormGroup } from '../../../../../components/form/form-group/FormGroup'
 import { FormInput } from '../../../../../components/form/form-input/FormInput'
 import { FormRadioInput } from '../../../../../components/form/form-radio-input/FormRadioInput'
-import { useField } from '../../../../../components/form/hooks/useField'
-import { FORM_ERROR, SubmissionErrors, useForm } from '../../../../../components/form/hooks/useForm'
-import { useTitleValidator } from '../../../../../components/form/hooks/useTitleValidator'
-import { createRequiredValidator } from '../../../../../components/form/validators'
-import { InsightTypeSuffix } from '../../../../../core/types'
+import { useFieldAPI } from '../../../../../components/form/hooks/useField'
+import { FORM_ERROR, SubmissionErrors } from '../../../../../components/form/hooks/useForm'
+import { LangStatsCreationFormFields } from '../../types'
 
 import styles from './LangStatsInsightCreationForm.module.scss'
 
-const repositoriesFieldValidator = createRequiredValidator('Repositories is a required field for code insight.')
-const thresholdFieldValidator = createRequiredValidator('Threshold is a required field for code insight.')
-
 export interface LangStatsInsightCreationFormProps {
-    settings: Settings | null
+    innerRef: RefObject<any>
+    handleSubmit: FormEventHandler
+    submitErrors: SubmissionErrors
+    submitting: boolean
     className?: string
-    onSubmit: (values: LangStatsCreationFormFields) => SubmissionErrors | Promise<SubmissionErrors> | void
+
+    title: useFieldAPI<LangStatsCreationFormFields['title']>
+    repository: useFieldAPI<LangStatsCreationFormFields['repository']>
+    threshold: useFieldAPI<LangStatsCreationFormFields['threshold']>
+    visibility: useFieldAPI<LangStatsCreationFormFields['visibility']>
+
     onCancel: () => void
 }
 
-export interface LangStatsCreationFormFields {
-    title: string
-    repository: string
-    threshold: number
-    visibility: 'personal' | 'organization'
-}
-
-const INITIAL_VALUES: LangStatsCreationFormFields = {
-    repository: '',
-    title: '',
-    threshold: 3,
-    visibility: 'personal',
-}
-
 export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsightCreationFormProps> = props => {
-    const { className, onSubmit, onCancel, settings } = props
-
-    const { handleSubmit, formAPI, ref } = useForm<LangStatsCreationFormFields>({
-        initialValues: INITIAL_VALUES,
-        onSubmit,
-    })
-
-    // We can't have two or more insights with the same name, since we rely on name as on id of insights.
-    const titleValidator = useTitleValidator({ settings, insightType: InsightTypeSuffix.langStats })
-
-    const repository = useField('repository', formAPI, repositoriesFieldValidator)
-    const title = useField('title', formAPI, titleValidator)
-    const threshold = useField('threshold', formAPI, thresholdFieldValidator)
-    const visibility = useField('visibility', formAPI)
+    const {
+        innerRef,
+        handleSubmit,
+        submitErrors,
+        submitting,
+        className,
+        title,
+        repository,
+        threshold,
+        visibility,
+        onCancel,
+    } = props
 
     return (
         // eslint-disable-next-line react/forbid-elements
         <form
-            ref={ref}
+            ref={innerRef}
             noValidate={true}
             className={classnames(className, 'd-flex flex-column')}
             onSubmit={handleSubmit}
@@ -134,14 +119,14 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
             <hr className={styles.formSeparator} />
 
             <div>
-                {formAPI.submitErrors?.[FORM_ERROR] && <ErrorAlert error={formAPI.submitErrors[FORM_ERROR]} />}
+                {submitErrors?.[FORM_ERROR] && <ErrorAlert error={submitErrors[FORM_ERROR]} />}
 
                 <LoaderButton
                     alwaysShowLabel={true}
-                    loading={formAPI.submitting}
-                    label={formAPI.submitting ? 'Submitting' : 'Create code insight'}
+                    loading={submitting}
+                    label={submitting ? 'Submitting' : 'Create code insight'}
                     type="submit"
-                    disabled={formAPI.submitting}
+                    disabled={submitting}
                     className="btn btn-primary mr-2"
                 />
 

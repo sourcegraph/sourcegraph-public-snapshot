@@ -403,10 +403,12 @@ func gatherPackageReferences(state *State) ([]semantic.PackageReference, error) 
 		}
 
 		packageReferences = append(packageReferences, semantic.PackageReference{
-			Scheme:  v.Scheme,
-			Name:    v.Name,
-			Version: v.Version,
-			Filter:  filter,
+			Package: semantic.Package{
+				Scheme:  v.Scheme,
+				Name:    v.Name,
+				Version: v.Version,
+			},
+			Filter: filter,
 		})
 	}
 

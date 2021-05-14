@@ -17,6 +17,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { parseHash } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { AuthenticatedUser, authRequired as authRequiredObservable } from './auth'
 import { CodeMonitoringProps } from './code-monitoring'
@@ -44,7 +45,7 @@ import { RepoHeaderActionButton } from './repo/RepoHeader'
 import { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
 import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
-import { LayoutRouteProps } from './routes'
+import { LayoutRouteProps, LayoutRouteComponentProps } from './routes'
 import { Settings } from './schema/settings.schema'
 import {
     parseSearchURLQuery,
@@ -254,6 +255,8 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
 
     const breadcrumbProps = useBreadcrumbs()
 
+    const [isRedesignEnabled] = useRedesignToggle()
+
     // Control browser extension discoverability animation here.
     // `Layout` is the lowest common ancestor of `UserNavItem` (target) and `RepoContainer` (trigger)
     const { isExtensionAlertAnimating, startExtensionAlertAnimation } = useExtensionAlertAnimation()
@@ -267,10 +270,11 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         return <Redirect to={{ ...props.location, pathname: props.location.pathname.slice(0, -1) }} />
     }
 
-    const context = {
+    const context: LayoutRouteComponentProps<any> = {
         ...props,
         ...breadcrumbProps,
         onExtensionAlertDismissed,
+        isRedesignEnabled,
     }
 
     return (

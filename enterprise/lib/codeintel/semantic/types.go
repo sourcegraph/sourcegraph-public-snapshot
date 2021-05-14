@@ -140,10 +140,8 @@ type Package struct {
 
 // PackageReferences pairs a package name/version with a dump that depends on it.
 type PackageReference struct {
-	Scheme  string
-	Name    string
-	Version string
-	Filter  []byte // a bloom filter of identifiers imported by this dependent
+	Package
+	Filter []byte // a bloom filter of identifiers imported by this dependent
 }
 
 // GroupedBundleData{Chans,Maps} is a view of a correlation State that sorts data by it's containing document

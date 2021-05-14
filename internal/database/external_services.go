@@ -470,20 +470,83 @@ func (e *ExternalServiceStore) validateSingleKindPerUser(ctx context.Context, id
 	return nil
 }
 
+// upsertAuthorizationToExternalService adds "authorization" field to the
+// external service config when not yet present for GitHub and GitLab.
+//
+// We will only rewrite user-add code host connections because we expect users
+// to edit code host connections via our UI so no JSON with comments should
+// appear. Therefore it is OK to reset config as normalized. Having the
+// "authorization" field will correctly generate authz.Provider.
+//
+// For site-level code host connections, there usually exists useful comments,
+// naively stripping them off is almost always problematic. Therefore we simply
+// return an error for site admins to add the "authorization" field manually.
+func upsertAuthorizationToExternalService(namespaceUserID int32, kind string, normalized []byte) ([]byte, error) {
+	var err error
+	switch kind {
+	case extsvc.KindGitHub:
+		var c schema.GitHubConnection
+		if err = jsoniter.Unmarshal(normalized, &c); err != nil {
+			return nil, err
+		}
+
+		if c.Authorization != nil {
+			return normalized, nil
+		} else if namespaceUserID == 0 {
+			return nil, errors.New(`The "authorization" field must be presented in the config`)
+		}
+
+		c.Authorization = &schema.GitHubAuthorization{}
+
+		normalized, err = jsoniter.MarshalIndent(c, "", "  ")
+		if err != nil {
+			return nil, err
+		}
+
+	case extsvc.KindGitLab:
+		var c schema.GitLabConnection
+		if err = jsoniter.Unmarshal(normalized, &c); err != nil {
+			return nil, err
+		}
+
+		if c.Authorization != nil {
+			return normalized, nil
+		} else if namespaceUserID == 0 {
+			return nil, errors.New(`The "authorization" field must be presented in the config`)
+		}
+
+		c.Authorization = &schema.GitLabAuthorization{
+			IdentityProvider: schema.IdentityProvider{
+				Oauth: &schema.OAuthIdentity{
+					Type: "oauth",
+				},
+			},
+		}
+
+		normalized, err = jsoniter.MarshalIndent(c, "", "  ")
+		if err != nil {
+			return nil, err
+		}
+	}
+	return normalized, nil
+}
+
 // Create creates an external service.
 //
-// Since this method is used before the configuration server has started
-// (search for "EXTSVC_CONFIG_FILE") you must pass the conf.Get function in so
-// that an alternative can be used when the configuration server has not
-// started, otherwise a panic would occur once pkg/conf's deadlock detector
-// determines a deadlock occurred.
+// Since this method is used before the configuration server has started (search
+// for "EXTSVC_CONFIG_FILE") you must pass the conf.Get function in so that an
+// alternative can be used when the configuration server has not started,
+// otherwise a panic would occur once pkg/conf's deadlock detector determines a
+// deadlock occurred.
 //
-// 🚨 SECURITY: The caller must ensure that the actor is a site admin or owner of the external service.
-// Otherwise, `es.NamespaceUserID` must be specified (i.e. non-nil) for
-// a user-added external service.
+// 🚨 SECURITY: The caller must ensure that the actor is a site admin or owner
+// of the external service. Otherwise, `es.NamespaceUserID` must be specified
+// (i.e. non-nil) for a user-added external service.
 //
-// 🚨 SECURITY: The value of `es.Unrestricted` is disregarded and will always
-// be recalculated based on whether `"authorization"` is presented in `es.Config`.
+// 🚨 SECURITY: The value of `es.Unrestricted` is disregarded and will always be
+// recalculated based on whether "authorization" field is presented in
+// `es.Config`. For Sourcegraph Cloud, the `es.Unrestricted` will always be
+// false (i.e. enforce permissions).
 func (e *ExternalServiceStore) Create(ctx context.Context, confGet func() *conf.Unified, es *types.ExternalService) error {
 	if Mocks.ExternalServices.Create != nil {
 		return Mocks.ExternalServices.Create(ctx, confGet, es)
@@ -500,50 +563,14 @@ func (e *ExternalServiceStore) Create(ctx context.Context, confGet func() *conf.
 		return err
 	}
 
-	// NOTE: For GitHub and GitLab user code host connections on Sourcegraph Cloud,
-	// we always want to enforce repository permissions using OAuth to prevent
-	// unexpected resource leaking.
-	if envvar.SourcegraphDotComMode() && es.NamespaceUserID != 0 {
-		switch es.Kind {
-		case extsvc.KindGitHub:
-			var c schema.GitHubConnection
-			if err = jsoniter.Unmarshal(normalized, &c); err != nil {
-				return err
-			}
-
-			if c.Authorization == nil {
-				c.Authorization = &schema.GitHubAuthorization{}
-
-				normalized, err = jsoniter.Marshal(c)
-				if err != nil {
-					return err
-				}
-			}
-
-		case extsvc.KindGitLab:
-			var c schema.GitLabConnection
-			if err = jsoniter.Unmarshal(normalized, &c); err != nil {
-				return err
-			}
-
-			if c.Authorization == nil {
-				c.Authorization = &schema.GitLabAuthorization{
-					IdentityProvider: schema.IdentityProvider{
-						Oauth: &schema.OAuthIdentity{
-							Type: "oauth",
-						},
-					},
-				}
-
-				normalized, err = jsoniter.Marshal(c)
-				if err != nil {
-					return err
-				}
-			}
+	// 🚨 SECURITY: For all GitHub and GitLab code host connections on Sourcegraph
+	// Cloud, we always want to enforce repository permissions using OAuth to
+	// prevent unexpected resource leaking.
+	if envvar.SourcegraphDotComMode() {
+		normalized, err = upsertAuthorizationToExternalService(es.NamespaceUserID, es.Kind, normalized)
+		if err != nil {
+			return err
 		}
-
-		// We expect users to edit code host connections via our UI so no JSON with
-		// comments should appear, thus OK to set config as normalized.
 		es.Config = string(normalized)
 	}
 
@@ -556,7 +583,7 @@ func (e *ExternalServiceStore) Create(ctx context.Context, confGet func() *conf.
 			return err
 		}
 	}
-	es.Unrestricted = !gjson.GetBytes(normalized, "authorization").Exists()
+	es.Unrestricted = !envvar.SourcegraphDotComMode() && !gjson.GetBytes(normalized, "authorization").Exists()
 
 	config, keyID, err := e.maybeEncryptConfig(ctx, es.Config)
 	if err != nil {
@@ -619,8 +646,10 @@ func (e *ExternalServiceStore) maybeDecryptConfig(ctx context.Context, config st
 // NOTE: Deletion of an external service via Upsert is not allowed. Use Delete()
 // instead.
 //
-// 🚨 SECURITY: The value of `Unrestricted` field is disregarded and will always
-// be recalculated based on whether `"authorization"` is presented in `Config`.
+// 🚨 SECURITY: The value of `es.Unrestricted` is disregarded and will always be
+// recalculated based on whether "authorization" field is presented in
+// `es.Config`. For Sourcegraph Cloud, the `es.Unrestricted` will always be
+// false (i.e. enforce permissions).
 func (e *ExternalServiceStore) Upsert(ctx context.Context, svcs ...*types.ExternalService) (err error) {
 	if Mocks.ExternalServices.Upsert != nil {
 		return Mocks.ExternalServices.Upsert(ctx, svcs...)
@@ -631,7 +660,7 @@ func (e *ExternalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 	e.ensureStore()
 
 	for _, s := range svcs {
-		s.Unrestricted = !gjson.Get(s.Config, "authorization").Exists()
+		s.Unrestricted = !envvar.SourcegraphDotComMode() && !gjson.Get(s.Config, "authorization").Exists()
 	}
 
 	tx, err := e.Transact(ctx)
@@ -825,6 +854,19 @@ func (e *ExternalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 		if err != nil {
 			return err
 		}
+
+		// 🚨 SECURITY: For all GitHub and GitLab code host connections on Sourcegraph
+		// Cloud, we always want to enforce repository permissions using OAuth to
+		// prevent unexpected resource leaking.
+		if envvar.SourcegraphDotComMode() {
+			normalized, err = upsertAuthorizationToExternalService(externalService.NamespaceUserID, externalService.Kind, normalized)
+			if err != nil {
+				return err
+			}
+			config := string(normalized)
+			update.Config = &config
+		}
+
 		var config string
 		config, keyID, err = e.maybeEncryptConfig(ctx, *update.Config)
 		if err != nil {
@@ -861,7 +903,7 @@ func (e *ExternalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 	}
 
 	if update.Config != nil {
-		unrestricted := !gjson.GetBytes(normalized, "authorization").Exists()
+		unrestricted := !envvar.SourcegraphDotComMode() && !gjson.GetBytes(normalized, "authorization").Exists()
 		q := sqlf.Sprintf(`config = %s, encryption_key_id = %s, next_sync_at = NOW(), unrestricted = %s`, update.Config, keyID, unrestricted)
 		if err := execUpdate(ctx, tx.DB(), q); err != nil {
 			return err

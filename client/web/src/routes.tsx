@@ -29,7 +29,7 @@ const SignUpPage = lazyComponent(() => import('./auth/SignUpPage'), 'SignUpPage'
 const PostSignUpPage = lazyComponent(() => import('./auth/PostSignUpPage'), 'PostSignUpPage')
 const SiteInitPage = lazyComponent(() => import('./site-admin/init/SiteInitPage'), 'SiteInitPage')
 
-interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof RouteParameters]?: string }>
+export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof RouteParameters]?: string }>
     extends RouteComponentProps<RouteParameters>,
         Omit<LayoutProps, 'match'>,
         BreadcrumbsProps,
@@ -37,6 +37,7 @@ interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof RouteP
         ExtensionAlertProps,
         UserRepositoriesUpdateProps {
     isSourcegraphDotCom: boolean
+    isRedesignEnabled: boolean
 }
 
 export interface LayoutRouteProps<Parameters_ extends { [K in keyof Parameters_]?: string }> {
@@ -79,8 +80,9 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         path: '/search',
         render: props =>
             props.parsedSearchQuery ? (
-                !isErrorLike(props.settingsCascade.final) &&
-                props.settingsCascade.final?.experimentalFeatures?.searchStreaming ? (
+                props.isRedesignEnabled || // Force streaming search if redesing is enabled
+                (!isErrorLike(props.settingsCascade.final) &&
+                    props.settingsCascade.final?.experimentalFeatures?.searchStreaming) ? (
                     <StreamingSearchResults {...props} />
                 ) : (
                     <SearchResults {...props} deployType={window.context.deployType} />

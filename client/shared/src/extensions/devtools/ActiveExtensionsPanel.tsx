@@ -1,24 +1,17 @@
-import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import React, { useCallback, useMemo } from 'react'
-import { UncontrolledPopover } from 'reactstrap'
 import { from } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 
-import { wrapRemoteObservable } from '../api/client/api/common'
-import { Link } from '../components/Link'
-import { PlatformContextProps } from '../platform/context'
-import { asError, isErrorLike } from '../util/errors'
-import { useObservable } from '../util/useObservable'
+import { wrapRemoteObservable } from '../../api/client/api/common'
+import { Link } from '../../components/Link'
+import { asError, isErrorLike } from '../../util/errors'
+import { useObservable } from '../../util/useObservable'
 
-import { ExtensionsControllerProps } from './controller'
+import { ExtensionsDevelopmentToolsProps } from '.'
 
-interface Props extends ExtensionsControllerProps, PlatformContextProps<'sideloadedExtensionURL'> {
-    link: React.ComponentType<{ id: string }>
-}
-
-const ExtensionStatus: React.FunctionComponent<Props> = props => {
+export const ActiveExtensionsPanel: React.FunctionComponent<ExtensionsDevelopmentToolsProps> = props => {
     const extensionsOrError = useObservable(
         useMemo(
             () =>
@@ -44,7 +37,7 @@ const ExtensionStatus: React.FunctionComponent<Props> = props => {
     ])
 
     return (
-        <div className="extension-status card border-0">
+        <>
             <div className="card-header">Active extensions (DEBUG)</div>
             {extensionsOrError ? (
                 isErrorLike(extensionsOrError) ? (
@@ -110,23 +103,6 @@ const ExtensionStatus: React.FunctionComponent<Props> = props => {
                     </div>
                 )}
             </div>
-        </div>
+        </>
     )
 }
-
-/** A button that toggles the visibility of the ExtensionStatus element in a popover. */
-export const ExtensionStatusPopover = React.memo<Props>(props => (
-    <>
-        <button type="button" id="extension-status-popover" className="btn btn-link text-decoration-none px-2">
-            <span className="text-muted">Ext</span> <MenuUpIcon className="icon-inline" />
-        </button>
-        <UncontrolledPopover
-            placement="auto-end"
-            target="extension-status-popover"
-            hideArrow={true}
-            popperClassName="border-0"
-        >
-            <ExtensionStatus {...props} />
-        </UncontrolledPopover>
-    </>
-))
