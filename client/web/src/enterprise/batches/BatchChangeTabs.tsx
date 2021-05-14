@@ -71,14 +71,7 @@ interface BatchChangeTabProps {
 
 export const BatchChangeTab: React.FunctionComponent<BatchChangeTabProps> = ({ children, index }) => {
     const { selectedIndex } = useTabsContext()
-    return (
-        <Tab className="nav-item">
-            {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-            <a className={classNames('nav-link', { active: selectedIndex === index })} role="button">
-                {children}
-            </a>
-        </Tab>
-    )
+    return <Tab className={classNames('nav-link', styles.navLink, { active: selectedIndex === index })}>{children}</Tab>
 }
 
 export { BatchChangeTabPanel, BatchChangeTabPanels }

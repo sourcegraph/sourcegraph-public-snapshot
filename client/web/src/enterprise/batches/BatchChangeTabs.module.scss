@@ -1,7 +1,7 @@
 // unsets the defaults; can probably go away with the redesign
 .batch-change-tabs {
     .nav-link {
-        border-bottom: 0;
+        color: var(--link-color);
     }
 
     [data-reach-tab],
@@ -10,7 +10,7 @@
         // stylelint-disable-next-line declaration-property-unit-whitelist
         margin-bottom: -1px;
         border-bottom: 0;
-        padding: 0;
+        padding: 0.5rem 1rem;
         font-size: 0.875rem;
         font-weight: normal;
         text-transform: none;
