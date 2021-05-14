@@ -1,37 +1,9 @@
-import classNames from 'classnames'
 import * as React from 'react'
 
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { ConnectionNodesState, ConnectionProps } from './ConnectionNodes'
 import { Connection } from './ConnectionType'
-
-interface ConnectionNodesSummaryShowMoreProps {
-    onShowMore?: () => void
-    showMoreClassName?: string
-}
-
-export const ConnectionNodesSummaryShowMore: React.FunctionComponent<ConnectionNodesSummaryShowMoreProps> = ({
-    onShowMore,
-    showMoreClassName,
-}) => {
-    const [isRedesignEnabled] = useRedesignToggle()
-
-    return (
-        <button
-            type="button"
-            className={classNames(
-                'btn btn-sm filtered-connection__show-more',
-                isRedesignEnabled ? 'btn-link' : 'btn-secondary',
-                showMoreClassName
-            )}
-            onClick={onShowMore}
-        >
-            Show more
-        </button>
-    )
-}
 
 interface ConnectionNodesSummaryProps<C extends Connection<N>, N, NP = {}, HP = {}>
     extends Pick<

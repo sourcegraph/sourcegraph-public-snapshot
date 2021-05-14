@@ -504,6 +504,9 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                 pluralNoun="code monitors"
                 query=""
               >
+                <div
+                  className="filtered-connection__summary-container"
+                />
                 <ul
                   className="filtered-connection__nodes"
                   data-testid="nodes"
@@ -1589,6 +1592,289 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                     </AnchorLink>
                   </CodeMonitorNode>
                 </ul>
+                <div
+                  className="filtered-connection__summary-container"
+                >
+                  <ConnectionNodesSummary
+                    connection={
+                      Object {
+                        "nodes": Array [
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-0",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-0 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-0",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Test code monitor",
+                            "enabled": true,
+                            "id": "foo0",
+                            "trigger": Object {
+                              "id": "test-0",
+                              "query": "test",
+                            },
+                          },
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-1",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-1 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-1",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Second test code monitor",
+                            "enabled": true,
+                            "id": "foo1",
+                            "trigger": Object {
+                              "id": "test-1",
+                              "query": "test",
+                            },
+                          },
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-2",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-2 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-2",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Third test code monitor",
+                            "enabled": true,
+                            "id": "foo2",
+                            "trigger": Object {
+                              "id": "test-2",
+                              "query": "test",
+                            },
+                          },
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-3",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-3 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-3",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Fourth test code monitor",
+                            "enabled": true,
+                            "id": "foo3",
+                            "trigger": Object {
+                              "id": "test-3",
+                              "query": "test",
+                            },
+                          },
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-4",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-4 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-4",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Fifth test code monitor",
+                            "enabled": true,
+                            "id": "foo4",
+                            "trigger": Object {
+                              "id": "test-4",
+                              "query": "test",
+                            },
+                          },
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-5",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-5 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-5",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Sixth test code monitor",
+                            "enabled": true,
+                            "id": "foo5",
+                            "trigger": Object {
+                              "id": "test-5",
+                              "query": "test",
+                            },
+                          },
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-6",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-6 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-6",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Seventh test code monitor",
+                            "enabled": true,
+                            "id": "foo6",
+                            "trigger": Object {
+                              "id": "test-6",
+                              "query": "test",
+                            },
+                          },
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-7",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-7 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-7",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Eighth test code monitor",
+                            "enabled": true,
+                            "id": "foo7",
+                            "trigger": Object {
+                              "id": "test-7",
+                              "query": "test",
+                            },
+                          },
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-9",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-9 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-9",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Ninth test code monitor",
+                            "enabled": true,
+                            "id": "foo9",
+                            "trigger": Object {
+                              "id": "test-9",
+                              "query": "test",
+                            },
+                          },
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-0",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-0 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-0",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Tenth test code monitor",
+                            "enabled": true,
+                            "id": "foo10",
+                            "trigger": Object {
+                              "id": "test-0",
+                              "query": "test",
+                            },
+                          },
+                        ],
+                        "pageInfo": Object {
+                          "endCursor": "foo10",
+                          "hasNextPage": false,
+                        },
+                        "totalCount": 10,
+                      }
+                    }
+                    connectionQuery=""
+                    hasNextPage={false}
+                    noSummaryIfAllNodesVisible={true}
+                    noun="code monitor"
+                    pluralNoun="code monitors"
+                    totalCount={10}
+                  />
+                </div>
               </ConnectionNodes>
             </div>
           </FilteredConnection>
@@ -1932,6 +2218,9 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                 pluralNoun="code monitors"
                 query=""
               >
+                <div
+                  className="filtered-connection__summary-container"
+                />
                 <ul
                   className="filtered-connection__nodes"
                   data-testid="nodes"
@@ -2261,6 +2550,107 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                     </AnchorLink>
                   </CodeMonitorNode>
                 </ul>
+                <div
+                  className="filtered-connection__summary-container"
+                >
+                  <ConnectionNodesSummary
+                    connection={
+                      Object {
+                        "nodes": Array [
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-0",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-0 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-0",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Test code monitor",
+                            "enabled": true,
+                            "id": "foo0",
+                            "trigger": Object {
+                              "id": "test-0",
+                              "query": "test",
+                            },
+                          },
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-1",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-1 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-1",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Second test code monitor",
+                            "enabled": true,
+                            "id": "foo1",
+                            "trigger": Object {
+                              "id": "test-1",
+                              "query": "test",
+                            },
+                          },
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-2",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-2 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-2",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Third test code monitor",
+                            "enabled": true,
+                            "id": "foo2",
+                            "trigger": Object {
+                              "id": "test-2",
+                              "query": "test",
+                            },
+                          },
+                        ],
+                        "pageInfo": Object {
+                          "endCursor": "foo3",
+                          "hasNextPage": false,
+                        },
+                        "totalCount": 3,
+                      }
+                    }
+                    connectionQuery=""
+                    hasNextPage={false}
+                    noSummaryIfAllNodesVisible={true}
+                    noun="code monitor"
+                    pluralNoun="code monitors"
+                    totalCount={3}
+                  />
+                </div>
               </ConnectionNodes>
             </div>
           </FilteredConnection>
@@ -2838,6 +3228,9 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                 pluralNoun="code monitors"
                 query=""
               >
+                <div
+                  className="filtered-connection__summary-container"
+                />
                 <ul
                   className="filtered-connection__nodes"
                   data-testid="nodes"
@@ -4139,24 +4532,356 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                     </AnchorLink>
                   </CodeMonitorNode>
                 </ul>
-                <p
-                  className="filtered-connection__summary"
-                  data-testid="summary"
+                <div
+                  className="filtered-connection__summary-container"
                 >
-                  <small>
-                    <span>
-                      12
-                       
-                      code monitors
-                       
-                      total
-                    </span>
-                     
-                  </small>
-                </p>
-                <ConnectionNodesSummaryShowMore
-                  onShowMore={[Function]}
-                >
+                  <ConnectionNodesSummary
+                    connection={
+                      Object {
+                        "nodes": Array [
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-0",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-0 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-0",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Test code monitor",
+                            "enabled": true,
+                            "id": "foo0",
+                            "trigger": Object {
+                              "id": "test-0",
+                              "query": "test",
+                            },
+                          },
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-1",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-1 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-1",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Second test code monitor",
+                            "enabled": true,
+                            "id": "foo1",
+                            "trigger": Object {
+                              "id": "test-1",
+                              "query": "test",
+                            },
+                          },
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-2",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-2 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-2",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Third test code monitor",
+                            "enabled": true,
+                            "id": "foo2",
+                            "trigger": Object {
+                              "id": "test-2",
+                              "query": "test",
+                            },
+                          },
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-3",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-3 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-3",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Fourth test code monitor",
+                            "enabled": true,
+                            "id": "foo3",
+                            "trigger": Object {
+                              "id": "test-3",
+                              "query": "test",
+                            },
+                          },
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-4",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-4 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-4",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Fifth test code monitor",
+                            "enabled": true,
+                            "id": "foo4",
+                            "trigger": Object {
+                              "id": "test-4",
+                              "query": "test",
+                            },
+                          },
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-5",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-5 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-5",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Sixth test code monitor",
+                            "enabled": true,
+                            "id": "foo5",
+                            "trigger": Object {
+                              "id": "test-5",
+                              "query": "test",
+                            },
+                          },
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-6",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-6 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-6",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Seventh test code monitor",
+                            "enabled": true,
+                            "id": "foo6",
+                            "trigger": Object {
+                              "id": "test-6",
+                              "query": "test",
+                            },
+                          },
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-7",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-7 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-7",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Eighth test code monitor",
+                            "enabled": true,
+                            "id": "foo7",
+                            "trigger": Object {
+                              "id": "test-7",
+                              "query": "test",
+                            },
+                          },
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-9",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-9 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-9",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Ninth test code monitor",
+                            "enabled": true,
+                            "id": "foo9",
+                            "trigger": Object {
+                              "id": "test-9",
+                              "query": "test",
+                            },
+                          },
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-0",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-0 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-0",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Tenth test code monitor",
+                            "enabled": true,
+                            "id": "foo10",
+                            "trigger": Object {
+                              "id": "test-0",
+                              "query": "test",
+                            },
+                          },
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-1",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-1 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-1",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Eleventh test code monitor",
+                            "enabled": true,
+                            "id": "foo11",
+                            "trigger": Object {
+                              "id": "test-1",
+                              "query": "test",
+                            },
+                          },
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-2",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-2 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-2",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Twelfth test code monitor",
+                            "enabled": true,
+                            "id": "foo12",
+                            "trigger": Object {
+                              "id": "test-2",
+                              "query": "test",
+                            },
+                          },
+                        ],
+                        "pageInfo": Object {
+                          "endCursor": "foo12",
+                          "hasNextPage": true,
+                        },
+                        "totalCount": 12,
+                      }
+                    }
+                    connectionQuery=""
+                    hasNextPage={true}
+                    noSummaryIfAllNodesVisible={true}
+                    noun="code monitor"
+                    pluralNoun="code monitors"
+                    totalCount={12}
+                  >
+                    <p
+                      className="filtered-connection__summary"
+                      data-testid="summary"
+                    >
+                      <small>
+                        <span>
+                          12
+                           
+                          code monitors
+                           
+                          total
+                        </span>
+                         
+                      </small>
+                    </p>
+                  </ConnectionNodesSummary>
                   <button
                     className="btn btn-sm filtered-connection__show-more btn-secondary"
                     onClick={[Function]}
@@ -4164,7 +4889,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                   >
                     Show more
                   </button>
-                </ConnectionNodesSummaryShowMore>
+                </div>
               </ConnectionNodes>
             </div>
           </FilteredConnection>
