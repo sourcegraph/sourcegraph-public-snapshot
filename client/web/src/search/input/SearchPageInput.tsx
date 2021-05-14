@@ -28,7 +28,6 @@ import { ThemePreferenceProps } from '../../theme'
 import { submitSearch, SubmitSearchParameters } from '../helpers'
 import { QuickLinks } from '../QuickLinks'
 
-import { LazyMonacoQueryInput } from './LazyMonacoQueryInput'
 import { SearchBox } from './SearchBox'
 import { SearchButton } from './SearchButton'
 import { useSearchOnboardingTour } from './SearchOnboardingTour'
