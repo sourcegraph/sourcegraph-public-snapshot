@@ -20,6 +20,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Steps in batch specs can now have an `if:` attribute to enable conditional execution of different steps. [#20701](https://github.com/sourcegraph/sourcegraph/pull/20701)
 - Extensions can now log messages through `sourcegraph.app.log` to aid debugging user issues. [#20474](https://github.com/sourcegraph/sourcegraph/pull/20474)
 - Bulk comments on many changesets are now available in Batch Changes. [#20361](https://github.com/sourcegraph/sourcegraph/pull/20361)
+- Batch change specs are now viewable when previewing changesets. [#19534](https://github.com/sourcegraph/sourcegraph/issues/19534)
 
 ### Changed
 
