@@ -1,41 +1,31 @@
-import * as H from 'history'
 import { isPlainObject } from 'lodash'
 import * as Monaco from 'monaco-editor'
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { Subscription, Observable, Unsubscribable, ReplaySubject } from 'rxjs'
-import { Omit } from 'utility-types'
 
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { getProviders } from '@sourcegraph/shared/src/search/query/providers'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { SearchSuggestion } from '@sourcegraph/shared/src/search/suggestions'
+import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { hasProperty } from '@sourcegraph/shared/src/util/types'
 import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
-import { CaseSensitivityProps, PatternTypeProps, CopyQueryButtonProps, SearchContextProps } from '..'
+import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '..'
 import { MonacoEditor } from '../../components/MonacoEditor'
 import { SearchPatternType } from '../../graphql-operations'
 import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '../../keyboardShortcuts/keyboardShortcuts'
 import { observeResize } from '../../util/dom'
 import { fetchSuggestions } from '../backend'
-import { QueryState, submitSearch } from '../helpers'
-
-import { SearchContextDropdown } from './SearchContextDropdown'
-import { Toggles, TogglesProps } from './toggles/Toggles'
+import { QueryState } from '../helpers'
 
 export interface MonacoQueryInputProps
-    extends Omit<TogglesProps, 'navbarSearchQuery'>,
-        ThemeProps,
-        CaseSensitivityProps,
-        PatternTypeProps,
-        Omit<
-            SearchContextProps,
-            'convertVersionContextToSearchContext' | 'isSearchContextSpecAvailable' | 'fetchSearchContext'
-        >,
-        CopyQueryButtonProps {
-    location: H.Location
-    history: H.History
+    extends ThemeProps,
+        Pick<CaseSensitivityProps, 'caseSensitive'>,
+        Pick<PatternTypeProps, 'patternType'>,
+        Pick<SearchContextProps, 'selectedSearchContextSpec'>,
+        VersionContextProps {
     isSourcegraphDotCom: boolean // significant for query suggestions
     queryState: QueryState
     onChange: (newState: QueryState) => void
@@ -45,7 +35,6 @@ export interface MonacoQueryInputProps
     onSuggestionsInitialized?: (actions: { trigger: () => void }) => void
     autoFocus?: boolean
     keyboardShortcutForFocus?: KeyboardShortcut
-    submitSearchOnSearchContextChange?: boolean
 
     // Whether globbing is enabled for filters.
     globbing: boolean
@@ -159,7 +148,14 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     onSuggestionsInitialized,
     onCompletionItemSelected,
     autoFocus,
-    ...props
+    selectedSearchContextSpec,
+    versionContext,
+    patternType,
+    globbing,
+    enableSmartQuery,
+    interpretComments,
+    isSourcegraphDotCom,
+    isLightTheme,
 }) => {
     const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
 
@@ -178,9 +174,8 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     }, [editor, container])
 
     const fetchSuggestionsWithContext = useCallback(
-        (query: string) =>
-            fetchSuggestions(appendContextFilter(query, props.selectedSearchContextSpec, props.versionContext)),
-        [props.selectedSearchContextSpec, props.versionContext]
+        (query: string) => fetchSuggestions(appendContextFilter(query, selectedSearchContextSpec, versionContext)),
+        [selectedSearchContextSpec, versionContext]
     )
 
     const [isRedesignEnabled] = useRedesignToggle()
@@ -197,7 +192,7 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     useLayoutEffect(() => {
         searchQueries.next(queryState.query)
     }, [queryState.query, searchQueries])
-    const { patternType, globbing, enableSmartQuery, interpretComments, isSourcegraphDotCom } = props
+
     useEffect(() => {
         if (!monacoInstance) {
             return
@@ -291,10 +286,10 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
 
     // Always focus the editor on selectedSearchContextSpec change
     useEffect(() => {
-        if (props.selectedSearchContextSpec) {
+        if (selectedSearchContextSpec) {
             editor?.focus()
         }
-    }, [editor, props.selectedSearchContextSpec])
+    }, [editor, selectedSearchContextSpec])
 
     // If an edit wasn't triggered by the user,
     // place the cursor at the end of the query.
@@ -372,35 +367,21 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
         cursorWidth: 1,
     }
     return (
-        <>
-            <div className="monaco-query-input-container">
-                {props.showSearchContext && (
-                    <SearchContextDropdown query={queryState.query} submitSearch={submitSearch} {...props} />
-                )}
-                <div className="monaco-query-input-container__focus-container flex-shrink-past-contents">
-                    <div ref={setContainer} className="flex-grow-1 flex-shrink-past-contents" onFocus={onFocus}>
-                        <MonacoEditor
-                            id="monaco-query-input"
-                            language={SOURCEGRAPH_SEARCH}
-                            value={queryState.query}
-                            height={17}
-                            isLightTheme={props.isLightTheme}
-                            editorWillMount={setMonacoInstance}
-                            onEditorCreated={setEditor}
-                            options={options}
-                            border={false}
-                            keyboardShortcutForFocus={KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR}
-                            isRedesignEnabled={isRedesignEnabled}
-                            className="test-query-input"
-                        />
-                    </div>
-                    <Toggles
-                        {...props}
-                        navbarSearchQuery={queryState.query}
-                        className="monaco-query-input-container__toggle-container"
-                    />
-                </div>
-            </div>
-        </>
+        <div ref={setContainer} className="flex-grow-1 flex-shrink-past-contents" onFocus={onFocus}>
+            <MonacoEditor
+                id="monaco-query-input"
+                language={SOURCEGRAPH_SEARCH}
+                value={queryState.query}
+                height={17}
+                isLightTheme={isLightTheme}
+                editorWillMount={setMonacoInstance}
+                onEditorCreated={setEditor}
+                options={options}
+                border={false}
+                keyboardShortcutForFocus={KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR}
+                isRedesignEnabled={isRedesignEnabled}
+                className="test-query-input monaco-query-input"
+            />
+        </div>
     )
 }
