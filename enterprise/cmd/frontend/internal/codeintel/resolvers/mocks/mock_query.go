@@ -4,10 +4,10 @@ package mocks
 
 import (
 	"context"
-	"sync"
-
 	resolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	lsifstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+	semantic "github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"sync"
 )
 
 // MockQueryResolver is a mock implementation of the QueryResolver interface
@@ -21,6 +21,9 @@ type MockQueryResolver struct {
 	// DiagnosticsFunc is an instance of a mock function object controlling
 	// the behavior of the method Diagnostics.
 	DiagnosticsFunc *QueryResolverDiagnosticsFunc
+	// DocumentationPageFunc is an instance of a mock function object
+	// controlling the behavior of the method DocumentationPage.
+	DocumentationPageFunc *QueryResolverDocumentationPageFunc
 	// HoverFunc is an instance of a mock function object controlling the
 	// behavior of the method Hover.
 	HoverFunc *QueryResolverHoverFunc
@@ -44,6 +47,11 @@ func NewMockQueryResolver() *MockQueryResolver {
 		DiagnosticsFunc: &QueryResolverDiagnosticsFunc{
 			defaultHook: func(context.Context, int) ([]resolvers.AdjustedDiagnostic, int, error) {
 				return nil, 0, nil
+			},
+		},
+		DocumentationPageFunc: &QueryResolverDocumentationPageFunc{
+			defaultHook: func(context.Context, string) (*semantic.DocumentationPageData, error) {
+				return nil, nil
 			},
 		},
 		HoverFunc: &QueryResolverHoverFunc{
@@ -74,6 +82,9 @@ func NewMockQueryResolverFrom(i resolvers.QueryResolver) *MockQueryResolver {
 		},
 		DiagnosticsFunc: &QueryResolverDiagnosticsFunc{
 			defaultHook: i.Diagnostics,
+		},
+		DocumentationPageFunc: &QueryResolverDocumentationPageFunc{
+			defaultHook: i.DocumentationPage,
 		},
 		HoverFunc: &QueryResolverHoverFunc{
 			defaultHook: i.Hover,
@@ -309,6 +320,117 @@ func (c QueryResolverDiagnosticsFuncCall) Args() []interface{} {
 // invocation.
 func (c QueryResolverDiagnosticsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// QueryResolverDocumentationPageFunc describes the behavior when the
+// DocumentationPage method of the parent MockQueryResolver instance is
+// invoked.
+type QueryResolverDocumentationPageFunc struct {
+	defaultHook func(context.Context, string) (*semantic.DocumentationPageData, error)
+	hooks       []func(context.Context, string) (*semantic.DocumentationPageData, error)
+	history     []QueryResolverDocumentationPageFuncCall
+	mutex       sync.Mutex
+}
+
+// DocumentationPage delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockQueryResolver) DocumentationPage(v0 context.Context, v1 string) (*semantic.DocumentationPageData, error) {
+	r0, r1 := m.DocumentationPageFunc.nextHook()(v0, v1)
+	m.DocumentationPageFunc.appendCall(QueryResolverDocumentationPageFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the DocumentationPage
+// method of the parent MockQueryResolver instance is invoked and the hook
+// queue is empty.
+func (f *QueryResolverDocumentationPageFunc) SetDefaultHook(hook func(context.Context, string) (*semantic.DocumentationPageData, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DocumentationPage method of the parent MockQueryResolver instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *QueryResolverDocumentationPageFunc) PushHook(hook func(context.Context, string) (*semantic.DocumentationPageData, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *QueryResolverDocumentationPageFunc) SetDefaultReturn(r0 *semantic.DocumentationPageData, r1 error) {
+	f.SetDefaultHook(func(context.Context, string) (*semantic.DocumentationPageData, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *QueryResolverDocumentationPageFunc) PushReturn(r0 *semantic.DocumentationPageData, r1 error) {
+	f.PushHook(func(context.Context, string) (*semantic.DocumentationPageData, error) {
+		return r0, r1
+	})
+}
+
+func (f *QueryResolverDocumentationPageFunc) nextHook() func(context.Context, string) (*semantic.DocumentationPageData, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *QueryResolverDocumentationPageFunc) appendCall(r0 QueryResolverDocumentationPageFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of QueryResolverDocumentationPageFuncCall
+// objects describing the invocations of this function.
+func (f *QueryResolverDocumentationPageFunc) History() []QueryResolverDocumentationPageFuncCall {
+	f.mutex.Lock()
+	history := make([]QueryResolverDocumentationPageFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// QueryResolverDocumentationPageFuncCall is an object that describes an
+// invocation of method DocumentationPage on an instance of
+// MockQueryResolver.
+type QueryResolverDocumentationPageFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *semantic.DocumentationPageData
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c QueryResolverDocumentationPageFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c QueryResolverDocumentationPageFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // QueryResolverHoverFunc describes the behavior when the Hover method of

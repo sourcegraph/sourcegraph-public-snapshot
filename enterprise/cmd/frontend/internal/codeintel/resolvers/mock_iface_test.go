@@ -4,10 +4,6 @@ package resolvers
 
 import (
 	"context"
-	"regexp"
-	"sync"
-	"time"
-
 	enqueuer "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
 	gitserver "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	dbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
@@ -17,6 +13,9 @@ import (
 	protocol "github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	config "github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	semantic "github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"regexp"
+	"sync"
+	"time"
 )
 
 // MockDBStore is a mock implementation of the DBStore interface (from the
@@ -4958,6 +4957,9 @@ type MockLSIFStore struct {
 	// DiagnosticsFunc is an instance of a mock function object controlling
 	// the behavior of the method Diagnostics.
 	DiagnosticsFunc *LSIFStoreDiagnosticsFunc
+	// DocumentationPageFunc is an instance of a mock function object
+	// controlling the behavior of the method DocumentationPage.
+	DocumentationPageFunc *LSIFStoreDocumentationPageFunc
 	// ExistsFunc is an instance of a mock function object controlling the
 	// behavior of the method Exists.
 	ExistsFunc *LSIFStoreExistsFunc
@@ -4995,6 +4997,11 @@ func NewMockLSIFStore() *MockLSIFStore {
 		DiagnosticsFunc: &LSIFStoreDiagnosticsFunc{
 			defaultHook: func(context.Context, int, string, int, int) ([]lsifstore.Diagnostic, int, error) {
 				return nil, 0, nil
+			},
+		},
+		DocumentationPageFunc: &LSIFStoreDocumentationPageFunc{
+			defaultHook: func(context.Context, int, string) (*semantic.DocumentationPageData, error) {
+				return nil, nil
 			},
 		},
 		ExistsFunc: &LSIFStoreExistsFunc{
@@ -5042,6 +5049,9 @@ func NewMockLSIFStoreFrom(i LSIFStore) *MockLSIFStore {
 		},
 		DiagnosticsFunc: &LSIFStoreDiagnosticsFunc{
 			defaultHook: i.Diagnostics,
+		},
+		DocumentationPageFunc: &LSIFStoreDocumentationPageFunc{
+			defaultHook: i.DocumentationPage,
 		},
 		ExistsFunc: &LSIFStoreExistsFunc{
 			defaultHook: i.Exists,
@@ -5435,6 +5445,118 @@ func (c LSIFStoreDiagnosticsFuncCall) Args() []interface{} {
 // invocation.
 func (c LSIFStoreDiagnosticsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// LSIFStoreDocumentationPageFunc describes the behavior when the
+// DocumentationPage method of the parent MockLSIFStore instance is invoked.
+type LSIFStoreDocumentationPageFunc struct {
+	defaultHook func(context.Context, int, string) (*semantic.DocumentationPageData, error)
+	hooks       []func(context.Context, int, string) (*semantic.DocumentationPageData, error)
+	history     []LSIFStoreDocumentationPageFuncCall
+	mutex       sync.Mutex
+}
+
+// DocumentationPage delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockLSIFStore) DocumentationPage(v0 context.Context, v1 int, v2 string) (*semantic.DocumentationPageData, error) {
+	r0, r1 := m.DocumentationPageFunc.nextHook()(v0, v1, v2)
+	m.DocumentationPageFunc.appendCall(LSIFStoreDocumentationPageFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the DocumentationPage
+// method of the parent MockLSIFStore instance is invoked and the hook queue
+// is empty.
+func (f *LSIFStoreDocumentationPageFunc) SetDefaultHook(hook func(context.Context, int, string) (*semantic.DocumentationPageData, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DocumentationPage method of the parent MockLSIFStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *LSIFStoreDocumentationPageFunc) PushHook(hook func(context.Context, int, string) (*semantic.DocumentationPageData, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *LSIFStoreDocumentationPageFunc) SetDefaultReturn(r0 *semantic.DocumentationPageData, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string) (*semantic.DocumentationPageData, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *LSIFStoreDocumentationPageFunc) PushReturn(r0 *semantic.DocumentationPageData, r1 error) {
+	f.PushHook(func(context.Context, int, string) (*semantic.DocumentationPageData, error) {
+		return r0, r1
+	})
+}
+
+func (f *LSIFStoreDocumentationPageFunc) nextHook() func(context.Context, int, string) (*semantic.DocumentationPageData, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *LSIFStoreDocumentationPageFunc) appendCall(r0 LSIFStoreDocumentationPageFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of LSIFStoreDocumentationPageFuncCall objects
+// describing the invocations of this function.
+func (f *LSIFStoreDocumentationPageFunc) History() []LSIFStoreDocumentationPageFuncCall {
+	f.mutex.Lock()
+	history := make([]LSIFStoreDocumentationPageFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// LSIFStoreDocumentationPageFuncCall is an object that describes an
+// invocation of method DocumentationPage on an instance of MockLSIFStore.
+type LSIFStoreDocumentationPageFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *semantic.DocumentationPageData
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c LSIFStoreDocumentationPageFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c LSIFStoreDocumentationPageFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // LSIFStoreExistsFunc describes the behavior when the Exists method of the
