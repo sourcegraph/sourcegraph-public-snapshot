@@ -34,7 +34,7 @@ To provide HTTP(S) authentication, assuming you're using the default `--volume $
 
 ## SSH authentication (config, keys, `known_hosts`)
 
-Provide your `gitserver` instance with your SSH / Git configuration (e.g. `.ssh/id_rsa`, `.ssh/id_rsa.pub`, and `.ssh/known_hosts`--but you can also provide other files like `.netrc`, `.gitconfig`, etc. if needed) by mounting a directory that contains this configuration into the `gitserver` container.
+Provide your `gitserver` instance with your SSH / Git configuration (e.g. `.ssh/config`, `.ssh/id_rsa`, `.ssh/id_rsa.pub`, and `.ssh/known_hosts`--but you can also provide other files like `.netrc`, `.gitconfig`, etc. if needed) by mounting a directory that contains this configuration into the `gitserver` container.
 
 For example, in the `gitserver-0` container configuration in your docker-compose.yaml file, add the second volume listed below, replacing `~/path/on/host/` with the path on the host machine to the `.ssh` directory:
 
@@ -47,6 +47,57 @@ gitserver-0:
     - '~/path/on/host/.ssh:/home/sourcegraph/.ssh'
   ...
 ```
+
+>NOTE: The permission of your SSH / Git configuration must be set to be readable by the user in the `gitserver` container. For example, run `chmod -v -R 600 ~/path/to/.ssh` in the folder on the host machine.
+
+See [Custom git or ssh config docs](https://docs.sourcegraph.com/admin/repo/custom_git_or_ssh_config#setting-configuration) on setting custom configuration 
+
+### Troubleshooting
+
+#### What should be included in my config file?
+
+We recommend adding the `StrictHostKeyChecking no` and `AddKeysToAgent yes` flags to prevent the need to give permission interactively when cloning from a new host.
+
+```yaml
+Host *
+  StrictHostKeyChecking no
+  AddKeysToAgent yes
+```
+
+
+#### Error: `Host key verification failed`
+This indicates an invalid key is being used. You can confirm the error by cloning inside the gitserver directly. For example:
+```bash
+docker exec -it gitserver-0 sh
+cd data/repos/<CODE-HOST>/<REPO-OWNER>
+git clone <SSH-URL>
+```
+
+#### Error: `Bad owner or permissions on /home/sourcegraph/.ssh/<YOUR-CONFIG-FILE>`
+This indicates the container is having trouble reading the configuration files due to permission / owner issues.
+The permission and ownership settings inside your `.ssh/` directory should look similar to:
+```bash
+$ ls -al #command to display list of file with detailed information
+total 20
+drwxr-xr-x    6 sourcegr sourcegr       192 May 12 19:54 .
+drwxr-sr-x    1 sourcegr sourcegr      4096 May 12 19:43 ..
+-rw-------    1 sourcegr sourcegr        34 May 12 19:22 config
+-rw-------    1 sourcegr sourcegr       411 May 12 18:52 id_ed25519
+-rw-------    1 sourcegr sourcegr        98 May 12 18:52 id_ed25519.pub
+-rw-------    1 sourcegr sourcegr       799 May 12 19:54 known_hosts
+```
+Solution:
+- Inside the `.ssh` directory on the Host Machine:
+  - Permission on all files must be set to `600`, and `700` for the directory itself.
+  - Files must be owned by a user who has access to the docker container. This can be done via `sudo chown -v -R $USER:$GROUP` (the user may need to set these values).
+- (OPTIONAL: Please read note below) Inside the `/home/sourcegraph/` directory on Docker Compose:
+  - Permission on all files must be set to `600`, and `700` for the directory itself.
+  - Files must be owned by the root user, which is `sourcegraph` by default. This can be done via `sudo chown -v -R $USER:$GROUP` (the user may need to set these values).
+
+>NOTE: Once the volume for the configuration files has been mounted, both the `/ssh` directory on the host machine and docker will be synced and changes within one directory will be reflected by the other one. Consquently, you will only need to make the changes within one directory.
+
+#### Error: `Permissions 0644 for '/home/sourcegraph/.ssh/<YOUR-PRIVATE-KEY-FILE>' are too open`
+This indicates the permission on your private key file is accessible by users other than the file owner. Setting the file permission to 600 resolves the issue.
 
 ### HTTP(S) authentication via netrc
 
