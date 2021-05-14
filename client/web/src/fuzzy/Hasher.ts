@@ -9,18 +9,17 @@
  * hashcode would be a linear operation resulting in a total runtime of O(N^2).
  */
 export class Hasher {
-    private h: number = 0
-    constructor() {}
-    public update(ch: string): Hasher {
-        for (let i = 0; i < ch.length; i++) {
-            this.h = (Math.imul(31, this.h) + ch.charCodeAt(i)) | 0
+    private currentHash = 0
+    public update(character: string): Hasher {
+        for (let index = 0; index < character.length; index++) {
+            this.currentHash = (Math.imul(31, this.currentHash) + character.charCodeAt(index)) | 0
         }
         return this
     }
     public digest(): number {
-        return this.h
+        return this.currentHash
     }
-    public reset() {
-        this.h = 0
+    public reset(): void {
+        this.currentHash = 0
     }
 }

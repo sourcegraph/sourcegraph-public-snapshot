@@ -1,6 +1,16 @@
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable jsx-a11y/no-noninteractive-element-interactions */
+/* eslint-disable jsx-a11y/click-events-have-key-events */
 import React from 'react'
+
+import { gql } from '@sourcegraph/shared/src/graphql/graphql'
+
 import { requestGraphQL } from '../backend/graphql'
+
 import { BloomFilterFuzzySearch } from './BloomFilterFuzzySearch'
 import { FuzzySearch, FuzzySearchResult } from './FuzzySearch'
 import { HighlightedText, HighlightedTextProps } from './HighlightedText'
@@ -21,10 +31,6 @@ export interface FuzzyModalProps {
  * Similar to "Go to file" in VS Code or the "t" keyboard shortcut on github.com
  */
 export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
-    if (!props.isVisible) {
-        return null
-    }
-
     // NOTE(olafur): the query is cached in local storage to mimic IntelliJ.
     // It' quite annoying in VS Code when it doesn't cache the "Go to symbol in
     // workspace" query. For example, I can't count the times I have typed a
@@ -40,33 +46,39 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
 
     const maxResults = useEphemeralState(DEFAULT_MAX_RESULTS)
 
-    const files = renderFiles(props, query, focusIndex, maxResults)
+    const loaded = useEphemeralState<Loaded>({ key: 'empty' })
+
+    if (!props.isVisible) {
+        return null
+    }
+
+    const files = renderFiles(props, query, focusIndex, maxResults, loaded)
 
     // Sets the new "focus index" so that it's rounded by the number of
     // displayed filenames.  Cycles so that the user can press-hold the down
     // arrow and it goes all the way down and back up to the top result.
-    function setRoundedFocusIndex(newNumber: number) {
-        const N = files.results.length
-        const i = newNumber % N
-        const nextIndex = i < 0 ? N + i : i
+    function setRoundedFocusIndex(newNumber: number): void {
+        const max = files.results.length
+        const index = newNumber % max
+        const nextIndex = index < 0 ? max + index : index
         focusIndex.set(nextIndex)
-        document.getElementById(`fuzzy-modal-result-${nextIndex}`)?.scrollIntoView(false)
+        document.querySelector(`#fuzzy-modal-result-${nextIndex}`)?.scrollIntoView(false)
     }
 
-    function onInputKeyDown(e: React.KeyboardEvent): void {
-        switch (e.key) {
+    function onInputKeyDown(event: React.KeyboardEvent): void {
+        switch (event.key) {
             case 'Escape':
                 props.onClose()
                 break
             case 'ArrowDown':
-                e.preventDefault() // Don't move the cursor to the end of the input.
+                event.preventDefault() // Don't move the cursor to the end of the input.
                 setRoundedFocusIndex(focusIndex.value + 1)
                 break
             case 'PageDown':
                 setRoundedFocusIndex(focusIndex.value + 10)
                 break
             case 'ArrowUp':
-                e.preventDefault() // Don't move the cursor to the start of the input.
+                event.preventDefault() // Don't move the cursor to the start of the input.
                 setRoundedFocusIndex(focusIndex.value - 1)
                 break
             case 'PageUp':
@@ -85,27 +97,28 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
     }
 
     return (
-        <div className="fuzzy-modal" onClick={props.onClose}>
-            <div className="fuzzy-modal-content" onClick={e => e.stopPropagation()}>
+        <div role="navigation" className="fuzzy-modal" onClick={() => props.onClose()}>
+            <div role="navigation" className="fuzzy-modal-content" onClick={event => event.stopPropagation()}>
                 <div className="fuzzy-modal-header">
                     <div className="fuzzy-modal-cursor">
                         <input
                             autoComplete="off"
                             id="fuzzy-modal-input"
+                            className="fuzzy-modal-input"
                             value={query.value}
-                            onChange={e => {
-                                query.set(e.target.value)
+                            onChange={event => {
+                                query.set(event.target.value)
                                 focusIndex.set(0)
                             }}
                             type="text"
                             onKeyDown={onInputKeyDown}
                         />
-                        <i></i>
+                        <i />
                     </div>
                 </div>
                 <div className="fuzzy-modal-body">{files.element}</div>
                 <div className="fuzzy-modal-footer">
-                    <button className="btn btn-secondary" onClick={props.onClose}>
+                    <button type="button" className="btn btn-secondary" onClick={() => props.onClose()}>
                         Close
                     </button>
                 </div>
@@ -117,8 +130,10 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
 /**
  * The fuzzy finder modal is implemented as a state machine with the following transitions:
  *
+ * ```
  * Empty ──> Loading ──> Indexing ──> Ready
  *            ╰─────────────────────> Failed
+ * ```
  *
  * - Empty: start state.
  * - Loading: downloading filenames from the remote server.
@@ -161,15 +176,18 @@ function renderFiles(
     props: FuzzyModalProps,
     query: State<string>,
     focusIndex: State<number>,
-    maxResults: State<number>
+    maxResults: State<number>,
+    loaded: State<Loaded>
 ): RenderedFiles {
-    let loaded = useEphemeralState<Loaded>({ key: 'empty' })
-
-    function empty(elem: JSX.Element): RenderedFiles {
+    function empty(element: JSX.Element): RenderedFiles {
         return {
-            element: elem,
+            element,
             results: [],
         }
+    }
+
+    function onError(error: any): void {
+        loaded.set({ key: 'failed', errorMessage: JSON.stringify(error) })
     }
 
     const usuallyFast =
@@ -177,64 +195,71 @@ function renderFiles(
 
     switch (loaded.value.key) {
         case 'empty':
-            handleEmpty(props, loaded)
+            handleEmpty(props, loaded).then(() => {}, onError)
             return empty(<></>)
         case 'loading':
             return empty(<p>Downloading... {usuallyFast}</p>)
         case 'failed':
             return empty(<p>Error: {loaded.value.errorMessage}</p>)
         case 'indexing':
-            handleIndexing(props, loaded.value.filenames).then(next => {
-                loaded.set(next)
-            })
+            handleIndexing(props, loaded.value.filenames).then(next => loaded.set(next), onError)
             return empty(<p>Indexing... {usuallyFast}</p>)
         case 'ready':
-            const cacheKey = `${query.value}-${maxResults.value}`
-            let fuzzyResult = lastFuzzySearchResult.get(cacheKey)
-            if (!fuzzyResult) {
-                fuzzyResult = loaded.value.fuzzy.search({
-                    value: query.value,
-                    maxResults: maxResults.value,
-                })
-                lastFuzzySearchResult.clear() // Only cache the last query.
-                lastFuzzySearchResult.set(cacheKey, fuzzyResult)
-            }
-            const matchingFiles = fuzzyResult.values
-
-            if (matchingFiles.length === 0) {
-                return empty(<p>No files matching '{query.value}'</p>)
-            }
-            const filesToRender = matchingFiles.slice(0, maxResults.value)
-            return {
-                element: (
-                    <ul className="fuzzy-modal-results">
-                        {filesToRender.map((file, i) => (
-                            <li
-                                id={`fuzzy-modal-result-${i}`}
-                                key={file.text}
-                                className={i === focusIndex.value ? 'fuzzy-modal-focused' : ''}
-                            >
-                                <HighlightedText value={file} />
-                            </li>
-                        ))}
-                        {!fuzzyResult.isComplete && (
-                            <li>
-                                <button
-                                    onClick={() => {
-                                        console.log('EXPAND')
-                                        maxResults.set(maxResults.value * 2)
-                                    }}
-                                >
-                                    (...truncated, click to show more results){' '}
-                                </button>
-                            </li>
-                        )}
-                    </ul>
-                ),
-                results: filesToRender,
-            }
+            return renderReady(query, focusIndex, maxResults, loaded.value.fuzzy)
         default:
             return empty(<p>ERROR</p>)
+    }
+}
+function renderReady(
+    query: State<string>,
+    focusIndex: State<number>,
+    maxResults: State<number>,
+    fuzzy: FuzzySearch
+): RenderedFiles {
+    const cacheKey = `${query.value}-${maxResults.value}`
+    let fuzzyResult = lastFuzzySearchResult.get(cacheKey)
+    if (!fuzzyResult) {
+        fuzzyResult = fuzzy.search({
+            value: query.value,
+            maxResults: maxResults.value,
+        })
+        lastFuzzySearchResult.clear() // Only cache the last query.
+        lastFuzzySearchResult.set(cacheKey, fuzzyResult)
+    }
+    const matchingFiles = fuzzyResult.values
+
+    if (matchingFiles.length === 0) {
+        return { element: <p>No files matching '{query.value}'</p>, results: [] }
+    }
+    const filesToRender = matchingFiles.slice(0, maxResults.value)
+    return {
+        element: (
+            <ul className="fuzzy-modal-results">
+                {filesToRender.map((file, fileIndex) => (
+                    <li
+                        id={`fuzzy-modal-result-${fileIndex}`}
+                        key={file.text}
+                        className={fileIndex === focusIndex.value ? 'fuzzy-modal-focused' : ''}
+                    >
+                        <HighlightedText value={file} />
+                    </li>
+                ))}
+                {!fuzzyResult.isComplete && (
+                    <li>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                console.log('EXPAND')
+                                maxResults.set(maxResults.value * 2)
+                            }}
+                        >
+                            (...truncated, click to show more results){' '}
+                        </button>
+                    </li>
+                )}
+            </ul>
+        ),
+        results: filesToRender,
     }
 }
 
@@ -253,7 +278,7 @@ async function handleIndexing(props: FuzzyModalProps, files: string[]): Promise<
                 resolve({
                     key: 'ready',
                     fuzzy: BloomFilterFuzzySearch.fromSearchValues(
-                        files.map(f => ({ value: f, url: `/${props.repoName}@${props.commitID}/-/blob/${f}` }))
+                        files.map(file => ({ value: file, url: `/${props.repoName}@${props.commitID}/-/blob/${file}` }))
                     ),
                 }),
             0
@@ -287,50 +312,45 @@ async function handleEmpty(props: FuzzyModalProps, files: State<Loaded>): Promis
     if (fromCache) {
         files.set(await deserializeIndex(fromCache))
     } else {
-        let request = requestGraphQL(
-            gql`
-                query Files($repository: String!, $commit: String!) {
-                    repository(name: $repository) {
-                        commit(rev: $commit) {
-                            tree(recursive: true) {
-                                files(first: 1000000, recursive: true) {
-                                    path
+        files.set({ key: 'loading' })
+        try {
+            const next: any = await requestGraphQL(
+                gql`
+                    query Files($repository: String!, $commit: String!) {
+                        repository(name: $repository) {
+                            commit(rev: $commit) {
+                                tree(recursive: true) {
+                                    files(first: 1000000, recursive: true) {
+                                        path
+                                    }
                                 }
                             }
                         }
                     }
+                `,
+                {
+                    repository: props.repoName,
+                    commit: props.commitID,
                 }
-            `,
-            {
-                repository: props.repoName,
-                commit: props.commitID,
-            }
-        )
-        files.set({ key: 'loading' })
-        request.subscribe(
-            (e: any) => {
-                const response = e.data?.repository?.commit?.tree?.files?.map((f: any) => f.path) as
-                    | string[]
-                    | undefined
-                if (response) {
-                    cache.put(cacheRequest, new Response(JSON.stringify(response)))
-                    files.set({
-                        key: 'indexing',
-                        filenames: response,
-                    })
-                } else {
-                    files.set({
-                        key: 'failed',
-                        errorMessage: JSON.stringify(e.data),
-                    })
-                }
-            },
-            e => {
+            ).toPromise()
+            const response = next.data?.repository?.commit?.tree?.files?.map((file: any) => file.path)
+            if (response) {
+                files.set({
+                    key: 'indexing',
+                    filenames: response,
+                })
+                await cache.put(cacheRequest, new Response(JSON.stringify(response)))
+            } else {
                 files.set({
                     key: 'failed',
-                    errorMessage: JSON.stringify(e),
+                    errorMessage: JSON.stringify(next.data),
                 })
             }
-        )
+        } catch (error) {
+            files.set({
+                key: 'failed',
+                errorMessage: JSON.stringify(error),
+            })
+        }
     }
 }

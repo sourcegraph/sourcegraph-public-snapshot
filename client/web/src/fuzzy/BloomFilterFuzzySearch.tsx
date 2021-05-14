@@ -1,7 +1,12 @@
-import { Hasher } from './Hasher'
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 import { BloomFilter } from './BloomFilter'
-import { HighlightedTextProps, RangePosition } from './HighlightedText'
 import { FuzzySearch, FuzzySearchParameters, FuzzySearchResult } from './FuzzySearch'
+import { Hasher } from './Hasher'
+import { HighlightedTextProps, RangePosition } from './HighlightedText'
 
 /**
  * We don't index filenames with length larger than this value.
@@ -48,7 +53,7 @@ const DEFAULT_BUCKET_SIZE = 500
  * serialized so that the indexing step only runs once per repoName/commitID pair.
  */
 export class BloomFilterFuzzySearch extends FuzzySearch {
-    constructor(readonly buckets: Bucket[], readonly BUCKET_SIZE: number = DEFAULT_BUCKET_SIZE) {
+    constructor(public readonly buckets: Bucket[], public readonly BUCKET_SIZE: number = DEFAULT_BUCKET_SIZE) {
         super()
     }
     public static fromSearchValues(
@@ -57,14 +62,16 @@ export class BloomFilterFuzzySearch extends FuzzySearch {
     ): BloomFilterFuzzySearch {
         const buckets = []
         let buffer: SearchValue[] = []
-        files.forEach(file => {
+        for (const file of files) {
             buffer.push(file)
             if (buffer.length >= BUCKET_SIZE) {
                 buckets.push(Bucket.fromSearchValues(buffer))
                 buffer = []
             }
-        })
-        if (buffer) buckets.push(Bucket.fromSearchValues(buffer))
+        }
+        if (buffer) {
+            buckets.push(Bucket.fromSearchValues(buffer))
+        }
         return new BloomFilterFuzzySearch(buckets, BUCKET_SIZE)
     }
 
@@ -76,27 +83,27 @@ export class BloomFilterFuzzySearch extends FuzzySearch {
     }
 
     public static fromSerializedString(text: string): BloomFilterFuzzySearch {
-        const json = JSON.parse(text) as any
-        return new BloomFilterFuzzySearch(json.buckets.map(Bucket.fromSerializedString), json.BUCKET_SIZE)
+        const json = JSON.parse(text)
+        return new BloomFilterFuzzySearch(
+            json.buckets.map((bucket: any) => Bucket.fromSerializedString(bucket)),
+            json.BUCKET_SIZE
+        )
     }
 
     public search(query: FuzzySearchParameters): FuzzySearchResult {
-        if (query.value.length === 0) return this.emptyResult(query)
-        const self = this
-        const result: HighlightedTextProps[] = []
-        const finalQuery = query.value // this.actualQuery(query.value)
-        const hashParts = allQueryHashParts(finalQuery)
-        function complete(isComplete: boolean) {
-            return self.sorted({ values: result, isComplete: isComplete })
+        if (query.value.length === 0) {
+            return this.emptyResult(query)
         }
-        for (var i = 0; i < this.buckets.length; i++) {
-            const bucket = this.buckets[i]
-            const matches = bucket.matches(finalQuery, hashParts)
-            for (var j = 0; j < matches.value.length; j++) {
+        const result: HighlightedTextProps[] = []
+        const hashParts = allQueryHashParts(query.value)
+        const complete = (isComplete: boolean): FuzzySearchResult => this.sorted({ values: result, isComplete })
+        for (const bucket of this.buckets) {
+            const matches = bucket.matches(query.value, hashParts)
+            for (const value of matches.value) {
                 if (result.length >= query.maxResults) {
                     return complete(false)
                 }
-                result.push(matches.value[j])
+                result.push(value)
             }
         }
         return complete(true)
@@ -105,9 +112,14 @@ export class BloomFilterFuzzySearch extends FuzzySearch {
     private sorted(result: FuzzySearchResult): FuzzySearchResult {
         result.values.sort((a, b) => {
             const byLength = a.text.length - b.text.length
-            if (byLength !== 0) return byLength
+            if (byLength !== 0) {
+                return byLength
+            }
+
             const byEarliestMatch = a.offsetSum() - b.offsetSum()
-            if (byEarliestMatch !== 0) return byEarliestMatch
+            if (byEarliestMatch !== 0) {
+                return byEarliestMatch
+            }
 
             return a.text.localeCompare(b.text)
         })
@@ -116,18 +128,17 @@ export class BloomFilterFuzzySearch extends FuzzySearch {
 
     private emptyResult(query: FuzzySearchParameters): FuzzySearchResult {
         const result: HighlightedTextProps[] = []
-        const self = this
-        function complete(isComplete: boolean) {
-            return self.sorted({ values: result, isComplete: isComplete })
-        }
+        const complete = (isComplete: boolean): FuzzySearchResult => this.sorted({ values: result, isComplete })
 
-        for (var i = 0; i < this.buckets.length; i++) {
-            const bucket = this.buckets[i]
-            if (result.length > query.maxResults) return complete(false)
-            for (var j = 0; j < bucket.files.length; j++) {
-                const value = bucket.files[j]
+        for (const bucket of this.buckets) {
+            if (result.length > query.maxResults) {
+                return complete(false)
+            }
+            for (const value of bucket.files) {
                 result.push(new HighlightedTextProps(value.value, [], value.url))
-                if (result.length > query.maxResults) return complete(false)
+                if (result.length > query.maxResults) {
+                    return complete(false)
+                }
             }
         }
         return complete(true)
@@ -136,10 +147,11 @@ export class BloomFilterFuzzySearch extends FuzzySearch {
 
 export function allFuzzyParts(value: string, includeDelimeters: boolean): string[] {
     const buf: string[] = []
-    var start = 0
-    for (var end = 0; end < value.length; end = nextFuzzyPart(value, end)) {
+    let start = 0
+    let end = 0
+    while (end < value.length) {
         if (end > start) {
-            buf.push(value.substring(start, end))
+            buf.push(value.slice(start, end))
         }
         while (end < value.length && isDelimeter(value[end])) {
             if (includeDelimeters) {
@@ -148,33 +160,36 @@ export function allFuzzyParts(value: string, includeDelimeters: boolean): string
             end++
         }
         start = end
-        end++
+        end = nextFuzzyPart(value, end + 1)
     }
 
     if (start < value.length && end > start) {
-        buf.push(value.substring(start, end))
+        buf.push(value.slice(start, end))
     }
 
     return buf
 }
 
-function isLowercase(str: string): boolean {
-    return str.toLowerCase() === str && str !== str.toUpperCase()
+function isLowercaseCharacter(value: string): boolean {
+    return isLowercase(value) && !isDelimeter(value)
+}
+function isLowercase(value: string): boolean {
+    return value.toLowerCase() === value && value !== value.toUpperCase()
 }
 
-function isUppercaseCharacter(str: string): boolean {
-    return isUppercase(str) && !isDelimeter(str)
+function isUppercaseCharacter(value: string): boolean {
+    return isUppercase(value) && !isDelimeter(value)
 }
-function isUppercase(str: string): boolean {
-    return str.toUpperCase() === str && str !== str.toLowerCase()
-}
-
-function isDelimeterOrUppercase(ch: string): boolean {
-    return isDelimeter(ch) || isUppercase(ch)
+function isUppercase(value: string): boolean {
+    return value.toUpperCase() === value && value !== value.toLowerCase()
 }
 
-function isDelimeter(ch: string): boolean {
-    switch (ch) {
+function isDelimeterOrUppercase(character: string): boolean {
+    return isDelimeter(character) || isUppercase(character)
+}
+
+function isDelimeter(character: string): boolean {
+    switch (character) {
         case '/':
         case '_':
         case '-':
@@ -189,7 +204,8 @@ function isDelimeter(ch: string): boolean {
 function fuzzyMatches(queries: string[], value: string): RangePosition[] {
     const lowercaseValue = value.toLowerCase()
     const result: RangePosition[] = []
-    var queryIndex = 0
+    let queryIndex = 0
+    let start = 0
     function query(): string {
         return queries[queryIndex]
     }
@@ -199,14 +215,15 @@ function fuzzyMatches(queries: string[], value: string): RangePosition[] {
     function isQueryDelimeter(): boolean {
         return isDelimeter(query())
     }
-    function indexOfDelimeter(delim: string, i: number) {
-        const index = value.indexOf(delim, i)
+    function indexOfDelimeter(delim: string, start: number): number {
+        const index = value.indexOf(delim, start)
         return index < 0 ? value.length : index
     }
-    var start = 0
     while (queryIndex < queries.length && start < value.length) {
         const isCurrentQueryDelimeter = isQueryDelimeter()
-        while (!isQueryDelimeter() && isDelimeter(value[start])) start++
+        while (!isQueryDelimeter() && isDelimeter(value[start])) {
+            start++
+        }
         const caseInsensitive = isCaseInsensitive()
         const compareValue = caseInsensitive ? lowercaseValue : value
         if (compareValue.startsWith(query(), start) && (!caseInsensitive || isCapitalizedPart(value, start, query()))) {
@@ -214,16 +231,25 @@ function fuzzyMatches(queries: string[], value: string): RangePosition[] {
             result.push({
                 startOffset: start,
                 endOffset: end,
-                isExact: end < value.length && isDelimeterOrUppercase(value[end]),
+                isExact: end >= value.length || startsNewWord(value, end),
             })
             queryIndex++
         }
         const nextStart = isCurrentQueryDelimeter ? start : start + 1
         let end = isQueryDelimeter() ? indexOfDelimeter(query(), nextStart) : nextFuzzyPart(value, nextStart)
-        while (end < value.length && !isQueryDelimeter && isDelimeter(value[end])) end++
+        while (end < value.length && !isQueryDelimeter && isDelimeter(value[end])) {
+            end++
+        }
         start = end
     }
     return queryIndex >= queries.length ? result : []
+}
+
+function startsNewWord(value: string, index: number): boolean {
+    return (
+        isDelimeterOrUppercase(value[index]) ||
+        (isLowercaseCharacter(value[index]) && !isLowercaseCharacter(value[index - 1]))
+    )
 }
 
 /**
@@ -235,29 +261,33 @@ function fuzzyMatches(queries: string[], value: string): RangePosition[] {
  * - Not properly capitalized: "InnerClasses" "innerClasses"
  * - Properly capitalized: "Innerclasses" "INnerclasses"
  */
-function isCapitalizedPart(value: string, start: number, query: string) {
+function isCapitalizedPart(value: string, start: number, query: string): boolean {
     let previousIsLowercase = false
-    for (var i = start; i < value.length && i - start < query.length; i++) {
-        const nextIsLowercase = isLowercase(value[i])
-        if (previousIsLowercase && !nextIsLowercase) return false
+    for (let index = start; index < value.length && index - start < query.length; index++) {
+        const nextIsLowercase = isLowercase(value[index])
+        if (previousIsLowercase && !nextIsLowercase) {
+            return false
+        }
         previousIsLowercase = nextIsLowercase
     }
     return true
 }
 
 function nextFuzzyPart(value: string, start: number): number {
-    var end = start
-    while (end < value.length && !isDelimeterOrUppercase(value[end])) end++
+    let end = start
+    while (end < value.length && !isDelimeterOrUppercase(value[end])) {
+        end++
+    }
     return end
 }
 
 function populateBloomFilter(values: SearchValue[]): BloomFilter {
-    let hashes = new BloomFilter(DEFAULT_BLOOM_FILTER_SIZE, DEFAULT_BLOOM_FILTER_HASH_FUNCTION_COUNT)
-    values.forEach(value => {
+    const hashes = new BloomFilter(DEFAULT_BLOOM_FILTER_SIZE, DEFAULT_BLOOM_FILTER_HASH_FUNCTION_COUNT)
+    for (const value of values) {
         if (value.value.length < MAX_VALUE_LENGTH) {
             updateHashParts(value.value, hashes)
         }
-    })
+    }
     return hashes
 }
 
@@ -265,11 +295,10 @@ function allQueryHashParts(query: string): number[] {
     const fuzzyParts = allFuzzyParts(query, false)
     const result: number[] = []
     const H = new Hasher()
-    for (var i = 0; i < fuzzyParts.length; i++) {
+    for (const part of fuzzyParts) {
         H.reset()
-        const part = fuzzyParts[i]
-        for (var j = 0; j < part.length; j++) {
-            H.update(part[j])
+        for (const character of part) {
+            H.update(character)
         }
         const digest = H.digest()
         result.push(digest)
@@ -278,33 +307,35 @@ function allQueryHashParts(query: string): number[] {
 }
 
 function updateHashParts(value: string, buf: BloomFilter): void {
-    let H = new Hasher(),
-        L = new Hasher()
+    const words = new Hasher()
+    const lowercaseWords = new Hasher()
 
-    for (var i = 0; i < value.length; i++) {
-        const ch = value[i]
-        if (isDelimeterOrUppercase(ch)) {
-            H.reset()
-            L.reset()
-            if (isUppercaseCharacter(ch) && (i === 0 || !isUppercaseCharacter(value[i - 1]))) {
-                let j = i
+    for (let index = 0; index < value.length; index++) {
+        const character = value[index]
+        if (isDelimeterOrUppercase(character)) {
+            words.reset()
+            lowercaseWords.reset()
+            if (isUppercaseCharacter(character) && (index === 0 || !isUppercaseCharacter(value[index - 1]))) {
+                let uppercaseWordIndex = index
                 const upper = []
-                while (j < value.length && isUppercaseCharacter(value[j])) {
-                    upper.push(value[j])
-                    L.update(value[j].toLowerCase())
-                    buf.add(L.digest())
-                    j++
+                while (uppercaseWordIndex < value.length && isUppercaseCharacter(value[uppercaseWordIndex])) {
+                    upper.push(value[uppercaseWordIndex])
+                    lowercaseWords.update(value[uppercaseWordIndex].toLowerCase())
+                    buf.add(lowercaseWords.digest())
+                    uppercaseWordIndex++
                 }
-                L.reset()
+                lowercaseWords.reset()
             }
         }
-        if (isDelimeter(ch)) continue
-        H.update(ch)
-        L.update(ch.toLowerCase())
+        if (isDelimeter(character)) {
+            continue
+        }
+        words.update(character)
+        lowercaseWords.update(character.toLowerCase())
 
-        buf.add(H.digest())
-        if (H.digest() !== L.digest()) {
-            buf.add(L.digest())
+        buf.add(words.digest())
+        if (words.digest() !== lowercaseWords.digest()) {
+            buf.add(lowercaseWords.digest())
         }
     }
 }
@@ -315,7 +346,11 @@ interface BucketResult {
 }
 
 class Bucket {
-    constructor(readonly files: SearchValue[], readonly filter: BloomFilter, readonly id: number) {}
+    constructor(
+        public readonly files: SearchValue[],
+        public readonly filter: BloomFilter,
+        public readonly id: number
+    ) {}
     public static fromSearchValues(files: SearchValue[]): Bucket {
         files.sort((a, b) => a.value.length - b.value.length)
         return new Bucket(files, populateBloomFilter(files), Math.random())
@@ -331,15 +366,16 @@ class Bucket {
     }
 
     private matchesMaybe(hashParts: number[]): boolean {
-        return hashParts.every(num => this.filter.test(num))
+        return hashParts.every(number => this.filter.test(number))
     }
     public matches(query: string, hashParts: number[]): BucketResult {
         const matchesMaybe = this.matchesMaybe(hashParts)
-        if (!matchesMaybe) return { skipped: true, value: [] }
+        if (!matchesMaybe) {
+            return { skipped: true, value: [] }
+        }
         const result: HighlightedTextProps[] = []
         const queryParts = allFuzzyParts(query, true)
-        for (var i = 0; i < this.files.length; i++) {
-            const file = this.files[i]
+        for (const file of this.files) {
             const positions = fuzzyMatches(queryParts, file.value)
             if (positions.length > 0) {
                 result.push(new HighlightedTextProps(file.value, positions, file.url))

@@ -10,24 +10,28 @@ export interface RangePosition {
 }
 
 export class HighlightedTextProps {
-    constructor(readonly text: string, readonly positions: RangePosition[], readonly url?: string) {}
-    offsetSum(): number {
+    constructor(
+        public readonly text: string,
+        public readonly positions: RangePosition[],
+        public readonly url?: string
+    ) {}
+    public offsetSum(): number {
         let sum = 0
-        this.positions.forEach(pos => {
-            sum += pos.startOffset
-        })
+        for (const position of this.positions) {
+            sum += position.startOffset
+        }
         return sum
     }
-    exactCount(): number {
+    public exactCount(): number {
         let result = 0
-        this.positions.forEach(pos => {
-            if (pos.isExact) {
+        for (const position of this.positions) {
+            if (position.isExact) {
                 result++
             }
-        })
+        }
         return result
     }
-    isExact(): boolean {
+    public isExact(): boolean {
         return this.positions.length === 1 && this.positions[0].isExact
     }
 }
@@ -44,8 +48,10 @@ export const HighlightedText: React.FunctionComponent<HighlightedTextPropsInstan
     const spans: JSX.Element[] = []
     let start = 0
     function pushSpan(className: string, startOffset: number, endOffset: number): void {
-        if (startOffset >= endOffset) return
-        const text = props.text.substring(startOffset, endOffset)
+        if (startOffset >= endOffset) {
+            return
+        }
+        const text = props.text.slice(startOffset, endOffset)
         const key = `${text}-${className}`
         const span = (
             <span key={key} className={className}>
@@ -54,14 +60,17 @@ export const HighlightedText: React.FunctionComponent<HighlightedTextPropsInstan
         )
         spans.push(span)
     }
-    for (let i = 0; i < props.positions.length; i++) {
-        const pos = props.positions[i]
-        if (pos.startOffset > start) {
-            pushSpan('fuzzy-modal-plaintext', start, pos.startOffset)
+    for (const position of props.positions) {
+        if (position.startOffset > start) {
+            pushSpan('fuzzy-modal-plaintext', start, position.startOffset)
         }
-        start = pos.endOffset
-        const classNameSuffix = pos.isExact ? 'exact' : 'fuzzy'
-        pushSpan(`fuzzy-modal-highlighted fuzzy-modal-highlighted-${classNameSuffix}`, pos.startOffset, pos.endOffset)
+        start = position.endOffset
+        const classNameSuffix = position.isExact ? 'exact' : 'fuzzy'
+        pushSpan(
+            `fuzzy-modal-highlighted fuzzy-modal-highlighted-${classNameSuffix}`,
+            position.startOffset,
+            position.endOffset
+        )
     }
     pushSpan('fuzzy-modal-plaintext', start, props.text.length)
 

@@ -21,7 +21,6 @@ export interface FuzzySearchResult {
  * your personal preferences :)
  */
 export abstract class FuzzySearch {
-    constructor() {}
-    public abstract search(params: FuzzySearchParameters): FuzzySearchResult
+    public abstract search(parameters: FuzzySearchParameters): FuzzySearchResult
     public abstract serialize(): string | undefined
 }

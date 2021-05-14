@@ -15,18 +15,20 @@ const all = [
     'test/WorkspaceSymbolProvider.scala',
 ]
 
-const fuzzy = BloomFilterFuzzySearch.fromSearchValues(all.map(f => ({ value: f })))
+const fuzzy = BloomFilterFuzzySearch.fromSearchValues(all.map(value => ({ value })))
 
 function checkSearch(query: string, expected: string[]) {
     test(`search-${query}`, () => {
-        const q = { value: query, maxResults: 1000 }
-        const actual = fuzzy.search(q).values.map(t => t.text)
+        const queryProps = { value: query, maxResults: 1000 }
+        const actual = fuzzy.search(queryProps).values.map(highlightedText => highlightedText.text)
         expect(actual).toStrictEqual(expected)
-        expected.forEach(result => {
+        for (const result of expected) {
             const individualFuzzy = BloomFilterFuzzySearch.fromSearchValues([{ value: result }])
-            const individualActual = individualFuzzy.search(q).values.map(t => t.text)
+            const individualActual = individualFuzzy
+                .search(queryProps)
+                .values.map(highlightedText => highlightedText.text)
             expect(individualActual).toStrictEqual([result])
-        })
+        }
     })
 }
 
@@ -40,10 +42,9 @@ function checkFuzzyMatch(name: string, query: string, value: string, expected: s
     test(`fuzzyMatchesQuery-${name}`, () => {
         const obtained = fuzzyMatchesQuery(query, value)
         const parts: string[] = []
-        obtained.forEach(pos => {
-            parts.push(value.substring(pos.startOffset, pos.endOffset))
-        })
-
+        for (const position of obtained) {
+            parts.push(value.slice(position.startOffset, position.endOffset))
+        }
         expect(parts).toStrictEqual(expected)
     })
 }

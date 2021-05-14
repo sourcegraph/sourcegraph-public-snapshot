@@ -1,6 +1,7 @@
 export class BloomFilter {
     public buckets: Int32Array
-    constructor(value: any, hashFunctionCount: number)
+    constructor(estimatedSize: number, hashFunctionCount: number)
+    constructor(serializedBuckets: number, hashFunctionCount: number)
     add(hash: number): void
     test(hash: number): boolean
 }

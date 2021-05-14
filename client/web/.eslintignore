@@ -1,4 +1,5 @@
 src/schema/*
+src/fuzzy/Bloomfilter.js
 src/graphql-operations.ts
 out/
 .eslintrc.js
