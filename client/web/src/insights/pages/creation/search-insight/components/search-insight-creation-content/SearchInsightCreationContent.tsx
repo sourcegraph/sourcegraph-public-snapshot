@@ -9,7 +9,7 @@ import { SubmissionErrors, useForm } from '../../../../../components/form/hooks/
 import { useTitleValidator } from '../../../../../components/form/hooks/useTitleValidator'
 import { createRequiredValidator } from '../../../../../components/form/validators'
 import { DataSeries } from '../../../../../core/backend/types'
-import { InsightTypeSuffix } from '../../../../../core/types'
+import { InsightTypePrefix } from '../../../../../core/types'
 import { CreateInsightFormFields } from '../../types'
 import { SearchInsightLivePreview } from '../live-preview-chart/SearchInsightLivePreview'
 import { SearchInsightCreationForm } from '../search-insight-creation-form/SearchInsightCreationForm'
@@ -35,6 +35,8 @@ const INITIAL_VALUES: CreateInsightFormFields = {
 }
 
 export interface SearchInsightCreationContentProps {
+    /** This component might be used in edit or creation insight case. */
+    mode?: 'creation' | 'edit'
     /** Final settings cascade. Used for title field validation. */
     settings?: Settings | null
     /** Initial value for all form fields. */
@@ -48,15 +50,18 @@ export interface SearchInsightCreationContentProps {
 }
 
 export const SearchInsightCreationContent: React.FunctionComponent<SearchInsightCreationContentProps> = props => {
-    const { settings, initialValue = INITIAL_VALUES, onSubmit, onCancel = noop, className } = props
+    const { mode = 'creation', settings, initialValue = INITIAL_VALUES, onSubmit, onCancel = noop, className } = props
+
+    const isEditMode = mode === 'edit'
 
     const { formAPI, ref, handleSubmit } = useForm<CreateInsightFormFields>({
         initialValues: initialValue,
         onSubmit,
+        touched: isEditMode,
     })
 
     // We can't have two or more insights with the same name, since we rely on name as on id of insights.
-    const titleValidator = useTitleValidator({ settings, insightType: InsightTypeSuffix.search })
+    const titleValidator = useTitleValidator({ settings, insightType: InsightTypePrefix.search })
 
     const title = useField('title', formAPI, titleValidator)
     const repositories = useField('repositories', formAPI, repositoriesFieldValidator)
@@ -76,6 +81,7 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
     return (
         <div className={classnames(styles.content, className)}>
             <SearchInsightCreationForm
+                mode={mode}
                 className={styles.contentForm}
                 innerRef={ref}
                 handleSubmit={handleSubmit}

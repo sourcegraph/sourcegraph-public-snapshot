@@ -3,7 +3,7 @@ import { useMemo } from 'react'
 
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 
-import { InsightTypeSuffix } from '../../../core/types'
+import { InsightTypePrefix } from '../../../core/types'
 import { composeValidators, createRequiredValidator } from '../validators'
 
 import { Validator } from './useField'
@@ -12,7 +12,7 @@ import { Validator } from './useField'
 const DEFAULT_FINAL_SETTINGS = {}
 
 export interface useTitleValidatorProps {
-    insightType: InsightTypeSuffix
+    insightType: InsightTypePrefix
     settings?: Settings | null
 }
 

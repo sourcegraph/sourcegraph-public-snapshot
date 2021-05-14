@@ -13,6 +13,11 @@ interface UseFormProps<FormValues extends object> {
     initialValues: FormValues
 
     /**
+     * Mark all fields within the form as touched.
+     * */
+    touched?: boolean
+
+    /**
      * Submit handler for a form element.
      * */
     onSubmit: (values: FormValues) => SubmissionErrors | Promise<SubmissionErrors> | void
@@ -88,6 +93,13 @@ export interface FormAPI<FormValues> {
     submitErrors: SubmissionErrors
 
     /**
+     * This prop marks all fields within the form as touched.
+     * This might be useful when you need trigger touched of all fields
+     * programmatically (edit mode for forms scenario)
+     * */
+    touched: boolean
+
+    /**
      * Public api for register fields to the form from useField hook.
      * By this we have field state withing useField hook and in useField.
      * */
@@ -145,7 +157,7 @@ type FieldsState<FormValues> = Record<keyof FormValues, FieldState<unknown>>
  * hook.
  * */
 export function useForm<FormValues extends object>(props: UseFormProps<FormValues>): Form<FormValues> {
-    const { onSubmit, initialValues, onChange = noop } = props
+    const { onSubmit, initialValues, touched = false, onChange = noop } = props
 
     const [submitted, setSubmitted] = useState(false)
     const [submitting, setSubmitting] = useState(false)
@@ -187,6 +199,7 @@ export function useForm<FormValues extends object>(props: UseFormProps<FormValue
     return {
         formAPI: {
             submitted,
+            touched,
             submitting,
             submitErrors,
             initialValues,

@@ -1,6 +1,4 @@
-import * as jsonc from '@sqs/jsonc-parser'
 import classnames from 'classnames'
-import { camelCase } from 'lodash'
 import React, { useCallback, useContext } from 'react'
 import { Redirect } from 'react-router'
 import { RouteComponentProps } from 'react-router-dom'
@@ -14,14 +12,14 @@ import { Page } from '../../../../components/Page'
 import { PageTitle } from '../../../../components/PageTitle'
 import { FORM_ERROR } from '../../../components/form/hooks/useForm'
 import { InsightsApiContext } from '../../../core/backend/api-provider'
-import { defaultFormattingOptions } from '../../../core/jsonc-settings'
-import { InsightTypeSuffix } from '../../../core/types'
+import { addInsightToCascadeSetting } from '../../../core/jsonc-operation'
 
 import {
     LangStatsInsightCreationContent,
     LangStatsInsightCreationContentProps,
 } from './components/lang-stats-insight-creation-content/LangStatsInsightCreationContent'
 import styles from './LangStatsInsightCreationPage.module.scss'
+import { getSanitizedLangStatsInsight } from './utils/insight-sanitizer'
 
 const DEFAULT_FINAL_SETTINGS = {}
 
@@ -59,23 +57,8 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
             try {
                 const settings = await getSubjectSettings(subjectID).toPromise()
 
-                // TODO [VK] Change these settings when multi code insights stats
-                // will be supported in code stats insight extension
-                const newSettingsString = {
-                    title: values.title,
-                    repository: values.repository.trim(),
-                    otherThreshold: values.threshold / 100,
-                }
-
-                const edits = jsonc.modify(
-                    settings.contents,
-                    // According to our naming convention <type>.insight.<name>
-                    [`${InsightTypeSuffix.langStats}.${camelCase(values.title)}`],
-                    newSettingsString,
-                    { formattingOptions: defaultFormattingOptions }
-                )
-
-                const editedSettings = jsonc.applyEdits(settings.contents, edits)
+                const insight = getSanitizedLangStatsInsight(values)
+                const editedSettings = addInsightToCascadeSetting(settings.contents, insight)
 
                 await updateSubjectSettings(platformContext, subjectID, editedSettings).toPromise()
 

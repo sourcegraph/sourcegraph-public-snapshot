@@ -6,8 +6,8 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { InsightsApiContext } from '../../../core/backend/api-provider'
-import { defaultFormattingOptions } from '../../../core/jsonc-settings'
-import { InsightTypeSuffix } from '../../../core/types'
+import { defaultFormattingOptions } from '../../../core/jsonc-operation'
+import { InsightTypePrefix } from '../../../core/types'
 
 export interface UseDeleteInsightProps extends SettingsCascadeProps, PlatformContextProps<'updateSettings'> {}
 
@@ -30,7 +30,7 @@ export function useDeleteInsight(props: UseDeleteInsightProps): UseDeleteInsight
             // For backward compatibility with old code stats insight api we have to delete
             // this insight in a special way. See link below for more information.
             // https://github.com/sourcegraph/sourcegraph-code-stats-insights/blob/master/src/code-stats-insights.ts#L33
-            const isOldCodeStatsInsight = insightID === `${InsightTypeSuffix.langStats}.language`
+            const isOldCodeStatsInsight = insightID === `${InsightTypePrefix.langStats}.language`
 
             const keyForSearchInSettings = isOldCodeStatsInsight
                 ? // Hardcoded value of id from old version of stats insight extension API
