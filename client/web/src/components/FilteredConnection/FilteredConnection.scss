@@ -52,6 +52,11 @@ $compact-summary-min-height: 2.75rem;
         display: flex;
         flex-direction: column;
 
+        &:empty {
+            // Hide if no children
+            display: none;
+        }
+
         .theme-redesign & {
             flex-direction: row;
             justify-content: space-between;
