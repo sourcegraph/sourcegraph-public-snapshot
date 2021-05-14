@@ -181,7 +181,7 @@ func groupAggregatedSearchStats(events []types.SearchAggregatedEvent) *types.Sea
 }
 
 // utility functions that resolve a SearchEventStatistics value for a given event name for some SearchUsagePeriod.
-var searchExtractors = map[string]func(p *types.SearchUsagePeriod) *types.SearchEventStatistics{
+var searchLatencyExtractors = map[string]func(p *types.SearchUsagePeriod) *types.SearchEventStatistics{
 	"search.latencies.literal":    func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Literal },
 	"search.latencies.regexp":     func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Regexp },
 	"search.latencies.structural": func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Structural },
@@ -206,7 +206,7 @@ var searchExtractors = map[string]func(p *types.SearchUsagePeriod) *types.Search
 //
 // (4) Populate that SearchEventStatistics object in the SearchUsagePeriod object with usage stats (latencies, etc).
 func populateSearchEventStatistics(event types.SearchAggregatedEvent, statistics *types.SearchUsageStatistics) {
-	extractor, ok := searchExtractors[event.Name]
+	extractor, ok := searchLatencyExtractors[event.Name]
 	if !ok {
 		return
 	}

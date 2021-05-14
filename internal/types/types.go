@@ -1232,21 +1232,27 @@ type SearchUsageStatistics struct {
 // to the updatecheck handler. This struct is marshalled and sent to
 // BigQuery, which requires the input match its schema exactly.
 type SearchUsagePeriod struct {
-	StartTime          time.Time
-	TotalUsers         int32
-	Literal            *SearchEventStatistics
-	Regexp             *SearchEventStatistics
+	StartTime  time.Time
+	TotalUsers int32
+
+	// Counts and latency statistics for different kinds of searches.
+	Literal    *SearchEventStatistics
+	Regexp     *SearchEventStatistics
+	Commit     *SearchEventStatistics
+	Diff       *SearchEventStatistics
+	File       *SearchEventStatistics
+	Structural *SearchEventStatistics
+	Symbol     *SearchEventStatistics
+
+	// Counts statistics for fields.
 	After              *SearchCountStatistics
 	Archived           *SearchCountStatistics
 	Author             *SearchCountStatistics
 	Before             *SearchCountStatistics
 	Case               *SearchCountStatistics
-	Commit             *SearchEventStatistics
 	Committer          *SearchCountStatistics
 	Content            *SearchCountStatistics
 	Count              *SearchCountStatistics
-	Diff               *SearchEventStatistics
-	File               *SearchEventStatistics
 	Fork               *SearchCountStatistics
 	Index              *SearchCountStatistics
 	Lang               *SearchCountStatistics
@@ -1256,11 +1262,11 @@ type SearchUsagePeriod struct {
 	Repohascommitafter *SearchCountStatistics
 	Repohasfile        *SearchCountStatistics
 	Repogroup          *SearchCountStatistics
-	Structural         *SearchEventStatistics
-	Symbol             *SearchEventStatistics
 	Timeout            *SearchCountStatistics
 	Type               *SearchCountStatistics
-	SearchModes        *SearchModeUsageStatistics
+
+	// Search modes statistics is deprecated.
+	SearchModes *SearchModeUsageStatistics
 }
 
 type SearchModeUsageStatistics struct {
