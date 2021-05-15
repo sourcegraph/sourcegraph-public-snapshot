@@ -2,7 +2,7 @@ import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 
 import { RepogroupMetadata } from './types'
 
-export const stackStorm: RepogroupMetadata = {
+export const temporal: RepogroupMetadata = {
     title: 'Temporal',
     name: 'temporalio',
     url: '/temporal',
