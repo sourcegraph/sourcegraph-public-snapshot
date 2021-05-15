@@ -7,6 +7,10 @@
     tab-size: 4;
     display: flex;
 
+    .theme-redesign & {
+        background-color: var(--code-bg);
+    }
+
     &__code {
         flex: 1;
 
