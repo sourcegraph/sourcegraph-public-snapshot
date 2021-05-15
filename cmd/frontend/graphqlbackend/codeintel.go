@@ -140,6 +140,7 @@ type QueueAutoIndexJobArgs struct {
 
 type GitTreeLSIFDataResolver interface {
 	Diagnostics(ctx context.Context, args *LSIFDiagnosticsArgs) (DiagnosticConnectionResolver, error)
+	DocumentationPage(ctx context.Context, args *LSIFDocumentationPageArgs) (DocumentationPageResolver, error)
 }
 
 type CodeIntelligenceCommitGraphResolver interface {
@@ -156,7 +157,6 @@ type GitBlobLSIFDataResolver interface {
 	Definitions(ctx context.Context, args *LSIFQueryPositionArgs) (LocationConnectionResolver, error)
 	References(ctx context.Context, args *LSIFPagedQueryPositionArgs) (LocationConnectionResolver, error)
 	Hover(ctx context.Context, args *LSIFQueryPositionArgs) (HoverResolver, error)
-	Documentation(ctx context.Context, args *LSIFDocumentationPageArgs) (DocumentationPageResolver, error)
 }
 
 type GitBlobLSIFDataArgs struct {

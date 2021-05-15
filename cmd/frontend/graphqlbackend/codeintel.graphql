@@ -209,6 +209,14 @@ interface TreeEntryLSIFData {
     Code diagnostics provided through LSIF.
     """
     diagnostics(first: Int): DiagnosticConnection!
+
+    """
+    Returns the documentation page corresponding to the given path ID, where the empty string ""
+    refers to the current tree entry and can be used to walk all documentation below this tree entry.
+
+    Currently this method is only supported on the root tree entry of a repository.
+    """
+    documentationPage(pathID: String!): DocumentationPage!
 }
 
 """
@@ -290,6 +298,25 @@ type GitBlobLSIFData implements TreeEntryLSIFData {
     Code diagnostics provided through LSIF.
     """
     diagnostics(first: Int): DiagnosticConnection!
+
+    """
+    Returns the documentation page corresponding to the given path ID, where the path ID "/"
+    refers to the current tree entry and can be used to walk all documentation below this tree entry.
+
+    Currently this method is only supported on the root tree entry of a repository.
+    """
+    documentationPage(pathID: String!): DocumentationPage!
+}
+
+"""
+Describes a single page of documentation.
+"""
+type DocumentationPage {
+    """
+    The tree of documentation nodes describing this page's hierarchy. It is a JSON value because
+    GraphQL has terrible support for recursive data structures: https://github.com/graphql/graphql-spec/issues/91
+    """
+    tree: JSONValue!
 }
 
 """
