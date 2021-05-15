@@ -3,6 +3,7 @@ package usagestats
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -153,7 +154,7 @@ func groupAggregatedCodeIntelStats(rawEvents []types.CodeIntelAggregatedEvent) *
 // GetAggregatedSearchStats queries the database for search usage and returns
 // the aggregates statistics in the format of our BigQuery schema.
 func GetAggregatedSearchStats(ctx context.Context, db dbutil.DB) (*types.SearchUsageStatistics, error) {
-	events, err := database.EventLogs(db).AggregatedSearchEvents(ctx)
+	events, err := database.EventLogs(db).AggregatedSearchEvents(ctx, time.Now().UTC())
 	if err != nil {
 		return nil, err
 	}
@@ -175,6 +176,7 @@ func groupAggregatedSearchStats(events []types.SearchAggregatedEvent) *types.Sea
 	// Iterate over events, updating searchUsageStats for each event
 	for _, event := range events {
 		populateSearchEventStatistics(event, searchUsageStats)
+		populateSearchFilterCountStatistics(event, searchUsageStats)
 	}
 
 	return searchUsageStats
@@ -190,6 +192,26 @@ var searchExtractors = map[string]func(p *types.SearchUsagePeriod) *types.Search
 	"search.latencies.diff":       func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Diff },
 	"search.latencies.commit":     func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Commit },
 	"search.latencies.symbol":     func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Symbol },
+}
+
+var searchFilterCountExtractors = map[string]func(p *types.SearchUsagePeriod) *types.SearchCountStatistics{
+	"field_after":              func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.After },
+	"field_archived":           func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.Archived },
+	"field_author":             func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.Author },
+	"field_before":             func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.Before },
+	"field_case":               func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.Case },
+	"field_committer":          func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.Committer },
+	"field_content":            func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.Content },
+	"field_count":              func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.Count },
+	"field_fork":               func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.Fork },
+	"field_lang":               func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.Lang },
+	"field_message":            func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.Message },
+	"field_patterntype":        func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.PatternType },
+	"field_repogroup":          func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.Repogroup },
+	"field_repohascommitafter": func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.Repohascommitafter },
+	"field_repohasfile":        func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.Repohasfile },
+	"field_timeout":            func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.Timeout },
+	"field_type":               func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.Type },
 }
 
 // populateSearchEventStatistics is a side-effecting function that populates the
@@ -237,6 +259,28 @@ func populateSearchEventStatistics(event types.SearchAggregatedEvent, statistics
 	day.EventsCount = &event.TotalDay
 	day.UserCount = &event.UniquesDay
 	day.EventLatencies = makeLatencies(event.LatenciesDay)
+}
+
+func populateSearchFilterCountStatistics(event types.SearchAggregatedEvent, statistics *types.SearchUsageStatistics) {
+	extractor, ok := searchFilterCountExtractors[event.Name]
+	if !ok {
+		return
+	}
+
+	statistics.Monthly[0].StartTime = event.Month
+	month := extractor(statistics.Monthly[0])
+	month.EventsCount = &event.TotalMonth
+	month.UserCount = &event.UniquesMonth
+
+	statistics.Weekly[0].StartTime = event.Week
+	week := extractor(statistics.Weekly[0])
+	week.EventsCount = &event.TotalMonth
+	week.UserCount = &event.UniquesMonth
+
+	statistics.Daily[0].StartTime = event.Day
+	day := extractor(statistics.Daily[0])
+	day.EventsCount = &event.TotalMonth
+	day.UserCount = &event.UniquesMonth
 }
 
 func newSearchEventPeriod() *types.SearchUsagePeriod {

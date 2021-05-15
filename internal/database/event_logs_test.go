@@ -555,7 +555,7 @@ func TestEventLogs_AggregatedSparseSearchEvents(t *testing.T) {
 		}
 	}
 
-	events, err := EventLogs(db).aggregatedSearchEvents(ctx, now)
+	events, err := EventLogs(db).AggregatedSearchEvents(ctx, now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -638,7 +638,7 @@ func TestEventLogs_AggregatedSearchEvents(t *testing.T) {
 		}
 	}
 
-	events, err := EventLogs(db).aggregatedSearchEvents(ctx, now)
+	events, err := EventLogs(db).AggregatedSearchEvents(ctx, now)
 	if err != nil {
 		t.Fatal(err)
 	}

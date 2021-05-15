@@ -826,12 +826,21 @@ FROM events GROUP BY name, current_week, language_id;
 `
 
 // AggregatedSearchEvents calculates SearchAggregatedEvent for each every unique event type related to search.
-func (l *EventLogStore) AggregatedSearchEvents(ctx context.Context) ([]types.SearchAggregatedEvent, error) {
-	return l.aggregatedSearchEvents(ctx, time.Now().UTC())
+func (l *EventLogStore) AggregatedSearchEvents(ctx context.Context, now time.Time) ([]types.SearchAggregatedEvent, error) {
+	latencyEvents, err := l.aggregatedSearchEvents(ctx, aggregatedSearchLatencyEventsQuery, now)
+	if err != nil {
+		return nil, err
+	}
+
+	usageEvents, err := l.aggregatedSearchEvents(ctx, aggregatedSearchUsageEventsQuery, now)
+	if err != nil {
+		return nil, err
+	}
+	return append(latencyEvents, usageEvents...), nil
 }
 
-func (l *EventLogStore) aggregatedSearchEvents(ctx context.Context, now time.Time) (events []types.SearchAggregatedEvent, err error) {
-	query := sqlf.Sprintf(aggregatedSearchEventsQuery, now, now, now, now)
+func (l *EventLogStore) aggregatedSearchEvents(ctx context.Context, queryString string, now time.Time) (events []types.SearchAggregatedEvent, err error) {
+	query := sqlf.Sprintf(queryString, now, now, now, now)
 
 	rows, err := l.Query(ctx, query)
 	if err != nil {
@@ -881,8 +890,8 @@ var searchLatencyEventNames = []string{
 	"'search.latencies.symbol'",
 }
 
-var aggregatedSearchEventsQuery = `
--- source: internal/database/event_logs.go:aggregatedSearchEvents
+var aggregatedSearchLatencyEventsQuery = `
+-- source: internal/database/event_logs.go:aggregatedSearchLatencyEvents
 WITH events AS (
   SELECT
     name,
@@ -915,6 +924,46 @@ SELECT
   PERCENTILE_CONT(ARRAY[0.50, 0.90, 0.99]) WITHIN GROUP (ORDER BY latency) FILTER (WHERE week = current_week) AS latencies_week,
   PERCENTILE_CONT(ARRAY[0.50, 0.90, 0.99]) WITHIN GROUP (ORDER BY latency) FILTER (WHERE day = current_day) AS latencies_day
 FROM events GROUP BY name, current_month, current_week, current_day
+`
+
+var searchUsageEventNames = []string{
+	"'field_repo'",
+}
+
+var aggregatedSearchUsageEventsQuery = `
+-- source: internal/database/event_logs.go:aggregatedSearchUsageEvents
+WITH events AS (
+  SELECT
+    jsonb_object_keys(argument->'code_search'->'query_data'->'query') as name,
+    ` + aggregatedUserIDQueryFragment + ` AS user_id,
+    ` + makeDateTruncExpression("month", "timestamp") + ` as month,
+    ` + makeDateTruncExpression("week", "timestamp") + ` as week,
+    ` + makeDateTruncExpression("day", "timestamp") + ` as day,
+    ` + makeDateTruncExpression("month", "%s::timestamp") + ` as current_month,
+    ` + makeDateTruncExpression("week", "%s::timestamp") + ` as current_week,
+    ` + makeDateTruncExpression("day", "%s::timestamp") + ` as current_day
+  FROM event_logs
+  WHERE
+    timestamp >= ` + makeDateTruncExpression("month", "%s::timestamp") + `
+    AND name = 'SearchResultsQueried'
+)
+SELECT
+  name,
+  current_month,
+  current_week,
+  current_day,
+  COUNT(*) FILTER (WHERE month = current_month) AS total_month,
+  COUNT(*) FILTER (WHERE week = current_week) AS total_week,
+  COUNT(*) FILTER (WHERE day = current_day) AS total_day,
+  COUNT(DISTINCT user_id) FILTER (WHERE month = current_month) AS uniques_month,
+  COUNT(DISTINCT user_id) FILTER (WHERE week = current_week) AS uniques_week,
+  COUNT(DISTINCT user_id) FILTER (WHERE day = current_day) AS uniques_day,
+  NULL,
+  NULL,
+  NULL
+FROM events
+WHERE name IN (` + strings.Join(searchUsageEventNames, ", ") + `)
+GROUP BY name, current_month, current_week, current_day
 `
 
 // userIDQueryFragment is a query fragment that can be used to return the anonymous user ID
