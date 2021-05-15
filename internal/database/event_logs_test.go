@@ -607,6 +607,7 @@ func TestEventLogs_AggregatedSearchEvents(t *testing.T) {
 		now.Add(-time.Hour * 24 * 40), // Previous month
 	}
 
+	// add some latencies
 	durationOffset := 0
 	for _, user := range users {
 		for _, name := range names {
@@ -636,6 +637,79 @@ func TestEventLogs_AggregatedSearchEvents(t *testing.T) {
 				}
 			}
 		}
+	}
+
+	e := &Event{
+		UserID: 3,
+		Name:   "SearchResultsQueried",
+		URL:    "test",
+		Source: "test",
+		Argument: json.RawMessage(`{
+   "code_search":{
+      "query_data":{
+         "empty":false,
+         "query":{
+            "chars":{
+               "count":99,
+               "space":6,
+               "non_ascii":0,
+               "double_quote":0,
+               "single_quote":0
+            },
+            "fields":{
+               "count":7,
+               "count_non_default":6
+            },
+            "field_case":{
+               "count":1
+            },
+            "field_repo":{
+               "count":1,
+               "value_glob":0,
+               "value_pipe":0,
+               "count_alias":0,
+               "value_regexp":1,
+               "count_negated":0,
+               "value_at_sign":0,
+               "value_rev_star":0,
+               "value_rev_caret":0,
+               "value_rev_colon":0
+            },
+            "field_type":{
+               "count":1,
+               "value_diff":0,
+               "value_file":1,
+               "value_commit":0,
+               "value_symbol":0
+            },
+            "field_count":{
+               "count":1
+            },
+            "field_index":{
+               "count":1
+            },
+            "field_stable":{
+               "count":1
+            },
+            "field_default":{
+               "count":2,
+               "count_regexp":0,
+               "count_literal":1,
+               "count_pattern":1,
+               "count_double_quote":0,
+               "count_single_quote":0
+            }
+         },
+         "combined":"repo:^github\\.com/sgtest/java-langserver$ \\nimport index:only count:1 stable:yes type:file case:yes"
+      }
+   }
+}`),
+		// Jitter current time +/- 30 minutes
+		Timestamp: now.Add(-time.Hour * 24 * 3).Add(time.Minute * time.Duration(rand.Intn(60)-30)),
+	}
+
+	if err := EventLogs(db).Insert(ctx, e); err != nil {
+		t.Fatal(err)
 	}
 
 	events, err := EventLogs(db).AggregatedSearchEvents(ctx, now)
@@ -673,6 +747,16 @@ func TestEventLogs_AggregatedSearchEvents(t *testing.T) {
 			LatenciesMonth: []float64{1394, 2222.1, 2289.51},
 			LatenciesWeek:  []float64{1369, 2202.1, 2242.51},
 			LatenciesDay:   []float64{1344, 2182.1, 2195.51},
+		},
+		{
+			Name:         "field_repo",
+			Month:        time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
+			Week:         now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sunday
+			Day:          now.Truncate(time.Hour * 24),
+			TotalMonth:   1,
+			TotalWeek:    1,
+			UniquesMonth: 1,
+			UniquesWeek:  1,
 		},
 	}
 	if diff := cmp.Diff(expectedEvents, events); diff != "" {
