@@ -10,6 +10,8 @@ const ASYNC_VALIDATION_DEBOUNCE_TIME = 500;
 
 export type AsyncValidator<FieldValue> = (value: FieldValue | undefined, validity: ValidityState | null) => Promise<ValidationResult>
 
+export type AsyncValidationState<FieldValue> = Omit<FieldState<FieldValue>, 'value'>
+
 export interface UseAsyncValidationProps<FieldValue> {
     /**
      * Native input element used below to set validation state via html5
@@ -27,7 +29,7 @@ export interface UseAsyncValidationProps<FieldValue> {
      * Validation state change handler. Used below to update state of consumer
      * according to async logic aspects (mark field as touched, set validity state, etc).
      * */
-    onValidationChange: (state: Partial<FieldState<FieldValue>>) => void
+    onValidationChange: (state: Partial<AsyncValidationState<FieldValue>>) => void
 }
 
 /**

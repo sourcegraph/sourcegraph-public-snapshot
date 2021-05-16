@@ -7,6 +7,8 @@ export const FORM_ERROR = 'useForm/submissionErrors'
 export type SubmissionErrors = Record<string, any> | undefined
 export type ValidationResult = string | undefined | void
 
+export type Validator<FieldValue> = (value: FieldValue | undefined, validity: ValidityState | null) => ValidationResult
+
 interface UseFormProps<FormValues extends object> {
     /**
      * Initial values for form fields.
@@ -90,7 +92,9 @@ export interface FormAPI<FormValues> {
      * */
     submitting: boolean
 
-    /** Store for submit errors which we got from onSubmit prop handler */
+    /**
+     * Store for submit errors which we got from onSubmit prop handler
+     * */
     submitErrors: SubmissionErrors
 
     /**
@@ -111,13 +115,15 @@ export interface FormAPI<FormValues> {
  * Field state which present public state from useField hook. On order to aggregate
  * state of all fields within the form we store all fields state on form level as well.
  * */
-export interface FieldState<Value> {
+export interface FieldState<Value> extends FieldErrorState {
     /**
      * Field (input) controlled value. This value might be not only some primitive value
      * like string, number but array, object, tuple and other complex types as consumer set.
      * */
     value: Value
+}
 
+export interface FieldErrorState {
     /**
      * State to understand when users focused and blurred input element.
      * */
@@ -128,7 +134,7 @@ export interface FieldState<Value> {
      * didn't return validation error, CHECKING for when async validation is going on,
      * and INVALID when some validator returns validation error.
      * */
-    validState: 'VALID' | 'INVALID' | 'NOT_VALIDATED' | 'CHECKING'
+    validState: FieldValidState
 
     /**
      * Last error value which has been returned from validators.
@@ -141,6 +147,8 @@ export interface FieldState<Value> {
      * */
     validity: ValidityState | null
 }
+
+export type FieldValidState = 'VALID' | 'INVALID' | 'NOT_VALIDATED' | 'CHECKING'
 
 /**
  * Store object of all fields state within the form element.

@@ -1,13 +1,9 @@
-import { ChangeEvent, FocusEventHandler, RefObject, useEffect, useRef, useState } from 'react'
+import { ChangeEvent, FocusEventHandler, Ref, useEffect, useRef, useState } from 'react'
 import { noop } from 'rxjs'
 
-import { FieldState, FormAPI, ValidationResult } from './useForm'
+import { FieldErrorState, FormAPI, Validator } from './useForm'
 import { getEventValue } from './utils/get-event-value';
 import { AsyncValidator, useAsyncValidation } from './utils/use-async-validation';
-
-export { AsyncValidator }
-
-export type Validator<FieldValue> = (value: FieldValue | undefined, validity: ValidityState | null) => ValidationResult
 
 export interface Validators<FieldValue> {
     sync?: Validator<FieldValue>,
@@ -26,9 +22,9 @@ export interface useFieldAPI<FieldValue> {
      * Constraint validation API.
      * */
     input: {
-        ref: RefObject<HTMLInputElement & HTMLFieldSetElement>
+        ref: Ref<HTMLInputElement & HTMLFieldSetElement>
         name: string
-        value: FieldValue | undefined
+        value: FieldValue
         onChange: (event: ChangeEvent<HTMLInputElement> | FieldValue) => void
         onBlur: FocusEventHandler<HTMLInputElement>
     }
@@ -36,7 +32,7 @@ export interface useFieldAPI<FieldValue> {
      * Meta state of form field - like touched, valid state and last
      * native validity state.
      * */
-    meta: FieldState<FieldValue>
+    meta: FieldErrorState
 }
 
 /**
@@ -56,8 +52,8 @@ export function useField<FormValues, FieldValueKey extends keyof FormAPI<FormVal
     const { sync = noop, async } = validators ?? {};
 
     const inputReference = useRef<HTMLInputElement & HTMLFieldSetElement>(null)
-    const [state, setState] = useState<FieldState<FormValues[FieldValueKey]>>({
-        value: initialValues[name],
+    const [value, setValue] = useState<FormValues[FieldValueKey]>(initialValues[name])
+    const [state, setState] = useState<FieldErrorState>({
         touched: false,
         validState: 'NOT_VALIDATED',
         error: '',
@@ -89,7 +85,7 @@ export function useField<FormValues, FieldValueKey extends keyof FormAPI<FormVal
         // standard validation error if validator doesn't provide message we fallback
         // on standard validationMessage string [1] (ex. Please fill in input.)
         const nativeErrorMessage = inputElement?.validationMessage ?? ''
-        const customValidation = sync(state.value, validity)
+        const customValidation = sync(value, validity)
 
         if (customValidation || !nativeAttributeValidation) {
             // We have to cancel async validation from previous call
@@ -110,7 +106,7 @@ export function useField<FormValues, FieldValueKey extends keyof FormAPI<FormVal
         }
 
         if (async) {
-            startAsyncValidation({ value: state.value, validity })
+            startAsyncValidation({ value, validity })
         }
 
         return setState(state => ({
@@ -119,23 +115,24 @@ export function useField<FormValues, FieldValueKey extends keyof FormAPI<FormVal
             error: '',
             validity,
         }))
-    }, [state.value, sync, startAsyncValidation, async, cancelAsyncValidation])
+    }, [value, sync, startAsyncValidation, async, cancelAsyncValidation])
 
     // Sync field state with state on form level - useForm hook will used this state to run
     // onSubmit handler and track validation state to prevent onSubmit run when async
     // validation is going.
-    useEffect(() => setFieldStateReference.current(name, state), [name, state])
+    useEffect(
+        () => setFieldStateReference.current(name, { ...state, value }),
+        [name, state, value]
+    )
 
     return {
         input: {
             name: name.toString(),
             ref: inputReference,
-            value: state.value,
+            value,
             onBlur: () => setState(state => ({ ...state, touched: true })),
             onChange: (event: ChangeEvent<HTMLInputElement> | FormValues[FieldValueKey]) => {
-                const value = getEventValue(event)
-
-                setState(state => ({ ...state, value }))
+                setValue(getEventValue(event))
             },
         },
         meta: {

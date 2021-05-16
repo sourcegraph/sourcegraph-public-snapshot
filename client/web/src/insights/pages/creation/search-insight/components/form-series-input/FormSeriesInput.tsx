@@ -3,61 +3,47 @@ import React from 'react'
 import { noop } from 'rxjs'
 
 import { FormInput } from '../../../../../components/form/form-input/FormInput'
-import { useField } from '../../../../../components/form/hooks/useField'
-import { useForm } from '../../../../../components/form/hooks/useForm'
-import { createRequiredValidator } from '../../../../../components/form/validators'
+import { FieldItem } from '../../../../../components/form/hooks/useFieldArray';
 import { DataSeries } from '../../../../../core/backend/types'
-import { DEFAULT_ACTIVE_COLOR, FormColorInput } from '../form-color-input/FormColorInput'
-
-const requiredNameField = createRequiredValidator('Name is a required field for data series.')
-const validQuery = createRequiredValidator('Query is a required field for data series.')
+import { FormColorInput } from '../form-color-input/FormColorInput'
 
 interface FormSeriesInputProps {
-    /** Name of series. */
-    name?: string
-    /** Query value of series. */
-    query?: string
-    /** Color value for line chart. (series) */
-    color?: string
-    /** Enable autofocus behavior of first input of form. */
     autofocus?: boolean
     /** Enable cancel button. */
     cancel?: boolean
     /** Custom class name for root element of form series. */
     className?: string
     /** On submit handler of series form. */
-    onSubmit?: (series: DataSeries) => void
+    onSubmit: () => void
     /** On cancel handler. */
     onCancel?: () => void
+
+    series: FieldItem<DataSeries>
 }
 
 /** Displays form series input (three field - name field, query field and color picker). */
 export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = props => {
-    const { name, query, color, className, cancel = false, autofocus = true, onCancel = noop, onSubmit = noop } = props
+    const { series, className, cancel = false, autofocus = true, onSubmit, onCancel = noop } = props
 
-    const hasNameControlledValue = !!name
-    const hasQueryControlledValue = !!query
+    const nameField = series.name;
+    const queryField = series.query;
+    const colorField = series.stroke;
 
-    const { formAPI, handleSubmit, ref } = useForm({
-        initialValues: {
-            seriesName: name ?? '',
-            seriesQuery: query ?? '',
-            seriesColor: color ?? DEFAULT_ACTIVE_COLOR,
-        },
-        onSubmit: values =>
-            onSubmit({
-                name: values.seriesName,
-                query: values.seriesQuery,
-                stroke: values.seriesColor,
-            }),
-    })
+    const hasNameControlledValue = !!nameField.input.value
+    const hasQueryControlledValue = !!queryField.input.value
 
-    const nameField = useField('seriesName', formAPI, { sync: requiredNameField})
-    const queryField = useField('seriesQuery', formAPI, { sync: validQuery })
-    const colorField = useField('seriesColor', formAPI)
+    const handleDone = () => {
+        const isSeriesValid = nameField.meta.validState === 'VALID' &&
+            queryField.meta.validState === 'VALID' &&
+            colorField.meta.validState === 'VALID'
+
+        if (isSeriesValid) {
+            onSubmit()
+        }
+    }
 
     return (
-        <div ref={ref} className={classnames('d-flex flex-column', className)}>
+        <div className={classnames('d-flex flex-column', className)}>
             <FormInput
                 title="Name"
                 required={true}
@@ -95,9 +81,9 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
 
             <div className="mt-4">
                 <button
+                    cli
                     aria-label="Submit button for data series"
                     type="button"
-                    onClick={handleSubmit}
                     className="btn btn-secondary"
                 >
                     Done

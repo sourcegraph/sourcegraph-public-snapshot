@@ -1,4 +1,4 @@
-import React, { PropsWithChildren, RefObject } from 'react'
+import React, { PropsWithChildren, Ref } from 'react'
 
 interface FormGroupProps {
     /** Name attr value for root fieldset element. */
@@ -16,7 +16,7 @@ interface FormGroupProps {
     /** Custom class name for div children wrapper element. */
     contentClassName?: string
     /** Reference to root fieldset element.*/
-    innerRef?: RefObject<HTMLFieldSetElement>
+    innerRef?: Ref<HTMLFieldSetElement>
 }
 
 /** Displays fieldset (group) of fields for code insight creation form with error message. */

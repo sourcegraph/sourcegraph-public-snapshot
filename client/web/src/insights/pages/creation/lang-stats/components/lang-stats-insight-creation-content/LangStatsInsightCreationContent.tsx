@@ -82,8 +82,8 @@ export const LangStatsInsightCreationContent: React.FunctionComponent<LangStatsI
             />
 
             <LangStatsInsightLivePreview
-                repository={repository.meta.value}
-                threshold={threshold.meta.value}
+                repository={repository.input.value}
+                threshold={threshold.input.value}
                 disabled={!allFieldsForPreviewAreValid}
                 className={styles.contentLivePreview}
             />

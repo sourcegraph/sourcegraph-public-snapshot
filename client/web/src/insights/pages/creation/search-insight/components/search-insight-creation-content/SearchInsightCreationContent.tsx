@@ -5,24 +5,35 @@ import { noop } from 'rxjs'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 
 import { useField } from '../../../../../components/form/hooks/useField'
+import { useFieldArray } from '../../../../../components/form/hooks/useFieldArray';
 import { SubmissionErrors, useForm } from '../../../../../components/form/hooks/useForm'
 import { useTitleValidator } from '../../../../../components/form/hooks/useTitleValidator'
+import { DataSeries } from '../../../../../core/backend/types';
 import { InsightTypePrefix } from '../../../../../core/types'
 import { CreateInsightFormFields } from '../../types'
+import { DEFAULT_ACTIVE_COLOR } from '../form-color-input/FormColorInput';
 import { SearchInsightLivePreview } from '../live-preview-chart/SearchInsightLivePreview'
 import { SearchInsightCreationForm } from '../search-insight-creation-form/SearchInsightCreationForm'
 
 import styles from './SearchInsightCreationContent.module.scss'
 import {
     repositoriesExistValidator,
-    repositoriesFieldValidator,
+    repositoriesFieldValidator, requiredNameField,
     requiredStepValueField,
-    seriesRequired
+    seriesRequired, validQuery
 } from './validators';
+
+const defaultSeries: DataSeries = {
+    name: '',
+    query: '',
+    stroke: DEFAULT_ACTIVE_COLOR
+}
+
+const seriesItemConfig = { name: requiredNameField, query: validQuery }
 
 const INITIAL_VALUES: CreateInsightFormFields = {
     visibility: 'personal',
-    series: [],
+    series: [defaultSeries],
     step: 'months',
     stepValue: '2',
     title: '',
@@ -44,6 +55,9 @@ export interface SearchInsightCreationContentProps {
     onCancel?: () => void
 }
 
+/**
+ * JSDOC with standard closed line
+ */
 export const SearchInsightCreationContent: React.FunctionComponent<SearchInsightCreationContentProps> = props => {
     const { mode = 'creation', settings, initialValue = INITIAL_VALUES, onSubmit, onCancel = noop, className } = props
 
@@ -65,9 +79,17 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
     })
     const visibility = useField('visibility', formAPI)
 
-    const series = useField('series', formAPI, { sync: seriesRequired })
+    // const series = useField('series', formAPI, { sync: seriesRequired })
     const step = useField('step', formAPI)
     const stepValue = useField('stepValue', formAPI, { sync: requiredStepValueField })
+
+    const series = useFieldArray(
+        'series',
+        formAPI,
+        defaultSeries,
+        seriesItemConfig,
+        seriesRequired
+    )
 
     // If some fields that needed to run live preview  are invalid
     // we should disabled live chart preview
@@ -96,10 +118,10 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
 
             <SearchInsightLivePreview
                 disabled={!allFieldsForPreviewAreValid}
-                repositories={repositories.meta.value}
-                series={series.meta.value}
-                step={step.meta.value}
-                stepValue={stepValue.meta.value}
+                repositories={repositories.input.value}
+                series={series.values}
+                step={step.input.value}
+                stepValue={stepValue.input.value}
                 className={styles.contentLivePreview}
             />
         </div>

@@ -1,5 +1,5 @@
 import { renderError } from '../../../../../../components/alerts';
-import { Validator } from '../../../../../components/form/hooks/useField';
+import { Validator } from '../../../../../components/form/hooks/useForm';
 import { AsyncValidator } from '../../../../../components/form/hooks/utils/use-async-validation';
 import { createRequiredValidator } from '../../../../../components/form/validators';
 import { fetchRepositories } from '../../../../../core/backend/requests/fetch-repositories';
@@ -36,3 +36,6 @@ export const repositoriesExistValidator: AsyncValidator<string> = async value =>
         return renderError(error);
     }
 }
+
+export const requiredNameField = createRequiredValidator<string>('Name is a required field for data series.')
+export const validQuery = createRequiredValidator('Query is a required field for data series.')

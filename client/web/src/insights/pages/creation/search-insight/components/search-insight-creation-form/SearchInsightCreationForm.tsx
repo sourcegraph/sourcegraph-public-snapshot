@@ -7,6 +7,7 @@ import { FormGroup } from '../../../../../components/form/form-group/FormGroup'
 import { FormInput } from '../../../../../components/form/form-input/FormInput'
 import { FormRadioInput } from '../../../../../components/form/form-radio-input/FormRadioInput'
 import { useFieldAPI } from '../../../../../components/form/hooks/useField'
+import { UseFieldArrayAPI } from '../../../../../components/form/hooks/useFieldArray';
 import { FORM_ERROR, SubmissionErrors } from '../../../../../components/form/hooks/useForm'
 import { CreateInsightFormFields } from '../../types'
 import { FormSeries } from '../form-series/FormSeries'
@@ -26,7 +27,9 @@ interface CreationSearchInsightFormProps {
     title: useFieldAPI<CreateInsightFormFields['title']>
     repositories: useFieldAPI<CreateInsightFormFields['repositories']>
     visibility: useFieldAPI<CreateInsightFormFields['visibility']>
-    series: useFieldAPI<CreateInsightFormFields['series']>
+    // series: useFieldAPI<CreateInsightFormFields['series']>
+
+    series: UseFieldArrayAPI<CreateInsightFormFields['series'][number]>
     step: useFieldAPI<CreateInsightFormFields['step']>
     stepValue: useFieldAPI<CreateInsightFormFields['stepValue']>
 
@@ -124,10 +127,10 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                 title="Data series"
                 subtitle="Add any number of data series to your chart"
                 error={series.meta.touched && series.meta.error}
-                innerRef={series.input.ref}
+                // innerRef={series.input.ref}
                 className="mb-0"
             >
-                <FormSeries series={series.input.value} onChange={series.input.onChange} />
+                <FormSeries series={series} />
             </FormGroup>
 
             <hr className={styles.creationInsightFormSeparator} />
