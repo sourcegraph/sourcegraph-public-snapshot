@@ -7,7 +7,9 @@
 
         // To manipulate opacity of hex color without affecting children
         &::before {
-            background-color: $oc-indigo-3;
+            // Fallback that shouldn't be reached. `<ExtensionCard>` should apply
+            // colors from "./ExtensionHeader.module.scss"
+            background-color: var(--oc-indigo-3);
             opacity: 0.1;
             height: 100%;
             width: 100%;
