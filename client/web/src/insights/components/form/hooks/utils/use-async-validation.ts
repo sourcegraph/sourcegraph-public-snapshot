@@ -59,9 +59,13 @@ export interface AsyncValidationEvent<FieldValue> {
 
 export interface useAsyncValidationAPI<FieldValue> {
     /**
-     * cancel hander for cancalation ongoing
+     * Cancel handler to cancel ongoing async validation pipeline
      * */
     cancel: () => void
+
+    /**
+     * Start async validation pipeline.
+     * */
     start: (event: AsyncValidationEvent<FieldValue>) => void
 }
 
@@ -105,8 +109,6 @@ export function useAsyncValidation<FieldValue>(
                     const validity = inputElement?.validity ?? null
 
                     if (validationMessage) {
-                        console.log('Async validation result', validationMessage)
-
                         inputElement?.setCustomValidity?.(validationMessage)
                         handleValidationChange({
                             validState: 'INVALID',
