@@ -1,4 +1,13 @@
 .extension-banner {
+    & h2 {
+        font-weight: 500;
+    }
+
+    &__body-text {
+        max-width: 43.75rem;
+        margin-bottom: 2rem;
+    }
+
     &__icon {
         height: calc(4rem - 2px); /* stylelint-disable-line */
         width: calc(4.5rem - 3px); /* stylelint-disable-line */
