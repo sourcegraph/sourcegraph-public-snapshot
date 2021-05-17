@@ -70,8 +70,8 @@ func CheckSiteAdminOrSameUser(ctx context.Context, subjectUserID int32) error {
 	if hasAuthzBypass(ctx) {
 		return nil
 	}
-	actor := actor.FromContext(ctx)
-	if actor.IsAuthenticated() && actor.UID == subjectUserID {
+	a := actor.FromContext(ctx)
+	if a.IsAuthenticated() && a.UID == subjectUserID {
 		return nil
 	}
 	isSiteAdminErr := CheckCurrentUserIsSiteAdmin(ctx)

@@ -102,8 +102,8 @@ func (r *codeHostRepositoryConnectionResolver) Nodes(ctx context.Context) ([]*co
 
 		// collect all results
 		r.nodes = []*codeHostRepositoryResolver{}
-		for repos := range results {
-			for _, repo := range repos {
+		for result := range results {
+			for _, repo := range result {
 				repo := repo
 				if r.query != "" && !strings.Contains(strings.ToLower(repo.Name), r.query) {
 					continue
