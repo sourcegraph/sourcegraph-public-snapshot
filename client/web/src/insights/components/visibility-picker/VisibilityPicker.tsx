@@ -24,11 +24,27 @@ export interface Organization {
 }
 
 export interface VisibilityPickerProps {
+    /**
+     * Current visibility value. Possible value
+     * 'personal' or any org id which is just a string.
+     * */
     value: string
+
+    /**
+     * On change handler.
+     * */
     onChange: (event: VisibilityChangeEvent) => void
+
+    /**
+     * Organization list - to display org radio buttons right after
+     * personal radio
+     * */
     organizations: Organization[]
 }
 
+/**
+ * Shared component for visibility field for creation UI pages.
+ * */
 export const VisibilityPicker: React.FunctionComponent<VisibilityPickerProps> = props => {
     const { value, organizations, onChange } = props
 
