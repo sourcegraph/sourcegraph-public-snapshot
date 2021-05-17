@@ -13,7 +13,7 @@ import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { ErrorAlert } from '../components/alerts'
 
 import { ExtensionCard } from './ExtensionCard'
-import { ExtensionListData, ExtensionsEnablement } from './ExtensionRegistry'
+import { ExtensionCategoryOrAll, ExtensionListData, ExtensionsEnablement } from './ExtensionRegistry'
 import { ExtensionsAreaRouteContext } from './ExtensionsArea'
 
 interface Props
@@ -25,7 +25,7 @@ interface Props
     location: H.Location
 
     data: ExtensionListData | undefined
-    selectedCategory: ExtensionCategory | 'All'
+    selectedCategory: ExtensionCategoryOrAll
     enablementFilter: ExtensionsEnablement
     query: string
     showMoreExtensions: boolean

@@ -2,9 +2,9 @@ import classnames from 'classnames'
 import React, { useCallback, useState } from 'react'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 
-import { EXTENSION_CATEGORIES, ExtensionCategory } from '@sourcegraph/shared/src/schema/extensionSchema'
+import { EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
 
-import { ExtensionsEnablement } from './ExtensionRegistry'
+import { ExtensionCategoryOrAll, ExtensionsEnablement } from './ExtensionRegistry'
 import styles from './ExtensionRegistrySidenav.module.scss'
 
 const enablementFilterToLabel: Record<ExtensionsEnablement, string> = {
@@ -14,8 +14,8 @@ const enablementFilterToLabel: Record<ExtensionsEnablement, string> = {
 }
 
 interface ExtensionsCategoryFiltersProps {
-    selectedCategory: ExtensionCategory | 'All'
-    onSelectCategory: (category: ExtensionCategory | 'All') => void
+    selectedCategory: ExtensionCategoryOrAll
+    onSelectCategory: (category: ExtensionCategoryOrAll) => void
 }
 interface ExtensionsEnablementDropdownProps {
     enablementFilter: ExtensionsEnablement

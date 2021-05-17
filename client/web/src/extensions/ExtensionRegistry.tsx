@@ -45,6 +45,8 @@ export type ExtensionListData = typeof LOADING | (ConfiguredExtensionRegistry & 
 
 export type ExtensionsEnablement = 'all' | 'enabled' | 'disabled'
 
+export type ExtensionCategoryOrAll = ExtensionCategory | 'All'
+
 const extensionRegistryQuery = gql`
     query RegistryExtensions($query: String, $prioritizeExtensionIDs: [String!]!) {
         extensionRegistry {
@@ -112,7 +114,7 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
 
     const [query, setQuery] = useState(getQueryFromLocation(location))
 
-    const [selectedCategory, setSelectedCategory] = useState<ExtensionCategory | 'All'>(
+    const [selectedCategory, setSelectedCategory] = useState<ExtensionCategoryOrAll>(
         getCategoryFromLocation(location) || 'All'
     )
 
@@ -128,7 +130,7 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
     const [nextQueryInput, data] = useEventObservable<
         {
             query: string
-            category: ExtensionCategory | 'All'
+            category: ExtensionCategoryOrAll
             immediate: boolean
             settingsCascade: SettingsCascadeOrError<Settings>
         },
@@ -241,7 +243,7 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
     )
 
     const onSelectCategory = useCallback(
-        (category: ExtensionCategory | 'All') => {
+        (category: ExtensionCategoryOrAll) => {
             const query = getQueryFromLocation(window.location)
 
             history.push({
@@ -356,7 +358,7 @@ function getQueryFromLocation(location: Pick<H.Location, 'search'>): string {
     return parameters.get(URL_QUERY_PARAM) || ''
 }
 
-function getCategoryFromLocation(location: Pick<H.Location, 'search'>): ExtensionCategory | 'All' {
+function getCategoryFromLocation(location: Pick<H.Location, 'search'>): ExtensionCategoryOrAll {
     const parameters = new URLSearchParams(location.search)
     const category = parameters.get(URL_CATEGORY_PARAM)
 
