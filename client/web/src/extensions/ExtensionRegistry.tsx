@@ -146,19 +146,7 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
                     tap(({ query, category }) => {
                         setQuery(query)
 
-                        history.replace({
-                            search: new URLSearchParams(
-                                query
-                                    ? {
-                                          [URL_QUERY_PARAM]: query,
-                                          [URL_CATEGORY_PARAM]: category,
-                                      }
-                                    : {
-                                          [URL_CATEGORY_PARAM]: category,
-                                      }
-                            ).toString(),
-                            hash: window.location.hash,
-                        })
+                        history.replace(getRegistryLocationDescriptor(query, category))
                     }),
                     debounce(({ immediate }) => timer(immediate ? 0 : 50)),
                     distinctUntilChanged(
@@ -246,19 +234,7 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
         (category: ExtensionCategoryOrAll) => {
             const query = getQueryFromLocation(window.location)
 
-            history.push({
-                search: new URLSearchParams(
-                    query
-                        ? {
-                              [URL_QUERY_PARAM]: query,
-                              [URL_CATEGORY_PARAM]: category,
-                          }
-                        : {
-                              [URL_CATEGORY_PARAM]: category,
-                          }
-                ).toString(),
-                hash: window.location.hash,
-            })
+            history.push(getRegistryLocationDescriptor(query, category))
         },
         [history]
     )
@@ -367,6 +343,26 @@ function getCategoryFromLocation(location: Pick<H.Location, 'search'>): Extensio
     }
 
     return 'All'
+}
+
+/**
+ * Returns location descriptor object to push/replace onto the history stack
+ * whenever the query or category is changed.
+ */
+function getRegistryLocationDescriptor(query: string, category: ExtensionCategoryOrAll): H.LocationDescriptorObject {
+    return {
+        search: new URLSearchParams(
+            query
+                ? {
+                      [URL_QUERY_PARAM]: query,
+                      [URL_CATEGORY_PARAM]: category,
+                  }
+                : {
+                      [URL_CATEGORY_PARAM]: category,
+                  }
+        ).toString(),
+        hash: window.location.hash,
+    }
 }
 
 function isExtensionCategory(category: string): category is ExtensionCategory {
