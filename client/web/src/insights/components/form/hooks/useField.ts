@@ -1,4 +1,4 @@
-import { ChangeEvent, FocusEventHandler, RefObject, useEffect, useRef, useState } from 'react'
+import { ChangeEvent, FocusEventHandler, RefObject, useCallback, useEffect, useRef, useState } from 'react'
 import { noop } from 'rxjs'
 
 import { FieldState, FormAPI, ValidationResult } from './useForm'
@@ -55,20 +55,22 @@ export function useField<FormValues, FieldValueKey extends keyof FormAPI<FormVal
 
     const inputReference = useRef<HTMLInputElement & HTMLFieldSetElement>(null)
 
-    const [selfValue, setSelfValue] = useState<FormValues[FieldValueKey]>(initialValues[name])
-
     const [state, setState] = useState<FieldState<FormValues[FieldValueKey]>>({
-        value: selfValue,
+        value: initialValues[name],
         touched: false,
         validState: 'NOT_VALIDATED',
         error: '',
         validity: null,
     })
 
+    const onValidationChange = useCallback((asyncState: Partial<FieldState<FormValues[FieldValueKey]>>) => {
+        setState(previousState => ({ ...previousState, ...asyncState }))
+    }, [])
+
     const { start: startAsyncValidation, cancel: cancelAsyncValidation } = useAsyncValidation({
         inputReference,
         asyncValidator: async,
-        onValidationChange: state => setState(previousState => ({ ...previousState, ...state, value: selfValue })),
+        onValidationChange
     })
 
     // Use useRef for form api handler in order to avoid unnecessary
@@ -90,7 +92,7 @@ export function useField<FormValues, FieldValueKey extends keyof FormAPI<FormVal
         // standard validation error if validator doesn't provide message we fallback
         // on standard validationMessage string [1] (ex. Please fill in input.)
         const nativeErrorMessage = inputElement?.validationMessage ?? ''
-        const customValidation = sync(selfValue, validity)
+        const customValidation = sync(state.value, validity)
 
         if (customValidation || !nativeAttributeValidation) {
             // We have to cancel async validation from previous call
@@ -104,7 +106,6 @@ export function useField<FormValues, FieldValueKey extends keyof FormAPI<FormVal
 
             return setState(state => ({
                 ...state,
-                value: selfValue,
                 validState: 'INVALID',
                 error: validationMessage,
                 validity,
@@ -112,38 +113,39 @@ export function useField<FormValues, FieldValueKey extends keyof FormAPI<FormVal
         }
 
         if (async) {
-            startAsyncValidation({ value: selfValue, validity })
+            startAsyncValidation({ value: state.value, validity })
         }
 
         return setState(state => ({
             ...state,
-            value: selfValue,
             validState: 'VALID' as const,
             error: '',
             validity,
         }))
-    }, [selfValue, sync, startAsyncValidation, async, cancelAsyncValidation])
+    }, [state.value, sync, startAsyncValidation, async, cancelAsyncValidation])
 
     // Sync field state with state on form level - useForm hook will used this state to run
     // onSubmit handler and track validation state to prevent onSubmit run when async
     // validation is going.
-    useEffect(() => setFieldStateReference.current(name, state), [name, state])
+    useEffect(
+        () => setFieldStateReference.current(name, state),
+        [name, state]
+    )
 
     return {
         input: {
             name: name.toString(),
             ref: inputReference,
-            value: selfValue,
+            value: state.value,
             onBlur: () => setState(state => ({ ...state, touched: true })),
             onChange: (event: ChangeEvent<HTMLInputElement> | FormValues[FieldValueKey]) => {
                 const value = getEventValue(event)
 
-                setSelfValue(value)
+                setState(state => ({...state, value }))
             },
         },
         meta: {
             ...state,
-            value: selfValue,
             touched: state.touched || submitted || formTouched,
         },
     }
