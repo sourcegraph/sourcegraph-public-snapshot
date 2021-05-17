@@ -5,10 +5,21 @@ Sourcegraph supports customising [git-config](https://git-scm.com/docs/git-confi
 ## Setting configuration
 
 For cluster environments, we have guides for configuring SSH cloning. These can be adapted to additionally set `/etc/gitconfig`:
-- Kubernetes guide to [configure repository cloning via SSH](../install/kubernetes/configure.md#configure-repository-cloning-via-ssh).
-- Docker guide to [configure SSH cloning](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/README.md#configuring-ssh-cloning)
 
-Upon the Sourcegraph Docker image container start, it copies all files from `/etc/sourcegraph/{ssh,gitconfig,netrc}` into its own `$HOME` directory. Alternatively you can create a new Docker image which inherits from Sourcegraph and then mutates the environment:
+- Kubernetes guide to [configure repository cloning via SSH](../install/kubernetes/configure.md#configure-repository-cloning-via-ssh).
+- Pure Docker guide to [configure SSH cloning](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/README.md#configuring-ssh-cloning)
+
+For Single Container environments, upon the Sourcegraph Docker image container start, it copies all files from `/etc/sourcegraph/{ssh,gitconfig,netrc}` into its own `$HOME` directory, via the `--volume /mnt/sourcegraph/config:/etc/sourcegraph` in the `docker run` command.
+
+For example, to mount a `.gitconfig`, create a file `/mnt/sourcegraph/config/gitconfig` on your host containing your configuration:
+```
+# example .gitconfig
+
+[url "example.url.com:"]
+  insteadOf = "ssh://example.url.com"
+```
+
+Alternatively you can create a new Docker image which inherits from Sourcegraph and then mutates the environment:
 
 ``` dockerfile
 FROM sourcegraph/server:3.27.5
