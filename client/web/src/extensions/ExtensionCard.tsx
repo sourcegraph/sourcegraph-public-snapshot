@@ -157,21 +157,17 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
 
     const renderUserToggleText = useCallback(
         (enabled: boolean) => (
-            <span className={classNames(change !== 'enabled' && 'text-muted')}>
+            <span className="text-muted">
                 {enabled ? 'Enabled' : 'Disabled'}
                 {authenticatedUser?.siteAdmin && ' for me'}
             </span>
         ),
-        [authenticatedUser?.siteAdmin, change]
+        [authenticatedUser?.siteAdmin]
     )
 
     const renderAdminExtensionToggleText = useCallback(
-        (enabled: boolean) => (
-            <span className={classNames(change !== 'enabled' && 'text-muted')}>
-                {enabled ? 'Enabled' : 'Not enabled'} for all users
-            </span>
-        ),
-        [change]
+        (enabled: boolean) => <span className="text-muted">{enabled ? 'Enabled' : 'Not enabled'} for all users</span>,
+        []
     )
 
     // Determine header color classname (either defined in manifest, or pseudorandom).
@@ -222,21 +218,11 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                 <div className="w-100 mx-2 my-1 flex-grow-1">
                     <div className="mb-2">
                         <h3 className="mb-0 mr-1 text-truncate flex-1">
-                            <Link
-                                to={`/extensions/${extension.id}`}
-                                className={classNames(
-                                    'font-weight-bold',
-                                    change === 'enabled' ? 'alert-link text-decoration-none' : ''
-                                )}
-                            >
+                            <Link to={`/extensions/${extension.id}`} className={classNames('font-weight-bold')}>
                                 {name}
                             </Link>
                         </h3>
-                        <span
-                            className={classNames({
-                                'text-muted': change !== 'enabled',
-                            })}
-                        >
+                        <span>
                             by {publisher}
                             {isSourcegraphExtension && (
                                 <SourcegraphExtensionIcon className="icon-inline extension-card__logo" />

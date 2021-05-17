@@ -59,8 +59,6 @@
 
     &--enabled {
         animation: extension-card__glow 2s ease-out;
-        background-color: rgba($success, 0.2);
-        color: var(--alert-success-text-color);
     }
 
     &__logo {
