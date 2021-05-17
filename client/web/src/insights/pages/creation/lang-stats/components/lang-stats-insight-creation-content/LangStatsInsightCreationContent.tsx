@@ -63,7 +63,9 @@ export const LangStatsInsightCreationContent: React.FunctionComponent<LangStatsI
 
     // If some fields that needed to run live preview  are invalid
     // we should disabled live chart preview
-    const allFieldsForPreviewAreValid = repository.meta.validState === 'VALID' && threshold.meta.validState === 'VALID'
+    const allFieldsForPreviewAreValid =
+        repository.meta.validState === 'VALID' || repository.meta.validState === 'CHECKING' &&
+        threshold.meta.validState === 'VALID'
 
     return (
         <div className={classnames(styles.content, className)}>

@@ -77,7 +77,7 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
     // If some fields that needed to run live preview  are invalid
     // we should disabled live chart preview
     const allFieldsForPreviewAreValid =
-        repositories.meta.validState === 'VALID' &&
+        (repositories.meta.validState === 'VALID' || repositories.meta.validState === 'CHECKING') &&
         (series.meta.validState === 'VALID' || liveSeries.length) &&
         stepValue.meta.validState === 'VALID'
 
