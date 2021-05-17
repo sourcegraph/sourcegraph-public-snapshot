@@ -983,13 +983,6 @@
       "group": "Misc.",
       "default": true
     },
-    "designRefreshToggle.enabled": {
-      "description": "Enables access to the design refresh toggle in the user menu.",
-      "type": "boolean",
-      "!go": { "pointer": true },
-      "group": "Misc.",
-      "default": false
-    },
     "encryption.keys": {
       "description": "Configuration for encryption keys used to encrypt data at rest in the database.",
       "type": "object",
