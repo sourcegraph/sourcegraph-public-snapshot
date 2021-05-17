@@ -9,9 +9,9 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/config"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
 
 // Resolver is the main interface to code intel-related operations exposed to the GraphQL API.
@@ -142,7 +142,7 @@ func (r *resolver) CommitGraph(ctx context.Context, repositoryID int) (gql.CodeI
 }
 
 func (r *resolver) QueueAutoIndexJobForRepo(ctx context.Context, repositoryID int) error {
-	return r.indexEnqueuer.ForceQueueIndex(ctx, repositoryID)
+	return r.indexEnqueuer.ForceQueueIndexesForRepository(ctx, repositoryID)
 }
 
 const slowQueryResolverRequestThreshold = time.Second
