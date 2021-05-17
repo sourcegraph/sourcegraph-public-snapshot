@@ -7,6 +7,7 @@ import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
 import { DismissibleAlert, isAlertDismissed } from '../../../components/DismissibleAlert'
 import { ActiveBulkOperationsConnectionFields } from '../../../graphql-operations'
+import { BatchChangeTab } from './BatchChangeTabs'
 
 export interface BulkOperationsNotificationsProps {
     location: H.Location
@@ -19,7 +20,7 @@ export const BulkOperationsNotifications: React.FunctionComponent<BulkOperations
 }) => {
     // Don't show the header banners if the bulkoperations tab is open.
     const parameters = new URLSearchParams(location.search)
-    if (parameters.get('tab') === 'bulkoperations') {
+    if (parameters.get('tab') === BatchChangeTab.BULK_OPERATIONS) {
         return null
     }
 
