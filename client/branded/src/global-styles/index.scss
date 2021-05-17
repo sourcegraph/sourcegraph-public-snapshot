@@ -97,6 +97,8 @@ $hr-margin-y: 0.25rem;
 // Disable transitions
 $btn-transition: none;
 $input-transition: none;
+$badge-transition: none;
+$custom-forms-transition: none;
 
 // './breakpoints' defines $grid-breakpoints for global CSS and exposes breakpoints mixins to CSS modules
 @import './breakpoints';
