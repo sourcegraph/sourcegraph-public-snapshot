@@ -65,7 +65,7 @@ export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = pr
         // initial values for edit components
         const insight: Insight = {
             id: insightID,
-            visibility: userID === subject.subject.id ? 'personal' : 'organization',
+            visibility: userID === subject.subject.id ? 'personal' : subject.subject.id,
             ...subject.settings[insightID],
         }
 
