@@ -31,6 +31,12 @@ func TestRepositories(t *testing.T) {
 
 		return repos, nil
 	}
+	database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
+		return &types.User{
+			ID:        1,
+			SiteAdmin: true,
+		}, nil
+	}
 
 	database.Mocks.Repos.Count = func(context.Context, database.ReposListOptions) (int, error) { return 3, nil }
 	gqltesting.RunTests(t, []*gqltesting.Test{
@@ -53,7 +59,7 @@ func TestRepositories(t *testing.T) {
 							{ "name": "repo2" },
 							{ "name": "repo3" }
 						],
-						"totalCount": null,
+						"totalCount": 3,
 						"pageInfo": {"hasNextPage": false}
 					}
 				}
@@ -81,7 +87,7 @@ func TestRepositories(t *testing.T) {
 							{ "name": "repo2" },
 							{ "name": "repo3" }
 						],
-						"totalCount": null,
+						"totalCount": 3,
 						"pageInfo": {"hasNextPage": false}
 					}
 				}
