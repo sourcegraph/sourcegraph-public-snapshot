@@ -210,8 +210,7 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*Repository
 func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *TotalCountArgs) (countptr *int32, err error) {
 	// 🚨 SECURITY: Only site admins can do this, because a total repository count does not respect repository permissions.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		// TODO this should return err instead of null
-		return nil, nil
+		return nil, err
 	}
 
 	i32ptr := func(v int32) *int32 {
