@@ -1,6 +1,6 @@
-import addons, { StoryFn } from '@storybook/addons'
+import { StoryFn } from '@storybook/addons'
 import React, { ReactElement, useEffect } from 'react'
-import { DARK_MODE_EVENT_NAME, useDarkMode } from 'storybook-dark-mode'
+import { useDarkMode } from 'storybook-dark-mode'
 
 import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
