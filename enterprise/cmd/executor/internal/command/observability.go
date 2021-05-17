@@ -43,7 +43,7 @@ func NewOperations(observationContext *observation.Context) *Operations {
 		SetupGitInit:              op("setup.git.init"),
 		SetupGitFetch:             op("setup.git.fetch"),
 		SetupGitFetchTags:         op("setup.git.fetch-tags"),
-		SetupGitAddRemote:         op("setup.git.add-add"),
+		SetupGitAddRemote:         op("setup.git.add-remote"),
 		SetupGitCheckout:          op("setup.git.checkout"),
 		SetupDockerPull:           op("setup.docker.pull"),
 		SetupDockerSave:           op("setup.docker.save"),
