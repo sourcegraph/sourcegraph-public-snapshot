@@ -13,7 +13,7 @@ exports[`ExtensionsQueryInputToolbar renders 1`] = `
       Categories
     </h3>
     <button
-      className="btn text-left"
+      className="btn text-left inactiveCategory"
       data-test-extension-category="All"
       onClick={[Function]}
       type="button"
@@ -21,7 +21,7 @@ exports[`ExtensionsQueryInputToolbar renders 1`] = `
       All
     </button>
     <button
-      className="btn text-left"
+      className="btn text-left inactiveCategory"
       data-test-extension-category="Reports and stats"
       onClick={[Function]}
       type="button"
@@ -29,7 +29,7 @@ exports[`ExtensionsQueryInputToolbar renders 1`] = `
       Reports and stats
     </button>
     <button
-      className="btn text-left"
+      className="btn text-left inactiveCategory"
       data-test-extension-category="External services"
       onClick={[Function]}
       type="button"
@@ -37,7 +37,7 @@ exports[`ExtensionsQueryInputToolbar renders 1`] = `
       External services
     </button>
     <button
-      className="btn text-left"
+      className="btn text-left inactiveCategory"
       data-test-extension-category="Linters"
       onClick={[Function]}
       type="button"
@@ -45,7 +45,7 @@ exports[`ExtensionsQueryInputToolbar renders 1`] = `
       Linters
     </button>
     <button
-      className="btn text-left"
+      className="btn text-left inactiveCategory"
       data-test-extension-category="Code editors"
       onClick={[Function]}
       type="button"
@@ -61,7 +61,7 @@ exports[`ExtensionsQueryInputToolbar renders 1`] = `
       Code analysis
     </button>
     <button
-      className="btn text-left"
+      className="btn text-left inactiveCategory"
       data-test-extension-category="Programming languages"
       onClick={[Function]}
       type="button"
@@ -69,7 +69,7 @@ exports[`ExtensionsQueryInputToolbar renders 1`] = `
       Programming languages
     </button>
     <button
-      className="btn text-left"
+      className="btn text-left inactiveCategory"
       data-test-extension-category="Other"
       onClick={[Function]}
       type="button"

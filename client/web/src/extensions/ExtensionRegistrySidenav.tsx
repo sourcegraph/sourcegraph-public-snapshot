@@ -44,9 +44,10 @@ export const ExtensionRegistrySidenav: React.FunctionComponent<
                 {['All' as const, ...EXTENSION_CATEGORIES].map(category => (
                     <button
                         type="button"
-                        className={classnames('btn text-left', {
-                            'btn-primary': selectedCategory === category,
-                        })}
+                        className={classnames(
+                            'btn text-left',
+                            selectedCategory === category ? 'btn-primary' : styles.inactiveCategory
+                        )}
                         data-test-extension-category={category}
                         key={category}
                         onClick={() => onSelectCategory(category)}

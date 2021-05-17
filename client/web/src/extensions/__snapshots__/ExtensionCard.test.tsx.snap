@@ -17,7 +17,7 @@ exports[`ExtensionCard renders 1`] = `
       />
     </div>
     <div
-      className="w-100 mx-2 my-1 flex-grow-1"
+      className="extension-card__details-section w-100 flex-grow-1"
     >
       <div
         className="mb-2"
@@ -48,7 +48,7 @@ exports[`ExtensionCard renders 1`] = `
       </div>
     </div>
     <div
-      className="extension-card__toggles-section d-flex flex-column align-items-end py-2 mt-1"
+      className="extension-card__toggles-section d-flex flex-column align-items-end mt-1"
     >
       <div
         className="px-1"
