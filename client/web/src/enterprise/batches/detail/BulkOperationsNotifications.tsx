@@ -34,8 +34,8 @@ export const BulkOperationsNotifications: React.FunctionComponent<BulkOperations
                 <span>
                     {processingCount} bulk {pluralize('operation', processingCount)}{' '}
                     {pluralize('is', processingCount, 'are')} currently running. Click the{' '}
+                    <Link to="?tab=bulkoperations">bulk operations tab</Link> to view.
                 </span>
-                <Link to="?tab=bulkoperations">bulk operations tab</Link> to view.
             </DismissibleAlert>
         )
     }

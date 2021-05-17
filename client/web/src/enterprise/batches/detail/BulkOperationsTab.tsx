@@ -54,6 +54,7 @@ export const BulkOperationsTab: React.FunctionComponent<BulkOperationsTabProps> 
             listClassName="mb-3"
             emptyElement={<EmptyBulkOperationsListElement />}
             noSummaryIfAllNodesVisible={true}
+            headComponent={BulkOperationsListHeadComponent}
         />
     )
 }
@@ -66,3 +67,7 @@ export const EmptyBulkOperationsListElement: React.FunctionComponent<{}> = () =>
         </div>
     </div>
 )
+
+export const BulkOperationsListHeadComponent: React.FunctionComponent<{ totalCount?: number | null }> = ({
+    totalCount,
+}) => <h3 className="mt-4">{totalCount} changeset updates</h3>

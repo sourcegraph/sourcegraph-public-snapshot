@@ -1,4 +1,5 @@
 import classNames from 'classnames'
+import CommentOutlineIcon from 'mdi-react/CommentOutlineIcon'
 import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import React from 'react'
 
@@ -11,60 +12,78 @@ import { Timestamp } from '../../../../components/time/Timestamp'
 import { BulkOperationFields } from '../../../../graphql-operations'
 
 import styles from './BulkOperationNode.module.scss'
+import { Collapsible } from '../../../../components/Collapsible'
+import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 
 export interface BulkOperationNodeProps {
     node: BulkOperationFields
-    showErrors: boolean
 }
 
-export const BulkOperationNode: React.FunctionComponent<BulkOperationNodeProps> = ({ node, showErrors }) => (
-    <div className="card mb-3">
-        <div className="card-body">
-            <div className="d-flex justify-content-between">
-                <div>
-                    <Link to={node.initiator.url}>{node.initiator.username}</Link> ran type{' '}
-                    <span>{node.type.toLocaleLowerCase()}</span> over {node.changesetCount}{' '}
-                    {pluralize('changeset', node.changesetCount)} <Timestamp date={node.createdAt} />
-                    <p
-                        className={classNames(
-                            node.state === BulkOperationState.PROCESSING && 'text-info',
-                            node.state === BulkOperationState.FAILED && 'text-danger',
-                            node.state === BulkOperationState.COMPLETED && 'text-success'
-                        )}
-                    >
-                        {node.state.toLocaleLowerCase()}
-                    </p>
-                    {!showErrors && node.errors.length > 0 && (
-                        <p className="text-danger">{node.errors.length} errors occurred while running.</p>
-                    )}
-                </div>
+export const BulkOperationNode: React.FunctionComponent<BulkOperationNodeProps> = ({ node }) => (
+    <>
+        <div
+            className={classNames(
+                styles.bulkOperationNodeContainer,
+                'd-flex justify-content-between align-items-center'
+            )}
+        >
+            <div className="text-center p-3">
+                <p className="badge badge-secondary mb-2">{node.changesetCount}</p>
+                <p className="mb-0">{pluralize('changeset', node.changesetCount)}</p>
+            </div>
+            <div className={styles.bulkOperationNodeDivider} />
+            <div className="flex-grow-1 ml-3">
+                <h4>
+                    <CommentOutlineIcon className="icon-inline text-muted" /> Comment on changesets
+                </h4>
+                <p className="mb-0">
+                    <Link to={node.initiator.url}>{node.initiator.username}</Link> <Timestamp date={node.createdAt} />
+                </p>
+            </div>
+            {node.state === BulkOperationState.PROCESSING && (
                 <div className={classNames(styles.bulkOperationNodeProgressBar, 'flex-grow-1 ml-3')}>
                     <div>
-                        <progress value={node.progress} className="w-100" max={1} />
+                        <meter value={node.progress} className="w-100" min={0} max={1} />
                     </div>
-                    <p className="text-center">{Math.ceil(node.progress * 100)}%</p>
+                    <p className="text-center mb-0">{Math.ceil(node.progress * 100)}%</p>
                 </div>
-            </div>
-            {showErrors &&
-                node.errors.map((error, index) => (
-                    <div className="alert alert-danger" key={index}>
-                        <p>
-                            Failed to run task for{' '}
-                            {error.changeset.__typename === 'HiddenExternalChangeset' ? (
-                                <span className="text-muted">hidden repository.</span>
-                            ) : (
-                                <>
-                                    <a href={error.changeset.externalURL?.url}>
-                                        {error.changeset.title} <ExternalLinkIcon className="icon-inline" />
-                                    </a>{' '}
-                                    on repo{' '}
-                                    <a href={error.changeset.repository.url}>{error.changeset.repository.name}</a>.
-                                </>
-                            )}
-                        </p>
-                        {error.error && <ErrorMessage error={'```\n' + error.error + '\n```'} />}
-                    </div>
-                ))}
+            )}
+            {node.state === BulkOperationState.FAILED && (
+                <span className="badge badge-danger text-uppercase">failed</span>
+            )}
+            {node.state === BulkOperationState.COMPLETED && (
+                <span className="badge badge-success text-uppercase">complete</span>
+            )}
         </div>
-    </div>
+        {node.errors.length > 0 && (
+            <div className={classNames(styles.bulkOperationNodeErrors, 'px-4')}>
+                <Collapsible
+                    titleClassName="flex-grow-1"
+                    title={<h4 className="mb-0">The following errors occured while running this task:</h4>}
+                >
+                    {node.errors.map((error, index) => (
+                        <div className="mt-2 alert alert-danger" key={index}>
+                            <p>
+                                {error.changeset.__typename === 'HiddenExternalChangeset' ? (
+                                    <span className="text-muted">On hidden repository</span>
+                                ) : (
+                                    <>
+                                        <LinkOrSpan className="alert-link" to={error.changeset.externalURL?.url}>
+                                            {error.changeset.title} <ExternalLinkIcon className="icon-inline" />
+                                        </LinkOrSpan>{' '}
+                                        on{' '}
+                                        <Link className="alert-link" to={error.changeset.repository.url}>
+                                            repo:{error.changeset.repository.name}
+                                        </Link>
+                                        .
+                                    </>
+                                )}
+                            </p>
+                            {error.error && <ErrorMessage error={'```\n' + error.error + '\n```'} />}
+                        </div>
+                    ))}
+                </Collapsible>
+            </div>
+        )}
+    </>
 )
