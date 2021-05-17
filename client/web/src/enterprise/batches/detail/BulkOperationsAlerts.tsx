@@ -14,6 +14,16 @@ export interface BulkOperationsAlertsProps {
     bulkOperations: ActiveBulkOperationsConnectionFields
 }
 
+/**
+ * Renders the alert bar at the top of the BatchChangeDetailsPage, when a bulk operation recently changed state or is processing.
+ * The logic for this is rather complex (TODO). It takes a list of bulk operations, which returns at most the latest 3 entries and
+ * only entries that were created less than three days ago.
+ * If there are any processing operations in that list, and the alerts have not been dismissed yet, a "in progress" alert is shown.
+ * If not, and there are failed bulk operations in the list and the alert for that hasn't been dismissed yet, a "something failed"
+ * alert is shown.
+ * If neither of the two above, and at least one completed operation is in the list and the alert has not yet been dismissed, a
+ * "something recently completed" alert is shown.
+ */
 export const BulkOperationsAlerts: React.FunctionComponent<BulkOperationsAlertsProps> = ({
     bulkOperations,
     location,
