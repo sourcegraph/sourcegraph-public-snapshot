@@ -1,5 +1,5 @@
 import classnames from 'classnames'
-import React, { useMemo, useState } from 'react'
+import React from 'react'
 import { noop } from 'rxjs'
 
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
@@ -7,14 +7,12 @@ import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { useField } from '../../../../../components/form/hooks/useField'
 import { SubmissionErrors, useForm } from '../../../../../components/form/hooks/useForm'
 import { useTitleValidator } from '../../../../../components/form/hooks/useTitleValidator'
-import { DataSeries } from '../../../../../core/backend/types';
 import { InsightTypePrefix } from '../../../../../core/types'
-import { useDistinctValue } from '../../../../../hooks/use-distinct-value';
 import { CreateInsightFormFields } from '../../types'
-import { DEFAULT_ACTIVE_COLOR } from '../form-color-input/FormColorInput';
 import { SearchInsightLivePreview } from '../live-preview-chart/SearchInsightLivePreview'
 import { SearchInsightCreationForm } from '../search-insight-creation-form/SearchInsightCreationForm'
 
+import { useEditableSeries } from './hooks/use-editable-series';
 import styles from './SearchInsightCreationContent.module.scss'
 import {
     repositoriesExistValidator,
@@ -30,21 +28,6 @@ const INITIAL_VALUES: CreateInsightFormFields = {
     stepValue: '2',
     title: '',
     repositories: '',
-}
-
-const createDefaultEditSeries = (series = defaultEditSeries, valid = false): EditDataSeries => ({
-    ...series,
-    valid,
-})
-
-const defaultEditSeries = {
-    name: '',
-    query: '',
-    stroke: DEFAULT_ACTIVE_COLOR,
-}
-
-interface EditDataSeries extends DataSeries {
-    valid: boolean;
 }
 
 export interface SearchInsightCreationContentProps {
@@ -84,39 +67,17 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
     const visibility = useField('visibility', formAPI)
 
     const series = useField('series', formAPI, { sync: seriesRequired })
-
-    const [editSeries, setEditSeries] = useState<(EditDataSeries | undefined)[]>(() => {
-        const hasSeries = formAPI.initialValues.series.length;
-
-        if (hasSeries) {
-            return formAPI.initialValues.series.map(() => undefined);
-        }
-
-        // If we in creation mode we should show first series editor in a first
-        // render.
-        return [createDefaultEditSeries()]
-    })
-
-    const liveSeries = useDistinctValue(
-        useMemo<DataSeries[]>(
-            () => editSeries
-                .map((editSeries, index) => {
-                    if (editSeries) {
-                        const { valid, ...series } = editSeries
-                        return valid ? series : undefined
-                    }
-
-                    return series.meta.value[index];
-                })
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                // @ts-ignore
-                .filter<DataSeries>(series => !!series),
-            [series, editSeries]
-        )
-    );
-
     const step = useField('step', formAPI)
     const stepValue = useField('stepValue', formAPI, { sync: requiredStepValueField })
+
+    const {
+        liveSeries,
+        editSeries,
+        listen,
+        editRequest,
+        editCommit,
+        cancelEdit,
+        deleteSeries } = useEditableSeries({ series })
 
     // If some fields that needed to run live preview  are invalid
     // we should disabled live chart preview
@@ -124,60 +85,6 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
         repositories.meta.validState === 'VALID' &&
         (series.meta.validState === 'VALID' || liveSeries.length) &&
         stepValue.meta.validState === 'VALID'
-
-    const handleSeriesLiveChange = (liveSeries: DataSeries, valid: boolean, index: number): void => {
-        const newEditSeries = [...editSeries];
-
-        newEditSeries[index] = { ...liveSeries, valid }
-
-        setEditSeries(newEditSeries)
-    }
-
-    const handleEditSeriesRequest = (index: number): void => {
-        const newEditSeries = [...editSeries];
-
-        newEditSeries[index] = series.meta.value[index]
-            ? createDefaultEditSeries(series.meta.value[index], true)
-            : createDefaultEditSeries()
-
-        setEditSeries(newEditSeries)
-    }
-
-    const handleEditSeriesCancel = (index: number): void => {
-        const newEditSeries = [...editSeries];
-
-        newEditSeries[index] = undefined
-        setEditSeries(newEditSeries)
-    }
-
-    const handleEditSeriesCommit = (index: number, editedSeries: DataSeries): void => {
-        const newEditedSeries = [...editSeries];
-        const newSeries = [
-            ...series.input.value.slice(0, index),
-            editedSeries,
-            ...series.input.value.slice(index + 1),
-        ]
-
-        // Remove series from edited cards
-        newEditedSeries[index] = undefined
-
-        setEditSeries(newEditedSeries)
-        series.input.onChange(newSeries)
-    }
-
-    const handleRemoveSeries = (index: number): void => {
-        const newSeries = [
-            ...series.input.value.slice(0, index),
-            ...series.input.value.slice(index + 1),
-        ]
-        const newEditedSereis = [
-            ...editSeries.slice(0, index),
-            ...editSeries.slice(index + 1),
-        ]
-
-        setEditSeries(newEditedSereis)
-        series.input.onChange(newSeries)
-    }
 
     return (
         <div className={classnames(styles.content, className)}>
@@ -194,13 +101,13 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
                 series={series}
                 step={step}
                 stepValue={stepValue}
-                onSeriesLiveChange={handleSeriesLiveChange}
+                onSeriesLiveChange={listen}
                 onCancel={onCancel}
                 editSeries={editSeries}
-                onEditSeriesRequest={handleEditSeriesRequest}
-                onEditSeriesCancel={handleEditSeriesCancel}
-                onEditSeriesCommit={handleEditSeriesCommit}
-                onSeriesRemove={handleRemoveSeries}/>
+                onEditSeriesRequest={editRequest}
+                onEditSeriesCancel={cancelEdit}
+                onEditSeriesCommit={editCommit}
+                onSeriesRemove={deleteSeries}/>
 
             <SearchInsightLivePreview
                 disabled={!allFieldsForPreviewAreValid}

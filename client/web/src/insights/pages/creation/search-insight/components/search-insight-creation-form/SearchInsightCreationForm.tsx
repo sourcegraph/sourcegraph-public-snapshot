@@ -33,8 +33,23 @@ interface CreationSearchInsightFormProps {
 
     onCancel: () => void
 
+    /**
+     * Edit series array used below for rendering series edit form.
+     * In case of some element has undefined value we're showing
+     * series card with data instead of form.
+     * */
     editSeries: (CreateInsightFormFields['series'][number] | undefined)[],
+
+    /**
+     * Handler to listen latest value form particular series edit form
+     * Used to get information for live preview chart.
+     * */
     onSeriesLiveChange: (liveSeries: DataSeries, isValid: boolean, index: number) => void
+
+    /**
+     * Handlers for CRUD operation over series. Add, delete, update and cancel
+     * series edit form.
+     * */
     onEditSeriesRequest: (openedCardIndex: number) => void
     onEditSeriesCommit: (seriesIndex: number, editedSeries: DataSeries) => void
     onEditSeriesCancel: (closedCardIndex: number) => void

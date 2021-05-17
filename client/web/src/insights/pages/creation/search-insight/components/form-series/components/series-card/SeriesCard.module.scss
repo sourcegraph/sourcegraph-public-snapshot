@@ -1,0 +1,16 @@
+
+.form-series-card {
+    &:hover {
+        box-shadow: 0 0 0 0.1875rem var(--primary);
+        border-color: transparent;
+    }
+
+    &__color {
+        width: 1rem;
+        height: 1rem;
+        align-self: center;
+        flex-grow: 0;
+        border-radius: 50%;
+        background-color: currentColor;
+    }
+}
