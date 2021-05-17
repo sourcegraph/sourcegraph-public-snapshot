@@ -39,7 +39,7 @@ export const createChromaticStory = (options: CreateChromaticStoryOptions): Stor
             // Always toggle dark mode back to the previous value because otherwise, it might be out of sync with the toolbar toggle.
             document.body.classList.toggle(THEME_DARK_CLASS, isDarkModeEnabledInitially)
             document.body.classList.toggle(THEME_LIGHT_CLASS, !isDarkModeEnabledInitially)
-            window.dispatchEvent(new CustomEvent('theme-changed', { detail: isDarkModeEnabled }))
+            window.dispatchEvent(new CustomEvent('theme-changed', { detail: !isDarkModeEnabledInitially }))
         }
         // We need to execute `useEffect` callback once to take snapshot in Chromatic, so we can omit dependencies here.
         // eslint-disable-next-line react-hooks/exhaustive-deps
