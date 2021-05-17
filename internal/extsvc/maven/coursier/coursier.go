@@ -10,6 +10,7 @@ import (
 )
 
 func ListAllGroupsForPrefix(ctx context.Context, repository, prefix string) ([]string, error) {
+	// TODO: codeintel make this work properly
 	return runCoursierCommand(ctx, repository, "complete", prefix)
 }
 
