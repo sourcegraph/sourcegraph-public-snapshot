@@ -42,9 +42,7 @@ export const BulkOperationNode: React.FunctionComponent<BulkOperationNodeProps> 
             </div>
             {node.state === BulkOperationState.PROCESSING && (
                 <div className={classNames(styles.bulkOperationNodeProgressBar, 'flex-grow-1 ml-3')}>
-                    <div>
-                        <meter value={node.progress} className="w-100" min={0} max={1} />
-                    </div>
+                    <meter value={node.progress} className="w-100" min={0} max={1} />
                     <p className="text-center mb-0">{Math.ceil(node.progress * 100)}%</p>
                 </div>
             )}
