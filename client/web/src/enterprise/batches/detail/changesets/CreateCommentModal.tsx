@@ -26,7 +26,6 @@ export const CreateCommentModal: React.FunctionComponent<CreateCommentModalProps
     changesetIDs,
     createChangesetComments = _createChangesetComments,
 }) => {
-    const labelId = 'create-comment-modal-id'
     const [isLoading, setIsLoading] = useState<boolean | Error>(false)
     const [commentBody, setCommentBody] = useState<string>('')
 
@@ -53,10 +52,10 @@ export const CreateCommentModal: React.FunctionComponent<CreateCommentModalProps
         <Dialog
             className="modal-body modal-body--top-third p-4 rounded border"
             onDismiss={onCancel}
-            aria-labelledby={labelId}
+            aria-labelledby={LABEL_ID}
         >
             <div className="web-content">
-                <h3 id={labelId}>Post a bulk comment on changesets</h3>
+                <h3 id={LABEL_ID}>Post a bulk comment on changesets</h3>
                 <p className="mb-4">Use this feature to create a bulk comment on all the selected code hosts.</p>
                 {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
                 <Form onSubmit={onSubmit}>
@@ -66,7 +65,7 @@ export const CreateCommentModal: React.FunctionComponent<CreateCommentModalProps
                             id="token"
                             name="token"
                             className="form-control text-monospace"
-                            placeholder={placeholderComment}
+                            placeholder={PLACEHOLDER_COMMENT}
                             required={true}
                             rows={8}
                             minLength={1}
@@ -98,6 +97,8 @@ export const CreateCommentModal: React.FunctionComponent<CreateCommentModalProps
     )
 }
 
-const placeholderComment = `## Please review this
+const LABEL_ID = 'create-comment-modal-id'
+
+const PLACEHOLDER_COMMENT = `## Please review this
 
 This change is really important for us so please go review and merge this.`

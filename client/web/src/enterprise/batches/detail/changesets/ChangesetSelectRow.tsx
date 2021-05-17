@@ -38,7 +38,7 @@ interface ChangesetListAction {
     ) => void | JSX.Element
 }
 
-const availableActions: ChangesetListAction[] = [
+const AVAILABLE_ACTIONS: ChangesetListAction[] = [
     {
         type: 'detach',
         buttonLabel: 'Detach changesets',
@@ -100,7 +100,7 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
     setAllAllSelected: setAllSelected,
     queryArguments,
 }) => {
-    const actions = useMemo(() => availableActions.filter(action => action.isAvailable(queryArguments)), [
+    const actions = useMemo(() => AVAILABLE_ACTIONS.filter(action => action.isAvailable(queryArguments)), [
         queryArguments,
     ])
     /* Whether the dropdown menu is expanded. */
