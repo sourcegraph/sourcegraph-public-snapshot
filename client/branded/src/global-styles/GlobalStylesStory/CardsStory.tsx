@@ -16,6 +16,7 @@ export const CardsStory: StoryFn<ReactElement> = () => (
             <div className="card-body">This is some text within a card body.</div>
         </div>
 
+        {/* eslint-disable-next-line react/forbid-dom-props */}
         <div className="card mb-3" style={{ maxWidth: '18rem' }}>
             <div className="card-body">
                 <h3 className="card-title">Card title</h3>
