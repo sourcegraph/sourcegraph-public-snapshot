@@ -6,9 +6,9 @@ import { BulkOperationState } from '@sourcegraph/shared/src/graphql-operations'
 
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
-import { BulkOperationsNotifications } from './BulkOperationsNotifications'
+import { BulkOperationsAlerts } from './BulkOperationsAlerts'
 
-const { add } = storiesOf('web/batches/details/BulkOperationsNotifications', module).addDecorator(story => (
+const { add } = storiesOf('web/batches/details/BulkOperationsAlerts', module).addDecorator(story => (
     <div className="p-3 container web-content">{story()}</div>
 ))
 
@@ -19,7 +19,7 @@ add('Processing', () => {
     )
     return (
         <EnterpriseWebStory>
-            {props => <BulkOperationsNotifications {...props} bulkOperations={bulkOperations} />}
+            {props => <BulkOperationsAlerts {...props} bulkOperations={bulkOperations} />}
         </EnterpriseWebStory>
     )
 })
@@ -30,7 +30,7 @@ add('Failed', () => {
     )
     return (
         <EnterpriseWebStory>
-            {props => <BulkOperationsNotifications {...props} bulkOperations={bulkOperations} />}
+            {props => <BulkOperationsAlerts {...props} bulkOperations={bulkOperations} />}
         </EnterpriseWebStory>
     )
 })
@@ -41,7 +41,7 @@ add('Completed', () => {
     )
     return (
         <EnterpriseWebStory>
-            {props => <BulkOperationsNotifications {...props} bulkOperations={bulkOperations} />}
+            {props => <BulkOperationsAlerts {...props} bulkOperations={bulkOperations} />}
         </EnterpriseWebStory>
     )
 })

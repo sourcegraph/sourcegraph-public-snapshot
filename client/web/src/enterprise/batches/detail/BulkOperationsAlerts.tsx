@@ -9,12 +9,12 @@ import { DismissibleAlert, isAlertDismissed } from '../../../components/Dismissi
 import { ActiveBulkOperationsConnectionFields } from '../../../graphql-operations'
 import { BatchChangeTab } from './BatchChangeTabs'
 
-export interface BulkOperationsNotificationsProps {
+export interface BulkOperationsAlertsProps {
     location: H.Location
     bulkOperations: ActiveBulkOperationsConnectionFields
 }
 
-export const BulkOperationsNotifications: React.FunctionComponent<BulkOperationsNotificationsProps> = ({
+export const BulkOperationsAlerts: React.FunctionComponent<BulkOperationsAlertsProps> = ({
     bulkOperations,
     location,
 }) => {

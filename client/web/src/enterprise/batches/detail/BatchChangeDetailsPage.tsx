@@ -31,7 +31,7 @@ import { BatchChangeDetailsActionSection } from './BatchChangeDetailsActionSecti
 import { BatchChangeInfoByline } from './BatchChangeInfoByline'
 import { BatchChangeStatsCard } from './BatchChangeStatsCard'
 import { BatchChangeTabs } from './BatchChangeTabs'
-import { BulkOperationsNotifications } from './BulkOperationsNotifications'
+import { BulkOperationsAlerts } from './BulkOperationsAlerts'
 import { ChangesetsArchivedNotice } from './ChangesetsArchivedNotice'
 import { ClosedNotice } from './ClosedNotice'
 import { SupersedingBatchSpecAlert } from './SupersedingBatchSpecAlert'
@@ -146,7 +146,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                 }
                 className="test-batch-change-details-page mb-3"
             />
-            <BulkOperationsNotifications location={location} bulkOperations={batchChange.activeBulkOperations} />
+            <BulkOperationsAlerts location={location} bulkOperations={batchChange.activeBulkOperations} />
             <SupersedingBatchSpecAlert spec={batchChange.currentSpec.supersedingBatchSpec} />
             <ClosedNotice closedAt={batchChange.closedAt} className="mb-3" />
             <UnpublishedNotice
