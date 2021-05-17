@@ -36,7 +36,8 @@ const getCSSLoaders = (...loaders: RuleSetUseItem[]): RuleSetUse => [
 ]
 
 const config = {
-    stories: [...storiesGlobs, chromaticStoriesGlob],
+    // stories: [...storiesGlobs, chromaticStoriesGlob],
+    stories: [path.resolve(rootPath, 'client/branded/src/global-styles/GlobalStylesStory/GlobalStyles.story.tsx')],
     addons: [
         '@storybook/addon-knobs',
         '@storybook/addon-actions',
