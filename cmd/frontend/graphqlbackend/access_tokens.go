@@ -33,8 +33,8 @@ func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAcce
 
 	switch conf.AccessTokensAllow() {
 	case conf.AccessTokensAll:
-		// 🚨 SECURITY: Only current logged in user should be able to create a token for
-		// themselves. A site admin should NOT be allowed to do this since they could
+		// 🚨 SECURITY: Only the current logged in user should be able to create a token
+		// for themselves. A site admin should NOT be allowed to do this since they could
 		// then use the token to impersonate a user and gain access to their private
 		// code.
 		if err := backend.CheckSameUser(ctx, userID); err != nil {
