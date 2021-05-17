@@ -218,9 +218,7 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                 <div className="w-100 mx-2 my-1 flex-grow-1">
                     <div className="mb-2">
                         <h3 className="mb-0 mr-1 text-truncate flex-1">
-                            <Link to={`/extensions/${extension.id}`} className={classNames('font-weight-bold')}>
-                                {name}
-                            </Link>
+                            <Link to={`/extensions/${extension.id}`}>{name}</Link>
                         </h3>
                         <span>
                             by {publisher}

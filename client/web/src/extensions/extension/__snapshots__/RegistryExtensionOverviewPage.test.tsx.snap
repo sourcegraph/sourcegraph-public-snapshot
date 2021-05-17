@@ -48,7 +48,7 @@ exports[`RegistryExtensionOverviewPage renders 1`] = `
         >
           <a
             className="btn btn-outline-secondary btn-sm"
-            href="/extensions?query=category%3A%22Programming+languages%22"
+            href="/extensions?category=Programming+languages"
             onClick={[Function]}
           >
             Programming languages
@@ -59,7 +59,7 @@ exports[`RegistryExtensionOverviewPage renders 1`] = `
         >
           <a
             className="btn btn-outline-secondary btn-sm"
-            href="/extensions?query=category%3AOther"
+            href="/extensions?category=Other"
             onClick={[Function]}
           >
             Other
@@ -200,7 +200,7 @@ exports[`RegistryExtensionOverviewPage renders with no tags 1`] = `
         >
           <a
             className="btn btn-outline-secondary btn-sm"
-            href="/extensions?query=category%3A%22Programming+languages%22"
+            href="/extensions?category=Programming+languages"
             onClick={[Function]}
           >
             Programming languages
@@ -211,7 +211,7 @@ exports[`RegistryExtensionOverviewPage renders with no tags 1`] = `
         >
           <a
             className="btn btn-outline-secondary btn-sm"
-            href="/extensions?query=category%3AOther"
+            href="/extensions?category=Other"
             onClick={[Function]}
           >
             Other

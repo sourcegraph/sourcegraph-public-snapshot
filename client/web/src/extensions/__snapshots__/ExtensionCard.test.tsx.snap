@@ -26,16 +26,13 @@ exports[`ExtensionCard renders 1`] = `
           className="mb-0 mr-1 text-truncate flex-1"
         >
           <a
-            className="font-weight-bold"
             href="/extensions/x/y"
             onClick={[Function]}
           >
             y
           </a>
         </h3>
-        <span
-          className="text-muted"
-        >
+        <span>
           by 
           x
         </span>
