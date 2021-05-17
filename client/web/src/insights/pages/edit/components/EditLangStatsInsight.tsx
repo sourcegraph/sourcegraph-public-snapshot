@@ -4,6 +4,7 @@ import { useHistory } from 'react-router-dom'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 
 import { SubmissionErrors } from '../../../components/form/hooks/useForm'
+import { Organization } from '../../../components/visibility-picker/VisibilityPicker';
 import { LangStatsInsight } from '../../../core/types'
 import { LangStatsInsightCreationContent } from '../../creation/lang-stats/components/lang-stats-insight-creation-content/LangStatsInsightCreationContent'
 import { LangStatsCreationFormFields } from '../../creation/lang-stats/types'
@@ -13,10 +14,11 @@ export interface EditLangStatsInsightProps {
     insight: LangStatsInsight
     onSubmit: (insight: LangStatsInsight) => SubmissionErrors | Promise<SubmissionErrors> | void
     finalSettings: Settings
+    organizations: Organization[]
 }
 
 export const EditLangStatsInsight: React.FunctionComponent<EditLangStatsInsightProps> = props => {
-    const { insight, finalSettings, onSubmit } = props
+    const { insight, finalSettings, organizations, onSubmit } = props
     const history = useHistory()
 
     const insightFormValues = useMemo<LangStatsCreationFormFields>(
@@ -46,6 +48,7 @@ export const EditLangStatsInsight: React.FunctionComponent<EditLangStatsInsightP
             className="pb-5"
             initialValues={insightFormValues}
             settings={finalSettings}
+            organizations={organizations}
             onSubmit={handleSubmit}
             onCancel={handleCancel}
         />

@@ -1,6 +1,7 @@
 import classnames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useContext, useMemo, useState } from 'react'
+import { Redirect } from 'react-router';
 import { useHistory, Link } from 'react-router-dom'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -157,6 +158,13 @@ export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = pr
         )
     }
 
+    // TODO [VK] Move this logic to high order component to simplify logic here
+    if (authenticatedUser === null) {
+        return <Redirect to="/" />
+    }
+
+    const { organizations: { nodes: orgs } } = authenticatedUser;
+
     return (
         <Page className={classnames('col-10', styles.creationPage)}>
             <PageTitle title="Edit code insight" />
@@ -180,7 +188,7 @@ export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = pr
                 <EditSearchBasedInsight
                     insight={insight}
                     finalSettings={finalSettings}
-                    /* eslint-disable-next-line react/jsx-no-bind */
+                    organizations={orgs}
                     onSubmit={handleSubmit}
                 />
             )}
@@ -189,7 +197,7 @@ export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = pr
                 <EditLangStatsInsight
                     insight={insight}
                     finalSettings={finalSettings}
-                    /* eslint-disable-next-line react/jsx-no-bind */
+                    organizations={orgs}
                     onSubmit={handleSubmit}
                 />
             )}

@@ -8,6 +8,11 @@ import { FormInput } from '../../../../../components/form/form-input/FormInput'
 import { FormRadioInput } from '../../../../../components/form/form-radio-input/FormRadioInput'
 import { useFieldAPI } from '../../../../../components/form/hooks/useField'
 import { FORM_ERROR, SubmissionErrors } from '../../../../../components/form/hooks/useForm'
+import {
+    getVisibilityValue,
+    Organization,
+    VisibilityPicker
+} from '../../../../../components/visibility-picker/VisibilityPicker';
 import { DataSeries } from '../../../../../core/backend/types'
 import { CreateInsightFormFields } from '../../types'
 import { FormSeries } from '../form-series/FormSeries'
@@ -26,7 +31,10 @@ interface CreationSearchInsightFormProps {
 
     title: useFieldAPI<CreateInsightFormFields['title']>
     repositories: useFieldAPI<CreateInsightFormFields['repositories']>
+
     visibility: useFieldAPI<CreateInsightFormFields['visibility']>
+    organizations: Organization[]
+
     series: useFieldAPI<CreateInsightFormFields['series']>
     step: useFieldAPI<CreateInsightFormFields['step']>
     stepValue: useFieldAPI<CreateInsightFormFields['stepValue']>
@@ -70,6 +78,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
         title,
         repositories,
         visibility,
+        organizations,
         series,
         editSeries,
         stepValue,
@@ -117,34 +126,11 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                 className="mb-0 mt-4"
             />
 
-            <FormGroup
-                name="visibility"
-                title="Visibility"
-                description="This insight will be visible only on your personal dashboard. It will not be show to other
-                            users in your organization."
-                className="mb-0 mt-4"
-                contentClassName="d-flex flex-wrap mb-n2"
-            >
-                <FormRadioInput
-                    name="visibility"
-                    value="personal"
-                    title="Personal"
-                    description="only you"
-                    checked={visibility.input.value === 'personal'}
-                    className="mr-3"
-                    onChange={visibility.input.onChange}
-                />
-
-                <FormRadioInput
-                    name="visibility"
-                    value="organization"
-                    title="Organization"
-                    description="all users in your organization"
-                    checked={visibility.input.value === 'organization'}
-                    onChange={visibility.input.onChange}
-                    className="mr-3"
-                />
-            </FormGroup>
+            <VisibilityPicker
+                organizations={organizations}
+                value={visibility.input.value}
+                onChange={event => visibility.input.onChange(getVisibilityValue(event))}
+            />
 
             <hr className={styles.creationInsightFormSeparator} />
 
