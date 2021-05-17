@@ -13,7 +13,7 @@ export interface FormSeriesProps {
     editSeries: (DataSeries | undefined)[]
 
     /** Change handler. */
-    onChange: (series: DataSeries[]) => void
+    // onChange: (series: DataSeries[]) => void
 
     /**
      * Live change series while user typing in active series form.
@@ -21,8 +21,10 @@ export interface FormSeriesProps {
      * */
     onLiveChange: (liveSeries: DataSeries, isValid: boolean, index: number) => void
 
-    onEditCard: (openedCardIndex: number) => void
-    onEditCardClose: (closedCardIndex: number) => void
+    onEditSeriesRequest: (openedCardIndex: number) => void
+    onEditSeriesCommit: (seriesIndex: number, editedSeries: DataSeries) => void
+    onEditSeriesCancel: (closedCardIndex: number) => void
+    onSeriesRemove: (removedSeriesIndex: number) => void
 }
 
 /**
@@ -32,36 +34,12 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
     const {
         series = [],
         editSeries,
-        onChange,
-        onEditCard,
-        onEditCardClose,
+        onEditSeriesRequest,
+        onEditSeriesCommit,
+        onEditSeriesCancel,
+        onSeriesRemove,
         onLiveChange
     } = props
-
-    // Add empty series form component that user be able to fill this form and create
-    // another chart series.
-    const handleAddSeries = (): void => {
-        onEditCard(editSeries.length)
-    }
-
-    const handleEditSeriesCommit = (index: number, editedSeries: DataSeries): void => {
-        const newSeries = [
-            ...series.slice(0, index),
-            editedSeries,
-            ...series.slice(index + 1),
-        ]
-
-        onChange(newSeries)
-        onEditCardClose(index)
-    }
-
-    const handleRequestToEdit = (index: number): void => {
-        onEditCard(index)
-    }
-
-    const handleCancelEditSeries = (index: number): void => {
-        onEditCardClose(index)
-    }
 
     // In case if we don't have series we have to skip series list ui (components below)
     // and render simple series form component.
@@ -69,20 +47,20 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
         return <FormSeriesInput
             autofocus={false}
             className="card card-body p-3"
-            onSubmit={series => handleEditSeriesCommit(0, series)}
+            onSubmit={series => onEditSeriesCommit(0, series)}
             onChange={(values, valid) => onLiveChange(values, valid, 0)}
         />
     }
 
     return (
-        <div role="list" className="d-flex flex-column">
+        <ul className="list-unstyled d-flex flex-column">
             {editSeries.map((line, index) =>
                 editSeries[index] ? (
                     <FormSeriesInput
                         key={`${line?.name ?? ''}-${index}`}
                         cancel={true}
-                        onSubmit={series => handleEditSeriesCommit(index, series)}
-                        onCancel={() => handleCancelEditSeries(index)}
+                        onSubmit={series => onEditSeriesCommit(index, series)}
+                        onCancel={() => onEditSeriesCancel(index)}
                         className={classnames('card card-body p-3', styles.formSeriesItem)}
                         onChange={(values, valid) => onLiveChange(values, valid, index)}
                         {...line}
@@ -91,7 +69,8 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
                     series[index] &&
                         <SeriesCard
                             key={`${series[index].name}-${index}`}
-                            onEdit={() => handleRequestToEdit(index)}
+                            onEdit={() => onEditSeriesRequest(index)}
+                            onRemove={() => onSeriesRemove(index)}
                             className={styles.formSeriesItem}
                             {...series[index]}
                         />
@@ -100,12 +79,12 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
 
             <button
                 type="button"
-                onClick={handleAddSeries}
+                onClick={() => onEditSeriesRequest(editSeries.length)}
                 className={classnames(styles.formSeriesItem, styles.formSeriesAddButton, 'btn btn-link p-3')}
             >
                 + Add another data series
             </button>
-        </div>
+        </ul>
     )
 }
 
@@ -128,22 +107,36 @@ interface SeriesCardProps {
  * Renders series card component, visual list item of series (name, color, query)
  * */
 function SeriesCard(props: SeriesCardProps): ReactElement {
-    const { name, query, stroke: color, className, onEdit } = props
+    const { name, query, stroke: color, className, onEdit, onRemove } = props
 
     return (
-        <button
-            type="button"
-            onClick={onEdit}
+        <li
             aria-label={`Edit button for ${name} data series`}
-            className={classnames(styles.formSeriesCard, className, 'd-flex p-3 btn btn-outline-secondary')}
+            className={classnames(styles.formSeriesCard, className, 'card d-flex flex-row p-3')}
         >
             <div className="flex-grow-1 d-flex flex-column align-items-start">
-                <span className="mb-1 font-weight-bold">{name}</span>
+
+                <div className='d-flex align-items-center mb-1 '>
+                    {/* eslint-disable-next-line react/forbid-dom-props */}
+                    <div style={{ color }} className={styles.formSeriesCardColor} />
+                    <span className="ml-1 font-weight-bold">{name}</span>
+                </div>
+
                 <span className="mb-0 text-muted">{query}</span>
             </div>
 
-            {/* eslint-disable-next-line react/forbid-dom-props */}
-            <div style={{ color }} className={styles.formSeriesCardColor} />
-        </button>
+            <div className='d-flex align-items-center'>
+
+                <button
+                    type="button"
+                    onClick={onEdit}
+                    className='border-0 btn btn-outline-primary'>Edit</button>
+
+                <button
+                    type="button"
+                    onClick={onRemove}
+                    className='border-0 btn btn-outline-danger ml-1'>Remove</button>
+            </div>
+        </li>
     )
 }

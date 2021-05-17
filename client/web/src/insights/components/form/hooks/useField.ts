@@ -26,7 +26,7 @@ export interface useFieldAPI<FieldValue> {
     input: {
         ref: RefObject<HTMLInputElement & HTMLFieldSetElement>
         name: string
-        value: FieldValue | undefined
+        value: FieldValue
         onChange: (event: ChangeEvent<HTMLInputElement> | FieldValue) => void
         onBlur: FocusEventHandler<HTMLInputElement>
     }
@@ -79,7 +79,6 @@ export function useField<FormValues, FieldValueKey extends keyof FormAPI<FormVal
     setFieldStateReference.current = setFieldState
 
     useEffect(() => {
-        console.log('HELLO use field validity effect')
         const inputElement = inputReference.current
 
         // Clear custom validity from the last validation call.

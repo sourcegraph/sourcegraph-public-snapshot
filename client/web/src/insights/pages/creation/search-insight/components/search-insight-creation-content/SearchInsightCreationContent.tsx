@@ -133,8 +133,7 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
         setEditSeries(newEditSeries)
     }
 
-    const handleAddEditCard = (index: number): void => {
-        console.log('Add edit series card')
+    const handleEditSeriesRequest = (index: number): void => {
         const newEditSeries = [...editSeries];
 
         newEditSeries[index] = series.meta.value[index]
@@ -144,12 +143,40 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
         setEditSeries(newEditSeries)
     }
 
-    const handleCancelEditCard = (index: number): void => {
+    const handleEditSeriesCancel = (index: number): void => {
         const newEditSeries = [...editSeries];
 
         newEditSeries[index] = undefined
-
         setEditSeries(newEditSeries)
+    }
+
+    const handleEditSeriesCommit = (index: number, editedSeries: DataSeries): void => {
+        const newEditedSeries = [...editSeries];
+        const newSeries = [
+            ...series.input.value.slice(0, index),
+            editedSeries,
+            ...series.input.value.slice(index + 1),
+        ]
+
+        // Remove series from edited cards
+        newEditedSeries[index] = undefined
+
+        setEditSeries(newEditedSeries)
+        series.input.onChange(newSeries)
+    }
+
+    const handleRemoveSeries = (index: number): void => {
+        const newSeries = [
+            ...series.input.value.slice(0, index),
+            ...series.input.value.slice(index + 1),
+        ]
+        const newEditedSereis = [
+            ...editSeries.slice(0, index),
+            ...editSeries.slice(index + 1),
+        ]
+
+        setEditSeries(newEditedSereis)
+        series.input.onChange(newSeries)
     }
 
     return (
@@ -170,8 +197,10 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
                 onSeriesLiveChange={handleSeriesLiveChange}
                 onCancel={onCancel}
                 editSeries={editSeries}
-                onEditSeries={handleAddEditCard}
-                onCancelSeries={handleCancelEditCard}/>
+                onEditSeriesRequest={handleEditSeriesRequest}
+                onEditSeriesCancel={handleEditSeriesCancel}
+                onEditSeriesCommit={handleEditSeriesCommit}
+                onSeriesRemove={handleRemoveSeries}/>
 
             <SearchInsightLivePreview
                 disabled={!allFieldsForPreviewAreValid}

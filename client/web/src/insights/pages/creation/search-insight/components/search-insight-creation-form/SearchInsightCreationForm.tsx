@@ -31,11 +31,14 @@ interface CreationSearchInsightFormProps {
     step: useFieldAPI<CreateInsightFormFields['step']>
     stepValue: useFieldAPI<CreateInsightFormFields['stepValue']>
 
-    editSeries: (CreateInsightFormFields['series'][number] | undefined)[],
-    onCancelSeries: (index: number) => void,
-    onEditSeries: (index: number) => void
-    onSeriesLiveChange: (liveSeries: DataSeries, isValid: boolean, index: number) => void
     onCancel: () => void
+
+    editSeries: (CreateInsightFormFields['series'][number] | undefined)[],
+    onSeriesLiveChange: (liveSeries: DataSeries, isValid: boolean, index: number) => void
+    onEditSeriesRequest: (openedCardIndex: number) => void
+    onEditSeriesCommit: (seriesIndex: number, editedSeries: DataSeries) => void
+    onEditSeriesCancel: (closedCardIndex: number) => void
+    onSeriesRemove: (removedSeriesIndex: number) => void
 }
 
 /**
@@ -58,9 +61,11 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
         step,
         className,
         onCancel,
-        onCancelSeries,
-        onEditSeries,
         onSeriesLiveChange,
+        onEditSeriesRequest,
+        onEditSeriesCommit,
+        onEditSeriesCancel,
+        onSeriesRemove
     } = props
 
     const isEditMode = mode === 'edit'
@@ -139,10 +144,11 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                 <FormSeries
                     series={series.input.value}
                     editSeries={editSeries}
-                    onChange={series.input.onChange}
                     onLiveChange={onSeriesLiveChange}
-                    onEditCard={onEditSeries}
-                    onEditCardClose={onCancelSeries}
+                    onEditSeriesRequest={onEditSeriesRequest}
+                    onEditSeriesCommit={onEditSeriesCommit}
+                    onEditSeriesCancel={onEditSeriesCancel}
+                    onSeriesRemove={onSeriesRemove}
                 />
             </FormGroup>
 
