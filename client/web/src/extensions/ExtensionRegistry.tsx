@@ -123,6 +123,12 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
     // Programming language extensions are hidden by default. Users cannot un-show PL extensions once toggled.
     const [showMoreExtensions, setShowMoreExtensions] = useState(false)
 
+    // Used to determine `isLoading` in order to stop <ExtensionList> from filtering based on the
+    // selected category before the new query has completed.
+    // Note: It'll be worth refactoring the query pipeline (probably split between category changes and
+    // query changes) when any more complexity is introduced.
+    const [changedCategory, setChangedCategory] = useState(false)
+
     /**
      * Note: pass `settingsCascade` instead of making it a dependency to prevent creating
      * new subscriptions when user toggles extensions
@@ -145,6 +151,7 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
                     ),
                     tap(({ query, category }) => {
                         setQuery(query)
+                        setSelectedCategory(getCategoryFromLocation(window.location))
 
                         history.replace(getRegistryLocationDescriptor(query, category))
                     }),
@@ -198,10 +205,8 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
                         }
                     }),
                     tap(() => {
-                        // Wait until `data` === LOADING to update category state
-                        // in order to prevent jitter from category change before loading spinner is rendered.
-                        // Hacky: this works because we know that category updates are always immeditate (no debounce)
-                        setSelectedCategory(getCategoryFromLocation(window.location))
+                        // In case this query was triggered due to a category change
+                        setChangedCategory(false)
                     })
                 ),
             [platformContext, history, configuredExtensionCache]
@@ -233,6 +238,11 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
     const onSelectCategory = useCallback(
         (category: ExtensionCategoryOrAll) => {
             const query = getQueryFromLocation(window.location)
+            const currentCategory = getCategoryFromLocation(window.location)
+
+            if (category !== currentCategory) {
+                setChangedCategory(true)
+            }
 
             history.push(getRegistryLocationDescriptor(query, category))
         },
@@ -245,7 +255,7 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
         onQueryChangeImmediate()
     }, [location, onQueryChangeImmediate])
 
-    const isLoading = !data || data === LOADING
+    const isLoading = !data || data === LOADING || changedCategory
 
     return (
         <>
@@ -294,7 +304,7 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
                             )}
                             <ExtensionsList
                                 {...props}
-                                data={data}
+                                data={isLoading ? LOADING : data}
                                 query={query}
                                 enablementFilter={enablementFilter}
                                 selectedCategory={selectedCategory}
@@ -302,6 +312,7 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
                                 onShowFullCategoryClicked={onSelectCategory}
                             />
                         </div>
+                        {/* TODO(tj): remove this button */}
                         {!isLoading && !showMoreExtensions && selectedCategory === 'All' && (
                             <div className="d-flex justify-content-center">
                                 <button
