@@ -70,7 +70,7 @@ export function useField<FormValues, FieldValueKey extends keyof FormAPI<FormVal
     const { start: startAsyncValidation, cancel: cancelAsyncValidation } = useAsyncValidation({
         inputReference,
         asyncValidator: async,
-        onValidationChange
+        onValidationChange,
     })
 
     // Use useRef for form api handler in order to avoid unnecessary
@@ -127,10 +127,7 @@ export function useField<FormValues, FieldValueKey extends keyof FormAPI<FormVal
     // Sync field state with state on form level - useForm hook will used this state to run
     // onSubmit handler and track validation state to prevent onSubmit run when async
     // validation is going.
-    useEffect(
-        () => setFieldStateReference.current(name, state),
-        [name, state]
-    )
+    useEffect(() => setFieldStateReference.current(name, state), [name, state])
 
     return {
         input: {
@@ -141,7 +138,7 @@ export function useField<FormValues, FieldValueKey extends keyof FormAPI<FormVal
             onChange: (event: ChangeEvent<HTMLInputElement> | FormValues[FieldValueKey]) => {
                 const value = getEventValue(event)
 
-                setState(state => ({...state, value }))
+                setState(state => ({ ...state, value }))
             },
         },
         meta: {
