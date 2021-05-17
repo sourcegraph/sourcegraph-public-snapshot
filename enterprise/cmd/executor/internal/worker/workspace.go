@@ -43,6 +43,8 @@ func (h *handler) prepareWorkspace(ctx context.Context, commandRunner command.Ru
 		gitCommands := []command.CommandSpec{
 			{Key: "setup.git.init", Command: []string{"git", "-C", tempDir, "init"}, Operation: h.operations.SetupGitInit},
 			{Key: "setup.git.fetch", Command: []string{"git", "-C", tempDir, "-c", "protocol.version=2", "fetch", cloneURL.String(), commit}, Operation: h.operations.SetupGitFetch},
+			{Key: "setup.git.fetch-tags", Command: []string{"git", "-C", tempDir, "-c", "protocol.version=2", "fetch", "-t"}, Operation: h.operations.SetupGitFetchTags},
+			{Key: "setup.git.remote-add", Command: []string{"git", "-C", tempDir, "remote", "add", "origin", repositoryName}, Operation: h.operations.SetupGitAddRemote},
 			{Key: "setup.git.checkout", Command: []string{"git", "-C", tempDir, "checkout", commit}, Operation: h.operations.SetupGitCheckout},
 		}
 		for _, spec := range gitCommands {
