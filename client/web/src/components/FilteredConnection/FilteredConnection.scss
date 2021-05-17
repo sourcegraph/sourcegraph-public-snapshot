@@ -1,3 +1,7 @@
+$compact-summary-padding: 0.5rem 0.75rem;
+$compact-summary-divider: solid 1px var(--border-color-2);
+$compact-summary-min-height: 2.75rem;
+
 .filtered-connection-filter-control {
     display: flex;
     align-items: center;
@@ -28,6 +32,13 @@
     &--compact &__loader {
         padding: var(--popover-item-padding-v) var(--popover-item-padding-h);
         flex: 0 0;
+
+        .theme-redesign & {
+            // Consistent with the summary to avoid layout shifting
+            border-top: $compact-summary-divider;
+            padding: $compact-summary-padding;
+            min-height: $compact-summary-min-height;
+        }
     }
     &--compact &__error {
         border-radius: 0;
@@ -36,11 +47,42 @@
         flex: 1 1;
         overflow-y: auto;
     }
+
+    &__summary-container {
+        display: flex;
+        flex-direction: column;
+
+        &:empty {
+            // Hide if no children
+            display: none;
+        }
+
+        .theme-redesign & {
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+        }
+    }
+    &--compact &__summary-container {
+        .theme-redesign & {
+            padding: $compact-summary-padding;
+            border-top: $compact-summary-divider;
+            min-height: $compact-summary-min-height;
+        }
+    }
+
     &--compact &__summary {
         flex: 0 0;
         padding: var(--popover-item-padding-v) var(--popover-item-padding-h);
         opacity: 0.7;
         border-top: solid 1px var(--border-color);
+
+        .theme-redesign & {
+            flex: 1;
+            opacity: 1;
+            border-top: none;
+            padding: 0;
+        }
     }
 
     &--noncompact {
@@ -58,9 +100,23 @@
     &__loader {
         display: flex;
         justify-content: center;
+
+        .theme-redesign & {
+            align-items: center;
+        }
     }
 
     &__show-more {
         flex: 0 0 auto;
+        .theme-redesign & {
+            margin-left: auto;
+        }
+    }
+    &--noncompact &__show-more {
+        margin-right: auto;
+        .theme-redesign & {
+            margin-right: initial;
+            margin-bottom: 1rem;
+        }
     }
 }
