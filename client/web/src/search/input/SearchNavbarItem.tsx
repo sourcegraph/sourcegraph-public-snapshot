@@ -12,7 +12,7 @@ import {
     CaseSensitivityProps,
     CopyQueryButtonProps,
     OnboardingTourProps,
-    SearchContextProps,
+    SearchContextInputProps,
 } from '..'
 import { submitSearch, QueryState } from '../helpers'
 
@@ -27,10 +27,7 @@ interface Props
         SettingsCascadeProps,
         ThemeProps,
         CopyQueryButtonProps,
-        Omit<
-            SearchContextProps,
-            'convertVersionContextToSearchContext' | 'isSearchContextSpecAvailable' | 'fetchSearchContext'
-        >,
+        SearchContextInputProps,
         VersionContextProps,
         OnboardingTourProps {
     location: H.Location

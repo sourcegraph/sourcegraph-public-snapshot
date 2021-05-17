@@ -32,6 +32,8 @@ import {
     FetchSearchContextVariables,
     ConvertVersionContextToSearchContextResult,
     ConvertVersionContextToSearchContextVariables,
+    CreateSearchContextResult,
+    CreateSearchContextVariables,
 } from '../graphql-operations'
 import { DeployType } from '../jscontext'
 
@@ -368,6 +370,26 @@ export const fetchSearchContext = (id: Scalars['ID']): Observable<GQL.ISearchCon
     }).pipe(
         map(dataOrThrowErrors),
         map(data => data.node as GQL.ISearchContext)
+    )
+}
+
+export function createSearchContext(variables: CreateSearchContextVariables): Observable<GQL.ISearchContext> {
+    return requestGraphQL<CreateSearchContextResult, CreateSearchContextVariables>(
+        gql`
+            mutation CreateSearchContext(
+                $searchContext: SearchContextInput!
+                $repositories: [SearchContextRepositoryRevisionsInput!]!
+            ) {
+                createSearchContext(searchContext: $searchContext, repositories: $repositories) {
+                    ...SearchContextFields
+                }
+            }
+            ${searchContextFragment}
+        `,
+        variables
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.createSearchContext as GQL.ISearchContext)
     )
 }
 

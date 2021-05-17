@@ -25,7 +25,7 @@ import {
     HomePanelsProps,
     ShowQueryBuilderProps,
     ParsedSearchQueryProps,
-    SearchContextProps,
+    SearchContextInputProps,
 } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { BrandLogo } from '../../components/branding/BrandLogo'
@@ -56,10 +56,7 @@ export interface SearchPageProps
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
         CopyQueryButtonProps,
         VersionContextProps,
-        Omit<
-            SearchContextProps,
-            'convertVersionContextToSearchContext' | 'isSearchContextSpecAvailable' | 'fetchSearchContext'
-        >,
+        SearchContextInputProps,
         RepogroupHomepageProps,
         OnboardingTourProps,
         HomePanelsProps,

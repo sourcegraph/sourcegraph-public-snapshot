@@ -13,7 +13,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { hasProperty } from '@sourcegraph/shared/src/util/types'
 import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
-import { CaseSensitivityProps, PatternTypeProps, CopyQueryButtonProps, SearchContextProps } from '..'
+import { CaseSensitivityProps, PatternTypeProps, CopyQueryButtonProps, SearchContextInputProps } from '..'
 import { MonacoEditor } from '../../components/MonacoEditor'
 import { SearchPatternType } from '../../graphql-operations'
 import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '../../keyboardShortcuts/keyboardShortcuts'
@@ -29,10 +29,7 @@ export interface MonacoQueryInputProps
         ThemeProps,
         CaseSensitivityProps,
         PatternTypeProps,
-        Omit<
-            SearchContextProps,
-            'convertVersionContextToSearchContext' | 'isSearchContextSpecAvailable' | 'fetchSearchContext'
-        >,
+        SearchContextInputProps,
         CopyQueryButtonProps {
     location: H.Location
     history: H.History
