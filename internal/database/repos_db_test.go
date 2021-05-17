@@ -2018,6 +2018,10 @@ func TestRepos_ListRepos_UserPublicRepos(t *testing.T) {
 	}
 }
 
+func TestRepos_RepoExternalServices(t *testing.T) {
+	t.Fatal("TODO")
+}
+
 func initUserAndRepo(t *testing.T, ctx context.Context, db dbutil.DB) (*types.User, *types.Repo) {
 	id := rand.String(3)
 	user, err := Users(db).Create(ctx, NewUser{
