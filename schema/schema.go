@@ -228,7 +228,7 @@ type BitbucketServerConnection struct {
 	//
 	// If "ssh", Sourcegraph will access Bitbucket Server repositories using Git URLs of the form ssh://git@example.bitbucket.com/myproject/myrepo.git. See the documentation for how to provide SSH private keys and known_hosts: https://docs.sourcegraph.com/admin/repo/auth#repositories-that-need-http-s-or-ssh-authentication.
 	GitURLType string `json:"gitURLType,omitempty"`
-	// InitialRepositoryEnablement description: Defines whether repositories from this Bitbucket Server instance should be enabled and cloned when they are first seen by Sourcegraph. If false, the site admin must explicitly enable Bitbucket Server repositories (in the site admin area) to clone them and make them searchable on Sourcegraph. If true, they will be enabled and cloned immediately (subject to rate limiting by Bitbucket Server); site admins can still disable them explicitly, and they'll remain disabled.
+	// InitialRepositoryEnablement description: Deprecated and ignored field which will be removed entirely in the next release. BitBucket repositories can no longer be enabled or disabled explicitly.
 	InitialRepositoryEnablement bool `json:"initialRepositoryEnablement,omitempty"`
 	// Password description: The password to use when authenticating to the Bitbucket Server instance. Also set the corresponding "username" field.
 	//
