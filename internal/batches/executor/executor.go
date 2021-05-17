@@ -171,7 +171,7 @@ func (x *executor) Wait(ctx context.Context) ([]*batches.ChangesetSpec, error) {
 	case err := <-result:
 		close(result)
 		if err != nil {
-			return nil, err
+			return x.specs, err
 		}
 	}
 

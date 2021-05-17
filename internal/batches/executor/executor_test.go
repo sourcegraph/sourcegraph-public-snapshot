@@ -82,6 +82,8 @@ func TestExecutor_Integration(t *testing.T) {
 		wantAuthorEmail   string
 
 		wantErrInclude string
+		// wantCacheHits overwrites the desired count of cache entries found after execution.
+		wantCacheHits int
 	}{
 		{
 			name: "success",
@@ -407,6 +409,36 @@ output4=integration-test-batch-change`,
 				},
 			},
 		},
+		{
+			name: "skips errors",
+			archives: []mock.RepoArchive{
+				{Repo: srcCLIRepo, Files: map[string]string{
+					"README.md": "# Welcome to the README\n",
+				}},
+				{Repo: sourcegraphRepo, Files: map[string]string{
+					"README.md": "# Sourcegraph README\n",
+				}},
+			},
+			steps: []batches.Step{
+				{Run: `echo -e "foobar\n" >> README.md`},
+				{
+					Run: `exit 1`,
+					If:  fmt.Sprintf(`${{ eq repository.name %q }}`, sourcegraphRepo.Name),
+				},
+			},
+			tasks: []*Task{
+				{Repository: srcCLIRepo},
+				{Repository: sourcegraphRepo},
+			},
+			wantFilesChanged: filesByRepository{
+				srcCLIRepo.ID: filesByBranch{
+					changesetTemplateBranch: []string{"README.md"},
+				},
+				sourcegraphRepo.ID: {},
+			},
+			wantErrInclude: "execution in github.com/sourcegraph/sourcegraph failed: run: exit 1",
+			wantCacheHits:  1,
+		},
 	}
 
 	for _, tc := range tests {
@@ -488,11 +520,10 @@ output4=integration-test-batch-change`,
 					if err == nil {
 						t.Fatalf("expected error to include %q, but got no error", tc.wantErrInclude)
 					} else {
-						if !strings.Contains(err.Error(), tc.wantErrInclude) {
+						if !strings.Contains(strings.ToLower(err.Error()), strings.ToLower(tc.wantErrInclude)) {
 							t.Errorf("wrong error. have=%q want included=%q", err, tc.wantErrInclude)
 						}
 					}
-					return
 				}
 
 				wantSpecs := 0
@@ -577,6 +608,9 @@ output4=integration-test-batch-change`,
 				want := len(tc.tasks)
 				if tc.wantErrInclude != "" {
 					want = 0
+				}
+				if tc.wantCacheHits != 0 {
+					want = tc.wantCacheHits
 				}
 
 				// Verify that there is a cache entry for each repo.
