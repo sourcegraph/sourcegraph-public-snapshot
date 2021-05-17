@@ -141,7 +141,7 @@ const batchChangeFragment = gql`
     fragment ActiveBulkOperationsConnectionFields on BulkOperationConnection {
         totalCount
         nodes {
-            ...BulkOperationFields
+            ...ActiveBulkOperationFields
         }
     }
 
@@ -149,7 +149,10 @@ const batchChangeFragment = gql`
 
     ${diffStatFields}
 
-    ${bulkOperationFragment}
+    fragment ActiveBulkOperationFields on BulkOperation {
+        id
+        state
+    }
 `
 
 const changesetLabelFragment = gql`

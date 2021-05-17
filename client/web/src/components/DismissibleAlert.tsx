@@ -14,9 +14,7 @@ interface Props {
  * again.
  */
 export const DismissibleAlert: React.FunctionComponent<Props> = ({ partialStorageKey, className, children }) => {
-    const [dismissed, setDismissed] = React.useState<boolean>(
-        localStorage.getItem(storageKeyForPartial(partialStorageKey)) === 'true'
-    )
+    const [dismissed, setDismissed] = React.useState<boolean>(isAlertDismissed(partialStorageKey))
 
     const onDismiss = React.useCallback(() => {
         dismissAlert(partialStorageKey)
@@ -38,6 +36,10 @@ export const DismissibleAlert: React.FunctionComponent<Props> = ({ partialStorag
 
 export function dismissAlert(key: string): void {
     localStorage.setItem(storageKeyForPartial(key), 'true')
+}
+
+export function isAlertDismissed(key: string): boolean {
+    return localStorage.getItem(storageKeyForPartial(key)) === 'true'
 }
 
 function storageKeyForPartial(partialStorageKey: string): string {

@@ -30,7 +30,7 @@ export const BulkOperationsTab: React.FunctionComponent<BulkOperationsTabProps> 
                 tap(connection => {
                     for (const node of connection.nodes) {
                         // Hide alerts for bulk operations seen already.
-                        dismissAlert(`bulkOperation-${node.id}`)
+                        dismissAlert(`bulkOperation-${node.state.toLocaleLowerCase()}-${node.id}`)
                     }
                 }),
                 repeatWhen(notifier => notifier.pipe(delay(2000)))
