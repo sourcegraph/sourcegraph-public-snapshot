@@ -1,5 +1,5 @@
 import { DataSeries } from '../../../core/backend/types'
-import { InsightVisibility } from '../../../core/types';
+import { InsightVisibility } from '../../../core/types'
 
 export type InsightStep = 'hours' | 'days' | 'weeks' | 'months' | 'years'
 

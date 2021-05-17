@@ -1,7 +1,7 @@
 import React, { ChangeEvent } from 'react'
 
-import { FormGroup } from '../form/form-group/FormGroup';
-import { FormRadioInput } from '../form/form-radio-input/FormRadioInput';
+import { FormGroup } from '../form/form-group/FormGroup'
+import { FormRadioInput } from '../form/form-radio-input/FormRadioInput'
 
 export const getVisibilityValue = (event: VisibilityChangeEvent): string => {
     if (event.type === 'personal') {
@@ -15,13 +15,11 @@ export const getVisibilityValue = (event: VisibilityChangeEvent): string => {
     return ''
 }
 
-export type VisibilityChangeEvent =
-    { type: 'personal' } |
-    { type: 'organization', orgID: string }
+export type VisibilityChangeEvent = { type: 'personal' } | { type: 'organization'; orgID: string }
 
 export interface Organization {
-    id: string,
-    name: string,
+    id: string
+    name: string
     displayName?: string | null
 }
 
@@ -32,13 +30,13 @@ export interface VisibilityPickerProps {
 }
 
 export const VisibilityPicker: React.FunctionComponent<VisibilityPickerProps> = props => {
-    const { value, organizations, onChange } = props;
+    const { value, organizations, onChange } = props
 
     const handleChange = (event: ChangeEvent<HTMLInputElement>): void => {
-        const value = event.target.value;
+        const value = event.target.value
 
         if (value === 'personal') {
-            return onChange({ type: 'personal'})
+            return onChange({ type: 'personal' })
         }
 
         const org = organizations.find(org => org.id === value)
@@ -67,23 +65,20 @@ export const VisibilityPicker: React.FunctionComponent<VisibilityPickerProps> = 
                 onChange={handleChange}
             />
 
-            {
-                organizations.map(org =>
-                    <FormRadioInput
-                        key={org.id}
-                        name="visibility"
-                        value={org.id}
-                        title={org.displayName ?? org.name}
-                        description={`all users in ${org.displayName ?? org.name} organization`}
-                        checked={value === org.id}
-                        onChange={handleChange}
-                        className="mr-3"
-                    />
-                )
-            }
+            {organizations.map(org => (
+                <FormRadioInput
+                    key={org.id}
+                    name="visibility"
+                    value={org.id}
+                    title={org.displayName ?? org.name}
+                    description={`all users in ${org.displayName ?? org.name} organization`}
+                    checked={value === org.id}
+                    onChange={handleChange}
+                    className="mr-3"
+                />
+            ))}
 
-            {
-                organizations.length === 0 &&
+            {organizations.length === 0 && (
                 <FormRadioInput
                     name="visibility"
                     value="organization"
@@ -92,10 +87,9 @@ export const VisibilityPicker: React.FunctionComponent<VisibilityPickerProps> = 
                     description="all users in your organization"
                     data-tooltip="Enable regular expression"
                     className="mr-3"
-                    labelTooltipText='Create or join the Organisation to share code insights with others!'
+                    labelTooltipText="Create or join the Organisation to share code insights with others!"
                 />
-            }
+            )}
         </FormGroup>
-
     )
 }

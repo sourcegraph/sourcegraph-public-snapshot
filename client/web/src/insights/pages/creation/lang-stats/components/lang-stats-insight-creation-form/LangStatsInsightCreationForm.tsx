@@ -9,8 +9,8 @@ import { FORM_ERROR, SubmissionErrors } from '../../../../../components/form/hoo
 import {
     getVisibilityValue,
     Organization,
-    VisibilityPicker
-} from '../../../../../components/visibility-picker/VisibilityPicker';
+    VisibilityPicker,
+} from '../../../../../components/visibility-picker/VisibilityPicker'
 import { LangStatsCreationFormFields } from '../../types'
 
 import styles from './LangStatsInsightCreationForm.module.scss'

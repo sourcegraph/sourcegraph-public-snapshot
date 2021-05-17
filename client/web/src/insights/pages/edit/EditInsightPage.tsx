@@ -1,7 +1,7 @@
 import classnames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useContext, useMemo, useState } from 'react'
-import { Redirect } from 'react-router';
+import { Redirect } from 'react-router'
 import { useHistory, Link } from 'react-router-dom'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -163,7 +163,9 @@ export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = pr
         return <Redirect to="/" />
     }
 
-    const { organizations: { nodes: orgs } } = authenticatedUser;
+    const {
+        organizations: { nodes: orgs },
+    } = authenticatedUser
 
     return (
         <Page className={classnames('col-10', styles.creationPage)}>

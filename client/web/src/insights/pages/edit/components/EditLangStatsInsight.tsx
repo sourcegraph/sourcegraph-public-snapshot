@@ -4,7 +4,7 @@ import { useHistory } from 'react-router-dom'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 
 import { SubmissionErrors } from '../../../components/form/hooks/useForm'
-import { Organization } from '../../../components/visibility-picker/VisibilityPicker';
+import { Organization } from '../../../components/visibility-picker/VisibilityPicker'
 import { LangStatsInsight } from '../../../core/types'
 import { LangStatsInsightCreationContent } from '../../creation/lang-stats/components/lang-stats-insight-creation-content/LangStatsInsightCreationContent'
 import { LangStatsCreationFormFields } from '../../creation/lang-stats/types'

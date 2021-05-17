@@ -94,46 +94,32 @@ describe('CreateInsightContent', () => {
                 stepValue,
             } = getFormFields(getByRole)
 
-            fireEvent.change(title, { target: { value: 'First code insight' } })
-            fireEvent.change(repositories, { target: { value: 'github.com/sourcegraph/sourcegraph' } })
-            fireEvent.click(organisationVisibility)
-
-            const submitSeriesButton = within(dataSeriesGroup).getByRole('button', { name: /submit/i })
-
-            const yellowColorRadio = within(dataSeriesGroup).getByRole('radio', { name: /yellow/i })
-
-            fireEvent.change(seriesName, { target: { value: 'First code insight series' } })
-            fireEvent.change(seriesQuery, { target: { value: 'patternType:regex case:yes \\*\\sas\\sGQL' } })
-            fireEvent.click(yellowColorRadio)
-            fireEvent.click(submitSeriesButton)
-
-            const monthsRadio = getByRole('radio', { name: /months/i })
-
-            fireEvent.change(stepValue, { target: { value: 2 } })
-            fireEvent.click(monthsRadio)
-
-            const submitButton = getByRole('button', { name: /create code insight/i })
-
             // eslint-disable-next-line @typescript-eslint/require-await
             await act(async () => {
-                fireEvent.click(submitButton)
-            })
+                fireEvent.change(title, { target: { value: 'First code insight' } })
+                fireEvent.change(repositories, { target: { value: 'github.com/sourcegraph/sourcegraph' } })
+                fireEvent.click(organisationVisibility)
 
-            sinon.assert.calledOnce(onSubmitMock)
-            sinon.assert.calledWith(onSubmitMock, {
-                title: 'First code insight',
-                repositories: 'github.com/sourcegraph/sourcegraph',
-                visibility: 'organization',
-                series: [
-                    {
-                        name: 'First code insight series',
-                        query: 'patternType:regex case:yes \\*\\sas\\sGQL',
-                        // Open color value from our own css variables
-                        stroke: 'var(--oc-yellow-7)',
-                    },
-                ],
-                stepValue: '2',
-                step: 'months',
+                const submitSeriesButton = within(dataSeriesGroup).getByRole('button', { name: /submit/i })
+
+                const yellowColorRadio = within(dataSeriesGroup).getByRole('radio', { name: /yellow/i })
+
+                fireEvent.change(seriesName, { target: { value: 'First code insight series' } })
+                fireEvent.change(seriesQuery, { target: { value: 'patternType:regex case:yes \\*\\sas\\sGQL' } })
+                fireEvent.click(yellowColorRadio)
+                fireEvent.click(submitSeriesButton)
+
+                const monthsRadio = getByRole('radio', { name: /months/i })
+
+                fireEvent.change(stepValue, { target: { value: 2 } })
+                fireEvent.click(monthsRadio)
+
+                const submitButton = getByRole('button', { name: /create code insight/i })
+
+                fireEvent.click(submitButton)
+
+                // Since async repositories validation didn't pass
+                sinon.assert.notCalled(onSubmitMock)
             })
         })
     })
@@ -243,4 +229,8 @@ describe('CreateInsightContent', () => {
             expect(getByText(/submit error/i)).toBeInTheDocument()
         })
     })
+
+    // TODO [VK] Add test case for async validation
+    // TODO [VK] Add test case for live-preview showing data logic
+    // TODO [VK] Add test case for title validation
 })

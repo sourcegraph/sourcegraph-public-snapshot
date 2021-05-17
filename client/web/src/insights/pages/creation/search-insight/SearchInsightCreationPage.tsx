@@ -48,8 +48,8 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
             const subjectID =
                 values.visibility === 'personal'
                     ? userID
-                    // If this is not a 'personal' value than we are dealing with org id
-                    : values.visibility
+                    : // If this is not a 'personal' value than we are dealing with org id
+                      values.visibility
 
             try {
                 const settings = await getSubjectSettings(subjectID).toPromise()
@@ -77,7 +77,9 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
         return <Redirect to="/" />
     }
 
-    const { organizations: { nodes: orgs } } = authenticatedUser;
+    const {
+        organizations: { nodes: orgs },
+    } = authenticatedUser
 
     return (
         <Page className={classnames('col-10', styles.creationPage)}>

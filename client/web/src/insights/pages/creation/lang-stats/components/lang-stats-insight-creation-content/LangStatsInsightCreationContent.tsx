@@ -7,7 +7,7 @@ import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { useField } from '../../../../../components/form/hooks/useField'
 import { SubmissionErrors, useForm } from '../../../../../components/form/hooks/useForm'
 import { useTitleValidator } from '../../../../../components/form/hooks/useTitleValidator'
-import { Organization } from '../../../../../components/visibility-picker/VisibilityPicker';
+import { Organization } from '../../../../../components/visibility-picker/VisibilityPicker'
 import { InsightTypePrefix } from '../../../../../core/types'
 import { LangStatsCreationFormFields } from '../../types'
 import { LangStatsInsightCreationForm } from '../lang-stats-insight-creation-form/LangStatsInsightCreationForm'
@@ -45,7 +45,15 @@ export interface LangStatsInsightCreationContentProps {
 }
 
 export const LangStatsInsightCreationContent: React.FunctionComponent<LangStatsInsightCreationContentProps> = props => {
-    const { mode = 'creation', settings, organizations = [], initialValues = INITIAL_VALUES, className, onSubmit, onCancel = noop } = props
+    const {
+        mode = 'creation',
+        settings,
+        organizations = [],
+        initialValues = INITIAL_VALUES,
+        className,
+        onSubmit,
+        onCancel = noop,
+    } = props
 
     const { handleSubmit, formAPI, ref } = useForm<LangStatsCreationFormFields>({
         initialValues,

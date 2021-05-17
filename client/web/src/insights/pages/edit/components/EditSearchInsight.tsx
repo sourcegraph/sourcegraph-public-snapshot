@@ -4,7 +4,7 @@ import { useHistory } from 'react-router-dom'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 
 import { SubmissionErrors } from '../../../components/form/hooks/useForm'
-import { Organization } from '../../../components/visibility-picker/VisibilityPicker';
+import { Organization } from '../../../components/visibility-picker/VisibilityPicker'
 import { SearchBasedInsight } from '../../../core/types'
 import { SearchInsightCreationContent } from '../../creation/search-insight/components/search-insight-creation-content/SearchInsightCreationContent'
 import { CreateInsightFormFields, InsightStep } from '../../creation/search-insight/types'

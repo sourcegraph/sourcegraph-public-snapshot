@@ -7,7 +7,7 @@ import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { useField } from '../../../../../components/form/hooks/useField'
 import { SubmissionErrors, useForm } from '../../../../../components/form/hooks/useForm'
 import { useTitleValidator } from '../../../../../components/form/hooks/useTitleValidator'
-import { Organization } from '../../../../../components/visibility-picker/VisibilityPicker';
+import { Organization } from '../../../../../components/visibility-picker/VisibilityPicker'
 import { InsightTypePrefix } from '../../../../../core/types'
 import { CreateInsightFormFields } from '../../types'
 import { SearchInsightLivePreview } from '../live-preview-chart/SearchInsightLivePreview'
@@ -49,7 +49,15 @@ export interface SearchInsightCreationContentProps {
 }
 
 export const SearchInsightCreationContent: React.FunctionComponent<SearchInsightCreationContentProps> = props => {
-    const { mode = 'creation', organizations = [], settings, initialValue = INITIAL_VALUES, onSubmit, onCancel = noop, className } = props
+    const {
+        mode = 'creation',
+        organizations = [],
+        settings,
+        initialValue = INITIAL_VALUES,
+        onSubmit,
+        onCancel = noop,
+        className,
+    } = props
 
     const isEditMode = mode === 'edit'
 

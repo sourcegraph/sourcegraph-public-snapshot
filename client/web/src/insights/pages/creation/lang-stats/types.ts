@@ -1,4 +1,4 @@
-import { InsightVisibility } from '../../../core/types';
+import { InsightVisibility } from '../../../core/types'
 
 export interface LangStatsCreationFormFields {
     title: string
