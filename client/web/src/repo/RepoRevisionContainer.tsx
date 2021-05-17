@@ -279,6 +279,7 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
                 {context => (
                     <GoToPermalinkAction
                         key="go-to-permalink"
+                        telemetryService={props.telemetryService}
                         revision={props.revision}
                         commitID={resolvedRevisionOrError.commitID}
                         location={props.location}
