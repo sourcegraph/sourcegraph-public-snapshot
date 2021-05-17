@@ -13,13 +13,19 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Added
 
-- Starting with Sourcegraph 3.28.0 batch spec `steps` can contain an `if: <template string>` attribute that determines whether the given step will be executed. [#520](https://github.com/sourcegraph/src-cli/pull/520)
-
 ### Changed
 
 ### Fixed
 
 ### Removed
+
+## 3.27.1
+
+- Starting with Sourcegraph 3.28.0 batch spec `steps` can contain an `if: <template string>` attribute that determines whether the given step will be executed. [#520](https://github.com/sourcegraph/src-cli/pull/520)
+
+### Fixed
+
+- When specifying `-skip-errors`, the batch spec would always be empty. This ix fixed and the intended behavior has been restored. [#539](https://github.com/sourcegraph/src-cli/pull/539)
 
 ## 3.27.0
 
