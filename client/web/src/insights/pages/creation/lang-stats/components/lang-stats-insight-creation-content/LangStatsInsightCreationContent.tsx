@@ -13,7 +13,7 @@ import { LangStatsInsightCreationForm } from '../lang-stats-insight-creation-for
 import { LangStatsInsightLivePreview } from '../live-preview-chart/LangStatsInsightLivePreview'
 
 import styles from './LangStatsInsightCreationContent.module.scss'
-import { repositoriesFieldValidator, repositoryFieldAsyncValidator, thresholdFieldValidator } from './validators';
+import { repositoriesFieldValidator, repositoryFieldAsyncValidator, thresholdFieldValidator } from './validators'
 
 const INITIAL_VALUES: LangStatsCreationFormFields = {
     repository: '',

@@ -4,7 +4,7 @@ import React from 'react'
 import { DataSeries } from '../../../../../core/backend/types'
 import { FormSeriesInput } from '../form-series-input/FormSeriesInput'
 
-import { SeriesCard } from './components/series-card/SeriesCard';
+import { SeriesCard } from './components/series-card/SeriesCard'
 import styles from './FormSeries.module.scss'
 
 export interface FormSeriesProps {
@@ -63,18 +63,20 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
         onEditSeriesCommit,
         onEditSeriesCancel,
         onSeriesRemove,
-        onLiveChange
+        onLiveChange,
     } = props
 
     // In case if we don't have series we have to skip series list ui (components below)
     // and render simple series form component.
     if (series.length === 0) {
-        return <FormSeriesInput
-            autofocus={false}
-            className="card card-body p-3"
-            onSubmit={series => onEditSeriesCommit(0, series)}
-            onChange={(values, valid) => onLiveChange(values, valid, 0)}
-        />
+        return (
+            <FormSeriesInput
+                autofocus={false}
+                className="card card-body p-3"
+                onSubmit={series => onEditSeriesCommit(0, series)}
+                onChange={(values, valid) => onLiveChange(values, valid, 0)}
+            />
+        )
     }
 
     return (
@@ -91,7 +93,7 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
                         {...line}
                     />
                 ) : (
-                    series[index] &&
+                    series[index] && (
                         <SeriesCard
                             key={`${series[index].name}-${index}`}
                             onEdit={() => onEditSeriesRequest(index)}
@@ -99,6 +101,7 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
                             className={styles.formSeriesItem}
                             {...series[index]}
                         />
+                    )
                 )
             )}
 

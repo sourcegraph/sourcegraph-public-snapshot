@@ -28,13 +28,23 @@ interface FormSeriesInputProps {
     /** On submit handler of series form. */
     onSubmit?: (series: DataSeries) => void
     /** On cancel handler. */
-    onCancel?: () => void,
+    onCancel?: () => void
     onChange?: (formValues: DataSeries, valid: boolean) => void
 }
 
 /** Displays form series input (three field - name field, query field and color picker). */
 export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = props => {
-    const { name, query, stroke: color, className, cancel = false, autofocus = true, onCancel = noop, onSubmit = noop, onChange = noop } = props
+    const {
+        name,
+        query,
+        stroke: color,
+        className,
+        cancel = false,
+        autofocus = true,
+        onCancel = noop,
+        onSubmit = noop,
+        onChange = noop,
+    } = props
 
     const hasNameControlledValue = !!name
     const hasQueryControlledValue = !!query
@@ -52,17 +62,20 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
                 stroke: values.seriesColor,
             }),
         onChange: event => {
-            const { values } = event;
+            const { values } = event
 
-            onChange({
-                name: values.seriesName,
-                query: values.seriesQuery,
-                stroke: values.seriesColor,
-            }, event.valid);
-        }
+            onChange(
+                {
+                    name: values.seriesName,
+                    query: values.seriesQuery,
+                    stroke: values.seriesColor,
+                },
+                event.valid
+            )
+        },
     })
 
-    const nameField = useField('seriesName', formAPI, { sync: requiredNameField})
+    const nameField = useField('seriesName', formAPI, { sync: requiredNameField })
     const queryField = useField('seriesQuery', formAPI, { sync: validQuery })
     const colorField = useField('seriesColor', formAPI)
 

@@ -1,7 +1,7 @@
 import classnames from 'classnames'
 import React, { forwardRef, InputHTMLAttributes, ReactNode } from 'react'
 
-import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput';
+import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 
 interface FormInputProps extends InputHTMLAttributes<HTMLInputElement> {
     /** Title of input. */

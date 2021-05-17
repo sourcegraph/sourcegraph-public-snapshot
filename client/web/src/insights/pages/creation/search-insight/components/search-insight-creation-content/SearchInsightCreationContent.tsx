@@ -12,14 +12,14 @@ import { CreateInsightFormFields } from '../../types'
 import { SearchInsightLivePreview } from '../live-preview-chart/SearchInsightLivePreview'
 import { SearchInsightCreationForm } from '../search-insight-creation-form/SearchInsightCreationForm'
 
-import { useEditableSeries } from './hooks/use-editable-series';
+import { useEditableSeries } from './hooks/use-editable-series'
 import styles from './SearchInsightCreationContent.module.scss'
 import {
     repositoriesExistValidator,
     repositoriesFieldValidator,
     requiredStepValueField,
-    seriesRequired
-} from './validators';
+    seriesRequired,
+} from './validators'
 
 const INITIAL_VALUES: CreateInsightFormFields = {
     visibility: 'personal',
@@ -62,7 +62,7 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
     const title = useField('title', formAPI, { sync: titleValidator })
     const repositories = useField('repositories', formAPI, {
         sync: repositoriesFieldValidator,
-        async: repositoriesExistValidator
+        async: repositoriesExistValidator,
     })
     const visibility = useField('visibility', formAPI)
 
@@ -70,14 +70,9 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
     const step = useField('step', formAPI)
     const stepValue = useField('stepValue', formAPI, { sync: requiredStepValueField })
 
-    const {
-        liveSeries,
-        editSeries,
-        listen,
-        editRequest,
-        editCommit,
-        cancelEdit,
-        deleteSeries } = useEditableSeries({ series })
+    const { liveSeries, editSeries, listen, editRequest, editCommit, cancelEdit, deleteSeries } = useEditableSeries({
+        series,
+    })
 
     // If some fields that needed to run live preview  are invalid
     // we should disabled live chart preview
@@ -107,7 +102,8 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
                 onEditSeriesRequest={editRequest}
                 onEditSeriesCancel={cancelEdit}
                 onEditSeriesCommit={editCommit}
-                onSeriesRemove={deleteSeries}/>
+                onSeriesRemove={deleteSeries}
+            />
 
             <SearchInsightLivePreview
                 disabled={!allFieldsForPreviewAreValid}

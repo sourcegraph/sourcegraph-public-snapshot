@@ -2,13 +2,13 @@ import { ChangeEvent, FocusEventHandler, RefObject, useEffect, useRef, useState 
 import { noop } from 'rxjs'
 
 import { FieldState, FormAPI, ValidationResult } from './useForm'
-import { getEventValue } from './utils/get-event-value';
-import { AsyncValidator, useAsyncValidation } from './utils/use-async-validation';
+import { getEventValue } from './utils/get-event-value'
+import { AsyncValidator, useAsyncValidation } from './utils/use-async-validation'
 
 export type Validator<FieldValue> = (value: FieldValue | undefined, validity?: ValidityState | null) => ValidationResult
 
 export interface Validators<FieldValue> {
-    sync?: Validator<FieldValue>,
+    sync?: Validator<FieldValue>
     async?: AsyncValidator<FieldValue>
 }
 
@@ -47,11 +47,11 @@ export interface useFieldAPI<FieldValue> {
 export function useField<FormValues, FieldValueKey extends keyof FormAPI<FormValues>['initialValues']>(
     name: FieldValueKey,
     formApi: FormAPI<FormValues>,
-    validators?: Validators<FormValues[FieldValueKey]>,
+    validators?: Validators<FormValues[FieldValueKey]>
 ): useFieldAPI<FormValues[FieldValueKey]> {
     const { setFieldState, initialValues, submitted, touched: formTouched } = formApi
 
-    const { sync = noop, async } = validators ?? {};
+    const { sync = noop, async } = validators ?? {}
 
     const inputReference = useRef<HTMLInputElement & HTMLFieldSetElement>(null)
 
@@ -68,9 +68,7 @@ export function useField<FormValues, FieldValueKey extends keyof FormAPI<FormVal
     const { start: startAsyncValidation, cancel: cancelAsyncValidation } = useAsyncValidation({
         inputReference,
         asyncValidator: async,
-        onValidationChange: state => setState(
-            previousState => ({ ...previousState, ...state, value: selfValue })
-        )
+        onValidationChange: state => setState(previousState => ({ ...previousState, ...state, value: selfValue })),
     })
 
     // Use useRef for form api handler in order to avoid unnecessary
@@ -150,4 +148,3 @@ export function useField<FormValues, FieldValueKey extends keyof FormAPI<FormVal
         },
     }
 }
-

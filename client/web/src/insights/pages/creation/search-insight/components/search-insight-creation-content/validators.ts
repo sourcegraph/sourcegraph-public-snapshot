@@ -1,10 +1,10 @@
-import { renderError } from '../../../../../../components/alerts';
-import { Validator } from '../../../../../components/form/hooks/useField';
-import { AsyncValidator } from '../../../../../components/form/hooks/utils/use-async-validation';
-import { createRequiredValidator } from '../../../../../components/form/validators';
-import { fetchRepositories } from '../../../../../core/backend/requests/fetch-repositories';
-import { DataSeries } from '../../../../../core/backend/types';
-import { getSanitizedRepositories } from '../../utils/insight-sanitizer';
+import { renderError } from '../../../../../../components/alerts'
+import { Validator } from '../../../../../components/form/hooks/useField'
+import { AsyncValidator } from '../../../../../components/form/hooks/utils/use-async-validation'
+import { createRequiredValidator } from '../../../../../components/form/validators'
+import { fetchRepositories } from '../../../../../core/backend/requests/fetch-repositories'
+import { DataSeries } from '../../../../../core/backend/types'
+import { getSanitizedRepositories } from '../../utils/insight-sanitizer'
 
 export const repositoriesFieldValidator = createRequiredValidator('Repositories is a required field.')
 export const requiredStepValueField = createRequiredValidator('Please specify a step between points.')
@@ -17,11 +17,11 @@ export const seriesRequired: Validator<DataSeries[]> = series =>
 
 export const repositoriesExistValidator: AsyncValidator<string> = async value => {
     if (!value) {
-        return;
+        return
     }
 
     try {
-        const repositoryNames = getSanitizedRepositories(value);
+        const repositoryNames = getSanitizedRepositories(value)
         const repositories = await fetchRepositories(repositoryNames).toPromise()
 
         const nullRepositoryIndex = repositories.findIndex(repo => !repo)
@@ -31,8 +31,7 @@ export const repositoriesExistValidator: AsyncValidator<string> = async value =>
         }
 
         return
-
     } catch (error) {
-        return renderError(error);
+        return renderError(error)
     }
 }

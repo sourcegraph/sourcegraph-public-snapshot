@@ -8,7 +8,7 @@ import { FormInput } from '../../../../../components/form/form-input/FormInput'
 import { FormRadioInput } from '../../../../../components/form/form-radio-input/FormRadioInput'
 import { useFieldAPI } from '../../../../../components/form/hooks/useField'
 import { FORM_ERROR, SubmissionErrors } from '../../../../../components/form/hooks/useForm'
-import { DataSeries } from '../../../../../core/backend/types';
+import { DataSeries } from '../../../../../core/backend/types'
 import { CreateInsightFormFields } from '../../types'
 import { FormSeries } from '../form-series/FormSeries'
 
@@ -38,7 +38,7 @@ interface CreationSearchInsightFormProps {
      * In case of some element has undefined value we're showing
      * series card with data instead of form.
      * */
-    editSeries: (CreateInsightFormFields['series'][number] | undefined)[],
+    editSeries: (CreateInsightFormFields['series'][number] | undefined)[]
 
     /**
      * Handler to listen latest value form particular series edit form
@@ -80,7 +80,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
         onEditSeriesRequest,
         onEditSeriesCommit,
         onEditSeriesCancel,
-        onSeriesRemove
+        onSeriesRemove,
     } = props
 
     const isEditMode = mode === 'edit'

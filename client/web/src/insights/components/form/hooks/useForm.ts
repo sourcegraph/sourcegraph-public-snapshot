@@ -2,7 +2,7 @@ import { debounce } from 'lodash'
 import { EventHandler, FormEventHandler, RefObject, SyntheticEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { noop } from 'rxjs'
 
-import { useDistinctValue } from '../../../hooks/use-distinct-value';
+import { useDistinctValue } from '../../../hooks/use-distinct-value'
 
 // Special key for the submit error store.
 export const FORM_ERROR = 'useForm/submissionErrors'
@@ -11,7 +11,7 @@ export type SubmissionErrors = Record<string, any> | undefined
 export type ValidationResult = string | undefined | void
 
 interface FormChangeEvent<FormValues> {
-    values: FormValues,
+    values: FormValues
     valid: boolean
 }
 
@@ -194,10 +194,11 @@ export function useForm<FormValues extends object>(props: UseFormProps<FormValue
     const changeEvent = useDistinctValue(
         useMemo(
             () => ({
-                    values: getFormValues(fields),
-                    valid: Object.values<Pick<FieldState<unknown>, 'validState'>>(fields)
-                        .every(state => state.validState === 'VALID'),
-                }),
+                values: getFormValues(fields),
+                valid: Object.values<Pick<FieldState<unknown>, 'validState'>>(fields).every(
+                    state => state.validState === 'VALID'
+                ),
+            }),
             [fields]
         )
     )

@@ -1,10 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react'
 
-import { useFieldAPI } from '../../../../../../components/form/hooks/useField';
-import { DataSeries } from '../../../../../../core/backend/types';
-import { useDistinctValue } from '../../../../../../hooks/use-distinct-value';
-import { CreateInsightFormFields } from '../../../types';
-import { DEFAULT_ACTIVE_COLOR } from '../../form-color-input/FormColorInput';
+import { useFieldAPI } from '../../../../../../components/form/hooks/useField'
+import { DataSeries } from '../../../../../../core/backend/types'
+import { useDistinctValue } from '../../../../../../hooks/use-distinct-value'
+import { CreateInsightFormFields } from '../../../types'
+import { DEFAULT_ACTIVE_COLOR } from '../../form-color-input/FormColorInput'
 
 const createDefaultEditSeries = (series = defaultEditSeries, valid = false): EditDataSeries => ({
     ...series,
@@ -18,7 +18,7 @@ const defaultEditSeries = {
 }
 
 interface EditDataSeries extends DataSeries {
-    valid: boolean;
+    valid: boolean
 }
 
 export interface UseEditableSeriesProps {
@@ -31,12 +31,12 @@ export interface UseEditableSeriesAPI {
      * In case of some element has undefined value we're showing
      * series card with data instead of form.
      * */
-    editSeries: (CreateInsightFormFields['series'][number] | undefined)[],
+    editSeries: (CreateInsightFormFields['series'][number] | undefined)[]
 
     /**
      * Latest valid values of series.
      * */
-    liveSeries: DataSeries[],
+    liveSeries: DataSeries[]
 
     /**
      * Handler to listen latest values of particular sereis form.
@@ -57,13 +57,13 @@ export interface UseEditableSeriesAPI {
  * edit, delete, add, and cancel series forms.
  * */
 export function useEditableSeries(props: UseEditableSeriesProps): UseEditableSeriesAPI {
-    const { series } = props;
+    const { series } = props
 
     const [editSeries, setEditSeries] = useState<(EditDataSeries | undefined)[]>(() => {
-        const hasSeries = series.input.value.length;
+        const hasSeries = series.input.value.length
 
         if (hasSeries) {
-            return series.input.value.map(() => undefined);
+            return series.input.value.map(() => undefined)
         }
 
         // If we in creation mode we should show first series editor in a first
@@ -73,24 +73,25 @@ export function useEditableSeries(props: UseEditableSeriesProps): UseEditableSer
 
     const liveSeries = useDistinctValue(
         useMemo<DataSeries[]>(
-            () => editSeries
-                .map((editSeries, index) => {
-                    if (editSeries) {
-                        const { valid, ...series } = editSeries
-                        return valid ? series : undefined
-                    }
+            () =>
+                editSeries
+                    .map((editSeries, index) => {
+                        if (editSeries) {
+                            const { valid, ...series } = editSeries
+                            return valid ? series : undefined
+                        }
 
-                    return series.meta.value[index];
-                })
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                // @ts-ignore
-                .filter<DataSeries>(series => !!series),
+                        return series.meta.value[index]
+                    })
+                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                    // @ts-ignore
+                    .filter<DataSeries>(series => !!series),
             [series, editSeries]
         )
-    );
+    )
 
     const handleSeriesLiveChange = (liveSeries: DataSeries, valid: boolean, index: number): void => {
-        const newEditSeries = [...editSeries];
+        const newEditSeries = [...editSeries]
 
         newEditSeries[index] = { ...liveSeries, valid }
 
@@ -98,7 +99,7 @@ export function useEditableSeries(props: UseEditableSeriesProps): UseEditableSer
     }
 
     const handleEditSeriesRequest = (index: number): void => {
-        const newEditSeries = [...editSeries];
+        const newEditSeries = [...editSeries]
 
         newEditSeries[index] = series.meta.value[index]
             ? createDefaultEditSeries(series.meta.value[index], true)
@@ -108,19 +109,15 @@ export function useEditableSeries(props: UseEditableSeriesProps): UseEditableSer
     }
 
     const handleEditSeriesCancel = (index: number): void => {
-        const newEditSeries = [...editSeries];
+        const newEditSeries = [...editSeries]
 
         newEditSeries[index] = undefined
         setEditSeries(newEditSeries)
     }
 
     const handleEditSeriesCommit = (index: number, editedSeries: DataSeries): void => {
-        const newEditedSeries = [...editSeries];
-        const newSeries = [
-            ...series.input.value.slice(0, index),
-            editedSeries,
-            ...series.input.value.slice(index + 1),
-        ]
+        const newEditedSeries = [...editSeries]
+        const newSeries = [...series.input.value.slice(0, index), editedSeries, ...series.input.value.slice(index + 1)]
 
         // Remove series from edited cards
         newEditedSeries[index] = undefined
@@ -130,14 +127,8 @@ export function useEditableSeries(props: UseEditableSeriesProps): UseEditableSer
     }
 
     const handleRemoveSeries = (index: number): void => {
-        const newSeries = [
-            ...series.input.value.slice(0, index),
-            ...series.input.value.slice(index + 1),
-        ]
-        const newEditedSereis = [
-            ...editSeries.slice(0, index),
-            ...editSeries.slice(index + 1),
-        ]
+        const newSeries = [...series.input.value.slice(0, index), ...series.input.value.slice(index + 1)]
+        const newEditedSereis = [...editSeries.slice(0, index), ...editSeries.slice(index + 1)]
 
         setEditSeries(newEditedSereis)
         series.input.onChange(newSeries)

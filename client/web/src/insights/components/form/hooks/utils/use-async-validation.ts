@@ -1,14 +1,17 @@
-import { RefObject, useCallback, useRef } from 'react';
-import { EMPTY, from, Observable } from 'rxjs';
-import { debounceTime, switchMap, tap } from 'rxjs/operators';
+import { RefObject, useCallback, useRef } from 'react'
+import { EMPTY, from, Observable } from 'rxjs'
+import { debounceTime, switchMap, tap } from 'rxjs/operators'
 
-import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable';
+import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
 
-import { FieldState, ValidationResult } from '../useForm';
+import { FieldState, ValidationResult } from '../useForm'
 
-const ASYNC_VALIDATION_DEBOUNCE_TIME = 500;
+const ASYNC_VALIDATION_DEBOUNCE_TIME = 500
 
-export type AsyncValidator<FieldValue> = (value: FieldValue | undefined, validity: ValidityState | null) => Promise<ValidationResult>
+export type AsyncValidator<FieldValue> = (
+    value: FieldValue | undefined,
+    validity: ValidityState | null
+) => Promise<ValidationResult>
 
 export interface UseAsyncValidationProps<FieldValue> {
     /**
@@ -40,7 +43,7 @@ export interface AsyncValidationEvent<FieldValue> {
     /**
      * Value of form filed.
      */
-    value: FieldValue | undefined,
+    value: FieldValue | undefined
 
     /**
      * Constraint API validity state.
@@ -65,8 +68,10 @@ export interface useAsyncValidationAPI<FieldValue> {
 /**
  * Internal util hook for async validation. Part of implementation of useField hook.
  */
-export function useAsyncValidation<FieldValue>(props: UseAsyncValidationProps<FieldValue>): useAsyncValidationAPI<FieldValue> {
-    const { inputReference, asyncValidator, onValidationChange } = props;
+export function useAsyncValidation<FieldValue>(
+    props: UseAsyncValidationProps<FieldValue>
+): useAsyncValidationAPI<FieldValue> {
+    const { inputReference, asyncValidator, onValidationChange } = props
 
     // Reference hack to allow consumers pass handlers without useMemo
     const onValidationChangeReference = useRef<UseAsyncValidationProps<FieldValue>['onValidationChange']>()
@@ -88,11 +93,13 @@ export function useAsyncValidation<FieldValue>(props: UseAsyncValidationProps<Fi
                             validState: 'CHECKING',
                             touched: true,
                             error: '',
-                            validity: inputElement?.validity ?? null
+                            validity: inputElement?.validity ?? null,
                         })
                     }
                 }),
-                switchMap(({ value, validity, canceled }) => !canceled ? from(asyncValidator!(value, validity)) : EMPTY),
+                switchMap(({ value, validity, canceled }) =>
+                    !canceled ? from(asyncValidator!(value, validity)) : EMPTY
+                ),
                 tap(validationMessage => {
                     const inputElement = inputReference.current
                     const validity = inputElement?.validity ?? null
@@ -110,7 +117,7 @@ export function useAsyncValidation<FieldValue>(props: UseAsyncValidationProps<Fi
                         handleValidationChange({
                             validState: 'VALID' as const,
                             error: '',
-                            validity
+                            validity,
                         })
                     }
                 })
@@ -118,14 +125,15 @@ export function useAsyncValidation<FieldValue>(props: UseAsyncValidationProps<Fi
         [inputReference, handleValidationChange, asyncValidator]
     )
 
-    const [startAsyncValidation] = useEventObservable(asyncValidationPipeline);
+    const [startAsyncValidation] = useEventObservable(asyncValidationPipeline)
 
     const cancelAsyncValidation = useCallback(
-        () => startAsyncValidation({
-            value: undefined,
-            validity: null,
-            canceled: true
-        }),
+        () =>
+            startAsyncValidation({
+                value: undefined,
+                validity: null,
+                canceled: true,
+            }),
         [startAsyncValidation]
     )
 
