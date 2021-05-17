@@ -5,3 +5,8 @@ $card-border-color: var(--border-color);
 $card-cap-bg: var(--color-bg-2);
 
 @import 'bootstrap/scss/card';
+
+.theme-redesign .card {
+    background: var(--color-bg-1);
+    border-color: var(--border-color-2);
+}
