@@ -21,15 +21,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
-
-type RepositoryResolverCache map[api.RepoName]*RepositoryResolver
 
 type RepositoryResolver struct {
 	hydration sync.Once
@@ -71,26 +68,6 @@ func NewRepositoryResolver(db dbutil.DB, repo *types.Repo) *RepositoryResolver {
 	}
 }
 
-func (r *schemaResolver) repositoryByID(ctx context.Context, id graphql.ID) (*RepositoryResolver, error) {
-	var repoID api.RepoID
-	if err := relay.UnmarshalSpec(id, &repoID); err != nil {
-		return nil, err
-	}
-	repo, err := database.Repos(r.db).Get(ctx, repoID)
-	if err != nil {
-		return nil, err
-	}
-	return NewRepositoryResolver(r.db, repo), nil
-}
-
-func RepositoryByIDInt32(ctx context.Context, db dbutil.DB, repoID api.RepoID) (*RepositoryResolver, error) {
-	repo, err := database.Repos(db).Get(ctx, repoID)
-	if err != nil {
-		return nil, err
-	}
-	return NewRepositoryResolver(db, repo), nil
-}
-
 func (r *RepositoryResolver) ID() graphql.ID {
 	return MarshalRepositoryID(r.IDInt32())
 }
@@ -104,18 +81,6 @@ func MarshalRepositoryID(repo api.RepoID) graphql.ID { return relay.MarshalID("R
 func UnmarshalRepositoryID(id graphql.ID) (repo api.RepoID, err error) {
 	err = relay.UnmarshalSpec(id, &repo)
 	return
-}
-
-func (r *RepositoryResolver) Select(path filter.SelectPath) SearchResultResolver {
-	match := r.RepoMatch.Select(path)
-
-	// Turn result type back into a resolver
-	switch v := match.(type) {
-	case *result.RepoMatch:
-		return NewRepositoryResolver(r.db, &types.Repo{Name: v.Name, ID: v.ID})
-	}
-
-	return nil
 }
 
 // repo makes sure the repo is hydrated before returning it.
@@ -210,28 +175,36 @@ func (r *RepositoryResolver) CommitFromID(ctx context.Context, args *RepositoryC
 
 func (r *RepositoryResolver) DefaultBranch(ctx context.Context) (*GitRefResolver, error) {
 	do := func() (*GitRefResolver, error) {
-		refBytes, _, exitCode, err := git.ExecSafe(ctx, r.RepoName(), []string{"symbolic-ref", "HEAD"})
-		refName := string(bytes.TrimSpace(refBytes))
-
-		if err == nil && exitCode == 0 {
-			// Check that our repo is not empty
-			_, err = git.ResolveRevision(ctx, r.RepoName(), "HEAD", git.ResolveRevisionOptions{NoEnsureRevision: true})
-		}
-
-		// If we fail to get the default branch due to cloning or being empty, we return nothing.
+		refName, err := getDefaultBranchForRepo(ctx, r.RepoName())
 		if err != nil {
-			if vcs.IsCloneInProgress(err) || gitserver.IsRevisionNotFound(err) {
-				return nil, nil
-			}
 			return nil, err
 		}
-
 		return &GitRefResolver{repo: r, name: refName}, nil
 	}
 	r.defaultBranchOnce.Do(func() {
 		r.defaultBranch, r.defaultBranchErr = do()
 	})
 	return r.defaultBranch, r.defaultBranchErr
+}
+
+func getDefaultBranchForRepo(ctx context.Context, repoName api.RepoName) (string, error) {
+	refBytes, _, exitCode, err := git.ExecSafe(ctx, repoName, []string{"symbolic-ref", "HEAD"})
+	refName := string(bytes.TrimSpace(refBytes))
+
+	if err == nil && exitCode == 0 {
+		// Check that our repo is not empty
+		_, err = git.ResolveRevision(ctx, repoName, "HEAD", git.ResolveRevisionOptions{NoEnsureRevision: true})
+	}
+
+	// If we fail to get the default branch due to cloning or being empty, we return nothing.
+	if err != nil {
+		if vcs.IsCloneInProgress(err) || gitserver.IsRevisionNotFound(err) {
+			return "", nil
+		}
+		return "", err
+	}
+
+	return refName, nil
 }
 
 func (r *RepositoryResolver) Language(ctx context.Context) (string, error) {
@@ -331,7 +304,7 @@ func (r *RepositoryResolver) hydrate(ctx context.Context) error {
 	r.hydration.Do(func() {
 		// Repositories with an empty creation date were created using RepoName.ToRepo(),
 		// they only contain ID and name information.
-		if !r.innerRepo.CreatedAt.IsZero() {
+		if r.innerRepo != nil && !r.innerRepo.CreatedAt.IsZero() {
 			return
 		}
 

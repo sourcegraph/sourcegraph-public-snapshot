@@ -7,19 +7,18 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
 )
 
 func TestDatabaseMonikersByPosition(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 	populateTestStore(t)
-	store := NewStore(dbconn.Global, &observation.TestContext)
+	store := NewStore(db, &observation.TestContext)
 
 	// `func NewMetaData(id, root string, info ToolInfo) *MetaData {`
 	//       ^^^^^^^^^^^
@@ -48,9 +47,9 @@ func TestDatabaseBulkMonikerResults(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
+	db := dbtesting.GetDB(t)
 	populateTestStore(t)
-	store := NewStore(dbconn.Global, &observation.TestContext)
+	store := NewStore(db, &observation.TestContext)
 
 	edgeDefinitionLocations := []Location{
 		{DumpID: testBundleID, Path: "protocol/protocol.go", Range: newRange(410, 5, 410, 9)},

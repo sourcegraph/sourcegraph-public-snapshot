@@ -55,7 +55,6 @@ export const RepositoryBranchesArea: React.FunctionComponent<Props> = ({ useBrea
         <div className="repository-branches-area container">
             <RepositoryBranchesNavbar className="my-3" repo={repo.name} />
             <Switch>
-                {/* eslint-disable react/jsx-no-bind */}
                 <Route
                     path={`${match.url}`}
                     key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
@@ -73,7 +72,6 @@ export const RepositoryBranchesArea: React.FunctionComponent<Props> = ({ useBrea
                     )}
                 />
                 <Route key="hardcoded-key" component={NotFoundPage} />
-                {/* eslint-enable react/jsx-no-bind */}
             </Switch>
         </div>
     )

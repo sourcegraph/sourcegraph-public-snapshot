@@ -1232,21 +1232,27 @@ type SearchUsageStatistics struct {
 // to the updatecheck handler. This struct is marshalled and sent to
 // BigQuery, which requires the input match its schema exactly.
 type SearchUsagePeriod struct {
-	StartTime          time.Time
-	TotalUsers         int32
-	Literal            *SearchEventStatistics
-	Regexp             *SearchEventStatistics
+	StartTime  time.Time
+	TotalUsers int32
+
+	// Counts and latency statistics for different kinds of searches.
+	Literal    *SearchEventStatistics
+	Regexp     *SearchEventStatistics
+	Commit     *SearchEventStatistics
+	Diff       *SearchEventStatistics
+	File       *SearchEventStatistics
+	Structural *SearchEventStatistics
+	Symbol     *SearchEventStatistics
+
+	// Counts statistics for fields.
 	After              *SearchCountStatistics
 	Archived           *SearchCountStatistics
 	Author             *SearchCountStatistics
 	Before             *SearchCountStatistics
 	Case               *SearchCountStatistics
-	Commit             *SearchEventStatistics
 	Committer          *SearchCountStatistics
 	Content            *SearchCountStatistics
 	Count              *SearchCountStatistics
-	Diff               *SearchEventStatistics
-	File               *SearchEventStatistics
 	Fork               *SearchCountStatistics
 	Index              *SearchCountStatistics
 	Lang               *SearchCountStatistics
@@ -1256,11 +1262,11 @@ type SearchUsagePeriod struct {
 	Repohascommitafter *SearchCountStatistics
 	Repohasfile        *SearchCountStatistics
 	Repogroup          *SearchCountStatistics
-	Structural         *SearchEventStatistics
-	Symbol             *SearchEventStatistics
 	Timeout            *SearchCountStatistics
 	Type               *SearchCountStatistics
-	SearchModes        *SearchModeUsageStatistics
+
+	// Search modes statistics is deprecated.
+	SearchModes *SearchModeUsageStatistics
 }
 
 type SearchModeUsageStatistics struct {
@@ -1316,9 +1322,9 @@ type SiteUsageSummary struct {
 	MonitorUniquesWeek      int32
 }
 
-// AggregatedEvent represents the total events, unique users, and
-// latencies over the current month, week, and day for a single event.
-type AggregatedEvent struct {
+// SearchAggregatedEvent represents the total events, unique users, and
+// latencies over the current month, week, and day for a single search event.
+type SearchAggregatedEvent struct {
 	Name           string
 	Month          time.Time
 	Week           time.Time
@@ -1513,6 +1519,7 @@ type SearchContext struct {
 	Public          bool
 	NamespaceUserID int32 // if non-zero, the owner is this user. NamespaceUserID/NamespaceOrgID are mutually exclusive.
 	NamespaceOrgID  int32 // if non-zero, the owner is this organization. NamespaceUserID/NamespaceOrgID are mutually exclusive.
+	UpdatedAt       time.Time
 
 	// We cache namespace names to avoid separate database lookups when constructing the search context spec
 

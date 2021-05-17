@@ -10,10 +10,10 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { PageHeader } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
 import { HeroPage } from '../../../components/HeroPage'
-import { PageHeader } from '../../../components/PageHeader'
 import { PageTitle } from '../../../components/PageTitle'
 import { BatchChangeFields, Scalars } from '../../../graphql-operations'
 import { Description } from '../Description'
@@ -153,7 +153,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                 diff={batchChange.diffStat}
                 className="mb-3"
             />
-            <Description history={history} description={batchChange.description} />
+            <Description description={batchChange.description} />
             <BatchChangeTabs
                 batchChange={batchChange}
                 changesetsCount={batchChange.changesetsStats.total - batchChange.changesetsStats.archived}

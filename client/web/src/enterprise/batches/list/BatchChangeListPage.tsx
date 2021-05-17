@@ -8,10 +8,10 @@ import { filter, map, tap, withLatestFrom } from 'rxjs/operators'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { PageHeader } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
 import { FilteredConnection, FilteredConnectionFilter } from '../../../components/FilteredConnection'
-import { PageHeader } from '../../../components/PageHeader'
 import {
     ListBatchChange,
     Scalars,
@@ -26,11 +26,12 @@ import {
     queryBatchChanges as _queryBatchChanges,
     queryBatchChangesByNamespace,
 } from './backend'
+import styles from './BatchChangeListPage.module.scss'
 import { BatchChangeNode, BatchChangeNodeProps } from './BatchChangeNode'
 import { BatchChangesListEmpty } from './BatchChangesListEmpty'
 import { BatchChangesListIntro } from './BatchChangesListIntro'
 
-export interface BatchChangeListPageProps extends TelemetryProps, Pick<RouteComponentProps, 'history' | 'location'> {
+export interface BatchChangeListPageProps extends TelemetryProps, Pick<RouteComponentProps, 'location'> {
     displayNamespace?: boolean
     /** For testing only. */
     queryBatchChanges?: typeof _queryBatchChanges
@@ -125,7 +126,7 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
                 path={[{ icon: BatchChangesIcon, text: 'Batch Changes' }]}
                 className="test-batches-list-page mb-3"
                 actions={<NewBatchChangeButton location={location} />}
-                byline="Run custom code over hundreds of repositories and manage the resulting changesets"
+                description="Run custom code over hundreds of repositories and manage the resulting changesets"
             />
             <BatchChangesListIntro licensed={licensed} />
             <BatchChangeListTabHeader selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
@@ -135,7 +136,7 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
                     {...props}
                     location={location}
                     nodeComponent={BatchChangeNode}
-                    nodeComponentProps={{ history: props.history, displayNamespace }}
+                    nodeComponentProps={{ displayNamespace }}
                     queryConnection={query}
                     hideSearch={true}
                     defaultFirst={15}
@@ -143,7 +144,7 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
                     noun="batch change"
                     pluralNoun="batch changes"
                     listComponent="div"
-                    listClassName="batch-change-list-page__grid mb-3"
+                    listClassName={classNames(styles.batchChangeListPageGrid, 'mb-3')}
                     className="mb-3"
                     cursorPaging={true}
                     noSummaryIfAllNodesVisible={true}

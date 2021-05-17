@@ -1,6 +1,16 @@
 import * as Monaco from 'monaco-editor'
-import { Observable, fromEventPattern, of } from 'rxjs'
-import { map, first, takeUntil, publishReplay, refCount, switchMap, debounceTime, share } from 'rxjs/operators'
+import { Observable, fromEventPattern, of, asyncScheduler } from 'rxjs'
+import {
+    map,
+    first,
+    takeUntil,
+    publishReplay,
+    refCount,
+    switchMap,
+    debounceTime,
+    share,
+    observeOn,
+} from 'rxjs/operators'
 
 import { SearchPatternType } from '../../graphql-operations'
 import { SearchSuggestion } from '../suggestions'
@@ -41,6 +51,7 @@ export function getProviders(
         globbing: boolean
         enableSmartQuery: boolean
         interpretComments?: boolean
+        isSourcegraphDotCom?: boolean
     }
 ): SearchFieldProviders {
     const scannedQueries = searchQueries.pipe(
@@ -96,10 +107,12 @@ export function getProviders(
                                       scannedQuery.scanned.term,
                                       position,
                                       debouncedDynamicSuggestions,
-                                      options.globbing
+                                      options.globbing,
+                                      options.isSourcegraphDotCom
                                   )
                         ),
-                        takeUntil(fromEventPattern(handler => token.onCancellationRequested(handler)))
+                        observeOn(asyncScheduler),
+                        map(completions => (token.isCancellationRequested ? undefined : completions))
                     )
                     .toPromise(),
         },

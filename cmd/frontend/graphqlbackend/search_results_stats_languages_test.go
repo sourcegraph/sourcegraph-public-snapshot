@@ -9,11 +9,9 @@ import (
 	"reflect"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -21,8 +19,6 @@ import (
 )
 
 func TestSearchResultsStatsLanguages(t *testing.T) {
-	db := new(dbtesting.MockDB)
-
 	wantCommitID := api.CommitID(strings.Repeat("a", 40))
 	rcache.SetupForTest(t)
 
@@ -59,23 +55,17 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 	}
 	defer git.ResetMocks()
 
-	fileMatch := func(path string, lineNumbers ...int32) *FileMatchResolver {
-		var lines []*result.LineMatch
-		for _, n := range lineNumbers {
-			lines = append(lines, &result.LineMatch{LineNumber: n})
+	mkResult := func(path string, lineNumbers ...int32) *result.FileMatch {
+		rn := types.RepoName{
+			Name: "r",
 		}
-		return mkFileMatchResolver(db, result.FileMatch{
-			File: result.File{
-				Path:     path,
-				Repo:     types.RepoName{Name: "r"},
-				CommitID: wantCommitID,
-			},
-			LineMatches: lines,
-		})
+		fm := mkFileMatch(rn, path, lineNumbers...)
+		fm.CommitID = wantCommitID
+		return fm
 	}
 
 	tests := map[string]struct {
-		results  []SearchResultResolver
+		results  []result.Match
 		getFiles []os.FileInfo
 		want     []inventory.Lang // TotalBytes values are incorrect (known issue doc'd in GraphQL schema)
 	}{
@@ -84,27 +74,27 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 			want:    []inventory.Lang{},
 		},
 		"1 entire file": {
-			results: []SearchResultResolver{
-				fileMatch("three.go"),
+			results: []result.Match{
+				mkResult("three.go"),
 			},
 			want: []inventory.Lang{{Name: "Go", TotalBytes: 6, TotalLines: 3}},
 		},
 		"line matches in 1 file": {
-			results: []SearchResultResolver{
-				fileMatch("three.go", 1),
+			results: []result.Match{
+				mkResult("three.go", 1),
 			},
 			want: []inventory.Lang{{Name: "Go", TotalBytes: 6, TotalLines: 1}},
 		},
 		"line matches in 2 files": {
-			results: []SearchResultResolver{
-				fileMatch("two.go", 1, 2),
-				fileMatch("three.go", 1),
+			results: []result.Match{
+				mkResult("two.go", 1, 2),
+				mkResult("three.go", 1),
 			},
 			want: []inventory.Lang{{Name: "Go", TotalBytes: 10, TotalLines: 3}},
 		},
 		"1 entire repo": {
-			results: []SearchResultResolver{
-				NewRepositoryResolver(db, &types.Repo{Name: "r", CreatedAt: time.Now()}),
+			results: []result.Match{
+				&result.RepoMatch{Name: "r"},
 			},
 			getFiles: []os.FileInfo{
 				fileInfo{path: "two.go"},

@@ -1,0 +1,40 @@
+.actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-self: flex-start;
+    margin: 0 0 0 auto;
+    padding: 0;
+    height: 100%;
+    &:first-child {
+        margin-left: 0;
+    }
+    &:last-child {
+        margin-right: 0;
+    }
+}
+
+.action {
+    display: flex;
+    align-items: center;
+    margin: 0 0.5rem;
+    padding: 0;
+    height: 100%;
+    &:first-of-type {
+        margin-left: 0;
+    }
+    &:last-of-type {
+        margin-right: 0;
+    }
+}
+
+// Global rule is necessary because the elements used as action items are handling margin/padding as part of their own styles.
+:is(.action) :global(.nav-link),
+:is(.action) :global(.btn-link) {
+    margin: 0;
+    padding: 0;
+    color: var(--icon-color);
+    &:hover {
+        color: var(--body-color);
+    }
+}

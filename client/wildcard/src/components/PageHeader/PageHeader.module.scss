@@ -1,0 +1,73 @@
+@import '../../global-styles/breakpoints';
+
+// Scale icon size with heading size. 26px font size (h1) -> 22px icon size
+$path-icon-size: (22em / 26);
+
+.container {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    justify-content: space-between;
+
+    @media (--md-breakpoint-up) {
+        flex-direction: row;
+        align-items: flex-end;
+    }
+}
+
+.heading {
+    display: flex;
+    flex-wrap: wrap;
+    flex-grow: 1;
+    align-items: center;
+    margin: 0;
+}
+
+.divider {
+    --divider-color: var(--text-muted);
+    margin-right: 0.5rem;
+
+    :global(.theme-redesign) & {
+        --divider-color: var(--icon-color);
+    }
+
+    color: var(--divider-color);
+}
+
+.path {
+    display: inline-flex;
+    align-items: center;
+
+    &-icon {
+        margin-right: 0.5rem;
+        height: $path-icon-size;
+        width: $path-icon-size;
+    }
+    &-text {
+        margin-right: 0.5rem;
+    }
+}
+
+.annotation {
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.byline {
+    display: block;
+    margin-top: 0.5rem;
+}
+
+.description {
+    display: block;
+    margin-top: 0.5rem;
+    margin-bottom: 0;
+}
+
+.actions {
+    margin-top: 1rem;
+
+    @media (--md-breakpoint-up) {
+        margin-top: 0;
+    }
+}

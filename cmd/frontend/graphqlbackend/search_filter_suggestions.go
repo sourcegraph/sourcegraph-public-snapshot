@@ -5,8 +5,8 @@ import (
 	"regexp"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 )
 
 // SearchFilterSuggestions provides search filter and default value suggestions.

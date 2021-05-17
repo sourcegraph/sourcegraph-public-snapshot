@@ -10,27 +10,27 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
-type RecordExpirer struct {
+type recordExpirer struct {
 	dbStore DBStore
 	ttl     time.Duration
 	metrics *metrics
 }
 
-var _ goroutine.Handler = &RecordExpirer{}
+var _ goroutine.Handler = &recordExpirer{}
 
 // NewRecordExpirer returns a background routine that periodically removes upload
 // and index records that are older than the given TTL. Upload records which have
 // valid LSIF data (not just a historic upload failure record) will only be deleted
 // if it is not visible at the tip of its repository's default branch.
 func NewRecordExpirer(dbStore DBStore, ttl, interval time.Duration, metrics *metrics) goroutine.BackgroundRoutine {
-	return goroutine.NewPeriodicGoroutine(context.Background(), interval, &RecordExpirer{
+	return goroutine.NewPeriodicGoroutine(context.Background(), interval, &recordExpirer{
 		dbStore: dbStore,
 		ttl:     ttl,
 		metrics: metrics,
 	})
 }
 
-func (e *RecordExpirer) Handle(ctx context.Context) error {
+func (e *recordExpirer) Handle(ctx context.Context) error {
 	tx, err := e.dbStore.Transact(ctx)
 	if err != nil {
 		return err
@@ -58,7 +58,7 @@ func (e *RecordExpirer) Handle(ctx context.Context) error {
 	return nil
 }
 
-func (e *RecordExpirer) HandleError(err error) {
+func (e *recordExpirer) HandleError(err error) {
 	e.metrics.numErrors.Inc()
 	log15.Error("Failed to delete old codeintel records", "error", err)
 }

@@ -41,9 +41,10 @@ $alert-padding-x: 0.75rem;
 // Badges
 
 $badge-font-size: 0.75em;
-$badge-font-weight: 600;
-$badge-padding-y: 0.34em;
-$badge-padding-x: 0.6em;
+$badge-font-weight: var(--badge-font-weight);
+$badge-padding-y: var(--badge-padding-y);
+$badge-padding-x: var(--badge-padding-x);
+$badge-border-radius: var(--badge-border-radius);
 
 // Tooltips
 
@@ -51,13 +52,13 @@ $tooltip-bg: var(--tooltip-bg);
 
 // Forms
 
-$form-check-input-margin-y: 0.2em;
+$form-check-input-margin-y: var(--form-check-input-margin-y);
+$form-feedback-font-size: 0.75rem;
 $input-btn-focus-width: 2px;
-$input-focus-border-color: $primary;
 // The default focus ring for buttons is very hard to see, raise opacity.
 // We only show the focus ring when using the keyboard, when the focus ring
 // should be clearly visible.
-$btn-focus-box-shadow: var(--btn-focus-box-shadow);
+$btn-focus-box-shadow: var(--focus-box-shadow);
 $btn-link-disabled-color: var(--btn-link-disabled-color);
 
 // Forms don't manipulate the colors at compile time,
@@ -72,6 +73,17 @@ $input-placeholder-color: var(--input-placeholder-color);
 $input-group-addon-color: var(--input-group-addon-color);
 $input-group-addon-bg: var(--input-group-addon-bg);
 $input-group-addon-border-color: var(--input-group-addon-border-color);
+$input-focus-border-color: var(--input-focus-border-color);
+$input-focus-box-shadow: var(--input-focus-box-shadow);
+
+// Custom Selects
+$custom-select-bg-size: 16px 16px;
+$custom-select-disabled-bg: var(--input-disabled-bg);
+$custom-select-focus-box-shadow: var(--input-focus-box-shadow);
+// Icon: mdi-react/ChevronDownIcon
+$custom-select-indicator: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' fill='#{$redesign-gray-06}' viewBox='0 0 24 24'><path d='M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6-6-6 1.41-1.42z'/></svg>");
+// Hide feedback icon for custom-select
+$custom-select-feedback-icon-size: 0;
 
 // Dropdown
 $dropdown-bg: var(--dropdown-bg);
@@ -103,11 +115,11 @@ $hr-border-color: var(--border-color);
 $hr-margin-y: 0.25rem;
 
 // Disable transitions
-$btn-transition: none;
 $input-transition: none;
+$btn-transition: none;
 
-// './breakpoints' defines $grid-breakpoints for global CSS and exposes breakpoints mixins to CSS modules
-@import './breakpoints';
+// Apply static redesign variables. Should be done before Bootstrap imports.
+@import './variables-redesign';
 @import 'bootstrap/scss/functions';
 @import 'bootstrap/scss/variables';
 @import 'bootstrap/scss/mixins';
@@ -117,7 +129,8 @@ $input-transition: none;
 @import 'bootstrap/scss/progress';
 @import 'bootstrap/scss/tooltip';
 @import 'bootstrap/scss/transitions';
-@import '../../../shared/src/global-styles/icons';
+@import 'wildcard/src/global-styles/breakpoints';
+@import 'shared/src/global-styles/icons';
 @import './background';
 @import './badge';
 @import './card';
@@ -157,9 +170,17 @@ $input-transition: none;
 }
 :focus-visible {
     outline: 0;
-    box-shadow: $btn-focus-box-shadow;
+    box-shadow: var(--focus-box-shadow);
 }
 
-.cursor-pointer {
-    cursor: pointer;
+.cursor-pointer,
+input[type='radio'],
+input[type='checkbox'] {
+    &:not(:disabled) {
+        cursor: pointer;
+    }
+}
+
+.theme-redesign .redesign-d-none {
+    display: none;
 }

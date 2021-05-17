@@ -31,4 +31,19 @@
         flex-direction: column;
         justify-content: center;
     }
+
+    .theme-redesign & {
+        &__icon {
+            color: var(--header-icon-color);
+        }
+
+        &__link {
+            color: var(--body-color);
+            border-radius: var(--border-radius);
+        }
+
+        &__sign-up {
+            border: 1px solid var(--brand-secondary);
+        }
+    }
 }

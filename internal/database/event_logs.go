@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -14,7 +13,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -27,8 +25,6 @@ const (
 
 type EventLogStore struct {
 	*basestore.Store
-
-	once sync.Once
 }
 
 // EventLogs instantiates and returns a new EventLogStore with prepared statements.
@@ -50,17 +46,6 @@ func (l *EventLogStore) Transact(ctx context.Context) (*EventLogStore, error) {
 	return &EventLogStore{Store: txBase}, err
 }
 
-// ensureStore instantiates a basestore.Store if necessary, using the dbconn.Global handle.
-// This function ensures access to dbconn happens after the rest of the code or tests have
-// initialized it.
-func (l *EventLogStore) ensureStore() {
-	l.once.Do(func() {
-		if l.Store == nil {
-			l.Store = basestore.NewWithDB(dbconn.Global, sql.TxOptions{})
-		}
-	})
-}
-
 // Event contains information needed for logging an event.
 type Event struct {
 	Name            string
@@ -73,8 +58,6 @@ type Event struct {
 }
 
 func (l *EventLogStore) Insert(ctx context.Context, e *Event) error {
-	l.ensureStore()
-
 	argument := e.Argument
 	if argument == nil {
 		argument = json.RawMessage([]byte(`{}`))
@@ -99,8 +82,6 @@ func (l *EventLogStore) Insert(ctx context.Context, e *Event) error {
 }
 
 func (l *EventLogStore) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types.Event, error) {
-	l.ensureStore()
-
 	q := sqlf.Sprintf("SELECT id, name, url, user_id, anonymous_user_id, source, argument, version, timestamp FROM event_logs %s", querySuffix)
 	rows, err := l.Query(ctx, q)
 	if err != nil {
@@ -186,8 +167,6 @@ func (l *EventLogStore) CountByUserIDAndEventNames(ctx context.Context, userID i
 
 // countBySQL gets a count of event logs.
 func (l *EventLogStore) countBySQL(ctx context.Context, querySuffix *sqlf.Query) (int, error) {
-	l.ensureStore()
-
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM event_logs %s", querySuffix)
 	r := l.QueryRow(ctx, q)
 	var count int
@@ -207,8 +186,6 @@ func (l *EventLogStore) MaxTimestampByUserIDAndSource(ctx context.Context, userI
 
 // maxTimestampBySQL gets the max timestamp among event logs.
 func (l *EventLogStore) maxTimestampBySQL(ctx context.Context, querySuffix *sqlf.Query) (*time.Time, error) {
-	l.ensureStore()
-
 	q := sqlf.Sprintf("SELECT MAX(timestamp) FROM event_logs %s", querySuffix)
 	r := l.QueryRow(ctx, q)
 
@@ -377,8 +354,6 @@ func (l *EventLogStore) countUniqueUsersPerPeriodBySQL(ctx context.Context, inte
 }
 
 func (l *EventLogStore) countPerPeriodBySQL(ctx context.Context, countExpr, interval, period *sqlf.Query, startDate, endDate time.Time, conds []*sqlf.Query) ([]UsageValue, error) {
-	l.ensureStore()
-
 	allPeriods := sqlf.Sprintf("SELECT generate_series((%s)::timestamp, (%s)::timestamp, (%s)::interval) AS period", startDate, endDate, interval)
 	countByPeriod := sqlf.Sprintf(`SELECT (%s) AS period, COUNT(%s) AS count
 		FROM event_logs
@@ -436,8 +411,6 @@ func (l *EventLogStore) CountUniqueUsersByEventNames(ctx context.Context, startD
 }
 
 func (l *EventLogStore) countUniqueUsersBySQL(ctx context.Context, startDate, endDate time.Time, querySuffix *sqlf.Query) (int, error) {
-	l.ensureStore()
-
 	if querySuffix == nil {
 		querySuffix = sqlf.Sprintf("")
 	}
@@ -451,8 +424,6 @@ func (l *EventLogStore) countUniqueUsersBySQL(ctx context.Context, startDate, en
 }
 
 func (l *EventLogStore) ListUniqueUsersAll(ctx context.Context, startDate, endDate time.Time) ([]int32, error) {
-	l.ensureStore()
-
 	rows, err := l.Handle().DB().QueryContext(ctx, `SELECT user_id
 		FROM event_logs
 		WHERE user_id > 0 AND DATE(TIMEZONE('UTC'::text, timestamp)) >= $1 AND DATE(TIMEZONE('UTC'::text, timestamp)) <= $2
@@ -479,8 +450,6 @@ func (l *EventLogStore) ListUniqueUsersAll(ctx context.Context, startDate, endDa
 // UsersUsageCounts returns a list of UserUsageCounts for all active users that produced 'SearchResultsQueried' and any
 // '%codeintel%' events in the event_logs table.
 func (l *EventLogStore) UsersUsageCounts(ctx context.Context) (counts []types.UserUsageCounts, err error) {
-	l.ensureStore()
-
 	rows, err := l.Handle().DB().QueryContext(ctx, usersUsageCountsQuery)
 	if err != nil {
 		return nil, err
@@ -528,8 +497,6 @@ func (l *EventLogStore) SiteUsage(ctx context.Context) (types.SiteUsageSummary, 
 }
 
 func (l *EventLogStore) siteUsage(ctx context.Context, now time.Time) (summary types.SiteUsageSummary, err error) {
-	l.ensureStore()
-
 	query := sqlf.Sprintf(siteUsageQuery, now, now, now, now)
 
 	err = l.QueryRow(ctx, query).Scan(
@@ -720,8 +687,6 @@ func (l *EventLogStore) CodeIntelligenceSearchBasedCrossRepositoryWAUs(ctx conte
 }
 
 func (l *EventLogStore) codeIntelligenceWeeklyUsersCount(ctx context.Context, eventNames []string, now time.Time) (wau int, _ error) {
-	l.ensureStore()
-
 	var names []*sqlf.Query
 	for _, name := range eventNames {
 		names = append(names, sqlf.Sprintf("%s", name))
@@ -746,8 +711,6 @@ WHERE
 // CodeIntelligenceRepositoryCounts returns the number of repositories with and without an associated
 // and up-to-date code intelligence upload.
 func (l *EventLogStore) CodeIntelligenceRepositoryCounts(ctx context.Context) (withUploads int, withoutUploads int, err error) {
-	l.ensureStore()
-
 	var totalRepositories int
 
 	rows, err := l.Query(ctx, sqlf.Sprintf(codeIntelligenceRepositoryCountsQuery))
@@ -785,14 +748,12 @@ SELECT
 	(SELECT count FROM active_repositories_with_upload) AS repositories_with_uploads
 `
 
-// AggregatedCodeIntelEvents calculates AggregatedEvent for each every unique event type related to code intel.
+// AggregatedCodeIntelEvents calculates CodeIntelAggregatedEvent for each every unique event type related to code intel.
 func (l *EventLogStore) AggregatedCodeIntelEvents(ctx context.Context) ([]types.CodeIntelAggregatedEvent, error) {
 	return l.aggregatedCodeIntelEvents(ctx, time.Now().UTC())
 }
 
 func (l *EventLogStore) aggregatedCodeIntelEvents(ctx context.Context, now time.Time) (events []types.CodeIntelAggregatedEvent, err error) {
-	l.ensureStore()
-
 	var eventNames = []string{
 		"codeintel.lsifHover",
 		"codeintel.lsifDefinitions",
@@ -864,14 +825,12 @@ SELECT
 FROM events GROUP BY name, current_week, language_id;
 `
 
-// AggregatedSearchEvents calculates AggregatedEvent for each every unique event type related to search.
-func (l *EventLogStore) AggregatedSearchEvents(ctx context.Context) ([]types.AggregatedEvent, error) {
+// AggregatedSearchEvents calculates SearchAggregatedEvent for each every unique event type related to search.
+func (l *EventLogStore) AggregatedSearchEvents(ctx context.Context) ([]types.SearchAggregatedEvent, error) {
 	return l.aggregatedSearchEvents(ctx, time.Now().UTC())
 }
 
-func (l *EventLogStore) aggregatedSearchEvents(ctx context.Context, now time.Time) (events []types.AggregatedEvent, err error) {
-	l.ensureStore()
-
+func (l *EventLogStore) aggregatedSearchEvents(ctx context.Context, now time.Time) (events []types.SearchAggregatedEvent, err error) {
 	query := sqlf.Sprintf(aggregatedSearchEventsQuery, now, now, now, now)
 
 	rows, err := l.Query(ctx, query)
@@ -881,7 +840,7 @@ func (l *EventLogStore) aggregatedSearchEvents(ctx context.Context, now time.Tim
 	defer rows.Close()
 
 	for rows.Next() {
-		var event types.AggregatedEvent
+		var event types.SearchAggregatedEvent
 		err := rows.Scan(
 			&event.Name,
 			&event.Month,
@@ -911,7 +870,7 @@ func (l *EventLogStore) aggregatedSearchEvents(ctx context.Context, now time.Tim
 	return events, nil
 }
 
-var searchEventNames = []string{
+var searchLatencyEventNames = []string{
 	"'search.latencies.literal'",
 	"'search.latencies.regexp'",
 	"'search.latencies.structural'",
@@ -939,7 +898,7 @@ WITH events AS (
   FROM event_logs
   WHERE
     timestamp >= ` + makeDateTruncExpression("month", "%s::timestamp") + `
-    AND name IN (` + strings.Join(searchEventNames, ", ") + `)
+    AND name IN (` + strings.Join(searchLatencyEventNames, ", ") + `)
 )
 SELECT
   name,

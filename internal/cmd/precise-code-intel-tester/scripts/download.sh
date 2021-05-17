@@ -11,6 +11,6 @@ INDEXDIR="${DATADIR}/indexes"
 # Ensure target dir exists
 mkdir -p "${INDEXDIR}"
 
-# Download all comprssed index files in parallel
+# Download all compressed index files in parallel
 gsutil -m cp gs://precise-code-intel-integration-testdata/* "${INDEXDIR}"
 gunzip "${INDEXDIR}"/*

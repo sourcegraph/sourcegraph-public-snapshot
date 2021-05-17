@@ -11,6 +11,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -81,7 +82,7 @@ func scanUploads(rows *sql.Rows, queryErr error) (_ []Upload, err error) {
 			return nil, err
 		}
 
-		var uploadedParts = []int{}
+		uploadedParts := make([]int, 0, len(rawUploadedParts))
 		for _, uploadedPart := range rawUploadedParts {
 			uploadedParts = append(uploadedParts, int(uploadedPart.Int32))
 		}
@@ -135,7 +136,12 @@ func (s *Store) GetUploadByID(ctx context.Context, id int) (_ Upload, _ bool, er
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return scanFirstUpload(s.Store.Query(ctx, sqlf.Sprintf(getUploadByIDQuery, id)))
+	authzConds, err := database.AuthzQueryConds(ctx, s.Store.Handle().DB())
+	if err != nil {
+		return Upload{}, false, err
+	}
+
+	return scanFirstUpload(s.Store.Query(ctx, sqlf.Sprintf(getUploadByIDQuery, id, authzConds)))
 }
 
 const uploadRankQueryFragment = `
@@ -172,7 +178,8 @@ SELECT
 FROM lsif_uploads_with_repository_name u
 LEFT JOIN (` + uploadRankQueryFragment + `) s
 ON u.id = s.id
-WHERE u.state != 'deleted' AND u.id = %s
+JOIN repo ON repo.id = u.repository_id
+WHERE u.state != 'deleted' AND u.id = %s AND %s
 `
 
 // DeleteUploadsStuckUploading soft deletes any upload record that has been uploading since the given time.
@@ -257,6 +264,12 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 		conds = append(conds, sqlf.Sprintf("u.uploaded_at > %s", *opts.UploadedAfter))
 	}
 
+	authzConds, err := database.AuthzQueryConds(ctx, tx.Store.Handle().DB())
+	if err != nil {
+		return nil, 0, err
+	}
+	conds = append(conds, authzConds)
+
 	totalCount, _, err := basestore.ScanFirstInt(tx.Store.Query(
 		ctx,
 		sqlf.Sprintf(getUploadsCountQuery, sqlf.Join(conds, " AND ")),
@@ -286,7 +299,9 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 
 const getUploadsCountQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:GetUploads
-SELECT COUNT(*) FROM lsif_uploads_with_repository_name u WHERE %s
+SELECT COUNT(*) FROM lsif_uploads_with_repository_name u
+JOIN repo ON repo.id = u.repository_id
+WHERE %s
 `
 
 const getUploadsQuery = `
@@ -315,18 +330,19 @@ SELECT
 FROM lsif_uploads_with_repository_name u
 LEFT JOIN (` + uploadRankQueryFragment + `) s
 ON u.id = s.id
+JOIN repo ON repo.id = u.repository_id
 WHERE %s ORDER BY %s LIMIT %d OFFSET %d
 `
 
 // makeSearchCondition returns a disjunction of LIKE clauses against all searchable columns of an upload.
 func makeSearchCondition(term string) *sqlf.Query {
 	searchableColumns := []string{
-		"(u.state)::text",
-		`u.repository_name`,
 		"u.commit",
 		"u.root",
-		"u.indexer",
+		"(u.state)::text",
 		"u.failure_message",
+		`u.repository_name`,
+		"u.indexer",
 	}
 
 	var termConds []*sqlf.Query
@@ -413,6 +429,29 @@ func (s *Store) MarkQueued(ctx context.Context, id int, uploadSize *int64) (err 
 const markQueuedQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:MarkQueued
 UPDATE lsif_uploads SET state = 'queued', upload_size = %s WHERE id = %s
+`
+
+// MarkFailed updates the state of the upload to failed, increments the num_failures column and sets the finished_at time
+func (s *Store) MarkFailed(ctx context.Context, id int, reason string) (err error) {
+	ctx, endObservation := s.operations.markFailed.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("id", id),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	return s.Store.Exec(ctx, sqlf.Sprintf(markFailedQuery, reason, id))
+}
+
+const markFailedQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:MarkFailed
+UPDATE
+	lsif_uploads
+SET
+	state = 'failed',
+	finished_at = clock_timestamp(),
+	failure_message = %s,
+	num_failures = num_failures + 1
+WHERE
+	id = %s
 `
 
 var uploadColumnsWithNullRank = []*sqlf.Query{

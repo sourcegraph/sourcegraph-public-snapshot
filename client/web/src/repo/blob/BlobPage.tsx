@@ -254,6 +254,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                 {context => (
                     <GoToRawAction
                         {...context}
+                        telemetryService={props.telemetryService}
                         key="raw-action"
                         repoName={repoName}
                         revision={props.revision}
@@ -306,11 +307,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                 </RepoHeaderContributionPortal>
             )}
             {blobInfoOrError.richHTML && renderMode === 'rendered' && (
-                <RenderedFile
-                    dangerousInnerHTML={blobInfoOrError.richHTML}
-                    location={props.location}
-                    history={props.history}
-                />
+                <RenderedFile dangerousInnerHTML={blobInfoOrError.richHTML} location={props.location} />
             )}
             {!blobInfoOrError.richHTML && blobInfoOrError.aborted && (
                 <div className="blob-page__aborted">

@@ -2,7 +2,6 @@
 
 exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
 <StreamingProgressSkippedPopover
-  history="[History]"
   onSearchAgain={[Function]}
   progress={
     Object {
@@ -61,7 +60,6 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
   }
 >
   <SkippedMessage
-    history="[History]"
     key="error"
     skipped={
       Object {
@@ -104,7 +102,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
               Error loading results
             </span>
             <Memo(ChevronDownIcon)
-              className="icon-inline flex-shrink-0"
+              className="icon-inline flex-shrink-0 streaming-skipped-item__chevron"
             />
           </h4>
         </button>
@@ -149,7 +147,6 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
               className="streaming-skipped-item__message text-left py-1"
               dangerousInnerHTML="<p>There was a network error retrieving search results. Check your Internet connection and try again.</p>
 "
-              history="[History]"
             >
               <div
                 className="streaming-skipped-item__message text-left py-1 markdown"
@@ -171,7 +168,6 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     </div>
   </SkippedMessage>
   <SkippedMessage
-    history="[History]"
     key="shard-timedout"
     skipped={
       Object {
@@ -218,7 +214,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
               Search timed out
             </span>
             <Memo(ChevronLeftIcon)
-              className="icon-inline flex-shrink-0"
+              className="icon-inline flex-shrink-0 streaming-skipped-item__chevron"
             />
           </h4>
         </button>
@@ -263,7 +259,6 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
               className="streaming-skipped-item__message text-left py-1"
               dangerousInnerHTML="<p>Search timed out</p>
 "
-              history="[History]"
             >
               <div
                 className="streaming-skipped-item__message text-left py-1 markdown"
@@ -285,7 +280,6 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     </div>
   </SkippedMessage>
   <SkippedMessage
-    history="[History]"
     key="excluded-fork"
     skipped={
       Object {
@@ -332,7 +326,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
               10k forked repositories excluded
             </span>
             <Memo(ChevronLeftIcon)
-              className="icon-inline flex-shrink-0"
+              className="icon-inline flex-shrink-0 streaming-skipped-item__chevron"
             />
           </h4>
         </button>
@@ -377,7 +371,6 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
               className="streaming-skipped-item__message text-left py-1"
               dangerousInnerHTML="<p>10k forked repositories excluded</p>
 "
-              history="[History]"
             >
               <div
                 className="streaming-skipped-item__message text-left py-1 markdown"
@@ -399,7 +392,6 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     </div>
   </SkippedMessage>
   <SkippedMessage
-    history="[History]"
     key="excluded-archive"
     skipped={
       Object {
@@ -446,7 +438,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
               60k archived repositories excluded
             </span>
             <Memo(ChevronLeftIcon)
-              className="icon-inline flex-shrink-0"
+              className="icon-inline flex-shrink-0 streaming-skipped-item__chevron"
             />
           </h4>
         </button>
@@ -491,7 +483,6 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
               className="streaming-skipped-item__message text-left py-1"
               dangerousInnerHTML="<p>60k archived repositories excluded</p>
 "
-              history="[History]"
             >
               <div
                 className="streaming-skipped-item__message text-left py-1 markdown"
@@ -513,7 +504,6 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     </div>
   </SkippedMessage>
   <SkippedMessage
-    history="[History]"
     key="excluded-archive"
     skipped={
       Object {
@@ -560,7 +550,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
               1 archived
             </span>
             <Memo(ChevronLeftIcon)
-              className="icon-inline flex-shrink-0"
+              className="icon-inline flex-shrink-0 streaming-skipped-item__chevron"
             />
           </h4>
         </button>
@@ -605,7 +595,6 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
               className="streaming-skipped-item__message text-left py-1"
               dangerousInnerHTML="<p>By default we exclude archived repositories. Include them with <code>archived:yes</code> in your query.</p>
 "
-              history="[History]"
             >
               <div
                 className="streaming-skipped-item__message text-left py-1 markdown"

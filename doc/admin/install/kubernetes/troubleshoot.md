@@ -66,12 +66,12 @@ kubectl rollout restart deployment sourcegraph-frontend
 
 ## Common errors
 
-> `Error from server (Forbidden): error when creating "base/frontend/sourcegraph-frontend.Role.yaml": roles.rbac.authorization.k8s.io "sourcegraph-frontend" is forbidden: attempt to grant extra privileges`
+#### `Error from server (Forbidden): error when creating "base/frontend/sourcegraph-frontend.Role.yaml": roles.rbac.authorization.k8s.io "sourcegraph-frontend" is forbidden: attempt to grant extra privileges`
 
 - The account you are using to apply the Kubernetes configuration doesn't have sufficient permissions to create roles.
 - GCP: `kubectl create clusterrolebinding cluster-admin-binding --clusterrole cluster-admin --user $YOUR_EMAIL`
 
-> `kubectl get pv` shows no Persistent Volumes, and/or `kubectl get events` shows a `Failed to provision volume with StorageClass "default"` error.
+#### `kubectl get pv` shows no Persistent Volumes, and/or `kubectl get events` shows a `Failed to provision volume with StorageClass "default"` error.
 
 Check that a storage class named "default" exists via:
 
@@ -83,19 +83,19 @@ If one does exist, run `kubectl get storageclass default -o=yaml` and verify tha
 
 - Google Cloud Platform users may need to [request an increase in storage quota](https://cloud.google.com/compute/quotas).
 
-> `error retrieving RESTMappings to prune: invalid resource networking.k8s.io/v1, Kind=Ingress, Namespaced=true: no matches for kind "Ingress" in version "networking.k8s.io/v1"`
+#### `error retrieving RESTMappings to prune: invalid resource networking.k8s.io/v1, Kind=Ingress, Namespaced=true: no matches for kind "Ingress" in version "networking.k8s.io/v1"`
 - Make sure the client version of your kubectl matches the one used by the server. Run `kubectl version` to check.
 - See the ["Configure network access"](configure.md#security-configure-network-access)
 - Check for duplicate `sourcegraph-frontend` using `kubectl get ingresses -A`
   - Delete duplicate using `kubectl delete ingress sourcegraph-frontend -n default`
 
-> `error when creating "base/cadvisor/cadvisor.ClusterRoleBinding.yaml": subjects[0].namespace: Required value`
+#### `error when creating "base/cadvisor/cadvisor.ClusterRoleBinding.yaml": subjects[0].namespace: Required value`
 Add `namespace: default` to the [base/cadvisor/cadvisor.ClusterRoleBinding.yaml](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/base/cadvisor/cadvisor.ClusterRoleBinding.yaml) file under `subjects`.
 
-> `error when creating "base/prometheus/prometheus.ClusterRoleBinding.yaml": subjects[0].namespace: Required value`
+#### `error when creating "base/prometheus/prometheus.ClusterRoleBinding.yaml": subjects[0].namespace: Required value`
 Add `namespace: default` to the [base/prometheus/prometheus.ClusterRoleBinding.yaml](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/base/prometheus/prometheus.ClusterRoleBinding.yaml) file under `subjects`.
 
-> Many pods are stuck in Pending status. 
+#### Many pods are stuck in Pending status. 
 
 One thing to check for is insufficient resources. To obtain a dump of the logs: `kubectl cluster-info dump > dump.txt`
 
@@ -109,8 +109,14 @@ If you're using Google Cloud Platform, note that the default node type is `n1-st
 with only one CPU, and that some components request a 2-CPU node. When creating a cluster, use
 `--machine-type=n1-standard-16`.
 
-> You can't access Sourcegraph.
+#### `ImagePullBackOff` / `429 Too Many Requests`
+This indicates the instance is getting rate-limited by Docker Hub([link](https://www.docker.com/increase-rate-limits)), where our images are stored, as unauthenticated users are limited to 100 image pulls within a 6 hour period. Possible solutions included:
+- Create a Docker Hub account with a higher rate limit > configure an `ImagePullSecrets` K8S object with your Docker Hub service that contains your docker credentials ([link to tutorial](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/)) > add these credentials to the default service account that's running the same namespace that Sourcegraph is running in ([link to tutorial](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#add-imagepullsecrets-to-a-service-account))
+- Wait until the rate limits are reset
+- [**OPTIONAL**] Upgrade your account to a Docker Pro or Team subscription ([See Docker Hub for more information](https://www.docker.com/increase-rate-limits))
 
+
+#### You can't access Sourcegraph.
 See the [Troubleshooting ingress-nginx docs](https://kubernetes.github.io/ingress-nginx/troubleshooting/). 
 If you followed our instructions, the namespace of the ingress-controller is `ingress-nginx`.
 

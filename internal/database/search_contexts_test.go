@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -70,6 +72,77 @@ func TestSearchContexts_Get(t *testing.T) {
 			}
 			if !reflect.DeepEqual(tt.want, searchContext) {
 				t.Fatalf("wanted %v search contexts, got %v", tt.want, searchContext)
+			}
+		})
+	}
+}
+
+func TestSearchContexts_Update(t *testing.T) {
+	db := dbtesting.GetDB(t)
+	ctx := actor.WithInternalActor(context.Background())
+	u := Users(db)
+	o := Orgs(db)
+	sc := SearchContexts(db)
+
+	user, err := u.Create(ctx, NewUser{Username: "u", Password: "p"})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+	displayName := "My Org"
+	org, err := o.Create(ctx, "myorg", &displayName)
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	created, err := createSearchContexts(ctx, sc, []*types.SearchContext{
+		{Name: "instance", Description: "instance level", Public: true},
+		{Name: "user", Description: "user level", Public: true, NamespaceUserID: user.ID},
+		{Name: "org", Description: "org level", Public: true, NamespaceOrgID: org.ID},
+	})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	instanceSC := created[0]
+	userSC := created[1]
+	orgSC := created[2]
+
+	set := func(sc *types.SearchContext, f func(*types.SearchContext)) *types.SearchContext {
+		copied := *sc
+		f(&copied)
+		return &copied
+	}
+
+	tests := []struct {
+		name    string
+		updated *types.SearchContext
+		revs    []*types.SearchContextRepositoryRevisions
+	}{
+		{
+			name:    "update public",
+			updated: set(instanceSC, func(sc *types.SearchContext) { sc.Public = false }),
+		},
+		{
+			name:    "update description",
+			updated: set(userSC, func(sc *types.SearchContext) { sc.Description = "testdescription" }),
+		},
+		{
+			name:    "update name",
+			updated: set(orgSC, func(sc *types.SearchContext) { sc.Name = "testname" }),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			updated, err := sc.UpdateSearchContextWithRepositoryRevisions(ctx, tt.updated, nil)
+			if err != nil {
+				t.Fatalf("unexpected error: %s", err)
+			}
+
+			// Ignore updatedAt change
+			updated.UpdatedAt = tt.updated.UpdatedAt
+			if diff := cmp.Diff(tt.updated, updated); diff != "" {
+				t.Fatalf("unexpected result: %s", diff)
 			}
 		})
 	}
@@ -165,14 +238,14 @@ func TestSearchContexts_PaginationAndCount(t *testing.T) {
 			name:               "instance-level contexts",
 			wantSearchContexts: createdSearchContexts[1:3],
 			options:            ListSearchContextsOptions{Name: "instance-v", NoNamespace: true},
-			pageOptions:        ListSearchContextsPageOptions{First: 2, AfterID: createdSearchContexts[0].ID},
+			pageOptions:        ListSearchContextsPageOptions{First: 2, After: 1},
 			totalCount:         4,
 		},
 		{
 			name:               "user-level contexts",
 			wantSearchContexts: createdSearchContexts[6:7],
 			options:            ListSearchContextsOptions{NamespaceUserID: user.ID},
-			pageOptions:        ListSearchContextsPageOptions{First: 1, AfterID: createdSearchContexts[5].ID},
+			pageOptions:        ListSearchContextsPageOptions{First: 1, After: 2},
 			totalCount:         3,
 		},
 		{
@@ -392,9 +465,9 @@ func TestSearchContexts_Permissions(t *testing.T) {
 			wantSearchContexts: []*types.SearchContext{searchContexts[0], searchContexts[2], searchContexts[4]},
 		},
 		{
-			name:               "site-admin user2 has access to all contexts",
+			name:               "site-admin user2 has access to all public contexts and private instance-level contexts",
 			userID:             user2.ID,
-			wantSearchContexts: searchContexts,
+			wantSearchContexts: []*types.SearchContext{searchContexts[0], searchContexts[1], searchContexts[2], searchContexts[4]},
 			siteAdmin:          true,
 		},
 	}
@@ -455,16 +528,23 @@ func TestSearchContexts_Permissions(t *testing.T) {
 			wantErr:       "search context not found",
 		},
 		{
-			name:          "authenticated site-admin user2 has access to private user1 context",
+			name:          "authenticated site-admin user2 does not have access to private user1 context",
 			userID:        user2.ID,
 			searchContext: searchContexts[3],
 			siteAdmin:     true,
+			wantErr:       "search context not found",
 		},
 		{
 			name:          "authenticated user1 does not have access to private instance-level context",
 			userID:        user1.ID,
 			searchContext: searchContexts[1],
 			wantErr:       "search context not found",
+		},
+		{
+			name:          "site-admin user2 has access to private instance-level context",
+			userID:        user2.ID,
+			siteAdmin:     true,
+			searchContext: searchContexts[1],
 		},
 		{
 			name:          "authenticated user1 has access to his private context",
@@ -549,5 +629,133 @@ func TestSearchContexts_Delete(t *testing.T) {
 	})
 	if err != nil {
 		t.Fatalf("Expected no error, got %s", err)
+	}
+}
+
+func reverseSearchContextsSlice(s []*types.SearchContext) []*types.SearchContext {
+	copySlice := make([]*types.SearchContext, len(s))
+	copy(copySlice, s)
+	for i, j := 0, len(copySlice)-1; i < j; i, j = i+1, j-1 {
+		copySlice[i], copySlice[j] = copySlice[j], copySlice[i]
+	}
+	return copySlice
+}
+
+func getSearchContextNames(s []*types.SearchContext) []string {
+	names := make([]string, 0, len(s))
+	for _, sc := range s {
+		names = append(names, sc.Name)
+	}
+	return names
+}
+
+func TestSearchContexts_OrderBy(t *testing.T) {
+	db := dbtesting.GetDB(t)
+	internalCtx := actor.WithInternalActor(context.Background())
+	u := Users(db)
+	o := Orgs(db)
+	om := OrgMembers(db)
+	sc := SearchContexts(db)
+
+	user1, err := u.Create(internalCtx, NewUser{Username: "u1", Password: "p"})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+	err = u.SetIsSiteAdmin(internalCtx, user1.ID, false)
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	displayName := "My Org"
+	org, err := o.Create(internalCtx, "myorg", &displayName)
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	_, err = om.Create(internalCtx, org.ID, user1.ID)
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	searchContexts, err := createSearchContexts(internalCtx, sc, []*types.SearchContext{
+		{Name: "A-instance-level", Public: true},
+		{Name: "B-instance-level", Public: false},
+		{Name: "A-user-level", Public: true, NamespaceUserID: user1.ID},
+		{Name: "B-user-level", Public: false, NamespaceUserID: user1.ID},
+		{Name: "A-org-level", Public: true, NamespaceOrgID: org.ID},
+		{Name: "B-org-level", Public: false, NamespaceOrgID: org.ID},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = sc.UpdateSearchContextWithRepositoryRevisions(internalCtx, searchContexts[1], nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = sc.UpdateSearchContextWithRepositoryRevisions(internalCtx, searchContexts[3], nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = sc.UpdateSearchContextWithRepositoryRevisions(internalCtx, searchContexts[5], nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	searchContextsOrderedBySpec := []*types.SearchContext{searchContexts[4], searchContexts[5], searchContexts[2], searchContexts[3], searchContexts[0], searchContexts[1]}
+	searchContextsOrderedByUpdatedAt := []*types.SearchContext{searchContexts[0], searchContexts[2], searchContexts[4], searchContexts[1], searchContexts[3], searchContexts[5]}
+
+	tests := []struct {
+		name                   string
+		orderBy                SearchContextsOrderByOption
+		descending             bool
+		wantSearchContextNames []string
+	}{
+		{
+			name:                   "order by id",
+			orderBy:                SearchContextsOrderByID,
+			wantSearchContextNames: getSearchContextNames(searchContexts),
+		},
+		{
+			name:                   "order by spec",
+			orderBy:                SearchContextsOrderBySpec,
+			wantSearchContextNames: getSearchContextNames(searchContextsOrderedBySpec),
+		},
+		{
+			name:                   "order by updated at",
+			orderBy:                SearchContextsOrderByUpdatedAt,
+			wantSearchContextNames: getSearchContextNames(searchContextsOrderedByUpdatedAt),
+		},
+		{
+			name:                   "order by id descending",
+			orderBy:                SearchContextsOrderByID,
+			descending:             true,
+			wantSearchContextNames: getSearchContextNames(reverseSearchContextsSlice(searchContexts)),
+		},
+		{
+			name:                   "order by spec descending",
+			orderBy:                SearchContextsOrderBySpec,
+			descending:             true,
+			wantSearchContextNames: getSearchContextNames(reverseSearchContextsSlice(searchContextsOrderedBySpec)),
+		},
+		{
+			name:                   "order by updated at descending",
+			orderBy:                SearchContextsOrderByUpdatedAt,
+			descending:             true,
+			wantSearchContextNames: getSearchContextNames(reverseSearchContextsSlice(searchContextsOrderedByUpdatedAt)),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotSearchContexts, err := sc.ListSearchContexts(internalCtx, ListSearchContextsPageOptions{First: 6}, ListSearchContextsOptions{OrderBy: tt.orderBy, OrderByDescending: tt.descending})
+			if err != nil {
+				t.Fatal(err)
+			}
+			gotSearchContextNames := getSearchContextNames(gotSearchContexts)
+			if !reflect.DeepEqual(tt.wantSearchContextNames, gotSearchContextNames) {
+				t.Fatalf("wanted %+v search contexts, got %+v", tt.wantSearchContextNames, gotSearchContextNames)
+			}
+		})
 	}
 }

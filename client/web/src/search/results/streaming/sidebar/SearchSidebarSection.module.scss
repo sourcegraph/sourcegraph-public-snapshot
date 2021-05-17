@@ -1,23 +1,61 @@
 .sidebar-section {
+    &__collapse-button {
+        display: flex;
+        align-items: center;
+        text-align: left;
+        width: 100%;
+        border: none;
+        padding: 0.25rem;
+        margin: 0 -0.25rem;
+    }
+
     &__list {
         list-style-type: none;
-        padding: 0;
-        margin-top: 0.5rem;
+        max-height: 12rem;
+        overflow: auto;
+        // Negative margin and positive padding allows focus rings to not be cut off by overflow:auto
+        margin: 0 -0.125rem;
+        padding: 0.125rem;
+    }
+
+    &__search-box {
+        display: block;
+        margin: 0.5rem 0;
     }
 
     &__list-item {
-        display: block;
+        display: flex;
         font-size: 0.75rem;
-        padding: 0.25rem 0.5rem;
+        padding: 0.25rem 0.375rem;
         border-radius: 3px;
+        width: 100%;
+        text-align: left;
+        overflow-wrap: anywhere;
 
         &:hover {
             background-color: var(--color-bg-2);
             text-decoration: none;
         }
 
+        &:focus {
+            text-decoration: none;
+        }
+
         &:active {
             background-color: var(--color-bg-3);
         }
+
+        &--break-words {
+            word-break: break-all;
+        }
+    }
+
+    &__icon {
+        margin: 0 0.125rem;
+    }
+
+    &__no-results {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.375rem;
     }
 }

@@ -34,7 +34,7 @@ DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT='/root/deploy-sourcegraph-docker'
 
 # 🚨 Update these variables with the correct values from your fork!
 DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL='https://github.com/sourcegraph/deploy-sourcegraph-docker.git'
-DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v3.27.3'
+DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v3.27.5'
 
 # Install git
 sudo apt-get update -y

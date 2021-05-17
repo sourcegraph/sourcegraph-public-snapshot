@@ -95,7 +95,6 @@ export const RepoSettingsArea: React.FunctionComponent<Props> = ({
                 <Switch>
                     {props.repoSettingsAreaRoutes.map(
                         ({ render, path, exact, condition = () => true }) =>
-                            /* eslint-disable react/jsx-no-bind */
                             condition(context) && (
                                 <Route
                                     // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490

@@ -59,21 +59,23 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
       }
     >
       <header
-        className="d-flex flex-column flex-md-row flex-wrap justify-content-between align-items-lg-center mb-3"
+        className="container mb-3"
       >
         <div>
           <h1
-            className="flex-grow-1 d-block m-0"
+            className="heading"
           >
-            <LinkOrSpan>
+            <LinkOrSpan
+              className="path"
+            >
               <span
-                className=""
+                className="path"
               >
                 <CodeMonitoringLogo
-                  className="icon-inline py-1 mr-1"
+                  className="pathIcon"
                 >
                   <svg
-                    className="icon-inline py-1 mr-1"
+                    className="pathIcon"
                     fill="currentColor"
                     height="20"
                     viewBox="0 0 20 20"
@@ -88,7 +90,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                   </svg>
                 </CodeMonitoringLogo>
                 <span
-                  className="mr-2"
+                  className="pathText"
                 >
                   Code monitoring
                 </span>
@@ -97,7 +99,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
           </h1>
         </div>
         <div
-          className="mt-3 mt-md-0"
+          className="actions"
         >
           <AnchorLink
             className="btn btn-secondary"
@@ -502,6 +504,9 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                 pluralNoun="code monitors"
                 query=""
               >
+                <div
+                  className="filtered-connection__summary-container"
+                />
                 <ul
                   className="filtered-connection__nodes"
                   data-testid="nodes"
@@ -596,9 +601,6 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                 >
                                   <span
                                     className="toggle__bar toggle__bar--on"
-                                  />
-                                  <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
                                   />
                                   <span
                                     className="toggle__knob toggle__knob--on"
@@ -709,9 +711,6 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                     className="toggle__bar toggle__bar--on"
                                   />
                                   <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
-                                  />
-                                  <span
                                     className="toggle__knob toggle__knob--on"
                                   />
                                 </button>
@@ -818,9 +817,6 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                 >
                                   <span
                                     className="toggle__bar toggle__bar--on"
-                                  />
-                                  <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
                                   />
                                   <span
                                     className="toggle__knob toggle__knob--on"
@@ -931,9 +927,6 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                     className="toggle__bar toggle__bar--on"
                                   />
                                   <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
-                                  />
-                                  <span
                                     className="toggle__knob toggle__knob--on"
                                   />
                                 </button>
@@ -1040,9 +1033,6 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                 >
                                   <span
                                     className="toggle__bar toggle__bar--on"
-                                  />
-                                  <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
                                   />
                                   <span
                                     className="toggle__knob toggle__knob--on"
@@ -1153,9 +1143,6 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                     className="toggle__bar toggle__bar--on"
                                   />
                                   <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
-                                  />
-                                  <span
                                     className="toggle__knob toggle__knob--on"
                                   />
                                 </button>
@@ -1262,9 +1249,6 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                 >
                                   <span
                                     className="toggle__bar toggle__bar--on"
-                                  />
-                                  <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
                                   />
                                   <span
                                     className="toggle__knob toggle__knob--on"
@@ -1375,9 +1359,6 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                     className="toggle__bar toggle__bar--on"
                                   />
                                   <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
-                                  />
-                                  <span
                                     className="toggle__knob toggle__knob--on"
                                   />
                                 </button>
@@ -1484,9 +1465,6 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                 >
                                   <span
                                     className="toggle__bar toggle__bar--on"
-                                  />
-                                  <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
                                   />
                                   <span
                                     className="toggle__knob toggle__knob--on"
@@ -1597,9 +1575,6 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                     className="toggle__bar toggle__bar--on"
                                   />
                                   <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
-                                  />
-                                  <span
                                     className="toggle__knob toggle__knob--on"
                                   />
                                 </button>
@@ -1617,6 +1592,289 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                     </AnchorLink>
                   </CodeMonitorNode>
                 </ul>
+                <div
+                  className="filtered-connection__summary-container"
+                >
+                  <ConnectionNodesSummary
+                    connection={
+                      Object {
+                        "nodes": Array [
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-0",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-0 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-0",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Test code monitor",
+                            "enabled": true,
+                            "id": "foo0",
+                            "trigger": Object {
+                              "id": "test-0",
+                              "query": "test",
+                            },
+                          },
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-1",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-1 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-1",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Second test code monitor",
+                            "enabled": true,
+                            "id": "foo1",
+                            "trigger": Object {
+                              "id": "test-1",
+                              "query": "test",
+                            },
+                          },
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-2",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-2 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-2",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Third test code monitor",
+                            "enabled": true,
+                            "id": "foo2",
+                            "trigger": Object {
+                              "id": "test-2",
+                              "query": "test",
+                            },
+                          },
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-3",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-3 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-3",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Fourth test code monitor",
+                            "enabled": true,
+                            "id": "foo3",
+                            "trigger": Object {
+                              "id": "test-3",
+                              "query": "test",
+                            },
+                          },
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-4",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-4 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-4",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Fifth test code monitor",
+                            "enabled": true,
+                            "id": "foo4",
+                            "trigger": Object {
+                              "id": "test-4",
+                              "query": "test",
+                            },
+                          },
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-5",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-5 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-5",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Sixth test code monitor",
+                            "enabled": true,
+                            "id": "foo5",
+                            "trigger": Object {
+                              "id": "test-5",
+                              "query": "test",
+                            },
+                          },
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-6",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-6 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-6",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Seventh test code monitor",
+                            "enabled": true,
+                            "id": "foo6",
+                            "trigger": Object {
+                              "id": "test-6",
+                              "query": "test",
+                            },
+                          },
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-7",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-7 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-7",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Eighth test code monitor",
+                            "enabled": true,
+                            "id": "foo7",
+                            "trigger": Object {
+                              "id": "test-7",
+                              "query": "test",
+                            },
+                          },
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-9",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-9 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-9",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Ninth test code monitor",
+                            "enabled": true,
+                            "id": "foo9",
+                            "trigger": Object {
+                              "id": "test-9",
+                              "query": "test",
+                            },
+                          },
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-0",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-0 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-0",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Tenth test code monitor",
+                            "enabled": true,
+                            "id": "foo10",
+                            "trigger": Object {
+                              "id": "test-0",
+                              "query": "test",
+                            },
+                          },
+                        ],
+                        "pageInfo": Object {
+                          "endCursor": "foo10",
+                          "hasNextPage": false,
+                        },
+                        "totalCount": 10,
+                      }
+                    }
+                    connectionQuery=""
+                    hasNextPage={false}
+                    noSummaryIfAllNodesVisible={true}
+                    noun="code monitor"
+                    pluralNoun="code monitors"
+                    totalCount={10}
+                  />
+                </div>
               </ConnectionNodes>
             </div>
           </FilteredConnection>
@@ -1697,21 +1955,23 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
       }
     >
       <header
-        className="d-flex flex-column flex-md-row flex-wrap justify-content-between align-items-lg-center mb-3"
+        className="container mb-3"
       >
         <div>
           <h1
-            className="flex-grow-1 d-block m-0"
+            className="heading"
           >
-            <LinkOrSpan>
+            <LinkOrSpan
+              className="path"
+            >
               <span
-                className=""
+                className="path"
               >
                 <CodeMonitoringLogo
-                  className="icon-inline py-1 mr-1"
+                  className="pathIcon"
                 >
                   <svg
-                    className="icon-inline py-1 mr-1"
+                    className="pathIcon"
                     fill="currentColor"
                     height="20"
                     viewBox="0 0 20 20"
@@ -1726,7 +1986,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                   </svg>
                 </CodeMonitoringLogo>
                 <span
-                  className="mr-2"
+                  className="pathText"
                 >
                   Code monitoring
                 </span>
@@ -1735,7 +1995,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
           </h1>
         </div>
         <div
-          className="mt-3 mt-md-0"
+          className="actions"
         >
           <AnchorLink
             className="btn btn-secondary"
@@ -1958,6 +2218,9 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                 pluralNoun="code monitors"
                 query=""
               >
+                <div
+                  className="filtered-connection__summary-container"
+                />
                 <ul
                   className="filtered-connection__nodes"
                   data-testid="nodes"
@@ -2052,9 +2315,6 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                                 >
                                   <span
                                     className="toggle__bar toggle__bar--on"
-                                  />
-                                  <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
                                   />
                                   <span
                                     className="toggle__knob toggle__knob--on"
@@ -2165,9 +2425,6 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                                     className="toggle__bar toggle__bar--on"
                                   />
                                   <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
-                                  />
-                                  <span
                                     className="toggle__knob toggle__knob--on"
                                   />
                                 </button>
@@ -2276,9 +2533,6 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                                     className="toggle__bar toggle__bar--on"
                                   />
                                   <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
-                                  />
-                                  <span
                                     className="toggle__knob toggle__knob--on"
                                   />
                                 </button>
@@ -2296,6 +2550,107 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                     </AnchorLink>
                   </CodeMonitorNode>
                 </ul>
+                <div
+                  className="filtered-connection__summary-container"
+                >
+                  <ConnectionNodesSummary
+                    connection={
+                      Object {
+                        "nodes": Array [
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-0",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-0 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-0",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Test code monitor",
+                            "enabled": true,
+                            "id": "foo0",
+                            "trigger": Object {
+                              "id": "test-0",
+                              "query": "test",
+                            },
+                          },
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-1",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-1 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-1",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Second test code monitor",
+                            "enabled": true,
+                            "id": "foo1",
+                            "trigger": Object {
+                              "id": "test-1",
+                              "query": "test",
+                            },
+                          },
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-2",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-2 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-2",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Third test code monitor",
+                            "enabled": true,
+                            "id": "foo2",
+                            "trigger": Object {
+                              "id": "test-2",
+                              "query": "test",
+                            },
+                          },
+                        ],
+                        "pageInfo": Object {
+                          "endCursor": "foo3",
+                          "hasNextPage": false,
+                        },
+                        "totalCount": 3,
+                      }
+                    }
+                    connectionQuery=""
+                    hasNextPage={false}
+                    noSummaryIfAllNodesVisible={true}
+                    noun="code monitor"
+                    pluralNoun="code monitors"
+                    totalCount={3}
+                  />
+                </div>
               </ConnectionNodes>
             </div>
           </FilteredConnection>
@@ -2376,21 +2731,23 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
       }
     >
       <header
-        className="d-flex flex-column flex-md-row flex-wrap justify-content-between align-items-lg-center mb-3"
+        className="container mb-3"
       >
         <div>
           <h1
-            className="flex-grow-1 d-block m-0"
+            className="heading"
           >
-            <LinkOrSpan>
+            <LinkOrSpan
+              className="path"
+            >
               <span
-                className=""
+                className="path"
               >
                 <CodeMonitoringLogo
-                  className="icon-inline py-1 mr-1"
+                  className="pathIcon"
                 >
                   <svg
-                    className="icon-inline py-1 mr-1"
+                    className="pathIcon"
                     fill="currentColor"
                     height="20"
                     viewBox="0 0 20 20"
@@ -2405,7 +2762,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                   </svg>
                 </CodeMonitoringLogo>
                 <span
-                  className="mr-2"
+                  className="pathText"
                 >
                   Code monitoring
                 </span>
@@ -2414,7 +2771,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
           </h1>
         </div>
         <div
-          className="mt-3 mt-md-0"
+          className="actions"
         >
           <AnchorLink
             className="btn btn-secondary"
@@ -2871,6 +3228,9 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                 pluralNoun="code monitors"
                 query=""
               >
+                <div
+                  className="filtered-connection__summary-container"
+                />
                 <ul
                   className="filtered-connection__nodes"
                   data-testid="nodes"
@@ -2965,9 +3325,6 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                 >
                                   <span
                                     className="toggle__bar toggle__bar--on"
-                                  />
-                                  <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
                                   />
                                   <span
                                     className="toggle__knob toggle__knob--on"
@@ -3078,9 +3435,6 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                     className="toggle__bar toggle__bar--on"
                                   />
                                   <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
-                                  />
-                                  <span
                                     className="toggle__knob toggle__knob--on"
                                   />
                                 </button>
@@ -3187,9 +3541,6 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                 >
                                   <span
                                     className="toggle__bar toggle__bar--on"
-                                  />
-                                  <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
                                   />
                                   <span
                                     className="toggle__knob toggle__knob--on"
@@ -3300,9 +3651,6 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                     className="toggle__bar toggle__bar--on"
                                   />
                                   <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
-                                  />
-                                  <span
                                     className="toggle__knob toggle__knob--on"
                                   />
                                 </button>
@@ -3409,9 +3757,6 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                 >
                                   <span
                                     className="toggle__bar toggle__bar--on"
-                                  />
-                                  <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
                                   />
                                   <span
                                     className="toggle__knob toggle__knob--on"
@@ -3522,9 +3867,6 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                     className="toggle__bar toggle__bar--on"
                                   />
                                   <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
-                                  />
-                                  <span
                                     className="toggle__knob toggle__knob--on"
                                   />
                                 </button>
@@ -3631,9 +3973,6 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                 >
                                   <span
                                     className="toggle__bar toggle__bar--on"
-                                  />
-                                  <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
                                   />
                                   <span
                                     className="toggle__knob toggle__knob--on"
@@ -3744,9 +4083,6 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                     className="toggle__bar toggle__bar--on"
                                   />
                                   <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
-                                  />
-                                  <span
                                     className="toggle__knob toggle__knob--on"
                                   />
                                 </button>
@@ -3853,9 +4189,6 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                 >
                                   <span
                                     className="toggle__bar toggle__bar--on"
-                                  />
-                                  <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
                                   />
                                   <span
                                     className="toggle__knob toggle__knob--on"
@@ -3966,9 +4299,6 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                     className="toggle__bar toggle__bar--on"
                                   />
                                   <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
-                                  />
-                                  <span
                                     className="toggle__knob toggle__knob--on"
                                   />
                                 </button>
@@ -4075,9 +4405,6 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                 >
                                   <span
                                     className="toggle__bar toggle__bar--on"
-                                  />
-                                  <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
                                   />
                                   <span
                                     className="toggle__knob toggle__knob--on"
@@ -4188,9 +4515,6 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                     className="toggle__bar toggle__bar--on"
                                   />
                                   <span
-                                    className="toggle__bar-shadow toggle__bar-shadow--on"
-                                  />
-                                  <span
                                     className="toggle__knob toggle__knob--on"
                                   />
                                 </button>
@@ -4208,28 +4532,364 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                     </AnchorLink>
                   </CodeMonitorNode>
                 </ul>
-                <p
-                  className="filtered-connection__summary"
-                  data-testid="summary"
+                <div
+                  className="filtered-connection__summary-container"
                 >
-                  <small>
-                    <span>
-                      12
-                       
-                      code monitors
-                       
-                      total
-                    </span>
-                     
-                  </small>
-                </p>
-                <button
-                  className="btn btn-secondary btn-sm filtered-connection__show-more"
-                  onClick={[Function]}
-                  type="button"
-                >
-                  Show more
-                </button>
+                  <ConnectionNodesSummary
+                    connection={
+                      Object {
+                        "nodes": Array [
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-0",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-0 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-0",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Test code monitor",
+                            "enabled": true,
+                            "id": "foo0",
+                            "trigger": Object {
+                              "id": "test-0",
+                              "query": "test",
+                            },
+                          },
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-1",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-1 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-1",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Second test code monitor",
+                            "enabled": true,
+                            "id": "foo1",
+                            "trigger": Object {
+                              "id": "test-1",
+                              "query": "test",
+                            },
+                          },
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-2",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-2 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-2",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Third test code monitor",
+                            "enabled": true,
+                            "id": "foo2",
+                            "trigger": Object {
+                              "id": "test-2",
+                              "query": "test",
+                            },
+                          },
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-3",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-3 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-3",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Fourth test code monitor",
+                            "enabled": true,
+                            "id": "foo3",
+                            "trigger": Object {
+                              "id": "test-3",
+                              "query": "test",
+                            },
+                          },
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-4",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-4 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-4",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Fifth test code monitor",
+                            "enabled": true,
+                            "id": "foo4",
+                            "trigger": Object {
+                              "id": "test-4",
+                              "query": "test",
+                            },
+                          },
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-5",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-5 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-5",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Sixth test code monitor",
+                            "enabled": true,
+                            "id": "foo5",
+                            "trigger": Object {
+                              "id": "test-5",
+                              "query": "test",
+                            },
+                          },
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-6",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-6 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-6",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Seventh test code monitor",
+                            "enabled": true,
+                            "id": "foo6",
+                            "trigger": Object {
+                              "id": "test-6",
+                              "query": "test",
+                            },
+                          },
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-7",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-7 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-7",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Eighth test code monitor",
+                            "enabled": true,
+                            "id": "foo7",
+                            "trigger": Object {
+                              "id": "test-7",
+                              "query": "test",
+                            },
+                          },
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-9",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-9 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-9",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Ninth test code monitor",
+                            "enabled": true,
+                            "id": "foo9",
+                            "trigger": Object {
+                              "id": "test-9",
+                              "query": "test",
+                            },
+                          },
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-0",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-0 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-0",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Tenth test code monitor",
+                            "enabled": true,
+                            "id": "foo10",
+                            "trigger": Object {
+                              "id": "test-0",
+                              "query": "test",
+                            },
+                          },
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-1",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-1 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-1",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Eleventh test code monitor",
+                            "enabled": true,
+                            "id": "foo11",
+                            "trigger": Object {
+                              "id": "test-1",
+                              "query": "test",
+                            },
+                          },
+                          Object {
+                            "actions": Object {
+                              "enabled": true,
+                              "id": "test-2",
+                              "nodes": Array [
+                                Object {
+                                  "enabled": true,
+                                  "id": "test-action-2 ",
+                                  "recipients": Object {
+                                    "nodes": Array [
+                                      Object {
+                                        "id": "baz-2",
+                                      },
+                                    ],
+                                  },
+                                },
+                              ],
+                            },
+                            "description": "Twelfth test code monitor",
+                            "enabled": true,
+                            "id": "foo12",
+                            "trigger": Object {
+                              "id": "test-2",
+                              "query": "test",
+                            },
+                          },
+                        ],
+                        "pageInfo": Object {
+                          "endCursor": "foo12",
+                          "hasNextPage": true,
+                        },
+                        "totalCount": 12,
+                      }
+                    }
+                    connectionQuery=""
+                    hasNextPage={true}
+                    noSummaryIfAllNodesVisible={true}
+                    noun="code monitor"
+                    pluralNoun="code monitors"
+                    totalCount={12}
+                  >
+                    <p
+                      className="filtered-connection__summary"
+                      data-testid="summary"
+                    >
+                      <small>
+                        <span>
+                          12
+                           
+                          code monitors
+                           
+                          total
+                        </span>
+                         
+                      </small>
+                    </p>
+                  </ConnectionNodesSummary>
+                  <button
+                    className="btn btn-sm filtered-connection__show-more btn-secondary"
+                    onClick={[Function]}
+                    type="button"
+                  >
+                    Show more
+                  </button>
+                </div>
               </ConnectionNodes>
             </div>
           </FilteredConnection>

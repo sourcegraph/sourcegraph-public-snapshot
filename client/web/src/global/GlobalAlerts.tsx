@@ -1,6 +1,5 @@
 import { parseISO } from 'date-fns'
 import differenceInDays from 'date-fns/differenceInDays'
-import * as H from 'history'
 import * as React from 'react'
 import { Subscription } from 'rxjs'
 
@@ -21,7 +20,6 @@ import { GlobalAlert } from './GlobalAlert'
 import { Notices } from './Notices'
 
 interface Props extends SettingsCascadeProps {
-    history: H.History
     isSiteAdmin: boolean
 }
 
@@ -64,12 +62,7 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                         {/* Only show if the user has already added repositories; if not yet, the user wouldn't experience any Docker for Mac perf issues anyway. */}
                         {window.context.likelyDockerOnMac && <DockerForMacAlert className="global-alerts__alert" />}
                         {this.state.siteFlags.alerts.map((alert, index) => (
-                            <GlobalAlert
-                                key={index}
-                                alert={alert}
-                                className="global-alerts__alert"
-                                history={this.props.history}
-                            />
+                            <GlobalAlert key={index} alert={alert} className="global-alerts__alert" />
                         ))}
                         {this.state.siteFlags.productSubscription.license &&
                             (() => {
@@ -95,14 +88,28 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                             partialStorageKey={`motd.${motd}`}
                             className="alert alert-info global-alerts__alert"
                         >
-                            <Markdown dangerousInnerHTML={renderMarkdown(motd)} history={this.props.history} />
+                            <Markdown dangerousInnerHTML={renderMarkdown(motd)} />
                         </DismissibleAlert>
                     ))}
+                {process.env.SOURCEGRAPH_API_URL && (
+                    <DismissibleAlert
+                        key="dev-web-server-alert"
+                        partialStorageKey="dev-web-server-alert"
+                        className="alert alert-danger global-alerts__alert"
+                    >
+                        <div>
+                            <strong>Warning!</strong> This build uses data from the proxied API:{' '}
+                            <a target="__blank" href="process.env.SOURCEGRAPH_API_URL">
+                                {process.env.SOURCEGRAPH_API_URL}
+                            </a>
+                        </div>
+                        .
+                    </DismissibleAlert>
+                )}
                 <Notices
                     alertClassName="global-alerts__alert"
                     location="top"
                     settingsCascade={this.props.settingsCascade}
-                    history={this.props.history}
                 />
             </div>
         )

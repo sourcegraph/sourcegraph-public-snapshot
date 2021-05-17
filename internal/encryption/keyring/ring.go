@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/cache"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/cloudkms"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/mounted"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -76,18 +77,27 @@ func NewRing(ctx context.Context, keyConfig *schema.EncryptionKeys) (*Ring, erro
 		return nil, nil
 	}
 
-	var r Ring
-	var err error
+	var (
+		r   Ring
+		err error
+	)
+
+	if keyConfig.BatchChangesCredentialKey != nil {
+		r.BatchChangesCredentialKey, err = NewKey(ctx, keyConfig.BatchChangesCredentialKey, keyConfig)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	if keyConfig.ExternalServiceKey != nil {
-		r.ExternalServiceKey, err = NewKey(ctx, keyConfig.ExternalServiceKey)
+		r.ExternalServiceKey, err = NewKey(ctx, keyConfig.ExternalServiceKey, keyConfig)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	if keyConfig.UserExternalAccountKey != nil {
-		r.UserExternalAccountKey, err = NewKey(ctx, keyConfig.UserExternalAccountKey)
+		r.UserExternalAccountKey, err = NewKey(ctx, keyConfig.UserExternalAccountKey, keyConfig)
 		if err != nil {
 			return nil, err
 		}
@@ -97,22 +107,35 @@ func NewRing(ctx context.Context, keyConfig *schema.EncryptionKeys) (*Ring, erro
 }
 
 type Ring struct {
-	ExternalServiceKey     encryption.Key
-	UserExternalAccountKey encryption.Key
+	BatchChangesCredentialKey encryption.Key
+	ExternalServiceKey        encryption.Key
+	UserExternalAccountKey    encryption.Key
 }
 
-func NewKey(ctx context.Context, k *schema.EncryptionKey) (encryption.Key, error) {
+func NewKey(ctx context.Context, k *schema.EncryptionKey, config *schema.EncryptionKeys) (encryption.Key, error) {
 	if k == nil {
 		return nil, fmt.Errorf("cannot configure nil key")
 	}
+	var (
+		key encryption.Key
+		err error
+	)
 	switch {
 	case k.Cloudkms != nil:
-		return cloudkms.NewKey(ctx, *k.Cloudkms)
+		key, err = cloudkms.NewKey(ctx, *k.Cloudkms)
 	case k.Mounted != nil:
-		return mounted.NewKey(ctx, *k.Mounted)
+		key, err = mounted.NewKey(ctx, *k.Mounted)
 	case k.Noop != nil:
-		return &encryption.NoopKey{}, nil
+		key = &encryption.NoopKey{}
 	default:
 		return nil, fmt.Errorf("couldn't configure key: %v", *k)
 	}
+	if err != nil {
+		return nil, err
+	}
+
+	if config.EnableCache {
+		key, err = cache.New(key, config.CacheSize)
+	}
+	return key, err
 }

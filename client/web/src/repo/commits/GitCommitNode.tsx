@@ -165,7 +165,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                             <ContentCopyIcon className="icon-inline" />
                         </button>
                     </code>
-                    <div className="git-commit-node__sha-and-parents-parents">
+                    <div className="d-flex">
                         {node.parents.length > 0 ? (
                             <>
                                 <span className="git-commit-node__sha-and-parents-label">

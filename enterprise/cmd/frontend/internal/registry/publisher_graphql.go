@@ -34,7 +34,7 @@ func extensionRegistryViewerPublishers(ctx context.Context, db dbutil.DB) ([]gra
 	}
 	publishers = append(publishers, &registryPublisher{user: user})
 
-	orgs, err := database.GlobalOrgs.GetByUserID(ctx, user.DatabaseID())
+	orgs, err := database.Orgs(db).GetByUserID(ctx, user.DatabaseID())
 	if err != nil {
 		return nil, err
 	}
@@ -143,7 +143,7 @@ func (p *registryPublisherID) viewerCanAdminister(ctx context.Context, db dbutil
 		return backend.CheckSiteAdminOrSameUser(ctx, p.userID)
 	case p.orgID != 0:
 		// 🚨 SECURITY: Check that the current user is a member of the publisher org.
-		return backend.CheckOrgAccess(ctx, db, p.orgID)
+		return backend.CheckOrgAccessOrSiteAdmin(ctx, db, p.orgID)
 	default:
 		return errRegistryUnknownPublisher
 	}

@@ -1,0 +1,74 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+$changeset-backdrop: #f3faff;
+
+.visible-changeset-apply-preview-node {
+    &__current-state,
+    &__action,
+    &__information,
+    &__show-details {
+        @media (--xs-breakpoint-down) {
+            // Make it full width in the current row.
+            grid-column: 1 / -1;
+        }
+    }
+    &__bg-expanded {
+        background-color: $changeset-backdrop;
+        @media (--sm-breakpoint-up) {
+            border-top: 1px solid var(--border-color-2);
+            padding: 1.5rem;
+        }
+    }
+    &__status-cell {
+        color: var(--muted);
+        @media (--sm-breakpoint-up) {
+            background-color: var(--oc-blue-0);
+        }
+    }
+    &__list-cell {
+        @media (--sm-breakpoint-up) {
+            padding: 0.5rem;
+        }
+        @media (--xs-breakpoint-down) {
+            padding-top: 0.25rem;
+            padding-bottom: 0.25rem;
+        }
+    }
+    &__expanded-section {
+        grid-column: 1 / -1;
+    }
+    &__commit-change-entry {
+        color: var(--muted);
+    }
+    &__tab-link {
+        &--active {
+            background-color: $changeset-backdrop !important;
+            border-bottom: 1px solid $changeset-backdrop !important;
+        }
+    }
+    &__change-indicator {
+        width: 0.5rem !important;
+        height: 0.5rem !important;
+        vertical-align: middle;
+    }
+}
+
+:global(.theme-dark) {
+    .visible-changeset-apply-preview-node {
+        &__status-cell {
+            color: var(--body-color);
+            @media (--sm-breakpoint-up) {
+                background-color: var(--oc-gray-7);
+            }
+        }
+        &__bg-expanded {
+            background-color: var(--oc-gray-7);
+        }
+        &__tab-link {
+            &--active {
+                background-color: var(--oc-gray-7) !important;
+                border-bottom: 1px solid var(--oc-gray-7) !important;
+            }
+        }
+    }
+}

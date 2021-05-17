@@ -3,8 +3,8 @@ package lsifstore
 import (
 	"database/sql"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
 )
 
 type QualifiedDocumentData struct {

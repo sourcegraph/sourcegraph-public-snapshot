@@ -10,6 +10,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -115,7 +116,12 @@ func (s *Store) GetIndexByID(ctx context.Context, id int) (_ Index, _ bool, err 
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return scanFirstIndex(s.Store.Query(ctx, sqlf.Sprintf(getIndexByIDQuery, id)))
+	authzConds, err := database.AuthzQueryConds(ctx, s.Store.Handle().DB())
+	if err != nil {
+		return Index{}, false, err
+	}
+
+	return scanFirstIndex(s.Store.Query(ctx, sqlf.Sprintf(getIndexByIDQuery, id, authzConds)))
 }
 
 const indexRankQueryFragment = `
@@ -152,7 +158,8 @@ SELECT
 FROM lsif_indexes_with_repository_name u
 LEFT JOIN (` + indexRankQueryFragment + `) s
 ON u.id = s.id
-WHERE u.id = %s
+JOIN repo ON repo.id = u.repository_id
+WHERE u.id = %s AND %s
 `
 
 type GetIndexesOptions struct {
@@ -192,14 +199,13 @@ func (s *Store) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Ind
 		conds = append(conds, sqlf.Sprintf("u.state = %s", opts.State))
 	}
 
-	if len(conds) == 0 {
-		conds = append(conds, sqlf.Sprintf("TRUE"))
+	authzConds, err := database.AuthzQueryConds(ctx, tx.Store.Handle().DB())
+	if err != nil {
+		return nil, 0, err
 	}
+	conds = append(conds, authzConds)
 
-	totalCount, _, err := basestore.ScanFirstInt(tx.Store.Query(
-		ctx,
-		sqlf.Sprintf(`SELECT COUNT(*) FROM lsif_indexes_with_repository_name u WHERE %s`, sqlf.Join(conds, " AND ")),
-	))
+	totalCount, _, err := basestore.ScanFirstInt(tx.Store.Query(ctx, sqlf.Sprintf(getIndexesCountQuery, sqlf.Join(conds, " AND "))))
 	if err != nil {
 		return nil, 0, err
 	}
@@ -215,6 +221,14 @@ func (s *Store) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Ind
 
 	return indexes, totalCount, nil
 }
+
+const getIndexesCountQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/indexes.go:GetIndexes
+SELECT COUNT(*)
+FROM lsif_indexes_with_repository_name u
+JOIN repo ON repo.id = u.repository_id
+WHERE %s
+`
 
 const getIndexesQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/indexes.go:GetIndexes
@@ -242,16 +256,19 @@ SELECT
 FROM lsif_indexes_with_repository_name u
 LEFT JOIN (` + indexRankQueryFragment + `) s
 ON u.id = s.id
+JOIN repo ON repo.id = u.repository_id
 WHERE %s ORDER BY queued_at DESC LIMIT %d OFFSET %d
 `
 
 // makeIndexSearchCondition returns a disjunction of LIKE clauses against all searchable columns of an index.
 func makeIndexSearchCondition(term string) *sqlf.Query {
 	searchableColumns := []string{
-		"(u.state)::text",
-		`u.repository_name`,
 		"u.commit",
+		"(u.state)::text",
 		"u.failure_message",
+		`u.repository_name`,
+		"u.root",
+		"u.indexer",
 	}
 
 	var termConds []*sqlf.Query

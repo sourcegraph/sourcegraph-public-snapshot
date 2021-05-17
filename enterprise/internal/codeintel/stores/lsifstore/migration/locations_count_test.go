@@ -9,19 +9,18 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
-	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
 )
 
 func TestLocationsCountMigrator(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
-	store := lsifstore.NewStore(dbconn.Global, &observation.TestContext)
+	db := dbtesting.GetDB(t)
+	store := lsifstore.NewStore(db, &observation.TestContext)
 	migrator := NewLocationsCountMigrator(store, "lsif_data_definitions", 250)
 	serializer := lsifstore.NewSerializer()
 

@@ -7,6 +7,10 @@ import { Configuration, DefinePlugin, ProgressPlugin, RuleSetUseItem, RuleSetUse
 
 const rootPath = path.resolve(__dirname, '../../../')
 const monacoEditorPaths = [path.resolve(rootPath, 'node_modules', 'monaco-editor')]
+
+// Stories in this file are guarded by the `isChromatic()` check. It will result in noop in all other environments.
+const chromaticStoriesGlob = path.resolve(rootPath, 'client/storybook/src/chromatic-story/Chromatic.story.tsx')
+
 // Due to an issue with constant recompiling (https://github.com/storybookjs/storybook/issues/14342)
 // we need to make the globs more specific (`(web|shared..)` also doesn't work). Once the above issue
 // is fixed, this can be removed and watched for `client/**/*.story.tsx` again.
@@ -32,7 +36,7 @@ const getCSSLoaders = (...loaders: RuleSetUseItem[]): RuleSetUse => [
 ]
 
 const config = {
-    stories: storiesGlobs,
+    stories: [...storiesGlobs, chromaticStoriesGlob],
     addons: [
         '@storybook/addon-knobs',
         '@storybook/addon-actions',
@@ -176,7 +180,14 @@ const config = {
             include: monacoEditorPaths,
             // Make sure Storybook styles get handled by the Storybook config
             exclude: [storybookDirectory],
-            use: ['style-loader', { loader: 'css-loader', options: { url: false } }],
+            use: ['style-loader', { loader: 'css-loader' }],
+        })
+
+        config.module?.rules.unshift({
+            // TTF rule for monaco-editor
+            test: /\.ttf$/,
+            include: monacoEditorPaths,
+            use: ['file-loader'],
         })
 
         config.module.rules.push({

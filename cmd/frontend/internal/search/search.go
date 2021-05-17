@@ -28,6 +28,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/search/run"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
@@ -158,7 +160,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	first := true
 
 	for {
-		var event graphqlbackend.SearchEvent
+		var event streaming.SearchEvent
 		var ok bool
 		select {
 		case event, ok = <-events:
@@ -177,45 +179,13 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		progress.Update(event)
 		filters.Update(event)
 
-		for _, result := range event.Results {
+		for _, match := range event.Results {
 			if display <= 0 {
 				break
 			}
 
-			if fm, ok := result.ToFileMatch(); ok {
-				display = fm.Limit(display)
-
-				if syms := fm.Symbols(); len(syms) > 0 {
-					// Inlining to avoid exporting a bunch of stuff from
-					// graphqlbackend
-					symbols := make([]streamhttp.Symbol, 0, len(syms))
-					for _, sym := range syms {
-						u, err := sym.URL(ctx)
-						if err != nil {
-							continue
-						}
-						symbols = append(symbols, streamhttp.Symbol{
-							URL:           u,
-							Name:          sym.Name(),
-							ContainerName: fromStrPtr(sym.ContainerName()),
-							Kind:          sym.Kind(),
-						})
-					}
-					matchesAppend(fromSymbolMatch(fm, symbols))
-				} else {
-					matchesAppend(fromFileMatch(&fm.FileMatch))
-				}
-			}
-			if repo, ok := result.ToRepository(); ok {
-				display = repo.Limit(display)
-
-				matchesAppend(fromRepository(repo.RepoMatch))
-			}
-			if commit, ok := result.ToCommitSearchResult(); ok {
-				display = commit.Limit(display)
-
-				matchesAppend(fromCommit(commit))
-			}
+			display = match.Limit(display)
+			matchesAppend(fromMatch(match))
 		}
 
 		// Instantly send results if we have not sent any yet.
@@ -308,8 +278,8 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // startSearch will start a search. It returns the events channel which
 // streams out search events. Once events is closed you can call results which
 // will return the results resolver and error.
-func (h *streamHandler) startSearch(ctx context.Context, a *args) (events <-chan graphqlbackend.SearchEvent, inputs graphqlbackend.SearchInputs, results func() (*graphqlbackend.SearchResultsResolver, error)) {
-	eventsC := make(chan graphqlbackend.SearchEvent)
+func (h *streamHandler) startSearch(ctx context.Context, a *args) (events <-chan streaming.SearchEvent, inputs run.SearchInputs, results func() (*graphqlbackend.SearchResultsResolver, error)) {
+	eventsC := make(chan streaming.SearchEvent)
 
 	search, err := h.newSearchResolver(ctx, h.db, &graphqlbackend.SearchArgs{
 		Query:          a.Query,
@@ -317,13 +287,13 @@ func (h *streamHandler) startSearch(ctx context.Context, a *args) (events <-chan
 		PatternType:    strPtr(a.PatternType),
 		VersionContext: strPtr(a.VersionContext),
 
-		Stream: graphqlbackend.StreamFunc(func(event graphqlbackend.SearchEvent) {
+		Stream: streaming.StreamFunc(func(event streaming.SearchEvent) {
 			eventsC <- event
 		}),
 	})
 	if err != nil {
 		close(eventsC)
-		return eventsC, graphqlbackend.SearchInputs{}, func() (*graphqlbackend.SearchResultsResolver, error) {
+		return eventsC, run.SearchInputs{}, func() (*graphqlbackend.SearchResultsResolver, error) {
 			return nil, err
 		}
 	}
@@ -349,7 +319,7 @@ func (h *streamHandler) startSearch(ctx context.Context, a *args) (events <-chan
 
 type searchResolver interface {
 	Results(context.Context) (*graphqlbackend.SearchResultsResolver, error)
-	Inputs() graphqlbackend.SearchInputs
+	Inputs() run.SearchInputs
 }
 
 func defaultNewSearchResolver(ctx context.Context, db dbutil.DB, args *graphqlbackend.SearchArgs) (searchResolver, error) {
@@ -407,7 +377,24 @@ func fromStrPtr(s *string) string {
 	return *s
 }
 
-func fromFileMatch(fm *result.FileMatch) *streamhttp.EventFileMatch {
+func fromMatch(match result.Match) streamhttp.EventMatch {
+	switch v := match.(type) {
+	case *result.FileMatch:
+		return fromFileMatch(v)
+	case *result.RepoMatch:
+		return fromRepository(v)
+	case *result.CommitMatch:
+		return fromCommit(v)
+	default:
+		panic(fmt.Sprintf("unknown match type %T", v))
+	}
+}
+
+func fromFileMatch(fm *result.FileMatch) streamhttp.EventMatch {
+	if syms := fm.Symbols; len(syms) > 0 {
+		return fromSymbolMatch(fm)
+	}
+
 	lineMatches := make([]streamhttp.EventLineMatch, 0, len(fm.LineMatches))
 	for _, lm := range fm.LineMatches {
 		lineMatches = append(lineMatches, streamhttp.EventLineMatch{
@@ -432,7 +419,23 @@ func fromFileMatch(fm *result.FileMatch) *streamhttp.EventFileMatch {
 	}
 }
 
-func fromSymbolMatch(fm *graphqlbackend.FileMatchResolver, symbols []streamhttp.Symbol) *streamhttp.EventSymbolMatch {
+func fromSymbolMatch(fm *result.FileMatch) *streamhttp.EventSymbolMatch {
+	symbols := make([]streamhttp.Symbol, 0, len(fm.Symbols))
+	for _, sym := range fm.Symbols {
+		kind := sym.Symbol.LSPKind()
+		kindString := "UNKNOWN"
+		if kind != 0 {
+			kindString = strings.ToUpper(kind.String())
+		}
+
+		symbols = append(symbols, streamhttp.Symbol{
+			URL:           sym.URL().String(),
+			Name:          sym.Symbol.Name,
+			ContainerName: sym.Symbol.Parent,
+			Kind:          kindString,
+		})
+	}
+
 	var branches []string
 	if fm.InputRev != nil {
 		branches = []string{*fm.InputRev}
@@ -448,7 +451,7 @@ func fromSymbolMatch(fm *graphqlbackend.FileMatchResolver, symbols []streamhttp.
 	}
 }
 
-func fromRepository(rm result.RepoMatch) *streamhttp.EventRepoMatch {
+func fromRepository(rm *result.RepoMatch) *streamhttp.EventRepoMatch {
 	var branches []string
 	if rev := rm.Rev; rev != "" {
 		branches = []string{rev}
@@ -461,25 +464,23 @@ func fromRepository(rm result.RepoMatch) *streamhttp.EventRepoMatch {
 	}
 }
 
-func fromCommit(commit *graphqlbackend.CommitSearchResultResolver) *streamhttp.EventCommitMatch {
-	var content string
-	var ranges [][3]int32
-	if matches := commit.Matches(); len(matches) == 1 {
-		match := matches[0]
-		content = match.Body().Text()
-		highlights := match.Highlights()
-		ranges = make([][3]int32, len(highlights))
-		for i, h := range highlights {
-			ranges[i] = [3]int32{h.Line(), h.Character(), h.Length()}
-		}
+func fromCommit(commit *result.CommitMatch) *streamhttp.EventCommitMatch {
+	content := commit.Body.Value
+
+	highlights := commit.Body.Highlights
+	ranges := make([][3]int32, len(highlights))
+	for i, h := range highlights {
+		ranges[i] = [3]int32{h.Line, h.Character, h.Length}
 	}
+
 	return &streamhttp.EventCommitMatch{
-		Type:    streamhttp.CommitMatchType,
-		Label:   commit.Label().Text(),
-		URL:     commit.URL(),
-		Detail:  commit.Detail().Text(),
-		Content: content,
-		Ranges:  ranges,
+		Type:       streamhttp.CommitMatchType,
+		Label:      commit.Label(),
+		URL:        commit.URL().String(),
+		Detail:     commit.Detail(),
+		Repository: string(commit.RepoName.Name),
+		Content:    content,
+		Ranges:     ranges,
 	}
 }
 

@@ -123,13 +123,13 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Only site admins may update all or a user's external services.
-	// Otherwise, the authenticated user can only update external services under the same namespace.
+	// 🚨 SECURITY: Site admins can only update site level external services.
+	// Otherwise, the current user can only update their own external services.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		if es.NamespaceUserID == 0 {
 			return nil, err
 		} else if actor.FromContext(ctx).UID != es.NamespaceUserID {
-			return nil, errors.New("the authenticated user does not have access to this external service")
+			return nil, errNoAccessExternalService
 		}
 	}
 
@@ -226,7 +226,7 @@ func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *delete
 		if es.NamespaceUserID == 0 {
 			return nil, err
 		} else if actor.FromContext(ctx).UID != es.NamespaceUserID {
-			return nil, errors.New("the authenticated user does not have access to this external service")
+			return nil, errNoAccessExternalService
 		}
 	}
 
@@ -253,7 +253,26 @@ type ExternalServicesArgs struct {
 	After *string
 }
 
-var errMustBeSiteAdminOrSameUser = errors.New("must be site admin or the namespace is same as the authenticated user")
+var errNoAccessExternalService = errors.New("the authenticated user does not have access to this external service")
+
+// checkExternalServiceAccess checks whether the current user is allowed to
+// access the supplied external service.
+//
+// 🚨 SECURITY: Site admins can view external services with no owner, otherwise
+// only the owner of the external service is allowed to access it.
+func checkExternalServiceAccess(ctx context.Context, namespaceUserID int32) error {
+	// Fast path that doesn't need to hit DB as we can get id from context
+	if a := actor.FromContext(ctx); a.IsAuthenticated() && namespaceUserID == a.UID {
+		return nil
+	}
+
+	// Special case when external service has no owner
+	if namespaceUserID == 0 && backend.CheckCurrentUserIsSiteAdmin(ctx) == nil {
+		return nil
+	}
+
+	return errNoAccessExternalService
+}
 
 func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalServicesArgs) (*externalServiceConnectionResolver, error) {
 	var namespaceUserID int32
@@ -271,13 +290,8 @@ func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalSer
 		}
 	}
 
-	// 🚨 SECURITY: Only site admins may read all or a user's external services.
-	// Otherwise, the authenticated user can only read external services under the same namespace.
-	if backend.CheckSiteAdminOrSameUser(ctx, namespaceUserID) != nil {
-		// NOTE: We do not directly return the err here because it contains the desired username,
-		// which then allows attacker to brute force over our database ID and get corresponding
-		// username.
-		return nil, errMustBeSiteAdminOrSameUser
+	if err := checkExternalServiceAccess(ctx, namespaceUserID); err != nil {
+		return nil, err
 	}
 
 	var afterID int64

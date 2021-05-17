@@ -20,6 +20,10 @@ func (e *RevisionNotFoundError) HTTPStatusCode() int {
 	return 404
 }
 
+func (RevisionNotFoundError) NotFound() bool {
+	return true
+}
+
 // IsRevisionNotFound reports if err is a RevisionNotFoundError.
 func IsRevisionNotFound(err error) bool {
 	_, ok := err.(*RevisionNotFoundError)

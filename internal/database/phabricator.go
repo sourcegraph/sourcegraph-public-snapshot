@@ -4,14 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"sync"
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -20,8 +18,6 @@ import (
 
 type PhabricatorStore struct {
 	*basestore.Store
-
-	once sync.Once
 }
 
 // Phabricator instantiates and returns a new PhabricatorStore with prepared statements.
@@ -43,17 +39,6 @@ func (s *PhabricatorStore) Transact(ctx context.Context) (*PhabricatorStore, err
 	return &PhabricatorStore{Store: txBase}, err
 }
 
-// ensureStore instantiates a basestore.Store if necessary, using the dbconn.Global handle.
-// This function ensures access to dbconn happens after the rest of the code or tests have
-// initialized it.
-func (s *PhabricatorStore) ensureStore() {
-	s.once.Do(func() {
-		if s.Store == nil {
-			s.Store = basestore.NewWithDB(dbconn.Global, sql.TxOptions{})
-		}
-	})
-}
-
 type errPhabricatorRepoNotFound struct {
 	args []interface{}
 }
@@ -65,8 +50,6 @@ func (err errPhabricatorRepoNotFound) Error() string {
 func (err errPhabricatorRepoNotFound) NotFound() bool { return true }
 
 func (p *PhabricatorStore) Create(ctx context.Context, callsign string, name api.RepoName, phabURL string) (*types.PhabricatorRepo, error) {
-	p.ensureStore()
-
 	r := &types.PhabricatorRepo{
 		Callsign: callsign,
 		Name:     name,
@@ -83,8 +66,6 @@ func (p *PhabricatorStore) Create(ctx context.Context, callsign string, name api
 }
 
 func (p *PhabricatorStore) CreateOrUpdate(ctx context.Context, callsign string, name api.RepoName, phabURL string) (*types.PhabricatorRepo, error) {
-	p.ensureStore()
-
 	r := &types.PhabricatorRepo{
 		Callsign: callsign,
 		Name:     name,
@@ -115,8 +96,6 @@ func (p *PhabricatorStore) CreateIfNotExists(ctx context.Context, callsign strin
 }
 
 func (p *PhabricatorStore) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*types.PhabricatorRepo, error) {
-	p.ensureStore()
-
 	rows, err := p.Handle().DB().QueryContext(ctx, "SELECT id, callsign, repo_name, url FROM phabricator_repos "+query, args...)
 	if err != nil {
 		return nil, err
@@ -153,7 +132,6 @@ func (p *PhabricatorStore) GetByName(ctx context.Context, name api.RepoName) (*t
 	if Mocks.Phabricator.GetByName != nil {
 		return Mocks.Phabricator.GetByName(name)
 	}
-	p.ensureStore()
 
 	opt := ExternalServicesListOptions{
 		Kinds: []string{extsvc.KindPhabricator},

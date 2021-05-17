@@ -161,9 +161,7 @@ export function BarChart<Datum extends object>(props: BarChartProps<Datum>): Rea
                                         height={barHeight}
                                         width={xScale.bandwidth()}
                                         fill={fill}
-                                        /* eslint-disable-next-line react/jsx-no-bind */
                                         onMouseLeave={handleMouseLeave}
-                                        /* eslint-disable-next-line react/jsx-no-bind */
                                         onMouseMove={event => {
                                             if (tooltipTimeout) {
                                                 clearTimeout(tooltipTimeout)

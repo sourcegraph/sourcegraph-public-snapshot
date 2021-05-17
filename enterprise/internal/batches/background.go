@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
@@ -18,6 +19,7 @@ import (
 func InitBackgroundJobs(
 	ctx context.Context,
 	db dbutil.DB,
+	key encryption.Key,
 	cf *httpcli.Factory,
 ) interface {
 	// EnqueueChangesetSyncs will queue the supplied changesets to sync ASAP.
@@ -26,11 +28,11 @@ func InitBackgroundJobs(
 	// the registry can start or stop the syncer associated with the service
 	HandleExternalServiceSync(es api.ExternalService)
 } {
-	cstore := store.New(db)
+	cstore := store.New(db, key)
 
 	// We use an internal actor so that we can freely load dependencies from
 	// the database without repository permissions being enforced.
-	// We do check for repository permissions conciously in the Rewirer when
+	// We do check for repository permissions consciously in the Rewirer when
 	// creating new changesets and in the executor, when talking to the code
 	// host, we manually check for BatchChangesCredentials.
 	ctx = actor.WithInternalActor(ctx)

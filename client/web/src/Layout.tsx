@@ -17,6 +17,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { parseHash } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { AuthenticatedUser, authRequired as authRequiredObservable } from './auth'
 import { CodeMonitoringProps } from './code-monitoring'
@@ -44,7 +45,7 @@ import { RepoHeaderActionButton } from './repo/RepoHeader'
 import { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
 import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
-import { LayoutRouteProps } from './routes'
+import { LayoutRouteProps, LayoutRouteComponentProps } from './routes'
 import { Settings } from './schema/settings.schema'
 import {
     parseSearchURLQuery,
@@ -225,6 +226,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         '/react-hooks',
         '/android',
         '/stanford',
+        '/stackstorm',
         '/cncf',
     ]
     const isRepogroupPage = repogroupPages.includes(props.location.pathname)
@@ -236,12 +238,13 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const isSignInOrUp =
         props.location.pathname === '/sign-in' ||
         props.location.pathname === '/sign-up' ||
-        props.location.pathname === '/password-reset'
+        props.location.pathname === '/password-reset' ||
+        props.location.pathname === '/post-sign-up'
 
     // TODO Change this behavior when we have global focus management system
     // Need to know this for disable autofocus on nav search input
-    // and preserve autofocus for first textarea at survey page
-    const isSurveyPage = routeMatch === '/survey/:score?'
+    // and preserve autofocus for first textarea at survey page, creation UI etc.
+    const isSearchAutoFocusRequired = routeMatch === '/survey/:score?' || routeMatch === '/insights'
 
     const authRequired = useObservable(authRequiredObservable)
 
@@ -251,6 +254,8 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         props.location.pathname === '/search/console'
 
     const breadcrumbProps = useBreadcrumbs()
+
+    const [isRedesignEnabled] = useRedesignToggle()
 
     // Control browser extension discoverability animation here.
     // `Layout` is the lowest common ancestor of `UserNavItem` (target) and `RepoContainer` (trigger)
@@ -265,10 +270,11 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         return <Redirect to={{ ...props.location, pathname: props.location.pathname.slice(0, -1) }} />
     }
 
-    const context = {
+    const context: LayoutRouteComponentProps<any> = {
         ...props,
         ...breadcrumbProps,
         onExtensionAlertDismissed,
+        isRedesignEnabled,
     }
 
     return (
@@ -280,14 +286,13 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
             <GlobalAlerts
                 isSiteAdmin={!!props.authenticatedUser && props.authenticatedUser.siteAdmin}
                 settingsCascade={props.settingsCascade}
-                history={props.history}
             />
             {!isSiteInit && <SurveyToast authenticatedUser={props.authenticatedUser} />}
             {!isSiteInit && !isSignInOrUp && (
                 <GlobalNavbar
                     {...props}
                     authRequired={!!authRequired}
-                    isSearchRelatedPage={isSearchRelatedPage}
+                    showSearchBox={isSearchRelatedPage && !isSearchHomepage && !isRepogroupPage}
                     variant={
                         hideGlobalSearchInput
                             ? 'no-search-input'
@@ -299,7 +304,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                     }
                     hideNavLinks={false}
                     minimalNavLinks={minimalNavLinks}
-                    isSearchAutoFocusRequired={!isSurveyPage}
+                    isSearchAutoFocusRequired={!isSearchAutoFocusRequired}
                     isExtensionAlertAnimating={isExtensionAlertAnimating}
                 />
             )}
@@ -313,7 +318,6 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                     }
                 >
                     <Switch>
-                        {/* eslint-disable react/jsx-no-bind */}
                         {props.routes.map(
                             ({ render, condition = () => true, ...route }) =>
                                 condition(context) && (
@@ -329,7 +333,6 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                                     />
                                 )
                         )}
-                        {/* eslint-enable react/jsx-no-bind */}
                     </Switch>
                 </Suspense>
             </ErrorBoundary>

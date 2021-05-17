@@ -1,7 +1,8 @@
 import * as React from 'react'
 import { NavLink } from 'react-router-dom'
 
-import { PageHeader } from '../../components/PageHeader'
+import { PageHeader } from '@sourcegraph/wildcard'
+
 import { NavItemWithIconDescriptor } from '../../util/contributions'
 import { UserAvatar } from '../UserAvatar'
 

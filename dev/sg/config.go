@@ -30,6 +30,16 @@ func ParseConfigFile(name string) (*Config, error) {
 		conf.Commands[name] = cmd
 	}
 
+	for name, cmd := range conf.Tests {
+		cmd.Name = name
+		conf.Tests[name] = cmd
+	}
+
+	for name, check := range conf.Checks {
+		check.Name = name
+		conf.Checks[name] = check
+	}
+
 	return &conf, nil
 }
 
@@ -39,8 +49,73 @@ type Command struct {
 	Install          string            `yaml:"install"`
 	Env              map[string]string `yaml:"env"`
 	Watch            []string          `yaml:"watch"`
-	InstallDocDarwin string            `yaml:"install_doc.darwin"`
-	InstallDocLinux  string            `yaml:"install_doc.linux"`
+	InstallDocDarwin string            `yaml:"installDoc.darwin"`
+	InstallDocLinux  string            `yaml:"installDoc.linux"`
+	IgnoreStdout     bool              `yaml:"ignoreStdout"`
+	IgnoreStderr     bool              `yaml:"ignoreStderr"`
+	DefaultArgs      string            `yaml:"defaultArgs"`
+
+	// ATTENTION: If you add a new field here, be sure to also handle that
+	// field in `Merge` (below).
+}
+
+func (c Command) Merge(other Command) Command {
+	merged := c
+
+	if other.Name != merged.Name && other.Name != "" {
+		merged.Name = other.Name
+	}
+	if other.Cmd != merged.Cmd && other.Cmd != "" {
+		merged.Cmd = other.Cmd
+	}
+	if other.Install != merged.Install && other.Install != "" {
+		merged.Install = other.Install
+	}
+	if other.InstallDocDarwin != merged.InstallDocDarwin && other.InstallDocDarwin != "" {
+		merged.InstallDocDarwin = other.InstallDocDarwin
+	}
+	if other.InstallDocLinux != merged.InstallDocLinux && other.InstallDocLinux != "" {
+		merged.InstallDocLinux = other.InstallDocLinux
+	}
+	if other.IgnoreStdout != merged.IgnoreStdout && !merged.IgnoreStdout {
+		merged.IgnoreStdout = other.IgnoreStdout
+	}
+	if other.IgnoreStderr != merged.IgnoreStderr && !merged.IgnoreStderr {
+		merged.IgnoreStderr = other.IgnoreStderr
+	}
+	if other.DefaultArgs != merged.DefaultArgs && other.DefaultArgs != "" {
+		merged.DefaultArgs = other.DefaultArgs
+	}
+
+	for k, v := range other.Env {
+		merged.Env[k] = v
+	}
+
+	if !equal(merged.Watch, other.Watch) {
+		merged.Watch = other.Watch
+	}
+
+	return merged
+}
+
+func equal(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	for i, v := range a {
+		if v != b[i] {
+			return false
+		}
+	}
+
+	return true
+}
+
+type Check struct {
+	Name        string `yaml:"-"`
+	Cmd         string `yaml:"cmd"`
+	FailMessage string `yaml:"failMessage"`
 }
 
 type Config struct {
@@ -48,6 +123,7 @@ type Config struct {
 	Commands    map[string]Command  `yaml:"commands"`
 	Commandsets map[string][]string `yaml:"commandsets"`
 	Tests       map[string]Command  `yaml:"tests"`
+	Checks      map[string]Check    `yaml:"checks"`
 }
 
 // Merges merges the top-level entries of two Config objects, with the receiver
@@ -58,7 +134,11 @@ func (c *Config) Merge(other *Config) {
 	}
 
 	for k, v := range other.Commands {
-		c.Commands[k] = v
+		if original, ok := c.Commands[k]; ok {
+			c.Commands[k] = original.Merge(v)
+		} else {
+			c.Commands[k] = v
+		}
 	}
 
 	for k, v := range other.Commandsets {
@@ -66,6 +146,10 @@ func (c *Config) Merge(other *Config) {
 	}
 
 	for k, v := range other.Tests {
-		c.Tests[k] = v
+		if original, ok := c.Tests[k]; ok {
+			c.Tests[k] = original.Merge(v)
+		} else {
+			c.Tests[k] = v
+		}
 	}
 }

@@ -1,5 +1,7 @@
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
+import classNames from 'classnames'
 import * as H from 'history'
+import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useCallback, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
@@ -11,6 +13,7 @@ import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
+import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { requestGraphQL } from '../backend/graphql'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../components/FilteredConnection'
@@ -119,6 +122,10 @@ const GitReferencePopoverNode: React.FunctionComponent<GitReferencePopoverNodePr
             node={node}
             url={replaceRevisionInURL(location.pathname + location.search + location.hash, node.abbrevName)}
             ancestorIsLink={false}
+            className={classNames(
+                'connection-popover__node-link',
+                isCurrent && 'connection-popover__node-link--active'
+            )}
         >
             {isCurrent && (
                 <CircleChevronLeftIcon
@@ -151,7 +158,7 @@ const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({ node, curr
                 <code className="revisions-popover-git-commit-node__oid" title={node.oid}>
                     {node.abbreviatedOID}
                 </code>
-                <span className="revisions-popover-git-commit-node__message">{node.subject.slice(0, 200)}</span>
+                <small className="revisions-popover-git-commit-node__message">{node.subject.slice(0, 200)}</small>
                 {isCurrent && (
                     <CircleChevronLeftIcon
                         className="icon-inline connection-popover__node-link-icon"
@@ -175,6 +182,9 @@ interface Props {
 
     history: H.History
     location: H.Location
+
+    /* Callback to dismiss the parent popover wrapper */
+    togglePopover: () => void
 }
 
 type RevisionsPopoverTabID = 'branches' | 'tags' | 'commits'
@@ -206,6 +216,7 @@ export const RevisionsPopover: React.FunctionComponent<Props> = props => {
 
     const [tabIndex, setTabIndex] = useLocalStorage(LAST_TAB_STORAGE_KEY, 0)
     const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
+    const [isRedesignEnabled] = useRedesignToggle()
 
     const queryGitBranches = (args: FilteredConnectionQueryArguments): Observable<GitRefConnectionFields> =>
         queryGitReferences({ ...args, repo: props.repo, type: GitRefType.GIT_BRANCH, withBehindAhead: false })
@@ -222,26 +233,42 @@ export const RevisionsPopover: React.FunctionComponent<Props> = props => {
             revision: props.currentRev || props.defaultBranch,
         })
 
+    const sharedPanelProps = {
+        className: 'connection-popover__content',
+        inputClassName: 'connection-popover__input',
+        listClassName: 'connection-popover__nodes',
+        showMoreClassName: 'connection-popover__show-more',
+        inputPlaceholder: 'Find...',
+        compact: true,
+        autoFocus: true,
+        history: props.history,
+        location: props.location,
+        noSummaryIfAllNodesVisible: !isRedesignEnabled,
+        useURLQuery: false,
+    }
+
     return (
-        <Tabs defaultIndex={tabIndex} className="revisions-popover" onChange={handleTabsChange}>
-            <div className="tablist-wrapper w-100 align-items-center">
+        <Tabs defaultIndex={tabIndex} className="revisions-popover connection-popover" onChange={handleTabsChange}>
+            <div className="tablist-wrapper revisions-popover__tabs">
                 <TabList>
                     {TABS.map(({ label, id }) => (
-                        <Tab className="d-flex flex-1 justify-content-around" key={id} data-test-tab={id}>
-                            {label}
+                        <Tab key={id} data-test-tab={id}>
+                            <span className="tablist-wrapper--tab-label">{label}</span>
                         </Tab>
                     ))}
                 </TabList>
+                <button onClick={props.togglePopover} type="button" className="btn btn-icon" aria-label="Close">
+                    <CloseIcon className="icon-inline" />
+                </button>
             </div>
-            <TabPanels className="revisions-popover__tabs">
+            <TabPanels>
                 {TABS.map(tab => (
-                    <TabPanel className="" key={tab.id}>
+                    <TabPanel key={tab.id}>
                         {tab.type ? (
                             <FilteredConnection<GitRefFields, Omit<GitReferencePopoverNodeProps, 'node'>>
+                                {...sharedPanelProps}
                                 key={tab.id}
-                                className="connection-popover__content"
-                                showMoreClassName="connection-popover__show-more"
-                                compact={true}
+                                defaultFirst={50}
                                 noun={tab.noun}
                                 pluralNoun={tab.pluralNoun}
                                 queryConnection={tab.type === GitRefType.GIT_BRANCH ? queryGitBranches : queryGitTags}
@@ -251,33 +278,20 @@ export const RevisionsPopover: React.FunctionComponent<Props> = props => {
                                     currentRevision: props.currentRev,
                                     location: props.location,
                                 }}
-                                defaultFirst={50}
-                                autoFocus={true}
-                                noSummaryIfAllNodesVisible={true}
-                                useURLQuery={false}
-                                history={props.history}
-                                location={props.location}
                             />
                         ) : (
                             <FilteredConnection<GitCommitAncestorFields, Omit<GitCommitNodeProps, 'node'>>
+                                {...sharedPanelProps}
                                 key={tab.id}
-                                className="connection-popover__content"
-                                compact={true}
+                                defaultFirst={15}
                                 noun={tab.noun}
                                 pluralNoun={tab.pluralNoun}
-                                // eslint-disable-next-line react/jsx-no-bind
                                 queryConnection={queryRepositoryCommits}
                                 nodeComponent={GitCommitNode}
                                 nodeComponentProps={{
                                     currentCommitID: props.currentCommitID,
                                     location: props.location,
                                 }}
-                                defaultFirst={15}
-                                autoFocus={true}
-                                history={props.history}
-                                location={props.location}
-                                noSummaryIfAllNodesVisible={true}
-                                useURLQuery={false}
                             />
                         )}
                     </TabPanel>

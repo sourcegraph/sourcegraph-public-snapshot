@@ -17,6 +17,12 @@ type:diff repo:@*refs/heads/ after:"5 days ago"
 -file:\.(json|md|txt)$ hack|todo|kludge|fixme
 ```
 
+[Removal of TODOs in the repository commit log](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+type:diff+TODO+select:commit.diff.removed+&patternType=literal)
+
+```sgquery
+repo:^github\.com/sourcegraph/sourcegraph$ type:diff select:commit.diff.removed TODO
+```
+
 [New usages of a function](https://sourcegraph.com/search?q=repo:github%5C.com/sourcegraph/+type:diff+after:%221+week+ago%22+%5C.subscribe%5C%28+lang:typescript&patternType=regexp)<br/>
 
 ```sgquery

@@ -14,9 +14,12 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 
+	"github.com/graph-gophers/graphql-go/errors"
 	"github.com/graph-gophers/graphql-go/gqltesting"
 	"github.com/inconshreveable/log15"
 
@@ -112,6 +115,7 @@ func TestMain(m *testing.M) {
 
 func TestAffiliatedRepositories(t *testing.T) {
 	resetMocks()
+	rcache.SetupForTest(t)
 	database.Mocks.Users.Tags = func(ctx context.Context, userID int32) (map[string]bool, error) {
 		return map[string]bool{}, nil
 	}
@@ -153,7 +157,7 @@ func TestAffiliatedRepositories(t *testing.T) {
 	database.Mocks.Users.GetByID = func(ctx context.Context, userID int32) (*types.User, error) {
 		return &types.User{
 			ID:        userID,
-			SiteAdmin: userID == 1,
+			SiteAdmin: userID == 2,
 		}, nil
 	}
 	database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
@@ -166,28 +170,34 @@ func TestAffiliatedRepositories(t *testing.T) {
 				buf := &bytes.Buffer{}
 				enc := json.NewEncoder(buf)
 				switch r.URL.Path {
-				case "/api/graphql": //github
-					enc.Encode(repoResponse{
-						Data: data{
-							Viewer: viewer{
-								Repositories: repositories{
-									Nodes: []githubRepository{
-										{
-											NameWithOwner: "test-user/test",
-											IsPrivate:     false,
-										},
-									},
-								},
+				case "/api/v3/user/repos": // github
+					page := r.URL.Query().Get("page")
+					if page == "1" {
+						if err := enc.Encode([]githubRepository{
+							{
+								FullName: "test-user/test",
+								Private:  false,
 							},
-						},
-					})
+						}); err != nil {
+							t.Fatal(err)
+						}
+					}
+					// Stop on the second page
+					if page == "2" {
+						if err := enc.Encode([]githubRepository{}); err != nil {
+							t.Fatal(err)
+						}
+					}
+
 				case "/api/v4/projects": //gitlab
-					enc.Encode([]gitlabRepository{
+					if err := enc.Encode([]gitlabRepository{
 						{
 							PathWithNamespace: "test-user2/test2",
 							Visibility:        "public",
 						},
-					})
+					}); err != nil {
+						t.Fatal(err)
+					}
 				default:
 					t.Fatalf("unexpected path: %s", r.URL.Path)
 				}
@@ -248,6 +258,41 @@ func TestAffiliatedRepositories(t *testing.T) {
 			`,
 		},
 	})
+
+	// Confirm that a site admin cannot list someone else's repos
+	ctx = actor.WithActor(ctx, &actor.Actor{
+		UID: 2,
+	})
+
+	gqltesting.RunTests(t, []*gqltesting.Test{
+		{
+			Context: ctx,
+			Schema:  mustParseGraphQLSchema(t),
+			Query: `
+			{
+				affiliatedRepositories(
+					user: "VXNlcjox"
+				) {
+					nodes {
+						name,
+						private,
+						codeHost {
+							displayName
+						}
+					}
+				}
+			}
+			`,
+			ExpectedResult: `null`,
+			ExpectedErrors: []*errors.QueryError{
+				{
+					Path:          []interface{}{"affiliatedRepositories"},
+					Message:       "Must be authenticated as user with id 1",
+					ResolverError: &backend.InsufficientAuthorizationError{Message: fmt.Sprintf("Must be authenticated as user with id %d", 1)},
+				},
+			},
+		},
+	})
 }
 
 type roundTripFunc func(*http.Request) (*http.Response, error)
@@ -258,23 +303,8 @@ func (f roundTripFunc) RoundTrip(r *http.Request) (*http.Response, error) {
 
 // copied from the github client, just the fields we need
 type githubRepository struct {
-	NameWithOwner string
-	IsPrivate     bool
-}
-
-type repoResponse struct {
-	Data data `json:"data"`
-}
-type data struct {
-	Viewer viewer `json:"viewer"`
-}
-
-type viewer struct {
-	Repositories repositories `json:"repositories"`
-}
-
-type repositories struct {
-	Nodes []githubRepository `json:"nodes"`
+	FullName string `json:"full_name"`
+	Private  bool   `json:"private"`
 }
 
 type gitlabRepository struct {

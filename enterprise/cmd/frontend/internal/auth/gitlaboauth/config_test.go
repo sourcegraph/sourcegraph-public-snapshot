@@ -63,7 +63,7 @@ func TestParseConfig(t *testing.T) {
 						AuthURL:  "https://gitlab.com/oauth/authorize",
 						TokenURL: "https://gitlab.com/oauth/token",
 					},
-					Scopes: []string{"api", "read_user"},
+					Scopes: []string{"read_user", "read_api"},
 				}),
 			},
 		},
@@ -104,7 +104,7 @@ func TestParseConfig(t *testing.T) {
 						AuthURL:  "https://gitlab.com/oauth/authorize",
 						TokenURL: "https://gitlab.com/oauth/token",
 					},
-					Scopes: []string{"api", "read_user"},
+					Scopes: []string{"read_user", "read_api"},
 				}),
 				{
 					ClientID:     "my-client-id-2",
@@ -120,7 +120,7 @@ func TestParseConfig(t *testing.T) {
 						AuthURL:  "https://mycompany.com/oauth/authorize",
 						TokenURL: "https://mycompany.com/oauth/token",
 					},
-					Scopes: []string{"api", "read_user"},
+					Scopes: []string{"read_user", "read_api"},
 				}),
 			},
 		},
@@ -128,27 +128,39 @@ func TestParseConfig(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gotProviders, gotProblems := parseConfig(tt.args.cfg)
-			for _, p := range gotProviders {
+			gotConfigs := make(map[schema.GitLabAuthProvider]oauth2.Config)
+			for k, p := range gotProviders {
 				if p, ok := p.(*oauth.Provider); ok {
 					p.Login, p.Callback = nil, nil
+					gotConfigs[k] = p.OAuth2Config()
+					p.OAuth2Config = nil
 					p.ProviderOp.Login, p.ProviderOp.Callback = nil, nil
 				}
 			}
+			wantConfigs := make(map[schema.GitLabAuthProvider]oauth2.Config)
 			for k, p := range tt.wantProviders {
 				k := k
 				if q, ok := p.(*oauth.Provider); ok {
 					q.SourceConfig = schema.AuthProviders{Gitlab: &k}
+					wantConfigs[k] = q.OAuth2Config()
+					q.OAuth2Config = nil
 				}
 			}
 			if !reflect.DeepEqual(gotProviders, tt.wantProviders) {
 				dmp := diffmatchpatch.New()
-
 				t.Errorf("parseConfig() gotProviders != tt.wantProviders, diff:\n%s",
 					dmp.DiffPrettyText(dmp.DiffMain(spew.Sdump(tt.wantProviders), spew.Sdump(gotProviders), false)),
 				)
 			}
 			if !reflect.DeepEqual(gotProblems.Messages(), tt.wantProblems) {
 				t.Errorf("parseConfig() gotProblems = %v, want %v", gotProblems, tt.wantProblems)
+			}
+
+			if !reflect.DeepEqual(gotConfigs, wantConfigs) {
+				dmp := diffmatchpatch.New()
+				t.Errorf("parseConfig() gotConfigs != wantConfigs, diff:\n%s",
+					dmp.DiffPrettyText(dmp.DiffMain(spew.Sdump(gotConfigs), spew.Sdump(wantConfigs), false)),
+				)
 			}
 		})
 	}
@@ -157,7 +169,7 @@ func TestParseConfig(t *testing.T) {
 func provider(serviceID string, oauth2Config oauth2.Config) *oauth.Provider {
 	op := oauth.ProviderOp{
 		AuthPrefix:   authPrefix,
-		OAuth2Config: oauth2Config,
+		OAuth2Config: func(extraScopes ...string) oauth2.Config { return oauth2Config },
 		StateConfig:  getStateConfig(),
 		ServiceID:    serviceID,
 		ServiceType:  extsvc.TypeGitLab,

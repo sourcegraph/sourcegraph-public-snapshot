@@ -9,6 +9,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/go-diff/diff"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -53,7 +54,7 @@ func SetDerivedState(ctx context.Context, repoStore *database.RepoStore, c *btyp
 	// synced, and it's still complete, then we don't need to do any further
 	// work: the diffstat should still be correct, and this way we don't need to
 	// rely on gitserver having the head OID still available.
-	if c.SyncState.IsComplete && c.ExternalState != btypes.ChangesetExternalStateOpen {
+	if c.SyncState.IsComplete && c.Complete() {
 		return
 	}
 
@@ -584,7 +585,7 @@ func computeSyncState(ctx context.Context, c *btypes.Changeset, repo api.RepoNam
 	return &btypes.ChangesetSyncState{
 		BaseRefOid: base,
 		HeadRefOid: head,
-		IsComplete: c.ExternalState != btypes.ChangesetExternalStateOpen,
+		IsComplete: c.Complete(),
 	}, nil
 }
 
@@ -612,7 +613,7 @@ func computeRev(ctx context.Context, repo api.RepoName, getOid, getRef func() (s
 // changesetRepoName looks up a api.RepoName based on the RepoID within a changeset.
 func changesetRepoName(ctx context.Context, repoStore *database.RepoStore, c *btypes.Changeset) (api.RepoName, error) {
 	// We need to use an internal actor here as the repo-updater otherwise has no access to the repo.
-	repo, err := repoStore.Get(actor.WithActor(ctx, &actor.Actor{Internal: true}), c.RepoID)
+	repo, err := repoStore.Get(actor.WithInternalActor(ctx), c.RepoID)
 	if err != nil {
 		return "", err
 	}

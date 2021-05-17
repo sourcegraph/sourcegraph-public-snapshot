@@ -16,7 +16,13 @@ import { SearchContextMenu } from './SearchContextMenu'
 import { defaultTourOptions } from './tour-options'
 
 export interface SearchContextDropdownProps
-    extends Omit<SearchContextProps, 'showSearchContext'>,
+    extends Omit<
+            SearchContextProps,
+            | 'showSearchContext'
+            | 'convertVersionContextToSearchContext'
+            | 'isSearchContextSpecAvailable'
+            | 'fetchSearchContext'
+        >,
         Pick<PatternTypeProps, 'patternType'>,
         Pick<CaseSensitivityProps, 'caseSensitive'>,
         VersionContextProps {
@@ -138,10 +144,15 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         tour.cancel()
     }, [tour])
 
-    const [isDisabled, setIsDisabled] = useState(false)
+    const isContextFilterInQuery = useMemo(() => filterExists(query, FilterType.context), [query])
 
-    // Disable the dropdown if the query contains a context filter
-    useEffect(() => setIsDisabled(filterExists(query, FilterType.context)), [query])
+    // Disable the dropdown if the query contains a context filter or if a version context is active
+    const isDisabled = isContextFilterInQuery || !!versionContext
+    const disabledTooltipText = isContextFilterInQuery
+        ? 'Overridden by query'
+        : versionContext
+        ? 'Overriden by version context'
+        : ''
 
     const submitOnToggle = useCallback(
         (selectedSearchContextSpec: string): void => {
@@ -187,7 +198,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
                     )}
                     color="link"
                     disabled={isDisabled}
-                    data-tooltip={isDisabled ? 'Overridden by query' : ''}
+                    data-tooltip={disabledTooltipText}
                 >
                     <code className="search-context-dropdown__button-content test-selected-search-context-spec">
                         <span className="search-filter-keyword">context:</span>

@@ -30,7 +30,7 @@ export interface SearchResultsFilterBarsProps {
     quickLinks?: QuickLink[] | undefined
     onFilterClick: (value: string) => void
     onShowMoreResultsClick: (value: string) => void
-    calculateShowMoreResultsCount: () => number
+    calculateShowMoreResultsCount: () => number | string
 }
 
 const FilterCarousel: React.FunctionComponent<{ children: JSX.Element | JSX.Element[] }> = ({ children }) => {

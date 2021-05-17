@@ -94,14 +94,11 @@ func (r *ChangesetRewirer) createChangesetForSpec(repo *types.Repo, spec *btypes
 
 		BatchChanges:         []btypes.BatchChangeAssoc{{BatchChangeID: r.batchChangeID}},
 		OwnedByBatchChangeID: r.batchChangeID,
-		CurrentSpecID:        spec.ID,
 
 		PublicationState: btypes.ChangesetPublicationStateUnpublished,
 	}
 
-	// Copy over diff stat from the spec.
-	diffStat := spec.DiffStat()
-	newChangeset.SetDiffStat(&diffStat)
+	newChangeset.SetCurrentSpec(spec)
 
 	// Set up the initial queue state of the changeset.
 	newChangeset.ResetReconcilerState(global.DefaultReconcilerEnqueueState())
@@ -113,7 +110,8 @@ func (r *ChangesetRewirer) updateChangesetToNewSpec(c *btypes.Changeset, spec *b
 	if c.ReconcilerState == btypes.ReconcilerStateCompleted {
 		c.PreviousSpecID = c.CurrentSpecID
 	}
-	c.CurrentSpecID = spec.ID
+
+	c.SetCurrentSpec(spec)
 
 	// Ensure that the changeset is attached to the batch change
 	c.Attach(r.batchChangeID)

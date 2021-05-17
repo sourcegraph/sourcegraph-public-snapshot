@@ -6,17 +6,22 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 )
 
-func (s *Store) CreateSiteCredential(ctx context.Context, c *btypes.SiteCredential) error {
+func (s *Store) CreateSiteCredential(ctx context.Context, c *btypes.SiteCredential, credential auth.Authenticator) error {
 	if c.CreatedAt.IsZero() {
 		c.CreatedAt = s.now()
 	}
 
 	if c.UpdatedAt.IsZero() {
 		c.UpdatedAt = c.CreatedAt
+	}
+
+	c.Key = s.key
+	if err := c.SetAuthenticator(ctx, credential); err != nil {
+		return err
 	}
 
 	q := createSiteCredentialQuery(c)
@@ -27,10 +32,16 @@ func (s *Store) CreateSiteCredential(ctx context.Context, c *btypes.SiteCredenti
 
 var createSiteCredentialQueryFmtstr = `
 -- source: enterprise/internal/batches/store/site_credentials.go:CreateSiteCredential
-INSERT INTO
-	batch_changes_site_credentials (external_service_type, external_service_id, credential, created_at, updated_at)
+INSERT INTO	batch_changes_site_credentials (
+	external_service_type,
+	external_service_id,
+	credential,
+	encryption_key_id,
+	created_at,
+	updated_at
+)
 VALUES
-	(%s, %s, %s, %s, %s)
+	(%s, %s, %s, %s, %s, %s)
 RETURNING
 	%s
 `
@@ -40,7 +51,8 @@ func createSiteCredentialQuery(c *btypes.SiteCredential) *sqlf.Query {
 		createSiteCredentialQueryFmtstr,
 		c.ExternalServiceType,
 		c.ExternalServiceID,
-		&database.NullAuthenticator{A: &c.Credential},
+		c.EncryptedCredential,
+		c.EncryptionKeyID,
 		c.CreatedAt,
 		c.UpdatedAt,
 		sqlf.Join(siteCredentialColumns, ","),
@@ -86,7 +98,7 @@ type GetSiteCredentialOpts struct {
 func (s *Store) GetSiteCredential(ctx context.Context, opts GetSiteCredentialOpts) (*btypes.SiteCredential, error) {
 	q := getSiteCredentialQuery(opts)
 
-	var cred btypes.SiteCredential
+	cred := btypes.SiteCredential{Key: s.key}
 	err := s.query(ctx, q, func(sc scanner) error { return scanSiteCredential(&cred, sc) })
 	if err != nil {
 		return nil, err
@@ -129,6 +141,15 @@ func getSiteCredentialQuery(opts GetSiteCredentialOpts) *sqlf.Query {
 
 type ListSiteCredentialsOpts struct {
 	LimitOpts
+	ForUpdate bool
+
+	// TODO(batch-changes-site-credential-encryption): remove when no longer
+	// needed.
+	RequiresMigration bool
+
+	// TODO(batch-changes-site-credential-encryption): remove when no longer
+	// needed.
+	OnlyEncrypted bool
 }
 
 func (s *Store) ListSiteCredentials(ctx context.Context, opts ListSiteCredentialsOpts) (cs []*btypes.SiteCredential, next int64, err error) {
@@ -136,7 +157,7 @@ func (s *Store) ListSiteCredentials(ctx context.Context, opts ListSiteCredential
 
 	cs = make([]*btypes.SiteCredential, 0, opts.DBLimit())
 	err = s.query(ctx, q, func(sc scanner) (err error) {
-		var c btypes.SiteCredential
+		c := btypes.SiteCredential{Key: s.key}
 		if err := scanSiteCredential(&c, sc); err != nil {
 			return err
 		}
@@ -157,12 +178,78 @@ var listSiteCredentialsQueryFmtstr = `
 SELECT
 	%s
 FROM batch_changes_site_credentials
+WHERE %s
 ORDER BY external_service_type ASC, external_service_id ASC
+%s  -- optional FOR UPDATE
 `
 
 func listSiteCredentialsQuery(opts ListSiteCredentialsOpts) *sqlf.Query {
+	preds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
+	if opts.RequiresMigration {
+		preds = append(preds, sqlf.Sprintf("encryption_key_id IN ('', %s)", btypes.SiteCredentialPlaceholderEncryptionKeyID))
+	}
+	if opts.OnlyEncrypted {
+		preds = append(preds, sqlf.Sprintf("encryption_key_id <> ''"))
+	}
+
+	forUpdate := &sqlf.Query{}
+	if opts.ForUpdate {
+		forUpdate = sqlf.Sprintf("FOR UPDATE")
+	}
+
 	return sqlf.Sprintf(
 		listSiteCredentialsQueryFmtstr+opts.ToDB(),
+		sqlf.Join(siteCredentialColumns, ","),
+		sqlf.Join(preds, "AND"),
+		forUpdate,
+	)
+}
+
+func (s *Store) UpdateSiteCredential(ctx context.Context, c *btypes.SiteCredential) error {
+	c.UpdatedAt = s.now()
+
+	updated := &btypes.SiteCredential{Key: s.key}
+	q := s.updateSiteCredentialQuery(c)
+	if err := s.query(ctx, q, func(sc scanner) error {
+		return scanSiteCredential(updated, sc)
+	}); err != nil {
+		return err
+	}
+
+	if updated.ID == 0 {
+		return ErrNoResults
+	}
+	*c = *updated
+	return nil
+}
+
+const updateSiteCredentialQueryFmtstr = `
+-- source: enterprise/internal/batches/store/site_credentials.go:UpdateSiteCredential
+UPDATE
+	batch_changes_site_credentials
+SET
+	external_service_type = %s,
+	external_service_id = %s,
+	credential = %s,
+	encryption_key_id = %s,
+	created_at = %s,
+	updated_at = %s
+WHERE
+	id = %s
+RETURNING
+	%s
+`
+
+func (s *Store) updateSiteCredentialQuery(c *btypes.SiteCredential) *sqlf.Query {
+	return sqlf.Sprintf(
+		updateSiteCredentialQueryFmtstr,
+		c.ExternalServiceType,
+		c.ExternalServiceID,
+		c.EncryptedCredential,
+		c.EncryptionKeyID,
+		c.CreatedAt,
+		c.UpdatedAt,
+		c.ID,
 		sqlf.Join(siteCredentialColumns, ","),
 	)
 }
@@ -172,6 +259,7 @@ var siteCredentialColumns = []*sqlf.Query{
 	sqlf.Sprintf("external_service_type"),
 	sqlf.Sprintf("external_service_id"),
 	sqlf.Sprintf("credential"),
+	sqlf.Sprintf("encryption_key_id"),
 	sqlf.Sprintf("created_at"),
 	sqlf.Sprintf("updated_at"),
 }
@@ -181,7 +269,8 @@ func scanSiteCredential(c *btypes.SiteCredential, sc scanner) error {
 		&c.ID,
 		&c.ExternalServiceType,
 		&c.ExternalServiceID,
-		&database.NullAuthenticator{A: &c.Credential},
+		&c.EncryptedCredential,
+		&c.EncryptionKeyID,
 		&dbutil.NullTime{Time: &c.CreatedAt},
 		&dbutil.NullTime{Time: &c.UpdatedAt},
 	)

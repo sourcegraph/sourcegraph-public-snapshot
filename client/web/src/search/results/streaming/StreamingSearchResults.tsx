@@ -123,6 +123,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                     results: {
                         results_count: results.results.length,
                         any_cloning: results.progress.skipped.some(skipped => skipped.reason === 'repository-cloning'),
+                        alert: results.alert ? results.alert.title : null,
                     },
                 },
             })
@@ -201,11 +202,11 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
             <PageTitle key="page-title" title={query} />
 
             {isRedesignEnabled ? (
-                <SearchSidebar {...props} query={props.navbarSearchQueryState.query} />
+                <SearchSidebar {...props} query={props.navbarSearchQueryState.query} filters={results?.filters} />
             ) : (
                 <StreamingSearchResultsFilterBars {...props} results={results} />
             )}
-            <div className="search-results-list">
+            <div className={classNames('search-results-list', styles.streamingSearchResultsContainer)}>
                 <div className="d-lg-flex mb-2 align-items-end flex-wrap">
                     {!isRedesignEnabled && (
                         <SearchResultTypeTabs
@@ -227,7 +228,6 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                             <StreamingProgress
                                 progress={results?.progress || { durationMs: 0, matchCount: 0, skipped: [] }}
                                 state={results?.state || 'loading'}
-                                history={props.history}
                                 onSearchAgain={onSearchAgain}
                                 showTrace={!!trace}
                             />

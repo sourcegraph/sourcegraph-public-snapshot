@@ -1,0 +1,30 @@
+.form-series {
+    &__item + &__item {
+        margin-top: 0.5rem;
+    }
+
+    &__add-button {
+        transition: background-color 0.2s ease, color 0.2s ease;
+
+        &:hover {
+            background-color: var(--link-hover-bg-color);
+        }
+    }
+}
+
+.form-series-card {
+    transition: background-color 0.2s ease;
+
+    &:hover {
+        background-color: var(--link-hover-bg-color-2);
+    }
+
+    &__color {
+        width: 2rem;
+        height: 2rem;
+        align-self: center;
+        flex-grow: 0;
+        border-radius: 50%;
+        background-color: currentColor;
+    }
+}

@@ -98,11 +98,13 @@ Create a batch change by specifying a search query to get a list of repositories
 - [Updating Go import statements using Comby](tutorials/updating_go_import_statements.md)
 - [Update base images in Dockerfiles](tutorials/update_base_images_in_dockerfiles.md)
 - [Search and replace specific terms](tutorials/search_and_replace_specific_terms.md)
+- [Examples repository](https://github.com/sourcegraph/batch-change-examples)
 
 ## References
 
 - [Requirements](references/requirements.md)
 - [Batch spec YAML reference](references/batch_spec_yaml_reference.md)
 - [Batch spec templating](references/batch_spec_templating.md)
+- [Batch spec cheat sheet](references/batch_spec_cheat_sheet.md)
 - [Troubleshooting](references/troubleshooting.md)
 - [CLI](../cli/references/batch/index.md)

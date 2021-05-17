@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useLayoutEffect } from 'react'
 import { MemoryRouter, MemoryRouterProps } from 'react-router'
 import { useDarkMode } from 'storybook-dark-mode'
 
@@ -13,7 +13,7 @@ export interface WebStoryProps extends MemoryRouterProps {
 }
 
 // Prepend global CSS styles to document head to keep them before CSS modules
-function prependCSSToDocumentHead(css: string): HTMLStyleElement {
+export function prependCSSToDocumentHead(css: string): HTMLStyleElement {
     const styleTag = document.createElement('style')
     styleTag.textContent = css
     document.head.prepend(styleTag)
@@ -32,7 +32,7 @@ export const BrandedStory: React.FunctionComponent<
 > = ({ children: Children, styles = brandedStyles, ...memoryRouterProps }) => {
     const isLightTheme = !useDarkMode()
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         const styleTag = prependCSSToDocumentHead(styles)
 
         return () => {

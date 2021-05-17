@@ -2,13 +2,13 @@ import { ProxyMarked, proxyMarker, Remote } from 'comlink'
 import { BehaviorSubject, Observer } from 'rxjs'
 
 import { SettingsCascade } from '../../../settings/settings'
-import { MainThreadAPI } from '../../contract'
+import { ClientAPI } from '../../client/api/api'
 import { pretendRemote } from '../../util'
 import { proxySubscribable } from '../api/common'
 
 import { initializeExtensionHostTest } from './test-helpers'
 
-const noopMain = pretendRemote<MainThreadAPI>({
+const noopMain = pretendRemote<ClientAPI>({
     getEnabledExtensions: () => proxySubscribable(new BehaviorSubject([])),
     getScriptURLForExtension: () => undefined,
 })
@@ -27,7 +27,7 @@ const observe = (onValue: (value: string) => void): Remote<Observer<string> & Pr
 describe('QueryTransformers', () => {
     it('returns the same query with no registered transformers', () => {
         const { extensionHostAPI } = initializeExtensionHostTest(
-            { initialSettings, clientApplication: 'sourcegraph' },
+            { initialSettings, clientApplication: 'sourcegraph', sourcegraphURL: 'https://example.com/' },
             noopMain
         )
 
@@ -38,7 +38,7 @@ describe('QueryTransformers', () => {
 
     it('can work with Promise based transformers', async () => {
         const { extensionHostAPI, extensionAPI } = initializeExtensionHostTest(
-            { initialSettings, clientApplication: 'sourcegraph' },
+            { initialSettings, clientApplication: 'sourcegraph', sourcegraphURL: 'https://example.com/' },
             noopMain
         )
         extensionAPI.search.registerQueryTransformer({ transformQuery: query => Promise.resolve(query + '!') })
@@ -50,7 +50,7 @@ describe('QueryTransformers', () => {
 
     it('emits a new transformed value if there is a new transformer', () => {
         const { extensionHostAPI, extensionAPI } = initializeExtensionHostTest(
-            { initialSettings, clientApplication: 'sourcegraph' },
+            { initialSettings, clientApplication: 'sourcegraph', sourcegraphURL: 'https://example.com/' },
             noopMain
         )
 
@@ -64,7 +64,7 @@ describe('QueryTransformers', () => {
 
     it('emits new value if a transformer was removed', () => {
         const { extensionHostAPI, extensionAPI } = initializeExtensionHostTest(
-            { initialSettings, clientApplication: 'sourcegraph' },
+            { initialSettings, clientApplication: 'sourcegraph', sourcegraphURL: 'https://example.com/' },
             noopMain
         )
 
@@ -82,7 +82,7 @@ describe('QueryTransformers', () => {
 
     it('emits modified query if there are any transformers registered', () => {
         const { extensionHostAPI, extensionAPI } = initializeExtensionHostTest(
-            { initialSettings, clientApplication: 'sourcegraph' },
+            { initialSettings, clientApplication: 'sourcegraph', sourcegraphURL: 'https://example.com/' },
             noopMain
         )
 
@@ -95,7 +95,7 @@ describe('QueryTransformers', () => {
 
     it('cancels previous transformer chains', async () => {
         const { extensionHostAPI, extensionAPI } = initializeExtensionHostTest(
-            { initialSettings, clientApplication: 'sourcegraph' },
+            { initialSettings, clientApplication: 'sourcegraph', sourcegraphURL: 'https://example.com/' },
             noopMain
         )
 

@@ -19,8 +19,6 @@ import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/setting
 
 import { HierarchicalLocationsView, HierarchicalLocationsViewProps } from './HierarchicalLocationsView'
 
-jest.mock('mdi-react/SourceRepositoryIcon', () => 'SourceRepositoryIcon')
-
 describe('<HierarchicalLocationsView />', () => {
     const getProps = () => {
         const registerContributions = sinon.spy<FlatExtensionHostAPI['registerContributions']>(() =>
