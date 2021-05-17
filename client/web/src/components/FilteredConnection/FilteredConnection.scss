@@ -109,13 +109,13 @@ $compact-summary-min-height: 2.75rem;
     &__show-more {
         flex: 0 0 auto;
         .theme-redesign & {
-            margin-right: initial;
             margin-left: auto;
         }
     }
-    &__noncompact &__show-more {
+    &--noncompact &__show-more {
         margin-right: auto;
         .theme-redesign & {
+            margin-right: initial;
             margin-bottom: 1rem;
         }
     }
