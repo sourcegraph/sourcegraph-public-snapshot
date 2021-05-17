@@ -101,7 +101,7 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                     checked={selected}
                     onChange={toggleSelected}
                     disabled={!viewerCanAdminister}
-                    data-tooltip="Click to select changeset for detaching from batch change"
+                    data-tooltip="Click to select changeset for bulk operation"
                 />
             </div>
             <ChangesetStatusCell
