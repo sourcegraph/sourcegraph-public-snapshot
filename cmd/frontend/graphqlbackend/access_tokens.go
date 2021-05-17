@@ -158,7 +158,8 @@ func (r *schemaResolver) DeleteAccessToken(ctx context.Context, args *deleteAcce
 func (r *siteResolver) AccessTokens(ctx context.Context, args *struct {
 	graphqlutil.ConnectionArgs
 }) (*accessTokenConnectionResolver, error) {
-	// 🚨 SECURITY: Only site admins can list all access tokens.
+	// 🚨 SECURITY: Only site admins can list all access tokens. This is safe as the
+	// token values themselves are not stored in our database.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}

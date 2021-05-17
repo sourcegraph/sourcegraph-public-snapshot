@@ -32,6 +32,7 @@ func TestRepositories(t *testing.T) {
 
 		return repos, nil
 	}
+
 	database.Mocks.Repos.Count = func(context.Context, database.ReposListOptions) (int, error) { return 3, nil }
 
 	// Test as non site admin first
