@@ -21,6 +21,10 @@
 .pink {
     &::before {
         background-color: var(--oc-pink-5);
+
+        :global(.theme-dark) & {
+            background-color: var(--oc-pink-7);
+        }
     }
 }
 
@@ -45,18 +49,8 @@
 .grey {
     &::before {
         background-color: var(--oc-gray-9);
-    }
-}
 
-:global(.theme-dark) {
-    .pink {
-        &::before {
-            background-color: var(--oc-pink-7);
-        }
-    }
-
-    .grey {
-        &::before {
+        :global(.theme-dark) & {
             background-color: var(--oc-gray-7);
         }
     }
