@@ -856,8 +856,12 @@ type Log struct {
 
 // MavenConnection description: Configuration for a connection to a Maven repository.
 type MavenConnection struct {
-	// CloneAll description: Whether to clone the entire repository so it's available for search, or only pull down packages which are dependencies of other repositories on this instance.
+	// Artifacts description: An array of artifact "groupID:artifactID" strings specifying which Maven artifacts to mirror on Sourcegraph.
+	Artifacts []string `json:"artifacts,omitempty"`
+	// CloneAll description: Whether to clone the entire repository so it's available for search, or only pull down dependencies and explicitly specified packages specified.
 	CloneAll bool `json:"cloneAll,omitempty"`
+	// Groups description: An array of prefixes of Maven groups whose artifacts should be mirrored on Sourcegraph.
+	Groups []string `json:"groups,omitempty"`
 	// RateLimit description: Rate limit applied when making background API requests to the Maven repository.
 	RateLimit *MavenRateLimit `json:"rateLimit,omitempty"`
 	// RepositoryPathPattern description: The pattern used to generate the corresponding Sourcegraph repository name for a Maven artifact. In the pattern, the variable "{artifact}" is replaced with the Maven artifact's path.

@@ -1325,20 +1325,22 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 		if err != nil {
 			return errors.Wrap(err, "get clone command")
 		}
-		if cmd.Env == nil {
-			cmd.Env = os.Environ()
-		}
+		if cmd != nil {
+			if cmd.Env == nil {
+				cmd.Env = os.Environ()
+			}
 
-		// see issue #7322: skip LFS content in repositories with Git LFS configured
-		cmd.Env = append(cmd.Env, "GIT_LFS_SKIP_SMUDGE=1")
-		log15.Info("cloning repo", "repo", repo, "tmp", tmpPath, "dst", dstPath)
+			// see issue #7322: skip LFS content in repositories with Git LFS configured
+			cmd.Env = append(cmd.Env, "GIT_LFS_SKIP_SMUDGE=1")
+			log15.Info("cloning repo", "repo", repo, "tmp", tmpPath, "dst", dstPath)
 
-		pr, pw := io.Pipe()
-		defer pw.Close()
-		go readCloneProgress(redactor, lock, pr)
+			pr, pw := io.Pipe()
+			defer pw.Close()
+			go readCloneProgress(redactor, lock, pr)
 
-		if output, err := runWithRemoteOpts(ctx, cmd, pw); err != nil {
-			return errors.Wrapf(err, "clone failed. Output: %s", string(output))
+			if output, err := runWithRemoteOpts(ctx, cmd, pw); err != nil {
+				return errors.Wrapf(err, "clone failed. Output: %s", string(output))
+			}
 		}
 
 		if testRepoCorrupter != nil {
@@ -1738,11 +1740,14 @@ func setHEAD(ctx context.Context, dir GitDir, syncer VCSSyncer, repo api.RepoNam
 	if err != nil {
 		return errors.Wrap(err, "get remote show command")
 	}
-	cmd.Dir = string(dir)
-	output, err := runWithRemoteOpts(ctx, cmd, nil)
-	if err != nil {
-		log15.Error("Failed to fetch remote info", "repo", repo, "error", err, "output", string(output))
-		return errors.Wrap(err, "failed to fetch remote info")
+	var output []byte
+	if cmd != nil {
+		cmd.Dir = string(dir)
+		output, err = runWithRemoteOpts(ctx, cmd, nil)
+		if err != nil {
+			log15.Error("Failed to fetch remote info", "repo", repo, "error", err, "output", string(output))
+			return errors.Wrap(err, "failed to fetch remote info")
+		}
 	}
 
 	submatches := headBranchPattern.FindSubmatch(output)

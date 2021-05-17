@@ -45,9 +45,43 @@
       "default": "maven/{depot}"
     },
     "cloneAll": {
-      "description": "Whether to clone the entire repository so it's available for search, or only pull down packages which are dependencies of other repositories on this instance.",
+      "description": "Whether to clone the entire repository so it's available for search, or only pull down dependencies and explicitly specified packages specified.",
       "type": "boolean",
       "default": false
+    },
+    "artifacts": {
+      "description": "An array of artifact \"groupID:artifactID\" strings specifying which Maven artifacts to mirror on Sourcegraph.",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[\\w-]+:[\\w.-]+$"
+      },
+      "examples": [
+        [
+          "groupID:artifactID"
+        ],
+        [
+          "org.apache.commons:commons-csv",
+          "com.google.guava:guava"
+        ]
+      ]
+    },
+    "groups": {
+      "description": "An array of prefixes of Maven groups whose artifacts should be mirrored on Sourcegraph.",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[\\w-]+$"
+      },
+      "examples": [
+        [
+          "groupID"
+        ],
+        [
+          "org.apache.",
+          "com.google.guava."
+        ]
+      ]
     }
   }
 }

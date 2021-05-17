@@ -4,11 +4,12 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/maven"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/maven/coursier"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -17,9 +18,8 @@ import (
 // A MavenSource yields depots from a single Maven connection configured
 // in Sourcegraph via the external services configuration.
 type MavenSource struct {
-	svc      *types.ExternalService
-	config   *schema.MavenConnection
-	coursier *maven.CoursierClient
+	svc    *types.ExternalService
+	config *schema.MavenConnection
 }
 
 // NewMavenSource returns a new MavenSource from the given external
@@ -50,9 +50,18 @@ func (s MavenSource) ListRepos(ctx context.Context, results chan SourceResult) {
 }
 
 func (s MavenSource) listAllRepos(ctx context.Context, results chan SourceResult) {
-	groupIDs := s.coursier.ListGroupIDs()
+	groupIDs, err := coursier.ListAllGroupsForPrefix(ctx, s.config.Url, "")
+	if err != nil {
+		results <- SourceResult{Err: err}
+		return
+	}
+
 	for _, groupID := range groupIDs {
-		artifactIDs := s.coursier.ListArtifactIDs(groupID)
+		artifactIDs, err := coursier.ListArtifactIDs(ctx, s.config.Url, groupID)
+		if err != nil {
+			results <- SourceResult{Err: err}
+			continue
+		}
 		for _, artifactID := range artifactIDs {
 			results <- SourceResult{
 				Source: s,
@@ -63,12 +72,62 @@ func (s MavenSource) listAllRepos(ctx context.Context, results chan SourceResult
 }
 
 func (s MavenSource) listDependentRepos(ctx context.Context, results chan SourceResult) {
+	listed := make(map[string]struct{})
+	for _, artifact := range s.config.Artifacts {
+		split := strings.Split(artifact, ":")
+		groupID := split[0]
+		artifactID := split[1]
+		exists, err := coursier.Exists(ctx, s.config.Url, groupID, artifactID)
+		if err != nil {
+			results <- SourceResult{Err: err}
+			continue
+		}
+		if !exists {
+			results <- SourceResult{
+				Err: &mavenArtifactNotFound{groupID: groupID, artifactID: artifactID},
+			}
+			continue
+		}
+
+		listed[artifact] = struct{}{}
+		results <- SourceResult{
+			Source: s,
+			Repo:   s.makeRepo(groupID, artifactID),
+		}
+	}
+
+	for _, groupPrefix := range s.config.Groups {
+		groups, err := coursier.ListAllGroupsForPrefix(ctx, s.config.Url, groupPrefix)
+		if err != nil {
+			results <- SourceResult{Err: err}
+			continue
+		}
+
+		for _, groupID := range groups {
+			artifacts, err := coursier.ListArtifactIDs(ctx, s.config.Url, groupID)
+			if err != nil {
+				results <- SourceResult{Err: err}
+				continue
+			}
+
+			for _, artifactID := range artifacts {
+				results <- SourceResult{
+					Source: s,
+					Repo:   s.makeRepo(groupID, artifactID),
+				}
+			}
+		}
+	}
 }
 
 func (s MavenSource) GetRepo(ctx context.Context, artifactPath string) (*types.Repo, error) {
 	groupID, artifactID := reposource.DecomposeMavenPath(artifactPath)
 
-	if !s.coursier.Exists(groupID, artifactID) {
+	exists, err := coursier.Exists(ctx, s.config.Url, groupID, artifactID)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
 		return nil, &mavenArtifactNotFound{
 			groupID:    groupID,
 			artifactID: artifactID,
@@ -88,7 +147,7 @@ func (mavenArtifactNotFound) NotFound() bool {
 }
 
 func (e *mavenArtifactNotFound) Error() string {
-	return "maven artifact "
+	return fmt.Sprintf("maven artifact %v:%v not found", e.groupID, e.artifactID)
 }
 
 func (s MavenSource) makeRepo(groupID, artifactID string) *types.Repo {
@@ -97,7 +156,7 @@ func (s MavenSource) makeRepo(groupID, artifactID string) *types.Repo {
 
 	urn := s.svc.URN()
 	cloneURL := url.URL{
-		Scheme: "maven",
+		Scheme: "https",
 		Host:   s.config.Url,
 		Path:   artifactPath,
 	}
@@ -115,7 +174,6 @@ func (s MavenSource) makeRepo(groupID, artifactID string) *types.Repo {
 			ServiceType: extsvc.TypeMaven,
 			ServiceID:   s.config.Url,
 		},
-		// TODO: codeintel
 		Private: false,
 		Sources: map[string]*types.SourceInfo{
 			urn: {
@@ -123,7 +181,6 @@ func (s MavenSource) makeRepo(groupID, artifactID string) *types.Repo {
 				CloneURL: cloneURL.String(),
 			},
 		},
-		// TODO: codeintel
 		Metadata: nil,
 	}
 }
