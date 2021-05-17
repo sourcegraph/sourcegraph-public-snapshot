@@ -8,6 +8,7 @@ import (
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/graph-gophers/graphql-go/gqltesting"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -31,6 +32,52 @@ func TestRepositories(t *testing.T) {
 
 		return repos, nil
 	}
+	database.Mocks.Repos.Count = func(context.Context, database.ReposListOptions) (int, error) { return 3, nil }
+
+	// Test as non site admin first
+	database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
+		return &types.User{
+			ID:        1,
+			SiteAdmin: false,
+		}, nil
+	}
+
+	gqltesting.RunTests(t, []*gqltesting.Test{
+		{
+			Schema: mustParseGraphQLSchema(t),
+			Query: `
+				{
+					repositories {
+						nodes { name }
+						totalCount
+						pageInfo { hasNextPage }
+					}
+				}
+			`,
+			ExpectedResult: `
+				{
+					"repositories": {
+						"nodes": [
+							{ "name": "repo1" },
+							{ "name": "repo2" },
+							{ "name": "repo3" }
+						],
+						"totalCount": null,
+						"pageInfo": {"hasNextPage": false}
+					}
+				}
+			`,
+			ExpectedErrors: []*gqlerrors.QueryError{
+				{
+					Path:          []interface{}{"repositories", "totalCount"},
+					Message:       backend.ErrMustBeSiteAdmin.Error(),
+					ResolverError: backend.ErrMustBeSiteAdmin,
+				},
+			},
+		},
+	})
+
+	// Then test as site admin
 	database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
 		return &types.User{
 			ID:        1,
@@ -38,7 +85,6 @@ func TestRepositories(t *testing.T) {
 		}, nil
 	}
 
-	database.Mocks.Repos.Count = func(context.Context, database.ReposListOptions) (int, error) { return 3, nil }
 	gqltesting.RunTests(t, []*gqltesting.Test{
 		{
 			Schema: mustParseGraphQLSchema(t),
