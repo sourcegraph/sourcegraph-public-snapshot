@@ -14,9 +14,9 @@ import {
 } from '../graphql-operations'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
+import { createRepositoryRedirectResult } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { createJsContext, siteGQLID, siteID } from './jscontext'
-import { createRepositoryRedirectResult } from './graphQlResponseHelpers'
 
 const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
     ...commonWebGraphQlResults,
@@ -79,8 +79,8 @@ describe('Search contexts', () => {
     })
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(async () => {
-        testContext?.dispose()
         await driver.page.evaluate(() => localStorage.clear())
+        await testContext?.dispose()
     })
 
     const getSearchFieldValue = (driver: Driver): Promise<string | undefined> =>
@@ -395,7 +395,8 @@ describe('Search contexts', () => {
         })
 
         // Enter repositories
-        const repositoriesConfig = `[{ "repository": "github.com/example/example", "revisions": ["main", "pr/feature1"] }]`
+        const repositoriesConfig =
+            '[{ "repository": "github.com/example/example", "revisions": ["main", "pr/feature1"] }]'
         await driver.page.waitForSelector('.test-repositories-config-input .monaco-editor')
         await driver.replaceText({
             selector: '.test-repositories-config-input .monaco-editor',

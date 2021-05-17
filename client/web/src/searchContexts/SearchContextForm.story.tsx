@@ -1,10 +1,11 @@
-import { IOrg, ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
 import { storiesOf } from '@storybook/react'
 import { subDays } from 'date-fns'
 import React from 'react'
 import { Observable, of } from 'rxjs'
-import { AuthenticatedUser } from '../auth'
 
+import { IOrg, ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
+
+import { AuthenticatedUser } from '../auth'
 import { WebStory } from '../components/WebStory'
 
 import { SearchContextForm } from './SearchContextForm'
