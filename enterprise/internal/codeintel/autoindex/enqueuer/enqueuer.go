@@ -111,7 +111,7 @@ func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg semantic
 // queueIndexForRepository determines the head of the default branch of the given repository and attempts to
 // determine a set of index jobs to enqueue.
 //
-// If the force flag is true, then the presence of an upload or index record for this given repository and commit
+// If the force flag is false, then the presence of an upload or index record for this given repository and commit
 // will cause this method to no-op. Note that this is NOT a guarantee that there will never be any duplicate records
 // when the flag is false.
 func (s *IndexEnqueuer) queueIndexForRepository(ctx context.Context, repositoryID int, force bool) (err error) {
