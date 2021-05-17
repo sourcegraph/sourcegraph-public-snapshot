@@ -70,6 +70,7 @@ export function experimentalFeaturesFromSettings(
     showQueryBuilder: boolean
     enableSmartQuery: boolean
     enableCodeMonitoring: boolean
+    designRefreshToggleEnabled: boolean
 } {
     const experimentalFeatures: SettingsExperimentalFeatures =
         (settingsCascade.final && !isErrorLike(settingsCascade.final) && settingsCascade.final.experimentalFeatures) ||
@@ -86,6 +87,7 @@ export function experimentalFeaturesFromSettings(
         showQueryBuilder = false,
         enableSmartQuery = true,
         codeMonitoring = true, // Default to true if not set
+        designRefreshToggleEnabled = false,
     } = experimentalFeatures
 
     return {
@@ -99,5 +101,6 @@ export function experimentalFeaturesFromSettings(
         showQueryBuilder,
         enableSmartQuery,
         enableCodeMonitoring: codeMonitoring,
+        designRefreshToggleEnabled,
     }
 }

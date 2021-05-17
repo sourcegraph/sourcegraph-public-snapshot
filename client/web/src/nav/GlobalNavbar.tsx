@@ -38,6 +38,7 @@ import {
 } from '../keyboardShortcuts/keyboardShortcuts'
 import { LayoutRouteProps } from '../routes'
 import { VersionContext } from '../schema/site.schema'
+import { Settings } from '../schema/settings.schema'
 import {
     PatternTypeProps,
     CaseSensitivityProps,
@@ -59,7 +60,7 @@ import { ExtensionAlertAnimationProps, UserNavItem } from './UserNavItem'
 import { VersionContextDropdown } from './VersionContextDropdown'
 
 interface Props
-    extends SettingsCascadeProps,
+    extends SettingsCascadeProps<Settings>,
         PlatformContextProps,
         ExtensionsControllerProps,
         KeyboardShortcutsProps,
@@ -354,6 +355,13 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                                         (!isErrorLike(props.settingsCascade.final) &&
                                             props.settingsCascade.final?.['alerts.codeHostIntegrationMessaging']) ||
                                         'browser-extension'
+                                    }
+                                    showRefreshToggle={
+                                        !isErrorLike(props.settingsCascade.final) &&
+                                        Boolean(
+                                            props.settingsCascade.final?.experimentalFeatures
+                                                ?.designRefreshToggleEnabled
+                                        )
                                     }
                                     keyboardShortcutForSwitchTheme={KEYBOARD_SHORTCUT_SWITCH_THEME}
                                 />
