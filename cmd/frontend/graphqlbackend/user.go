@@ -462,7 +462,7 @@ func viewerIsChangingUsername(ctx context.Context, db dbutil.DB, subjectUserID i
 }
 
 func (r *UserResolver) Monitors(ctx context.Context, args *ListMonitorsArgs) (MonitorConnectionResolver, error) {
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.user.ID); err != nil {
+	if err := backend.CheckSameUser(ctx, r.user.ID); err != nil {
 		return nil, err
 	}
 	return EnterpriseResolvers.codeMonitorsResolver.Monitors(ctx, r.user.ID, args)
