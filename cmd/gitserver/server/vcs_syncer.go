@@ -29,10 +29,13 @@ type VCSSyncer interface {
 	// error indicates there is a problem.
 	IsCloneable(ctx context.Context, remoteURL *vcs.URL) error
 	// CloneCommand returns the command to be executed for cloning from remote.
+	// Returning nil will prevent progress on the command from being reported to the user.
 	CloneCommand(ctx context.Context, remoteURL *vcs.URL, tmpPath string) (cmd *exec.Cmd, err error)
 	// Fetch tries to fetch updates from the remote to given directory.
 	Fetch(ctx context.Context, remoteURL *vcs.URL, dir GitDir) error
 	// RemoteShowCommand returns the command to be executed for showing remote.
+	// Returning nil will cause functionality which depends on this command
+	// (right now just picking the default branch) to pick arbitrary values.
 	RemoteShowCommand(ctx context.Context, remoteURL *vcs.URL) (cmd *exec.Cmd, err error)
 }
 
@@ -440,5 +443,6 @@ func (s MavenArtifactSyncer) commitJars(ctx context.Context, dir GitDir, paths, 
 
 // RemoteShowCommand returns the command to be executed for showing remote.
 func (s MavenArtifactSyncer) RemoteShowCommand(ctx context.Context, remoteURL *vcs.URL) (cmd *exec.Cmd, err error) {
+	// TODO: we return nil
 	return nil, nil
 }
