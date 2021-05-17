@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import React, { useCallback } from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
@@ -6,6 +7,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
 import { repogroupList } from '../../repogroups/HomepageConfig'
 
+import styles from './LoggedOutHomepage.module.scss'
 import { SignUpCta } from './SignUpCta'
 
 const exampleQueries = [
@@ -27,90 +29,105 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
     )
 
     return (
-        <>
-            <div className="search-page__repogroup-content container">
-                <div className="search-page__help-content row">
-                    <div className="search-page__help-content-example-searches mr-2">
-                        <h3 className="search-page__help-content-header my-3">Example searches</h3>
-                        <div className="mt-2">
-                            {exampleQueries.map(example => (
-                                <div key={example.query} className="pb-2">
-                                    <Link
-                                        to={`/search?q=${encodeURIComponent(example.query)}&patternType=${
-                                            example.patternType
-                                        }`}
-                                        className="search-query-link text-monospace mb-2"
-                                        onClick={SearchExampleClicked(
-                                            `/search?q=${encodeURIComponent(example.query)}&patternType=${
-                                                example.patternType
-                                            }`
-                                        )}
-                                    >
-                                        <SyntaxHighlightedSearchQuery query={example.query} />
-                                    </Link>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                    <div>
-                        <h3 className="search-page__help-content-header my-3">Search basics</h3>
-                        <div className="mt-2">
-                            <div className="mb-2">
-                                Search for code without escaping.{' '}
-                                <span className="search-page__inline-code text-code bg-code p-1">console.log("</span>{' '}
-                                results in:
-                            </div>
-                            <LiteralCodeSearchExample />
-                        </div>
-                    </div>
-                </div>
-
-                <div className="mt-5 d-flex justify-content-center">
-                    <div className="d-flex align-items-center search-page__cta">
-                        <SignUpCta />
-                        <div className="mt-2">
-                            Prefer a local installation?{' '}
-                            <a href="https://docs.sourcegraph.com" target="_blank" rel="noopener noreferrer">
-                                Install Sourcegraph locally.
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="mt-5">
-                    <div className="d-flex align-items-baseline mt-5 mb-3">
-                        <h3 className="search-page__help-content-header mr-2">Repository group pages</h3>
-                        <small className="text-monospace font-weight-normal small">
-                            <span className="search-filter-keyword">repogroup:</span>
-                            <i>name</i>
-                        </small>
-                    </div>
-                    <div className="search-page__repogroup-list-cards">
-                        {repogroupList.map(repogroup => (
-                            <div className="d-flex align-items-center" key={repogroup.name}>
-                                <img
-                                    className="search-page__repogroup-list-icon mr-2"
-                                    src={repogroup.homepageIcon}
-                                    alt={`${repogroup.name} icon`}
-                                />
+        <div className={styles.loggedOutHomepage}>
+            <div className={styles.loggedOutHomepageHelpContent}>
+                <div className={classNames('mr-2', styles.loggedOutHomepageHelpContentExampleSearches)}>
+                    <h3 className="my-3">Example searches</h3>
+                    <div className="mt-2">
+                        {exampleQueries.map(example => (
+                            <div key={example.query} className="pb-2">
                                 <Link
-                                    to={repogroup.url}
-                                    className="search-page__repogroup-listing-title font-weight-bold"
+                                    to={`/search?q=${encodeURIComponent(example.query)}&patternType=${
+                                        example.patternType
+                                    }`}
+                                    className={classNames(
+                                        styles.loggedOutHomepageHelpContentExampleSearchesQueryLink,
+                                        'search-query-link',
+                                        'text-monospace',
+                                        'mb-2'
+                                    )}
+                                    onClick={SearchExampleClicked(
+                                        `/search?q=${encodeURIComponent(example.query)}&patternType=${
+                                            example.patternType
+                                        }`
+                                    )}
                                 >
-                                    {repogroup.title}
+                                    <SyntaxHighlightedSearchQuery query={example.query} />
                                 </Link>
                             </div>
                         ))}
                     </div>
                 </div>
+                <div>
+                    <h3 className="my-3">Search basics</h3>
+                    <div className="mt-2">
+                        <div className="mb-2">
+                            Search for code without escaping.{' '}
+                            <span
+                                className={classNames(
+                                    styles.loggedOutHomepageInlineCode,
+                                    'text-code',
+                                    'bg-code',
+                                    'p-1'
+                                )}
+                            >
+                                console.log("
+                            </span>{' '}
+                            results in:
+                        </div>
+                        <LiteralCodeSearchExample />
+                    </div>
+                </div>
             </div>
-        </>
+
+            <div className="mt-5 d-flex justify-content-center">
+                <div className="d-flex align-items-center flex-column">
+                    <SignUpCta className={styles.loggedOutHomepageCta} />
+                    <div className="mt-2 text-center">
+                        Prefer a local installation?{' '}
+                        <a href="https://docs.sourcegraph.com" target="_blank" rel="noopener noreferrer">
+                            Install Sourcegraph locally.
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div className="mt-5">
+                <div className="d-flex align-items-baseline mt-5 mb-3">
+                    <h3 className="mr-2">Repository group pages</h3>
+                    <small className="text-monospace font-weight-normal small">
+                        <span className="search-filter-keyword">repogroup:</span>
+                        <i>name</i>
+                    </small>
+                </div>
+                <div className={styles.loggedOutHomepageRepogroupListCards}>
+                    {repogroupList.map(repogroup => (
+                        <div className="d-flex align-items-center" key={repogroup.name}>
+                            <img
+                                className={classNames(styles.loggedOutHomepageRepogroupListIcon, 'mr-2')}
+                                src={repogroup.homepageIcon}
+                                alt={`${repogroup.name} icon`}
+                            />
+                            <Link
+                                to={repogroup.url}
+                                className={classNames(
+                                    styles.loggedOutHomepageRepogroupListingTitle,
+                                    'font-weight-bold'
+                                )}
+                            >
+                                {repogroup.title}
+                            </Link>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
     )
 }
 
 const LiteralCodeSearchExample = React.memo(() => (
-    <div className="search-page__literal-search-code-excerpt">
-        <code className="code-excerpt">
+    <div className={styles.loggedOutHomepageLiteralSearch}>
+        <code className={classNames(styles.loggedOutHomepageLiteralSearchCodeExcerpt, 'code-excerpt')}>
             <table>
                 <tbody>
                     <tr>
