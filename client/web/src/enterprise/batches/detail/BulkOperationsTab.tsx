@@ -60,11 +60,9 @@ export const BulkOperationsTab: React.FunctionComponent<BulkOperationsTabProps> 
 }
 
 export const EmptyBulkOperationsListElement: React.FunctionComponent<{}> = () => (
-    <div className="text-muted mt-4 pt-4 mb-4 row">
-        <div className="col-12 text-center">
-            <MapSearchIcon className="icon" />
-            <div className="pt-2">No bulk operations have been run on this batch change.</div>
-        </div>
+    <div className="text-muted my-4 pt-4 text-center">
+        <MapSearchIcon className="icon" />
+        <div className="pt-2">No bulk operations have been run on this batch change.</div>
     </div>
 )
 
