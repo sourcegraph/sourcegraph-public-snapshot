@@ -1,5 +1,5 @@
 import classnames from 'classnames'
-import React from 'react'
+import React, { useMemo, useState } from 'react'
 import { noop } from 'rxjs'
 
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
@@ -7,8 +7,11 @@ import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { useField } from '../../../../../components/form/hooks/useField'
 import { SubmissionErrors, useForm } from '../../../../../components/form/hooks/useForm'
 import { useTitleValidator } from '../../../../../components/form/hooks/useTitleValidator'
+import { DataSeries } from '../../../../../core/backend/types';
 import { InsightTypePrefix } from '../../../../../core/types'
+import { useDistinctValue } from '../../../../../hooks/use-distinct-value';
 import { CreateInsightFormFields } from '../../types'
+import { DEFAULT_ACTIVE_COLOR } from '../form-color-input/FormColorInput';
 import { SearchInsightLivePreview } from '../live-preview-chart/SearchInsightLivePreview'
 import { SearchInsightCreationForm } from '../search-insight-creation-form/SearchInsightCreationForm'
 
@@ -27,6 +30,21 @@ const INITIAL_VALUES: CreateInsightFormFields = {
     stepValue: '2',
     title: '',
     repositories: '',
+}
+
+const createDefaultEditSeries = (series = defaultEditSeries, valid = false): EditDataSeries => ({
+    ...series,
+    valid,
+})
+
+const defaultEditSeries = {
+    name: '',
+    query: '',
+    stroke: DEFAULT_ACTIVE_COLOR,
+}
+
+interface EditDataSeries extends DataSeries {
+    valid: boolean;
 }
 
 export interface SearchInsightCreationContentProps {
@@ -66,6 +84,37 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
     const visibility = useField('visibility', formAPI)
 
     const series = useField('series', formAPI, { sync: seriesRequired })
+
+    const [editSeries, setEditSeries] = useState<(EditDataSeries | undefined)[]>(() => {
+        const hasSeries = formAPI.initialValues.series.length;
+
+        if (hasSeries) {
+            return formAPI.initialValues.series.map(() => undefined);
+        }
+
+        // If we in creation mode we should show first series editor in a first
+        // render.
+        return [createDefaultEditSeries()]
+    })
+
+    const liveSeries = useDistinctValue(
+        useMemo<DataSeries[]>(
+            () => editSeries
+                .map((editSeries, index) => {
+                    if (editSeries) {
+                        const { valid, ...series } = editSeries
+                        return valid ? series : undefined
+                    }
+
+                    return series.meta.value[index];
+                })
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
+                .filter<DataSeries>(series => !!series),
+            [series, editSeries]
+        )
+    );
+
     const step = useField('step', formAPI)
     const stepValue = useField('stepValue', formAPI, { sync: requiredStepValueField })
 
@@ -73,8 +122,35 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
     // we should disabled live chart preview
     const allFieldsForPreviewAreValid =
         repositories.meta.validState === 'VALID' &&
-        series.meta.validState === 'VALID' &&
+        (series.meta.validState === 'VALID' || liveSeries.length) &&
         stepValue.meta.validState === 'VALID'
+
+    const handleSeriesLiveChange = (liveSeries: DataSeries, valid: boolean, index: number): void => {
+        const newEditSeries = [...editSeries];
+
+        newEditSeries[index] = { ...liveSeries, valid }
+
+        setEditSeries(newEditSeries)
+    }
+
+    const handleAddEditCard = (index: number): void => {
+        console.log('Add edit series card')
+        const newEditSeries = [...editSeries];
+
+        newEditSeries[index] = series.meta.value[index]
+            ? createDefaultEditSeries(series.meta.value[index], true)
+            : createDefaultEditSeries()
+
+        setEditSeries(newEditSeries)
+    }
+
+    const handleCancelEditCard = (index: number): void => {
+        const newEditSeries = [...editSeries];
+
+        newEditSeries[index] = undefined
+
+        setEditSeries(newEditSeries)
+    }
 
     return (
         <div className={classnames(styles.content, className)}>
@@ -91,13 +167,16 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
                 series={series}
                 step={step}
                 stepValue={stepValue}
+                onSeriesLiveChange={handleSeriesLiveChange}
                 onCancel={onCancel}
-            />
+                editSeries={editSeries}
+                onEditSeries={handleAddEditCard}
+                onCancelSeries={handleCancelEditCard}/>
 
             <SearchInsightLivePreview
                 disabled={!allFieldsForPreviewAreValid}
                 repositories={repositories.meta.value}
-                series={series.meta.value}
+                series={liveSeries}
                 step={step.meta.value}
                 stepValue={stepValue.meta.value}
                 className={styles.contentLivePreview}

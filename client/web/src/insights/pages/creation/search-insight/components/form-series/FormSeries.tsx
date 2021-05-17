@@ -1,5 +1,5 @@
 import classnames from 'classnames'
-import React, { ReactElement, useState } from 'react'
+import React, { ReactElement } from 'react'
 
 import { DataSeries } from '../../../../../core/backend/types'
 import { FormSeriesInput } from '../form-series-input/FormSeriesInput'
@@ -9,103 +9,102 @@ import styles from './FormSeries.module.scss'
 export interface FormSeriesProps {
     /** Controlled value (series - chart lines) for series input component. */
     series?: DataSeries[]
+
+    editSeries: (DataSeries | undefined)[]
+
     /** Change handler. */
     onChange: (series: DataSeries[]) => void
+
+    /**
+     * Live change series while user typing in active series form.
+     * Used by consumers for getting latest values for live preview chart.
+     * */
+    onLiveChange: (liveSeries: DataSeries, isValid: boolean, index: number) => void
+
+    onEditCard: (openedCardIndex: number) => void
+    onEditCardClose: (closedCardIndex: number) => void
 }
 
 /**
  * Renders form series (sub-form) for series (chart lines) creation code insight form.
  * */
 export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
-    const { series = [], onChange } = props
-
-    // We can have more than one series. In case if user clicked on existing series
-    // he should see edit form for series. To track which series is active now
-    // we use array of theses series indexes.
-    const [editSeriesIndexes, setEditSeriesIndex] = useState<number[]>([])
-    const [newSeriesEdit, setNewSeriesEdit] = useState(false)
+    const {
+        series = [],
+        editSeries,
+        onChange,
+        onEditCard,
+        onEditCardClose,
+        onLiveChange
+    } = props
 
     // Add empty series form component that user be able to fill this form and create
     // another chart series.
     const handleAddSeries = (): void => {
-        setNewSeriesEdit(true)
-    }
-
-    // Close new series form component in case if user clicked cancel button.
-    const handleCancelNewSeries = (): void => setNewSeriesEdit(false)
-
-    // Handle submit of creation of new chart series.
-    const handleSubmitNewSeries = (newSeries: DataSeries): void => {
-        // Close series input in case if we add another series
-        if (newSeriesEdit) {
-            setNewSeriesEdit(false)
-        }
-
-        onChange([...series, newSeries])
+        onEditCard(editSeries.length)
     }
 
     const handleEditSeriesCommit = (index: number, editedSeries: DataSeries): void => {
-        const newSeries = [...series]
+        const newSeries = [
+            ...series.slice(0, index),
+            editedSeries,
+            ...series.slice(index + 1),
+        ]
 
-        newSeries[index] = editedSeries
-        setEditSeriesIndex(indexes => indexes.filter(currentIndex => currentIndex !== index))
         onChange(newSeries)
+        onEditCardClose(index)
     }
 
     const handleRequestToEdit = (index: number): void => {
-        setEditSeriesIndex([...editSeriesIndexes, index])
+        onEditCard(index)
     }
 
     const handleCancelEditSeries = (index: number): void => {
-        setEditSeriesIndex(indexes => indexes.filter(currentIndex => currentIndex !== index))
+        onEditCardClose(index)
     }
 
     // In case if we don't have series we have to skip series list ui (components below)
     // and render simple series form component.
     if (series.length === 0) {
-        return <FormSeriesInput autofocus={false} className="card card-body p-3" onSubmit={handleSubmitNewSeries} />
+        return <FormSeriesInput
+            autofocus={false}
+            className="card card-body p-3"
+            onSubmit={series => handleEditSeriesCommit(0, series)}
+            onChange={(values, valid) => onLiveChange(values, valid, 0)}
+        />
     }
 
     return (
         <div role="list" className="d-flex flex-column">
-            {series.map((line, index) =>
-                editSeriesIndexes.includes(index) ? (
+            {editSeries.map((line, index) =>
+                editSeries[index] ? (
                     <FormSeriesInput
-                        key={`${line.name}-${index}`}
+                        key={`${line?.name ?? ''}-${index}`}
                         cancel={true}
                         onSubmit={series => handleEditSeriesCommit(index, series)}
                         onCancel={() => handleCancelEditSeries(index)}
                         className={classnames('card card-body p-3', styles.formSeriesItem)}
+                        onChange={(values, valid) => onLiveChange(values, valid, index)}
                         {...line}
                     />
                 ) : (
-                    <SeriesCard
-                        key={`${line.name}-${index}`}
-                        onEdit={() => handleRequestToEdit(index)}
-                        className={styles.formSeriesItem}
-                        {...line}
-                    />
+                    series[index] &&
+                        <SeriesCard
+                            key={`${series[index].name}-${index}`}
+                            onEdit={() => handleRequestToEdit(index)}
+                            className={styles.formSeriesItem}
+                            {...series[index]}
+                        />
                 )
             )}
 
-            {newSeriesEdit && (
-                <FormSeriesInput
-                    cancel={true}
-                    onSubmit={handleSubmitNewSeries}
-                    onCancel={handleCancelNewSeries}
-                    className={classnames('card card-body p-3', styles.formSeriesItem)}
-                />
-            )}
-
-            {!newSeriesEdit && (
-                <button
-                    type="button"
-                    onClick={handleAddSeries}
-                    className={classnames(styles.formSeriesItem, styles.formSeriesAddButton, 'btn btn-link p-3')}
-                >
-                    + Add another data series
-                </button>
-            )}
+            <button
+                type="button"
+                onClick={handleAddSeries}
+                className={classnames(styles.formSeriesItem, styles.formSeriesAddButton, 'btn btn-link p-3')}
+            >
+                + Add another data series
+            </button>
         </div>
     )
 }

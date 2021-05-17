@@ -8,6 +8,7 @@ import { FormInput } from '../../../../../components/form/form-input/FormInput'
 import { FormRadioInput } from '../../../../../components/form/form-radio-input/FormRadioInput'
 import { useFieldAPI } from '../../../../../components/form/hooks/useField'
 import { FORM_ERROR, SubmissionErrors } from '../../../../../components/form/hooks/useForm'
+import { DataSeries } from '../../../../../core/backend/types';
 import { CreateInsightFormFields } from '../../types'
 import { FormSeries } from '../form-series/FormSeries'
 
@@ -30,6 +31,10 @@ interface CreationSearchInsightFormProps {
     step: useFieldAPI<CreateInsightFormFields['step']>
     stepValue: useFieldAPI<CreateInsightFormFields['stepValue']>
 
+    editSeries: (CreateInsightFormFields['series'][number] | undefined)[],
+    onCancelSeries: (index: number) => void,
+    onEditSeries: (index: number) => void
+    onSeriesLiveChange: (liveSeries: DataSeries, isValid: boolean, index: number) => void
     onCancel: () => void
 }
 
@@ -48,10 +53,14 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
         repositories,
         visibility,
         series,
+        editSeries,
         stepValue,
         step,
         className,
         onCancel,
+        onCancelSeries,
+        onEditSeries,
+        onSeriesLiveChange,
     } = props
 
     const isEditMode = mode === 'edit'
@@ -127,7 +136,14 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                 innerRef={series.input.ref}
                 className="mb-0"
             >
-                <FormSeries series={series.input.value} onChange={series.input.onChange} />
+                <FormSeries
+                    series={series.input.value}
+                    editSeries={editSeries}
+                    onChange={series.input.onChange}
+                    onLiveChange={onSeriesLiveChange}
+                    onEditCard={onEditSeries}
+                    onEditCardClose={onCancelSeries}
+                />
             </FormGroup>
 
             <hr className={styles.creationInsightFormSeparator} />
