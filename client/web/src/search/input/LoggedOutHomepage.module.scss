@@ -1,0 +1,72 @@
+@import 'bootstrap/scss/functions';
+@import 'bootstrap/scss/variables';
+@import 'bootstrap/scss/mixins';
+@import 'bootstrap/scss/utilities/spacing';
+@import 'wildcard/src/global-styles/breakpoints';
+@import './homepage';
+
+.logged-out-homepage {
+    width: 100%;
+    max-width: 90%;
+    @media (--xl-breakpoint-up) {
+        max-width: $max-homepage-container-width;
+    }
+
+    &__repogroup-list {
+        &-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+            grid-auto-rows: minmax(4rem, auto);
+            gap: $spacer * 0.75;
+        }
+
+        &-icon {
+            width: 3rem;
+            height: 3rem;
+            object-fit: contain;
+        }
+    }
+
+    &__help-content {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+
+        &-example-searches {
+            min-width: 10rem;
+            word-break: break-all;
+
+            &-query-link {
+                font-size: 0.75rem;
+            }
+        }
+
+        &-subheading {
+            margin-bottom: 1rem;
+        }
+    }
+
+    &__cta {
+        max-width: 38rem;
+        background-color: var(--color-bg-1);
+    }
+
+    &__repogroup-listing-title {
+        margin-bottom: 0.25rem;
+    }
+
+    &__literal-search {
+        background-color: var(--color-bg-1);
+        border: 1px solid var(--border-color);
+        padding: 0.25rem;
+        border-radius: 0.25rem;
+
+        &-code-excerpt {
+            white-space: nowrap;
+        }
+    }
+
+    &__inline-code {
+        border-radius: 3px;
+    }
+}

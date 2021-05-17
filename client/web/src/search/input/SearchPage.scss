@@ -7,8 +7,7 @@
 @import './SearchContextMenu.scss';
 @import './SearchOnboardingTour';
 @import '../panels/HomePanels.scss';
-
-$max-homepage-container-width: 60rem;
+@import './homepage';
 
 .search-page {
     justify-content: flex-start;
@@ -44,17 +43,6 @@ $max-homepage-container-width: 60rem;
         }
     }
 
-    &__literal-search-code-excerpt {
-        background-color: var(--color-bg-1);
-        border: 1px solid var(--border-color);
-        padding: 0.25rem;
-        border-radius: 0.25rem;
-
-        .code-excerpt {
-            white-space: nowrap;
-        }
-    }
-
     &__input-container {
         width: 100%;
         display: flex;
@@ -66,71 +54,7 @@ $max-homepage-container-width: 60rem;
         margin: 0.5rem 0;
     }
 
-    &__repogroup-content {
-        width: 100%;
-        max-width: 90%;
-        @media (--xl-breakpoint-up) {
-            max-width: $max-homepage-container-width;
-        }
-    }
-
-    &__repogroup-list {
-        &-cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
-            grid-auto-rows: minmax(4rem, auto);
-            gap: $spacer * 0.75;
-        }
-
-        &-icon {
-            width: 3rem;
-            height: 3rem;
-            object-fit: contain;
-        }
-    }
-
-    &__search-a-language {
-        margin-bottom: 3rem;
-    }
-
-    &__lang-link {
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    &__help-content {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: space-between;
-
-        &-example-searches {
-            min-width: 10rem;
-            word-break: break-all;
-
-            .search-query-link {
-                font-size: 0.75rem;
-            }
-        }
-
-        &-subheading {
-            margin-bottom: 1rem;
-        }
-    }
-
-    &__cta {
-        max-width: 38rem;
-        flex-direction: column;
-    }
-
-    &__repogroup-listing-title {
-        margin-bottom: 0.25rem;
-    }
-
     &__footer {
         margin-top: 2rem;
-    }
-
-    &__inline-code {
-        border-radius: 3px;
     }
 }
