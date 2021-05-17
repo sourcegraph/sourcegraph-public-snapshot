@@ -268,7 +268,7 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
                                 </span>
                             </div>
                             <Form onSubmit={preventDefault} className="form-inline">
-                                <div className="shadow flex-grow-1 mb-2">
+                                <div className="shadow flex-grow-1">
                                     <input
                                         className="form-control w-100 test-extension-registry-input"
                                         type="search"
@@ -317,7 +317,7 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
                         {selectedCategory === 'All' && !isLoading && (
                             <>
                                 <hr className="mt-5" />
-                                <div className="my-5 justify-content-center">
+                                <div className="my-4 justify-content-center">
                                     <ExtensionBanner />
                                 </div>
                             </>

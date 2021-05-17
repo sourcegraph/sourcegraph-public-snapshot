@@ -67,7 +67,7 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
     )
 
     if (!data || data === LOADING) {
-        return <LoadingSpinner className="icon-inline" />
+        return <LoadingSpinner className="icon-inline mt-2" />
     }
 
     if (isErrorLike(data)) {
