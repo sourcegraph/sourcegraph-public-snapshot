@@ -22,6 +22,13 @@ func ListVersions(ctx context.Context, repository, groupID, artifactID string) (
 	return runCoursierCommand(ctx, repository, "complete", groupID+":"+artifactID+":")
 }
 
+// TODO: codeintel, we are manually constructing URLs to pass to 'cs get' rather than just calling
+// 'cs fetch --sources groupID:artifactID'. this is because roux couldn't figure out how to get
+// coursier to only fetch the sources we're interested rather than pulling down the entire
+// dependency tree. the TODO is to figure out:
+//   - if the URL construction works universally
+//   - if we do actually need to pull down the deps
+//   - if we can get fetch to not pull down the deps
 func FetchVersions(ctx context.Context, repository, groupID, artifactID string, versions []string) ([]string, error) {
 	var urls []string
 	for _, version := range versions {
