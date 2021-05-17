@@ -38,8 +38,13 @@
         margin: 0.75rem;
     }
 
+    &__details-section {
+        padding: 0.5rem 0.75rem 0.75rem;
+    }
+
     &__toggles-section {
         border-top: 1px solid var(--border-color-2);
+        padding: 0.75rem 0;
     }
 
     &__footer {

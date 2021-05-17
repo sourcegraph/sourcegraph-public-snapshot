@@ -215,7 +215,7 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                     )}
                 </div>
                 {/* Section 2: Extension details. This should be the section that grows to fill remaining space. */}
-                <div className="w-100 mx-2 my-1 flex-grow-1">
+                <div className="extension-card__details-section w-100 flex-grow-1">
                     <div className="mb-2">
                         <h3 className="mb-0 mr-1 text-truncate flex-1">
                             <Link to={`/extensions/${extension.id}`}>{name}</Link>
@@ -246,7 +246,7 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                     </div>
                 </div>
                 {/* Item 3: Toggle(s) */}
-                <div className="extension-card__toggles-section d-flex flex-column align-items-end py-2 mt-1">
+                <div className="extension-card__toggles-section d-flex flex-column align-items-end mt-1">
                     <div className="px-1">
                         {/* User toggle */}
                         {subject &&
