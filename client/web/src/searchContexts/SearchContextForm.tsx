@@ -62,7 +62,7 @@ function getVisibilityRadioButtons(selectedNamespaceType: SelectedNamespaceType)
 
 function getSearchContextSpecPreview(selectedNamespace: SelectedNamespace, searchContextName: string): JSX.Element {
     return (
-        <code className={styles.searchContextFormPreview}>
+        <code className={classNames('test-search-context-preview', styles.searchContextFormPreview)}>
             <span className="search-filter-keyword">context:</span>
             {selectedNamespace.name.length > 0 && (
                 <>
@@ -230,7 +230,10 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                 <div className="flex-1">
                     <div className="mb-2">Context name</div>
                     <input
-                        className={classNames('w-100 form-control', styles.searchContextFormNameInput)}
+                        className={classNames(
+                            'w-100 form-control test-search-context-name-input',
+                            styles.searchContextFormNameInput
+                        )}
                         type="text"
                         pattern="^[a-zA-Z0-9_\-\/\.]+$"
                         required={true}
@@ -258,7 +261,7 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                     Description <span className="text-muted">(optional)</span>
                 </div>
                 <textarea
-                    className="form-control w-100"
+                    className="form-control w-100 test-search-context-description-input"
                     maxLength={MAX_DESCRIPTION_LENGTH}
                     value={description}
                     rows={5}
@@ -313,7 +316,7 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
             <div>
                 <button
                     type="submit"
-                    className="btn btn-primary mr-2"
+                    className="btn btn-primary mr-2 test-create-search-context-button"
                     disabled={searchContextOrError && searchContextOrError === LOADING}
                 >
                     Create search context

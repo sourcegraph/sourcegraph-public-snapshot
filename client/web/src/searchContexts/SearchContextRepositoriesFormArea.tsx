@@ -131,6 +131,7 @@ export const SearchContextRepositoriesFormArea: React.FunctionComponent<SearchCo
     return (
         <div>
             <DynamicallyImportedMonacoSettingsEditor
+                className="test-repositories-config-input"
                 value={repositoriesConfig}
                 jsonSchema={REPOSITORIES_REVISIONS_CONFIG_SCHEMA}
                 actions={actions}
@@ -154,7 +155,7 @@ export const SearchContextRepositoriesFormArea: React.FunctionComponent<SearchCo
             )}
             <button
                 type="button"
-                className="mt-2 btn btn-sm btn-outline-secondary"
+                className="mt-2 btn btn-sm btn-outline-secondary test-repositories-config-button"
                 onClick={triggerTestConfig}
                 disabled={triggerTestConfigErrors === LOADING || isValidConfig}
             >
