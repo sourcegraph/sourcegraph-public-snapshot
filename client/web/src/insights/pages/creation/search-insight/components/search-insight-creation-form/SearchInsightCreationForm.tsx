@@ -8,6 +8,7 @@ import { FormInput } from '../../../../../components/form/form-input/FormInput'
 import { FormRadioInput } from '../../../../../components/form/form-radio-input/FormRadioInput'
 import { useFieldAPI } from '../../../../../components/form/hooks/useField'
 import { FORM_ERROR, SubmissionErrors } from '../../../../../components/form/hooks/useForm'
+import { DataSeries } from '../../../../../core/backend/types'
 import { CreateInsightFormFields } from '../../types'
 import { FormSeries } from '../form-series/FormSeries'
 
@@ -31,6 +32,28 @@ interface CreationSearchInsightFormProps {
     stepValue: useFieldAPI<CreateInsightFormFields['stepValue']>
 
     onCancel: () => void
+
+    /**
+     * Edit series array used below for rendering series edit form.
+     * In case of some element has undefined value we're showing
+     * series card with data instead of form.
+     * */
+    editSeries: (CreateInsightFormFields['series'][number] | undefined)[]
+
+    /**
+     * Handler to listen latest value form particular series edit form
+     * Used to get information for live preview chart.
+     * */
+    onSeriesLiveChange: (liveSeries: DataSeries, isValid: boolean, index: number) => void
+
+    /**
+     * Handlers for CRUD operation over series. Add, delete, update and cancel
+     * series edit form.
+     * */
+    onEditSeriesRequest: (openedCardIndex: number) => void
+    onEditSeriesCommit: (seriesIndex: number, editedSeries: DataSeries) => void
+    onEditSeriesCancel: (closedCardIndex: number) => void
+    onSeriesRemove: (removedSeriesIndex: number) => void
 }
 
 /**
@@ -48,10 +71,16 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
         repositories,
         visibility,
         series,
+        editSeries,
         stepValue,
         step,
         className,
         onCancel,
+        onSeriesLiveChange,
+        onEditSeriesRequest,
+        onEditSeriesCommit,
+        onEditSeriesCancel,
+        onSeriesRemove,
     } = props
 
     const isEditMode = mode === 'edit'
@@ -81,6 +110,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                 required={true}
                 description="Create a list of repositories to run your search over. Separate them with commas."
                 placeholder="Add or search for repositories"
+                loading={repositories.meta.validState === 'CHECKING'}
                 valid={repositories.meta.touched && repositories.meta.validState === 'VALID'}
                 error={repositories.meta.touched && repositories.meta.error}
                 {...repositories.input}
@@ -126,7 +156,15 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                 innerRef={series.input.ref}
                 className="mb-0"
             >
-                <FormSeries series={series.input.value} onChange={series.input.onChange} />
+                <FormSeries
+                    series={series.input.value}
+                    editSeries={editSeries}
+                    onLiveChange={onSeriesLiveChange}
+                    onEditSeriesRequest={onEditSeriesRequest}
+                    onEditSeriesCommit={onEditSeriesCommit}
+                    onEditSeriesCancel={onEditSeriesCancel}
+                    onSeriesRemove={onSeriesRemove}
+                />
             </FormGroup>
 
             <hr className={styles.creationInsightFormSeparator} />
