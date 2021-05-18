@@ -81,8 +81,6 @@ export function useAsyncValidation<FieldValue>(
     const onValidationChangeReference = useRef<UseAsyncValidationProps<FieldValue>['onValidationChange']>()
     onValidationChangeReference.current = onValidationChange
 
-    const handleValidationChange = onValidationChangeReference.current
-
     const asyncValidationPipeline = useCallback(
         (validationEvents: Observable<AsyncValidationEvent<FieldValue>>) =>
             validationEvents.pipe(
@@ -93,7 +91,7 @@ export function useAsyncValidation<FieldValue>(
 
                         // Reset validation (native and custom) before async validation
                         inputElement?.setCustomValidity?.('')
-                        handleValidationChange({
+                        onValidationChangeReference.current?.({
                             validState: 'CHECKING',
                             touched: true,
                             error: '',
@@ -110,13 +108,13 @@ export function useAsyncValidation<FieldValue>(
 
                     if (validationMessage) {
                         inputElement?.setCustomValidity?.(validationMessage)
-                        handleValidationChange({
+                        onValidationChangeReference.current?.({
                             validState: 'INVALID',
                             error: validationMessage,
                             validity,
                         })
                     } else {
-                        handleValidationChange({
+                        onValidationChangeReference.current?.({
                             validState: 'VALID' as const,
                             error: '',
                             validity,
@@ -124,7 +122,7 @@ export function useAsyncValidation<FieldValue>(
                     }
                 })
             ),
-        [inputReference, handleValidationChange, asyncValidator]
+        [inputReference, asyncValidator]
     )
 
     const [startAsyncValidation] = useEventObservable(asyncValidationPipeline)

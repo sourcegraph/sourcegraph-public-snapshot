@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 
 import { useFieldAPI } from '../../../../../../components/form/hooks/useField'
 import { DataSeries } from '../../../../../../core/backend/types'
@@ -72,22 +72,16 @@ export function useEditableSeries(props: UseEditableSeriesProps): UseEditableSer
     })
 
     const liveSeries = useDistinctValue(
-        useMemo<DataSeries[]>(
-            () =>
-                editSeries
-                    .map((editSeries, index) => {
-                        if (editSeries) {
-                            const { valid, ...series } = editSeries
-                            return valid ? series : undefined
-                        }
+        editSeries
+            .map((editSeries, index) => {
+                if (editSeries) {
+                    const { valid, ...series } = editSeries
+                    return valid ? series : undefined
+                }
 
-                        return series.meta.value[index]
-                    })
-                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                    // @ts-ignore
-                    .filter<DataSeries>(series => !!series),
-            [series, editSeries]
-        )
+                return series.meta.value[index]
+            })
+            .filter<DataSeries>((series): series is DataSeries => !!series)
     )
 
     const handleSeriesLiveChange = (liveSeries: DataSeries, valid: boolean, index: number): void => {

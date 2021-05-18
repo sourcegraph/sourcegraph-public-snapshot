@@ -63,14 +63,10 @@ export function useField<FormValues, FieldValueKey extends keyof FormAPI<FormVal
         validity: null,
     })
 
-    const onValidationChange = useCallback((asyncState: Partial<FieldState<FormValues[FieldValueKey]>>) => {
-        setState(previousState => ({ ...previousState, ...asyncState }))
-    }, [])
-
     const { start: startAsyncValidation, cancel: cancelAsyncValidation } = useAsyncValidation({
         inputReference,
         asyncValidator: async,
-        onValidationChange,
+        onValidationChange: asyncState => setState(previousState => ({ ...previousState, ...asyncState })),
     })
 
     // Use useRef for form api handler in order to avoid unnecessary
@@ -129,17 +125,20 @@ export function useField<FormValues, FieldValueKey extends keyof FormAPI<FormVal
     // validation is going.
     useEffect(() => setFieldStateReference.current(name, state), [name, state])
 
+    const handleBlur = useCallback(() => setState(state => ({ ...state, touched: true })), [])
+    const handleChange = useCallback((event: ChangeEvent<HTMLInputElement> | FormValues[FieldValueKey]) => {
+        const value = getEventValue(event)
+
+        setState(state => ({ ...state, value }))
+    }, [])
+
     return {
         input: {
             name: name.toString(),
             ref: inputReference,
             value: state.value,
-            onBlur: () => setState(state => ({ ...state, touched: true })),
-            onChange: (event: ChangeEvent<HTMLInputElement> | FormValues[FieldValueKey]) => {
-                const value = getEventValue(event)
-
-                setState(state => ({ ...state, value }))
-            },
+            onBlur: handleBlur,
+            onChange: handleChange,
         },
         meta: {
             ...state,

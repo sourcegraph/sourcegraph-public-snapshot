@@ -71,6 +71,7 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
     if (series.length === 0) {
         return (
             <FormSeriesInput
+                index={1}
                 autofocus={false}
                 className="card card-body p-3"
                 onSubmit={series => onEditSeriesCommit(0, series)}
@@ -85,6 +86,7 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
                 editSeries[index] ? (
                     <FormSeriesInput
                         key={`${line?.name ?? ''}-${index}`}
+                        index={index + 1}
                         cancel={true}
                         onSubmit={series => onEditSeriesCommit(index, series)}
                         onCancel={() => onEditSeriesCancel(index)}
