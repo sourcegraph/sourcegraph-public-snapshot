@@ -245,17 +245,19 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                 </div>
             </div>
             <div className="text-muted my-2">
-                The best context names are short and semantic. Context names are limited to {MAX_NAME_LENGTH}{' '}
-                characters. They can contain alphanumeric and following non-alphanumeric characters: <kbd>.</kbd>
-                <kbd>_</kbd>
-                <kbd>/</kbd>
-                <kbd>-</kbd> (no spaces).
+                <small>
+                    The best context names are short and semantic. {MAX_NAME_LENGTH} characters max. Alphanumeric and{' '}
+                    <kbd>.</kbd>
+                    <kbd>_</kbd>
+                    <kbd>/</kbd>
+                    <kbd>-</kbd> characters only.
+                </small>
             </div>
             <div>
                 <div className={classNames('mb-1', styles.searchContextFormPreviewTitle)}>Preview</div>
                 {searchContextSpecPreview}
             </div>
-            <hr className="my-4" />
+            <hr className={classNames('my-4', styles.searchContextFormDivider)} />
             <div>
                 <div className="mb-2">
                     Description <span className="text-muted">(optional)</span>
@@ -278,31 +280,34 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                     <span>{MAX_DESCRIPTION_LENGTH - description.length} characters remaining</span>
                 </div>
             </div>
-            <hr className="my-4" />
-            <div>
-                <div>Visibility</div>
+            <div className="mt-3">
+                <div className="mb-3">Visibility</div>
                 {visibilityRadioButtons.map(radio => (
                     <label key={radio.visibility} className="d-flex mt-2">
-                        <input
-                            className={styles.searchContextFormVisibilityRadio}
-                            name="visibility"
-                            type="radio"
-                            value={radio.visibility}
-                            checked={visibility === radio.visibility}
-                            required={true}
-                            onChange={() => setVisibility(radio.visibility)}
-                        />
-                        <div className="ml-2">
+                        <div className="mr-2">
+                            <input
+                                className={styles.searchContextFormVisibilityRadio}
+                                name="visibility"
+                                type="radio"
+                                value={radio.visibility}
+                                checked={visibility === radio.visibility}
+                                required={true}
+                                onChange={() => setVisibility(radio.visibility)}
+                            />
+                        </div>
+                        <div>
                             <strong className={styles.searchContextFormVisibilityTitle}>{radio.title}</strong>
-                            <div className="text-muted">{radio.description}</div>
+                            <div className="text-muted">
+                                <small>{radio.description}</small>
+                            </div>
                         </div>
                     </label>
                 ))}
             </div>
-            <hr className="my-4" />
+            <hr className={classNames('my-4', styles.searchContextFormDivider)} />
             <div>
                 <div className="mb-1">Repositories and revisions</div>
-                <div className="text-muted mb-2">
+                <div className="text-muted mb-3">
                     Define which repositories and revisions should be included in this search context.
                 </div>
                 <SearchContextRepositoriesFormArea
@@ -312,7 +317,7 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                     repositories={searchContext?.repositories}
                 />
             </div>
-            <hr className="my-4" />
+            <hr className={classNames('my-4', styles.searchContextFormDivider)} />
             <div>
                 <button
                     type="submit"

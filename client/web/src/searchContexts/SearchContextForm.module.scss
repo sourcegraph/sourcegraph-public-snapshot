@@ -1,4 +1,8 @@
 .search-context-form {
+    &__divider {
+        border-color: var(--border-color-2);
+    }
+
     &__name-input {
         height: 2rem;
     }
@@ -16,7 +20,9 @@
     }
 
     &__visibility-radio {
-        margin-top: 0.25rem;
+        margin-top: 0.2rem;
+        width: 0.875rem;
+        height: 0.875rem;
     }
 
     &__visibility-title {

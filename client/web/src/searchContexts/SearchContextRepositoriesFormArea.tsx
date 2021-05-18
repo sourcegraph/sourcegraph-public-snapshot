@@ -155,7 +155,7 @@ export const SearchContextRepositoriesFormArea: React.FunctionComponent<SearchCo
             )}
             <button
                 type="button"
-                className="mt-2 btn btn-sm btn-outline-secondary test-repositories-config-button"
+                className="mt-3 btn btn-sm btn-outline-secondary test-repositories-config-button"
                 onClick={triggerTestConfig}
                 disabled={triggerTestConfigErrors === LOADING || isValidConfig}
             >
