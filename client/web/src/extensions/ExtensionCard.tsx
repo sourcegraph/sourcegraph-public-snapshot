@@ -24,12 +24,7 @@ import { ExtensionConfigurationState } from './extension/ExtensionConfigurationS
 import { ExtensionStatusBadge } from './extension/ExtensionStatusBadge'
 import headerColorStyles from './ExtensionHeader.module.scss'
 import { ExtensionToggle, OptimisticUpdateFailure } from './ExtensionToggle'
-import {
-    DefaultExtensionIcon,
-    DefaultSourcegraphExtensionIcon,
-    DefaultSourcegraphExtensionIconEnabled,
-    SourcegraphExtensionIcon,
-} from './icons'
+import { DefaultExtensionIcon, DefaultSourcegraphExtensionIcon, SourcegraphExtensionIcon } from './icons'
 
 interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettings'>, ThemeProps {
     node: Pick<
@@ -196,14 +191,7 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                     {icon ? (
                         <img className="extension-card__icon" src={icon} alt="" />
                     ) : isSourcegraphExtension ? (
-                        change === 'enabled' ? (
-                            <DefaultSourcegraphExtensionIconEnabled
-                                isLightTheme={isLightTheme}
-                                className="extension-card__icon"
-                            />
-                        ) : (
-                            <DefaultSourcegraphExtensionIcon className="extension-card__icon" />
-                        )
+                        <DefaultSourcegraphExtensionIcon className="extension-card__icon" />
                     ) : (
                         <DefaultExtensionIcon className="extension-card__icon" />
                     )}
