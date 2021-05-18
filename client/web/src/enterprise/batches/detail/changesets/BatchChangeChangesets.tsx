@@ -71,14 +71,14 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
     onlyArchived,
 }) => {
     // Whether all the changesets are selected, beyond the scope of what's on screen right now.
-    const [allAllSelected, setAllAllSelected] = useState<boolean>(false)
+    const [allSelected, setAllSelected] = useState<boolean>(false)
     // The overall amount of all changesets in the connection.
     const [totalChangesetCount, setTotalChangesetCount] = useState<number>(0)
     // All changesets that are currently in view and can be selected. That currently
     // just means they are visible.
     const [availableChangesets, setAvailableChangesets] = useState<Set<Scalars['ID']>>(new Set())
     // The list of all selected changesets. This list does not reflect the selection
-    // when `allAllSelected` is true.
+    // when `allSelected` is true.
     const [selectedChangesets, setSelectedChangesets] = useState<Set<Scalars['ID']>>(new Set())
 
     const onSelect = useCallback((id: string, selected: boolean): void => {
@@ -94,20 +94,20 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
             newSet.delete(id)
             return newSet
         })
-        setAllAllSelected(false)
+        setAllSelected(false)
     }, [])
 
     /**
-     * Whether the given changeset is currently selected. Returns always true, if `allAllSelected` is true.
+     * Whether the given changeset is currently selected. Returns always true, if `allSelected` is true.
      */
-    const changesetSelected = useCallback(
-        (id: Scalars['ID']): boolean => allAllSelected || selectedChangesets.has(id),
-        [allAllSelected, selectedChangesets]
-    )
+    const changesetSelected = useCallback((id: Scalars['ID']): boolean => allSelected || selectedChangesets.has(id), [
+        allSelected,
+        selectedChangesets,
+    ])
 
     const deselectAll = useCallback((): void => {
         setSelectedChangesets(new Set())
-        setAllAllSelected(false)
+        setAllSelected(false)
     }, [setSelectedChangesets])
 
     const selectAll = useCallback((): void => {
@@ -116,18 +116,18 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
 
     // True when all in the current list are selected. It ticks the header row
     // checkbox when true.
-    const allSelected = allAllSelected || selectedChangesets.size === availableChangesets.size
+    const allSelectedCheckboxChecked = allSelected || selectedChangesets.size === availableChangesets.size
 
     const toggleSelectAll = useCallback((): void => {
-        if (allSelected) {
+        if (allSelectedCheckboxChecked) {
             deselectAll()
         } else {
             selectAll()
         }
-    }, [allSelected, selectAll, deselectAll])
+    }, [allSelectedCheckboxChecked, selectAll, deselectAll])
 
-    const onSelectAllAll = useCallback(() => {
-        setAllAllSelected(true)
+    const onSelectAll = useCallback(() => {
+        setAllSelected(true)
     }, [])
 
     const [changesetFilters, setChangesetFilters] = useState<ChangesetFilters>({
@@ -254,16 +254,16 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
                     onFiltersChange={setChangesetFiltersAndDeselectAll}
                 />
             )}
-            {showSelectRow && (
+            {showSelectRow && queryArguments && (
                 <ChangesetSelectRow
                     batchChangeID={batchChangeID}
                     selected={selectedChangesets}
                     onSubmit={deselectAll}
                     totalCount={totalChangesetCount}
-                    isAllSelected={allSelected}
-                    allAllSelected={allAllSelected}
-                    setAllAllSelected={onSelectAllAll}
-                    queryArguments={queryArguments!}
+                    allVisibleSelected={allSelectedCheckboxChecked}
+                    allSelected={allSelected}
+                    setAllSelected={onSelectAll}
+                    queryArguments={queryArguments}
                 />
             )}
             <div className="list-group position-relative" ref={nextContainerElement}>
@@ -293,7 +293,7 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
                     listClassName={classNames(styles.batchChangeChangesetsGrid, 'mb-3')}
                     headComponent={BatchChangeChangesetsHeader}
                     headComponentProps={{
-                        allSelected,
+                        allSelected: allSelectedCheckboxChecked,
                         toggleSelectAll,
                         disabled: !viewerCanAdminister,
                     }}

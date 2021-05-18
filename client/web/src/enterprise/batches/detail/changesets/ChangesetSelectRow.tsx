@@ -79,10 +79,10 @@ export interface ChangesetSelectRowProps {
     selected: Set<Scalars['ID']>
     batchChangeID: Scalars['ID']
     onSubmit: () => void
-    isAllSelected: boolean
+    allVisibleSelected: boolean
     totalCount: number
-    allAllSelected: boolean
-    setAllAllSelected: () => void
+    allSelected: boolean
+    setAllSelected: () => void
     queryArguments: Omit<AllChangesetIDsVariables, 'after'>
 }
 
@@ -94,10 +94,10 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
     selected,
     batchChangeID,
     onSubmit,
-    isAllSelected,
+    allVisibleSelected,
     totalCount,
-    allAllSelected,
-    setAllAllSelected: setAllSelected,
+    allSelected,
+    setAllSelected,
     queryArguments,
 }) => {
     const actions = useMemo(() => AVAILABLE_ACTIONS.filter(action => action.isAvailable(queryArguments)), [
@@ -129,7 +129,7 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
         // Depending on the selection, we need to construct a loader function for
         // the changeset IDs.
         let ids: () => Promise<Scalars['ID'][]>
-        if (allAllSelected) {
+        if (allSelected) {
             // We asynchronously fetch all the IDs for ALL all.
             ids = () => queryAllChangesetIDs(queryArguments).toPromise()
         } else {
@@ -148,12 +148,12 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
         if (element !== undefined) {
             setRenderedElement(element)
         }
-    }, [allAllSelected, batchChangeID, onSubmit, queryArguments, selected, selectedAction])
+    }, [allSelected, batchChangeID, onSubmit, queryArguments, selected, selectedAction])
 
     const buttonLabel = selectedAction === undefined ? 'Select action' : selectedAction.buttonLabel
 
     // If we have ALL all selected, we take the totalCount in the current connection, otherwise the count of selected changeset IDs.
-    const selectedAmount = allAllSelected ? totalCount : selected.size
+    const selectedAmount = allSelected ? totalCount : selected.size
 
     return (
         <>
@@ -162,7 +162,7 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
                 <div className="ml-2 col d-flex align-items-center">
                     <InfoCircleOutlineIcon className="icon-inline text-muted mr-2" />
                     {selectedAmount} {pluralize('changeset', selectedAmount)} selected
-                    {isAllSelected && totalCount > selectedAmount && (
+                    {allVisibleSelected && totalCount > selectedAmount && (
                         <button type="button" className="btn btn-link py-0 px-1" onClick={setAllSelected}>
                             (Select all {totalCount})
                         </button>
