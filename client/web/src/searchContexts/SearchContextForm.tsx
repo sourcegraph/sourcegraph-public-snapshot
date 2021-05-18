@@ -88,13 +88,18 @@ export interface SearchContextFormProps extends RouteComponentProps, ThemeProps,
     ) => Observable<ISearchContext>
 }
 
+const searchContextVisibility = (searchContext: ISearchContext): SelectedVisibility =>
+    searchContext.public ? 'public' : 'private'
+
 export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> = props => {
     const { authenticatedUser, onSubmit, searchContext } = props
     const history = useHistory()
 
-    const [name, setName] = useState('')
-    const [description, setDescription] = useState('')
-    const [visibility, setVisibility] = useState<SelectedVisibility>('public')
+    const [name, setName] = useState(searchContext ? searchContext.name : '')
+    const [description, setDescription] = useState(searchContext ? searchContext.description : '')
+    const [visibility, setVisibility] = useState<SelectedVisibility>(
+        searchContext ? searchContextVisibility(searchContext) : 'public'
+    )
 
     const isValidName = useMemo(() => name.length === 0 || name.match(VALIDATE_NAME_REGEXP) !== null, [name])
 
@@ -113,12 +118,16 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
         <div className="text-danger">Invalid context name</div>
     )
 
+    const [hasRepositoriesConfigChanged, setHasRepositoriesConfigChanged] = useState(false)
     const [repositoriesConfig, setRepositoriesConfig] = useState('')
     const onRepositoriesConfigChange = useCallback(
-        config => {
+        (config, isInitialValue) => {
             setRepositoriesConfig(config)
+            if (!isInitialValue && config !== repositoriesConfig) {
+                setHasRepositoriesConfigChanged(true)
+            }
         },
-        [setRepositoriesConfig]
+        [repositoriesConfig, setRepositoriesConfig, setHasRepositoriesConfigChanged]
     )
 
     const hasChanges = useMemo(() => {
@@ -127,12 +136,17 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                 name.length > 0 ||
                 description.length > 0 ||
                 visibility !== 'public' ||
-                selectedNamespace.type !== 'user'
+                selectedNamespace.type !== 'user' ||
+                hasRepositoriesConfigChanged
             )
         }
-        // TODO: Check for changes when editing context
-        return true
-    }, [description, name, searchContext, selectedNamespace, visibility])
+        return (
+            searchContext.name !== name ||
+            searchContext.description !== description ||
+            searchContextVisibility(searchContext) !== visibility ||
+            hasRepositoriesConfigChanged
+        )
+    }, [description, name, searchContext, selectedNamespace, visibility, hasRepositoriesConfigChanged])
 
     const onCancel = useCallback(() => {
         if (hasChanges) {
@@ -221,6 +235,7 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                 <div className="mr-2">
                     <div className="mb-2">Owner</div>
                     <SearchContextOwnerDropdown
+                        isDisabled={!!searchContext}
                         selectedNamespace={selectedNamespace}
                         setSelectedNamespace={setSelectedNamespace}
                         selectedUserNamespace={selectedUserNamespace}
@@ -234,6 +249,7 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                             'w-100 form-control test-search-context-name-input',
                             styles.searchContextFormNameInput
                         )}
+                        value={name}
                         type="text"
                         pattern="^[a-zA-Z0-9_\-\/\.]+$"
                         required={true}
@@ -323,10 +339,10 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
             <div>
                 <button
                     type="submit"
-                    className="btn btn-primary mr-2 test-create-search-context-button"
+                    className="btn btn-primary mr-2 test-search-context-submit-button"
                     disabled={searchContextOrError && searchContextOrError === LOADING}
                 >
-                    Create search context
+                    {!searchContext ? 'Create search context' : 'Save'}
                 </button>
                 <button type="button" onClick={onCancel} className="btn btn-outline-secondary">
                     Cancel

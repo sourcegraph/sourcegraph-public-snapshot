@@ -76,7 +76,7 @@ const actions: {
 export interface SearchContextRepositoriesFormAreaProps extends ThemeProps, TelemetryProps {
     repositories: ISearchContextRepositoryRevisions[] | undefined
     validateRepositories: () => Observable<Error[]>
-    onChange: (config: string) => void
+    onChange: (config: string, isInitialValue?: boolean) => void
 }
 
 export const SearchContextRepositoriesFormArea: React.FunctionComponent<SearchContextRepositoriesFormAreaProps> = ({
@@ -116,11 +116,15 @@ export const SearchContextRepositoriesFormArea: React.FunctionComponent<SearchCo
     const [repositoriesConfig, setRepositoriesConfig] = useState('')
     useEffect(
         () => {
+            const mappedRepositories = repositories?.map(repository => ({
+                repository: repository.repository.name,
+                revisions: repository.revisions,
+            }))
             const config =
                 REPOSITORY_REVISIONS_INPUT_COMMENT +
-                (typeof repositories !== 'undefined' ? JSON.stringify(repositories, undefined, 2) : '[]')
+                (mappedRepositories ? JSON.stringify(mappedRepositories, undefined, 2) : '[]')
             setRepositoriesConfig(config)
-            onChange(config)
+            onChange(config, true)
         },
         // Only stringify repositories on initial load
         // eslint-disable-next-line react-hooks/exhaustive-deps

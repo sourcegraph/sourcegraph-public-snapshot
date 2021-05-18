@@ -21,6 +21,7 @@ import {
     convertVersionContextToSearchContext,
     fetchSearchContext,
     createSearchContext,
+    updateSearchContext,
 } from './backend'
 import { AggregateStreamingSearchResults, StreamSearchOptions } from './stream'
 
@@ -202,6 +203,7 @@ export interface SearchContextProps {
     isSearchContextSpecAvailable: typeof isSearchContextSpecAvailable
     fetchSearchContext: typeof fetchSearchContext
     createSearchContext: typeof createSearchContext
+    updateSearchContext: typeof updateSearchContext
 }
 
 export type SearchContextInputProps = Pick<

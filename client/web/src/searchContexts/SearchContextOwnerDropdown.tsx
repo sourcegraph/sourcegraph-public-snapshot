@@ -15,6 +15,7 @@ export interface SelectedNamespace {
 }
 
 export interface SearchContextOwnerDropdownProps {
+    isDisabled: boolean
     authenticatedUser: AuthenticatedUser
     selectedUserNamespace: SelectedNamespace
     selectedNamespace: SelectedNamespace
@@ -22,6 +23,7 @@ export interface SearchContextOwnerDropdownProps {
 }
 
 export const SearchContextOwnerDropdown: React.FunctionComponent<SearchContextOwnerDropdownProps> = ({
+    isDisabled,
     authenticatedUser,
     selectedNamespace,
     selectedUserNamespace,
@@ -36,6 +38,7 @@ export const SearchContextOwnerDropdown: React.FunctionComponent<SearchContextOw
                 className={classNames('btn btn-sm form-control', styles.searchContextOwnerDropdownToggle)}
                 caret={true}
                 color="outline-secondary"
+                disabled={isDisabled}
             >
                 {selectedNamespace.type === 'no-owner' ? 'No owner' : `@${selectedNamespace.name}`}
             </DropdownToggle>

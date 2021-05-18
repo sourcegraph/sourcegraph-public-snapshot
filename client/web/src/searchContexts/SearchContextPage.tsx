@@ -52,21 +52,41 @@ export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> 
                     {searchContextOrError && !isErrorLike(searchContextOrError) && searchContextOrError !== LOADING && (
                         <>
                             <PageTitle title={searchContextOrError.spec} />
-                            <div className="mb-2 d-flex align-items-center">
-                                <Link to="/contexts">
-                                    <ChevronLeftIcon />
-                                </Link>
-                                <PageHeader
-                                    path={[
-                                        {
-                                            text: searchContextOrError.spec,
-                                        },
-                                    ]}
-                                />
-                                {!searchContextOrError.public && (
-                                    <div className="badge badge-pill badge-secondary ml-1">Private</div>
-                                )}
-                            </div>
+                            <PageHeader
+                                className="mb-2"
+                                path={[
+                                    {
+                                        text: (
+                                            <div className="d-flex align-items-center">
+                                                <Link className="d-flex" to="/contexts">
+                                                    <ChevronLeftIcon />
+                                                </Link>
+                                                <span>{searchContextOrError.spec}</span>
+                                                {!searchContextOrError.public && (
+                                                    <div
+                                                        className={classNames(
+                                                            'badge badge-pill badge-secondary ml-2',
+                                                            styles.searchContextPagePrivateBadge
+                                                        )}
+                                                    >
+                                                        Private
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ),
+                                    },
+                                ]}
+                                actions={
+                                    searchContextOrError.viewerCanManage && (
+                                        <Link
+                                            to={`/contexts/${searchContextOrError.id}/edit`}
+                                            className="btn btn-secondary test-edit-search-context-link"
+                                        >
+                                            Edit
+                                        </Link>
+                                    )
+                                }
+                            />
                             <div className="text-muted">
                                 <span className="mr-1">{searchContextOrError.repositories.length} repositories</span>
                                 &middot;

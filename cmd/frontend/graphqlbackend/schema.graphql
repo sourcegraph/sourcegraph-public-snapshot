@@ -2413,6 +2413,10 @@ type SearchContext implements Node {
     """
     id: ID!
     """
+    The name of the search context.
+    """
+    name: String!
+    """
     The description of the search context.
     """
     description: String!
@@ -2443,6 +2447,10 @@ type SearchContext implements Node {
     Date and time the search context was last updated.
     """
     updatedAt: DateTime!
+    """
+    If current viewer can manage (edit, delete) the search context.
+    """
+    viewerCanManage: Boolean!
 }
 
 """

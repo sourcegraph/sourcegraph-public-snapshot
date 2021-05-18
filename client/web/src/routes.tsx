@@ -241,6 +241,14 @@ export const routes: readonly LayoutRouteProps<any>[] = [
             !!props.settingsCascade.final?.experimentalFeatures?.showSearchContextManagement,
     },
     {
+        path: '/contexts/:id/edit',
+        render: lazyComponent(() => import('./searchContexts/EditSearchContextPage'), 'EditSearchContextPage'),
+        condition: props =>
+            !isErrorLike(props.settingsCascade.final) &&
+            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContext &&
+            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContextManagement,
+    },
+    {
         path: '/contexts/:id',
         render: lazyComponent(() => import('./searchContexts/SearchContextPage'), 'SearchContextPage'),
         condition: props =>
