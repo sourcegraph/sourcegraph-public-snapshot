@@ -257,7 +257,12 @@ export const RevisionsPopover: React.FunctionComponent<Props> = props => {
                         </Tab>
                     ))}
                 </TabList>
-                <button onClick={props.togglePopover} type="button" className="btn btn-icon" aria-label="Close">
+                <button
+                    onClick={props.togglePopover}
+                    type="button"
+                    className="btn btn-icon revisions-popover__tabs-close"
+                    aria-label="Close"
+                >
                     <CloseIcon className="icon-inline" />
                 </button>
             </div>
