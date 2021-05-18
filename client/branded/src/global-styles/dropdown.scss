@@ -31,7 +31,7 @@
     --dropdown-border-color: var(--input-border-color);
     --dropdown-link-hover-bg: var(--color-bg-2);
     --dropdown-header-color: var(--text-muted);
-    --dropdown-shadow: 0 0 12px 0 rgba(0, 27, 76, 0.085);
+    --dropdown-shadow: 0 4px 16px -6px rgba(36, 41, 54, 0.2);
     .dropdown-menu {
         border-radius: 5px;
         box-shadow: var(--dropdown-shadow);
@@ -43,7 +43,7 @@
     --dropdown-border-color: var(--input-border-color);
     --dropdown-link-hover-bg: var(--color-bg-2);
     --dropdown-header-color: var(--text-muted);
-    --dropdown-shadow: 0 0 12px 0 rgba(0, 27, 76, 0.4);
+    --dropdown-shadow: 0 4px 16px -6px rgba(11, 12, 15, 0.8);
     .dropdown-menu {
         border-radius: 5px;
         box-shadow: var(--dropdown-shadow);
