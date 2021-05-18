@@ -91,46 +91,56 @@ export function useEditableSeries(props: UseEditableSeriesProps): UseEditableSer
     )
 
     const handleSeriesLiveChange = (liveSeries: DataSeries, valid: boolean, index: number): void => {
-        const newEditSeries = [...editSeries]
+        setEditSeries(editSeries => {
+            const newEditSeries = [...editSeries]
 
-        newEditSeries[index] = { ...liveSeries, valid }
+            newEditSeries[index] = { ...liveSeries, valid }
 
-        setEditSeries(newEditSeries)
+            return newEditSeries
+        })
     }
 
     const handleEditSeriesRequest = (index: number): void => {
-        const newEditSeries = [...editSeries]
+        setEditSeries(editSeries => {
+            const newEditSeries = [...editSeries]
 
-        newEditSeries[index] = series.meta.value[index]
-            ? createDefaultEditSeries(series.meta.value[index], true)
-            : createDefaultEditSeries()
+            newEditSeries[index] = series.meta.value[index]
+                ? createDefaultEditSeries(series.meta.value[index], true)
+                : createDefaultEditSeries()
 
-        setEditSeries(newEditSeries)
+            return newEditSeries
+        })
     }
 
     const handleEditSeriesCancel = (index: number): void => {
-        const newEditSeries = [...editSeries]
+        setEditSeries(editSeries => {
+            const newEditSeries = [...editSeries]
 
-        newEditSeries[index] = undefined
-        setEditSeries(newEditSeries)
+            newEditSeries[index] = undefined
+            setEditSeries(newEditSeries)
+
+            return editSeries
+        })
     }
 
     const handleEditSeriesCommit = (index: number, editedSeries: DataSeries): void => {
-        const newEditedSeries = [...editSeries]
+        setEditSeries(editSeries => {
+            const newEditedSeries = [...editSeries]
+
+            // Remove series from edited cards
+            newEditedSeries[index] = undefined
+
+            return newEditedSeries
+        })
+
         const newSeries = [...series.input.value.slice(0, index), editedSeries, ...series.input.value.slice(index + 1)]
-
-        // Remove series from edited cards
-        newEditedSeries[index] = undefined
-
-        setEditSeries(newEditedSeries)
         series.input.onChange(newSeries)
     }
 
     const handleRemoveSeries = (index: number): void => {
-        const newSeries = [...series.input.value.slice(0, index), ...series.input.value.slice(index + 1)]
-        const newEditedSereis = [...editSeries.slice(0, index), ...editSeries.slice(index + 1)]
+        setEditSeries(editSeries => [...editSeries.slice(0, index), ...editSeries.slice(index + 1)])
 
-        setEditSeries(newEditedSereis)
+        const newSeries = [...series.input.value.slice(0, index), ...series.input.value.slice(index + 1)]
         series.input.onChange(newSeries)
     }
 
