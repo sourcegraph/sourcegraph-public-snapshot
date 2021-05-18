@@ -26,18 +26,17 @@ func (r *queryResolver) DocumentationPage(ctx context.Context, pathID string) (_
 	})
 	defer endObservation()
 
-	var lastErr error
 	for i := range r.uploads {
 		traceLog(log.Int("uploadID", r.uploads[i].ID))
 
 		// In the case of multiple LSIF uploads, we merely return the most-recent page from a
 		// matching bundle.
 		var page *semantic.DocumentationPageData
-		page, lastErr = r.lsifStore.DocumentationPage(ctx, r.uploads[i].ID, pathID)
-		if lastErr == nil {
+		page, err = r.lsifStore.DocumentationPage(ctx, r.uploads[i].ID, pathID)
+		if err == nil {
 			return page, nil
 		}
-
 	}
-	return nil, lastErr
+	
+	return nil, err
 }
