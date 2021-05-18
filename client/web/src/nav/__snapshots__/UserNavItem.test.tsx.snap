@@ -42,6 +42,7 @@ exports[`UserNavItem simple 1`] = `
       location="[Location path=/]"
       onThemePreferenceChange={[Function]}
       showDotComMarketing={true}
+      showRefreshToggle={false}
       showRepositorySection={true}
       themePreference="light"
     >
