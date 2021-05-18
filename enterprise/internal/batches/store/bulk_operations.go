@@ -148,7 +148,7 @@ func listBulkOperationsQuery(opts *ListBulkOperationsOpts) *sqlf.Query {
 	having := sqlf.Sprintf("")
 
 	if opts.Cursor > 0 {
-		preds = append(preds, sqlf.Sprintf("changeset_jobs.id >= %s", opts.Cursor))
+		preds = append(preds, sqlf.Sprintf("changeset_jobs.id <= %s", opts.Cursor))
 	}
 
 	if !opts.CreatedAfter.IsZero() {
