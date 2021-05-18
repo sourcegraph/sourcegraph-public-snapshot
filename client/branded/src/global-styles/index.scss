@@ -160,6 +160,11 @@ $input-transition: none;
     background-color: var(--body-bg);
     border: solid 1px var(--border-color);
     border-radius: $border-radius;
+
+    .theme-redesign & {
+        background-color: var(--color-bg-1);
+        border-radius: 5px;
+    }
 }
 
 // Show a focus ring when performing keyboard navigation. Uses the polyfill at
