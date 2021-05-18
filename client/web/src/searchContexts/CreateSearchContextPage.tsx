@@ -12,6 +12,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { AuthenticatedUser } from '../auth'
+import { withAuthenticatedUser } from '../auth/withAuthenticatedUser'
 import { Page } from '../components/Page'
 import { PageTitle } from '../components/PageTitle'
 import { SearchContextProps } from '../search'
@@ -23,10 +24,10 @@ export interface CreateSearchContextPageProps
         ThemeProps,
         TelemetryProps,
         Pick<SearchContextProps, 'createSearchContext'> {
-    authenticatedUser: AuthenticatedUser | null
+    authenticatedUser: AuthenticatedUser
 }
 
-export const CreateSearchContextPage: React.FunctionComponent<CreateSearchContextPageProps> = props => {
+export const AuthenticatedCreateSearchContextPage: React.FunctionComponent<CreateSearchContextPageProps> = props => {
     const { authenticatedUser, createSearchContext } = props
     const onSubmit = useCallback(
         (
@@ -58,9 +59,11 @@ export const CreateSearchContextPage: React.FunctionComponent<CreateSearchContex
                             Learn more
                         </a>
                     </div>
-                    <SearchContextForm {...props} onSubmit={onSubmit} authenticatedUser={authenticatedUser} />
+                    <SearchContextForm {...props} onSubmit={onSubmit} />
                 </div>
             </Page>
         </div>
     )
 }
+
+export const CreateSearchContextPage = withAuthenticatedUser(AuthenticatedCreateSearchContextPage)
