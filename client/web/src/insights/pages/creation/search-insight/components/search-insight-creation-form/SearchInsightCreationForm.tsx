@@ -102,12 +102,11 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
             onSubmit={handleSubmit}
             className={classnames(className, 'd-flex flex-column')}
         >
-
             <FormGroup
-                name='insight repositories'
-                title='Repositories'
-                subtitle='Create a list of repositories to run your search over'>
-
+                name="insight repositories"
+                title="Repositories"
+                subtitle="Create a list of repositories to run your search over"
+            >
                 <FormInput
                     autoFocus={true}
                     required={true}
@@ -128,8 +127,8 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                 title="Data series"
                 subtitle="Add any number of data series to your chart"
                 error={series.meta.touched && series.meta.error}
-                innerRef={series.input.ref}>
-
+                innerRef={series.input.ref}
+            >
                 <FormSeries
                     series={series.input.value}
                     editSeries={editSeries}
@@ -143,10 +142,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
 
             <hr className={styles.creationInsightFormSeparator} />
 
-            <FormGroup
-                name='chart settings group'
-                title='Chart settings'>
-
+            <FormGroup name="chart settings group" title="Chart settings">
                 <FormInput
                     title="Title"
                     required={true}

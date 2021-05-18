@@ -4,7 +4,7 @@ import type { LineChartContent } from 'sourcegraph'
 import { asError } from '@sourcegraph/shared/src/util/errors'
 import { useDebounce } from '@sourcegraph/wildcard/src'
 
-import { LivePreviewContainer } from '../../../../../components/live-preview-container/LivePreviewContainer';
+import { LivePreviewContainer } from '../../../../../components/live-preview-container/LivePreviewContainer'
 import { InsightsApiContext } from '../../../../../core/backend/api-provider'
 import { DataSeries } from '../../../../../core/backend/types'
 import { InsightStep } from '../../types'
@@ -83,8 +83,13 @@ export const SearchInsightLivePreview: React.FunctionComponent<SearchInsightLive
             loading={loading}
             disabled={disabled}
             defaultMock={DEFAULT_MOCK_CHART_CONTENT}
-            mockMessage={<span> Here you’ll see your insight’s chart preview. <br/>
-                            You need to fill in the repositories and series fields.</span>}
+            mockMessage={
+                <span>
+                    {' '}
+                    Here you’ll see your insight’s chart preview. <br />
+                    You need to fill in the repositories and series fields.
+                </span>
+            }
             className={className}
             onUpdateClick={() => setLastPreviewVersion(version => version + 1)}
         />

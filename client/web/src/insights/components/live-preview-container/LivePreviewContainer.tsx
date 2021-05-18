@@ -1,20 +1,20 @@
-import classnames from 'classnames';
-import RefreshIcon from 'mdi-react/RefreshIcon';
+import classnames from 'classnames'
+import RefreshIcon from 'mdi-react/RefreshIcon'
 import React, { ReactElement, ReactNode } from 'react'
-import { useHistory } from 'react-router-dom';
-import { ChartContent } from 'sourcegraph';
+import { useHistory } from 'react-router-dom'
+import { ChartContent } from 'sourcegraph'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner';
-import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService';
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors';
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
-import { ErrorAlert } from '../../../components/alerts';
-import { ChartViewContent } from '../../../views/ChartViewContent/ChartViewContent';
+import { ErrorAlert } from '../../../components/alerts'
+import { ChartViewContent } from '../../../views/ChartViewContent/ChartViewContent'
 
-import styles from './LivePreviewContainer.module.scss';
+import styles from './LivePreviewContainer.module.scss'
 
 export interface LivePreviewContainerProps {
-    onUpdateClick: () => void;
+    onUpdateClick: () => void
     loading: boolean
     disabled: boolean
     className?: string
@@ -23,22 +23,16 @@ export interface LivePreviewContainerProps {
     mockMessage: ReactNode
 }
 
-export function LivePreviewContainer(props: LivePreviewContainerProps): ReactElement  {
+export function LivePreviewContainer(props: LivePreviewContainerProps): ReactElement {
     const { disabled, loading, dataOrError, defaultMock, onUpdateClick, className, mockMessage } = props
     const history = useHistory()
 
     return (
         <section className={classnames(styles.livePreview, className)}>
-            <div className='d-flex align-items-center mb-1'>
+            <div className="d-flex align-items-center mb-1">
                 Live preview
-
-                <button
-                    type="button"
-                    disabled={disabled}
-                    className="btn btn-icon ml-1"
-                    onClick={onUpdateClick}
-                >
-                    <RefreshIcon size="1rem"/>
+                <button type="button" disabled={disabled} className="btn btn-icon ml-1" onClick={onUpdateClick}>
+                    <RefreshIcon size="1rem" />
                 </button>
             </div>
 
@@ -57,7 +51,6 @@ export function LivePreviewContainer(props: LivePreviewContainerProps): ReactEle
 
             {!loading && !isErrorLike(dataOrError) && (
                 <div className={classnames(styles.livePreviewChartContainer, 'card')}>
-
                     <ChartViewContent
                         className={classnames(styles.livePreviewChart, 'card-body', {
                             [styles.livePreviewChartWithMock]: !dataOrError,
@@ -68,11 +61,7 @@ export function LivePreviewContainer(props: LivePreviewContainerProps): ReactEle
                         content={dataOrError ?? defaultMock}
                     />
 
-                    {!dataOrError && (
-                        <p className={styles.livePreviewLoadingChartInfo}>
-                            {mockMessage}
-                        </p>
-                    )}
+                    {!dataOrError && <p className={styles.livePreviewLoadingChartInfo}>{mockMessage}</p>}
                 </div>
             )}
         </section>

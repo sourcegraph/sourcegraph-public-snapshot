@@ -18,7 +18,7 @@ describe('CreateInsightContent', () => {
 
     const getFormFields = (getByRole: BoundFunction<GetByRole>) => {
         const title = getByRole('textbox', { name: /title/i })
-        const repoGroup = getByRole('group', { name: /list of repositories/i } )
+        const repoGroup = getByRole('group', { name: /list of repositories/i })
         const repositories = within(repoGroup).getByRole('textbox')
 
         const personalVisibility = getByRole('radio', { name: /personal/i })
@@ -130,7 +130,7 @@ describe('CreateInsightContent', () => {
             const { getByRole, getByText } = renderWithProps({
                 onSubmit: onSubmitMock,
             })
-            const repoGroup = getByRole('group', { name: /list of repositories/i } )
+            const repoGroup = getByRole('group', { name: /list of repositories/i })
             const repositories = within(repoGroup).getByRole('textbox')
             const submitButton = getByRole('button', { name: /create code insight/i })
 
@@ -151,7 +151,7 @@ describe('CreateInsightContent', () => {
             })
             const title = getByRole('textbox', { name: /title/i })
 
-            const repoGroup = getByRole('group', { name: /list of repositories/i } )
+            const repoGroup = getByRole('group', { name: /list of repositories/i })
             const repositories = within(repoGroup).getByRole('textbox')
             const submitButton = getByRole('button', { name: /create code insight/i })
 
@@ -173,7 +173,7 @@ describe('CreateInsightContent', () => {
                 onSubmit: onSubmitMock,
             })
             const title = getByRole('textbox', { name: /title/i })
-            const repoGroup = getByRole('group', { name: /list of repositories/i } )
+            const repoGroup = getByRole('group', { name: /list of repositories/i })
             const repositories = within(repoGroup).getByRole('textbox')
             const submitButton = getByRole('button', { name: /create code insight/i })
             const dataSeriesGroup = getByRole('group', { name: /data series/i })

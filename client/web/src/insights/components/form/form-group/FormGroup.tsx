@@ -1,4 +1,4 @@
-import classnames from 'classnames';
+import classnames from 'classnames'
 import React, { PropsWithChildren, RefObject } from 'react'
 
 interface FormGroupProps {
@@ -15,7 +15,7 @@ interface FormGroupProps {
     /** Custom class name for root fieldset element. */
     className?: string
     /** Custom class name for label element of the group. */
-    labelClassName?: string;
+    labelClassName?: string
     /** Custom class name for div children wrapper element. */
     contentClassName?: string
     /** Reference to root fieldset element.*/
@@ -24,7 +24,18 @@ interface FormGroupProps {
 
 /** Displays fieldset (group) of fields for code insight creation form with error message. */
 export const FormGroup: React.FunctionComponent<PropsWithChildren<FormGroupProps>> = props => {
-    const { innerRef, className, labelClassName, contentClassName, name, title, subtitle, children, description, error } = props
+    const {
+        innerRef,
+        className,
+        labelClassName,
+        contentClassName,
+        name,
+        title,
+        subtitle,
+        children,
+        description,
+        error,
+    } = props
 
     return (
         <fieldset ref={innerRef} name={name} className={className}>

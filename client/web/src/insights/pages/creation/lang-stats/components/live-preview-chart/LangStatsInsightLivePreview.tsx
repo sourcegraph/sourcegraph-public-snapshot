@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 
-import { LivePreviewContainer } from '../../../../../components/live-preview-container/LivePreviewContainer';
+import { LivePreviewContainer } from '../../../../../components/live-preview-container/LivePreviewContainer'
 
 import { useLangStatsPreviewContent } from './hooks/use-lang-stats-preview-content'
 import { DEFAULT_PREVIEW_MOCK } from './live-preview-mock-data'
@@ -45,10 +45,12 @@ export const LangStatsInsightLivePreview: React.FunctionComponent<LangStatsInsig
             loading={loading}
             defaultMock={DEFAULT_PREVIEW_MOCK}
             onUpdateClick={update}
-            mockMessage={<span>
-                  Here you’ll see your insight’s chart preview. <br/>
-                            You need to fill in the repository field.
-            </span>}
+            mockMessage={
+                <span>
+                    Here you’ll see your insight’s chart preview. <br />
+                    You need to fill in the repository field.
+                </span>
+            }
         />
     )
 }
