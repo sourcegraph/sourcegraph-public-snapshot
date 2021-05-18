@@ -64,6 +64,7 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
                 title="Repository"
                 description="This insight is limited to one repository. You can set up multiple language usage charts for analyzing other repositories."
                 placeholder="Add or search for repository"
+                loading={repository.meta.validState === 'CHECKING'}
                 valid={repository.meta.touched && repository.meta.validState === 'VALID'}
                 error={repository.meta.touched && repository.meta.error}
                 {...repository.input}
