@@ -16,7 +16,7 @@ export const repositoryFieldAsyncValidator: AsyncValidator<string> = async value
         const repositories = await fetchRepositories([value.trim()]).toPromise()
 
         if (!repositories) {
-            return `We couldn't find repository with ${value} name. Please check the repo URL.`
+            return `We couldn't find the repository ${value}. Please ensure the repository exists.`
         }
 
         return
