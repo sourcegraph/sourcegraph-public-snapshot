@@ -4,11 +4,13 @@ import { RouteComponentProps, Switch, Route } from 'react-router'
 
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
+import { AuthenticatedUser } from '../auth'
 import { HeroPage } from '../components/HeroPage'
 import { lazyComponent } from '../util/lazyComponent'
 
 import { SearchInsightCreationPageProps } from './pages/creation/search-insight/SearchInsightCreationPage'
 import { InsightsPageProps } from './pages/dashboard/InsightsPage'
+import { EditInsightPageProps } from './pages/edit/EditInsightPage'
 
 const InsightsLazyPage = lazyComponent(() => import('./pages/dashboard/InsightsPage'), 'InsightsPage')
 
@@ -27,6 +29,8 @@ const LangStatsInsightCreationLazyPage = lazyComponent(
     'LangStatsInsightCreationPage'
 )
 
+const EditInsightLazyPage = lazyComponent(() => import('./pages/edit/EditInsightPage'), 'EditInsightPage')
+
 /**
  * Feature flag for new code insights creation UI.
  * */
@@ -42,7 +46,14 @@ const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIco
 export interface InsightsRouterProps
     extends RouteComponentProps,
         Omit<InsightsPageProps, 'isCreationUIEnabled'>,
-        SearchInsightCreationPageProps {}
+        SearchInsightCreationPageProps,
+        Omit<EditInsightPageProps, 'insightID'> {
+    /**
+     * Authenticated user info, Used to decide where code insight will appears
+     * in personal dashboard (private) or in organisation dashboard (public)
+     * */
+    authenticatedUser: Pick<AuthenticatedUser, 'id' | 'organizations' | 'username'> | null
+}
 
 /** Main Insight routing component. Main entry point to code insights UI. */
 export const InsightsRouter: React.FunctionComponent<InsightsRouterProps> = props => {
@@ -72,6 +83,19 @@ export const InsightsRouter: React.FunctionComponent<InsightsRouterProps> = prop
                     />
 
                     <Route path={`${match.url}/create-intro`} component={IntroCreationLazyPage} />
+
+                    <Route
+                        path={`${match.url}/edit/:insightID`}
+                        /* eslint-disable-next-line react/jsx-no-bind */
+                        render={(props: RouteComponentProps<{ insightID: string }>) => (
+                            <EditInsightLazyPage
+                                platformContext={outerProps.platformContext}
+                                authenticatedUser={outerProps.authenticatedUser}
+                                settingsCascade={outerProps.settingsCascade}
+                                insightID={props.match.params.insightID}
+                            />
+                        )}
+                    />
                 </>
             )}
 

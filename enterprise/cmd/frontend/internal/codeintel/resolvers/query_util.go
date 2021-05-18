@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
-	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
 )
 
 // adjustedUpload pairs an upload visible from the current target commit with the

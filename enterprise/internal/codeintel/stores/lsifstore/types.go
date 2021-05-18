@@ -1,7 +1,7 @@
 package lsifstore
 
 import (
-	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
 )
 
 // Package pairs a package name and the dump that provides it.

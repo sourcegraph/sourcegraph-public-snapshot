@@ -1,0 +1,9 @@
+.monaco-settings-editor {
+    .monaco-mouse-cursor-text {
+        // Hack: remove focus ring around Monaco editor cursor
+        &:focus-within,
+        &:focus-visible {
+            box-shadow: none;
+        }
+    }
+}

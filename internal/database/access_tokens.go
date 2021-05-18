@@ -42,7 +42,7 @@ func AccessTokens(db dbutil.DB) *AccessTokenStore {
 	return &AccessTokenStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
-// NewAccessTokenStoreWithDB instantiates and returns a new AccessTokenStore using the other store handle.
+// AccessTokensWith instantiates and returns a new AccessTokenStore using the other store handle.
 func AccessTokensWith(other basestore.ShareableStore) *AccessTokenStore {
 	return &AccessTokenStore{Store: basestore.NewWithHandle(other.Handle())}
 }

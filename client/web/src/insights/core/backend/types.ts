@@ -28,6 +28,13 @@ export interface SearchInsightSettings {
     repositories: string[]
 }
 
+export interface LangStatsInsightsSettings {
+    /** URL of git repository from which statistics will be collected */
+    repository: string
+    /** The threshold below which a language is counted as part of 'Other' */
+    threshold: number
+}
+
 export interface DataSeries {
     name: string
     stroke: string
@@ -38,14 +45,18 @@ export interface ApiService {
     getCombinedViews: (
         getExtensionsInsights: () => Observable<ViewProviderResult[]>
     ) => Observable<ViewInsightProviderResult[]>
+
     getInsightCombinedViews: (
         extensionApi: Promise<Remote<FlatExtensionHostAPI>>
     ) => Observable<ViewInsightProviderResult[]>
+
     getSubjectSettings: (id: string) => Observable<SubjectSettingsResult>
+
     updateSubjectSettings: (
         context: Pick<PlatformContext, 'updateSettings'>,
         subjectId: string,
         content: string
     ) => Observable<void>
     getSearchInsightContent: (insight: SearchInsightSettings) => Promise<sourcegraph.LineChartContent<any, string>>
+    getLangStatsInsightContent: (insight: LangStatsInsightsSettings) => Promise<sourcegraph.PieChartContent<any>>
 }

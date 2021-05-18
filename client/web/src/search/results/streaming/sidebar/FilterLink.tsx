@@ -3,11 +3,11 @@ import React from 'react'
 
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { getRepoIcon } from '@sourcegraph/shared/src/util/getRepoIcon'
 
 import { SyntaxHighlightedSearchQuery } from '../../../../components/SyntaxHighlightedSearchQuery'
 import { Settings } from '../../../../schema/settings.schema'
 import { Filter } from '../../../stream'
-import { getRepoIcon } from '../getRepoIcon'
 
 import styles from './SearchSidebarSection.module.scss'
 

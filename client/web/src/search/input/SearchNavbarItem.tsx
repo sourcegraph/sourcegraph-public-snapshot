@@ -16,7 +16,7 @@ import {
 } from '..'
 import { submitSearch, QueryState } from '../helpers'
 
-import { LazyMonacoQueryInput } from './LazyMonacoQueryInput'
+import { SearchBox } from './SearchBox'
 import { SearchButton } from './SearchButton'
 
 interface Props
@@ -61,7 +61,7 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
             className="search--navbar-item d-flex align-items-flex-start flex-grow-1 flex-shrink-past-contents"
             onSubmit={onSubmit}
         >
-            <LazyMonacoQueryInput
+            <SearchBox
                 {...props}
                 hasGlobalQueryBehavior={true}
                 queryState={props.navbarSearchState}

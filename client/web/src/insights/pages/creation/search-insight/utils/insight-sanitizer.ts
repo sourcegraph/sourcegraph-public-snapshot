@@ -1,6 +1,7 @@
-import type { Duration } from 'date-fns'
+import { camelCase } from 'lodash'
 
 import { DataSeries } from '../../../../core/backend/types'
+import { InsightTypePrefix, SearchBasedInsight } from '../../../../core/types'
 import { CreateInsightFormFields } from '../types'
 
 export function getSanitizedRepositories(rawRepositories: string): string[] {
@@ -19,21 +20,15 @@ export function getSanitizedSeries(rawSeries: DataSeries[]): DataSeries[] {
 }
 
 /**
- * Insight as it is presented in user/org settings.
- */
-export interface SanitizedInsight {
-    title: string
-    repositories: string[]
-    series: DataSeries[]
-    step: Duration
-}
-
-/**
  * Function converter from form shape insight to insight as it is
  * presented in user/org settings.
  */
-export function getSanitizedInsight(rawInsight: CreateInsightFormFields): SanitizedInsight {
+export function getSanitizedSearchInsight(rawInsight: CreateInsightFormFields): SearchBasedInsight {
     return {
+        // ID generated according to our naming insight convention
+        // <Type of insight>.insight.<name of insight>
+        id: `${InsightTypePrefix.search}.${camelCase(rawInsight.title)}`,
+        visibility: rawInsight.visibility,
         title: rawInsight.title,
         repositories: getSanitizedRepositories(rawInsight.repositories),
         series: getSanitizedSeries(rawInsight.series),

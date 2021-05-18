@@ -153,6 +153,10 @@ const batchSpecApplyPreviewConnectionFieldsFragment = gql`
                     id
                     title
                     state
+                    externalURL {
+                        url
+                    }
+                    externalID
                     currentSpec {
                         description {
                             __typename
@@ -187,6 +191,10 @@ const batchSpecApplyPreviewConnectionFieldsFragment = gql`
                     id
                     title
                     state
+                    externalURL {
+                        url
+                    }
+                    externalID
                     repository {
                         url
                         name

@@ -199,6 +199,10 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                                         any_cloning: isErrorLike(results)
                                                             ? false
                                                             : results.cloning.length > 0,
+                                                        alert:
+                                                            !isErrorLike(results) && results.alert
+                                                                ? results.alert.title
+                                                                : null,
                                                     },
                                                 },
                                             })

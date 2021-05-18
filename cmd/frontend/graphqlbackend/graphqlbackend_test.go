@@ -14,10 +14,12 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 
+	"github.com/graph-gophers/graphql-go/errors"
 	"github.com/graph-gophers/graphql-go/gqltesting"
 	"github.com/inconshreveable/log15"
 
@@ -155,7 +157,7 @@ func TestAffiliatedRepositories(t *testing.T) {
 	database.Mocks.Users.GetByID = func(ctx context.Context, userID int32) (*types.User, error) {
 		return &types.User{
 			ID:        userID,
-			SiteAdmin: userID == 1,
+			SiteAdmin: userID == 2,
 		}, nil
 	}
 	database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
@@ -254,6 +256,41 @@ func TestAffiliatedRepositories(t *testing.T) {
 					}
 				}
 			`,
+		},
+	})
+
+	// Confirm that a site admin cannot list someone else's repos
+	ctx = actor.WithActor(ctx, &actor.Actor{
+		UID: 2,
+	})
+
+	gqltesting.RunTests(t, []*gqltesting.Test{
+		{
+			Context: ctx,
+			Schema:  mustParseGraphQLSchema(t),
+			Query: `
+			{
+				affiliatedRepositories(
+					user: "VXNlcjox"
+				) {
+					nodes {
+						name,
+						private,
+						codeHost {
+							displayName
+						}
+					}
+				}
+			}
+			`,
+			ExpectedResult: `null`,
+			ExpectedErrors: []*errors.QueryError{
+				{
+					Path:          []interface{}{"affiliatedRepositories"},
+					Message:       "Must be authenticated as user with id 1",
+					ResolverError: &backend.InsufficientAuthorizationError{Message: fmt.Sprintf("Must be authenticated as user with id %d", 1)},
+				},
+			},
 		},
 	})
 }

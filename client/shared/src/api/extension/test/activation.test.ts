@@ -1,6 +1,7 @@
 import { BehaviorSubject } from 'rxjs'
 import { filter, first } from 'rxjs/operators'
 import sinon from 'sinon'
+import sourcegraph from 'sourcegraph'
 
 import { SettingsCascade } from '../../../settings/settings'
 import { MainThreadAPI } from '../../contract'
@@ -43,7 +44,15 @@ describe('Extension activation', () => {
             // Noop for activation and deactivation
             const noopPromise = () => Promise.resolve()
 
-            activateExtensions(mockState, mockMain, noopPromise, noopPromise)
+            activateExtensions(
+                mockState,
+                mockMain,
+                function createExtensionAPI() {
+                    return {} as typeof sourcegraph
+                },
+                noopPromise,
+                noopPromise
+            )
 
             // Wait for extensions to load to check on the spy
             await haveInitialExtensionsLoaded

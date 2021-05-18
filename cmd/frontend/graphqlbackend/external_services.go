@@ -123,8 +123,8 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Only site admins may update all or a user's external services.
-	// Otherwise, the authenticated user can only update external services under the same namespace.
+	// 🚨 SECURITY: Site admins can only update site level external services.
+	// Otherwise, the current user can only update their own external services.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		if es.NamespaceUserID == 0 {
 			return nil, err

@@ -157,13 +157,25 @@ func (c *Client) EnqueueRepoUpdate(ctx context.Context, repo api.RepoName) (*pro
 	}
 
 	var res protocol.RepoUpdateResponse
-	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, &repoNotFoundError{string(repo), string(bs)}
+	} else if resp.StatusCode < 200 || resp.StatusCode >= 400 {
 		return nil, errors.New(string(bs))
 	} else if err = json.Unmarshal(bs, &res); err != nil {
 		return nil, err
 	}
 
 	return &res, nil
+}
+
+type repoNotFoundError struct {
+	repo         string
+	responseBody string
+}
+
+func (repoNotFoundError) NotFound() bool { return true }
+func (e *repoNotFoundError) Error() string {
+	return fmt.Sprintf("repo %v not found with response: %v", e.repo, e.responseBody)
 }
 
 // MockEnqueueChangesetSync mocks (*Client).EnqueueChangesetSync for tests.
