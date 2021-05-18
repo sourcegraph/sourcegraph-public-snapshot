@@ -56,42 +56,6 @@ func TestTickerGoBrrr(t *testing.T) {
 	}
 }
 
-func TestTickerRateLimited(t *testing.T) {
-	t.Parallel()
-
-	// We'll set up a 100/sec rate limit, and then ensure we take at least 10 ms
-	// to take two messages without any other delays.
-	cfg, err := window.NewConfiguration(&[]*schema.BatchChangeRolloutWindow{
-		{Rate: "100/sec"},
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	ticker := newTicker(cfg.Schedule())
-
-	// We'll take two messages, which should be at least 10 ms apart.
-	now := time.Now()
-	c := <-ticker.C
-	c <- time.Duration(0)
-
-	c = <-ticker.C
-	have := time.Since(now)
-	if wantMin, wantMax := 9*time.Millisecond, 15*time.Millisecond; have < wantMin || have > wantMax {
-		t.Errorf("unexpectedly short delay between takes: have=%v want >=%v && <=%v", have, wantMin, wantMax)
-	}
-	c <- time.Duration(0)
-
-	// Finally, let's stop the ticker
-	ticker.stop()
-	// Also read from the now-closed `done` to synchronize, since closing a
-	// channel is non-blocking.
-	<-ticker.done
-	// Now make sure that the channel is closed.
-	if c := <-ticker.C; c != nil {
-		t.Errorf("unexpected non-nil channel: %v", c)
-	}
-}
-
 func TestTickerZero(t *testing.T) {
 	t.Parallel()
 
