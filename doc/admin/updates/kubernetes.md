@@ -15,8 +15,9 @@ and any manual migration steps you must perform.
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 ## Unreleased
-All Sourcegraph images now have a registry prefix. [#2901](https://github.com/sourcegraph/deploy-sourcegraph/pull/2901)
 
+- All Sourcegraph images now have a registry prefix. [#2901](https://github.com/sourcegraph/deploy-sourcegraph/pull/2901)
+- The memory requirements for `redis-cache` and `redis-store` have been increased by 1GB. See https://github.com/sourcegraph/deploy-sourcegraph/pull/2898 for more context.
 ## 3.26 -> 3.27
 
 > Warning: ⚠️ Sourcegraph 3.27 now requires **Postgres 12+**.
