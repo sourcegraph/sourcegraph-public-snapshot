@@ -105,17 +105,17 @@ describe('ResultContainer', () => {
         expect(expandedItems.length).toBe(1)
     })
 
-    it('expands to display all results when the header is clicked', () => {
+    it('expands to display all results when the expand button is clicked', () => {
         const { container } = render(<ResultContainer {...defaultProps} />)
 
         let expandedItems = container.querySelectorAll('.file-match-children__item')
         // 1 is the value of subsetMatches
         expect(expandedItems.length).toBe(1)
 
-        const header = container.querySelector('.result-container__header--collapsible')
-        expect(header).toBeVisible()
+        const button = container.querySelector('.result-container__toggle-matches-container')
+        expect(button).toBeVisible()
 
-        fireEvent.click(header!)
+        fireEvent.click(button!)
 
         expandedItems = container.querySelectorAll('.file-match-children__item')
         expect(expandedItems.length).toBe(5)
@@ -131,10 +131,10 @@ describe('ResultContainer', () => {
     it('displays the collapse label when expanded', () => {
         const { container } = render(<ResultContainer {...defaultProps} />)
 
-        const clickableHeader = container.querySelector('.result-container__header--collapsible')
-        expect(clickableHeader).toBeVisible()
+        const button = container.querySelector('.result-container__toggle-matches-container')
+        expect(button).toBeVisible()
 
-        fireEvent.click(clickableHeader!)
+        fireEvent.click(button!)
 
         expect(getByText(container, 'Hide matches')).toBeVisible()
     })
@@ -146,15 +146,15 @@ describe('ResultContainer', () => {
         expect(expandedItems.length).toBe(5)
     })
 
-    it('collapses to show no results when the header is clicked, when allExpanded is true', () => {
+    it('collapses to show no results when the collapse is clicked, when allExpanded is true', () => {
         const { container } = render(<ResultContainer {...findReferencesProps} />)
 
         let expandedItems = container.querySelectorAll('.file-match-children__item')
         expect(expandedItems.length).toBe(5)
 
-        const header = container.querySelector('.result-container__header--collapsible')
-        expect(header).toBeVisible()
-        fireEvent.click(header!)
+        const button = container.querySelector('.result-container__toggle-matches-container')
+        expect(button).toBeVisible()
+        fireEvent.click(button!)
 
         expandedItems = container.querySelectorAll('.file-match-children__item')
         expect(expandedItems.length).toBe(0)

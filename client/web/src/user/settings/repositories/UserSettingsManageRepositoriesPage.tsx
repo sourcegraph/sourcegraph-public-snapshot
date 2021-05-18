@@ -103,13 +103,15 @@ const isLoading = (status: initialFetchingReposState): boolean => {
 
 const displayWarning = (warning: string, hint?: JSX.Element): JSX.Element => (
     <div key={warning} className="alert alert-warning mt-3 mb-0" role="alert">
-        <AlertCircleIcon className="icon icon-inline" /> {warning}. {hint} {hint ? 'for more details' : null}
+        <AlertCircleIcon className="redesign-d-none icon icon-inline" /> {warning}. {hint}{' '}
+        {hint ? 'for more details' : null}
     </div>
 )
 
 const displayError = (error: ErrorLike, hint?: JSX.Element): JSX.Element => (
     <div key={error.message} className="alert alert-danger mt-3 mb-0" role="alert">
-        <AlertCircleIcon className="icon icon-inline" /> {error.message}. {hint} {hint ? 'for more details' : null}
+        <AlertCircleIcon className="redesign-d-none icon icon-inline" /> {error.message}. {hint}{' '}
+        {hint ? 'for more details' : null}
     </div>
 )
 

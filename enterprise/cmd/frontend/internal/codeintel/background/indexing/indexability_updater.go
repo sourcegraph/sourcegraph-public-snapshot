@@ -12,11 +12,11 @@ import (
 	"github.com/pkg/errors"
 	"golang.org/x/time/rate"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/inference"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/inference"
 )
 
 const MaxGitserverRequestsPerSecond = 20
@@ -158,11 +158,11 @@ func (u *IndexabilityUpdater) queueRepository(ctx context.Context, repoUsageStat
 	}
 	traceLog(log.Int("numPaths", len(paths)))
 
-	gitserverClient := inference.NewGitserverClientShim(repoUsageStatistics.RepositoryID, commit, u.gitserverClient)
+	gitclient := newGitClient(u.gitserverClient, repoUsageStatistics.RepositoryID, commit)
 
 	matched := false
-	for name, handler := range inference.Recognizers {
-		matched = handler.CanIndex(paths, gitserverClient)
+	for name, recognizer := range inference.Recognizers {
+		matched = recognizer.CanIndexRepo(gitclient, paths)
 		traceLog(log.Bool(fmt.Sprintf("%s.CanIndex", name), matched))
 
 		if matched {

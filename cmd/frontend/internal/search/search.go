@@ -28,6 +28,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/search/run"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
@@ -158,7 +160,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	first := true
 
 	for {
-		var event graphqlbackend.SearchEvent
+		var event streaming.SearchEvent
 		var ok bool
 		select {
 		case event, ok = <-events:
@@ -177,12 +179,11 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		progress.Update(event)
 		filters.Update(event)
 
-		for _, result := range event.Results {
+		for _, match := range event.Results {
 			if display <= 0 {
 				break
 			}
 
-			match := toMatch(result)
 			display = match.Limit(display)
 			matchesAppend(fromMatch(match))
 		}
@@ -277,8 +278,8 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // startSearch will start a search. It returns the events channel which
 // streams out search events. Once events is closed you can call results which
 // will return the results resolver and error.
-func (h *streamHandler) startSearch(ctx context.Context, a *args) (events <-chan graphqlbackend.SearchEvent, inputs graphqlbackend.SearchInputs, results func() (*graphqlbackend.SearchResultsResolver, error)) {
-	eventsC := make(chan graphqlbackend.SearchEvent)
+func (h *streamHandler) startSearch(ctx context.Context, a *args) (events <-chan streaming.SearchEvent, inputs run.SearchInputs, results func() (*graphqlbackend.SearchResultsResolver, error)) {
+	eventsC := make(chan streaming.SearchEvent)
 
 	search, err := h.newSearchResolver(ctx, h.db, &graphqlbackend.SearchArgs{
 		Query:          a.Query,
@@ -286,13 +287,13 @@ func (h *streamHandler) startSearch(ctx context.Context, a *args) (events <-chan
 		PatternType:    strPtr(a.PatternType),
 		VersionContext: strPtr(a.VersionContext),
 
-		Stream: graphqlbackend.StreamFunc(func(event graphqlbackend.SearchEvent) {
+		Stream: streaming.StreamFunc(func(event streaming.SearchEvent) {
 			eventsC <- event
 		}),
 	})
 	if err != nil {
 		close(eventsC)
-		return eventsC, graphqlbackend.SearchInputs{}, func() (*graphqlbackend.SearchResultsResolver, error) {
+		return eventsC, run.SearchInputs{}, func() (*graphqlbackend.SearchResultsResolver, error) {
 			return nil, err
 		}
 	}
@@ -318,7 +319,7 @@ func (h *streamHandler) startSearch(ctx context.Context, a *args) (events <-chan
 
 type searchResolver interface {
 	Results(context.Context) (*graphqlbackend.SearchResultsResolver, error)
-	Inputs() graphqlbackend.SearchInputs
+	Inputs() run.SearchInputs
 }
 
 func defaultNewSearchResolver(ctx context.Context, db dbutil.DB, args *graphqlbackend.SearchArgs) (searchResolver, error) {
@@ -374,24 +375,6 @@ func fromStrPtr(s *string) string {
 		return ""
 	}
 	return *s
-}
-
-// Temporary function to convert to SearchResultResolvers to Matches until
-// streaming search takes matches directly
-func toMatch(srr graphqlbackend.SearchResultResolver) result.Match {
-	if fmr, ok := srr.ToFileMatch(); ok {
-		return &fmr.FileMatch
-	}
-
-	if csr, ok := srr.ToCommitSearchResult(); ok {
-		return &csr.CommitMatch
-	}
-
-	if rr, ok := srr.ToRepository(); ok {
-		return &rr.RepoMatch
-	}
-
-	panic(fmt.Sprintf("unknown concrete type %T behind SearchResultResolver", srr))
 }
 
 func fromMatch(match result.Match) streamhttp.EventMatch {
@@ -491,12 +474,13 @@ func fromCommit(commit *result.CommitMatch) *streamhttp.EventCommitMatch {
 	}
 
 	return &streamhttp.EventCommitMatch{
-		Type:    streamhttp.CommitMatchType,
-		Label:   commit.Label(),
-		URL:     commit.URL().String(),
-		Detail:  commit.Detail(),
-		Content: content,
-		Ranges:  ranges,
+		Type:       streamhttp.CommitMatchType,
+		Label:      commit.Label(),
+		URL:        commit.URL().String(),
+		Detail:     commit.Detail(),
+		Repository: string(commit.RepoName.Name),
+		Content:    content,
+		Ranges:     ranges,
 	}
 }
 

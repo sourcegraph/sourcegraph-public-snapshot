@@ -196,15 +196,13 @@ export const Panel = React.memo<Props>(props => {
                               label: panelView.title,
                               id: panelView.id,
                               priority: panelView.priority,
-                              element: (
-                                  <PanelView {...props} panelView={panelView} history={history} location={location} />
-                              ),
+                              element: <PanelView {...props} panelView={panelView} location={location} />,
                               hasLocations: !!panelView.locationProvider,
                           })
                       )
                       .sort((a, b) => b.priority - a.priority)
                 : [],
-        [history, location, panelViews, props]
+        [location, panelViews, props]
     )
 
     useEffect(() => {
@@ -237,9 +235,13 @@ export const Panel = React.memo<Props>(props => {
         <Tabs className="panel" index={tabIndex} onChange={handleActiveTab}>
             <div className="tablist-wrapper bg-body d-flex justify-content-between">
                 <TabList>
-                    {items.map(({ label, id }) => (
-                        <Tab key={id}>{label}</Tab>
-                    ))}
+                    <div className="d-flex w-100">
+                        {items.map(({ label, id }) => (
+                            <Tab key={id}>
+                                <span className="tablist-wrapper--tab-label">{label}</span>
+                            </Tab>
+                        ))}
+                    </div>
                 </TabList>
                 <div className="align-items-center d-flex mr-2">
                     {activeTab && (

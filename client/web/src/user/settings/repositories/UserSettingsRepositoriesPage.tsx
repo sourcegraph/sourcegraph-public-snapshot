@@ -15,11 +15,11 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { ErrorAlert } from '../../../components/alerts'
 import { queryExternalServices } from '../../../components/externalServices/backend'
 import {
-    Connection,
     FilteredConnection,
     FilteredConnectionFilter,
     FilteredConnectionQueryArguments,
-    FilterValue,
+    FilteredConnectionFilterValue,
+    Connection,
 } from '../../../components/FilteredConnection'
 import { PageTitle } from '../../../components/PageTitle'
 import {
@@ -163,7 +163,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                             { delay: 2000 }
                         ),
                         map(result => {
-                            const services: FilterValue[] = [
+                            const services: FilteredConnectionFilterValue[] = [
                                 {
                                     value: 'all',
                                     label: 'All',

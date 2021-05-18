@@ -35,14 +35,14 @@
 }
 
 .theme-light.theme-redesign {
-    --input-bg: #{$white};
-    --input-disabled-bg: #{$redesign-gray-04};
-    --input-border-color: #{$redesign-gray-04};
-    --input-color: #{$redesign-gray-09};
-    --input-placeholder-color: #{$redesign-gray-07};
-    --input-group-addon-color: #{$redesign-gray-08};
-    --input-group-addon-bg: #{$redesign-gray-03};
-    --input-group-addon-border-color: #{$redesign-gray-03};
+    --input-bg: var(--white);
+    --input-disabled-bg: var(--gray-04);
+    --input-border-color: var(--gray-04);
+    --input-color: var(--gray-09);
+    --input-placeholder-color: var(--gray-07);
+    --input-group-addon-color: var(--gray-08);
+    --input-group-addon-bg: var(--gray-03);
+    --input-group-addon-border-color: var(--gray-03);
     --input-focus-border-color: var(--border-active-color);
     --input-focus-box-shadow: var(--focus-box-shadow);
 
@@ -51,14 +51,14 @@
 }
 
 .theme-dark.theme-redesign {
-    --input-bg: #{$redesign-gray-10};
-    --input-disabled-bg: #{$redesign-gray-08};
-    --input-border-color: #{$redesign-gray-08};
-    --input-color: #{$redesign-gray-04};
-    --input-placeholder-color: #{$redesign-gray-05};
-    --input-group-addon-color: #{$redesign-gray-01};
-    --input-group-addon-bg: #{$redesign-gray-08};
-    --input-group-addon-border-color: #{$redesign-gray-08};
+    --input-bg: var(--gray-10);
+    --input-disabled-bg: var(--gray-08);
+    --input-border-color: var(--gray-08);
+    --input-color: var(--gray-04);
+    --input-placeholder-color: var(--gray-05);
+    --input-group-addon-color: var(--gray-01);
+    --input-group-addon-bg: var(--gray-08);
+    --input-group-addon-border-color: var(--gray-08);
     --input-focus-border-color: var(--border-active-color);
     --input-focus-box-shadow: var(--focus-box-shadow);
 

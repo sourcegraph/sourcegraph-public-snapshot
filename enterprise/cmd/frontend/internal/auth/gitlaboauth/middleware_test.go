@@ -41,7 +41,7 @@ func TestMiddleware(t *testing.T) {
 	authedHandler.Handle("/", Middleware(nil).App(h))
 
 	mockGitLabCom := newMockProvider(t, "gitlab-com-client", "gitlab-com-secret", "https://gitlab.com/")
-	mockPrivateGitLab := newMockProvider(t, "gitlab-private-instsance-client", "github-private-instance-secret", "https://mycompany.com/")
+	mockPrivateGitLab := newMockProvider(t, "gitlab-private-instance-client", "github-private-instance-secret", "https://mycompany.com/")
 	providers.MockProviders = []providers.Provider{mockGitLabCom.Provider}
 	defer func() { providers.MockProviders = nil }()
 
@@ -123,7 +123,7 @@ func TestMiddleware(t *testing.T) {
 		if got, want := uredirect.Query().Get("client_id"), mockGitLabCom.Provider.CachedInfo().ClientID; got != want {
 			t.Errorf("got %v, want %v", got, want)
 		}
-		if got, want := uredirect.Query().Get("scope"), "read_user api"; got != want {
+		if got, want := uredirect.Query().Get("scope"), "read_user read_api"; got != want {
 			t.Errorf("got %v, want %v", got, want)
 		}
 		if got, want := uredirect.Query().Get("response_type"), "code"; got != want {
@@ -156,7 +156,7 @@ func TestMiddleware(t *testing.T) {
 		if got, want := uredirect.Query().Get("client_id"), mockPrivateGitLab.Provider.CachedInfo().ClientID; got != want {
 			t.Errorf("got %v, want %v", got, want)
 		}
-		if got, want := uredirect.Query().Get("scope"), "read_user api"; got != want {
+		if got, want := uredirect.Query().Get("scope"), "read_user read_api"; got != want {
 			t.Errorf("got %v, want %v", got, want)
 		}
 		if got, want := uredirect.Query().Get("response_type"), "code"; got != want {
@@ -189,7 +189,7 @@ func TestMiddleware(t *testing.T) {
 		if got, want := uredirect.Query().Get("client_id"), mockGitLabCom.Provider.CachedInfo().ClientID; got != want {
 			t.Errorf("got %v, want %v", got, want)
 		}
-		if got, want := uredirect.Query().Get("scope"), "read_user api"; got != want {
+		if got, want := uredirect.Query().Get("scope"), "read_user read_api"; got != want {
 			t.Errorf("got %v, want %v", got, want)
 		}
 		if got, want := uredirect.Query().Get("response_type"), "code"; got != want {

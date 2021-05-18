@@ -16,7 +16,7 @@ export const PerformanceWarningAlert: React.FunctionComponent = () => (
         partialStorageKey="performanceWarningAlert"
         className="alert alert-warning align-items-center m-2"
     >
-        <WarningIcon className="icon-inline mr-2 flex-shrink-0" />
+        <WarningIcon className="redesign-d-none icon-inline mr-2 flex-shrink-0" />
         <div>
             Search performance and accuracy are limited on single-node Docker deployments. We recommend that instances
             with 100+ repositories&nbsp;

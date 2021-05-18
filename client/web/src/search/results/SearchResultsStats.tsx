@@ -21,13 +21,13 @@ export const SearchResultsStats: React.FunctionComponent<{
     return (
         <>
             <div className="search-results-info-bar__notice test-search-results-stats">
-                <span>
+                <small>
                     <CalculatorIcon className="icon-inline" /> {results.approximateResultCount}{' '}
                     {pluralize('result', results.matchCount)} in {(results.elapsedMilliseconds / 1000).toFixed(2)}{' '}
                     seconds
                     {results.indexUnavailable && ' (index unavailable)'}
                     {results.limitHit && String.fromCharCode(160)}
-                </span>
+                </small>
 
                 {results.limitHit && onShowMoreResultsClick && (
                     <button type="button" className="btn btn-link btn-sm p-0" onClick={onShowMoreResultsClick}>
@@ -38,19 +38,19 @@ export const SearchResultsStats: React.FunctionComponent<{
 
             {excludedForksCount > 0 && (
                 <div className="search-results-info-bar__notice" data-tooltip="add fork:yes to include forks">
-                    <span>
+                    <small>
                         <AlertCircleIcon className="icon-inline" /> {excludedForksCount} forked{' '}
                         {pluralize('repository', excludedForksCount, 'repositories')} excluded
-                    </span>
+                    </small>
                 </div>
             )}
 
             {excludedArchivedCount > 0 && (
                 <div className="search-results-info-bar__notice" data-tooltip="add archived:yes to include archives">
-                    <span>
+                    <small>
                         <AlertCircleIcon className="icon-inline" /> {excludedArchivedCount} archived{' '}
                         {pluralize('repository', excludedArchivedCount, 'repositories')} excluded
-                    </span>
+                    </small>
                 </div>
             )}
 
@@ -59,10 +59,10 @@ export const SearchResultsStats: React.FunctionComponent<{
                     className="search-results-info-bar__notice"
                     data-tooltip={results.missing.map(repo => repo.name).join('\n')}
                 >
-                    <span>
+                    <small>
                         <MapSearchIcon className="icon-inline" /> {results.missing.length}{' '}
                         {pluralize('repository', results.missing.length, 'repositories')} not found
-                    </span>
+                    </small>
                 </div>
             )}
 
@@ -71,11 +71,11 @@ export const SearchResultsStats: React.FunctionComponent<{
                     className="search-results-info-bar__notice"
                     data-tooltip={results.timedout.map(repo => repo.name).join('\n')}
                 >
-                    <span>
+                    <small>
                         <TimerSandIcon className="icon-inline" /> {results.timedout.length}{' '}
                         {pluralize('repository', results.timedout.length, 'repositories')} timed out (reload to try
                         again, or specify a longer "timeout:" in your query)
-                    </span>
+                    </small>
                 </div>
             )}
 
@@ -84,10 +84,10 @@ export const SearchResultsStats: React.FunctionComponent<{
                     className="search-results-info-bar__notice"
                     data-tooltip={results.cloning.map(repo => repo.name).join('\n')}
                 >
-                    <span>
+                    <small>
                         <CloudDownloadIcon className="icon-inline" /> {results.cloning.length}{' '}
                         {pluralize('repository', results.cloning.length, 'repositories')} cloning (reload to try again)
-                    </span>
+                    </small>
                 </div>
             )}
         </>

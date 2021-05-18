@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Collapse } from 'reactstrap'
 
 import { FilterLink, FilterLinkProps } from './FilterLink'
@@ -10,32 +10,29 @@ import styles from './SearchSidebarSection.module.scss'
 export const SearchSidebarSection: React.FunctionComponent<{
     header: string
     children?: React.ReactElement[]
+    className?: string
     showSearch?: boolean // Search only works if children are FilterLink
-}> = ({ header, children = [], showSearch = false }) => {
+}> = ({ header, children = [], className, showSearch = false }) => {
     const [filter, setFilter] = useState('')
 
     // Clear filter when children change
     useEffect(() => setFilter(''), [children])
 
-    const filteredChildren = useMemo(
-        () =>
-            children.filter(child => {
-                if (child.type === FilterLink) {
-                    const props: FilterLinkProps = child.props as FilterLinkProps
-                    return (
-                        (props?.label).toLowerCase().includes(filter.toLowerCase()) ||
-                        (props?.value).toLowerCase().includes(filter.toLowerCase())
-                    )
-                }
-                return true
-            }),
-        [children, filter]
-    )
+    const filteredChildren = children.filter(child => {
+        if (child.type === FilterLink) {
+            const props: FilterLinkProps = child.props as FilterLinkProps
+            return (
+                (props?.label).toLowerCase().includes(filter.toLowerCase()) ||
+                (props?.value).toLowerCase().includes(filter.toLowerCase())
+            )
+        }
+        return true
+    })
 
     const [collapsed, setCollapsed] = useState(false)
 
     return children.length > 0 ? (
-        <div>
+        <div className={className}>
             <button
                 type="button"
                 className={classNames('btn btn-outline-secondary', styles.sidebarSectionCollapseButton)}
@@ -56,11 +53,7 @@ export const SearchSidebarSection: React.FunctionComponent<{
                             value={filter}
                             onChange={event => setFilter(event.currentTarget.value)}
                             data-testid="sidebar-section-search-box"
-                            className={classNames(
-                                'form-control',
-                                styles.sidebarSectionSearchBox,
-                                'test-sidebar-section-search-box'
-                            )}
+                            className={classNames('form-control form-control-sm', styles.sidebarSectionSearchBox)}
                         />
                     )}
 

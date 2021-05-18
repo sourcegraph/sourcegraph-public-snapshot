@@ -3,10 +3,10 @@ package authtest
 import (
 	"bytes"
 	"io"
-	"net/http"
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -26,6 +26,44 @@ func TestCodeIntelEndpoints(t *testing.T) {
 			t.Fatal(err)
 		}
 	}()
+
+	// Set up external service
+	esID, err := client.AddExternalService(
+		gqltestutil.AddExternalServiceInput{
+			Kind:        extsvc.KindGitHub,
+			DisplayName: "authtest-github-code-intel-repository",
+			Config: mustMarshalJSONString(
+				&schema.GitHubConnection{
+					Authorization: &schema.GitHubAuthorization{},
+					Repos: []string{
+						"sgtest/go-diff",
+						"sgtest/private", // Private
+					},
+					RepositoryPathPattern: "github.com/{nameWithOwner}",
+					Token:                 *githubToken,
+					Url:                   "https://ghe.sgdev.org/",
+				},
+			),
+		},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		err := client.DeleteExternalService(esID)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	const privateRepo = "github.com/sgtest/private"
+	err = client.WaitForReposToBeCloned(
+		"github.com/sgtest/go-diff",
+		privateRepo,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	t.Run("LSIF upload", func(t *testing.T) {
 		// Update site configuration to enable "lsifEnforceAuth".
@@ -82,8 +120,8 @@ func TestCodeIntelEndpoints(t *testing.T) {
 		}
 		defer func() { _ = resp.Body.Close() }()
 
-		if resp.StatusCode != http.StatusUnauthorized {
-			t.Fatalf(`Want status code %d error but got %d`, http.StatusUnauthorized, resp.StatusCode)
+		if resp.StatusCode/100 != 4 {
+			t.Fatalf(`Want status code 4xx error but got %d`, resp.StatusCode)
 		}
 	})
 }

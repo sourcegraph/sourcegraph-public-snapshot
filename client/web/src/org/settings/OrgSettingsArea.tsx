@@ -43,7 +43,6 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
                 <ErrorBoundary location={props.location}>
                     <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
                         <Switch>
-                            {/* eslint-disable react/jsx-no-bind */}
                             <Route
                                 path={props.match.path}
                                 key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
@@ -88,7 +87,6 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
                                 )}
                             />
                             <Route component={NotFoundPage} />
-                            {/* eslint-enable react/jsx-no-bind */}
                         </Switch>
                     </React.Suspense>
                 </ErrorBoundary>

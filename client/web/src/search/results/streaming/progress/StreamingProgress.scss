@@ -13,7 +13,7 @@
         color: var(--link-color);
 
         .theme-redesign & {
-            color: inherit;
+            color: var(--body-color);
             padding-left: 0.5rem;
             padding-right: 0.5rem;
 
@@ -34,9 +34,13 @@
         }
     }
 
-    &__skipped {
-        margin-left: 0.25rem;
+    &__count-icon {
+        .theme-redesign & {
+            display: none;
+        }
+    }
 
+    &__skipped {
         &--warning {
             color: var(--infobar-warning-color);
         }
@@ -56,9 +60,14 @@
     &__button {
         &:disabled {
             opacity: 1;
+
+            .theme-redesign & {
+                color: var(--body-color);
+            }
         }
     }
 
+    // Not needed once .theme-redesign is removed
     &__icon {
         color: var(--primary);
     }
@@ -95,7 +104,12 @@
         margin-right: 0.75rem;
     }
 
+    &__chevron {
+        fill: currentColor !important;
+    }
+
     &--warn {
+        // Not needed once .theme-redesign is removed
         .streaming-skipped-item__icon {
             color: var(--danger);
         }

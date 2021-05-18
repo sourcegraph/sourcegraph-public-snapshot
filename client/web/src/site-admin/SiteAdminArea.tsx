@@ -8,13 +8,13 @@ import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { withAuthenticatedUser } from '../auth/withAuthenticatedUser'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
 import { Page } from '../components/Page'
-import { PageHeader } from '../components/PageHeader'
 import { RouteDescriptor } from '../util/contributions'
 
 import { SiteAdminSidebar, SiteAdminSideBarGroups } from './SiteAdminSidebar'
@@ -103,7 +103,6 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<SiteAdminAreaProps> = 
                         <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
                             <Switch>
                                 {props.routes.map(
-                                    /* eslint-disable react/jsx-no-bind */
                                     ({ render, path, exact, condition = () => true }) =>
                                         condition(context) && (
                                             <Route
@@ -116,7 +115,6 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<SiteAdminAreaProps> = 
                                                 }
                                             />
                                         )
-                                    /* eslint-enable react/jsx-no-bind */
                                 )}
                                 <Route component={NotFoundPage} />
                             </Switch>

@@ -19,9 +19,16 @@
         display: flex;
         flex-wrap: wrap;
         justify-content: flex-end;
+        gap: 0.5rem;
         height: 100%;
         flex: 1 0 auto;
         text-align: right;
+
+        .theme-redesign & {
+            justify-content: flex-start;
+            align-items: flex-start;
+            text-align: left;
+        }
     }
 
     &__notice {
@@ -34,6 +41,24 @@
         height: 1rem;
         border-right: 1px solid var(--border-color);
         margin: 0 0.5rem;
+
+        .theme-redesign & {
+            margin-left: 0;
+
+            &:first-child {
+                display: none;
+            }
+        }
+    }
+
+    &__expander {
+        display: none;
+
+        .theme-redesign & {
+            display: block;
+            flex-grow: 1;
+            margin-right: 0; // Reset gap
+        }
     }
 
     .theme-redesign & {

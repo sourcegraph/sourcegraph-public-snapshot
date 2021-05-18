@@ -7,8 +7,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
-	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
 )
 
 type DBStore interface {
@@ -70,4 +71,9 @@ func (s *LSIFStoreShim) Transact(ctx context.Context) (LSIFStore, error) {
 type GitserverClient interface {
 	DirectoryChildren(ctx context.Context, repositoryID int, commit string, dirnames []string) (map[string][]string, error)
 	CommitDate(ctx context.Context, repositoryID int, commit string) (time.Time, error)
+	ResolveRevision(ctx context.Context, repositoryID int, versionString string) (api.CommitID, error)
+}
+
+type IndexEnqueuer interface {
+	QueueIndexesForPackage(ctx context.Context, pkg semantic.Package) error
 }

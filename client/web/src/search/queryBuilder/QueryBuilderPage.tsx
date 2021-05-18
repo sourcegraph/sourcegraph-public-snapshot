@@ -3,10 +3,10 @@ import { Link } from 'react-router-dom'
 
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
+import { PageHeader } from '@sourcegraph/wildcard'
 
 import { PatternTypeProps, SearchContextProps } from '..'
 import { Page } from '../../components/Page'
-import { PageHeader } from '../../components/PageHeader'
 import { PageTitle } from '../../components/PageTitle'
 
 import { QueryBuilder } from './QueryBuilder'

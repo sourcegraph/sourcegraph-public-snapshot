@@ -9,6 +9,7 @@ import {
 import { HoverOverlay, HoverOverlayProps } from '@sourcegraph/shared/src/hover/HoverOverlay'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
+import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { HoverThresholdProps } from '../repo/RepoContainer'
 
@@ -60,20 +61,26 @@ export const WebHoverOverlay: React.FunctionComponent<HoverOverlayProps & HoverT
 }
 WebHoverOverlay.displayName = 'WebHoverOverlay'
 
-export const WebCommandListPopoverButton: React.FunctionComponent<CommandListPopoverButtonProps> = props => (
-    <CommandListPopoverButton
-        {...props}
-        buttonClassName="btn btn-link"
-        popoverClassName="popover"
-        popoverInnerClassName="border rounded overflow-hidden"
-        formClassName="form"
-        inputClassName="form-control px-2 py-1 rounded-0"
-        listClassName="list-group list-group-flush list-unstyled"
-        actionItemClassName="list-group-item list-group-item-action px-2"
-        selectedActionItemClassName="active border-primary"
-        noResultsClassName="list-group-item text-muted"
-    />
-)
+export const WebCommandListPopoverButton: React.FunctionComponent<CommandListPopoverButtonProps> = props => {
+    const [isRedesignEnabled] = useRedesignToggle()
+    return (
+        <CommandListPopoverButton
+            {...props}
+            buttonClassName="btn btn-link"
+            popoverClassName={classNames('popover', isRedesignEnabled && 'border-0')}
+            popoverInnerClassName="rounded overflow-hidden"
+            formClassName={classNames('form', isRedesignEnabled && 'p-2 bg-1 border-bottom')}
+            inputClassName="form-control px-2 py-1"
+            listClassName={classNames('list-group list-group-flush list-unstyled', isRedesignEnabled && 'pt-1')}
+            actionItemClassName={classNames(
+                'list-group-item list-group-item-action',
+                isRedesignEnabled ? 'p-2 border-0' : 'px-2'
+            )}
+            selectedActionItemClassName="active border-primary"
+            noResultsClassName="list-group-item text-muted"
+        />
+    )
+}
 
 WebCommandListPopoverButton.displayName = 'WebCommandListPopoverButton'
 

@@ -1,5 +1,4 @@
 import classNames from 'classnames'
-import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
@@ -10,6 +9,7 @@ import { Button, Collapse, Form, FormGroup, Input, Label } from 'reactstrap'
 
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
+import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { SyntaxHighlightedSearchQuery } from '../../../../components/SyntaxHighlightedSearchQuery'
 import { Skipped } from '../../../stream'
@@ -34,11 +34,7 @@ const sortBySeverity = (a: Skipped, b: Skipped): number => {
     return aSev - bSev
 }
 
-const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; history: H.History; startOpen: boolean }> = ({
-    skipped,
-    history,
-    startOpen,
-}) => {
+const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; startOpen: boolean }> = ({ skipped, startOpen }) => {
     const [isOpen, setIsOpen] = useState(startOpen)
 
     const toggleIsOpen = useCallback(() => setIsOpen(oldValue => !oldValue), [])
@@ -52,6 +48,9 @@ const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; history: H.His
         }
     }, [])
 
+    const [isRedesignEnabled] = useRedesignToggle()
+    const buttonColorRedesign = skipped.severity !== 'info' ? 'outline-danger' : 'outline-primary'
+
     return (
         <div
             className={classNames('streaming-skipped-item pt-2 w-100', {
@@ -63,6 +62,7 @@ const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; history: H.His
                 onClick={toggleIsOpen}
                 onKeyDown={onKeyDown}
                 disabled={!skipped.message}
+                color={isRedesignEnabled ? buttonColorRedesign : 'secondary'}
             >
                 <h4 className="d-flex align-items-center mb-0 w-100">
                     {skipped.severity === 'info' ? (
@@ -74,9 +74,9 @@ const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; history: H.His
 
                     {skipped.message &&
                         (isOpen ? (
-                            <ChevronDownIcon className="icon-inline flex-shrink-0" />
+                            <ChevronDownIcon className="icon-inline flex-shrink-0 streaming-skipped-item__chevron" />
                         ) : (
-                            <ChevronLeftIcon className="icon-inline flex-shrink-0" />
+                            <ChevronLeftIcon className="icon-inline flex-shrink-0 streaming-skipped-item__chevron" />
                         ))}
                 </h4>
             </Button>
@@ -85,7 +85,6 @@ const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; history: H.His
                     <Markdown
                         className="streaming-skipped-item__message text-left py-1"
                         dangerousInnerHTML={renderMarkdown(skipped.message)}
-                        history={history}
                     />
                 </Collapse>
             )}
@@ -95,8 +94,8 @@ const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; history: H.His
 }
 
 export const StreamingProgressSkippedPopover: React.FunctionComponent<
-    Pick<StreamingProgressProps, 'progress' | 'onSearchAgain' | 'history'>
-> = ({ progress, onSearchAgain, history }) => {
+    Pick<StreamingProgressProps, 'progress' | 'onSearchAgain'>
+> = ({ progress, onSearchAgain }) => {
     const [selectedSuggestedSearches, setSelectedSuggestedSearches] = useState(new Set<string>())
     const submitHandler = useCallback(
         (event: React.FormEvent) => {
@@ -127,7 +126,6 @@ export const StreamingProgressSkippedPopover: React.FunctionComponent<
                 <SkippedMessage
                     key={skipped.reason}
                     skipped={skipped}
-                    history={history}
                     // Start with first item open, but only if it's not info severity or if there's only one item
                     startOpen={index === 0 && (skipped.severity !== 'info' || sortedSkippedItems.length === 1)}
                 />

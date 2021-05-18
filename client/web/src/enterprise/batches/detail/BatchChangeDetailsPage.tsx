@@ -1,3 +1,4 @@
+import { subDays } from 'date-fns'
 import * as H from 'history'
 import { isEqual } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
@@ -10,10 +11,10 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { PageHeader } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
 import { HeroPage } from '../../../components/HeroPage'
-import { PageHeader } from '../../../components/PageHeader'
 import { PageTitle } from '../../../components/PageTitle'
 import { BatchChangeFields, Scalars } from '../../../graphql-operations'
 import { Description } from '../Description'
@@ -24,11 +25,13 @@ import {
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
     queryChangesetCountsOverTime as _queryChangesetCountsOverTime,
     deleteBatchChange as _deleteBatchChange,
+    queryBulkOperations as _queryBulkOperations,
 } from './backend'
 import { BatchChangeDetailsActionSection } from './BatchChangeDetailsActionSection'
 import { BatchChangeInfoByline } from './BatchChangeInfoByline'
 import { BatchChangeStatsCard } from './BatchChangeStatsCard'
 import { BatchChangeTabs } from './BatchChangeTabs'
+import { BulkOperationsAlerts } from './BulkOperationsAlerts'
 import { ChangesetsArchivedNotice } from './ChangesetsArchivedNotice'
 import { ClosedNotice } from './ClosedNotice'
 import { SupersedingBatchSpecAlert } from './SupersedingBatchSpecAlert'
@@ -60,6 +63,8 @@ export interface BatchChangeDetailsPageProps
     queryChangesetCountsOverTime?: typeof _queryChangesetCountsOverTime
     /** For testing only. */
     deleteBatchChange?: typeof _deleteBatchChange
+    /** For testing only. */
+    queryBulkOperations?: typeof _queryBulkOperations
 }
 
 /**
@@ -79,19 +84,21 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
     queryExternalChangesetWithFileDiffs,
     queryChangesetCountsOverTime,
     deleteBatchChange,
+    queryBulkOperations,
 }) => {
     useEffect(() => {
         telemetryService.logViewEvent('BatchChangeDetailsPage')
     }, [telemetryService])
 
+    const createdAfter = useMemo(() => subDays(new Date(), 3).toISOString(), [])
     const batchChange: BatchChangeFields | null | undefined = useObservable(
         useMemo(
             () =>
-                fetchBatchChangeByNamespace(namespaceID, batchChangeName).pipe(
+                fetchBatchChangeByNamespace(namespaceID, batchChangeName, createdAfter).pipe(
                     repeatWhen(notifier => notifier.pipe(delay(5000))),
                     distinctUntilChanged((a, b) => isEqual(a, b))
                 ),
-            [namespaceID, batchChangeName, fetchBatchChangeByNamespace]
+            [fetchBatchChangeByNamespace, namespaceID, batchChangeName, createdAfter]
         )
     )
 
@@ -139,6 +146,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                 }
                 className="test-batch-change-details-page mb-3"
             />
+            <BulkOperationsAlerts location={location} bulkOperations={batchChange.activeBulkOperations} />
             <SupersedingBatchSpecAlert spec={batchChange.currentSpec.supersedingBatchSpec} />
             <ClosedNotice closedAt={batchChange.closedAt} className="mb-3" />
             <UnpublishedNotice
@@ -153,11 +161,12 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                 diff={batchChange.diffStat}
                 className="mb-3"
             />
-            <Description history={history} description={batchChange.description} />
+            <Description description={batchChange.description} />
             <BatchChangeTabs
                 batchChange={batchChange}
                 changesetsCount={batchChange.changesetsStats.total - batchChange.changesetsStats.archived}
                 archivedCount={batchChange.changesetsStats.archived}
+                bulkOperationsCount={batchChange.bulkOperations.totalCount}
                 extensionsController={extensionsController}
                 history={history}
                 isLightTheme={isLightTheme}
@@ -167,6 +176,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                 queryChangesets={queryChangesets}
                 queryChangesetCountsOverTime={queryChangesetCountsOverTime}
                 queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
+                queryBulkOperations={queryBulkOperations}
             />
         </>
     )

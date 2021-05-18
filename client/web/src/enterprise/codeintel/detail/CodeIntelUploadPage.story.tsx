@@ -111,6 +111,25 @@ add('Errored', () => (
     </EnterpriseWebStory>
 ))
 
+add('Failed Upload', () => (
+    <EnterpriseWebStory>
+        {props => (
+            <CodeIntelUploadPage
+                {...props}
+                fetchLsifUpload={fetch({
+                    state: LSIFUploadState.ERRORED,
+                    uploadedAt: '2020-06-15T12:20:30+00:00',
+                    startedAt: null,
+                    finishedAt: '2020-06-15T12:30:30+00:00',
+                    failure: 'Upload failed to complete: object store error:\n * XMinioStorageFull etc etc',
+                    placeInQueue: null,
+                })}
+                now={now}
+            />
+        )}
+    </EnterpriseWebStory>
+))
+
 const fetch = (
     upload: Pick<LsifUploadFields, 'state' | 'uploadedAt' | 'startedAt' | 'finishedAt' | 'failure' | 'placeInQueue'>
 ): (() => Observable<LsifUploadFields>) => () =>

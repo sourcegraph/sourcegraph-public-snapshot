@@ -16,6 +16,7 @@ const { add } = storiesOf('web/search/results/streaming/sidebar/SearchSidebar', 
         type: 'figma',
         url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/?node-id=1018%3A13883',
     },
+    chromatic: { viewports: [544, 577, 993] },
 })
 
 const defaultProps: SearchSidebarProps = {
@@ -51,9 +52,30 @@ const filters: Filter[] = [
         kind: 'repo',
     },
     {
-        label: 'sourcegraph/sourcegraph',
-        value: 'repo:^sourcegraph/sourcegraph$',
+        label: 'gitlab.com/sourcegraph/sourcegraph',
+        value: 'repo:^gitlab\\.com/sourcegraph/sourcegraph$',
         count: 201,
+        limitHit: true,
+        kind: 'repo',
+    },
+    {
+        label: 'github.com/microsoft/vscode',
+        value: 'repo:^github\\.com/microsoft/vscode$',
+        count: 10,
+        limitHit: true,
+        kind: 'repo',
+    },
+    {
+        label: 'bitbucket.com/test/test',
+        value: 'repo:^bitbucket\\.com/test/test$',
+        count: 10,
+        limitHit: true,
+        kind: 'repo',
+    },
+    {
+        label: 'gitlab.sgdev.org/example/test',
+        value: 'repo:^gitlab\\.sgdev\\.org/example/test$',
+        count: 10,
         limitHit: true,
         kind: 'repo',
     },

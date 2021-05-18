@@ -1,33 +1,23 @@
-// Redesign colors
-$redesign-gray-01: #f9fafb;
-$redesign-gray-02: #f0f1f2;
-$redesign-gray-03: #e6ebf2;
-$redesign-gray-04: #dbe2f0;
-$redesign-gray-05: #a6b6d9;
-$redesign-gray-06: #798baf;
-$redesign-gray-07: #5e6e8c;
-$redesign-gray-08: #343a4d;
-$redesign-gray-09: #262b38;
-$redesign-gray-10: #1d212f;
-$redesign-gray-11: #181b26;
-$redesign-gray-12: #14171f;
-$redesign-black: #0f111a;
 $redesign-blue: #0b70db;
-$redesign-red: $oc-red-9;
-$redesign-pink: #d68cf3;
 $redesign-indigo: #0864c6;
-$redesign-cyan: #72dbe8;
-$redesign-purple: $oc-violet-7;
+$redesign-purple: #a305e1;
+$redesign-pink: #d68cf3;
+$redesign-red: $oc-red-9;
 $redesign-orange: $oc-orange-7;
 $redesign-yellow: $oc-yellow-7;
 $redesign-green: $oc-green-7;
 $redesign-teal: $oc-teal-7;
+$redesign-cyan: #72dbe8;
+
+// Exception that's used in $custom-select-indicator as SVG icon fill color.
+$redesign-gray-06: #798baf;
+// Exception that's used in $theme-colors-redesign and in --box-shadow variable.
+$redesign-gray-08: #343a4d;
 
 // Core semantic base colors.
 $theme-colors-redesign: (
     primary: $redesign-blue,
     secondary: $redesign-gray-08,
-    secondary-light: $redesign-gray-04,
     success: $redesign-green,
     info: $redesign-cyan,
     warning: $redesign-yellow,
@@ -36,29 +26,58 @@ $theme-colors-redesign: (
 );
 
 .theme-redesign {
-    --primary: #{map-get($theme-colors-redesign, 'primary')};
-    --primary-3: #{$redesign-indigo};
-    --brand-secondary: #a305e1;
-    --brand-secondary-2: #{$redesign-pink};
-    --success: #{map-get($theme-colors-redesign, 'success')};
+    // Gray (blueish) root palette.
+    --white: #{$white};
+    --gray-01: #f9fafb;
+    --gray-02: #f0f1f2;
+    --gray-03: #e6ebf2;
+    --gray-04: #dbe2f0;
+    --gray-05: #a6b6d9;
+    --gray-06: #{$redesign-gray-06};
+    --gray-07: #5e6e8c;
+    --gray-08: #{$redesign-gray-08};
+    --gray-09: #262b38;
+    --gray-10: #1d212f;
+    --gray-11: #181b26;
+    --gray-12: #14171f;
+    --black: #0f111a;
+
+    // Other root palette colors.
+    --blue: #{$redesign-blue};
+    --indigo: #{$redesign-indigo};
+    --purple: #{$redesign-purple};
+    --pink: #{$redesign-pink};
+    --red: #{$redesign-red};
+    --orange: #{$redesign-orange};
+    --yellow: #{$redesign-yellow};
+    --green: #{$redesign-green};
+    --teal: #{$redesign-teal};
+    --cyan: #{$redesign-cyan};
+
+    // Logo colors.
+    --logo-purple: var(--purple);
+
+    // Semantic colors.
+    --primary: var(--blue);
+    --primary-3: var(--indigo);
+    --brand-secondary: var(--purple);
+    --brand-secondary-2: var(--pink);
+    --success: var(--green);
     --success-2: #afe0b8;
-    --info: #{map-get($theme-colors-redesign, 'info')};
-    --warning: #{map-get($theme-colors-redesign, 'warning')};
+    --info: var(--cyan);
+    --warning: var(--yellow);
     --warning-2: #fbd999;
-    --danger: #{map-get($theme-colors-redesign, 'danger')};
+    --danger: var(--red);
     --danger-2: #e9aaaa;
-    --merged: #{map-get($theme-colors-redesign, 'merged')};
+    --merged: var(--purple);
     --merged-2: #c6b6f6;
     --merged-3: #6b47d6;
-    --light-text: #{$white};
-    --dark-text: #343a4d;
-    --line-number-color: #{$redesign-gray-06};
-    --header-icon-color: #{$redesign-gray-05};
-    --logo-orange: #{$logo-orange};
-    --logo-blue: #{$logo-blue};
-    --logo-purple: #{$redesign-purple};
-    --tooltip-bg: #{$redesign-gray-08};
-    // Assumption: Uses light-mode body-color, which matches current behavior
+    --light-text: var(--white);
+    --dark-text: var(--gray-08);
+    --line-number-color: var(--gray-06);
+    --header-icon-color: var(--gray-05);
+    --tooltip-bg: var(--gray-08);
+    // Assumption: Uses light-mode body-color, which matches current behavior.
     --box-shadow: 0 0.25rem 0.5rem #{rgba($redesign-gray-08, 0.07)};
     --focus-box-shadow: 0 0 0 0.125rem var(--primary-2);
     --btn-link-disabled-color: var(--primary-2);
@@ -67,7 +86,7 @@ $theme-colors-redesign: (
 .theme-light.theme-redesign {
     --primary-2: #a3d0ff;
     --primary-4: #e1f0ff;
-    --secondary: #{$redesign-gray-04};
+    --secondary: var(--gray-04);
     --secondary-2: #eef1f7;
     --secondary-3: #c6cfe1;
     --secondary-4: #f1f4f9;
@@ -80,31 +99,31 @@ $theme-colors-redesign: (
     --warning-4: #fff7e1;
     --danger-3: #b52626;
     --danger-4: #fbeaea;
-    --body-color: #{$redesign-gray-08};
-    --body-bg: #{$redesign-gray-01};
-    --color-bg-1: #{$white};
-    --color-bg-2: #{$redesign-gray-03};
-    --color-bg-3: #{$redesign-gray-04};
+    --body-color: var(--gray-08);
+    --body-bg: var(--gray-01);
+    --color-bg-1: var(--white);
+    --color-bg-2: var(--gray-03);
+    --color-bg-3: var(--gray-04);
     --mark-bg: rgba(255, 218, 30, 0.5);
     --merged-4: #eee9fd;
-    --text-muted: #{$redesign-gray-07};
+    --text-muted: var(--gray-07);
     --link-color: var(--primary);
     --link-color-2: #0766cc;
     --link-active-color: #0c7bf0;
     --link-hover-color: #0c7bf0;
-    --border-color: #{$redesign-gray-03};
-    --border-color-2: #{$redesign-gray-04};
+    --border-color: var(--gray-03);
+    --border-color-2: var(--gray-04);
     --border-active-color: var(--primary);
-    --search-query-text-color: #{$redesign-gray-12};
+    --search-query-text-color: var(--gray-12);
     --search-filter-keyword-color: var(--primary);
-    --search-keyword-color: var(--secondary);
-    --infobar-warning-color: #{$oc-red-8};
-    --icon-color: #{$redesign-gray-06};
-    --code-bg: #{$redesign-gray-03};
-    --intel-bg: #{$white};
-    --subtle-bg: #{$redesign-gray-02};
+    --search-keyword-color: var(--purple);
+    --infobar-warning-color: var(--oc-red-8);
+    --icon-color: var(--gray-06);
+    --code-bg: var(--white);
+    --intel-bg: var(--white);
+    --subtle-bg: var(--gray-02);
 
-    // TODO: Remove from use, replace with the variables referenced here
+    // TODO: Remove from use, replace with the variables referenced here.
     // Issue: https://github.com/sourcegraph/sourcegraph/issues/19973
     --link-hover-bg-color: var(--color-bg-2);
     --link-hover-bg-color-2: var(--color-bg-3);
@@ -115,7 +134,7 @@ $theme-colors-redesign: (
 .theme-dark.theme-redesign {
     --primary-2: #0f59aa;
     --primary-4: #03284f;
-    --secondary: #{$redesign-gray-08};
+    --secondary: var(--gray-08);
     --secondary-2: #242936;
     --secondary-3: #1f232e;
     --secondary-4: #545967;
@@ -128,31 +147,31 @@ $theme-colors-redesign: (
     --warning-4: #3d2904;
     --danger-3: #801b1b;
     --danger-4: #3d0a0a;
-    --body-color: #{$redesign-gray-04};
-    --body-bg: #{$redesign-gray-12};
-    --color-bg-1: #{$redesign-gray-11};
-    --color-bg-2: #{$redesign-gray-10};
-    --color-bg-3: #{$redesign-gray-08};
+    --body-color: var(--gray-04);
+    --body-bg: var(--gray-12);
+    --color-bg-1: var(--gray-11);
+    --color-bg-2: var(--gray-10);
+    --color-bg-3: var(--gray-08);
     --mark-bg: rgba(16, 104, 2, 0.5);
     --merged-4: #1f0a5c;
-    --text-muted: #{$redesign-gray-05};
+    --text-muted: var(--gray-05);
     --link-color: #4393e7;
     --link-color-2: #70b0f3;
     --link-active-color: #489ffa;
     --link-hover-color: #489ffa;
-    --border-color: #{$redesign-gray-09};
-    --border-color-2: #{$redesign-gray-08};
+    --border-color: var(--gray-09);
+    --border-color-2: var(--gray-08);
     --border-active-color: #4393e7;
-    --search-query-text-color: #{$redesign-gray-04};
+    --search-query-text-color: var(--gray-04);
     --search-filter-keyword-color: #4393e7;
-    --search-keyword-color: var(--secondary-2);
+    --search-keyword-color: var(--pink);
     --infobar-warning-color: #f05151;
-    --icon-color: #{$redesign-gray-05};
-    --code-bg: #{$redesign-gray-10};
-    --intel-bg: #{$redesign-gray-12};
-    --subtle-bg: #{$redesign-gray-09};
+    --icon-color: var(--gray-05);
+    --code-bg: var(--gray-10);
+    --intel-bg: var(--gray-12);
+    --subtle-bg: var(--gray-09);
 
-    // TODO: Remove from use, replace with the variables referenced here
+    // TODO: Remove from use, replace with the variables referenced here.
     // Issue: https://github.com/sourcegraph/sourcegraph/issues/19973
     --link-hover-bg-color: var(--color-bg-2);
     --link-hover-bg-color-2: var(--color-bg-3);

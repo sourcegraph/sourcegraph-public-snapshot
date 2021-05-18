@@ -1,14 +1,14 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`RepoFileLink renders 1`] = `
-Array [
+<div>
   <a
     href="https://example.com"
   >
     my/repo
-  </a>,
-  " ›",
-  " ",
+  </a>
+   ›
+   
   <a
     href="/file?subtree=true"
   >
@@ -16,6 +16,6 @@ Array [
     <strong>
       file
     </strong>
-  </a>,
-]
+  </a>
+</div>
 `;

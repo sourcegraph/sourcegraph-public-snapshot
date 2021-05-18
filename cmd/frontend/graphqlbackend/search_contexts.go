@@ -9,20 +9,24 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type namespaceFilterType string
+type searchContextsOrderBy string
 
 const (
-	namespaceFilterTypeInstance  namespaceFilterType = "INSTANCE"
-	namespaceFilterTypeNamespace namespaceFilterType = "NAMESPACE"
+	searchContextCursorKind                              = "SearchContextCursor"
+	namespaceFilterTypeInstance    namespaceFilterType   = "INSTANCE"
+	namespaceFilterTypeNamespace   namespaceFilterType   = "NAMESPACE"
+	searchContextsOrderByUpdatedAt searchContextsOrderBy = "SEARCH_CONTEXT_UPDATED_AT"
+	searchContextsOrderBySpec      searchContextsOrderBy = "SEARCH_CONTEXT_SPEC"
 )
 
 type searchContextResolver struct {
@@ -78,9 +82,12 @@ type listSearchContextsArgs struct {
 	Query               *string
 	NamespaceFilterType *namespaceFilterType
 	Namespace           *graphql.ID
+	OrderBy             searchContextsOrderBy
+	Descending          bool
 }
 
 type searchContextConnection struct {
+	afterCursor    int32
 	searchContexts []*searchContextResolver
 	totalCount     int32
 	hasNextPage    bool
@@ -98,7 +105,8 @@ func (s *searchContextConnection) PageInfo(ctx context.Context) (*graphqlutil.Pa
 	if len(s.searchContexts) == 0 || !s.hasNextPage {
 		return graphqlutil.HasNextPage(false), nil
 	}
-	return graphqlutil.NextPageCursor(string(s.searchContexts[len(s.searchContexts)-1].DatabaseID())), nil
+	// The after value (offset) for the next page is computed from the current after value + the number of retrieved search contexts
+	return graphqlutil.NextPageCursor(marshalSearchContextCursor(s.afterCursor + int32(len(s.searchContexts)))), nil
 }
 
 func marshalSearchContextID(searchContextSpec string) graphql.ID {
@@ -110,33 +118,33 @@ func unmarshalSearchContextID(id graphql.ID) (spec string, err error) {
 	return
 }
 
-func marshalSearchContextDatabaseID(id int64) graphql.ID {
-	return relay.MarshalID("SearchContext", id)
+func marshalSearchContextCursor(cursor int32) string {
+	return string(relay.MarshalID(searchContextCursorKind, cursor))
 }
 
-func unmarshalSearchContextCursor(after *string) (int64, error) {
-	var id int64
-	if after == nil {
-		id = 0
+func unmarshalSearchContextCursor(cursor *string) (int32, error) {
+	var after int32
+	if cursor == nil {
+		after = 0
 	} else {
-		err := relay.UnmarshalSpec(graphql.ID(*after), &id)
+		err := relay.UnmarshalSpec(graphql.ID(*cursor), &after)
 		if err != nil {
 			return -1, err
 		}
 	}
-	return id, nil
+	return after, nil
 }
 
 func (r *searchContextResolver) ID() graphql.ID {
 	return marshalSearchContextID(searchcontexts.GetSearchContextSpec(r.sc))
 }
 
-func (r *searchContextResolver) DatabaseID() graphql.ID {
-	return marshalSearchContextDatabaseID(r.sc.ID)
-}
-
 func (r *searchContextResolver) Description(ctx context.Context) string {
 	return r.sc.Description
+}
+
+func (r *searchContextResolver) Public(ctx context.Context) bool {
+	return r.sc.Public
 }
 
 func (r *searchContextResolver) AutoDefined(ctx context.Context) bool {
@@ -145,6 +153,10 @@ func (r *searchContextResolver) AutoDefined(ctx context.Context) bool {
 
 func (r *searchContextResolver) Spec(ctx context.Context) string {
 	return searchcontexts.GetSearchContextSpec(r.sc)
+}
+
+func (r *searchContextResolver) UpdatedAt(ctx context.Context) DateTime {
+	return DateTime{Time: r.sc.UpdatedAt}
 }
 
 func (r *searchContextResolver) Repositories(ctx context.Context) ([]*searchContextRepositoryRevisionsResolver, error) {
@@ -282,6 +294,11 @@ func (r *schemaResolver) SearchContexts(ctx context.Context, args *listSearchCon
 		namespaceFilter = *args.NamespaceFilterType
 	}
 
+	orderBy := database.SearchContextsOrderBySpec
+	if args.OrderBy == searchContextsOrderByUpdatedAt {
+		orderBy = database.SearchContextsOrderByUpdatedAt
+	}
+
 	if args.Namespace != nil && namespaceFilter != namespaceFilterTypeNamespace {
 		return nil, errors.New("namespace can only be used if namespaceFilterType is NAMESPACE")
 	}
@@ -304,7 +321,12 @@ func (r *schemaResolver) SearchContexts(ctx context.Context, args *listSearchCon
 		return nil, err
 	}
 
-	opts := database.ListSearchContextsOptions{Name: searchContextName, NoNamespace: namespaceFilter == namespaceFilterTypeInstance}
+	opts := database.ListSearchContextsOptions{
+		Name:              searchContextName,
+		NoNamespace:       namespaceFilter == namespaceFilterTypeInstance,
+		OrderBy:           orderBy,
+		OrderByDescending: args.Descending,
+	}
 	if newArgs.Namespace != nil {
 		err := UnmarshalNamespaceID(*newArgs.Namespace, &opts.NamespaceUserID, &opts.NamespaceOrgID)
 		if err != nil {
@@ -313,7 +335,7 @@ func (r *schemaResolver) SearchContexts(ctx context.Context, args *listSearchCon
 	}
 
 	searchContextsStore := database.SearchContexts(r.db)
-	pageOpts := database.ListSearchContextsPageOptions{First: newArgs.First, AfterID: afterCursor}
+	pageOpts := database.ListSearchContextsPageOptions{First: newArgs.First, After: afterCursor}
 	searchContexts, err := searchContextsStore.ListSearchContexts(ctx, pageOpts, opts)
 	if err != nil {
 		return nil, err
@@ -331,6 +353,7 @@ func (r *schemaResolver) SearchContexts(ctx context.Context, args *listSearchCon
 	}
 
 	return &searchContextConnection{
+		afterCursor:    afterCursor,
 		searchContexts: searchContextsToResolvers(searchContexts, r.db),
 		totalCount:     count,
 		hasNextPage:    hasNextPage,

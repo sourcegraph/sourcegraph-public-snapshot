@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -71,32 +72,11 @@ func newOAuthFlowHandler(db dbutil.DB, serviceType string) http.Handler {
 			return
 		}
 
-		var extraScopes []string
-
-		// On Sourcegraph Cloud and for GitHub or GitLab, check if the user has the AllowUserExternalServicePrivate tag
-		// and if so, ask the code host for additional scopes
-		if envvar.SourcegraphDotComMode() && (serviceType == extsvc.TypeGitHub || serviceType == extsvc.TypeGitLab) {
-			if actor := actor.FromContext(req.Context()); actor.IsAuthenticated() {
-				ok, err := database.Users(db).HasTag(req.Context(), actor.UID, database.TagAllowUserExternalServicePrivate)
-				if err != nil {
-					log15.Error("error while checking user tag", "id", actor.UID, "tag", database.TagAllowUserExternalServicePrivate)
-					http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site).", http.StatusInternalServerError)
-					return
-				}
-
-				if ok {
-					switch serviceType {
-					case extsvc.TypeGitHub:
-						extraScopes = append(extraScopes, "repo")
-					case extsvc.TypeGitLab:
-						extraScopes = append(extraScopes, "api")
-					default:
-						log15.Error("unknown service type", "serviceType", serviceType)
-						http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site).", http.StatusInternalServerError)
-						return
-					}
-				}
-			}
+		extraScopes, err := getExtraScopes(req.Context(), db, serviceType)
+		if err != nil {
+			log15.Error("Getting extra OAuth scopes", "error", err)
+			http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site).", http.StatusInternalServerError)
+			return
 		}
 
 		p.Login(p.OAuth2Config(extraScopes...)).ServeHTTP(w, req)
@@ -117,6 +97,31 @@ func newOAuthFlowHandler(db dbutil.DB, serviceType string) http.Handler {
 		p.Callback(p.OAuth2Config()).ServeHTTP(w, req)
 	}))
 	return mux
+}
+
+func getExtraScopes(ctx context.Context, db dbutil.DB, serviceType string) ([]string, error) {
+	// On Sourcegraph Cloud and for GitHub or GitLab, check if the user is allowed to
+	// add private code and if so, ask the code host for additional scopes
+	if !envvar.SourcegraphDotComMode() || (serviceType != extsvc.TypeGitHub && serviceType != extsvc.KindGitLab) {
+		return nil, nil
+	}
+
+	mode, err := database.Users(db).CurrentUserAllowedExternalServices(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if mode != conf.ExternalServiceModeAll {
+		return nil, nil
+	}
+
+	switch serviceType {
+	case extsvc.TypeGitHub:
+		return []string{"repo"}, nil
+	case extsvc.TypeGitLab:
+		return []string{}, nil
+	default:
+		return nil, errors.Errorf("unknown service type: %q", serviceType)
+	}
 }
 
 // withOAuthExternalHTTPClient updates client such that the

@@ -13,6 +13,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/graph-gophers/graphql-go/introspection"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/graph-gophers/graphql-go/trace"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
@@ -512,6 +513,18 @@ func (r *schemaResolver) Repository(ctx context.Context, args *struct {
 	return resolver.repo, nil
 }
 
+func (r *schemaResolver) repositoryByID(ctx context.Context, id graphql.ID) (*RepositoryResolver, error) {
+	var repoID api.RepoID
+	if err := relay.UnmarshalSpec(id, &repoID); err != nil {
+		return nil, err
+	}
+	repo, err := database.Repos(r.db).Get(ctx, repoID)
+	if err != nil {
+		return nil, err
+	}
+	return NewRepositoryResolver(r.db, repo), nil
+}
+
 type RedirectResolver struct {
 	url string
 }
@@ -598,8 +611,8 @@ func (r *schemaResolver) AffiliatedRepositories(ctx context.Context, args *struc
 	if err != nil {
 		return nil, err
 	}
-	// 🚨 SECURITY: make sure the user is either site admin or the same user being requested
-	if err := backend.CheckSiteAdminOrSameUser(ctx, userID); err != nil {
+	// 🚨 SECURITY: Make sure the user is the same user being requested
+	if err := backend.CheckSameUser(ctx, userID); err != nil {
 		return nil, err
 	}
 	var codeHost int64

@@ -7,7 +7,7 @@ import { ConfiguredRegistryExtension, splitExtensionID } from '@sourcegraph/shar
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { SettingsCascadeProps, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { isEncodedImage } from '@sourcegraph/shared/src/util/icon'
@@ -30,6 +30,7 @@ interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettin
         'id' | 'manifest' | 'registryExtension'
     >
     subject: Pick<GQL.SettingsSubject, 'id' | 'viewerCanAdminister'>
+    viewerSubject: SettingsSubject | undefined
     enabled: boolean
     settingsURL: string | null | undefined
 }
@@ -46,6 +47,7 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
     enabled,
     settingsURL,
     isLightTheme,
+    viewerSubject,
 }) {
     const manifest: ExtensionManifest | undefined =
         extension.manifest && !isErrorLike(extension.manifest) ? extension.manifest : undefined
@@ -236,7 +238,7 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                     </div>
                     {/* Item 3: Toggle */}
                     {subject &&
-                        (subject.viewerCanAdminister ? (
+                        (subject.viewerCanAdminister && viewerSubject ? (
                             <ExtensionToggle
                                 extensionID={extension.id}
                                 enabled={enabled}
@@ -245,6 +247,7 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                                 className="extension-card__toggle flex-shrink-0 align-self-start"
                                 onToggleChange={onToggleChange}
                                 onToggleError={onToggleError}
+                                subject={viewerSubject}
                             />
                         ) : (
                             <ExtensionConfigurationState

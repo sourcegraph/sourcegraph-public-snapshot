@@ -14,7 +14,7 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { ErrorAlert } from '../components/alerts'
 import { Collapsible } from '../components/Collapsible'
-import { Connection, FilteredConnection, FilteredConnectionFilter } from '../components/FilteredConnection'
+import { FilteredConnection, FilteredConnectionFilter, Connection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
 import { Timestamp } from '../components/time/Timestamp'
 import { OutOfBandMigrationFields } from '../graphql-operations'
@@ -226,7 +226,7 @@ interface MigrationUpgradeWarningBannerProps {
 const MigrationUpgradeWarningBanner: React.FunctionComponent<MigrationUpgradeWarningBannerProps> = ({ migrations }) => (
     <div className="alert alert-warning">
         <p>
-            <WarningIcon className="icon-inline mr-2" />
+            <WarningIcon className="redesign-d-none icon-inline mr-2" />
             The next version of Sourcegraph removes support for reading an old data format. Your Sourcegraph instance
             must complete the following migrations to ensure your data remains readable.{' '}
             <strong>If you upgrade your Sourcegraph instance now, you may corrupt or lose data.</strong>

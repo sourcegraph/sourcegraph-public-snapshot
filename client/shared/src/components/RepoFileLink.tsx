@@ -29,6 +29,7 @@ interface Props {
     filePath: string
     fileURL: string
     repoDisplayName?: string
+    className?: string
 }
 
 /**
@@ -41,15 +42,16 @@ export const RepoFileLink: React.FunctionComponent<Props> = ({
     repoURL,
     filePath,
     fileURL,
+    className,
 }) => {
     const [fileBase, fileName] = splitPath(filePath)
     return (
-        <>
+        <div className={className}>
             <Link to={repoURL}>{repoDisplayName || displayRepoName(repoName)}</Link> ›{' '}
             <Link to={appendSubtreeQueryParameter(fileURL)}>
                 {fileBase ? `${fileBase}/` : null}
                 <strong>{fileName}</strong>
             </Link>
-        </>
+        </div>
     )
 }

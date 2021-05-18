@@ -1,32 +1,32 @@
 .theme-redesign {
     h1 {
-        font-size: 1.625rem;
+        font-size: 1.625rem; // 26px
         font-weight: 600;
-        letter-spacing: -0.031em;
+        letter-spacing: (0.5/26) + em;
     }
 
     h2 {
-        font-size: 1.25rem;
+        font-size: 1.25rem; // 20px
         font-weight: 600;
-        letter-spacing: -0.016em;
+        letter-spacing: (0.25/20) + em;
     }
 
     h3 {
-        font-size: 1rem;
+        font-size: 1rem; // 16px
         font-weight: 600;
-        letter-spacing: -0.016em;
+        letter-spacing: (0.25/16) + em;
     }
 
     h4 {
-        font-size: 0.875rem;
+        font-size: 0.875rem; // 14px
         font-weight: 500;
-        letter-spacing: -0.016em;
+        letter-spacing: (0.25/14) + em;
     }
 
     h5 {
-        font-size: 0.625rem;
+        font-size: 0.625rem; // 10px
         font-weight: 600;
-        letter-spacing: 0.031em;
+        letter-spacing: (0.5/10) + em;
         text-transform: uppercase;
     }
 
@@ -67,13 +67,24 @@
     label,
     %label-base {
         font-weight: 500;
-        letter-spacing: -0.016em;
+        letter-spacing: -(0.1/14) + em;
+    }
+
+    label small,
+    %label-base-small {
+        letter-spacing: -(0.25/12) + em;
     }
 
     // Label / Uppercase
     label.text-uppercase,
     %label-uppercase {
         font-size: 0.75rem;
-        letter-spacing: 0.016em;
+        letter-spacing: (0.25/14) + em;
+    }
+
+    label.text-uppercase small,
+    %label-uppercase-small {
+        font-size: 0.75rem;
+        letter-spacing: -(0.25/12) + em;
     }
 }

@@ -1,11 +1,11 @@
-@import 'branded/src/global-styles/breakpoints';
+@import 'wildcard/src/global-styles/breakpoints';
 
 .changeset-apply-preview-node {
     &__separator {
         // Make it full width in the current row.
         grid-column: 1 / -1;
         border-top: 1px solid var(--border-color-2);
-        @include media-breakpoint-down(xs) {
+        @media (--xs-breakpoint-down) {
             margin-top: 1rem;
             padding-bottom: 1rem;
         }

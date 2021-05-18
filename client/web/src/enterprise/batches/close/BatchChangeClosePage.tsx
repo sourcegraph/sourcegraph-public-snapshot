@@ -1,3 +1,4 @@
+import { subDays } from 'date-fns'
 import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { useState, useMemo, useCallback } from 'react'
@@ -9,10 +10,10 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { PageHeader } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
 import { HeroPage } from '../../../components/HeroPage'
-import { PageHeader } from '../../../components/PageHeader'
 import { PageTitle } from '../../../components/PageTitle'
 import { BatchChangeChangesetsResult, BatchChangeFields, Scalars } from '../../../graphql-operations'
 import {
@@ -67,11 +68,13 @@ export const BatchChangeClosePage: React.FunctionComponent<BatchChangeClosePageP
     closeBatchChange,
 }) => {
     const [closeChangesets, setCloseChangesets] = useState<boolean>(false)
+    const createdAfter = useMemo(() => subDays(new Date(), 3).toISOString(), [])
     const batchChange = useObservable(
-        useMemo(() => fetchBatchChangeByNamespace(namespaceID, batchChangeName), [
+        useMemo(() => fetchBatchChangeByNamespace(namespaceID, batchChangeName, createdAfter), [
+            fetchBatchChangeByNamespace,
             namespaceID,
             batchChangeName,
-            fetchBatchChangeByNamespace,
+            createdAfter,
         ])
     )
 

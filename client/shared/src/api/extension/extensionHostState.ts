@@ -42,7 +42,7 @@ export function createExtensionHostState(
         // Most extensions never call `configuration.get()` synchronously in `activate()` to get
         // the initial settings data, and instead only subscribe to configuration changes.
         // In order for these extensions to be able to access settings, make sure `configuration` emits on subscription.
-        settings: new BehaviorSubject<Readonly<SettingsCascade<object>>>(initData.initialSettings),
+        settings: new BehaviorSubject<Readonly<SettingsCascade>>(initData.initialSettings),
 
         queryTransformers: new BehaviorSubject<readonly sourcegraph.QueryTransformer[]>([]),
 
@@ -100,6 +100,7 @@ export function createExtensionHostState(
         >([]),
 
         activeExtensions,
+        activeLoggers: new Set<string>(),
     }
 }
 
@@ -166,4 +167,7 @@ export interface ExtensionHostState {
 
     // Extensions
     activeExtensions: Observable<(ConfiguredExtension | ExecutableExtension)[]>
+
+    /** Set of names of active loggers determined by user settings */
+    activeLoggers: Set<string>
 }

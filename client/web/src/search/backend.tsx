@@ -239,7 +239,9 @@ const searchContextFragment = gql`
         id
         spec
         description
+        public
         autoDefined
+        updatedAt
         repositories {
             __typename
             repository {
@@ -291,12 +293,16 @@ export function fetchSearchContexts({
     namespace,
     query,
     after,
+    orderBy,
+    descending,
 }: {
     first: number
     query?: string
     namespace?: Scalars['ID']
     namespaceFilterType?: GQL.SearchContextsNamespaceFilterType
     after?: string
+    orderBy?: GQL.SearchContextsOrderBy
+    descending?: boolean
 }): Observable<ListSearchContextsResult['searchContexts']> {
     return requestGraphQL<ListSearchContextsResult, ListSearchContextsVariables>(
         gql`
@@ -306,6 +312,8 @@ export function fetchSearchContexts({
                 $query: String
                 $namespaceFilterType: SearchContextsNamespaceFilterType
                 $namespace: ID
+                $orderBy: SearchContextsOrderBy
+                $descending: Boolean
             ) {
                 searchContexts(
                     first: $first
@@ -313,6 +321,8 @@ export function fetchSearchContexts({
                     query: $query
                     namespaceFilterType: $namespaceFilterType
                     namespace: $namespace
+                    orderBy: $orderBy
+                    descending: $descending
                 ) {
                     nodes {
                         ...SearchContextFields
@@ -332,6 +342,8 @@ export function fetchSearchContexts({
             query: query ?? null,
             namespaceFilterType: namespaceFilterType ?? null,
             namespace: namespace ?? null,
+            orderBy: orderBy ?? GQL.SearchContextsOrderBy.SEARCH_CONTEXT_SPEC,
+            descending: descending ?? false,
         }
     ).pipe(
         map(dataOrThrowErrors),

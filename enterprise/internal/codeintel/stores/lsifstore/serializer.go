@@ -9,7 +9,7 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
 )
 
 func init() {

@@ -63,7 +63,7 @@ func TestParseConfig(t *testing.T) {
 						AuthURL:  "https://gitlab.com/oauth/authorize",
 						TokenURL: "https://gitlab.com/oauth/token",
 					},
-					Scopes: []string{"read_user", "api"},
+					Scopes: []string{"read_user", "read_api"},
 				}),
 			},
 		},
@@ -104,7 +104,7 @@ func TestParseConfig(t *testing.T) {
 						AuthURL:  "https://gitlab.com/oauth/authorize",
 						TokenURL: "https://gitlab.com/oauth/token",
 					},
-					Scopes: []string{"read_user", "api"},
+					Scopes: []string{"read_user", "read_api"},
 				}),
 				{
 					ClientID:     "my-client-id-2",
@@ -120,7 +120,7 @@ func TestParseConfig(t *testing.T) {
 						AuthURL:  "https://mycompany.com/oauth/authorize",
 						TokenURL: "https://mycompany.com/oauth/token",
 					},
-					Scopes: []string{"read_user", "api"},
+					Scopes: []string{"read_user", "read_api"},
 				}),
 			},
 		},
@@ -148,7 +148,6 @@ func TestParseConfig(t *testing.T) {
 			}
 			if !reflect.DeepEqual(gotProviders, tt.wantProviders) {
 				dmp := diffmatchpatch.New()
-
 				t.Errorf("parseConfig() gotProviders != tt.wantProviders, diff:\n%s",
 					dmp.DiffPrettyText(dmp.DiffMain(spew.Sdump(tt.wantProviders), spew.Sdump(gotProviders), false)),
 				)
@@ -159,7 +158,6 @@ func TestParseConfig(t *testing.T) {
 
 			if !reflect.DeepEqual(gotConfigs, wantConfigs) {
 				dmp := diffmatchpatch.New()
-
 				t.Errorf("parseConfig() gotConfigs != wantConfigs, diff:\n%s",
 					dmp.DiffPrettyText(dmp.DiffMain(spew.Sdump(gotConfigs), spew.Sdump(wantConfigs), false)),
 				)

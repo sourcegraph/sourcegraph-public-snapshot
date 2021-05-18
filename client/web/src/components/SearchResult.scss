@@ -2,6 +2,7 @@
     &__title {
         display: flex;
         align-items: center;
+        flex-grow: 1;
     }
     &__spacer {
         flex: 1;

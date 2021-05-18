@@ -485,7 +485,7 @@ func (s *Service) ReenqueueChangeset(ctx context.Context, id int64) (changeset *
 // If both values are zero, an error is returned.
 func checkNamespaceAccess(ctx context.Context, db dbutil.DB, namespaceUserID, namespaceOrgID int32) error {
 	if namespaceOrgID != 0 {
-		return backend.CheckOrgAccess(ctx, db, namespaceOrgID)
+		return backend.CheckOrgAccessOrSiteAdmin(ctx, db, namespaceOrgID)
 	} else if namespaceUserID != 0 {
 		return backend.CheckSiteAdminOrSameUser(ctx, namespaceUserID)
 	} else {
@@ -671,9 +671,8 @@ func (s *Service) CreateChangesetJobs(ctx context.Context, batchChangeID int64, 
 		BatchChangeID: batchChangeID,
 		// We can only run jobs on published changesets.
 		PublicationState: &published,
-		// TODO: Do we want to allow this on imported changesets?
-		// OwnedByBatchChangeID: batchChangeID,
-
+		// Also include archived changesets, we allow commenting on them as well.
+		IncludeArchived: true,
 		// We only want to allow changesets the user has access to.
 		EnforceAuthz: true,
 	})

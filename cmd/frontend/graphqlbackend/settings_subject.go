@@ -46,7 +46,7 @@ func settingsSubjectForNode(ctx context.Context, n Node) (*settingsSubject, erro
 
 	case *OrgResolver:
 		// 🚨 SECURITY: Check that the current user is a member of the org.
-		if err := backend.CheckOrgAccess(ctx, s.db, s.org.ID); err != nil {
+		if err := backend.CheckOrgAccessOrSiteAdmin(ctx, s.db, s.org.ID); err != nil {
 			return nil, err
 		}
 		return &settingsSubject{org: s}, nil

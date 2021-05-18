@@ -5,14 +5,19 @@ cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 SCRIPTDIR=$(realpath './internal/cmd/precise-code-intel-tester/scripts')
 
 declare -A REVS=(
-  # NOTE: Keep these commits in order of their commit date. For the test harness, we will
-  # upload sequentially within each repository so that our heurstic that the oldest upload
-  # correlates roughly to older comits (which is true in practice) remains true in the test
-  # environment.
-  [etcd]='fb77f9b1d56391318823c434f586ffe371750321 1044a8b07c56f3d32a1f3fe91c8ec849a8b17b5e dfb0a405096af39e694a501de5b0a46962b3050e'
-  [tidb]='2f9a487ebbd2f1a46b5f2c2262ae8f0ef4c4d42f 43764a59b7dcb846dc1e9754e8f125818c69a96f b4f42abc36d893ec3f443af78fc62705a2e54236'
-  [titan]='aef232fbec9089d4468ff06705a3a7f84ee50ea6 33623cc32f8d9f999fd69189d29124d4368c20ab 0ad2e75d529bda74472a1dbb5e488ec095b07fe7'
+  # This repository has not been changed
   [zap]='a6015e13fab9b744d96085308ce4e8f11bad1996 2aa9fa25da83bdfff756c36a91442edc9a84576c'
+
+  # Each commit here is tagged as sg-test-1, sg-test-2, and sg-test-3, respectively. See CHANGES.md in the root of the
+  # repository's master branch to see a history of changes and which revisions were targetted. We specifically use replace
+  # directives in the project root's go.mod file to target sourcegraph-testing/zap, which has no changes of its own. This
+  # simulates how common forking works in the Go ecosystem (see our own use of zoekt).
+  #
+  # To ensure that the last commit in the list for each repository is visible at tip, the master branch's last commit is
+  # a merge commit between the true upstream tip and sg-test-3.
+  [etcd]='4397ceb9c11be0b3e9ee0111230235c868ba581d bc588b7a2e9af4f903396cdcf66f56190b9e254f ad7848014a051dbe3fcd6a4cff2c7befdd16d5a8'
+  [tidb]='8eaaa098b4e938b18485f7b1fa7d8e720b04c699 b5f100a179e20d5539e629bd0919d05774cb7c6a 9aab49176993f9dc0ed2fcb9ef7e5125518e8b98'
+  [titan]='fb38de395ba67f49978b218e099de1c45122fb50 415ffd5a3ba7a92a07cd96c7d9f4b734f61248f7 f8307e394c512b4263fc0cd67ccf9fd46f1ad9a5'
 )
 
 KEYS=()

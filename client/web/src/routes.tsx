@@ -26,9 +26,10 @@ const ExtensionsArea = lazyComponent(() => import('./extensions/ExtensionsArea')
 const SearchConsolePage = lazyComponent(() => import('./search/SearchConsolePage'), 'SearchConsolePage')
 const SignInPage = lazyComponent(() => import('./auth/SignInPage'), 'SignInPage')
 const SignUpPage = lazyComponent(() => import('./auth/SignUpPage'), 'SignUpPage')
+const PostSignUpPage = lazyComponent(() => import('./auth/PostSignUpPage'), 'PostSignUpPage')
 const SiteInitPage = lazyComponent(() => import('./site-admin/init/SiteInitPage'), 'SiteInitPage')
 
-interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof RouteParameters]?: string }>
+export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof RouteParameters]?: string }>
     extends RouteComponentProps<RouteParameters>,
         Omit<LayoutProps, 'match'>,
         BreadcrumbsProps,
@@ -36,6 +37,7 @@ interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof RouteP
         ExtensionAlertProps,
         UserRepositoriesUpdateProps {
     isSourcegraphDotCom: boolean
+    isRedesignEnabled: boolean
 }
 
 export interface LayoutRouteProps<Parameters_ extends { [K in keyof Parameters_]?: string }> {
@@ -78,8 +80,9 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         path: '/search',
         render: props =>
             props.parsedSearchQuery ? (
-                !isErrorLike(props.settingsCascade.final) &&
-                props.settingsCascade.final?.experimentalFeatures?.searchStreaming ? (
+                props.isRedesignEnabled || // Force streaming search if redesing is enabled
+                (!isErrorLike(props.settingsCascade.final) &&
+                    props.settingsCascade.final?.experimentalFeatures?.searchStreaming) ? (
                     <StreamingSearchResults {...props} />
                 ) : (
                     <SearchResults {...props} deployType={window.context.deployType} />
@@ -124,6 +127,11 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/sign-up',
         render: props => <SignUpPage {...props} context={window.context} />,
+        exact: true,
+    },
+    {
+        path: '/post-sign-up',
+        render: props => <PostSignUpPage {...props} context={window.context} />,
         exact: true,
     },
     {
@@ -191,8 +199,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     },
     {
         path: '/insights',
-        exact: true,
-        render: lazyComponent(() => import('./insights/pages/InsightsPage'), 'InsightsPage'),
+        render: lazyComponent(() => import('./insights/InsightsRouter'), 'InsightsRouter'),
         condition: props =>
             !isErrorLike(props.settingsCascade.final) &&
             !!props.settingsCascade.final?.experimentalFeatures?.codeInsights &&

@@ -19,13 +19,13 @@ error @: The engine "node" is incompatible with this module. Expected version "^
 ```
 If you see an error like this you need to upgrade the version of node installed. You can do this with `nvm use` and then following the prompts to install or update to the correct Node.js version.
 
-### dial tcp 127.0.0.1:3090: connect: connection refused
+## dial tcp 127.0.0.1:3090: connect: connection refused
 
 This means the `frontend` server failed to start, for some reason. Look through
 the previous logs for possible explanations, such as failure to contact the
 `redis` server, or database migrations failing.
 
-### Database migration failures
+## Database migration failures
 
 While developing Sourcegraph, you may run into:
 
@@ -47,7 +47,7 @@ dev/db/drop-entire-local-database-and-redis.sh
 dev/db/migrate.sh <db_name> up
 ```
 
-### Internal Server Error
+## Internal Server Error
 
 If you see this error when opening the app:
 
@@ -57,7 +57,7 @@ that means Webpack hasn't finished compiling the styles yet (it takes about 3 mi
 Simply wait a little while for a message from webpack like `web | Time: 180000ms` to appear
 in the terminal.
 
-### Increase maximum available file descriptors.
+## Increase maximum available file descriptors.
 
 `./dev/start.sh` may ask you to run ulimit to increase the maximum number
 of available file descriptors for a process. You can make this setting
@@ -85,7 +85,7 @@ If you ever need to wipe your local database and Redis, run the following comman
 ./dev/drop-entire-local-database-and-redis.sh
 ```
 
-### Caddy 2 certificate problems
+## Caddy 2 certificate problems
 
 We use Caddy 2 to setup HTTPS for local development. It creates self-signed certificates and uses that to serve the local Sourcegraph instance. If your browser complains about the certificate, check the following:
 
@@ -93,7 +93,7 @@ We use Caddy 2 to setup HTTPS for local development. It creates self-signed cert
 
 1. If you have completed the previous step and your browser still complains about the certificate, try restarting your browser or your local machine.
 
-#### Adding Caddy certificates to Windows
+### Adding Caddy certificates to Windows
 
 When running Caddy on WSL, you need to manually add the Caddy root certificate to the Windows certificate store using [certutil.exe](https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/certutil).
 
@@ -104,7 +104,13 @@ certutil.exe -addstore -user Root "$(find /usr/local/share/ca-certificates/ -nam
 
 This command will add the certificate to the `Trusted Root Certification Authorities` for your Windows user.
 
-### Running out of disk space
+### Certificate expiry
+
+If you see a certificate expiry warning you may need to delete your certificate and restart your server.
+
+On MaCOS, the certificate can be removed from here: `~/Library/Application\ Support/Caddy/certificates/local/sourcegraph.test`
+
+## Running out of disk space
 
 If you see errors similar to this:
 
@@ -119,12 +125,6 @@ You can override that by setting this env variable:
 # means 5%. You may want to put that into .bashrc for convinience
 SRC_REPOS_DESIRED_PERCENT_FREE=5
 ```
-
-### Certificate expiry
-
-If you see a certificate expiry warning you may need to delete your certificate and restart your server.
-
-On MaCOS, the certificate can be removed from here: `~/Library/Application\ Support/Caddy/certificates/local/sourcegraph.test`
 
 ## CPU/RAM/bandwidth/battery usage
 

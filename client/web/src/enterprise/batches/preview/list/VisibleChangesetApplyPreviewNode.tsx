@@ -9,6 +9,7 @@ import FileDocumentEditOutlineIcon from 'mdi-react/FileDocumentEditOutlineIcon'
 import React, { useCallback, useState } from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
+import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { DiffStat } from '../../../../components/diff/DiffStat'
@@ -23,6 +24,7 @@ import {
 import { PersonLink } from '../../../../person/PersonLink'
 import { Description } from '../../Description'
 import { ChangesetStatusCell } from '../../detail/changesets/ChangesetStatusCell'
+import { ExternalChangesetTitle } from '../../detail/changesets/ExternalChangesetTitle'
 import { PreviewPageAuthenticatedUser } from '../BatchChangePreviewPage'
 
 import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from './backend'
@@ -345,10 +347,7 @@ const ExpandedSection: React.FunctionComponent<
                                     <del>{node.targets.changeset.currentSpec.description.title}</del>
                                 </h3>
                                 <del className="text-muted">
-                                    <Description
-                                        history={history}
-                                        description={node.targets.changeset.currentSpec.description.body}
-                                    />
+                                    <Description description={node.targets.changeset.currentSpec.description.body} />
                                 </del>
                             </>
                         )}
@@ -370,7 +369,7 @@ const ExpandedSection: React.FunctionComponent<
                             />
                         </small>
                     </h3>
-                    <Description history={history} description={node.targets.changesetSpec.description.body} />
+                    <Description description={node.targets.changesetSpec.description.body} />
                 </>
             )}
             {selectedTab === 'commits' && <GitBranchChangesetDescriptionInfo node={node} />}
@@ -425,23 +424,49 @@ const ChangesetSpecFileDiffConnection: React.FunctionComponent<
 }
 
 const ChangesetSpecTitle: React.FunctionComponent<{ spec: VisibleChangesetApplyPreviewFields }> = ({ spec }) => {
-    if (spec.targets.__typename === 'VisibleApplyPreviewTargetsDetach') {
-        return <h3>{spec.targets.changeset.title}</h3>
+    // Identify the title and external ID/URL, if the changeset spec has them, depending on the type
+    let externalID: Maybe<string> = null
+    let externalURL: Maybe<{ url: string }> = null
+    let title: Maybe<string> = null
+
+    if (spec.targets.__typename === 'VisibleApplyPreviewTargetsAttach') {
+        // An import changeset does not display a regular title
+        if (spec.targets.changesetSpec.description.__typename === 'ExistingChangesetReference') {
+            return <h3>Import changeset #{spec.targets.changesetSpec.description.externalID}</h3>
+        }
+
+        title = spec.targets.changesetSpec.description.title
+    } else {
+        externalID = spec.targets.changeset.externalID
+        externalURL = spec.targets.changeset.externalURL
+        title = spec.targets.changeset.title
     }
-    if (spec.targets.changesetSpec.description.__typename === 'ExistingChangesetReference') {
-        return <h3>Import changeset #{spec.targets.changesetSpec.description.externalID}</h3>
-    }
-    if (
-        spec.operations.length === 0 ||
-        !spec.delta.titleChanged ||
-        spec.targets.__typename === 'VisibleApplyPreviewTargetsAttach'
-    ) {
-        return <h3>{spec.targets.changesetSpec.description.title}</h3>
-    }
+
+    // For existing changesets, the title also may have been updated
+    const newTitle =
+        spec.targets.__typename === 'VisibleApplyPreviewTargetsUpdate' &&
+        spec.targets.changesetSpec.description.__typename !== 'ExistingChangesetReference' &&
+        spec.delta.titleChanged
+            ? spec.targets.changesetSpec.description.title
+            : null
+
     return (
         <h3>
-            <del className="text-muted">{spec.targets.changeset.title}</del>{' '}
-            {spec.targets.changesetSpec.description.title}
+            {newTitle ? (
+                <>
+                    <del className="mr-1">
+                        <ExternalChangesetTitle
+                            className="text-muted"
+                            externalID={externalID}
+                            externalURL={externalURL}
+                            title={title}
+                        />
+                    </del>
+                    {newTitle}
+                </>
+            ) : (
+                <ExternalChangesetTitle externalID={externalID} externalURL={externalURL} title={title} />
+            )}
         </h3>
     )
 }

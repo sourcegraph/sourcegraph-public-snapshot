@@ -119,12 +119,59 @@ func TestGroupSiteUsageStatsMonthsOnly(t *testing.T) {
 	}
 }
 
+func newSearchUsagePeriod(t time.Time, structuralEvent, commitEvent *types.SearchEventStatistics) []*types.SearchUsagePeriod {
+	return []*types.SearchUsagePeriod{
+		{
+			StartTime:          t,
+			Literal:            newSearchEventStatistics(),
+			Regexp:             newSearchEventStatistics(),
+			Structural:         structuralEvent,
+			File:               newSearchEventStatistics(),
+			Repo:               newSearchEventStatistics(),
+			Diff:               newSearchEventStatistics(),
+			Commit:             commitEvent,
+			Symbol:             newSearchEventStatistics(),
+			Case:               newSearchCountStatistics(),
+			Committer:          newSearchCountStatistics(),
+			Lang:               newSearchCountStatistics(),
+			Fork:               newSearchCountStatistics(),
+			Archived:           newSearchCountStatistics(),
+			Count:              newSearchCountStatistics(),
+			Timeout:            newSearchCountStatistics(),
+			Content:            newSearchCountStatistics(),
+			Before:             newSearchCountStatistics(),
+			After:              newSearchCountStatistics(),
+			Author:             newSearchCountStatistics(),
+			Message:            newSearchCountStatistics(),
+			Index:              newSearchCountStatistics(),
+			Repogroup:          newSearchCountStatistics(),
+			Repohasfile:        newSearchCountStatistics(),
+			Repohascommitafter: newSearchCountStatistics(),
+			PatternType:        newSearchCountStatistics(),
+			Type:               newSearchCountStatistics(),
+			SearchModes:        newSearchModeUsageStatistics(),
+		},
+	}
+}
+
+func newSearchTestEvent(eventCount, userCount int32, p50, p90, p99 float64) *types.SearchEventStatistics {
+	intptr := func(i int32) *int32 {
+		return &i
+	}
+
+	return &types.SearchEventStatistics{
+		EventsCount:    intptr(eventCount),
+		UserCount:      intptr(userCount),
+		EventLatencies: &types.SearchEventLatencies{P50: p50, P90: p90, P99: p99},
+	}
+}
+
 func TestGroupAggregateSearchStats(t *testing.T) {
 	t1 := time.Now().UTC()
 	t2 := t1.Add(time.Hour)
 	t3 := t2.Add(time.Hour)
 
-	searchStats := groupAggregatedSearchStats([]types.AggregatedEvent{
+	searchStats := groupAggregatedSearchStats([]types.SearchAggregatedEvent{
 		{
 			Name:           "search.latencies.structural",
 			Month:          t1,
@@ -157,131 +204,17 @@ func TestGroupAggregateSearchStats(t *testing.T) {
 		},
 	})
 
-	intptr := func(i int32) *int32 {
-		return &i
-	}
+	expectDailyStructural := newSearchTestEvent(33, 36, 37, 38, 39)
+	expectDailyCommit := newSearchTestEvent(43, 46, 47, 48, 49)
+	expectWeeklyStructural := newSearchTestEvent(32, 35, 34, 35, 36)
+	expectWeeklyCommit := newSearchTestEvent(42, 45, 44, 45, 46)
+	expectMonthlyStructural := newSearchTestEvent(31, 34, 31, 32, 33)
+	expectMonthlyCommit := newSearchTestEvent(41, 44, 41, 42, 43)
 
 	expectedSearchStats := &types.SearchUsageStatistics{
-		Daily: []*types.SearchUsagePeriod{
-			{
-				StartTime: t3,
-				Literal:   newSearchEventStatistics(),
-				Regexp:    newSearchEventStatistics(),
-				Structural: &types.SearchEventStatistics{
-					EventsCount:    intptr(33),
-					UserCount:      intptr(36),
-					EventLatencies: &types.SearchEventLatencies{P50: 37, P90: 38, P99: 39},
-				},
-				File: newSearchEventStatistics(),
-				Repo: newSearchEventStatistics(),
-				Diff: newSearchEventStatistics(),
-				Commit: &types.SearchEventStatistics{
-					EventsCount:    intptr(43),
-					UserCount:      intptr(46),
-					EventLatencies: &types.SearchEventLatencies{P50: 47, P90: 48, P99: 49},
-				},
-				Symbol:             newSearchEventStatistics(),
-				Case:               newSearchCountStatistics(),
-				Committer:          newSearchCountStatistics(),
-				Lang:               newSearchCountStatistics(),
-				Fork:               newSearchCountStatistics(),
-				Archived:           newSearchCountStatistics(),
-				Count:              newSearchCountStatistics(),
-				Timeout:            newSearchCountStatistics(),
-				Content:            newSearchCountStatistics(),
-				Before:             newSearchCountStatistics(),
-				After:              newSearchCountStatistics(),
-				Author:             newSearchCountStatistics(),
-				Message:            newSearchCountStatistics(),
-				Index:              newSearchCountStatistics(),
-				Repogroup:          newSearchCountStatistics(),
-				Repohasfile:        newSearchCountStatistics(),
-				Repohascommitafter: newSearchCountStatistics(),
-				PatternType:        newSearchCountStatistics(),
-				Type:               newSearchCountStatistics(),
-				SearchModes:        newSearchModeUsageStatistics(),
-			},
-		},
-		Weekly: []*types.SearchUsagePeriod{
-			{
-				StartTime: t2,
-				Literal:   newSearchEventStatistics(),
-				Regexp:    newSearchEventStatistics(),
-				Structural: &types.SearchEventStatistics{
-					EventsCount:    intptr(32),
-					UserCount:      intptr(35),
-					EventLatencies: &types.SearchEventLatencies{P50: 34, P90: 35, P99: 36},
-				},
-				File: newSearchEventStatistics(),
-				Repo: newSearchEventStatistics(),
-				Diff: newSearchEventStatistics(),
-				Commit: &types.SearchEventStatistics{
-					EventsCount:    intptr(42),
-					UserCount:      intptr(45),
-					EventLatencies: &types.SearchEventLatencies{P50: 44, P90: 45, P99: 46},
-				},
-				Symbol:             newSearchEventStatistics(),
-				Case:               newSearchCountStatistics(),
-				Committer:          newSearchCountStatistics(),
-				Lang:               newSearchCountStatistics(),
-				Fork:               newSearchCountStatistics(),
-				Archived:           newSearchCountStatistics(),
-				Count:              newSearchCountStatistics(),
-				Timeout:            newSearchCountStatistics(),
-				Content:            newSearchCountStatistics(),
-				Before:             newSearchCountStatistics(),
-				After:              newSearchCountStatistics(),
-				Author:             newSearchCountStatistics(),
-				Message:            newSearchCountStatistics(),
-				Index:              newSearchCountStatistics(),
-				Repogroup:          newSearchCountStatistics(),
-				Repohasfile:        newSearchCountStatistics(),
-				Repohascommitafter: newSearchCountStatistics(),
-				PatternType:        newSearchCountStatistics(),
-				Type:               newSearchCountStatistics(),
-				SearchModes:        newSearchModeUsageStatistics(),
-			},
-		},
-		Monthly: []*types.SearchUsagePeriod{
-			{
-				StartTime: t1,
-				Literal:   newSearchEventStatistics(),
-				Regexp:    newSearchEventStatistics(),
-				Structural: &types.SearchEventStatistics{
-					EventsCount:    intptr(31),
-					UserCount:      intptr(34),
-					EventLatencies: &types.SearchEventLatencies{P50: 31, P90: 32, P99: 33},
-				},
-				File: newSearchEventStatistics(),
-				Repo: newSearchEventStatistics(),
-				Diff: newSearchEventStatistics(),
-				Commit: &types.SearchEventStatistics{
-					EventsCount:    intptr(41),
-					UserCount:      intptr(44),
-					EventLatencies: &types.SearchEventLatencies{P50: 41, P90: 42, P99: 43},
-				},
-				Symbol:             newSearchEventStatistics(),
-				Case:               newSearchCountStatistics(),
-				Committer:          newSearchCountStatistics(),
-				Lang:               newSearchCountStatistics(),
-				Fork:               newSearchCountStatistics(),
-				Archived:           newSearchCountStatistics(),
-				Count:              newSearchCountStatistics(),
-				Timeout:            newSearchCountStatistics(),
-				Content:            newSearchCountStatistics(),
-				Before:             newSearchCountStatistics(),
-				After:              newSearchCountStatistics(),
-				Author:             newSearchCountStatistics(),
-				Message:            newSearchCountStatistics(),
-				Index:              newSearchCountStatistics(),
-				Repogroup:          newSearchCountStatistics(),
-				Repohasfile:        newSearchCountStatistics(),
-				Repohascommitafter: newSearchCountStatistics(),
-				PatternType:        newSearchCountStatistics(),
-				Type:               newSearchCountStatistics(),
-				SearchModes:        newSearchModeUsageStatistics(),
-			},
-		},
+		Daily:   newSearchUsagePeriod(t3, expectDailyStructural, expectDailyCommit),
+		Weekly:  newSearchUsagePeriod(t2, expectWeeklyStructural, expectWeeklyCommit),
+		Monthly: newSearchUsagePeriod(t1, expectMonthlyStructural, expectMonthlyCommit),
 	}
 	if diff := cmp.Diff(expectedSearchStats, searchStats); diff != "" {
 		t.Fatal(diff)

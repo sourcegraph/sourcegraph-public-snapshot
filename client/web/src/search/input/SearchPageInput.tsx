@@ -21,14 +21,13 @@ import {
 import { AuthenticatedUser } from '../../auth'
 import { Notices } from '../../global/Notices'
 import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
-import { VersionContextDropdown } from '../../nav/VersionContextDropdown'
 import { Settings } from '../../schema/settings.schema'
 import { VersionContext } from '../../schema/site.schema'
 import { ThemePreferenceProps } from '../../theme'
 import { submitSearch, SubmitSearchParameters } from '../helpers'
 import { QuickLinks } from '../QuickLinks'
 
-import { LazyMonacoQueryInput } from './LazyMonacoQueryInput'
+import { SearchBox } from './SearchBox'
 import { SearchButton } from './SearchButton'
 import { useSearchOnboardingTour } from './SearchOnboardingTour'
 
@@ -46,7 +45,10 @@ interface Props
         CopyQueryButtonProps,
         Pick<SubmitSearchParameters, 'source'>,
         VersionContextProps,
-        Omit<SearchContextProps, 'convertVersionContextToSearchContext' | 'isSearchContextSpecAvailable'>,
+        Omit<
+            SearchContextProps,
+            'convertVersionContextToSearchContext' | 'isSearchContextSpecAvailable' | 'fetchSearchContext'
+        >,
         OnboardingTourProps {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
@@ -120,19 +122,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
         <div className="d-flex flex-row flex-shrink-past-contents">
             <Form className="flex-grow-1 flex-shrink-past-contents" onSubmit={onSubmit}>
                 <div className="search-page__input-container">
-                    {!props.hideVersionContexts && (
-                        <VersionContextDropdown
-                            history={props.history}
-                            caseSensitive={props.caseSensitive}
-                            patternType={props.patternType}
-                            navbarSearchQuery={userQueryState.query}
-                            versionContext={props.versionContext}
-                            setVersionContext={props.setVersionContext}
-                            availableVersionContexts={props.availableVersionContexts}
-                            selectedSearchContextSpec={props.selectedSearchContextSpec}
-                        />
-                    )}
-                    <LazyMonacoQueryInput
+                    <SearchBox
                         {...props}
                         {...onboardingTourQueryInputProps}
                         submitSearchOnSearchContextChange={false}
@@ -153,12 +143,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                     </div>
                 )}
                 <QuickLinks quickLinks={quickLinks} className="search-page__input-sub-container" />
-                <Notices
-                    className="my-3"
-                    location="home"
-                    settingsCascade={props.settingsCascade}
-                    history={props.history}
-                />
+                <Notices className="my-3" location="home" settingsCascade={props.settingsCascade} />
             </Form>
         </div>
     )

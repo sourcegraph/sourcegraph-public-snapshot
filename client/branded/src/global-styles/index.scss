@@ -117,8 +117,8 @@ $hr-margin-y: 0.25rem;
 // Disable transitions
 $input-transition: none;
 
-// './breakpoints' defines $grid-breakpoints for global CSS and exposes breakpoints mixins to CSS modules
-@import './breakpoints';
+// Apply static redesign variables. Should be done before Bootstrap imports.
+@import './variables-redesign';
 @import 'bootstrap/scss/functions';
 @import 'bootstrap/scss/variables';
 @import 'bootstrap/scss/mixins';
@@ -128,7 +128,8 @@ $input-transition: none;
 @import 'bootstrap/scss/progress';
 @import 'bootstrap/scss/tooltip';
 @import 'bootstrap/scss/transitions';
-@import '../../../shared/src/global-styles/icons';
+@import 'wildcard/src/global-styles/breakpoints';
+@import 'shared/src/global-styles/icons';
 @import './background';
 @import './badge';
 @import './card';
@@ -177,4 +178,8 @@ input[type='checkbox'] {
     &:not(:disabled) {
         cursor: pointer;
     }
+}
+
+.theme-redesign .redesign-d-none {
+    display: none;
 }

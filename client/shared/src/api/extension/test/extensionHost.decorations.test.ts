@@ -2,7 +2,7 @@ import { ProxyMarked, proxyMarker, Remote } from 'comlink'
 import { Observer, of } from 'rxjs'
 
 import { SettingsCascade } from '../../../settings/settings'
-import { MainThreadAPI } from '../../contract'
+import { ClientAPI } from '../../client/api/api'
 import { pretendProxySubscribable, pretendRemote } from '../../util'
 import { FileDecorationsByPath } from '../extensionHostApi'
 
@@ -10,7 +10,7 @@ import { initializeExtensionHostTest } from './test-helpers'
 
 describe('extensionHostAPI.getFileDecorations()', () => {
     // integration(ish) tests for scenarios not covered by providers tests
-    const noopMain = pretendRemote<MainThreadAPI>({
+    const noopMain = pretendRemote<ClientAPI>({
         getEnabledExtensions: () => pretendProxySubscribable(of([])),
         getScriptURLForExtension: () => undefined,
     })
@@ -34,6 +34,7 @@ describe('extensionHostAPI.getFileDecorations()', () => {
             {
                 initialSettings: emptySettings,
                 clientApplication: 'sourcegraph',
+                sourcegraphURL: 'https://example.com/',
             },
             noopMain
         )
