@@ -61,7 +61,7 @@ const BatchChangesChangelogAlert: React.FunctionComponent = () => (
                 </ul>
                 <ul className="text-muted mb-0 pl-3">
                     {/* TODO: link to documentation if we have it; remove if this doesn't make it before branch cut. */}
-                    <li>Comments can be added to some or all changesets in a batch change.</li>
+                    <li>Commenting on changesets is now supported.</li>
                 </ul>
                 <ul className="text-muted mb-0 pl-3">
                     <li>
