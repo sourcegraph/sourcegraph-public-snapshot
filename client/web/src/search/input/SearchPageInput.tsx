@@ -21,7 +21,6 @@ import {
 import { AuthenticatedUser } from '../../auth'
 import { Notices } from '../../global/Notices'
 import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
-import { VersionContextDropdown } from '../../nav/VersionContextDropdown'
 import { Settings } from '../../schema/settings.schema'
 import { VersionContext } from '../../schema/site.schema'
 import { ThemePreferenceProps } from '../../theme'
@@ -123,18 +122,6 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
         <div className="d-flex flex-row flex-shrink-past-contents">
             <Form className="flex-grow-1 flex-shrink-past-contents" onSubmit={onSubmit}>
                 <div className="search-page__input-container">
-                    {!props.hideVersionContexts && (
-                        <VersionContextDropdown
-                            history={props.history}
-                            caseSensitive={props.caseSensitive}
-                            patternType={props.patternType}
-                            navbarSearchQuery={userQueryState.query}
-                            versionContext={props.versionContext}
-                            setVersionContext={props.setVersionContext}
-                            availableVersionContexts={props.availableVersionContexts}
-                            selectedSearchContextSpec={props.selectedSearchContextSpec}
-                        />
-                    )}
                     <SearchBox
                         {...props}
                         {...onboardingTourQueryInputProps}
