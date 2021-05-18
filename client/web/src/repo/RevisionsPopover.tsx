@@ -151,20 +151,24 @@ const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({ node, curr
         <li key={node.oid} className="connection-popover__node revisions-popover-git-commit-node">
             <Link
                 to={replaceRevisionInURL(location.pathname + location.search + location.hash, node.oid)}
-                className={`connection-popover__node-link ${
-                    isCurrent ? 'connection-popover__node-link--active' : ''
-                } revisions-popover-git-commit-node__link`}
-            >
-                <code className="revisions-popover-git-commit-node__oid" title={node.oid}>
-                    {node.abbreviatedOID}
-                </code>
-                <small className="revisions-popover-git-commit-node__message">{node.subject.slice(0, 200)}</small>
-                {isCurrent && (
-                    <CircleChevronLeftIcon
-                        className="icon-inline connection-popover__node-link-icon"
-                        data-tooltip="Current commit"
-                    />
+                className={classNames(
+                    'connection-popover__node-link',
+                    isCurrent && 'connection-popover__node-link--active',
+                    'revisions-popover-git-commit-node__link'
                 )}
+            >
+                <span>
+                    <code className="revisions-popover-git-commit-node__oid" title={node.oid}>
+                        {node.abbreviatedOID}
+                    </code>
+                    <small className="revisions-popover-git-commit-node__message">{node.subject.slice(0, 200)}</small>
+                    {isCurrent && (
+                        <CircleChevronLeftIcon
+                            className="icon-inline connection-popover__node-link-icon"
+                            data-tooltip="Current commit"
+                        />
+                    )}
+                </span>
             </Link>
         </li>
     )
