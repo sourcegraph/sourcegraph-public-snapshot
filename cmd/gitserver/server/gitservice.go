@@ -2,7 +2,6 @@ package server
 
 import (
 	"compress/gzip"
-	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -75,7 +74,7 @@ func (s *gitServiceHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Content-Encoding") == "gzip" {
 		gzipReader, err := gzip.NewReader(body)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("malformed payload: %s", err), http.StatusBadRequest)
+			http.Error(w, "malformed payload: "+err.Error(), http.StatusBadRequest)
 			return
 		}
 		defer gzipReader.Close()
