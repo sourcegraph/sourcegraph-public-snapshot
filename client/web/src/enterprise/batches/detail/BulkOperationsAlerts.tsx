@@ -7,6 +7,7 @@ import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
 import { DismissibleAlert, isAlertDismissed } from '../../../components/DismissibleAlert'
 import { ActiveBulkOperationsConnectionFields } from '../../../graphql-operations'
+
 import { BatchChangeTab } from './BatchChangeTabs'
 
 export interface BulkOperationsAlertsProps {
@@ -16,7 +17,7 @@ export interface BulkOperationsAlertsProps {
 
 /**
  * Renders the alert bar at the top of the BatchChangeDetailsPage, when a bulk operation recently changed state or is processing.
- * The logic for this is rather complex (TODO). It takes a list of bulk operations, which returns at most the latest 3 entries and
+ * The logic for this is rather complex (TODO). It takes a list of bulk operations, which returns at most the latest 50 entries and
  * only entries that were created less than three days ago.
  * If there are any processing operations in that list, and the alerts have not been dismissed yet, a "in progress" alert is shown.
  * If not, and there are failed bulk operations in the list and the alert for that hasn't been dismissed yet, a "something failed"

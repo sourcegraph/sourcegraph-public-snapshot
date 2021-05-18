@@ -125,7 +125,7 @@ const batchChangeFragment = gql`
             totalCount
         }
 
-        activeBulkOperations: bulkOperations(first: 3, createdAfter: $createdAfter) {
+        activeBulkOperations: bulkOperations(first: 50, createdAfter: $createdAfter) {
             ...ActiveBulkOperationsConnectionFields
         }
 
