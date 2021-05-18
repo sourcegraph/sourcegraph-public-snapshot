@@ -1,6 +1,6 @@
 # Bulk operations on changesets
 
-Sometimes it might be necessary to perform an action over many changesets in a batch change. Bulk operations provide a set of actions to run over a large set of them.
+Bulk operations allow a single action to be performed across many changesets in a batch change.
 
 ## Selecting changesets for a bulk operation
 
