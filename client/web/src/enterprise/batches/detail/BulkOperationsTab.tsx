@@ -3,6 +3,7 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useCallback } from 'react'
 import { delay, repeatWhen, tap } from 'rxjs/operators'
 
+import { BulkOperationState } from '@sourcegraph/shared/src/graphql-operations'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
 import { dismissAlert } from '../../../components/DismissibleAlert'
@@ -31,8 +32,12 @@ export const BulkOperationsTab: React.FunctionComponent<BulkOperationsTabProps> 
             queryBulkOperations({ batchChange: batchChangeID, after: after ?? null, first: first ?? null }).pipe(
                 tap(connection => {
                     for (const node of connection.nodes) {
-                        // Hide alerts for bulk operations seen already.
-                        dismissAlert(`bulkOperation-${node.state.toLocaleLowerCase()}-${node.id}`)
+                        if (node.state !== BulkOperationState.PROCESSING) {
+                            // Hide alerts for bulk operations seen already.
+                            // When the user visits this tab, we want to auto-dismiss notifications
+                            // for failed and completed operations.
+                            dismissAlert(`bulkOperation-${node.state.toLocaleLowerCase()}-${node.id}`)
+                        }
                     }
                 }),
                 repeatWhen(notifier => notifier.pipe(delay(2000)))
