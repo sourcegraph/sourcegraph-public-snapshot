@@ -74,7 +74,7 @@ export const ConnectionNodesSummary = <C extends Connection<N>, N, NP = {}, HP =
         emptyElement || (
             <p className="filtered-connection__summary" data-testid="summary">
                 <small>
-                    No {pluralNoun}{' '}
+                    No {pluralNoun} found{' '}
                     {connectionQuery && (
                         <span>
                             matching <strong>{connectionQuery}</strong>
