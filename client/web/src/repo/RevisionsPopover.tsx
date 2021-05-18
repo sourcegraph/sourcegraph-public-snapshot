@@ -237,7 +237,7 @@ export const RevisionsPopover: React.FunctionComponent<Props> = props => {
         className: 'connection-popover__content',
         inputClassName: 'connection-popover__input',
         listClassName: 'connection-popover__nodes',
-        showMoreClassName: 'connection-popover__show-more',
+        showMoreClassName: isRedesignEnabled ? '' : 'connection-popover__show-more',
         inputPlaceholder: 'Find...',
         compact: true,
         autoFocus: true,

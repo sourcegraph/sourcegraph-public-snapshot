@@ -14,6 +14,7 @@
         --popover-item-padding-v: 0.25rem;
         background-color: var(--color-bg-1);
         border-radius: 5px;
+        box-shadow: var(--dropdown-box-shadow);
     }
 
     &__content {

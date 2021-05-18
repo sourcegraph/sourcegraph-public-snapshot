@@ -244,6 +244,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                             target="repo-popover"
                             trigger="legacy"
                             hideArrow={true}
+                            fade={false}
                             popperClassName="border-0"
                         >
                             <RepositoriesPopover
