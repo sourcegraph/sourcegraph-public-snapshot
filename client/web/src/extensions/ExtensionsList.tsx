@@ -28,7 +28,6 @@ interface Props
     selectedCategory: ExtensionCategoryOrAll
     enablementFilter: ExtensionsEnablement
     query: string
-    showMoreExtensions: boolean
     onShowFullCategoryClicked: (category: ExtensionCategory) => void
 }
 
@@ -51,7 +50,6 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
     selectedCategory,
     enablementFilter,
     query,
-    showMoreExtensions,
     authenticatedUser,
     onShowFullCategoryClicked,
     ...props
@@ -108,8 +106,8 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
         categorySections = ORDERED_EXTENSION_CATEGORIES.filter(
             category =>
                 filteredExtensionIDsByCategory[category].length > 0 &&
-                // Only show Programming Languages when "show more" was clicked
-                (category !== 'Programming languages' || showMoreExtensions)
+                // Only show Programming Languages when it is the selected category
+                category !== 'Programming languages'
         ).map(category => {
             const extensionIDsForCategory = filteredExtensionIDsByCategory[category]
 

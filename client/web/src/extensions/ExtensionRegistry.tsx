@@ -120,8 +120,6 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
 
     // Filter extensions by enablement state: enabled, disabled, or all.
     const [enablementFilter, setEnablementFilter] = useState<ExtensionsEnablement>('all')
-    // Programming language extensions are hidden by default. Users cannot un-show PL extensions once toggled.
-    const [showMoreExtensions, setShowMoreExtensions] = useState(false)
 
     // Used to determine `isLoading` in order to stop <ExtensionList> from filtering based on the
     // selected category before the new query has completed.
@@ -308,22 +306,9 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
                                 query={query}
                                 enablementFilter={enablementFilter}
                                 selectedCategory={selectedCategory}
-                                showMoreExtensions={showMoreExtensions}
                                 onShowFullCategoryClicked={onSelectCategory}
                             />
                         </div>
-                        {/* TODO(tj): remove this button */}
-                        {!isLoading && !showMoreExtensions && selectedCategory === 'All' && (
-                            <div className="d-flex justify-content-center">
-                                <button
-                                    type="button"
-                                    className="btn btn-outline-secondary"
-                                    onClick={() => setShowMoreExtensions(true)}
-                                >
-                                    Show more extensions
-                                </button>
-                            </div>
-                        )}
                         {/* Only show the banner when there are no selected categories and it is not loading */}
                         {selectedCategory === 'All' && !isLoading && (
                             <>
