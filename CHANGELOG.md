@@ -19,7 +19,13 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Removed
 
+## 3.28.0
+
+- This release is identical to 3.27.1, and is simply a version number bump to correspond with the forthcoming release of Sourcegraph 3.28.
+
 ## 3.27.1
+
+### Added
 
 - Starting with Sourcegraph 3.28.0 batch spec `steps` can contain an `if: <template string>` attribute that determines whether the given step will be executed. [#520](https://github.com/sourcegraph/src-cli/pull/520)
 
