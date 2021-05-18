@@ -5,6 +5,8 @@ import { useRedesignToggle, REDESIGN_CLASS_NAME } from '@sourcegraph/shared/src/
 
 import { Badge } from '../../components/Badge'
 
+import styles from './RedesignToggle.module.scss'
+
 export const RedesignToggle: React.FunctionComponent = () => {
     const [isRedesignEnabled, setIsRedesignEnabled] = useRedesignToggle()
 
@@ -21,7 +23,9 @@ export const RedesignToggle: React.FunctionComponent = () => {
                 </div>
                 <Toggle title="Redesign theme enabled" value={isRedesignEnabled} onToggle={handleRedesignToggle} />
             </div>
-            <small>Still working on it. We'll let you know once we're ready for feedback!</small>
+            <small className={styles.feedbackText}>
+                Still working on it. We'll let you know once we're ready for feedback!
+            </small>
         </div>
     )
 }
