@@ -71,7 +71,7 @@ export const BulkOperationNode: React.FunctionComponent<BulkOperationNodeProps> 
                                         </LinkOrSpan>{' '}
                                         on{' '}
                                         <Link className="alert-link" to={error.changeset.repository.url}>
-                                            repo:{error.changeset.repository.name}
+                                            repository {error.changeset.repository.name}
                                         </Link>
                                         .
                                     </>
