@@ -247,11 +247,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                             fade={false}
                             popperClassName="border-0"
                         >
-                            <RepositoriesPopover
-                                currentRepo={repoOrError.id}
-                                history={props.history}
-                                location={props.location}
-                            />
+                            <RepositoriesPopover currentRepo={repoOrError.id} />
                         </UncontrolledPopover>
                     </>
                 ),
