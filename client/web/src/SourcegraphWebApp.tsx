@@ -205,11 +205,6 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      * Whether the code monitoring feature flag is enabled.
      */
     enableCodeMonitoring: boolean
-
-    /**
-     * Whether the design refresh toggle is enabled.
-     */
-    designRefreshToggleEnabled: boolean
 }
 
 const notificationClassNames = {
@@ -300,7 +295,6 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             showQueryBuilder: false,
             enableSmartQuery: false,
             enableCodeMonitoring: false,
-            designRefreshToggleEnabled: false,
         }
     }
 
@@ -315,6 +309,10 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         updateUserSessionStores()
 
         document.documentElement.classList.add('theme')
+
+        if (getIsRedesignEnabled()) {
+            document.documentElement.classList.add(REDESIGN_CLASS_NAME)
+        }
 
         this.subscriptions.add(
             combineLatest([from(this.platformContext.settings), authenticatedUser.pipe(startWith(null))]).subscribe(
@@ -430,10 +428,6 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         localStorage.setItem(LIGHT_THEME_LOCAL_STORAGE_KEY, this.state.themePreference)
         document.documentElement.classList.toggle('theme-light', this.isLightTheme())
         document.documentElement.classList.toggle('theme-dark', !this.isLightTheme())
-        document.documentElement.classList.toggle(
-            REDESIGN_CLASS_NAME,
-            this.state.designRefreshToggleEnabled && getIsRedesignEnabled()
-        )
     }
 
     public render(): React.ReactFragment | null {

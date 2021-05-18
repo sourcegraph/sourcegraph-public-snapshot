@@ -51,7 +51,7 @@ add(
                     onThemePreferenceChange={onThemePreferenceChange}
                     showDotComMarketing={boolean('showDotComMarketing', true)}
                     isExtensionAlertAnimating={false}
-                    showRefreshToggle={false}
+                    showRedesignToggle={false}
                     codeHostIntegrationMessaging={select(
                         'codeHostIntegrationMessaging',
                         ['browser-extension', 'native-integration'] as const,
@@ -108,7 +108,7 @@ add(
                     onThemePreferenceChange={onThemePreferenceChange}
                     showDotComMarketing={boolean('showDotComMarketing', true)}
                     isExtensionAlertAnimating={false}
-                    showRefreshToggle={false}
+                    showRedesignToggle={false}
                     codeHostIntegrationMessaging={select(
                         'codeHostIntegrationMessaging',
                         ['browser-extension', 'native-integration'] as const,

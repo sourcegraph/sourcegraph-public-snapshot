@@ -33,7 +33,7 @@ export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps, Exte
     testIsOpen?: boolean
     codeHostIntegrationMessaging: 'browser-extension' | 'native-integration'
     showRepositorySection?: boolean
-    showRefreshToggle: boolean
+    showRedesignToggle: boolean
 }
 
 export interface ExtensionAlertAnimationProps {
@@ -206,7 +206,7 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                         <Shortcut key={index} {...keybinding} onMatch={onThemeCycle} />
                     ))}
                 </div>
-                {props.showRefreshToggle && <RedesignToggle />}
+                {props.showRedesignToggle && <RedesignToggle />}
                 {props.authenticatedUser.organizations.nodes.length > 0 && (
                     <>
                         <DropdownItem divider={true} />

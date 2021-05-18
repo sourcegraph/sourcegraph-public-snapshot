@@ -356,7 +356,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                                             props.settingsCascade.final?.['alerts.codeHostIntegrationMessaging']) ||
                                         'browser-extension'
                                     }
-                                    showRefreshToggle={
+                                    showRedesignToggle={
                                         !isErrorLike(props.settingsCascade.final) &&
                                         Boolean(
                                             props.settingsCascade.final?.experimentalFeatures
