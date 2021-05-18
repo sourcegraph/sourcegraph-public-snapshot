@@ -1,4 +1,15 @@
 .search-context-menu {
+    &__header {
+        display: flex;
+        padding: 0.5rem;
+        border: 1px solid transparent;
+        border-bottom: 1px solid var(--border-color-2);
+
+        &-input {
+            font-size: 0.8125rem;
+        }
+    }
+
     &__title {
         display: flex;
         justify-content: space-between;
@@ -9,17 +20,6 @@
 
         &-close {
             color: var(--icon-color);
-        }
-    }
-
-    &__header {
-        display: flex;
-        padding: 0.5rem;
-        border: 1px solid transparent;
-        border-bottom: 1px solid var(--border-color-2);
-
-        &-input {
-            font-size: 0.8125rem;
         }
     }
 
