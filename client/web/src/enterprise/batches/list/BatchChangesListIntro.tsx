@@ -13,33 +13,26 @@ export interface BatchChangesListIntroProps {
 }
 
 export const BatchChangesListIntro: React.FunctionComponent<BatchChangesListIntroProps> = ({ licensed }) => (
-    <>
-        <div className="row">
+    <div className="row mb-2">
+        {licensed === true ? (
             <div className="col-12">
-                <BatchChangesRenameAlert />
+                <BatchChangesChangelogAlert />
             </div>
-        </div>
-        <div className="row mb-2">
-            {licensed === true ? (
-                <div className="col-12">
-                    <BatchChangesChangelogAlert />
-                </div>
-            ) : (
-                <>
-                    {licensed === false && (
-                        <>
-                            <div className="col-12 col-md-6">
-                                <BatchChangesUnlicensedAlert />
-                            </div>
-                            <div className="col-12 col-md-6">
-                                <BatchChangesChangelogAlert />
-                            </div>
-                        </>
-                    )}
-                </>
-            )}
-        </div>
-    </>
+        ) : (
+            <>
+                {licensed === false && (
+                    <>
+                        <div className="col-12 col-md-6">
+                            <BatchChangesUnlicensedAlert />
+                        </div>
+                        <div className="col-12 col-md-6">
+                            <BatchChangesChangelogAlert />
+                        </div>
+                    </>
+                )}
+            </>
+        )}
+    </div>
 )
 
 const BatchChangesChangelogAlert: React.FunctionComponent = () => (
@@ -86,24 +79,6 @@ const BatchChangesChangelogAlert: React.FunctionComponent = () => (
                         of `encryption.keys` in the site configuration.
                     </li>
                 </ul>
-            </div>
-        </div>
-    </DismissibleAlert>
-)
-
-const BatchChangesRenameAlert: React.FunctionComponent = () => (
-    <DismissibleAlert
-        className={classNames(styles.batchChangesListIntroAlert, 'mb-4')}
-        partialStorageKey="batch-changes-list-intro-rename"
-    >
-        <div className={classNames(styles.batchChangesListIntroCard, 'card h-100 p-2')}>
-            <div className="card-body">
-                <h4>Campaigns is now Batch Changes</h4>
-                <p className="text-muted mb-0">
-                    Campaigns was renamed to Sourcegraph Batch Changes in version 3.26. If you were already using it
-                    under the previous name (campaigns), backwards compatibility has been preserved.{' '}
-                    <a href="https://docs.sourcegraph.com/batch_changes/references/name-change">Read more.</a>
-                </p>
             </div>
         </div>
     </DismissibleAlert>
