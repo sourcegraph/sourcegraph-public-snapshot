@@ -27,13 +27,15 @@ export function SeriesCard(props: SeriesCardProps): ReactElement {
     return (
         <li
             aria-label={`Edit button for ${name} data series`}
-            className={classnames(styles.formSeriesCard, className, 'card d-flex flex-row p-3')}
+            className={classnames(styles.card, className, 'card d-flex flex-row p-3')}
         >
-            <div className="flex-grow-1 d-flex flex-column align-items-start">
-                <div className="d-flex align-items-center mb-1 ">
+            <div className={styles.cardInfo}>
+                <div className={classnames('mb-1 ', styles.cardTitle)}>
                     {/* eslint-disable-next-line react/forbid-dom-props */}
-                    <div style={{ color }} className={styles.formSeriesCardColor} />
-                    <span className="ml-1 font-weight-bold">{name}</span>
+                    <div style={{ color }} className={styles.cardColorMark} />
+                    <span title={name} className={classnames(styles.cardName, 'ml-1 font-weight-bold')}>
+                        {name}
+                    </span>
                 </div>
 
                 <span className="mb-0 text-muted">{query}</span>
