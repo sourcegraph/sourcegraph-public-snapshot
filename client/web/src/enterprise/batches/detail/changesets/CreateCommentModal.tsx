@@ -64,7 +64,7 @@ export const CreateCommentModal: React.FunctionComponent<CreateCommentModalProps
                         <textarea
                             id="token"
                             name="token"
-                            className="form-control text-monospace"
+                            className="form-control"
                             placeholder={PLACEHOLDER_COMMENT}
                             required={true}
                             rows={8}
@@ -99,6 +99,8 @@ export const CreateCommentModal: React.FunctionComponent<CreateCommentModalProps
 
 const LABEL_ID = 'create-comment-modal-id'
 
-const PLACEHOLDER_COMMENT = `## Please review this
+const PLACEHOLDER_COMMENT = `A comment that will be posted to all selected changesets.
 
-This change is really important for us so please go review and merge this.`
+You can use whatever formatting is available on your code host, such as _Markdown_!
+
+Use this to request a review, provide an update, or post your favorite emoji, like 🦡.`

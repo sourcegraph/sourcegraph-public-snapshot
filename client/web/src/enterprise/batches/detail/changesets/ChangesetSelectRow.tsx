@@ -44,7 +44,7 @@ const AVAILABLE_ACTIONS: ChangesetListAction[] = [
         buttonLabel: 'Detach changesets',
         dropdownTitle: 'Detach changesets',
         dropdownDescription:
-            "Removes the selected changesets from this batch change. Unlike archive, this can't be undone.",
+            "Remove the selected changesets from this batch change. Unlike archive, this can't be undone.",
         // Only show on the archived tab.
         isAvailable: ({ onlyArchived }) => !!onlyArchived,
         onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => (
@@ -62,7 +62,7 @@ const AVAILABLE_ACTIONS: ChangesetListAction[] = [
         buttonLabel: 'Create comment',
         dropdownTitle: 'Create comment',
         dropdownDescription:
-            'Create a comment on all selected changesets to ask people for reviews, or give an update.',
+            'Create a comment on all selected changesets. For example, you could ask people for reviews, give an update, or post a cat GIF.',
         isAvailable: () => true,
         onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => (
             <CreateCommentModal
