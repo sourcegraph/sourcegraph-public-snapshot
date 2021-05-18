@@ -2,31 +2,22 @@
     display: flex;
     flex-direction: column;
 
-    &__update-button {
-        display: flex;
-        align-items: center;
-        margin-bottom: 0.5rem;
-        flex-grow: 0;
-        align-self: flex-start;
-    }
-
     &__chart-container {
         position: relative;
         width: 100%;
         flex-grow: 1;
+        padding: 1rem;
     }
 
     &__chart {
-        position: absolute;
-        top: 0;
-        left: 0;
         width: 100%;
         height: 100%;
     }
 
-    &__chart--with-mock-data {
-        filter: blur(5px);
+    &__chart--with-mock {
+        filter: blur(4px);
         pointer-events: none;
+        opacity: 0.4;
 
         // In order to turn off any interactions with chart like
         // tooltip or chart shutter for user cursor we have to
@@ -37,8 +28,9 @@
         }
     }
 
-    &__update-button-icon {
-        margin-left: 0.5rem;
+    &__loader {
+        background-color: var(--color-bg-2);
+        height: 100%;
     }
 
     &__loading-chart-info {
@@ -46,10 +38,9 @@
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-    }
-
-    &__loader {
-        background-color: var(--color-bg-2);
-        height: 100%;
+        width: 100%;
+        padding: 3rem;
+        display: flex;
+        justify-content: center;
     }
 }
