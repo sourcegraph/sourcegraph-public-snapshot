@@ -33,8 +33,8 @@
     --dropdown-link-hover-bg: var(--color-bg-2);
     --dropdown-header-color: var(--text-muted);
     .dropdown-menu {
-        border-radius: 4px;
-        box-shadow: 0 0 12px 0 rgba(0, 27, 76, 0.085);
+        border-radius: 5px;
+        box-shadow: 0 4px 16px -6px rgba(36, 41, 54, 0.2);
     }
 }
 
@@ -45,7 +45,7 @@
     --dropdown-link-hover-bg: var(--color-bg-2);
     --dropdown-header-color: var(--text-muted);
     .dropdown-menu {
-        border-radius: 4px;
-        box-shadow: 0 0 12px 0 rgba(0, 27, 76, 0.4);
+        border-radius: 5px;
+        box-shadow: 0 4px 16px -6px rgba(11, 12, 15, 0.8);
     }
 }

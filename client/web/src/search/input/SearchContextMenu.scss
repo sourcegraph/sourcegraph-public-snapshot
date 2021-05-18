@@ -1,19 +1,24 @@
 .search-context-menu {
+    &__title {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 1rem;
+        border-bottom: 1px solid var(--border-color-2);
+        color: var(--text-muted);
+
+        &-close {
+            color: var(--icon-color);
+        }
+    }
+
     &__header {
         display: flex;
-        padding: 0.25rem 1rem 0.5rem 0;
+        padding: 0.5rem;
         border: 1px solid transparent;
         border-bottom: 1px solid var(--border-color-2);
 
-        &-prompt {
-            color: var(--search-keyword-color);
-            margin-left: 0.5rem;
-        }
-
         &-input {
-            flex-grow: 1;
-            background-color: transparent;
-            border: none;
             font-size: 0.8125rem;
         }
     }
@@ -88,7 +93,7 @@
     &__footer {
         display: flex;
         border-top: 1px solid var(--border-color-2);
-        padding: 0.5rem 1rem 0.25rem;
+        padding: 0.5rem 1rem;
 
         &-button {
             color: var(--web-content-link-color);

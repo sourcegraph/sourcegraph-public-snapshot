@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
+import CloseIcon from 'mdi-react/CloseIcon'
 import React, {
     useCallback,
     useRef,
@@ -267,16 +267,25 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
     return (
         // eslint-disable-next-line jsx-a11y/no-static-element-interactions
         <div className="search-context-menu" onKeyDown={onMenuKeyDown}>
+            <div className="search-context-menu__title">
+                <small>Choose search context</small>
+                <button
+                    onClick={closeMenu}
+                    type="button"
+                    className="btn btn-icon search-context-menu__title-close"
+                    aria-label="Close"
+                >
+                    <CloseIcon className="icon-inline" />
+                </button>
+            </div>
             <div className="search-context-menu__header d-flex">
-                <span aria-hidden="true" className="search-context-menu__header-prompt">
-                    <ChevronRightIcon className="icon-inline" />
-                </span>
                 <input
                     ref={inputElement}
                     onInput={onSearchFilterChanged}
                     type="search"
-                    placeholder="Find a context"
-                    className="search-context-menu__header-input"
+                    placeholder="Find..."
+                    aria-label="Find a context"
+                    className="form-control search-context-menu__header-input"
                 />
             </div>
             <div className="search-context-menu__list" ref={infiniteScrollList}>
