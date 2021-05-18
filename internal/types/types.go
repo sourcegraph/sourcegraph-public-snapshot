@@ -9,15 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hashicorp/go-multierror"
-	"github.com/pkg/errors"
-	"github.com/xeipuuv/gojsonschema"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // A SourceInfo represents a source a Repo belongs to (such as an external service).
@@ -491,80 +485,6 @@ func (e *ExternalService) Update(n *ExternalService) (modified bool) {
 // Configuration returns the external service config.
 func (e *ExternalService) Configuration() (cfg interface{}, _ error) {
 	return extsvc.ParseConfig(e.Kind, e.Config)
-}
-
-func (e *ExternalService) config(kind string, opt func(c interface{}) (string, interface{}, error)) error {
-	if !strings.EqualFold(kind, e.Kind) {
-		return fmt.Errorf("config: unexpected external service kind %q", e.Kind)
-	}
-
-	c, err := e.Configuration()
-	if err != nil {
-		return errors.Wrap(err, "config")
-	}
-
-	path, val, err := opt(c)
-	if err != nil {
-		return errors.Wrap(err, "config")
-	}
-
-	if !reflect.ValueOf(val).IsNil() {
-		edited, err := jsonc.Edit(e.Config, val, strings.Split(path, ".")...)
-		if err != nil {
-			return errors.Wrap(err, "edit")
-		}
-		e.Config = edited
-	}
-
-	return e.validateConfig()
-}
-
-func (e ExternalService) schema() string {
-	switch strings.ToUpper(e.Kind) {
-	case extsvc.KindAWSCodeCommit:
-		return schema.AWSCodeCommitSchemaJSON
-	case extsvc.KindBitbucketServer:
-		return schema.BitbucketServerSchemaJSON
-	case extsvc.KindGitHub:
-		return schema.GitHubSchemaJSON
-	case extsvc.KindGitLab:
-		return schema.GitLabSchemaJSON
-	case extsvc.KindGitolite:
-		return schema.GitoliteSchemaJSON
-	case extsvc.KindPhabricator:
-		return schema.PhabricatorSchemaJSON
-	case extsvc.KindOther:
-		return schema.OtherExternalServiceSchemaJSON
-	default:
-		return ""
-	}
-}
-
-// validateConfig validates the config of an external service
-// against its JSON schema.
-func (e *ExternalService) validateConfig() error {
-	sl := gojsonschema.NewSchemaLoader()
-	sc, err := sl.Compile(gojsonschema.NewStringLoader(e.schema()))
-	if err != nil {
-		return errors.Wrapf(err, "failed to compile schema for external service of kind %q", e.Kind)
-	}
-
-	normalized, err := jsonc.Parse(e.Config)
-	if err != nil {
-		return errors.Wrapf(err, "failed to normalize JSON")
-	}
-
-	res, err := sc.Validate(gojsonschema.NewBytesLoader(normalized))
-	if err != nil {
-		return errors.Wrap(err, "failed to validate config against schema")
-	}
-
-	errs := new(multierror.Error)
-	for _, err := range res.Errors() {
-		errs = multierror.Append(errs, errors.New(err.String()))
-	}
-
-	return errs.ErrorOrNil()
 }
 
 // Clone returns a clone of the given external service.

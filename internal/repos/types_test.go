@@ -11,7 +11,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -71,15 +70,6 @@ func TestPick(t *testing.T) {
 			t.Errorf("unexpected pick(%v, %v)", args[0], args[1])
 		}
 	}
-}
-
-func formatJSON(t testing.TB, s string) string {
-	formatted, err := jsonc.Format(s, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	return formatted
 }
 
 func TestSyncRateLimiters(t *testing.T) {
