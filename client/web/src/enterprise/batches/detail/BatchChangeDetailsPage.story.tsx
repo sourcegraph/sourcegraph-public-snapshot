@@ -81,26 +81,6 @@ const batchChangeDefaults: BatchChangeFields = {
             {
                 id: 'testid-123',
                 state: BulkOperationState.PROCESSING,
-                createdAt: subDays(now, 2).toISOString(),
-                finishedAt: null,
-                progress: 0.37,
-                errors: [
-                    {
-                        changeset: {
-                            __typename: 'ExternalChangeset',
-                            title: 'Changeset title',
-                            externalURL: { url: '/test' },
-                            repository: { name: 'sourcegraph/sourcegraph', url: '/github.com/sourcegraph/sourcegraph' },
-                        },
-                        error: 'Very bad error happening here',
-                    },
-                ],
-                type: BulkOperationType.COMMENT,
-                changesetCount: 100,
-                initiator: {
-                    url: '/users/alice',
-                    username: 'alice',
-                },
             },
         ],
     },

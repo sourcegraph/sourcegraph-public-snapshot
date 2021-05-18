@@ -84,6 +84,9 @@ export interface ChangesetSelectRowProps {
     allSelected: boolean
     setAllSelected: () => void
     queryArguments: Omit<AllChangesetIDsVariables, 'after'>
+
+    /** For testing only. */
+    dropDownInitiallyOpen?: boolean
 }
 
 /**
@@ -99,12 +102,13 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
     allSelected,
     setAllSelected,
     queryArguments,
+    dropDownInitiallyOpen = false,
 }) => {
     const actions = useMemo(() => AVAILABLE_ACTIONS.filter(action => action.isAvailable(queryArguments)), [
         queryArguments,
     ])
     /* Whether the dropdown menu is expanded. */
-    const [isOpen, setIsOpen] = useState<boolean>(false)
+    const [isOpen, setIsOpen] = useState<boolean>(dropDownInitiallyOpen)
     /* Toggle the dropdown menu */
     const toggleIsOpen = useCallback(() => setIsOpen(open => !open), [])
     const [selectedAction, setSelectedAction] = useState<ChangesetListAction | undefined>(() => {
