@@ -27,7 +27,8 @@ export const repositoriesExistValidator: AsyncValidator<string> = async value =>
         const nullRepositoryIndex = repositories.findIndex(repo => !repo)
 
         if (nullRepositoryIndex !== -1) {
-            return `We couldn't find repository with ${repositoryNames[nullRepositoryIndex]}. Please check the repo URL.`
+            const repoName = repositoryNames[nullRepositoryIndex])
+            return `We couldn't find the repository ${repoName}. Please ensure the repository exists at ${new URL(repoName, location.href)}.`
         }
 
         return
