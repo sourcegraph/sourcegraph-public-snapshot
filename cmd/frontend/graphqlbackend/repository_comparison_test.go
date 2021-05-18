@@ -438,6 +438,114 @@ func TestDiffHunk(t *testing.T) {
 	})
 }
 
+func TestDiffHunk2(t *testing.T) {
+	ctx := context.Background()
+	filediff := `diff --git cmd/staticcheck/README.md cmd/staticcheck/README.md
+index 4d14577..10ef458 100644
+--- cmd/staticcheck/README.md
++++ cmd/staticcheck/README.md
+@@ -13,3 +13,5 @@ See [the main README](https://github.com/dominikh/go-tools#installation) for ins
+ Detailed documentation can be found on
+ [staticcheck.io](https://staticcheck.io/docs/).
+` + " " + `
++
++(c) Copyright Sourcegraph 2013-2021.
+\ No newline at end of file
+`
+	dr := diff.NewMultiFileDiffReader(strings.NewReader(filediff))
+	// We only read the first file diff from testDiff
+	fileDiff, err := dr.ReadFile()
+	if err != nil && err != io.EOF {
+		t.Fatalf("parsing diff failed: %s", err)
+	}
+
+	hunk := &DiffHunk{hunk: fileDiff.Hunks[0]}
+
+	t.Run("Highlight", func(t *testing.T) {
+		hunk.highlighter = &dummyFileHighlighter{
+			highlightedBase: []template.HTML{
+				"<div><span class=\"hl-text hl-html hl-markdown\"><span class=\"hl-meta hl-block-level hl-markdown\"><span class=\"hl-markup hl-heading hl-1 hl-markdown\"><span class=\"hl-punctuation hl-definition hl-heading hl-begin hl-markdown\">#</span> </span><span class=\"hl-markup hl-heading hl-1 hl-markdown\"><span class=\"hl-entity hl-name hl-section hl-markdown\">staticcheck</span><span class=\"hl-meta hl-whitespace hl-newline hl-markdown\">\n</span></span></span></span></div>",
+				"<div><span class=\"hl-text hl-html hl-markdown\">\n</span></div>",
+				"<div><span class=\"hl-text hl-html hl-markdown\">_staticcheck_ offers extensive analysis of Go code, covering a myriad\n</span></div>",
+				"<div><span class=\"hl-text hl-html hl-markdown\">of categories. It will detect bugs, suggest code simplifications,\n</span></div>",
+				"<div><span class=\"hl-text hl-html hl-markdown\">point out dead code, and more.\n</span></div>",
+				"<div><span class=\"hl-text hl-html hl-markdown\">\n</span></div>",
+				"<div><span class=\"hl-text hl-html hl-markdown\"><span class=\"hl-meta hl-block-level hl-markdown\"><span class=\"hl-markup hl-heading hl-2 hl-markdown\"><span class=\"hl-punctuation hl-definition hl-heading hl-begin hl-markdown\">##</span> </span><span class=\"hl-markup hl-heading hl-2 hl-markdown\"><span class=\"hl-entity hl-name hl-section hl-markdown\">Installation</span><span class=\"hl-meta hl-whitespace hl-newline hl-markdown\">\n</span></span></span></span></div>",
+				"<div><span class=\"hl-text hl-html hl-markdown\">\n</span></div>",
+				"<div><span class=\"hl-text hl-html hl-markdown\">See [the main README](https://github.com/dominikh/go-tools#installation) for installation instructions.\n</span></div>",
+				"<div><span class=\"hl-text hl-html hl-markdown\">\n</span></div>",
+				"<div><span class=\"hl-text hl-html hl-markdown\"><span class=\"hl-meta hl-block-level hl-markdown\"><span class=\"hl-markup hl-heading hl-2 hl-markdown\"><span class=\"hl-punctuation hl-definition hl-heading hl-begin hl-markdown\">##</span> </span><span class=\"hl-markup hl-heading hl-2 hl-markdown\"><span class=\"hl-entity hl-name hl-section hl-markdown\">Documentation</span><span class=\"hl-meta hl-whitespace hl-newline hl-markdown\">\n</span></span></span></span></div>",
+				"<div><span class=\"hl-text hl-html hl-markdown\">\n</span></div>",
+				"<div><span class=\"hl-text hl-html hl-markdown\">Detailed documentation can be found on\n</span></div>",
+				"<div><span class=\"hl-text hl-html hl-markdown\">[staticcheck.io](https://staticcheck.io/docs/).\n</span></div>",
+			},
+			highlightedHead: []template.HTML{
+				"<div><span class=\"hl-text hl-html hl-markdown\"><span class=\"hl-meta hl-block-level hl-markdown\"><span class=\"hl-markup hl-heading hl-1 hl-markdown\"><span class=\"hl-punctuation hl-definition hl-heading hl-begin hl-markdown\">#</span> </span><span class=\"hl-markup hl-heading hl-1 hl-markdown\"><span class=\"hl-entity hl-name hl-section hl-markdown\">staticcheck</span><span class=\"hl-meta hl-whitespace hl-newline hl-markdown\">\n</span></span></span></span></div>",
+				"<div><span class=\"hl-text hl-html hl-markdown\">\n</span></div>",
+				"<div><span class=\"hl-text hl-html hl-markdown\">_staticcheck_ offers extensive analysis of Go code, covering a myriad\n</span></div>",
+				"<div><span class=\"hl-text hl-html hl-markdown\">of categories. It will detect bugs, suggest code simplifications,\n</span></div>",
+				"<div><span class=\"hl-text hl-html hl-markdown\">point out dead code, and more.\n</span></div>",
+				"<div><span class=\"hl-text hl-html hl-markdown\">\n</span></div>",
+				"<div><span class=\"hl-text hl-html hl-markdown\"><span class=\"hl-meta hl-block-level hl-markdown\"><span class=\"hl-markup hl-heading hl-2 hl-markdown\"><span class=\"hl-punctuation hl-definition hl-heading hl-begin hl-markdown\">##</span> </span><span class=\"hl-markup hl-heading hl-2 hl-markdown\"><span class=\"hl-entity hl-name hl-section hl-markdown\">Installation</span><span class=\"hl-meta hl-whitespace hl-newline hl-markdown\">\n</span></span></span></span></div>",
+				"<div><span class=\"hl-text hl-html hl-markdown\">\n</span></div>",
+				"<div><span class=\"hl-text hl-html hl-markdown\">See [the main README](https://github.com/dominikh/go-tools#installation) for installation instructions.\n</span></div>",
+				"<div><span class=\"hl-text hl-html hl-markdown\">\n</span></div>",
+				"<div><span class=\"hl-text hl-html hl-markdown\"><span class=\"hl-meta hl-block-level hl-markdown\"><span class=\"hl-markup hl-heading hl-2 hl-markdown\"><span class=\"hl-punctuation hl-definition hl-heading hl-begin hl-markdown\">##</span> </span><span class=\"hl-markup hl-heading hl-2 hl-markdown\"><span class=\"hl-entity hl-name hl-section hl-markdown\">Documentation</span><span class=\"hl-meta hl-whitespace hl-newline hl-markdown\">\n</span></span></span></span></div>",
+				"<div><span class=\"hl-text hl-html hl-markdown\">\n</span></div>",
+				"<div><span class=\"hl-text hl-html hl-markdown\">Detailed documentation can be found on\n</span></div>",
+				"<div><span class=\"hl-text hl-html hl-markdown\">[staticcheck.io](https://staticcheck.io/docs/).\n</span></div>",
+				"<div><span class=\"hl-text hl-html hl-markdown\">\n</span></div>",
+				"<div><span class=\"hl-text hl-html hl-markdown\">\n</span></div>",
+				"<div><span class=\"hl-text hl-html hl-markdown\">(c) Copyright Sourcegraph 2013-2021.</span></div>",
+			},
+		}
+
+		body, err := hunk.Highlight(ctx, &HighlightArgs{
+			DisableTimeout:     false,
+			HighlightLongLines: false,
+			IsLightTheme:       true,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if body.Aborted() {
+			t.Fatal("highlighting is aborted")
+		}
+
+		// wantLines := []struct {
+		// 	kind, html string
+		// }{
+		// 	{kind: "UNCHANGED", html: "B3"},
+		// 	{kind: "UNCHANGED", html: "B4"},
+		// 	{kind: "UNCHANGED", html: "B5"},
+		// 	{kind: "DELETED", html: "B6"},
+		// 	{kind: "ADDED", html: "H6"},
+		// 	{kind: "UNCHANGED", html: "B7"},
+		// 	{kind: "UNCHANGED", html: "B8"},
+		// 	{kind: "DELETED", html: "B9"},
+		// 	{kind: "DELETED", html: "B10"},
+		// 	{kind: "ADDED", html: "H9"},
+		// 	{kind: "ADDED", html: "H10"},
+		// 	{kind: "UNCHANGED", html: "B11"},
+		// 	{kind: "UNCHANGED", html: "B12"},
+		// }
+
+		// lines := body.Lines()
+		// if have, want := len(lines), len(wantLines); have != want {
+		// 	t.Fatalf("len(Highlight.Lines) is wrong. want = %d, have = %d", want, have)
+		// }
+		// for i, n := range lines {
+		// 	wantedLine := wantLines[i]
+		// 	if n.Kind() != wantedLine.kind {
+		// 		t.Fatalf("Kind is wrong. want = %q, have = %q", wantedLine.kind, n.Kind())
+		// 	}
+		// 	if n.HTML() != wantedLine.html {
+		// 		t.Fatalf("HTML is wrong. want = %q, have = %q", wantedLine.html, n.HTML())
+		// 	}
+		// }
+	})
+}
+
 const testDiffFiles = 3
 const testDiff = `diff --git INSTALL.md INSTALL.md
 index e5af166..d44c3fc 100644
