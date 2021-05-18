@@ -65,7 +65,9 @@ const SearchContextMenuItem: React.FunctionComponent<{
             <span className="search-context-menu__item-description" title={description}>
                 {description}
             </span>
-            {isDefault && <span className="search-context-menu__item-default">Default</span>}
+            {isDefault && (
+                <span className="badge badge-secondary text-uppercase search-context-menu__item-default">Default</span>
+            )}
         </DropdownItem>
     )
 }
@@ -326,7 +328,7 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
                         className="btn btn-link btn-sm search-context-menu__footer-button"
                         onClick={closeMenu}
                     >
-                        Manage
+                        Manage contexts
                     </Link>
                 )}
             </div>
