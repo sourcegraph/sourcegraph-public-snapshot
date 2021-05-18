@@ -37,6 +37,6 @@ func (r *queryResolver) DocumentationPage(ctx context.Context, pathID string) (_
 			return page, nil
 		}
 	}
-	
+
 	return nil, err
 }
