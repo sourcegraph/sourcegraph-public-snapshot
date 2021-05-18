@@ -553,6 +553,19 @@ func (r *DiffHunk) Highlight(ctx context.Context, args *HighlightArgs) (*highlig
 		hunkLines = append(hunkLines[:lastMinus], hunkLines[lastMinus+1:]...)
 	}
 
+	// Even after all the logic above, we were still hitting out-of-bounds panics:
+	// https://github.com/sourcegraph/sourcegraph/issues/21054
+	// Ultimately, we'll need a cleaner solution than this, but for now, just
+	// returning an empty line div when one was trimmed unexpectedly will at least
+	// protect from panics.
+	// Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/20704
+	safeIndex := func(lines []template.HTML, target int32) string {
+		if len(lines) > int(target) {
+			return string(lines[target])
+		}
+		return `<div>\n</div>`
+	}
+
 	highlightedDiffHunkLineResolvers := make([]*highlightedDiffHunkLineResolver, len(hunkLines))
 	// Lines in highlightedBase and highlightedHead are 0-indexed.
 	baseLine := r.hunk.OrigStartLine - 1
@@ -561,16 +574,16 @@ func (r *DiffHunk) Highlight(ctx context.Context, args *HighlightArgs) (*highlig
 		highlightedDiffHunkLineResolver := highlightedDiffHunkLineResolver{}
 		if hunkLine[0] == ' ' {
 			highlightedDiffHunkLineResolver.kind = "UNCHANGED"
-			highlightedDiffHunkLineResolver.html = string(highlightedBase[baseLine])
+			highlightedDiffHunkLineResolver.html = safeIndex(highlightedBase, baseLine)
 			baseLine++
 			headLine++
 		} else if hunkLine[0] == '+' {
 			highlightedDiffHunkLineResolver.kind = "ADDED"
-			highlightedDiffHunkLineResolver.html = string(highlightedHead[headLine])
+			highlightedDiffHunkLineResolver.html = safeIndex(highlightedHead, headLine)
 			headLine++
 		} else if hunkLine[0] == '-' {
 			highlightedDiffHunkLineResolver.kind = "DELETED"
-			highlightedDiffHunkLineResolver.html = string(highlightedBase[baseLine])
+			highlightedDiffHunkLineResolver.html = safeIndex(highlightedBase, baseLine)
 			baseLine++
 		} else {
 			return nil, fmt.Errorf("expected patch lines to start with ' ', '-', '+', but found %q", hunkLine[0])
