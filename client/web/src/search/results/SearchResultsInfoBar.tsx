@@ -178,7 +178,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                 {props.stats}
                 <QuotesInterpretedLiterallyNotice {...props} />
 
-                <div className="flex-grow-1" />
+                <div className="search-results-info-bar__expander" />
 
                 <ul className={classNames('nav align-items-center', !isRedesignEnabled && 'justify-content-end')}>
                     <ActionsNavItems

@@ -51,6 +51,15 @@
         }
     }
 
+    &__expander {
+        margin: 0 -0.5rem; // Counteract the gap
+
+        .theme-redesign & {
+            flex-grow: 1;
+            margin-right: 0; // Reset gap
+        }
+    }
+
     .theme-redesign & {
         padding-left: 0;
     }
