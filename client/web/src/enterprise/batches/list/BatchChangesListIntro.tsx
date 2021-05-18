@@ -60,8 +60,13 @@ const BatchChangesChangelogAlert: React.FunctionComponent = () => (
                     </li>
                 </ul>
                 <ul className="text-muted mb-0 pl-3">
-                    {/* TODO: link to documentation if we have it; remove if this doesn't make it before branch cut. */}
-                    <li>Commenting on changesets is now supported.</li>
+                    <li>
+                        Commenting on changesets{' '}
+                        <Link to="https://docs.sourcegraph.com/batch_changes/how-tos/bulk_operations_on_changesets">
+                            is now supported
+                        </Link>
+                        .
+                    </li>
                 </ul>
                 <ul className="text-muted mb-0 pl-3">
                     <li>
