@@ -147,7 +147,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                     title="Title"
                     required={true}
                     description="Shown as the title for your insight"
-                    placeholder="ex. Migration to React function components"
+                    placeholder="Example: Migration to React function components"
                     valid={title.meta.touched && title.meta.validState === 'VALID'}
                     error={title.meta.touched && title.meta.error}
                     {...title.input}
