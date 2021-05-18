@@ -205,7 +205,7 @@ export function useForm<FormValues extends object>(props: UseFormProps<FormValue
 
     useEffect(() => {
         if (Object.keys(changeEvent.values).length === 0) {
-            return;
+            return
         }
 
         onChangeReference.current?.(changeEvent)
