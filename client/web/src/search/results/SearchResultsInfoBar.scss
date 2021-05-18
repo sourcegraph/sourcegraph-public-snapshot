@@ -52,9 +52,10 @@
     }
 
     &__expander {
-        margin: 0 -0.5rem; // Counteract the gap
+        display: none;
 
         .theme-redesign & {
+            display: block;
             flex-grow: 1;
             margin-right: 0; // Reset gap
         }
