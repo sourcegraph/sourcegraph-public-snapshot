@@ -38,6 +38,7 @@ import {
     BulkOperationConnectionFields,
     AllChangesetIDsResult,
     AllChangesetIDsVariables,
+    ChangesetIDConnectionFields,
 } from '../../../graphql-operations'
 
 const changesetsStatsFragment = gql`
@@ -706,7 +707,7 @@ export const queryAllChangesetIDs = ({
     search,
     onlyArchived,
 }: Omit<AllChangesetIDsVariables, 'after'>): Observable<Scalars['ID'][]> => {
-    const request = (after: string | null) =>
+    const request = (after: string | null): Observable<ChangesetIDConnectionFields> =>
         requestGraphQL<AllChangesetIDsResult, AllChangesetIDsVariables>(
             gql`
                 query AllChangesetIDs(
@@ -732,16 +733,20 @@ export const queryAllChangesetIDs = ({
                                 search: $search
                                 onlyArchived: $onlyArchived
                             ) {
-                                nodes {
-                                    __typename
-                                    id
-                                }
-                                pageInfo {
-                                    hasNextPage
-                                    endCursor
-                                }
+                                ...ChangesetIDConnectionFields
                             }
                         }
+                    }
+                }
+
+                fragment ChangesetIDConnectionFields on ChangesetConnection {
+                    nodes {
+                        __typename
+                        id
+                    }
+                    pageInfo {
+                        hasNextPage
+                        endCursor
                     }
                 }
             `,
