@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -563,6 +564,7 @@ func (r *DiffHunk) Highlight(ctx context.Context, args *HighlightArgs) (*highlig
 		if len(lines) > int(target) {
 			return string(lines[target])
 		}
+		log15.Warn("returned default value for out of bounds index on highlighted code")
 		return `<div>\n</div>`
 	}
 
