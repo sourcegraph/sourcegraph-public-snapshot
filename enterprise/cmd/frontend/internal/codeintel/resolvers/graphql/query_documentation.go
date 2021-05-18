@@ -12,11 +12,11 @@ func (r *QueryResolver) DocumentationPage(ctx context.Context, args *gql.LSIFDoc
 	if err != nil {
 		return nil, err
 	}
-	value, err := json.Marshal(page)
+	tree, err := json.Marshal(page.Tree)
 	if err != nil {
 		return nil, err
 	}
-	return &DocumentationPageResolver{tree: gql.JSONValue{Value: string(value)}}, nil
+	return &DocumentationPageResolver{tree: gql.JSONValue{Value: string(tree)}}, nil
 }
 
 type DocumentationPageResolver struct {
