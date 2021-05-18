@@ -83,13 +83,12 @@
   },
   "devDependencies": {
     "@atlassian/aui": "^7.10.1",
-    "@babel/core": "^7.13.0",
-    "@babel/plugin-proposal-class-properties": "^7.13.0",
-    "@babel/plugin-proposal-decorators": "^7.13.0",
+    "@babel/core": "^7.14.2",
+    "@babel/plugin-proposal-decorators": "^7.14.2",
     "@babel/plugin-transform-typescript": "^7.13.0",
-    "@babel/preset-env": "^7.13.0",
+    "@babel/preset-env": "^7.14.2",
     "@babel/preset-typescript": "^7.13.0",
-    "@babel/runtime": "^7.13.0",
+    "@babel/runtime": "^7.14.0",
     "@gql2ts/from-schema": "^1.10.1",
     "@gql2ts/language-typescript": "^1.9.0",
     "@gql2ts/types": "^1.9.0",
@@ -105,7 +104,7 @@
     "@pollyjs/core": "^5.1.0",
     "@pollyjs/persister-fs": "^5.0.0",
     "@slack/web-api": "^5.10.0",
-    "@sourcegraph/babel-plugin-transform-react-hot-loader-wrapper": "^1.0.0",
+    "@sourcegraph/babel-plugin-transform-react-hot-loader-wrapper": "^1.1.0",
     "@sourcegraph/eslint-config": "^0.25.0",
     "@sourcegraph/eslint-plugin-sourcegraph": "1.0.0",
     "@sourcegraph/prettierrc": "^3.0.3",
@@ -199,7 +198,7 @@
     "abort-controller": "^3.0.0",
     "autoprefixer": "^10.2.1",
     "babel-jest": "^25.5.1",
-    "babel-loader": "^8.2.1",
+    "babel-loader": "^8.2.2",
     "babel-plugin-lodash": "^3.3.4",
     "babel-preset-react-app": "^10.0.0",
     "browserslist": "^4.12.0",
@@ -384,7 +383,6 @@
   },
   "resolutions": {
     "history": "4.5.1",
-    "cssnano": "4.1.10",
-    "@babel/traverse": "7.12.5"
+    "cssnano": "4.1.10"
   }
 }
