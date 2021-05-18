@@ -1,5 +1,7 @@
 import { useState } from 'react'
 
+import { isDefined } from '@sourcegraph/shared/src/util/types'
+
 import { useFieldAPI } from '../../../../../../components/form/hooks/useField'
 import { DataSeries } from '../../../../../../core/backend/types'
 import { useDistinctValue } from '../../../../../../hooks/use-distinct-value'
@@ -81,7 +83,7 @@ export function useEditableSeries(props: UseEditableSeriesProps): UseEditableSer
 
                 return series.meta.value[index]
             })
-            .filter<DataSeries>((series): series is DataSeries => !!series)
+            .filter<DataSeries>(isDefined)
     )
 
     const handleSeriesLiveChange = (liveSeries: DataSeries, valid: boolean, index: number): void => {
