@@ -10,6 +10,7 @@ import { QueryState, submitSearch } from '../helpers'
 
 import { LazyMonacoQueryInput } from './LazyMonacoQueryInput'
 import styles from './SearchBox.module.scss'
+import { SearchButton } from './SearchButton'
 import { SearchContextDropdown } from './SearchContextDropdown'
 import { Toggles, TogglesProps } from './toggles/Toggles'
 
@@ -64,13 +65,20 @@ export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
                     selectedSearchContextSpec={props.selectedSearchContextSpec}
                 />
             )}
-            {props.showSearchContext && (
-                <SearchContextDropdown query={queryState.query} submitSearch={submitSearch} {...props} />
-            )}
-            <div className={`${styles.searchBoxFocusContainer} flex-shrink-past-contents`}>
-                <LazyMonacoQueryInput {...props} />
-                <Toggles {...props} navbarSearchQuery={queryState.query} className={styles.searchBoxToggleContainer} />
+            <div className={styles.searchBoxBackgroundContainer}>
+                {props.showSearchContext && (
+                    <SearchContextDropdown query={queryState.query} submitSearch={submitSearch} {...props} />
+                )}
+                <div className={`${styles.searchBoxFocusContainer} flex-shrink-past-contents`}>
+                    <LazyMonacoQueryInput {...props} />
+                    <Toggles
+                        {...props}
+                        navbarSearchQuery={queryState.query}
+                        className={styles.searchBoxToggleContainer}
+                    />
+                </div>
             </div>
+            <SearchButton />
         </div>
     )
 }

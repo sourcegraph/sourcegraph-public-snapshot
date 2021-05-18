@@ -1,4 +1,12 @@
 .search-button {
+    // Override parent's background and border
+    background-color: var(--body-bg);
+    border-width: 1px 0;
+    border-style: solid;
+    border-color: var(--body-bg);
+    // stylelint-disable-next-line declaration-property-unit-whitelist
+    margin: -1px 0;
+
     &__btn {
         // Left side is flush with QueryInput.
         border-top-left-radius: 0;

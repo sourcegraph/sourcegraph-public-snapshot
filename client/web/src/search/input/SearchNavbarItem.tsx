@@ -18,7 +18,6 @@ import { VersionContext } from '../../schema/site.schema'
 import { submitSearch, QueryState } from '../helpers'
 
 import { SearchBox } from './SearchBox'
-import { SearchButton } from './SearchButton'
 import { useSearchOnboardingTour } from './SearchOnboardingTour'
 
 interface Props
@@ -80,7 +79,6 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
                 autoFocus={autoFocus}
                 showSearchContextHighlightTourStep={true}
             />
-            <SearchButton />
         </Form>
     )
 }
