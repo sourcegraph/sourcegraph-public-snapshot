@@ -161,7 +161,7 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
     )
 
     const renderAdminExtensionToggleText = useCallback(
-        (enabled: boolean) => <span className="text-muted">{enabled ? 'Enabled' : 'Not enabled'} for all users</span>,
+        (enabled: boolean) => <span className="text-muted">{enabled ? 'Enabled' : 'Disabled'} by default for all</span>,
         []
     )
 

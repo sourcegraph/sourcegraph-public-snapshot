@@ -65,8 +65,8 @@ exports[`ExtensionCard renders 1`] = `
         <span
           className="text-muted"
         >
-          Not enabled
-           for all users
+          Disabled
+           by default for all
         </span>
         <button
           aria-checked={false}
