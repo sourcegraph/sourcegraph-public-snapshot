@@ -274,10 +274,12 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                         }
                     }}
                 />
-                <div className="mt-2 text-muted">
-                    <span>Markdown formatting is supported</span>
-                    <span className="px-1">&middot;</span>
-                    <span>{MAX_DESCRIPTION_LENGTH - description.length} characters remaining</span>
+                <div className="mt-1 text-muted">
+                    <small>
+                        <span>Markdown formatting is supported</span>
+                        <span className="px-1">&middot;</span>
+                        <span>{MAX_DESCRIPTION_LENGTH - description.length} characters remaining</span>
+                    </small>
                 </div>
             </div>
             <div className="mt-3">
