@@ -18,7 +18,7 @@ $nav-tabs-link-active-border-color: var(--border-color) var(--border-color) tran
         border-radius: var(--border-radius);
         color: var(--text-muted);
         &:not(.active):hover {
-            border-bottom: 3px solid var(--border-color);
+            border-bottom: 3px solid var(--border-color-2);
             margin-top: 0;
             color: var(--body-color);
         }
