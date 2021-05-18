@@ -41,7 +41,7 @@ const defaultConnectionNodesProps = {
 describe('ConnectionNodes', () => {
     afterAll(cleanup)
 
-    it('has a "Show more" button when *not* loading', () => {
+    it('has a "Show more" button and summary when *not* loading', () => {
         render(
             <ConnectionNodes
                 {...defaultConnectionNodesProps}
@@ -54,7 +54,7 @@ describe('ConnectionNodes', () => {
         expect(screen.getByText('(showing first 1)')).toBeVisible()
     })
 
-    it("*doesn't* have a 'Show more' button when loading", () => {
+    it("*doesn't* have a 'Show more' button or summary when loading", () => {
         render(
             <ConnectionNodes
                 {...defaultConnectionNodesProps}
@@ -63,8 +63,8 @@ describe('ConnectionNodes', () => {
             />
         )
         expect(screen.queryByRole('button')).not.toBeInTheDocument()
-        expect(screen.getByText('2 cats total')).toBeVisible()
-        expect(screen.getByText('(showing first 1)')).toBeVisible()
+        expect(screen.queryByText('2 cats total')).not.toBeInTheDocument()
+        expect(screen.queryByText('(showing first 1)')).not.toBeInTheDocument()
         // NOTE: we also expect a LoadingSpinner, but that is not provided by ConnectionNodes.
     })
 
@@ -87,7 +87,7 @@ describe('ConnectionNodes', () => {
             <ConnectionNodes
                 {...defaultConnectionNodesProps}
                 connection={fakeConnection({ hasNextPage: false, totalCount: 1, nodes: [{}] })}
-                loading={true}
+                loading={false}
             />
         )
         expect(screen.queryByRole('button')).not.toBeInTheDocument()
@@ -113,7 +113,7 @@ describe('ConnectionNodes', () => {
             <ConnectionNodes
                 {...defaultConnectionNodesProps}
                 connection={fakeConnection({ hasNextPage: true, totalCount: null, nodes: [{}] })}
-                loading={true}
+                loading={false}
             />
         )
         expect(screen.queryByTestId('summary')).not.toBeInTheDocument()
@@ -124,7 +124,7 @@ describe('ConnectionNodes', () => {
             <ConnectionNodes
                 {...defaultConnectionNodesProps}
                 connection={fakeConnection({ hasNextPage: false, totalCount: 1, nodes: [{}] })}
-                loading={true}
+                loading={false}
                 noSummaryIfAllNodesVisible={false}
             />
         )
@@ -142,19 +142,7 @@ describe('ConnectionNodes', () => {
             <ConnectionNodes
                 {...defaultConnectionNodesProps}
                 connection={fakeConnection({ hasNextPage: false, totalCount: 1, nodes: [] })}
-                loading={true}
-            />
-        )
-        expect(screen.getByText('1 cat total')).toBeVisible()
-        expect(screen.queryByText('(showing first 1)')).not.toBeInTheDocument()
-    })
-
-    it('shows a summary if nodes.length is 0', () => {
-        render(
-            <ConnectionNodes
-                {...defaultConnectionNodesProps}
-                connection={fakeConnection({ hasNextPage: false, totalCount: 1, nodes: [] })}
-                loading={true}
+                loading={false}
             />
         )
         expect(screen.getByText('1 cat total')).toBeVisible()
@@ -166,7 +154,7 @@ describe('ConnectionNodes', () => {
             <ConnectionNodes
                 {...defaultConnectionNodesProps}
                 connection={fakeConnection({ hasNextPage: false, totalCount: 0, nodes: [] })}
-                loading={true}
+                loading={false}
             />
         )
         expect(screen.getByText('No cats')).toBeVisible()

@@ -14,7 +14,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -32,7 +31,7 @@ type handler struct {
 	dbStore         DBStore
 	lsifStore       LSIFStore
 	uploadStore     uploadstore.Store
-	enqueuer        enqueuer.Enqueuer
+	enqueuer        IndexEnqueuer
 	gitserverClient GitserverClient
 	enableBudget    bool
 	budgetRemaining int64
@@ -157,9 +156,10 @@ func (h *handler) handle(ctx context.Context, workerStore dbworkerstore.Store, d
 		}
 
 		if upload.RepositoryID == sourcegraphRepositoryID {
-			err = h.enqueuer.QueueIndexesForPackages(ctx, groupedBundleData.PackageReferences)
-			if err != nil {
-				return errors.Wrap(err, "enqueuer.QueueIndexesForPackages")
+			for _, pkg := range groupedBundleData.PackageReferences {
+				if err := h.enqueuer.QueueIndexesForPackage(ctx, pkg.Package); err != nil {
+					return errors.Wrap(err, "enqueuer.QueueIndexesForPackage")
+				}
 			}
 		}
 

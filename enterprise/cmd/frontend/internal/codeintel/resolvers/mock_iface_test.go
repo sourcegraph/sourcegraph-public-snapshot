@@ -4,13 +4,18 @@ package resolvers
 
 import (
 	"context"
+	"regexp"
 	"sync"
 	"time"
 
-	config "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/config"
+	enqueuer "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
 	gitserver "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	dbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	lsifstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+	api "github.com/sourcegraph/sourcegraph/internal/api"
+	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	protocol "github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	config "github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	semantic "github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
 )
 
@@ -2271,6 +2276,2136 @@ func (c DBStoreUpdateIndexConfigurationByRepositoryIDFuncCall) Results() []inter
 	return []interface{}{c.Result0}
 }
 
+// MockEnqueuerDBStore is a mock implementation of the EnqueuerDBStore
+// interface (from the package
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers)
+// used for unit testing.
+type MockEnqueuerDBStore struct {
+	// DirtyRepositoriesFunc is an instance of a mock function object
+	// controlling the behavior of the method DirtyRepositories.
+	DirtyRepositoriesFunc *EnqueuerDBStoreDirtyRepositoriesFunc
+	// DoneFunc is an instance of a mock function object controlling the
+	// behavior of the method Done.
+	DoneFunc *EnqueuerDBStoreDoneFunc
+	// GetIndexConfigurationByRepositoryIDFunc is an instance of a mock
+	// function object controlling the behavior of the method
+	// GetIndexConfigurationByRepositoryID.
+	GetIndexConfigurationByRepositoryIDFunc *EnqueuerDBStoreGetIndexConfigurationByRepositoryIDFunc
+	// GetRepositoriesWithIndexConfigurationFunc is an instance of a mock
+	// function object controlling the behavior of the method
+	// GetRepositoriesWithIndexConfiguration.
+	GetRepositoriesWithIndexConfigurationFunc *EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFunc
+	// HandleFunc is an instance of a mock function object controlling the
+	// behavior of the method Handle.
+	HandleFunc *EnqueuerDBStoreHandleFunc
+	// IndexableRepositoriesFunc is an instance of a mock function object
+	// controlling the behavior of the method IndexableRepositories.
+	IndexableRepositoriesFunc *EnqueuerDBStoreIndexableRepositoriesFunc
+	// InsertIndexFunc is an instance of a mock function object controlling
+	// the behavior of the method InsertIndex.
+	InsertIndexFunc *EnqueuerDBStoreInsertIndexFunc
+	// IsQueuedFunc is an instance of a mock function object controlling the
+	// behavior of the method IsQueued.
+	IsQueuedFunc *EnqueuerDBStoreIsQueuedFunc
+	// RepoUsageStatisticsFunc is an instance of a mock function object
+	// controlling the behavior of the method RepoUsageStatistics.
+	RepoUsageStatisticsFunc *EnqueuerDBStoreRepoUsageStatisticsFunc
+	// ResetIndexableRepositoriesFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// ResetIndexableRepositories.
+	ResetIndexableRepositoriesFunc *EnqueuerDBStoreResetIndexableRepositoriesFunc
+	// TransactFunc is an instance of a mock function object controlling the
+	// behavior of the method Transact.
+	TransactFunc *EnqueuerDBStoreTransactFunc
+	// UpdateIndexableRepositoryFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// UpdateIndexableRepository.
+	UpdateIndexableRepositoryFunc *EnqueuerDBStoreUpdateIndexableRepositoryFunc
+}
+
+// NewMockEnqueuerDBStore creates a new mock of the EnqueuerDBStore
+// interface. All methods return zero values for all results, unless
+// overwritten.
+func NewMockEnqueuerDBStore() *MockEnqueuerDBStore {
+	return &MockEnqueuerDBStore{
+		DirtyRepositoriesFunc: &EnqueuerDBStoreDirtyRepositoriesFunc{
+			defaultHook: func(context.Context) (map[int]int, error) {
+				return nil, nil
+			},
+		},
+		DoneFunc: &EnqueuerDBStoreDoneFunc{
+			defaultHook: func(error) error {
+				return nil
+			},
+		},
+		GetIndexConfigurationByRepositoryIDFunc: &EnqueuerDBStoreGetIndexConfigurationByRepositoryIDFunc{
+			defaultHook: func(context.Context, int) (dbstore.IndexConfiguration, bool, error) {
+				return dbstore.IndexConfiguration{}, false, nil
+			},
+		},
+		GetRepositoriesWithIndexConfigurationFunc: &EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFunc{
+			defaultHook: func(context.Context) ([]int, error) {
+				return nil, nil
+			},
+		},
+		HandleFunc: &EnqueuerDBStoreHandleFunc{
+			defaultHook: func() *basestore.TransactableHandle {
+				return nil
+			},
+		},
+		IndexableRepositoriesFunc: &EnqueuerDBStoreIndexableRepositoriesFunc{
+			defaultHook: func(context.Context, dbstore.IndexableRepositoryQueryOptions) ([]dbstore.IndexableRepository, error) {
+				return nil, nil
+			},
+		},
+		InsertIndexFunc: &EnqueuerDBStoreInsertIndexFunc{
+			defaultHook: func(context.Context, dbstore.Index) (int, error) {
+				return 0, nil
+			},
+		},
+		IsQueuedFunc: &EnqueuerDBStoreIsQueuedFunc{
+			defaultHook: func(context.Context, int, string) (bool, error) {
+				return false, nil
+			},
+		},
+		RepoUsageStatisticsFunc: &EnqueuerDBStoreRepoUsageStatisticsFunc{
+			defaultHook: func(context.Context) ([]dbstore.RepoUsageStatistics, error) {
+				return nil, nil
+			},
+		},
+		ResetIndexableRepositoriesFunc: &EnqueuerDBStoreResetIndexableRepositoriesFunc{
+			defaultHook: func(context.Context, time.Time) error {
+				return nil
+			},
+		},
+		TransactFunc: &EnqueuerDBStoreTransactFunc{
+			defaultHook: func(context.Context) (enqueuer.DBStore, error) {
+				return nil, nil
+			},
+		},
+		UpdateIndexableRepositoryFunc: &EnqueuerDBStoreUpdateIndexableRepositoryFunc{
+			defaultHook: func(context.Context, dbstore.UpdateableIndexableRepository, time.Time) error {
+				return nil
+			},
+		},
+	}
+}
+
+// NewMockEnqueuerDBStoreFrom creates a new mock of the MockEnqueuerDBStore
+// interface. All methods delegate to the given implementation, unless
+// overwritten.
+func NewMockEnqueuerDBStoreFrom(i EnqueuerDBStore) *MockEnqueuerDBStore {
+	return &MockEnqueuerDBStore{
+		DirtyRepositoriesFunc: &EnqueuerDBStoreDirtyRepositoriesFunc{
+			defaultHook: i.DirtyRepositories,
+		},
+		DoneFunc: &EnqueuerDBStoreDoneFunc{
+			defaultHook: i.Done,
+		},
+		GetIndexConfigurationByRepositoryIDFunc: &EnqueuerDBStoreGetIndexConfigurationByRepositoryIDFunc{
+			defaultHook: i.GetIndexConfigurationByRepositoryID,
+		},
+		GetRepositoriesWithIndexConfigurationFunc: &EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFunc{
+			defaultHook: i.GetRepositoriesWithIndexConfiguration,
+		},
+		HandleFunc: &EnqueuerDBStoreHandleFunc{
+			defaultHook: i.Handle,
+		},
+		IndexableRepositoriesFunc: &EnqueuerDBStoreIndexableRepositoriesFunc{
+			defaultHook: i.IndexableRepositories,
+		},
+		InsertIndexFunc: &EnqueuerDBStoreInsertIndexFunc{
+			defaultHook: i.InsertIndex,
+		},
+		IsQueuedFunc: &EnqueuerDBStoreIsQueuedFunc{
+			defaultHook: i.IsQueued,
+		},
+		RepoUsageStatisticsFunc: &EnqueuerDBStoreRepoUsageStatisticsFunc{
+			defaultHook: i.RepoUsageStatistics,
+		},
+		ResetIndexableRepositoriesFunc: &EnqueuerDBStoreResetIndexableRepositoriesFunc{
+			defaultHook: i.ResetIndexableRepositories,
+		},
+		TransactFunc: &EnqueuerDBStoreTransactFunc{
+			defaultHook: i.Transact,
+		},
+		UpdateIndexableRepositoryFunc: &EnqueuerDBStoreUpdateIndexableRepositoryFunc{
+			defaultHook: i.UpdateIndexableRepository,
+		},
+	}
+}
+
+// EnqueuerDBStoreDirtyRepositoriesFunc describes the behavior when the
+// DirtyRepositories method of the parent MockEnqueuerDBStore instance is
+// invoked.
+type EnqueuerDBStoreDirtyRepositoriesFunc struct {
+	defaultHook func(context.Context) (map[int]int, error)
+	hooks       []func(context.Context) (map[int]int, error)
+	history     []EnqueuerDBStoreDirtyRepositoriesFuncCall
+	mutex       sync.Mutex
+}
+
+// DirtyRepositories delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockEnqueuerDBStore) DirtyRepositories(v0 context.Context) (map[int]int, error) {
+	r0, r1 := m.DirtyRepositoriesFunc.nextHook()(v0)
+	m.DirtyRepositoriesFunc.appendCall(EnqueuerDBStoreDirtyRepositoriesFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the DirtyRepositories
+// method of the parent MockEnqueuerDBStore instance is invoked and the hook
+// queue is empty.
+func (f *EnqueuerDBStoreDirtyRepositoriesFunc) SetDefaultHook(hook func(context.Context) (map[int]int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DirtyRepositories method of the parent MockEnqueuerDBStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *EnqueuerDBStoreDirtyRepositoriesFunc) PushHook(hook func(context.Context) (map[int]int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *EnqueuerDBStoreDirtyRepositoriesFunc) SetDefaultReturn(r0 map[int]int, r1 error) {
+	f.SetDefaultHook(func(context.Context) (map[int]int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *EnqueuerDBStoreDirtyRepositoriesFunc) PushReturn(r0 map[int]int, r1 error) {
+	f.PushHook(func(context.Context) (map[int]int, error) {
+		return r0, r1
+	})
+}
+
+func (f *EnqueuerDBStoreDirtyRepositoriesFunc) nextHook() func(context.Context) (map[int]int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnqueuerDBStoreDirtyRepositoriesFunc) appendCall(r0 EnqueuerDBStoreDirtyRepositoriesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EnqueuerDBStoreDirtyRepositoriesFuncCall
+// objects describing the invocations of this function.
+func (f *EnqueuerDBStoreDirtyRepositoriesFunc) History() []EnqueuerDBStoreDirtyRepositoriesFuncCall {
+	f.mutex.Lock()
+	history := make([]EnqueuerDBStoreDirtyRepositoriesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnqueuerDBStoreDirtyRepositoriesFuncCall is an object that describes an
+// invocation of method DirtyRepositories on an instance of
+// MockEnqueuerDBStore.
+type EnqueuerDBStoreDirtyRepositoriesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 map[int]int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnqueuerDBStoreDirtyRepositoriesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnqueuerDBStoreDirtyRepositoriesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// EnqueuerDBStoreDoneFunc describes the behavior when the Done method of
+// the parent MockEnqueuerDBStore instance is invoked.
+type EnqueuerDBStoreDoneFunc struct {
+	defaultHook func(error) error
+	hooks       []func(error) error
+	history     []EnqueuerDBStoreDoneFuncCall
+	mutex       sync.Mutex
+}
+
+// Done delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockEnqueuerDBStore) Done(v0 error) error {
+	r0 := m.DoneFunc.nextHook()(v0)
+	m.DoneFunc.appendCall(EnqueuerDBStoreDoneFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Done method of the
+// parent MockEnqueuerDBStore instance is invoked and the hook queue is
+// empty.
+func (f *EnqueuerDBStoreDoneFunc) SetDefaultHook(hook func(error) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Done method of the parent MockEnqueuerDBStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *EnqueuerDBStoreDoneFunc) PushHook(hook func(error) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *EnqueuerDBStoreDoneFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(error) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *EnqueuerDBStoreDoneFunc) PushReturn(r0 error) {
+	f.PushHook(func(error) error {
+		return r0
+	})
+}
+
+func (f *EnqueuerDBStoreDoneFunc) nextHook() func(error) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnqueuerDBStoreDoneFunc) appendCall(r0 EnqueuerDBStoreDoneFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EnqueuerDBStoreDoneFuncCall objects
+// describing the invocations of this function.
+func (f *EnqueuerDBStoreDoneFunc) History() []EnqueuerDBStoreDoneFuncCall {
+	f.mutex.Lock()
+	history := make([]EnqueuerDBStoreDoneFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnqueuerDBStoreDoneFuncCall is an object that describes an invocation of
+// method Done on an instance of MockEnqueuerDBStore.
+type EnqueuerDBStoreDoneFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 error
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnqueuerDBStoreDoneFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnqueuerDBStoreDoneFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// EnqueuerDBStoreGetIndexConfigurationByRepositoryIDFunc describes the
+// behavior when the GetIndexConfigurationByRepositoryID method of the
+// parent MockEnqueuerDBStore instance is invoked.
+type EnqueuerDBStoreGetIndexConfigurationByRepositoryIDFunc struct {
+	defaultHook func(context.Context, int) (dbstore.IndexConfiguration, bool, error)
+	hooks       []func(context.Context, int) (dbstore.IndexConfiguration, bool, error)
+	history     []EnqueuerDBStoreGetIndexConfigurationByRepositoryIDFuncCall
+	mutex       sync.Mutex
+}
+
+// GetIndexConfigurationByRepositoryID delegates to the next hook function
+// in the queue and stores the parameter and result values of this
+// invocation.
+func (m *MockEnqueuerDBStore) GetIndexConfigurationByRepositoryID(v0 context.Context, v1 int) (dbstore.IndexConfiguration, bool, error) {
+	r0, r1, r2 := m.GetIndexConfigurationByRepositoryIDFunc.nextHook()(v0, v1)
+	m.GetIndexConfigurationByRepositoryIDFunc.appendCall(EnqueuerDBStoreGetIndexConfigurationByRepositoryIDFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the
+// GetIndexConfigurationByRepositoryID method of the parent
+// MockEnqueuerDBStore instance is invoked and the hook queue is empty.
+func (f *EnqueuerDBStoreGetIndexConfigurationByRepositoryIDFunc) SetDefaultHook(hook func(context.Context, int) (dbstore.IndexConfiguration, bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetIndexConfigurationByRepositoryID method of the parent
+// MockEnqueuerDBStore instance invokes the hook at the front of the queue
+// and discards it. After the queue is empty, the default hook function is
+// invoked for any future action.
+func (f *EnqueuerDBStoreGetIndexConfigurationByRepositoryIDFunc) PushHook(hook func(context.Context, int) (dbstore.IndexConfiguration, bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *EnqueuerDBStoreGetIndexConfigurationByRepositoryIDFunc) SetDefaultReturn(r0 dbstore.IndexConfiguration, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, int) (dbstore.IndexConfiguration, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *EnqueuerDBStoreGetIndexConfigurationByRepositoryIDFunc) PushReturn(r0 dbstore.IndexConfiguration, r1 bool, r2 error) {
+	f.PushHook(func(context.Context, int) (dbstore.IndexConfiguration, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *EnqueuerDBStoreGetIndexConfigurationByRepositoryIDFunc) nextHook() func(context.Context, int) (dbstore.IndexConfiguration, bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnqueuerDBStoreGetIndexConfigurationByRepositoryIDFunc) appendCall(r0 EnqueuerDBStoreGetIndexConfigurationByRepositoryIDFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// EnqueuerDBStoreGetIndexConfigurationByRepositoryIDFuncCall objects
+// describing the invocations of this function.
+func (f *EnqueuerDBStoreGetIndexConfigurationByRepositoryIDFunc) History() []EnqueuerDBStoreGetIndexConfigurationByRepositoryIDFuncCall {
+	f.mutex.Lock()
+	history := make([]EnqueuerDBStoreGetIndexConfigurationByRepositoryIDFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnqueuerDBStoreGetIndexConfigurationByRepositoryIDFuncCall is an object
+// that describes an invocation of method
+// GetIndexConfigurationByRepositoryID on an instance of
+// MockEnqueuerDBStore.
+type EnqueuerDBStoreGetIndexConfigurationByRepositoryIDFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 dbstore.IndexConfiguration
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 bool
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnqueuerDBStoreGetIndexConfigurationByRepositoryIDFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnqueuerDBStoreGetIndexConfigurationByRepositoryIDFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFunc describes the
+// behavior when the GetRepositoriesWithIndexConfiguration method of the
+// parent MockEnqueuerDBStore instance is invoked.
+type EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFunc struct {
+	defaultHook func(context.Context) ([]int, error)
+	hooks       []func(context.Context) ([]int, error)
+	history     []EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFuncCall
+	mutex       sync.Mutex
+}
+
+// GetRepositoriesWithIndexConfiguration delegates to the next hook function
+// in the queue and stores the parameter and result values of this
+// invocation.
+func (m *MockEnqueuerDBStore) GetRepositoriesWithIndexConfiguration(v0 context.Context) ([]int, error) {
+	r0, r1 := m.GetRepositoriesWithIndexConfigurationFunc.nextHook()(v0)
+	m.GetRepositoriesWithIndexConfigurationFunc.appendCall(EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// GetRepositoriesWithIndexConfiguration method of the parent
+// MockEnqueuerDBStore instance is invoked and the hook queue is empty.
+func (f *EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFunc) SetDefaultHook(hook func(context.Context) ([]int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetRepositoriesWithIndexConfiguration method of the parent
+// MockEnqueuerDBStore instance invokes the hook at the front of the queue
+// and discards it. After the queue is empty, the default hook function is
+// invoked for any future action.
+func (f *EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFunc) PushHook(hook func(context.Context) ([]int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFunc) SetDefaultReturn(r0 []int, r1 error) {
+	f.SetDefaultHook(func(context.Context) ([]int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFunc) PushReturn(r0 []int, r1 error) {
+	f.PushHook(func(context.Context) ([]int, error) {
+		return r0, r1
+	})
+}
+
+func (f *EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFunc) nextHook() func(context.Context) ([]int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFunc) appendCall(r0 EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFuncCall objects
+// describing the invocations of this function.
+func (f *EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFunc) History() []EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFuncCall {
+	f.mutex.Lock()
+	history := make([]EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFuncCall is an object
+// that describes an invocation of method
+// GetRepositoriesWithIndexConfiguration on an instance of
+// MockEnqueuerDBStore.
+type EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// EnqueuerDBStoreHandleFunc describes the behavior when the Handle method
+// of the parent MockEnqueuerDBStore instance is invoked.
+type EnqueuerDBStoreHandleFunc struct {
+	defaultHook func() *basestore.TransactableHandle
+	hooks       []func() *basestore.TransactableHandle
+	history     []EnqueuerDBStoreHandleFuncCall
+	mutex       sync.Mutex
+}
+
+// Handle delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockEnqueuerDBStore) Handle() *basestore.TransactableHandle {
+	r0 := m.HandleFunc.nextHook()()
+	m.HandleFunc.appendCall(EnqueuerDBStoreHandleFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Handle method of the
+// parent MockEnqueuerDBStore instance is invoked and the hook queue is
+// empty.
+func (f *EnqueuerDBStoreHandleFunc) SetDefaultHook(hook func() *basestore.TransactableHandle) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Handle method of the parent MockEnqueuerDBStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *EnqueuerDBStoreHandleFunc) PushHook(hook func() *basestore.TransactableHandle) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *EnqueuerDBStoreHandleFunc) SetDefaultReturn(r0 *basestore.TransactableHandle) {
+	f.SetDefaultHook(func() *basestore.TransactableHandle {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *EnqueuerDBStoreHandleFunc) PushReturn(r0 *basestore.TransactableHandle) {
+	f.PushHook(func() *basestore.TransactableHandle {
+		return r0
+	})
+}
+
+func (f *EnqueuerDBStoreHandleFunc) nextHook() func() *basestore.TransactableHandle {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnqueuerDBStoreHandleFunc) appendCall(r0 EnqueuerDBStoreHandleFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EnqueuerDBStoreHandleFuncCall objects
+// describing the invocations of this function.
+func (f *EnqueuerDBStoreHandleFunc) History() []EnqueuerDBStoreHandleFuncCall {
+	f.mutex.Lock()
+	history := make([]EnqueuerDBStoreHandleFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnqueuerDBStoreHandleFuncCall is an object that describes an invocation
+// of method Handle on an instance of MockEnqueuerDBStore.
+type EnqueuerDBStoreHandleFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *basestore.TransactableHandle
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnqueuerDBStoreHandleFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnqueuerDBStoreHandleFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// EnqueuerDBStoreIndexableRepositoriesFunc describes the behavior when the
+// IndexableRepositories method of the parent MockEnqueuerDBStore instance
+// is invoked.
+type EnqueuerDBStoreIndexableRepositoriesFunc struct {
+	defaultHook func(context.Context, dbstore.IndexableRepositoryQueryOptions) ([]dbstore.IndexableRepository, error)
+	hooks       []func(context.Context, dbstore.IndexableRepositoryQueryOptions) ([]dbstore.IndexableRepository, error)
+	history     []EnqueuerDBStoreIndexableRepositoriesFuncCall
+	mutex       sync.Mutex
+}
+
+// IndexableRepositories delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockEnqueuerDBStore) IndexableRepositories(v0 context.Context, v1 dbstore.IndexableRepositoryQueryOptions) ([]dbstore.IndexableRepository, error) {
+	r0, r1 := m.IndexableRepositoriesFunc.nextHook()(v0, v1)
+	m.IndexableRepositoriesFunc.appendCall(EnqueuerDBStoreIndexableRepositoriesFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// IndexableRepositories method of the parent MockEnqueuerDBStore instance
+// is invoked and the hook queue is empty.
+func (f *EnqueuerDBStoreIndexableRepositoriesFunc) SetDefaultHook(hook func(context.Context, dbstore.IndexableRepositoryQueryOptions) ([]dbstore.IndexableRepository, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// IndexableRepositories method of the parent MockEnqueuerDBStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *EnqueuerDBStoreIndexableRepositoriesFunc) PushHook(hook func(context.Context, dbstore.IndexableRepositoryQueryOptions) ([]dbstore.IndexableRepository, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *EnqueuerDBStoreIndexableRepositoriesFunc) SetDefaultReturn(r0 []dbstore.IndexableRepository, r1 error) {
+	f.SetDefaultHook(func(context.Context, dbstore.IndexableRepositoryQueryOptions) ([]dbstore.IndexableRepository, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *EnqueuerDBStoreIndexableRepositoriesFunc) PushReturn(r0 []dbstore.IndexableRepository, r1 error) {
+	f.PushHook(func(context.Context, dbstore.IndexableRepositoryQueryOptions) ([]dbstore.IndexableRepository, error) {
+		return r0, r1
+	})
+}
+
+func (f *EnqueuerDBStoreIndexableRepositoriesFunc) nextHook() func(context.Context, dbstore.IndexableRepositoryQueryOptions) ([]dbstore.IndexableRepository, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnqueuerDBStoreIndexableRepositoriesFunc) appendCall(r0 EnqueuerDBStoreIndexableRepositoriesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// EnqueuerDBStoreIndexableRepositoriesFuncCall objects describing the
+// invocations of this function.
+func (f *EnqueuerDBStoreIndexableRepositoriesFunc) History() []EnqueuerDBStoreIndexableRepositoriesFuncCall {
+	f.mutex.Lock()
+	history := make([]EnqueuerDBStoreIndexableRepositoriesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnqueuerDBStoreIndexableRepositoriesFuncCall is an object that describes
+// an invocation of method IndexableRepositories on an instance of
+// MockEnqueuerDBStore.
+type EnqueuerDBStoreIndexableRepositoriesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 dbstore.IndexableRepositoryQueryOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []dbstore.IndexableRepository
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnqueuerDBStoreIndexableRepositoriesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnqueuerDBStoreIndexableRepositoriesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// EnqueuerDBStoreInsertIndexFunc describes the behavior when the
+// InsertIndex method of the parent MockEnqueuerDBStore instance is invoked.
+type EnqueuerDBStoreInsertIndexFunc struct {
+	defaultHook func(context.Context, dbstore.Index) (int, error)
+	hooks       []func(context.Context, dbstore.Index) (int, error)
+	history     []EnqueuerDBStoreInsertIndexFuncCall
+	mutex       sync.Mutex
+}
+
+// InsertIndex delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockEnqueuerDBStore) InsertIndex(v0 context.Context, v1 dbstore.Index) (int, error) {
+	r0, r1 := m.InsertIndexFunc.nextHook()(v0, v1)
+	m.InsertIndexFunc.appendCall(EnqueuerDBStoreInsertIndexFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the InsertIndex method
+// of the parent MockEnqueuerDBStore instance is invoked and the hook queue
+// is empty.
+func (f *EnqueuerDBStoreInsertIndexFunc) SetDefaultHook(hook func(context.Context, dbstore.Index) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// InsertIndex method of the parent MockEnqueuerDBStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *EnqueuerDBStoreInsertIndexFunc) PushHook(hook func(context.Context, dbstore.Index) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *EnqueuerDBStoreInsertIndexFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context, dbstore.Index) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *EnqueuerDBStoreInsertIndexFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context, dbstore.Index) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *EnqueuerDBStoreInsertIndexFunc) nextHook() func(context.Context, dbstore.Index) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnqueuerDBStoreInsertIndexFunc) appendCall(r0 EnqueuerDBStoreInsertIndexFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EnqueuerDBStoreInsertIndexFuncCall objects
+// describing the invocations of this function.
+func (f *EnqueuerDBStoreInsertIndexFunc) History() []EnqueuerDBStoreInsertIndexFuncCall {
+	f.mutex.Lock()
+	history := make([]EnqueuerDBStoreInsertIndexFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnqueuerDBStoreInsertIndexFuncCall is an object that describes an
+// invocation of method InsertIndex on an instance of MockEnqueuerDBStore.
+type EnqueuerDBStoreInsertIndexFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 dbstore.Index
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnqueuerDBStoreInsertIndexFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnqueuerDBStoreInsertIndexFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// EnqueuerDBStoreIsQueuedFunc describes the behavior when the IsQueued
+// method of the parent MockEnqueuerDBStore instance is invoked.
+type EnqueuerDBStoreIsQueuedFunc struct {
+	defaultHook func(context.Context, int, string) (bool, error)
+	hooks       []func(context.Context, int, string) (bool, error)
+	history     []EnqueuerDBStoreIsQueuedFuncCall
+	mutex       sync.Mutex
+}
+
+// IsQueued delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockEnqueuerDBStore) IsQueued(v0 context.Context, v1 int, v2 string) (bool, error) {
+	r0, r1 := m.IsQueuedFunc.nextHook()(v0, v1, v2)
+	m.IsQueuedFunc.appendCall(EnqueuerDBStoreIsQueuedFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the IsQueued method of
+// the parent MockEnqueuerDBStore instance is invoked and the hook queue is
+// empty.
+func (f *EnqueuerDBStoreIsQueuedFunc) SetDefaultHook(hook func(context.Context, int, string) (bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// IsQueued method of the parent MockEnqueuerDBStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *EnqueuerDBStoreIsQueuedFunc) PushHook(hook func(context.Context, int, string) (bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *EnqueuerDBStoreIsQueuedFunc) SetDefaultReturn(r0 bool, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string) (bool, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *EnqueuerDBStoreIsQueuedFunc) PushReturn(r0 bool, r1 error) {
+	f.PushHook(func(context.Context, int, string) (bool, error) {
+		return r0, r1
+	})
+}
+
+func (f *EnqueuerDBStoreIsQueuedFunc) nextHook() func(context.Context, int, string) (bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnqueuerDBStoreIsQueuedFunc) appendCall(r0 EnqueuerDBStoreIsQueuedFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EnqueuerDBStoreIsQueuedFuncCall objects
+// describing the invocations of this function.
+func (f *EnqueuerDBStoreIsQueuedFunc) History() []EnqueuerDBStoreIsQueuedFuncCall {
+	f.mutex.Lock()
+	history := make([]EnqueuerDBStoreIsQueuedFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnqueuerDBStoreIsQueuedFuncCall is an object that describes an invocation
+// of method IsQueued on an instance of MockEnqueuerDBStore.
+type EnqueuerDBStoreIsQueuedFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 bool
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnqueuerDBStoreIsQueuedFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnqueuerDBStoreIsQueuedFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// EnqueuerDBStoreRepoUsageStatisticsFunc describes the behavior when the
+// RepoUsageStatistics method of the parent MockEnqueuerDBStore instance is
+// invoked.
+type EnqueuerDBStoreRepoUsageStatisticsFunc struct {
+	defaultHook func(context.Context) ([]dbstore.RepoUsageStatistics, error)
+	hooks       []func(context.Context) ([]dbstore.RepoUsageStatistics, error)
+	history     []EnqueuerDBStoreRepoUsageStatisticsFuncCall
+	mutex       sync.Mutex
+}
+
+// RepoUsageStatistics delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockEnqueuerDBStore) RepoUsageStatistics(v0 context.Context) ([]dbstore.RepoUsageStatistics, error) {
+	r0, r1 := m.RepoUsageStatisticsFunc.nextHook()(v0)
+	m.RepoUsageStatisticsFunc.appendCall(EnqueuerDBStoreRepoUsageStatisticsFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the RepoUsageStatistics
+// method of the parent MockEnqueuerDBStore instance is invoked and the hook
+// queue is empty.
+func (f *EnqueuerDBStoreRepoUsageStatisticsFunc) SetDefaultHook(hook func(context.Context) ([]dbstore.RepoUsageStatistics, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RepoUsageStatistics method of the parent MockEnqueuerDBStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *EnqueuerDBStoreRepoUsageStatisticsFunc) PushHook(hook func(context.Context) ([]dbstore.RepoUsageStatistics, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *EnqueuerDBStoreRepoUsageStatisticsFunc) SetDefaultReturn(r0 []dbstore.RepoUsageStatistics, r1 error) {
+	f.SetDefaultHook(func(context.Context) ([]dbstore.RepoUsageStatistics, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *EnqueuerDBStoreRepoUsageStatisticsFunc) PushReturn(r0 []dbstore.RepoUsageStatistics, r1 error) {
+	f.PushHook(func(context.Context) ([]dbstore.RepoUsageStatistics, error) {
+		return r0, r1
+	})
+}
+
+func (f *EnqueuerDBStoreRepoUsageStatisticsFunc) nextHook() func(context.Context) ([]dbstore.RepoUsageStatistics, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnqueuerDBStoreRepoUsageStatisticsFunc) appendCall(r0 EnqueuerDBStoreRepoUsageStatisticsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EnqueuerDBStoreRepoUsageStatisticsFuncCall
+// objects describing the invocations of this function.
+func (f *EnqueuerDBStoreRepoUsageStatisticsFunc) History() []EnqueuerDBStoreRepoUsageStatisticsFuncCall {
+	f.mutex.Lock()
+	history := make([]EnqueuerDBStoreRepoUsageStatisticsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnqueuerDBStoreRepoUsageStatisticsFuncCall is an object that describes an
+// invocation of method RepoUsageStatistics on an instance of
+// MockEnqueuerDBStore.
+type EnqueuerDBStoreRepoUsageStatisticsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []dbstore.RepoUsageStatistics
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnqueuerDBStoreRepoUsageStatisticsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnqueuerDBStoreRepoUsageStatisticsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// EnqueuerDBStoreResetIndexableRepositoriesFunc describes the behavior when
+// the ResetIndexableRepositories method of the parent MockEnqueuerDBStore
+// instance is invoked.
+type EnqueuerDBStoreResetIndexableRepositoriesFunc struct {
+	defaultHook func(context.Context, time.Time) error
+	hooks       []func(context.Context, time.Time) error
+	history     []EnqueuerDBStoreResetIndexableRepositoriesFuncCall
+	mutex       sync.Mutex
+}
+
+// ResetIndexableRepositories delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockEnqueuerDBStore) ResetIndexableRepositories(v0 context.Context, v1 time.Time) error {
+	r0 := m.ResetIndexableRepositoriesFunc.nextHook()(v0, v1)
+	m.ResetIndexableRepositoriesFunc.appendCall(EnqueuerDBStoreResetIndexableRepositoriesFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// ResetIndexableRepositories method of the parent MockEnqueuerDBStore
+// instance is invoked and the hook queue is empty.
+func (f *EnqueuerDBStoreResetIndexableRepositoriesFunc) SetDefaultHook(hook func(context.Context, time.Time) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ResetIndexableRepositories method of the parent MockEnqueuerDBStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *EnqueuerDBStoreResetIndexableRepositoriesFunc) PushHook(hook func(context.Context, time.Time) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *EnqueuerDBStoreResetIndexableRepositoriesFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, time.Time) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *EnqueuerDBStoreResetIndexableRepositoriesFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, time.Time) error {
+		return r0
+	})
+}
+
+func (f *EnqueuerDBStoreResetIndexableRepositoriesFunc) nextHook() func(context.Context, time.Time) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnqueuerDBStoreResetIndexableRepositoriesFunc) appendCall(r0 EnqueuerDBStoreResetIndexableRepositoriesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// EnqueuerDBStoreResetIndexableRepositoriesFuncCall objects describing the
+// invocations of this function.
+func (f *EnqueuerDBStoreResetIndexableRepositoriesFunc) History() []EnqueuerDBStoreResetIndexableRepositoriesFuncCall {
+	f.mutex.Lock()
+	history := make([]EnqueuerDBStoreResetIndexableRepositoriesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnqueuerDBStoreResetIndexableRepositoriesFuncCall is an object that
+// describes an invocation of method ResetIndexableRepositories on an
+// instance of MockEnqueuerDBStore.
+type EnqueuerDBStoreResetIndexableRepositoriesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 time.Time
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnqueuerDBStoreResetIndexableRepositoriesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnqueuerDBStoreResetIndexableRepositoriesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// EnqueuerDBStoreTransactFunc describes the behavior when the Transact
+// method of the parent MockEnqueuerDBStore instance is invoked.
+type EnqueuerDBStoreTransactFunc struct {
+	defaultHook func(context.Context) (enqueuer.DBStore, error)
+	hooks       []func(context.Context) (enqueuer.DBStore, error)
+	history     []EnqueuerDBStoreTransactFuncCall
+	mutex       sync.Mutex
+}
+
+// Transact delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockEnqueuerDBStore) Transact(v0 context.Context) (enqueuer.DBStore, error) {
+	r0, r1 := m.TransactFunc.nextHook()(v0)
+	m.TransactFunc.appendCall(EnqueuerDBStoreTransactFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Transact method of
+// the parent MockEnqueuerDBStore instance is invoked and the hook queue is
+// empty.
+func (f *EnqueuerDBStoreTransactFunc) SetDefaultHook(hook func(context.Context) (enqueuer.DBStore, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Transact method of the parent MockEnqueuerDBStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *EnqueuerDBStoreTransactFunc) PushHook(hook func(context.Context) (enqueuer.DBStore, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *EnqueuerDBStoreTransactFunc) SetDefaultReturn(r0 enqueuer.DBStore, r1 error) {
+	f.SetDefaultHook(func(context.Context) (enqueuer.DBStore, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *EnqueuerDBStoreTransactFunc) PushReturn(r0 enqueuer.DBStore, r1 error) {
+	f.PushHook(func(context.Context) (enqueuer.DBStore, error) {
+		return r0, r1
+	})
+}
+
+func (f *EnqueuerDBStoreTransactFunc) nextHook() func(context.Context) (enqueuer.DBStore, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnqueuerDBStoreTransactFunc) appendCall(r0 EnqueuerDBStoreTransactFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EnqueuerDBStoreTransactFuncCall objects
+// describing the invocations of this function.
+func (f *EnqueuerDBStoreTransactFunc) History() []EnqueuerDBStoreTransactFuncCall {
+	f.mutex.Lock()
+	history := make([]EnqueuerDBStoreTransactFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnqueuerDBStoreTransactFuncCall is an object that describes an invocation
+// of method Transact on an instance of MockEnqueuerDBStore.
+type EnqueuerDBStoreTransactFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 enqueuer.DBStore
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnqueuerDBStoreTransactFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnqueuerDBStoreTransactFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// EnqueuerDBStoreUpdateIndexableRepositoryFunc describes the behavior when
+// the UpdateIndexableRepository method of the parent MockEnqueuerDBStore
+// instance is invoked.
+type EnqueuerDBStoreUpdateIndexableRepositoryFunc struct {
+	defaultHook func(context.Context, dbstore.UpdateableIndexableRepository, time.Time) error
+	hooks       []func(context.Context, dbstore.UpdateableIndexableRepository, time.Time) error
+	history     []EnqueuerDBStoreUpdateIndexableRepositoryFuncCall
+	mutex       sync.Mutex
+}
+
+// UpdateIndexableRepository delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockEnqueuerDBStore) UpdateIndexableRepository(v0 context.Context, v1 dbstore.UpdateableIndexableRepository, v2 time.Time) error {
+	r0 := m.UpdateIndexableRepositoryFunc.nextHook()(v0, v1, v2)
+	m.UpdateIndexableRepositoryFunc.appendCall(EnqueuerDBStoreUpdateIndexableRepositoryFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// UpdateIndexableRepository method of the parent MockEnqueuerDBStore
+// instance is invoked and the hook queue is empty.
+func (f *EnqueuerDBStoreUpdateIndexableRepositoryFunc) SetDefaultHook(hook func(context.Context, dbstore.UpdateableIndexableRepository, time.Time) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UpdateIndexableRepository method of the parent MockEnqueuerDBStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *EnqueuerDBStoreUpdateIndexableRepositoryFunc) PushHook(hook func(context.Context, dbstore.UpdateableIndexableRepository, time.Time) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *EnqueuerDBStoreUpdateIndexableRepositoryFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, dbstore.UpdateableIndexableRepository, time.Time) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *EnqueuerDBStoreUpdateIndexableRepositoryFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, dbstore.UpdateableIndexableRepository, time.Time) error {
+		return r0
+	})
+}
+
+func (f *EnqueuerDBStoreUpdateIndexableRepositoryFunc) nextHook() func(context.Context, dbstore.UpdateableIndexableRepository, time.Time) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnqueuerDBStoreUpdateIndexableRepositoryFunc) appendCall(r0 EnqueuerDBStoreUpdateIndexableRepositoryFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// EnqueuerDBStoreUpdateIndexableRepositoryFuncCall objects describing the
+// invocations of this function.
+func (f *EnqueuerDBStoreUpdateIndexableRepositoryFunc) History() []EnqueuerDBStoreUpdateIndexableRepositoryFuncCall {
+	f.mutex.Lock()
+	history := make([]EnqueuerDBStoreUpdateIndexableRepositoryFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnqueuerDBStoreUpdateIndexableRepositoryFuncCall is an object that
+// describes an invocation of method UpdateIndexableRepository on an
+// instance of MockEnqueuerDBStore.
+type EnqueuerDBStoreUpdateIndexableRepositoryFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 dbstore.UpdateableIndexableRepository
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 time.Time
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnqueuerDBStoreUpdateIndexableRepositoryFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnqueuerDBStoreUpdateIndexableRepositoryFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// MockEnqueuerGitserverClient is a mock implementation of the
+// EnqueuerGitserverClient interface (from the package
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers)
+// used for unit testing.
+type MockEnqueuerGitserverClient struct {
+	// FileExistsFunc is an instance of a mock function object controlling
+	// the behavior of the method FileExists.
+	FileExistsFunc *EnqueuerGitserverClientFileExistsFunc
+	// HeadFunc is an instance of a mock function object controlling the
+	// behavior of the method Head.
+	HeadFunc *EnqueuerGitserverClientHeadFunc
+	// ListFilesFunc is an instance of a mock function object controlling
+	// the behavior of the method ListFiles.
+	ListFilesFunc *EnqueuerGitserverClientListFilesFunc
+	// RawContentsFunc is an instance of a mock function object controlling
+	// the behavior of the method RawContents.
+	RawContentsFunc *EnqueuerGitserverClientRawContentsFunc
+	// ResolveRevisionFunc is an instance of a mock function object
+	// controlling the behavior of the method ResolveRevision.
+	ResolveRevisionFunc *EnqueuerGitserverClientResolveRevisionFunc
+}
+
+// NewMockEnqueuerGitserverClient creates a new mock of the
+// EnqueuerGitserverClient interface. All methods return zero values for all
+// results, unless overwritten.
+func NewMockEnqueuerGitserverClient() *MockEnqueuerGitserverClient {
+	return &MockEnqueuerGitserverClient{
+		FileExistsFunc: &EnqueuerGitserverClientFileExistsFunc{
+			defaultHook: func(context.Context, int, string, string) (bool, error) {
+				return false, nil
+			},
+		},
+		HeadFunc: &EnqueuerGitserverClientHeadFunc{
+			defaultHook: func(context.Context, int) (string, error) {
+				return "", nil
+			},
+		},
+		ListFilesFunc: &EnqueuerGitserverClientListFilesFunc{
+			defaultHook: func(context.Context, int, string, *regexp.Regexp) ([]string, error) {
+				return nil, nil
+			},
+		},
+		RawContentsFunc: &EnqueuerGitserverClientRawContentsFunc{
+			defaultHook: func(context.Context, int, string, string) ([]byte, error) {
+				return nil, nil
+			},
+		},
+		ResolveRevisionFunc: &EnqueuerGitserverClientResolveRevisionFunc{
+			defaultHook: func(context.Context, int, string) (api.CommitID, error) {
+				return "", nil
+			},
+		},
+	}
+}
+
+// NewMockEnqueuerGitserverClientFrom creates a new mock of the
+// MockEnqueuerGitserverClient interface. All methods delegate to the given
+// implementation, unless overwritten.
+func NewMockEnqueuerGitserverClientFrom(i EnqueuerGitserverClient) *MockEnqueuerGitserverClient {
+	return &MockEnqueuerGitserverClient{
+		FileExistsFunc: &EnqueuerGitserverClientFileExistsFunc{
+			defaultHook: i.FileExists,
+		},
+		HeadFunc: &EnqueuerGitserverClientHeadFunc{
+			defaultHook: i.Head,
+		},
+		ListFilesFunc: &EnqueuerGitserverClientListFilesFunc{
+			defaultHook: i.ListFiles,
+		},
+		RawContentsFunc: &EnqueuerGitserverClientRawContentsFunc{
+			defaultHook: i.RawContents,
+		},
+		ResolveRevisionFunc: &EnqueuerGitserverClientResolveRevisionFunc{
+			defaultHook: i.ResolveRevision,
+		},
+	}
+}
+
+// EnqueuerGitserverClientFileExistsFunc describes the behavior when the
+// FileExists method of the parent MockEnqueuerGitserverClient instance is
+// invoked.
+type EnqueuerGitserverClientFileExistsFunc struct {
+	defaultHook func(context.Context, int, string, string) (bool, error)
+	hooks       []func(context.Context, int, string, string) (bool, error)
+	history     []EnqueuerGitserverClientFileExistsFuncCall
+	mutex       sync.Mutex
+}
+
+// FileExists delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockEnqueuerGitserverClient) FileExists(v0 context.Context, v1 int, v2 string, v3 string) (bool, error) {
+	r0, r1 := m.FileExistsFunc.nextHook()(v0, v1, v2, v3)
+	m.FileExistsFunc.appendCall(EnqueuerGitserverClientFileExistsFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the FileExists method of
+// the parent MockEnqueuerGitserverClient instance is invoked and the hook
+// queue is empty.
+func (f *EnqueuerGitserverClientFileExistsFunc) SetDefaultHook(hook func(context.Context, int, string, string) (bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// FileExists method of the parent MockEnqueuerGitserverClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *EnqueuerGitserverClientFileExistsFunc) PushHook(hook func(context.Context, int, string, string) (bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *EnqueuerGitserverClientFileExistsFunc) SetDefaultReturn(r0 bool, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string, string) (bool, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *EnqueuerGitserverClientFileExistsFunc) PushReturn(r0 bool, r1 error) {
+	f.PushHook(func(context.Context, int, string, string) (bool, error) {
+		return r0, r1
+	})
+}
+
+func (f *EnqueuerGitserverClientFileExistsFunc) nextHook() func(context.Context, int, string, string) (bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnqueuerGitserverClientFileExistsFunc) appendCall(r0 EnqueuerGitserverClientFileExistsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EnqueuerGitserverClientFileExistsFuncCall
+// objects describing the invocations of this function.
+func (f *EnqueuerGitserverClientFileExistsFunc) History() []EnqueuerGitserverClientFileExistsFuncCall {
+	f.mutex.Lock()
+	history := make([]EnqueuerGitserverClientFileExistsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnqueuerGitserverClientFileExistsFuncCall is an object that describes an
+// invocation of method FileExists on an instance of
+// MockEnqueuerGitserverClient.
+type EnqueuerGitserverClientFileExistsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 bool
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnqueuerGitserverClientFileExistsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnqueuerGitserverClientFileExistsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// EnqueuerGitserverClientHeadFunc describes the behavior when the Head
+// method of the parent MockEnqueuerGitserverClient instance is invoked.
+type EnqueuerGitserverClientHeadFunc struct {
+	defaultHook func(context.Context, int) (string, error)
+	hooks       []func(context.Context, int) (string, error)
+	history     []EnqueuerGitserverClientHeadFuncCall
+	mutex       sync.Mutex
+}
+
+// Head delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockEnqueuerGitserverClient) Head(v0 context.Context, v1 int) (string, error) {
+	r0, r1 := m.HeadFunc.nextHook()(v0, v1)
+	m.HeadFunc.appendCall(EnqueuerGitserverClientHeadFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Head method of the
+// parent MockEnqueuerGitserverClient instance is invoked and the hook queue
+// is empty.
+func (f *EnqueuerGitserverClientHeadFunc) SetDefaultHook(hook func(context.Context, int) (string, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Head method of the parent MockEnqueuerGitserverClient instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *EnqueuerGitserverClientHeadFunc) PushHook(hook func(context.Context, int) (string, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *EnqueuerGitserverClientHeadFunc) SetDefaultReturn(r0 string, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) (string, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *EnqueuerGitserverClientHeadFunc) PushReturn(r0 string, r1 error) {
+	f.PushHook(func(context.Context, int) (string, error) {
+		return r0, r1
+	})
+}
+
+func (f *EnqueuerGitserverClientHeadFunc) nextHook() func(context.Context, int) (string, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnqueuerGitserverClientHeadFunc) appendCall(r0 EnqueuerGitserverClientHeadFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EnqueuerGitserverClientHeadFuncCall objects
+// describing the invocations of this function.
+func (f *EnqueuerGitserverClientHeadFunc) History() []EnqueuerGitserverClientHeadFuncCall {
+	f.mutex.Lock()
+	history := make([]EnqueuerGitserverClientHeadFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnqueuerGitserverClientHeadFuncCall is an object that describes an
+// invocation of method Head on an instance of MockEnqueuerGitserverClient.
+type EnqueuerGitserverClientHeadFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 string
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnqueuerGitserverClientHeadFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnqueuerGitserverClientHeadFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// EnqueuerGitserverClientListFilesFunc describes the behavior when the
+// ListFiles method of the parent MockEnqueuerGitserverClient instance is
+// invoked.
+type EnqueuerGitserverClientListFilesFunc struct {
+	defaultHook func(context.Context, int, string, *regexp.Regexp) ([]string, error)
+	hooks       []func(context.Context, int, string, *regexp.Regexp) ([]string, error)
+	history     []EnqueuerGitserverClientListFilesFuncCall
+	mutex       sync.Mutex
+}
+
+// ListFiles delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockEnqueuerGitserverClient) ListFiles(v0 context.Context, v1 int, v2 string, v3 *regexp.Regexp) ([]string, error) {
+	r0, r1 := m.ListFilesFunc.nextHook()(v0, v1, v2, v3)
+	m.ListFilesFunc.appendCall(EnqueuerGitserverClientListFilesFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ListFiles method of
+// the parent MockEnqueuerGitserverClient instance is invoked and the hook
+// queue is empty.
+func (f *EnqueuerGitserverClientListFilesFunc) SetDefaultHook(hook func(context.Context, int, string, *regexp.Regexp) ([]string, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListFiles method of the parent MockEnqueuerGitserverClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *EnqueuerGitserverClientListFilesFunc) PushHook(hook func(context.Context, int, string, *regexp.Regexp) ([]string, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *EnqueuerGitserverClientListFilesFunc) SetDefaultReturn(r0 []string, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string, *regexp.Regexp) ([]string, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *EnqueuerGitserverClientListFilesFunc) PushReturn(r0 []string, r1 error) {
+	f.PushHook(func(context.Context, int, string, *regexp.Regexp) ([]string, error) {
+		return r0, r1
+	})
+}
+
+func (f *EnqueuerGitserverClientListFilesFunc) nextHook() func(context.Context, int, string, *regexp.Regexp) ([]string, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnqueuerGitserverClientListFilesFunc) appendCall(r0 EnqueuerGitserverClientListFilesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EnqueuerGitserverClientListFilesFuncCall
+// objects describing the invocations of this function.
+func (f *EnqueuerGitserverClientListFilesFunc) History() []EnqueuerGitserverClientListFilesFuncCall {
+	f.mutex.Lock()
+	history := make([]EnqueuerGitserverClientListFilesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnqueuerGitserverClientListFilesFuncCall is an object that describes an
+// invocation of method ListFiles on an instance of
+// MockEnqueuerGitserverClient.
+type EnqueuerGitserverClientListFilesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 *regexp.Regexp
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []string
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnqueuerGitserverClientListFilesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnqueuerGitserverClientListFilesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// EnqueuerGitserverClientRawContentsFunc describes the behavior when the
+// RawContents method of the parent MockEnqueuerGitserverClient instance is
+// invoked.
+type EnqueuerGitserverClientRawContentsFunc struct {
+	defaultHook func(context.Context, int, string, string) ([]byte, error)
+	hooks       []func(context.Context, int, string, string) ([]byte, error)
+	history     []EnqueuerGitserverClientRawContentsFuncCall
+	mutex       sync.Mutex
+}
+
+// RawContents delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockEnqueuerGitserverClient) RawContents(v0 context.Context, v1 int, v2 string, v3 string) ([]byte, error) {
+	r0, r1 := m.RawContentsFunc.nextHook()(v0, v1, v2, v3)
+	m.RawContentsFunc.appendCall(EnqueuerGitserverClientRawContentsFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the RawContents method
+// of the parent MockEnqueuerGitserverClient instance is invoked and the
+// hook queue is empty.
+func (f *EnqueuerGitserverClientRawContentsFunc) SetDefaultHook(hook func(context.Context, int, string, string) ([]byte, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RawContents method of the parent MockEnqueuerGitserverClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *EnqueuerGitserverClientRawContentsFunc) PushHook(hook func(context.Context, int, string, string) ([]byte, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *EnqueuerGitserverClientRawContentsFunc) SetDefaultReturn(r0 []byte, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string, string) ([]byte, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *EnqueuerGitserverClientRawContentsFunc) PushReturn(r0 []byte, r1 error) {
+	f.PushHook(func(context.Context, int, string, string) ([]byte, error) {
+		return r0, r1
+	})
+}
+
+func (f *EnqueuerGitserverClientRawContentsFunc) nextHook() func(context.Context, int, string, string) ([]byte, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnqueuerGitserverClientRawContentsFunc) appendCall(r0 EnqueuerGitserverClientRawContentsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EnqueuerGitserverClientRawContentsFuncCall
+// objects describing the invocations of this function.
+func (f *EnqueuerGitserverClientRawContentsFunc) History() []EnqueuerGitserverClientRawContentsFuncCall {
+	f.mutex.Lock()
+	history := make([]EnqueuerGitserverClientRawContentsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnqueuerGitserverClientRawContentsFuncCall is an object that describes an
+// invocation of method RawContents on an instance of
+// MockEnqueuerGitserverClient.
+type EnqueuerGitserverClientRawContentsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []byte
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnqueuerGitserverClientRawContentsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnqueuerGitserverClientRawContentsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// EnqueuerGitserverClientResolveRevisionFunc describes the behavior when
+// the ResolveRevision method of the parent MockEnqueuerGitserverClient
+// instance is invoked.
+type EnqueuerGitserverClientResolveRevisionFunc struct {
+	defaultHook func(context.Context, int, string) (api.CommitID, error)
+	hooks       []func(context.Context, int, string) (api.CommitID, error)
+	history     []EnqueuerGitserverClientResolveRevisionFuncCall
+	mutex       sync.Mutex
+}
+
+// ResolveRevision delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockEnqueuerGitserverClient) ResolveRevision(v0 context.Context, v1 int, v2 string) (api.CommitID, error) {
+	r0, r1 := m.ResolveRevisionFunc.nextHook()(v0, v1, v2)
+	m.ResolveRevisionFunc.appendCall(EnqueuerGitserverClientResolveRevisionFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ResolveRevision
+// method of the parent MockEnqueuerGitserverClient instance is invoked and
+// the hook queue is empty.
+func (f *EnqueuerGitserverClientResolveRevisionFunc) SetDefaultHook(hook func(context.Context, int, string) (api.CommitID, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ResolveRevision method of the parent MockEnqueuerGitserverClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *EnqueuerGitserverClientResolveRevisionFunc) PushHook(hook func(context.Context, int, string) (api.CommitID, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *EnqueuerGitserverClientResolveRevisionFunc) SetDefaultReturn(r0 api.CommitID, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string) (api.CommitID, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *EnqueuerGitserverClientResolveRevisionFunc) PushReturn(r0 api.CommitID, r1 error) {
+	f.PushHook(func(context.Context, int, string) (api.CommitID, error) {
+		return r0, r1
+	})
+}
+
+func (f *EnqueuerGitserverClientResolveRevisionFunc) nextHook() func(context.Context, int, string) (api.CommitID, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnqueuerGitserverClientResolveRevisionFunc) appendCall(r0 EnqueuerGitserverClientResolveRevisionFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// EnqueuerGitserverClientResolveRevisionFuncCall objects describing the
+// invocations of this function.
+func (f *EnqueuerGitserverClientResolveRevisionFunc) History() []EnqueuerGitserverClientResolveRevisionFuncCall {
+	f.mutex.Lock()
+	history := make([]EnqueuerGitserverClientResolveRevisionFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnqueuerGitserverClientResolveRevisionFuncCall is an object that
+// describes an invocation of method ResolveRevision on an instance of
+// MockEnqueuerGitserverClient.
+type EnqueuerGitserverClientResolveRevisionFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 api.CommitID
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnqueuerGitserverClientResolveRevisionFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnqueuerGitserverClientResolveRevisionFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // MockGitserverClient is a mock implementation of the GitserverClient
 // interface (from the package
 // github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers)
@@ -2546,9 +4681,10 @@ func (c GitserverClientCommitGraphFuncCall) Results() []interface{} {
 // github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers)
 // used for unit testing.
 type MockIndexEnqueuer struct {
-	// ForceQueueIndexFunc is an instance of a mock function object
-	// controlling the behavior of the method ForceQueueIndex.
-	ForceQueueIndexFunc *IndexEnqueuerForceQueueIndexFunc
+	// ForceQueueIndexesForRepositoryFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// ForceQueueIndexesForRepository.
+	ForceQueueIndexesForRepositoryFunc *IndexEnqueuerForceQueueIndexesForRepositoryFunc
 	// InferIndexConfigurationFunc is an instance of a mock function object
 	// controlling the behavior of the method InferIndexConfiguration.
 	InferIndexConfigurationFunc *IndexEnqueuerInferIndexConfigurationFunc
@@ -2558,7 +4694,7 @@ type MockIndexEnqueuer struct {
 // All methods return zero values for all results, unless overwritten.
 func NewMockIndexEnqueuer() *MockIndexEnqueuer {
 	return &MockIndexEnqueuer{
-		ForceQueueIndexFunc: &IndexEnqueuerForceQueueIndexFunc{
+		ForceQueueIndexesForRepositoryFunc: &IndexEnqueuerForceQueueIndexesForRepositoryFunc{
 			defaultHook: func(context.Context, int) error {
 				return nil
 			},
@@ -2576,8 +4712,8 @@ func NewMockIndexEnqueuer() *MockIndexEnqueuer {
 // overwritten.
 func NewMockIndexEnqueuerFrom(i IndexEnqueuer) *MockIndexEnqueuer {
 	return &MockIndexEnqueuer{
-		ForceQueueIndexFunc: &IndexEnqueuerForceQueueIndexFunc{
-			defaultHook: i.ForceQueueIndex,
+		ForceQueueIndexesForRepositoryFunc: &IndexEnqueuerForceQueueIndexesForRepositoryFunc{
+			defaultHook: i.ForceQueueIndexesForRepository,
 		},
 		InferIndexConfigurationFunc: &IndexEnqueuerInferIndexConfigurationFunc{
 			defaultHook: i.InferIndexConfiguration,
@@ -2585,36 +4721,37 @@ func NewMockIndexEnqueuerFrom(i IndexEnqueuer) *MockIndexEnqueuer {
 	}
 }
 
-// IndexEnqueuerForceQueueIndexFunc describes the behavior when the
-// ForceQueueIndex method of the parent MockIndexEnqueuer instance is
-// invoked.
-type IndexEnqueuerForceQueueIndexFunc struct {
+// IndexEnqueuerForceQueueIndexesForRepositoryFunc describes the behavior
+// when the ForceQueueIndexesForRepository method of the parent
+// MockIndexEnqueuer instance is invoked.
+type IndexEnqueuerForceQueueIndexesForRepositoryFunc struct {
 	defaultHook func(context.Context, int) error
 	hooks       []func(context.Context, int) error
-	history     []IndexEnqueuerForceQueueIndexFuncCall
+	history     []IndexEnqueuerForceQueueIndexesForRepositoryFuncCall
 	mutex       sync.Mutex
 }
 
-// ForceQueueIndex delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockIndexEnqueuer) ForceQueueIndex(v0 context.Context, v1 int) error {
-	r0 := m.ForceQueueIndexFunc.nextHook()(v0, v1)
-	m.ForceQueueIndexFunc.appendCall(IndexEnqueuerForceQueueIndexFuncCall{v0, v1, r0})
+// ForceQueueIndexesForRepository delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockIndexEnqueuer) ForceQueueIndexesForRepository(v0 context.Context, v1 int) error {
+	r0 := m.ForceQueueIndexesForRepositoryFunc.nextHook()(v0, v1)
+	m.ForceQueueIndexesForRepositoryFunc.appendCall(IndexEnqueuerForceQueueIndexesForRepositoryFuncCall{v0, v1, r0})
 	return r0
 }
 
-// SetDefaultHook sets function that is called when the ForceQueueIndex
-// method of the parent MockIndexEnqueuer instance is invoked and the hook
-// queue is empty.
-func (f *IndexEnqueuerForceQueueIndexFunc) SetDefaultHook(hook func(context.Context, int) error) {
+// SetDefaultHook sets function that is called when the
+// ForceQueueIndexesForRepository method of the parent MockIndexEnqueuer
+// instance is invoked and the hook queue is empty.
+func (f *IndexEnqueuerForceQueueIndexesForRepositoryFunc) SetDefaultHook(hook func(context.Context, int) error) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// ForceQueueIndex method of the parent MockIndexEnqueuer instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *IndexEnqueuerForceQueueIndexFunc) PushHook(hook func(context.Context, int) error) {
+// ForceQueueIndexesForRepository method of the parent MockIndexEnqueuer
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *IndexEnqueuerForceQueueIndexesForRepositoryFunc) PushHook(hook func(context.Context, int) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2622,7 +4759,7 @@ func (f *IndexEnqueuerForceQueueIndexFunc) PushHook(hook func(context.Context, i
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *IndexEnqueuerForceQueueIndexFunc) SetDefaultReturn(r0 error) {
+func (f *IndexEnqueuerForceQueueIndexesForRepositoryFunc) SetDefaultReturn(r0 error) {
 	f.SetDefaultHook(func(context.Context, int) error {
 		return r0
 	})
@@ -2630,13 +4767,13 @@ func (f *IndexEnqueuerForceQueueIndexFunc) SetDefaultReturn(r0 error) {
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *IndexEnqueuerForceQueueIndexFunc) PushReturn(r0 error) {
+func (f *IndexEnqueuerForceQueueIndexesForRepositoryFunc) PushReturn(r0 error) {
 	f.PushHook(func(context.Context, int) error {
 		return r0
 	})
 }
 
-func (f *IndexEnqueuerForceQueueIndexFunc) nextHook() func(context.Context, int) error {
+func (f *IndexEnqueuerForceQueueIndexesForRepositoryFunc) nextHook() func(context.Context, int) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2649,26 +4786,28 @@ func (f *IndexEnqueuerForceQueueIndexFunc) nextHook() func(context.Context, int)
 	return hook
 }
 
-func (f *IndexEnqueuerForceQueueIndexFunc) appendCall(r0 IndexEnqueuerForceQueueIndexFuncCall) {
+func (f *IndexEnqueuerForceQueueIndexesForRepositoryFunc) appendCall(r0 IndexEnqueuerForceQueueIndexesForRepositoryFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of IndexEnqueuerForceQueueIndexFuncCall
-// objects describing the invocations of this function.
-func (f *IndexEnqueuerForceQueueIndexFunc) History() []IndexEnqueuerForceQueueIndexFuncCall {
+// History returns a sequence of
+// IndexEnqueuerForceQueueIndexesForRepositoryFuncCall objects describing
+// the invocations of this function.
+func (f *IndexEnqueuerForceQueueIndexesForRepositoryFunc) History() []IndexEnqueuerForceQueueIndexesForRepositoryFuncCall {
 	f.mutex.Lock()
-	history := make([]IndexEnqueuerForceQueueIndexFuncCall, len(f.history))
+	history := make([]IndexEnqueuerForceQueueIndexesForRepositoryFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// IndexEnqueuerForceQueueIndexFuncCall is an object that describes an
-// invocation of method ForceQueueIndex on an instance of MockIndexEnqueuer.
-type IndexEnqueuerForceQueueIndexFuncCall struct {
+// IndexEnqueuerForceQueueIndexesForRepositoryFuncCall is an object that
+// describes an invocation of method ForceQueueIndexesForRepository on an
+// instance of MockIndexEnqueuer.
+type IndexEnqueuerForceQueueIndexesForRepositoryFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -2682,13 +4821,13 @@ type IndexEnqueuerForceQueueIndexFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c IndexEnqueuerForceQueueIndexFuncCall) Args() []interface{} {
+func (c IndexEnqueuerForceQueueIndexesForRepositoryFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c IndexEnqueuerForceQueueIndexFuncCall) Results() []interface{} {
+func (c IndexEnqueuerForceQueueIndexesForRepositoryFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -4011,4 +6150,150 @@ func (c LSIFStoreReferencesFuncCall) Args() []interface{} {
 // invocation.
 func (c LSIFStoreReferencesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// MockRepoUpdaterClient is a mock implementation of the RepoUpdaterClient
+// interface (from the package
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers)
+// used for unit testing.
+type MockRepoUpdaterClient struct {
+	// EnqueueRepoUpdateFunc is an instance of a mock function object
+	// controlling the behavior of the method EnqueueRepoUpdate.
+	EnqueueRepoUpdateFunc *RepoUpdaterClientEnqueueRepoUpdateFunc
+}
+
+// NewMockRepoUpdaterClient creates a new mock of the RepoUpdaterClient
+// interface. All methods return zero values for all results, unless
+// overwritten.
+func NewMockRepoUpdaterClient() *MockRepoUpdaterClient {
+	return &MockRepoUpdaterClient{
+		EnqueueRepoUpdateFunc: &RepoUpdaterClientEnqueueRepoUpdateFunc{
+			defaultHook: func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error) {
+				return nil, nil
+			},
+		},
+	}
+}
+
+// NewMockRepoUpdaterClientFrom creates a new mock of the
+// MockRepoUpdaterClient interface. All methods delegate to the given
+// implementation, unless overwritten.
+func NewMockRepoUpdaterClientFrom(i RepoUpdaterClient) *MockRepoUpdaterClient {
+	return &MockRepoUpdaterClient{
+		EnqueueRepoUpdateFunc: &RepoUpdaterClientEnqueueRepoUpdateFunc{
+			defaultHook: i.EnqueueRepoUpdate,
+		},
+	}
+}
+
+// RepoUpdaterClientEnqueueRepoUpdateFunc describes the behavior when the
+// EnqueueRepoUpdate method of the parent MockRepoUpdaterClient instance is
+// invoked.
+type RepoUpdaterClientEnqueueRepoUpdateFunc struct {
+	defaultHook func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error)
+	hooks       []func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error)
+	history     []RepoUpdaterClientEnqueueRepoUpdateFuncCall
+	mutex       sync.Mutex
+}
+
+// EnqueueRepoUpdate delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockRepoUpdaterClient) EnqueueRepoUpdate(v0 context.Context, v1 api.RepoName) (*protocol.RepoUpdateResponse, error) {
+	r0, r1 := m.EnqueueRepoUpdateFunc.nextHook()(v0, v1)
+	m.EnqueueRepoUpdateFunc.appendCall(RepoUpdaterClientEnqueueRepoUpdateFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the EnqueueRepoUpdate
+// method of the parent MockRepoUpdaterClient instance is invoked and the
+// hook queue is empty.
+func (f *RepoUpdaterClientEnqueueRepoUpdateFunc) SetDefaultHook(hook func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// EnqueueRepoUpdate method of the parent MockRepoUpdaterClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *RepoUpdaterClientEnqueueRepoUpdateFunc) PushHook(hook func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *RepoUpdaterClientEnqueueRepoUpdateFunc) SetDefaultReturn(r0 *protocol.RepoUpdateResponse, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *RepoUpdaterClientEnqueueRepoUpdateFunc) PushReturn(r0 *protocol.RepoUpdateResponse, r1 error) {
+	f.PushHook(func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error) {
+		return r0, r1
+	})
+}
+
+func (f *RepoUpdaterClientEnqueueRepoUpdateFunc) nextHook() func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RepoUpdaterClientEnqueueRepoUpdateFunc) appendCall(r0 RepoUpdaterClientEnqueueRepoUpdateFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of RepoUpdaterClientEnqueueRepoUpdateFuncCall
+// objects describing the invocations of this function.
+func (f *RepoUpdaterClientEnqueueRepoUpdateFunc) History() []RepoUpdaterClientEnqueueRepoUpdateFuncCall {
+	f.mutex.Lock()
+	history := make([]RepoUpdaterClientEnqueueRepoUpdateFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RepoUpdaterClientEnqueueRepoUpdateFuncCall is an object that describes an
+// invocation of method EnqueueRepoUpdate on an instance of
+// MockRepoUpdaterClient.
+type RepoUpdaterClientEnqueueRepoUpdateFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *protocol.RepoUpdateResponse
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RepoUpdaterClientEnqueueRepoUpdateFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RepoUpdaterClientEnqueueRepoUpdateFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }

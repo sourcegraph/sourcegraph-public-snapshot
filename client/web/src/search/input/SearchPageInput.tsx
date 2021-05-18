@@ -28,7 +28,7 @@ import { ThemePreferenceProps } from '../../theme'
 import { submitSearch, SubmitSearchParameters } from '../helpers'
 import { QuickLinks } from '../QuickLinks'
 
-import { LazyMonacoQueryInput } from './LazyMonacoQueryInput'
+import { SearchBox } from './SearchBox'
 import { SearchButton } from './SearchButton'
 import { useSearchOnboardingTour } from './SearchOnboardingTour'
 
@@ -132,7 +132,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                             selectedSearchContextSpec={props.selectedSearchContextSpec}
                         />
                     )}
-                    <LazyMonacoQueryInput
+                    <SearchBox
                         {...props}
                         {...onboardingTourQueryInputProps}
                         submitSearchOnSearchContextChange={false}

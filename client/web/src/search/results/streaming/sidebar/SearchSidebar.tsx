@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import React, { useCallback } from 'react'
 import { useHistory } from 'react-router'
 import StickyBox from 'react-sticky-box'
@@ -25,6 +26,7 @@ export interface SearchSidebarProps
         TelemetryProps {
     query: string
     filters?: Filter[]
+    className?: string
 }
 
 export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props => {
@@ -44,7 +46,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
     )
 
     return (
-        <div className={styles.searchSidebar}>
+        <div className={classNames(styles.searchSidebar, props.className)}>
             <StickyBox offsetTop={8} offsetBottom={8}>
                 <SearchSidebarSection header="Search types">{getSearchTypeLinks(props)}</SearchSidebarSection>
                 <SearchSidebarSection header="Dynamic filters">
