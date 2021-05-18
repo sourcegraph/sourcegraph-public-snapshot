@@ -26,6 +26,17 @@ img.icon-inline,
     height: $icon-inline-size;
     // Match color of the text
     fill: currentColor;
+    .theme-redesign & {
+        width: 1rem;
+        height: 1rem;
+    }
+}
+
+.icon-inline-md {
+    .theme-redesign & {
+        width: $icon-inline-size;
+        height: $icon-inline-size;
+    }
 }
 
 // Special case for the loader
