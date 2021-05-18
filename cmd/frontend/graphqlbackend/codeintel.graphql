@@ -343,6 +343,9 @@ type DocumentationPage {
     """
     The tree of documentation nodes describing this page's hierarchy. It is a JSON value because
     GraphQL has terrible support for recursive data structures: https://github.com/graphql/graphql-spec/issues/91
+
+    The exact structure of this value is documented here:
+    https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+type+DocumentationNode+struct&patternType=literal&case=yes
     """
     tree: JSONValue!
 }
