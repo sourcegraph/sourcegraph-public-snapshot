@@ -32,6 +32,19 @@ func SpanURL(span opentracing.Span) string {
 	return f(span)
 }
 
+// SpanURLFromContext returns the URL to the tracing UI for the span attached to the given
+// context. An empty string is returned if there is no span associated with the given context.
+func SpanURLFromContext(ctx context.Context) string {
+	if span := opentracing.SpanFromContext(ctx); span != nil {
+		// URLs starting with # don't have a trace. eg "#tracer-not-enabled"
+		if spanURL := SpanURL(span); !strings.HasPrefix(spanURL, "#") {
+			return spanURL
+		}
+	}
+
+	return ""
+}
+
 // SetSpanURLFunc sets the function that SpanURL sets.
 func SetSpanURLFunc(f func(span opentracing.Span) string) {
 	spanURL.Store(f)

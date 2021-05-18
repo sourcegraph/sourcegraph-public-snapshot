@@ -426,7 +426,7 @@ func (r *Resolver) isAllowedToCreate(ctx context.Context, owner graphql.ID) erro
 	case "User":
 		return backend.CheckSiteAdminOrSameUser(ctx, ownerInt32)
 	case "Org":
-		return backend.CheckOrgAccess(ctx, r.store.Handle().DB(), ownerInt32)
+		return backend.CheckOrgAccessOrSiteAdmin(ctx, r.store.Handle().DB(), ownerInt32)
 	default:
 		return fmt.Errorf("provided ID is not a namespace")
 	}

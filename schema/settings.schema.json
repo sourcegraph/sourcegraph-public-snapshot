@@ -306,6 +306,13 @@
         "description": "`true` to enable the extension, `false` to disable the extension (if it was previously enabled)"
       }
     },
+    "extensions.activeLoggers": {
+      "description": "The Sourcegraph extensions, by ID (e.g. `my/extension`), whose logs should be visible in the console.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
     "codeHost.useNativeTooltips": {
       "description": "Whether to use the code host's native hover tooltips when they exist (GitHub's jump-to-definition tooltips, for example).",
       "type": "boolean",

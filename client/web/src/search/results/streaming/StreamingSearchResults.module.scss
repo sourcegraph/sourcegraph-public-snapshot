@@ -4,14 +4,32 @@
     width: 100%;
 
     :global(.theme-redesign) & {
-        flex-direction: row;
+        display: grid;
+        grid-template-columns: auto 1fr;
+        grid-template-rows: auto 1fr;
         height: min-content;
     }
 
-    &-container {
+    &--sidebar {
+        :global(.theme-redesign) & {
+            grid-column: 1;
+            grid-row: 1 / span 2;
+        }
+    }
+
+    &--infobar {
+        :global(.theme-redesign) & {
+            grid-column: 2;
+            grid-row: 1;
+        }
+    }
+
+    &--container {
         :global(.theme-redesign) & {
             overflow-y: visible;
             overflow-x: hidden;
+            grid-column: 2;
+            grid-row: 2;
         }
     }
 }

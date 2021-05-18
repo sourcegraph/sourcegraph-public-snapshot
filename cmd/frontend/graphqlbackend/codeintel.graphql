@@ -10,17 +10,11 @@ extend type Mutation {
     queueAutoIndexJobForRepo(repository: ID!): EmptyResponse
 
     """
-    (experimental) The LSIF API may change substantially in the near future as we
-    continue to adjust it for our use cases. Changes will not be documented in the
-    CHANGELOG during this time.
     Deletes an LSIF upload.
     """
     deleteLSIFUpload(id: ID!): EmptyResponse
 
     """
-    (experimental) The LSIF API may change substantially in the near future as we
-    continue to adjust it for our use cases. Changes will not be documented in the
-    CHANGELOG during this time.
     Deletes an LSIF index.
     """
     deleteLSIFIndex(id: ID!): EmptyResponse
@@ -28,9 +22,6 @@ extend type Mutation {
 
 extend type Query {
     """
-    (experimental) The LSIF API may change substantially in the near future as we
-    continue to adjust it for our use cases. Changes will not be documented in the
-    CHANGELOG during this time.
     The repository's LSIF uploads.
     """
     lsifUploads(
@@ -68,9 +59,6 @@ extend type Query {
     ): LSIFUploadConnection!
 
     """
-    (experimental) The LSIF API may change substantially in the near future as we
-    continue to adjust it for our use cases. Changes will not be documented in the
-    CHANGELOG during this time.
     The repository's LSIF uploads.
     """
     lsifIndexes(
@@ -109,9 +97,6 @@ extend type Repository {
     indexConfiguration: IndexConfiguration
 
     """
-    (experimental) The LSIF API may change substantially in the near future as we
-    continue to adjust it for our use cases. Changes will not be documented in the
-    CHANGELOG during this time.
     The repository's LSIF uploads.
     """
     lsifUploads(
@@ -148,9 +133,6 @@ extend type Repository {
     ): LSIFUploadConnection!
 
     """
-    (experimental) The LSIF API may change substantially in the near future as we
-    continue to adjust it for our use cases. Changes will not be documented in the
-    CHANGELOG during this time.
     The repository's LSIF uploads.
     """
     lsifIndexes(
@@ -184,9 +166,6 @@ extend type Repository {
 
 extend interface TreeEntry {
     """
-    (experimental) The LSIF API may change substantially in the near future as we
-    continue to adjust it for our use cases. Changes will not be documented in the
-    CHANGELOG during this time.
     LSIF data for this tree entry.
     """
     lsif(
@@ -199,9 +178,6 @@ extend interface TreeEntry {
 
 extend type GitTree {
     """
-    (experimental) The LSIF API may change substantially in the near future as we
-    continue to adjust it for our use cases. Changes will not be documented in the
-    CHANGELOG during this time.
     LSIF data for this tree entry.
     """
     lsif(
@@ -214,9 +190,6 @@ extend type GitTree {
 
 extend type GitBlob {
     """
-    (experimental) The LSIF API may change substantially in the near future as we
-    continue to adjust it for our use cases. Changes will not be documented in the
-    CHANGELOG during this time.
     A wrapper around LSIF query methods. If no LSIF upload can be used to answer code
     intelligence queries for this path-at-revision, this resolves to null.
     """
@@ -244,9 +217,6 @@ null, no LSIF data is available for containing git blob.
 """
 type GitBlobLSIFData implements TreeEntryLSIFData {
     """
-    (experimental) The LSIF API may change substantially in the near future as we
-    continue to adjust it for our use cases. Changes will not be documented in the
-    CHANGELOG during this time.
     Get aggregated local code intelligence for all ranges that fall in the window
     indicated by the given zero-based start (inclusive) and end (exclusive) lines.
     The associated data for each range is "local", in that the locations and hover
@@ -257,9 +227,6 @@ type GitBlobLSIFData implements TreeEntryLSIFData {
     ranges(startLine: Int!, endLine: Int!): CodeIntelligenceRangeConnection
 
     """
-    (experimental) The LSIF API may change substantially in the near future as we
-    continue to adjust it for our use cases. Changes will not be documented in the
-    CHANGELOG during this time.
     A list of definitions of the symbol under the given document position.
     """
     definitions(
@@ -275,9 +242,6 @@ type GitBlobLSIFData implements TreeEntryLSIFData {
     ): LocationConnection!
 
     """
-    (experimental) The LSIF API may change substantially in the near future as we
-    continue to adjust it for our use cases. Changes will not be documented in the
-    CHANGELOG during this time.
     A list of references of the symbol under the given document position.
     """
     references(
@@ -308,9 +272,6 @@ type GitBlobLSIFData implements TreeEntryLSIFData {
     ): LocationConnection!
 
     """
-    (experimental) The LSIF API may change substantially in the near future as we
-    continue to adjust it for our use cases. Changes will not be documented in the
-    CHANGELOG during this time.
     The hover result of the symbol under the given document position.
     """
     hover(
@@ -326,9 +287,6 @@ type GitBlobLSIFData implements TreeEntryLSIFData {
     ): Hover
 
     """
-    (experimental) The LSIF API may change substantially in the near future as we
-    continue to adjust it for our use cases. Changes will not be documented in the
-    CHANGELOG during this time.
     Code diagnostics provided through LSIF.
     """
     diagnostics(first: Int): DiagnosticConnection!

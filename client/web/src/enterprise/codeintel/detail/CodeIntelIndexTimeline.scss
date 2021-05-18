@@ -1,5 +1,10 @@
 .docker-command-spec {
+    display: flex;
+    flex-direction: row;
+    overflow: auto;
+
     &__header {
         width: 5rem;
+        flex-shrink: 0;
     }
 }

@@ -54,6 +54,9 @@
         }
         &--inactive {
             filter: grayscale(1);
+            .theme-redesign & {
+                border: none;
+            }
         }
     }
 
@@ -73,5 +76,11 @@
     }
     to {
         transform: scale(1.285555);
+    }
+}
+
+.theme-redesign {
+    .icon-radio-buttons__border--inactive {
+        border: none;
     }
 }

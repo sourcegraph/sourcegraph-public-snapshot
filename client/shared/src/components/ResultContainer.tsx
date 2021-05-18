@@ -1,8 +1,12 @@
 /* eslint jsx-a11y/click-events-have-key-events: warn, jsx-a11y/no-static-element-interactions: warn */
+import ArrowCollapseUpIcon from 'mdi-react/ArrowCollapseUpIcon'
+import ArrowExpandDownIcon from 'mdi-react/ArrowExpandDownIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
+import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import React, { useEffect, useState } from 'react'
+
+import { useRedesignToggle } from '../util/useRedesignToggle'
 
 export interface Props {
     /**
@@ -61,12 +65,15 @@ export interface Props {
     expandLabel?: string
 
     /**
+     * The total number of matches to display
+     */
+    matchCountLabel?: string
+
+    /**
      * This component does not accept children.
      */
     children?: never
 }
-
-const blockExpandAndCollapse = (event: React.MouseEvent<HTMLElement>): void => event.stopPropagation()
 
 /**
  * The container component for a result in the SearchResults component.
@@ -83,7 +90,9 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
     title,
     titleClassName,
     description,
+    matchCountLabel,
 }) => {
+    const [isRedesignEnabled] = useRedesignToggle()
     const [expanded, setExpanded] = useState(allExpanded || defaultExpanded)
 
     useEffect(() => setExpanded(allExpanded || defaultExpanded), [allExpanded, defaultExpanded])
@@ -97,41 +106,49 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
     const Icon = icon
     return (
         <div className="test-search-result result-container" data-testid="result-container">
-            {/* TODO: Fix accessibility issues.
-                Issue: https://github.com/sourcegraph/sourcegraph/issues/19272 */}
-            <div
-                className={'result-container__header' + (collapsible ? ' result-container__header--collapsible' : '')}
-                onClick={toggle}
-            >
+            <div className="result-container__header">
                 <Icon className="icon-inline" />
                 <div className="result-container__header-divider" />
                 <div
                     className={`result-container__header-title ${titleClassName || ''}`}
                     data-testid="result-container-header"
                 >
-                    {collapsible ? (
-                        // This is to ensure the onClick toggle handler doesn't get called
-                        // We should be able to remove this if we refactor to seperate the toggle to its own button
-                        <span onClick={blockExpandAndCollapse}>{title}</span>
-                    ) : (
-                        title
-                    )}
+                    {title}
                     {description && <span className="ml-2">{description}</span>}
                 </div>
-                {collapsible &&
-                    (expanded ? (
-                        <small className="result-container__toggle-matches-container">
-                            {collapseLabel}
-                            {collapseLabel && <ChevronUpIcon className="icon-inline" />}
-                            {!collapseLabel && <ChevronDownIcon className="icon-inline" />}
-                        </small>
-                    ) : (
-                        <small className="result-container__toggle-matches-container">
-                            {expandLabel}
-                            {expandLabel && <ChevronDownIcon className="icon-inline" />}
-                            {!expandLabel && <ChevronRightIcon className="icon-inline" />}
-                        </small>
-                    ))}
+                {matchCountLabel && isRedesignEnabled && (
+                    <>
+                        <small className="mr-1">{matchCountLabel}</small>
+                        {collapsible && <div className="result-container__header-divider" />}
+                    </>
+                )}
+                {collapsible && (
+                    <button
+                        type="button"
+                        className="result-container__toggle-matches-container btn btn-sm btn-link px-1 py-0"
+                        onClick={toggle}
+                    >
+                        {expanded ? (
+                            <>
+                                {collapseLabel && isRedesignEnabled && (
+                                    <ArrowCollapseUpIcon className="icon-inline mr-1" />
+                                )}
+                                {collapseLabel}
+                                {collapseLabel && !isRedesignEnabled && <ChevronUpIcon className="icon-inline" />}
+                                {!collapseLabel && <ChevronDownIcon className="icon-inline" />}
+                            </>
+                        ) : (
+                            <>
+                                {expandLabel && isRedesignEnabled && (
+                                    <ArrowExpandDownIcon className="icon-inline mr-1" />
+                                )}
+                                {expandLabel}
+                                {expandLabel && !isRedesignEnabled && <ChevronDownIcon className="icon-inline" />}
+                                {!expandLabel && <ChevronLeftIcon className="icon-inline" />}
+                            </>
+                        )}
+                    </button>
+                )}
             </div>
             {!expanded && collapsedChildren}
             {expanded && expandedChildren}

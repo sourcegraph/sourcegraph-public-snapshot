@@ -15,7 +15,7 @@ import { RemoveCodeHostConnectionModal } from './RemoveCodeHostConnectionModal'
 import { ifNotNavigated } from './UserAddCodeHostsPage'
 
 interface CodeHostItemProps {
-    userID: Scalars['ID']
+    user: { id: Scalars['ID']; tags: string[] }
     kind: ExternalServiceKind
     name: string
     icon: React.ComponentType<{ className?: string }>
@@ -30,7 +30,7 @@ interface CodeHostItemProps {
 }
 
 export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
-    userID,
+    user,
     service,
     kind,
     name,
@@ -68,7 +68,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
         <div className="p-2 d-flex align-items-start">
             {isAddConnectionModalOpen && (
                 <AddCodeHostConnectionModal
-                    userID={userID}
+                    userID={user.id}
                     kind={kind}
                     name={name}
                     hintFragment={hints[kind]}
@@ -116,13 +116,10 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                             Connect
                         </DropdownToggle>
                         <DropdownMenu right={true}>
-                            {/* temporarily disable OAuth for GitLab */}
-                            {kind !== ExternalServiceKind.GITLAB && (
-                                <DropdownItem toggle={false} onClick={toAuthProvider}>
-                                    Connect with {name}
-                                    {oauthInFlight && <LoadingSpinner className="icon-inline ml-2" />}
-                                </DropdownItem>
-                            )}
+                            <DropdownItem toggle={false} onClick={toAuthProvider}>
+                                Connect with {name}
+                                {oauthInFlight && <LoadingSpinner className="icon-inline ml-2" />}
+                            </DropdownItem>
                             <DropdownItem onClick={toggleAddConnectionModal}>Connect with access token</DropdownItem>
                         </DropdownMenu>
                     </ButtonDropdown>

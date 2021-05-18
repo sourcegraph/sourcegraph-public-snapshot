@@ -611,8 +611,8 @@ func (r *schemaResolver) AffiliatedRepositories(ctx context.Context, args *struc
 	if err != nil {
 		return nil, err
 	}
-	// 🚨 SECURITY: make sure the user is either site admin or the same user being requested
-	if err := backend.CheckSiteAdminOrSameUser(ctx, userID); err != nil {
+	// 🚨 SECURITY: Make sure the user is the same user being requested
+	if err := backend.CheckSameUser(ctx, userID); err != nil {
 		return nil, err
 	}
 	var codeHost int64

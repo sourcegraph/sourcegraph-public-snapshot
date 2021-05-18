@@ -14,7 +14,7 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { ErrorAlert } from '../components/alerts'
 import { Collapsible } from '../components/Collapsible'
-import { Connection, FilteredConnection, FilteredConnectionFilter } from '../components/FilteredConnection'
+import { FilteredConnection, FilteredConnectionFilter, Connection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
 import { Timestamp } from '../components/time/Timestamp'
 import { OutOfBandMigrationFields } from '../graphql-operations'

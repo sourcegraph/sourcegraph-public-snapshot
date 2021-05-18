@@ -3,7 +3,7 @@ import { test } from 'mocha'
 import { Key } from 'ts-key-enum'
 
 import { SharedGraphQlOperations, SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
-import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
+import { Driver, createDriverForTest, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import {
@@ -128,13 +128,14 @@ describe('Search', () => {
     const getSearchFieldValue = (driver: Driver): Promise<string | undefined> =>
         driver.page.evaluate(() => document.querySelector<HTMLTextAreaElement>('#monaco-query-input textarea')?.value)
 
-    test('Styled correctly on results page', async () => {
+    test('Styled correctly on GraphQL search results page', async () => {
         testContext.overrideGraphQL({
             ...commonSearchGraphQLResults,
         })
         await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=foo')
         await driver.page.waitForSelector('#monaco-query-input')
-        await percySnapshotWithVariants(driver.page, 'Search results page')
+        // GraphQL search is not supported with redesign enabled so no need to take snapshots of variants
+        await percySnapshot(driver.page, 'Search results page')
     })
 
     describe('Search filters', () => {
@@ -180,11 +181,11 @@ describe('Search', () => {
                 newText: '-repo',
                 enterTextMethod: 'type',
             })
-            await driver.page.waitForSelector('.monaco-query-input-container .suggest-widget.visible')
+            await driver.page.waitForSelector('.monaco-query-input .suggest-widget.visible')
             await driver.findElementWithText('-repo', {
                 action: 'click',
                 wait: { timeout: 5000 },
-                selector: '.monaco-query-input-container .suggest-widget.visible span',
+                selector: '.monaco-query-input .suggest-widget.visible span',
             })
             expect(await getSearchFieldValue(driver)).toStrictEqual('-repo:')
         })
@@ -232,11 +233,11 @@ describe('Search', () => {
                 newText: 'go-jwt-middlew',
                 enterTextMethod: 'type',
             })
-            await driver.page.waitForSelector('.monaco-query-input-container .suggest-widget.visible')
+            await driver.page.waitForSelector('.monaco-query-input .suggest-widget.visible')
             await driver.findElementWithText('github.com/auth0/go-jwt-middleware', {
                 action: 'click',
                 wait: { timeout: 5000 },
-                selector: '.monaco-query-input-container .suggest-widget.visible span',
+                selector: '.monaco-query-input .suggest-widget.visible a.label-name',
             })
             expect(await getSearchFieldValue(driver)).toStrictEqual('repo:^github\\.com/auth0/go-jwt-middleware$ ')
 
@@ -247,9 +248,9 @@ describe('Search', () => {
             await driver.page.waitForSelector('#monaco-query-input')
             await driver.page.focus('#monaco-query-input')
             await driver.page.keyboard.type('jwtmi')
-            await driver.page.waitForSelector('.monaco-query-input-container .suggest-widget.visible')
+            await driver.page.waitForSelector('.monaco-query-input .suggest-widget.visible')
             await driver.findElementWithText('jwtmiddleware.go', {
-                selector: '.monaco-query-input-container .suggest-widget.visible span',
+                selector: '.monaco-query-input .suggest-widget.visible span',
                 wait: { timeout: 5000 },
             })
             await driver.page.keyboard.press(Key.Tab)
@@ -259,9 +260,9 @@ describe('Search', () => {
 
             // Symbol autocomplete in top search bar
             await driver.page.keyboard.type('On')
-            await driver.page.waitForSelector('.monaco-query-input-container .suggest-widget.visible')
+            await driver.page.waitForSelector('.monaco-query-input .suggest-widget.visible')
             await driver.findElementWithText('OnError', {
-                selector: '.monaco-query-input-container .suggest-widget.visible span',
+                selector: '.monaco-query-input .suggest-widget.visible span',
                 wait: { timeout: 5000 },
             })
         })

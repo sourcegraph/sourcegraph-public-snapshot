@@ -1,6 +1,4 @@
-import * as jsonc from '@sqs/jsonc-parser'
 import classnames from 'classnames'
-import { camelCase } from 'lodash'
 import React, { useCallback, useContext } from 'react'
 import { Redirect } from 'react-router'
 import { RouteComponentProps } from 'react-router-dom'
@@ -14,20 +12,14 @@ import { Page } from '../../../../components/Page'
 import { PageTitle } from '../../../../components/PageTitle'
 import { FORM_ERROR } from '../../../components/form/hooks/useForm'
 import { InsightsApiContext } from '../../../core/backend/api-provider'
-import { InsightTypeSuffix } from '../../../core/types'
+import { addInsightToCascadeSetting } from '../../../core/jsonc-operation'
 
 import {
     SearchInsightCreationContent,
     SearchInsightCreationContentProps,
 } from './components/search-insight-creation-content/SearchInsightCreationContent'
 import styles from './SearchInsightCreationPage.module.scss'
-import { getSanitizedInsight } from './utils/insight-sanitizer'
-
-const defaultFormattingOptions: jsonc.FormattingOptions = {
-    eol: '\n',
-    insertSpaces: true,
-    tabSize: 2,
-}
+import { getSanitizedSearchInsight } from './utils/insight-sanitizer'
 
 export interface SearchInsightCreationPageProps
     extends PlatformContextProps<'updateSettings'>,
@@ -63,16 +55,8 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
 
             try {
                 const settings = await getSubjectSettings(subjectID).toPromise()
-                const newSettingsString = getSanitizedInsight(values)
-                const edits = jsonc.modify(
-                    settings.contents,
-                    // According to our naming convention <type>.insight.<name>
-                    [`${InsightTypeSuffix.search}.${camelCase(values.title)}`],
-                    newSettingsString,
-                    { formattingOptions: defaultFormattingOptions }
-                )
-
-                const editedSettings = jsonc.applyEdits(settings.contents, edits)
+                const insight = getSanitizedSearchInsight(values)
+                const editedSettings = addInsightToCascadeSetting(settings.contents, insight)
 
                 await updateSubjectSettings(platformContext, subjectID, editedSettings).toPromise()
 

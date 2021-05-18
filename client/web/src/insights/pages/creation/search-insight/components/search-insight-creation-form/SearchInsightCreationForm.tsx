@@ -14,6 +14,9 @@ import { FormSeries } from '../form-series/FormSeries'
 import styles from './SearchInsightCreationForm.module.scss'
 
 interface CreationSearchInsightFormProps {
+    /** This component might be used in edit or creation insight case. */
+    mode?: 'creation' | 'edit'
+
     innerRef: RefObject<any>
     handleSubmit: FormEventHandler
     submitErrors: SubmissionErrors
@@ -36,6 +39,7 @@ interface CreationSearchInsightFormProps {
  * */
 export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchInsightFormProps> = props => {
     const {
+        mode,
         innerRef,
         handleSubmit,
         submitErrors,
@@ -49,6 +53,8 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
         className,
         onCancel,
     } = props
+
+    const isEditMode = mode === 'edit'
 
     return (
         // eslint-disable-next-line react/forbid-elements
@@ -194,7 +200,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                 <LoaderButton
                     alwaysShowLabel={true}
                     loading={submitting}
-                    label={submitting ? 'Submitting' : 'Create code insight'}
+                    label={submitting ? 'Submitting' : isEditMode ? 'Edit insight' : 'Create code insight'}
                     type="submit"
                     disabled={submitting}
                     className="btn btn-primary mr-2"

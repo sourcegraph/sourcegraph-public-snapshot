@@ -26,6 +26,9 @@ type MockDBStore struct {
 	// InsertUploadFunc is an instance of a mock function object controlling
 	// the behavior of the method InsertUpload.
 	InsertUploadFunc *DBStoreInsertUploadFunc
+	// MarkFailedFunc is an instance of a mock function object controlling
+	// the behavior of the method MarkFailed.
+	MarkFailedFunc *DBStoreMarkFailedFunc
 	// MarkQueuedFunc is an instance of a mock function object controlling
 	// the behavior of the method MarkQueued.
 	MarkQueuedFunc *DBStoreMarkQueuedFunc
@@ -58,6 +61,11 @@ func NewMockDBStore() *MockDBStore {
 				return 0, nil
 			},
 		},
+		MarkFailedFunc: &DBStoreMarkFailedFunc{
+			defaultHook: func(context.Context, int, string) error {
+				return nil
+			},
+		},
 		MarkQueuedFunc: &DBStoreMarkQueuedFunc{
 			defaultHook: func(context.Context, int, *int64) error {
 				return nil
@@ -86,6 +94,9 @@ func NewMockDBStoreFrom(i DBStore) *MockDBStore {
 		},
 		InsertUploadFunc: &DBStoreInsertUploadFunc{
 			defaultHook: i.InsertUpload,
+		},
+		MarkFailedFunc: &DBStoreMarkFailedFunc{
+			defaultHook: i.MarkFailed,
 		},
 		MarkQueuedFunc: &DBStoreMarkQueuedFunc{
 			defaultHook: i.MarkQueued,
@@ -526,6 +537,114 @@ func (c DBStoreInsertUploadFuncCall) Args() []interface{} {
 // invocation.
 func (c DBStoreInsertUploadFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// DBStoreMarkFailedFunc describes the behavior when the MarkFailed method
+// of the parent MockDBStore instance is invoked.
+type DBStoreMarkFailedFunc struct {
+	defaultHook func(context.Context, int, string) error
+	hooks       []func(context.Context, int, string) error
+	history     []DBStoreMarkFailedFuncCall
+	mutex       sync.Mutex
+}
+
+// MarkFailed delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockDBStore) MarkFailed(v0 context.Context, v1 int, v2 string) error {
+	r0 := m.MarkFailedFunc.nextHook()(v0, v1, v2)
+	m.MarkFailedFunc.appendCall(DBStoreMarkFailedFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the MarkFailed method of
+// the parent MockDBStore instance is invoked and the hook queue is empty.
+func (f *DBStoreMarkFailedFunc) SetDefaultHook(hook func(context.Context, int, string) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// MarkFailed method of the parent MockDBStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *DBStoreMarkFailedFunc) PushHook(hook func(context.Context, int, string) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBStoreMarkFailedFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int, string) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBStoreMarkFailedFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int, string) error {
+		return r0
+	})
+}
+
+func (f *DBStoreMarkFailedFunc) nextHook() func(context.Context, int, string) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBStoreMarkFailedFunc) appendCall(r0 DBStoreMarkFailedFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBStoreMarkFailedFuncCall objects
+// describing the invocations of this function.
+func (f *DBStoreMarkFailedFunc) History() []DBStoreMarkFailedFuncCall {
+	f.mutex.Lock()
+	history := make([]DBStoreMarkFailedFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBStoreMarkFailedFuncCall is an object that describes an invocation of
+// method MarkFailed on an instance of MockDBStore.
+type DBStoreMarkFailedFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBStoreMarkFailedFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBStoreMarkFailedFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // DBStoreMarkQueuedFunc describes the behavior when the MarkQueued method
