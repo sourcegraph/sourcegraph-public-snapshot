@@ -13,6 +13,8 @@ import (
 const slowDocumentationPageRequestThreshold = time.Second
 
 // DocumentationPage returns the DocumentationPage for the given PathID.
+//
+// nil, nil is returned if the page does not exist.
 func (r *queryResolver) DocumentationPage(ctx context.Context, pathID string) (_ *semantic.DocumentationPageData, err error) {
 	ctx, traceLog, endObservation := observeResolver(ctx, &err, "DocumentationPage", r.operations.documentationPage, slowDocumentationPageRequestThreshold, observation.Args{
 		LogFields: []log.Field{
