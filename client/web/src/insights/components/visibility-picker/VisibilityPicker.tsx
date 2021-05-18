@@ -40,13 +40,18 @@ export interface VisibilityPickerProps {
      * personal radio
      * */
     organizations: Organization[]
+
+    /**
+     * Custom class name for visibility group label element.
+     * */
+    labelClassName?: string
 }
 
 /**
  * Shared component for visibility field for creation UI pages.
  * */
 export const VisibilityPicker: React.FunctionComponent<VisibilityPickerProps> = props => {
-    const { value, organizations, onChange } = props
+    const { value, organizations, onChange, labelClassName } = props
 
     const handleChange = (event: ChangeEvent<HTMLInputElement>): void => {
         const value = event.target.value
@@ -69,6 +74,7 @@ export const VisibilityPicker: React.FunctionComponent<VisibilityPickerProps> = 
             description="This insight will be visible only on your personal dashboard. It will not be show to other
                             users in your organization."
             className="mb-0 mt-4"
+            labelClassName={labelClassName}
             contentClassName="d-flex flex-wrap mb-n2"
         >
             <FormRadioInput

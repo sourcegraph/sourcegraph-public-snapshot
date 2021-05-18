@@ -18,7 +18,8 @@ describe('CreateInsightContent', () => {
 
     const getFormFields = (getByRole: BoundFunction<GetByRole>) => {
         const title = getByRole('textbox', { name: /title/i })
-        const repositories = getByRole('textbox', { name: /list of repositories/i })
+        const repoGroup = getByRole('group', { name: /list of repositories/i } )
+        const repositories = within(repoGroup).getByRole('textbox')
 
         const personalVisibility = getByRole('radio', { name: /personal/i })
         const organisationVisibility = getByRole('radio', { name: /organization/i })
@@ -31,7 +32,7 @@ describe('CreateInsightContent', () => {
 
         const seriesColorRadioButtons = within(seriesColorGroup).getAllByRole('radio') as HTMLInputElement[]
 
-        const stepGroup = getByRole('group', { name: /step/i })
+        const stepGroup = getByRole('group', { name: /granularity/i })
 
         const stepValue = within(stepGroup).getByRole('spinbutton')
 
@@ -129,7 +130,8 @@ describe('CreateInsightContent', () => {
             const { getByRole, getByText } = renderWithProps({
                 onSubmit: onSubmitMock,
             })
-            const title = getByRole('textbox', { name: /title/i })
+            const repoGroup = getByRole('group', { name: /list of repositories/i } )
+            const repositories = within(repoGroup).getByRole('textbox')
             const submitButton = getByRole('button', { name: /create code insight/i })
 
             // eslint-disable-next-line @typescript-eslint/require-await
@@ -139,7 +141,7 @@ describe('CreateInsightContent', () => {
 
             sinon.assert.notCalled(onSubmitMock)
 
-            expect(title).toHaveFocus()
+            expect(repositories).toHaveFocus()
             expect(getByText(/title is a required/i)).toBeInTheDocument()
         })
 
@@ -148,7 +150,9 @@ describe('CreateInsightContent', () => {
                 onSubmit: onSubmitMock,
             })
             const title = getByRole('textbox', { name: /title/i })
-            const repositories = getByRole('textbox', { name: /list of repositories/i })
+
+            const repoGroup = getByRole('group', { name: /list of repositories/i } )
+            const repositories = within(repoGroup).getByRole('textbox')
             const submitButton = getByRole('button', { name: /create code insight/i })
 
             fireEvent.change(title, { target: { value: 'First code insight' } })
@@ -169,7 +173,8 @@ describe('CreateInsightContent', () => {
                 onSubmit: onSubmitMock,
             })
             const title = getByRole('textbox', { name: /title/i })
-            const repositories = getByRole('textbox', { name: /list of repositories/i })
+            const repoGroup = getByRole('group', { name: /list of repositories/i } )
+            const repositories = within(repoGroup).getByRole('textbox')
             const submitButton = getByRole('button', { name: /create code insight/i })
             const dataSeriesGroup = getByRole('group', { name: /data series/i })
             const seriesName = within(dataSeriesGroup).getByRole('textbox', { name: /name/i })
