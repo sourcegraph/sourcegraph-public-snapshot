@@ -1,4 +1,4 @@
-import { debounce } from 'lodash'
+import { debounce, DebouncedFunc } from 'lodash'
 import { EventHandler, FormEventHandler, RefObject, SyntheticEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { noop } from 'rxjs'
 
@@ -14,6 +14,8 @@ interface FormChangeEvent<FormValues> {
     values: FormValues
     valid: boolean
 }
+
+type ChangeHandler<FormValues> = (event: FormChangeEvent<FormValues>) => void
 
 interface UseFormProps<FormValues extends object> {
     /**
@@ -35,7 +37,7 @@ interface UseFormProps<FormValues extends object> {
      * Change handler will be called every time when some field withing the form
      * has been changed with last fields values.
      * */
-    onChange?: (event: FormChangeEvent<FormValues>) => void
+    onChange?: ChangeHandler<FormValues>
 }
 
 /**
@@ -181,7 +183,7 @@ export function useForm<FormValues extends object>(props: UseFormProps<FormValue
     const onSubmitReference = useRef<UseFormProps<FormValues>['onSubmit']>()
 
     // Debounced onChange handler.
-    const onChangeReference = useRef<UseFormProps<FormValues>['onChange']>(debounce(onChange, 0))
+    const onChangeReference = useRef<DebouncedFunc<ChangeHandler<FormValues>>>(debounce(onChange, 0))
 
     // Track unmounted state to prevent setState if async validation or async submitting
     // will be resolved after component has been unmounted.
@@ -213,6 +215,7 @@ export function useForm<FormValues extends object>(props: UseFormProps<FormValue
 
     useEffect(
         () => () => {
+            onChangeReference.current?.cancel()
             isUnmounted.current = true
         },
         []
