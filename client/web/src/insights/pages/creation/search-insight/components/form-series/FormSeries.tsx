@@ -83,7 +83,7 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
     return (
         <ul className="list-unstyled d-flex flex-column">
             {editSeries.map((line, index) =>
-                editSeries[index] ? (
+                line ? (
                     <FormSeriesInput
                         key={`${line?.name ?? ''}-${index}`}
                         index={index + 1}

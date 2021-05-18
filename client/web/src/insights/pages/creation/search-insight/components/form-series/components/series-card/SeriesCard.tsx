@@ -26,7 +26,7 @@ export function SeriesCard(props: SeriesCardProps): ReactElement {
 
     return (
         <li
-            aria-label={`Edit button for ${name} data series`}
+            aria-label={`${name} data series`}
             className={classnames(styles.card, className, 'card d-flex flex-row p-3')}
         >
             <div className={styles.cardInfo}>
