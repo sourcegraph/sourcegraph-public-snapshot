@@ -439,6 +439,9 @@ func TestDiffHunk(t *testing.T) {
 }
 
 func TestDiffHunk2(t *testing.T) {
+	// This test exists to protect against panics related to
+	// https://github.com/sourcegraph/sourcegraph/pull/21068
+
 	ctx := context.Background()
 	filediff := `diff --git cmd/staticcheck/README.md cmd/staticcheck/README.md
 index 4d14577..10ef458 100644
@@ -511,38 +514,6 @@ index 4d14577..10ef458 100644
 		if body.Aborted() {
 			t.Fatal("highlighting is aborted")
 		}
-
-		// wantLines := []struct {
-		// 	kind, html string
-		// }{
-		// 	{kind: "UNCHANGED", html: "B3"},
-		// 	{kind: "UNCHANGED", html: "B4"},
-		// 	{kind: "UNCHANGED", html: "B5"},
-		// 	{kind: "DELETED", html: "B6"},
-		// 	{kind: "ADDED", html: "H6"},
-		// 	{kind: "UNCHANGED", html: "B7"},
-		// 	{kind: "UNCHANGED", html: "B8"},
-		// 	{kind: "DELETED", html: "B9"},
-		// 	{kind: "DELETED", html: "B10"},
-		// 	{kind: "ADDED", html: "H9"},
-		// 	{kind: "ADDED", html: "H10"},
-		// 	{kind: "UNCHANGED", html: "B11"},
-		// 	{kind: "UNCHANGED", html: "B12"},
-		// }
-
-		// lines := body.Lines()
-		// if have, want := len(lines), len(wantLines); have != want {
-		// 	t.Fatalf("len(Highlight.Lines) is wrong. want = %d, have = %d", want, have)
-		// }
-		// for i, n := range lines {
-		// 	wantedLine := wantLines[i]
-		// 	if n.Kind() != wantedLine.kind {
-		// 		t.Fatalf("Kind is wrong. want = %q, have = %q", wantedLine.kind, n.Kind())
-		// 	}
-		// 	if n.HTML() != wantedLine.html {
-		// 		t.Fatalf("HTML is wrong. want = %q, have = %q", wantedLine.html, n.HTML())
-		// 	}
-		// }
 	})
 }
 
