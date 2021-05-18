@@ -11,7 +11,7 @@ Bulk operations allow a single action to be performed across many changesets in 
     
     <img src="https://sourcegraphstatic.com/docs/images/batch_changes/select_all_changesets_in_view.png" class="screenshot">
     
-    If you want to select _all_ changesets that meet the filters and search currently set, click the **(Select XX changesets) link in the header toolbar.
+    If you want to select _all_ changesets that meet the filters and search currently set, click the **(Select XX changesets)** link in the header toolbar.
 
     <img src="https://sourcegraphstatic.com/docs/images/batch_changes/select_all_changesets.png" class="screenshot">
 1. In the top right, select the action to perform on all the changesets.
