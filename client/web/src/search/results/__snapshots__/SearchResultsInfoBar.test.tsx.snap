@@ -10,7 +10,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
   >
     <div />
     <div
-      className="flex-grow-1"
+      className="search-results-info-bar__expander"
     />
     <ul
       className="nav align-items-center justify-content-end"
@@ -82,7 +82,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
   >
     <div />
     <div
-      className="flex-grow-1"
+      className="search-results-info-bar__expander"
     />
     <ul
       className="nav align-items-center justify-content-end"
@@ -181,7 +181,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
   >
     <div />
     <div
-      className="flex-grow-1"
+      className="search-results-info-bar__expander"
     />
     <ul
       className="nav align-items-center justify-content-end"
@@ -227,7 +227,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
   >
     <div />
     <div
-      className="flex-grow-1"
+      className="search-results-info-bar__expander"
     />
     <ul
       className="nav align-items-center justify-content-end"

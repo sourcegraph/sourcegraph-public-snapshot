@@ -13,7 +13,7 @@ exports[`StreamingProgressCount should not render a trace link when not opted in
   state="loading"
 >
   <small
-    className="streaming-progress__count d-flex align-items-center mr-2 streaming-progress__count--in-progress"
+    className="streaming-progress__count d-flex align-items-center streaming-progress__count--in-progress"
   >
     <Memo(CalculatorIcon)
       className="mr-2 icon-inline streaming-progress__count-icon"
@@ -41,7 +41,7 @@ exports[`StreamingProgressCount should render correctly for 0 items in progress 
   state="loading"
 >
   <small
-    className="streaming-progress__count d-flex align-items-center mr-2 streaming-progress__count--in-progress"
+    className="streaming-progress__count d-flex align-items-center streaming-progress__count--in-progress"
   >
     <Memo(CalculatorIcon)
       className="mr-2 icon-inline streaming-progress__count-icon"
@@ -70,7 +70,7 @@ exports[`StreamingProgressCount should render correctly for 0 repositories 1`] =
   state="loading"
 >
   <small
-    className="streaming-progress__count d-flex align-items-center mr-2 streaming-progress__count--in-progress"
+    className="streaming-progress__count d-flex align-items-center streaming-progress__count--in-progress"
   >
     <Memo(CalculatorIcon)
       className="mr-2 icon-inline streaming-progress__count-icon"
@@ -104,7 +104,7 @@ exports[`StreamingProgressCount should render correctly for 1 item complete 1`] 
   state="complete"
 >
   <small
-    className="streaming-progress__count d-flex align-items-center mr-2"
+    className="streaming-progress__count d-flex align-items-center"
   >
     <Memo(CalculatorIcon)
       className="mr-2 icon-inline streaming-progress__count-icon"
@@ -138,7 +138,7 @@ exports[`StreamingProgressCount should render correctly for 123 items complete 1
   state="complete"
 >
   <small
-    className="streaming-progress__count d-flex align-items-center mr-2"
+    className="streaming-progress__count d-flex align-items-center"
   >
     <Memo(CalculatorIcon)
       className="mr-2 icon-inline streaming-progress__count-icon"
@@ -172,7 +172,7 @@ exports[`StreamingProgressCount should render correctly for big numbers complete
   state="complete"
 >
   <small
-    className="streaming-progress__count d-flex align-items-center mr-2"
+    className="streaming-progress__count d-flex align-items-center"
   >
     <Memo(CalculatorIcon)
       className="mr-2 icon-inline streaming-progress__count-icon"
@@ -213,7 +213,7 @@ exports[`StreamingProgressCount should render correctly for limithit 1`] = `
   state="complete"
 >
   <small
-    className="streaming-progress__count d-flex align-items-center mr-2"
+    className="streaming-progress__count d-flex align-items-center"
   >
     <Memo(CalculatorIcon)
       className="mr-2 icon-inline streaming-progress__count-icon"
@@ -249,7 +249,7 @@ exports[`StreamingProgressCount should render correctly when a trace url is prov
   state="loading"
 >
   <small
-    className="streaming-progress__count d-flex align-items-center mr-2 streaming-progress__count--in-progress"
+    className="streaming-progress__count d-flex align-items-center streaming-progress__count--in-progress"
   >
     <Memo(CalculatorIcon)
       className="mr-2 icon-inline streaming-progress__count-icon"
