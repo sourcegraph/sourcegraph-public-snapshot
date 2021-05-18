@@ -4,16 +4,16 @@ import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import React from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
+import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { BulkOperationState } from '@sourcegraph/shared/src/graphql-operations'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
 import { ErrorMessage } from '../../../../components/alerts'
+import { Collapsible } from '../../../../components/Collapsible'
 import { Timestamp } from '../../../../components/time/Timestamp'
 import { BulkOperationFields } from '../../../../graphql-operations'
 
 import styles from './BulkOperationNode.module.scss'
-import { Collapsible } from '../../../../components/Collapsible'
-import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 
 export interface BulkOperationNodeProps {
     node: BulkOperationFields
