@@ -37,6 +37,16 @@ export function fetchRepositories(repositories: string[]): Observable<BulkSearch
     ).pipe(
         map(dataOrThrowErrors),
         map(search =>
+            /**
+             * Gather information from bulk search to array of search results
+             *
+             * Raw search:
+             * { repoSearch0: { repo content 1 }, repoSearch1: { repo content 2 } ... }
+             *
+             * Transformed array result
+             *
+             * [{ repo content 1}, { repo content 2 }, ... { repo content N }]
+             * */
             Object.keys(search).reduce<BulkSearchRepositories[]>((result, key) => {
                 const index = +key.slice('repoSearch'.length)
 
