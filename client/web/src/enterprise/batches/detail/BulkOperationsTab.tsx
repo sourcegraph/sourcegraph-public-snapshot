@@ -3,6 +3,8 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useCallback } from 'react'
 import { delay, repeatWhen, tap } from 'rxjs/operators'
 
+import { pluralize } from '@sourcegraph/shared/src/util/strings'
+
 import { dismissAlert } from '../../../components/DismissibleAlert'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../components/FilteredConnection'
 import { BulkOperationFields, Scalars } from '../../../graphql-operations'
@@ -68,4 +70,8 @@ export const EmptyBulkOperationsListElement: React.FunctionComponent<{}> = () =>
 
 export const BulkOperationsListHeadComponent: React.FunctionComponent<{ totalCount?: number | null }> = ({
     totalCount,
-}) => <h3 className="mt-4">{totalCount} changeset updates</h3>
+}) => (
+    <h3 className="mt-4">
+        {totalCount} changeset {pluralize('updates', totalCount ?? 0)}
+    </h3>
+)
