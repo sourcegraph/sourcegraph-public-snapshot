@@ -43,7 +43,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
--
+- The deprecated `SetRepositoryEnabled` mutation. [#21044](https://github.com/sourcegraph/sourcegraph/pull/21044)
 
 ## 3.27.5
 
