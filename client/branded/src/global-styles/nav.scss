@@ -13,6 +13,24 @@ $nav-tabs-link-active-border-color: var(--border-color) var(--border-color) tran
 // to have an undesirable bottom border when active.
 .nav-tabs > .nav-item > .nav-link {
     height: 100%;
+    .theme-redesign & {
+        border: none;
+        border-radius: var(--border-radius);
+        color: var(--text-muted);
+        &:not(.active):hover {
+            border-bottom: 3px solid var(--border-color);
+            margin-top: 0;
+            color: var(--body-color);
+        }
+    }
+}
+
+.nav-tabs > .nav-item > .nav-link.active {
+    .theme-redesign & {
+        color: var(--body-color);
+        font-weight: bold;
+        border-bottom: 3px solid var(--brand-secondary);
+    }
 }
 
 // Bootstrap's nav base class does not include styles for the active state.
