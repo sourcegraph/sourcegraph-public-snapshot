@@ -3,7 +3,7 @@ import path from 'path'
 import { remove } from 'lodash'
 import MonacoWebpackPlugin from 'monaco-editor-webpack-plugin'
 import TerserPlugin from 'terser-webpack-plugin'
-import { Configuration, DefinePlugin, ProgressPlugin, RuleSetUseItem, RuleSetUse } from 'webpack'
+import { Configuration, DefinePlugin, ProgressPlugin, RuleSetUseItem, RuleSetUse, RuleSetRule } from 'webpack'
 
 const rootPath = path.resolve(__dirname, '../../../')
 const monacoEditorPaths = [path.resolve(rootPath, 'node_modules', 'monaco-editor')]
@@ -53,6 +53,10 @@ const config = {
         postcss: false,
     },
 
+    core: {
+        builder: 'webpack5',
+    },
+
     typescript: {
         check: false,
         reactDocgen: false,
@@ -62,7 +66,7 @@ const config = {
         config.mode = shouldMinify ? 'production' : 'development'
 
         // Check the default config is in an expected shape.
-        if (!config.module) {
+        if (!config.module || !config.module.rules) {
             throw new Error(
                 'The format of the default storybook webpack config changed, please check if the config in ./src/main.ts is still valid'
             )
@@ -82,12 +86,10 @@ const config = {
             if (!config.optimization) {
                 throw new Error('The structure of the config changed, expected config.optimization to be not-null')
             }
-            config.optimization.namedModules = false
             config.optimization.minimize = true
             config.optimization.minimizer = [
                 new TerserPlugin({
                     terserOptions: {
-                        sourceMap: true,
                         compress: {
                             // Don't inline functions, which causes name collisions with uglify-es:
                             // https://github.com/mishoo/UglifyJS2/issues/2842
@@ -160,7 +162,9 @@ const config = {
         })
 
         // Make sure Storybook style loaders are only evaluated for Storybook styles.
-        const cssRule = config.module.rules.find(rule => rule.test?.toString() === /\.css$/.toString())
+        const cssRule = config.module.rules.find(
+            rule => rule !== '...' && rule.test?.toString() === /\.css$/.toString()
+        ) as RuleSetRule
         if (!cssRule) {
             throw new Error('Cannot find original CSS rule')
         }
@@ -183,16 +187,16 @@ const config = {
             use: ['style-loader', { loader: 'css-loader' }],
         })
 
-        config.module?.rules.unshift({
+        config.module.rules.unshift({
             // TTF rule for monaco-editor
             test: /\.ttf$/,
             include: monacoEditorPaths,
-            use: ['file-loader'],
+            type: 'asset/resource',
         })
 
         config.module.rules.push({
             test: /\.ya?ml$/,
-            use: ['raw-loader'],
+            type: 'asset/source',
         })
 
         Object.assign(config.entry, {

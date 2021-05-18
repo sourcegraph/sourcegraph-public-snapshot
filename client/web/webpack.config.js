@@ -19,7 +19,7 @@ logger.info('Using mode', mode)
 
 const isDevelopment = mode === 'development'
 const isProduction = mode === 'production'
-const devtool = isProduction ? 'source-map' : 'cheap-module-eval-source-map'
+const devtool = isProduction ? 'source-map' : 'eval-cheap-module-source-map'
 
 const shouldServeIndexHTML = process.env.WEBPACK_SERVE_INDEX === 'true'
 if (shouldServeIndexHTML) {
@@ -60,7 +60,6 @@ const config = {
     minimize: isProduction,
     minimizer: [
       new TerserPlugin({
-        sourceMap: true,
         terserOptions: {
           compress: {
             // Don't inline functions, which causes name collisions with uglify-es:
@@ -71,7 +70,7 @@ const config = {
       }),
       new CssMinimizerWebpackPlugin(),
     ],
-    namedModules: false,
+    moduleIds: false,
 
     ...(isDevelopment
       ? {
@@ -130,7 +129,7 @@ const config = {
         'suggest',
       ],
     }),
-    new webpack.IgnorePlugin(/\.flow$/, /.*/),
+    new webpack.IgnorePlugin({ resourceRegExp: /\.flow$/ }),
     new WebpackManifestPlugin({
       writeToFileEmit: true,
       fileName: 'webpack.manifest.json',
@@ -214,13 +213,13 @@ const config = {
         // TTF rule for monaco-editor
         test: /\.ttf$/,
         include: monacoEditorPaths,
-        use: ['file-loader'],
+        type: 'asset/resource',
       },
       {
         test: extensionHostWorker,
         use: [{ loader: 'worker-loader', options: { inline: 'no-fallback' } }, babelLoader],
       },
-      { test: /\.ya?ml$/, use: ['raw-loader'] },
+      { test: /\.ya?ml$/, type: 'asset/source' },
     ],
   },
 }
