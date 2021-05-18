@@ -11,5 +11,6 @@ func UnmarshalYAML(data []byte) (IndexConfiguration, error) {
 	if err := yaml.Unmarshal(data, &configuration); err != nil {
 		return IndexConfiguration{}, fmt.Errorf("invalid YAML: %v", err)
 	}
+
 	return configuration, nil
 }

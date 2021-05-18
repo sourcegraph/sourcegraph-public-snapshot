@@ -1,12 +1,12 @@
 @import '../../nav/GlobalNavbar';
 @import '../QuickLinks';
-@import './QueryInput';
-@import './LazyMonacoQueryInput';
+@import './MonacoQueryInput';
 @import './InfoDropdown';
-@import './SearchContextDropdown.scss';
-@import './SearchContextMenu.scss';
+@import './SearchContextDropdown';
+@import './SearchContextMenu';
 @import './SearchOnboardingTour';
-@import '../panels/HomePanels.scss';
+@import '../panels/HomePanels';
+@import './toggles/Toggles';
 
 .search-page {
     justify-content: flex-start;
