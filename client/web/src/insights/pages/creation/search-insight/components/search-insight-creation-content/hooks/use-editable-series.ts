@@ -5,13 +5,15 @@ import { useFieldAPI } from '../../../../../../components/form/hooks/useField'
 import { CreateInsightFormFields, EditableDataSeries } from '../../../types'
 import { DEFAULT_ACTIVE_COLOR } from '../../form-color-input/FormColorInput'
 
+import { remove, replace } from './helpers';
+
 export const createDefaultEditSeries = (series?: Partial<EditableDataSeries>): EditableDataSeries => ({
     ...defaultEditSeries,
     ...series,
+    id: uuid.v4(),
 })
 
 const defaultEditSeries = {
-    id: uuid.v4(),
     valid: false,
     edit: false,
     name: '',
@@ -57,10 +59,8 @@ export function useEditableSeries(props: UseEditableSeriesProps): UseEditableSer
     const handleSeriesLiveChange = (liveSeries: EditableDataSeries, valid: boolean, index: number): void => {
         series.meta.setState(state => {
             const newLiveSeries = { ...liveSeries, edit: true, valid }
-            const series = state.value
-            const newSeries = [...series.slice(0, index), newLiveSeries, ...series.slice(index + 1)]
 
-            return { ...state, value: newSeries }
+            return { ...state, value: replace(state.value, index, newLiveSeries) }
         })
     }
 
@@ -103,10 +103,7 @@ export function useEditableSeries(props: UseEditableSeriesProps): UseEditableSer
 
             // On other case means that user clicked cancel of new series form
             // in this case we have to remove series model entirely
-
-            const newSeries = [...series.slice(0, index), ...series.slice(index + 1)]
-
-            return { ...state, value: newSeries }
+            return { ...state, value: remove(series, index) }
         })
     }
 
@@ -114,7 +111,7 @@ export function useEditableSeries(props: UseEditableSeriesProps): UseEditableSer
         series.meta.setState(state => {
             const series = state.value
             const updatedSeries = { ...editedSeries, valid: true, edit: false }
-            const newSeries = [...series.slice(0, index), updatedSeries, ...series.slice(index + 1)]
+            const newSeries = replace(series, index, updatedSeries)
 
             return { ...state, value: newSeries }
         })
@@ -123,7 +120,7 @@ export function useEditableSeries(props: UseEditableSeriesProps): UseEditableSer
     const handleRemoveSeries = (index: number): void => {
         series.meta.setState(state => {
             const series = state.value
-            const newSeries = [...series.slice(0, index), ...series.slice(index + 1)]
+            const newSeries = remove(series, index)
 
             if (newSeries.length === 0) {
                 // If user remove all series we add fallback with another oped edit series

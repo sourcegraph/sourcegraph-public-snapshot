@@ -69,7 +69,7 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
             {series.map((line, index) =>
                 line.edit ? (
                     <FormSeriesInput
-                        key={`${line?.name ?? ''}-${index}`}
+                        key={line.id}
                         touched={touched}
                         index={index + 1}
                         cancel={series.length > 1}
@@ -81,13 +81,13 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
                         {...line}
                     />
                 ) : (
-                    series[index] && (
+                    line && (
                         <SeriesCard
-                            key={`${series[index].name}-${index}`}
+                            key={`${line.id}-card`}
                             onEdit={() => onEditSeriesRequest(index)}
                             onRemove={() => onSeriesRemove(index)}
                             className={styles.formSeriesItem}
-                            {...series[index]}
+                            {...line}
                         />
                     )
                 )
