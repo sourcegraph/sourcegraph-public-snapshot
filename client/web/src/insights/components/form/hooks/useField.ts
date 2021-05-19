@@ -35,6 +35,11 @@ export interface useFieldAPI<FieldValue> {
      * native validity state.
      * */
     meta: FieldState<FieldValue> & {
+        /**
+         * Set state handler gives access to set inner state of useField.
+         * Useful for complicated cases when need to deal with custom react input
+         * component.
+         * */
         setState: (dispatch: (previousState: FieldState<FieldValue>) => FieldState<FieldValue>) => void
     }
 }
@@ -145,6 +150,11 @@ export function useField<FormValues, FieldValueKey extends keyof FormAPI<FormVal
         meta: {
             ...state,
             touched: state.touched || submitted || formTouched,
+            /**
+             * Set state dispatcher gives access to set inner state of useField.
+             * Useful for complex cases when you need to deal with custom react input
+             * components.
+             * */
             setState: dispatch => {
                 setState(state => ({ ...dispatch(state) }))
             },
