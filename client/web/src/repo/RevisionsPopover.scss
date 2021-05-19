@@ -28,6 +28,10 @@
             text-overflow: ellipsis;
             overflow: hidden;
             padding: 0 0.5rem;
+
+            .theme-redesign & {
+                padding: 0 0.5rem 0;
+            }
         }
         &__link:not(:hover) &__message {
             color: var(--body-color);

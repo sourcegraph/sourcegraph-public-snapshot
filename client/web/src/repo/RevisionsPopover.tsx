@@ -157,18 +157,16 @@ const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({ node, curr
                     'revisions-popover-git-commit-node__link'
                 )}
             >
-                <span>
-                    <code className="revisions-popover-git-commit-node__oid" title={node.oid}>
-                        {node.abbreviatedOID}
-                    </code>
-                    <small className="revisions-popover-git-commit-node__message">{node.subject.slice(0, 200)}</small>
-                    {isCurrent && (
-                        <CircleChevronLeftIcon
-                            className="icon-inline connection-popover__node-link-icon"
-                            data-tooltip="Current commit"
-                        />
-                    )}
-                </span>
+                <code className="revisions-popover-git-commit-node__oid" title={node.oid}>
+                    {node.abbreviatedOID}
+                </code>
+                <small className="revisions-popover-git-commit-node__message">{node.subject.slice(0, 200)}</small>
+                {isCurrent && (
+                    <CircleChevronLeftIcon
+                        className="icon-inline connection-popover__node-link-icon"
+                        data-tooltip="Current commit"
+                    />
+                )}
             </Link>
         </li>
     )
