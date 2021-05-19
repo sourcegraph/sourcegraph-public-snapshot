@@ -132,6 +132,7 @@ const RepoRevisionContainerPopover: React.FunctionComponent<RepoRevisionContaine
             target="repo-revision-popover"
             trigger="legacy"
             hideArrow={true}
+            fade={false}
             popperClassName="border-0"
         >
             <RevisionsPopover
