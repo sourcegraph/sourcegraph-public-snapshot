@@ -124,7 +124,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
             >
                 <FormSeries
                     series={series.input.value}
-                    touched={submitted}
+                    showValidationErrorsOnMount={submitted}
                     onLiveChange={onSeriesLiveChange}
                     onEditSeriesRequest={onEditSeriesRequest}
                     onEditSeriesCommit={onEditSeriesCommit}

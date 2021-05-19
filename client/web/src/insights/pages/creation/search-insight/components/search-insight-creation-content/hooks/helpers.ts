@@ -1,4 +1,3 @@
-
 /**
  * Helper replace element in array by index and return new array.
  * */

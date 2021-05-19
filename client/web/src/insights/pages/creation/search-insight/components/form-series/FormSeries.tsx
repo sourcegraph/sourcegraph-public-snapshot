@@ -9,10 +9,9 @@ import styles from './FormSeries.module.scss'
 
 export interface FormSeriesProps {
     /**
-     * Prop to force touched state for all series forms.
-     * (show all validation error for all forms and fields)
+     * Show all validation error for all forms and fields within the series forms.
      * */
-    touched: boolean
+    showValidationErrorsOnMount: boolean
     /**
      * Controlled value (series - chart lines) for series input component.
      * */
@@ -56,7 +55,7 @@ export interface FormSeriesProps {
 export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
     const {
         series = [],
-        touched,
+        showValidationErrorsOnMount,
         onEditSeriesRequest,
         onEditSeriesCommit,
         onEditSeriesCancel,
@@ -70,7 +69,7 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
                 line.edit ? (
                     <FormSeriesInput
                         key={line.id}
-                        touched={touched}
+                        showValidationErrorsOnMount={showValidationErrorsOnMount}
                         index={index + 1}
                         cancel={series.length > 1}
                         autofocus={series.length > 1}

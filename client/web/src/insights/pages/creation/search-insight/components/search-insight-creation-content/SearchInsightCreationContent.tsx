@@ -88,11 +88,13 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
         series,
     })
 
+    const validEditSeries = editSeries.filter(series => series.valid)
+
     // If some fields that needed to run live preview  are invalid
     // we should disabled live chart preview
     const allFieldsForPreviewAreValid =
         (repositories.meta.validState === 'VALID' || repositories.meta.validState === 'CHECKING') &&
-        (series.meta.validState === 'VALID' || editSeries.length) &&
+        (series.meta.validState === 'VALID' || validEditSeries.length) &&
         stepValue.meta.validState === 'VALID'
 
     return (

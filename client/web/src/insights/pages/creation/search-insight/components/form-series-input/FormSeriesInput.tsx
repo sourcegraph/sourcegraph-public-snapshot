@@ -16,10 +16,9 @@ interface FormSeriesInputProps {
     /** Series index. */
     index: number
     /**
-     * Prop to force touched state for series form.
-     * (show all validation error)
+     * Show all validation error of all fields within the form.
      * */
-    touched?: boolean
+    showValidationErrorsOnMount?: boolean
     /** Name of series. */
     name?: string
     /** Query value of series. */
@@ -44,7 +43,7 @@ interface FormSeriesInputProps {
 export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = props => {
     const {
         index,
-        touched = false,
+        showValidationErrorsOnMount = false,
         name,
         query,
         stroke: color,
@@ -60,7 +59,7 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
     const hasQueryControlledValue = !!query
 
     const { formAPI, handleSubmit, ref } = useForm({
-        touched,
+        touched: showValidationErrorsOnMount,
         initialValues: {
             seriesName: name ?? '',
             seriesQuery: query ?? '',

@@ -5,7 +5,7 @@ import { useFieldAPI } from '../../../../../../components/form/hooks/useField'
 import { CreateInsightFormFields, EditableDataSeries } from '../../../types'
 import { DEFAULT_ACTIVE_COLOR } from '../../form-color-input/FormColorInput'
 
-import { remove, replace } from './helpers';
+import { remove, replace } from './helpers'
 
 export const createDefaultEditSeries = (series?: Partial<EditableDataSeries>): EditableDataSeries => ({
     ...defaultEditSeries,
