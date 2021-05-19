@@ -3,6 +3,10 @@ import React, { useCallback } from 'react'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { useRedesignToggle, REDESIGN_CLASS_NAME } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
+import { Badge } from '../../components/Badge'
+
+import styles from './RedesignToggle.module.scss'
+
 export const RedesignToggle: React.FunctionComponent = () => {
     const [isRedesignEnabled, setIsRedesignEnabled] = useRedesignToggle()
 
@@ -13,10 +17,15 @@ export const RedesignToggle: React.FunctionComponent = () => {
 
     return (
         <div className="px-2 py-1">
-            <div className="d-flex align-items-center justify-content-between">
-                <div className="mr-2">Redesign enabled</div>
+            <div className="d-flex align-items-center justify-content-between mb-1">
+                <div className="mr-2">
+                    Redesign <Badge status="wip" className="text-uppercase" />
+                </div>
                 <Toggle title="Redesign theme enabled" value={isRedesignEnabled} onToggle={handleRedesignToggle} />
             </div>
+            <small className={styles.feedbackText}>
+                Still working on it. We'll let you know once we're ready for feedback!
+            </small>
         </div>
     )
 }

@@ -131,6 +131,14 @@
           "!go": {
             "pointer": true
           }
+        },
+        "designRefreshToggleEnabled": {
+          "description": "Enables access to the design refresh toggle in the user menu.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
         }
       },
       "group": "Experimental"
