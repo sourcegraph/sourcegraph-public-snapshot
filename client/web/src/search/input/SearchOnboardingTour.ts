@@ -26,6 +26,7 @@ const tourOptions: Shepherd.Tour.TourOptions = {
     ...defaultTourOptions,
     defaultStepOptions: {
         ...defaultTourOptions.defaultStepOptions,
+        classes: 'web-content',
         popperOptions: {
             // Removes default behavior of autofocusing steps
             modifiers: [
@@ -43,25 +44,16 @@ const tourOptions: Shepherd.Tour.TourOptions = {
  * generateStep creates the content for the search tour card. All steps that just contain
  * static content should use this function to populate the step's `text` field.
  */
-function generateStep(options: {
-    tour: Shepherd.Tour
-    title: string
-    stepNumber: number
-    additionalContent?: HTMLElement
-}): HTMLElement {
+function generateStep(options: { tour: Shepherd.Tour; stepNumber: number; content: HTMLElement }): HTMLElement {
     const element = document.createElement('div')
     element.className = `d-flex align-items-center test-tour-step-${options.stepNumber}`
-    element.innerHTML = `<div class="tour-card__title mr-3">${options.title}</div>`
-
-    if (options.additionalContent) {
-        element.append(options.additionalContent)
-    }
+    element.append(options.content)
 
     const close = document.createElement('div')
     close.className = 'd-flex align-items-center'
     close.innerHTML = `
-        <div class="tour-card__separator mr-3"></div>
-        <div class="tour-card__close text-muted">${closeIconSvg}</div>
+        <div class="tour-card__separator mx-3"></div>
+        <div class="tour-card__close">${closeIconSvg}</div>
     `
     element.append(close)
     element.querySelector('.tour-card__close')?.addEventListener('click', () => {
@@ -73,7 +65,7 @@ function generateStep(options: {
 }
 
 const closeIconSvg =
-    '<svg width="16" height="16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12.667 4.274l-.94-.94L8 7.06 4.273 3.334l-.94.94L7.06 8l-3.727 3.727.94.94L8 8.94l3.727 3.727.94-.94L8.94 8l3.727-3.726z" fill="#5E6E8C"/></svg>'
+    '<svg width="16" height="16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12.667 4.274l-.94-.94L8 7.06 4.273 3.334l-.94.94L7.06 8l-3.727 3.727.94.94L8 8.94l3.727 3.727.94-.94L8.94 8l3.727-3.726z" fill="currentColor"/></svg>'
 
 /**
  * Generates the content for the first step in the tour.
@@ -86,22 +78,23 @@ function generateStep1(
     languageButtonHandler: () => void,
     repositoryButtonHandler: () => void
 ): HTMLElement {
-    const element = document.createElement('div')
-    element.className = 'd-flex align-items-center mr-3'
-    element.innerHTML = `
-        <button class="btn btn-link p-0 mr-3 tour-language-button">Search a language</button>
-        <button class="btn btn-link p-0 tour-repo-button">Search a repository</button>
+    const content = document.createElement('div')
+    content.className = 'd-flex align-items-center'
+    content.innerHTML = `
+        <div class="tour-card__title mr-3">Get started</div>
+        <button class="btn btn-link p-0 mr-3 tour-card__link tour-language-button">Search a language</button>
+        <button class="btn btn-link p-0 tour-card__link tour-repo-button">Search a repository</button>
     `
-    element.querySelector('.tour-language-button')?.addEventListener('click', () => {
+    content.querySelector('.tour-language-button')?.addEventListener('click', () => {
         languageButtonHandler()
         eventLogger.log('OnboardingTourLanguageOptionClicked')
     })
-    element.querySelector('.tour-repo-button')?.addEventListener('click', () => {
+    content.querySelector('.tour-repo-button')?.addEventListener('click', () => {
         repositoryButtonHandler()
         eventLogger.log('OnboardingTourRepositoryOptionClicked')
     })
 
-    return generateStep({ tour, title: 'Get started', additionalContent: element, stepNumber: 1 })
+    return generateStep({ tour, content, stepNumber: 1 })
 }
 
 type TourStepID = 'filter-repository' | 'filter-lang' | 'add-query-term'
@@ -178,10 +171,13 @@ const useCurrentStep = (tour: Tour): TourStepID | undefined => {
     return currentStep
 }
 
-const generateStepDescription = (description: string): HTMLElement => {
+const generateStepContent = (title: string, description: string): HTMLElement => {
     const element = document.createElement('div')
-    element.className = 'tour-card__description text-monospace mr-3'
-    element.textContent = description
+    element.className = 'd-flex align-items-center'
+    element.innerHTML = `
+        <div class="tour-card__title mr-3">${title}</div>
+        <div class="tour-card__description text-monospace">${description}</div>
+    `
     return element
 }
 
@@ -202,7 +198,7 @@ const useTourWithSteps = ({ setQueryState }: Pick<UseSearchOnboardingTourOptions
                         tour.show('filter-repository')
                     }
                 ),
-                classes: 'tour-card--arrow-left-up',
+                classes: 'tour-card tour-card--arrow-left-up',
                 attachTo: {
                     element: '.search-page__input-container',
                     on: 'bottom',
@@ -215,16 +211,15 @@ const useTourWithSteps = ({ setQueryState }: Pick<UseSearchOnboardingTourOptions
                 id: 'filter-lang',
                 text: generateStep({
                     tour,
-                    title: 'Enter a language',
                     stepNumber: 2,
-                    additionalContent: generateStepDescription('Example: Python'),
+                    content: generateStepContent('Enter a language', 'Example: Python'),
                 }),
                 when: {
                     show() {
                         eventLogger.log('ViewedOnboardingTourFilterLangStep')
                     },
                 },
-                classes: 'tour-card--arrow-left-down',
+                classes: 'tour-card tour-card--arrow-left-down',
                 attachTo: {
                     element: '.search-page__input-container',
                     on: 'top',
@@ -237,16 +232,15 @@ const useTourWithSteps = ({ setQueryState }: Pick<UseSearchOnboardingTourOptions
                 id: 'filter-repository',
                 text: generateStep({
                     tour,
-                    title: 'Enter a repository',
                     stepNumber: 2,
-                    additionalContent: generateStepDescription('Example: sourcegraph/sourcegraph'),
+                    content: generateStepContent('Enter a repository', 'Example: sourcegraph/sourcegraph'),
                 }),
                 when: {
                     show() {
                         eventLogger.log('ViewedOnboardingTourFilterRepoStep')
                     },
                 },
-                classes: 'tour-card--arrow-left-down',
+                classes: 'tour-card tour-card--arrow-left-down',
                 attachTo: {
                     element: '.search-page__input-container',
                     on: 'top',
@@ -259,16 +253,15 @@ const useTourWithSteps = ({ setQueryState }: Pick<UseSearchOnboardingTourOptions
                 id: 'add-query-term',
                 text: generateStep({
                     tour,
-                    title: 'Enter source code',
                     stepNumber: 3,
-                    additionalContent: generateStepDescription('Example: []*Request'),
+                    content: generateStepContent('Enter source code', 'Example: []*Request'),
                 }),
                 when: {
                     show() {
                         eventLogger.log('ViewedOnboardingTourAddQueryTermStep')
                     },
                 },
-                classes: 'tour-card--arrow-left-up',
+                classes: 'tour-card tour-card--arrow-left-up',
                 attachTo: {
                     element: '.search-page__input-container',
                     on: 'bottom',
@@ -281,16 +274,15 @@ const useTourWithSteps = ({ setQueryState }: Pick<UseSearchOnboardingTourOptions
                 id: 'submit-search',
                 text: generateStep({
                     tour,
-                    title: 'Search',
                     stepNumber: 4,
-                    additionalContent: generateStepDescription('(Or press RETURN)'),
+                    content: generateStepContent('Search', '(Or press RETURN)'),
                 }),
                 when: {
                     show() {
                         eventLogger.log('ViewedOnboardingTourSubmitSearchStep')
                     },
                 },
-                classes: 'tour-card--arrow-right-down',
+                classes: 'tour-card tour-card--arrow-right-down',
                 attachTo: {
                     element: '.search-button',
                     on: 'top',
@@ -337,7 +329,7 @@ interface UseSearchOnboardingTourReturnValue
      * (`false` on the search homepage when the tour is active).
      */
     shouldFocusQueryInput: boolean
-    isSearchOnboardingTourActive: boolean
+    hasCompletedSearchOnboardingTour: boolean
 }
 
 /**
@@ -437,6 +429,6 @@ export const useSearchOnboardingTour = ({
         onFocus,
         onSuggestionsInitialized,
         shouldFocusQueryInput: !shouldShowTour,
-        isSearchOnboardingTourActive: tour.isActive(),
+        hasCompletedSearchOnboardingTour: hasCompletedTour,
     }
 }

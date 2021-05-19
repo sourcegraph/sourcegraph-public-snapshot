@@ -43,7 +43,7 @@ export interface SearchBoxProps
     /** Whether comments are parsed and highlighted */
     interpretComments?: boolean
 
-    isSearchOnboardingTourActive: boolean
+    hasCompletedSearchOnboardingTour: boolean
 
     /** Don't show the version contexts dropdown. */
     hideVersionContexts?: boolean
