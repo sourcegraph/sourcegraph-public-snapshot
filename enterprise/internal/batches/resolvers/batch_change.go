@@ -276,6 +276,10 @@ func (r *batchChangeResolver) BulkOperations(
 		opts.Cursor = int64(id)
 	}
 
+	if args.CreatedAfter != nil {
+		opts.CreatedAfter = args.CreatedAfter.Time
+	}
+
 	return &bulkOperationConnectionResolver{
 		store:         r.store,
 		batchChangeID: r.batchChange.ID,

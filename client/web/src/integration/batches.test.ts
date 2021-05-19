@@ -298,6 +298,8 @@ function mockCommonGraphQLResponses(
                     originalInput: 'name: awesome-batch-change\ndescription: somesttring',
                     supersedingBatchSpec: null,
                 },
+                bulkOperations: { totalCount: 0 },
+                activeBulkOperations: { totalCount: 0, nodes: [] },
                 ...batchesOverrides,
             },
         }),

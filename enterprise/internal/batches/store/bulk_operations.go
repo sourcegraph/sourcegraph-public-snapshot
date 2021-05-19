@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"time"
 
 	"github.com/keegancsmith/sqlf"
 
@@ -32,6 +33,8 @@ END AS state`,
 		btypes.ChangesetJobStateCompleted.ToDB(),
 		btypes.ChangesetJobStateFailed.ToDB(),
 	),
+	sqlf.Sprintf("MIN(changeset_jobs.user_id) AS user_id"),
+	sqlf.Sprintf("COUNT(changeset_jobs.id) AS changeset_count"),
 	sqlf.Sprintf("MIN(changeset_jobs.created_at) AS created_at"),
 	sqlf.Sprintf(
 		"CASE WHEN (COUNT(*) FILTER (WHERE changeset_jobs.state IN (%s, %s)) / COUNT(*)) = 1.0 THEN MAX(changeset_jobs.finished_at) ELSE null END AS finished_at",
@@ -94,7 +97,8 @@ func getBulkOperationQuery(opts *GetBulkOperationOpts) *sqlf.Query {
 // ListBulkOperationsOpts captures the query options needed for getting a list of bulk operations.
 type ListBulkOperationsOpts struct {
 	LimitOpts
-	Cursor int64
+	Cursor       int64
+	CreatedAfter time.Time
 
 	BatchChangeID int64
 }
@@ -132,7 +136,8 @@ WHERE
     %s
 GROUP BY
     changeset_jobs.bulk_group, changeset_jobs.job_type
-ORDER BY MIN(changeset_jobs.id) ASC
+%s
+ORDER BY MIN(changeset_jobs.id) DESC
 `
 
 func listBulkOperationsQuery(opts *ListBulkOperationsOpts) *sqlf.Query {
@@ -140,20 +145,27 @@ func listBulkOperationsQuery(opts *ListBulkOperationsOpts) *sqlf.Query {
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
 		sqlf.Sprintf("changeset_jobs.batch_change_id = %s", opts.BatchChangeID),
 	}
+	having := sqlf.Sprintf("")
 
 	if opts.Cursor > 0 {
-		preds = append(preds, sqlf.Sprintf("changeset_jobs.id >= %s", opts.Cursor))
+		preds = append(preds, sqlf.Sprintf("changeset_jobs.id <= %s", opts.Cursor))
+	}
+
+	if !opts.CreatedAfter.IsZero() {
+		having = sqlf.Sprintf("HAVING MIN(changeset_jobs.created_at) >= %s", opts.CreatedAfter)
 	}
 
 	return sqlf.Sprintf(
 		listBulkOperationsQueryFmtstr+opts.LimitOpts.ToDB(),
 		sqlf.Join(bulkOperationColumns, ","),
 		sqlf.Join(preds, "\n AND "),
+		having,
 	)
 }
 
 // CountBulkOperationsOpts captures the query options needed when counting BulkOperations.
 type CountBulkOperationsOpts struct {
+	CreatedAfter  time.Time
 	BatchChangeID int64
 }
 
@@ -165,7 +177,7 @@ func (s *Store) CountBulkOperations(ctx context.Context, opts CountBulkOperation
 var countBulkOperationsQueryFmtstr = `
 -- source: enterprise/internal/batches/store/bulk_operations.go:CountBulkOperations
 SELECT
-    COUNT(DISTINCT(changeset_jobs.bulk_group))
+	COUNT(DISTINCT(changeset_jobs.bulk_group))
 FROM changeset_jobs
 INNER JOIN changesets ON changesets.id = changeset_jobs.changeset_id
 INNER JOIN repo ON repo.id = changesets.repo_id
@@ -177,6 +189,10 @@ func countBulkOperationsQuery(opts *CountBulkOperationsOpts) *sqlf.Query {
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
 		sqlf.Sprintf("changeset_jobs.batch_change_id = %s", opts.BatchChangeID),
+	}
+
+	if !opts.CreatedAfter.IsZero() {
+		preds = append(preds, sqlf.Sprintf("changeset_jobs.created_at >= %s", opts.CreatedAfter))
 	}
 
 	return sqlf.Sprintf(
@@ -240,6 +256,8 @@ func scanBulkOperation(b *btypes.BulkOperation, s scanner) error {
 		&b.Type,
 		&b.State,
 		&b.Progress,
+		&b.UserID,
+		&b.ChangesetCount,
 		&b.CreatedAt,
 		&dbutil.NullTime{Time: &b.FinishedAt},
 	)

@@ -65,11 +65,13 @@ func testStoreBulkOperations(t *testing.T, ctx context.Context, s *Store, clock 
 	}
 	for i := 0; i < cap(bulkOperations); i++ {
 		j := &btypes.BulkOperation{
-			ID:        jobs[i].BulkGroup,
-			DBID:      jobs[i].ID,
-			State:     btypes.BulkOperationStateProcessing,
-			Type:      btypes.ChangesetJobTypeComment,
-			CreatedAt: clock.Now(),
+			ID:             jobs[i].BulkGroup,
+			DBID:           jobs[i].ID,
+			State:          btypes.BulkOperationStateProcessing,
+			Type:           btypes.ChangesetJobTypeComment,
+			ChangesetCount: 1,
+			UserID:         jobs[i].UserID,
+			CreatedAt:      clock.Now(),
 		}
 		if i == 0 {
 			j.Progress = 1
@@ -138,6 +140,18 @@ func testStoreBulkOperations(t *testing.T, ctx context.Context, s *Store, clock 
 	})
 
 	t.Run("List", func(t *testing.T) {
+		reverse := func(s []*btypes.BulkOperation) []*btypes.BulkOperation {
+			a := make([]*btypes.BulkOperation, len(s))
+			copy(a, s)
+
+			for i := len(a)/2 - 1; i >= 0; i-- {
+				opp := len(a) - 1 - i
+				a[i], a[opp] = a[opp], a[i]
+			}
+
+			return a
+		}
+		reverseBulkOperations := reverse(bulkOperations)
 		t.Run("NoLimit", func(t *testing.T) {
 			// Empty limit should return all entries.
 			opts := ListBulkOperationsOpts{BatchChangeID: batchChangeID}
@@ -150,7 +164,7 @@ func testStoreBulkOperations(t *testing.T, ctx context.Context, s *Store, clock 
 				t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
 			}
 
-			have, want := ts, bulkOperations
+			have, want := ts, reverseBulkOperations
 			if len(have) != len(want) {
 				t.Fatalf("listed %d bulk operations, want: %d", len(have), len(want))
 			}
@@ -161,7 +175,7 @@ func testStoreBulkOperations(t *testing.T, ctx context.Context, s *Store, clock 
 		})
 
 		t.Run("WithLimit", func(t *testing.T) {
-			for i := 1; i <= len(bulkOperations); i++ {
+			for i := 1; i <= len(reverseBulkOperations); i++ {
 				cs, next, err := s.ListBulkOperations(ctx, ListBulkOperationsOpts{BatchChangeID: batchChangeID, LimitOpts: LimitOpts{Limit: i}})
 				if err != nil {
 					t.Fatal(err)
@@ -169,8 +183,8 @@ func testStoreBulkOperations(t *testing.T, ctx context.Context, s *Store, clock 
 
 				{
 					have, want := next, int64(0)
-					if i < len(bulkOperations) {
-						want = bulkOperations[i].DBID
+					if i < len(reverseBulkOperations) {
+						want = reverseBulkOperations[i].DBID
 					}
 
 					if have != want {
@@ -179,7 +193,7 @@ func testStoreBulkOperations(t *testing.T, ctx context.Context, s *Store, clock 
 				}
 
 				{
-					have, want := cs, bulkOperations[:i]
+					have, want := cs, reverseBulkOperations[:i]
 					if len(have) != len(want) {
 						t.Fatalf("listed %d bulkOperations, want: %d", len(have), len(want))
 					}
@@ -193,14 +207,14 @@ func testStoreBulkOperations(t *testing.T, ctx context.Context, s *Store, clock 
 
 		t.Run("WithLimitAndCursor", func(t *testing.T) {
 			var cursor int64
-			for i := 1; i <= len(bulkOperations); i++ {
+			for i := 1; i <= len(reverseBulkOperations); i++ {
 				opts := ListBulkOperationsOpts{BatchChangeID: batchChangeID, Cursor: cursor, LimitOpts: LimitOpts{Limit: 1}}
 				have, next, err := s.ListBulkOperations(ctx, opts)
 				if err != nil {
 					t.Fatal(err)
 				}
 
-				want := bulkOperations[i-1 : i]
+				want := reverseBulkOperations[i-1 : i]
 				if diff := cmp.Diff(have, want); diff != "" {
 					t.Fatalf("opts: %+v, diff: %s", opts, diff)
 				}

@@ -11,6 +11,9 @@ Upgrades should happen across consecutive minor versions of Sourcegraph. For exa
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
+## Unreleased
+
+- The memory requirements for `redis-cache` and `redis-store` have been increased by 1GB. See https://github.com/sourcegraph/deploy-sourcegraph-docker/pull/373 for more context.
 ## 3.26 -> 3.27
 
 > Warning: ⚠️ Sourcegraph 3.27 now requires **Postgres 12+**.

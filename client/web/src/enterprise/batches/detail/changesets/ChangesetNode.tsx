@@ -20,7 +20,6 @@ export interface ChangesetNodeProps extends ThemeProps {
     viewerCanAdminister: boolean
     history: H.History
     location: H.Location
-    enableSelect?: boolean
     onSelect?: (id: string, selected: boolean) => void
     isSelected?: (id: string) => boolean
     extensionInfo?: {

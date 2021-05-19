@@ -4,6 +4,7 @@ import { useHistory } from 'react-router-dom'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 
 import { SubmissionErrors } from '../../../components/form/hooks/useForm'
+import { Organization } from '../../../components/visibility-picker/VisibilityPicker'
 import { SearchBasedInsight } from '../../../core/types'
 import { SearchInsightCreationContent } from '../../creation/search-insight/components/search-insight-creation-content/SearchInsightCreationContent'
 import { CreateInsightFormFields, InsightStep } from '../../creation/search-insight/types'
@@ -13,10 +14,11 @@ interface EditSearchBasedInsightProps {
     insight: SearchBasedInsight
     onSubmit: (insight: SearchBasedInsight) => SubmissionErrors | Promise<SubmissionErrors> | void
     finalSettings: Settings
+    organizations: Organization[]
 }
 
 export const EditSearchBasedInsight: React.FunctionComponent<EditSearchBasedInsightProps> = props => {
-    const { insight, finalSettings = {}, onSubmit } = props
+    const { insight, finalSettings = {}, organizations, onSubmit } = props
     const history = useHistory()
 
     const insightFormValues = useMemo<CreateInsightFormFields>(
@@ -48,9 +50,8 @@ export const EditSearchBasedInsight: React.FunctionComponent<EditSearchBasedInsi
             className="pb-5"
             initialValue={insightFormValues}
             settings={finalSettings}
-            /* eslint-disable-next-line react/jsx-no-bind */
+            organizations={organizations}
             onSubmit={handleSubmit}
-            /* eslint-disable-next-line react/jsx-no-bind */
             onCancel={handleCancel}
         />
     )
