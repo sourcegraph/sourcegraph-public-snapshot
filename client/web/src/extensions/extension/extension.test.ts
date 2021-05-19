@@ -15,13 +15,18 @@ describe('validCategories', () => {
 })
 
 describe('extensionsQuery', () => {
-    test('category (unquoted)', () => expect(extensionsQuery({ category: 'c' })).toBe('category:c'))
-    test('category (quoted)', () => expect(extensionsQuery({ category: 'c c' })).toBe('category:"c c"'))
     test('tag (unquoted)', () => expect(extensionsQuery({ tag: 't' })).toBe('tag:t'))
     test('tag (quoted)', () => expect(extensionsQuery({ tag: 't t' })).toBe('tag:"t t"'))
     test('none', () => expect(extensionsQuery({})).toBe(''))
 })
 
 describe('urlToExtensionsQuery', () => {
-    test('generates', () => expect(urlToExtensionsQuery('foo bar')).toBe('/extensions?query=foo+bar'))
+    test('only query', () => expect(urlToExtensionsQuery({ query: 'foo bar' })).toBe('/extensions?query=foo+bar'))
+    test('only category', () =>
+        expect(urlToExtensionsQuery({ category: 'Linters' })).toBe('/extensions?category=Linters'))
+    test('both query and category', () =>
+        expect(urlToExtensionsQuery({ query: 'foo bar', category: 'Linters' })).toBe(
+            '/extensions?query=foo+bar&category=Linters'
+        ))
+    test('neither query nor category', () => expect(urlToExtensionsQuery({ query: undefined })).toBe('/extensions'))
 })

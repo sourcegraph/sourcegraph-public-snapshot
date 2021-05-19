@@ -1,17 +1,15 @@
 import {
     ConfiguredRegistryExtension,
     toConfiguredRegistryExtension,
-    isExtensionEnabled,
 } from '@sourcegraph/shared/src/extensions/extension'
 import { ExtensionCategory, EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
-import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { createRecord } from '@sourcegraph/shared/src/util/createRecord'
-import { isErrorLike, ErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { RegistryExtensionFieldsForList } from '../graphql-operations'
 
 import { validCategories } from './extension/extension'
-import { ConfiguredExtensionCache, ExtensionsEnablement } from './ExtensionRegistry'
+import { ConfiguredExtensionCache } from './ExtensionRegistry'
 
 export interface ConfiguredRegistryExtensions {
     [id: string]: Pick<ConfiguredRegistryExtension<RegistryExtensionFieldsForList>, 'manifest' | 'id'>
@@ -82,54 +80,4 @@ export function configureExtensionRegistry(
     }
 
     return { extensions, extensionIDsByCategory }
-}
-
-/** Groups extensions by category */
-export function applyCategoryFilter(
-    extensionIDsByCategory: ConfiguredExtensionRegistry['extensionIDsByCategory'],
-    categories: ExtensionCategory[],
-    selectedCategories: ExtensionCategory[]
-): Record<ExtensionCategory, string[]> {
-    if (selectedCategories.length === 0) {
-        // Primary categories
-        return createRecord(categories, category => [...extensionIDsByCategory[category].primaryExtensionIDs])
-    }
-
-    // Categorize in toggle order, make sure the same extension doesn't appear twice.
-    const filteredCategorizedExtensions = createRecord<ExtensionCategory, string[]>(selectedCategories, () => [])
-
-    // To "blacklist" extension ID after it has been used
-    const takenIDs = new Set<string>()
-
-    for (const category of selectedCategories) {
-        for (const extensionID of extensionIDsByCategory[category].allExtensionIDs) {
-            if (!takenIDs.has(extensionID)) {
-                filteredCategorizedExtensions[category].push(extensionID)
-
-                takenIDs.add(extensionID)
-            }
-        }
-    }
-
-    return filteredCategorizedExtensions
-}
-
-/**
- * Filters categorized registry extensions by enablement (enabled | disabled | all)
- */
-export function applyExtensionsEnablement(
-    categorizedExtensions: Record<ExtensionCategory, string[]>,
-    filteredCategoryIDs: ExtensionCategory[],
-    enablement: ExtensionsEnablement,
-    settings: Settings | ErrorLike | null
-): Record<ExtensionCategory, string[]> {
-    if (enablement === 'all') {
-        return categorizedExtensions
-    }
-
-    return createRecord(filteredCategoryIDs, category =>
-        categorizedExtensions[category].filter(
-            extensionID => (enablement === 'enabled') === isExtensionEnabled(settings, extensionID)
-        )
-    )
 }
