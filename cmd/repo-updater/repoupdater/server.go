@@ -105,29 +105,6 @@ func respond(w http.ResponseWriter, code int, v interface{}) {
 	}
 }
 
-func newExternalServices(es ...*types.ExternalService) []api.ExternalService {
-	svcs := make([]api.ExternalService, 0, len(es))
-
-	for _, e := range es {
-		svc := api.ExternalService{
-			ID:          e.ID,
-			Kind:        e.Kind,
-			DisplayName: e.DisplayName,
-			Config:      e.Config,
-			CreatedAt:   e.CreatedAt,
-			UpdatedAt:   e.UpdatedAt,
-		}
-
-		if e.IsDeleted() {
-			svc.DeletedAt = e.DeletedAt
-		}
-
-		svcs = append(svcs, svc)
-	}
-
-	return svcs
-}
-
 func (s *Server) handleRepoUpdateSchedulerInfo(w http.ResponseWriter, r *http.Request) {
 	var args protocol.RepoUpdateSchedulerInfoArgs
 	if err := json.NewDecoder(r.Body).Decode(&args); err != nil {

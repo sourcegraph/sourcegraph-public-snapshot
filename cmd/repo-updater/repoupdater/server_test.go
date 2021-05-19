@@ -27,7 +27,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -279,32 +278,6 @@ func testServerEnqueueRepoUpdate(t *testing.T, store *repos.Store) func(t *testi
 			})
 		}
 	}
-}
-
-func apiExternalServices(es ...*types.ExternalService) []api.ExternalService {
-	if len(es) == 0 {
-		return nil
-	}
-
-	svcs := make([]api.ExternalService, 0, len(es))
-	for _, e := range es {
-		svc := api.ExternalService{
-			ID:          e.ID,
-			Kind:        e.Kind,
-			DisplayName: e.DisplayName,
-			Config:      e.Config,
-			CreatedAt:   e.CreatedAt,
-			UpdatedAt:   e.UpdatedAt,
-		}
-
-		if e.IsDeleted() {
-			svc.DeletedAt = e.DeletedAt
-		}
-
-		svcs = append(svcs, svc)
-	}
-
-	return svcs
 }
 
 func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore *repos.Store) func(t *testing.T) {
@@ -897,12 +870,4 @@ func (t testSource) WithAuthenticator(a auth.Authenticator) (repos.Source, error
 
 func (t testSource) ValidateAuthenticator(ctx context.Context) error {
 	return t.fn()
-}
-
-func formatJSON(s string) string {
-	formatted, err := jsonc.Format(s, nil)
-	if err != nil {
-		panic(err)
-	}
-	return formatted
 }
