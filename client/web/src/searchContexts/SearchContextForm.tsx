@@ -148,19 +148,6 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
         )
     }, [description, name, searchContext, selectedNamespace, visibility, hasRepositoriesConfigChanged])
 
-    const leavePromptMessage = 'Leave page? All unsaved changes will be lost.'
-    const onCancel = useCallback(() => {
-        if (hasChanges) {
-            if (window.confirm(leavePromptMessage)) {
-                history.push('/contexts')
-            }
-        } else {
-            history.push('/contexts')
-        }
-    }, [hasChanges, history])
-
-    useEffect(() => history.block(() => (hasChanges ? leavePromptMessage : undefined)), [history, hasChanges])
-
     const parseRepositories = useCallback(
         () =>
             of(parseConfig(repositoriesConfig)).pipe(
@@ -231,6 +218,23 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
             [onSubmit, parseRepositories, name, description, visibility, selectedNamespace, history, searchContext]
         )
     )
+
+    const leavePromptMessage = 'Leave page? All unsaved changes will be lost.'
+    const onCancel = useCallback(() => {
+        if (hasChanges) {
+            if (window.confirm(leavePromptMessage)) {
+                history.push('/contexts')
+            }
+        } else {
+            history.push('/contexts')
+        }
+    }, [hasChanges, history])
+
+    useEffect(() => history.block(() => (hasChanges && !searchContextOrError ? leavePromptMessage : undefined)), [
+        history,
+        hasChanges,
+        searchContextOrError,
+    ])
 
     return (
         <Form onSubmit={submitRequest}>
