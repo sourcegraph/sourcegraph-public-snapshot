@@ -1,8 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable jsx-a11y/no-noninteractive-element-interactions */
 import React from 'react'
 
@@ -11,8 +6,9 @@ import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { requestGraphQL } from '../backend/graphql'
 
 import { BloomFilterFuzzySearch, Indexing as FuzzyIndexing } from './BloomFilterFuzzySearch'
+import styles from './FuzzyModal.module.scss'
 import { FuzzySearch, FuzzySearchResult } from './FuzzySearch'
-import { HighlightedText, HighlightedTextProps } from './HighlightedText'
+import { HighlightedText } from './HighlightedText'
 import { useEphemeralState, useLocalStorage, State } from './useLocalStorage'
 
 const DEFAULT_MAX_RESULTS = 100
@@ -32,12 +28,12 @@ export interface FuzzyModalProps {
  * Similar to "Go to file" in VS Code or the "t" keyboard shortcut on github.com
  */
 export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
-    // NOTE(olafur): the query is cached in local storage to mimic IntelliJ.
-    // It' quite annoying in VS Code when it doesn't cache the "Go to symbol in
-    // workspace" query. For example, I can't count the times I have typed a
-    // query like "FilePro", browsed the results and want to update the query to
-    // become "FileProvider" but VS Code has forgotten the original query so I
-    // have to type it out from scratch again.
+    // NOTE: the query is cached in local storage to mimic IntelliJ.  It' quite
+    // annoying in VS Code when it doesn't cache the "Go to symbol in workspace"
+    // query. For example, I can't count the times I have typed a query like
+    // "FilePro", browsed the results and want to update the query to become
+    // "FileProvider" but VS Code has forgotten the original query so I have to
+    // type it out from scratch again.
     const query = useLocalStorage(`fuzzy-modal.query.${props.repoName}`, '')
 
     // The "focus index" is the index of the file result that the user has
@@ -59,9 +55,8 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
     // displayed filenames.  Cycles so that the user can press-hold the down
     // arrow and it goes all the way down and back up to the top result.
     function setRoundedFocusIndex(newNumber: number): void {
-        const max = files.results.length
-        const index = newNumber % max
-        const nextIndex = index < 0 ? max + index : index
+        const index = newNumber % files.resultsCount
+        const nextIndex = index < 0 ? files.resultsCount + index : index
         focusIndex.set(nextIndex)
         document.querySelector(`#fuzzy-modal-result-${nextIndex}`)?.scrollIntoView(false)
     }
@@ -86,11 +81,11 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
                 setRoundedFocusIndex(focusIndex.value - 10)
                 break
             case 'Enter':
-                if (focusIndex.value < files.results.length) {
-                    const url = files.results[focusIndex.value].url
-                    if (url) {
-                        window.location.href = url
-                    }
+                if (focusIndex.value < files.resultsCount) {
+                    const fileAnchor = document.querySelector<HTMLAnchorElement>(
+                        `#fuzzy-modal-result-${focusIndex.value} a`
+                    )
+                    fileAnchor?.click()
                 }
                 break
             default:
@@ -99,27 +94,24 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
 
     return (
         // Use 'onMouseDown' instead of 'onClick' to allow selecting the text and mouse up outside the modal
-        <div role="navigation" className="fuzzy-modal" onMouseDown={() => props.onClose()}>
-            <div role="navigation" className="fuzzy-modal-content" onMouseDown={event => event.stopPropagation()}>
-                <div className="fuzzy-modal-header">
-                    <div className="fuzzy-modal-cursor">
-                        <input
-                            autoComplete="off"
-                            id="fuzzy-modal-input"
-                            className="fuzzy-modal-input"
-                            value={query.value}
-                            onChange={event => {
-                                query.set(event.target.value)
-                                focusIndex.set(0)
-                            }}
-                            type="text"
-                            onKeyDown={onInputKeyDown}
-                        />
-                        <i />
-                    </div>
+        <div role="navigation" className={styles.modal} onMouseDown={() => props.onClose()}>
+            <div role="navigation" className={styles.content} onMouseDown={event => event.stopPropagation()}>
+                <div className={styles.header}>
+                    <input
+                        autoComplete="off"
+                        id="fuzzy-modal-input"
+                        className={styles.input}
+                        value={query.value}
+                        onChange={event => {
+                            query.set(event.target.value)
+                            focusIndex.set(0)
+                        }}
+                        type="text"
+                        onKeyDown={onInputKeyDown}
+                    />
                 </div>
-                <div className="fuzzy-modal-body">{files.element}</div>
-                <div className="fuzzy-modal-footer">
+                <div className={styles.body}>{files.element}</div>
+                <div className={styles.footer}>
                     <button type="button" className="btn btn-secondary" onClick={() => props.onClose()}>
                         Close
                     </button>
@@ -142,7 +134,7 @@ function fuzzyFooter(loaded: Loaded, files: RenderedFiles): JSX.Element {
         </>
     ) : (
         <>
-            <span>{plural('result', files.results.length, files.isComplete)}</span>
+            <span>{plural('result', files.resultsCount, files.isComplete)}</span>
             <span>
                 {loaded.key === 'indexing' && indexingProgressBar(loaded)}
                 {plural('total file', files.totalFileCount, true)}
@@ -208,7 +200,7 @@ interface Failed {
 
 interface RenderedFiles {
     element: JSX.Element
-    results: HighlightedTextProps[]
+    resultsCount: number
     isComplete: boolean
     totalFileCount: number
     elapsedMilliseconds?: number
@@ -230,14 +222,16 @@ function renderFiles(
     function empty(element: JSX.Element): RenderedFiles {
         return {
             element,
-            results: [],
+            resultsCount: 0,
             isComplete: true,
             totalFileCount: 0,
         }
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     function onError(what: string): (error: any) => void {
         return error => {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             error.what = what
             loaded.set({ key: 'failed', errorMessage: JSON.stringify(error) })
             throw new Error(what)
@@ -295,7 +289,7 @@ function renderReady(
     if (matchingFiles.length === 0) {
         return {
             element: <p>No files matching '{query.value}'</p>,
-            results: [],
+            resultsCount: 0,
             totalFileCount: fuzzy.totalFileCount,
             isComplete: fuzzyResult.isComplete,
         }
@@ -303,19 +297,20 @@ function renderReady(
     const filesToRender = matchingFiles.slice(0, maxResults.value)
     return {
         element: (
-            <ul className="fuzzy-modal-results">
+            <ul className={`${styles.results} text-monospace`}>
                 {filesToRender.map((file, fileIndex) => (
                     <li
                         id={`fuzzy-modal-result-${fileIndex}`}
                         key={file.text}
-                        className={fileIndex === focusIndex.value ? 'fuzzy-modal-focused' : ''}
+                        className={fileIndex === focusIndex.value ? styles.focused : ''}
                     >
-                        <HighlightedText value={file} />
+                        <HighlightedText {...file} />
                     </li>
                 ))}
                 {!fuzzyResult.isComplete && (
                     <li>
                         <button
+                            className="btn btn-seconday"
                             type="button"
                             onClick={() => {
                                 maxResults.set(maxResults.value + DEFAULT_MAX_RESULTS)
@@ -327,7 +322,7 @@ function renderReady(
                 )}
             </ul>
         ),
-        results: filesToRender,
+        resultsCount: filesToRender.length,
         totalFileCount: fuzzy.totalFileCount,
         isComplete: fuzzyResult.isComplete,
         elapsedMilliseconds: fuzzyResult.elapsedMilliseconds,
@@ -371,6 +366,7 @@ async function loadCachedIndex(props: FuzzyModalProps): Promise<Loaded | undefin
     if (!fromCache) {
         return undefined
     }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const filenames = JSON.parse(await fromCache.text())
     return handleFilenames(props, filenames)
 }
@@ -392,6 +388,7 @@ async function handleEmpty(props: FuzzyModalProps, files: State<Loaded>): Promis
     } else {
         files.set({ key: 'downloading' })
         try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const next: any = await requestGraphQL(
                 gql`
                     query Files($repository: String!, $commit: String!) {
@@ -411,6 +408,7 @@ async function handleEmpty(props: FuzzyModalProps, files: State<Loaded>): Promis
                     commit: props.commitID,
                 }
             ).toPromise()
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-return
             const filenames = next.data?.repository?.commit?.tree?.files?.map((file: any) => file.path) as
                 | string[]
                 | undefined
@@ -423,6 +421,7 @@ async function handleEmpty(props: FuzzyModalProps, files: State<Loaded>): Promis
             } else {
                 files.set({
                     key: 'failed',
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                     errorMessage: JSON.stringify(next.data),
                 })
             }

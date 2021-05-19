@@ -1,10 +1,15 @@
 /* eslint-disable */
 /**
- * ===============================================================
+ * ===================================================================================================
  * ORIGINAL LICENSE
  * https://github.com/jasondavies/bloomfilter.js/blob/649e43e60ded806a3f0d1ca88d6a42c6dffba2db/LICENSE
- * This file has been adapted toG
- * ===============================================================
+ * This file has been adapted from the original package to support emitting a
+ * stream of numbers instead of strings. A key component that makes the bloom
+ * filter approach possible for fuzzy file finding is that we can index all
+ * prefixes of a filename in O(n) time instead of O(n^2) if we had to insert
+ * each string prefix individually (where `n` is the length of the filename).
+ * See the Hasher.ts file for more details.
+ * ===================================================================================================
  * Copyright (c) 2018, Jason Davies
  * All rights reserved.
  *

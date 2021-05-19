@@ -1,5 +1,7 @@
 import React from 'react'
 
+import styles from './HighlightedText.module.scss'
+
 export interface RangePosition {
     startOffset: number
     endOffset: number
@@ -8,43 +10,28 @@ export interface RangePosition {
      */
     isExact: boolean
 }
-
-export class HighlightedTextProps {
-    constructor(
-        public readonly text: string,
-        public readonly positions: RangePosition[],
-        public readonly url?: string
-    ) {}
-    public offsetSum(): number {
-        let sum = 0
-        for (const position of this.positions) {
-            sum += position.startOffset
-        }
-        return sum
-    }
-    public exactCount(): number {
-        let result = 0
-        for (const position of this.positions) {
-            if (position.isExact) {
-                result++
-            }
-        }
-        return result
-    }
-    public isExact(): boolean {
-        return this.positions.length === 1 && this.positions[0].isExact
-    }
+export interface HighlightedTextProps {
+    text: string
+    positions: RangePosition[]
+    url?: string
 }
 
-export interface HighlightedTextPropsInstance {
-    value: HighlightedTextProps
+export function offsetSum(props: HighlightedTextProps): number {
+    let sum = 0
+    for (const position of props.positions) {
+        sum += position.startOffset
+    }
+    return sum
 }
 
 /**
- * React component that re
+ * React component that renders text with highlighted subranges.
+ *
+ * Used to render fuzzy finder results. For example, given the query "doc/read"
+ * we want to highlight 'Doc' and `READ' in the filename
+ * 'Documentation/README.md`.
  */
-export const HighlightedText: React.FunctionComponent<HighlightedTextPropsInstance> = propsInstance => {
-    const props = propsInstance.value
+export const HighlightedText: React.FunctionComponent<HighlightedTextProps> = props => {
     const spans: JSX.Element[] = []
     let start = 0
     function pushSpan(className: string, startOffset: number, endOffset: number): void {
@@ -62,20 +49,16 @@ export const HighlightedText: React.FunctionComponent<HighlightedTextPropsInstan
     }
     for (const position of props.positions) {
         if (position.startOffset > start) {
-            pushSpan('fuzzy-modal-plaintext', start, position.startOffset)
+            pushSpan('', start, position.startOffset)
         }
         start = position.endOffset
-        const classNameSuffix = position.isExact ? 'exact' : 'fuzzy'
-        pushSpan(
-            `fuzzy-modal-highlighted fuzzy-modal-highlighted-${classNameSuffix}`,
-            position.startOffset,
-            position.endOffset
-        )
+        const classNameSuffix = position.isExact ? styles.exact : styles.fuzzy
+        pushSpan(`${styles.highlighted} ${classNameSuffix}`, position.startOffset, position.endOffset)
     }
-    pushSpan('fuzzy-modal-plaintext', start, props.text.length)
+    pushSpan('', start, props.text.length)
 
     return props.url ? (
-        <a className="fuzzy-modal-link" href={props.url}>
+        <a className={styles.link} href={props.url}>
             {spans}
         </a>
     ) : (

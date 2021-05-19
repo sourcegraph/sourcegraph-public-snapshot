@@ -1,7 +1,7 @@
 import { BloomFilter } from './BloomFilter'
 import { FuzzySearch, FuzzySearchParameters, FuzzySearchResult } from './FuzzySearch'
 import { Hasher } from './Hasher'
-import { HighlightedTextProps, RangePosition } from './HighlightedText'
+import { HighlightedTextProps, offsetSum, RangePosition } from './HighlightedText'
 
 /**
  * We don't index filenames with length larger than this value.
@@ -132,7 +132,7 @@ export class BloomFilterFuzzySearch extends FuzzySearch {
                 return byLength
             }
 
-            const byEarliestMatch = a.offsetSum() - b.offsetSum()
+            const byEarliestMatch = offsetSum(a) - offsetSum(b)
             if (byEarliestMatch !== 0) {
                 return byEarliestMatch
             }
@@ -151,9 +151,11 @@ export class BloomFilterFuzzySearch extends FuzzySearch {
                 return complete(false)
             }
             for (const value of bucket.files) {
-                result.push(
-                    new HighlightedTextProps(value.text, [], query.createUrl ? query.createUrl(value.text) : undefined)
-                )
+                result.push({
+                    text: value.text,
+                    positions: [],
+                    url: query.createUrl ? query.createUrl(value.text) : undefined,
+                })
                 if (result.length > query.maxResults) {
                     return complete(false)
                 }
@@ -420,13 +422,11 @@ class Bucket {
         for (const file of this.files) {
             const positions = fuzzyMatches(queryParts, file.text)
             if (positions.length > 0) {
-                result.push(
-                    new HighlightedTextProps(
-                        file.text,
-                        positions,
-                        query.createUrl ? query.createUrl(file.text) : undefined
-                    )
-                )
+                result.push({
+                    text: file.text,
+                    positions,
+                    url: query.createUrl ? query.createUrl(file.text) : undefined,
+                })
             }
         }
         return { skipped: false, value: result }

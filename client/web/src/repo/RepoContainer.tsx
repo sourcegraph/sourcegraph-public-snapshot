@@ -394,7 +394,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                 {...KEYBOARD_SHORTCUT_FUZZY_FILES.keybindings[0]}
                 onMatch={() => {
                     setIsFuzzyModalVisible(true)
-                    const input = document.querySelector('#fuzzy-modal-input') as any
+                    const input = document.querySelector<HTMLInputElement>('#fuzzy-modal-input')
                     input?.focus()
                     input?.select()
                 }}
