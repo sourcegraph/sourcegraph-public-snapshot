@@ -4,26 +4,23 @@ import { noop } from 'rxjs'
 
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 
-import { useField, Validator } from '../../../../../components/form/hooks/useField'
+import { useField } from '../../../../../components/form/hooks/useField'
 import { SubmissionErrors, useForm } from '../../../../../components/form/hooks/useForm'
 import { useTitleValidator } from '../../../../../components/form/hooks/useTitleValidator'
-import { createRequiredValidator } from '../../../../../components/form/validators'
-import { DataSeries } from '../../../../../core/backend/types'
+import { Organization } from '../../../../../components/visibility-picker/VisibilityPicker'
 import { InsightTypePrefix } from '../../../../../core/types'
 import { CreateInsightFormFields } from '../../types'
 import { SearchInsightLivePreview } from '../live-preview-chart/SearchInsightLivePreview'
 import { SearchInsightCreationForm } from '../search-insight-creation-form/SearchInsightCreationForm'
 
+import { useEditableSeries } from './hooks/use-editable-series'
 import styles from './SearchInsightCreationContent.module.scss'
-
-const repositoriesFieldValidator = createRequiredValidator('Repositories is a required field.')
-const requiredStepValueField = createRequiredValidator('Please specify a step between points.')
-/**
- * Custom validator for chart series. Since series has complex type
- * we can't validate this with standard validators.
- * */
-const seriesRequired: Validator<DataSeries[]> = series =>
-    series && series.length > 0 ? undefined : 'Series is empty. You must have at least one series for code insight.'
+import {
+    repositoriesExistValidator,
+    repositoriesFieldValidator,
+    requiredStepValueField,
+    seriesRequired,
+} from './validators'
 
 const INITIAL_VALUES: CreateInsightFormFields = {
     visibility: 'personal',
@@ -39,6 +36,8 @@ export interface SearchInsightCreationContentProps {
     mode?: 'creation' | 'edit'
     /** Final settings cascade. Used for title field validation. */
     settings?: Settings | null
+    /** List of all user organizations */
+    organizations?: Organization[]
     /** Initial value for all form fields. */
     initialValue?: CreateInsightFormFields
     /** Custom class name for root form element. */
@@ -50,7 +49,15 @@ export interface SearchInsightCreationContentProps {
 }
 
 export const SearchInsightCreationContent: React.FunctionComponent<SearchInsightCreationContentProps> = props => {
-    const { mode = 'creation', settings, initialValue = INITIAL_VALUES, onSubmit, onCancel = noop, className } = props
+    const {
+        mode = 'creation',
+        organizations = [],
+        settings,
+        initialValue = INITIAL_VALUES,
+        onSubmit,
+        onCancel = noop,
+        className,
+    } = props
 
     const isEditMode = mode === 'edit'
 
@@ -63,19 +70,26 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
     // We can't have two or more insights with the same name, since we rely on name as on id of insights.
     const titleValidator = useTitleValidator({ settings, insightType: InsightTypePrefix.search })
 
-    const title = useField('title', formAPI, titleValidator)
-    const repositories = useField('repositories', formAPI, repositoriesFieldValidator)
+    const title = useField('title', formAPI, { sync: titleValidator })
+    const repositories = useField('repositories', formAPI, {
+        sync: repositoriesFieldValidator,
+        async: repositoriesExistValidator,
+    })
     const visibility = useField('visibility', formAPI)
 
-    const series = useField('series', formAPI, seriesRequired)
+    const series = useField('series', formAPI, { sync: seriesRequired })
     const step = useField('step', formAPI)
-    const stepValue = useField('stepValue', formAPI, requiredStepValueField)
+    const stepValue = useField('stepValue', formAPI, { sync: requiredStepValueField })
+
+    const { liveSeries, editSeries, listen, editRequest, editCommit, cancelEdit, deleteSeries } = useEditableSeries({
+        series,
+    })
 
     // If some fields that needed to run live preview  are invalid
     // we should disabled live chart preview
     const allFieldsForPreviewAreValid =
-        repositories.meta.validState === 'VALID' &&
-        series.meta.validState === 'VALID' &&
+        (repositories.meta.validState === 'VALID' || repositories.meta.validState === 'CHECKING') &&
+        (series.meta.validState === 'VALID' || liveSeries.length) &&
         stepValue.meta.validState === 'VALID'
 
     return (
@@ -90,16 +104,23 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
                 title={title}
                 repositories={repositories}
                 visibility={visibility}
+                organizations={organizations}
                 series={series}
                 step={step}
                 stepValue={stepValue}
+                onSeriesLiveChange={listen}
                 onCancel={onCancel}
+                editSeries={editSeries}
+                onEditSeriesRequest={editRequest}
+                onEditSeriesCancel={cancelEdit}
+                onEditSeriesCommit={editCommit}
+                onSeriesRemove={deleteSeries}
             />
 
             <SearchInsightLivePreview
                 disabled={!allFieldsForPreviewAreValid}
                 repositories={repositories.meta.value}
-                series={series.meta.value}
+                series={liveSeries}
                 step={step.meta.value}
                 stepValue={stepValue.meta.value}
                 className={styles.contentLivePreview}

@@ -87,7 +87,7 @@ func TestBulkOperationConnectionResolver(t *testing.T) {
 
 	nodes := []apitest.BulkOperation{
 		{
-			ID:        string(marshalBulkOperationID("group-1")),
+			ID:        string(marshalBulkOperationID("group-3")),
 			Type:      "COMMENT",
 			State:     string(btypes.BulkOperationStateProcessing),
 			Errors:    []*apitest.ChangesetJobError{},
@@ -101,7 +101,7 @@ func TestBulkOperationConnectionResolver(t *testing.T) {
 			CreatedAt: marshalDateTime(t, now),
 		},
 		{
-			ID:        string(marshalBulkOperationID("group-3")),
+			ID:        string(marshalBulkOperationID("group-1")),
 			Type:      "COMMENT",
 			State:     string(btypes.BulkOperationStateProcessing),
 			Errors:    []*apitest.ChangesetJobError{},
@@ -117,7 +117,7 @@ func TestBulkOperationConnectionResolver(t *testing.T) {
 		wantNodes       []apitest.BulkOperation
 	}{
 		{firstParam: 1, wantHasNextPage: true, wantEndCursor: "2", wantTotalCount: 3, wantNodes: nodes[:1]},
-		{firstParam: 2, wantHasNextPage: true, wantEndCursor: "3", wantTotalCount: 3, wantNodes: nodes[:2]},
+		{firstParam: 2, wantHasNextPage: true, wantEndCursor: "1", wantTotalCount: 3, wantNodes: nodes[:2]},
 		{firstParam: 3, wantHasNextPage: false, wantTotalCount: 3, wantNodes: nodes[:3]},
 	}
 

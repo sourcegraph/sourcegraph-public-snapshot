@@ -14,6 +14,7 @@ import {
     OnboardingTourProps,
     SearchContextInputProps,
 } from '..'
+import { VersionContext } from '../../schema/site.schema'
 import { submitSearch, QueryState } from '../helpers'
 
 import { SearchBox } from './SearchBox'
@@ -38,6 +39,8 @@ interface Props
     globbing: boolean
     enableSmartQuery: boolean
     isSearchAutoFocusRequired?: boolean
+    setVersionContext: (versionContext: string | undefined) => Promise<void>
+    availableVersionContexts: VersionContext[] | undefined
 }
 
 /**

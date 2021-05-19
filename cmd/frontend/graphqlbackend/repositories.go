@@ -6,8 +6,6 @@ import (
 	"time"
 
 	"github.com/google/zoekt"
-	"github.com/graph-gophers/graphql-go"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -15,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -270,41 +267,6 @@ func (r *repositoryConnectionResolver) PageInfo(ctx context.Context) (*graphqlut
 			Direction: r.opt.CursorDirection,
 		},
 	)), nil
-}
-
-// SetRepositoryEnabled is a deprecated in our API. However, as of Oct 2020 we
-// still have a customer integrating permissions via this mutation. Before
-// removing check with the distribution team.
-func (r *schemaResolver) SetRepositoryEnabled(ctx context.Context, args *struct {
-	Repository graphql.ID
-	Enabled    bool
-}) (*EmptyResponse, error) {
-	// 🚨 SECURITY: Only site admins can enable/disable repositories, because it's a site-wide
-	// and semi-destructive action.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
-	}
-
-	repo, err := r.repositoryByID(ctx, args.Repository)
-	if err != nil {
-		return nil, err
-	}
-
-	if !args.Enabled {
-		_, err := repoupdater.DefaultClient.ExcludeRepo(ctx, repo.IDInt32())
-		if err != nil {
-			return nil, errors.Wrapf(err, "repo-updater.exclude-repos")
-		}
-	}
-
-	// Trigger update when enabling.
-	if args.Enabled {
-		if _, err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, repo.RepoName()); err != nil {
-			return nil, err
-		}
-	}
-
-	return &EmptyResponse{}, nil
 }
 
 func repoNamesToStrings(repoNames []api.RepoName) []string {

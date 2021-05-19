@@ -8,11 +8,11 @@
         list-style: none;
         background-color: var(--color-bg-1);
         border: 1px solid var(--border-color);
-
         border-radius: 4px;
-        // TODO [VK] Copy color from dropdown menu replace by branded color
-        // class .dropdown-menu breaks Menu positioning in portal
-        box-shadow: 0 0 12px 0 rgba(0, 27, 76, 0.4);
+
+        // class .dropdown-menu brings position absolute and breaks
+        // Menu positioning in portal because of it we reset position
+        position: static;
     }
 
     &__item-button {

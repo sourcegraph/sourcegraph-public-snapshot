@@ -111,18 +111,6 @@ type Mutation {
     """
     deleteExternalService(externalService: ID!): EmptyResponse!
     """
-    DEPRECATED: All repositories are accessible or deleted. To prevent a
-    repository from being accessed on Sourcegraph add it to the external
-    service exclude configuration. This mutation will be removed in 3.6.
-
-    Enables or disables a repository. A disabled repository is only accessible
-    to site admins and never appears in search results.
-
-    Only site admins may perform this mutation.
-    """
-    setRepositoryEnabled(repository: ID!, enabled: Boolean!): EmptyResponse
-        @deprecated(reason: "update external service exclude setting.")
-    """
     Tests the connection to a mirror repository's original source repository. This is an
     expensive and slow operation, so it should only be used for interactive diagnostics.
 
