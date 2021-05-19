@@ -393,7 +393,16 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 	}
 }
 
-func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert {
+type ErrOverRepoLimit struct {
+	ProposedQueries []*searchQueryDescription
+	Description     string
+}
+
+func (e ErrOverRepoLimit) Error() string {
+	return "Too many matching repositories"
+}
+
+func (r *searchResolver) errorForOverRepoLimit(ctx context.Context) ErrOverRepoLimit {
 	// Try to suggest the most helpful repo: filters to narrow the query.
 	//
 	// For example, suppose the query contains "repo:kubern" and it matches > 30
@@ -416,19 +425,17 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert
 		description += " As a site admin, you can increase the limit by changing maxReposToSearch in site config."
 	}
 
-	buildAlert := func(proposedQueries []*searchQueryDescription, description string) *searchAlert {
-		return &searchAlert{
-			prometheusType:  "over_repo_limit",
-			title:           "Too many matching repositories",
-			proposedQueries: proposedQueries,
-			description:     description,
+	buildErr := func(proposedQueries []*searchQueryDescription, description string) ErrOverRepoLimit {
+		return ErrOverRepoLimit{
+			ProposedQueries: proposedQueries,
+			Description:     description,
 		}
 	}
 
 	// If globbing is active we return a simple alert for now. The alert is still
 	// helpful but it doesn't contain any proposed queries.
 	if getBoolPtr(r.UserSettings.SearchGlobbing, false) {
-		return buildAlert(proposedQueries, description)
+		return buildErr(proposedQueries, description)
 	}
 
 	q, err := query.ParseLiteral(r.rawQuery()) // Invariant: query is already validated; guard against error anyway.
@@ -436,7 +443,7 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert
 		// If the query is not basic, the assumptions that other logic
 		// makes to propose queries do not hold. Return a default alert
 		// without proposed queries.
-		return buildAlert(proposedQueries, description)
+		return buildErr(proposedQueries, description)
 	}
 
 	resolved, _ := r.resolveRepositories(ctx, nil)
@@ -472,7 +479,7 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert
 			if ctx.Err() != nil {
 				continue
 			} else if err != nil {
-				return buildAlert([]*searchQueryDescription{}, description)
+				return buildErr([]*searchQueryDescription{}, description)
 			}
 
 			var more string
@@ -511,7 +518,7 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert
 			}
 		}
 	}
-	return buildAlert(proposedQueries, description)
+	return buildErr(proposedQueries, description)
 }
 
 func alertForStructuralSearchNotSet(queryString string) *searchAlert {
@@ -697,9 +704,23 @@ func errorToAlert(err error) (*searchAlert, error) {
 		return alertForStalePermissions(), nil
 	}
 
-	e := git.BadCommitError{}
-	if errors.As(err, &e) {
-		return alertForInvalidRevision(e.Spec), nil
+	{
+		e := git.BadCommitError{}
+		if errors.As(err, &e) {
+			return alertForInvalidRevision(e.Spec), nil
+		}
+	}
+
+	{
+		e := ErrOverRepoLimit{}
+		if errors.As(err, &e) {
+			return &searchAlert{
+				prometheusType:  "over_repo_limit",
+				title:           "Too many matching repositories",
+				proposedQueries: e.ProposedQueries,
+				description:     e.Description,
+			}, nil
+		}
 	}
 
 	return nil, err

@@ -1320,8 +1320,7 @@ func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, st
 		return nil, alert, nil
 	}
 	if resolved.OverLimit {
-		alert := r.alertForOverRepoLimit(ctx)
-		return nil, alert, nil
+		return nil, nil, r.errorForOverRepoLimit(ctx)
 	}
 	return &resolved, nil, nil
 }

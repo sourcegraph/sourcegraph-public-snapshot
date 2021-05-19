@@ -369,7 +369,11 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 			if test.cancelContext {
 				cancel()
 			}
-			alert := sr.alertForOverRepoLimit(ctx)
+			alert, err := errorToAlert(sr.errorForOverRepoLimit(ctx))
+			if err != nil {
+				t.Fatalf("unexpected error: %s", err)
+			}
+
 
 			wantAlert := test.wantAlert
 			if !reflect.DeepEqual(alert, wantAlert) {
