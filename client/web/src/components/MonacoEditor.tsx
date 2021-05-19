@@ -140,8 +140,8 @@ monaco.editor.defineTheme(SOURCEGRAPH_DARK_REDESIGN, {
     inherit: true,
     colors: {
         ...darkColors,
-        background: '#1d212f',
-        'editor.background': '#1d212f',
+        background: '#181b26',
+        'editor.background': '#181b26',
     },
     rules: darkRules,
 })

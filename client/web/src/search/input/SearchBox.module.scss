@@ -15,6 +15,10 @@
         background-color: var(--input-bg);
         height: 100%;
 
+        :global(.theme-redesign) & {
+            background-color: var(--color-bg-1);
+        }
+
         &:first-child {
             border-top-left-radius: 3px;
             border-bottom-left-radius: 3px;
