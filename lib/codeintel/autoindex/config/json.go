@@ -3,8 +3,9 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/jsonx"
 )
 
 // default json behaviour is to render nil slices as "null", so we manually
@@ -44,8 +45,21 @@ func MarshalJSON(config IndexConfiguration) ([]byte, error) {
 
 func UnmarshalJSON(data []byte) (IndexConfiguration, error) {
 	configuration := IndexConfiguration{}
-	if err := jsonc.Unmarshal(string(data), &configuration); err != nil {
+	if err := jsonUnmarshal(string(data), &configuration); err != nil {
 		return IndexConfiguration{}, fmt.Errorf("invalid JSON: %v", err)
 	}
 	return configuration, nil
+}
+
+// jsonUnmarshal unmarshals the JSON using a fault-tolerant parser that allows comments
+// and trailing commas. If any unrecoverable faults are found, an error is returned.
+func jsonUnmarshal(text string, v interface{}) error {
+	data, errs := jsonx.Parse(text, jsonx.ParseOptions{Comments: true, TrailingCommas: true})
+	if len(errs) > 0 {
+		return fmt.Errorf("failed to parse JSON: %v", errs)
+	}
+	if strings.TrimSpace(text) == "" {
+		return nil
+	}
+	return json.Unmarshal(data, v)
 }

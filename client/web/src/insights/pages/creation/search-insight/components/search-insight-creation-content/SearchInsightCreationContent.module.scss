@@ -8,6 +8,9 @@
         order: 1;
         flex-grow: 1;
         flex-basis: 25rem;
+        // A hack to make flex box parent treat truncated flex child
+        // properly, see https://css-tricks.com/using-flexbox-and-text-ellipsis-together/
+        min-width: 0;
     }
 
     &__live-preview {

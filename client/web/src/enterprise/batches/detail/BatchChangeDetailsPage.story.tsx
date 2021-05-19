@@ -7,6 +7,8 @@ import { of } from 'rxjs'
 
 import {
     BatchChangeFields,
+    BulkOperationState,
+    BulkOperationType,
     ChangesetCheckState,
     ChangesetReviewState,
     ChangesetSpecType,
@@ -19,6 +21,7 @@ import {
     queryChangesets as _queryChangesets,
     queryExternalChangesetWithFileDiffs,
     queryChangesetCountsOverTime as _queryChangesetCountsOverTime,
+    queryBulkOperations as _queryBulkOperations,
 } from './backend'
 import { BatchChangeDetailsPage } from './BatchChangeDetailsPage'
 
@@ -68,6 +71,18 @@ const batchChangeDefaults: BatchChangeFields = {
     currentSpec: {
         originalInput: 'name: awesome-batch-changes\ndescription: somestring',
         supersedingBatchSpec: null,
+    },
+    bulkOperations: {
+        totalCount: 3,
+    },
+    activeBulkOperations: {
+        totalCount: 1,
+        nodes: [
+            {
+                id: 'testid-123',
+                state: BulkOperationState.PROCESSING,
+            },
+        ],
     },
     diffStat: { added: 1000, changed: 2000, deleted: 1000 },
 }
@@ -210,6 +225,74 @@ const queryEmptyExternalChangesetWithFileDiffs: typeof queryExternalChangesetWit
         },
     })
 
+const queryBulkOperations: typeof _queryBulkOperations = () =>
+    of({
+        totalCount: 3,
+        pageInfo: {
+            endCursor: null,
+            hasNextPage: false,
+        },
+        nodes: [
+            {
+                id: 'id1',
+                type: BulkOperationType.COMMENT,
+                state: BulkOperationState.PROCESSING,
+                errors: [],
+                progress: 0.25,
+                createdAt: subDays(now, 5).toISOString(),
+                finishedAt: null,
+                changesetCount: 100,
+                initiator: {
+                    url: '/users/alice',
+                    username: 'alice',
+                },
+            },
+            {
+                id: 'id2',
+                type: BulkOperationType.COMMENT,
+                state: BulkOperationState.COMPLETED,
+                errors: [],
+                progress: 1,
+                createdAt: subDays(now, 5).toISOString(),
+                finishedAt: subDays(now, 4).toISOString(),
+                changesetCount: 100,
+                initiator: {
+                    url: '/users/alice',
+                    username: 'alice',
+                },
+            },
+            {
+                id: 'id3',
+                type: BulkOperationType.COMMENT,
+                state: BulkOperationState.FAILED,
+                errors: [
+                    {
+                        changeset: {
+                            __typename: 'ExternalChangeset',
+                            externalURL: {
+                                url: 'https://test.test/my/pr',
+                            },
+                            repository: {
+                                name: 'sourcegraph/sourcegraph',
+                                url: '/github.com/sourcegraph/sourcegraph',
+                            },
+                            title: 'Changeset title on code host',
+                        },
+                        error: 'Failed to create comment, cannot comment on a PR that is awesome.',
+                    },
+                ],
+                progress: 1,
+                createdAt: subDays(now, 5).toISOString(),
+                finishedAt: subDays(now, 4).toISOString(),
+                changesetCount: 100,
+                initiator: {
+                    url: '/users/alice',
+                    username: 'alice',
+                },
+            },
+        ],
+    })
+
 const queryChangesetCountsOverTime: typeof _queryChangesetCountsOverTime = () =>
     of([
         {
@@ -281,6 +364,7 @@ const stories: Record<string, { url: string; supersededBatchSpec?: boolean }> = 
     'Burndown chart': { url: '/users/alice/batch-changes/awesome-batch-change?tab=chart' },
     'Spec file': { url: '/users/alice/batch-changes/awesome-batch-change?tab=spec' },
     Archived: { url: '/users/alice/batch-changes/awesome-batch-change?tab=archived' },
+    'Bulk operations': { url: '/users/alice/batch-changes/awesome-batch-change?tab=bulkoperations' },
     'Superseded batch-spec': { url: '/users/alice/batch-changes/awesome-batch-change', supersededBatchSpec: true },
 }
 
@@ -320,6 +404,7 @@ for (const [name, { url, supersededBatchSpec }] of Object.entries(stories)) {
                         queryChangesetCountsOverTime={queryChangesetCountsOverTime}
                         queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
                         deleteBatchChange={deleteBatchChange}
+                        queryBulkOperations={queryBulkOperations}
                         extensionsController={{} as any}
                         platformContext={{} as any}
                     />

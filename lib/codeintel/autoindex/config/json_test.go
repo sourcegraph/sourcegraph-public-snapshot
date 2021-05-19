@@ -78,3 +78,21 @@ func TestUnmarshalJSON(t *testing.T) {
 		t.Errorf("unexpected configuration (-want +got):\n%s", diff)
 	}
 }
+
+func TestJsonUnmarshal(t *testing.T) {
+	const input = `
+	{
+		// comment
+		/* another comment */
+		"hello": "world",
+	}`
+
+	var actual interface{}
+	if err := jsonUnmarshal(input, &actual); err != nil {
+		t.Fatalf("unexpected error unmarshalling payload: %s", err)
+	}
+
+	if diff := cmp.Diff(map[string]interface{}{"hello": "world"}, actual); diff != "" {
+		t.Errorf("unexpected configuration (-want +got):\n%s", diff)
+	}
+}

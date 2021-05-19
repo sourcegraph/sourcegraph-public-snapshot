@@ -8,11 +8,10 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/config"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
 
-func TestLSIFTscJobRecognizerCanIndex(t *testing.T) {
-	recognizer := lsifTscJobRecognizer{}
+func TestCanIndexTypeScriptRepo(t *testing.T) {
 	testCases := []struct {
 		paths    []string
 		expected bool
@@ -28,15 +27,14 @@ func TestLSIFTscJobRecognizerCanIndex(t *testing.T) {
 		name := strings.Join(testCase.paths, ", ")
 
 		t.Run(name, func(t *testing.T) {
-			if value := recognizer.CanIndexRepo(testCase.paths, NewMockGitserverClientWrapper()); value != testCase.expected {
+			if value := CanIndexTypeScriptRepo(NewMockGitClient(), testCase.paths); value != testCase.expected {
 				t.Errorf("unexpected result from CanIndex. want=%v have=%v", testCase.expected, value)
 			}
 		})
 	}
 }
 
-func TestLsifTscJobRecognizerInferIndexJobsTsConfigRoot(t *testing.T) {
-	recognizer := lsifTscJobRecognizer{}
+func TestInferTypeScriptIndexJobsTsConfigRoot(t *testing.T) {
 	paths := []string{
 		"tsconfig.json",
 	}
@@ -50,13 +48,12 @@ func TestLsifTscJobRecognizerInferIndexJobsTsConfigRoot(t *testing.T) {
 			Outfile:     "",
 		},
 	}
-	if diff := cmp.Diff(expectedIndexJobs, recognizer.InferIndexJobs(paths, NewMockGitserverClientWrapper())); diff != "" {
+	if diff := cmp.Diff(expectedIndexJobs, InferTypeScriptIndexJobs(NewMockGitClient(), paths)); diff != "" {
 		t.Errorf("unexpected index jobs (-want +got):\n%s", diff)
 	}
 }
 
-func TestLsifTscJobRecognizerInferIndexJobsTsConfigSubdirs(t *testing.T) {
-	recognizer := lsifTscJobRecognizer{}
+func TestInferTypeScriptIndexJobsTsConfigSubdirs(t *testing.T) {
 	paths := []string{
 		"a/tsconfig.json",
 		"b/tsconfig.json",
@@ -86,13 +83,12 @@ func TestLsifTscJobRecognizerInferIndexJobsTsConfigSubdirs(t *testing.T) {
 			Outfile:     "",
 		},
 	}
-	if diff := cmp.Diff(expectedIndexJobs, recognizer.InferIndexJobs(paths, NewMockGitserverClientWrapper())); diff != "" {
+	if diff := cmp.Diff(expectedIndexJobs, InferTypeScriptIndexJobs(NewMockGitClient(), paths)); diff != "" {
 		t.Errorf("unexpected index jobs (-want +got):\n%s", diff)
 	}
 }
 
-func TestLsifTscJobRecognizerInferIndexJobsInstallSteps(t *testing.T) {
-	recognizer := lsifTscJobRecognizer{}
+func TestInferTypeScriptIndexJobsInstallSteps(t *testing.T) {
 	paths := []string{
 		"tsconfig.json",
 		"package.json",
@@ -173,13 +169,12 @@ func TestLsifTscJobRecognizerInferIndexJobsInstallSteps(t *testing.T) {
 			Outfile:     "",
 		},
 	}
-	if diff := cmp.Diff(expectedIndexJobs, recognizer.InferIndexJobs(paths, NewMockGitserverClientWrapper())); diff != "" {
+	if diff := cmp.Diff(expectedIndexJobs, InferTypeScriptIndexJobs(NewMockGitClient(), paths)); diff != "" {
 		t.Errorf("unexpected index jobs (-want +got):\n%s", diff)
 	}
 }
 
-func TestLSIFTscJobRecognizerPatterns(t *testing.T) {
-	recognizer := lsifTscJobRecognizer{}
+func TestTypeScriptPatterns(t *testing.T) {
 	paths := []string{
 		"tsconfig.json",
 		"subdir/tsconfig.json",
@@ -187,7 +182,7 @@ func TestLSIFTscJobRecognizerPatterns(t *testing.T) {
 
 	for _, path := range paths {
 		match := false
-		for _, pattern := range recognizer.Patterns() {
+		for _, pattern := range TypeScriptPatterns() {
 			if pattern.MatchString(path) {
 				match = true
 				break
@@ -200,8 +195,8 @@ func TestLSIFTscJobRecognizerPatterns(t *testing.T) {
 	}
 }
 
-func TestLSIFTscLernaConfig(t *testing.T) {
-	mockGit := NewMockGitserverClientWrapper()
+func TestInferTypeScriptIndexJobsTscLernaConfig(t *testing.T) {
+	mockGit := NewMockGitClient()
 	// this is kinda tied to the order in which the impl calls them :(
 	{
 		mockGit.RawContentsFunc.PushReturn([]byte(`{"npmClient": "yarn"}`), nil)
@@ -216,8 +211,6 @@ func TestLSIFTscLernaConfig(t *testing.T) {
 		mockGit.RawContentsFunc.PushReturn([]byte(`{"npmClient": "yarn"}`), nil)
 		mockGit.RawContentsFunc.PushReturn([]byte(`{}`), nil)
 	}
-
-	recognizer := lsifTscJobRecognizer{}
 
 	paths := [][]string{
 		{
@@ -317,19 +310,17 @@ func TestLSIFTscLernaConfig(t *testing.T) {
 
 	for i, paths := range paths {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			if diff := cmp.Diff(expectedJobs[i], recognizer.InferIndexJobs(paths, mockGit)); diff != "" {
+			if diff := cmp.Diff(expectedJobs[i], InferTypeScriptIndexJobs(mockGit, paths)); diff != "" {
 				t.Errorf("unexpected index jobs (-want +got):\n%s", diff)
 			}
 		})
 	}
 }
 
-func TestLSIFTscNodeVersionInferrence(t *testing.T) {
-	mockGit := NewMockGitserverClientWrapper()
+func TestInferTypeScriptIndexJobsNodeVersionInferrence(t *testing.T) {
+	mockGit := NewMockGitClient()
 	mockGit.RawContentsFunc.PushReturn([]byte(""), nil)
 	mockGit.RawContentsFunc.PushReturn([]byte(`{"engines":{"node":"420"}}`), nil)
-
-	recognizer := lsifTscJobRecognizer{}
 
 	paths := [][]string{
 		{
@@ -383,7 +374,7 @@ func TestLSIFTscNodeVersionInferrence(t *testing.T) {
 	}
 
 	for i, paths := range paths {
-		if diff := cmp.Diff(expectedJobs[i], recognizer.InferIndexJobs(paths, mockGit)); diff != "" {
+		if diff := cmp.Diff(expectedJobs[i], InferTypeScriptIndexJobs(mockGit, paths)); diff != "" {
 			t.Errorf("unexpected index jobs (-want +got):\n%s", diff)
 		}
 	}

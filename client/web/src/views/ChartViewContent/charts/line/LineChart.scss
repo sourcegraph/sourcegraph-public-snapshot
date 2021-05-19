@@ -103,6 +103,7 @@
     &__legend-mark {
         width: 0.75rem;
         height: 0.75rem;
+        flex-shrink: 0;
         margin-right: 0.25rem;
         border-radius: 50%;
     }

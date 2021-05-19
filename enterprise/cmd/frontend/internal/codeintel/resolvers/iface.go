@@ -4,11 +4,12 @@ import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/config"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
 )
 
@@ -52,6 +53,10 @@ type LSIFStore interface {
 }
 
 type IndexEnqueuer interface {
-	ForceQueueIndex(ctx context.Context, repositoryID int) error
+	ForceQueueIndexesForRepository(ctx context.Context, repositoryID int) error
 	InferIndexConfiguration(ctx context.Context, repositoryID int) (*config.IndexConfiguration, error)
 }
+
+type RepoUpdaterClient = enqueuer.RepoUpdaterClient
+type EnqueuerDBStore = enqueuer.DBStore
+type EnqueuerGitserverClient = enqueuer.GitserverClient

@@ -8,14 +8,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	protocol "github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 )
-
-type Enqueuer interface {
-	QueueIndex(ctx context.Context, repositoryID int) (err error)
-	ForceQueueIndex(ctx context.Context, repositoryID int) (err error)
-	QueueIndexesForPackages(ctx context.Context, packages []semantic.PackageReference) error
-}
 
 type DBStore interface {
 	basestore.ShareableStore
@@ -49,10 +43,40 @@ func (db *DBStoreShim) Transact(ctx context.Context) (DBStore, error) {
 
 var _ DBStore = &DBStoreShim{}
 
+type RepoUpdaterClient interface {
+	EnqueueRepoUpdate(ctx context.Context, repo api.RepoName) (*protocol.RepoUpdateResponse, error)
+}
+
 type GitserverClient interface {
 	Head(ctx context.Context, repositoryID int) (string, error)
 	ListFiles(ctx context.Context, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error)
 	FileExists(ctx context.Context, repositoryID int, commit, file string) (bool, error)
 	RawContents(ctx context.Context, repositoryID int, commit, file string) ([]byte, error)
 	ResolveRevision(ctx context.Context, repositoryID int, versionString string) (api.CommitID, error)
+}
+
+type gitClient struct {
+	client       GitserverClient
+	repositoryID int
+	commit       string
+}
+
+func newGitClient(client GitserverClient, repositoryID int, commit string) gitClient {
+	return gitClient{
+		client:       client,
+		repositoryID: repositoryID,
+		commit:       commit,
+	}
+}
+
+func (s gitClient) ListFiles(ctx context.Context, pattern *regexp.Regexp) ([]string, error) {
+	return s.client.ListFiles(ctx, s.repositoryID, s.commit, pattern)
+}
+
+func (s gitClient) FileExists(ctx context.Context, file string) (bool, error) {
+	return s.client.FileExists(ctx, s.repositoryID, s.commit, file)
+}
+
+func (s gitClient) RawContents(ctx context.Context, file string) ([]byte, error) {
+	return s.client.RawContents(ctx, s.repositoryID, s.commit, file)
 }

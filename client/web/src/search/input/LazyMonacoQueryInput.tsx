@@ -1,11 +1,9 @@
 import React, { Suspense } from 'react'
 
 import { lazyComponent } from '../../util/lazyComponent'
-import { submitSearch } from '../helpers'
 
+import styles from './LazyMonacoQueryInput.module.scss'
 import { MonacoQueryInputProps } from './MonacoQueryInput'
-import { SearchContextDropdown } from './SearchContextDropdown'
-import { Toggles } from './toggles/Toggles'
 
 const MonacoQueryInput = lazyComponent(() => import('./MonacoQueryInput'), 'MonacoQueryInput')
 
@@ -13,12 +11,9 @@ const MonacoQueryInput = lazyComponent(() => import('./MonacoQueryInput'), 'Mona
  * A plain query input displayed during lazy-loading of the MonacoQueryInput.
  * It has no suggestions, but still allows to type in and submit queries.
  */
-export const PlainQueryInput: React.FunctionComponent<MonacoQueryInputProps> = ({
-    queryState,
-    autoFocus,
-    onChange,
-    ...props
-}) => {
+export const PlainQueryInput: React.FunctionComponent<
+    Pick<MonacoQueryInputProps, 'queryState' | 'autoFocus' | 'onChange'>
+> = ({ queryState, autoFocus, onChange }) => {
     const onInputChange = React.useCallback(
         (event: React.ChangeEvent<HTMLInputElement>) => {
             onChange({ query: event.target.value })
@@ -26,24 +21,14 @@ export const PlainQueryInput: React.FunctionComponent<MonacoQueryInputProps> = (
         [onChange]
     )
     return (
-        <div className="query-input2 d-flex">
-            {props.showSearchContext && (
-                <div className="query-input2__search-context-dropdown-container">
-                    <SearchContextDropdown {...props} submitSearch={submitSearch} query={queryState.query} />
-                </div>
-            )}
-            <input
-                type="text"
-                autoFocus={autoFocus}
-                className="form-control text-code lazy-monaco-query-input--intermediate-input"
-                value={queryState.query}
-                onChange={onInputChange}
-                spellCheck={false}
-            />
-            <div className="query-input2__toggle-container">
-                <Toggles {...props} navbarSearchQuery={queryState.query} />
-            </div>
-        </div>
+        <input
+            type="text"
+            autoFocus={autoFocus}
+            className={`form-control text-code ${styles.lazyMonacoQueryInputIntermediateInput}`}
+            value={queryState.query}
+            onChange={onInputChange}
+            spellCheck={false}
+        />
     )
 }
 

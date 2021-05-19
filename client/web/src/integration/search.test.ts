@@ -181,11 +181,11 @@ describe('Search', () => {
                 newText: '-repo',
                 enterTextMethod: 'type',
             })
-            await driver.page.waitForSelector('.monaco-query-input-container .suggest-widget.visible')
+            await driver.page.waitForSelector('.monaco-query-input .suggest-widget.visible')
             await driver.findElementWithText('-repo', {
                 action: 'click',
                 wait: { timeout: 5000 },
-                selector: '.monaco-query-input-container .suggest-widget.visible span',
+                selector: '.monaco-query-input .suggest-widget.visible span',
             })
             expect(await getSearchFieldValue(driver)).toStrictEqual('-repo:')
         })
@@ -233,11 +233,11 @@ describe('Search', () => {
                 newText: 'go-jwt-middlew',
                 enterTextMethod: 'type',
             })
-            await driver.page.waitForSelector('.monaco-query-input-container .suggest-widget.visible')
+            await driver.page.waitForSelector('.monaco-query-input .suggest-widget.visible')
             await driver.findElementWithText('github.com/auth0/go-jwt-middleware', {
                 action: 'click',
                 wait: { timeout: 5000 },
-                selector: '.monaco-query-input-container .suggest-widget.visible a.label-name',
+                selector: '.monaco-query-input .suggest-widget.visible a.label-name',
             })
             expect(await getSearchFieldValue(driver)).toStrictEqual('repo:^github\\.com/auth0/go-jwt-middleware$ ')
 
@@ -248,9 +248,9 @@ describe('Search', () => {
             await driver.page.waitForSelector('#monaco-query-input')
             await driver.page.focus('#monaco-query-input')
             await driver.page.keyboard.type('jwtmi')
-            await driver.page.waitForSelector('.monaco-query-input-container .suggest-widget.visible')
+            await driver.page.waitForSelector('.monaco-query-input .suggest-widget.visible')
             await driver.findElementWithText('jwtmiddleware.go', {
-                selector: '.monaco-query-input-container .suggest-widget.visible span',
+                selector: '.monaco-query-input .suggest-widget.visible span',
                 wait: { timeout: 5000 },
             })
             await driver.page.keyboard.press(Key.Tab)
@@ -260,9 +260,9 @@ describe('Search', () => {
 
             // Symbol autocomplete in top search bar
             await driver.page.keyboard.type('On')
-            await driver.page.waitForSelector('.monaco-query-input-container .suggest-widget.visible')
+            await driver.page.waitForSelector('.monaco-query-input .suggest-widget.visible')
             await driver.findElementWithText('OnError', {
-                selector: '.monaco-query-input-container .suggest-widget.visible span',
+                selector: '.monaco-query-input .suggest-widget.visible span',
                 wait: { timeout: 5000 },
             })
         })

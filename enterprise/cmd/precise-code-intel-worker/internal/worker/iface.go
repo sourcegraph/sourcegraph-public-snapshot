@@ -73,3 +73,7 @@ type GitserverClient interface {
 	CommitDate(ctx context.Context, repositoryID int, commit string) (time.Time, error)
 	ResolveRevision(ctx context.Context, repositoryID int, versionString string) (api.CommitID, error)
 }
+
+type IndexEnqueuer interface {
+	QueueIndexesForPackage(ctx context.Context, pkg semantic.Package) error
+}

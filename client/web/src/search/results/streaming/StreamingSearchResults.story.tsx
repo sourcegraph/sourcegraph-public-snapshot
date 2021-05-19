@@ -65,7 +65,7 @@ const defaultProps: StreamingSearchResultsProps = {
 }
 
 const { add } = storiesOf('web/search/results/streaming/StreamingSearchResults', module).addParameters({
-    chromatic: { viewports: [769, 993] },
+    chromatic: { viewports: [577, 769, 993] },
 })
 
 add('standard render', () => <WebStory>{() => <StreamingSearchResults {...defaultProps} />}</WebStory>)
