@@ -655,8 +655,8 @@ func capFirst(s string) string {
 func alertForError(err error, inputs *run.SearchInputs) *searchAlert {
 	var (
 		alert *searchAlert
-		rErr  *RepoLimitError
-		tErr  *TimeLimitError
+		rErr  *run.RepoLimitError
+		tErr  *run.TimeLimitError
 		mErr  *missingRepoRevsError
 	)
 
