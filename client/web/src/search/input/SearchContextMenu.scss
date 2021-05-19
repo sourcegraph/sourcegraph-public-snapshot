@@ -47,10 +47,6 @@
             overflow: hidden;
             text-overflow: ellipsis;
             flex-shrink: 0;
-
-            .theme-redesign & {
-                @extend .font-weight-medium;
-            }
         }
 
         &-description {
