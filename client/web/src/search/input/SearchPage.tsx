@@ -104,9 +104,7 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
     return (
         <div className="web-content search-page d-flex flex-column align-items-center pb-5 px-3">
             <BrandLogo className="search-page__logo" isLightTheme={props.isLightTheme} variant="logo" />
-            {props.isSourcegraphDotCom && (
-                <div className="text-muted text-center mt-3">Public code search, insights, and automation</div>
-            )}
+            {props.isSourcegraphDotCom && <div className="text-muted text-center mt-3">Search public code</div>}
             <div
                 className={classNames('search-page__search-container', {
                     'search-page__search-container--with-content-below':
