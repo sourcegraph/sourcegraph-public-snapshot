@@ -27,7 +27,7 @@ import {
     BatchChangeTabPanel,
     BatchChangeTabPanels,
     BatchChangeTabs,
-    BatchChangeTabsList,
+    BatchChangeTabList,
 } from '../BatchChangeTabs'
 import { BatchSpec, BatchSpecDownloadLink, BatchSpecMeta } from '../BatchSpec'
 import { Description } from '../Description'
@@ -188,8 +188,8 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
             />
             <Description description={batchChange.description} />
             <BatchChangeTabs history={history} location={location} tabNames={TAB_NAME_VALUES}>
-                <BatchChangeTabsList>
                     <BatchChangeTab index={0}>
+                <BatchChangeTabList>
                         <SourceBranchIcon className="icon-inline text-muted mr-1" />
                         Changesets{' '}
                         <span className="badge badge-pill badge-secondary ml-1">
@@ -214,7 +214,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                             {batchChange.bulkOperations.totalCount}
                         </span>
                     </BatchChangeTab>
-                </BatchChangeTabsList>
+                </BatchChangeTabList>
                 <BatchChangeTabPanels>
                     <BatchChangeTabPanel>
                         <BatchChangeChangesets

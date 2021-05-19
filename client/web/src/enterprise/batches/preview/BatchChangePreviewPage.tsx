@@ -21,7 +21,7 @@ import {
     BatchChangeTabPanel,
     BatchChangeTabPanels,
     BatchChangeTabs,
-    BatchChangeTabsList,
+    BatchChangeTabList,
 } from '../BatchChangeTabs'
 import { BatchSpec, BatchSpecDownloadLink } from '../BatchSpec'
 import { Description } from '../Description'
@@ -124,8 +124,8 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
             />
             <Description description={spec.description.description} />
             <BatchChangeTabs history={history} location={location} tabNames={TAB_NAMES}>
-                <BatchChangeTabsList>
                     <BatchChangeTab index={0}>
+                <BatchChangeTabList>
                         <SourceBranchIcon className="icon-inline text-muted mr-1" />
                         Changesets{' '}
                         <span className="badge badge-pill badge-secondary ml-1">{spec.applyPreview.totalCount}</span>
@@ -133,7 +133,7 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
                     <BatchChangeTab index={1}>
                         <FileDocumentIcon className="icon-inline text-muted mr-1" /> Spec
                     </BatchChangeTab>
-                </BatchChangeTabsList>
+                </BatchChangeTabList>
                 <BatchChangeTabPanels>
                     <BatchChangeTabPanel>
                         <PreviewList
