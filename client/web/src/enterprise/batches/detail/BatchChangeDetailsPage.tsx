@@ -1,6 +1,6 @@
 import { subDays } from 'date-fns'
 import * as H from 'history'
-import { isEqual, values } from 'lodash'
+import { isEqual } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import ArchiveIcon from 'mdi-react/ArchiveIcon'
 import ChartLineVariantIcon from 'mdi-react/ChartLineVariantIcon'
@@ -52,15 +52,13 @@ import { ClosedNotice } from './ClosedNotice'
 import { SupersedingBatchSpecAlert } from './SupersedingBatchSpecAlert'
 import { UnpublishedNotice } from './UnpublishedNotice'
 
-export const TAB_NAMES = {
-    changesets: 'changesets',
-    chart: 'chart',
-    spec: 'spec',
-    archived: 'archived',
-    bulkOperations: 'bulkoperations',
-} as const
-
-const TAB_NAME_VALUES = values(TAB_NAMES) as [string, string, ...string[]]
+export enum TabName {
+    Changesets = 'changesets',
+    Chart = 'chart',
+    Spec = 'spec',
+    Archived = 'archived',
+    BulkOperations = 'bulkoperations',
+}
 
 export interface BatchChangeDetailsPageProps
     extends ThemeProps,
@@ -187,28 +185,28 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                 className="mb-3"
             />
             <Description description={batchChange.description} />
-            <BatchChangeTabs history={history} location={location} tabNames={TAB_NAME_VALUES}>
-                    <BatchChangeTab index={0}>
+            <BatchChangeTabs history={history} location={location}>
                 <BatchChangeTabList>
+                    <BatchChangeTab index={0} name={TabName.Changesets}>
                         <SourceBranchIcon className="icon-inline text-muted mr-1" />
                         Changesets{' '}
                         <span className="badge badge-pill badge-secondary ml-1">
                             {batchChange.changesetsStats.total - batchChange.changesetsStats.archived}
                         </span>
                     </BatchChangeTab>
-                    <BatchChangeTab index={1}>
+                    <BatchChangeTab index={1} name={TabName.Chart}>
                         <ChartLineVariantIcon className="icon-inline text-muted mr-1" /> Burndown chart
                     </BatchChangeTab>
-                    <BatchChangeTab index={2}>
+                    <BatchChangeTab index={2} name={TabName.Spec}>
                         <FileDocumentIcon className="icon-inline text-muted mr-1" /> Spec
                     </BatchChangeTab>
-                    <BatchChangeTab index={3}>
+                    <BatchChangeTab index={3} name={TabName.Archived}>
                         <ArchiveIcon className="icon-inline text-muted mr-1" /> Archived{' '}
                         <span className="badge badge-pill badge-secondary ml-1">
                             {batchChange.changesetsStats.archived}
                         </span>
                     </BatchChangeTab>
-                    <BatchChangeTab index={4}>
+                    <BatchChangeTab index={4} name={TabName.BulkOperations}>
                         <MonitorStarIcon className="icon-inline text-muted mr-1" /> Bulk operations{' '}
                         <span className="badge badge-pill badge-secondary ml-1">
                             {batchChange.bulkOperations.totalCount}
