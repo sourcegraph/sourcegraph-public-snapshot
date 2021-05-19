@@ -46,6 +46,7 @@ All notable changes to Sourcegraph are documented in this file.
 - An issue causing diff and commit results with file filters to return invalid results. [#21039](https://github.com/sourcegraph/sourcegraph/pull/21039)
 - All databases now have the Kubernetes Quality of Service class of 'Guaranteed' which should reduce the chance of them
   being evicted during NodePressure events. [#2900](https://github.com/sourcegraph/deploy-sourcegraph/pull/2900)
+- An issue causing diff views to display without syntax highlighting [#21160](https://github.com/sourcegraph/sourcegraph/pull/21160)
 
 ### Removed
 
