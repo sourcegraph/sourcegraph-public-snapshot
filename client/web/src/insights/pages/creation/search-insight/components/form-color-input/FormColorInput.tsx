@@ -1,7 +1,7 @@
 import classnames from 'classnames'
 import { startCase } from 'lodash'
 import openColor from 'open-color'
-import React, { ChangeEventHandler } from 'react'
+import React, { ChangeEventHandler, memo } from 'react'
 import { noop } from 'rxjs'
 
 import styles from './FormColorInput.module.scss'
@@ -28,7 +28,7 @@ const DEFAULT_COLOURS = Object.keys(openColor)
 export const DEFAULT_ACTIVE_COLOR = 'var(--oc-grape-7)'
 
 /** Displays custom radio group for picking color of code insight chart line. */
-export const FormColorInput: React.FunctionComponent<FormColorInputProps> = props => {
+export const FormColorInput: React.FunctionComponent<FormColorInputProps> = memo(props => {
     const { className, value = null, title, name, colours = DEFAULT_COLOURS, onChange = noop } = props
 
     return (
@@ -60,4 +60,4 @@ export const FormColorInput: React.FunctionComponent<FormColorInputProps> = prop
             </div>
         </fieldset>
     )
-}
+})

@@ -12,6 +12,10 @@
             padding-right: 1rem;
             margin-top: 0.25rem;
         }
+
+        &-close {
+            color: var(--icon-color);
+        }
     }
 
     &-git-commit-node {

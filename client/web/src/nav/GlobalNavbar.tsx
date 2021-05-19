@@ -37,6 +37,7 @@ import {
     KEYBOARD_SHORTCUT_SWITCH_THEME,
 } from '../keyboardShortcuts/keyboardShortcuts'
 import { LayoutRouteProps } from '../routes'
+import { Settings } from '../schema/settings.schema'
 import { VersionContext } from '../schema/site.schema'
 import {
     PatternTypeProps,
@@ -56,10 +57,9 @@ import { showDotComMarketing } from '../util/features'
 
 import { NavLinks } from './NavLinks'
 import { ExtensionAlertAnimationProps, UserNavItem } from './UserNavItem'
-import { VersionContextDropdown } from './VersionContextDropdown'
 
 interface Props
-    extends SettingsCascadeProps,
+    extends SettingsCascadeProps<Settings>,
         PlatformContextProps,
         ExtensionsControllerProps,
         KeyboardShortcutsProps,
@@ -123,9 +123,6 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     authRequired,
     showSearchBox,
     navbarSearchQueryState,
-    versionContext,
-    setVersionContext,
-    availableVersionContexts,
     caseSensitive,
     patternType,
     onNavbarQueryChange,
@@ -226,7 +223,6 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
             onChange={onNavbarQueryChange}
             location={location}
             history={history}
-            versionContext={versionContext}
             isLightTheme={isLightTheme}
             patternType={patternType}
             caseSensitive={caseSensitive}
@@ -355,27 +351,20 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                                             props.settingsCascade.final?.['alerts.codeHostIntegrationMessaging']) ||
                                         'browser-extension'
                                     }
+                                    showRedesignToggle={
+                                        !isErrorLike(props.settingsCascade.final) &&
+                                        Boolean(
+                                            props.settingsCascade.final?.experimentalFeatures
+                                                ?.designRefreshToggleEnabled
+                                        )
+                                    }
                                     keyboardShortcutForSwitchTheme={KEYBOARD_SHORTCUT_SWITCH_THEME}
                                 />
                             </NavAction>
                         )}
                     </NavActions>
                 </NavBar>
-                {showSearchBox && (
-                    <div className="d-flex w-100 flex-row px-3 py-2 border-bottom">
-                        <VersionContextDropdown
-                            history={history}
-                            navbarSearchQuery={navbarSearchQueryState.query}
-                            caseSensitive={caseSensitive}
-                            patternType={patternType}
-                            versionContext={versionContext}
-                            setVersionContext={setVersionContext}
-                            availableVersionContexts={availableVersionContexts}
-                            selectedSearchContextSpec={props.selectedSearchContextSpec}
-                        />
-                        {searchNavBar}
-                    </div>
-                )}
+                {showSearchBox && <div className="d-flex w-100 flex-row px-3 py-2 border-bottom">{searchNavBar}</div>}
             </>
         )
     }
@@ -411,16 +400,6 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                         <div className="flex-1" />
                     ) : (
                         <div className="global-navbar__search-box-container d-none d-sm-flex flex-row">
-                            <VersionContextDropdown
-                                history={history}
-                                navbarSearchQuery={navbarSearchQueryState.query}
-                                caseSensitive={caseSensitive}
-                                patternType={patternType}
-                                versionContext={versionContext}
-                                setVersionContext={setVersionContext}
-                                availableVersionContexts={availableVersionContexts}
-                                selectedSearchContextSpec={props.selectedSearchContextSpec}
-                            />
                             {searchNavBar}
                         </div>
                     )}

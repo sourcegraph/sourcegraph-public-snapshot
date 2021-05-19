@@ -196,6 +196,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
     )
 
     const [isRedesignEnabled] = useRedesignToggle()
+    const [showSidebar, setShowSidebar] = useState(false)
 
     const infobar = (
         <SearchResultsInfoBar
@@ -210,6 +211,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
             allExpanded={allExpanded}
             onExpandAllResultsToggle={onExpandAllResultsToggle}
             onSaveQueryClick={onSaveQueryClick}
+            onShowFiltersChanged={show => setShowSidebar(show)}
             stats={
                 <StreamingProgress
                     progress={results?.progress || { durationMs: 0, matchCount: 0, skipped: [] }}
@@ -229,7 +231,10 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                 <>
                     <SearchSidebar
                         {...props}
-                        className={styles.streamingSearchResultsSidebar}
+                        className={classNames(
+                            styles.streamingSearchResultsSidebar,
+                            showSidebar && styles.streamingSearchResultsSidebarShow
+                        )}
                         query={props.navbarSearchQueryState.query}
                         filters={results?.filters}
                     />

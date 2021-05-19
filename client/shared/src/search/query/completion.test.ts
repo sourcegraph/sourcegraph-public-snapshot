@@ -312,6 +312,8 @@ describe('getCompletionItems()', () => {
               "C#",
               "CSS",
               "Dart",
+              "Elixir",
+              "Erlang",
               "Go",
               "GraphQL",
               "Haskell",

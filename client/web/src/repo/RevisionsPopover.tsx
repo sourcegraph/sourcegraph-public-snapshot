@@ -151,20 +151,24 @@ const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({ node, curr
         <li key={node.oid} className="connection-popover__node revisions-popover-git-commit-node">
             <Link
                 to={replaceRevisionInURL(location.pathname + location.search + location.hash, node.oid)}
-                className={`connection-popover__node-link ${
-                    isCurrent ? 'connection-popover__node-link--active' : ''
-                } revisions-popover-git-commit-node__link`}
-            >
-                <code className="revisions-popover-git-commit-node__oid" title={node.oid}>
-                    {node.abbreviatedOID}
-                </code>
-                <small className="revisions-popover-git-commit-node__message">{node.subject.slice(0, 200)}</small>
-                {isCurrent && (
-                    <CircleChevronLeftIcon
-                        className="icon-inline connection-popover__node-link-icon"
-                        data-tooltip="Current commit"
-                    />
+                className={classNames(
+                    'connection-popover__node-link',
+                    isCurrent && 'connection-popover__node-link--active',
+                    'revisions-popover-git-commit-node__link'
                 )}
+            >
+                <span>
+                    <code className="revisions-popover-git-commit-node__oid" title={node.oid}>
+                        {node.abbreviatedOID}
+                    </code>
+                    <small className="revisions-popover-git-commit-node__message">{node.subject.slice(0, 200)}</small>
+                    {isCurrent && (
+                        <CircleChevronLeftIcon
+                            className="icon-inline connection-popover__node-link-icon"
+                            data-tooltip="Current commit"
+                        />
+                    )}
+                </span>
             </Link>
         </li>
     )
@@ -237,7 +241,7 @@ export const RevisionsPopover: React.FunctionComponent<Props> = props => {
         className: 'connection-popover__content',
         inputClassName: 'connection-popover__input',
         listClassName: 'connection-popover__nodes',
-        showMoreClassName: 'connection-popover__show-more',
+        showMoreClassName: isRedesignEnabled ? '' : 'connection-popover__show-more',
         inputPlaceholder: 'Find...',
         compact: true,
         autoFocus: true,
@@ -257,7 +261,12 @@ export const RevisionsPopover: React.FunctionComponent<Props> = props => {
                         </Tab>
                     ))}
                 </TabList>
-                <button onClick={props.togglePopover} type="button" className="btn btn-icon" aria-label="Close">
+                <button
+                    onClick={props.togglePopover}
+                    type="button"
+                    className="btn btn-icon revisions-popover__tabs-close"
+                    aria-label="Close"
+                >
                     <CloseIcon className="icon-inline" />
                 </button>
             </div>
