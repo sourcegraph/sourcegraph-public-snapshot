@@ -17,6 +17,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -25,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 type searchAlert struct {
@@ -99,14 +101,6 @@ func alertForTimeout(usedTime time.Duration, suggestTime time.Duration, r *searc
 				patternType: r.PatternType,
 			},
 		},
-	}
-}
-
-func alertForStalePermissions() *searchAlert {
-	return &searchAlert{
-		prometheusType: "no_resolved_repos__stale_permissions",
-		title:          "Permissions syncing in progress",
-		description:    "Permissions are being synced from your code host, please wait for a minute and try again.",
 	}
 }
 
@@ -399,14 +393,6 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 	}
 }
 
-func (r *searchResolver) alertForInvalidRevision(revision string) *searchAlert {
-	revision = strings.TrimSuffix(revision, "^0")
-	return &searchAlert{
-		title:       "Invalid revision syntax",
-		description: fmt.Sprintf("We don't know how to interpret the revision (%s) you specified. Learn more about the revision syntax in our documentation: https://docs.sourcegraph.com/code_search/reference/queries#repository-revisions.", revision),
-	}
-}
-
 func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert {
 	// Try to suggest the most helpful repo: filters to narrow the query.
 	//
@@ -693,6 +679,74 @@ func alertForError(err error) *searchAlert {
 		}
 	}
 	return alert
+}
+
+// errorToAlert is intended to be a catch-all function for converting all errors into alerts.
+// The intent here is to create alerts as close to the API boundary as possible, so this should be called
+// immediately before creating the SearchResultsResolver.
+func errorToAlert(err error) (*searchAlert, error) {
+	if err == nil {
+		return nil, nil
+	}
+
+	if me, ok := err.(*multierror.Error); ok {
+		return multierrorToAlert(me)
+	}
+
+	if errors.Is(err, authz.ErrStalePermissions{}) {
+		return alertForStalePermissions(), nil
+	}
+
+	e := git.BadCommitError{}
+	if errors.As(err, &e) {
+		return alertForInvalidRevision(e.Spec), nil
+	}
+
+	return nil, err
+}
+
+func maxAlertByPriority(a, b *searchAlert) *searchAlert {
+	if a == nil {
+		return b
+	}
+	if b == nil {
+		return a
+	}
+
+	if a.priority < b.priority {
+		return b
+	}
+
+	return a
+}
+
+// multierrorToAlert converts a multierror.Error into the highest priority alert
+// for the errors contained in it, and a new error with all the errors that could
+// not be converted to alerts.
+func multierrorToAlert(me *multierror.Error) (resAlert *searchAlert, resErr error) {
+	for _, err := range me.Errors {
+		alert, err := errorToAlert(err)
+		resAlert = maxAlertByPriority(resAlert, alert)
+		multierror.Append(resErr, err)
+	}
+
+	return resAlert, resErr
+}
+
+func alertForStalePermissions() *searchAlert {
+	return &searchAlert{
+		prometheusType: "no_resolved_repos__stale_permissions",
+		title:          "Permissions syncing in progress",
+		description:    "Permissions are being synced from your code host, please wait for a minute and try again.",
+	}
+}
+
+func alertForInvalidRevision(revision string) *searchAlert {
+	revision = strings.TrimSuffix(revision, "^0")
+	return &searchAlert{
+		title:       "Invalid revision syntax",
+		description: fmt.Sprintf("We don't know how to interpret the revision (%s) you specified. Learn more about the revision syntax in our documentation: https://docs.sourcegraph.com/code_search/reference/queries#repository-revisions.", revision),
+	}
 }
 
 type alertObserver struct {

@@ -25,7 +25,6 @@ import (
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
@@ -901,11 +900,16 @@ func (r *searchResolver) resultsStreaming(ctx context.Context) (*SearchResultsRe
 	return r.resultsRecursive(ctx, r.Plan)
 }
 
-func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, error) {
+func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolver, err error) {
 	if r.stream == nil {
-		return r.resultsBatch(ctx)
+		srr, err = r.resultsBatch(ctx)
+	} else {
+		srr, err = r.resultsStreaming(ctx)
 	}
-	return r.resultsStreaming(ctx)
+
+	alert, err := errorToAlert(err)
+	srr.alert = maxAlertByPriority(srr.alert, alert)
+	return srr, err
 }
 
 // DetermineStatusForLogs determines the final status of a search for logging
@@ -1307,16 +1311,6 @@ func (r *searchResolver) determineResultTypes(args search.TextParameters, forceT
 func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, start time.Time) (*searchrepos.Resolved, *searchAlert, error) {
 	resolved, err := r.resolveRepositories(ctx, nil)
 	if err != nil {
-		if errors.Is(err, authz.ErrStalePermissions{}) {
-			log15.Debug("searchResolver.determineRepos", "err", err)
-			alert := alertForStalePermissions()
-			return nil, alert, nil
-		}
-		e := git.BadCommitError{}
-		if errors.As(err, &e) {
-			alert := r.alertForInvalidRevision(e.Spec)
-			return nil, alert, nil
-		}
 		return nil, nil, err
 	}
 
