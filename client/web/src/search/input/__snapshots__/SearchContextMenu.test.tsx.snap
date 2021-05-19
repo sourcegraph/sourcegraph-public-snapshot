@@ -15,21 +15,24 @@ Array [
       tabIndex="0"
       type="button"
     >
-      <small
-        className="search-context-menu__item-name font-weight-medium"
-        title="@username"
+      <strong
+        className="search-context-menu__item-name"
       >
-        <HighlightedSearchTerm
-          searchFilter="ser"
-          text="@username"
+        <small
+          title="@username"
         >
-          @u
-          <strong>
-            ser
-          </strong>
-          name
-        </HighlightedSearchTerm>
-      </small>
+          <HighlightedSearchTerm
+            searchFilter="ser"
+            text="@username"
+          >
+            @u
+            <strong>
+              ser
+            </strong>
+            name
+          </HighlightedSearchTerm>
+        </small>
+      </strong>
        
       <small
         className="search-context-menu__item-description"
@@ -52,21 +55,24 @@ Array [
       tabIndex="0"
       type="button"
     >
-      <small
-        className="search-context-menu__item-name font-weight-medium"
-        title="@username/test-version-1.5"
+      <strong
+        className="search-context-menu__item-name"
       >
-        <HighlightedSearchTerm
-          searchFilter="ser"
-          text="@username/test-version-1.5"
+        <small
+          title="@username/test-version-1.5"
         >
-          @u
-          <strong>
-            ser
-          </strong>
-          name/test-version-1.5
-        </HighlightedSearchTerm>
-      </small>
+          <HighlightedSearchTerm
+            searchFilter="ser"
+            text="@username/test-version-1.5"
+          >
+            @u
+            <strong>
+              ser
+            </strong>
+            name/test-version-1.5
+          </HighlightedSearchTerm>
+        </small>
+      </strong>
        
       <small
         className="search-context-menu__item-description"
