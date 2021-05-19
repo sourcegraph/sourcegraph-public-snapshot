@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 
@@ -1235,14 +1236,21 @@ AND account_id IN (%s)
 // UserIDsWithNoPerms returns a list of user IDs with no permissions found in
 // the database.
 func (s *PermsStore) UserIDsWithNoPerms(ctx context.Context) ([]int32, error) {
+	// By default, site admins can access any repo
+	filterSiteAdmins := sqlf.Sprintf("users.site_admin = FALSE")
+	// Unless we enforce it in config
+	if conf.Get().AuthzEnforceForSiteAdmins {
+		filterSiteAdmins = sqlf.Sprintf("TRUE")
+	}
+
 	q := sqlf.Sprintf(`
 -- source: enterprise/internal/database/perms_store.go:PermsStore.UserIDsWithNoPerms
 SELECT users.id, NULL FROM users
-WHERE users.site_admin = FALSE
-AND users.deleted_at IS NULL
+WHERE users.deleted_at IS NULL
+AND %s
 AND users.id NOT IN
 	(SELECT perms.user_id FROM user_permissions AS perms)
-`)
+`, filterSiteAdmins)
 	results, err := s.loadIDsWithTime(ctx, q)
 	if err != nil {
 		return nil, err
@@ -1255,7 +1263,7 @@ AND users.id NOT IN
 	return ids, nil
 }
 
-// UserIDsWithNoPerms returns a list of private repository IDs with no permissions
+// RepoIDsWithNoPerms returns a list of private repository IDs with no permissions
 // found in the database.
 func (s *PermsStore) RepoIDsWithNoPerms(ctx context.Context) ([]api.RepoID, error) {
 	q := sqlf.Sprintf(`
