@@ -88,6 +88,14 @@ func (r *bulkOperationResolver) Errors(ctx context.Context) ([]graphqlbackend.Ch
 	return res, nil
 }
 
+func (r *bulkOperationResolver) Initiator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
+	return graphqlbackend.UserByIDInt32(ctx, r.store.DB(), r.bulkOperation.UserID)
+}
+
+func (r *bulkOperationResolver) ChangesetCount() int32 {
+	return r.bulkOperation.ChangesetCount
+}
+
 func (r *bulkOperationResolver) CreatedAt() graphqlbackend.DateTime {
 	return graphqlbackend.DateTime{Time: r.bulkOperation.CreatedAt}
 }

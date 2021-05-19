@@ -1,23 +1,16 @@
-import classnames from 'classnames'
-import RefreshIcon from 'mdi-react/RefreshIcon'
 import React, { useContext, useEffect, useMemo, useState } from 'react'
-import { useHistory } from 'react-router-dom'
 import type { LineChartContent } from 'sourcegraph'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { asError } from '@sourcegraph/shared/src/util/errors'
 import { useDebounce } from '@sourcegraph/wildcard/src'
 
-import { ErrorAlert } from '../../../../../../components/alerts'
-import { ChartViewContent } from '../../../../../../views/ChartViewContent/ChartViewContent'
+import { LivePreviewContainer } from '../../../../../components/live-preview-container/LivePreviewContainer'
 import { InsightsApiContext } from '../../../../../core/backend/api-provider'
 import { DataSeries } from '../../../../../core/backend/types'
 import { InsightStep } from '../../types'
 import { getSanitizedRepositories, getSanitizedSeries } from '../../utils/insight-sanitizer'
 
 import { DEFAULT_MOCK_CHART_CONTENT } from './live-preview-mock-data'
-import styles from './SearchInsightLivePreview.module.scss'
 
 export interface SearchInsightLivePreviewProps {
     /** Custom className for the root element of live preview. */
@@ -45,7 +38,6 @@ export interface SearchInsightLivePreviewProps {
 export const SearchInsightLivePreview: React.FunctionComponent<SearchInsightLivePreviewProps> = props => {
     const { series, repositories, step, stepValue, disabled = false, className } = props
 
-    const history = useHistory()
     const { getSearchInsightContent } = useContext(InsightsApiContext)
 
     const [loading, setLoading] = useState<boolean>(false)
@@ -86,49 +78,20 @@ export const SearchInsightLivePreview: React.FunctionComponent<SearchInsightLive
     }, [disabled, lastPreviewVersion, getSearchInsightContent, liveDebouncedSettings])
 
     return (
-        <div className={classnames(styles.livePreview, className)}>
-            <button
-                type="button"
-                disabled={disabled}
-                className={classnames('btn btn-secondary', styles.livePreviewUpdateButton)}
-                onClick={() => setLastPreviewVersion(version => version + 1)}
-            >
-                Update live preview
-                <RefreshIcon size="1rem" className={styles.livePreviewUpdateButtonIcon} />
-            </button>
-
-            {loading && (
-                <div
-                    className={classnames(
-                        styles.livePreviewLoader,
-                        'flex-grow-1 d-flex flex-column align-items-center justify-content-center'
-                    )}
-                >
-                    <LoadingSpinner /> Loading code insight
-                </div>
-            )}
-
-            {isErrorLike(dataOrError) && <ErrorAlert className="m-0" error={dataOrError} />}
-
-            {!loading && !isErrorLike(dataOrError) && (
-                <div className={styles.livePreviewChartContainer}>
-                    <ChartViewContent
-                        className={classnames(styles.livePreviewChart, {
-                            [styles.livePreviewChartLoading]: !dataOrError,
-                        })}
-                        history={history}
-                        viewID="search-insight-live-preview"
-                        telemetryService={NOOP_TELEMETRY_SERVICE}
-                        content={dataOrError ?? DEFAULT_MOCK_CHART_CONTENT}
-                    />
-
-                    {!dataOrError && (
-                        <p className={styles.livePreviewLoadingChartInfo}>
-                            Here you’ll see your insight’s chart preview
-                        </p>
-                    )}
-                </div>
-            )}
-        </div>
+        <LivePreviewContainer
+            dataOrError={dataOrError}
+            loading={loading}
+            disabled={disabled}
+            defaultMock={DEFAULT_MOCK_CHART_CONTENT}
+            mockMessage={
+                <span>
+                    {' '}
+                    Here you’ll see your insight’s chart preview. <br />
+                    You need to fill in the repositories and series fields.
+                </span>
+            }
+            className={className}
+            onUpdateClick={() => setLastPreviewVersion(version => version + 1)}
+        />
     )
 }

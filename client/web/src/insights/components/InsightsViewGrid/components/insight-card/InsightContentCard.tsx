@@ -94,7 +94,7 @@ export const InsightContentCard: React.FunctionComponent<InsightCardProps> = pro
                 <>
                     <header className={styles.insightCardHeader}>
                         <div className={styles.insightCardHeaderContent}>
-                            <h3 className={styles.insightCardTitle}>{view.title}</h3>
+                            <h4 className={styles.insightCardTitle}>{view.title}</h4>
                             {view.subtitle && <div className={styles.insightCardSubtitle}>{view.subtitle}</div>}
                         </div>
 

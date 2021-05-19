@@ -43,15 +43,13 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
                 return
             }
 
-            const {
-                id: userID,
-                organizations: { nodes: orgs },
-            } = authenticatedUser
+            const { id: userID } = authenticatedUser
+
             const subjectID =
                 values.visibility === 'personal'
                     ? userID
-                    : // TODO [VK] Add org picker in creation UI and not just pick first organization
-                      orgs[0].id
+                    : // If this is not a 'personal' value than we are dealing with org id
+                      values.visibility
 
             try {
                 const settings = await getSubjectSettings(subjectID).toPromise()
@@ -79,6 +77,10 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
         return <Redirect to="/" />
     }
 
+    const {
+        organizations: { nodes: orgs },
+    } = authenticatedUser
+
     return (
         <Page className={classnames('col-10', styles.creationPage)}>
             <PageTitle title="Create new code insight" />
@@ -101,6 +103,7 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
             <SearchInsightCreationContent
                 className="pb-5"
                 settings={settingsCascade.final}
+                organizations={orgs}
                 onSubmit={handleSubmit}
                 onCancel={handleCancel}
             />

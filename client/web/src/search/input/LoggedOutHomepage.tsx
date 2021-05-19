@@ -11,13 +11,13 @@ import styles from './LoggedOutHomepage.module.scss'
 import { SignUpCta } from './SignUpCta'
 
 const exampleQueries = [
-    { query: 'repo:^github\\.com/sourcegraph/sourcegraph$@3.17 CONTAINER_ID', patternType: 'literal' },
+    { query: 'repo:hashicorp lang:TypeScript async ()', patternType: 'literal' },
     { query: 'repo:sourcegraph/sourcegraph type:diff after:"1 week ago"', patternType: 'literal' },
     {
         query: 'lang:TypeScript useState OR useMemo',
         patternType: 'literal',
     },
-    { query: 'lang:Python return :[v.], :[v.]', patternType: 'structural' },
+    { query: 'repo:^github\\.com/sourcegraph/sourcegraph$@3.17 CONTAINER_ID', patternType: 'literal' },
 ]
 
 export interface LoggedOutHomepageProps extends TelemetryProps {}
