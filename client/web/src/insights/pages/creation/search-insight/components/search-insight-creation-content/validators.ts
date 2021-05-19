@@ -14,11 +14,11 @@ export const requiredStepValueField = createRequiredValidator('Please specify a 
  * */
 export const seriesRequired: Validator<EditableDataSeries[]> = series => {
     if (!series || series.length === 0) {
-        return 'Series is empty. You must have at least one series for code insight.'
+        return 'No series defined. You must add at least one series to create a code insight.'
     }
 
     if (series.some(series => !series.valid)) {
-        return 'Some series is invalid. Remove or edit invalid series.'
+        return 'Some series is invalid. Remove or edit the invalid series.'
     }
 
     return
