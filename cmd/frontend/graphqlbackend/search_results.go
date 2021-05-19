@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/honeycombio/libhoney-go"
 	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
@@ -1372,13 +1373,10 @@ func checkDiffCommitSearchLimits(ctx context.Context, args *search.TextParameter
 	return nil
 }
 
-func newAggregator(db dbutil.DB, stream streaming.Sender, inputs *run.SearchInputs) *aggregator {
+func newAggregator(db dbutil.DB, stream streaming.Sender) *aggregator {
 	return &aggregator{
 		db:           db,
 		parentStream: stream,
-		alert: alertObserver{
-			Inputs: inputs,
-		},
 	}
 }
 
@@ -1389,17 +1387,16 @@ type aggregator struct {
 	mu      sync.Mutex
 	results []result.Match
 	stats   streaming.Stats
-	alert   alertObserver
+	errors  *multierror.Error
 }
 
 // get finalises aggregation over the stream and returns the aggregated
 // result. It should only be called once each do* function is finished
 // running.
-func (a *aggregator) get() ([]result.Match, streaming.Stats, *searchAlert, error) {
+func (a *aggregator) get() ([]result.Match, streaming.Stats, *multierror.Error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
-	alert, err := a.alert.Done(&a.stats)
-	return a.results, a.stats, alert, err
+	return a.results, a.stats, a.errors
 }
 
 func (a *aggregator) Send(event streaming.SearchEvent) {
@@ -1415,18 +1412,17 @@ func (a *aggregator) Send(event streaming.SearchEvent) {
 		a.results = append(a.results, event.Results...)
 	}
 
-	a.alert.Update(event)
 	a.stats.Update(&event.Stats)
 }
 
-func (a *aggregator) error(ctx context.Context, err error) {
-	a.alert.Error(ctx, err)
+func (a *aggregator) error(err error) {
+	multierror.Append(a.errors, err)
 }
 
 func (a *aggregator) doRepoSearch(ctx context.Context, args *search.TextParameters, limit int32) (err error) {
 	tr, ctx := trace.New(ctx, "doRepoSearch", "")
 	defer func() {
-		a.error(ctx, err)
+		a.error(err)
 		tr.SetError(err)
 		tr.Finish()
 	}()
@@ -1438,7 +1434,7 @@ func (a *aggregator) doRepoSearch(ctx context.Context, args *search.TextParamete
 func (a *aggregator) doSymbolSearch(ctx context.Context, args *search.TextParameters, limit int) (err error) {
 	tr, ctx := trace.New(ctx, "doSymbolSearch", "")
 	defer func() {
-		a.error(ctx, err)
+		a.error(err)
 		tr.SetError(err)
 		tr.Finish()
 	}()
@@ -1451,7 +1447,7 @@ func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextPara
 	tr, ctx := trace.New(ctx, "doFilePathSearch", "")
 	tr.LogFields(trace.Stringer("global_search_mode", args.Mode))
 	defer func() {
-		a.error(ctx, err)
+		a.error(err)
 		tr.SetErrorIfNotContext(err)
 		tr.Finish()
 	}()
@@ -1499,7 +1495,7 @@ func (a *aggregator) doFilePathSearch(ctx context.Context, args *search.TextPara
 func (a *aggregator) doDiffSearch(ctx context.Context, tp *search.TextParameters) (err error) {
 	tr, ctx := trace.New(ctx, "doDiffSearch", "")
 	defer func() {
-		a.error(ctx, err)
+		a.error(err)
 		tr.SetError(err)
 		tr.Finish()
 	}()
@@ -1520,7 +1516,7 @@ func (a *aggregator) doDiffSearch(ctx context.Context, tp *search.TextParameters
 func (a *aggregator) doCommitSearch(ctx context.Context, tp *search.TextParameters) (err error) {
 	tr, ctx := trace.New(ctx, "doCommitSearch", "")
 	defer func() {
-		a.error(ctx, err)
+		a.error(err)
 		tr.SetError(err)
 		tr.Finish()
 	}()
@@ -1638,7 +1634,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 		defer cancelOnLimit()
 	}
 
-	agg := newAggregator(r.db, stream, r.SearchInputs)
+	agg := newAggregator(r.db, stream)
 
 	// This ensures we properly cleanup in the case of an early return. In
 	// particular we want to cancel global searches before returning early.
@@ -1650,7 +1646,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 		cancel()
 		requiredWg.Wait()
 		optionalWg.Wait()
-		_, _, _, _ = agg.get()
+		_, _, _ = agg.get()
 	}()
 
 	isFileOrPath := resultTypes.Has(result.TypeFile) || resultTypes.Has(result.TypePath)
@@ -1685,7 +1681,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 		return &SearchResultsResolver{db: r.db, alert: alertResult}, nil
 	}
 	if len(resolved.MissingRepoRevs) > 0 {
-		agg.error(ctx, &missingRepoRevsError{Missing: resolved.MissingRepoRevs})
+		agg.error(&missingRepoRevsError{Missing: resolved.MissingRepoRevs})
 	}
 
 	// Send down our first bit of progress.
@@ -1776,7 +1772,16 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 
 	// We have to call get once all waitgroups are done since it relies on
 	// collecting from the streams.
-	matches, common, alert, err := agg.get()
+	matches, common, aggErrs := agg.get()
+
+	ao := alertObserver{
+		Inputs:     r.SearchInputs,
+		hasResults: len(matches) > 0,
+	}
+	for _, err := range aggErrs.Errors {
+		ao.Error(ctx, err)
+	}
+	alert, err := ao.Done(&common)
 
 	tr.LazyPrintf("matches=%d %s", len(matches), &common)
 

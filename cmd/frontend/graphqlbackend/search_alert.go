@@ -708,13 +708,6 @@ type alertObserver struct {
 	err   error
 }
 
-// Update AlertObserver's state based on event.
-func (o *alertObserver) Update(event streaming.SearchEvent) {
-	if len(event.Results) > 0 {
-		o.hasResults = true
-	}
-}
-
 func (o *alertObserver) Error(ctx context.Context, err error) {
 	// Timeouts are reported through Stats so don't report an error for them.
 	if err == nil || isContextError(ctx, err) {
