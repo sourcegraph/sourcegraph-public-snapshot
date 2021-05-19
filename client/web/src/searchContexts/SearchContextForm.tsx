@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { RouteComponentProps, useHistory } from 'react-router'
 import { Form } from 'reactstrap'
 import { from, Observable, of, throwError } from 'rxjs'
@@ -148,15 +148,18 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
         )
     }, [description, name, searchContext, selectedNamespace, visibility, hasRepositoriesConfigChanged])
 
+    const leavePromptMessage = 'Leave page? All unsaved changes will be lost.'
     const onCancel = useCallback(() => {
         if (hasChanges) {
-            if (window.confirm('Leave page? All unsaved changes will be lost.')) {
+            if (window.confirm(leavePromptMessage)) {
                 history.push('/contexts')
             }
         } else {
             history.push('/contexts')
         }
     }, [hasChanges, history])
+
+    useEffect(() => history.block(() => (hasChanges ? leavePromptMessage : undefined)), [history, hasChanges])
 
     const parseRepositories = useCallback(
         () =>

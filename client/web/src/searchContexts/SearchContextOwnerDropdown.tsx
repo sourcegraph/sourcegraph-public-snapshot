@@ -1,6 +1,6 @@
 import classNames from 'classnames'
 import React, { useCallback, useState } from 'react'
-import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
+import { Dropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 
 import { AuthenticatedUser } from '../auth'
 
@@ -33,14 +33,15 @@ export const SearchContextOwnerDropdown: React.FunctionComponent<SearchContextOw
     const toggleIsOpen = useCallback(() => setIsOpen(open => !open), [])
 
     return (
-        <ButtonDropdown isOpen={isOpen} toggle={toggleIsOpen}>
+        <Dropdown isOpen={isOpen} toggle={toggleIsOpen}>
             <DropdownToggle
-                className={classNames('btn btn-sm form-control', styles.searchContextOwnerDropdownToggle)}
+                className={classNames('form-control', styles.searchContextOwnerDropdownToggle)}
                 caret={true}
                 color="outline-secondary"
                 disabled={isDisabled}
+                data-tooltip={isDisabled ? "Owner can't be changed." : ''}
             >
-                {selectedNamespace.type === 'no-owner' ? 'No owner' : `@${selectedNamespace.name}`}
+                <div>{selectedNamespace.type === 'no-owner' ? 'No owner' : `@${selectedNamespace.name}`}</div>
             </DropdownToggle>
             <DropdownMenu>
                 <DropdownItem onClick={() => setSelectedNamespace(selectedUserNamespace)}>
@@ -64,6 +65,6 @@ export const SearchContextOwnerDropdown: React.FunctionComponent<SearchContextOw
                     </>
                 )}
             </DropdownMenu>
-        </ButtonDropdown>
+        </Dropdown>
     )
 }

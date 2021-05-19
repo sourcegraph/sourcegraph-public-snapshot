@@ -79,7 +79,7 @@ export const AuthenticatedEditSearchContextPage: React.FunctionComponent<EditSea
                     )}
                     {searchContextOrError && searchContextOrError !== LOADING && !isErrorLike(searchContextOrError) && (
                         <>
-                            <h1 className="mb-4">Edit context: {searchContextOrError.spec}</h1>
+                            <h1 className="mb-4">Edit search context</h1>
                             <SearchContextForm {...props} searchContext={searchContextOrError} onSubmit={onSubmit} />
                         </>
                     )}
