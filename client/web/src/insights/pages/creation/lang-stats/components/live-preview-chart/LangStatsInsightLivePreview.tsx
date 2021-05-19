@@ -47,8 +47,7 @@ export const LangStatsInsightLivePreview: React.FunctionComponent<LangStatsInsig
             onUpdateClick={update}
             mockMessage={
                 <span>
-                    Here you’ll see your insight’s chart preview. <br />
-                    The chart preview will be shown here once you filled out the repository field.
+                    The chart preview will be shown here once you have filled out the repository field.
                 </span>
             }
         />
