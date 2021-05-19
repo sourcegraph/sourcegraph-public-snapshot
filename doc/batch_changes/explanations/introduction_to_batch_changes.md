@@ -51,9 +51,8 @@ To learn about the internals of Batch Changes, see [Batch Changes](../../../dev/
 ## Known issues
 
 - Batch Changes currently support **GitHub**, **GitLab** and **Bitbucket Server** repositories. If you're interested in using Batch Changes on other code hosts, [let us know](https://about.sourcegraph.com/contact).
-- It is not yet possible for a batch change to create multiple changesets in a single repository (e.g., to make changes to multiple subtrees in a monorepo).
-- Forking a repository and creating a pull request on the fork is not yet supported. Because of this limitation, you need write access to each repository that your batch change will change (in order to push a branch to it).
+- Forking a repository and creating a pull request on the fork is not yet supported. Because of this limitation, you need write access to each repository that your batch change will change (in order to push a branch to it), either through your account or a service account (see [credentials](how-tos/configuring_credentials.md)).
 - Batch change steps are run locally (in the [Sourcegraph CLI](https://github.com/sourcegraph/src-cli)). Sourcegraph does not yet support executing batch change steps on the server. For this reason, the APIs for creating and updating a batch change require you to upload all of the changeset specs (which are produced by executing the batch spec locally). {#server-execution}
 - It is not yet possible for multiple users to edit the same batch change that was created under an organization.
 - It is not yet possible to reuse a branch in a repository across multiple batch changes.
-- The only type of user credential supported by Sourcegraph right now is a personal access token. Further credential types may be supported in the future.
+- The only type of user credential supported by Sourcegraph right now is a [personal access token](how-tos/configuring_credentials.md#adding-a-personal-access-token), either per user, or a shared service account credential. Further credential types may be supported in the future.
