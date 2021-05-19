@@ -9,6 +9,7 @@ import {
 import classNames from 'classnames'
 import * as H from 'history'
 import React, { useCallback, useEffect, useReducer } from 'react'
+import { resetFilteredConnectionURLQuery } from '../../components/FilteredConnection'
 
 import styles from './BatchChangeTabs.module.scss'
 
@@ -63,9 +64,7 @@ const BatchChangeTabs_: React.FunctionComponent<BatchChangeTabsProps> = ({ child
             const newTabName = Object.keys(tabNames).find(key => tabNames[key] === newIndex) || defaultTabName
 
             const urlParameters = new URLSearchParams(location.search)
-            urlParameters.delete('visible')
-            urlParameters.delete('first')
-            urlParameters.delete('after')
+            resetFilteredConnectionURLQuery(urlParameters)
 
             if (!newTabName || newTabName === defaultTabName) {
                 urlParameters.delete('tab')
@@ -88,14 +87,12 @@ const BatchChangeTabs_: React.FunctionComponent<BatchChangeTabsProps> = ({ child
 }
 
 /** Wrapper of ReachUI's `Tabs` with built-in logic for reading and writing to the URL tab parameter */
-export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = ({ children, history, location }) => {
+export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = props => {
     const [state, dispatch] = useReducer(tabsReducer, {})
     return (
         <TabNamesStateContext.Provider value={state}>
             <TabNamesDispatchContext.Provider value={dispatch}>
-                <BatchChangeTabs_ history={history} location={location}>
-                    {children}
-                </BatchChangeTabs_>
+                <BatchChangeTabs_ {...props} />
             </TabNamesDispatchContext.Provider>
         </TabNamesStateContext.Provider>
     )
