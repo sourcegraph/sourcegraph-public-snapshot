@@ -73,9 +73,9 @@ kubectl rollout restart deployment sourcegraph-frontend
 - GCP: `kubectl create clusterrolebinding cluster-admin-binding --clusterrole cluster-admin --user $YOUR_EMAIL`
 
 
-### `kubectl get pv` shows no Persistent Volumes, and/or `kubectl get events` shows a `Failed to provision volume with StorageClass "default"` error.
+### `kubectl get pv` shows no Persistent Volumes, and/or `kubectl get events` shows a `Failed to provision volume with StorageClass "sourcegraph"` error.
 
-Check that a storage class named "default" exists via:
+Check that a storage class named "sourcegraph" exists via:
 
 ```bash
 kubectl get storageclass
