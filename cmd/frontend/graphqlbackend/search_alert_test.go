@@ -11,6 +11,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
@@ -374,7 +375,6 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 				t.Fatalf("unexpected error: %s", err)
 			}
 
-
 			wantAlert := test.wantAlert
 			if !reflect.DeepEqual(alert, wantAlert) {
 				t.Fatalf("test %s, have alert %+v, want: %+v", test.name, alert, test.wantAlert)
@@ -441,8 +441,7 @@ func TestAlertForNoResolvedReposWithNonGlobalSearchContext(t *testing.T) {
 		},
 	}
 
-	alert := sr.alertForNoResolvedRepos(context.Background())
-	if !reflect.DeepEqual(alert, wantAlert) {
-		t.Fatalf("have alert %+v, want: %+v", alert, wantAlert)
-	}
+	alert, err := errorToAlert(sr.errorForNoResolvedRepos(context.Background()))
+	require.NoError(t, err)
+	require.Equal(t, wantAlert, alert)
 }

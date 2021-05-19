@@ -900,16 +900,11 @@ func (r *searchResolver) resultsStreaming(ctx context.Context) (*SearchResultsRe
 	return r.resultsRecursive(ctx, r.Plan)
 }
 
-func (r *searchResolver) Results(ctx context.Context) (srr *SearchResultsResolver, err error) {
+func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, error) {
 	if r.stream == nil {
-		srr, err = r.resultsBatch(ctx)
-	} else {
-		srr, err = r.resultsStreaming(ctx)
+		return r.resultsBatch(ctx)
 	}
-
-	alert, err := errorToAlert(err)
-	srr.alert = maxAlertByPriority(srr.alert, alert)
-	return srr, err
+	return r.resultsStreaming(ctx)
 }
 
 // DetermineStatusForLogs determines the final status of a search for logging
@@ -1316,8 +1311,7 @@ func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, st
 
 	tr.LazyPrintf("searching %d repos, %d missing", len(resolved.RepoRevs), len(resolved.MissingRepoRevs))
 	if len(resolved.RepoRevs) == 0 {
-		alert := r.alertForNoResolvedRepos(ctx)
-		return nil, alert, nil
+		return nil, nil, r.errorForNoResolvedRepos(ctx)
 	}
 	if resolved.OverLimit {
 		return nil, nil, r.errorForOverRepoLimit(ctx)
@@ -1466,6 +1460,9 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 
 	resolved, alertResult, err := r.determineRepos(ctx, tr, start)
 	if err != nil {
+		if alert, err := errorToAlert(err); alert != nil {
+			return &SearchResultsResolver{db: r.db, alert: alert}, err
+		}
 		return nil, err
 	}
 	if alertResult != nil {
