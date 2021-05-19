@@ -42,10 +42,15 @@ type ChangesetJobType string
 
 var (
 	ChangesetJobTypeComment ChangesetJobType = "commentatore"
+	ChangesetJobTypeDetach  ChangesetJobType = "detach"
 )
 
 type ChangesetJobCommentPayload struct {
 	Message string `json:"message"`
+}
+
+type ChangesetJobDetachPayload struct {
+	Nothing string `json:"-"`
 }
 
 // ChangesetJob describes a one-time action to be taken on a changeset.
