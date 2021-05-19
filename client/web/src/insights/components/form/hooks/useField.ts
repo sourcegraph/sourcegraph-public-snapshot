@@ -34,7 +34,9 @@ export interface useFieldAPI<FieldValue> {
      * Meta state of form field - like touched, valid state and last
      * native validity state.
      * */
-    meta: FieldState<FieldValue>
+    meta: FieldState<FieldValue> & {
+        setState: (dispatch: (previousState: FieldState<FieldValue>) => FieldState<FieldValue>) => void
+    }
 }
 
 /**
@@ -143,6 +145,9 @@ export function useField<FormValues, FieldValueKey extends keyof FormAPI<FormVal
         meta: {
             ...state,
             touched: state.touched || submitted || formTouched,
+            setState: dispatch => {
+                setState(state => ({ ...dispatch(state) }))
+            },
         },
     }
 }

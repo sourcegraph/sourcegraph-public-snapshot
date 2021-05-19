@@ -1,7 +1,7 @@
 import classnames from 'classnames'
 import React from 'react'
 
-import { DataSeries } from '../../../../../core/backend/types'
+import { EditableDataSeries } from '../../types'
 import { FormSeriesInput } from '../form-series-input/FormSeriesInput'
 
 import { SeriesCard } from './components/series-card/SeriesCard'
@@ -9,23 +9,21 @@ import styles from './FormSeries.module.scss'
 
 export interface FormSeriesProps {
     /**
+     * Prop to force touched state for all series forms.
+     * (show all validation error for all forms and fields)
+     * */
+    touched: boolean
+    /**
      * Controlled value (series - chart lines) for series input component.
      * */
-    series?: DataSeries[]
-
-    /**
-     * Edit series used below for rendering edit series form. Element of
-     * this array has undefined value when there are no series to edit
-     * and has DataSeries value when user activated edit for some series.
-     * */
-    editSeries: (DataSeries | undefined)[]
+    series?: EditableDataSeries[]
 
     /**
      * Live change series handler while user typing in active series form.
      * Used by consumers to get latest values from series inputs and pass
      * them tp live preview chart.
      * */
-    onLiveChange: (liveSeries: DataSeries, isValid: boolean, index: number) => void
+    onLiveChange: (liveSeries: EditableDataSeries, isValid: boolean, index: number) => void
 
     /**
      * Handler that runs every time user clicked edit on particular
@@ -37,7 +35,7 @@ export interface FormSeriesProps {
      * Handler that runs every time use clicked commit (done) in
      * series edit form.
      * */
-    onEditSeriesCommit: (seriesIndex: number, editedSeries: DataSeries) => void
+    onEditSeriesCommit: (seriesIndex: number, editedSeries: EditableDataSeries) => void
 
     /**
      * Handler that runs every time use canceled (click cancel) in
@@ -58,7 +56,7 @@ export interface FormSeriesProps {
 export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
     const {
         series = [],
-        editSeries,
+        touched,
         onEditSeriesRequest,
         onEditSeriesCommit,
         onEditSeriesCancel,
@@ -66,32 +64,20 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
         onLiveChange,
     } = props
 
-    // In case if we don't have series we have to skip series list ui (components below)
-    // and render simple series form component.
-    if (series.length === 0) {
-        return (
-            <FormSeriesInput
-                index={1}
-                autofocus={false}
-                className="card card-body p-3"
-                onSubmit={series => onEditSeriesCommit(0, series)}
-                onChange={(values, valid) => onLiveChange(values, valid, 0)}
-            />
-        )
-    }
-
     return (
         <ul className="list-unstyled d-flex flex-column">
-            {editSeries.map((line, index) =>
-                line ? (
+            {series.map((line, index) =>
+                line.edit ? (
                     <FormSeriesInput
                         key={`${line?.name ?? ''}-${index}`}
+                        touched={touched}
                         index={index + 1}
-                        cancel={true}
-                        onSubmit={series => onEditSeriesCommit(index, series)}
+                        cancel={series.length > 1}
+                        autofocus={series.length > 1}
+                        onSubmit={seriesValues => onEditSeriesCommit(index, { ...line, ...seriesValues })}
                         onCancel={() => onEditSeriesCancel(index)}
                         className={classnames('card card-body p-3', styles.formSeriesItem)}
-                        onChange={(values, valid) => onLiveChange(values, valid, index)}
+                        onChange={(seriesValues, valid) => onLiveChange({ ...line, ...seriesValues }, valid, index)}
                         {...line}
                     />
                 ) : (
@@ -109,7 +95,7 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
 
             <button
                 type="button"
-                onClick={() => onEditSeriesRequest(editSeries.length)}
+                onClick={() => onEditSeriesRequest(series.length)}
                 className={classnames(styles.formSeriesItem, styles.formSeriesAddButton, 'btn btn-link p-3')}
             >
                 + Add another data series

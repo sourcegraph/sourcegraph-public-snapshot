@@ -15,6 +15,11 @@ const validQuery = createRequiredValidator('Query is a required field for data s
 interface FormSeriesInputProps {
     /** Series index. */
     index: number
+    /**
+     * Prop to force touched state for series form.
+     * (show all validation error)
+     * */
+    touched?: boolean
     /** Name of series. */
     name?: string
     /** Query value of series. */
@@ -31,6 +36,7 @@ interface FormSeriesInputProps {
     onSubmit?: (series: DataSeries) => void
     /** On cancel handler. */
     onCancel?: () => void
+    /** Change handler in order to listen last values of series form. */
     onChange?: (formValues: DataSeries, valid: boolean) => void
 }
 
@@ -38,6 +44,7 @@ interface FormSeriesInputProps {
 export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = props => {
     const {
         index,
+        touched = false,
         name,
         query,
         stroke: color,
@@ -53,6 +60,7 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
     const hasQueryControlledValue = !!query
 
     const { formAPI, handleSubmit, ref } = useForm({
+        touched,
         initialValues: {
             seriesName: name ?? '',
             seriesQuery: query ?? '',

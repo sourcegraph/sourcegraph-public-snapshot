@@ -13,7 +13,7 @@ import { CreateInsightFormFields } from '../../types'
 import { SearchInsightLivePreview } from '../live-preview-chart/SearchInsightLivePreview'
 import { SearchInsightCreationForm } from '../search-insight-creation-form/SearchInsightCreationForm'
 
-import { useEditableSeries } from './hooks/use-editable-series'
+import { useEditableSeries, createDefaultEditSeries } from './hooks/use-editable-series'
 import styles from './SearchInsightCreationContent.module.scss'
 import {
     repositoriesExistValidator,
@@ -24,7 +24,10 @@ import {
 
 const INITIAL_VALUES: CreateInsightFormFields = {
     visibility: 'personal',
-    series: [],
+    // If user opens creation form to create insight
+    // we want to show the series form as soon as possible without
+    // force user to click 'add another series' button
+    series: [createDefaultEditSeries({ edit: true })],
     step: 'months',
     stepValue: '2',
     title: '',
@@ -81,7 +84,7 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
     const step = useField('step', formAPI)
     const stepValue = useField('stepValue', formAPI, { sync: requiredStepValueField })
 
-    const { liveSeries, editSeries, listen, editRequest, editCommit, cancelEdit, deleteSeries } = useEditableSeries({
+    const { liveSeries, listen, editRequest, editCommit, cancelEdit, deleteSeries } = useEditableSeries({
         series,
     })
 
@@ -101,6 +104,7 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
                 handleSubmit={handleSubmit}
                 submitErrors={formAPI.submitErrors}
                 submitting={formAPI.submitting}
+                submitted={formAPI.submitted}
                 title={title}
                 repositories={repositories}
                 visibility={visibility}
@@ -110,7 +114,6 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
                 stepValue={stepValue}
                 onSeriesLiveChange={listen}
                 onCancel={onCancel}
-                editSeries={editSeries}
                 onEditSeriesRequest={editRequest}
                 onEditSeriesCancel={cancelEdit}
                 onEditSeriesCommit={editCommit}
