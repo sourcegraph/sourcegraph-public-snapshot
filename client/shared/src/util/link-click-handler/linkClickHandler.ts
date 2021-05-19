@@ -34,24 +34,3 @@ export const createLinkClickHandler = (history: H.History): React.MouseEventHand
     const url = new URL(href)
     history.push(url.pathname + url.search + url.hash)
 }
-
-/**
- * Returns a click handler for any element that takes event and target URL
- * that will redirect to this URL and in case if cmd+click happened that will open a new browser tab
- */
-export const createProgrammaticLinkHandler = (history: H.History) => (
-    event: React.MouseEvent<unknown>,
-    target: string
-): void => {
-    const url = new URL(target)
-
-    // Do nothing if the link was requested to open in a new tab
-    if (event.ctrlKey || event.metaKey) {
-        window.open(url.origin + url.pathname + url.search + url.hash, '_blank')?.focus()
-
-        return
-    }
-
-    // Handle navigation programmatically
-    history.push(url.pathname + url.search + url.hash)
-}
