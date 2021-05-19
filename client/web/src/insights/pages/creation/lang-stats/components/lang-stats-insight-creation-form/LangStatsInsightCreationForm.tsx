@@ -63,7 +63,7 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
                 autoFocus={true}
                 title="Repository"
                 description="This insight is limited to one repository. You can set up multiple language usage charts for analyzing other repositories."
-                placeholder="Add or search for repository"
+                placeholder="Example: github.com/sourcegraph/sourcegraph"
                 loading={repository.meta.validState === 'CHECKING'}
                 valid={repository.meta.touched && repository.meta.validState === 'VALID'}
                 error={repository.meta.touched && repository.meta.error}
