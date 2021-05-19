@@ -287,7 +287,7 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
                     type="search"
                     placeholder="Find..."
                     aria-label="Find a context"
-                    className="form-control search-context-menu__header-input"
+                    className="form-control form-control-sm search-context-menu__header-input"
                 />
             </div>
             <div className="search-context-menu__list" ref={infiniteScrollList} role="menu">
