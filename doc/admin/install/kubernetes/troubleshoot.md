@@ -81,7 +81,7 @@ Check that a storage class named "sourcegraph" exists via:
 kubectl get storageclass
 ```
 
-If one does exist, run `kubectl get storageclass default -o=yaml` and verify that the zone indicated in the output matches the zone of your cluster.
+If one does exist, run `kubectl get storageclass sourcegraph -o=yaml` and verify that the zone indicated in the output matches the zone of your cluster.
 
 - Google Cloud Platform users may need to [request an increase in storage quota](https://cloud.google.com/compute/quotas).
 
