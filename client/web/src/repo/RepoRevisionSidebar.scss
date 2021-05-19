@@ -21,7 +21,6 @@
         justify-content: center;
         z-index: 1;
         .theme-redesign & {
-            border-radius: 0;
             border-bottom-right-radius: var(--border-radius);
             color: var(--body-color);
             &:hover {
