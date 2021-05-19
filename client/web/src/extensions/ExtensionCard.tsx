@@ -215,7 +215,7 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                             )}
                         </span>
                     </div>
-                    <div className="mt-3 mb-2 extension-card__description">
+                    <div className="mt-3 extension-card__description">
                         {extension.manifest ? (
                             isErrorLike(extension.manifest) ? (
                                 <span className="text-danger small" title={extension.manifest.message}>
