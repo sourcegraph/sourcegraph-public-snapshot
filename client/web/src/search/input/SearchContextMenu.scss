@@ -57,7 +57,7 @@
         }
 
         &:not(:active) {
-            .search-context-menu__item-description {
+            > .search-context-menu__item-description {
                 color: var(--text-muted);
             }
         }
@@ -65,7 +65,7 @@
         &:hover,
         &:active,
         &:focus {
-            .search-context-menu__item-default {
+            > .search-context-menu__item-default {
                 background-color: var(--color-bg-1);
             }
 
@@ -73,7 +73,7 @@
                 background-color: var(--primary);
                 color: var(--light-text);
 
-                .search-context-menu__item-description {
+                > .search-context-menu__item-description {
                     color: var(--light-text);
                 }
             }
@@ -81,7 +81,7 @@
 
         &--selected {
             background-color: var(--color-bg-4);
-            .search-context-menu__item-default {
+            > .search-context-menu__item-default {
                 background-color: var(--color-bg-1);
             }
 
