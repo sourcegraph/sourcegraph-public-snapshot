@@ -33,7 +33,7 @@ export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps, Exte
     testIsOpen?: boolean
     codeHostIntegrationMessaging: 'browser-extension' | 'native-integration'
     showRepositorySection?: boolean
-    showRedesignToggle: boolean
+    showRedesignToggle?: boolean
 }
 
 export interface ExtensionAlertAnimationProps {
