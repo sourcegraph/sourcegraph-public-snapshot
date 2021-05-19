@@ -59,9 +59,11 @@ const SearchContextMenuItem: React.FunctionComponent<{
             className={classNames('search-context-menu__item', { 'search-context-menu__item--selected': selected })}
             onClick={setContext}
         >
-            <small className="search-context-menu__item-name font-weight-medium" title={spec}>
-                <HighlightedSearchTerm text={spec} searchFilter={searchFilter} />
-            </small>{' '}
+            <strong className="search-context-menu__item-name">
+                <small title={spec}>
+                    <HighlightedSearchTerm text={spec} searchFilter={searchFilter} />
+                </small>
+            </strong>{' '}
             <small className="search-context-menu__item-description" title={description}>
                 {description}
             </small>
@@ -288,7 +290,7 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
                     className="form-control search-context-menu__header-input"
                 />
             </div>
-            <div className="search-context-menu__list" ref={infiniteScrollList}>
+            <div className="search-context-menu__list" ref={infiniteScrollList} role="menu">
                 {loadingState !== 'LOADING' &&
                     filteredList.map(context => (
                         <SearchContextMenuItem

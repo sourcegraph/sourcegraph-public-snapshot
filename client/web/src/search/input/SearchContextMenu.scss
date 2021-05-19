@@ -16,7 +16,7 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 0.5rem 1rem;
+        padding: 0.25rem 1rem 0.5rem;
         border-bottom: 1px solid var(--border-color-2);
         color: var(--text-muted);
 
@@ -62,12 +62,19 @@
             }
         }
 
+        &--selected {
+            background-color: var(--color-bg-4);
+
+            .theme-redesign & {
+                background-color: var(--color-bg-3);
+            }
+        }
+
         &:hover,
         &:active,
         &:focus {
-            > .search-context-menu__item-default {
-                background-color: var(--color-bg-1);
-            }
+            // Override default focus styles
+            box-shadow: none;
 
             .theme-redesign & {
                 background-color: var(--primary);
@@ -79,14 +86,14 @@
             }
         }
 
+        &:hover,
+        &:active,
+        &:focus,
         &--selected {
-            background-color: var(--color-bg-4);
+            // Badge-secondary variant for improved contrast when background color changes
             > .search-context-menu__item-default {
                 background-color: var(--color-bg-1);
-            }
-
-            .theme-redesign & {
-                background-color: var(--color-bg-3);
+                border-color: var(--color-bg-1);
             }
         }
     }
@@ -94,7 +101,7 @@
     &__footer {
         display: flex;
         border-top: 1px solid var(--border-color-2);
-        padding: 0.75rem 1rem;
+        padding: 0.75rem 1rem 0.5rem;
 
         &-button {
             color: var(--web-content-link-color);
