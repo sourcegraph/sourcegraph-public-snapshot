@@ -123,9 +123,9 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
             <Description description={spec.description.description} />
             <BatchChangeTabs history={history} location={location}>
                 <BatchChangeTabList>
-                    <BatchChangeTab index={0} name="changesets">
+                    <BatchChangeTab index={0} name="previewchangesets">
                         <SourceBranchIcon className="icon-inline text-muted mr-1" />
-                        Changesets{' '}
+                        Preview changesets{' '}
                         <span className="badge badge-pill badge-secondary ml-1">{spec.applyPreview.totalCount}</span>
                     </BatchChangeTab>
                     <BatchChangeTab index={1} name="spec">
