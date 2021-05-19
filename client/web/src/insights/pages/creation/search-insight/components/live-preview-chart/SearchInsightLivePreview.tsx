@@ -97,7 +97,7 @@ export const SearchInsightLivePreview: React.FunctionComponent<SearchInsightLive
                 <span>
                     {' '}
                     Here you’ll see your insight’s chart preview. <br />
-                    You need to fill in the repositories and series fields.
+                    The chart preview will be shown here once you filled out the repositories and series fields.
                 </span>
             }
             className={className}
