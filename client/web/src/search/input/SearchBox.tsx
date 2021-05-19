@@ -62,7 +62,7 @@ export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
                     selectedSearchContextSpec={props.selectedSearchContextSpec}
                 />
             )}
-            <div className={styles.searchBoxBackgroundContainer}>
+            <div className={`${styles.searchBoxBackgroundContainer} flex-shrink-past-contents`}>
                 {props.showSearchContext && (
                     <SearchContextDropdown query={queryState.query} submitSearch={submitSearch} {...props} />
                 )}
