@@ -8,10 +8,10 @@
     padding: 0.375rem 0.75rem;
     height: 1.75rem;
 
-    box-shadow: 0px 1px 4px rgba($gray-07, 0.3);
+    box-shadow: 0 1px 4px rgba($gray-07, 0.3);
 
     .theme-redesign & {
-        box-shadow: 0px 1px 4px rgba(var(--gray-07), 0.3);
+        box-shadow: 0 1px 4px rgba(var(--gray-07), 0.3);
     }
 
     .theme-dark & {
