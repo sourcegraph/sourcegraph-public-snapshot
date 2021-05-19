@@ -65,6 +65,10 @@
         &:hover,
         &:active,
         &:focus {
+            .search-context-menu__item-default {
+                background-color: var(--color-bg-1);
+            }
+
             .theme-redesign & {
                 background-color: var(--primary);
                 color: var(--light-text);
@@ -72,16 +76,11 @@
                 .search-context-menu__item-description {
                     color: var(--light-text);
                 }
-
-                .search-context-menu__item-default {
-                    background-color: var(--color-bg-1);
-                }
             }
         }
 
         &--selected {
             background-color: var(--color-bg-4);
-
             .search-context-menu__item-default {
                 background-color: var(--color-bg-1);
             }
