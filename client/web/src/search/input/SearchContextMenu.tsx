@@ -59,12 +59,12 @@ const SearchContextMenuItem: React.FunctionComponent<{
             className={classNames('search-context-menu__item', { 'search-context-menu__item--selected': selected })}
             onClick={setContext}
         >
-            <span className="search-context-menu__item-name" title={spec}>
+            <small className="search-context-menu__item-name" title={spec}>
                 <HighlightedSearchTerm text={spec} searchFilter={searchFilter} />
-            </span>{' '}
-            <span className="search-context-menu__item-description" title={description}>
+            </small>{' '}
+            <small className="search-context-menu__item-description" title={description}>
                 {description}
-            </span>
+            </small>
             {isDefault && (
                 <span className="badge badge-secondary text-uppercase search-context-menu__item-default">Default</span>
             )}
