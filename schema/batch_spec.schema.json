@@ -69,21 +69,12 @@
           "rootAtLocationOf": {
             "type": "string",
             "description": "The name of the file that sits at the root of the desired workspace.",
-            "examples": [
-              "package.json",
-              "go.mod",
-              "Gemfile",
-              "Cargo.toml",
-              "README.md"
-            ]
+            "examples": ["package.json", "go.mod", "Gemfile", "Cargo.toml", "README.md"]
           },
           "in": {
             "type": "string",
             "description": "The repositories in which to apply the workspace configuration. Supports globbing.",
-            "examples": [
-              "github.com/sourcegraph/src-cli",
-              "github.com/sourcegraph/*"
-            ]
+            "examples": ["github.com/sourcegraph/src-cli", "github.com/sourcegraph/*"]
           },
           "onlyFetchWorkspace": {
             "type": "boolean",
@@ -122,11 +113,7 @@
                 "value": {
                   "type": "string",
                   "description": "The value of the output, which can be a template string.",
-                  "examples": [
-                    "hello world",
-                    "${{ step.stdout }}",
-                    "${{ repository.name }}"
-                  ]
+                  "examples": ["hello world", "${{ step.stdout }}", "${{ repository.name }}"]
                 },
                 "format": {
                   "type": "string",
