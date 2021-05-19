@@ -89,8 +89,8 @@ export const SearchContextsListTab: React.FunctionComponent<SearchContextsListTa
                     args: {},
                 },
                 {
-                    value: 'no-owner',
-                    label: 'No owner',
+                    value: 'global-owner',
+                    label: 'Global owner',
                     args: {
                         namespaceFilterType: SearchContextsNamespaceFilterType.INSTANCE,
                     },
