@@ -54,8 +54,6 @@ export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props =>
         props.telemetryService.log('InsightAddMoreClick')
     }, [props.telemetryService])
 
-    const configureURL = isCreationUIEnabled ? '/insights/create-intro' : '/user/settings'
-
     return (
         <div className="w-100">
             <Page>
@@ -63,18 +61,28 @@ export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props =>
                     annotation={<FeedbackBadge status="prototype" feedback={{ mailto: 'support@sourcegraph.com' }} />}
                     path={[{ icon: InsightsIcon, text: 'Code insights' }]}
                     actions={
-                        <>
+                        !isCreationUIEnabled ? (
+                            <>
+                                <Link
+                                    to="/extensions?query=category:Insights"
+                                    onClick={logAddMoreClick}
+                                    className="btn btn-secondary mr-1"
+                                >
+                                    <PlusIcon className="icon-inline" /> Add more insights
+                                </Link>
+                                <Link to="/user/settings" onClick={logConfigureClick} className="btn btn-secondary">
+                                    <GearIcon className="icon-inline" /> Configure insights
+                                </Link>
+                            </>
+                        ) : (
                             <Link
-                                to="/extensions?query=category:Insights"
+                                to="/insights/create-intro"
                                 onClick={logAddMoreClick}
                                 className="btn btn-secondary mr-1"
                             >
-                                <PlusIcon className="icon-inline" /> Add more insights
+                                <PlusIcon className="icon-inline" /> Create new insight
                             </Link>
-                            <Link to={configureURL} onClick={logConfigureClick} className="btn btn-secondary">
-                                <GearIcon className="icon-inline" /> Configure insights
-                            </Link>
-                        </>
+                        )
                     }
                     className="mb-3"
                 />

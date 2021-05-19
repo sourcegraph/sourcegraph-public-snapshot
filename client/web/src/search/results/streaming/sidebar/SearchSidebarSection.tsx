@@ -10,8 +10,9 @@ import styles from './SearchSidebarSection.module.scss'
 export const SearchSidebarSection: React.FunctionComponent<{
     header: string
     children?: React.ReactElement[]
+    className?: string
     showSearch?: boolean // Search only works if children are FilterLink
-}> = ({ header, children = [], showSearch = false }) => {
+}> = ({ header, children = [], className, showSearch = false }) => {
     const [filter, setFilter] = useState('')
 
     // Clear filter when children change
@@ -31,7 +32,7 @@ export const SearchSidebarSection: React.FunctionComponent<{
     const [collapsed, setCollapsed] = useState(false)
 
     return children.length > 0 ? (
-        <div>
+        <div className={className}>
             <button
                 type="button"
                 className={classNames('btn btn-outline-secondary', styles.sidebarSectionCollapseButton)}

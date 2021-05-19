@@ -44,15 +44,12 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
                 return
             }
 
-            const {
-                id: userID,
-                organizations: { nodes: orgs },
-            } = authenticatedUser
+            const { id: userID } = authenticatedUser
             const subjectID =
                 values.visibility === 'personal'
                     ? userID
-                    : // TODO [VK] Add org picker in creation UI and not just pick first organization
-                      orgs[0].id
+                    : // If this is not a 'personal' value than we are dealing with org id
+                      values.visibility
 
             try {
                 const settings = await getSubjectSettings(subjectID).toPromise()
@@ -80,6 +77,10 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
         return <Redirect to="/" />
     }
 
+    const {
+        organizations: { nodes: orgs },
+    } = authenticatedUser
+
     return (
         <Page className={classnames(styles.creationPage, 'col-10')}>
             <PageTitle title="Create new code insight" />
@@ -102,6 +103,7 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
             <LangStatsInsightCreationContent
                 className="pb-5"
                 settings={settingsCascade.final ?? DEFAULT_FINAL_SETTINGS}
+                organizations={orgs}
                 onSubmit={handleSubmit}
                 onCancel={handleCancel}
             />

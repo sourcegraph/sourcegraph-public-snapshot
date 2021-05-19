@@ -7,7 +7,11 @@ export enum InsightTypePrefix {
     langStats = 'codeStatsInsights.insight',
 }
 
-export type InsightVisibility = 'personal' | 'organization'
+/**
+ * Visibility setting which responsible for where insight will appear.
+ * possible value 'personal' | '<org id 1> ... | ... <org id N>'
+ * */
+export type InsightVisibility = string
 
 export type Insight = SearchBasedInsight | LangStatsInsight
 

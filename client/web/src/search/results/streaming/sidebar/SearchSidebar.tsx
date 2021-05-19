@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import React, { useCallback } from 'react'
 import { useHistory } from 'react-router'
 import StickyBox from 'react-sticky-box'
@@ -25,6 +26,7 @@ export interface SearchSidebarProps
         TelemetryProps {
     query: string
     filters?: Filter[]
+    className?: string
 }
 
 export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props => {
@@ -44,19 +46,23 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
     )
 
     return (
-        <div className={styles.searchSidebar}>
-            <StickyBox offsetTop={8} offsetBottom={8}>
-                <SearchSidebarSection header="Search types">{getSearchTypeLinks(props)}</SearchSidebarSection>
-                <SearchSidebarSection header="Dynamic filters">
+        <div className={classNames(styles.searchSidebar, props.className)}>
+            <StickyBox offsetTop={8} offsetBottom={8} className={styles.searchSidebarStickyBox}>
+                <SearchSidebarSection className={styles.searchSidebarItem} header="Search types">
+                    {getSearchTypeLinks(props)}
+                </SearchSidebarSection>
+                <SearchSidebarSection className={styles.searchSidebarItem} header="Dynamic filters">
                     {getDynamicFilterLinks(props.filters, onFilterClicked)}
                 </SearchSidebarSection>
-                <SearchSidebarSection header="Repositories" showSearch={true}>
+                <SearchSidebarSection className={styles.searchSidebarItem} header="Repositories" showSearch={true}>
                     {getRepoFilterLinks(props.filters, onFilterClicked)}
                 </SearchSidebarSection>
-                <SearchSidebarSection header="Search snippets">
+                <SearchSidebarSection className={styles.searchSidebarItem} header="Search snippets">
                     {getSearchScopeLinks(props.settingsCascade, onFilterClicked)}
                 </SearchSidebarSection>
-                <SearchSidebarSection header="Quicklinks">{getQuickLinks(props.settingsCascade)}</SearchSidebarSection>
+                <SearchSidebarSection className={styles.searchSidebarItem} header="Quicklinks">
+                    {getQuickLinks(props.settingsCascade)}
+                </SearchSidebarSection>
             </StickyBox>
         </div>
     )

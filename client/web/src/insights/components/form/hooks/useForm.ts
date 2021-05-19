@@ -1,10 +1,21 @@
-import { EventHandler, FormEventHandler, RefObject, SyntheticEvent, useEffect, useRef, useState } from 'react'
+import { debounce, DebouncedFunc } from 'lodash'
+import { EventHandler, FormEventHandler, RefObject, SyntheticEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { noop } from 'rxjs'
+
+import { useDistinctValue } from '../../../hooks/use-distinct-value'
 
 // Special key for the submit error store.
 export const FORM_ERROR = 'useForm/submissionErrors'
 
 export type SubmissionErrors = Record<string, any> | undefined
+export type ValidationResult = string | undefined | void
+
+interface FormChangeEvent<FormValues> {
+    values: FormValues
+    valid: boolean
+}
+
+type ChangeHandler<FormValues> = (event: FormChangeEvent<FormValues>) => void
 
 interface UseFormProps<FormValues extends object> {
     /**
@@ -26,7 +37,7 @@ interface UseFormProps<FormValues extends object> {
      * Change handler will be called every time when some field withing the form
      * has been changed with last fields values.
      * */
-    onChange?: (values: FormValues) => void
+    onChange?: ChangeHandler<FormValues>
 }
 
 /**
@@ -75,6 +86,8 @@ export interface FormAPI<FormValues> {
      * */
     submitted: boolean
 
+    valid: boolean
+
     /**
      * State to understand there some field is processing async validations.
      * It might be useful to disable submit button for example if we got async
@@ -110,13 +123,15 @@ export interface FormAPI<FormValues> {
  * Field state which present public state from useField hook. On order to aggregate
  * state of all fields within the form we store all fields state on form level as well.
  * */
-export interface FieldState<Value> {
+export interface FieldState<Value> extends FieldMetaState {
     /**
      * Field (input) controlled value. This value might be not only some primitive value
      * like string, number but array, object, tuple and other complex types as consumer set.
      * */
     value: Value
+}
 
+export interface FieldMetaState {
     /**
      * State to understand when users focused and blurred input element.
      * */
@@ -146,7 +161,7 @@ export interface FieldState<Value> {
  * Used below to keep tracking of fields value, touched, validity and other
  * fields state data.
  * */
-type FieldsState<FormValues> = Record<keyof FormValues, FieldState<unknown>>
+type FieldsState<FormValues> = Record<keyof FormValues, FieldState<FormValues>>
 
 /**
  * Unified form abstraction to track form state and provide form fields management
@@ -167,26 +182,40 @@ export function useForm<FormValues extends object>(props: UseFormProps<FormValue
     const formElementReference = useRef<HTMLFormElement>(null)
     const onSubmitReference = useRef<UseFormProps<FormValues>['onSubmit']>()
 
+    // Debounced onChange handler.
+    const onChangeReference = useRef<DebouncedFunc<ChangeHandler<FormValues>>>(debounce(onChange, 0))
+
     // Track unmounted state to prevent setState if async validation or async submitting
     // will be resolved after component has been unmounted.
     const isUnmounted = useRef<boolean>(false)
 
     const setFieldState = (name: keyof FormValues, state: FieldState<unknown>): void => {
         setFields(fields => ({ ...fields, [name]: state }))
-
-        // On first render all fields within the form trigger setFieldState
-        // in order to set initial state. OnChange handler shouldn't being run
-        // on first render so we have to skip setFieldState calls during the first
-        // fields render.
-        const hasRegisterField = fields[name] !== undefined
-
-        if (hasRegisterField && fields[name].value !== state.value) {
-            onChange(getFormValues({ ...fields, [name]: state }))
-        }
     }
+
+    const changeEvent = useDistinctValue(
+        useMemo(
+            () => ({
+                values: getFormValues(fields),
+                valid: Object.values<Pick<FieldState<unknown>, 'validState'>>(fields).every(
+                    state => state.validState === 'VALID'
+                ),
+            }),
+            [fields]
+        )
+    )
+
+    useEffect(() => {
+        if (Object.keys(changeEvent.values).length === 0) {
+            return
+        }
+
+        onChangeReference.current?.(changeEvent)
+    }, [changeEvent])
 
     useEffect(
         () => () => {
+            onChangeReference.current?.cancel()
             isUnmounted.current = true
         },
         []
@@ -204,6 +233,7 @@ export function useForm<FormValues extends object>(props: UseFormProps<FormValue
             submitErrors,
             initialValues,
             setFieldState,
+            valid: Object.values<FieldState<unknown>>(fields).every(state => state.validState === 'VALID'),
             validating: Object.values<FieldState<unknown>>(fields).some(state => state.validState === 'CHECKING'),
         },
         ref: formElementReference,
@@ -242,7 +272,7 @@ export function useForm<FormValues extends object>(props: UseFormProps<FormValue
  * Creates form values object and omits all other internal states of a form field.
  * Used to form values for onSubmit and onChange handlers.
  * */
-function getFormValues<FormValues>(fields: Record<string, FieldState<unknown>>): FormValues {
+function getFormValues<FormValues>(fields: Record<string, Pick<FieldState<FormValues>, 'value'>>): FormValues {
     return Object.keys(fields).reduce(
         (values, fieldName) => ({ ...values, [fieldName]: fields[fieldName].value }),
         {} as FormValues

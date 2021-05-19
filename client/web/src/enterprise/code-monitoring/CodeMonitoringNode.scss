@@ -30,4 +30,16 @@
         // stylelint-disable-next-line declaration-property-unit-whitelist
         margin-bottom: -2px;
     }
+
+    .theme-redesign & {
+        color: var(--body-color);
+
+        &:focus-visible {
+            border-color: transparent;
+        }
+
+        &:hover {
+            border-color: var(--border-active-color);
+        }
+    }
 }
