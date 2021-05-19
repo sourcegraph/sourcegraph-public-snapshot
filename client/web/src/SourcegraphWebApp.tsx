@@ -312,8 +312,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
 
         document.documentElement.classList.add('theme')
 
-        // NODE_ENV check ensures that this logic won't propagate to non-dev builds via Webpack dead code elimination
-        if (process.env.NODE_ENV === 'development' && getIsRedesignEnabled()) {
+        if (getIsRedesignEnabled()) {
             document.documentElement.classList.add(REDESIGN_CLASS_NAME)
         }
 

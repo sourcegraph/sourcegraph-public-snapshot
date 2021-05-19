@@ -111,7 +111,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                     autoFocus={true}
                     required={true}
                     description="Separate repositories with comas"
-                    placeholder="Add or search for repositories"
+                    placeholder="Example: github.com/sourcegraph/sourcegraph"
                     loading={repositories.meta.validState === 'CHECKING'}
                     valid={repositories.meta.touched && repositories.meta.validState === 'VALID'}
                     error={repositories.meta.touched && repositories.meta.error}

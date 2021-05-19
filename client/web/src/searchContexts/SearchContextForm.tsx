@@ -38,7 +38,7 @@ interface VisibilityRadioButton {
 
 function getVisibilityRadioButtons(selectedNamespaceType: SelectedNamespaceType): VisibilityRadioButton[] {
     const privateVisibilityDescription =
-        selectedNamespaceType === 'no-owner'
+        selectedNamespaceType === 'global-owner'
             ? 'Only site-admins can view this context.'
             : selectedNamespaceType === 'org'
             ? 'Only organization members can view this context.'
@@ -49,7 +49,7 @@ function getVisibilityRadioButtons(selectedNamespaceType: SelectedNamespaceType)
             visibility: 'public',
             title: 'Public',
             description:
-                'Anyone on Sourcegraph can view this context. Public repositories will be visible to all users. ' +
+                'Anyone can view this context. Public repositories will be visible to everyone. ' +
                 'Private repositories will only be visible to users that have permission to view the repository via the code host.',
         },
         {
