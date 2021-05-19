@@ -6,7 +6,7 @@ import { AuthenticatedUser } from '../auth'
 
 import styles from './SearchContextOwnerDropdown.module.scss'
 
-export type SelectedNamespaceType = 'user' | 'org' | 'no-owner'
+export type SelectedNamespaceType = 'user' | 'org' | 'global-owner'
 
 export interface SelectedNamespace {
     id: string | null
@@ -37,7 +37,7 @@ export const SearchContextOwnerDropdown: React.FunctionComponent<SearchContextOw
                 caret={true}
                 color="outline-secondary"
             >
-                {selectedNamespace.type === 'no-owner' ? 'No owner' : `@${selectedNamespace.name}`}
+                {selectedNamespace.type === 'global-owner' ? 'Global owner' : `@${selectedNamespace.name}`}
             </DropdownToggle>
             <DropdownMenu>
                 <DropdownItem onClick={() => setSelectedNamespace(selectedUserNamespace)}>
@@ -54,9 +54,11 @@ export const SearchContextOwnerDropdown: React.FunctionComponent<SearchContextOw
                 {authenticatedUser.siteAdmin && (
                     <>
                         <hr />
-                        <DropdownItem onClick={() => setSelectedNamespace({ id: null, type: 'no-owner', name: '' })}>
-                            <div>No owner</div>
-                            <div className="text-muted">Globally available on Sourcegraph.</div>
+                        <DropdownItem
+                            onClick={() => setSelectedNamespace({ id: null, type: 'global-owner', name: '' })}
+                        >
+                            <div>Global owner</div>
+                            <div className="text-muted">Available to everyone.</div>
                         </DropdownItem>
                     </>
                 )}
