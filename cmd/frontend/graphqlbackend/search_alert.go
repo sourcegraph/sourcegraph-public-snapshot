@@ -652,7 +652,7 @@ func capFirst(s string) string {
 	}, s)
 }
 
-func alertForError(err error, inputs *run.SearchInputs) *searchAlert {
+func alertForError(err error) *searchAlert {
 	var (
 		alert *searchAlert
 		rErr  *run.RepoLimitError
@@ -715,7 +715,7 @@ func (o *alertObserver) Error(ctx context.Context, err error) {
 	}
 
 	// We can compute the alert outside of the critical section.
-	alert := alertForError(err, o.Inputs)
+	alert := alertForError(err)
 
 	o.mu.Lock()
 	defer o.mu.Unlock()
