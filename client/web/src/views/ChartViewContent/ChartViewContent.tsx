@@ -47,7 +47,7 @@ export const ChartViewContent: FunctionComponent<ChartViewContentProps> = props 
             telemetryService.log('InsightDataPointClick', { insightType: getInsightTypeByViewId(viewID) })
 
             const url = new URL(event.link)
-            window.open(url.origin + url.pathname + url.search + url.hash, '_blank')?.focus()
+            window.open(event.link, '_blank', 'noopener')?.focus()
         },
         [viewID, telemetryService]
     )
