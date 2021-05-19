@@ -1,8 +1,0 @@
-.input:-webkit-autofill,
-.input:-webkit-autofill:focus,
-.input:-webkit-autofill:hover {
-    // In order to improve visual styles for autofill state of input
-    // we have to set box shadow we huge size to override native styles
-    // See https://css-tricks.com/snippets/css/change-autocomplete-styles-webkit-browsers/
-    -webkit-box-shadow: 0 0 0 1000px var(--secondary) inset;
-}

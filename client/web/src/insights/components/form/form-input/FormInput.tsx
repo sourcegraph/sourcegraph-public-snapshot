@@ -3,8 +3,6 @@ import React, { forwardRef, InputHTMLAttributes, ReactNode } from 'react'
 
 import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 
-import styles from './FormInput.module.scss'
-
 interface FormInputProps extends InputHTMLAttributes<HTMLInputElement> {
     /** Title of input. */
     title?: string
@@ -49,7 +47,7 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>((props, re
             <LoaderInput className="d-flex" loading={loading}>
                 <input
                     type={type}
-                    className={classnames(styles.input, inputClassName, 'form-control', {
+                    className={classnames(inputClassName, 'form-control', {
                         'is-valid': valid,
                         'is-invalid': !!error || errorInputState,
                     })}
