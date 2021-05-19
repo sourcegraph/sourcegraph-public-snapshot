@@ -9,6 +9,9 @@ exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
     className="search-results-info-bar__row"
   >
     <div />
+    <div
+      className="search-results-info-bar__expander"
+    />
     <ul
       className="nav align-items-center justify-content-end"
     >
@@ -78,6 +81,9 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
     className="search-results-info-bar__row"
   >
     <div />
+    <div
+      className="search-results-info-bar__expander"
+    />
     <ul
       className="nav align-items-center justify-content-end"
     >
@@ -174,6 +180,9 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
     className="search-results-info-bar__row"
   >
     <div />
+    <div
+      className="search-results-info-bar__expander"
+    />
     <ul
       className="nav align-items-center justify-content-end"
     >
@@ -217,6 +226,9 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
     className="search-results-info-bar__row"
   >
     <div />
+    <div
+      className="search-results-info-bar__expander"
+    />
     <ul
       className="nav align-items-center justify-content-end"
     >

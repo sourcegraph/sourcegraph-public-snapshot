@@ -20,7 +20,7 @@ export default {
     devtool: 'source-map',
     resolve: {
         alias: { react: require.resolve('react') },
-        extensions: ['.ts', '.tsx', '.js', '.jsx'],
+        extensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
     },
     module: {
         rules: [
