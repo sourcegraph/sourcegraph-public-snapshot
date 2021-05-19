@@ -283,10 +283,6 @@ func (r *Resolver) UsersWithPendingPermissions(ctx context.Context) ([]string, e
 }
 
 func (r *Resolver) AuthorizedUsers(ctx context.Context, args *graphqlbackend.RepoAuthorizedUserArgs) (graphqlbackend.UserConnectionResolver, error) {
-	if envvar.SourcegraphDotComMode() {
-		return nil, errors.New("cannot read permissions on sourcegraph.com")
-	}
-
 	// 🚨 SECURITY: Only site admins can query repository permissions.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
@@ -344,10 +340,6 @@ func (r *permissionsInfoResolver) UpdatedAt() graphqlbackend.DateTime {
 }
 
 func (r *Resolver) RepositoryPermissionsInfo(ctx context.Context, id graphql.ID) (graphqlbackend.PermissionsInfoResolver, error) {
-	if envvar.SourcegraphDotComMode() {
-		return nil, errors.New("cannot read authorized users on sourcegraph.com")
-	}
-
 	// 🚨 SECURITY: Only site admins can query repository permissions.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
@@ -383,10 +375,6 @@ func (r *Resolver) RepositoryPermissionsInfo(ctx context.Context, id graphql.ID)
 }
 
 func (r *Resolver) UserPermissionsInfo(ctx context.Context, id graphql.ID) (graphqlbackend.PermissionsInfoResolver, error) {
-	if envvar.SourcegraphDotComMode() {
-		return nil, errors.New("cannot read authorized users on sourcegraph.com")
-	}
-
 	// 🚨 SECURITY: Only site admins can query user permissions.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err

@@ -4,6 +4,7 @@
   "disablePublicRepoRedirects": true,
   "repoListUpdateInterval": 1,
   "update.channel": "release",
+  "authz.enforceForSiteAdmins": true,
   "auth.providers": [
     {
       "type": "builtin",
