@@ -84,6 +84,7 @@ export function GlyphContent<Datum extends object>(props: GlyphContentProps<Datu
         <MaybeLink
             to={linkURL}
             target="_blank"
+            rel="noopener"
             onPointerUp={onPointerUp}
             onClick={onClick}
             onFocus={() => linkURL && setFocusedDatum(currentDatum)}
