@@ -27,7 +27,8 @@ const testKeyID = "4b739277-5a93-4551-b71c-99608c9c805d"
 
 func TestRoundtrip(t *testing.T) {
 	ctx := context.Background()
-	testString := "test1234"
+	// Validate that we successfully worked around the 4096 bytes restriction.
+	testString := strings.Repeat("test1234", 4096)
 	keyConfig := schema.AWSKMSEncryptionKey{
 		KeyId:  testKeyID,
 		Region: "us-west-2",
@@ -51,7 +52,7 @@ func TestRoundtrip(t *testing.T) {
 	configOpts = append(configOpts, config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
 		readEnvFallback("AWS_ACCESS_KEY_ID", "test"),
 		readEnvFallback("AWS_SECRET_ACCESS_KEY", "test"),
-		readEnvFallback("AWS_SESSION_TOKEN", "test"),
+		"",
 	)))
 	config, err := config.LoadDefaultConfig(ctx, configOpts...)
 	if err != nil {

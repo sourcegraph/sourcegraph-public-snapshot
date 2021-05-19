@@ -2,11 +2,17 @@ package awskms
 
 import (
 	"context"
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
 	"encoding/base64"
+	"encoding/json"
+	"io"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/kms"
+	"github.com/aws/aws-sdk-go-v2/service/kms/types"
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
@@ -68,31 +74,85 @@ func (k *Key) Decrypt(ctx context.Context, cipherText []byte) (*encryption.Secre
 	if err != nil {
 		return nil, err
 	}
-
-	// Decrypt ciphertext.
-	res, err := k.client.Decrypt(ctx, &kms.DecryptInput{
-		KeyId:          &k.keyID,
-		CiphertextBlob: buf,
-	})
+	ev := encryptedValue{}
+	err = json.Unmarshal(buf, &ev)
 	if err != nil {
 		return nil, err
 	}
 
-	s := encryption.NewSecret(string(res.Plaintext))
+	res, err := k.client.Decrypt(ctx, &kms.DecryptInput{CiphertextBlob: ev.Key, KeyId: &k.keyID})
+	if err != nil {
+		return nil, err
+	}
+
+	// Decrypt ciphertext.
+	decBuf, err := aesDecrypt(ev.Ciphertext, res.Plaintext, ev.Nonce)
+	if err != nil {
+		return nil, err
+	}
+
+	s := encryption.NewSecret(string(decBuf))
 	return &s, nil
 }
 
 // Encrypt a secret, storing it as a base64 encoded string.
 func (k *Key) Encrypt(ctx context.Context, plaintext []byte) ([]byte, error) {
 	// Encrypt plaintext.
-	res, err := k.client.Encrypt(ctx, &kms.EncryptInput{
-		KeyId:     &k.keyID,
-		Plaintext: plaintext,
+	res, err := k.client.GenerateDataKey(ctx, &kms.GenerateDataKeyInput{
+		KeyId:   &k.keyID,
+		KeySpec: types.DataKeySpecAes256,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	buf := base64.StdEncoding.EncodeToString(res.CiphertextBlob)
+	ev := encryptedValue{
+		Key: res.CiphertextBlob,
+	}
+	ev.Ciphertext, ev.Nonce, err = aesEncrypt(plaintext, res.Plaintext)
+	if err != nil {
+		return nil, err
+	}
+
+	jsonKey, err := json.Marshal(ev)
+	if err != nil {
+		return nil, err
+	}
+	buf := base64.StdEncoding.EncodeToString(jsonKey)
 	return []byte(buf), err
+}
+
+type encryptedValue struct {
+	Key        []byte
+	Nonce      []byte
+	Ciphertext []byte
+}
+
+func aesEncrypt(plaintext, key []byte) ([]byte, []byte, error) {
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, nil, err
+	}
+	aesGCM, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, nil, err
+	}
+	nonce := make([]byte, aesGCM.NonceSize())
+	if _, err = io.ReadFull(rand.Reader, nonce); err != nil {
+		return nil, nil, err
+	}
+	ciphertext := aesGCM.Seal(nil, nonce, plaintext, nil)
+	return ciphertext, nonce, nil
+}
+
+func aesDecrypt(ciphertext, key, nonce []byte) ([]byte, error) {
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, err
+	}
+	aesGCM, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, err
+	}
+	return aesGCM.Open(nil, nonce, ciphertext, nil)
 }
