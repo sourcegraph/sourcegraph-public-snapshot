@@ -164,6 +164,7 @@ $input-transition: none;
 
     .theme-redesign & {
         background-color: var(--color-bg-1);
+        box-shadow: var(--dropdown-shadow);
         border-radius: var(--popover-border-radius);
         // Ensure content is clipped by border
         overflow: hidden;
