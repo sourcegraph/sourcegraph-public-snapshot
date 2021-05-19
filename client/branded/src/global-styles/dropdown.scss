@@ -1,18 +1,11 @@
 @import 'bootstrap/scss/dropdown';
 
-.dropdown-divider {
-    margin: 0.25rem 0;
-}
-
 .theme-dark {
     --dropdown-bg: #0e121b;
     --dropdown-border-color: var(--border-color);
     --dropdown-link-hover-bg: var(--color-bg-2);
     --dropdown-header-color: var(--text-muted);
-    .dropdown-menu {
-        border-radius: 4px;
-        box-shadow: 0 0 12px 0 rgba(0, 27, 76, 0.4);
-    }
+    --dropdown-shadow: 0 0 12px 0 rgba(0, 27, 76, 0.4);
 }
 
 .theme-light {
@@ -20,10 +13,7 @@
     --dropdown-border-color: var(--border-color);
     --dropdown-link-hover-bg: var(--color-bg-2);
     --dropdown-header-color: var(--text-muted);
-    .dropdown-menu {
-        border-radius: 4px;
-        box-shadow: 0 0 12px 0 rgba(0, 27, 76, 0.085);
-    }
+    --dropdown-shadow: 0 0 12px 0 rgba(0, 27, 76, 0.085);
 }
 
 .theme-light.theme-redesign {
@@ -32,10 +22,6 @@
     --dropdown-link-hover-bg: var(--color-bg-2);
     --dropdown-header-color: var(--text-muted);
     --dropdown-shadow: 0 4px 16px -6px rgba(36, 41, 54, 0.2);
-    .dropdown-menu {
-        border-radius: 5px;
-        box-shadow: var(--dropdown-shadow);
-    }
 }
 
 .theme-dark.theme-redesign {
@@ -44,8 +30,13 @@
     --dropdown-link-hover-bg: var(--color-bg-2);
     --dropdown-header-color: var(--text-muted);
     --dropdown-shadow: 0 4px 16px -6px rgba(11, 12, 15, 0.8);
-    .dropdown-menu {
-        border-radius: 5px;
-        box-shadow: var(--dropdown-shadow);
-    }
+}
+
+.dropdown-divider {
+    margin: 0.25rem 0;
+}
+
+.dropdown-menu {
+    border-radius: var(--popover-border-radius);
+    box-shadow: var(--dropdown-shadow);
 }
