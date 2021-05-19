@@ -14,11 +14,16 @@ $nav-tabs-link-active-border-color: var(--border-color) var(--border-color) tran
 .nav-tabs > .nav-item > .nav-link {
     height: 100%;
     .theme-redesign & {
-        border: none;
-        border-radius: var(--border-radius);
         color: var(--text-muted);
+        border: none;
+        &:focus-visible {
+            border-radius: var(--border-radius);
+            // Add this new stacking context in order to show the focus ring without cutting any edge.
+            isolation: isolate;
+            z-index: 1;
+        }
         &:not(.active):hover {
-            border-bottom: 3px solid var(--border-color-2);
+            border-bottom: 2px solid var(--border-color-2);
             margin-top: 0;
             color: var(--body-color);
         }
@@ -28,8 +33,8 @@ $nav-tabs-link-active-border-color: var(--border-color) var(--border-color) tran
 .nav-tabs > .nav-item > .nav-link.active {
     .theme-redesign & {
         color: var(--body-color);
-        font-weight: bold;
-        border-bottom: 3px solid var(--brand-secondary);
+        font-weight: 600;
+        border-bottom: 2px solid var(--brand-secondary);
     }
 }
 
