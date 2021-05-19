@@ -111,12 +111,12 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 	ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
 	defer cancel()
 
-	resolved, alertResult, err := r.determineRepos(ctx, tr, start)
+	resolved, err := r.determineRepos(ctx, tr, start)
 	if err != nil {
+		if alert, err := errorToAlert(err); alert != nil {
+			return &SearchResultsResolver{db: r.db, alert: alert}, err
+		}
 		return nil, err
-	}
-	if alertResult != nil {
-		return &SearchResultsResolver{db: r.db, alert: alertResult}, nil
 	}
 
 	q, err := query.ToBasicQuery(r.Query)

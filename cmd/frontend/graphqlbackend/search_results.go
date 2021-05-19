@@ -1303,20 +1303,20 @@ func (r *searchResolver) determineResultTypes(args search.TextParameters, forceT
 // determineRepos wraps resolveRepositories. It interprets the response and
 // error to see if an alert needs to be returned. Only one of the return
 // values will be non-nil.
-func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, start time.Time) (*searchrepos.Resolved, *searchAlert, error) {
+func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, start time.Time) (*searchrepos.Resolved, error) {
 	resolved, err := r.resolveRepositories(ctx, nil)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	tr.LazyPrintf("searching %d repos, %d missing", len(resolved.RepoRevs), len(resolved.MissingRepoRevs))
 	if len(resolved.RepoRevs) == 0 {
-		return nil, nil, r.errorForNoResolvedRepos(ctx)
+		return nil, r.errorForNoResolvedRepos(ctx)
 	}
 	if resolved.OverLimit {
-		return nil, nil, r.errorForOverRepoLimit(ctx)
+		return nil, r.errorForOverRepoLimit(ctx)
 	}
-	return &resolved, nil, nil
+	return &resolved, nil
 }
 
 // isGlobalSearch returns true if the query does not contain repo, repogroup, or
@@ -1458,15 +1458,12 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 		}
 	}
 
-	resolved, alertResult, err := r.determineRepos(ctx, tr, start)
+	resolved, err := r.determineRepos(ctx, tr, start)
 	if err != nil {
 		if alert, err := errorToAlert(err); alert != nil {
 			return &SearchResultsResolver{db: r.db, alert: alert}, err
 		}
 		return nil, err
-	}
-	if alertResult != nil {
-		return &SearchResultsResolver{db: r.db, alert: alertResult}, nil
 	}
 	if len(resolved.MissingRepoRevs) > 0 {
 		agg.Error(&missingRepoRevsError{Missing: resolved.MissingRepoRevs})
