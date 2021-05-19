@@ -252,7 +252,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                     </>
                 ),
             }
-        }, [repoOrError, resolvedRevisionOrError, props.history, props.location])
+        }, [repoOrError, resolvedRevisionOrError])
     )
 
     // Update the workspace roots service to reflect the current repo / resolved revision

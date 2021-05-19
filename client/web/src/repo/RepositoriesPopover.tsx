@@ -9,11 +9,11 @@ import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
+import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { queryGraphQL } from '../backend/graphql'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../components/FilteredConnection'
 import { eventLogger } from '../tracking/eventLogger'
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 function fetchRepositories(args: { first?: number; query?: string }): Observable<GQL.IRepositoryConnection> {
     return queryGraphQL(
