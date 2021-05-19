@@ -8,8 +8,8 @@ export function getSanitizedRepositories(rawRepositories: string): string[] {
     return rawRepositories.trim().split(/\s*,\s*/)
 }
 
-export function getSanitizedSeries(rawSeries: EditableDataSeries[]): DataSeries[] {
-    return rawSeries.map(line => ({
+export function getSanitizedLine(line: EditableDataSeries): DataSeries {
+    return {
         name: line.name.trim(),
         stroke: line.stroke,
         // Query field is a reg exp field for code insight query setting
@@ -17,7 +17,11 @@ export function getSanitizedSeries(rawSeries: EditableDataSeries[]): DataSeries[
         // to prevent this behavior below we replace double escaping
         // with just one series of escape characters e.g. - //
         query: line.query.replace(/\\\\/g, '\\'),
-    }))
+    }
+}
+
+export function getSanitizedSeries(rawSeries: EditableDataSeries[]): DataSeries[] {
+    return rawSeries.map(getSanitizedLine)
 }
 
 /**

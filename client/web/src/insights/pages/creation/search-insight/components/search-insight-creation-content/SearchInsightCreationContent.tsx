@@ -84,7 +84,7 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
     const step = useField('step', formAPI)
     const stepValue = useField('stepValue', formAPI, { sync: requiredStepValueField })
 
-    const { liveSeries, listen, editRequest, editCommit, cancelEdit, deleteSeries } = useEditableSeries({
+    const { editSeries, listen, editRequest, editCommit, cancelEdit, deleteSeries } = useEditableSeries({
         series,
     })
 
@@ -92,7 +92,7 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
     // we should disabled live chart preview
     const allFieldsForPreviewAreValid =
         (repositories.meta.validState === 'VALID' || repositories.meta.validState === 'CHECKING') &&
-        (series.meta.validState === 'VALID' || liveSeries.length) &&
+        (series.meta.validState === 'VALID' || editSeries.length) &&
         stepValue.meta.validState === 'VALID'
 
     return (
@@ -123,7 +123,7 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
             <SearchInsightLivePreview
                 disabled={!allFieldsForPreviewAreValid}
                 repositories={repositories.meta.value}
-                series={liveSeries}
+                series={editSeries}
                 step={step.meta.value}
                 stepValue={stepValue.meta.value}
                 className={styles.contentLivePreview}

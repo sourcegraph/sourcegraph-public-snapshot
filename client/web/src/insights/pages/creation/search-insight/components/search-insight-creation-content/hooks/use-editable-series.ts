@@ -2,8 +2,6 @@ import { useState } from 'react'
 import * as uuid from 'uuid'
 
 import { useFieldAPI } from '../../../../../../components/form/hooks/useField'
-import { DataSeries } from '../../../../../../core/backend/types'
-import { useDistinctValue } from '../../../../../../hooks/use-distinct-value'
 import { CreateInsightFormFields, EditableDataSeries } from '../../../types'
 import { DEFAULT_ACTIVE_COLOR } from '../../form-color-input/FormColorInput'
 
@@ -34,11 +32,6 @@ export interface UseEditableSeriesAPI {
     editSeries: CreateInsightFormFields['series']
 
     /**
-     * Latest valid values of series.
-     * */
-    liveSeries: DataSeries[]
-
-    /**
      * Handler to listen latest values of particular sereis form.
      * */
     listen: (liveSeries: EditableDataSeries, valid: boolean, index: number) => void
@@ -60,15 +53,6 @@ export function useEditableSeries(props: UseEditableSeriesProps): UseEditableSer
     const { series } = props
 
     const [seriesBeforeEdit, setSeriesBeforeEdit] = useState<Record<string, EditableDataSeries>>({})
-
-    const liveSeries = useDistinctValue(
-        series.input.value
-            .filter(series => series.valid)
-            // Cut off all unnecessary for live preview fields in order to
-            // not trigger live preview update if any of unnecessary has been updated
-            // Example: edit true => false - chart shouldn't re-fetch data
-            .map<DataSeries>(line => ({ name: line.name, query: line.query, stroke: line.stroke }))
-    )
 
     const handleSeriesLiveChange = (liveSeries: EditableDataSeries, valid: boolean, index: number): void => {
         series.meta.setState(state => {
@@ -152,7 +136,6 @@ export function useEditableSeries(props: UseEditableSeriesProps): UseEditableSer
     }
 
     return {
-        liveSeries,
         editSeries: series.input.value,
         listen: handleSeriesLiveChange,
         editRequest: handleEditSeriesRequest,
