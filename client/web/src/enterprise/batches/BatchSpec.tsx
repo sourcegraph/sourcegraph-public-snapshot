@@ -34,19 +34,20 @@ export const BatchSpec: React.FunctionComponent<BatchSpecProps> = ({ originalInp
     return <CodeSnippet code={input} language={inputIsJSON ? 'json' : 'yaml'} className="mb-3" />
 }
 
-export const BatchSpecDownloadLink: React.FunctionComponent<BatchSpecProps & Pick<BatchChangeFields, 'name'>> = ({
-    name,
-    originalInput,
-}) => (
-    <a
-        download={`${name}.batch.yaml`}
-        href={'data:text/plain;charset=utf-8,' + encodeURIComponent(originalInput)}
-        className="text-right btn btn-secondary text-nowrap"
-        data-tooltip={`Download ${name}.batch.yaml`}
-    >
-        <FileDownloadIcon className="icon-inline" /> Download YAML
-    </a>
-)
+export const BatchSpecDownloadLink: React.FunctionComponent<
+    BatchSpecProps & Pick<BatchChangeFields, 'name'>
+> = React.memo(function BatchSpecDownloadLink({ name, originalInput }) {
+    return (
+        <a
+            download={`${name}.batch.yaml`}
+            href={'data:text/plain;charset=utf-8,' + encodeURIComponent(originalInput)}
+            className="text-right btn btn-secondary text-nowrap"
+            data-tooltip={`Download ${name}.batch.yaml`}
+        >
+            <FileDownloadIcon className="icon-inline" /> Download YAML
+        </a>
+    )
+})
 
 type BatchSpecMetaProps = Pick<BatchChangeFields, 'createdAt' | 'lastApplier' | 'lastAppliedAt'>
 
