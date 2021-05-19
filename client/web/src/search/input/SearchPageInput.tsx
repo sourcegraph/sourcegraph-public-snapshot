@@ -28,7 +28,6 @@ import { submitSearch, SubmitSearchParameters } from '../helpers'
 import { QuickLinks } from '../QuickLinks'
 
 import { SearchBox } from './SearchBox'
-import { SearchButton } from './SearchButton'
 import { useSearchOnboardingTour } from './SearchOnboardingTour'
 
 interface Props
@@ -130,7 +129,6 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                         autoFocus={showOnboardingTour ? shouldFocusQueryInput : props.autoFocus !== false}
                         showSearchContextHighlightTourStep={true}
                     />
-                    <SearchButton />
                 </div>
                 {props.showQueryBuilder && (
                     <div className="search-page__input-sub-container">
