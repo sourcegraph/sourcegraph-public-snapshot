@@ -7,13 +7,9 @@ import (
 	"io"
 	"io/ioutil"
 	"path"
-	"reflect"
 	"regexp"
-	"strconv"
 	"strings"
-	"time"
 
-	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/batches"
@@ -28,10 +24,6 @@ type Service struct {
 	client           api.Client
 	features         batches.FeatureFlags
 	imageCache       *docker.ImageCache
-
-	// TODO(mrnugget): I don't like this state here, ugh.
-	exec  executor.Executor
-	cache executor.ExecutionCache
 }
 
 type Opts struct {
@@ -196,119 +188,12 @@ func (svc *Service) BuildTasks(ctx context.Context, repos []*graphql.Repository,
 	return builder.BuildAll(ctx, repos)
 }
 
-// TODO(mrnugget): This is not good.
-func (svc *Service) InitCache(cacheDir string) {
-	svc.cache = executor.NewCache(cacheDir)
-}
-
-// TODO(mrnugget): This is not good. Ideally the executor wouldn't have to know
-// anything about the cache.
-func (svc *Service) InitExecutor(ctx context.Context, opts executor.NewExecutorOpts) {
-	opts.Cache = svc.cache
+func (svc *Service) NewCoordinator(opts executor.NewCoordinatorOpts) *executor.Coordinator {
+	opts.ResolveRepoName = svc.resolveRepositoryName
 	opts.Client = svc.client
-	opts.Features = svc.features
+	opts.AutoAuthorDetails = svc.features.IncludeAutoAuthorDetails
 
-	svc.exec = executor.New(opts)
-}
-
-func (svc *Service) CheckCache(ctx context.Context, tasks []*executor.Task, clearCache bool) (uncached []*executor.Task, specs []*batches.ChangesetSpec, err error) {
-	for _, t := range tasks {
-		cachedSpecs, found, err := executor.CheckCache(ctx, svc.cache, clearCache, svc.features, t)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		if !found {
-			uncached = append(uncached, t)
-			continue
-		}
-
-		specs = append(specs, cachedSpecs...)
-	}
-
-	return uncached, specs, nil
-}
-
-func (svc *Service) RunExecutor(ctx context.Context, tasks []*executor.Task, spec *batches.BatchSpec, progress func([]*executor.TaskStatus), skipErrors bool) ([]*batches.ChangesetSpec, []string, error) {
-	for _, t := range tasks {
-		svc.exec.AddTask(t)
-	}
-
-	done := make(chan struct{})
-	if progress != nil {
-		go func() {
-			svc.exec.LockedTaskStatuses(progress)
-
-			ticker := time.NewTicker(1 * time.Second)
-			defer ticker.Stop()
-
-			for {
-				select {
-				case <-ticker.C:
-					svc.exec.LockedTaskStatuses(progress)
-
-				case <-done:
-					return
-				}
-			}
-		}()
-	}
-
-	var errs *multierror.Error
-
-	svc.exec.Start(ctx)
-	specs, err := svc.exec.Wait(ctx)
-	if progress != nil {
-		svc.exec.LockedTaskStatuses(progress)
-		done <- struct{}{}
-	}
-	if err != nil {
-		if skipErrors {
-			errs = multierror.Append(errs, err)
-		} else {
-			return nil, nil, err
-		}
-	}
-
-	// Add external changeset specs.
-	for _, ic := range spec.ImportChangesets {
-		repo, err := svc.resolveRepositoryName(ctx, ic.Repository)
-		if err != nil {
-			wrapped := errors.Wrapf(err, "resolving repository name %q", ic.Repository)
-			if skipErrors {
-				errs = multierror.Append(errs, wrapped)
-				continue
-			} else {
-				return nil, nil, wrapped
-			}
-		}
-
-		for _, id := range ic.ExternalIDs {
-			var sid string
-
-			switch tid := id.(type) {
-			case string:
-				sid = tid
-			case int, int8, int16, int32, int64:
-				sid = strconv.FormatInt(reflect.ValueOf(id).Int(), 10)
-			case uint, uint8, uint16, uint32, uint64:
-				sid = strconv.FormatUint(reflect.ValueOf(id).Uint(), 10)
-			case float32:
-				sid = strconv.FormatFloat(float64(tid), 'f', -1, 32)
-			case float64:
-				sid = strconv.FormatFloat(tid, 'f', -1, 64)
-			default:
-				return nil, nil, errors.Errorf("cannot convert value of type %T into a valid external ID: expected string or int", id)
-			}
-
-			specs = append(specs, &batches.ChangesetSpec{
-				BaseRepository:    repo.ID,
-				ExternalChangeset: &batches.ExternalChangeset{ExternalID: sid},
-			})
-		}
-	}
-
-	return specs, svc.exec.LogFiles(), errs.ErrorOrNil()
+	return executor.NewCoordinator(opts)
 }
 
 func (svc *Service) ValidateChangesetSpecs(repos []*graphql.Repository, specs []*batches.ChangesetSpec) error {

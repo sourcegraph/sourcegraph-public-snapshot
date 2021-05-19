@@ -9,7 +9,6 @@ import (
 
 	"github.com/neelance/parallel"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/log"
 	"github.com/sourcegraph/src-cli/internal/batches/workspace"
@@ -41,97 +40,54 @@ func (e TaskExecutionErr) StatusText() string {
 	return e.Err.Error()
 }
 
-type Executor interface {
-	AddTask(*Task)
-	LogFiles() []string
-	Start(ctx context.Context)
-	Wait(ctx context.Context) ([]*batches.ChangesetSpec, error)
-
-	// LockedTaskStatuses calls the given function with the current state of
-	// the task statuses. Before calling the function, the statuses are locked
-	// to provide a consistent view of all statuses, but that also means the
-	// callback should be as fast as possible.
-	LockedTaskStatuses(func([]*TaskStatus))
+// taskResult is a combination of a Task and the result of its execution.
+type taskResult struct {
+	task   *Task
+	result executionResult
 }
 
-type NewExecutorOpts struct {
-	Cache    ExecutionCache
-	Client   api.Client
-	Features batches.FeatureFlags
-	Creator  workspace.Creator
+type newExecutorOpts struct {
+	// Dependencies
+	Creator workspace.Creator
+	Fetcher batches.RepoFetcher
+	Logger  *log.Manager
 
-	CleanArchives bool
-
-	CacheDir string
-
-	Parallelism int
-	Timeout     time.Duration
-
-	KeepLogs bool
-	TempDir  string
+	// Config
+	AutoAuthorDetails bool
+	Parallelism       int
+	Timeout           time.Duration
+	TempDir           string
 }
 
 type executor struct {
-	cache ExecutionCache
-
-	features batches.FeatureFlags
-
-	client  api.Client
-	logger  *log.Manager
-	creator workspace.Creator
-	fetcher batches.RepoFetcher
-
-	tasks      []*Task
-	statuses   map[*Task]*TaskStatus
-	statusesMu sync.RWMutex
-
-	tempDir string
-	timeout time.Duration
+	opts newExecutorOpts
 
 	par           *parallel.Run
 	doneEnqueuing chan struct{}
 
-	specs   []*batches.ChangesetSpec
-	specsMu sync.Mutex
+	results   []taskResult
+	resultsMu sync.Mutex
 }
 
-func New(opts NewExecutorOpts) *executor {
+func newExecutor(opts newExecutorOpts) *executor {
 	return &executor{
-		cache:    opts.Cache,
-		client:   opts.Client,
-		features: opts.Features,
-		creator:  opts.Creator,
-
-		logger: log.NewManager(opts.TempDir, opts.KeepLogs),
-
-		fetcher: batches.NewRepoFetcher(opts.Client, opts.CacheDir, opts.CleanArchives),
-
-		tempDir: opts.TempDir,
-		timeout: opts.Timeout,
+		opts: opts,
 
 		doneEnqueuing: make(chan struct{}),
 		par:           parallel.NewRun(opts.Parallelism),
-		tasks:         []*Task{},
-		statuses:      map[*Task]*TaskStatus{},
 	}
 }
 
-func (x *executor) AddTask(task *Task) {
-	x.tasks = append(x.tasks, task)
-
-	x.statusesMu.Lock()
-	x.statuses[task] = &TaskStatus{RepoName: task.Repository.Name, Path: task.Path, EnqueuedAt: time.Now()}
-	x.statusesMu.Unlock()
+type taskStatusHandler interface {
+	Update(task *Task, callback func(status *TaskStatus))
 }
 
-func (x *executor) LogFiles() []string {
-	return x.logger.LogFiles()
-}
-
-func (x *executor) Start(ctx context.Context) {
+// Start starts the execution of the given Tasks in goroutines, calling the
+// given taskStatusHandler to update the progress of the tasks.
+func (x *executor) Start(ctx context.Context, tasks []*Task, status taskStatusHandler) {
 	defer func() { close(x.doneEnqueuing) }()
 
-	for _, task := range x.tasks {
+	for _, task := range tasks {
 		select {
 		case <-ctx.Done():
 			return
@@ -140,23 +96,24 @@ func (x *executor) Start(ctx context.Context) {
 
 		x.par.Acquire()
 
-		go func(task *Task) {
+		go func(task *Task, status taskStatusHandler) {
 			defer x.par.Release()
 
 			select {
 			case <-ctx.Done():
 				return
 			default:
-				err := x.do(ctx, task)
+				err := x.do(ctx, task, status)
 				if err != nil {
 					x.par.Error(err)
 				}
 			}
-		}(task)
+		}(task, status)
 	}
 }
 
-func (x *executor) Wait(ctx context.Context) ([]*batches.ChangesetSpec, error) {
+// Wait blocks until all Tasks enqueued with Start have been executed.
+func (x *executor) Wait(ctx context.Context) ([]taskResult, error) {
 	<-x.doneEnqueuing
 
 	result := make(chan error, 1)
@@ -167,21 +124,21 @@ func (x *executor) Wait(ctx context.Context) ([]*batches.ChangesetSpec, error) {
 
 	select {
 	case <-ctx.Done():
-		return nil, ctx.Err()
+		return x.results, ctx.Err()
 	case err := <-result:
 		close(result)
 		if err != nil {
-			return x.specs, err
+			return x.results, err
 		}
 	}
 
-	return x.specs, nil
+	return x.results, nil
 }
 
-func (x *executor) do(ctx context.Context, task *Task) (err error) {
+func (x *executor) do(ctx context.Context, task *Task, status taskStatusHandler) (err error) {
 	// Ensure that the status is updated when we're done.
 	defer func() {
-		x.updateTaskStatus(task, func(status *TaskStatus) {
+		status.Update(task, func(status *TaskStatus) {
 			status.FinishedAt = time.Now()
 			status.CurrentlyExecuting = ""
 			status.Err = err
@@ -189,16 +146,14 @@ func (x *executor) do(ctx context.Context, task *Task) (err error) {
 	}()
 
 	// We're away!
-	x.updateTaskStatus(task, func(status *TaskStatus) {
+	status.Update(task, func(status *TaskStatus) {
 		status.StartedAt = time.Now()
 	})
 
-	// It isn't, so let's get ready to run the task. First, let's set up our
-	// logging.
-	log, err := x.logger.AddTask(task.Repository.SlugForPath(task.Path))
+	// Let's set up our logging.
+	log, err := x.opts.Logger.AddTask(task.Repository.SlugForPath(task.Path))
 	if err != nil {
-		err = errors.Wrap(err, "creating log file")
-		return
+		return errors.Wrap(err, "creating log file")
 	}
 	defer func() {
 		if err != nil {
@@ -213,96 +168,50 @@ func (x *executor) do(ctx context.Context, task *Task) (err error) {
 	}()
 
 	// Now checkout the archive
-	task.Archive = x.fetcher.Checkout(task.Repository, task.ArchivePathToFetch())
+	task.Archive = x.opts.Fetcher.Checkout(task.Repository, task.ArchivePathToFetch())
 
 	// Set up our timeout.
-	runCtx, cancel := context.WithTimeout(ctx, x.timeout)
+	runCtx, cancel := context.WithTimeout(ctx, x.opts.Timeout)
 	defer cancel()
 
 	// Actually execute the steps.
 	opts := &executionOpts{
 		archive:               task.Archive,
-		wc:                    x.creator,
 		batchChangeAttributes: task.BatchChangeAttributes,
 		repo:                  task.Repository,
 		path:                  task.Path,
 		steps:                 task.Steps,
+		wc:                    x.opts.Creator,
 		logger:                log,
-		tempDir:               x.tempDir,
+		tempDir:               x.opts.TempDir,
 		reportProgress: func(currentlyExecuting string) {
-			x.updateTaskStatus(task, func(status *TaskStatus) {
+			status.Update(task, func(status *TaskStatus) {
 				status.CurrentlyExecuting = currentlyExecuting
 			})
 		},
 	}
+
 	result, err := runSteps(runCtx, opts)
 	if err != nil {
 		if reachedTimeout(runCtx, err) {
-			err = &errTimeoutReached{timeout: x.timeout}
+			err = &errTimeoutReached{timeout: x.opts.Timeout}
 		}
-		return
-	}
-
-	// Check if the task is cached.
-	cacheKey := task.cacheKey()
-
-	// Add to the cache. We don't use runCtx here because we want to write to
-	// the cache even if we've now reached the timeout.
-	if err = x.cache.Set(ctx, cacheKey, result); err != nil {
-		err = errors.Wrapf(err, "caching result for %q", task.Repository.Name)
-	}
-
-	// If the steps didn't result in any diff, we don't need to add it to the
-	// list of specs that are displayed to the user and send to the server.
-	if result.Diff == "" {
-		return
-	}
-
-	// Build the changeset specs.
-	specs, err := createChangesetSpecs(task, result, x.features)
-	if err != nil {
 		return err
 	}
 
-	x.updateTaskStatus(task, func(status *TaskStatus) {
-		status.ChangesetSpecs = specs
-	})
+	x.addResult(task, result)
 
-	if err := x.addCompletedSpecs(specs); err != nil {
-		return err
-	}
-
-	return
-}
-
-func (x *executor) updateTaskStatus(task *Task, update func(status *TaskStatus)) {
-	x.statusesMu.Lock()
-	defer x.statusesMu.Unlock()
-
-	status, ok := x.statuses[task]
-	if ok {
-		update(status)
-	}
-}
-
-func (x *executor) addCompletedSpecs(specs []*batches.ChangesetSpec) error {
-	x.specsMu.Lock()
-	defer x.specsMu.Unlock()
-
-	x.specs = append(x.specs, specs...)
 	return nil
 }
 
-func (x *executor) LockedTaskStatuses(callback func([]*TaskStatus)) {
-	x.statusesMu.RLock()
-	defer x.statusesMu.RUnlock()
+func (x *executor) addResult(task *Task, result executionResult) {
+	x.resultsMu.Lock()
+	defer x.resultsMu.Unlock()
 
-	var s []*TaskStatus
-	for _, status := range x.statuses {
-		s = append(s, status)
-	}
-
-	callback(s)
+	x.results = append(x.results, taskResult{
+		task:   task,
+		result: result,
+	})
 }
 
 type errTimeoutReached struct{ timeout time.Duration }

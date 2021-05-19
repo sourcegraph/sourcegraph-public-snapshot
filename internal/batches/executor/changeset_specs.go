@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/src-cli/internal/batches"
 )
 
-func createChangesetSpecs(task *Task, result executionResult, features batches.FeatureFlags) ([]*batches.ChangesetSpec, error) {
+func createChangesetSpecs(task *Task, result executionResult, autoAuthorDetails bool) ([]*batches.ChangesetSpec, error) {
 	repo := task.Repository.Name
 
 	tmplCtx := &ChangesetTemplateContext{
@@ -26,7 +26,7 @@ func createChangesetSpecs(task *Task, result executionResult, features batches.F
 	var authorEmail string
 
 	if task.Template.Commit.Author == nil {
-		if features.IncludeAutoAuthorDetails {
+		if autoAuthorDetails {
 			// user did not provide author info, so use defaults
 			authorName = "Sourcegraph"
 			authorEmail = "batch-changes@sourcegraph.com"

@@ -8,18 +8,62 @@ import (
 	"github.com/sourcegraph/src-cli/internal/batches"
 )
 
+// TaskStatusCollection is a collection of TaskStatuses that provides
+// concurrency-safe access to the statuses by locking access and providing
+// copies of the TaskStatuses.
+type TaskStatusCollection struct {
+	statuses   map[*Task]*TaskStatus
+	statusesMu sync.RWMutex
+}
+
+func NewTaskStatusCollection(tasks []*Task) *TaskStatusCollection {
+	tsc := &TaskStatusCollection{
+		statuses: make(map[*Task]*TaskStatus),
+	}
+
+	for _, t := range tasks {
+		tsc.statuses[t] = &TaskStatus{
+			RepoName: t.Repository.Name,
+			Path:     t.Path,
+		}
+	}
+
+	return tsc
+}
+
+// Update updates the TaskStatus for the given Task by calling the provided
+// update callback with the TaskStatus.
+func (tsc *TaskStatusCollection) Update(task *Task, update func(status *TaskStatus)) {
+	tsc.statusesMu.Lock()
+	defer tsc.statusesMu.Unlock()
+
+	status, ok := tsc.statuses[task]
+	if ok {
+		update(status)
+	}
+}
+
+// CopyStatuses creates a copy of all TaskStatuses and calls the provided
+// callback with list.
+func (tsc *TaskStatusCollection) CopyStatuses(callback func([]*TaskStatus)) {
+	tsc.statusesMu.RLock()
+	defer tsc.statusesMu.RUnlock()
+
+	var s []*TaskStatus
+	for _, status := range tsc.statuses {
+		s = append(s, status)
+	}
+
+	callback(s)
+}
+
 type TaskStatus struct {
 	RepoName string
 	Path     string
 
-	Cached bool
-
-	LogFile    string
-	EnqueuedAt time.Time
-	StartedAt  time.Time
-	FinishedAt time.Time
-
-	// TODO: add current step and progress fields.
+	LogFile            string
+	StartedAt          time.Time
+	FinishedAt         time.Time
 	CurrentlyExecuting string
 
 	// ChangesetSpecs are the specs produced by executing the Task in a

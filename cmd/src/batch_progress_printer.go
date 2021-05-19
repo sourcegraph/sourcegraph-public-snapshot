@@ -274,10 +274,6 @@ func taskStatusBarText(ts *executor.TaskStatus) (string, error) {
 				statusText = "No changes"
 			}
 		}
-
-		if ts.Cached {
-			statusText += " (cached)"
-		}
 	} else if ts.IsRunning() {
 		if ts.CurrentlyExecuting != "" {
 			lines := strings.Split(ts.CurrentlyExecuting, "\n")
