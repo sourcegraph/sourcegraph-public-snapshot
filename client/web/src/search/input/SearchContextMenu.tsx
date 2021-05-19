@@ -303,7 +303,7 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
                     ))}
                 {(loadingState === 'LOADING' || loadingState === 'LOADING_NEXT_PAGE') && (
                     <DropdownItem className="search-context-menu__item" disabled={true}>
-                        Loading search contexts...
+                        <small>Loading search contexts...</small>
                     </DropdownItem>
                 )}
                 {loadingState === 'ERROR' && (
@@ -311,12 +311,12 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
                         className="search-context-menu__item search-context-menu__item--error"
                         disabled={true}
                     >
-                        Error occured while loading search contexts
+                        <small>Error occured while loading search contexts</small>
                     </DropdownItem>
                 )}
                 {loadingState === 'DONE' && filteredList.length === 0 && (
                     <DropdownItem className="search-context-menu__item" disabled={true}>
-                        No contexts found
+                        <small>No contexts found</small>
                     </DropdownItem>
                 )}
                 <div ref={infiniteScrollTrigger} />

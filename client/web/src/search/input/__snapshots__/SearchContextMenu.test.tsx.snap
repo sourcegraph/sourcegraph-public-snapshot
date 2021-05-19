@@ -15,8 +15,8 @@ Array [
       tabIndex="0"
       type="button"
     >
-      <span
-        className="search-context-menu__item-name"
+      <small
+        className="search-context-menu__item-name font-weight-medium"
         title="@username"
       >
         <HighlightedSearchTerm
@@ -29,14 +29,14 @@ Array [
           </strong>
           name
         </HighlightedSearchTerm>
-      </span>
+      </small>
        
-      <span
+      <small
         className="search-context-menu__item-description"
         title="Your repositories on Sourcegraph"
       >
         Your repositories on Sourcegraph
-      </span>
+      </small>
     </button>
   </DropdownItem>,
   <DropdownItem
@@ -52,8 +52,8 @@ Array [
       tabIndex="0"
       type="button"
     >
-      <span
-        className="search-context-menu__item-name"
+      <small
+        className="search-context-menu__item-name font-weight-medium"
         title="@username/test-version-1.5"
       >
         <HighlightedSearchTerm
@@ -66,14 +66,14 @@ Array [
           </strong>
           name/test-version-1.5
         </HighlightedSearchTerm>
-      </span>
+      </small>
        
-      <span
+      <small
         className="search-context-menu__item-description"
         title="Only code in version 1.5"
       >
         Only code in version 1.5
-      </span>
+      </small>
     </button>
   </DropdownItem>,
 ]
