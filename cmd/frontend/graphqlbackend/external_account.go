@@ -67,14 +67,14 @@ func (r *externalAccountResolver) AccountData(ctx context.Context) (*JSONValue, 
 	//
 	// Therefore, the site admins and the user can view account data of GitHub and
 	// GitLab, but only site admins can view account data for all other types.
+	var err error
 	if r.account.ServiceType == extsvc.TypeGitHub || r.account.ServiceType == extsvc.TypeGitLab {
-		if err := backend.CheckSiteAdminOrSameUser(ctx, actor.FromContext(ctx).UID); err != nil {
-			return nil, err
-		}
+		err = backend.CheckSiteAdminOrSameUser(ctx, actor.FromContext(ctx).UID)
 	} else {
-		if err := backend.CheckUserIsSiteAdmin(ctx, actor.FromContext(ctx).UID); err != nil {
-			return nil, err
-		}
+		err = backend.CheckUserIsSiteAdmin(ctx, actor.FromContext(ctx).UID)
+	}
+	if err != nil {
+		return nil, err
 	}
 
 	if r.account.Data != nil {
