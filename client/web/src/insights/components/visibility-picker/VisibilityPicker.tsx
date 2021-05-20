@@ -67,12 +67,19 @@ export const VisibilityPicker: React.FunctionComponent<VisibilityPickerProps> = 
         }
     }
 
+    const possibleOrg = organizations.find(org => org.id === value)
+
+    const descriptionText = !possibleOrg
+        ? 'This insight will only be visible to you. It will not be shown to other users in your organization.'
+        : `This insight will be visible to all users in the ${
+              possibleOrg.displayName || possibleOrg.name
+          } organization who have enabled code insights.`
+
     return (
         <FormGroup
             name="visibility"
             title="Visibility"
-            description="This insight will be visible only on your personal dashboard. It will not be show to other
-                            users in your organization."
+            description={descriptionText}
             className="mb-0 mt-4"
             labelClassName={labelClassName}
             contentClassName="d-flex flex-wrap mb-n2"

@@ -13,7 +13,6 @@
         --popover-item-padding-h: 1rem;
         --popover-item-padding-v: 0.25rem;
         background-color: var(--color-bg-1);
-        border-radius: 5px;
     }
 
     &__content {
@@ -26,7 +25,7 @@
 
         .theme-redesign & {
             min-height: initial;
-            height: 20rem;
+            max-height: calc(min(20rem, 70vh));
         }
 
         .alert {
@@ -38,6 +37,7 @@
         .theme-redesign & {
             border-top: solid 1px var(--border-color-2);
             padding-top: 0.25rem;
+            padding-bottom: 0.25rem;
         }
     }
 
@@ -89,6 +89,8 @@
     &__input {
         .theme-redesign & {
             margin: 0.5rem;
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
         }
     }
 

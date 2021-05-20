@@ -263,6 +263,20 @@ const queryBulkOperations: typeof _queryBulkOperations = () =>
             },
             {
                 id: 'id3',
+                type: BulkOperationType.DETACH,
+                state: BulkOperationState.COMPLETED,
+                errors: [],
+                progress: 1,
+                createdAt: subDays(now, 5).toISOString(),
+                finishedAt: subDays(now, 4).toISOString(),
+                changesetCount: 25,
+                initiator: {
+                    url: '/users/alice',
+                    username: 'alice',
+                },
+            },
+            {
+                id: 'id4',
                 type: BulkOperationType.COMMENT,
                 state: BulkOperationState.FAILED,
                 errors: [

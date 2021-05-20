@@ -228,7 +228,10 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         })
 
         // list of the repos user selected
-        const selectedAffiliatedRepos: string[] = []
+        const selectedAffiliatedRepos: {
+            name: string
+            kind: ExternalServiceKind
+        }[] = []
 
         // if external services may return code hosts with errors or warnings -
         // we can't safely continue
@@ -258,7 +261,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     const gitLabCfg = cfg as GitLabConfig
                     if (gitLabCfg.projects !== undefined) {
                         gitLabCfg.projects.map(project => {
-                            selectedAffiliatedRepos.push(project.name)
+                            selectedAffiliatedRepos.push({ name: project.name, kind: ExternalServiceKind.GITLAB })
                         })
                     }
                     break
@@ -267,7 +270,11 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 case ExternalServiceKind.GITHUB: {
                     const gitHubCfg = cfg as GitHubConfig
                     if (gitHubCfg.repos !== undefined) {
-                        selectedAffiliatedRepos.push(...gitHubCfg.repos)
+                        const selected = gitHubCfg.repos.map(repoName => ({
+                            name: repoName,
+                            kind: ExternalServiceKind.GITHUB,
+                        }))
+                        selectedAffiliatedRepos.push(...selected)
                     }
                     break
                 }
@@ -283,10 +290,10 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         const selectedRepos = new Map<string, Repo>()
 
         // create a map of user selected affiliated repos
-        for (const repoName of selectedAffiliatedRepos) {
-            const affiliatedRepo = affiliatedRepos.find(repo => repo.name === repoName)
+        for (const { name, kind } of selectedAffiliatedRepos) {
+            const affiliatedRepo = affiliatedRepos.find(repo => repo.name === name && repo.codeHost?.kind === kind)
             if (affiliatedRepo) {
-                selectedRepos.set(repoName, affiliatedRepo)
+                selectedRepos.set(`${kind}/${name}`, affiliatedRepo)
             }
         }
 
@@ -636,11 +643,12 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
     const onRepoClicked = useCallback(
         (repo: Repo) => (): void => {
+            const clickedRepo = `${repo.codeHost?.kind || 'unknown'}/${repo.name}`
             const newMap = new Map(selectionState.repos)
-            if (newMap.has(repo.name)) {
-                newMap.delete(repo.name)
+            if (newMap.has(clickedRepo)) {
+                newMap.delete(clickedRepo)
             } else {
-                newMap.set(repo.name, repo)
+                newMap.set(clickedRepo, repo)
             }
             setSelectionState({
                 repos: newMap,
@@ -654,9 +662,10 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     const selectAll = (): void => {
         const newMap = new Map<string, Repo>()
         // if not all repos are selected, we should select all, otherwise empty the selection
+
         if (selectionState.repos.size !== filteredRepos.length) {
             for (const repo of filteredRepos) {
-                newMap.set(repo.name, repo)
+                newMap.set(`${repo.codeHost?.kind || 'unknown'}/${repo.name}`, repo)
             }
         }
         setSelectionState({
@@ -697,13 +706,17 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 if (index < (currentPage - 1) * PER_PAGE || index >= currentPage * PER_PAGE) {
                     return
                 }
+
+                const serviceType = `${repo.codeHost?.kind || 'unknown'}`
+                const serviceAndRepoName = `${serviceType}/${repo.name}`
+
                 return (
                     <CheckboxRepositoryNode
                         name={repo.name}
-                        key={repo.name}
+                        key={serviceAndRepoName}
                         onClick={onRepoClicked(repo)}
-                        checked={selectionState.repos.has(repo.name)}
-                        serviceType={repo.codeHost?.kind || ''}
+                        checked={selectionState.repos.has(serviceAndRepoName)}
+                        serviceType={serviceType}
                         isPrivate={repo.private}
                     />
                 )

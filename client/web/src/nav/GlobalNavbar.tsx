@@ -37,6 +37,7 @@ import {
     KEYBOARD_SHORTCUT_SWITCH_THEME,
 } from '../keyboardShortcuts/keyboardShortcuts'
 import { LayoutRouteProps } from '../routes'
+import { Settings } from '../schema/settings.schema'
 import { VersionContext } from '../schema/site.schema'
 import {
     PatternTypeProps,
@@ -44,9 +45,9 @@ import {
     CopyQueryButtonProps,
     OnboardingTourProps,
     ParsedSearchQueryProps,
-    SearchContextProps,
     isSearchContextSpecAvailable,
     getGlobalSearchContextFilter,
+    SearchContextInputProps,
 } from '../search'
 import { QueryState } from '../search/helpers'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
@@ -58,7 +59,7 @@ import { NavLinks } from './NavLinks'
 import { ExtensionAlertAnimationProps, UserNavItem } from './UserNavItem'
 
 interface Props
-    extends SettingsCascadeProps,
+    extends SettingsCascadeProps<Settings>,
         PlatformContextProps,
         ExtensionsControllerProps,
         KeyboardShortcutsProps,
@@ -72,10 +73,7 @@ interface Props
         CaseSensitivityProps,
         CopyQueryButtonProps,
         VersionContextProps,
-        Omit<
-            SearchContextProps,
-            'convertVersionContextToSearchContext' | 'isSearchContextSpecAvailable' | 'fetchSearchContext'
-        >,
+        SearchContextInputProps,
         CodeMonitoringProps,
         OnboardingTourProps {
     history: H.History
@@ -349,6 +347,13 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                                         (!isErrorLike(props.settingsCascade.final) &&
                                             props.settingsCascade.final?.['alerts.codeHostIntegrationMessaging']) ||
                                         'browser-extension'
+                                    }
+                                    showRedesignToggle={
+                                        !isErrorLike(props.settingsCascade.final) &&
+                                        Boolean(
+                                            props.settingsCascade.final?.experimentalFeatures
+                                                ?.designRefreshToggleEnabled
+                                        )
                                     }
                                     keyboardShortcutForSwitchTheme={KEYBOARD_SHORTCUT_SWITCH_THEME}
                                 />

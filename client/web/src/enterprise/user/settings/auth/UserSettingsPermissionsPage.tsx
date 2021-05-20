@@ -30,7 +30,7 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<{ user: UserAr
         <div className="w-100">
             <PageTitle title="Permissions" />
             <h2>Permissions</h2>
-            {user.siteAdmin ? (
+            {user.siteAdmin && !window.context.site['authz.enforceForSiteAdmins'] ? (
                 <div className="alert alert-info">
                     Site admin can access all repositories in the Sourcegraph instance.
                 </div>

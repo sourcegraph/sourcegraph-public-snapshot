@@ -207,8 +207,10 @@ func publicSiteConfiguration() schema.SiteConfiguration {
 		updateChannel = "release"
 	}
 	return schema.SiteConfiguration{
-		AuthPublic:    c.AuthPublic,
-		UpdateChannel: updateChannel,
+		AuthPublic:                  c.AuthPublic,
+		UpdateChannel:               updateChannel,
+		AuthzEnforceForSiteAdmins:   c.AuthzEnforceForSiteAdmins,
+		DisableNonCriticalTelemetry: c.DisableNonCriticalTelemetry,
 	}
 }
 

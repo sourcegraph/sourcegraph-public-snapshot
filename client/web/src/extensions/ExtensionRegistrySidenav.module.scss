@@ -1,0 +1,17 @@
+.column {
+    width: 12.5rem;
+}
+
+.header {
+    color: var(--body-color) !important; // Override .web-content h3 color
+}
+
+.divider {
+    border-color: var(--border-color-2);
+}
+
+.inactive-category {
+    &:hover {
+        background-color: var(--color-bg-2);
+    }
+}
