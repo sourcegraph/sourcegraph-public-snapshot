@@ -6,7 +6,11 @@ import (
 	"strings"
 	"sync"
 
-	"golang.org/x/sync/errgroup"
+	"github.com/pkg/errors"
+
+	"github.com/inconshreveable/log15"
+
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -21,7 +25,7 @@ var (
 	cf = httpcli.NewExternalHTTPClientFactory()
 )
 
-type codeHostRepositoryConnectionResolver struct {
+type affiliatedRepositoriesConnection struct {
 	userID   int32
 	codeHost int64
 	query    string
@@ -32,97 +36,120 @@ type codeHostRepositoryConnectionResolver struct {
 	db    dbutil.DB
 }
 
-func (r *codeHostRepositoryConnectionResolver) Nodes(ctx context.Context) ([]*codeHostRepositoryResolver, error) {
-	r.once.Do(func() {
+func (a *affiliatedRepositoriesConnection) Nodes(ctx context.Context) ([]*codeHostRepositoryResolver, error) {
+	a.once.Do(func() {
 		var (
 			svcs []*types.ExternalService
 			err  error
 		)
 		// get all external services for user, or for the specified external service
-		if r.codeHost == 0 {
-			svcs, err = database.ExternalServices(r.db).List(ctx, database.ExternalServicesListOptions{NamespaceUserID: r.userID})
+		if a.codeHost == 0 {
+			svcs, err = database.ExternalServices(a.db).List(ctx, database.ExternalServicesListOptions{NamespaceUserID: a.userID})
 			if err != nil {
-				r.err = err
+				a.err = err
 				return
 			}
 		} else {
-			svc, err := database.ExternalServices(r.db).GetByID(ctx, r.codeHost)
+			svc, err := database.ExternalServices(a.db).GetByID(ctx, a.codeHost)
 			if err != nil {
-				r.err = err
+				a.err = err
 				return
 			}
 			// 🚨 SECURITY: if the user doesn't own this service, check they're site admin
-			if err := backend.CheckUserIsSiteAdmin(ctx, r.userID); svc.NamespaceUserID != r.userID && err != nil {
-				r.err = err
-				return
+			if svc.NamespaceUserID != a.userID {
+				if err := backend.CheckUserIsSiteAdmin(ctx, a.userID); err != nil {
+					a.err = err
+					return
+				}
 			}
-			svcs = []*types.ExternalService{svc}
+			svcs = append(svcs, svc)
 		}
+
+		type affiliatedResult struct {
+			svcID int64
+			repos []types.CodeHostRepository
+			err   error
+		}
+
 		// get Source for all external services
 		var (
-			results  = make(chan []types.CodeHostRepository)
-			g, ctx   = errgroup.WithContext(ctx)
+			results  = make(chan affiliatedResult, len(svcs))
 			svcsByID = make(map[int64]*types.ExternalService)
+			pending  int
 		)
 		for _, svc := range svcs {
 			svcsByID[svc.ID] = svc
 			src, err := repos.NewSource(svc, cf)
 			if err != nil {
-				r.err = err
+				a.err = err
 				return
 			}
-			if af, ok := src.(repos.AffiliatedRepositorySource); ok {
-				g.Go(func() error {
-					repos, err := af.AffiliatedRepositories(ctx)
-					if err != nil {
-						return err
-					}
-					select {
-					case results <- repos:
-					case <-ctx.Done():
-						return ctx.Err()
-					}
-					return nil
-				})
+			af, ok := src.(repos.AffiliatedRepositorySource)
+			if !ok {
+				continue
 			}
+			pending++
+			svcID := svc.ID
+			goroutine.Go(func() {
+				affiliated, err := af.AffiliatedRepositories(ctx)
+				results <- affiliatedResult{
+					svcID: svcID,
+					repos: affiliated,
+					err:   err,
+				}
+			})
 		}
-		go func() {
-			// wait for all sources to return their repos
-			err = g.Wait()
-			// signal the collector to finish
-			close(results)
-		}()
 
 		// are we allowed to show the user private repos?
-		allowPrivate, err := allowPrivate(ctx, r.db, r.userID)
+		allowPrivate, err := allowPrivate(ctx, a.db, a.userID)
 		if err != nil {
-			r.err = err
+			a.err = err
 			return
 		}
 
 		// collect all results
-		r.nodes = []*codeHostRepositoryResolver{}
-		for result := range results {
-			for _, repo := range result {
-				repo := repo
-				if r.query != "" && !strings.Contains(strings.ToLower(repo.Name), r.query) {
+		var fetchErrors []error
+		a.nodes = []*codeHostRepositoryResolver{}
+		for i := 0; i < pending; i++ {
+			select {
+			case result := <-results:
+				if result.err != nil {
+					// An error from one code is not fatal
+					log15.Error("getting affiliated repos", "externalServiceId", result.svcID, "err", err)
+					fetchErrors = append(fetchErrors, result.err)
 					continue
 				}
-				if !allowPrivate && repo.Private {
-					continue
+				for _, repo := range result.repos {
+					if a.query != "" && !strings.Contains(strings.ToLower(repo.Name), a.query) {
+						continue
+					}
+					if !allowPrivate && repo.Private {
+						continue
+					}
+					repo := repo
+					a.nodes = append(a.nodes, &codeHostRepositoryResolver{
+						db:       a.db,
+						codeHost: svcsByID[repo.CodeHostID],
+						repo:     &repo,
+					})
 				}
-				r.nodes = append(r.nodes, &codeHostRepositoryResolver{
-					db:       r.db,
-					codeHost: svcsByID[repo.CodeHostID],
-					repo:     &repo,
-				})
+			case <-ctx.Done():
+				a.err = ctx.Err()
+				return
 			}
 		}
-		sort.Slice(r.nodes, func(i, j int) bool {
-			return r.nodes[i].repo.Name < r.nodes[j].repo.Name
+
+		sort.Slice(a.nodes, func(i, j int) bool {
+			return a.nodes[i].repo.Name < a.nodes[j].repo.Name
 		})
+
+		if len(fetchErrors) == pending {
+			// All hosts failed
+			a.err = errors.New("failed to fetch from any code host")
+		}
 	})
-	return r.nodes, r.err
+
+	return a.nodes, a.err
 }
 
 type codeHostRepositoryResolver struct {
