@@ -139,13 +139,16 @@ exports[`ExtensionsQueryInputToolbar renders 1`] = `
         onClick={[Function]}
         role="menuitem"
         tabIndex="0"
+        type="button"
       >
         <div
           className="d-flex align-items-center"
         >
           <input
             aria-labelledby="show-experimental-extensions"
+            checked={true}
             className=""
+            onChange={[Function]}
             type="checkbox"
           />
           <span
