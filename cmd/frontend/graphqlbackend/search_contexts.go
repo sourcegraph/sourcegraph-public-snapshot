@@ -163,6 +163,24 @@ func (r *searchContextResolver) UpdatedAt(ctx context.Context) DateTime {
 	return DateTime{Time: r.sc.UpdatedAt}
 }
 
+func (r *searchContextResolver) Namespace(ctx context.Context) (*NamespaceResolver, error) {
+	if r.sc.NamespaceUserID != 0 {
+		n, err := NamespaceByID(ctx, r.db, MarshalUserID(r.sc.NamespaceUserID))
+		if err != nil {
+			return nil, err
+		}
+		return &NamespaceResolver{n}, nil
+	}
+	if r.sc.NamespaceOrgID != 0 {
+		n, err := NamespaceByID(ctx, r.db, MarshalOrgID(r.sc.NamespaceOrgID))
+		if err != nil {
+			return nil, err
+		}
+		return &NamespaceResolver{n}, nil
+	}
+	return nil, nil
+}
+
 func (r *searchContextResolver) ViewerCanManage(ctx context.Context) bool {
 	hasWriteAccess := searchcontexts.ValidateSearchContextWriteAccessForCurrentUser(ctx, r.db, r.sc.NamespaceUserID, r.sc.NamespaceOrgID, r.sc.Public) == nil
 	return !searchcontexts.IsAutoDefinedSearchContext(r.sc) && hasWriteAccess

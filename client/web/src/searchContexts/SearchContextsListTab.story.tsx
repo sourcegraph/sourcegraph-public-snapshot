@@ -49,6 +49,11 @@ const propsWithContexts: SearchContextsListTabProps = {
                     id: '3',
                     spec: '@username/test-version-1.5',
                     name: 'test-version-1.5',
+                    namespace: {
+                        __typename: 'User',
+                        id: 'u1',
+                        namespaceName: 'username',
+                    },
                     autoDefined: false,
                     public: true,
                     description: 'Only code in version 1.5',
@@ -60,6 +65,11 @@ const propsWithContexts: SearchContextsListTabProps = {
                     __typename: 'SearchContext',
                     id: '4',
                     spec: '@username/test-version-1.6',
+                    namespace: {
+                        __typename: 'User',
+                        id: 'u1',
+                        namespaceName: 'username',
+                    },
                     name: 'test-version-1.6',
                     autoDefined: false,
                     public: false,

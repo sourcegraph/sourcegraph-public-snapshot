@@ -242,6 +242,11 @@ const searchContextFragment = gql`
         __typename
         id
         name
+        namespace {
+            __typename
+            id
+            namespaceName
+        }
         spec
         description
         public

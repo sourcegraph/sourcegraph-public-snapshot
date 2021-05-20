@@ -128,7 +128,7 @@ export const SearchContextRepositoriesFormArea: React.FunctionComponent<SearchCo
         },
         // Only stringify repositories on initial load
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [setRepositoriesConfig, onChange]
+        []
     )
 
     const history = useHistory()

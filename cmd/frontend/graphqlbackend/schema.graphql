@@ -2405,6 +2405,10 @@ type SearchContext implements Node {
     """
     name: String!
     """
+    The owner (user or org) of the search context. If nil, search context is considered instance-level.
+    """
+    namespace: Namespace
+    """
     The description of the search context.
     """
     description: String!

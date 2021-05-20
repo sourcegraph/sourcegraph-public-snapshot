@@ -90,7 +90,7 @@ export const SearchContextsListTab: React.FunctionComponent<SearchContextsListTa
                 },
                 {
                     value: 'global-owner',
-                    label: 'Global owner',
+                    label: 'Global',
                     args: {
                         namespaceFilterType: SearchContextsNamespaceFilterType.INSTANCE,
                     },

@@ -14,6 +14,7 @@ export function mockFetchAutoDefinedSearchContexts(numberContexts = 0): Observab
             id: index.toString(),
             spec: `auto-defined-${index}`,
             name: `auto-defined-${index}`,
+            namespace: null,
             public: true,
             autoDefined: true,
             viewerCanManage: false,

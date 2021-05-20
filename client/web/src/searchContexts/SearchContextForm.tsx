@@ -22,7 +22,13 @@ import { fetchRepository } from '../repo/backend'
 
 import { parseConfig } from './repositoryRevisionsConfigParser'
 import styles from './SearchContextForm.module.scss'
-import { SearchContextOwnerDropdown, SelectedNamespace, SelectedNamespaceType } from './SearchContextOwnerDropdown'
+import {
+    getSelectedNamespace,
+    getSelectedNamespaceFromUser,
+    SearchContextOwnerDropdown,
+    SelectedNamespace,
+    SelectedNamespaceType,
+} from './SearchContextOwnerDropdown'
 import { SearchContextRepositoriesFormArea } from './SearchContextRepositoriesFormArea'
 
 const MAX_DESCRIPTION_LENGTH = 1024
@@ -104,12 +110,9 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
 
     const isValidName = useMemo(() => name.length === 0 || name.match(VALIDATE_NAME_REGEXP) !== null, [name])
 
-    const selectedUserNamespace = {
-        id: authenticatedUser.id,
-        type: 'user' as SelectedNamespaceType,
-        name: authenticatedUser.username,
-    }
-    const [selectedNamespace, setSelectedNamespace] = useState<SelectedNamespace>(selectedUserNamespace)
+    const [selectedNamespace, setSelectedNamespace] = useState<SelectedNamespace>(
+        searchContext ? getSelectedNamespace(searchContext.namespace) : getSelectedNamespaceFromUser(authenticatedUser)
+    )
 
     const visibilityRadioButtons = useMemo(() => getVisibilityRadioButtons(selectedNamespace.type), [selectedNamespace])
 
@@ -233,7 +236,6 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                         isDisabled={!!searchContext}
                         selectedNamespace={selectedNamespace}
                         setSelectedNamespace={setSelectedNamespace}
-                        selectedUserNamespace={selectedUserNamespace}
                         authenticatedUser={authenticatedUser}
                     />
                 </div>
