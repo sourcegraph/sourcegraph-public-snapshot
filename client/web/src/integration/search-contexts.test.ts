@@ -516,4 +516,54 @@ describe('Search contexts', () => {
         const errorText = await driver.page.evaluate(() => document.querySelector('.alert-danger')?.textContent)
         expect(errorText).toContain('You do not have sufficient permissions to edit this context.')
     })
+
+    test('Delete search context', async () => {
+        testContext.overrideGraphQL({
+            ...testContextForSearchContexts,
+            RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
+            DeleteSearchContext: () => ({
+                deleteSearchContext: {
+                    alwaysNil: '',
+                },
+            }),
+            FetchSearchContext: ({ id }) => ({
+                node: {
+                    __typename: 'SearchContext',
+                    id,
+                    spec: '@test/context-1',
+                    name: 'context-1',
+                    namespace: {
+                        __typename: 'User',
+                        id: 'u1',
+                        namespaceName: 'test',
+                    },
+                    description: 'description',
+                    public: true,
+                    autoDefined: false,
+                    updatedAt: subDays(new Date(), 1).toISOString(),
+                    viewerCanManage: true,
+                    repositories: [
+                        {
+                            __typename: 'SearchContextRepositoryRevisions',
+                            revisions: ['HEAD'],
+                            repository: { name: 'github.com/example/example' },
+                        },
+                    ],
+                },
+            }),
+        })
+
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/contexts/context-1/edit')
+
+        // Click delete
+        await driver.page.waitForSelector('[data-testid="search-context-delete-button"]')
+        await driver.page.click('[data-testid="search-context-delete-button"]')
+
+        // Wait for modal
+        await driver.page.waitForSelector('[data-testid="delete-search-context-modal"]', { visible: true })
+        await driver.page.click('[data-testid="confirm-delete-search-context"]')
+
+        // Wait for delete request to finish and redirect to list page
+        await driver.page.waitForSelector('.search-contexts-list-page')
+    })
 })
