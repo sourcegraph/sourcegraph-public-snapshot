@@ -165,24 +165,21 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
 
             return {
                 key: 'revision',
-                divider: <span className="mr-1">@</span>,
                 element: (
-                    <div className="d-flex align-items-center" key="repo-revision">
-                        <span className="test-revision">
-                            {(props.revision && props.revision === props.resolvedRevisionOrError.commitID
-                                ? props.resolvedRevisionOrError.commitID.slice(0, 7)
-                                : props.revision) ||
-                                props.resolvedRevisionOrError.defaultBranch ||
-                                'HEAD'}
-                        </span>
-                        <button
-                            type="button"
-                            id="repo-revision-popover"
-                            className="btn btn-icon px-0"
-                            aria-label="Change revision"
-                        >
-                            <MenuDownIcon className="icon-inline" />
-                        </button>
+                    <button
+                        type="button"
+                        className="btn btn-outline-secondary d-flex align-items-center text-nowrap"
+                        key="repo-revision"
+                        id="repo-revision-popover"
+                        aria-label="Change revision"
+                    >
+                        @{' '}
+                        {(props.revision && props.revision === props.resolvedRevisionOrError.commitID
+                            ? props.resolvedRevisionOrError.commitID.slice(0, 7)
+                            : props.revision) ||
+                            props.resolvedRevisionOrError.defaultBranch ||
+                            'HEAD'}
+                        <MenuDownIcon className="icon-inline" />
                         <RepoRevisionContainerPopover
                             repo={props.repo}
                             resolvedRevisionOrError={props.resolvedRevisionOrError}
@@ -190,7 +187,7 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
                             history={props.history}
                             location={props.location}
                         />
-                    </div>
+                    </button>
                 ),
             }
         }, [props.resolvedRevisionOrError, props.revision, props.repo, props.history, props.location])
