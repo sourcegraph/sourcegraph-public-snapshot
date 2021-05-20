@@ -79,7 +79,9 @@ OFFSET %d
 const countSearchContextsFmtStr = `
 SELECT COUNT(*)
 FROM search_contexts sc
-WHERE sc.deleted_at IS NULL AND (%s)
+WHERE sc.deleted_at IS NULL
+	AND (%s) -- permission conditions
+	AND (%s) -- query conditions
 `
 
 type SearchContextsOrderByOption uint8
@@ -206,8 +208,12 @@ func (s *SearchContextsStore) CountSearchContexts(ctx context.Context, opts List
 	if err != nil {
 		return -1, err
 	}
+	permissionsCond, err := searchContextsPermissionsCondition(ctx, s.Handle().DB())
+	if err != nil {
+		return -1, err
+	}
 	var count int32
-	err = s.QueryRow(ctx, sqlf.Sprintf(countSearchContextsFmtStr, sqlf.Join(conds, "\n AND "))).Scan(&count)
+	err = s.QueryRow(ctx, sqlf.Sprintf(countSearchContextsFmtStr, permissionsCond, sqlf.Join(conds, "\n AND "))).Scan(&count)
 	if err != nil {
 		return -1, err
 	}

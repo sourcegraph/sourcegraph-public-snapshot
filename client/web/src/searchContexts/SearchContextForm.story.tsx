@@ -3,7 +3,7 @@ import { subDays } from 'date-fns'
 import React from 'react'
 import { Observable, of } from 'rxjs'
 
-import { IOrg, ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
+import { IOrg, IRepository, ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
 
 import { AuthenticatedUser } from '../auth'
 import { WebStory } from '../components/WebStory'
@@ -21,12 +21,35 @@ const onSubmit = (): Observable<ISearchContext> =>
         __typename: 'SearchContext',
         id: '1',
         spec: 'public-ctx',
+        name: 'public-ctx',
+        namespace: null,
         public: true,
         autoDefined: false,
         description: 'Repositories on Sourcegraph',
         repositories: [],
         updatedAt: subDays(new Date(), 1).toISOString(),
+        viewerCanManage: true,
     })
+
+const searchContextToEdit: ISearchContext = {
+    __typename: 'SearchContext',
+    id: '1',
+    spec: 'public-ctx',
+    name: 'public-ctx',
+    namespace: null,
+    public: true,
+    autoDefined: false,
+    description: 'Repositories on Sourcegraph',
+    repositories: [
+        {
+            __typename: 'SearchContextRepositoryRevisions',
+            revisions: ['HEAD'],
+            repository: { name: 'github.com/example/example' } as IRepository,
+        },
+    ],
+    updatedAt: subDays(new Date(), 1).toISOString(),
+    viewerCanManage: true,
+}
 
 const authUser: AuthenticatedUser = {
     __typename: 'User',
@@ -55,6 +78,23 @@ add(
     () => (
         <WebStory>
             {webProps => <SearchContextForm {...webProps} authenticatedUser={authUser} onSubmit={onSubmit} />}
+        </WebStory>
+    ),
+    {}
+)
+
+add(
+    'edit existing',
+    () => (
+        <WebStory>
+            {webProps => (
+                <SearchContextForm
+                    {...webProps}
+                    searchContext={searchContextToEdit}
+                    authenticatedUser={authUser}
+                    onSubmit={onSubmit}
+                />
+            )}
         </WebStory>
     ),
     {}

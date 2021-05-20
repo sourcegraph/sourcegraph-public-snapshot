@@ -5,5 +5,12 @@
         height: 2rem;
         // To match the input
         font-size: 0.875rem !important;
+
+        &:disabled,
+        &:hover:disabled,
+        &:active:disabled,
+        &:focus:disabled {
+            pointer-events: auto; // Required to show tooltip on hover
+        }
     }
 }

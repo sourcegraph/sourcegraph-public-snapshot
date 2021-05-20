@@ -1,3 +1,4 @@
+import { subDays } from 'date-fns'
 import expect from 'expect'
 import { test } from 'mocha'
 
@@ -5,13 +6,7 @@ import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operati
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import {
-    RepoGroupsResult,
-    SearchSuggestionsResult,
-    WebGraphQlOperations,
-    AutoDefinedSearchContextsResult,
-    SearchResult,
-} from '../graphql-operations'
+import { RepoGroupsResult, SearchSuggestionsResult, WebGraphQlOperations, SearchResult } from '../graphql-operations'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { createRepositoryRedirectResult } from './graphQlResponseHelpers'
@@ -47,9 +42,6 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
     RepoGroups: (): RepoGroupsResult => ({
         repoGroups: [],
     }),
-    AutoDefinedSearchContexts: (): AutoDefinedSearchContextsResult => ({
-        autoDefinedSearchContexts: [],
-    }),
     ConvertVersionContextToSearchContext: ({ name }) => ({
         convertVersionContextToSearchContext: { id: `id${name}`, spec: name },
     }),
@@ -80,7 +72,9 @@ describe('Search contexts', () => {
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(async () => {
         await driver.page.evaluate(() => localStorage.clear())
-        await testContext?.dispose()
+        if (testContext) {
+            await testContext.dispose()
+        }
     })
 
     const getSearchFieldValue = (driver: Driver): Promise<string | undefined> =>
@@ -129,30 +123,6 @@ describe('Search contexts', () => {
     const testContextForSearchContexts: Partial<WebGraphQlOperations> = {
         ...commonSearchGraphQLResults,
         ...viewerSettingsWithSearchContexts,
-        AutoDefinedSearchContexts: () => ({
-            autoDefinedSearchContexts: [
-                {
-                    __typename: 'SearchContext',
-                    id: '1',
-                    spec: 'global',
-                    description: '',
-                    autoDefined: true,
-                    public: true,
-                    updatedAt: '2021-03-15T19:39:11Z',
-                    repositories: [],
-                },
-                {
-                    __typename: 'SearchContext',
-                    id: '2',
-                    spec: '@test',
-                    description: '',
-                    autoDefined: true,
-                    public: true,
-                    updatedAt: '2021-03-15T19:39:11Z',
-                    repositories: [],
-                },
-            ],
-        }),
         UserRepositories: () => ({
             node: {
                 repositories: {
@@ -360,10 +330,13 @@ describe('Search contexts', () => {
                     __typename: 'SearchContext',
                     id: 'id1',
                     spec: searchContext.name,
+                    name: searchContext.name,
+                    namespace: null,
                     description: searchContext.description,
                     public: searchContext.public,
                     autoDefined: false,
                     updatedAt: '',
+                    viewerCanManage: true,
                     repositories: repositories.map(repository => ({
                         __typename: 'SearchContextRepositoryRevisions',
                         revisions: repository.revisions,
@@ -376,20 +349,20 @@ describe('Search contexts', () => {
         await driver.page.goto(driver.sourcegraphBaseUrl + '/contexts/new')
 
         await driver.replaceText({
-            selector: '.test-search-context-name-input',
+            selector: '[data-testid="search-context-name-input"]',
             newText: 'new-context',
             enterTextMethod: 'type',
         })
 
         // Assert spec preview
         const specPreview = await driver.page.evaluate(
-            () => document.querySelector('.test-search-context-preview')?.textContent
+            () => document.querySelector('[data-testid="search-context-preview"]')?.textContent
         )
         expect(specPreview).toBe('context:@test/new-context')
 
         // Enter description
         await driver.replaceText({
-            selector: '.test-search-context-description-input',
+            selector: '[data-testid="search-context-description-input"]',
             newText: 'Search context description',
             enterTextMethod: 'type',
         })
@@ -397,22 +370,150 @@ describe('Search contexts', () => {
         // Enter repositories
         const repositoriesConfig =
             '[{ "repository": "github.com/example/example", "revisions": ["main", "pr/feature1"] }]'
-        await driver.page.waitForSelector('.test-repositories-config-input .monaco-editor')
+        await driver.page.waitForSelector('[data-testid="repositories-config-area"] .monaco-editor')
         await driver.replaceText({
-            selector: '.test-repositories-config-input .monaco-editor',
+            selector: '[data-testid="repositories-config-area"] .monaco-editor',
             newText: repositoriesConfig,
             selectMethod: 'keyboard',
             enterTextMethod: 'paste',
         })
 
         // Test configuration
-        await driver.page.click('.test-repositories-config-button')
-        await driver.page.waitForSelector('.test-repositories-config-button .text-success')
+        await driver.page.click('[data-testid="repositories-config-button"]')
+        await driver.page.waitForSelector('[data-testid="repositories-config-button"] .text-success')
 
         // Click create
-        await driver.page.click('.test-create-search-context-button')
+        await driver.page.click('[data-testid="search-context-submit-button"]')
 
         // Wait for submit request to finish and redirect to list page
         await driver.page.waitForSelector('.search-contexts-list-page')
+    })
+
+    test('Edit search context', async () => {
+        testContext.overrideGraphQL({
+            ...testContextForSearchContexts,
+            RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
+            UpdateSearchContext: ({ id, searchContext, repositories }) => ({
+                updateSearchContext: {
+                    __typename: 'SearchContext',
+                    id,
+                    spec: `@test/${searchContext.name}`,
+                    name: searchContext.name,
+                    namespace: {
+                        __typename: 'User',
+                        id: 'u1',
+                        namespaceName: 'test',
+                    },
+                    description: searchContext.description,
+                    public: searchContext.public,
+                    autoDefined: false,
+                    updatedAt: subDays(new Date(), 1).toISOString(),
+                    viewerCanManage: true,
+                    repositories: repositories.map(repository => ({
+                        __typename: 'SearchContextRepositoryRevisions',
+                        revisions: repository.revisions,
+                        repository: { name: repository.repositoryID },
+                    })),
+                },
+            }),
+            FetchSearchContext: ({ id }) => ({
+                node: {
+                    __typename: 'SearchContext',
+                    id,
+                    spec: '@test/context-1',
+                    name: 'context-1',
+                    namespace: {
+                        __typename: 'User',
+                        id: 'u1',
+                        namespaceName: 'test',
+                    },
+                    description: 'description',
+                    public: true,
+                    autoDefined: false,
+                    updatedAt: subDays(new Date(), 1).toISOString(),
+                    viewerCanManage: true,
+                    repositories: [
+                        {
+                            __typename: 'SearchContextRepositoryRevisions',
+                            revisions: ['HEAD'],
+                            repository: { name: 'github.com/example/example' },
+                        },
+                    ],
+                },
+            }),
+        })
+
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/contexts/context-1')
+
+        await driver.page.waitForSelector('[data-testid="edit-search-context-link"]')
+        await driver.page.click('[data-testid="edit-search-context-link"]')
+
+        await driver.page.waitForSelector('[data-testid="search-context-name-input"]')
+        await driver.replaceText({
+            selector: '[data-testid="search-context-name-input"]',
+            newText: 'new-context',
+            enterTextMethod: 'type',
+        })
+
+        // Assert spec preview
+        const specPreview = await driver.page.evaluate(
+            () => document.querySelector('[data-testid="search-context-preview"]')?.textContent
+        )
+        expect(specPreview).toBe('context:@test/new-context')
+
+        // Enter description
+        await driver.replaceText({
+            selector: '[data-testid="search-context-description-input"]',
+            newText: 'Search context description',
+            enterTextMethod: 'type',
+        })
+
+        // Enter repositories
+        const repositoriesConfig =
+            '[{ "repository": "github.com/example/example", "revisions": ["main", "pr/feature1"] }]'
+        await driver.page.waitForSelector('[data-testid="repositories-config-area"] .monaco-editor')
+        await driver.replaceText({
+            selector: '[data-testid="repositories-config-area"] .monaco-editor',
+            newText: repositoriesConfig,
+            selectMethod: 'keyboard',
+            enterTextMethod: 'paste',
+        })
+
+        // Test configuration
+        await driver.page.click('[data-testid="repositories-config-button"]')
+        await driver.page.waitForSelector('[data-testid="repositories-config-button"] .text-success')
+
+        // Click save
+        await driver.page.click('[data-testid="search-context-submit-button"]')
+
+        // Wait for submit request to finish and redirect to list page
+        await driver.page.waitForSelector('.search-contexts-list-page')
+    })
+
+    test('Cannot edit search context without necessary permissions', async () => {
+        testContext.overrideGraphQL({
+            ...testContextForSearchContexts,
+            FetchSearchContext: ({ id }) => ({
+                node: {
+                    __typename: 'SearchContext',
+                    id,
+                    spec: 'context-1',
+                    name: 'context-1',
+                    namespace: null,
+                    description: 'description',
+                    public: true,
+                    autoDefined: false,
+                    updatedAt: subDays(new Date(), 1).toISOString(),
+                    viewerCanManage: false,
+                    repositories: [],
+                },
+            }),
+        })
+
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/contexts/context-1/edit')
+
+        await driver.page.waitForSelector('.alert-danger')
+        const errorText = await driver.page.evaluate(() => document.querySelector('.alert-danger')?.textContent)
+        expect(errorText).toContain('You do not have sufficient permissions to edit this context.')
     })
 })
