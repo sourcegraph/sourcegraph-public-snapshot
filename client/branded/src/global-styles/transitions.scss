@@ -1,0 +1,6 @@
+:root {
+    --btn-transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    @media (prefers-reduced-motion) {
+        --btn-transition: none;
+    }
+}
