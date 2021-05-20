@@ -1270,6 +1270,11 @@ type Query {
     affiliatedRepositories(user: ID!, codeHost: ID, query: String): CodeHostRepositoryConnection!
 
     """
+    Returns true if any of the code hosts supplied are syncing now or within "seconds" from now.
+    """
+    codeHostSyncDue(ids: [ID!]!, seconds: Int!): Boolean!
+
+    """
     Retrieve all registered out-of-band migrations.
     """
     outOfBandMigrations: [OutOfBandMigration!]!
