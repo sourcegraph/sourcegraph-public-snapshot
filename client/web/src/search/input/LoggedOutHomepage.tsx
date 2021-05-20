@@ -84,9 +84,9 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
                 <div className="d-flex align-items-center flex-column">
                     <SignUpCta className={styles.loggedOutHomepageCta} />
                     <div className="mt-2 text-center">
-                        Prefer a local installation?{' '}
-                        <a href="https://docs.sourcegraph.com" target="_blank" rel="noopener noreferrer">
-                            Install Sourcegraph locally.
+                        Search private code by{' '}
+                        <a href="https://docs.sourcegraph.com/admin/install" target="_blank" rel="noopener noreferrer">
+                            installing Sourcegraph locally.
                         </a>
                     </div>
                 </div>
