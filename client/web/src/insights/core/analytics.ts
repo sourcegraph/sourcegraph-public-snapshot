@@ -14,24 +14,33 @@ import { AuthenticatedUser } from '../../auth'
 import { InsightTypePrefix, SearchBasedInsightOrigin } from './types'
 
 export function logInsightMetrics(
-    settingsCascade: SettingsCascadeOrError<Settings>,
+    oldSettingsCascade: SettingsCascadeOrError<Settings>,
+    newSettingsCascade: SettingsCascadeOrError<Settings>,
     authUser: AuthenticatedUser,
     telemetryService: TelemetryService
 ): void {
-    logCodeInsightsCount(settingsCascade, authUser, telemetryService)
-    logSearchBasedInsightStepSize(settingsCascade, telemetryService)
+    logCodeInsightsCount(oldSettingsCascade, newSettingsCascade, authUser, telemetryService)
+    logSearchBasedInsightStepSize(oldSettingsCascade, newSettingsCascade, telemetryService)
+    logCodeInsightsChanges(oldSettingsCascade, newSettingsCascade, telemetryService)
 }
 
 export function logCodeInsightsCount(
-    settingsCascade: SettingsCascadeOrError<Settings>,
+    oldSettingsCascade: SettingsCascadeOrError<Settings>,
+    newSettingsCascade: SettingsCascadeOrError<Settings>,
     authUser: AuthenticatedUser,
     telemetryService: TelemetryService
 ): void {
-    try {
-        if (isSettingsValid(settingsCascade)) {
-            const groupedInsights = getInsightsGroupedByType(settingsCascade, authUser)
+    const oldSettings = isSettingsValid(oldSettingsCascade) && oldSettingsCascade
+    const newSettings = isSettingsValid(newSettingsCascade) && newSettingsCascade
 
-            telemetryService.log('InsightsGroupedCount', groupedInsights)
+    try {
+        if (oldSettings && newSettings) {
+            const oldGroupedInsights = getInsightsGroupedByType(oldSettings, authUser)
+            const newGroupedInsights = getInsightsGroupedByType(newSettings, authUser)
+
+            if (!isEqual(oldGroupedInsights, newGroupedInsights)) {
+                telemetryService.log('InsightsGroupedCount', newGroupedInsights)
+            }
         }
     } catch {
         // noop
@@ -39,14 +48,21 @@ export function logCodeInsightsCount(
 }
 
 export function logSearchBasedInsightStepSize(
-    settingsCascade: SettingsCascadeOrError<Settings>,
+    oldSettingsCascade: SettingsCascadeOrError<Settings>,
+    newSettingsCascade: SettingsCascadeOrError<Settings>,
     telemetryService: TelemetryService
 ): void {
-    try {
-        if (isSettingsValid(settingsCascade)) {
-            const groupedStepSizes = getGroupedStepSizes(settingsCascade.final)
+    const oldSettings = isSettingsValid(oldSettingsCascade) && oldSettingsCascade
+    const newSettings = isSettingsValid(newSettingsCascade) && newSettingsCascade
 
-            telemetryService.log('InsightsGroupedStepSizes', groupedStepSizes)
+    try {
+        if (oldSettings && newSettings) {
+            const oldGroupedStepSizes = getGroupedStepSizes(oldSettings.final)
+            const newGroupedStepSizes = getGroupedStepSizes(newSettings.final)
+
+            if (!isEqual(oldGroupedStepSizes, newGroupedStepSizes)) {
+                telemetryService.log('InsightsGroupedStepSizes', newGroupedStepSizes)
+            }
         }
     } catch {
         // noop

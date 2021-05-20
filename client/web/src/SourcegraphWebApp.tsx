@@ -35,7 +35,7 @@ import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
-import { logCodeInsightsChanges, logInsightMetrics } from './insights'
+import { logInsightMetrics } from './insights'
 import { KeyboardShortcutsProps } from './keyboardShortcuts/keyboardShortcuts'
 import { Layout, LayoutProps } from './Layout'
 import { updateUserSessionStores } from './marketing/util'
@@ -334,27 +334,17 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             )
         )
 
-        // Observe settings mutations for analytics
-        // Track add delete and update events of code insights via
-        // checking user/org settings on settings update
-        this.subscriptions.add(
-            from(this.platformContext.settings)
-                .pipe(bufferCount(2, 1))
-                .subscribe(([oldSettings, newSettings]) => {
-                    logCodeInsightsChanges(oldSettings, newSettings, eventLogger)
-                })
-        )
-
         // Track static metrics fo code insights.
-        // Insight count, insights settings.
+        // Insight count, insights settings, observe settings mutations for analytics
+        // Track add delete and update events of code insights via
         this.subscriptions.add(
-            combineLatest([from(this.platformContext.settings), authenticatedUser]).subscribe(
-                ([settings, authUser]) => {
+            combineLatest([from(this.platformContext.settings), authenticatedUser])
+                .pipe(bufferCount(2, 1))
+                .subscribe(([[oldSettings], [newSettings, authUser]]) => {
                     if (authUser) {
-                        logInsightMetrics(settings, authUser, eventLogger)
+                        logInsightMetrics(oldSettings, newSettings, authUser, eventLogger)
                     }
-                }
-            )
+                })
         )
 
         // React to OS theme change
