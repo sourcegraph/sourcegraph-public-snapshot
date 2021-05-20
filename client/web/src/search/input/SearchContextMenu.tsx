@@ -34,7 +34,7 @@ const HighlightedSearchTerm: React.FunctionComponent<{ text: string; searchFilte
             return (
                 <>
                     {before}
-                    <strong>{highlighted}</strong>
+                    <strong className="search-context-menu__item--highlighted">{highlighted}</strong>
                     {after}
                 </>
             )
@@ -59,11 +59,9 @@ const SearchContextMenuItem: React.FunctionComponent<{
             className={classNames('search-context-menu__item', { 'search-context-menu__item--selected': selected })}
             onClick={setContext}
         >
-            <strong className="search-context-menu__item-name">
-                <small title={spec}>
-                    <HighlightedSearchTerm text={spec} searchFilter={searchFilter} />
-                </small>
-            </strong>{' '}
+            <small className="search-context-menu__item-name font-weight-medium" title={spec}>
+                <HighlightedSearchTerm text={spec} searchFilter={searchFilter} />
+            </small>{' '}
             <small className="search-context-menu__item-description" title={description}>
                 {description}
             </small>

@@ -70,6 +70,12 @@
             }
         }
 
+        &--highlighted {
+            .theme-redesign & {
+                font-weight: 700;
+            }
+        }
+
         &:hover,
         &:active,
         &:focus {
