@@ -1,26 +1,24 @@
 import { useState } from 'react'
-
-import { isDefined } from '@sourcegraph/shared/src/util/types'
+import * as uuid from 'uuid'
 
 import { useFieldAPI } from '../../../../../../components/form/hooks/useField'
-import { DataSeries } from '../../../../../../core/backend/types'
-import { useDistinctValue } from '../../../../../../hooks/use-distinct-value'
-import { CreateInsightFormFields } from '../../../types'
+import { CreateInsightFormFields, EditableDataSeries } from '../../../types'
 import { DEFAULT_ACTIVE_COLOR } from '../../form-color-input/FormColorInput'
 
-const createDefaultEditSeries = (series = defaultEditSeries, valid = false): EditDataSeries => ({
+import { remove, replace } from './helpers'
+
+export const createDefaultEditSeries = (series?: Partial<EditableDataSeries>): EditableDataSeries => ({
+    ...defaultEditSeries,
     ...series,
-    valid,
+    id: uuid.v4(),
 })
 
 const defaultEditSeries = {
+    valid: false,
+    edit: false,
     name: '',
     query: '',
     stroke: DEFAULT_ACTIVE_COLOR,
-}
-
-interface EditDataSeries extends DataSeries {
-    valid: boolean
 }
 
 export interface UseEditableSeriesProps {
@@ -33,23 +31,18 @@ export interface UseEditableSeriesAPI {
      * In case of some element has undefined value we're showing
      * series card with data instead of form.
      * */
-    editSeries: (CreateInsightFormFields['series'][number] | undefined)[]
-
-    /**
-     * Latest valid values of series.
-     * */
-    liveSeries: DataSeries[]
+    editSeries: CreateInsightFormFields['series']
 
     /**
      * Handler to listen latest values of particular sereis form.
      * */
-    listen: (liveSeries: DataSeries, valid: boolean, index: number) => void
+    listen: (liveSeries: EditableDataSeries, valid: boolean, index: number) => void
 
     /**
-     * Handlers for CRUD operations over sereis.
+     * Handlers for CRUD operations over series.
      * */
     editRequest: (index: number) => void
-    editCommit: (index: number, editedSeries: DataSeries) => void
+    editCommit: (index: number, editedSeries: EditableDataSeries) => void
     cancelEdit: (index: number) => void
     deleteSeries: (index: number) => void
 }
@@ -61,88 +54,86 @@ export interface UseEditableSeriesAPI {
 export function useEditableSeries(props: UseEditableSeriesProps): UseEditableSeriesAPI {
     const { series } = props
 
-    const [editSeries, setEditSeries] = useState<(EditDataSeries | undefined)[]>(() => {
-        const hasSeries = series.input.value.length
+    const [seriesBeforeEdit, setSeriesBeforeEdit] = useState<Record<string, EditableDataSeries>>({})
 
-        if (hasSeries) {
-            return series.input.value.map(() => undefined)
-        }
+    const handleSeriesLiveChange = (liveSeries: EditableDataSeries, valid: boolean, index: number): void => {
+        series.meta.setState(state => {
+            const newLiveSeries = { ...liveSeries, edit: true, valid }
 
-        // If we in creation mode we should show first series editor in a first
-        // render.
-        return [createDefaultEditSeries()]
-    })
-
-    const liveSeries = useDistinctValue(
-        editSeries
-            .map((editSeries, index) => {
-                if (editSeries) {
-                    const { valid, ...series } = editSeries
-                    return valid ? series : undefined
-                }
-
-                return series.meta.value[index]
-            })
-            .filter<DataSeries>(isDefined)
-    )
-
-    const handleSeriesLiveChange = (liveSeries: DataSeries, valid: boolean, index: number): void => {
-        setEditSeries(editSeries => {
-            const newEditSeries = [...editSeries]
-
-            newEditSeries[index] = { ...liveSeries, valid }
-
-            return newEditSeries
+            return { ...state, value: replace(state.value, index, newLiveSeries) }
         })
     }
 
     const handleEditSeriesRequest = (index: number): void => {
-        setEditSeries(editSeries => {
-            const newEditSeries = [...editSeries]
+        const seriesValue = series.meta.value
+        const newEditSeries = [...seriesValue]
 
-            newEditSeries[index] = series.meta.value[index]
-                ? createDefaultEditSeries(series.meta.value[index], true)
-                : createDefaultEditSeries()
+        newEditSeries[index] = seriesValue[index]
+            ? { ...seriesValue[index], edit: true }
+            : createDefaultEditSeries({ edit: true })
 
-            return newEditSeries
-        })
+        // If user tries edit series we have to remember value before edit
+        // in case if user clicks cancel we return that initial value back
+        if (seriesValue[index]) {
+            const newSeriesID = newEditSeries[index].id
+
+            setSeriesBeforeEdit({
+                ...seriesBeforeEdit,
+                [newSeriesID]: seriesValue[index],
+            })
+        }
+
+        series.meta.setState(state => ({ ...state, value: newEditSeries }))
     }
 
     const handleEditSeriesCancel = (index: number): void => {
-        setEditSeries(editSeries => {
-            const newEditSeries = [...editSeries]
+        series.meta.setState(state => {
+            const series = [...state.value]
+            const seriesValueBeforeEdit = seriesBeforeEdit[series[index].id]
 
-            newEditSeries[index] = undefined
-            setEditSeries(newEditSeries)
+            // If we have series by this index that means user activated
+            // cancellation of edit mode of series that already exists
+            if (seriesValueBeforeEdit) {
+                // in this case we have to set values of settings that we had
+                // before edit happened
+                series[index] = seriesValueBeforeEdit
 
-            return editSeries
+                return { ...state, value: series }
+            }
+
+            // On other case means that user clicked cancel of new series form
+            // in this case we have to remove series model entirely
+            return { ...state, value: remove(series, index) }
         })
     }
 
-    const handleEditSeriesCommit = (index: number, editedSeries: DataSeries): void => {
-        setEditSeries(editSeries => {
-            const newEditedSeries = [...editSeries]
+    const handleEditSeriesCommit = (index: number, editedSeries: EditableDataSeries): void => {
+        series.meta.setState(state => {
+            const series = state.value
+            const updatedSeries = { ...editedSeries, valid: true, edit: false }
+            const newSeries = replace(series, index, updatedSeries)
 
-            // Remove series from edited cards
-            newEditedSeries[index] = undefined
-
-            return newEditedSeries
+            return { ...state, value: newSeries }
         })
-
-        const newSeries = [...series.input.value.slice(0, index), editedSeries, ...series.input.value.slice(index + 1)]
-        series.input.onChange(newSeries)
     }
 
     const handleRemoveSeries = (index: number): void => {
-        setEditSeries(editSeries => [...editSeries.slice(0, index), ...editSeries.slice(index + 1)])
+        series.meta.setState(state => {
+            const series = state.value
+            const newSeries = remove(series, index)
 
-        const newSeries = [...series.input.value.slice(0, index), ...series.input.value.slice(index + 1)]
-        series.input.onChange(newSeries)
+            if (newSeries.length === 0) {
+                // If user remove all series we add fallback with another oped edit series
+                // just to emphasize that user has to fill in at least one series
+                return { ...state, value: [createDefaultEditSeries({ edit: true })] }
+            }
+
+            return { ...state, value: newSeries }
+        })
     }
 
     return {
-        liveSeries,
-        editSeries,
+        editSeries: series.input.value,
         listen: handleSeriesLiveChange,
         editRequest: handleEditSeriesRequest,
         editCommit: handleEditSeriesCommit,

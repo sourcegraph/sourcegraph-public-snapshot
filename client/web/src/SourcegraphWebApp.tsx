@@ -65,6 +65,7 @@ import {
     fetchSearchContexts,
     convertVersionContextToSearchContext,
     fetchSearchContext,
+    createSearchContext,
 } from './search/backend'
 import { QueryState } from './search/helpers'
 import { aggregateStreamingSearch } from './search/stream'
@@ -310,8 +311,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
 
         document.documentElement.classList.add('theme')
 
-        // NODE_ENV check ensures that this logic won't propagate to non-dev builds via Webpack dead code elimination
-        if (process.env.NODE_ENV === 'development' && getIsRedesignEnabled()) {
+        if (getIsRedesignEnabled()) {
             document.documentElement.classList.add(REDESIGN_CLASS_NAME)
         }
 
@@ -511,6 +511,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
                                     fetchSearchContexts={fetchSearchContexts}
                                     fetchSearchContext={fetchSearchContext}
+                                    createSearchContext={createSearchContext}
                                     convertVersionContextToSearchContext={convertVersionContextToSearchContext}
                                     isSearchContextSpecAvailable={isSearchContextSpecAvailable}
                                     defaultSearchContextSpec={this.state.defaultSearchContextSpec}

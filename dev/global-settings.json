@@ -4,7 +4,8 @@
     "showRepogroupHomepage": true,
     "showMultilineSearchConsole": true,
     "codeMonitoring": true,
-    "codeInsights": true
+    "codeInsights": true,
+    "designRefreshToggleEnabled": true
   },
   "insights": [
     {

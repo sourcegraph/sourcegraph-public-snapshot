@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Observable, of } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
 
@@ -28,6 +28,9 @@ interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettin
     onToggleError?: (revertedValue: OptimisticUpdateFailure<boolean>) => void
     /** Settings subject that the toggle should act upon */
     subject: SettingsSubject | null
+
+    /** Render text left of the toggle based on optimistic enablement state */
+    renderText?: (enabled: boolean) => JSX.Element
 }
 
 export interface OptimisticUpdateFailure<T> {
@@ -85,9 +88,15 @@ export const ExtensionToggle: React.FunctionComponent<Props> = ({
     onToggleChange,
     onToggleError,
     subject,
+    renderText,
 }) => {
     const [optimisticEnabled, setOptimisticEnabled] = useState(enabled)
     const [askingForPermission, setAskingForPermission] = useState<boolean>(false)
+
+    // If `enabled` changes for any reason (e.g. enabled with another toggle), update optimistic state
+    useEffect(() => {
+        setOptimisticEnabled(enabled)
+    }, [enabled])
 
     const onOptimisticError = useCallback(
         (optimisticUpdateFailure: OptimisticUpdateFailure<boolean>) => {
@@ -161,6 +170,7 @@ export const ExtensionToggle: React.FunctionComponent<Props> = ({
 
     return (
         <>
+            {renderText?.(optimisticEnabled)}
             {big ? <ToggleBig {...props} /> : <Toggle {...props} />}
             {askingForPermission && (
                 <ExtensionPermissionModal

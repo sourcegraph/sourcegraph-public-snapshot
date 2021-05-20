@@ -13,13 +13,12 @@ import {
     CaseSensitivityProps,
     CopyQueryButtonProps,
     OnboardingTourProps,
-    SearchContextProps,
+    SearchContextInputProps,
 } from '..'
 import { VersionContext } from '../../schema/site.schema'
 import { submitSearch, QueryState } from '../helpers'
 
 import { SearchBox } from './SearchBox'
-import { SearchButton } from './SearchButton'
 import { HAS_COMPLETED_TOUR_KEY } from './SearchOnboardingTour'
 
 interface Props
@@ -29,10 +28,7 @@ interface Props
         SettingsCascadeProps,
         ThemeProps,
         CopyQueryButtonProps,
-        Omit<
-            SearchContextProps,
-            'convertVersionContextToSearchContext' | 'isSearchContextSpecAvailable' | 'fetchSearchContext'
-        >,
+        SearchContextInputProps,
         VersionContextProps,
         OnboardingTourProps {
     location: H.Location
@@ -76,7 +72,6 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
                 showSearchContextHighlightTourStep={true}
                 hasCompletedSearchOnboardingTour={hasCompletedTour}
             />
-            <SearchButton />
         </Form>
     )
 }

@@ -9,20 +9,14 @@ import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
-import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '..'
+import { CaseSensitivityProps, PatternTypeProps, SearchContextInputProps } from '..'
 import { SubmitSearchParameters } from '../helpers'
 
 import { SearchContextMenu } from './SearchContextMenu'
 import { defaultTourOptions } from './tour-options'
 
 export interface SearchContextDropdownProps
-    extends Omit<
-            SearchContextProps,
-            | 'showSearchContext'
-            | 'convertVersionContextToSearchContext'
-            | 'isSearchContextSpecAvailable'
-            | 'fetchSearchContext'
-        >,
+    extends Omit<SearchContextInputProps, 'showSearchContext'>,
         Pick<PatternTypeProps, 'patternType'>,
         Pick<CaseSensitivityProps, 'caseSensitive'>,
         VersionContextProps {
