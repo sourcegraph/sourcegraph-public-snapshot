@@ -16,7 +16,7 @@ func MavenRepoName(repositoryPathPattern, artifact string) api.RepoName {
 	).Replace(repositoryPathPattern))
 }
 
-func DecomposeMavenPath(path string) (groupID, artifactID string) {
-	split := strings.Split(path, "/")
-	return strings.Join(split[:len(split)-1], "."), split[len(split)-1]
+func DecomposeMavenPath(path string) (groupID, artifactID, version string) {
+	split := strings.Split(strings.TrimPrefix(path, "/"), "/")
+	return split[0], split[1], split[2]
 }

@@ -858,20 +858,20 @@ type Log struct {
 type MavenConnection struct {
 	// Artifacts description: An array of artifact "groupID:artifactID" strings specifying which Maven artifacts to mirror on Sourcegraph.
 	Artifacts []string `json:"artifacts,omitempty"`
-	// CloneAll description: Whether to clone the entire repository so it's available for search, or only pull down dependencies and explicitly specified packages specified.
-	CloneAll bool `json:"cloneAll,omitempty"`
-	// Groups description: An array of prefixes of Maven groups whose artifacts should be mirrored on Sourcegraph.
+	// Credentials description: Contents of a coursier.credentials file needed for accessing the Maven repositories.
+	Credentials string `json:"credentials,omitempty"`
+	// Groups description: An array of Maven groups whose artifacts should be mirrored on Sourcegraph.
 	Groups []string `json:"groups,omitempty"`
 	// RateLimit description: Rate limit applied when making background API requests to the Maven repository.
 	RateLimit *MavenRateLimit `json:"rateLimit,omitempty"`
+	// Repositories description: The url at which the maven repository can be found.
+	Repositories []string `json:"repositories"`
 	// RepositoryPathPattern description: The pattern used to generate the corresponding Sourcegraph repository name for a Maven artifact. In the pattern, the variable "{artifact}" is replaced with the Maven artifact's path.
 	//
 	// For example, if your Maven artifact path is "//Sourcegraph/" and your Sourcegraph URL is https://src.example.com, then a repositoryPathPattern of "maven/{artifact}" would mean that the Maven artifact is available on Sourcegraph at https://src.example.com/maven/Sourcegraph.
 	//
 	// It is important that the Sourcegraph repository name generated with this pattern be unique to this Maven repository. If different Maven repositories generate repository names that collide, Sourcegraph's behavior is undefined.
 	RepositoryPathPattern string `json:"repositoryPathPattern"`
-	// Url description: The url at which the maven repository can be found.
-	Url string `json:"url"`
 }
 
 // MavenRateLimit description: Rate limit applied when making background API requests to the Maven repository.

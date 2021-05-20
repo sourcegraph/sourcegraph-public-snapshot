@@ -193,7 +193,11 @@ func Main(enterpriseInit EnterpriseInit) {
 			// cloud_default flag has been set.
 			NoNamespace:      true,
 			OnlyCloudDefault: true,
-			Kinds:            []string{extsvc.KindGitHub, extsvc.KindGitLab},
+			Kinds: []string{
+				extsvc.KindGitHub,
+				extsvc.KindGitLab,
+				extsvc.KindMaven,
+			},
 		})
 
 		if err != nil {

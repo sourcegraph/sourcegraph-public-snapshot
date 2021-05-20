@@ -576,8 +576,8 @@ func (s *Server) remoteRepoSync(ctx context.Context, codehost *extsvc.CodeHost, 
 			}
 			return nil, err
 		}
-	case extsvc.MavenCentral:
-		artifactPath := strings.TrimPrefix(remoteName, "repo1.maven.org/maven2/")
+	case extsvc.Maven:
+		artifactPath := strings.TrimPrefix(remoteName, "maven/")
 		repo, err = s.MavenSource.GetRepo(ctx, artifactPath)
 		if err != nil {
 			if errcode.IsNotFound(err) {

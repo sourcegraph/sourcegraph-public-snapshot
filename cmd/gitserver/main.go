@@ -138,7 +138,25 @@ func main() {
 					MaxChanges: int(c.MaxChanges),
 				}, nil
 			case extsvc.TypeMaven:
-				return &server.MavenArtifactSyncer{}, nil
+				var c schema.MavenConnection
+				for _, info := range r.Sources {
+					es, err := externalServiceStore.GetByID(ctx, info.ExternalServiceID())
+					if err != nil {
+						return nil, errors.Wrap(err, "get external service")
+					}
+
+					normalized, err := jsonc.Parse(es.Config)
+					if err != nil {
+						return nil, errors.Wrap(err, "normalize JSON")
+					}
+
+					if err = jsoniter.Unmarshal(normalized, &c); err != nil {
+						return nil, errors.Wrap(err, "unmarshal JSON")
+					}
+					break
+				}
+
+				return &server.MavenArtifactSyncer{Config: &c}, nil
 			}
 			return &server.GitRepoSyncer{}, nil
 		},

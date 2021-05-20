@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -12,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/maven/coursier"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/schema"
 
 	"github.com/pkg/errors"
 
@@ -29,13 +31,10 @@ type VCSSyncer interface {
 	// error indicates there is a problem.
 	IsCloneable(ctx context.Context, remoteURL *vcs.URL) error
 	// CloneCommand returns the command to be executed for cloning from remote.
-	// Returning nil will prevent progress on the command from being reported to the user.
 	CloneCommand(ctx context.Context, remoteURL *vcs.URL, tmpPath string) (cmd *exec.Cmd, err error)
 	// Fetch tries to fetch updates from the remote to given directory.
 	Fetch(ctx context.Context, remoteURL *vcs.URL, dir GitDir) error
 	// RemoteShowCommand returns the command to be executed for showing remote.
-	// Returning nil will cause functionality which depends on this command
-	// (right now just picking the default branch) to pick arbitrary values.
 	RemoteShowCommand(ctx context.Context, remoteURL *vcs.URL) (cmd *exec.Cmd, err error)
 }
 
@@ -310,6 +309,7 @@ func (s *PerforceDepotSyncer) RemoteShowCommand(ctx context.Context, remoteURL *
 }
 
 type MavenArtifactSyncer struct {
+	Config *schema.MavenConnection
 }
 
 var _ VCSSyncer = &MavenArtifactSyncer{}
@@ -318,19 +318,11 @@ func (s MavenArtifactSyncer) Type() string {
 	return "maven"
 }
 
-func decomposeMavenURL(url *vcs.URL) (repository, groupID, artifactID string) {
-	pathIdx := strings.Index(url.String(), "maven2")
-	repository = url.String()[:pathIdx+len("maven2")]
-	path := url.String()[pathIdx+len("maven2")+1:]
-	groupID, artifactID = reposource.DecomposeMavenPath(path)
-	return repository, groupID, artifactID
-}
-
 // IsCloneable checks to see if the VCS remote URL is cloneable. Any non-nil
 // error indicates there is a problem.
 func (s MavenArtifactSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL) error {
-	repository, groupID, artifactID := decomposeMavenURL(remoteURL)
-	exists, err := coursier.Exists(ctx, repository, groupID, artifactID)
+	groupID, artifactID, version := reposource.DecomposeMavenPath(remoteURL.Path)
+	exists, err := coursier.Exists(ctx, s.Config, groupID, artifactID, version)
 	if err != nil {
 		return err
 	}
@@ -343,13 +335,9 @@ func (s MavenArtifactSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL
 
 // CloneCommand returns the command to be executed for cloning from remote.
 func (s MavenArtifactSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL, tmpPath string) (cmd *exec.Cmd, err error) {
-	repository, groupID, artifactID := decomposeMavenURL(remoteURL)
-	versions, err := coursier.ListVersions(ctx, repository, groupID, artifactID)
-	if err != nil {
-		return nil, err
-	}
+	groupID, artifactID, version := reposource.DecomposeMavenPath(remoteURL.Path)
 
-	paths, err := coursier.FetchVersions(ctx, repository, groupID, artifactID, versions)
+	path, err := coursier.FetchVersion(ctx, s.Config, groupID, artifactID, version)
 	if err != nil {
 		return nil, err
 	}
@@ -360,89 +348,65 @@ func (s MavenArtifactSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.UR
 		return nil, errors.Wrapf(err, "failed to init git repository with output %q", string(output))
 	}
 
-	return nil, s.commitJars(ctx, GitDir(tmpPath), paths, versions)
+	return exec.CommandContext(ctx, "git", "--version"), s.commitJar(ctx, GitDir(tmpPath), groupID, artifactID, path, version)
 }
 
 var versionPattern = lazyregexp.New(`refs/heads/(.+)$`)
 
 // Fetch tries to fetch updates from the remote to given directory.
 func (s MavenArtifactSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir GitDir) error {
-	repository, groupID, artifactID := decomposeMavenURL(remoteURL)
-	coursierVersions, err := coursier.ListVersions(ctx, repository, groupID, artifactID)
+	return nil
+}
+
+func (s MavenArtifactSyncer) commitJar(ctx context.Context, dir GitDir, groupID, artifactID, path, version string) error {
+	cmd := exec.CommandContext(ctx, "unzip", path, "-d", "./")
+	dir.Set(cmd)
+	if output, err := runWith(ctx, cmd, false, nil); err != nil {
+		return errors.Wrapf(err, "failed to unzip with output %q", string(output))
+	}
+
+	file, err := os.Create(dir.Path("lsif-java.json"))
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	jsonContents, err := json.Marshal(&lsifJavaJson{
+		kind:         "maven",
+		jvm:          "8",
+		dependencies: []string{strings.Join([]string{groupID, artifactID, version}, ":")},
+	})
 	if err != nil {
 		return err
 	}
 
-	cmd := exec.CommandContext(ctx, "git", "show-branch")
-	dir.Set(cmd)
-	gitVersionsRaw, err := runWith(ctx, cmd, false, nil)
+	_, err = file.Write(jsonContents)
 	if err != nil {
-		return errors.Wrapf(err, "failed to git show-branch with output %q", string(gitVersionsRaw))
-	}
-	gitVersionsLines := strings.Split(string(gitVersionsRaw), "\n")
-
-	gitVersions := make(map[string]struct{})
-	for _, rawVersion := range gitVersionsLines {
-		gitVersions[versionPattern.FindStringSubmatch(rawVersion)[1]] = struct{}{}
-	}
-	var filteredCoursierVersions []string
-	for _, version := range coursierVersions {
-		if _, exists := gitVersions[version]; !exists {
-			filteredCoursierVersions = append(filteredCoursierVersions, version)
-		}
+		return err
 	}
 
-	paths, err := coursier.FetchVersions(ctx, repository, groupID, artifactID, filteredCoursierVersions)
+	cmd = exec.CommandContext(ctx, "git", "add", "*")
+	dir.Set(cmd)
+	if output, err := runWith(ctx, cmd, false, nil); err != nil {
+		return errors.Wrapf(err, "failed to git add with output %q", string(output))
+	}
 
-	return s.commitJars(ctx, dir, paths, filteredCoursierVersions)
-}
-
-func (s MavenArtifactSyncer) commitJars(ctx context.Context, dir GitDir, paths, versions []string) error {
-	for idx, path := range paths {
-		cmd := exec.CommandContext(ctx, "git", "checkout", "--orphan", versions[idx])
-		dir.Set(cmd)
-		if output, err := runWith(ctx, cmd, false, nil); err != nil {
-			return errors.Wrapf(err, "failed to git checkout with output %q", string(output))
-		}
-
-		cmd = exec.CommandContext(ctx, "git", "reset")
-		dir.Set(cmd)
-		if output, err := runWith(ctx, cmd, false, nil); err != nil {
-			return errors.Wrapf(err, "failed to git reset with output %q", string(output))
-		}
-
-		cmd = exec.CommandContext(ctx, "git", "clean", "-d", "-f")
-		dir.Set(cmd)
-		if output, err := runWith(ctx, cmd, false, nil); err != nil {
-			return errors.Wrapf(err, "failed to git clean with output %q", string(output))
-		}
-
-		cmd = exec.CommandContext(ctx, "unzip", path, "-d", "./")
-		dir.Set(cmd)
-		if output, err := runWith(ctx, cmd, false, nil); err != nil {
-			return errors.Wrapf(err, "failed to unzip with output %q", string(output))
-		}
-
-		// TODO: codeintel, need some extra logic here to set up maven repo properly for indexing
-
-		cmd = exec.CommandContext(ctx, "git", "add", "*")
-		dir.Set(cmd)
-		if output, err := runWith(ctx, cmd, false, nil); err != nil {
-			return errors.Wrapf(err, "failed to git add with output %q", string(output))
-		}
-
-		cmd = exec.CommandContext(ctx, "git", "commit", "-m", versions[idx])
-		dir.Set(cmd)
-		if output, err := runWith(ctx, cmd, false, nil); err != nil {
-			return errors.Wrapf(err, "failed to git commit with output %q", string(output))
-		}
+	cmd = exec.CommandContext(ctx, "git", "commit", "-m", version)
+	dir.Set(cmd)
+	if output, err := runWith(ctx, cmd, false, nil); err != nil {
+		return errors.Wrapf(err, "failed to git commit with output %q", string(output))
 	}
 
 	return nil
 }
 
+type lsifJavaJson struct {
+	kind         string
+	jvm          string
+	dependencies []string
+}
+
 // RemoteShowCommand returns the command to be executed for showing remote.
 func (s MavenArtifactSyncer) RemoteShowCommand(ctx context.Context, remoteURL *vcs.URL) (cmd *exec.Cmd, err error) {
-	// TODO: we return nil
-	return nil, nil
+	return exec.CommandContext(ctx, "git", "remote", "show", "./"), nil
 }

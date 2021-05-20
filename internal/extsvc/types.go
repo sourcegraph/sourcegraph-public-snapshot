@@ -399,7 +399,7 @@ func GetLimitFromConfig(kind string, config interface{}) (rlc RateLimitConfig, e
 			rlc.Limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 			rlc.IsDefault = false
 		}
-		rlc.BaseURL = c.Url
+		rlc.BaseURL = "maven"
 	default:
 		return rlc, ErrRateLimitUnsupported{codehostKind: kind}
 	}
