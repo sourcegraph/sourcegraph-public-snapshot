@@ -9,7 +9,6 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -55,10 +54,8 @@ func (a *affiliatedRepositoriesConnection) Nodes(ctx context.Context) ([]*codeHo
 			}
 			// 🚨 SECURITY: if the user doesn't own this service, check they're site admin
 			if svc.NamespaceUserID != a.userID {
-				if err := backend.CheckUserIsSiteAdmin(ctx, a.userID); err != nil {
-					a.err = err
-					return
-				}
+				a.err = errors.New("external service must be owned by specified user")
+				return
 			}
 			svcs = append(svcs, svc)
 		}
