@@ -598,9 +598,6 @@ func (s *Service) CreateChangesetJobs(ctx context.Context, batchChangeID int64, 
 	opts := listOpts
 	opts.IDs = ids
 	opts.BatchChangeID = batchChangeID
-	published := btypes.ChangesetPublicationStatePublished
-	// We can only run jobs on published changesets.
-	opts.PublicationState = &published
 	// We only want to allow changesets the user has access to.
 	opts.EnforceAuthz = true
 	cs, _, err := s.store.ListChangesets(ctx, opts)

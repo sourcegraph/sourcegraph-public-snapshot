@@ -8,9 +8,11 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/global"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -68,6 +70,8 @@ func (b *bulkProcessor) process(ctx context.Context, job *btypes.ChangesetJob) (
 		return b.comment(ctx, job)
 	case btypes.ChangesetJobTypeDetach:
 		return b.detach(ctx, job)
+	case btypes.ChangesetJobTypeReenqueue:
+		return b.reenqueueChangeset(ctx, job)
 
 	default:
 		return &unknownJobTypeErr{jobType: string(job.JobType)}
@@ -105,4 +109,12 @@ func (b *bulkProcessor) detach(ctx context.Context, job *btypes.ChangesetJob) er
 	// If we successfully marked the record as to-be-detached, trigger a reconciler run.
 	b.ch.ResetReconcilerState(global.DefaultReconcilerEnqueueState())
 	return b.store.UpdateChangeset(ctx, b.ch)
+}
+
+func (b *bulkProcessor) reenqueueChangeset(ctx context.Context, job *btypes.ChangesetJob) error {
+	svc := service.New(b.store)
+	// Use the acting user for the operation to enforce repository permissions.
+	ctx = actor.WithActor(ctx, actor.FromUser(job.UserID))
+	_, _, err := svc.ReenqueueChangeset(ctx, b.ch.ID)
+	return err
 }
