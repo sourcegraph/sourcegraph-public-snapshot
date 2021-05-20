@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-// compressReaderToDisk compresses and writes the content of the given reader to a temporary 
+// compressReaderToDisk compresses and writes the content of the given reader to a temporary
 // file and returns the file's path. If the given progress object is non-nil, then the progress's
 // first bar will be updated with the percentage of bytes read on each read.
 func compressReaderToDisk(r io.Reader, readerLen int64, progress output.Progress) (filename string, err error) {
