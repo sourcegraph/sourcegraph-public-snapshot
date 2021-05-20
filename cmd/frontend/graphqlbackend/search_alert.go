@@ -655,8 +655,8 @@ func capFirst(s string) string {
 func alertForError(err error, inputs *run.SearchInputs) *searchAlert {
 	var (
 		alert *searchAlert
-		rErr  *RepoLimitError
-		tErr  *TimeLimitError
+		rErr  *run.RepoLimitError
+		tErr  *run.TimeLimitError
 		mErr  *missingRepoRevsError
 	)
 
@@ -706,13 +706,6 @@ type alertObserver struct {
 	mu    sync.Mutex
 	alert *searchAlert
 	err   error
-}
-
-// Update AlertObserver's state based on event.
-func (o *alertObserver) Update(event streaming.SearchEvent) {
-	if len(event.Results) > 0 {
-		o.hasResults = true
-	}
 }
 
 func (o *alertObserver) Error(ctx context.Context, err error) {
