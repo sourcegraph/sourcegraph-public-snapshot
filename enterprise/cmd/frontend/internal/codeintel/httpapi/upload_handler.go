@@ -25,7 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
-	codeintelutils "github.com/sourcegraph/sourcegraph/lib/codeintel/utils"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/upload"
 )
 
 type UploadHandler struct {
@@ -84,7 +84,7 @@ func (h *UploadHandler) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if err == codeintelutils.ErrMetadataExceedsBuffer {
+		if err == upload.ErrMetadataExceedsBuffer {
 			http.Error(w, "Could not read indexer name from metaData vertex. Please supply it explicitly.", http.StatusBadRequest)
 			return
 		}
@@ -368,7 +368,7 @@ func inferIndexer(r *http.Request) (string, error) {
 
 	// Read from the stream until we extract a tool name. This method is careful not to
 	// take too much resident memory in the case of a malformed bundle.
-	name, err := codeintelutils.ReadIndexerName(gzipReader)
+	name, err := upload.ReadIndexerName(gzipReader)
 	if err != nil {
 		return "", err
 	}
