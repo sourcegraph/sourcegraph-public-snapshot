@@ -35,7 +35,7 @@ import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
-import { logCodeInsightsChanges } from './insights'
+import { logCodeInsightsChanges, logInsightMetrics } from './insights'
 import { KeyboardShortcutsProps } from './keyboardShortcuts/keyboardShortcuts'
 import { Layout, LayoutProps } from './Layout'
 import { updateUserSessionStores } from './marketing/util'
@@ -341,6 +341,16 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                 .subscribe(([oldSettings, newSettings]) => {
                     logCodeInsightsChanges(oldSettings, newSettings, eventLogger)
                 })
+        )
+
+        this.subscriptions.add(
+            combineLatest([from(this.platformContext.settings), authenticatedUser]).subscribe(
+                ([settings, authUser]) => {
+                    if (authUser) {
+                        logInsightMetrics(settings, authUser, eventLogger)
+                    }
+                }
+            )
         )
 
         // React to OS theme change

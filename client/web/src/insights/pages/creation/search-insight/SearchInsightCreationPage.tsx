@@ -1,10 +1,11 @@
 import classnames from 'classnames'
-import React, { useCallback, useContext } from 'react'
+import React, { useCallback, useContext, useEffect } from 'react'
 import { Redirect } from 'react-router'
-import { RouteComponentProps } from 'react-router-dom'
+import { useHistory } from 'react-router-dom'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { asError } from '@sourcegraph/shared/src/util/errors'
 
 import { AuthenticatedUser } from '../../../../auth'
@@ -23,8 +24,8 @@ import { getSanitizedSearchInsight } from './utils/insight-sanitizer'
 
 export interface SearchInsightCreationPageProps
     extends PlatformContextProps<'updateSettings'>,
-        Pick<RouteComponentProps, 'history'>,
-        SettingsCascadeProps {
+        SettingsCascadeProps,
+        TelemetryProps {
     /**
      * Authenticated user info, Used to decide where code insight will appears
      * in personal dashboard (private) or in organisation dashboard (public)
@@ -34,8 +35,13 @@ export interface SearchInsightCreationPageProps
 
 /** Displays create insight page with creation form. */
 export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCreationPageProps> = props => {
-    const { platformContext, authenticatedUser, history, settingsCascade } = props
+    const { platformContext, authenticatedUser, settingsCascade, telemetryService } = props
     const { updateSubjectSettings, getSubjectSettings } = useContext(InsightsApiContext)
+    const history = useHistory()
+
+    useEffect(() => {
+        telemetryService.logViewEvent('SearchBasedCreationPage')
+    }, [telemetryService])
 
     const handleSubmit = useCallback<SearchInsightCreationContentProps['onSubmit']>(
         async values => {
@@ -58,6 +64,7 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
 
                 await updateSubjectSettings(platformContext, subjectID, editedSettings).toPromise()
 
+                telemetryService.log('SearchBasedCreationPageSubmitClick')
                 history.push('/insights')
             } catch (error) {
                 return { [FORM_ERROR]: asError(error) }
@@ -65,12 +72,13 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
 
             return
         },
-        [history, updateSubjectSettings, getSubjectSettings, platformContext, authenticatedUser]
+        [telemetryService, history, updateSubjectSettings, getSubjectSettings, platformContext, authenticatedUser]
     )
 
     const handleCancel = useCallback(() => {
+        telemetryService.log('SearchBasedCreationPageCancelClick')
         history.push('/insights')
-    }, [history])
+    }, [history, telemetryService])
 
     // TODO [VK] Move this logic to high order component to simplify logic here
     if (authenticatedUser === null) {
