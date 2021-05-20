@@ -1,5 +1,6 @@
 @import './colors.scss';
 @import './border-radius.scss';
+@import './transitions.scss';
 
 // Bootstrap configuration before Bootstrap is imported
 $border-radius: var(--border-radius);
@@ -116,9 +117,9 @@ $hr-margin-y: 0.25rem;
 
 // Disable transitions
 $input-transition: none;
-$btn-transition: none;
-$badge-transition: none;
 $custom-forms-transition: none;
+$btn-transition: var(--btn-transition);
+$badge-transition: none; // Disable default badge transition, we only want to apply this when badges are links
 
 // Apply static redesign variables. Should be done before Bootstrap imports.
 @import './variables-redesign';

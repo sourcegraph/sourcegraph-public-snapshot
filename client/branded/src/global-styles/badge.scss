@@ -34,6 +34,11 @@
         }
     }
 
+    a.badge {
+        // Badge acts like btn-link, replicate transition
+        transition: var(--btn-transition);
+    }
+
     // Variants
     .badge-primary,
     .badge-secondary,
