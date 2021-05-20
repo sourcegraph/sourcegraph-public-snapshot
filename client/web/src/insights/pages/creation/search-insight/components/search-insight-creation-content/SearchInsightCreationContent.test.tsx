@@ -190,7 +190,7 @@ describe('CreateInsightContent', () => {
             sinon.assert.notCalled(onSubmitMock)
 
             expect(seriesName).toHaveFocus()
-            expect(getByText(/series is empty/i)).toBeInTheDocument()
+            expect(getByText(/series is invalid/i)).toBeInTheDocument()
         })
 
         it('when onSubmit threw submit error', async () => {

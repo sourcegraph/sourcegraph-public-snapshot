@@ -15,6 +15,10 @@ const validQuery = createRequiredValidator('Query is a required field for data s
 interface FormSeriesInputProps {
     /** Series index. */
     index: number
+    /**
+     * Show all validation error of all fields within the form.
+     * */
+    showValidationErrorsOnMount?: boolean
     /** Name of series. */
     name?: string
     /** Query value of series. */
@@ -31,6 +35,7 @@ interface FormSeriesInputProps {
     onSubmit?: (series: DataSeries) => void
     /** On cancel handler. */
     onCancel?: () => void
+    /** Change handler in order to listen last values of series form. */
     onChange?: (formValues: DataSeries, valid: boolean) => void
 }
 
@@ -38,6 +43,7 @@ interface FormSeriesInputProps {
 export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = props => {
     const {
         index,
+        showValidationErrorsOnMount = false,
         name,
         query,
         stroke: color,
@@ -53,6 +59,7 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
     const hasQueryControlledValue = !!query
 
     const { formAPI, handleSubmit, ref } = useForm({
+        touched: showValidationErrorsOnMount,
         initialValues: {
             seriesName: name ?? '',
             seriesQuery: query ?? '',

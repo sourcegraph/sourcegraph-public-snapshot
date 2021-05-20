@@ -1134,7 +1134,7 @@ func (r *Resolver) deleteBatchChangesSiteCredential(ctx context.Context, credent
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
-func (r *Resolver) DetachChangesets(ctx context.Context, args *graphqlbackend.DetachChangesetsArgs) (_ *graphqlbackend.EmptyResponse, err error) {
+func (r *Resolver) DetachChangesets(ctx context.Context, args *graphqlbackend.DetachChangesetsArgs) (_ graphqlbackend.BulkOperationResolver, err error) {
 	tr, ctx := trace.New(ctx, "Resolver.DetachChangesets", fmt.Sprintf("BatchChange: %q, len(Changesets): %d", args.BatchChange, len(args.Changesets)))
 	defer func() {
 		tr.SetError(err)
@@ -1167,13 +1167,24 @@ func (r *Resolver) DetachChangesets(ctx context.Context, args *graphqlbackend.De
 		changesetIDs = append(changesetIDs, id)
 	}
 
-	// 🚨 SECURITY: DetachChangeset checks whether current user is authorized.
+	// 🚨 SECURITY: CreateChangesetJobs checks whether current user is authorized.
 	svc := service.New(r.store)
-	if err = svc.DetachChangesets(ctx, batchChangeID, changesetIDs); err != nil {
+	bulkGroupID, err := svc.CreateChangesetJobs(
+		ctx,
+		batchChangeID,
+		changesetIDs,
+		btypes.ChangesetJobTypeDetach,
+		&btypes.ChangesetJobDetachPayload{},
+		store.ListChangesetsOpts{
+			// Only allow to run this on archived changesets.
+			OnlyArchived: true,
+		},
+	)
+	if err != nil {
 		return nil, err
 	}
 
-	return &graphqlbackend.EmptyResponse{}, nil
+	return r.bulkOperationByIDString(ctx, bulkGroupID)
 }
 
 func (r *Resolver) CreateChangesetComments(ctx context.Context, args *graphqlbackend.CreateChangesetCommentsArgs) (_ graphqlbackend.BulkOperationResolver, err error) {
@@ -1226,6 +1237,10 @@ func (r *Resolver) CreateChangesetComments(ctx context.Context, args *graphqlbac
 		btypes.ChangesetJobTypeComment,
 		&btypes.ChangesetJobCommentPayload{
 			Message: args.Body,
+		},
+		store.ListChangesetsOpts{
+			// Also include archived changesets, we allow commenting on them as well.
+			IncludeArchived: true,
 		},
 	)
 	if err != nil {

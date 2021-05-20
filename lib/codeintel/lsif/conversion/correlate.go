@@ -13,6 +13,8 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/datastructures"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/reader"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/pathexistence"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
 )
@@ -158,6 +160,10 @@ var vertexHandlers = map[string]func(state *wrappedState, element Element) error
 	"moniker":            correlateMoniker,
 	"packageInformation": correlatePackageInformation,
 	"diagnosticResult":   correlateDiagnosticResult,
+
+	// Sourcegraph extensions
+	string(protocol.VertexSourcegraphDocumentationResult): correlateDocumentationResult,
+	string(protocol.VertexSourcegraphDocumentationString): correlateDocumentationString,
 }
 
 // correlateElement maps a single vertex element into the correlation state.
@@ -187,22 +193,27 @@ var edgeHandlers = map[string]func(state *wrappedState, id int, edge Edge) error
 	"nextMoniker":             correlateNextMonikerEdge,
 	"packageInformation":      correlatePackageInformationEdge,
 	"textDocument/diagnostic": correlateDiagnosticEdge,
+
+	// Sourcegraph extensions
+	string(protocol.EdgeSourcegraphDocumentationResult):   correlateDocumentationResultEdge,
+	string(protocol.EdgeSourcegraphDocumentationChildren): correlateDocumentationChildrenEdge,
 }
 
 // correlateElement maps a single edge element into the correlation state.
 func correlateEdge(state *wrappedState, element Element) error {
-	edge, ok := element.Payload.(Edge)
-	if !ok {
+	switch payload := element.Payload.(type) {
+	case Edge:
+		handler, ok := edgeHandlers[element.Label]
+		if !ok {
+			// We don't care, can safely skip
+			return nil
+		}
+		return handler(state, element.ID, payload)
+	case reader.DocumentationStringEdge:
+		return correlateDocumentationStringEdge(state, element.ID, payload)
+	default:
 		return ErrUnexpectedPayload
 	}
-
-	handler, ok := edgeHandlers[element.Label]
-	if !ok {
-		// We don't care, can safely skip
-		return nil
-	}
-
-	return handler(state, element.ID, edge)
 }
 
 func correlateMetaData(state *wrappedState, element Element) error {

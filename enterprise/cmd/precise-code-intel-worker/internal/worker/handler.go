@@ -265,6 +265,9 @@ func writeData(ctx context.Context, lsifStore LSIFStore, id int, groupedBundleDa
 	if err := tx.WriteReferences(ctx, id, groupedBundleData.References); err != nil {
 		return errors.Wrap(err, "store.WriteReferences")
 	}
+	if err := tx.WriteDocumentationPages(ctx, id, groupedBundleData.DocumentationPages); err != nil {
+		return errors.Wrap(err, "store.WriteDocumentationPages")
+	}
 
 	return nil
 }

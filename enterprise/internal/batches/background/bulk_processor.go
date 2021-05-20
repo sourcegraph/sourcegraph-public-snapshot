@@ -7,6 +7,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/global"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -65,6 +66,8 @@ func (b *bulkProcessor) process(ctx context.Context, job *btypes.ChangesetJob) (
 
 	case btypes.ChangesetJobTypeComment:
 		return b.comment(ctx, job)
+	case btypes.ChangesetJobTypeDetach:
+		return b.detach(ctx, job)
 
 	default:
 		return &unknownJobTypeErr{jobType: string(job.JobType)}
@@ -81,4 +84,25 @@ func (b *bulkProcessor) comment(ctx context.Context, job *btypes.ChangesetJob) e
 		Repo:      b.repo,
 	}
 	return b.css.CreateComment(ctx, cs, typedPayload.Message)
+}
+
+func (b *bulkProcessor) detach(ctx context.Context, job *btypes.ChangesetJob) error {
+	// Try to detach the changeset from the batch change of the job.
+	var detached bool
+	for i, assoc := range b.ch.BatchChanges {
+		if assoc.BatchChangeID == job.BatchChangeID {
+			if !b.ch.BatchChanges[i].Detach {
+				b.ch.BatchChanges[i].Detach = true
+				detached = true
+			}
+		}
+	}
+
+	if !detached {
+		return nil
+	}
+
+	// If we successfully marked the record as to-be-detached, trigger a reconciler run.
+	b.ch.ResetReconcilerState(global.DefaultReconcilerEnqueueState())
+	return b.store.UpdateChangeset(ctx, b.ch)
 }

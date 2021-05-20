@@ -180,6 +180,8 @@ func scanChangesetJob(c *btypes.ChangesetJob, s scanner) error {
 	switch c.JobType {
 	case btypes.ChangesetJobTypeComment:
 		c.Payload = new(btypes.ChangesetJobCommentPayload)
+	case btypes.ChangesetJobTypeDetach:
+		c.Payload = new(btypes.ChangesetJobDetachPayload)
 	default:
 		return fmt.Errorf("unknown job type %q", c.JobType)
 	}

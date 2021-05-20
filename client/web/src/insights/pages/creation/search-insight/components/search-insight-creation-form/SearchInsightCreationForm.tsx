@@ -13,8 +13,7 @@ import {
     Organization,
     VisibilityPicker,
 } from '../../../../../components/visibility-picker/VisibilityPicker'
-import { DataSeries } from '../../../../../core/backend/types'
-import { CreateInsightFormFields } from '../../types'
+import { CreateInsightFormFields, EditableDataSeries } from '../../types'
 import { FormSeries } from '../form-series/FormSeries'
 
 import styles from './SearchInsightCreationForm.module.scss'
@@ -27,6 +26,7 @@ interface CreationSearchInsightFormProps {
     handleSubmit: FormEventHandler
     submitErrors: SubmissionErrors
     submitting: boolean
+    submitted: boolean
     className?: string
 
     title: useFieldAPI<CreateInsightFormFields['title']>
@@ -42,24 +42,17 @@ interface CreationSearchInsightFormProps {
     onCancel: () => void
 
     /**
-     * Edit series array used below for rendering series edit form.
-     * In case of some element has undefined value we're showing
-     * series card with data instead of form.
-     * */
-    editSeries: (CreateInsightFormFields['series'][number] | undefined)[]
-
-    /**
      * Handler to listen latest value form particular series edit form
      * Used to get information for live preview chart.
      * */
-    onSeriesLiveChange: (liveSeries: DataSeries, isValid: boolean, index: number) => void
+    onSeriesLiveChange: (liveSeries: EditableDataSeries, isValid: boolean, index: number) => void
 
     /**
      * Handlers for CRUD operation over series. Add, delete, update and cancel
      * series edit form.
      * */
     onEditSeriesRequest: (openedCardIndex: number) => void
-    onEditSeriesCommit: (seriesIndex: number, editedSeries: DataSeries) => void
+    onEditSeriesCommit: (seriesIndex: number, editedSeries: EditableDataSeries) => void
     onEditSeriesCancel: (closedCardIndex: number) => void
     onSeriesRemove: (removedSeriesIndex: number) => void
 }
@@ -75,12 +68,12 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
         handleSubmit,
         submitErrors,
         submitting,
+        submitted,
         title,
         repositories,
         visibility,
         organizations,
         series,
-        editSeries,
         stepValue,
         step,
         className,
@@ -131,7 +124,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
             >
                 <FormSeries
                     series={series.input.value}
-                    editSeries={editSeries}
+                    showValidationErrorsOnMount={submitted}
                     onLiveChange={onSeriesLiveChange}
                     onEditSeriesRequest={onEditSeriesRequest}
                     onEditSeriesCommit={onEditSeriesCommit}
@@ -164,7 +157,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                 <FormGroup
                     name="insight step group"
                     title="Granularity: distance between data points"
-                    description="The prototype supports 7 datapoints, so your total x-axis timeframe is 7 times the distance between each point."
+                    description="The prototype supports 7 datapoints, so your total x-axis timeframe is 6 times the distance between each point."
                     error={stepValue.meta.touched && stepValue.meta.error}
                     className="mt-4"
                     labelClassName={styles.creationInsightFormGroupLabel}

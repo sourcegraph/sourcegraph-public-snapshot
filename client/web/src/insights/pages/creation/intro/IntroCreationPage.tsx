@@ -44,12 +44,12 @@ export const IntroCreationPage: React.FunctionComponent = () => (
                     to="/insights/create-search-insight"
                     className={classnames(styles.createIntroPageInsightButton, 'btn', 'btn-primary')}
                 >
-                    Create custom insight
+                    Create search insight
                 </Link>
 
                 <hr className="ml-n3 mr-n3 mt-4 mb-3" />
 
-                <p className="text-muted">How your insight would look:</p>
+                <p className="text-muted">Example:</p>
                 <div className={styles.createIntroPageChartContainer}>
                     <ParentSize className={styles.createIntroPageChart}>
                         {({ width, height }) => <LineChart width={width} height={height} {...LINE_CHART_DATA} />}
@@ -66,12 +66,12 @@ export const IntroCreationPage: React.FunctionComponent = () => (
                     to="/insights/create-lang-stats-insight"
                     className={classnames(styles.createIntroPageInsightButton, 'btn', 'btn-primary')}
                 >
-                    Set up language usage insight
+                    Create language usage insight
                 </Link>
 
                 <hr className="ml-n3 mr-n3 mt-4 mb-3" />
 
-                <p className="text-muted">How your insight would look:</p>
+                <p className="text-muted">Example:</p>
                 <div className={styles.createIntroPageChartContainer}>
                     <ParentSize className={styles.createIntroPageChart}>
                         {({ width, height }) => <PieChart width={width} height={height} {...PIE_CHART_DATA} />}
