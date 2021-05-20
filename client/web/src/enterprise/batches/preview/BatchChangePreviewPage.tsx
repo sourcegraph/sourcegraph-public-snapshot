@@ -133,7 +133,7 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
                     </BatchChangeTab>
                 </BatchChangeTabList>
                 <BatchChangeTabPanels>
-                    <BatchChangeTabPanel>
+                    <BatchChangeTabPanel index={0}>
                         <PreviewList
                             batchSpecID={specID}
                             history={history}
@@ -145,7 +145,7 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
                             expandChangesetDescriptions={expandChangesetDescriptions}
                         />
                     </BatchChangeTabPanel>
-                    <BatchChangeTabPanel>
+                    <BatchChangeTabPanel index={1}>
                         <div className="d-flex mb-2 justify-content-end">
                             <BatchSpecDownloadLink name={spec.description.name} originalInput={spec.originalInput} />
                         </div>

@@ -214,7 +214,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                     </BatchChangeTab>
                 </BatchChangeTabList>
                 <BatchChangeTabPanels>
-                    <BatchChangeTabPanel>
+                    <BatchChangeTabPanel index={0}>
                         <BatchChangeChangesets
                             batchChangeID={batchChange.id}
                             viewerCanAdminister={batchChange.viewerCanAdminister}
@@ -229,14 +229,14 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                             onlyArchived={false}
                         />
                     </BatchChangeTabPanel>
-                    <BatchChangeTabPanel>
+                    <BatchChangeTabPanel index={1}>
                         <BatchChangeBurndownChart
                             batchChangeID={batchChange.id}
                             queryChangesetCountsOverTime={queryChangesetCountsOverTime}
                             history={history}
                         />
                     </BatchChangeTabPanel>
-                    <BatchChangeTabPanel>
+                    <BatchChangeTabPanel index={2}>
                         <div className="d-flex flex-wrap justify-content-between align-items-baseline mb-2 test-batches-spec">
                             <BatchSpecMeta
                                 createdAt={batchChange.createdAt}
@@ -250,7 +250,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                         </div>
                         <BatchSpec originalInput={batchChange.currentSpec.originalInput} />
                     </BatchChangeTabPanel>
-                    <BatchChangeTabPanel>
+                    <BatchChangeTabPanel index={3}>
                         <BatchChangeChangesets
                             batchChangeID={batchChange.id}
                             viewerCanAdminister={batchChange.viewerCanAdminister}
@@ -265,7 +265,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                             onlyArchived={true}
                         />
                     </BatchChangeTabPanel>
-                    <BatchChangeTabPanel>
+                    <BatchChangeTabPanel index={4}>
                         <BulkOperationsTab
                             batchChangeID={batchChange.id}
                             history={history}

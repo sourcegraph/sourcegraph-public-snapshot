@@ -1,7 +1,8 @@
 import {
     Tab,
     TabList,
-    TabPanel as BatchChangeTabPanel,
+    TabPanel,
+    TabPanelProps,
     TabPanels as BatchChangeTabPanels,
     Tabs,
     useTabsContext,
@@ -121,4 +122,13 @@ export const BatchChangeTab: React.FunctionComponent<BatchChangeTabProps> = ({ c
     return <Tab className={classNames('nav-link', styles.navLink, { active: selectedIndex === index })}>{children}</Tab>
 }
 
-export { BatchChangeTabPanel, BatchChangeTabPanels }
+/** Wrapper of ReachUI's `TabPanel`, but that only renders its children if the tab is active */
+export const BatchChangeTabPanel: React.FunctionComponent<TabPanelProps & { index: number }> = ({
+    children,
+    index,
+}) => {
+    const { selectedIndex } = useTabsContext()
+    return <TabPanel>{selectedIndex === index ? children : null}</TabPanel>
+}
+
+export { BatchChangeTabPanels }
