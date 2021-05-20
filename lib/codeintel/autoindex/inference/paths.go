@@ -57,9 +57,10 @@ func containsNoSegments(path string, segments ...string) bool {
 // completely automatic index job inference and won't stop any  repositories with an
 // index configuration from indexing such paths.
 var segmentBlockList = []string{
-	"test",
-	"tests",
 	"example",
 	"examples",
 	"integration",
+	"test",
+	"testdata",
+	"tests",
 }

@@ -9,14 +9,16 @@ import (
 
 func GoPatterns() []*regexp.Regexp {
 	return []*regexp.Regexp{
-		suffixPattern("go.mod"),
-		segmentPattern("vendor"),
+		// go.mod in any directory
+		pathPattern(rawPattern("go.mod")),
+		// *.go file in root directory
+		prefixPattern(suffixPattern(extensionPattern(rawPattern("go")))),
 	}
 }
 
 func CanIndexGoRepo(gitclient GitClient, paths []string) bool {
 	for _, path := range paths {
-		if canIndexGoPath(path) {
+		if isGoModulePath(path) || isPreModuleGoProjectPath(path) {
 			return true
 		}
 	}
@@ -28,7 +30,7 @@ const lsifGoImage = "sourcegraph/lsif-go:latest"
 
 func InferGoIndexJobs(gitclient GitClient, paths []string) (indexes []config.IndexJob) {
 	for _, path := range paths {
-		if !canIndexGoPath(path) {
+		if !isGoModulePath(path) {
 			continue
 		}
 
@@ -50,16 +52,35 @@ func InferGoIndexJobs(gitclient GitClient, paths []string) (indexes []config.Ind
 			Outfile:     "",
 		})
 	}
+	if len(indexes) > 0 {
+		return indexes
+	}
 
-	return indexes
+	for _, path := range paths {
+		if !isPreModuleGoProjectPath(path) {
+			continue
+		}
+
+		return []config.IndexJob{
+			{
+				Steps:       nil,
+				Root:        "",
+				Indexer:     lsifGoImage,
+				IndexerArgs: []string{"GO111MODULE=off", "lsif-go", "--no-animation"},
+				Outfile:     "",
+			},
+		}
+	}
+
+	return nil
 }
 
-var goSegmentBlockList = append([]string{
-	"vendor",
-}, segmentBlockList...)
+var goSegmentBlockList = append([]string{"vendor"}, segmentBlockList...)
 
-func canIndexGoPath(path string) bool {
-	// TODO(efritz) - support glide, dep, other historic package managers
-	// TODO(efritz) - support projects without go.mod but a vendor dir and go files
+func isGoModulePath(path string) bool {
 	return filepath.Base(path) == "go.mod" && containsNoSegments(path, goSegmentBlockList...)
+}
+
+func isPreModuleGoProjectPath(path string) bool {
+	return filepath.Ext(path) == ".go" && containsNoSegments(path, goSegmentBlockList...)
 }
