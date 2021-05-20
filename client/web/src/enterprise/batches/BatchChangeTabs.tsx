@@ -9,7 +9,7 @@ import {
 } from '@reach/tabs'
 import classNames from 'classnames'
 import * as H from 'history'
-import React, { useCallback, useEffect, useReducer } from 'react'
+import React, { useCallback, useEffect, useReducer, useState } from 'react'
 
 import { resetFilteredConnectionURLQuery } from '../../components/FilteredConnection'
 
@@ -56,13 +56,21 @@ interface BatchChangeTabsProps {
 }
 
 const BatchChangeTabs_: React.FunctionComponent<BatchChangeTabsProps> = ({ children, history, location }) => {
+    // We are required to track the current tab locally in order to also control it from the URL parameter
+    const [tabIndex, setTabIndex] = useState(0)
     const tabNames = useTabNamesContext()
     const defaultTabName = Object.keys(tabNames).find(key => tabNames[key] === 0)
-    const initialTabName = new URLSearchParams(location.search).get('tab') || defaultTabName
-    const initialTabIndex = initialTabName ? tabNames[initialTabName] : 0
+
+    // Determine the initial tab from the URL parameters
+    useEffect(() => {
+        console.log('running effect')
+        const initialTabName = new URLSearchParams(location.search).get('tab') || defaultTabName
+        setTabIndex(initialTabName ? tabNames[initialTabName] || 0 : 0)
+    }, [defaultTabName, location.search, tabNames])
 
     const onChange = useCallback(
         (newIndex: number): void => {
+            setTabIndex(newIndex)
             const newTabName = Object.keys(tabNames).find(key => tabNames[key] === newIndex) || defaultTabName
 
             const urlParameters = new URLSearchParams(location.search)
@@ -82,7 +90,7 @@ const BatchChangeTabs_: React.FunctionComponent<BatchChangeTabsProps> = ({ child
     )
 
     return (
-        <Tabs className={styles.batchChangeTabs} defaultIndex={initialTabIndex} onChange={onChange}>
+        <Tabs className={styles.batchChangeTabs} index={tabIndex} onChange={onChange}>
             {children}
         </Tabs>
     )
