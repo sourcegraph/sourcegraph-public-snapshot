@@ -45,6 +45,7 @@
         display: inline-flex;
         flex-direction: column;
         justify-content: center;
+        border-bottom: 2px solid transparent;
         &:active {
             background-color: transparent;
         }
@@ -56,20 +57,16 @@
             font-weight: 700;
             border-bottom: 2px solid var(--brand-secondary);
         }
+        // ::after used here for avoids the CLS when the font-weight change (see: https://css-tricks.com/bold-on-hover-without-the-layout-shift/)
         &::after {
             content: attr(data-test-tab);
-            content: attr(data-test-tab) / '';
             height: 0;
             text-transform: capitalize;
-            visibility: hidden;
+            visibility: hidden; // a11y: avoid detection for voice over
             overflow: hidden;
             user-select: none;
             pointer-events: none;
             font-weight: 700;
-
-            @media speech {
-                display: none;
-            }
         }
 
         &:focus-visible {
