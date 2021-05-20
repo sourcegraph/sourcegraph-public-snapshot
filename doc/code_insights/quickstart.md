@@ -8,6 +8,8 @@ In this guide, you'll create a Sourcegraph code insight that tracks the number o
 
 For more information about Code Insights see the [Code Insights](index.md) documentation. 
 
+<img src="https://sourcegraphstatic.com/docs/images/code_insights/quickstart_TODOs_insight_dark.png" class="screenshot">
+
 ## Requirements
 
 - You are a Sourcegraph enterprise customer. (Want code insights but aren't enterprise? [Let us know](mailto:feedback@sourcegraph.com).)
@@ -19,15 +21,15 @@ For more information about Code Insights see the [Code Insights](index.md) docum
 
 ### 1. Enable the experimental feature flag
 
-Add the following to your Sourcegraph user settings `sourcegraph.example.com/users/[username]/settings` or organization `sourcegraph.example.com/organizations/[your_org]/settings` settings: 
+Add the following to either your Sourcegraph user settings `sourcegraph.example.com/users/[username]/settings` or organization settings `sourcegraph.example.com/organizations/[your_org]/settings`: 
 
 `"experimentalFeatures": { "codeInsights": true }`
 
-If you put this flag in your organization settings, everyone on your Sourcegraph insights will be able to see the "Insights" menu bar item and create their own code insights. Otherwise, only you will have those abilities. 
+If you put this flag in your organization settings, everyone on your Sourcegraph insights will be able to see the "Insights" navbar menu item and create their own code insights. If you put the flag in your user settings, only you will have those abilities. 
 
-(Enabling the feature organization-wide doesn't mean that other users can automatically see the code insights you create, however – you can control that visibility per individual insight.)
+(Enabling code insights organization-wide doesn't mean that other users can automatically see the code insights you create, however – you can control that visibility per individual insight.)
 
-### 2. Visit your Sourcegraph instance /Insights page and select "+ Create new insight" 
+### 2. Visit your sourcegraph.example.com/insights page and select "+ Create new insight" 
 
 ### 3. On the insight type selection page, select "Create custom insight"
 
@@ -37,9 +39,7 @@ If you are more interested in creating a language-based insight to show you lang
 
 ### 4. Once on the "Create New Code Insight" form fields page, enter the repositories you want to search
 
-Enter repositories in the colloquial repository URL format, like `github.com/Sourcegraph/Sourcegraph`. Separate multiple repositories with a comma. 
-
-The form field will validate that you've entered the repository correctly. 
+Enter repositories in the repository URL format, like `github.com/Sourcegraph/Sourcegraph`. Separate multiple repositories with a comma. The form field will validate that you've entered the repository correctly. 
 
 ### 5. Define a data series to track the incidence of `TODO`
 
@@ -59,11 +59,11 @@ Enter a descriptive **Title** for the chart, like `Count of TODOs in [repository
 
 This controls who else can see your insight. 
 
-Anything set to "Personal" won't be visible by anyone else. Otherwise, everyone in the selected organization (who has also enabled code insights) can see your insight.
+Anything set to "Personal" won't be visible by anyone else. Otherwise, everyone in the selected organization can see your insight (if they have also enabled [the feature flag](#1-enable-the-experimental-feature-flag)).
 
 ### 8. Set the distance between data points to 1 month
 
-Code insights currently shows you seven datapoints for each data series. Your code insight will therefore show you results for a time horizon that is 6 * [distance between datapoints]. Setting it to one month means you'll see the results over the last six months. 
+The code insights prototypes currently show you seven datapoints for each data series. Your code insight will therefore show you results for a time horizon that is 6 * [distance between datapoints]. Setting it to one month means you'll see the results over the last six months. 
 
 ### 9. Click "create code insight" and view your insight. 
 
