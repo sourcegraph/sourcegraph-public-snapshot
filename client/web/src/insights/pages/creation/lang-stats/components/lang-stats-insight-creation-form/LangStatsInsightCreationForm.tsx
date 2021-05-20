@@ -75,7 +75,7 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
                 required={true}
                 title="Title"
                 description="Shown as the title for your insight."
-                placeholder="Example: Language Usage in [Repository Name]"
+                placeholder="Example: Language Usage in RepositoryName"
                 valid={title.meta.touched && title.meta.validState === 'VALID'}
                 error={title.meta.touched && title.meta.error}
                 {...title.input}
