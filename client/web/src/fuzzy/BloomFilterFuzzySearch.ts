@@ -156,6 +156,7 @@ export class BloomFilterFuzzySearch extends FuzzySearch {
                     text: value.text,
                     positions: [],
                     url: query.createUrl ? query.createUrl(value.text) : undefined,
+                    onClick: query.onClick,
                 })
                 if (result.length > query.maxResults) {
                     return complete(false)
@@ -427,6 +428,7 @@ class Bucket {
                     text: file.text,
                     positions,
                     url: query.createUrl ? query.createUrl(file.text) : undefined,
+                    onClick: query.onClick,
                 })
             }
         }

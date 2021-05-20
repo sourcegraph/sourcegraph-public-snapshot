@@ -15,6 +15,7 @@ export interface HighlightedTextProps {
     text: string
     positions: RangePosition[]
     url?: string
+    onClick?: () => void
 }
 
 export function offsetSum(props: HighlightedTextProps): number {
@@ -59,7 +60,7 @@ export const HighlightedText: React.FunctionComponent<HighlightedTextProps> = pr
     pushSpan('', start, props.text.length)
 
     return props.url ? (
-        <Link className={styles.link} to={props.url}>
+        <Link className={styles.link} to={props.url} onClick={() => props.onClick?.()}>
             {spans}
         </Link>
     ) : (

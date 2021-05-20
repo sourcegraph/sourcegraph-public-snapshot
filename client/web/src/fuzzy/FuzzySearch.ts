@@ -4,6 +4,7 @@ export interface FuzzySearchParameters {
     value: string
     maxResults: number
     createUrl?: (value: string) => string
+    onClick?: () => void
 }
 export interface FuzzySearchResult {
     values: HighlightedTextProps[]

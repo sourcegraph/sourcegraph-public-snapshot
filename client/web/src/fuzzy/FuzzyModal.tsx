@@ -284,6 +284,7 @@ function renderReady(
             value: query,
             maxResults,
             createUrl: filename => `/${props.repoName}@${props.commitID}/-/blob/${filename}`,
+            onClick: () => props.onClose(),
         })
         fuzzyResult.elapsedMilliseconds = window.performance.now() - start
         lastFuzzySearchResult.clear() // Only cache the last query.
