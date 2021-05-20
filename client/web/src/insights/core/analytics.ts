@@ -1,7 +1,141 @@
+import { Duration } from 'date-fns'
 import { isEqual } from 'lodash'
 
-import { isSettingsValid, Settings, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
+import {
+    isSettingsValid,
+    Settings,
+    SettingsCascade,
+    SettingsCascadeOrError,
+} from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
+
+import { AuthenticatedUser } from '../../auth'
+
+import { InsightTypePrefix, SearchBasedInsightOrigin } from './types'
+
+export function logInsightMetrics(
+    settingsCascade: SettingsCascadeOrError<Settings>,
+    authUser: AuthenticatedUser,
+    telemetryService: TelemetryService
+): void {
+    logCodeInsightsCount(settingsCascade, authUser, telemetryService)
+    logSearchBasedInsightStepSize(settingsCascade, telemetryService)
+}
+
+export function logCodeInsightsCount(
+    settingsCascade: SettingsCascadeOrError<Settings>,
+    authUser: AuthenticatedUser,
+    telemetryService: TelemetryService
+): void {
+    try {
+        if (isSettingsValid(settingsCascade)) {
+            const groupedInsights = getInsightsGroupedByType(settingsCascade, authUser)
+
+            telemetryService.log('InsightsGroupedCount', groupedInsights)
+        }
+    } catch {
+        // noop
+    }
+}
+
+export function logSearchBasedInsightStepSize(
+    settingsCascade: SettingsCascadeOrError<Settings>,
+    telemetryService: TelemetryService
+): void {
+    try {
+        if (isSettingsValid(settingsCascade)) {
+            const groupedStepSizes = getGroupedStepSizes(settingsCascade.final)
+
+            telemetryService.log('InsightsGroupedStepSizes', groupedStepSizes)
+        }
+    } catch {
+        // noop
+    }
+}
+
+/**
+ * Collect number current insights that are org-visible by type of insight.
+ * */
+export function getGroupedStepSizes(settings: Settings): number[] {
+    return Object.keys(settings)
+        .filter(key => key.startsWith(InsightTypePrefix.search))
+        .reduce<number[]>((stepsInDays, key) => {
+            const insight = settings[key] as SearchBasedInsightOrigin
+
+            return [...stepsInDays, getDaysFromInsightStep(insight.step)]
+        }, [])
+}
+
+export function getDaysFromInsightStep(step: Duration): number {
+    return (Object.keys(step) as (keyof Duration)[]).reduce((days, stepKey) => {
+        const stepValue = step[stepKey] ?? 0
+
+        switch (stepKey) {
+            case 'years': {
+                return days + stepValue * 365
+            }
+
+            case 'months': {
+                return days + stepValue * 30
+            }
+
+            case 'weeks': {
+                return days + stepValue * 7
+            }
+
+            case 'days': {
+                return days + stepValue
+            }
+
+            default:
+                return days
+        }
+    }, 0)
+}
+
+interface InsightGroups {
+    codeStatsInsights: number
+    searchBasedInsights: number
+}
+
+/**
+ * Collect insights count statistic from orgs settings according to
+ * auth user organization list.
+ * */
+export function getInsightsGroupedByType(
+    settingsCascade: SettingsCascade<Settings>,
+    authUser: AuthenticatedUser
+): InsightGroups {
+    const { subjects } = settingsCascade
+    const {
+        organizations: { nodes: orgs },
+    } = authUser
+    const orgIDs = new Set(orgs.map(org => org.id))
+
+    const orgSubjects = subjects.filter(subject => orgIDs.has(subject.subject.id))
+
+    const finalSettingsOfAllOrgs = orgSubjects.reduce((finalSettings, orgSubject) => {
+        const orgSettings = orgSubject.settings
+
+        if (!orgSettings) {
+            return finalSettings
+        }
+        return { ...finalSettings, ...orgSettings }
+    }, {})
+
+    const codeStatsInsights = Object.keys(finalSettingsOfAllOrgs).filter(key =>
+        key.startsWith(InsightTypePrefix.langStats)
+    ).length
+
+    const searchBasedInsights = Object.keys(finalSettingsOfAllOrgs).filter(key =>
+        key.startsWith(InsightTypePrefix.search)
+    ).length
+
+    return {
+        codeStatsInsights,
+        searchBasedInsights,
+    }
+}
 
 export function logCodeInsightsChanges(
     oldSettingsCascade: SettingsCascadeOrError<Settings>,

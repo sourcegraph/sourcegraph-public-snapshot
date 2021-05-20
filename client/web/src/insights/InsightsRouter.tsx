@@ -58,19 +58,35 @@ export const InsightsRouter: React.FunctionComponent<InsightsRouterProps> = prop
 
             <Route
                 path={`${match.url}/create-search-insight`}
-                render={props => <SearchInsightCreationLazyPage {...outerProps} {...props} />}
+                render={() => (
+                    <SearchInsightCreationLazyPage
+                        telemetryService={outerProps.telemetryService}
+                        platformContext={outerProps.platformContext}
+                        authenticatedUser={outerProps.authenticatedUser}
+                        settingsCascade={outerProps.settingsCascade}
+                    />
+                )}
             />
 
             <Route
                 path={`${match.url}/create-lang-stats-insight`}
-                render={props => <LangStatsInsightCreationLazyPage {...outerProps} {...props} />}
+                render={() => (
+                    <LangStatsInsightCreationLazyPage
+                        telemetryService={outerProps.telemetryService}
+                        platformContext={outerProps.platformContext}
+                        authenticatedUser={outerProps.authenticatedUser}
+                        settingsCascade={outerProps.settingsCascade}
+                    />
+                )}
             />
 
-            <Route path={`${match.url}/create-intro`} component={IntroCreationLazyPage} />
+            <Route
+                path={`${match.url}/create-intro`}
+                render={() => <IntroCreationLazyPage telemetryService={outerProps.telemetryService} />}
+            />
 
             <Route
                 path={`${match.url}/edit/:insightID`}
-                /* eslint-disable-next-line react/jsx-no-bind */
                 render={(props: RouteComponentProps<{ insightID: string }>) => (
                     <EditInsightLazyPage
                         platformContext={outerProps.platformContext}

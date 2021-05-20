@@ -1,7 +1,9 @@
 import { ParentSize } from '@visx/responsive'
 import classnames from 'classnames'
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Link } from 'react-router-dom'
+
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { Page } from '../../../../components/Page'
 import { PageTitle } from '../../../../components/PageTitle'
@@ -11,85 +13,110 @@ import { PieChart } from '../../../../views/ChartViewContent/charts/pie/PieChart
 import { LINE_CHART_DATA, PIE_CHART_DATA } from './charts-mock'
 import styles from './IntroCreationPage.module.scss'
 
+interface IntroCreationPageProps extends TelemetryProps {}
+
 /** Displays intro page for insights creation UI. */
-export const IntroCreationPage: React.FunctionComponent = () => (
-    <Page className="col-8">
-        <PageTitle title="Create code insights" />
+export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> = props => {
+    const { telemetryService } = props
 
-        <div className="mb-5">
-            <h2>Create new insight</h2>
+    const logCreateSearchBasedInsightClick = (): void => {
+        telemetryService.log('CodeInsightsCreateSearchBasedInsightClick')
+    }
 
-            <p className="text-muted">
-                Code insights analyze your code based on any search query.{' '}
-                <a href="https://docs.sourcegraph.com/code_insights" target="_blank" rel="noopener">
-                    Learn more.
-                </a>
-            </p>
-        </div>
+    const logCreateCodeStatsInsightClick = (): void => {
+        telemetryService.log('CodeInsightsCreateCodeStatsInsightClick')
+    }
 
-        <div className={classnames(styles.createIntroPageInsights, 'pb-5')}>
-            <section className={classnames(styles.createIntroPageInsightCard, 'card card-body p-3')}>
-                <h3>Based on your search query</h3>
+    const logExploreExtensionsClick = (): void => {
+        telemetryService.log('CodeInsightsExploreInsightExtensionsClick')
+    }
 
-                <p>
-                    Search-based insights let you create a time series data visualization about your code based on a
-                    custom search query.
+    useEffect(() => {
+        telemetryService.logViewEvent('CodeInsightsCreationPage')
+    }, [telemetryService])
+
+    return (
+        <Page className="col-8">
+            <PageTitle title="Create code insights" />
+
+            <div className="mb-5">
+                <h2>Create new insight</h2>
+
+                <p className="text-muted">
+                    Code insights analyze your code based on any search query.{' '}
+                    <a href="https://docs.sourcegraph.com/code_insights" target="_blank" rel="noopener">
+                        Learn more.
+                    </a>
                 </p>
+            </div>
 
-                <Link
-                    to="/insights/create-search-insight"
-                    className={classnames(styles.createIntroPageInsightButton, 'btn', 'btn-primary')}
-                >
-                    Create search insight
-                </Link>
+            <div className={classnames(styles.createIntroPageInsights, 'pb-5')}>
+                <section className={classnames(styles.createIntroPageInsightCard, 'card card-body p-3')}>
+                    <h3>Based on your search query</h3>
 
-                <hr className="ml-n3 mr-n3 mt-4 mb-3" />
+                    <p>
+                        Search-based insights let you create a time series data visualization about your code based on a
+                        custom search query.
+                    </p>
 
-                <p className="text-muted">Example:</p>
-                <div className={styles.createIntroPageChartContainer}>
-                    <ParentSize className={styles.createIntroPageChart}>
-                        {({ width, height }) => <LineChart width={width} height={height} {...LINE_CHART_DATA} />}
-                    </ParentSize>
-                </div>
-            </section>
+                    <Link
+                        to="/insights/create-search-insight"
+                        onClick={logCreateSearchBasedInsightClick}
+                        className={classnames(styles.createIntroPageInsightButton, 'btn', 'btn-primary')}
+                    >
+                        Create search insight
+                    </Link>
 
-            <section className={classnames(styles.createIntroPageInsightCard, 'card card-body p-3')}>
-                <h3>Language usage</h3>
+                    <hr className="ml-n3 mr-n3 mt-4 mb-3" />
 
-                <p>Shows language usage in your repository by lines of code.</p>
+                    <p className="text-muted">Example:</p>
+                    <div className={styles.createIntroPageChartContainer}>
+                        <ParentSize className={styles.createIntroPageChart}>
+                            {({ width, height }) => <LineChart width={width} height={height} {...LINE_CHART_DATA} />}
+                        </ParentSize>
+                    </div>
+                </section>
 
-                <Link
-                    to="/insights/create-lang-stats-insight"
-                    className={classnames(styles.createIntroPageInsightButton, 'btn', 'btn-primary')}
-                >
-                    Create language usage insight
-                </Link>
+                <section className={classnames(styles.createIntroPageInsightCard, 'card card-body p-3')}>
+                    <h3>Language usage</h3>
 
-                <hr className="ml-n3 mr-n3 mt-4 mb-3" />
+                    <p>Shows language usage in your repository by lines of code.</p>
 
-                <p className="text-muted">Example:</p>
-                <div className={styles.createIntroPageChartContainer}>
-                    <ParentSize className={styles.createIntroPageChart}>
-                        {({ width, height }) => <PieChart width={width} height={height} {...PIE_CHART_DATA} />}
-                    </ParentSize>
-                </div>
-            </section>
+                    <Link
+                        to="/insights/create-lang-stats-insight"
+                        onClick={logCreateCodeStatsInsightClick}
+                        className={classnames(styles.createIntroPageInsightButton, 'btn', 'btn-primary')}
+                    >
+                        Create language usage insight
+                    </Link>
 
-            <section className={classnames(styles.createIntroPageInsightCard, 'card card-body p-3')}>
-                <h3>Based on Sourcegraph extensions</h3>
+                    <hr className="ml-n3 mr-n3 mt-4 mb-3" />
 
-                <p>
-                    Enable an extension that creates code insights, then follow its README.md to learn how to set up
-                    code insights for that extension.
-                </p>
+                    <p className="text-muted">Example:</p>
+                    <div className={styles.createIntroPageChartContainer}>
+                        <ParentSize className={styles.createIntroPageChart}>
+                            {({ width, height }) => <PieChart width={width} height={height} {...PIE_CHART_DATA} />}
+                        </ParentSize>
+                    </div>
+                </section>
 
-                <Link
-                    to="/extensions?query=category:Insights"
-                    className={classnames(styles.createIntroPageInsightButton, 'btn', 'btn-secondary')}
-                >
-                    Explore the extensions
-                </Link>
-            </section>
-        </div>
-    </Page>
-)
+                <section className={classnames(styles.createIntroPageInsightCard, 'card card-body p-3')}>
+                    <h3>Based on Sourcegraph extensions</h3>
+
+                    <p>
+                        Enable an extension that creates code insights, then follow its README.md to learn how to set up
+                        code insights for that extension.
+                    </p>
+
+                    <Link
+                        to="/extensions?query=category:Insights"
+                        onClick={logExploreExtensionsClick}
+                        className={classnames(styles.createIntroPageInsightButton, 'btn', 'btn-secondary')}
+                    >
+                        Explore the extensions
+                    </Link>
+                </section>
+            </div>
+        </Page>
+    )
+}
