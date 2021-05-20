@@ -44,11 +44,7 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
 
                 <p className="text-muted">
                     Code insights analyze your code based on any search query.{' '}
-                    <a
-                        href="https://docs.sourcegraph.com/code_insights"
-                        target="_blank"
-                        rel="noopener"
-                    >
+                    <a href="https://docs.sourcegraph.com/code_insights" target="_blank" rel="noopener">
                         Learn more.
                     </a>
                 </p>

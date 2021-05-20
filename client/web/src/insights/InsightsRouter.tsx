@@ -59,44 +59,43 @@ export const InsightsRouter: React.FunctionComponent<InsightsRouterProps> = prop
             <Route
                 path={`${match.url}/create-search-insight`}
                 render={() => (
-                            <SearchInsightCreationLazyPage
-                                telemetryService={outerProps.telemetryService}
-                                platformContext={outerProps.platformContext}
-                                authenticatedUser={outerProps.authenticatedUser}
-                                settingsCascade={outerProps.settingsCascade}
-                            />
-                        )}
+                    <SearchInsightCreationLazyPage
+                        telemetryService={outerProps.telemetryService}
+                        platformContext={outerProps.platformContext}
+                        authenticatedUser={outerProps.authenticatedUser}
+                        settingsCascade={outerProps.settingsCascade}
+                    />
+                )}
             />
 
             <Route
                 path={`${match.url}/create-lang-stats-insight`}
                 render={() => (
-                            <LangStatsInsightCreationLazyPage
-                                telemetryService={outerProps.telemetryService}
-                                platformContext={outerProps.platformContext}
-                                authenticatedUser={outerProps.authenticatedUser}
-                                settingsCascade={outerProps.settingsCascade}
-                            />
-                        )}
+                    <LangStatsInsightCreationLazyPage
+                        telemetryService={outerProps.telemetryService}
+                        platformContext={outerProps.platformContext}
+                        authenticatedUser={outerProps.authenticatedUser}
+                        settingsCascade={outerProps.settingsCascade}
+                    />
+                )}
             />
 
             <Route
-                        path={`${match.url}/create-intro`}
-                        render={() => <IntroCreationLazyPage telemetryService={outerProps.telemetryService} />}
-                    />
+                path={`${match.url}/create-intro`}
+                render={() => <IntroCreationLazyPage telemetryService={outerProps.telemetryService} />}
+            />
 
-                    <Route
-                        path={`${match.url}/edit/:insightID`}
-                        render={(props: RouteComponentProps<{ insightID: string }>) => (
-                            <EditInsightLazyPage
-                                platformContext={outerProps.platformContext}
-                                authenticatedUser={outerProps.authenticatedUser}
-                                settingsCascade={outerProps.settingsCascade}
-                                insightID={props.match.params.insightID}
-                            />
-                        )}
+            <Route
+                path={`${match.url}/edit/:insightID`}
+                render={(props: RouteComponentProps<{ insightID: string }>) => (
+                    <EditInsightLazyPage
+                        platformContext={outerProps.platformContext}
+                        authenticatedUser={outerProps.authenticatedUser}
+                        settingsCascade={outerProps.settingsCascade}
+                        insightID={props.match.params.insightID}
                     />
-
+                )}
+            />
 
             <Route component={NotFoundPage} key="hardcoded-key" />
         </Switch>
