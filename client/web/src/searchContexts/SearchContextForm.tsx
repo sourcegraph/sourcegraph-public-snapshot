@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import { RouteComponentProps, useHistory } from 'react-router'
 import { Form } from 'reactstrap'
 import { from, Observable, of, throwError } from 'rxjs'
@@ -17,6 +17,7 @@ import { asError, createAggregateError, isErrorLike } from '@sourcegraph/shared/
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { AuthenticatedUser } from '../auth'
+import { ALLOW_NAVIGATION, AwayPrompt } from '../components/AwayPrompt'
 import { fetchRepository } from '../repo/backend'
 
 import { parseConfig } from './repositoryRevisionsConfigParser'
@@ -62,7 +63,7 @@ function getVisibilityRadioButtons(selectedNamespaceType: SelectedNamespaceType)
 
 function getSearchContextSpecPreview(selectedNamespace: SelectedNamespace, searchContextName: string): JSX.Element {
     return (
-        <code className={classNames('test-search-context-preview', styles.searchContextFormPreview)}>
+        <code className={styles.searchContextFormPreview} data-testid="search-context-preview">
             <span className="search-filter-keyword">context:</span>
             {selectedNamespace.name.length > 0 && (
                 <>
@@ -208,7 +209,7 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                             catchError(error => [asError(error)]),
                             tap(successOrError => {
                                 if (!isErrorLike(successOrError) && successOrError !== LOADING) {
-                                    history.push('/contexts?order=updated-at-desc')
+                                    history.push('/contexts?order=updated-at-desc', ALLOW_NAVIGATION)
                                 }
                             })
                         )
@@ -219,22 +220,9 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
         )
     )
 
-    const leavePromptMessage = 'Leave page? All unsaved changes will be lost.'
     const onCancel = useCallback(() => {
-        if (hasChanges) {
-            if (window.confirm(leavePromptMessage)) {
-                history.push('/contexts')
-            }
-        } else {
-            history.push('/contexts')
-        }
-    }, [hasChanges, history])
-
-    useEffect(() => history.block(() => (hasChanges && !searchContextOrError ? leavePromptMessage : undefined)), [
-        history,
-        hasChanges,
-        searchContextOrError,
-    ])
+        history.push('/contexts')
+    }, [history])
 
     return (
         <Form onSubmit={submitRequest}>
@@ -252,10 +240,8 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                 <div className="flex-1">
                     <div className="mb-2">Context name</div>
                     <input
-                        className={classNames(
-                            'w-100 form-control test-search-context-name-input',
-                            styles.searchContextFormNameInput
-                        )}
+                        className={classNames('w-100', 'form-control', styles.searchContextFormNameInput)}
+                        data-testid="search-context-name-input"
                         value={name}
                         type="text"
                         pattern="^[a-zA-Z0-9_\-\/\.]+$"
@@ -286,7 +272,8 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                     Description <span className="text-muted">(optional)</span>
                 </div>
                 <textarea
-                    className="form-control w-100 test-search-context-description-input"
+                    className="form-control w-100"
+                    data-testid="search-context-description-input"
                     maxLength={MAX_DESCRIPTION_LENGTH}
                     value={description}
                     rows={5}
@@ -347,6 +334,7 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                 <button
                     type="submit"
                     className="btn btn-primary mr-2 test-search-context-submit-button"
+                    data-testid="search-context-submit-button"
                     disabled={searchContextOrError && searchContextOrError === LOADING}
                 >
                     {!searchContext ? 'Create search context' : 'Save'}
@@ -360,6 +348,12 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                     Failed to create search context: {searchContextOrError.message}
                 </div>
             )}
+            <AwayPrompt
+                header="Discard unsaved changes?"
+                message="All unsaved changes will be lost."
+                button_ok_text="Discard"
+                when={hasChanges}
+            />
         </Form>
     )
 }

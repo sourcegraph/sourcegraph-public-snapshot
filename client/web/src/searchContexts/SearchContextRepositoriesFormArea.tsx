@@ -133,9 +133,8 @@ export const SearchContextRepositoriesFormArea: React.FunctionComponent<SearchCo
 
     const history = useHistory()
     return (
-        <div>
+        <div data-testid="repositories-config-area">
             <DynamicallyImportedMonacoSettingsEditor
-                className="test-repositories-config-input"
                 value={repositoriesConfig}
                 jsonSchema={REPOSITORIES_REVISIONS_CONFIG_SCHEMA}
                 actions={actions}
@@ -159,7 +158,8 @@ export const SearchContextRepositoriesFormArea: React.FunctionComponent<SearchCo
             )}
             <button
                 type="button"
-                className="mt-3 btn btn-sm btn-outline-secondary test-repositories-config-button"
+                className="mt-3 btn btn-sm btn-outline-secondary"
+                data-testid="repositories-config-button"
                 onClick={triggerTestConfig}
                 disabled={triggerTestConfigErrors === LOADING || isValidConfig}
             >

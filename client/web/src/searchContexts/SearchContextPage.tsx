@@ -58,7 +58,12 @@ export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> 
                                     {
                                         text: (
                                             <div className="d-flex align-items-center">
-                                                <Link className="d-flex" to="/contexts">
+                                                <Link
+                                                    className="d-flex"
+                                                    to="/contexts"
+                                                    aria-label="Back to contexts list"
+                                                    title="Back to contexts list"
+                                                >
                                                     <ChevronLeftIcon />
                                                 </Link>
                                                 <span>{searchContextOrError.spec}</span>
@@ -80,7 +85,8 @@ export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> 
                                     searchContextOrError.viewerCanManage && (
                                         <Link
                                             to={`/contexts/${searchContextOrError.id}/edit`}
-                                            className="btn btn-secondary test-edit-search-context-link"
+                                            className="btn btn-secondary"
+                                            data-testid="edit-search-context-link"
                                         >
                                             Edit
                                         </Link>

@@ -72,7 +72,9 @@ describe('Search contexts', () => {
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(async () => {
         await driver.page.evaluate(() => localStorage.clear())
-        await testContext?.dispose()
+        if (testContext) {
+            await testContext.dispose()
+        }
     })
 
     const getSearchFieldValue = (driver: Driver): Promise<string | undefined> =>
@@ -346,20 +348,20 @@ describe('Search contexts', () => {
         await driver.page.goto(driver.sourcegraphBaseUrl + '/contexts/new')
 
         await driver.replaceText({
-            selector: '.test-search-context-name-input',
+            selector: '[data-testid="search-context-name-input"]',
             newText: 'new-context',
             enterTextMethod: 'type',
         })
 
         // Assert spec preview
         const specPreview = await driver.page.evaluate(
-            () => document.querySelector('.test-search-context-preview')?.textContent
+            () => document.querySelector('[data-testid="search-context-preview"]')?.textContent
         )
         expect(specPreview).toBe('context:@test/new-context')
 
         // Enter description
         await driver.replaceText({
-            selector: '.test-search-context-description-input',
+            selector: '[data-testid="search-context-description-input"]',
             newText: 'Search context description',
             enterTextMethod: 'type',
         })
@@ -367,20 +369,20 @@ describe('Search contexts', () => {
         // Enter repositories
         const repositoriesConfig =
             '[{ "repository": "github.com/example/example", "revisions": ["main", "pr/feature1"] }]'
-        await driver.page.waitForSelector('.test-repositories-config-input .monaco-editor')
+        await driver.page.waitForSelector('[data-testid="repositories-config-area"] .monaco-editor')
         await driver.replaceText({
-            selector: '.test-repositories-config-input .monaco-editor',
+            selector: '[data-testid="repositories-config-area"] .monaco-editor',
             newText: repositoriesConfig,
             selectMethod: 'keyboard',
             enterTextMethod: 'paste',
         })
 
         // Test configuration
-        await driver.page.click('.test-repositories-config-button')
-        await driver.page.waitForSelector('.test-repositories-config-button .text-success')
+        await driver.page.click('[data-testid="repositories-config-button"]')
+        await driver.page.waitForSelector('[data-testid="repositories-config-button"] .text-success')
 
         // Click create
-        await driver.page.click('.test-search-context-submit-button')
+        await driver.page.click('[data-testid="search-context-submit-button"]')
 
         // Wait for submit request to finish and redirect to list page
         await driver.page.waitForSelector('.search-contexts-list-page')
@@ -432,25 +434,25 @@ describe('Search contexts', () => {
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/contexts/context-1')
 
-        await driver.page.waitForSelector('.test-edit-search-context-link')
-        await driver.page.click('.test-edit-search-context-link')
+        await driver.page.waitForSelector('[data-testid="edit-search-context-link"]')
+        await driver.page.click('[data-testid="edit-search-context-link"]')
 
-        await driver.page.waitForSelector('.test-search-context-name-input')
+        await driver.page.waitForSelector('[data-testid="search-context-name-input"]')
         await driver.replaceText({
-            selector: '.test-search-context-name-input',
+            selector: '[data-testid="search-context-name-input"]',
             newText: 'new-context',
             enterTextMethod: 'type',
         })
 
         // Assert spec preview
         const specPreview = await driver.page.evaluate(
-            () => document.querySelector('.test-search-context-preview')?.textContent
+            () => document.querySelector('[data-testid="search-context-preview"]')?.textContent
         )
         expect(specPreview).toBe('context:@test/new-context')
 
         // Enter description
         await driver.replaceText({
-            selector: '.test-search-context-description-input',
+            selector: '[data-testid="search-context-description-input"]',
             newText: 'Search context description',
             enterTextMethod: 'type',
         })
@@ -458,20 +460,20 @@ describe('Search contexts', () => {
         // Enter repositories
         const repositoriesConfig =
             '[{ "repository": "github.com/example/example", "revisions": ["main", "pr/feature1"] }]'
-        await driver.page.waitForSelector('.test-repositories-config-input .monaco-editor')
+        await driver.page.waitForSelector('[data-testid="repositories-config-area"] .monaco-editor')
         await driver.replaceText({
-            selector: '.test-repositories-config-input .monaco-editor',
+            selector: '[data-testid="repositories-config-area"] .monaco-editor',
             newText: repositoriesConfig,
             selectMethod: 'keyboard',
             enterTextMethod: 'paste',
         })
 
         // Test configuration
-        await driver.page.click('.test-repositories-config-button')
-        await driver.page.waitForSelector('.test-repositories-config-button .text-success')
+        await driver.page.click('[data-testid="repositories-config-button"]')
+        await driver.page.waitForSelector('[data-testid="repositories-config-button"] .text-success')
 
         // Click save
-        await driver.page.click('.test-search-context-submit-button')
+        await driver.page.click('[data-testid="search-context-submit-button"]')
 
         // Wait for submit request to finish and redirect to list page
         await driver.page.waitForSelector('.search-contexts-list-page')
