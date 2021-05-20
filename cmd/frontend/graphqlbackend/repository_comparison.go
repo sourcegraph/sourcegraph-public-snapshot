@@ -12,8 +12,8 @@ import (
 	"sync"
 
 	"github.com/inconshreveable/log15"
-	"github.com/sourcegraph/go-diff/diff"
 
+	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -541,7 +541,7 @@ func (r *DiffHunk) Highlight(ctx context.Context, args *HighlightArgs) (*highlig
 
 	// Now do the same thing for trailing "-" lines. But only if they're not
 	// followed by an "unchanged" line.
-	var lastMinus int = -1
+	var lastMinus = -1
 	for i, hunkLine := range hunkLines {
 		if hunkLine == " " {
 			lastMinus = -1
