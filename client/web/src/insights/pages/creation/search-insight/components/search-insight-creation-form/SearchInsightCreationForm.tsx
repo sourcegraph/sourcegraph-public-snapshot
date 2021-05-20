@@ -157,7 +157,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                 <FormGroup
                     name="insight step group"
                     title="Granularity: distance between data points"
-                    description="The prototype supports 7 datapoints, so your total x-axis timeframe is 7 times the distance between each point."
+                    description="The prototype supports 7 datapoints, so your total x-axis timeframe is 6 times the distance between each point."
                     error={stepValue.meta.touched && stepValue.meta.error}
                     className="mt-4"
                     labelClassName={styles.creationInsightFormGroupLabel}
