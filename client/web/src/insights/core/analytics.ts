@@ -53,6 +53,9 @@ export function logSearchBasedInsightStepSize(
     }
 }
 
+/**
+ * Collect number current insights that are org-visible by type of insight.
+ * */
 export function getGroupedStepSizes(settings: Settings): number[] {
     return Object.keys(settings)
         .filter(key => key.startsWith(InsightTypePrefix.search))

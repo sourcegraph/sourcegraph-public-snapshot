@@ -40,7 +40,7 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
     const history = useHistory()
 
     useEffect(() => {
-        telemetryService.logViewEvent('SearchBasedCreationPage')
+        telemetryService.logViewEvent('CodeInsightsSearchBasedCreationPage')
     }, [telemetryService])
 
     const handleSubmit = useCallback<SearchInsightCreationContentProps['onSubmit']>(
@@ -64,7 +64,7 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
 
                 await updateSubjectSettings(platformContext, subjectID, editedSettings).toPromise()
 
-                telemetryService.log('SearchBasedCreationPageSubmitClick')
+                telemetryService.log('CodeInsightsSearchBasedCreationPageSubmitClick')
                 history.push('/insights')
             } catch (error) {
                 return { [FORM_ERROR]: asError(error) }
@@ -76,7 +76,7 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
     )
 
     const handleCancel = useCallback(() => {
-        telemetryService.log('SearchBasedCreationPageCancelClick')
+        telemetryService.log('CodeInsightsSearchBasedCreationPageCancelClick')
         history.push('/insights')
     }, [history, telemetryService])
 

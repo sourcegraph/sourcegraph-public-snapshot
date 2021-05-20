@@ -20,19 +20,19 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
     const { telemetryService } = props
 
     const logCreateSearchBasedInsightClick = (): void => {
-        telemetryService.log('CreateSearchBasedInsightClick')
+        telemetryService.log('CodeInsightsCreateSearchBasedInsightClick')
     }
 
     const logCreateCodeStatsInsightClick = (): void => {
-        telemetryService.log('CreateCodeStatsInsightClick')
+        telemetryService.log('CodeInsightsCreateCodeStatsInsightClick')
     }
 
     const logExploreExtensionsClick = (): void => {
-        telemetryService.log('ExploreInsightExtensionsClick')
+        telemetryService.log('CodeInsightsExploreInsightExtensionsClick')
     }
 
     useEffect(() => {
-        telemetryService.logViewEvent('InsightsCreationPage')
+        telemetryService.logViewEvent('CodeInsightsCreationPage')
     }, [telemetryService])
 
     return (

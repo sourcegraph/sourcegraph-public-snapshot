@@ -335,6 +335,8 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         )
 
         // Observe settings mutations for analytics
+        // Track add delete and update events of code insights via
+        // checking user/org settings on settings update
         this.subscriptions.add(
             from(this.platformContext.settings)
                 .pipe(bufferCount(2, 1))
@@ -343,6 +345,8 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                 })
         )
 
+        // Track static metrics fo code insights.
+        // Insight count, insights settings.
         this.subscriptions.add(
             combineLatest([from(this.platformContext.settings), authenticatedUser]).subscribe(
                 ([settings, authUser]) => {

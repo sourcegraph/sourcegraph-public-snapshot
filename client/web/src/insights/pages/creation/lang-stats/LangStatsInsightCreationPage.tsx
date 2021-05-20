@@ -41,7 +41,7 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
     const history = useHistory()
 
     useEffect(() => {
-        telemetryService.logViewEvent('CodeStatsCreationPage')
+        telemetryService.logViewEvent('CodeInsightsCodeStatsCreationPage')
     }, [telemetryService])
 
     const handleSubmit = useCallback<LangStatsInsightCreationContentProps['onSubmit']>(
@@ -65,7 +65,7 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
 
                 await updateSubjectSettings(platformContext, subjectID, editedSettings).toPromise()
 
-                telemetryService.log('CodeStatsCreationPageSubmitClick')
+                telemetryService.log('CodeInsightsCodeStatsCreationPageSubmitClick')
                 history.push('/insights')
             } catch (error) {
                 return { [FORM_ERROR]: asError(error) }
@@ -77,7 +77,7 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
     )
 
     const handleCancel = useCallback(() => {
-        telemetryService.log('CodeStatsCreationPageCancelClick')
+        telemetryService.log('CodeInsightsCodeStatsCreationPageCancelClick')
         history.push('/insights')
     }, [history, telemetryService])
 
