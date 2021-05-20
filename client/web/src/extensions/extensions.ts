@@ -15,10 +15,7 @@ import { validCategories } from './extension/extension'
 import { ConfiguredExtensionCache, ExtensionsEnablement } from './ExtensionRegistry'
 
 export interface ConfiguredRegistryExtensions {
-    [id: string]: Pick<
-        ConfiguredRegistryExtension<RegistryExtensionFieldsForList>,
-        'manifest' | 'id' | 'registryExtension'
-    >
+    [id: string]: Pick<ConfiguredRegistryExtension<RegistryExtensionFieldsForList>, 'manifest' | 'id'>
 }
 
 export interface ConfiguredExtensionRegistry {
