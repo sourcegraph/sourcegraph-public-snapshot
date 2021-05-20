@@ -145,6 +145,7 @@ func (a *affiliatedRepositoriesConnection) Nodes(ctx context.Context) ([]*codeHo
 
 		if len(fetchErrors) == pending {
 			// All hosts failed
+			a.nodes = nil
 			a.err = errors.New("failed to fetch from any code host")
 		}
 	})
