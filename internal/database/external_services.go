@@ -1277,6 +1277,9 @@ func (e *ExternalServiceStore) RepoCount(ctx context.Context, id int64) (int32, 
 // SyncDue returns true if any of the supplied external services are due to sync
 // now or within given duration from now.
 func (e *ExternalServiceStore) SyncDue(ctx context.Context, intIDs []int64, d time.Duration) (bool, error) {
+	if len(intIDs) == 0 {
+		return false, nil
+	}
 	ids := make([]*sqlf.Query, 0, len(intIDs))
 	for _, id := range intIDs {
 		ids = append(ids, sqlf.Sprintf("%s", id))
