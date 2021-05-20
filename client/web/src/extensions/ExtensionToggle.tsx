@@ -93,11 +93,6 @@ export const ExtensionToggle: React.FunctionComponent<Props> = ({
     const [optimisticEnabled, setOptimisticEnabled] = useState(enabled)
     const [askingForPermission, setAskingForPermission] = useState<boolean>(false)
 
-    // If `enabled` changes for any reason (e.g. enabled with another toggle), update optimistic state
-    useEffect(() => {
-        setOptimisticEnabled(enabled)
-    }, [enabled])
-
     const onOptimisticError = useCallback(
         (optimisticUpdateFailure: OptimisticUpdateFailure<boolean>) => {
             setOptimisticEnabled(optimisticUpdateFailure.previousValue)
