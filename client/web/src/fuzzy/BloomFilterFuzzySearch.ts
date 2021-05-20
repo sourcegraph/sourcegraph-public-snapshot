@@ -1,4 +1,5 @@
-import { BloomFilter } from './BloomFilter'
+import { BloomFilter } from 'bloomfilter'
+
 import { FuzzySearch, FuzzySearchParameters, FuzzySearchResult } from './FuzzySearch'
 import { Hasher } from './Hasher'
 import { HighlightedTextProps, offsetSum, RangePosition } from './HighlightedText'

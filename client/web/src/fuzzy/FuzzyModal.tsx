@@ -1,7 +1,8 @@
 /* eslint-disable jsx-a11y/no-noninteractive-element-interactions */
-import React from 'react'
+import React, { useState } from 'react'
 
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
 import { requestGraphQL } from '../backend/graphql'
 
@@ -9,7 +10,6 @@ import { BloomFilterFuzzySearch, Indexing as FuzzyIndexing } from './BloomFilter
 import styles from './FuzzyModal.module.scss'
 import { FuzzySearch, FuzzySearchResult } from './FuzzySearch'
 import { HighlightedText } from './HighlightedText'
-import { useEphemeralState, useLocalStorage, State } from './useLocalStorage'
 
 const DEFAULT_MAX_RESULTS = 100
 
@@ -34,22 +34,22 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
     // "FilePro", browsed the results and want to update the query to become
     // "FileProvider" but VS Code has forgotten the original query so I have to
     // type it out from scratch again.
-    const query = useLocalStorage(`fuzzy-modal.query.${props.repoName}`, '')
+    const [query, setQuery] = useLocalStorage(`fuzzy-modal.query.${props.repoName}`, '')
 
     // The "focus index" is the index of the file result that the user has
     // select with up/down arrow keys. The focused item is highlighted and the
     // window.location is moved to that URL when the user presses the enter key.
-    const focusIndex = useEphemeralState(0)
+    const [focusIndex, setFocusIndex] = useState(0)
 
-    const maxResults = useEphemeralState(DEFAULT_MAX_RESULTS)
+    const [maxResults, setMaxResults] = useState(DEFAULT_MAX_RESULTS)
 
-    const loaded = useEphemeralState<Loaded>({ key: 'empty' })
+    const [loaded, setLoaded] = useState<Loaded>({ key: 'empty' })
 
     if (!props.isVisible) {
         return null
     }
 
-    const files = renderFiles(props, query, focusIndex, maxResults, loaded)
+    const files = renderFiles(props, query, focusIndex, maxResults, setMaxResults, loaded, setLoaded)
 
     // Sets the new "focus index" so that it's rounded by the number of
     // displayed filenames.  Cycles so that the user can press-hold the down
@@ -57,7 +57,7 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
     function setRoundedFocusIndex(newNumber: number): void {
         const index = newNumber % files.resultsCount
         const nextIndex = index < 0 ? files.resultsCount + index : index
-        focusIndex.set(nextIndex)
+        setFocusIndex(nextIndex)
         document.querySelector(`#fuzzy-modal-result-${nextIndex}`)?.scrollIntoView(false)
     }
 
@@ -68,23 +68,21 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
                 break
             case 'ArrowDown':
                 event.preventDefault() // Don't move the cursor to the end of the input.
-                setRoundedFocusIndex(focusIndex.value + 1)
+                setRoundedFocusIndex(focusIndex + 1)
                 break
             case 'PageDown':
-                setRoundedFocusIndex(focusIndex.value + 10)
+                setRoundedFocusIndex(focusIndex + 10)
                 break
             case 'ArrowUp':
                 event.preventDefault() // Don't move the cursor to the start of the input.
-                setRoundedFocusIndex(focusIndex.value - 1)
+                setRoundedFocusIndex(focusIndex - 1)
                 break
             case 'PageUp':
-                setRoundedFocusIndex(focusIndex.value - 10)
+                setRoundedFocusIndex(focusIndex - 10)
                 break
             case 'Enter':
-                if (focusIndex.value < files.resultsCount) {
-                    const fileAnchor = document.querySelector<HTMLAnchorElement>(
-                        `#fuzzy-modal-result-${focusIndex.value} a`
-                    )
+                if (focusIndex < files.resultsCount) {
+                    const fileAnchor = document.querySelector<HTMLAnchorElement>(`#fuzzy-modal-result-${focusIndex} a`)
                     fileAnchor?.click()
                 }
                 break
@@ -101,10 +99,10 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
                         autoComplete="off"
                         id="fuzzy-modal-input"
                         className={styles.input}
-                        value={query.value}
+                        value={query}
                         onChange={event => {
-                            query.set(event.target.value)
-                            focusIndex.set(0)
+                            setQuery(event.target.value)
+                            setFocusIndex(0)
                         }}
                         type="text"
                         onKeyDown={onInputKeyDown}
@@ -115,7 +113,7 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
                     <button type="button" className="btn btn-secondary" onClick={() => props.onClose()}>
                         Close
                     </button>
-                    {fuzzyFooter(loaded.value, files)}
+                    {fuzzyFooter(loaded, files)}
                 </div>
             </div>
         </div>
@@ -214,10 +212,12 @@ const lastFuzzySearchResult = new Map<string, FuzzySearchResult>()
 
 function renderFiles(
     props: FuzzyModalProps,
-    query: State<string>,
-    focusIndex: State<number>,
-    maxResults: State<number>,
-    loaded: State<Loaded>
+    query: string,
+    focusIndex: number,
+    maxResults: number,
+    setMaxResults: (maxResults: number) => void,
+    loaded: Loaded,
+    setLoaded: (loaded: Loaded) => void
 ): RenderedFiles {
     function empty(element: JSX.Element): RenderedFiles {
         return {
@@ -233,7 +233,7 @@ function renderFiles(
         return error => {
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             error.what = what
-            loaded.set({ key: 'failed', errorMessage: JSON.stringify(error) })
+            setLoaded({ key: 'failed', errorMessage: JSON.stringify(error) })
             throw new Error(what)
         }
     }
@@ -241,23 +241,23 @@ function renderFiles(
     const usuallyFast =
         "This step is usually fast unless it's a very large repository. The result is cached so you only have to wait for it once :)"
 
-    switch (loaded.value.key) {
+    switch (loaded.key) {
         case 'empty':
-            handleEmpty(props, loaded).then(() => {}, onError('onEmpty'))
+            handleEmpty(props, setLoaded).then(() => {}, onError('onEmpty'))
             return empty(<></>)
         case 'downloading':
             return empty(<p>Downloading... {usuallyFast}</p>)
         case 'failed':
-            return empty(<p>Error: {loaded.value.errorMessage}</p>)
+            return empty(<p>Error: {loaded.errorMessage}</p>)
         case 'indexing': {
-            const loader = loaded.value.loader
+            const loader = loaded.loader
             later()
                 .then(() => continueIndexing(props, loader))
-                .then(next => loaded.set(next), onError('onIndexing'))
-            return renderReady(props, query, focusIndex, maxResults, loaded.value.loader.partialValue, loaded.value)
+                .then(next => setLoaded(next), onError('onIndexing'))
+            return renderReady(props, query, focusIndex, maxResults, setMaxResults, loaded.loader.partialValue, loaded)
         }
         case 'ready':
-            return renderReady(props, query, focusIndex, maxResults, loaded.value.fuzzy, loaded.value)
+            return renderReady(props, query, focusIndex, maxResults, setMaxResults, loaded.fuzzy, loaded)
         default:
             return empty(<p>ERROR</p>)
     }
@@ -265,20 +265,21 @@ function renderFiles(
 
 function renderReady(
     props: FuzzyModalProps,
-    query: State<string>,
-    focusIndex: State<number>,
-    maxResults: State<number>,
+    query: string,
+    focusIndex: number,
+    maxResults: number,
+    setMaxResults: (maxResults: number) => void,
     fuzzy: FuzzySearch,
     ready: Ready | Indexing
 ): RenderedFiles {
     const indexedFileCount = ready.key === 'indexing' ? ready.loader.indexedFileCount : ''
-    const cacheKey = `${query.value}-${maxResults.value}${indexedFileCount}`
+    const cacheKey = `${query}-${maxResults}${indexedFileCount}`
     let fuzzyResult = lastFuzzySearchResult.get(cacheKey)
     if (!fuzzyResult) {
         const start = window.performance.now()
         fuzzyResult = fuzzy.search({
-            value: query.value,
-            maxResults: maxResults.value,
+            value: query,
+            maxResults,
             createUrl: filename => `/${props.repoName}@${props.commitID}/-/blob/${filename}`,
         })
         fuzzyResult.elapsedMilliseconds = window.performance.now() - start
@@ -288,13 +289,13 @@ function renderReady(
     const matchingFiles = fuzzyResult.values
     if (matchingFiles.length === 0) {
         return {
-            element: <p>No files matching '{query.value}'</p>,
+            element: <p>No files matching '{query}'</p>,
             resultsCount: 0,
             totalFileCount: fuzzy.totalFileCount,
             isComplete: fuzzyResult.isComplete,
         }
     }
-    const filesToRender = matchingFiles.slice(0, maxResults.value)
+    const filesToRender = matchingFiles.slice(0, maxResults)
     return {
         element: (
             <ul className={`${styles.results} text-monospace`}>
@@ -302,7 +303,7 @@ function renderReady(
                     <li
                         id={`fuzzy-modal-result-${fileIndex}`}
                         key={file.text}
-                        className={fileIndex === focusIndex.value ? styles.focused : ''}
+                        className={fileIndex === focusIndex ? styles.focused : ''}
                     >
                         <HighlightedText {...file} />
                     </li>
@@ -313,7 +314,7 @@ function renderReady(
                             className="btn btn-seconday"
                             type="button"
                             onClick={() => {
-                                maxResults.set(maxResults.value + DEFAULT_MAX_RESULTS)
+                                setMaxResults(maxResults + DEFAULT_MAX_RESULTS)
                             }}
                         >
                             (...truncated, click to show more results){' '}
@@ -368,7 +369,7 @@ async function loadCachedIndex(props: FuzzyModalProps): Promise<Loaded | undefin
     }
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const filenames = JSON.parse(await fromCache.text())
-    return handleFilenames(props, filenames)
+    return handleFilenames(filenames)
 }
 
 async function cacheFilenames(props: FuzzyModalProps, filenames: string[]): Promise<void> {
@@ -381,12 +382,12 @@ async function cacheFilenames(props: FuzzyModalProps, filenames: string[]): Prom
     await cache.put(cacheKey, new Response(JSON.stringify(filenames)))
 }
 
-async function handleEmpty(props: FuzzyModalProps, files: State<Loaded>): Promise<void> {
+async function handleEmpty(props: FuzzyModalProps, setFiles: (files: Loaded) => void): Promise<void> {
     const fromCache = await loadCachedIndex(props)
     if (fromCache) {
-        files.set(fromCache)
+        setFiles(fromCache)
     } else {
-        files.set({ key: 'downloading' })
+        setFiles({ key: 'downloading' })
         try {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const next: any = await requestGraphQL(
@@ -413,27 +414,27 @@ async function handleEmpty(props: FuzzyModalProps, files: State<Loaded>): Promis
                 | string[]
                 | undefined
             if (filenames) {
-                files.set(handleFilenames(props, filenames))
+                setFiles(handleFilenames(filenames))
                 cacheFilenames(props, filenames).then(
                     () => {},
                     () => {}
                 )
             } else {
-                files.set({
+                setFiles({
                     key: 'failed',
                     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                     errorMessage: JSON.stringify(next.data),
                 })
             }
         } catch (error) {
-            files.set({
+            setFiles({
                 key: 'failed',
                 errorMessage: JSON.stringify(error),
             })
         }
     }
 }
-function handleFilenames(props: FuzzyModalProps, filenames: string[]): Loaded {
+function handleFilenames(filenames: string[]): Loaded {
     const loader = BloomFilterFuzzySearch.fromSearchValuesAsync(filenames.map(file => ({ text: file })))
     if (loader.key === 'ready') {
         return {
