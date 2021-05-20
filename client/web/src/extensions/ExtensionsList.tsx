@@ -14,8 +14,8 @@ import { ErrorAlert } from '../components/alerts'
 
 import { ExtensionCard } from './ExtensionCard'
 import { ExtensionCategoryOrAll, ExtensionListData, ExtensionsEnablement } from './ExtensionRegistry'
-import { ExtensionsAreaRouteContext } from './ExtensionsArea'
 import { applyEnablementFilter, applyWIPFilter } from './extensions'
+import { ExtensionsAreaRouteContext } from './ExtensionsArea'
 
 interface Props
     extends SettingsCascadeProps,
