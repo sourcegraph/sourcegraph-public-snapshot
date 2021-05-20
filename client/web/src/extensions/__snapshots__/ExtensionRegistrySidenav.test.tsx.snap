@@ -22,19 +22,19 @@ exports[`ExtensionsQueryInputToolbar renders 1`] = `
     </button>
     <button
       className="btn text-left inactiveCategory"
-      data-test-extension-category="Reports and stats"
-      onClick={[Function]}
-      type="button"
-    >
-      Reports and stats
-    </button>
-    <button
-      className="btn text-left inactiveCategory"
       data-test-extension-category="External services"
       onClick={[Function]}
       type="button"
     >
       External services
+    </button>
+    <button
+      className="btn text-left inactiveCategory"
+      data-test-extension-category="Reports and stats"
+      onClick={[Function]}
+      type="button"
+    >
+      Reports and stats
     </button>
     <button
       className="btn text-left inactiveCategory"
