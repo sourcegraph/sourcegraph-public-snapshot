@@ -35,8 +35,8 @@
     }
 
     a.badge {
-        // Badge acts like btn-link, replicate transition
-        transition: var(--btn-transition);
+        // Badge acts like btn-link, replicate Bootstrap btn transition
+        transition: $btn-transition;
     }
 
     // Variants
