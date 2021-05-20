@@ -634,3 +634,23 @@ func (r *schemaResolver) AffiliatedRepositories(ctx context.Context, args *struc
 		query:    query,
 	}, nil
 }
+
+// CodeHostSyncDue returns true if any of the supplied code hosts are due to sync
+// now or within "seconds" from now.
+func (r *schemaResolver) CodeHostSyncDue(ctx context.Context, args *struct {
+	IDs     []graphql.ID
+	Seconds int32
+}) (bool, error) {
+	if len(args.IDs) == 0 {
+		return false, errors.New("no ids supplied")
+	}
+	ids := make([]int64, len(args.IDs))
+	for i, gqlID := range args.IDs {
+		id, err := unmarshalExternalServiceID(gqlID)
+		if err != nil {
+			return false, errors.New("unable to unmarshal id")
+		}
+		ids[i] = id
+	}
+	return database.ExternalServices(r.db).SyncDue(ctx, ids, time.Duration(args.Seconds)*time.Second)
+}
