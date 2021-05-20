@@ -8,7 +8,7 @@ import { pluralize } from '@sourcegraph/shared/src/util/strings'
 import { DismissibleAlert, isAlertDismissed } from '../../../components/DismissibleAlert'
 import { ActiveBulkOperationsConnectionFields } from '../../../graphql-operations'
 
-import { TabName } from './BatchChangeDetailsPage'
+import { TabName } from './BatchChangeDetailsTabs'
 
 export interface BulkOperationsAlertsProps {
     location: H.Location

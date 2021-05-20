@@ -1,8 +1,6 @@
 import * as H from 'history'
 import { isEqual } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
-import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import React, { useEffect, useMemo } from 'react'
 import { delay, distinctUntilChanged, repeatWhen } from 'rxjs/operators'
 
@@ -16,23 +14,15 @@ import { AuthenticatedUser } from '../../../auth'
 import { BatchChangesIcon } from '../../../batches/icons'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
-import {
-    BatchChangeTab,
-    BatchChangeTabPanel,
-    BatchChangeTabPanels,
-    BatchChangeTabs,
-    BatchChangeTabList,
-} from '../BatchChangeTabs'
-import { BatchSpec, BatchSpecDownloadLink } from '../BatchSpec'
 import { Description } from '../Description'
 import { SupersedingBatchSpecAlert } from '../detail/SupersedingBatchSpecAlert'
 
 import { fetchBatchSpecById as _fetchBatchSpecById } from './backend'
 import { BatchChangePreviewStatsBar } from './BatchChangePreviewStatsBar'
+import { BatchChangePreviewTabs } from './BatchChangePreviewTabs'
 import { BatchSpecInfoByline } from './BatchSpecInfoByline'
 import { CreateUpdateBatchChangeAlert } from './CreateUpdateBatchChangeAlert'
 import { queryChangesetSpecFileDiffs, queryChangesetApplyPreview } from './list/backend'
-import { PreviewList } from './list/PreviewList'
 import { MissingCredentialsAlert } from './MissingCredentialsAlert'
 
 export type PreviewPageAuthenticatedUser = Pick<AuthenticatedUser, 'url' | 'displayName' | 'username' | 'email'>
@@ -53,18 +43,15 @@ export interface BatchChangePreviewPageProps extends ThemeProps, TelemetryProps 
     expandChangesetDescriptions?: boolean
 }
 
-export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewPageProps> = ({
-    batchSpecID: specID,
-    history,
-    location,
-    authenticatedUser,
-    isLightTheme,
-    telemetryService,
-    fetchBatchSpecById = _fetchBatchSpecById,
-    queryChangesetApplyPreview,
-    queryChangesetSpecFileDiffs,
-    expandChangesetDescriptions,
-}) => {
+export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewPageProps> = props => {
+    const {
+        batchSpecID: specID,
+        history,
+        authenticatedUser,
+        telemetryService,
+        fetchBatchSpecById = _fetchBatchSpecById,
+    } = props
+
     const spec = useObservable(
         useMemo(
             () =>
@@ -121,38 +108,7 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
                 telemetryService={telemetryService}
             />
             <Description description={spec.description.description} />
-            <BatchChangeTabs history={history} location={location}>
-                <BatchChangeTabList>
-                    <BatchChangeTab index={0} name="previewchangesets">
-                        <SourceBranchIcon className="icon-inline text-muted mr-1" />
-                        Preview changesets{' '}
-                        <span className="badge badge-pill badge-secondary ml-1">{spec.applyPreview.totalCount}</span>
-                    </BatchChangeTab>
-                    <BatchChangeTab index={1} name="spec">
-                        <FileDocumentIcon className="icon-inline text-muted mr-1" /> Spec
-                    </BatchChangeTab>
-                </BatchChangeTabList>
-                <BatchChangeTabPanels>
-                    <BatchChangeTabPanel index={0}>
-                        <PreviewList
-                            batchSpecID={specID}
-                            history={history}
-                            location={location}
-                            authenticatedUser={authenticatedUser}
-                            isLightTheme={isLightTheme}
-                            queryChangesetApplyPreview={queryChangesetApplyPreview}
-                            queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
-                            expandChangesetDescriptions={expandChangesetDescriptions}
-                        />
-                    </BatchChangeTabPanel>
-                    <BatchChangeTabPanel index={1}>
-                        <div className="d-flex mb-2 justify-content-end">
-                            <BatchSpecDownloadLink name={spec.description.name} originalInput={spec.originalInput} />
-                        </div>
-                        <BatchSpec originalInput={spec.originalInput} />
-                    </BatchChangeTabPanel>
-                </BatchChangeTabPanels>
-            </BatchChangeTabs>
+            <BatchChangePreviewTabs spec={spec} {...props} />
         </div>
     )
 }
