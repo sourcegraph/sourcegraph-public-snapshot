@@ -1,4 +1,5 @@
 import React from 'react'
+import { Link } from 'react-router-dom'
 
 import styles from './HighlightedText.module.scss'
 
@@ -58,9 +59,9 @@ export const HighlightedText: React.FunctionComponent<HighlightedTextProps> = pr
     pushSpan('', start, props.text.length)
 
     return props.url ? (
-        <a className={styles.link} href={props.url}>
+        <Link className={styles.link} to={props.url}>
             {spans}
-        </a>
+        </Link>
     ) : (
         <>{spans}</>
     )

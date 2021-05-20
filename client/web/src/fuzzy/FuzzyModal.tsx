@@ -86,6 +86,7 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
                 if (focusIndex < files.resultsCount) {
                     const fileAnchor = document.querySelector<HTMLAnchorElement>(`#fuzzy-modal-result-${focusIndex} a`)
                     fileAnchor?.click()
+                    props.onClose()
                 }
                 break
             default:
