@@ -1,7 +1,9 @@
 /* eslint-disable jsx-a11y/no-noninteractive-element-interactions */
 import React, { useState } from 'react'
 
+import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
 import { requestGraphQL } from '../backend/graphql'
@@ -13,9 +15,9 @@ import { HighlightedText } from './HighlightedText'
 
 const DEFAULT_MAX_RESULTS = 100
 
-const IS_DEBUG = window.location.href.toString().includes('debug=true')
+const IS_DEBUG = window.location.href.toString().includes('fuzzyFinder=debug')
 
-export interface FuzzyModalProps {
+export interface FuzzyModalProps extends SettingsCascadeProps {
     isVisible: boolean
     onClose(): void
     repoName: string
@@ -45,9 +47,13 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
 
     const [loaded, setLoaded] = useState<Loaded>({ key: 'empty' })
 
-    const isFuzzyFinderDisabled = window.context?.experimentalFeatures?.fuzzyFinder === 'disabled'
+    console.log(props.settingsCascade.final)
+    const isFuzzyFinderEnabled =
+        IS_DEBUG ||
+        (!isErrorLike(props.settingsCascade.final) &&
+            props.settingsCascade.final?.experimentalFeatures?.fuzzyFinder === 'enabled')
 
-    if (!props.isVisible || isFuzzyFinderDisabled) {
+    if (!props.isVisible || !isFuzzyFinderEnabled) {
         return null
     }
 

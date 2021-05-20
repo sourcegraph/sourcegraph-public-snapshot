@@ -409,6 +409,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                     onClose={() => setIsFuzzyModalVisible(false)}
                     repoName={repoName}
                     commitID={resolvedRevisionOrError.commitID}
+                    settingsCascade={props.settingsCascade}
                 />
             )}
             {showExtensionAlert && (
