@@ -75,6 +75,7 @@
         &:focus {
             // Override default focus styles
             box-shadow: none;
+            outline: none;
 
             .theme-redesign & {
                 background-color: var(--primary);
