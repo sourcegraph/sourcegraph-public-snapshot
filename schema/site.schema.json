@@ -300,6 +300,15 @@
           "!go": {
             "pointer": false
           }
+        },
+        "fuzzyFinder": {
+          "description": "Enables fuzzy finder with keyboard shortcut `t`.",
+          "type": "string",
+          "enum": [
+            "enabled",
+            "disabled"
+          ],
+          "default": "disabled"
         }
       },
       "examples": [
@@ -1290,7 +1299,7 @@
           }
         }
       }
-    },
+    }
   },
   "definitions": {
     "BrandAssets": {

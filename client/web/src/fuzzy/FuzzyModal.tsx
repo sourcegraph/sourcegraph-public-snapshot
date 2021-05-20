@@ -45,7 +45,9 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
 
     const [loaded, setLoaded] = useState<Loaded>({ key: 'empty' })
 
-    if (!props.isVisible) {
+    const isFuzzyFinderDisabled = window.context?.experimentalFeatures?.fuzzyFinder === 'disabled'
+
+    if (!props.isVisible || isFuzzyFinderDisabled) {
         return null
     }
 
