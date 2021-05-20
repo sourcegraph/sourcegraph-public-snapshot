@@ -1,5 +1,5 @@
 import classnames from 'classnames'
-import React, { useCallback, useState } from 'react'
+import React, { useState } from 'react'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 
 import { EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
@@ -20,6 +20,9 @@ interface ExtensionsCategoryFiltersProps {
 interface ExtensionsEnablementDropdownProps {
     enablementFilter: ExtensionsEnablement
     setEnablementFilter: React.Dispatch<React.SetStateAction<ExtensionsEnablement>>
+
+    showExperimentalExtensions: boolean
+    toggleExperimentalExtensions: () => void
 }
 
 /**
@@ -28,13 +31,20 @@ interface ExtensionsEnablementDropdownProps {
  */
 export const ExtensionRegistrySidenav: React.FunctionComponent<
     ExtensionsCategoryFiltersProps & ExtensionsEnablementDropdownProps
-> = ({ selectedCategory, onSelectCategory, enablementFilter, setEnablementFilter }) => {
+> = ({
+    selectedCategory,
+    onSelectCategory,
+    enablementFilter,
+    setEnablementFilter,
+    showExperimentalExtensions,
+    toggleExperimentalExtensions,
+}) => {
     const [isOpen, setIsOpen] = useState(false)
-    const toggleIsOpen = useCallback(() => setIsOpen(open => !open), [])
+    const toggleIsOpen = (): void => setIsOpen(open => !open)
 
-    const showAll = useCallback(() => setEnablementFilter('all'), [setEnablementFilter])
-    const showEnabled = useCallback(() => setEnablementFilter('enabled'), [setEnablementFilter])
-    const showDisabled = useCallback(() => setEnablementFilter('disabled'), [setEnablementFilter])
+    const showAll = (): void => setEnablementFilter('all')
+    const showEnabled = (): void => setEnablementFilter('enabled')
+    const showDisabled = (): void => setEnablementFilter('disabled')
 
     return (
         <div className={classnames(styles.column, 'mr-4 flex-grow-0 flex-shrink-0')}>
@@ -64,14 +74,37 @@ export const ExtensionRegistrySidenav: React.FunctionComponent<
                     {enablementFilterToLabel[enablementFilter]}
                 </DropdownToggle>
                 <DropdownMenu>
-                    <DropdownItem onClick={showAll} disabled={enablementFilter === 'all'}>
+                    <DropdownItem onClick={showAll} disabled={enablementFilter === 'all'} toggle={false}>
                         Show all
                     </DropdownItem>
-                    <DropdownItem onClick={showEnabled} disabled={enablementFilter === 'enabled'}>
+                    <DropdownItem onClick={showEnabled} disabled={enablementFilter === 'enabled'} toggle={false}>
                         Show enabled extensions
                     </DropdownItem>
-                    <DropdownItem onClick={showDisabled} disabled={enablementFilter === 'disabled'}>
+                    <DropdownItem onClick={showDisabled} disabled={enablementFilter === 'disabled'} toggle={false}>
                         Show disabled extensions
+                    </DropdownItem>
+
+                    <DropdownItem divider={true} />
+
+                    <DropdownItem
+                        // Hack: clicking <label> inside <DropdownItem> doesn't affect checked state,
+                        // so use a <span> for which click events are handled by <DropdownItem>.
+                        onClick={toggleExperimentalExtensions}
+                        // Ensure that clicking the checkbox doesn't close the dropdown.
+                        toggle={false}
+                    >
+                        <div className="d-flex align-items-center">
+                            <input
+                                type="checkbox"
+                                checked={showExperimentalExtensions}
+                                onChange={toggleExperimentalExtensions}
+                                className=""
+                                aria-labelledby="show-experimental-extensions"
+                            />
+                            <span className="m-0 pl-2" id="show-experimental-extensions">
+                                Show experimental extensions
+                            </span>
+                        </div>
                     </DropdownItem>
                 </DropdownMenu>
             </ButtonDropdown>

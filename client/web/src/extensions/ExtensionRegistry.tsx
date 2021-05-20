@@ -12,6 +12,7 @@ import { ExtensionCategory, EXTENSION_CATEGORIES } from '@sourcegraph/shared/src
 import { Settings, SettingsCascadeProps, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { PageTitle } from '../components/PageTitle'
@@ -40,6 +41,7 @@ interface Props
 const LOADING = 'loading' as const
 const URL_QUERY_PARAM = 'query'
 const URL_CATEGORY_PARAM = 'category'
+const SHOW_EXPERIMENTAL_EXTENSIONS_KEY = 'show-experimental-extensions'
 
 export type ExtensionListData = typeof LOADING | (ConfiguredExtensionRegistry & { error: string | null }) | ErrorLike
 
@@ -126,6 +128,13 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
     // Note: It'll be worth refactoring the query pipeline (probably split between category changes and
     // query changes) when any more complexity is introduced.
     const [changedCategory, setChangedCategory] = useState(false)
+
+    // Whether to show extensions that set "wip" to true in their manifests.
+    const [showExperimentalExtensions, setShowExperimentalExtensions] = useLocalStorage(
+        SHOW_EXPERIMENTAL_EXTENSIONS_KEY,
+        false
+    )
+    const toggleExperimentalExtensions = (): void => setShowExperimentalExtensions(!showExperimentalExtensions)
 
     /**
      * Note: pass `settingsCascade` instead of making it a dependency to prevent creating
@@ -265,6 +274,8 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
                         onSelectCategory={onSelectCategory}
                         enablementFilter={enablementFilter}
                         setEnablementFilter={setEnablementFilter}
+                        showExperimentalExtensions={showExperimentalExtensions}
+                        toggleExperimentalExtensions={toggleExperimentalExtensions}
                     />
                     <div className="flex-grow-1">
                         <div className="mb-5">
@@ -307,6 +318,7 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
                                 enablementFilter={enablementFilter}
                                 selectedCategory={selectedCategory}
                                 onShowFullCategoryClicked={onSelectCategory}
+                                showExperimentalExtensions={showExperimentalExtensions}
                             />
                         </div>
                         {/* Only show the banner when there are no selected categories and it is not loading */}

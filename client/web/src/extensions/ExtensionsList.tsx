@@ -15,6 +15,7 @@ import { ErrorAlert } from '../components/alerts'
 import { ExtensionCard } from './ExtensionCard'
 import { ExtensionCategoryOrAll, ExtensionListData, ExtensionsEnablement } from './ExtensionRegistry'
 import { ExtensionsAreaRouteContext } from './ExtensionsArea'
+import { applyEnablementFilter, applyWIPFilter } from './extensions'
 
 interface Props
     extends SettingsCascadeProps,
@@ -27,6 +28,7 @@ interface Props
     data: ExtensionListData | undefined
     selectedCategory: ExtensionCategoryOrAll
     enablementFilter: ExtensionsEnablement
+    showExperimentalExtensions: boolean
     query: string
     onShowFullCategoryClicked: (category: ExtensionCategory) => void
 }
@@ -49,6 +51,7 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
     data,
     selectedCategory,
     enablementFilter,
+    showExperimentalExtensions,
     query,
     authenticatedUser,
     onShowFullCategoryClicked,
@@ -93,14 +96,12 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
 
     if (selectedCategory === 'All') {
         const filteredExtensionIDsByCategory = createRecord(ORDERED_EXTENSION_CATEGORIES, category => {
-            if (enablementFilter === 'all') {
-                return extensionIDsByCategory[category].primaryExtensionIDs
-            }
-
-            return extensionIDsByCategory[category].primaryExtensionIDs.filter(
-                extensionID =>
-                    (enablementFilter === 'enabled') === isExtensionEnabled(settingsCascade.final, extensionID)
+            const enablementFilteredExtensionIDs = applyEnablementFilter(
+                extensionIDsByCategory[category].primaryExtensionIDs,
+                enablementFilter,
+                settingsCascade.final
             )
+            return applyWIPFilter(enablementFilteredExtensionIDs, showExperimentalExtensions, extensions)
         })
 
         categorySections = ORDERED_EXTENSION_CATEGORIES.filter(
@@ -111,48 +112,6 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
         ).map(category => {
             const extensionIDsForCategory = filteredExtensionIDsByCategory[category]
 
-            if (extensionIDsForCategory.length > 6) {
-                return (
-                    <div key={category} className="mt-1">
-                        <h3
-                            className="extensions-list__category mb-3 font-weight-normal"
-                            data-test-extension-category-header={category}
-                        >
-                            {category}
-                        </h3>
-                        <div className="extensions-list__cards mt-1">
-                            {extensionIDsForCategory.slice(0, 6).map(extensionId => (
-                                <ExtensionCard
-                                    key={extensionId}
-                                    subject={subject}
-                                    viewerSubject={viewerSubject?.subject}
-                                    siteSubject={siteSubject?.subject}
-                                    node={extensions[extensionId]}
-                                    settingsCascade={settingsCascade}
-                                    platformContext={platformContext}
-                                    enabled={isExtensionEnabled(settingsCascade.final, extensionId)}
-                                    enabledForAllUsers={
-                                        siteSubject ? isExtensionEnabled(siteSubject.settings, extensionId) : false
-                                    }
-                                    isLightTheme={props.isLightTheme}
-                                    settingsURL={authenticatedUser?.settingsURL}
-                                    authenticatedUser={authenticatedUser}
-                                />
-                            ))}
-                        </div>
-                        <div className="d-flex justify-content-center mt-4">
-                            <button
-                                type="button"
-                                className="btn btn-outline-secondary"
-                                onClick={() => onShowFullCategoryClicked(category)}
-                            >
-                                Show full category
-                            </button>
-                        </div>
-                    </div>
-                )
-            }
-
             return (
                 <div key={category} className="mt-1">
                     <h3
@@ -162,7 +121,7 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
                         {category}
                     </h3>
                     <div className="extensions-list__cards mt-1">
-                        {extensionIDsForCategory.map(extensionId => (
+                        {extensionIDsForCategory.slice(0, 6).map(extensionId => (
                             <ExtensionCard
                                 key={extensionId}
                                 subject={subject}
@@ -181,6 +140,17 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
                             />
                         ))}
                     </div>
+                    {extensionIDsForCategory.length > 6 && (
+                        <div className="d-flex justify-content-center mt-4">
+                            <button
+                                type="button"
+                                className="btn btn-outline-secondary"
+                                onClick={() => onShowFullCategoryClicked(category)}
+                            >
+                                Show full category
+                            </button>
+                        </div>
+                    )}
                 </div>
             )
         })
@@ -189,14 +159,12 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
         // not just extensions for which this is the primary category.
         const { allExtensionIDs } = extensionIDsByCategory[selectedCategory]
 
-        let extensionIDs = allExtensionIDs
-
-        if (enablementFilter !== 'all') {
-            extensionIDs = allExtensionIDs.filter(
-                extensionID =>
-                    (enablementFilter === 'enabled') === isExtensionEnabled(settingsCascade.final, extensionID)
-            )
-        }
+        const enablementFilteredExtensionIDs = applyEnablementFilter(
+            allExtensionIDs,
+            enablementFilter,
+            settingsCascade.final
+        )
+        const extensionIDs = applyWIPFilter(enablementFilteredExtensionIDs, showExperimentalExtensions, extensions)
 
         categorySections = [
             <div key={selectedCategory} className="mt-1">

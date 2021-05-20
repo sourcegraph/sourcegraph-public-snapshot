@@ -1,18 +1,24 @@
 import {
     ConfiguredRegistryExtension,
+    isExtensionEnabled,
     toConfiguredRegistryExtension,
 } from '@sourcegraph/shared/src/extensions/extension'
 import { ExtensionCategory, EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
+import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { createRecord } from '@sourcegraph/shared/src/util/createRecord'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { isDefined } from '@sourcegraph/shared/src/util/types'
 
 import { RegistryExtensionFieldsForList } from '../graphql-operations'
 
 import { validCategories } from './extension/extension'
-import { ConfiguredExtensionCache } from './ExtensionRegistry'
+import { ConfiguredExtensionCache, ExtensionsEnablement } from './ExtensionRegistry'
 
 export interface ConfiguredRegistryExtensions {
-    [id: string]: Pick<ConfiguredRegistryExtension<RegistryExtensionFieldsForList>, 'manifest' | 'id'>
+    [id: string]: Pick<
+        ConfiguredRegistryExtension<RegistryExtensionFieldsForList>,
+        'manifest' | 'id' | 'registryExtension'
+    >
 }
 
 export interface ConfiguredExtensionRegistry {
@@ -80,4 +86,57 @@ export function configureExtensionRegistry(
     }
 
     return { extensions, extensionIDsByCategory }
+}
+
+/**
+ * Removes extensions that do not satify the enablement filter.
+ *
+ * For example, if the user wants to see only enabled extensions, remove disabled extensions.
+ */
+export function applyEnablementFilter(
+    extensionIDs: string[],
+    enablementFilter: ExtensionsEnablement,
+    settings: Settings | ErrorLike | null
+): string[] {
+    if (enablementFilter === 'all') {
+        return extensionIDs
+    }
+
+    return extensionIDs.filter(extensionID => {
+        const showEnabled = enablementFilter === 'enabled'
+        const isEnabled = isExtensionEnabled(settings, extensionID)
+
+        return showEnabled === isEnabled
+    })
+}
+
+/**
+ * Removes extensions that do not satisfy the WIP/experimental filter.
+ *
+ * For example, if the user does not want to see experimental extensions,
+ * remove all extensions where WIP === true.
+ */
+export function applyWIPFilter(
+    extensionIDs: string[],
+    wipFilter: boolean,
+    extensions: ConfiguredRegistryExtensions
+): string[] {
+    if (wipFilter === true) {
+        return extensionIDs
+    }
+
+    return extensionIDs.filter(extensionID => {
+        const extension = extensions[extensionID]
+        if (!extension) {
+            return false // Shouldn't be reached
+        }
+
+        if (extension.manifest && !isErrorLike(extension.manifest) && isDefined(extension.manifest.wip)) {
+            return !extension.manifest.wip // Don't include WIP extensions
+        }
+
+        // Don't filter it out if we don't have enough information to determine
+        // that the extension is WIP.
+        return true
+    })
 }
