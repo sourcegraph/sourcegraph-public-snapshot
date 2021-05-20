@@ -12,18 +12,6 @@
     }
     @media (--sm-breakpoint-down) {
         margin: 0;
-        &:first-of-type {
-            .link {
-                border-top-right-radius: 2px;
-                border-top-left-radius: 2px;
-            }
-        }
-        &:last-of-type {
-            .link {
-                border-bottom-right-radius: 2px;
-                border-bottom-left-radius: 2px;
-            }
-        }
     }
 }
 
