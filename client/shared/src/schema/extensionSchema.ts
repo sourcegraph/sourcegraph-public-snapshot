@@ -19,8 +19,8 @@ import { Contributions, Raw } from '../api/protocol/contribution'
  * string constant (e.g., `ProgrammingLanguages = 'Programming languages'`).
  */
 export const EXTENSION_CATEGORIES = array([
-    'Reports and stats',
     'External services',
+    'Reports and stats',
     'Linters',
     'Code editors',
     'Code analysis',
