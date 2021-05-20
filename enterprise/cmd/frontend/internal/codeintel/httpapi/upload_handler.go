@@ -275,20 +275,12 @@ func (h *UploadHandler) handleEnqueueMultipartSetup(r *http.Request, uploadArgs 
 // data to the bundle manager and marks the part index in the upload record.
 func (h *UploadHandler) handleEnqueueMultipartUpload(r *http.Request, upload store.Upload, partIndex int) (interface{}, error) {
 	ctx := r.Context()
-
-	tx, err := h.dbStore.Transact(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		err = tx.Done(err)
-	}()
-
-	if err := tx.AddUploadPart(ctx, upload.ID, partIndex); err != nil {
-		return nil, err
-	}
 	if _, err := h.uploadStore.Upload(ctx, fmt.Sprintf("upload-%d.%d.lsif.gz", upload.ID, partIndex), r.Body); err != nil {
-		h.markUploadAsFailed(context.Background(), tx, upload.ID, err)
+		h.markUploadAsFailed(context.Background(), h.dbStore, upload.ID, err)
+		return nil, err
+	}
+
+	if err := h.dbStore.AddUploadPart(ctx, upload.ID, partIndex); err != nil {
 		return nil, err
 	}
 
