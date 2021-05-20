@@ -645,6 +645,10 @@ tests:
       EMAIL: 'joe@sourcegraph.com'
       PASSWORD: '12345'
 
+  web-integration:
+    cmd: yarn test-integration
+    install: ENTERPRISE=1 yarn build-web
+
   frontend:
     cmd: yarn run jest --testPathIgnorePatterns end-to-end regression integration storybook
 
