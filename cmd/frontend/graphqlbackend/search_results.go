@@ -1585,7 +1585,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 	if err != nil {
 		return nil, err
 	}
-	p := search.ToTextPatternInfo(q, search.Batch, query.Identity)
+	p := search.ToTextPatternInfo(q, r.protocol(), query.Identity)
 
 	// Fallback to literal search for searching repos and files if
 	// the structural search pattern is empty.

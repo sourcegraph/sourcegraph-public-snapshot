@@ -35,6 +35,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
+- Search returned inconsistent result counts when a `count:` limit was not specified.
 - Indexed search failed when the `master` branch needed indexing but was not the default. [#20260](https://github.com/sourcegraph/sourcegraph/pull/20260)
 - `repo:contains(...)` built-in did not respect parameters that affect repo filtering (e.g., `repogroup`, `fork`). It now respects these. [#20339](https://github.com/sourcegraph/sourcegraph/pull/20339)
 - An issue where duplicate results would render for certain `or`-expressions. [#20480](https://github.com/sourcegraph/sourcegraph/pull/20480)

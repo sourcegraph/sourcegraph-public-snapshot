@@ -262,6 +262,17 @@ func (r *searchResolver) countIsSet() bool {
 	return count != nil
 }
 
+// protocol returns what type of search we are doing (batch, stream,
+// paginated).
+func (r *searchResolver) protocol() search.Protocol {
+	if r.SearchInputs.Pagination != nil {
+		return search.Pagination
+	} else if r.stream != nil {
+		return search.Streaming
+	}
+	return search.Batch
+}
+
 const defaultMaxSearchResults = 30
 const defaultMaxSearchResultsStreaming = 500
 const maxSearchResultsPerPaginatedRequest = 5000
@@ -414,7 +425,7 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]Sea
 		// Not an atomic pattern, can't guarantee it will behave well.
 		return nil, nil
 	}
-	p := search.ToTextPatternInfo(q, search.Batch, query.PatternToFile)
+	p := search.ToTextPatternInfo(q, r.protocol(), query.PatternToFile)
 
 	args := search.TextParameters{
 		PatternInfo:     p,
