@@ -1,6 +1,5 @@
 @import './colors.scss';
 @import './border-radius.scss';
-@import './transitions.scss';
 
 // Bootstrap configuration before Bootstrap is imported
 $border-radius: var(--border-radius);
@@ -97,9 +96,7 @@ $hr-margin-y: 0.25rem;
 
 // Disable transitions
 $input-transition: none;
-$custom-forms-transition: none;
-$btn-transition: var(--btn-transition);
-$badge-transition: none; // Disable default badge transition, we only want to apply this when badges are links
+$badge-transition: none; // Avoids setting transitions on badges that aren't links
 
 // './breakpoints' defines $grid-breakpoints for global CSS and exposes breakpoints mixins to CSS modules
 @import './breakpoints';
