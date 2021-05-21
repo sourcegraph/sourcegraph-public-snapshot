@@ -1125,7 +1125,7 @@ const PERFORCE: AddExternalServiceOptions = {
     defaultConfig: `{
   "p4.port": "ssl:111.222.333.444:1666",
   "p4.user": "admin",
-  "p4.passwd": "<secure password>",
+  "p4.passwd": "<ticket value>",
   "depots": []
 }`,
     instructions: (
@@ -1138,7 +1138,7 @@ const PERFORCE: AddExternalServiceOptions = {
                     Set the <Field>p4.user</Field> field to be the authenticated user.
                 </li>
                 <li>
-                    Set the <Field>p4.passwd</Field> field to be the plain password of the authenticated user.
+                    Set the <Field>p4.passwd</Field> field to be the ticket value of the authenticated user.
                 </li>
             </ol>
             <p>
@@ -1159,7 +1159,7 @@ const PERFORCE: AddExternalServiceOptions = {
             id: 'setMaxChanges',
             label: 'Set max changes',
             run: (config: string) => {
-                const value = '1000'
+                const value = 1000
                 const edits = setProperty(config, ['maxChanges'], value, defaultFormattingOptions)
                 return { edits, selectText: value }
             },

@@ -62,7 +62,7 @@ func newGithubSource(c *schema.GitHubConnection, cf *httpcli.Factory, au auth.Au
 		return nil, err
 	}
 
-	var authr auth.Authenticator = au
+	var authr = au
 	if au == nil {
 		authr = &auth.OAuthBearerToken{Token: c.Token}
 	}

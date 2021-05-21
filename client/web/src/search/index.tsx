@@ -22,6 +22,7 @@ import {
     fetchSearchContext,
     createSearchContext,
     updateSearchContext,
+    deleteSearchContext,
 } from './backend'
 import { AggregateStreamingSearchResults, StreamSearchOptions } from './stream'
 
@@ -204,6 +205,7 @@ export interface SearchContextProps {
     fetchSearchContext: typeof fetchSearchContext
     createSearchContext: typeof createSearchContext
     updateSearchContext: typeof updateSearchContext
+    deleteSearchContext: typeof deleteSearchContext
 }
 
 export type SearchContextInputProps = Pick<

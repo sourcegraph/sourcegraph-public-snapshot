@@ -332,7 +332,7 @@ export type ConfigInsertionFunction = (
     edits: jsonc.Edit[]
 
     /** Select text in inserted JSON. */
-    selectText?: string
+    selectText?: string | number
 
     /**
      * If set, the selection is an empty selection that begins at the left-hand match of selectText plus this

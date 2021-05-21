@@ -29,14 +29,14 @@ func TestPrepareWorkspace(t *testing.T) {
 		operations: command.NewOperations(&observation.TestContext),
 	}
 
-	dir, err := handler.prepareWorkspace(context.Background(), runner, "linux", "deadbeef")
+	dir, err := handler.prepareWorkspace(context.Background(), runner, "torvalds/linux", "deadbeef")
 	if err != nil {
 		t.Fatalf("unexpected error preparing workspace: %s", err)
 	}
 	defer os.RemoveAll(dir)
 
-	if value := len(runner.RunFunc.History()); value != 3 {
-		t.Fatalf("unexpected number of calls to Run. want=%d have=%d", 3, value)
+	if value := len(runner.RunFunc.History()); value != 4 {
+		t.Fatalf("unexpected number of calls to Run. want=%d have=%d", 4, value)
 	}
 
 	var commands [][]string
@@ -46,7 +46,8 @@ func TestPrepareWorkspace(t *testing.T) {
 
 	expectedCommands := [][]string{
 		{"git", "-C", dir, "init"},
-		{"git", "-C", dir, "-c", "protocol.version=2", "fetch", "https://test:hunter2@test.io/internal/git/linux", "deadbeef"},
+		{"git", "-C", dir, "-c", "protocol.version=2", "fetch", "https://test:hunter2@test.io/internal/git/torvalds/linux", "-t", "deadbeef"},
+		{"git", "-C", dir, "remote", "add", "origin", "torvalds/linux"},
 		{"git", "-C", dir, "checkout", "deadbeef"},
 	}
 	if diff := cmp.Diff(expectedCommands, commands); diff != "" {

@@ -19,7 +19,9 @@ import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { AuthenticatedUser } from '../auth'
 import { ALLOW_NAVIGATION, AwayPrompt } from '../components/AwayPrompt'
 import { fetchRepository } from '../repo/backend'
+import { SearchContextProps } from '../search'
 
+import { DeleteSearchContextModal } from './DeleteSearchContextModal'
 import { parseConfig } from './repositoryRevisionsConfigParser'
 import styles from './SearchContextForm.module.scss'
 import {
@@ -84,7 +86,11 @@ function getSearchContextSpecPreview(selectedNamespace: SelectedNamespace, searc
 
 const LOADING = 'loading' as const
 
-export interface SearchContextFormProps extends RouteComponentProps, ThemeProps, TelemetryProps {
+export interface SearchContextFormProps
+    extends RouteComponentProps,
+        ThemeProps,
+        TelemetryProps,
+        Pick<SearchContextProps, 'deleteSearchContext'> {
     searchContext?: ISearchContext
     authenticatedUser: AuthenticatedUser
 
@@ -99,7 +105,7 @@ const searchContextVisibility = (searchContext: ISearchContext): SelectedVisibil
     searchContext.public ? 'public' : 'private'
 
 export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> = props => {
-    const { authenticatedUser, onSubmit, searchContext } = props
+    const { authenticatedUser, onSubmit, searchContext, deleteSearchContext } = props
     const history = useHistory()
 
     const [name, setName] = useState(searchContext ? searchContext.name : '')
@@ -227,6 +233,9 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
         history.push('/contexts')
     }, [history])
 
+    const [showDeleteModal, setShowDeleteModal] = useState(false)
+    const toggleDeleteModal = useCallback(() => setShowDeleteModal(show => !show), [setShowDeleteModal])
+
     return (
         <Form onSubmit={submitRequest}>
             <div className="d-flex">
@@ -332,7 +341,7 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                 />
             </div>
             <hr className={classNames('my-4', styles.searchContextFormDivider)} />
-            <div>
+            <div className="d-flex">
                 <button
                     type="submit"
                     className="btn btn-primary mr-2 test-search-context-submit-button"
@@ -344,6 +353,25 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                 <button type="button" onClick={onCancel} className="btn btn-outline-secondary">
                     Cancel
                 </button>
+                {searchContext && (
+                    <>
+                        <div className="flex-grow-1" />
+                        <button
+                            type="button"
+                            data-testid="search-context-delete-button"
+                            className="btn btn-outline-secondary text-danger"
+                            onClick={toggleDeleteModal}
+                        >
+                            Delete
+                        </button>
+                        <DeleteSearchContextModal
+                            isOpen={showDeleteModal}
+                            deleteSearchContext={deleteSearchContext}
+                            searchContext={searchContext}
+                            toggleDeleteModal={toggleDeleteModal}
+                        />
+                    </>
+                )}
             </div>
             {isErrorLike(searchContextOrError) && (
                 <div className="alert alert-danger mt-2">
