@@ -1,7 +1,7 @@
 ---
 name: Flaky Test
 about: Capture information about a flaky test that has been disabled.
-title: 'Flake: $TEST_NAME disabled '
+title: 'Flake: $TEST_NAME disabled'
 labels: 'testing'
 assignees: ''
 
