@@ -146,7 +146,7 @@ func (c *V4Client) requestGraphQL(ctx context.Context, query string, vars map[st
 
 	time.Sleep(c.rateLimitMonitor.RecommendedWaitForBackgroundOp(cost))
 
-	if err := doRequest(ctx, c.apiURL, c.auth, c.rateLimitMonitor, "graphql", c.httpClient, req, &respBody); err != nil {
+	if err := doRequest(ctx, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, &respBody); err != nil {
 		return err
 	}
 
