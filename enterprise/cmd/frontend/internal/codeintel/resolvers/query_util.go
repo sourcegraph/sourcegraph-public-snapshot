@@ -151,13 +151,16 @@ func (r *queryResolver) monikerLocations(ctx context.Context, uploads []dbstore.
 }
 
 // adjustLocations translates a set of locations into an equivalent set of locations in the requested
-// commit.
+// commit. If a location cannot be adjusted, it will be omitted from the resulting list.
 func (r *queryResolver) adjustLocations(ctx context.Context, uploadsByID map[int]dbstore.Dump, locations []lsifstore.Location) ([]AdjustedLocation, error) {
 	adjustedLocations := make([]AdjustedLocation, 0, len(locations))
 	for _, location := range locations {
-		adjustedLocation, err := r.adjustLocation(ctx, uploadsByID[location.DumpID], location)
+		adjustedLocation, ok, err := r.adjustLocation(ctx, uploadsByID[location.DumpID], location)
 		if err != nil {
 			return nil, err
+		}
+		if !ok {
+			continue
 		}
 
 		adjustedLocations = append(adjustedLocations, adjustedLocation)
@@ -167,11 +170,11 @@ func (r *queryResolver) adjustLocations(ctx context.Context, uploadsByID map[int
 }
 
 // adjustLocation translates a location (relative to the indexed commit) into an equivalent location in
-// the requested commit.
-func (r *queryResolver) adjustLocation(ctx context.Context, dump store.Dump, location lsifstore.Location) (AdjustedLocation, error) {
-	adjustedCommit, adjustedRange, err := r.adjustRange(ctx, dump.RepositoryID, dump.Commit, dump.Root+location.Path, location.Range)
-	if err != nil {
-		return AdjustedLocation{}, err
+// the requested commit. This method also returns a false-valued flag when the adjustment is unsuccessful.
+func (r *queryResolver) adjustLocation(ctx context.Context, dump store.Dump, location lsifstore.Location) (AdjustedLocation, bool, error) {
+	adjustedCommit, adjustedRange, ok, err := r.adjustRange(ctx, dump.RepositoryID, dump.Commit, dump.Root+location.Path, location.Range)
+	if err != nil || !ok {
+		return AdjustedLocation{}, false, err
 	}
 
 	return AdjustedLocation{
@@ -179,24 +182,25 @@ func (r *queryResolver) adjustLocation(ctx context.Context, dump store.Dump, loc
 		Path:           dump.Root + location.Path,
 		AdjustedCommit: adjustedCommit,
 		AdjustedRange:  adjustedRange,
-	}, nil
+	}, true, nil
 }
 
 // adjustRange translates a range (relative to the indexed commit) into an equivalent range in the requested
-// commit.
-func (r *queryResolver) adjustRange(ctx context.Context, repositoryID int, commit, path string, rn lsifstore.Range) (string, lsifstore.Range, error) {
+// commit. This method also returns a false-valued flag when the adjustment is unsuccessful.
+func (r *queryResolver) adjustRange(ctx context.Context, repositoryID int, commit, path string, rn lsifstore.Range) (string, lsifstore.Range, bool, error) {
 	if repositoryID != r.repositoryID {
 		// No diffs between distinct repositories
-		return commit, rn, nil
+		return commit, rn, true, nil
 	}
 
-	if _, adjustedRange, ok, err := r.positionAdjuster.AdjustRange(ctx, commit, path, rn, true); err != nil {
-		return "", lsifstore.Range{}, errors.Wrap(err, "positionAdjuster.AdjustRange")
-	} else if ok {
-		return r.commit, adjustedRange, nil
+	_, adjustedRange, ok, err := r.positionAdjuster.AdjustRange(ctx, commit, path, rn, true)
+	if err != nil {
+		return "", lsifstore.Range{}, false, errors.Wrap(err, "positionAdjuster.AdjustRange")
+	} else if !ok {
+		return "", lsifstore.Range{}, false, nil
 	}
 
-	return commit, rn, nil
+	return r.commit, adjustedRange, true, nil
 }
 
 // filterUploadsWithCommits removes the uploads for commits which are unknown to gitserver from the given

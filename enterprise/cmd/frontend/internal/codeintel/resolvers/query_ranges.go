@@ -51,9 +51,12 @@ func (r *queryResolver) Ranges(ctx context.Context, startLine, endLine int) (adj
 		}
 
 		for _, rn := range ranges {
-			adjustedRange, err := r.adjustCodeIntelligenceRange(ctx, adjustedUploads[i], rn)
+			adjustedRange, ok, err := r.adjustCodeIntelligenceRange(ctx, adjustedUploads[i], rn)
 			if err != nil {
 				return nil, err
+			}
+			if !ok {
+				continue
 			}
 
 			adjustedRanges = append(adjustedRanges, adjustedRange)
@@ -65,11 +68,13 @@ func (r *queryResolver) Ranges(ctx context.Context, startLine, endLine int) (adj
 }
 
 // adjustCodeIntelligenceRange translates a range summary (relative to the indexed commit) into an
-// equivalent range summary in the requested commit.
-func (r *queryResolver) adjustCodeIntelligenceRange(ctx context.Context, upload adjustedUpload, rn lsifstore.CodeIntelligenceRange) (AdjustedCodeIntelligenceRange, error) {
-	_, adjustedRange, err := r.adjustRange(ctx, upload.Upload.RepositoryID, upload.Upload.Commit, upload.AdjustedPath, rn.Range)
-	if err != nil {
-		return AdjustedCodeIntelligenceRange{}, err
+// equivalent range summary in the requested commit. If the source range cannot be adjusted, a
+// false-valued flag is returned. If a position (a target of a navigation) cannot  be adjusted, it
+// will be  omitted from the resulting list.
+func (r *queryResolver) adjustCodeIntelligenceRange(ctx context.Context, upload adjustedUpload, rn lsifstore.CodeIntelligenceRange) (AdjustedCodeIntelligenceRange, bool, error) {
+	_, adjustedRange, ok, err := r.adjustRange(ctx, upload.Upload.RepositoryID, upload.Upload.Commit, upload.AdjustedPath, rn.Range)
+	if err != nil || !ok {
+		return AdjustedCodeIntelligenceRange{}, false, err
 	}
 
 	uploadsByID := map[int]store.Dump{
@@ -78,12 +83,12 @@ func (r *queryResolver) adjustCodeIntelligenceRange(ctx context.Context, upload 
 
 	adjustedDefinitions, err := r.adjustLocations(ctx, uploadsByID, rn.Definitions)
 	if err != nil {
-		return AdjustedCodeIntelligenceRange{}, err
+		return AdjustedCodeIntelligenceRange{}, false, err
 	}
 
 	adjustedReferences, err := r.adjustLocations(ctx, uploadsByID, rn.References)
 	if err != nil {
-		return AdjustedCodeIntelligenceRange{}, err
+		return AdjustedCodeIntelligenceRange{}, false, err
 	}
 
 	return AdjustedCodeIntelligenceRange{
@@ -91,5 +96,5 @@ func (r *queryResolver) adjustCodeIntelligenceRange(ctx context.Context, upload 
 		Definitions: adjustedDefinitions,
 		References:  adjustedReferences,
 		HoverText:   rn.HoverText,
-	}, nil
+	}, true, nil
 }

@@ -56,9 +56,12 @@ func (r *queryResolver) Hover(ctx context.Context, line, character int) (_ strin
 		}
 
 		// Adjust the highlighted range back to the appropriate range in the target commit
-		_, adjustedRange, err := r.adjustRange(ctx, r.uploads[i].RepositoryID, r.uploads[i].Commit, r.path, rn)
+		_, adjustedRange, ok, err := r.adjustRange(ctx, r.uploads[i].RepositoryID, r.uploads[i].Commit, r.path, rn)
 		if err != nil {
 			return "", lsifstore.Range{}, false, err
+		}
+		if !ok {
+			continue
 		}
 
 		return text, adjustedRange, true, nil
