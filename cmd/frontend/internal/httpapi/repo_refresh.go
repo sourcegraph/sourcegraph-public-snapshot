@@ -16,6 +16,7 @@ func serveRepoRefresh(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
+
 	_, err = repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, repo.Name)
 	return err
 }
