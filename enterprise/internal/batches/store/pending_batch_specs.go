@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
 
@@ -47,11 +48,36 @@ func createPendingBatchSpecQuery(pbs *btypes.PendingBatchSpec) *sqlf.Query {
 		pbs.UpdatedAt,
 		pbs.CreatorUserID,
 		pbs.Spec,
-		sqlf.Join(pendingBatchSpecColumns, ","),
+		sqlf.Join(PendingBatchSpecColumns, ","),
 	)
 }
 
-var pendingBatchSpecColumns = []*sqlf.Query{
+func ScanFirstPendingBatchSpec(rows *sql.Rows, err error) (*btypes.PendingBatchSpec, bool, error) {
+	if err != nil {
+		return nil, false, err
+	}
+
+	pbses, err := scanPendingBatchSpecs(rows)
+	if err != nil || len(pbses) == 0 {
+		return &btypes.PendingBatchSpec{}, false, err
+	}
+	return pbses[0], true, nil
+}
+
+func scanPendingBatchSpecs(rows *sql.Rows) ([]*btypes.PendingBatchSpec, error) {
+	var pbses []*btypes.PendingBatchSpec
+
+	return pbses, scanAll(rows, func(sc scanner) error {
+		var pbs btypes.PendingBatchSpec
+		if err := scanPendingBatchSpec(&pbs, sc); err != nil {
+			return err
+		}
+		pbses = append(pbses, &pbs)
+		return nil
+	})
+}
+
+var PendingBatchSpecColumns = []*sqlf.Query{
 	sqlf.Sprintf("id"),
 	sqlf.Sprintf("state"),
 	sqlf.Sprintf("failure_message"),
