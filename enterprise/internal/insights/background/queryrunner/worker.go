@@ -4,8 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
