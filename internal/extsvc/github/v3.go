@@ -148,7 +148,7 @@ func (c *V3Client) requestGet(ctx context.Context, requestURI string, result int
 		return errInternalRateLimitExceeded
 	}
 
-	return doRequest(ctx, c.apiURL, c.auth, c.rateLimitMonitor, c.resource, c.httpClient, req, result)
+	return doRequest(ctx, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, result)
 }
 
 // newRepoCache creates a new cache for GitHub repository metadata. The backing
