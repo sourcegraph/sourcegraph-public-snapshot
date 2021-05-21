@@ -49,13 +49,13 @@ func APIRoot(baseURL *url.URL) (apiURL *url.URL, githubDotCom bool) {
 	return baseURL.ResolveReference(&url.URL{Path: "api"}), false
 }
 
-func doRequest(ctx context.Context, apiURL *url.URL, auth auth.Authenticator, rateLimitMonitor *ratelimit.Monitor, httpClient httpcli.Doer, req *http.Request, result interface{}) (err error) {
+func doRequest(ctx context.Context, apiURL *url.URL, auth auth.Authenticator, rateLimitMonitor *ratelimit.Monitor, httpClient httpcli.Doer, req *http.Request, result interface{}) (headers http.Header, err error) {
 	req.URL.Path = path.Join(apiURL.Path, req.URL.Path)
 	req.URL = apiURL.ResolveReference(req.URL)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	if auth != nil {
 		if err := auth.Authenticate(req); err != nil {
-			return errors.Wrap(err, "authenticating request")
+			return nil, errors.Wrap(err, "authenticating request")
 		}
 	}
 
@@ -75,9 +75,8 @@ func doRequest(ctx context.Context, apiURL *url.URL, auth auth.Authenticator, ra
 
 	resp, err = httpClient.Do(req.WithContext(ctx))
 	if err != nil {
-		return err
+		return nil, err
 	}
-
 	defer resp.Body.Close()
 
 	// For 401 responses we receive a remaining limit of 0. This will cause the next
@@ -96,9 +95,10 @@ func doRequest(ctx context.Context, apiURL *url.URL, auth auth.Authenticator, ra
 		}
 		err.URL = req.URL.String()
 		err.Code = resp.StatusCode
-		return &err
+		return resp.Header, &err
 	}
-	return json.NewDecoder(resp.Body).Decode(result)
+	err = json.NewDecoder(resp.Body).Decode(result)
+	return resp.Header, err
 }
 
 func canonicalizedURL(apiURL *url.URL) *url.URL {

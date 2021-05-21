@@ -127,9 +127,18 @@ func (c *V3Client) RateLimitMonitor() *ratelimit.Monitor {
 }
 
 func (c *V3Client) requestGet(ctx context.Context, requestURI string, result interface{}) error {
+	_, err := c.get(ctx, requestURI, result)
+	return err
+}
+
+func (c *V3Client) requestGetWithHeader(ctx context.Context, requestURI string, result interface{}) (http.Header, error) {
+	return c.get(ctx, requestURI, result)
+}
+
+func (c *V3Client) get(ctx context.Context, requestURI string, result interface{}) (http.Header, error) {
 	req, err := http.NewRequest("GET", requestURI, nil)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Include node_id (GraphQL ID) in response. See
@@ -145,7 +154,7 @@ func (c *V3Client) requestGet(ctx context.Context, requestURI string, result int
 
 	err = c.rateLimit.Wait(ctx)
 	if err != nil {
-		return errInternalRateLimitExceeded
+		return nil, errInternalRateLimitExceeded
 	}
 
 	return doRequest(ctx, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, result)
