@@ -31,7 +31,7 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = ({ node, d
 
     return (
         <div className="documentation-index-node">
-            <Link id={'index-' + hash} to={thisPage}>
+            <Link id={'index-' + hash} to={thisPage} className="text-nowrap">
                 {node.label.value}
             </Link>
 
