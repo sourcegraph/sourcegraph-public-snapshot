@@ -208,11 +208,6 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      * Whether the code monitoring feature flag is enabled.
      */
     enableCodeMonitoring: boolean
-
-    /**
-     * Whether the API docs feature flag is enabled.
-     */
-    enableAPIDocs: boolean
 }
 
 const notificationClassNames = {
@@ -303,7 +298,6 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             showQueryBuilder: false,
             enableSmartQuery: false,
             enableCodeMonitoring: false,
-            enableAPIDocs: false,
         }
     }
 

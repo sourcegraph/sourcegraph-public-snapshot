@@ -21,10 +21,10 @@ import { PageTitle } from '../../components/PageTitle'
 import { RepositoryFields, Scalars } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { toDocumentationURL } from '../../util/url'
+import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 
 import { DocumentationNode, GQLDocumentationNode } from './DocumentationNode'
 import { RepositoryDocumentationSidebar, getSidebarVisibility } from './RepositoryDocumentationSidebar'
-import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 
 interface DocumentationPageResults {
     node: GQL.IRepository
