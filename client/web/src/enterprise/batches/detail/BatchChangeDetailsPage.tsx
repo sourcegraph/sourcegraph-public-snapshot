@@ -5,6 +5,7 @@ import React, { useEffect, useMemo } from 'react'
 import { delay, distinctUntilChanged, repeatWhen } from 'rxjs/operators'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { PageHeader } from '@sourcegraph/wildcard'
 
@@ -32,7 +33,16 @@ import { ClosedNotice } from './ClosedNotice'
 import { SupersedingBatchSpecAlert } from './SupersedingBatchSpecAlert'
 import { UnpublishedNotice } from './UnpublishedNotice'
 
-export interface BatchChangeDetailsPageProps extends BatchChangeDetailsProps {}
+export interface BatchChangeDetailsPageProps extends BatchChangeDetailsProps {
+    /** The namespace ID. */
+    namespaceID: Scalars['ID']
+    /** The batch change name. */
+    batchChangeName: BatchChangeFields['name']
+    /** For testing only. */
+    fetchBatchChangeByNamespace?: typeof _fetchBatchChangeByNamespace
+    /** For testing only. */
+    deleteBatchChange?: typeof _deleteBatchChange
+}
 
 /**
  * The area for a single batch change.

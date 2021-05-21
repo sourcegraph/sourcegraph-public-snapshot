@@ -16,7 +16,6 @@ import {
 } from '../BatchChangeTabs'
 import { BatchSpec, BatchSpecDownloadLink } from '../BatchSpec'
 
-import { fetchBatchSpecById as _fetchBatchSpecById } from './backend'
 import { PreviewPageAuthenticatedUser } from './BatchChangePreviewPage'
 import {
     queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs,
@@ -30,8 +29,6 @@ export interface BatchChangePreviewProps extends ThemeProps, TelemetryProps {
     location: H.Location
     authenticatedUser: PreviewPageAuthenticatedUser
 
-    /** Used for testing. */
-    fetchBatchSpecById?: typeof _fetchBatchSpecById
     /** Used for testing. */
     queryChangesetApplyPreview?: typeof _queryChangesetApplyPreview
     /** Used for testing. */

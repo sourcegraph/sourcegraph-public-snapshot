@@ -1,12 +1,9 @@
-import * as H from 'history'
 import { isEqual } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { useEffect, useMemo } from 'react'
 import { delay, distinctUntilChanged, repeatWhen } from 'rxjs/operators'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { PageHeader } from '@sourcegraph/wildcard'
 
@@ -19,28 +16,16 @@ import { SupersedingBatchSpecAlert } from '../detail/SupersedingBatchSpecAlert'
 
 import { fetchBatchSpecById as _fetchBatchSpecById } from './backend'
 import { BatchChangePreviewStatsBar } from './BatchChangePreviewStatsBar'
-import { BatchChangePreviewTabs } from './BatchChangePreviewTabs'
+import { BatchChangePreviewProps, BatchChangePreviewTabs } from './BatchChangePreviewTabs'
 import { BatchSpecInfoByline } from './BatchSpecInfoByline'
 import { CreateUpdateBatchChangeAlert } from './CreateUpdateBatchChangeAlert'
-import { queryChangesetSpecFileDiffs, queryChangesetApplyPreview } from './list/backend'
 import { MissingCredentialsAlert } from './MissingCredentialsAlert'
 
 export type PreviewPageAuthenticatedUser = Pick<AuthenticatedUser, 'url' | 'displayName' | 'username' | 'email'>
 
-export interface BatchChangePreviewPageProps extends ThemeProps, TelemetryProps {
-    batchSpecID: string
-    history: H.History
-    location: H.Location
-    authenticatedUser: PreviewPageAuthenticatedUser
-
+interface BatchChangePreviewPageProps extends BatchChangePreviewProps {
     /** Used for testing. */
     fetchBatchSpecById?: typeof _fetchBatchSpecById
-    /** Used for testing. */
-    queryChangesetApplyPreview?: typeof queryChangesetApplyPreview
-    /** Used for testing. */
-    queryChangesetSpecFileDiffs?: typeof queryChangesetSpecFileDiffs
-    /** Expand changeset descriptions, for testing only. */
-    expandChangesetDescriptions?: boolean
 }
 
 export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewPageProps> = props => {

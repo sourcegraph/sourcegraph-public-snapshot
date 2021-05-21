@@ -7,7 +7,6 @@ import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import React from 'react'
 
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -23,11 +22,9 @@ import {
 import { BatchSpec, BatchSpecDownloadLink, BatchSpecMeta } from '../BatchSpec'
 
 import {
-    fetchBatchChangeByNamespace as _fetchBatchChangeByNamespace,
     queryChangesets as _queryChangesets,
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
     queryChangesetCountsOverTime as _queryChangesetCountsOverTime,
-    deleteBatchChange as _deleteBatchChange,
     queryBulkOperations as _queryBulkOperations,
 } from './backend'
 import { BatchChangeBurndownChart } from './BatchChangeBurndownChart'
@@ -48,27 +45,15 @@ export interface BatchChangeDetailsProps
         ExtensionsControllerProps,
         PlatformContextProps,
         TelemetryProps {
-    /**
-     * The namespace ID.
-     */
-    namespaceID: Scalars['ID']
-    /**
-     * The batch change name.
-     */
-    batchChangeName: BatchChangeFields['name']
     history: H.History
     location: H.Location
 
-    /** For testing only. */
-    fetchBatchChangeByNamespace?: typeof _fetchBatchChangeByNamespace
     /** For testing only. */
     queryChangesets?: typeof _queryChangesets
     /** For testing only. */
     queryExternalChangesetWithFileDiffs?: typeof _queryExternalChangesetWithFileDiffs
     /** For testing only. */
     queryChangesetCountsOverTime?: typeof _queryChangesetCountsOverTime
-    /** For testing only. */
-    deleteBatchChange?: typeof _deleteBatchChange
     /** For testing only. */
     queryBulkOperations?: typeof _queryBulkOperations
 }
