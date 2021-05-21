@@ -19,7 +19,7 @@ Engineers should budget an appropriate amount of time for writing tests when mak
 
 ## Flaky tests
 
-A *flaky* test is defined as a test that is unreliable or non-deterministic, meaning that it doesn't consistently produce the same pass/fail result.
+A *flaky* test is defined as a test that is unreliable or non-deterministic, i.e. it exhibits both a passing and a failing result with the same code.
 
 Typical reasons why a test may be flaky:
 
@@ -31,7 +31,7 @@ Typical reasons why a test may be flaky:
 We do not tolerate flaky tests of any kind. Any engineer that sees a flaky test should immediately:
 
 1. Open a PR to disable the flaky test.
-1. Open an issue to re-enable the flaky test, assign it to the most likely owner, and add it to the current release milestone.
+1. Open an issue to re-enable the flaky test (use the [Flaky Test template](https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=&template=flaky_test.md&title=)), assign it to the most likely owner, and add it to the current release milestone.
 
 If the build or test infrastructure itself is flaky, then [open an issue](https://github.com/sourcegraph/sourcegraph/issues/new?labels=team/distribution) and notify the [distribution team](https://about.sourcegraph.com/handbook/engineering/distribution#contact).
 
