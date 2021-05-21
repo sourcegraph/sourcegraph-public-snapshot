@@ -34,11 +34,11 @@ Examples:
 			return err
 		}
 		if recommendedVersion == "" {
-			fmt.Println("Recommended Version: <unknown>")
+			fmt.Println("Recommended version: <unknown>")
 			fmt.Println("This Sourcegraph instance does not support this feature.")
 			return nil
 		}
-		fmt.Printf("Recommended Version: %s\n", recommendedVersion)
+		fmt.Printf("Recommended version: %s or later\n", recommendedVersion)
 		return nil
 	}
 
