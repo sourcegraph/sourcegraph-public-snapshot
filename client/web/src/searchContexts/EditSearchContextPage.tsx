@@ -28,7 +28,7 @@ export interface EditSearchContextPageProps
     extends RouteComponentProps<{ id: Scalars['ID'] }>,
         ThemeProps,
         TelemetryProps,
-        Pick<SearchContextProps, 'updateSearchContext' | 'fetchSearchContext'> {
+        Pick<SearchContextProps, 'updateSearchContext' | 'fetchSearchContext' | 'deleteSearchContext'> {
     authenticatedUser: AuthenticatedUser
 }
 

@@ -1,7 +1,8 @@
 import { storiesOf } from '@storybook/react'
 import { subDays } from 'date-fns'
 import React from 'react'
-import { Observable, of } from 'rxjs'
+import { NEVER, Observable, of } from 'rxjs'
+import sinon from 'sinon'
 
 import { IOrg, IRepository, ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
 
@@ -73,11 +74,20 @@ const authUser: AuthenticatedUser = {
     databaseID: 0,
 }
 
+const deleteSearchContext = sinon.fake(() => NEVER)
+
 add(
     'empty create',
     () => (
         <WebStory>
-            {webProps => <SearchContextForm {...webProps} authenticatedUser={authUser} onSubmit={onSubmit} />}
+            {webProps => (
+                <SearchContextForm
+                    {...webProps}
+                    authenticatedUser={authUser}
+                    onSubmit={onSubmit}
+                    deleteSearchContext={deleteSearchContext}
+                />
+            )}
         </WebStory>
     ),
     {}
@@ -93,6 +103,7 @@ add(
                     searchContext={searchContextToEdit}
                     authenticatedUser={authUser}
                     onSubmit={onSubmit}
+                    deleteSearchContext={deleteSearchContext}
                 />
             )}
         </WebStory>

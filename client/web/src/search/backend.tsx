@@ -36,6 +36,8 @@ import {
     CreateSearchContextVariables,
     UpdateSearchContextVariables,
     UpdateSearchContextResult,
+    DeleteSearchContextVariables,
+    DeleteSearchContextResult,
 } from '../graphql-operations'
 import { DeployType } from '../jscontext'
 
@@ -421,6 +423,19 @@ export function updateSearchContext(variables: UpdateSearchContextVariables): Ob
         map(dataOrThrowErrors),
         map(data => data.updateSearchContext as GQL.ISearchContext)
     )
+}
+
+export function deleteSearchContext(id: GQL.ID): Observable<DeleteSearchContextResult> {
+    return requestGraphQL<DeleteSearchContextResult, DeleteSearchContextVariables>(
+        gql`
+            mutation DeleteSearchContext($id: ID!) {
+                deleteSearchContext(id: $id) {
+                    alwaysNil
+                }
+            }
+        `,
+        { id }
+    ).pipe(map(dataOrThrowErrors))
 }
 
 export function isSearchContextAvailable(
