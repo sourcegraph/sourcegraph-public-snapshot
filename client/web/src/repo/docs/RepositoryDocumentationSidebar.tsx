@@ -40,7 +40,7 @@ export const getSidebarVisibility = (): boolean => {
 /**
  * The sidebar for a specific repo revision that shows the index of all documentation.
  */
-export const RepositoryDocumentationSidebar: React.FunctionComponent<Props> = ({onToggle, ...props}) => {
+export const RepositoryDocumentationSidebar: React.FunctionComponent<Props> = ({ onToggle, ...props }) => {
     const [toggleSidebar, setToggleSidebar] = useLocalStorage(SIDEBAR_KEY, SIDEBAR_DEFAULT_VISIBILITY)
     const handleSidebarToggle = useCallback(() => {
         onToggle(!toggleSidebar)
@@ -60,28 +60,30 @@ export const RepositoryDocumentationSidebar: React.FunctionComponent<Props> = ({
         )
     }
 
-    return <Resizable
-        defaultSize={384}
-        handlePosition="right"
-        storageKey={SIZE_STORAGE_KEY}
-        className={props.className}
-        element={
-            <div className='d-flex flex-column w-100 border-right'>
-                <div className='d-flex flex-1 mx-3'>
-                    <Button
-                        onClick={handleSidebarToggle}
-                        className="bg-transparent border-0 ml-auto p-1 position-relative focus-behaviour"
-                        title="Close panel"
-                        data-tooltip="Collapse panel"
-                        data-placement="right"
-                    >
-                        <ChevronDoubleLeftIcon className="icon-inline" />
-                    </Button>
+    return (
+        <Resizable
+            defaultSize={384}
+            handlePosition="right"
+            storageKey={SIZE_STORAGE_KEY}
+            className={props.className}
+            element={
+                <div className="d-flex flex-column w-100 border-right">
+                    <div className="d-flex flex-1 mx-3">
+                        <Button
+                            onClick={handleSidebarToggle}
+                            className="bg-transparent border-0 ml-auto p-1 position-relative focus-behaviour"
+                            title="Close panel"
+                            data-tooltip="Collapse panel"
+                            data-placement="right"
+                        >
+                            <ChevronDoubleLeftIcon className="icon-inline" />
+                        </Button>
+                    </div>
+                    <div aria-hidden={true} className="d-flex explorer overflow-auto px-3">
+                        <DocumentationIndexNode {...props} node={props.node} pagePathID={props.pagePathID} depth={0} />
+                    </div>
                 </div>
-                <div aria-hidden={true} className='d-flex explorer overflow-auto px-3'>
-                    <DocumentationIndexNode {...props} node={props.node} pagePathID={props.pagePathID} depth={0} />
-                </div>
-            </div>
-        }
-    />
+            }
+        />
+    )
 }

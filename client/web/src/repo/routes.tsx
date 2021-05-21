@@ -16,7 +16,10 @@ import { RepoContainerRoute } from './RepoContainer'
 import { RepoRevisionContainerContext, RepoRevisionContainerRoute } from './RepoRevisionContainer'
 
 const BlobPage = lazyComponent(() => import('./blob/BlobPage'), 'BlobPage')
-const RepositoryDocumentationPage = lazyComponent(() => import('./docs/RepositoryDocumentationPage'), 'RepositoryDocumentationPage')
+const RepositoryDocumentationPage = lazyComponent(
+    () => import('./docs/RepositoryDocumentationPage'),
+    'RepositoryDocumentationPage'
+)
 const RepositoryCommitsPage = lazyComponent(() => import('./commits/RepositoryCommitsPage'), 'RepositoryCommitsPage')
 const RepoRevisionSidebar = lazyComponent(() => import('./RepoRevisionSidebar'), 'RepoRevisionSidebar')
 const TreePage = lazyComponent(() => import('./tree/TreePage'), 'TreePage')

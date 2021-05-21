@@ -63,7 +63,11 @@ export const DocumentationNode: React.FunctionComponent<Props> = ({ useBreadcrum
     const thisPage = toDocumentationURL({ ...repoRevision, pathID: props.pagePathID }) + (hash ? '#' + hash : '')
     if (depth === 0) {
         useBreadcrumb(
-            useMemo(() => ({ key: `node-${depth}`, element: <Link to={thisPage}>{node.label.value}</Link> }), [depth, node.label.value, thisPage])
+            useMemo(() => ({ key: `node-${depth}`, element: <Link to={thisPage}>{node.label.value}</Link> }), [
+                depth,
+                node.label.value,
+                thisPage,
+            ])
         )
     }
 
@@ -85,17 +89,17 @@ export const DocumentationNode: React.FunctionComponent<Props> = ({ useBreadcrum
             )}
 
             {node.children?.map(
-                    (child, index) =>
-                        child.node && (
-                            <DocumentationNode
-                                key={`${depth}-${index}`}
-                                {...props}
-                                node={child.node!}
-                                depth={depth + 1}
-                                useBreadcrumb={useBreadcrumb}
-                            />
-                        )
-                )}
+                (child, index) =>
+                    child.node && (
+                        <DocumentationNode
+                            key={`${depth}-${index}`}
+                            {...props}
+                            node={child.node!}
+                            depth={depth + 1}
+                            useBreadcrumb={useBreadcrumb}
+                        />
+                    )
+            )}
         </div>
     )
 }
