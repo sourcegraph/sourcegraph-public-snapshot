@@ -1,4 +1,7 @@
 /* eslint-disable jsx-a11y/no-noninteractive-element-interactions */
+// NOTE: the eslint-disable above can't be a eslint-disable-next-line because
+// JSX syntax doesn't support comments on the line where it's needed.
+
 import React from 'react'
 
 import { BloomFilterFuzzySearch } from './BloomFilterFuzzySearch'
