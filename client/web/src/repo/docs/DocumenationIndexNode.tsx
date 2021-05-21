@@ -1,0 +1,58 @@
+import * as H from 'history'
+import React, { Children, useMemo } from 'react'
+
+import { ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
+import { RepositoryFields } from '../../graphql-operations'
+import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
+import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
+import { Link } from 'react-router-dom'
+import { toDocsURL } from '../../util/url'
+import { useScrollToLocationHash } from '../../components/useScrollToLocationHash'
+import { GQLDocumentationNode } from './DocumentationNode'
+
+interface Props
+    extends Partial<RevisionSpec>,
+        ResolvedRevisionSpec {
+    repo: RepositoryFields
+
+    history: H.History
+    location: H.Location
+    node: GQLDocumentationNode,
+    depth: number,
+    pagePathID: string
+}
+
+export const DocumentationIndexNode: React.FunctionComponent<Props> = ({ useBreadcrumb, node, depth, ...props }) => {
+    useScrollToLocationHash(props.location)
+    const repoRev = {
+        repoName: props.repo.name,
+        revision: props.revision || '',
+    }
+    const hash = node.pathID.slice(props.pagePathID.length + '/'.length).replace(/\//g, '-')
+    const thisPage = toDocsURL({...repoRev, pathID: props.pagePathID}) + (hash ? '#' + hash : '')
+
+    return (
+        <div className="documentation-index-node">
+            <Link
+                id={'index-'+hash}
+                to={thisPage}
+            >
+                {node.label.value}
+            </Link>
+
+            <ul className="pl-3">
+                {node.children && node.children.map((child, i) =>
+                    child.pathID ?
+                        <li><Link key={`${depth}-${i}`} to={toDocsURL({...repoRev, pathID: child.pathID})}>{child.pathID}</Link></li>
+                        :
+                        <DocumentationIndexNode
+                            key={`${depth}-${i}`} 
+                            {...props}
+                            node={child.node!}
+                            depth={depth+1}
+                        />
+                )}
+            </ul>
+        </div>
+    )
+}

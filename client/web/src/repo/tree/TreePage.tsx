@@ -4,6 +4,7 @@ import FolderIcon from 'mdi-react/FolderIcon'
 import HistoryIcon from 'mdi-react/HistoryIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
+import BookOpenVariantIcon from 'mdi-react/BookOpenVariantIcon'
 import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import TagIcon from 'mdi-react/TagIcon'
@@ -370,6 +371,9 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                 </h2>
                                 {repo.description && <p>{repo.description}</p>}
                                 <div className="btn-group mb-3">
+                                    <Link className="btn btn-secondary" to={`${treeOrError.url}/-/docs`}>
+                                        <BookOpenVariantIcon className="icon-inline" /> API docs
+                                    </Link>
                                     <Link className="btn btn-secondary" to={`${treeOrError.url}/-/commits`}>
                                         <SourceCommitIcon className="icon-inline" /> Commits
                                     </Link>

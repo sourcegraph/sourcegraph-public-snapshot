@@ -5,14 +5,16 @@ import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { isLegacyFragment, parseHash, toRepoURL } from '@sourcegraph/shared/src/util/url'
 
 import { ErrorBoundary } from '../components/ErrorBoundary'
-import { ActionItemsBar } from '../extensions/components/ActionItemsBar'
+import { ActionItemsBar, ActionItemsBarProps } from '../extensions/components/ActionItemsBar'
 import { lazyComponent } from '../util/lazyComponent'
 import { formatHash } from '../util/url'
 
 import { RepoContainerRoute } from './RepoContainer'
 import { RepoRevisionContainerContext, RepoRevisionContainerRoute } from './RepoRevisionContainer'
+import { RepositoryDocsPageProps } from './docs/RepositoryDocsPage'
 
 const BlobPage = lazyComponent(() => import('./blob/BlobPage'), 'BlobPage')
+const RepositoryDocsPage = lazyComponent(() => import('./docs/RepositoryDocsPage'), 'RepositoryDocsPage')
 const RepositoryCommitsPage = lazyComponent(() => import('./commits/RepositoryCommitsPage'), 'RepositoryCommitsPage')
 const RepoRevisionSidebar = lazyComponent(() => import('./RepoRevisionSidebar'), 'RepoRevisionSidebar')
 const TreePage = lazyComponent(() => import('./tree/TreePage'), 'TreePage')
@@ -214,6 +216,34 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                     telemetryService={context.telemetryService}
                 />
             </>
+        ),
+    },
+    {
+        path: '/-/docs/:pathID*',
+        render: ({
+            resolvedRev: { commitID },
+            repoHeaderContributionsLifecycleProps,
+            match,
+            ...context
+        }: RepositoryDocsPageProps & RepoRevisionContainerContext & RouteComponentProps<{
+            pathID: string | undefined
+        }>) => (
+                <>
+                    <RepositoryDocsPage
+                        repo={context.repo}
+                        useBreadcrumb={context.useBreadcrumb}
+                        location={context.location}
+                        pathID={match.params.pathID ? "/" + decodeURIComponent(match.params.pathID) : '/'}
+                        commitID={commitID}
+                    />
+                    <ActionItemsBar
+                        useActionItemsBar={context.useActionItemsBar}
+                        location={context.location}
+                        extensionsController={context.extensionsController}
+                        platformContext={context.platformContext}
+                        telemetryService={context.telemetryService}
+                    />
+                </>
         ),
     },
 ]
