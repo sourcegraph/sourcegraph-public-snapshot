@@ -5,6 +5,7 @@
 $border-radius: var(--border-radius);
 $border-radius-sm: var(--border-radius-sm);
 $border-radius-lg: var(--border-radius-lg);
+$popover-border-radius: var(--popover-border-radius);
 
 $font-size-base: 0.875rem;
 $line-height-base: (20/14);
@@ -163,7 +164,10 @@ $input-transition: none;
 
     .theme-redesign & {
         background-color: var(--color-bg-1);
+        box-shadow: var(--dropdown-shadow);
         border-radius: var(--popover-border-radius);
+        // Ensure content is clipped by border
+        overflow: hidden;
     }
 }
 

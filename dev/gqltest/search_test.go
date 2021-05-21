@@ -1113,6 +1113,12 @@ func testSearchClient(t *testing.T, client searchClient) {
 				counts: counts{Commit: 1},
 			},
 			{
+				// https://github.com/sourcegraph/sourcegraph/issues/21031
+				name:   `search diffs with file filter and time filters`,
+				query:  `repo:go-diff patterntype:literal type:diff lang:go before:"May 10 2020" after:"May 5 2020" unquotedOrigName`,
+				counts: counts{Commit: 1},
+			},
+			{
 				name:   `select diffs with added lines containing pattern`,
 				query:  `repo:go-diff patterntype:literal type:diff select:commit.diff.added sample_binary_inline`,
 				counts: counts{Commit: 1},

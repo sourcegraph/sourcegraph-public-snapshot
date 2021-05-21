@@ -35,7 +35,7 @@ import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
-import { logCodeInsightsChanges } from './insights'
+import { logInsightMetrics } from './insights'
 import { KeyboardShortcutsProps } from './keyboardShortcuts/keyboardShortcuts'
 import { Layout, LayoutProps } from './Layout'
 import { updateUserSessionStores } from './marketing/util'
@@ -65,6 +65,9 @@ import {
     fetchSearchContexts,
     convertVersionContextToSearchContext,
     fetchSearchContext,
+    createSearchContext,
+    updateSearchContext,
+    deleteSearchContext,
 } from './search/backend'
 import { QueryState } from './search/helpers'
 import { aggregateStreamingSearch } from './search/stream'
@@ -332,12 +335,16 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             )
         )
 
-        // Observe settings mutations for analytics
+        // Track static metrics fo code insights.
+        // Insight count, insights settings, observe settings mutations for analytics
+        // Track add delete and update events of code insights via
         this.subscriptions.add(
-            from(this.platformContext.settings)
+            combineLatest([from(this.platformContext.settings), authenticatedUser])
                 .pipe(bufferCount(2, 1))
-                .subscribe(([oldSettings, newSettings]) => {
-                    logCodeInsightsChanges(oldSettings, newSettings, eventLogger)
+                .subscribe(([[oldSettings], [newSettings, authUser]]) => {
+                    if (authUser) {
+                        logInsightMetrics(oldSettings, newSettings, authUser, eventLogger)
+                    }
                 })
         )
 
@@ -510,6 +517,9 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
                                     fetchSearchContexts={fetchSearchContexts}
                                     fetchSearchContext={fetchSearchContext}
+                                    createSearchContext={createSearchContext}
+                                    updateSearchContext={updateSearchContext}
+                                    deleteSearchContext={deleteSearchContext}
                                     convertVersionContextToSearchContext={convertVersionContextToSearchContext}
                                     isSearchContextSpecAvailable={isSearchContextSpecAvailable}
                                     defaultSearchContextSpec={this.state.defaultSearchContextSpec}

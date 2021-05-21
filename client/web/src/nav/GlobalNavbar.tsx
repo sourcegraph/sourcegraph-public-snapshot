@@ -45,9 +45,9 @@ import {
     CopyQueryButtonProps,
     OnboardingTourProps,
     ParsedSearchQueryProps,
-    SearchContextProps,
     isSearchContextSpecAvailable,
     getGlobalSearchContextFilter,
+    SearchContextInputProps,
 } from '../search'
 import { QueryState } from '../search/helpers'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
@@ -73,10 +73,7 @@ interface Props
         CaseSensitivityProps,
         CopyQueryButtonProps,
         VersionContextProps,
-        Omit<
-            SearchContextProps,
-            'convertVersionContextToSearchContext' | 'isSearchContextSpecAvailable' | 'fetchSearchContext'
-        >,
+        SearchContextInputProps,
         CodeMonitoringProps,
         OnboardingTourProps {
     history: H.History

@@ -1,4 +1,4 @@
-package codeintelutils
+package upload
 
 import (
 	"bytes"

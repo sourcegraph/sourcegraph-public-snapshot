@@ -66,7 +66,7 @@ func ResolveSearchContextSpec(ctx context.Context, db dbutil.DB, searchContextSp
 	return searchContext, nil
 }
 
-func validateSearchContextWriteAccessForCurrentUser(ctx context.Context, db dbutil.DB, namespaceUserID, namespaceOrgID int32, public bool) error {
+func ValidateSearchContextWriteAccessForCurrentUser(ctx context.Context, db dbutil.DB, namespaceUserID, namespaceOrgID int32, public bool) error {
 	if namespaceUserID != 0 && namespaceOrgID != 0 {
 		return errors.New("namespaceUserID and namespaceOrgID are mutually exclusive")
 	}
@@ -155,7 +155,7 @@ func CreateSearchContextWithRepositoryRevisions(ctx context.Context, db dbutil.D
 		return nil, errors.New("cannot override global search context")
 	}
 
-	err := validateSearchContextWriteAccessForCurrentUser(ctx, db, searchContext.NamespaceUserID, searchContext.NamespaceOrgID, searchContext.Public)
+	err := ValidateSearchContextWriteAccessForCurrentUser(ctx, db, searchContext.NamespaceUserID, searchContext.NamespaceOrgID, searchContext.Public)
 	if err != nil {
 		return nil, err
 	}
@@ -192,7 +192,7 @@ func UpdateSearchContextWithRepositoryRevisions(ctx context.Context, db dbutil.D
 		return nil, errors.New("cannot update global search context")
 	}
 
-	err := validateSearchContextWriteAccessForCurrentUser(ctx, db, searchContext.NamespaceUserID, searchContext.NamespaceOrgID, searchContext.Public)
+	err := ValidateSearchContextWriteAccessForCurrentUser(ctx, db, searchContext.NamespaceUserID, searchContext.NamespaceOrgID, searchContext.Public)
 	if err != nil {
 		return nil, err
 	}
@@ -224,7 +224,7 @@ func DeleteSearchContext(ctx context.Context, db dbutil.DB, searchContext *types
 		return errors.New("cannot delete auto-defined search context")
 	}
 
-	err := validateSearchContextWriteAccessForCurrentUser(ctx, db, searchContext.NamespaceUserID, searchContext.NamespaceOrgID, searchContext.Public)
+	err := ValidateSearchContextWriteAccessForCurrentUser(ctx, db, searchContext.NamespaceUserID, searchContext.NamespaceOrgID, searchContext.Public)
 	if err != nil {
 		return err
 	}

@@ -18,7 +18,7 @@ import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
-import { SearchContextProps } from '..'
+import { SearchContextInputProps } from '..'
 import { SearchContextFields } from '../../graphql-operations'
 
 const HighlightedSearchTerm: React.FunctionComponent<{ text: string; searchFilter: string }> = ({
@@ -73,14 +73,7 @@ const SearchContextMenuItem: React.FunctionComponent<{
 }
 
 export interface SearchContextMenuProps
-    extends Omit<
-        SearchContextProps,
-        | 'showSearchContext'
-        | 'setSelectedSearchContextSpec'
-        | 'convertVersionContextToSearchContext'
-        | 'isSearchContextSpecAvailable'
-        | 'fetchSearchContext'
-    > {
+    extends Omit<SearchContextInputProps, 'showSearchContext' | 'setSelectedSearchContextSpec'> {
     closeMenu: () => void
     selectSearchContextSpec: (spec: string) => void
 }

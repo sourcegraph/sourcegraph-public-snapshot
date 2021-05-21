@@ -25,7 +25,7 @@ type versionCache struct {
 	lastReset time.Time
 }
 
-var globalVersionCache *versionCache = &versionCache{
+var globalVersionCache = &versionCache{
 	versions: make(map[string]*semver.Version),
 }
 

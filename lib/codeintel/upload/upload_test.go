@@ -1,4 +1,4 @@
-package codeintelutils
+package upload
 
 import (
 	"bytes"
@@ -53,16 +53,19 @@ func TestUploadIndex(t *testing.T) {
 	_, _ = io.Copy(f, bytes.NewReader(expectedPayload))
 	_ = f.Close()
 
-	id, err := UploadIndex(UploadIndexOpts{
-		Endpoint:            ts.URL,
-		AccessToken:         "hunter2",
-		Repo:                "foo/bar",
-		Commit:              "deadbeef",
-		Root:                "proj/",
-		Indexer:             "lsif-go",
-		GitHubToken:         "ght",
-		File:                f.Name(),
-		MaxPayloadSizeBytes: 1000,
+	id, err := UploadIndex(f.Name(), UploadOptions{
+		UploadRecordOptions: UploadRecordOptions{
+			Repo:    "foo/bar",
+			Commit:  "deadbeef",
+			Root:    "proj/",
+			Indexer: "lsif-go",
+		},
+		SourcegraphInstanceOptions: SourcegraphInstanceOptions{
+			SourcegraphURL:      ts.URL,
+			AccessToken:         "hunter2",
+			GitHubToken:         "ght",
+			MaxPayloadSizeBytes: 1000,
+		},
 	})
 	if err != nil {
 		t.Fatalf("unexpected error uploading index: %s", err)
@@ -113,16 +116,19 @@ func TestUploadIndexMultipart(t *testing.T) {
 	_, _ = io.Copy(f, bytes.NewReader(expectedPayload))
 	_ = f.Close()
 
-	id, err := UploadIndex(UploadIndexOpts{
-		Endpoint:            ts.URL,
-		AccessToken:         "hunter2",
-		Repo:                "foo/bar",
-		Commit:              "deadbeef",
-		Root:                "proj/",
-		Indexer:             "lsif-go",
-		GitHubToken:         "ght",
-		File:                f.Name(),
-		MaxPayloadSizeBytes: 100,
+	id, err := UploadIndex(f.Name(), UploadOptions{
+		UploadRecordOptions: UploadRecordOptions{
+			Repo:    "foo/bar",
+			Commit:  "deadbeef",
+			Root:    "proj/",
+			Indexer: "lsif-go",
+		},
+		SourcegraphInstanceOptions: SourcegraphInstanceOptions{
+			SourcegraphURL:      ts.URL,
+			AccessToken:         "hunter2",
+			GitHubToken:         "ght",
+			MaxPayloadSizeBytes: 100,
+		},
 	})
 	if err != nil {
 		t.Fatalf("unexpected error uploading index: %s", err)

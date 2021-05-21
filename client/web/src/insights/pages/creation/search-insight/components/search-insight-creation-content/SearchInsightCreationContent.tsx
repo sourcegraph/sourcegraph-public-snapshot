@@ -13,7 +13,7 @@ import { CreateInsightFormFields } from '../../types'
 import { SearchInsightLivePreview } from '../live-preview-chart/SearchInsightLivePreview'
 import { SearchInsightCreationForm } from '../search-insight-creation-form/SearchInsightCreationForm'
 
-import { useEditableSeries } from './hooks/use-editable-series'
+import { useEditableSeries, createDefaultEditSeries } from './hooks/use-editable-series'
 import styles from './SearchInsightCreationContent.module.scss'
 import {
     repositoriesExistValidator,
@@ -24,7 +24,10 @@ import {
 
 const INITIAL_VALUES: CreateInsightFormFields = {
     visibility: 'personal',
-    series: [],
+    // If user opens creation form to create insight
+    // we want to show the series form as soon as possible without
+    // force user to click 'add another series' button
+    series: [createDefaultEditSeries({ edit: true })],
     step: 'months',
     stepValue: '2',
     title: '',
@@ -81,15 +84,17 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
     const step = useField('step', formAPI)
     const stepValue = useField('stepValue', formAPI, { sync: requiredStepValueField })
 
-    const { liveSeries, editSeries, listen, editRequest, editCommit, cancelEdit, deleteSeries } = useEditableSeries({
+    const { editSeries, listen, editRequest, editCommit, cancelEdit, deleteSeries } = useEditableSeries({
         series,
     })
+
+    const validEditSeries = editSeries.filter(series => series.valid)
 
     // If some fields that needed to run live preview  are invalid
     // we should disabled live chart preview
     const allFieldsForPreviewAreValid =
         (repositories.meta.validState === 'VALID' || repositories.meta.validState === 'CHECKING') &&
-        (series.meta.validState === 'VALID' || liveSeries.length) &&
+        (series.meta.validState === 'VALID' || validEditSeries.length) &&
         stepValue.meta.validState === 'VALID'
 
     return (
@@ -101,6 +106,7 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
                 handleSubmit={handleSubmit}
                 submitErrors={formAPI.submitErrors}
                 submitting={formAPI.submitting}
+                submitted={formAPI.submitted}
                 title={title}
                 repositories={repositories}
                 visibility={visibility}
@@ -110,7 +116,6 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
                 stepValue={stepValue}
                 onSeriesLiveChange={listen}
                 onCancel={onCancel}
-                editSeries={editSeries}
                 onEditSeriesRequest={editRequest}
                 onEditSeriesCancel={cancelEdit}
                 onEditSeriesCommit={editCommit}
@@ -120,7 +125,7 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
             <SearchInsightLivePreview
                 disabled={!allFieldsForPreviewAreValid}
                 repositories={repositories.meta.value}
-                series={liveSeries}
+                series={editSeries}
                 step={step.meta.value}
                 stepValue={stepValue.meta.value}
                 className={styles.contentLivePreview}

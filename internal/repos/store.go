@@ -426,7 +426,7 @@ WHERE
             external_service_repos sr
             INNER JOIN external_services s ON s.id = sr.external_service_id
         WHERE
-            s.namespace_user_id IS NOT NULL
+            sr.user_id IS NOT NULL
             AND s.deleted_at IS NULL
             AND r.id = sr.repo_id
             AND r.deleted_at IS NULL)

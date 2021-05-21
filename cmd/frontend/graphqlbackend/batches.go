@@ -242,7 +242,7 @@ type BatchChangesResolver interface {
 	CreateChangesetSpec(ctx context.Context, args *CreateChangesetSpecArgs) (ChangesetSpecResolver, error)
 	SyncChangeset(ctx context.Context, args *SyncChangesetArgs) (*EmptyResponse, error)
 	ReenqueueChangeset(ctx context.Context, args *ReenqueueChangesetArgs) (ChangesetResolver, error)
-	DetachChangesets(ctx context.Context, args *DetachChangesetsArgs) (*EmptyResponse, error)
+	DetachChangesets(ctx context.Context, args *DetachChangesetsArgs) (BulkOperationResolver, error)
 	CreateChangesetComments(ctx context.Context, args *CreateChangesetCommentsArgs) (BulkOperationResolver, error)
 
 	// Queries

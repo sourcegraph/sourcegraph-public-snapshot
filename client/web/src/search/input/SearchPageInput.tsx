@@ -16,7 +16,7 @@ import {
     CopyQueryButtonProps,
     OnboardingTourProps,
     ParsedSearchQueryProps,
-    SearchContextProps,
+    SearchContextInputProps,
 } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { Notices } from '../../global/Notices'
@@ -28,7 +28,6 @@ import { submitSearch, SubmitSearchParameters } from '../helpers'
 import { QuickLinks } from '../QuickLinks'
 
 import { SearchBox } from './SearchBox'
-import { SearchButton } from './SearchButton'
 import { useSearchOnboardingTour } from './SearchOnboardingTour'
 
 interface Props
@@ -45,10 +44,7 @@ interface Props
         CopyQueryButtonProps,
         Pick<SubmitSearchParameters, 'source'>,
         VersionContextProps,
-        Omit<
-            SearchContextProps,
-            'convertVersionContextToSearchContext' | 'isSearchContextSpecAvailable' | 'fetchSearchContext'
-        >,
+        SearchContextInputProps,
         OnboardingTourProps {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
@@ -133,7 +129,6 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                         autoFocus={showOnboardingTour ? shouldFocusQueryInput : props.autoFocus !== false}
                         showSearchContextHighlightTourStep={true}
                     />
-                    <SearchButton />
                 </div>
                 {props.showQueryBuilder && (
                     <div className="search-page__input-sub-container">

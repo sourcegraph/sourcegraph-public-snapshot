@@ -1,10 +1,11 @@
 import classnames from 'classnames'
-import React, { useCallback, useContext } from 'react'
+import React, { useCallback, useContext, useEffect } from 'react'
 import { Redirect } from 'react-router'
-import { RouteComponentProps } from 'react-router-dom'
+import { useHistory } from 'react-router-dom'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { asError } from '@sourcegraph/shared/src/util/errors'
 
 import { AuthenticatedUser } from '../../../../auth'
@@ -25,8 +26,8 @@ const DEFAULT_FINAL_SETTINGS = {}
 
 export interface LangStatsInsightCreationPageProps
     extends PlatformContextProps<'updateSettings'>,
-        Pick<RouteComponentProps, 'history'>,
-        SettingsCascadeProps {
+        SettingsCascadeProps,
+        TelemetryProps {
     /**
      * Authenticated user info, Used to decide where code insight will appears
      * in personal dashboard (private) or in organization dashboard (public)
@@ -35,8 +36,13 @@ export interface LangStatsInsightCreationPageProps
 }
 
 export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsightCreationPageProps> = props => {
-    const { history, authenticatedUser, settingsCascade, platformContext } = props
+    const { authenticatedUser, settingsCascade, platformContext, telemetryService } = props
     const { getSubjectSettings, updateSubjectSettings } = useContext(InsightsApiContext)
+    const history = useHistory()
+
+    useEffect(() => {
+        telemetryService.logViewEvent('CodeInsightsCodeStatsCreationPage')
+    }, [telemetryService])
 
     const handleSubmit = useCallback<LangStatsInsightCreationContentProps['onSubmit']>(
         async values => {
@@ -59,6 +65,7 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
 
                 await updateSubjectSettings(platformContext, subjectID, editedSettings).toPromise()
 
+                telemetryService.log('CodeInsightsCodeStatsCreationPageSubmitClick')
                 history.push('/insights')
             } catch (error) {
                 return { [FORM_ERROR]: asError(error) }
@@ -66,12 +73,13 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
 
             return
         },
-        [history, updateSubjectSettings, getSubjectSettings, platformContext, authenticatedUser]
+        [telemetryService, history, updateSubjectSettings, getSubjectSettings, platformContext, authenticatedUser]
     )
 
     const handleCancel = useCallback(() => {
+        telemetryService.log('CodeInsightsCodeStatsCreationPageCancelClick')
         history.push('/insights')
-    }, [history])
+    }, [history, telemetryService])
 
     if (authenticatedUser === null) {
         return <Redirect to="/" />
@@ -90,11 +98,7 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
 
                 <p className="text-muted">
                     Shows language usage in your repository based on number of lines of code.{' '}
-                    <a
-                        href="https://docs.sourcegraph.com/dev/background-information/insights"
-                        target="_blank"
-                        rel="noopener"
-                    >
+                    <a href="https://docs.sourcegraph.com/code_insights" target="_blank" rel="noopener">
                         Learn more.
                     </a>
                 </p>

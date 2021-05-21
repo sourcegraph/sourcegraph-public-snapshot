@@ -11,6 +11,38 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
 
+func TestTypeScriptPatterns(t *testing.T) {
+	testCases := []struct {
+		path     string
+		expected bool
+	}{
+		{"tsconfig.json", true},
+		{"tsconfig.json/subdir", false},
+		{".nvmrc", true},
+		{"subdir/package.json", true},
+		{"subdir/yarn.lock", true},
+	}
+
+	for _, testCase := range testCases {
+		match := false
+		for _, pattern := range TypeScriptPatterns() {
+			if pattern.MatchString(testCase.path) {
+				match = true
+				break
+			}
+		}
+
+		if match {
+			if !testCase.expected {
+				t.Error(fmt.Sprintf("did not expect match: %s", testCase.path))
+			}
+
+		} else if testCase.expected {
+			t.Error(fmt.Sprintf("expected match: %s", testCase.path))
+		}
+	}
+}
+
 func TestCanIndexTypeScriptRepo(t *testing.T) {
 	testCases := []struct {
 		paths    []string
@@ -171,27 +203,6 @@ func TestInferTypeScriptIndexJobsInstallSteps(t *testing.T) {
 	}
 	if diff := cmp.Diff(expectedIndexJobs, InferTypeScriptIndexJobs(NewMockGitClient(), paths)); diff != "" {
 		t.Errorf("unexpected index jobs (-want +got):\n%s", diff)
-	}
-}
-
-func TestTypeScriptPatterns(t *testing.T) {
-	paths := []string{
-		"tsconfig.json",
-		"subdir/tsconfig.json",
-	}
-
-	for _, path := range paths {
-		match := false
-		for _, pattern := range TypeScriptPatterns() {
-			if pattern.MatchString(path) {
-				match = true
-				break
-			}
-		}
-
-		if !match {
-			t.Error(fmt.Sprintf("failed to match %s", path))
-		}
 	}
 }
 

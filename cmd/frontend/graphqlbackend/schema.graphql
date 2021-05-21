@@ -1270,6 +1270,11 @@ type Query {
     affiliatedRepositories(user: ID!, codeHost: ID, query: String): CodeHostRepositoryConnection!
 
     """
+    Returns true if any of the code hosts supplied are syncing now or within "seconds" from now.
+    """
+    codeHostSyncDue(ids: [ID!]!, seconds: Int!): Boolean!
+
+    """
     Retrieve all registered out-of-band migrations.
     """
     outOfBandMigrations: [OutOfBandMigration!]!
@@ -2401,6 +2406,14 @@ type SearchContext implements Node {
     """
     id: ID!
     """
+    The name of the search context.
+    """
+    name: String!
+    """
+    The owner (user or org) of the search context. If nil, search context is considered instance-level.
+    """
+    namespace: Namespace
+    """
     The description of the search context.
     """
     description: String!
@@ -2431,6 +2444,10 @@ type SearchContext implements Node {
     Date and time the search context was last updated.
     """
     updatedAt: DateTime!
+    """
+    If current viewer can manage (edit, delete) the search context.
+    """
+    viewerCanManage: Boolean!
 }
 
 """

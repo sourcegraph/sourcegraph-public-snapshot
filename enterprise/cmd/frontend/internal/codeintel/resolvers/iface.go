@@ -50,6 +50,7 @@ type LSIFStore interface {
 	MonikersByPosition(ctx context.Context, bundleID int, path string, line, character int) ([][]semantic.MonikerData, error)
 	BulkMonikerResults(ctx context.Context, tableName string, ids []int, args []semantic.MonikerData, limit, offset int) (_ []lsifstore.Location, _ int, err error)
 	PackageInformation(ctx context.Context, bundleID int, path string, packageInformationID string) (semantic.PackageInformationData, bool, error)
+	DocumentationPage(ctx context.Context, bundleID int, pathID string) (*semantic.DocumentationPageData, error)
 }
 
 type IndexEnqueuer interface {

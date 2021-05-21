@@ -1,5 +1,5 @@
 import * as H from 'history'
-import React from 'react'
+import React, { useMemo } from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { isExtensionEnabled } from '@sourcegraph/shared/src/extensions/extension'
@@ -7,13 +7,13 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { ExtensionCategory, EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { SettingsCascadeProps, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { createRecord } from '@sourcegraph/shared/src/util/createRecord'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { ErrorAlert } from '../components/alerts'
 
 import { ExtensionCard } from './ExtensionCard'
-import { ExtensionListData, ExtensionsEnablement } from './ExtensionRegistry'
-import { applyCategoryFilter, applyExtensionsEnablement } from './extensions'
+import { ExtensionCategoryOrAll, ExtensionListData, ExtensionsEnablement } from './ExtensionRegistry'
 import { ExtensionsAreaRouteContext } from './ExtensionsArea'
 
 interface Props
@@ -25,13 +25,19 @@ interface Props
     location: H.Location
 
     data: ExtensionListData | undefined
-    selectedCategories: ExtensionCategory[]
+    selectedCategory: ExtensionCategoryOrAll
     enablementFilter: ExtensionsEnablement
     query: string
-    showMoreExtensions: boolean
+    onShowFullCategoryClicked: (category: ExtensionCategory) => void
 }
 
 const LOADING = 'loading' as const
+
+/** Categories, but with 'Programming Languages' at the end */
+const ORDERED_EXTENSION_CATEGORIES: ExtensionCategory[] = [
+    ...EXTENSION_CATEGORIES.filter(category => category !== 'Programming languages'),
+    'Programming languages',
+]
 
 /**
  * Displays a list of extensions.
@@ -41,24 +47,25 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
     settingsCascade,
     platformContext,
     data,
-    selectedCategories,
+    selectedCategory,
     enablementFilter,
     query,
-    showMoreExtensions,
     authenticatedUser,
+    onShowFullCategoryClicked,
     ...props
 }) => {
-    /** Categories, but with 'Programming Languages' at the end */
-    const ORDERED_EXTENSION_CATEGORIES: ExtensionCategory[] = React.useMemo(
-        () => [
-            ...EXTENSION_CATEGORIES.filter(category => category !== 'Programming languages'),
-            'Programming languages',
-        ],
-        []
+    // Settings subjects for extension toggle
+    const viewerSubject = useMemo(
+        () => settingsCascade.subjects?.find(settingsSubject => settingsSubject.subject.id === subject.id),
+        [settingsCascade, subject.id]
+    )
+    const siteSubject = useMemo(
+        () => settingsCascade.subjects?.find(settingsSubject => settingsSubject.subject.__typename === 'Site'),
+        [settingsCascade]
     )
 
     if (!data || data === LOADING) {
-        return <LoadingSpinner className="icon-inline" />
+        return <LoadingSpinner className="icon-inline mt-2" />
     }
 
     if (isErrorLike(data)) {
@@ -82,52 +89,146 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
         )
     }
 
-    // Don't display programming language extensions by default
-    const renderLanguages =
-        (selectedCategories.length === 0 && showMoreExtensions) || selectedCategories.includes('Programming languages')
+    let categorySections: JSX.Element[]
 
-    const filteredCategoryIDs = ORDERED_EXTENSION_CATEGORIES.filter(category => {
-        if (category === 'Programming languages') {
-            return renderLanguages
+    if (selectedCategory === 'All') {
+        const filteredExtensionIDsByCategory = createRecord(ORDERED_EXTENSION_CATEGORIES, category => {
+            if (enablementFilter === 'all') {
+                return extensionIDsByCategory[category].primaryExtensionIDs
+            }
+
+            return extensionIDsByCategory[category].primaryExtensionIDs.filter(
+                extensionID =>
+                    (enablementFilter === 'enabled') === isExtensionEnabled(settingsCascade.final, extensionID)
+            )
+        })
+
+        categorySections = ORDERED_EXTENSION_CATEGORIES.filter(
+            category =>
+                filteredExtensionIDsByCategory[category].length > 0 &&
+                // Only show Programming Languages when it is the selected category
+                category !== 'Programming languages'
+        ).map(category => {
+            const extensionIDsForCategory = filteredExtensionIDsByCategory[category]
+
+            if (extensionIDsForCategory.length > 6) {
+                return (
+                    <div key={category} className="mt-1">
+                        <h3
+                            className="extensions-list__category mb-3 font-weight-normal"
+                            data-test-extension-category-header={category}
+                        >
+                            {category}
+                        </h3>
+                        <div className="extensions-list__cards mt-1">
+                            {extensionIDsForCategory.slice(0, 6).map(extensionId => (
+                                <ExtensionCard
+                                    key={extensionId}
+                                    subject={subject}
+                                    viewerSubject={viewerSubject?.subject}
+                                    siteSubject={siteSubject?.subject}
+                                    node={extensions[extensionId]}
+                                    settingsCascade={settingsCascade}
+                                    platformContext={platformContext}
+                                    enabled={isExtensionEnabled(settingsCascade.final, extensionId)}
+                                    enabledForAllUsers={
+                                        siteSubject ? isExtensionEnabled(siteSubject.settings, extensionId) : false
+                                    }
+                                    isLightTheme={props.isLightTheme}
+                                    settingsURL={authenticatedUser?.settingsURL}
+                                    authenticatedUser={authenticatedUser}
+                                />
+                            ))}
+                        </div>
+                        <div className="d-flex justify-content-center mt-4">
+                            <button
+                                type="button"
+                                className="btn btn-outline-secondary"
+                                onClick={() => onShowFullCategoryClicked(category)}
+                            >
+                                Show full category
+                            </button>
+                        </div>
+                    </div>
+                )
+            }
+
+            return (
+                <div key={category} className="mt-1">
+                    <h3
+                        className="extensions-list__category mb-3 font-weight-normal"
+                        data-test-extension-category-header={category}
+                    >
+                        {category}
+                    </h3>
+                    <div className="extensions-list__cards mt-1">
+                        {extensionIDsForCategory.map(extensionId => (
+                            <ExtensionCard
+                                key={extensionId}
+                                subject={subject}
+                                viewerSubject={viewerSubject?.subject}
+                                siteSubject={siteSubject?.subject}
+                                node={extensions[extensionId]}
+                                settingsCascade={settingsCascade}
+                                platformContext={platformContext}
+                                enabled={isExtensionEnabled(settingsCascade.final, extensionId)}
+                                enabledForAllUsers={
+                                    siteSubject ? isExtensionEnabled(siteSubject.settings, extensionId) : false
+                                }
+                                isLightTheme={props.isLightTheme}
+                                settingsURL={authenticatedUser?.settingsURL}
+                                authenticatedUser={authenticatedUser}
+                            />
+                        ))}
+                    </div>
+                </div>
+            )
+        })
+    } else {
+        // When a category is selected, display all extensions that include this category in their manifest,
+        // not just extensions for which this is the primary category.
+        const { allExtensionIDs } = extensionIDsByCategory[selectedCategory]
+
+        let extensionIDs = allExtensionIDs
+
+        if (enablementFilter !== 'all') {
+            extensionIDs = allExtensionIDs.filter(
+                extensionID =>
+                    (enablementFilter === 'enabled') === isExtensionEnabled(settingsCascade.final, extensionID)
+            )
         }
 
-        return selectedCategories.length === 0 || selectedCategories.includes(category)
-    })
-
-    const filteredCategories = applyExtensionsEnablement(
-        applyCategoryFilter(extensionIDsByCategory, ORDERED_EXTENSION_CATEGORIES, selectedCategories),
-        filteredCategoryIDs,
-        enablementFilter,
-        settingsCascade.final
-    )
-
-    // Settings subjects for extension toggle
-    const viewerSubject = settingsCascade.subjects?.find(settingsSubject => settingsSubject.subject.id === subject.id)
-        ?.subject
-    // TODO(card redesign): find Site subject for site admins, render site-wide toggle
-
-    const categorySections = filteredCategoryIDs
-        .filter(category => filteredCategories[category].length > 0)
-        .map(category => (
-            <div key={category} className="mt-1">
-                <h3 className="extensions-list__category font-weight-bold">{category}</h3>
+        categorySections = [
+            <div key={selectedCategory} className="mt-1">
+                <h3
+                    className="extensions-list__category mb-3 font-weight-normal"
+                    data-test-extension-category-header={selectedCategory}
+                >
+                    {selectedCategory}
+                </h3>
                 <div className="extensions-list__cards mt-1">
-                    {filteredCategories[category].map(extensionId => (
+                    {extensionIDs.map(extensionId => (
                         <ExtensionCard
                             key={extensionId}
                             subject={subject}
-                            viewerSubject={viewerSubject}
+                            viewerSubject={viewerSubject?.subject}
+                            siteSubject={siteSubject?.subject}
                             node={extensions[extensionId]}
                             settingsCascade={settingsCascade}
                             platformContext={platformContext}
                             enabled={isExtensionEnabled(settingsCascade.final, extensionId)}
+                            enabledForAllUsers={
+                                siteSubject ? isExtensionEnabled(siteSubject.settings, extensionId) : false
+                            }
                             isLightTheme={props.isLightTheme}
                             settingsURL={authenticatedUser?.settingsURL}
+                            authenticatedUser={authenticatedUser}
                         />
                     ))}
                 </div>
-            </div>
-        ))
+            </div>,
+        ]
+    }
 
     return (
         <>

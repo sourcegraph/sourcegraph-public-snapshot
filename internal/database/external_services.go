@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/hashicorp/go-multierror"
 	jsoniter "github.com/json-iterator/go"
@@ -1035,6 +1036,7 @@ func (e *ExternalServiceStore) GetByID(ctx context.Context, id int64) (*types.Ex
 	return ess[0], nil
 }
 
+// GetSyncJobs gets all sync jobs
 func (e *ExternalServiceStore) GetSyncJobs(ctx context.Context) ([]*types.ExternalServiceSyncJob, error) {
 	q := sqlf.Sprintf(`SELECT id, state, failure_message, started_at, finished_at, process_after, num_resets, external_service_id, num_failures
 FROM external_service_sync_jobs ORDER BY started_at desc
@@ -1270,6 +1272,44 @@ func (e *ExternalServiceStore) RepoCount(ctx context.Context, id int64) (int32, 
 	}
 
 	return count, nil
+}
+
+// SyncDue returns true if any of the supplied external services are due to sync
+// now or within given duration from now.
+func (e *ExternalServiceStore) SyncDue(ctx context.Context, intIDs []int64, d time.Duration) (bool, error) {
+	if len(intIDs) == 0 {
+		return false, nil
+	}
+	ids := make([]*sqlf.Query, 0, len(intIDs))
+	for _, id := range intIDs {
+		ids = append(ids, sqlf.Sprintf("%s", id))
+	}
+	idFilter := sqlf.Sprintf("IN (%s)", sqlf.Join(ids, ","))
+	deadline := time.Now().Add(d)
+
+	q := sqlf.Sprintf(`
+SELECT TRUE
+WHERE EXISTS(
+        SELECT
+        FROM external_services
+        WHERE id %s
+          AND (
+                next_sync_at IS NULL
+                OR next_sync_at <= %s)
+    )
+   OR EXISTS(
+        SELECT
+        FROM external_service_sync_jobs
+        WHERE external_service_id %s
+          AND state IN ('queued', 'processing')
+    );
+`, idFilter, deadline, idFilter)
+
+	v, exists, err := basestore.ScanFirstBool(e.Query(ctx, q))
+	if err != nil {
+		return false, err
+	}
+	return v && exists, nil
 }
 
 // MockExternalServices mocks the external services store.

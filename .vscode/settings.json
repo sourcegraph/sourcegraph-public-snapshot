@@ -52,22 +52,15 @@
   },
   "eslint.options": { "cache": true },
   "eslint.workingDirectories": [
-    {
-      "directory": "dev/release",
-      "changeProcessCWD": true,
-    },
-    {
-      "directory": "web",
-      "changeProcessCWD": true,
-    },
-    {
-      "directory": "browser",
-      "changeProcessCWD": true,
-    },
-    {
-      "directory": "shared",
-      "changeProcessCWD": true,
-    },
+    "./dev/release",
+    "./client/web",
+    "./client/browser",
+    "./client/shared",
+    "./client/branded",
+    "./client/wildcard",
+    "./client/storybook",
+    "./client/extension-api-types",
+    "./client/extension-api",
   ],
   "go.lintTool": "golangci-lint",
   "shellformat.flag": "-i 2 -ci",

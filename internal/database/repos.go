@@ -68,7 +68,7 @@ func Repos(db dbutil.DB) *RepoStore {
 	return &RepoStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
-// NewRepoStoreWithDB instantiates and returns a new RepoStore using the other
+// ReposWith instantiates and returns a new RepoStore using the other
 // store handle.
 func ReposWith(other basestore.ShareableStore) *RepoStore {
 	return &RepoStore{Store: basestore.NewWithHandle(other.Handle())}
@@ -1200,6 +1200,34 @@ func (s *RepoStore) ListEnabledNames(ctx context.Context) ([]string, error) {
 	s.ensureStore()
 	q := sqlf.Sprintf("SELECT name FROM repo WHERE deleted_at IS NULL")
 	return basestore.ScanStrings(s.Query(ctx, q))
+}
+
+// ExternalServices lists the external services which include references to the given repo.
+func (s *RepoStore) ExternalServices(ctx context.Context, repoID api.RepoID) ([]*types.ExternalService, error) {
+	rs, err := s.List(ctx, ReposListOptions{
+		IDs: []api.RepoID{repoID},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if len(rs) == 0 {
+		return nil, &RepoNotFoundErr{
+			ID: repoID,
+		}
+	}
+
+	svcIDs := rs[0].ExternalServiceIDs()
+	if len(svcIDs) == 0 {
+		return []*types.ExternalService{}, nil
+	}
+
+	opts := ExternalServicesListOptions{
+		IDs:              svcIDs,
+		OrderByDirection: "ASC",
+	}
+
+	return ExternalServicesWith(s).List(ctx, opts)
 }
 
 func parsePattern(p string) ([]*sqlf.Query, error) {
