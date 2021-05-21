@@ -4,7 +4,8 @@ This document describes the exact changes needed to update a single-node Sourceg
 
 A new version of Sourcegraph is released every month (with patch releases in between, released as needed). Check the [Sourcegraph blog](https://about.sourcegraph.com/blog) or the site admin updates page to learn about updates. We actively maintain the two most recent monthly releases of Sourcegraph.
 
-Upgrades should happen across consecutive minor versions of Sourcegraph. For example, if you are running Sourcegraph 3.1 and want to upgrade to 3.3, you should upgrade to 3.2 and then 3.3.
+> :warning: **Regardless of your deployment type:** upgrade one version at a time, e.g. v3.26 --> v3.27 --> v3.28.
+> <br>(Note that patches, e.g. vX.X.4 vs. vX.X.5 do not have to be adopted when moving between vX.X versions)
 
 **Always refer to this page before upgrading Sourcegraph,** as it comprehensively describes the steps needed to upgrade, and any manual migration steps you must perform.
 
