@@ -79,7 +79,7 @@ func traceTraverse(pkg string, relation map[string][]string, maxDepth int) (pack
 	sort.Strings(packages)
 
 	// Ensure we don't point to anything we don't have an explicit
-	// vertex for. This can happen at the edge of hte last frontier.
+	// vertex for. This can happen at the edge of the last frontier.
 	pruneEdges(edges, packageMap)
 
 	return packages, edges
