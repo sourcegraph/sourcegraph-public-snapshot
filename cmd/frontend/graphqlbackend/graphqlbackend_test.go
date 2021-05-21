@@ -389,7 +389,7 @@ func TestAffiliatedRepositories(t *testing.T) {
 		}, nil
 	}
 
-	gqltesting.RunTests(t, []*gqltesting.Test{
+	RunTests(t, []*Test{
 		{
 			Context: ctx,
 			Schema:  mustParseGraphQLSchema(t),
@@ -411,7 +411,7 @@ func TestAffiliatedRepositories(t *testing.T) {
 			ExpectedResult: `null`,
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
-					Path:          []interface{}{"affiliatedRepositories"},
+					Path:          []interface{}{"affiliatedRepositories", "nodes"},
 					Message:       "failed to fetch from any code host",
 					ResolverError: errors.New("failed to fetch from any code host"),
 				},
