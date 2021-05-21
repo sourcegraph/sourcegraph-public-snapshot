@@ -23,7 +23,7 @@ import { MissingCredentialsAlert } from './MissingCredentialsAlert'
 
 export type PreviewPageAuthenticatedUser = Pick<AuthenticatedUser, 'url' | 'displayName' | 'username' | 'email'>
 
-interface BatchChangePreviewPageProps extends BatchChangePreviewProps {
+export interface BatchChangePreviewPageProps extends BatchChangePreviewProps {
     /** Used for testing. */
     fetchBatchSpecById?: typeof _fetchBatchSpecById
 }

@@ -63,7 +63,6 @@ const BatchChangeTabs_: React.FunctionComponent<BatchChangeTabsProps> = ({ child
 
     // Determine the initial tab from the URL parameters
     useEffect(() => {
-        console.log('running effect')
         const initialTabName = new URLSearchParams(location.search).get('tab') || defaultTabName
         setTabIndex(initialTabName ? tabNames[initialTabName] || 0 : 0)
     }, [defaultTabName, location.search, tabNames])
