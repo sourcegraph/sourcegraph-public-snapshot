@@ -59,6 +59,7 @@ export const batchSpecFragment = gql`
         diffStat {
             ...DiffStatFields
         }
+        originalInput
         applyPreview {
             stats {
                 close
@@ -76,6 +77,7 @@ export const batchSpecFragment = gql`
                 modified
                 removed
             }
+            totalCount
         }
         supersedingBatchSpec {
             ...SupersedingBatchSpecFields
