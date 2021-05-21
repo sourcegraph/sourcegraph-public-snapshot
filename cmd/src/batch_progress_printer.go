@@ -21,8 +21,9 @@ func newBatchProgressPrinter(out *output.Output, verbose bool, numParallelism in
 
 		numParallelism: numParallelism,
 
-		completedTasks: map[string]bool{},
+		executedTasks:  map[string]bool{},
 		runningTasks:   map[string]*executor.TaskStatus{},
+		completedTasks: map[string]bool{},
 
 		repoStatusBar: map[string]int{},
 		statusBarRepo: map[int]string{},
@@ -45,8 +46,14 @@ type batchProgressPrinter struct {
 	maxRepoName    int
 	numParallelism int
 
+	// runningTasks are the tasks that are currently executing.
+	runningTasks map[string]*executor.TaskStatus
+	// executedTasks are the tasks that finished execution but where the
+	// changesetSpec hasn't been built.
+	executedTasks map[string]bool
+	// completedTasks are the tasks that finished execution and finished
+	// building changesetSpecs.
 	completedTasks map[string]bool
-	runningTasks   map[string]*executor.TaskStatus
 
 	repoStatusBar map[string]int
 	statusBarRepo map[int]string
@@ -109,7 +116,8 @@ func (p *batchProgressPrinter) PrintStatuses(statuses []*executor.TaskStatus) {
 		p.numStatusBars = p.initProgressBar(statuses)
 	}
 
-	newlyCompleted := []*executor.TaskStatus{}
+	newlyFinishedExecution := []*executor.TaskStatus{}
+	newlyFinishedBuilding := []*executor.TaskStatus{}
 	currentlyRunning := []*executor.TaskStatus{}
 	errored := 0
 
@@ -118,14 +126,14 @@ func (p *batchProgressPrinter) PrintStatuses(statuses []*executor.TaskStatus) {
 			p.maxRepoName = len(ts.DisplayName())
 		}
 
-		if ts.IsCompleted() {
+		if ts.FinishedExecution() {
 			if ts.Err != nil {
 				errored += 1
 			}
 
-			if !p.completedTasks[ts.DisplayName()] {
-				p.completedTasks[ts.DisplayName()] = true
-				newlyCompleted = append(newlyCompleted, ts)
+			if !p.executedTasks[ts.DisplayName()] {
+				p.executedTasks[ts.DisplayName()] = true
+				newlyFinishedExecution = append(newlyFinishedExecution, ts)
 			}
 
 			if _, ok := p.runningTasks[ts.DisplayName()]; ok {
@@ -137,13 +145,20 @@ func (p *batchProgressPrinter) PrintStatuses(statuses []*executor.TaskStatus) {
 			}
 		}
 
+		if ts.FinishedBuildingSpecs() {
+			if !p.completedTasks[ts.DisplayName()] {
+				p.completedTasks[ts.DisplayName()] = true
+				newlyFinishedBuilding = append(newlyFinishedBuilding, ts)
+			}
+		}
+
 		if ts.IsRunning() {
 			currentlyRunning = append(currentlyRunning, ts)
 		}
 
 	}
 
-	p.updateProgressBar(len(p.completedTasks), errored, len(statuses))
+	p.updateProgressBar(len(p.executedTasks), errored, len(statuses))
 
 	newlyStarted := map[string]*executor.TaskStatus{}
 	statusBarIndex := 0
@@ -176,14 +191,35 @@ func (p *batchProgressPrinter) PrintStatuses(statuses []*executor.TaskStatus) {
 		p.repoStatusBar[ts.DisplayName()] = statusBarIndex
 	}
 
-	for _, ts := range newlyCompleted {
-		fileDiffs, hasDiffs, err := ts.FileDiffs()
-		if err != nil {
-			p.progress.Verbosef("%-*s failed to display status: %s", p.maxRepoName, ts.DisplayName(), err)
-			continue
-		}
+	for _, ts := range newlyFinishedExecution {
+		if idx, ok := p.repoStatusBar[ts.DisplayName()]; ok {
+			// Log that this task completed, but only if there is no
+			// currently executing one in this bar, to avoid flicker.
+			if _, ok := p.statusBarRepo[idx]; !ok {
+				statusText, err := taskStatusBarText(ts)
+				if err != nil {
+					p.progress.Verbosef("%-*s failed to display status: %s", p.maxRepoName, ts.DisplayName(), err)
+					continue
+				}
 
-		if p.verbose {
+				if ts.Err != nil {
+					p.progress.StatusBarFailf(idx, statusText)
+				} else {
+					p.progress.StatusBarCompletef(idx, statusText)
+				}
+			}
+			delete(p.repoStatusBar, ts.DisplayName())
+		}
+	}
+
+	if p.verbose {
+		for _, ts := range newlyFinishedBuilding {
+			fileDiffs, hasDiffs, err := ts.FileDiffs()
+			if err != nil {
+				p.progress.Verbosef("%-*s failed to display status: %s", p.maxRepoName, ts.DisplayName(), err)
+				continue
+			}
+
 			p.progress.WriteLine(output.Linef("", output.StylePending, "%s", ts.DisplayName()))
 
 			if !hasDiffs {
@@ -205,25 +241,6 @@ func (p *batchProgressPrinter) PrintStatuses(statuses []*executor.TaskStatus) {
 			}
 			p.progress.Verbosef("  Execution took %s", ts.ExecutionTime())
 			p.progress.Verbose("")
-		}
-
-		if idx, ok := p.repoStatusBar[ts.DisplayName()]; ok {
-			// Log that this task completed, but only if there is no
-			// currently executing one in this bar, to avoid flicker.
-			if _, ok := p.statusBarRepo[idx]; !ok {
-				statusText, err := taskStatusBarText(ts)
-				if err != nil {
-					p.progress.Verbosef("%-*s failed to display status: %s", p.maxRepoName, ts.DisplayName(), err)
-					continue
-				}
-
-				if ts.Err != nil {
-					p.progress.StatusBarFailf(idx, statusText)
-				} else {
-					p.progress.StatusBarCompletef(idx, statusText)
-				}
-			}
-			delete(p.repoStatusBar, ts.DisplayName())
 		}
 	}
 
@@ -255,24 +272,15 @@ type statusTexter interface {
 func taskStatusBarText(ts *executor.TaskStatus) (string, error) {
 	var statusText string
 
-	if ts.IsCompleted() {
-		diffs, hasDiffs, err := ts.FileDiffs()
-		if err != nil {
-			return "", err
-		}
-
-		if hasDiffs {
-			statusText = diffStatDescription(diffs) + " " + diffStatDiagram(sumDiffStats(diffs))
-		} else {
-			if ts.Err != nil {
-				if texter, ok := ts.Err.(statusTexter); ok {
-					statusText = texter.StatusText()
-				} else {
-					statusText = ts.Err.Error()
-				}
+	if ts.FinishedExecution() {
+		if ts.Err != nil {
+			if texter, ok := ts.Err.(statusTexter); ok {
+				statusText = texter.StatusText()
 			} else {
-				statusText = "No changes"
+				statusText = ts.Err.Error()
 			}
+		} else {
+			statusText = "Done!"
 		}
 	} else if ts.IsRunning() {
 		if ts.CurrentlyExecuting != "" {

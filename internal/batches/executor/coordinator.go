@@ -139,7 +139,15 @@ func (c *Coordinator) checkCacheForTask(ctx context.Context, task *Task) (specs 
 	return specs, true, nil
 }
 
-func (c *Coordinator) cacheAndBuildSpec(ctx context.Context, taskResult taskResult, status taskStatusHandler) ([]*batches.ChangesetSpec, error) {
+func (c *Coordinator) cacheAndBuildSpec(ctx context.Context, taskResult taskResult, status taskStatusHandler) (specs []*batches.ChangesetSpec, err error) {
+	defer func() {
+		// Set these two fields in any case
+		status.Update(taskResult.task, func(status *TaskStatus) {
+			status.ChangesetSpecsDone = true
+			status.ChangesetSpecs = specs
+		})
+	}()
+
 	// Add to the cache, even if no diff was produced.
 	cacheKey := taskResult.task.cacheKey()
 	if err := c.cache.Set(ctx, cacheKey, taskResult.result); err != nil {
@@ -153,17 +161,10 @@ func (c *Coordinator) cacheAndBuildSpec(ctx context.Context, taskResult taskResu
 	}
 
 	// Build the changeset specs.
-	specs, err := createChangesetSpecs(taskResult.task, taskResult.result, c.opts.AutoAuthorDetails)
+	specs, err = createChangesetSpecs(taskResult.task, taskResult.result, c.opts.AutoAuthorDetails)
 	if err != nil {
 		return specs, err
 	}
-
-	// Update the status of Task
-	status.Update(taskResult.task, func(status *TaskStatus) {
-		status.ChangesetSpecs = specs
-		// TODO(mrnugget): Ideally we'd get rid of this dependency on the task
-		// status handler here.
-	})
 
 	return specs, nil
 }
@@ -205,10 +206,6 @@ func (c *Coordinator) Execute(ctx context.Context, tasks []*Task, spec *batches.
 	// Run executor
 	c.exec.Start(ctx, tasks, status)
 	results, err := c.exec.Wait(ctx)
-	if printer != nil {
-		status.CopyStatuses(printer)
-		done <- struct{}{}
-	}
 	if err != nil {
 		if c.opts.SkipErrors {
 			errs = multierror.Append(errs, err)
@@ -225,6 +222,12 @@ func (c *Coordinator) Execute(ctx context.Context, tasks []*Task, spec *batches.
 		}
 
 		specs = append(specs, taskSpecs...)
+	}
+
+	// Now that we've built the specs too we can mark the progress as done
+	if printer != nil {
+		status.CopyStatuses(printer)
+		done <- struct{}{}
 	}
 
 	// Add external changeset specs.

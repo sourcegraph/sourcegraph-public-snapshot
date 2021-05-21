@@ -67,9 +67,14 @@ type TaskStatus struct {
 	CurrentlyExecuting string
 
 	// ChangesetSpecs are the specs produced by executing the Task in a
-	// repository. With the introduction of `transformChanges` to the batch
-	// spec, one Task can produce multiple ChangesetSpecs.
+	// repository. One Task can produce multiple ChangesetSpecs (see
+	// createChangesetSpec).
+	// Only check this field once ChangesetSpecsDone is set.
 	ChangesetSpecs []*batches.ChangesetSpec
+	// ChangesetSpecsDone is set after the Coordinator attempted to build the
+	// ChangesetSpecs of a task.
+	ChangesetSpecsDone bool
+
 	// Err is set if executing the Task lead to an error.
 	Err error
 
@@ -89,8 +94,12 @@ func (ts *TaskStatus) IsRunning() bool {
 	return !ts.StartedAt.IsZero() && ts.FinishedAt.IsZero()
 }
 
-func (ts *TaskStatus) IsCompleted() bool {
+func (ts *TaskStatus) FinishedExecution() bool {
 	return !ts.StartedAt.IsZero() && !ts.FinishedAt.IsZero()
+}
+
+func (ts *TaskStatus) FinishedBuildingSpecs() bool {
+	return ts.ChangesetSpecsDone
 }
 
 func (ts *TaskStatus) ExecutionTime() time.Duration {
@@ -102,7 +111,7 @@ func (ts *TaskStatus) ExecutionTime() time.Duration {
 // If no file diffs were produced, the task resulted in an error, or the task
 // hasn't finished execution yet, the second return value is false.
 func (ts *TaskStatus) FileDiffs() ([]*diff.FileDiff, bool, error) {
-	if !ts.IsCompleted() || len(ts.ChangesetSpecs) == 0 || ts.Err != nil {
+	if !ts.FinishedBuildingSpecs() || len(ts.ChangesetSpecs) == 0 || ts.Err != nil {
 		return nil, false, nil
 	}
 

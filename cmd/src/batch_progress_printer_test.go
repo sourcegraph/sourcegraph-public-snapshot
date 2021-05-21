@@ -89,13 +89,44 @@ func TestBatchProgressPrinterIntegration(t *testing.T) {
 		t.Fatalf("wrong output:\n%s", cmp.Diff(want, have))
 	}
 
-	// Now mark the last task as completed
+	// Now mark the last task as finished-execution
 	statuses[len(statuses)-1] = &executor.TaskStatus{
 		RepoName:           "github.com/sourcegraph/automation-testing",
 		StartedAt:          now.Add(time.Duration(-5) * time.Second),
 		FinishedAt:         now.Add(time.Duration(5) * time.Second),
 		CurrentlyExecuting: "",
 		Err:                nil,
+	}
+
+	printer.PrintStatuses(statuses)
+	have = buf.Lines()
+	want = []string{
+		"⠋  Executing... (1/3, 0 errored)  ███████████████▍",
+		"│                                                                               ",
+		"├── github.com/sourcegraph/sourcegraph  echo Hello World > README.md          0s",
+		"├── github.com/sourcegraph/src-cli      Downloading archive                   0s",
+		"└── github.com/sourcegraph/automati...  Done!                                 0s",
+		"",
+	}
+	if !cmp.Equal(want, have) {
+		t.Fatalf("wrong output:\n%s", cmp.Diff(want, have))
+	}
+
+	// Print again to make sure we get the same result
+	printer.PrintStatuses(statuses)
+	have = buf.Lines()
+	if !cmp.Equal(want, have) {
+		t.Fatalf("wrong output:\n%s", cmp.Diff(want, have))
+	}
+
+	// Mark the last task as finished-building-specs
+	statuses[len(statuses)-1] = &executor.TaskStatus{
+		RepoName:           "github.com/sourcegraph/automation-testing",
+		StartedAt:          now.Add(time.Duration(-5) * time.Second),
+		FinishedAt:         now.Add(time.Duration(5) * time.Second),
+		CurrentlyExecuting: "",
+		Err:                nil,
+		ChangesetSpecsDone: true,
 		ChangesetSpecs: []*batches.ChangesetSpec{
 			{
 				BaseRepository: "graphql-id",
@@ -132,16 +163,9 @@ func TestBatchProgressPrinterIntegration(t *testing.T) {
 		"│                                                                               ",
 		"├── github.com/sourcegraph/sourcegraph  echo Hello World > README.md          0s",
 		"├── github.com/sourcegraph/src-cli      Downloading archive                   0s",
-		"└── github.com/sourcegraph/automati...  3 files changed ++++               0s",
+		"└── github.com/sourcegraph/automati...  Done!                                 0s",
 		"",
 	}
-	if !cmp.Equal(want, have) {
-		t.Fatalf("wrong output:\n%s", cmp.Diff(want, have))
-	}
-
-	// Print again to make sure we get the same result
-	printer.PrintStatuses(statuses)
-	have = buf.Lines()
 	if !cmp.Equal(want, have) {
 		t.Fatalf("wrong output:\n%s", cmp.Diff(want, have))
 	}
