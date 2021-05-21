@@ -1,10 +1,10 @@
 .repo-revision-sidebar-symbols {
     .theme-redesign & {
         padding-top: 0.75rem;
+        .filtered-connection__form {
+            padding-bottom: 0.75rem;
+        }
         &-node {
-            &:first-of-type {
-                padding-top: 0.75rem;
-            }
             &__link {
                 padding: 0 0 0.25rem 0;
             }
