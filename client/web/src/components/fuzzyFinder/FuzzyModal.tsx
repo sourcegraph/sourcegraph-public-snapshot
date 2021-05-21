@@ -20,6 +20,9 @@ const IS_DEBUG = window.location.href.toString().includes('fuzzyFinder=debug')
 // keys to move the "focus index".
 const lastFuzzySearchResult = new Map<string, FuzzySearchResult>()
 
+// The number of results to jump by on PageUp/PageDown keyboard shortcuts.
+const PAGE_DOWN_INCREMENT = 10
+
 export interface FuzzyModalProps
     extends VisibilityProps,
         FuzzyFinderProps,
@@ -79,14 +82,14 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
                 setRoundedFocusIndex(1)
                 break
             case 'PageDown':
-                setRoundedFocusIndex(10)
+                setRoundedFocusIndex(PAGE_DOWN_INCREMENT)
                 break
             case 'ArrowUp':
                 event.preventDefault() // Don't move the cursor to the start of the input.
                 setRoundedFocusIndex(-1)
                 break
             case 'PageUp':
-                setRoundedFocusIndex(-10)
+                setRoundedFocusIndex(-PAGE_DOWN_INCREMENT)
                 break
             case 'Enter':
                 if (props.focusIndex < fuzzyResult.resultsCount) {
