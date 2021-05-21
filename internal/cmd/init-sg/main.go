@@ -38,7 +38,7 @@ func main() {
 	switch os.Args[1] {
 	case "initSG":
 		initSG.Parse(os.Args[2:])
-		initSourceGraph()
+		initSourcegraph()
 	case "addRepos":
 		addRepos.Parse(os.Args[2:])
 		addReposCommand()

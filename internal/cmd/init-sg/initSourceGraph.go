@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
 )
 
-func initSourceGraph() {
+func initSourcegraph() {
 	log.Println("Running initializer")
 
 	needsSiteInit, err := gqltestutil.NeedsSiteInit(*baseURL)
