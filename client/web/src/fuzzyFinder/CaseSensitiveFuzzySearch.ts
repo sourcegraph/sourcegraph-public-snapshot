@@ -10,9 +10,20 @@ import { Hasher } from './Hasher'
  */
 const MAX_VALUE_LENGTH = 100
 
+// Normally, you need multiple hash functions to keep the false-positive ratio
+// low. However, non-empirical observations indicate that a single hash function
+// works fine and provides the fastest indexing time in large repositories like
+// Chromium.
 const DEFAULT_BLOOM_FILTER_HASH_FUNCTION_COUNT = 1
-const DEFAULT_BLOOM_FILTER_SIZE = 2 << 17
+// The number of filenames to group together in a single bucket, and the number
+// string prefixes that each bloom can contain.  Currently, every bucket can
+// contain up to 262.144 prefixes (conservatively large number).  With bucket
+// size 50, my off-the-napkin calculation is that total memory usage with 400k
+// files (Chromium size) may be as large as ~261mb. It's usable on most
+// computers, but still a bit high.
+// Tracking issue to fine-tune these parameters: https://github.com/sourcegraph/sourcegraph/issues/21201
 const DEFAULT_BUCKET_SIZE = 50
+const DEFAULT_BLOOM_FILTER_SIZE = 2 << 17
 
 /**
  * Returns true if the given query fuzzy matches the given value.
