@@ -85,7 +85,10 @@ const PageNotFound: React.FunctionComponent = () => (
     </div>
 )
 
-export interface RepositoryDocumentationPageProps extends Partial<RevisionSpec>, ResolvedRevisionSpec, BreadcrumbSetters {
+export interface RepositoryDocumentationPageProps
+    extends Partial<RevisionSpec>,
+        ResolvedRevisionSpec,
+        BreadcrumbSetters {
     repo: RepositoryFields
 
     history: H.History
@@ -96,7 +99,10 @@ export interface RepositoryDocumentationPageProps extends Partial<RevisionSpec>,
 const LOADING = 'loading' as const
 
 /** A page that shows a repository's documentation at the current revision. */
-export const RepositoryDocumentationPage: React.FunctionComponent<RepositoryDocumentationPageProps> = ({ useBreadcrumb, ...props }) => {
+export const RepositoryDocumentationPage: React.FunctionComponent<RepositoryDocumentationPageProps> = ({
+    useBreadcrumb,
+    ...props
+}) => {
     // TODO(slimsag): nightmare: there is _something_ in the props that causes this entire page to
     // rerender whenever you type in the search bar. In fact, this also appears to happen on all other
     // pages!
