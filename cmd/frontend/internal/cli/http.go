@@ -25,7 +25,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	tracepkg "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -64,10 +66,10 @@ func newExternalHTTPHandler(db dbutil.DB, schema *graphql.Schema, gitHubWebhook 
 	appHandler = handlerutil.CSRFMiddleware(appHandler, func() bool {
 		return globals.ExternalURL().Scheme == "https"
 	}) // after appAuthMiddleware because SAML IdP posts data to us w/o a CSRF token
-	appHandler = authMiddlewares.App(appHandler)                           // 🚨 SECURITY: auth middleware
-	appHandler = session.CookieMiddleware(appHandler)                      // app accepts cookies
-	appHandler = internalhttpapi.AccessTokenAuthMiddleware(db, appHandler) // app accepts access tokens
-	appHandler = featureflag.Feature(db, appHandler)                       // app accepts access tokens
+	appHandler = authMiddlewares.App(appHandler)                                          // 🚨 SECURITY: auth middleware
+	appHandler = session.CookieMiddleware(appHandler)                                     // app accepts cookies
+	appHandler = internalhttpapi.AccessTokenAuthMiddleware(db, appHandler)                // app accepts access tokens
+	appHandler = featureflag.FeatureFlagMiddleware(database.FeatureFlags(db), appHandler) // app accepts access tokens
 
 	// Mount handlers and assets.
 	sm := http.NewServeMux()

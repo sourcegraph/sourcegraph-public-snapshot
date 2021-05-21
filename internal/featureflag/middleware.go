@@ -8,8 +8,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
-type featureFlagKey struct{}
+type flagContextKey struct{}
 
+// FeatureFlagMiddleware evaluates the feature flags for the current user and adds the
+// feature flags to the current context.
 func FeatureFlagMiddleware(ffs *database.FeatureFlagStore, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Vary", "Cookie")
@@ -21,8 +23,7 @@ func contextWithFeatureFlags(ffs *database.FeatureFlagStore, r *http.Request) co
 	if a := actor.FromContext(r.Context()); a != nil && a.UID != 0 {
 		flags, err := ffs.UserFlags(r.Context(), a.UID)
 		if err == nil {
-
-			return context.WithValue(r.Context(), featureFlagKey{}, flags)
+			return context.WithValue(r.Context(), flagContextKey{}, FlagSet(flags))
 		}
 		// Continue if err != nil
 	}
@@ -30,19 +31,17 @@ func contextWithFeatureFlags(ffs *database.FeatureFlagStore, r *http.Request) co
 	if cookie, err := r.Cookie("sourcegraphAnonymousUid"); err != nil {
 		flags, err := ffs.AnonymousUserFlags(r.Context(), cookie.Value)
 		if err == nil {
-			return context.WithValue(r.Context(), featureFlagKey{}, flags)
+			return context.WithValue(r.Context(), flagContextKey{}, FlagSet(flags))
 		}
 		// Continue if err != nil
 	}
 
 	flags, err := ffs.UserlessFeatureFlags(r.Context())
 	if err != nil {
-		return context.WithValue(r.Context(), featureFlagKey{}, flags)
+		return context.WithValue(r.Context(), flagContextKey{}, FlagSet(flags))
 	}
 	return r.Context()
 }
-
-type flagContextKey struct{}
 
 // FromContext retrieves the current set of flags from the current
 // request's context.

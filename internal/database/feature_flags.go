@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/binary"
 	"hash/fnv"
+	"sync/errgroup"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
@@ -34,56 +35,56 @@ func (f *FeatureFlagStore) Transact(ctx context.Context) (*FeatureFlagStore, err
 	return &FeatureFlagStore{Store: txBase}, err
 }
 
-const newBoolFmtStr = `
-INSERT INTO feature_flags (
+const featureFlagColumns = `
 	flag_name,
 	flag_type,
-	value,
-) VALUES (
-	%s,
-	'bool',
-	%s
-) RETURNING (
-	flag_name,
+	bool_val,
 	rollout,
 	created_at,
 	updated_at,
 	deleted_at
-);
 `
 
-func (f *FeatureFlagStore) NewBool(ctx context.Context, name string, value bool) (*types.FeatureFlag, error) {
-	rows, err := f.Query(ctx, sqlf.Sprintf(newBoolFmtStr, name, value))
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	if !rows.Next() {
-		return nil, errors.New("expected a returned row")
-	}
-	return scanFeatureFlag(rows)
-}
-
-const newBoolVarFmtStr = `
+const newFeatureFlagFmtStr = `
 INSERT INTO feature_flags (
 	flag_name,
 	flag_type,
+	bool_val,
 	rollout
 ) VALUES (
 	%s,
-	'bool_var',
+	%s,
+	%s,
 	%s
 ) RETURNING (
-	flag_name,
-	rollout,
-	created_at,
-	updated_at,
-	deleted_at
+	%s
 );
 `
 
-func (f *FeatureFlagStore) NewBoolVar(ctx context.Context, name string, rollout int) (*types.FeatureFlag, error) {
-	rows, err := f.Query(ctx, sqlf.Sprintf(newBoolVarFmtStr, name, rollout))
+func (f *FeatureFlagStore) NewFeatureFlag(ctx context.Context, flag *types.FeatureFlag) (*types.FeatureFlag, error) {
+	var (
+		flagType string
+		boolVal  *bool
+		rollout  *int
+	)
+	switch {
+	case flag.Bool != nil:
+		flagType = "bool"
+		boolVal = &flag.Bool.Value
+	case flag.BoolVar != nil:
+		flagType = "boolVar"
+		rollout = &flag.BoolVar.Rollout
+	default:
+		return nil, errors.New("feature flag must have exactly one type")
+	}
+
+	rows, err := f.Query(ctx, sqlf.Sprintf(
+		newFeatureFlagFmtStr,
+		flag.Name,
+		flagType,
+		boolVal,
+		rollout,
+		featureFlagColumns))
 	if err != nil {
 		return nil, err
 	}
@@ -94,95 +95,234 @@ func (f *FeatureFlagStore) NewBoolVar(ctx context.Context, name string, rollout 
 	return scanFeatureFlag(rows)
 }
 
+func (f *FeatureFlagStore) NewBoolVar(ctx context.Context, name string, rollout int) (*types.FeatureFlag, error) {
+	return f.NewFeatureFlag(ctx, &types.FeatureFlag{
+		Name: name,
+		BoolVar: &types.FeatureFlagBoolVar{
+			Rollout: rollout,
+		},
+	})
+}
+
+func (f *FeatureFlagStore) NewBool(ctx context.Context, name string, value bool) (*types.FeatureFlag, error) {
+	return f.NewFeatureFlag(ctx, &types.FeatureFlag{
+		Name: name,
+		Bool: &types.FeatureFlagBool{
+			Value: value,
+		},
+	})
+}
+
+var ErrInvalidColumnState = errors.New("encountered column that is unexpectedly null based on column type")
+
 func scanFeatureFlag(rows *sql.Rows) (*types.FeatureFlag, error) {
-	out := types.FeatureFlag{}
-	err := rows.Scan(
-		&out.Name,
-		&out.Rollout,
-		&out.CreatedAt,
-		&out.UpdatedAt,
-		&dbutil.NullTime{out.DeletedAt},
+	var (
+		res      types.FeatureFlag
+		flagType string
+		boolVal  *bool
+		rollout  *int
 	)
-	return &out, err
-}
-
-const newFeatureFlagOverrideFmtStr = `
-INSERT INTO feature_flag_overrides (
-	namespace_user_id,
-	flag_name,
-	flag_value
-) VALUES (
-	%s,
-	%s,
-	%s
-);
-`
-
-func (f *FeatureFlagStore) NewUserOverride(ctx context.Context, userID int32, flagName string, flagValue bool) error {
-	rows, err := f.Query(ctx, sqlf.Sprintf(newFeatureFlagOverrideFmtStr, userID, flagName, flagValue))
+	err := rows.Scan(
+		&res.Name,
+		&flagType,
+		&boolVal,
+		&rollout,
+		&res.CreatedAt,
+		&res.UpdatedAt,
+		&dbutil.NullTime{res.DeletedAt},
+	)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	defer rows.Close()
-	return nil
+
+	switch flagType {
+	case "bool":
+		if boolVal == nil {
+			return nil, ErrInvalidColumnState
+		}
+		res.Bool = &types.FeatureFlagBool{
+			Value: *boolVal,
+		}
+	case "bool_var":
+		if rollout == nil {
+			return nil, ErrInvalidColumnState
+		}
+		res.BoolVar = &types.FeatureFlagBoolVar{
+			Rollout: *rollout,
+		}
+	default:
+		return nil, ErrInvalidColumnState
+	}
+
+	return &res, nil
 }
 
-const listUserFlagsAndOverridesFmtStr = `
-WITH uo AS (
-	SELECT *
-	FROM feature_flag_overrides
-	WHERE namespace_user_id = %s
-)
-SELECT
-	f.flag_name,
-	f.flag_type,
-	f.bool_value,
-	f.rollout,
-	uo.flag_value AS user_override
-FROM feature_flags f
-LEFT JOIN uo ON f.flag_name = uo.flag_name
+const listFeatureFlagsFmtString = `
+SELECT (
+	%s
+) FROM feature_flags;
 `
 
-// UserFlags returns the calculated values for feature flags for the given userID
-func (f *FeatureFlagStore) UserFlags(ctx context.Context, userID int32) (map[string]bool, error) {
-	rows, err := f.Query(ctx, sqlf.Sprintf(listUserFlagsAndOverridesFmtStr, userID))
+func (f *FeatureFlagStore) ListFeatureFlags(ctx context.Context) ([]*types.FeatureFlag, error) {
+	rows, err := f.Query(ctx, sqlf.Sprintf(listFeatureFlagsFmtString, featureFlagColumns))
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	res := make(map[string]bool, 10) // guess on size to avoid small allocations
+	res := make([]*types.FeatureFlag, 0, 10)
 	for rows.Next() {
-		var (
-			name          string
-			flag_type     string
-			bool_value    *bool
-			rollout       *int
-			user_override *bool
-		)
-
-		if err := rows.Scan(&name, &flag_type, &bool_value, &rollout, &user_override); err != nil {
+		flag, err := scanFeatureFlag(rows)
+		if err != nil {
 			return nil, err
 		}
+		res = append(res, flag)
+	}
+	return res, nil
+}
 
-		if user_override != nil {
-			res[name] = *user_override
-			continue
+func (f *FeatureFlagStore) NewOverride(ctx context.Context, override *types.FeatureFlagOverride) error {
+	const newFeatureFlagOverrideFmtStr = `
+		INSERT INTO feature_flag_overrides (
+			namespace_org_id,
+			namespace_user_id,
+			flag_name,
+			flag_value
+		) VALUES (
+			%s,
+			%s,
+			%s,
+			%s
+		);
+	`
+	rows, err := f.Query(ctx, sqlf.Sprintf(
+		newFeatureFlagOverrideFmtStr,
+		override.OrgID,
+		override.UserID,
+		override.FlagName,
+		override.Value))
+	if err != nil {
+		return err
+	}
+	rows.Close()
+	return nil
+}
+
+func (f *FeatureFlagStore) ListUserOverrides(ctx context.Context, userID int32) ([]*types.FeatureFlagOverride, error) {
+	const listUserOverridesFmtString = `
+		SELECT (
+			namespace_org_id,
+			namespace_user_id,
+			flag_name,
+			flag_value
+		) 
+		FROM feature_flag_overrides
+		WHERE namespace_user_id = %s;
+	`
+	rows, err := f.Query(ctx, sqlf.Sprintf(listUserOverridesFmtString, userID))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	return scanFeatureFlagOverrides(rows)
+}
+
+func (f *FeatureFlagStore) ListOrgOverridesForUser(ctx context.Context, userID int32) ([]*types.FeatureFlagOverride, error) {
+	const listUserOverridesFmtString = `
+		SELECT (
+			namespace_org_id,
+			namespace_user_id,
+			flag_name,
+			flag_value
+		) 
+		FROM feature_flag_overrides
+		WHERE EXISTS (
+			SELECT org_id
+			FROM org_members
+			WHERE org_members.user_id = %s
+				AND feature_flag_overrides.namespace_org_id = org_members.org_id
+		);
+	`
+	rows, err := f.Query(ctx, sqlf.Sprintf(listUserOverridesFmtString, userID))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	return scanFeatureFlagOverrides(rows)
+}
+
+func scanFeatureFlagOverrides(rows *sql.Rows) ([]*types.FeatureFlagOverride, error) {
+	var res []*types.FeatureFlagOverride
+	for rows.Next() {
+		override, err := scanFeatureFlagOverride(rows)
+		if err != nil {
+			return nil, err
+		}
+		res = append(res, override)
+	}
+	return res, nil
+}
+
+func scanFeatureFlagOverride(rows *sql.Rows) (*types.FeatureFlagOverride, error) {
+	var res types.FeatureFlagOverride
+	err := rows.Scan(
+		&res.OrgID,
+		&res.UserID,
+		&res.FlagName,
+		&res.Value,
+	)
+	return &res, err
+}
+
+// UserFlags returns the calculated values for feature flags for the given userID
+func (f *FeatureFlagStore) UserFlags(ctx context.Context, userID int32) (map[string]bool, error) {
+	g := errgroup.WithContext(ctx)
+
+	var flags []*types.FeatureFlag
+	g.Go(func() error {
+		res, err := f.ListFeatureFlags(ctx)
+		flags = res
+		return err
+	})
+
+	var orgOverrides []*types.FeatureFlagOverride
+	g.Go(func() error {
+		res, err := f.ListOrgOverridesForUser(ctx, userID)
+		orgOverrides = res
+		return err
+	})
+
+	var userOverrides []*types.FeatureFlagOverride
+	g.Go(func() error {
+		res, err := f.ListUserOverrides(ctx, userID)
+		userOverrides = res
+		return err
+	})
+
+	err := g.Wait()
+	if err != nil {
+		return nil, err
+	}
+
+	res := make(map[string]bool, 10) // guess on size to avoid small allocations
+	for _, ff := range flags {
+		switch {
+		case ff.Bool != nil:
+			res[ff.Name] = ff.Bool.Value
+		case ff.BoolVar != nil:
+			res[ff.Name] = hashUserAndFlag(userID, ff.Name)%10000 < uint32(ff.BoolVar.Rollout)
 		}
 
-		switch flag_type {
-		case "bool":
-			if bool_value != nil {
-				// This should always be non-nil based on table constraints
-				res[name] = *bool_value
-			}
-		case "bool_var":
-			if rollout != nil {
-				// This should always be non-nil based on table constraints
-				res[name] = hashUserAndFlag(userID, name)%10000 < uint32(*rollout)
-			}
-		default:
-			panic("unknown flag type")
+		// Org overrides are higher priority than default
+		for _, oo := range orgOverrides {
+			res[oo.FlagName] = oo.Value
+		}
+
+		// User overrides are higher priority than org overrides
+		for _, uo := range userOverrides {
+			res[uo.FlagName] = uo.Value
 		}
 	}
 
@@ -196,51 +336,21 @@ func hashUserAndFlag(userID int32, flagName string) uint32 {
 	return h.Sum32()
 }
 
-const listAnonymousUserFlagsFmtStr = `
-SELECT
-	f.flag_name,
-	f.flag_type,
-	f.bool_value,
-	f.rollout,
-FROM feature_flags f
-`
-
 // AnonymousUserFlags returns the calculated values for feature flags for the given anonymousUID
 func (f *FeatureFlagStore) AnonymousUserFlags(ctx context.Context, anonymousUID string) (map[string]bool, error) {
-	rows, err := f.Query(ctx, sqlf.Sprintf(listUserFlagsAndOverridesFmtStr))
+	flags, err := f.ListFeatureFlags(ctx)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 
 	res := make(map[string]bool, 10) // guess on size to avoid small allocations
-	for rows.Next() {
-		var (
-			name       string
-			flag_type  string
-			bool_value *bool
-			rollout    *int
-		)
-
-		if err := rows.Scan(&name, &flag_type, &bool_value, &rollout); err != nil {
-			return nil, err
+	for _, ff := range flags {
+		switch {
+		case ff.Bool != nil:
+			res[ff.Name] = ff.Bool.Value
+		case ff.BoolVar != nil:
+			res[ff.Name] = hashAnonymousUserAndFlag(anonymousUID, ff.Name)%10000 < uint32(ff.BoolVar.Rollout)
 		}
-
-		switch flag_type {
-		case "bool":
-			if bool_value != nil {
-				// This should always be non-nil based on table constraints
-				res[name] = *bool_value
-			}
-		case "bool_var":
-			if rollout != nil {
-				// This should always be non-nil based on table constraints
-				res[name] = hashAnonymousUserAndFlag(anonymousUID, name)%10000 < uint32(*rollout)
-			}
-		default:
-			panic("unknown flag type")
-		}
-
 	}
 
 	return res, nil
@@ -262,35 +372,20 @@ FROM feature_flags f
 `
 
 func (f *FeatureFlagStore) UserlessFeatureFlags(ctx context.Context) (map[string]bool, error) {
-	rows, err := f.Query(ctx, sqlf.Sprintf(listUserlessFlagsFmtStr))
+	flags, err := f.ListFeatureFlags(ctx)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 
 	res := make(map[string]bool, 10) // guess on size to avoid small allocations
-	for rows.Next() {
-		var (
-			name       string
-			flag_type  string
-			bool_value *bool
-		)
-
-		if err := rows.Scan(&name, &flag_type, &bool_value); err != nil {
-			return nil, err
-		}
-
-		switch flag_type {
-		case "bool":
-			if bool_value != nil {
-				// This should always be non-nil based on table constraints
-				res[name] = *bool_value
-			}
+	for _, ff := range flags {
+		switch {
+		case ff.Bool != nil:
+			res[ff.Name] = ff.Bool.Value
 		default:
-			// Ignore non-concrete flags since we don't have a user
+			// ignore non-concrete feature flags since we have no active user
 		}
 	}
 
 	return res, nil
-
 }
