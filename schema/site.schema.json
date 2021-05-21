@@ -20,17 +20,13 @@
     "search.index.enabled": {
       "description": "Whether indexed search is enabled. If unset Sourcegraph detects the environment to decide if indexed search is enabled. Indexed search is RAM heavy, and is disabled by default in the single docker image. All other environments will have it enabled by default. The size of all your repository working copies is the amount of additional RAM required.",
       "type": "boolean",
-      "!go": {
-        "pointer": true
-      },
+      "!go": { "pointer": true },
       "group": "Search"
     },
     "search.index.symbols.enabled": {
       "description": "Whether indexed symbol search is enabled. This is contingent on the indexed search configuration, and is true by default for instances with indexed search enabled. Enabling this will cause every repository to re-index, which is a time consuming (several hours) operation. Additionally, it requires more storage and ram to accommodate the added symbols information in the search index.",
       "type": "boolean",
-      "!go": {
-        "pointer": true
-      },
+      "!go": { "pointer": true },
       "group": "Search"
     },
     "search.largeFiles": {
@@ -98,9 +94,7 @@
           "description": "DEPRECATED. Always on. Will be removed in 3.19.",
           "type": "boolean",
           "default": false,
-          "!go": {
-            "pointer": true
-          }
+          "!go": { "pointer": true }
         },
         "perforce": {
           "description": "Allow adding Perforce code host connections",
@@ -168,9 +162,7 @@
           "type": "object",
           "additionalProperties": {
             "type": "array",
-            "items": {
-              "type": "string"
-            },
+            "items": { "type": "string" },
             "maxItems": 64
           },
           "examples": [
@@ -247,17 +239,13 @@
           "description": "Enables webhook consumers to sync permissions from external services faster than the defaults schedule",
           "type": "boolean",
           "default": false,
-          "!go": {
-            "pointer": false
-          }
+          "!go": { "pointer": false }
         },
         "enablePostSignupFlow": {
           "description": "Enables post sign-up user flow to add code hosts and sync code",
           "type": "boolean",
           "default": false,
-          "!go": {
-            "pointer": false
-          }
+          "!go": { "pointer": false }
         }
       },
       "examples": [
@@ -279,45 +267,35 @@
     "campaigns.enabled": {
       "description": "DEPRECATED: Use batchChanges.enabled instead. Enables/disables the campaigns feature.",
       "type": "boolean",
-      "!go": {
-        "pointer": true
-      },
+      "!go": { "pointer": true },
       "group": "Campaigns",
       "default": true
     },
     "campaigns.restrictToAdmins": {
       "description": "DEPRECATED: Use batchChanges.restrictToAdmins instead. When enabled, only site admins can create and apply campaigns.",
       "type": "boolean",
-      "!go": {
-        "pointer": true
-      },
+      "!go": { "pointer": true },
       "group": "Campaigns",
       "default": false
     },
     "batchChanges.enabled": {
       "description": "Enables/disables the Batch Changes feature.",
       "type": "boolean",
-      "!go": {
-        "pointer": true
-      },
+      "!go": { "pointer": true },
       "group": "BatchChanges",
       "default": true
     },
     "batchChanges.restrictToAdmins": {
       "description": "When enabled, only site admins can create and apply batch changes.",
       "type": "boolean",
-      "!go": {
-        "pointer": true
-      },
+      "!go": { "pointer": true },
       "group": "BatchChanges",
       "default": false
     },
     "batchChanges.rolloutWindows": {
       "description": "Specifies specific windows, which can have associated rate limits, to be used when publishing changesets. All days and times are handled in UTC.",
       "type": "array",
-      "!go": {
-        "pointer": true
-      },
+      "!go": { "pointer": true },
       "group": "BatchChanges",
       "items": {
         "title": "BatchChangeRolloutWindow",
@@ -328,11 +306,7 @@
           "rate": {
             "description": "The rate changesets will be published at.",
             "oneOf": [
-              {
-                "type": "number",
-                "minimum": 0,
-                "maximum": 0
-              },
+              { "type": "number", "minimum": 0, "maximum": 0 },
               {
                 "type": "string",
                 "pattern": "^(unlimited|[0-9]+\\/(sec|secs|second|seconds|min|mins|minute|minutes|hr|hrs|hour|hours))$"
@@ -366,9 +340,7 @@
     "codeIntelAutoIndexing.enabled": {
       "description": "Enables/disables the code intel auto indexing feature.",
       "type": "boolean",
-      "!go": {
-        "pointer": true
-      },
+      "!go": { "pointer": true },
       "group": "Code intelligence",
       "default": false
     },
@@ -474,9 +446,7 @@
     "gitMaxCodehostRequestsPerSecond": {
       "description": "Maximum number of remote code host git operations (e.g. clone or ls-remote) to be run per second per gitserver. Default is -1, which is unlimited.",
       "type": "integer",
-      "!go": {
-        "pointer": true
-      },
+      "!go": { "pointer": true },
       "default": -1,
       "group": "External services"
     },
@@ -560,9 +530,7 @@
         {
           "allow": "site-admin-create"
         },
-        {
-          "allow": "none"
-        }
+        { "allow": "none" }
       ],
       "group": "Security"
     },
@@ -598,14 +566,7 @@
         "enabled": true,
         "bindID": "email"
       },
-      "examples": [
-        {
-          "bindID": "email"
-        },
-        {
-          "bindID": "username"
-        }
-      ],
+      "examples": [{ "bindID": "email" }, { "bindID": "username" }],
       "group": "Security"
     },
     "branding": {
@@ -718,21 +679,13 @@
           "description": "Disable all usage of extensions.",
           "type": "boolean",
           "default": false,
-          "!go": {
-            "pointer": true
-          }
+          "!go": { "pointer": true }
         },
         "remoteRegistry": {
           "description": "The remote extension registry URL, or `false` to not use a remote extension registry. If not set, the default remote extension registry URL is used.",
           "oneOf": [
-            {
-              "type": "string",
-              "format": "uri"
-            },
-            {
-              "type": "boolean",
-              "const": false
-            }
+            { "type": "string", "format": "uri" },
+            { "type": "boolean", "const": false }
           ]
         },
         "allowRemoteExtensions": {
@@ -763,11 +716,7 @@
           "type": "string"
         }
       },
-      "examples": [
-        {
-          "*": ["myorg1"]
-        }
-      ],
+      "examples": [{ "*": ["myorg1"] }],
       "hide": true
     },
     "log": {
@@ -793,13 +742,7 @@
           }
         }
       },
-      "examples": [
-        {
-          "sentry": {
-            "dsn": "https://mykey@sentry.io/myproject"
-          }
-        }
-      ],
+      "examples": [{ "sentry": { "dsn": "https://mykey@sentry.io/myproject" } }],
       "group": "Misc."
     },
     "externalURL": {
@@ -850,21 +793,11 @@
               }
             },
             "oneOf": [
-              {
-                "$ref": "#/definitions/NotifierSlack"
-              },
-              {
-                "$ref": "#/definitions/NotifierPagerduty"
-              },
-              {
-                "$ref": "#/definitions/NotifierWebhook"
-              },
-              {
-                "$ref": "#/definitions/NotifierEmail"
-              },
-              {
-                "$ref": "#/definitions/NotifierOpsGenie"
-              }
+              { "$ref": "#/definitions/NotifierSlack" },
+              { "$ref": "#/definitions/NotifierPagerduty" },
+              { "$ref": "#/definitions/NotifierWebhook" },
+              { "$ref": "#/definitions/NotifierEmail" },
+              { "$ref": "#/definitions/NotifierOpsGenie" }
             ],
             "!go": {
               "taggedUnionType": true
@@ -924,9 +857,7 @@
     },
     "insights.historical.speedFactor": {
       "description": "(debug) Speed factor for building historical insights data. A value like 1.5 indicates approximately to use 1.5x as much repo-updater and gitserver resources.",
-      "!go": {
-        "pointer": true
-      },
+      "!go": { "pointer": true },
       "type": "number",
       "group": "Debug",
       "examples": ["1.0"]
@@ -987,36 +918,19 @@
           }
         },
         "oneOf": [
-          {
-            "$ref": "#/definitions/BuiltinAuthProvider"
-          },
-          {
-            "$ref": "#/definitions/SAMLAuthProvider"
-          },
-          {
-            "$ref": "#/definitions/OpenIDConnectAuthProvider"
-          },
-          {
-            "$ref": "#/definitions/HTTPHeaderAuthProvider"
-          },
-          {
-            "$ref": "#/definitions/GitHubAuthProvider"
-          },
-          {
-            "$ref": "#/definitions/GitLabAuthProvider"
-          }
+          { "$ref": "#/definitions/BuiltinAuthProvider" },
+          { "$ref": "#/definitions/SAMLAuthProvider" },
+          { "$ref": "#/definitions/OpenIDConnectAuthProvider" },
+          { "$ref": "#/definitions/HTTPHeaderAuthProvider" },
+          { "$ref": "#/definitions/GitHubAuthProvider" },
+          { "$ref": "#/definitions/GitLabAuthProvider" }
         ],
         "!go": {
           "taggedUnionType": true
         }
       },
       "group": "Authentication",
-      "default": [
-        {
-          "type": "builtin",
-          "allowSignup": true
-        }
-      ]
+      "default": [{ "type": "builtin", "allowSignup": true }]
     },
     "auth.public": {
       "description": "WARNING: This option has been removed as of 3.8.",
@@ -1072,9 +986,7 @@
     "productResearchPage.enabled": {
       "description": "Enables users access to the product research page in their settings.",
       "type": "boolean",
-      "!go": {
-        "pointer": true
-      },
+      "!go": { "pointer": true },
       "group": "Misc.",
       "default": true
     },
@@ -1139,18 +1051,9 @@
               "limit": {
                 "description": "The limit per hour, 'unlimited' or 'blocked'",
                 "oneOf": [
-                  {
-                    "type": "string",
-                    "const": "unlimited"
-                  },
-                  {
-                    "type": "string",
-                    "const": "blocked"
-                  },
-                  {
-                    "type": "integer",
-                    "minimum": 1
-                  }
+                  { "type": "string", "const": "unlimited" },
+                  { "type": "string", "const": "blocked" },
+                  { "type": "integer", "minimum": 1 }
                 ]
               }
             }
@@ -1202,9 +1105,7 @@
           "type": "string",
           "const": "openidconnect"
         },
-        "displayName": {
-          "$ref": "#/definitions/AuthProviderCommon/properties/displayName"
-        },
+        "displayName": { "$ref": "#/definitions/AuthProviderCommon/properties/displayName" },
         "configID": {
           "description": "An identifier that can be used to reference this authentication provider in other parts of the config. For example, in configuration for a code host, you may want to designate this authentication provider as the identity provider for the code host.",
           "type": "string"
@@ -1251,9 +1152,7 @@
           "description": "An identifier that can be used to reference this authentication provider in other parts of the config. For example, in configuration for a code host, you may want to designate this authentication provider as the identity provider for the code host.",
           "type": "string"
         },
-        "displayName": {
-          "$ref": "#/definitions/AuthProviderCommon/properties/displayName"
-        },
+        "displayName": { "$ref": "#/definitions/AuthProviderCommon/properties/displayName" },
         "serviceProviderIssuer": {
           "description": "The SAML Service Provider name, used to identify this Service Provider. This is required if the \"externalURL\" field is not set (as the SAML metadata endpoint is computed as \"<externalURL>.auth/saml/metadata\"), or when using multiple SAML authentication providers.",
           "type": "string"
@@ -1300,9 +1199,7 @@
         "signRequests": {
           "description": "Sign AuthnRequests and LogoutRequests sent to the Identity Provider using the Service Provider's private key (`serviceProviderPrivateKey`). It defaults to true if the `serviceProviderPrivateKey` and `serviceProviderCertificate` are set, and false otherwise.",
           "type": "boolean",
-          "!go": {
-            "pointer": true
-          }
+          "!go": { "pointer": true }
         },
         "insecureSkipAssertionSignatureValidation": {
           "description": "Whether the Service Provider should (insecurely) accept assertions from the Identity Provider without a valid signature.",
@@ -1312,9 +1209,7 @@
         "allowSignup": {
           "description": "Allows new visitors to sign up for accounts via SAML authentication. If false, users signing in via SAML must have an existing Sourcegraph account, which will be linked to their SAML identity after sign-in.",
           "type": "boolean",
-          "!go": {
-            "pointer": true
-          }
+          "!go": { "pointer": true }
         }
       }
     },
@@ -1368,9 +1263,7 @@
           "type": "string",
           "description": "The Client Secret of the GitHub OAuth app, accessible from https://github.com/settings/developers (or the same path on GitHub Enterprise)."
         },
-        "displayName": {
-          "$ref": "#/definitions/AuthProviderCommon/properties/displayName"
-        },
+        "displayName": { "$ref": "#/definitions/AuthProviderCommon/properties/displayName" },
         "allowSignup": {
           "description": "Allows new visitors to sign up for accounts via GitHub authentication. If false, users signing in via GitHub must have an existing Sourcegraph account, which will be linked to their GitHub identity after sign-in.",
           "default": false,
@@ -1410,9 +1303,7 @@
           "type": "string",
           "description": "The Client Secret of the GitLab OAuth app, accessible from https://gitlab.com/oauth/applications (or the same path on your private GitLab instance)."
         },
-        "displayName": {
-          "$ref": "#/definitions/AuthProviderCommon/properties/displayName"
-        }
+        "displayName": { "$ref": "#/definitions/AuthProviderCommon/properties/displayName" }
       }
     },
     "AuthProviderCommon": {
@@ -1474,9 +1365,7 @@
           "description": "Severity level for PagerDuty alert",
           "type": "string"
         },
-        "apiUrl": {
-          "type": "string"
-        }
+        "apiUrl": { "type": "string" }
       }
     },
     "NotifierWebhook": {
@@ -1488,18 +1377,10 @@
           "type": "string",
           "const": "webhook"
         },
-        "url": {
-          "type": "string"
-        },
-        "username": {
-          "type": "string"
-        },
-        "password": {
-          "type": "string"
-        },
-        "bearerToken": {
-          "type": "string"
-        }
+        "url": { "type": "string" },
+        "username": { "type": "string" },
+        "password": { "type": "string" },
+        "bearerToken": { "type": "string" }
       }
     },
     "NotifierEmail": {
@@ -1526,12 +1407,8 @@
           "type": "string",
           "const": "opsgenie"
         },
-        "apiKey": {
-          "type": "string"
-        },
-        "apiUrl": {
-          "type": "string"
-        },
+        "apiKey": { "type": "string" },
+        "apiUrl": { "type": "string" },
         "priority": {
           "type": "string",
           "enum": ["P1", "P2", "P3", "P4", "P5"]
@@ -1546,26 +1423,14 @@
                 "type": "string",
                 "enum": ["team", "user", "escalation", "schedule"]
               },
-              "id": {
-                "type": "string"
-              },
-              "name": {
-                "type": "string"
-              },
-              "username": {
-                "type": "string"
-              }
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "username": { "type": "string" }
             },
             "oneOf": [
-              {
-                "required": ["type", "id"]
-              },
-              {
-                "required": ["type", "name"]
-              },
-              {
-                "required": ["type", "username"]
-              }
+              { "required": ["type", "id"] },
+              { "required": ["type", "name"] },
+              { "required": ["type", "username"] }
             ]
           }
         }
