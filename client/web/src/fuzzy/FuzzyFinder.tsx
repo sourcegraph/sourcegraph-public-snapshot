@@ -5,6 +5,7 @@ import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
 import { requestGraphQL } from '../backend/graphql'
+import { FilesResult, FilesVariables } from '../graphql-operations'
 import {
     KEYBOARD_SHORTCUT_CLOSE_FUZZY_FILES,
     KEYBOARD_SHORTCUT_FUZZY_FILES,
@@ -119,8 +120,7 @@ export interface Failed {
 }
 
 async function downloadFilenames(props: FuzzyFinderProps): Promise<string[]> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const gqlResult: any = await requestGraphQL(
+    const gqlResult = await requestGraphQL<FilesResult, FilesVariables>(
         gql`
             query Files($repository: String!, $commit: String!) {
                 repository(name: $repository) {
@@ -139,10 +139,7 @@ async function downloadFilenames(props: FuzzyFinderProps): Promise<string[]> {
             commit: props.commitID,
         }
     ).toPromise()
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-return
-    const filenames = gqlResult.data?.repository?.commit?.tree?.files?.map((file: any) => file.path) as
-        | string[]
-        | undefined
+    const filenames = gqlResult.data?.repository?.commit?.tree?.files?.map(file => file.path)
     if (!filenames) {
         throw new Error(JSON.stringify(gqlResult))
     }
