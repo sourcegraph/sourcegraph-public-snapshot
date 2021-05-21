@@ -264,6 +264,10 @@ export const TreePage: React.FunctionComponent<Props> = ({
         )
     )
 
+    const enableAPIDocs =
+        !isErrorLike(settingsCascade.final) &&
+        !!settingsCascade.final?.experimentalFeatures?.apiDocs
+
     const { getCombinedViews } = useContext(InsightsApiContext)
     const views = useObservable(
         useMemo(
@@ -371,9 +375,9 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                 </h2>
                                 {repo.description && <p>{repo.description}</p>}
                                 <div className="btn-group mb-3">
-                                    <Link className="btn btn-secondary" to={`${treeOrError.url}/-/docs`}>
+                                    {enableAPIDocs && <Link className="btn btn-secondary" to={`${treeOrError.url}/-/docs`}>
                                         <BookOpenVariantIcon className="icon-inline" /> API docs
-                                    </Link>
+                                    </Link>}
                                     <Link className="btn btn-secondary" to={`${treeOrError.url}/-/commits`}>
                                         <SourceCommitIcon className="icon-inline" /> Commits
                                     </Link>

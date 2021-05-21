@@ -90,7 +90,6 @@ export interface RepositoryDocumentationPageProps
         ResolvedRevisionSpec,
         BreadcrumbSetters {
     repo: RepositoryFields
-
     history: H.History
     location: H.Location
     pathID: string

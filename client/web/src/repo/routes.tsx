@@ -230,10 +230,11 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                 return false
             }
             const settings: Settings = settingsCascade.final
-            return Boolean(settings.experimentalFeatures?.apiDocs)
+            return !!settings.experimentalFeatures?.apiDocs
         },
         render: ({
             repoHeaderContributionsLifecycleProps,
+            resolvedRev: { commitID },
             match,
             ...context
         }: RepositoryDocumentationPageProps &
@@ -244,6 +245,7 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
             <>
                 <RepositoryDocumentationPage
                     {...context}
+                    commitID={commitID}
                     pathID={match.params.pathID ? '/' + decodeURIComponent(match.params.pathID) : '/'}
                 />
                 <ActionItemsBar

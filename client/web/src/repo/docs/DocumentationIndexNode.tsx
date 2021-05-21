@@ -38,11 +38,8 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = ({ node, d
             <ul className="pl-3">
                 {node.children?.map((child, index) =>
                     child.pathID ? (
-                        <li>
-                            <Link
-                                key={`${depth}-${index}`}
-                                to={toDocumentationURL({ ...repoRevision, pathID: child.pathID })}
-                            >
+                        <li key={`${depth}-${index}`}>
+                            <Link to={toDocumentationURL({ ...repoRevision, pathID: child.pathID })}>
                                 {child.pathID}
                             </Link>
                         </li>
