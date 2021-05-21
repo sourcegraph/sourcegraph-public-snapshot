@@ -21,7 +21,8 @@ export function fuzzyMatchesQuery(query: string, value: string): RangePosition[]
 }
 
 /**
- * Fuzzy search that uses bloom filters to improve performance in very large repositories.
+ * Case-sensitive fuzzy search that uses bloom filters for low-latency filtering
+ * in large repositories (>100k files).
  *
  * NOTE(olafur): this is a reimplementation of the fuzzy finder in the Scala
  * language server that's documented in this blog post here
@@ -42,7 +43,7 @@ export function fuzzyMatchesQuery(query: string, value: string): RangePosition[]
  * possible prefixes of "Symbol" and "Provider". Fortunately, bloom filters can be
  * serialized so that the indexing step only runs once per repoName/commitID pair.
  */
-export class BloomFilterFuzzySearch extends FuzzySearch {
+export class CaseSensitiveFuzzySearch extends FuzzySearch {
     public totalFileCount = 0
     constructor(public readonly buckets: Bucket[]) {
         super()
@@ -73,7 +74,7 @@ export class BloomFilterFuzzySearch extends FuzzySearch {
     public static fromSearchValues(
         files: SearchValue[],
         bucketSize: number = DEFAULT_BUCKET_SIZE
-    ): BloomFilterFuzzySearch {
+    ): CaseSensitiveFuzzySearch {
         const indexer = new Indexer(files, bucketSize)
         while (!indexer.isDone()) {
             indexer.processBuckets(bucketSize)
@@ -424,8 +425,8 @@ class Indexer {
         this.files.sort((a, b) => a.text.length - b.text.length)
     }
 
-    public complete(): BloomFilterFuzzySearch {
-        return new BloomFilterFuzzySearch(this.buckets)
+    public complete(): CaseSensitiveFuzzySearch {
+        return new CaseSensitiveFuzzySearch(this.buckets)
     }
 
     public isDone(): boolean {

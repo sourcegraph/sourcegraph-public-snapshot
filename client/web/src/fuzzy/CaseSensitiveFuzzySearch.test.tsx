@@ -1,4 +1,4 @@
-import { BloomFilterFuzzySearch, allFuzzyParts, fuzzyMatchesQuery } from './BloomFilterFuzzySearch'
+import { CaseSensitiveFuzzySearch, allFuzzyParts, fuzzyMatchesQuery } from './CaseSensitiveFuzzySearch'
 import { FuzzySearchParameters } from './FuzzySearch'
 
 const all = [
@@ -16,7 +16,7 @@ const all = [
     'test/WorkspaceSymbolProvider.scala',
 ]
 
-const fuzzy = BloomFilterFuzzySearch.fromSearchValues(all.map(text => ({ text })))
+const fuzzy = CaseSensitiveFuzzySearch.fromSearchValues(all.map(text => ({ text })))
 
 function checkSearch(query: string, expected: string[]) {
     test(`search-${query}`, () => {
@@ -24,7 +24,7 @@ function checkSearch(query: string, expected: string[]) {
         const actual = fuzzy.search(queryProps).results.map(highlightedText => highlightedText.text)
         expect(actual).toStrictEqual(expected)
         for (const result of expected) {
-            const individualFuzzy = BloomFilterFuzzySearch.fromSearchValues([{ text: result }])
+            const individualFuzzy = CaseSensitiveFuzzySearch.fromSearchValues([{ text: result }])
             const individualActual = individualFuzzy
                 .search(queryProps)
                 .results.map(highlightedText => highlightedText.text)
@@ -50,7 +50,7 @@ function checkFuzzyMatch(name: string, query: string, value: string, expected: s
     })
 }
 
-describe('bloom filter fuzzy search', () => {
+describe('case sensitive fuzzy search', () => {
     describe('splitting a filename into parts works as expected', () => {
         checkParts('basic', 'haha/business.txt', ['haha', 'business', 'txt'])
         checkParts('snake_case', 'haha_business.txt', ['haha', 'business', 'txt'])
