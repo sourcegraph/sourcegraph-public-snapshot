@@ -1,10 +1,8 @@
 import * as H from 'history'
-import React, { Children, useMemo } from 'react'
+import React from 'react'
 
 import { ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { RepositoryFields } from '../../graphql-operations'
-import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
-import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { Link } from 'react-router-dom'
 import { toDocsURL } from '../../util/url'
 import { useScrollToLocationHash } from '../../components/useScrollToLocationHash'
@@ -22,7 +20,7 @@ interface Props
     pagePathID: string
 }
 
-export const DocumentationIndexNode: React.FunctionComponent<Props> = ({ useBreadcrumb, node, depth, ...props }) => {
+export const DocumentationIndexNode: React.FunctionComponent<Props> = ({ node, depth, ...props }) => {
     useScrollToLocationHash(props.location)
     const repoRev = {
         repoName: props.repo.name,

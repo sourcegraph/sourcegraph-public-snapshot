@@ -5,13 +5,15 @@ import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { isLegacyFragment, parseHash, toRepoURL } from '@sourcegraph/shared/src/util/url'
 
 import { ErrorBoundary } from '../components/ErrorBoundary'
-import { ActionItemsBar, ActionItemsBarProps } from '../extensions/components/ActionItemsBar'
+import { ActionItemsBar } from '../extensions/components/ActionItemsBar'
 import { lazyComponent } from '../util/lazyComponent'
 import { formatHash } from '../util/url'
 
 import { RepoContainerRoute } from './RepoContainer'
 import { RepoRevisionContainerContext, RepoRevisionContainerRoute } from './RepoRevisionContainer'
 import { RepositoryDocsPageProps } from './docs/RepositoryDocsPage'
+import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { Settings } from '../schema/settings.schema'
 
 const BlobPage = lazyComponent(() => import('./blob/BlobPage'), 'BlobPage')
 const RepositoryDocsPage = lazyComponent(() => import('./docs/RepositoryDocsPage'), 'RepositoryDocsPage')
@@ -220,6 +222,13 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
     },
     {
         path: '/-/docs/:pathID*',
+        condition: ({ settingsCascade }) => {
+            if (settingsCascade.final === null || isErrorLike(settingsCascade.final)) {
+                return false
+            }
+            const settings: Settings = settingsCascade.final
+            return Boolean(settings.experimentalFeatures?.apiDocs)
+        },
         render: ({
             resolvedRev: { commitID },
             repoHeaderContributionsLifecycleProps,
@@ -230,9 +239,7 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
         }>) => (
                 <>
                     <RepositoryDocsPage
-                        repo={context.repo}
-                        useBreadcrumb={context.useBreadcrumb}
-                        location={context.location}
+                        {...context}
                         pathID={match.params.pathID ? "/" + decodeURIComponent(match.params.pathID) : '/'}
                         commitID={commitID}
                     />

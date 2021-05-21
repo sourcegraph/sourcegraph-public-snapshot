@@ -52,6 +52,14 @@
             "pointer": true
           }
         },
+        "apiDocs": {
+          "description": "Enables a new API documentation page for repositories with LSIF API documentation data.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
         "copyQueryButton": {
           "description": "Enables displaying the copy query button in the search bar when hovering over the global navigation bar.",
           "type": "boolean",
