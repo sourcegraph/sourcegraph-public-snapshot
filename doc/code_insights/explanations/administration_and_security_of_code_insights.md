@@ -20,6 +20,6 @@ Sourcegraph extension-provided insights adhere to the same security standards as
 
 If you are concerned about the security of extension-provided insights, then you can: 
 
-## Disable Sourcegraph-extension-provided Code Insights 
+## Disable Sourcegraph extension-provided Code Insights 
 
 If you want to disable Sourcegraph-extension-provided code insights, you can do so the same way you would disable any other extension. Refer to [Disabling remote extensions](../../admin/extensions.md#use-extensions-from-sourcegraph-com-or-disable-remote-extensions) and [Allow only specific extensions](../../admin/extensions.md#use-extensions-from-sourcegraph-com-or-disable-remote-extensions). 
