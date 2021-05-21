@@ -2,21 +2,21 @@ import React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
+import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { isLegacyFragment, parseHash, toRepoURL } from '@sourcegraph/shared/src/util/url'
 
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { ActionItemsBar } from '../extensions/components/ActionItemsBar'
+import { Settings } from '../schema/settings.schema'
 import { lazyComponent } from '../util/lazyComponent'
 import { formatHash } from '../util/url'
 
+import { RepositoryDocumentationPageProps } from './docs/RepositoryDocumentationPage'
 import { RepoContainerRoute } from './RepoContainer'
 import { RepoRevisionContainerContext, RepoRevisionContainerRoute } from './RepoRevisionContainer'
-import { RepositoryDocsPageProps } from './docs/RepositoryDocsPage'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { Settings } from '../schema/settings.schema'
 
 const BlobPage = lazyComponent(() => import('./blob/BlobPage'), 'BlobPage')
-const RepositoryDocsPage = lazyComponent(() => import('./docs/RepositoryDocsPage'), 'RepositoryDocsPage')
+const RepositoryDocumentationPage = lazyComponent(() => import('./docs/RepositoryDocumentationPage'), 'RepositoryDocumentationPage')
 const RepositoryCommitsPage = lazyComponent(() => import('./commits/RepositoryCommitsPage'), 'RepositoryCommitsPage')
 const RepoRevisionSidebar = lazyComponent(() => import('./RepoRevisionSidebar'), 'RepoRevisionSidebar')
 const TreePage = lazyComponent(() => import('./tree/TreePage'), 'TreePage')
@@ -234,23 +234,25 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
             repoHeaderContributionsLifecycleProps,
             match,
             ...context
-        }: RepositoryDocsPageProps & RepoRevisionContainerContext & RouteComponentProps<{
-            pathID: string | undefined
-        }>) => (
-                <>
-                    <RepositoryDocsPage
-                        {...context}
-                        pathID={match.params.pathID ? "/" + decodeURIComponent(match.params.pathID) : '/'}
-                        commitID={commitID}
-                    />
-                    <ActionItemsBar
-                        useActionItemsBar={context.useActionItemsBar}
-                        location={context.location}
-                        extensionsController={context.extensionsController}
-                        platformContext={context.platformContext}
-                        telemetryService={context.telemetryService}
-                    />
-                </>
+        }: RepositoryDocumentationPageProps &
+            RepoRevisionContainerContext &
+            RouteComponentProps<{
+                pathID: string | undefined
+            }>) => (
+            <>
+                <RepositoryDocumentationPage
+                    {...context}
+                    commitID={commitID}
+                    pathID={match.params.pathID ? '/' + decodeURIComponent(match.params.pathID) : '/'}
+                />
+                <ActionItemsBar
+                    useActionItemsBar={context.useActionItemsBar}
+                    location={context.location}
+                    extensionsController={context.extensionsController}
+                    platformContext={context.platformContext}
+                    telemetryService={context.telemetryService}
+                />
+            </>
         ),
     },
 ]

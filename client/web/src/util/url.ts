@@ -14,7 +14,7 @@ export function toTreeURL(target: RepoFile): string {
     return `/${encodeRepoRevision(target)}/-/tree/${target.filePath}`
 }
 
-export function toDocsURL(target: RepoDocs): string {
+export function toDocumentationURL(target: RepoDocs): string {
     return `/${encodeRepoRevision(target)}/-/docs${target.pathID}`
 }
 
