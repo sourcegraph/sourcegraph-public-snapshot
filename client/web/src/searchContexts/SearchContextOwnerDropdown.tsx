@@ -1,6 +1,8 @@
 import classNames from 'classnames'
-import React, { useCallback, useState } from 'react'
-import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
+import React, { useCallback, useState, useMemo } from 'react'
+import { Dropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
+
+import { Namespace } from '@sourcegraph/shared/src/graphql/schema'
 
 import { AuthenticatedUser } from '../auth'
 
@@ -14,30 +16,52 @@ export interface SelectedNamespace {
     name: string
 }
 
+export function getSelectedNamespace(namespace: Namespace | null): SelectedNamespace {
+    if (!namespace) {
+        return { id: null, type: 'global-owner', name: '' }
+    }
+    return {
+        id: namespace.id,
+        type: namespace.__typename === 'User' ? 'user' : 'org',
+        name: namespace.namespaceName,
+    }
+}
+
+export function getSelectedNamespaceFromUser(authenticatedUser: AuthenticatedUser): SelectedNamespace {
+    return {
+        id: authenticatedUser.id,
+        type: 'user',
+        name: authenticatedUser.username,
+    }
+}
+
 export interface SearchContextOwnerDropdownProps {
+    isDisabled: boolean
     authenticatedUser: AuthenticatedUser
-    selectedUserNamespace: SelectedNamespace
     selectedNamespace: SelectedNamespace
     setSelectedNamespace: (selectedNamespace: SelectedNamespace) => void
 }
 
 export const SearchContextOwnerDropdown: React.FunctionComponent<SearchContextOwnerDropdownProps> = ({
+    isDisabled,
     authenticatedUser,
     selectedNamespace,
-    selectedUserNamespace,
     setSelectedNamespace,
 }) => {
     const [isOpen, setIsOpen] = useState(false)
     const toggleIsOpen = useCallback(() => setIsOpen(open => !open), [])
 
+    const selectedUserNamespace = useMemo(() => getSelectedNamespaceFromUser(authenticatedUser), [authenticatedUser])
     return (
-        <ButtonDropdown isOpen={isOpen} toggle={toggleIsOpen}>
+        <Dropdown isOpen={isOpen} toggle={toggleIsOpen}>
             <DropdownToggle
-                className={classNames('btn btn-sm form-control', styles.searchContextOwnerDropdownToggle)}
+                className={classNames('form-control', styles.searchContextOwnerDropdownToggle)}
                 caret={true}
                 color="outline-secondary"
+                disabled={isDisabled}
+                data-tooltip={isDisabled ? "Owner can't be changed." : ''}
             >
-                {selectedNamespace.type === 'global-owner' ? 'Global owner' : `@${selectedNamespace.name}`}
+                <div>{selectedNamespace.type === 'global-owner' ? 'Global' : `@${selectedNamespace.name}`}</div>
             </DropdownToggle>
             <DropdownMenu>
                 <DropdownItem onClick={() => setSelectedNamespace(selectedUserNamespace)}>
@@ -63,6 +87,6 @@ export const SearchContextOwnerDropdown: React.FunctionComponent<SearchContextOw
                     </>
                 )}
             </DropdownMenu>
-        </ButtonDropdown>
+        </Dropdown>
     )
 }

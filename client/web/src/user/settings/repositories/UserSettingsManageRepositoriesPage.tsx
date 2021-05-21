@@ -12,6 +12,7 @@ import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/er
 import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
 import { PageSelector } from '@sourcegraph/wildcard'
 
+import { ALLOW_NAVIGATION, AwayPrompt } from '../../../components/AwayPrompt'
 import {
     queryExternalServices,
     setExternalServiceRepos,
@@ -29,7 +30,6 @@ import { queryUserPublicRepositories, setUserPublicRepositories } from '../../..
 import { eventLogger } from '../../../tracking/eventLogger'
 import { UserRepositoriesUpdateProps } from '../../../util'
 
-import { AwayPrompt, ALLOW_NAVIGATION } from './AwayPrompt'
 import { CheckboxRepositoryNode } from './RepositoryNode'
 
 interface authenticatedUser {

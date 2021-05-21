@@ -66,6 +66,7 @@ import {
     convertVersionContextToSearchContext,
     fetchSearchContext,
     createSearchContext,
+    updateSearchContext,
 } from './search/backend'
 import { QueryState } from './search/helpers'
 import { aggregateStreamingSearch } from './search/stream'
@@ -512,6 +513,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     fetchSearchContexts={fetchSearchContexts}
                                     fetchSearchContext={fetchSearchContext}
                                     createSearchContext={createSearchContext}
+                                    updateSearchContext={updateSearchContext}
                                     convertVersionContextToSearchContext={convertVersionContextToSearchContext}
                                     isSearchContextSpecAvailable={isSearchContextSpecAvailable}
                                     defaultSearchContextSpec={this.state.defaultSearchContextSpec}

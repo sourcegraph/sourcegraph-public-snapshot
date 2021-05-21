@@ -17,11 +17,18 @@ import { asError, createAggregateError, isErrorLike } from '@sourcegraph/shared/
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { AuthenticatedUser } from '../auth'
+import { ALLOW_NAVIGATION, AwayPrompt } from '../components/AwayPrompt'
 import { fetchRepository } from '../repo/backend'
 
 import { parseConfig } from './repositoryRevisionsConfigParser'
 import styles from './SearchContextForm.module.scss'
-import { SearchContextOwnerDropdown, SelectedNamespace, SelectedNamespaceType } from './SearchContextOwnerDropdown'
+import {
+    getSelectedNamespace,
+    getSelectedNamespaceFromUser,
+    SearchContextOwnerDropdown,
+    SelectedNamespace,
+    SelectedNamespaceType,
+} from './SearchContextOwnerDropdown'
 import { SearchContextRepositoriesFormArea } from './SearchContextRepositoriesFormArea'
 
 const MAX_DESCRIPTION_LENGTH = 1024
@@ -62,7 +69,7 @@ function getVisibilityRadioButtons(selectedNamespaceType: SelectedNamespaceType)
 
 function getSearchContextSpecPreview(selectedNamespace: SelectedNamespace, searchContextName: string): JSX.Element {
     return (
-        <code className={classNames('test-search-context-preview', styles.searchContextFormPreview)}>
+        <code className={styles.searchContextFormPreview} data-testid="search-context-preview">
             <span className="search-filter-keyword">context:</span>
             {selectedNamespace.name.length > 0 && (
                 <>
@@ -88,22 +95,24 @@ export interface SearchContextFormProps extends RouteComponentProps, ThemeProps,
     ) => Observable<ISearchContext>
 }
 
+const searchContextVisibility = (searchContext: ISearchContext): SelectedVisibility =>
+    searchContext.public ? 'public' : 'private'
+
 export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> = props => {
     const { authenticatedUser, onSubmit, searchContext } = props
     const history = useHistory()
 
-    const [name, setName] = useState('')
-    const [description, setDescription] = useState('')
-    const [visibility, setVisibility] = useState<SelectedVisibility>('public')
+    const [name, setName] = useState(searchContext ? searchContext.name : '')
+    const [description, setDescription] = useState(searchContext ? searchContext.description : '')
+    const [visibility, setVisibility] = useState<SelectedVisibility>(
+        searchContext ? searchContextVisibility(searchContext) : 'public'
+    )
 
     const isValidName = useMemo(() => name.length === 0 || name.match(VALIDATE_NAME_REGEXP) !== null, [name])
 
-    const selectedUserNamespace = {
-        id: authenticatedUser.id,
-        type: 'user' as SelectedNamespaceType,
-        name: authenticatedUser.username,
-    }
-    const [selectedNamespace, setSelectedNamespace] = useState<SelectedNamespace>(selectedUserNamespace)
+    const [selectedNamespace, setSelectedNamespace] = useState<SelectedNamespace>(
+        searchContext ? getSelectedNamespace(searchContext.namespace) : getSelectedNamespaceFromUser(authenticatedUser)
+    )
 
     const visibilityRadioButtons = useMemo(() => getVisibilityRadioButtons(selectedNamespace.type), [selectedNamespace])
 
@@ -113,12 +122,16 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
         <div className="text-danger">Invalid context name</div>
     )
 
+    const [hasRepositoriesConfigChanged, setHasRepositoriesConfigChanged] = useState(false)
     const [repositoriesConfig, setRepositoriesConfig] = useState('')
     const onRepositoriesConfigChange = useCallback(
-        config => {
+        (config, isInitialValue) => {
             setRepositoriesConfig(config)
+            if (!isInitialValue && config !== repositoriesConfig) {
+                setHasRepositoriesConfigChanged(true)
+            }
         },
-        [setRepositoriesConfig]
+        [repositoriesConfig, setRepositoriesConfig, setHasRepositoriesConfigChanged]
     )
 
     const hasChanges = useMemo(() => {
@@ -127,22 +140,17 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                 name.length > 0 ||
                 description.length > 0 ||
                 visibility !== 'public' ||
-                selectedNamespace.type !== 'user'
+                selectedNamespace.type !== 'user' ||
+                hasRepositoriesConfigChanged
             )
         }
-        // TODO: Check for changes when editing context
-        return true
-    }, [description, name, searchContext, selectedNamespace, visibility])
-
-    const onCancel = useCallback(() => {
-        if (hasChanges) {
-            if (window.confirm('Leave page? All unsaved changes will be lost.')) {
-                history.push('/contexts')
-            }
-        } else {
-            history.push('/contexts')
-        }
-    }, [hasChanges, history])
+        return (
+            searchContext.name !== name ||
+            searchContext.description !== description ||
+            searchContextVisibility(searchContext) !== visibility ||
+            hasRepositoriesConfigChanged
+        )
+    }, [description, name, searchContext, selectedNamespace, visibility, hasRepositoriesConfigChanged])
 
     const parseRepositories = useCallback(
         () =>
@@ -204,7 +212,7 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                             catchError(error => [asError(error)]),
                             tap(successOrError => {
                                 if (!isErrorLike(successOrError) && successOrError !== LOADING) {
-                                    history.push('/contexts?order=updated-at-desc')
+                                    history.push('/contexts?order=updated-at-desc', ALLOW_NAVIGATION)
                                 }
                             })
                         )
@@ -215,25 +223,28 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
         )
     )
 
+    const onCancel = useCallback(() => {
+        history.push('/contexts')
+    }, [history])
+
     return (
         <Form onSubmit={submitRequest}>
             <div className="d-flex">
                 <div className="mr-2">
                     <div className="mb-2">Owner</div>
                     <SearchContextOwnerDropdown
+                        isDisabled={!!searchContext}
                         selectedNamespace={selectedNamespace}
                         setSelectedNamespace={setSelectedNamespace}
-                        selectedUserNamespace={selectedUserNamespace}
                         authenticatedUser={authenticatedUser}
                     />
                 </div>
                 <div className="flex-1">
                     <div className="mb-2">Context name</div>
                     <input
-                        className={classNames(
-                            'w-100 form-control test-search-context-name-input',
-                            styles.searchContextFormNameInput
-                        )}
+                        className={classNames('w-100', 'form-control', styles.searchContextFormNameInput)}
+                        data-testid="search-context-name-input"
+                        value={name}
                         type="text"
                         pattern="^[a-zA-Z0-9_\-\/\.]+$"
                         required={true}
@@ -263,7 +274,8 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                     Description <span className="text-muted">(optional)</span>
                 </div>
                 <textarea
-                    className="form-control w-100 test-search-context-description-input"
+                    className="form-control w-100"
+                    data-testid="search-context-description-input"
                     maxLength={MAX_DESCRIPTION_LENGTH}
                     value={description}
                     rows={5}
@@ -323,10 +335,11 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
             <div>
                 <button
                     type="submit"
-                    className="btn btn-primary mr-2 test-create-search-context-button"
+                    className="btn btn-primary mr-2 test-search-context-submit-button"
+                    data-testid="search-context-submit-button"
                     disabled={searchContextOrError && searchContextOrError === LOADING}
                 >
-                    Create search context
+                    {!searchContext ? 'Create search context' : 'Save'}
                 </button>
                 <button type="button" onClick={onCancel} className="btn btn-outline-secondary">
                     Cancel
@@ -337,6 +350,12 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                     Failed to create search context: {searchContextOrError.message}
                 </div>
             )}
+            <AwayPrompt
+                header="Discard unsaved changes?"
+                message="All unsaved changes will be lost."
+                button_ok_text="Discard"
+                when={hasChanges}
+            />
         </Form>
     )
 }

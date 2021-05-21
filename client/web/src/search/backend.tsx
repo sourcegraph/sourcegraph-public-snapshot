@@ -34,6 +34,8 @@ import {
     ConvertVersionContextToSearchContextVariables,
     CreateSearchContextResult,
     CreateSearchContextVariables,
+    UpdateSearchContextVariables,
+    UpdateSearchContextResult,
 } from '../graphql-operations'
 import { DeployType } from '../jscontext'
 
@@ -239,11 +241,18 @@ const searchContextFragment = gql`
     fragment SearchContextFields on SearchContext {
         __typename
         id
+        name
+        namespace {
+            __typename
+            id
+            namespaceName
+        }
         spec
         description
         public
         autoDefined
         updatedAt
+        viewerCanManage
         repositories {
             __typename
             repository {
@@ -390,6 +399,27 @@ export function createSearchContext(variables: CreateSearchContextVariables): Ob
     ).pipe(
         map(dataOrThrowErrors),
         map(data => data.createSearchContext as GQL.ISearchContext)
+    )
+}
+
+export function updateSearchContext(variables: UpdateSearchContextVariables): Observable<GQL.ISearchContext> {
+    return requestGraphQL<UpdateSearchContextResult, UpdateSearchContextVariables>(
+        gql`
+            mutation UpdateSearchContext(
+                $id: ID!
+                $searchContext: SearchContextEditInput!
+                $repositories: [SearchContextRepositoryRevisionsInput!]!
+            ) {
+                updateSearchContext(id: $id, searchContext: $searchContext, repositories: $repositories) {
+                    ...SearchContextFields
+                }
+            }
+            ${searchContextFragment}
+        `,
+        variables
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.updateSearchContext as GQL.ISearchContext)
     )
 }
 
