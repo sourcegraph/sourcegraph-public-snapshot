@@ -1302,6 +1302,8 @@ type SettingsExperimentalFeatures struct {
 	EnableFastResultLoading *bool `json:"enableFastResultLoading,omitempty"`
 	// EnableSmartQuery description: Enables contextual syntax highlighting and hovers for search queries in the web app
 	EnableSmartQuery *bool `json:"enableSmartQuery,omitempty"`
+	// FuzzyFinder description: Enables fuzzy finder with keyboard shortcut `t`.
+	FuzzyFinder *bool `json:"fuzzyFinder,omitempty"`
 	// SearchStats description: Enables a new page that shows language statistics about the results for a search query.
 	SearchStats *bool `json:"searchStats,omitempty"`
 	// SearchStreaming description: Enables experimental streaming support.
