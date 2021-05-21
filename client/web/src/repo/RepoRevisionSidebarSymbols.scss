@@ -1,5 +1,6 @@
-.theme-redesign {
-    .repo-revision-sidebar-symbols {
+.repo-revision-sidebar-symbols {
+    .theme-redesign & {
+        padding-top: 0.75rem;
         &-node {
             &:first-of-type {
                 padding-top: 0.75rem;
@@ -9,9 +10,6 @@
             }
         }
     }
-}
-
-.repo-revision-sidebar-symbols {
     flex: 1 1 auto;
     display: flex;
     flex-direction: column;
@@ -28,6 +26,11 @@
             &--active,
             &:hover {
                 background-color: var(--color-bg-3);
+                .theme-redesign & {
+                    text-decoration: none;
+                    color: var(--body-color);
+                    border-radius: var(--border-radius);
+                }
             }
         }
 
