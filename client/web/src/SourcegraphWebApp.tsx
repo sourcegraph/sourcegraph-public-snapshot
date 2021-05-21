@@ -303,6 +303,9 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             showQueryBuilder: false,
             enableSmartQuery: false,
             enableCodeMonitoring: false,
+            // Disabling linter here as otherwise the application fails to compile. Bad lint?
+            // See 7a137b201330eb2118c746f8cc5acddf63c1f039
+            // eslint-disable-next-line react/no-unused-state
             enableAPIDocs: false,
         }
     }
