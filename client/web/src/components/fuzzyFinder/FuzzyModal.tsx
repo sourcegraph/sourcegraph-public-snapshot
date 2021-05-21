@@ -4,10 +4,11 @@
 
 import React from 'react'
 
-import { CaseSensitiveFuzzySearch } from './CaseSensitiveFuzzySearch'
+import { CaseSensitiveFuzzySearch } from '../../fuzzyFinder/CaseSensitiveFuzzySearch'
+import { FuzzySearch, FuzzySearchResult, SearchIndexing } from '../../fuzzyFinder/FuzzySearch'
+
 import { FuzzyFinderProps, Indexing, FuzzyFSM } from './FuzzyFinder'
 import styles from './FuzzyModal.module.scss'
-import { FuzzySearch, FuzzySearchResult, SearchIndexing } from './FuzzySearch'
 import { HighlightedLink } from './HighlightedLink'
 
 // Enable this URL query parameter to see debugging information like latency

@@ -4,15 +4,15 @@ import React, { useState } from 'react'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
-import { requestGraphQL } from '../backend/graphql'
-import { FilesResult, FilesVariables } from '../graphql-operations'
+import { requestGraphQL } from '../../backend/graphql'
+import { FuzzySearch, SearchIndexing } from '../../fuzzyFinder/FuzzySearch'
+import { FilesResult, FilesVariables } from '../../graphql-operations'
 import {
     KEYBOARD_SHORTCUT_CLOSE_FUZZY_FINDER,
     KEYBOARD_SHORTCUT_FUZZY_FINDER,
-} from '../keyboardShortcuts/keyboardShortcuts'
+} from '../../keyboardShortcuts/keyboardShortcuts'
 
 import { FuzzyModal } from './FuzzyModal'
-import { FuzzySearch, SearchIndexing } from './FuzzySearch'
 
 const DEFAULT_MAX_RESULTS = 100
 

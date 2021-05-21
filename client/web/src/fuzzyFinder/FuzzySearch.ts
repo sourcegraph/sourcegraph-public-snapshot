@@ -1,4 +1,4 @@
-import { HighlightedLinkProps } from './HighlightedLink'
+import { HighlightedLinkProps } from '../components/fuzzyFinder/HighlightedLink'
 
 export interface FuzzySearchParameters {
     query: string
