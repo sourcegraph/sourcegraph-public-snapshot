@@ -56,15 +56,15 @@ interface FuzzyFSMProps {
  * Similar to "Go to file" in VS Code or the "t" keyboard shortcut on github.com
  */
 export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
-    const files = renderFiles(props)
+    const fuzzyResult = renderFuzzyResult(props)
 
     // Sets the new "focus index" so that it's rounded by the number of
     // displayed filenames.  Cycles so that the user can press-hold the down
     // arrow and it goes all the way down and back up to the top result.
     function setRoundedFocusIndex(increment: number): void {
         const newNumber = props.focusIndex + increment
-        const index = newNumber % files.resultsCount
-        const nextIndex = index < 0 ? files.resultsCount + index : index
+        const index = newNumber % fuzzyResult.resultsCount
+        const nextIndex = index < 0 ? fuzzyResult.resultsCount + index : index
         props.setFocusIndex(nextIndex)
         document.querySelector(`#fuzzy-modal-result-${nextIndex}`)?.scrollIntoView(false)
     }
@@ -89,7 +89,7 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
                 setRoundedFocusIndex(-10)
                 break
             case 'Enter':
-                if (props.focusIndex < files.resultsCount) {
+                if (props.focusIndex < fuzzyResult.resultsCount) {
                     const fileAnchor = document.querySelector<HTMLAnchorElement>(
                         `#fuzzy-modal-result-${props.focusIndex} a`
                     )
@@ -119,12 +119,12 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
                         onKeyDown={onInputKeyDown}
                     />
                 </div>
-                <div className={styles.body}>{files.element}</div>
+                <div className={styles.body}>{fuzzyResult.element}</div>
                 <div className={styles.footer}>
                     <button type="button" className="btn btn-secondary" onClick={() => props.onClose()}>
                         Close
                     </button>
-                    {fuzzyFooter(props.fsm, files)}
+                    {fuzzyFooter(props.fsm, fuzzyResult)}
                 </div>
             </div>
         </div>
@@ -135,7 +135,7 @@ function plural(what: string, count: number, isComplete: boolean): string {
     return count.toLocaleString() + (isComplete ? '' : '+') + ' ' + what + (count === 1 ? '' : 's')
 }
 
-function fuzzyFooter(fsm: FuzzyFSM, files: RenderedFiles): JSX.Element {
+function fuzzyFooter(fsm: FuzzyFSM, files: RenderedFuzzyResult): JSX.Element {
     return IS_DEBUG ? (
         <>
             <span>{files.falsePositiveRatio && Math.round(files.falsePositiveRatio * 100)}fp</span>
@@ -163,7 +163,7 @@ function indexingProgressBar(indexing: Indexing): JSX.Element {
     )
 }
 
-interface RenderedFiles {
+interface RenderedFuzzyResult {
     element: JSX.Element
     resultsCount: number
     isComplete: boolean
@@ -172,8 +172,8 @@ interface RenderedFiles {
     falsePositiveRatio?: number
 }
 
-function renderFiles(props: FuzzyModalProps): RenderedFiles {
-    function empty(element: JSX.Element): RenderedFiles {
+function renderFuzzyResult(props: FuzzyModalProps): RenderedFuzzyResult {
+    function empty(element: JSX.Element): RenderedFuzzyResult {
         return {
             element,
             resultsCount: 0,
@@ -208,16 +208,16 @@ function renderFiles(props: FuzzyModalProps): RenderedFiles {
             later()
                 .then(() => continueIndexing(loader))
                 .then(next => props.setFsm(next), onError('onIndexing'))
-            return renderReady(props, props.fsm.loader.partialValue, props.fsm.loader)
+            return renderFiles(props, props.fsm.loader.partialValue, props.fsm.loader)
         }
         case 'ready':
-            return renderReady(props, props.fsm.fuzzy)
+            return renderFiles(props, props.fsm.fuzzy)
         default:
             return empty(<p>ERROR</p>)
     }
 }
 
-function renderReady(props: FuzzyModalProps, search: FuzzySearch, indexing?: SearchIndexing): RenderedFiles {
+function renderFiles(props: FuzzyModalProps, search: FuzzySearch, indexing?: SearchIndexing): RenderedFuzzyResult {
     const indexedFileCount = indexing ? indexing.indexedFileCount : ''
     const cacheKey = `${props.query}-${props.maxResults}${indexedFileCount}`
     let fuzzyResult = lastFuzzySearchResult.get(cacheKey)
