@@ -24,6 +24,7 @@ import { toDocumentationURL } from '../../util/url'
 
 import { DocumentationNode, GQLDocumentationNode } from './DocumentationNode'
 import { RepositoryDocumentationSidebar, getSidebarVisibility } from './RepositoryDocumentationSidebar'
+import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 
 interface DocumentationPageResults {
     node: GQL.IRepository
@@ -73,7 +74,7 @@ const fetchDocumentationPage = (args: DocumentationPageVariables): Observable<GQ
         })
     )
 
-export const PageError: React.FunctionComponent<{ error: ErrorLike }> = ({ error }) => (
+const PageError: React.FunctionComponent<{ error: ErrorLike }> = ({ error }) => (
     <div className="repository-docs-page__error alert alert-danger m-2">
         <AlertCircleIcon className="redesign-d-none icon-inline" /> Error: {upperFirst(error.message)}
     </div>
@@ -85,23 +86,22 @@ const PageNotFound: React.FunctionComponent = () => (
     </div>
 )
 
-export interface RepositoryDocumentationPageProps
-    extends Partial<RevisionSpec>,
+interface Props
+    extends RepoHeaderContributionsLifecycleProps,
+        Partial<RevisionSpec>,
         ResolvedRevisionSpec,
         BreadcrumbSetters {
     repo: RepositoryFields
     history: H.History
     location: H.Location
     pathID: string
+    commitID: string
 }
 
 const LOADING = 'loading' as const
 
 /** A page that shows a repository's documentation at the current revision. */
-export const RepositoryDocumentationPage: React.FunctionComponent<RepositoryDocumentationPageProps> = ({
-    useBreadcrumb,
-    ...props
-}) => {
+export const RepositoryDocumentationPage: React.FunctionComponent<Props> = ({ useBreadcrumb, ...props }) => {
     // TODO(slimsag): nightmare: there is _something_ in the props that causes this entire page to
     // rerender whenever you type in the search bar. In fact, this also appears to happen on all other
     // pages!

@@ -11,7 +11,6 @@ import { Settings } from '../schema/settings.schema'
 import { lazyComponent } from '../util/lazyComponent'
 import { formatHash } from '../util/url'
 
-import { RepositoryDocumentationPageProps } from './docs/RepositoryDocumentationPage'
 import { RepoContainerRoute } from './RepoContainer'
 import { RepoRevisionContainerContext, RepoRevisionContainerRoute } from './RepoRevisionContainer'
 
@@ -232,19 +231,11 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
             const settings: Settings = settingsCascade.final
             return !!settings.experimentalFeatures?.apiDocs
         },
-        render: ({
-            repoHeaderContributionsLifecycleProps,
-            resolvedRev: { commitID },
-            match,
-            ...context
-        }: RepositoryDocumentationPageProps &
-            RepoRevisionContainerContext &
-            RouteComponentProps<{
-                pathID: string | undefined
-            }>) => (
+        render: ({ resolvedRev: { commitID }, match, repoHeaderContributionsLifecycleProps, ...context }: any) => (
             <>
                 <RepositoryDocumentationPage
                     {...context}
+                    match={match}
                     commitID={commitID}
                     pathID={match.params.pathID ? '/' + decodeURIComponent(match.params.pathID) : '/'}
                 />
