@@ -106,13 +106,11 @@ export interface Downloading {
 }
 export interface Indexing {
     key: 'indexing'
-    loader: SearchIndexing
-    totalFileCount: number
+    indexing: SearchIndexing
 }
 export interface Ready {
     key: 'ready'
     fuzzy: FuzzySearch
-    totalFileCount: number
 }
 export interface Failed {
     key: 'failed'

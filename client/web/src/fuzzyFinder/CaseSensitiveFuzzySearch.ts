@@ -65,7 +65,7 @@ export class CaseSensitiveFuzzySearch extends FuzzySearch {
                 key: 'indexing',
                 indexedFileCount: indexer.indexedFileCount(),
                 totalFileCount: indexer.totalFileCount(),
-                partialValue: indexer.complete(),
+                partialFuzzy: indexer.complete(),
                 continue: () => new Promise(resolve => resolve(loop())),
             }
         }

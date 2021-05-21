@@ -153,8 +153,8 @@ function fuzzyFooter(fsm: FuzzyFSM, files: RenderedFuzzyResult): JSX.Element {
 }
 
 function indexingProgressBar(indexing: Indexing): JSX.Element {
-    const indexedFiles = indexing.loader.indexedFileCount
-    const totalFiles = indexing.loader.totalFileCount
+    const indexedFiles = indexing.indexing.indexedFileCount
+    const totalFiles = indexing.indexing.totalFileCount
     const percentage = Math.round((indexedFiles / totalFiles) * 100)
     return (
         <progress value={indexedFiles} max={totalFiles}>
@@ -204,11 +204,11 @@ function renderFuzzyResult(props: FuzzyModalProps): RenderedFuzzyResult {
         case 'failed':
             return empty(<p>Error: {props.fsm.errorMessage}</p>)
         case 'indexing': {
-            const loader = props.fsm.loader
+            const loader = props.fsm.indexing
             later()
                 .then(() => continueIndexing(loader))
                 .then(next => props.setFsm(next), onError('onIndexing'))
-            return renderFiles(props, props.fsm.loader.partialValue, props.fsm.loader)
+            return renderFiles(props, props.fsm.indexing.partialFuzzy, props.fsm.indexing)
         }
         case 'ready':
             return renderFiles(props, props.fsm.fuzzy)
@@ -287,12 +287,11 @@ async function later(): Promise<void> {
 async function continueIndexing(indexing: SearchIndexing): Promise<FuzzyFSM> {
     const next = await indexing.continue()
     if (next.key === 'indexing') {
-        return { key: 'indexing', loader: next, totalFileCount: next.totalFileCount }
+        return { key: 'indexing', indexing: next }
     }
     return {
         key: 'ready',
         fuzzy: next.value,
-        totalFileCount: next.value.totalFileCount,
     }
 }
 
@@ -346,17 +345,15 @@ async function handleEmpty(props: FuzzyModalProps): Promise<void> {
 }
 
 function handleFilenames(filenames: string[]): FuzzyFSM {
-    const loader = CaseSensitiveFuzzySearch.fromSearchValuesAsync(filenames.map(file => ({ text: file })))
-    if (loader.key === 'ready') {
+    const indexing = CaseSensitiveFuzzySearch.fromSearchValuesAsync(filenames.map(file => ({ text: file })))
+    if (indexing.key === 'ready') {
         return {
             key: 'ready',
-            fuzzy: loader.value,
-            totalFileCount: loader.value.totalFileCount,
+            fuzzy: indexing.value,
         }
     }
     return {
         key: 'indexing',
-        loader,
-        totalFileCount: loader.totalFileCount,
+        indexing,
     }
 }

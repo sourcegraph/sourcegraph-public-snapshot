@@ -23,7 +23,7 @@ export interface SearchIndexing {
     key: 'indexing'
     indexedFileCount: number
     totalFileCount: number
-    partialValue: FuzzySearch
+    partialFuzzy: FuzzySearch
     continue: () => Promise<IndexingFSM>
 }
 export interface SearchReady {
