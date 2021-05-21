@@ -53,6 +53,13 @@ env:
   # Default `NODE_ENV` to `development`
   NODE_ENV: development
 
+  # Code Insights uses a separate database, because it's easier to run TimescaleDB in
+  # Docker than install as a Postgres extension in dev environments.
+  CODEINSIGHTS_PGDATASOURCE: postgres://postgres:password@127.0.0.1:5435/postgres
+  DB_STARTUP_TIMEOUT: 120s # codeinsights-db needs more time to start in some instances.
+  DISABLE_CODE_INSIGHTS_HISTORICAL: true
+  DISABLE_CODE_INSIGHTS: true
+
 commands:
   frontend:
     cmd: ulimit -n 10000 && .bin/frontend
@@ -245,14 +252,14 @@ commands:
       # This is not needed actually
       INSECURE_DEV: 1
 
-  zoekt-indexserver-0:
+  zoekt-indexserver-template: &zoekttemplate
     cmd: |
       .bin/zoekt-sourcegraph-indexserver \
         -sourcegraph_url 'http://localhost:3090' \
-        -index "$HOME/.sourcegraph/zoekt/index-0" \
-        -hostname 'localhost:3070' \
+        -index "$HOME/.sourcegraph/zoekt/index-$ZOEKT_NUM" \
+        -hostname "localhost:$ZOEKT_HOSTNAME_PORT" \
         -interval 1m \
-        -listen ":6072" \
+        -listen ":$ZOEKT_LISTEN_PORT" \
         -cpu_fraction 0.25
     install: |
       mkdir -p .bin
@@ -261,33 +268,26 @@ commands:
       go install github.com/google/zoekt/cmd/zoekt-archive-index
       go install github.com/google/zoekt/cmd/zoekt-git-index
       go install github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver
-    env:
+    env: &zoektenv
       GOGC: 50
       CTAGS_COMMAND: cmd/symbols/universal-ctags-dev
       PATH: .bin:$PATH
 
-  zoekt-indexserver-1:
-    cmd: |
-      .bin/zoekt-sourcegraph-indexserver \
-        -sourcegraph_url 'http://localhost:3090' \
-        -index "$HOME/.sourcegraph/zoekt/index-1" \
-        -hostname 'localhost:3071' \
-        -interval 1m \
-        -listen ":6073" \
-        -cpu_fraction 0.25
-    install: |
-      # We technically don't need this because indexserver-0 installs it, but
-      # let's keep it here before we have something to remove the duplication
-      mkdir -p .bin
-      export GOBIN="${PWD}/.bin"
-      export GO111MODULE=on
-      go install github.com/google/zoekt/cmd/zoekt-archive-index
-      go install github.com/google/zoekt/cmd/zoekt-git-index
-      go install github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver
+  zoekt-indexserver-0:
+    <<: *zoekttemplate
     env:
-      GOGC: 50
-      CTAGS_COMMAND: cmd/symbols/universal-ctags-dev
-      PATH: .bin:$PATH
+      <<: *zoektenv
+      ZOEKT_NUM: 0
+      ZOEKT_HOSTNAME_PORT: 3070
+      ZOEKT_LISTEN_PORT: 6072
+
+  zoekt-indexserver-1:
+    <<: *zoekttemplate
+    env:
+      <<: *zoektenv
+      ZOEKT_NUM: 1
+      ZOEKT_HOSTNAME_PORT: 3071
+      ZOEKT_LISTEN_PORT: 6073
 
   zoekt-webserver-0:
     cmd: |
@@ -315,6 +315,80 @@ commands:
       GOGC: 50
       PATH: .bin:$PATH
 
+  precise-code-intel-worker:
+    cmd: .bin/precise-code-intel-worker
+    install: |
+      go build -o .bin/precise-code-intel-worker github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker
+    watch:
+      - internal
+      - cmd/enterprise/precise-code-intel-worker
+      - enterprise/internal
+      - lib/codeintel
+
+  executor-queue:
+    cmd: .bin/executor-queue
+    install: |
+      go build -o .bin/executor-queue github.com/sourcegraph/sourcegraph/enterprise/cmd/executor-queue
+    watch:
+      - internal
+      - cmd/enterprise/executor-queue
+      - enterprise/internal
+      - lib/codeintel
+
+  codeintel-executor:
+    cmd: .bin/codeintel-executor
+    install:
+    env:
+      EXECUTOR_QUEUE_NAME: codeintel
+      TMPDIR: $HOME/.sourcegraph/indexer-temp
+
+
+  minio:
+    cmd: |
+      docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
+      docker run --rm \
+        --name=$CONTAINER \
+        --cpus=1 \
+        --memory=1g \
+        -p 0.0.0.0:9000:9000 \
+        -e 'MINIO_ACCESS_KEY=AKIAIOSFODNN7EXAMPLE' \
+        -e 'MINIO_SECRET_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY' \
+        -v "$MINIO_DISK":/data \
+        $IMAGE server /data >"$MINIO_LOG_FILE" 2>&1
+    install: |
+      mkdir -p $MINIO_LOGS
+      mkdir -p $MINIO_DISK
+      CACHE=true ./docker-images/minio/build.sh >$MINIO_LOG_FILE 2>&1
+    env:
+      MINIO_DISK: $HOME/.sourcegraph-dev/data/minio
+      MINIO_LOGS: $HOME/.sourcegraph-dev/logs/minio
+      MINIO_LOG_FILE: $HOME/.sourcegraph-dev/logs/minio/minio.log"
+      IMAGE: sourcegraph/minio
+      CONTAINER: minio
+
+  codeinsights-db:
+    cmd: |
+      docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
+      docker run --rm \
+        --name=${CONTAINER} \
+        --cpus=1 \
+        --memory=1g \
+        -e POSTGRES_PASSWORD=password \
+        -p 0.0.0.0:$PORT:5432 \
+        -v $DISK:/var/lib/postgresql/data \
+        $IMAGE >$LOG_FILE 2>&1
+    install: |
+      mkdir -p $LOGS
+      mkdir -p $DISK
+      CACHE=true ./docker-images/codeinsights-db/build.sh >$LOG_FILE 2>&1
+    env:
+      LOGS: $HOME/.sourcegraph-dev/logs/codeinsights-db
+      LOG_FILE: $HOME/.sourcegraph-dev/logs/codeinsights-db/codeinsights-db.log
+      DISK: $HOME/.sourcegraph-dev/data/codeinsights-db
+      IMAGE: sourcegraph/codeinsights-db:dev
+      CONTAINER: codeinsights-db
+      PORT: 5435
+
 checks:
   docker:
     cmd: docker -v
@@ -329,6 +403,8 @@ checks:
     failMessage: "Failed to connect to Postgres database. Make sure environment variables are setup correctly so that psql can connect."
 
 commandsets:
+  # TODO: Should we be able to define "env" vars _per set_?
+
   default:
     - frontend
     - repo-updater
@@ -362,6 +438,52 @@ commandsets:
     - zoekt-indexserver-1
     - zoekt-webserver-0
     - zoekt-webserver-1
+
+  enterprise-codeintel:
+    - enterprise-frontend
+    - enterprise-repo-updater
+    - enterprise-web
+    - gitserver
+    - searcher
+    - symbols
+    - query-runner
+    - caddy
+    - docsite
+    - syntect_server
+    - github-proxy
+    - zoekt-indexserver-0
+    - zoekt-indexserver-1
+    - zoekt-webserver-0
+    - zoekt-webserver-1
+    - minio
+    - executor-queue
+    - precise-code-intel-worker
+    - codeintel-executor
+
+  enterprise-codeinsights:
+    # Add the following overwrites to your sg.config.overwrite.yaml to get
+    # codeinsights working:
+    #
+    #   env:
+    #     DISABLE_CODE_INSIGHTS_HISTORICAL: false
+    #     DISABLE_CODE_INSIGHTS: false
+    #
+    - enterprise-frontend
+    - enterprise-repo-updater
+    - enterprise-web
+    - gitserver
+    - searcher
+    - symbols
+    - query-runner
+    - caddy
+    - docsite
+    - syntect_server
+    - github-proxy
+    - zoekt-indexserver-0
+    - zoekt-indexserver-1
+    - zoekt-webserver-0
+    - zoekt-webserver-1
+    - codeinsights-db
 
 tests:
   # These can be run with `sg test [name]`
