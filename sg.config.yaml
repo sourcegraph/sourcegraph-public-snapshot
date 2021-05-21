@@ -252,14 +252,14 @@ commands:
       # This is not needed actually
       INSECURE_DEV: 1
 
-  zoekt-indexserver-0:
+  zoekt-indexserver-template: &zoekttemplate
     cmd: |
       .bin/zoekt-sourcegraph-indexserver \
         -sourcegraph_url 'http://localhost:3090' \
-        -index "$HOME/.sourcegraph/zoekt/index-0" \
-        -hostname 'localhost:3070' \
+        -index "$HOME/.sourcegraph/zoekt/index-$ZOEKT_NUM" \
+        -hostname "localhost:$ZOEKT_HOSTNAME_PORT" \
         -interval 1m \
-        -listen ":6072" \
+        -listen ":$ZOEKT_LISTEN_PORT" \
         -cpu_fraction 0.25
     install: |
       mkdir -p .bin
@@ -268,33 +268,26 @@ commands:
       go install github.com/google/zoekt/cmd/zoekt-archive-index
       go install github.com/google/zoekt/cmd/zoekt-git-index
       go install github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver
-    env:
+    env: &zoektenv
       GOGC: 50
       CTAGS_COMMAND: cmd/symbols/universal-ctags-dev
       PATH: .bin:$PATH
 
-  zoekt-indexserver-1:
-    cmd: |
-      .bin/zoekt-sourcegraph-indexserver \
-        -sourcegraph_url 'http://localhost:3090' \
-        -index "$HOME/.sourcegraph/zoekt/index-1" \
-        -hostname 'localhost:3071' \
-        -interval 1m \
-        -listen ":6073" \
-        -cpu_fraction 0.25
-    install: |
-      # We technically don't need this because indexserver-0 installs it, but
-      # let's keep it here before we have something to remove the duplication
-      mkdir -p .bin
-      export GOBIN="${PWD}/.bin"
-      export GO111MODULE=on
-      go install github.com/google/zoekt/cmd/zoekt-archive-index
-      go install github.com/google/zoekt/cmd/zoekt-git-index
-      go install github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver
+  zoekt-indexserver-0:
+    <<: *zoekttemplate
     env:
-      GOGC: 50
-      CTAGS_COMMAND: cmd/symbols/universal-ctags-dev
-      PATH: .bin:$PATH
+      <<: *zoektenv
+      ZOEKT_NUM: 0
+      ZOEKT_HOSTNAME_PORT: 3070
+      ZOEKT_LISTEN_PORT: 6072
+
+  zoekt-indexserver-1:
+    <<: *zoekttemplate
+    env:
+      <<: *zoektenv
+      ZOEKT_NUM: 1
+      ZOEKT_HOSTNAME_PORT: 3071
+      ZOEKT_LISTEN_PORT: 6073
 
   zoekt-webserver-0:
     cmd: |
@@ -331,6 +324,24 @@ commands:
       - cmd/enterprise/precise-code-intel-worker
       - enterprise/internal
       - lib/codeintel
+
+  executor-queue:
+    cmd: .bin/executor-queue
+    install: |
+      go build -o .bin/executor-queue github.com/sourcegraph/sourcegraph/enterprise/cmd/executor-queue
+    watch:
+      - internal
+      - cmd/enterprise/executor-queue
+      - enterprise/internal
+      - lib/codeintel
+
+  codeintel-executor:
+    cmd: .bin/codeintel-executor
+    install:
+    env:
+      EXECUTOR_QUEUE_NAME: codeintel
+      TMPDIR: $HOME/.sourcegraph/indexer-temp
+
 
   minio:
     cmd: |
@@ -428,7 +439,28 @@ commandsets:
     - zoekt-webserver-0
     - zoekt-webserver-1
 
-  enterprise-with-codeinsights:
+  enterprise-codeintel:
+    - enterprise-frontend
+    - enterprise-repo-updater
+    - enterprise-web
+    - gitserver
+    - searcher
+    - symbols
+    - query-runner
+    - caddy
+    - docsite
+    - syntect_server
+    - github-proxy
+    - zoekt-indexserver-0
+    - zoekt-indexserver-1
+    - zoekt-webserver-0
+    - zoekt-webserver-1
+    - minio
+    - executor-queue
+    - precise-code-intel-worker
+    - codeintel-executor
+
+  enterprise-codeinsights:
     # Add the following overwrites to your sg.config.overwrite.yaml to get
     # codeinsights working:
     #
