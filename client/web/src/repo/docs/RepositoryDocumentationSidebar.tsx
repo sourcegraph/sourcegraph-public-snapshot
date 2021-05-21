@@ -68,7 +68,7 @@ export const RepositoryDocumentationSidebar: React.FunctionComponent<Props> = ({
             className={props.className}
             element={
                 <div className="d-flex flex-column w-100 border-right">
-                    <div className="d-flex flex-1 mx-3">
+                    <div className="d-flex flex-0 mx-3">
                         <Button
                             onClick={handleSidebarToggle}
                             className="bg-transparent border-0 ml-auto p-1 position-relative focus-behaviour"

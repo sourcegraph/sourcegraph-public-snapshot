@@ -68,7 +68,7 @@ const fetchDocumentationPage = (args: DocumentationPageVariables): Observable<GQ
                 !repo.commit.tree.lsif.documentationPage ||
                 !repo.commit.tree.lsif.documentationPage.tree
             ) {
-                throw new Error('page not found')
+                throw new Error('no LSIF documentation')
             }
             return repo.commit.tree.lsif.documentationPage
         })
@@ -145,7 +145,12 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = ({ us
             <PageTitle title="API docs" />
             {page === LOADING ? <LoadingSpinner className="icon-inline m-1" /> : null}
             {isErrorLike(page) && page.message === 'page not found' ? <PageNotFound /> : null}
-            {isErrorLike(page) && page.message !== 'page not found' ? <PageError error={page} /> : null}
+            {isErrorLike(page) && page.message === 'no LSIF documentation' ? (
+                <p>This repository does not have LSIF documentation data. Currently, only lsif-go is supported.</p>
+            ) : null}
+            {isErrorLike(page) && page.message !== 'page not found' && page.message !== 'no LSIF documentation' ? (
+                <PageError error={page} />
+            ) : null}
             {page !== LOADING && !isErrorLike(page) ? (
                 <>
                     <RepositoryDocumentationSidebar
