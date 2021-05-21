@@ -118,7 +118,7 @@ Indexing multiple branches will add additional resource requirements to Sourcegr
 
 > NOTE: All revisions specified in version contexts are also indexed.
 
-## Search contexts <span class="badge badge-primary">beta</span>
+## Search contexts <span class="badge badge-primary">experimental</span>
 
 Search contexts help you search the code you care about on Sourcegraph. A search context represents a set of repositories at specific revisions on a Sourcegraph instance that will be targeted by search queries by default.
 

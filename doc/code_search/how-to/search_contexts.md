@@ -22,7 +22,7 @@ You can also search across multiple contexts at once using the `OR` [boolean ope
 
 **Note**: Creating search contexts is only supported on private Sourcegraph instances. Sourcegraph Cloud does not yet support custom search contexts. Want early access to custom contexts on Sourcegraph Cloud? [Let us know](mailto:feedback@sourcegraph.com).
 
-When search contexts are [enabled on your private Sourcegraph instance](/code_search/explanations/features#search-contexts-beta), you can create your own search contexts.
+When search contexts are [enabled on your private Sourcegraph instance](/code_search/explanations/features#search-contexts-experimental), you can create your own search contexts.
 
 A search context consists of a name, description, and a set of repositories at one or many revisions.
 
