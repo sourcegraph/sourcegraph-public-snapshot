@@ -62,11 +62,11 @@ export const DocumentationNode: React.FunctionComponent<Props> = ({ useBreadcrum
     const hash = node.pathID.slice(props.pagePathID.length + '/'.length).replace(/\//g, '-')
     const thisPage = toDocumentationURL({ ...repoRevision, pathID: props.pagePathID }) + (hash ? '#' + hash : '')
     useBreadcrumb(
-        useMemo(() => (depth === 0 ? null : { key: `node-${depth}`, element: <Link to={thisPage}>{node.label.value}</Link> }), [
-            depth,
-            node.label.value,
-            thisPage,
-        ])
+        useMemo(
+            () =>
+                depth === 0 ? null : { key: `node-${depth}`, element: <Link to={thisPage}>{node.label.value}</Link> },
+            [depth, node.label.value, thisPage]
+        )
     )
 
     const tagIcons = {
