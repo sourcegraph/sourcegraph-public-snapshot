@@ -1,10 +1,10 @@
 import { subYears, formatISO } from 'date-fns'
 import * as H from 'history'
+import BookOpenVariantIcon from 'mdi-react/BookOpenVariantIcon'
 import FolderIcon from 'mdi-react/FolderIcon'
 import HistoryIcon from 'mdi-react/HistoryIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
-import BookOpenVariantIcon from 'mdi-react/BookOpenVariantIcon'
 import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import TagIcon from 'mdi-react/TagIcon'
@@ -264,6 +264,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
         )
     )
 
+    // eslint-disable-next-line unicorn/prevent-abbreviations
     const enableAPIDocs = !isErrorLike(settingsCascade.final) && !!settingsCascade.final?.experimentalFeatures?.apiDocs
 
     const { getCombinedViews } = useContext(InsightsApiContext)

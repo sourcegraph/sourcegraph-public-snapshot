@@ -5,7 +5,7 @@ import {
     lprToRange,
     ParsedRepoURI,
     parseHash,
-    RepoDocs,
+    RepoDocumentation,
     RepoFile,
     toPositionHashComponent,
 } from '@sourcegraph/shared/src/util/url'
@@ -14,7 +14,7 @@ export function toTreeURL(target: RepoFile): string {
     return `/${encodeRepoRevision(target)}/-/tree/${target.filePath}`
 }
 
-export function toDocumentationURL(target: RepoDocs): string {
+export function toDocumentationURL(target: RepoDocumentation): string {
     return `/${encodeRepoRevision(target)}/-/docs${target.pathID}`
 }
 

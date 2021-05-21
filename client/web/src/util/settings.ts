@@ -87,6 +87,7 @@ export function experimentalFeaturesFromSettings(
         showQueryBuilder = false,
         enableSmartQuery = true,
         codeMonitoring = true, // Default to true if not set
+        // eslint-disable-next-line unicorn/prevent-abbreviations
         apiDocs = false,
     } = experimentalFeatures
 

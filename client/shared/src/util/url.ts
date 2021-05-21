@@ -226,7 +226,7 @@ export interface AbsoluteRepo extends RepoSpec, RevisionSpec, ResolvedRevisionSp
 export interface DocumentationPathID {
     pathID: string
 }
-export interface RepoDocs extends RepoSpec, RevisionSpec, Partial<ResolvedRevisionSpec>, DocumentationPathID {}
+export interface RepoDocumentation extends RepoSpec, RevisionSpec, Partial<ResolvedRevisionSpec>, DocumentationPathID {}
 
 /**
  * A file in a repo
