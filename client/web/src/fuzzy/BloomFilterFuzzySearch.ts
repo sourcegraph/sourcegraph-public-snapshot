@@ -1,6 +1,6 @@
 import { BloomFilter } from 'bloomfilter'
 
-import { FuzzySearch, FuzzySearchParameters, FuzzySearchResult } from './FuzzySearch'
+import { FuzzySearch, IndexingFSM, FuzzySearchParameters, FuzzySearchResult, SearchValue } from './FuzzySearch'
 import { Hasher } from './Hasher'
 import { HighlightedTextProps, offsetSum, RangePosition } from './HighlightedText'
 
@@ -19,23 +19,6 @@ const DEFAULT_BUCKET_SIZE = 50
 export function fuzzyMatchesQuery(query: string, value: string): RangePosition[] {
     return fuzzyMatches(allFuzzyParts(query, true), value)
 }
-
-export interface SearchValue {
-    text: string
-}
-
-export interface Indexing {
-    key: 'indexing'
-    indexedFileCount: number
-    totalFileCount: number
-    partialValue: BloomFilterFuzzySearch
-    continue: () => Promise<FuzzySearchLoader>
-}
-export interface Ready {
-    key: 'ready'
-    value: BloomFilterFuzzySearch
-}
-export type FuzzySearchLoader = Indexing | Ready
 
 /**
  * Fuzzy search that uses bloom filters to improve performance in very large repositories.
@@ -68,13 +51,10 @@ export class BloomFilterFuzzySearch extends FuzzySearch {
         }
     }
 
-    public static fromSearchValuesAsync(
-        files: SearchValue[],
-        bucketSize: number = DEFAULT_BUCKET_SIZE
-    ): FuzzySearchLoader {
+    public static fromSearchValuesAsync(files: SearchValue[], bucketSize: number = DEFAULT_BUCKET_SIZE): IndexingFSM {
         files.sort((a, b) => a.text.length - b.text.length)
         const indexer = new Indexer(files, bucketSize)
-        function loop(): FuzzySearchLoader {
+        function loop(): IndexingFSM {
             if (indexer.isDone()) {
                 return { key: 'ready', value: indexer.complete() }
             }
@@ -102,15 +82,15 @@ export class BloomFilterFuzzySearch extends FuzzySearch {
     }
 
     public search(query: FuzzySearchParameters): FuzzySearchResult {
-        if (query.value.length === 0) {
+        if (query.query.length === 0) {
             return this.emptyResult(query)
         }
         let falsePositives = 0
         const result: HighlightedTextProps[] = []
-        const hashParts = allQueryHashParts(query.value)
-        const queryParts = allFuzzyParts(query.value, true)
+        const hashParts = allQueryHashParts(query.query)
+        const queryParts = allFuzzyParts(query.query, true)
         const complete = (isComplete: boolean): FuzzySearchResult =>
-            this.sorted({ values: result, isComplete, falsePositiveRatio: falsePositives / this.buckets.length })
+            this.sorted({ results: result, isComplete, falsePositiveRatio: falsePositives / this.buckets.length })
         for (const bucket of this.buckets) {
             const matches = bucket.matches(query, queryParts, hashParts)
             if (!matches.skipped && matches.value.length === 0) {
@@ -127,7 +107,7 @@ export class BloomFilterFuzzySearch extends FuzzySearch {
     }
 
     private sorted(result: FuzzySearchResult): FuzzySearchResult {
-        result.values.sort((a, b) => {
+        result.results.sort((a, b) => {
             const byLength = a.text.length - b.text.length
             if (byLength !== 0) {
                 return byLength
@@ -145,7 +125,7 @@ export class BloomFilterFuzzySearch extends FuzzySearch {
 
     private emptyResult(query: FuzzySearchParameters): FuzzySearchResult {
         const result: HighlightedTextProps[] = []
-        const complete = (isComplete: boolean): FuzzySearchResult => this.sorted({ values: result, isComplete })
+        const complete = (isComplete: boolean): FuzzySearchResult => this.sorted({ results: result, isComplete })
 
         for (const bucket of this.buckets) {
             if (result.length > query.maxResults) {
@@ -196,9 +176,9 @@ function isDigit(value: string): boolean {
     return value >= '0' && value <= '9'
 }
 function isLowercaseCharacter(value: string): boolean {
-    return isLowercase(value) && !isDelimeter(value)
+    return isLowercaseOrDigit(value) && !isDelimeter(value)
 }
-function isLowercase(value: string): boolean {
+function isLowercaseOrDigit(value: string): boolean {
     return isDigit(value) || (value.toLowerCase() === value && value !== value.toUpperCase())
 }
 
@@ -286,7 +266,7 @@ class FuzzyMatcher {
         return this.queries[this.queryIndex]
     }
     public isCaseInsensitive(): boolean {
-        return isLowercase(this.query())
+        return isLowercaseOrDigit(this.query())
     }
     public isQueryDelimeter(): boolean {
         return isDelimeter(this.query())
@@ -316,7 +296,7 @@ function startsNewWord(value: string, index: number): boolean {
 function isCapitalizedPart(value: string, start: number, query: string): boolean {
     let previousIsLowercase = false
     for (let index = start; index < value.length && index - start < query.length; index++) {
-        const nextIsLowercase = isLowercase(value[index])
+        const nextIsLowercase = isLowercaseOrDigit(value[index])
         if (previousIsLowercase && !nextIsLowercase) {
             return false
         }

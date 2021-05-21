@@ -1,16 +1,34 @@
 import { HighlightedTextProps } from './HighlightedText'
 
 export interface FuzzySearchParameters {
-    value: string
+    query: string
     maxResults: number
     createUrl?: (value: string) => string
     onClick?: () => void
 }
+
 export interface FuzzySearchResult {
-    values: HighlightedTextProps[]
+    results: HighlightedTextProps[]
     isComplete: boolean
     elapsedMilliseconds?: number
     falsePositiveRatio?: number
+}
+
+export interface SearchValue {
+    text: string
+}
+
+export type IndexingFSM = SearchIndexing | SearchReady
+export interface SearchIndexing {
+    key: 'indexing'
+    indexedFileCount: number
+    totalFileCount: number
+    partialValue: FuzzySearch
+    continue: () => Promise<IndexingFSM>
+}
+export interface SearchReady {
+    key: 'ready'
+    value: FuzzySearch
 }
 
 /**
