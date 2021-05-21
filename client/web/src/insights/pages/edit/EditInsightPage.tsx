@@ -146,11 +146,12 @@ export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = pr
                 title="Oops, we couldn't find insight"
                 subtitle={
                     <span>
-                        Try find insight with id: <code className="badge badge-secondary">{insightID}</code> in{' '}
+                        We couldn't find that insight. Try to find the insight with ID:{' '}
+                        <code className="badge badge-secondary">{insightID}</code> in your{' '}
                         {authenticatedUser ? (
-                            <Link to={`/users/${authenticatedUser?.username}/settings`}>user/org settings</Link>
+                            <Link to={`/users/${authenticatedUser?.username}/settings`}>user or org settings</Link>
                         ) : (
-                            <span>user/org settings</span>
+                            <span>user or org settings</span>
                         )}
                     </span>
                 }
