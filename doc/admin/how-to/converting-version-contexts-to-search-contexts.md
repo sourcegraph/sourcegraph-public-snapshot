@@ -5,9 +5,9 @@ This guide will provide steps for migrating from [version contexts](/code_search
 ## Prerequisites
 
 * This document assumes that you have already configured version contexts in your site configuration.
-* Search contexts and search context management are enabled in site configuration
+* Search contexts and search context management are enabled in global settings.
 
-Site admins can enable search contexts on private Sourcegraph instances in site configuration using the following:
+Site admins can enable search contexts on private Sourcegraph instances in global settings using the following:
 
 ```json
 "experimentalFeatures": {  
@@ -24,7 +24,7 @@ Site admins can enable search contexts on private Sourcegraph instances in site 
 4. Convert either all version contexts at once, or specific individual version contexts as desired.
 5. Navigate back to `https://your_sourcegraph_instance.com/contexts`. Converted version contexts will be listed.
 
-Converted search contexts can be used immediately by users on the Sourcegraph instance. The contexts selector will be shown the search input.
+Converted search contexts can be used immediately by users on the Sourcegraph instance. The contexts selector will be shown in the search input.
 
 ## Discontinuing use of version contexts on your private Sourcegraph instance
 

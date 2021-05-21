@@ -4,6 +4,8 @@ Search contexts help you search the code you care about on Sourcegraph. A search
 
 Every search on Sourcegraph uses a search context. Search contexts can be defined with the contexts selector shown in the search input, or entered directly in a search query.
 
+If no search context is specified, `context:global` is used.
+
 ## Using search contexts
 
 The search contexts selector is shown in the search input. All search queries will target the currently selected search context. 
@@ -40,7 +42,7 @@ To create a search context:
   - Private contexts can only be viewed by their owner, or in the case being globally owned, by site admins.
 - In the **Repositories and revisions** configuration, define which repositories and revisions should be included in the search context. Press **Add repository** to quickly add a template to the configuration.
   - Define repositories with valid URLs.
-  - Define revisions as objects in an array. To specify the default branch, you can set `"rev"` to `"HEAD"` or `""`.
+  - Define revisions as strings in an array. To specify a default branch, use `"HEAD"`.
 
 For example:
   
@@ -56,7 +58,7 @@ For example:
         "revisions": [
           "3.11.2"
         ]
-      }, 
+      }
     ]
 ```
 

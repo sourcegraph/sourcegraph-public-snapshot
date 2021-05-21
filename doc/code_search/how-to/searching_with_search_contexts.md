@@ -9,7 +9,6 @@ Sourcegraph Cloud currently supports two search contexts:
 
 **Coming soon:** create your own search contexts that include the repositories you choose. Want early access? [Let us know](mailto:feedback@sourcegraph.com).
 
-
 ## Using search contexts
 
 The search contexts selector is shown in the search input. All search queries will target the currently selected search context. 

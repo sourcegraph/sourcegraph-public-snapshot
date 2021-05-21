@@ -129,6 +129,8 @@ Every search on Sourcegraph uses a search context. Search contexts can be define
 - Your personal context, `context:@username`, which automatically includes all repositories you add to Sourcegraph Cloud.
 - The global context, `context:global`, which includes all repositories on Sourcegraph Cloud.
 
+If no search context is specified, `context:global` is used.
+
 **Private Sourcegraph instances** support custom search contexts:
 
 - Contexts owned by a user, such as `context:@username/context-name`, which can be private to the user or public to all users on the Sourcegraph instance.
@@ -137,7 +139,7 @@ Every search on Sourcegraph uses a search context. Search contexts can be define
 
 This feature is currently under active development for self-hosted Sourcegraph instances and is disabled by default.
 
-Your site admin can enable search contexts on your private instance in site configuration using the following:
+Your site admin can enable search contexts on your private instance in global settings using the following:
 
 ```json
 "experimentalFeatures": {  
