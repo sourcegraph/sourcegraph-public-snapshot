@@ -7,8 +7,8 @@ import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 import { requestGraphQL } from '../backend/graphql'
 import { FilesResult, FilesVariables } from '../graphql-operations'
 import {
-    KEYBOARD_SHORTCUT_CLOSE_FUZZY_FILES,
-    KEYBOARD_SHORTCUT_FUZZY_FILES,
+    KEYBOARD_SHORTCUT_CLOSE_FUZZY_FINDER,
+    KEYBOARD_SHORTCUT_FUZZY_FINDER,
 } from '../keyboardShortcuts/keyboardShortcuts'
 
 import { FuzzyModal } from './FuzzyModal'
@@ -46,7 +46,7 @@ export const FuzzyFinder: React.FunctionComponent<FuzzyFinderProps> = props => {
     return (
         <>
             <Shortcut
-                {...KEYBOARD_SHORTCUT_FUZZY_FILES.keybindings[0]}
+                {...KEYBOARD_SHORTCUT_FUZZY_FINDER.keybindings[0]}
                 onMatch={() => {
                     setIsVisible(true)
                     const input = document.querySelector<HTMLInputElement>('#fuzzy-modal-input')
@@ -54,7 +54,7 @@ export const FuzzyFinder: React.FunctionComponent<FuzzyFinderProps> = props => {
                     input?.select()
                 }}
             />
-            <Shortcut {...KEYBOARD_SHORTCUT_CLOSE_FUZZY_FILES.keybindings[0]} onMatch={() => setIsVisible(false)} />
+            <Shortcut {...KEYBOARD_SHORTCUT_CLOSE_FUZZY_FINDER.keybindings[0]} onMatch={() => setIsVisible(false)} />
             {isVisible && (
                 <FuzzyModal
                     {...props}
