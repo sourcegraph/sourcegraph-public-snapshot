@@ -1,7 +1,6 @@
 package httpapi
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -15,6 +14,6 @@ func serveRepoRefresh(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	_, err = repoupdater.DefaultClient.EnqueueRepoUpdate(context.Background(), repo.Name)
+	_, err = repoupdater.DefaultClient.EnqueueRepoUpdate(r.Context(), repo.Name)
 	return err
 }
