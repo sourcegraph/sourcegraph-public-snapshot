@@ -8,7 +8,7 @@ import { CaseSensitiveFuzzySearch } from './CaseSensitiveFuzzySearch'
 import { FuzzyFinderProps, Indexing, FuzzyFSM } from './FuzzyFinder'
 import styles from './FuzzyModal.module.scss'
 import { FuzzySearch, FuzzySearchResult, SearchIndexing } from './FuzzySearch'
-import { HighlightedText } from './HighlightedText'
+import { HighlightedLink } from './HighlightedLink'
 
 // Enable this URL query parameter to see debugging information like latency
 // numbers and the false-positive ratio for the bloom filter.
@@ -232,8 +232,8 @@ function renderReady(props: FuzzyModalProps, search: FuzzySearch, indexing?: Sea
         lastFuzzySearchResult.clear() // Only cache the last query.
         lastFuzzySearchResult.set(cacheKey, fuzzyResult)
     }
-    const matchingFiles = fuzzyResult.results
-    if (matchingFiles.length === 0) {
+    const links = fuzzyResult.links
+    if (links.length === 0) {
         return {
             element: <p>No files matching '{props.query}'</p>,
             resultsCount: 0,
@@ -241,17 +241,17 @@ function renderReady(props: FuzzyModalProps, search: FuzzySearch, indexing?: Sea
             isComplete: fuzzyResult.isComplete,
         }
     }
-    const filesToRender = matchingFiles.slice(0, props.maxResults)
+    const linksToRender = links.slice(0, props.maxResults)
     return {
         element: (
             <ul className={`${styles.results} text-monospace`}>
-                {filesToRender.map((file, fileIndex) => (
+                {linksToRender.map((file, fileIndex) => (
                     <li
                         id={`fuzzy-modal-result-${fileIndex}`}
                         key={file.text}
                         className={fileIndex === props.focusIndex ? styles.focused : ''}
                     >
-                        <HighlightedText {...file} />
+                        <HighlightedLink {...file} />
                     </li>
                 ))}
                 {!fuzzyResult.isComplete && (
@@ -263,7 +263,7 @@ function renderReady(props: FuzzyModalProps, search: FuzzySearch, indexing?: Sea
                 )}
             </ul>
         ),
-        resultsCount: filesToRender.length,
+        resultsCount: linksToRender.length,
         totalFileCount: search.totalFileCount,
         isComplete: fuzzyResult.isComplete,
         elapsedMilliseconds: fuzzyResult.elapsedMilliseconds,

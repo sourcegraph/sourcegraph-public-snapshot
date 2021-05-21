@@ -1,7 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 
-import styles from './HighlightedText.module.scss'
+import styles from './HighlightedLink.module.scss'
 
 export interface RangePosition {
     startOffset: number
@@ -11,14 +11,14 @@ export interface RangePosition {
      */
     isExact: boolean
 }
-export interface HighlightedTextProps {
+export interface HighlightedLinkProps {
     text: string
     positions: RangePosition[]
     url?: string
     onClick?: () => void
 }
 
-export function offsetSum(props: HighlightedTextProps): number {
+export function offsetSum(props: HighlightedLinkProps): number {
     let sum = 0
     for (const position of props.positions) {
         sum += position.startOffset
@@ -33,7 +33,7 @@ export function offsetSum(props: HighlightedTextProps): number {
  * we want to highlight 'Doc' and `READ' in the filename
  * 'Documentation/README.md`.
  */
-export const HighlightedText: React.FunctionComponent<HighlightedTextProps> = props => {
+export const HighlightedLink: React.FunctionComponent<HighlightedLinkProps> = props => {
     const spans: JSX.Element[] = []
     let start = 0
     function pushSpan(className: string, startOffset: number, endOffset: number): void {

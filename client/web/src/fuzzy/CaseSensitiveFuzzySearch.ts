@@ -2,7 +2,7 @@ import { BloomFilter } from 'bloomfilter'
 
 import { FuzzySearch, IndexingFSM, FuzzySearchParameters, FuzzySearchResult, SearchValue } from './FuzzySearch'
 import { Hasher } from './Hasher'
-import { HighlightedTextProps, offsetSum, RangePosition } from './HighlightedText'
+import { HighlightedLinkProps, offsetSum, RangePosition } from './HighlightedLink'
 
 /**
  * We don't index filenames with length larger than this value.
@@ -87,11 +87,11 @@ export class CaseSensitiveFuzzySearch extends FuzzySearch {
             return this.emptyResult(query)
         }
         let falsePositives = 0
-        const result: HighlightedTextProps[] = []
+        const result: HighlightedLinkProps[] = []
         const hashParts = allQueryHashParts(query.query)
         const queryParts = allFuzzyParts(query.query, true)
         const complete = (isComplete: boolean): FuzzySearchResult =>
-            this.sorted({ results: result, isComplete, falsePositiveRatio: falsePositives / this.buckets.length })
+            this.sorted({ links: result, isComplete, falsePositiveRatio: falsePositives / this.buckets.length })
         for (const bucket of this.buckets) {
             const matches = bucket.matches(query, queryParts, hashParts)
             if (!matches.skipped && matches.value.length === 0) {
@@ -108,7 +108,7 @@ export class CaseSensitiveFuzzySearch extends FuzzySearch {
     }
 
     private sorted(result: FuzzySearchResult): FuzzySearchResult {
-        result.results.sort((a, b) => {
+        result.links.sort((a, b) => {
             const byLength = a.text.length - b.text.length
             if (byLength !== 0) {
                 return byLength
@@ -125,8 +125,8 @@ export class CaseSensitiveFuzzySearch extends FuzzySearch {
     }
 
     private emptyResult(query: FuzzySearchParameters): FuzzySearchResult {
-        const result: HighlightedTextProps[] = []
-        const complete = (isComplete: boolean): FuzzySearchResult => this.sorted({ results: result, isComplete })
+        const result: HighlightedLinkProps[] = []
+        const complete = (isComplete: boolean): FuzzySearchResult => this.sorted({ links: result, isComplete })
 
         for (const bucket of this.buckets) {
             if (result.length > query.maxResults) {
@@ -374,7 +374,7 @@ function updateHashParts(value: string, buf: BloomFilter): void {
 
 interface BucketResult {
     skipped: boolean
-    value: HighlightedTextProps[]
+    value: HighlightedLinkProps[]
 }
 
 class Bucket {
@@ -401,7 +401,7 @@ class Bucket {
         if (!matchesMaybe) {
             return { skipped: true, value: [] }
         }
-        const result: HighlightedTextProps[] = []
+        const result: HighlightedLinkProps[] = []
         for (const file of this.files) {
             const positions = fuzzyMatches(queryParts, file.text)
             if (positions.length > 0) {

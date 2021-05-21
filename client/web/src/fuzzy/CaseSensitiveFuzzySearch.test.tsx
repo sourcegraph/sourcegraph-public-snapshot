@@ -21,13 +21,11 @@ const fuzzy = CaseSensitiveFuzzySearch.fromSearchValues(all.map(text => ({ text 
 function checkSearch(query: string, expected: string[]) {
     test(`search-${query}`, () => {
         const queryProps: FuzzySearchParameters = { query, maxResults: 1000 }
-        const actual = fuzzy.search(queryProps).results.map(highlightedText => highlightedText.text)
+        const actual = fuzzy.search(queryProps).links.map(link => link.text)
         expect(actual).toStrictEqual(expected)
         for (const result of expected) {
             const individualFuzzy = CaseSensitiveFuzzySearch.fromSearchValues([{ text: result }])
-            const individualActual = individualFuzzy
-                .search(queryProps)
-                .results.map(highlightedText => highlightedText.text)
+            const individualActual = individualFuzzy.search(queryProps).links.map(link => link.text)
             expect(individualActual).toStrictEqual([result])
         }
     })
