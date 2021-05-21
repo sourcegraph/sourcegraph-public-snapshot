@@ -185,11 +185,8 @@ function renderFuzzyResult(props: FuzzyModalProps): RenderedFuzzyResult {
         }
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    function onError(what: string): (error: any) => void {
+    function onError(what: string): (error: Error) => void {
         return error => {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            error.what = what
             props.setFsm({ key: 'failed', errorMessage: JSON.stringify(error) })
             throw new Error(what)
         }
