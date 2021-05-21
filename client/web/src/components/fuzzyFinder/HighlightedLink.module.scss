@@ -1,11 +1,11 @@
 .highlighted {
-    color: #000000;
+    color: var(--oc-black);
 }
 .fuzzy {
-    background-color: #d4b83b;
+    background-color: var(--oc-yellow-4);
 }
 .exact {
-    background-color: #ebdd4d;
+    background-color: var(--oc-yellow-3);
 }
 .link {
     display: inline-block;
