@@ -6,7 +6,6 @@ import { ActivationProps } from '@sourcegraph/shared/src/components/activation/A
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
 import {
     PatternTypeProps,
@@ -19,7 +18,6 @@ import { VersionContext } from '../../schema/site.schema'
 import { submitSearch, QueryState } from '../helpers'
 
 import { SearchBox } from './SearchBox'
-import { HAS_COMPLETED_TOUR_KEY } from './SearchOnboardingTour'
 
 interface Props
     extends ActivationProps,
@@ -57,7 +55,6 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
         [props]
     )
 
-    const [hasCompletedTour] = useLocalStorage(HAS_COMPLETED_TOUR_KEY, false)
     return (
         <Form
             className="search--navbar-item d-flex align-items-flex-start flex-grow-1 flex-shrink-past-contents"
@@ -70,7 +67,7 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
                 onSubmit={onSubmit}
                 autoFocus={autoFocus}
                 showSearchContextHighlightTourStep={true}
-                hasCompletedSearchOnboardingTour={hasCompletedTour}
+                isSearchOnboardingTourVisible={false}
             />
         </Form>
     )

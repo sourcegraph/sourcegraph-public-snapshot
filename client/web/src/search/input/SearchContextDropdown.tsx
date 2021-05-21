@@ -24,7 +24,7 @@ export interface SearchContextDropdownProps
     submitSearchOnSearchContextChange?: boolean
     query: string
     history: H.History
-    hasCompletedSearchOnboardingTour: boolean
+    isSearchOnboardingTourVisible: boolean
 }
 
 const tourOptions: Shepherd.Tour.TourOptions = {
@@ -76,7 +76,7 @@ const HAS_SEEN_HIGHLIGHT_TOUR_STEP_KEY = 'has-seen-search-contexts-dropdown-high
 
 const useSearchContextHighlightTour = (
     showSearchContextHighlightTourStep: boolean,
-    hasCompletedSearchOnboardingTour: boolean
+    isSearchOnboardingTourVisible: boolean
 ): Shepherd.Tour => {
     const [hasSeenHighlightTourStep, setHasSeenHighlightTourStep] = useLocalStorage(
         HAS_SEEN_HIGHLIGHT_TOUR_STEP_KEY,
@@ -106,11 +106,11 @@ const useSearchContextHighlightTour = (
             !tour.isActive() &&
             showSearchContextHighlightTourStep &&
             !hasSeenHighlightTourStep &&
-            hasCompletedSearchOnboardingTour
+            !isSearchOnboardingTourVisible
         ) {
             tour.start()
         }
-    }, [showSearchContextHighlightTourStep, hasCompletedSearchOnboardingTour, hasSeenHighlightTourStep, tour])
+    }, [showSearchContextHighlightTourStep, isSearchOnboardingTourVisible, hasSeenHighlightTourStep, tour])
 
     useEffect(() => {
         const onCanceled = (): void => {
@@ -141,10 +141,10 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         fetchSearchContexts,
         showSearchContextHighlightTourStep = false,
         submitSearchOnSearchContextChange = true,
-        hasCompletedSearchOnboardingTour,
+        isSearchOnboardingTourVisible,
     } = props
 
-    const tour = useSearchContextHighlightTour(showSearchContextHighlightTourStep, hasCompletedSearchOnboardingTour)
+    const tour = useSearchContextHighlightTour(showSearchContextHighlightTourStep, isSearchOnboardingTourVisible)
 
     const [isOpen, setIsOpen] = useState(false)
     const toggleOpen = useCallback(() => {

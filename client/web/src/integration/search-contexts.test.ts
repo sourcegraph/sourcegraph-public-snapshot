@@ -303,31 +303,37 @@ describe('Search contexts', () => {
         expect(convertedContexts).toBe(versionContexts.length)
     })
 
-    test('Highlight tour step should not be visible with empty local storage', async () => {
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=context:global+test&patternType=regexp')
+    test('Highlight tour step should not be visible with empty local storage on search homepage', async () => {
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
         await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
         expect(await isSearchContextHighlightTourStepVisible()).toBeFalsy()
     })
 
-    test('Highlight tour step should be visible with completed search onboarding tour', async () => {
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=context:global+test&patternType=regexp', {
-            waitUntil: 'networkidle0',
-        })
-        await driver.page.evaluate(() => localStorage.setItem('has-completed-onboarding-tour', 'true'))
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=context:global+test&patternType=regexp')
+    test('Highlight tour step should be visible with empty local storage on search results page', async () => {
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test')
         await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
         expect(await isSearchContextHighlightTourStepVisible()).toBeTruthy()
     })
 
-    test('Highlight tour step should not be visible if already seen with completed search onboarding tour', async () => {
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=context:global+test&patternType=regexp', {
+    test('Highlight tour step should be visible with cancelled search onboarding tour on search homepage', async () => {
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/search', {
+            waitUntil: 'networkidle0',
+        })
+        await driver.page.evaluate(() => localStorage.setItem('has-cancelled-onboarding-tour', 'true'))
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
+        await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
+        expect(await isSearchContextHighlightTourStepVisible()).toBeTruthy()
+    })
+
+    test('Highlight tour step should not be visible if already seen with cancelled search onboarding tour on search homepage', async () => {
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/search', {
             waitUntil: 'networkidle0',
         })
         await driver.page.evaluate(() => {
-            localStorage.setItem('has-completed-onboarding-tour', 'true')
+            localStorage.setItem('has-cancelled-onboarding-tour', 'true')
             localStorage.setItem('has-seen-search-contexts-dropdown-highlight-tour-step', 'true')
         })
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=context:global+test&patternType=regexp')
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
         await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
         expect(await isSearchContextHighlightTourStepVisible()).toBeFalsy()
     })

@@ -284,11 +284,11 @@ const useTourWithSteps = ({ setQueryState }: Pick<UseSearchOnboardingTourOptions
                 },
                 classes: 'tour-card tour-card--arrow-right-down',
                 attachTo: {
-                    element: '.search-button',
+                    element: '.search-button__btn',
                     on: 'top',
                 },
                 popperOptions: {
-                    modifiers: [{ name: 'offset', options: { offset: [-170, 8] } }],
+                    modifiers: [{ name: 'offset', options: { offset: [-140, 8] } }],
                 },
                 advanceOn: { selector: '.search-button__btn', event: 'click' },
             },
@@ -329,7 +329,7 @@ interface UseSearchOnboardingTourReturnValue
      * (`false` on the search homepage when the tour is active).
      */
     shouldFocusQueryInput: boolean
-    hasCompletedSearchOnboardingTour: boolean
+    isSearchOnboardingTourVisible: boolean
 }
 
 /**
@@ -347,11 +347,11 @@ export const useSearchOnboardingTour = ({
     // True when the user has manually cancelled the tour
     const [hasCancelledTour, setHasCancelledTour] = useLocalStorage(HAS_CANCELLED_TOUR_KEY, false)
     // True when the user has completed the tour on the search results page
-    const [hasCompletedTour, setHasCompletedTour] = useLocalStorage(HAS_COMPLETED_TOUR_KEY, false)
-    const shouldShowTour = useMemo(
-        () => showOnboardingTour && daysActiveCount === 1 && !hasCancelledTour && !hasCompletedTour,
-        [showOnboardingTour, hasCancelledTour, hasCompletedTour]
-    )
+    const [, setHasCompletedTour] = useLocalStorage(HAS_COMPLETED_TOUR_KEY, false)
+    const shouldShowTour = useMemo(() => showOnboardingTour && daysActiveCount === 1 && !hasCancelledTour, [
+        showOnboardingTour,
+        hasCancelledTour,
+    ])
 
     // Start the Tour when the query input is focused on the search homepage.
     const onFocus = useCallback(() => {
@@ -377,13 +377,9 @@ export const useSearchOnboardingTour = ({
     }, [tour, setHasCompletedTour, setHasCancelledTour])
 
     // 'Complete' tour on unmount.
-    // This will not necessarily result in HAS_COMPLETED_CODE_MONITOR
-    // being set to true (see completion event handler).
     useEffect(
         () => () => {
-            if (tour.isActive()) {
-                tour.complete()
-            }
+            tour.complete()
         },
         [tour]
     )
@@ -429,6 +425,6 @@ export const useSearchOnboardingTour = ({
         onFocus,
         onSuggestionsInitialized,
         shouldFocusQueryInput: !shouldShowTour,
-        hasCompletedSearchOnboardingTour: hasCompletedTour,
+        isSearchOnboardingTourVisible: shouldShowTour,
     }
 }

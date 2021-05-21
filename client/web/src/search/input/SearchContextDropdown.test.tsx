@@ -26,7 +26,7 @@ describe('SearchContextDropdown', () => {
         patternType: SearchPatternType.literal,
         versionContext: undefined,
         submitSearch: () => {},
-        hasCompletedSearchOnboardingTour: true,
+        isSearchOnboardingTourVisible: false,
     }
     const RealIntersectionObserver = window.IntersectionObserver
     let clock: sinon.SinonFakeTimers
