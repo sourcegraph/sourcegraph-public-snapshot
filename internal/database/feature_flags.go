@@ -5,13 +5,13 @@ import (
 	"database/sql"
 	"encoding/binary"
 	"hash/fnv"
-	"sync/errgroup"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"golang.org/x/sync/errgroup"
 )
 
 type FeatureFlagStore struct {
@@ -35,33 +35,28 @@ func (f *FeatureFlagStore) Transact(ctx context.Context) (*FeatureFlagStore, err
 	return &FeatureFlagStore{Store: txBase}, err
 }
 
-const featureFlagColumns = `
-	flag_name,
-	flag_type,
-	bool_val,
-	rollout,
-	created_at,
-	updated_at,
-	deleted_at
-`
-
-const newFeatureFlagFmtStr = `
-INSERT INTO feature_flags (
-	flag_name,
-	flag_type,
-	bool_val,
-	rollout
-) VALUES (
-	%s,
-	%s,
-	%s,
-	%s
-) RETURNING (
-	%s
-);
-`
-
 func (f *FeatureFlagStore) NewFeatureFlag(ctx context.Context, flag *types.FeatureFlag) (*types.FeatureFlag, error) {
+	const newFeatureFlagFmtStr = `
+		INSERT INTO feature_flags (
+			flag_name,
+			flag_type,
+			bool_value,
+			rollout
+		) VALUES (
+			%s,
+			%s,
+			%s,
+			%s
+		) RETURNING 
+			flag_name,
+			flag_type,
+			bool_value,
+			rollout,
+			created_at,
+			updated_at,
+			deleted_at
+		;
+	`
 	var (
 		flagType string
 		boolVal  *bool
@@ -72,27 +67,19 @@ func (f *FeatureFlagStore) NewFeatureFlag(ctx context.Context, flag *types.Featu
 		flagType = "bool"
 		boolVal = &flag.Bool.Value
 	case flag.BoolVar != nil:
-		flagType = "boolVar"
+		flagType = "bool_var"
 		rollout = &flag.BoolVar.Rollout
 	default:
 		return nil, errors.New("feature flag must have exactly one type")
 	}
 
-	rows, err := f.Query(ctx, sqlf.Sprintf(
+	row := f.QueryRow(ctx, sqlf.Sprintf(
 		newFeatureFlagFmtStr,
 		flag.Name,
 		flagType,
 		boolVal,
-		rollout,
-		featureFlagColumns))
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	if !rows.Next() {
-		return nil, errors.New("expected a returned row")
-	}
-	return scanFeatureFlag(rows)
+		rollout))
+	return scanFeatureFlag(row)
 }
 
 func (f *FeatureFlagStore) NewBoolVar(ctx context.Context, name string, rollout int) (*types.FeatureFlag, error) {
@@ -115,21 +102,26 @@ func (f *FeatureFlagStore) NewBool(ctx context.Context, name string, value bool)
 
 var ErrInvalidColumnState = errors.New("encountered column that is unexpectedly null based on column type")
 
-func scanFeatureFlag(rows *sql.Rows) (*types.FeatureFlag, error) {
+// rowScanner is an interface that can scan from either a sql.Row or sql.Rows
+type rowScanner interface {
+	Scan(...interface{}) error
+}
+
+func scanFeatureFlag(scanner rowScanner) (*types.FeatureFlag, error) {
 	var (
 		res      types.FeatureFlag
 		flagType string
 		boolVal  *bool
 		rollout  *int
 	)
-	err := rows.Scan(
+	err := scanner.Scan(
 		&res.Name,
 		&flagType,
 		&boolVal,
 		&rollout,
 		&res.CreatedAt,
 		&res.UpdatedAt,
-		&dbutil.NullTime{res.DeletedAt},
+		&res.DeletedAt,
 	)
 	if err != nil {
 		return nil, err
@@ -157,14 +149,20 @@ func scanFeatureFlag(rows *sql.Rows) (*types.FeatureFlag, error) {
 	return &res, nil
 }
 
-const listFeatureFlagsFmtString = `
-SELECT (
-	%s
-) FROM feature_flags;
-`
-
 func (f *FeatureFlagStore) ListFeatureFlags(ctx context.Context) ([]*types.FeatureFlag, error) {
-	rows, err := f.Query(ctx, sqlf.Sprintf(listFeatureFlagsFmtString, featureFlagColumns))
+	const listFeatureFlagsQuery = `
+		SELECT 
+			flag_name,
+			flag_type,
+			bool_value,
+			rollout,
+			created_at,
+			updated_at,
+			deleted_at
+		FROM feature_flags;
+	`
+
+	rows, err := f.Query(ctx, sqlf.Sprintf(listFeatureFlagsQuery))
 	if err != nil {
 		return nil, err
 	}
@@ -181,7 +179,7 @@ func (f *FeatureFlagStore) ListFeatureFlags(ctx context.Context) ([]*types.Featu
 	return res, nil
 }
 
-func (f *FeatureFlagStore) NewOverride(ctx context.Context, override *types.FeatureFlagOverride) error {
+func (f *FeatureFlagStore) NewOverride(ctx context.Context, override *types.FeatureFlagOverride) (*types.FeatureFlagOverride, error) {
 	const newFeatureFlagOverrideFmtStr = `
 		INSERT INTO feature_flag_overrides (
 			namespace_org_id,
@@ -193,19 +191,19 @@ func (f *FeatureFlagStore) NewOverride(ctx context.Context, override *types.Feat
 			%s,
 			%s,
 			%s
-		);
+		) RETURNING
+			namespace_org_id,
+			namespace_user_id,
+			flag_name,
+			flag_value;
 	`
-	rows, err := f.Query(ctx, sqlf.Sprintf(
+	row := f.QueryRow(ctx, sqlf.Sprintf(
 		newFeatureFlagOverrideFmtStr,
 		override.OrgID,
 		override.UserID,
 		override.FlagName,
 		override.Value))
-	if err != nil {
-		return err
-	}
-	rows.Close()
-	return nil
+	return scanFeatureFlagOverride(row)
 }
 
 func (f *FeatureFlagStore) ListUserOverrides(ctx context.Context, userID int32) ([]*types.FeatureFlagOverride, error) {
@@ -265,9 +263,9 @@ func scanFeatureFlagOverrides(rows *sql.Rows) ([]*types.FeatureFlagOverride, err
 	return res, nil
 }
 
-func scanFeatureFlagOverride(rows *sql.Rows) (*types.FeatureFlagOverride, error) {
+func scanFeatureFlagOverride(scanner rowScanner) (*types.FeatureFlagOverride, error) {
 	var res types.FeatureFlagOverride
-	err := rows.Scan(
+	err := scanner.Scan(
 		&res.OrgID,
 		&res.UserID,
 		&res.FlagName,
@@ -278,7 +276,7 @@ func scanFeatureFlagOverride(rows *sql.Rows) (*types.FeatureFlagOverride, error)
 
 // UserFlags returns the calculated values for feature flags for the given userID
 func (f *FeatureFlagStore) UserFlags(ctx context.Context, userID int32) (map[string]bool, error) {
-	g := errgroup.WithContext(ctx)
+	g, ctx := errgroup.WithContext(ctx)
 
 	var flags []*types.FeatureFlag
 	g.Go(func() error {
@@ -367,7 +365,7 @@ const listUserlessFlagsFmtStr = `
 SELECT
 	f.flag_name,
 	f.flag_type,
-	f.bool_value,
+	f.bool_var,
 FROM feature_flags f
 `
 
