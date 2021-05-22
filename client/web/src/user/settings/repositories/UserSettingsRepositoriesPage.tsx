@@ -1,24 +1,24 @@
-import { isAfter, parseISO } from 'date-fns'
 import AddIcon from 'mdi-react/AddIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { EMPTY, Observable } from 'rxjs'
-import { catchError, map } from 'rxjs/operators'
+import { catchError } from 'rxjs/operators'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Link } from '@sourcegraph/shared/src/components/Link'
+import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
+import { requestGraphQL } from '../../../backend/graphql'
 import { ErrorAlert } from '../../../components/alerts'
 import { queryExternalServices } from '../../../components/externalServices/backend'
 import {
     FilteredConnection,
     FilteredConnectionFilter,
     FilteredConnectionQueryArguments,
-    FilteredConnectionFilterValue,
     Connection,
 } from '../../../components/FilteredConnection'
 import { PageTitle } from '../../../components/PageTitle'
@@ -26,7 +26,10 @@ import {
     RepositoriesResult,
     SiteAdminRepositoryFields,
     UserRepositoriesResult,
-    ListExternalServiceFields,
+    UserRepositoriesVariables,
+    ExternalServicesResult,
+    CodeHostSyncDueResult,
+    CodeHostSyncDueVariables,
 } from '../../../graphql-operations'
 import { listUserRepositories } from '../../../site-admin/backend'
 import { eventLogger } from '../../../tracking/eventLogger'
@@ -42,6 +45,45 @@ interface RowProps {
     node: SiteAdminRepositoryFields
 }
 
+const DEFAULT_FILTERS: FilteredConnectionFilter[] = [
+    {
+        label: 'Status',
+        type: 'select',
+        id: 'status',
+        tooltip: 'Repository status',
+        values: [
+            {
+                value: 'all',
+                label: 'All',
+                args: {},
+            },
+            {
+                value: 'cloned',
+                label: 'Cloned',
+                args: { cloned: true, notCloned: false },
+            },
+            {
+                value: 'not-cloned',
+                label: 'Not Cloned',
+                args: { cloned: false, notCloned: true },
+            },
+        ],
+    },
+    {
+        label: 'Code host',
+        type: 'select',
+        id: 'code-host',
+        tooltip: 'Code host',
+        values: [
+            {
+                value: 'all',
+                label: 'All',
+                args: {},
+            },
+        ],
+    },
+]
+
 const Row: React.FunctionComponent<RowProps> = props => (
     <RepositoryNode
         name={props.node.name}
@@ -52,8 +94,7 @@ const Row: React.FunctionComponent<RowProps> = props => (
     />
 )
 
-type Status = undefined | 'pending' | ErrorLike
-const emptyFilters: FilteredConnectionFilter[] = []
+type SyncStatusOrError = undefined | 'scheduled' | 'schedule-complete' | ErrorLike
 
 /**
  * A page displaying the repositories for this user.
@@ -66,8 +107,9 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     telemetryService,
 }) => {
     const [hasRepos, setHasRepos] = useState(false)
-    const [externalServices, setExternalServices] = useState<ListExternalServiceFields[]>()
-    const [pendingOrError, setPendingOrError] = useState<Status>()
+    const [externalServices, setExternalServices] = useState<ExternalServicesResult['externalServices']['nodes']>()
+    const [repoFilters, setRepoFilters] = useState<FilteredConnectionFilter[]>([])
+    const [status, setStatus] = useState<SyncStatusOrError>()
 
     const NoAddedReposBanner = (
         <div className="border rounded p-3">
@@ -95,125 +137,160 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
         </div>
     )
 
-    const filters =
-        useObservable<FilteredConnectionFilter[]>(
-            useMemo(
-                () =>
-                    queryExternalServices({ namespace: userID, first: null, after: null }).pipe(
-                        repeatUntil(
-                            result => {
-                                let pending: Status
-                                const now = new Date()
-
-                                setExternalServices(result.nodes)
-
-                                let repoCount = 0
-
-                                for (const node of result.nodes) {
-                                    repoCount += node.repoCount
-
-                                    // when the service was just added both
-                                    // createdAt and updatedAt will have the same timestamp
-                                    if (node.createdAt === node.updatedAt) {
-                                        continue
-                                    }
-
-                                    // if the next sync is in the future we must not be syncing
-                                    if (node.nextSyncAt) {
-                                        if (isAfter(now, parseISO(node.nextSyncAt))) {
-                                            pending = 'pending'
-                                        }
+    const fetchUserReposCount = useCallback(
+        async (): Promise<UserRepositoriesResult> =>
+            dataOrThrowErrors(
+                await requestGraphQL<UserRepositoriesResult, UserRepositoriesVariables>(
+                    gql`
+                        query UserRepositories(
+                            $id: ID!
+                            $first: Int
+                            $query: String
+                            $cloned: Boolean
+                            $notCloned: Boolean
+                            $indexed: Boolean
+                            $notIndexed: Boolean
+                            $externalServiceID: ID
+                        ) {
+                            node(id: $id) {
+                                ... on User {
+                                    repositories(
+                                        first: $first
+                                        query: $query
+                                        cloned: $cloned
+                                        notCloned: $notCloned
+                                        indexed: $indexed
+                                        notIndexed: $notIndexed
+                                        externalServiceID: $externalServiceID
+                                    ) {
+                                        totalCount(precise: true)
                                     }
                                 }
+                            }
+                        }
+                    `,
+                    {
+                        id: userID,
+                        cloned: true,
+                        notCloned: true,
+                        indexed: true,
+                        notIndexed: true,
+                        first: null,
+                        query: null,
+                        externalServiceID: null,
+                    }
+                ).toPromise()
+            ),
 
-                                if (repoCount > 0) {
-                                    setHasRepos(true)
-                                }
+        [userID]
+    )
 
-                                setPendingOrError(pending)
-                                return pending !== 'pending'
-                            },
-                            { delay: 2000 }
-                        ),
-                        map(result => {
-                            const services: FilteredConnectionFilterValue[] = [
-                                {
-                                    value: 'all',
-                                    label: 'All',
-                                    args: {},
-                                },
-                                ...result.nodes.map(node => ({
-                                    value: node.id,
-                                    label: node.displayName.split(' ')[0],
-                                    tooltip: '',
-                                    args: { externalServiceID: node.id },
-                                })),
-                            ]
+    const fetchExternalServices = useCallback(
+        async (): Promise<ExternalServicesResult['externalServices']['nodes']> =>
+            queryExternalServices({
+                first: null,
+                after: null,
+                namespace: userID,
+            })
+                .toPromise()
+                .then(({ nodes }) => nodes),
 
-                            return [
-                                {
-                                    label: 'Status',
-                                    type: 'select',
-                                    id: 'status',
-                                    tooltip: 'Repository status',
-                                    values: [
-                                        {
-                                            value: 'all',
-                                            label: 'All',
-                                            args: {},
-                                        },
-                                        {
-                                            value: 'cloned',
-                                            label: 'Cloned',
-                                            args: { cloned: true, notCloned: false },
-                                        },
-                                        {
-                                            value: 'not-cloned',
-                                            label: 'Not Cloned',
-                                            args: { cloned: false, notCloned: true },
-                                        },
-                                    ],
-                                },
-                                {
-                                    label: 'Code host',
-                                    type: 'select',
-                                    id: 'code-host',
-                                    tooltip: 'Code host',
-                                    values: services,
-                                },
-                            ]
-                        }),
-                        catchError(error => {
-                            setPendingOrError(asError(error))
-                            return EMPTY
-                        })
+        [userID]
+    )
+
+    const fetchCodeHostSyncDueStatus = useCallback(
+        (ids: string[], seconds: number) =>
+            requestGraphQL<CodeHostSyncDueResult, CodeHostSyncDueVariables>(
+                gql`
+                    query CodeHostSyncDue($ids: [ID!]!, $seconds: Int!) {
+                        codeHostSyncDue(ids: $ids, seconds: $seconds)
+                    }
+                `,
+                { ids, seconds }
+            ),
+        []
+    )
+
+    const init = useCallback(async (): Promise<void> => {
+        // fetch and set external services
+        const services = await fetchExternalServices()
+        setExternalServices(services)
+
+        // check if user has any manually added or affiliated repositories
+        const result = await fetchUserReposCount()
+        if (result?.node?.repositories?.totalCount && result.node.repositories.totalCount > 0) {
+            setHasRepos(true)
+        }
+
+        // configure filters
+        const specificCodeHostFilters = services.map(service => ({
+            tooltip: '',
+            value: service.id,
+            label: service.displayName.split(' ')[0],
+            args: { externalServiceID: service.id },
+        }))
+
+        const [statusFilter, codeHostFilter] = DEFAULT_FILTERS
+
+        // update default code host filter by adding GitLab and/or GitHub filters
+        const updatedCodeHostFilter = {
+            ...codeHostFilter,
+            values: [...codeHostFilter.values, ...specificCodeHostFilters],
+        }
+
+        setRepoFilters([statusFilter, updatedCodeHostFilter])
+    }, [fetchExternalServices, fetchUserReposCount])
+
+    useObservable(
+        useMemo(() => {
+            if (externalServices && externalServices.length !== 0) {
+                // get serviceIds and check if services will sync in the next 2 seconds
+                const serviceIds = externalServices.map(service => service.id)
+
+                return fetchCodeHostSyncDueStatus(serviceIds, 2).pipe(
+                    repeatUntil(
+                        result => {
+                            const isScheduledToSync = result.data?.codeHostSyncDue === true
+                            // if all existing code hosts were just added - don't show the "sync in progress" banner
+                            const areCodeHostsJustAdded = externalServices.every(
+                                ({ updatedAt, createdAt, repoCount }) => updatedAt === createdAt && repoCount === 0
+                            )
+
+                            if (isScheduledToSync && !areCodeHostsJustAdded) {
+                                setStatus('scheduled')
+                            } else {
+                                setStatus(previousState => {
+                                    if (previousState === 'scheduled') {
+                                        return 'schedule-complete'
+                                    }
+
+                                    return undefined
+                                })
+                            }
+
+                            return !isScheduledToSync
+                        },
+                        { delay: 2000 }
                     ),
-                [userID]
-            )
-        ) || emptyFilters
+                    catchError(error => {
+                        setStatus(asError(error))
+                        return EMPTY
+                    })
+                )
+            }
+
+            return EMPTY
+        }, [externalServices, fetchCodeHostSyncDueStatus])
+    )
+
+    useEffect(() => {
+        init().catch(error => setStatus(asError(error)))
+    }, [init])
 
     const queryRepositories = useCallback(
         (args: FilteredConnectionQueryArguments): Observable<RepositoriesResult['repositories']> =>
-            listUserRepositories({ ...args, id: userID }).pipe(
-                repeatUntil(
-                    (result): boolean => {
-                        // don't repeat the query when user doesn't have repos
-                        if (result.nodes && result.nodes.length === 0) {
-                            return true
-                        }
-
-                        return (
-                            result.nodes &&
-                            result.nodes.length > 0 &&
-                            result.nodes.every(nodes => !nodes.mirrorInfo.cloneInProgress && nodes.mirrorInfo.cloned) &&
-                            !(pendingOrError === 'pending')
-                        )
-                    },
-
-                    { delay: 2000 }
-                )
-            ),
-        [pendingOrError, userID]
+            listUserRepositories({ ...args, id: userID }),
+        [userID]
     )
 
     const onRepoQueryUpdate = useCallback(
@@ -253,7 +330,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
             listComponent="table"
             listClassName="w-100"
             onUpdate={onRepoQueryUpdate}
-            filters={filters}
+            filters={repoFilters}
             history={history}
             location={location}
             emptyElement={NoMatchedRepos}
@@ -272,13 +349,19 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
 
     return (
         <div className="user-settings-repos">
-            {pendingOrError === 'pending' && (
+            {status === 'scheduled' && (
                 <div className="alert alert-info">
                     <span className="font-weight-bold">Some repositories are still being updated.</span> These
                     repositories may not appear up-to-date in the list of repositories.
                 </div>
             )}
-            {isErrorLike(pendingOrError) && <ErrorAlert error={pendingOrError} icon={true} />}
+            {status === 'schedule-complete' && (
+                <div className="alert alert-success">
+                    <span className="font-weight-bold">All repositories are up to date.</span> Feel free to refresh the
+                    page
+                </div>
+            )}
+            {isErrorLike(status) && <ErrorAlert error={status} icon={true} />}
             <PageTitle title="Repositories" />
             <div className="d-flex justify-content-between align-items-center">
                 <h2 className="mb-2">Repositories</h2>
