@@ -142,7 +142,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
             dataOrThrowErrors(
                 await requestGraphQL<UserRepositoriesResult, UserRepositoriesVariables>(
                     gql`
-                        query UserRepositories(
+                        query UserRepositoriesTotalCount(
                             $id: ID!
                             $first: Int
                             $query: String
