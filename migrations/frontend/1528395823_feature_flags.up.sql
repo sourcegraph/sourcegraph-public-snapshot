@@ -40,7 +40,11 @@ CREATE TABLE IF NOT EXISTS feature_flag_overrides (
 	updated_at timestamp with time zone DEFAULT now() NOT NULL,
 	deleted_at timestamp with time zone,
 
-	UNIQUE (namespace_org_id, namespace_user_id, flag_name),
+	CONSTRAINT feature_flag_overrides_unique_user_flag 
+		UNIQUE (namespace_user_id, flag_name),
+
+	CONSTRAINT feature_flag_overrides_unique_org_flag 
+		UNIQUE (namespace_org_id, flag_name),
 
 	CONSTRAINT feature_flag_overrides_has_org_or_user_id CHECK(
 		(namespace_org_id IS NOT NULL) OR (namespace_user_id IS NOT NULL)),

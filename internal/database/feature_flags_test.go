@@ -16,6 +16,8 @@ func TestFeatureFlagStore(t *testing.T) {
 	t.Run("ListFeatureFlags", testListFeatureFlags)
 	t.Run("Overrides", func(t *testing.T) {
 		t.Run("NewOverride", testNewOverrideRoundtrip)
+		t.Run("ListUserOverrides", testListUserOverrides)
+		t.Run("ListOrgOverrides", testListOrgOverrides)
 	})
 }
 
@@ -70,6 +72,7 @@ func testNewFeatureFlagRoundtrip(t *testing.T) {
 				tc.assertErr(t, err)
 				return
 			}
+			require.NoError(t, err)
 
 			// Only assert that the values it is created with are equal.
 			// Don't bother with the timestamps
@@ -107,15 +110,37 @@ func testListFeatureFlags(t *testing.T) {
 }
 
 func testNewOverrideRoundtrip(t *testing.T) {
-	ff := FeatureFlags(dbtest.NewDB(t, ""))
+	db := dbtest.NewDB(t, "")
+	ff := FeatureFlags(db)
+	users := Users(db)
 	ctx := actor.WithInternalActor(context.Background())
+
+	ff1, err := ff.NewFeatureFlag(ctx, &types.FeatureFlag{Name: "t", Bool: &types.FeatureFlagBool{Value: true}})
+	require.NoError(t, err)
+
+	u1, err := users.Create(ctx, NewUser{Username: "u", Password: "p"})
+	require.NoError(t, err)
+
+	invalidUserID := int32(38535)
 
 	cases := []struct {
 		override  *types.FeatureFlagOverride
 		assertErr require.ErrorAssertionFunc
 	}{
 		{
-			override: &types.FeatureFlagOverride{},
+			override: &types.FeatureFlagOverride{UserID: &u1.ID, FlagName: ff1.Name, Value: false},
+		},
+		{
+			override:  &types.FeatureFlagOverride{UserID: &invalidUserID, FlagName: ff1.Name, Value: false},
+			assertErr: errorContains(`violates foreign key constraint "feature_flag_overrides_namespace_user_id_fkey"`),
+		},
+		{
+			override:  &types.FeatureFlagOverride{UserID: &u1.ID, FlagName: "invalid-flag-name", Value: false},
+			assertErr: errorContains(`violates foreign key constraint "feature_flag_overrides_flag_name_fkey"`),
+		},
+		{
+			override:  &types.FeatureFlagOverride{FlagName: ff1.Name, Value: false},
+			assertErr: errorContains(`violates check constraint "feature_flag_overrides_has_org_or_user_id"`),
 		},
 	}
 
@@ -126,8 +151,164 @@ func testNewOverrideRoundtrip(t *testing.T) {
 				tc.assertErr(t, err)
 				return
 			}
-
+			require.NoError(t, err)
 			require.Equal(t, tc.override, res)
 		})
 	}
+}
+
+func testListUserOverrides(t *testing.T) {
+	db := dbtest.NewDB(t, "")
+	ff := FeatureFlags(db)
+	users := Users(db)
+	ctx := actor.WithInternalActor(context.Background())
+
+	mkUser := func(name string) *types.User {
+		u, err := users.Create(ctx, NewUser{Username: name, Password: "p"})
+		require.NoError(t, err)
+		return u
+	}
+
+	mkFFBool := func(name string, val bool) *types.FeatureFlag {
+		ff, err := ff.NewFeatureFlag(ctx, &types.FeatureFlag{Name: name, Bool: &types.FeatureFlagBool{Value: val}})
+		require.NoError(t, err)
+		return ff
+	}
+
+	mkOverride := func(user int32, flag string, val bool) *types.FeatureFlagOverride {
+		ffo, err := ff.NewOverride(ctx, &types.FeatureFlagOverride{UserID: &user, FlagName: flag, Value: val})
+		require.NoError(t, err)
+		return ffo
+	}
+
+	cleanup := func() {
+		if t.Failed() {
+			// Retain content on failed tests
+			return
+		}
+		db.Exec(`truncate feature_flags cascade;`)
+		db.Exec(`truncate feature_flag_overrides cascade;`)
+		db.Exec(`truncate users cascade;`)
+	}
+
+	t.Run("no overrides", func(t *testing.T) {
+		t.Cleanup(cleanup)
+		u1 := mkUser("u")
+		mkFFBool("f", true)
+		got, err := ff.ListUserOverrides(ctx, u1.ID)
+		require.NoError(t, err)
+		require.Empty(t, got)
+	})
+
+	t.Run("some overrides", func(t *testing.T) {
+		t.Cleanup(cleanup)
+		u1 := mkUser("u")
+		f1 := mkFFBool("f", true)
+		o1 := mkOverride(u1.ID, f1.Name, false)
+		got, err := ff.ListUserOverrides(ctx, u1.ID)
+		require.NoError(t, err)
+		require.Equal(t, got, []*types.FeatureFlagOverride{o1})
+	})
+
+	t.Run("overrides for other users", func(t *testing.T) {
+		t.Cleanup(cleanup)
+		u1 := mkUser("u1")
+		u2 := mkUser("u2")
+		f1 := mkFFBool("f", true)
+		o1 := mkOverride(u1.ID, f1.Name, false)
+		mkOverride(u2.ID, f1.Name, true)
+		got, err := ff.ListUserOverrides(ctx, u1.ID)
+		require.NoError(t, err)
+		require.Equal(t, got, []*types.FeatureFlagOverride{o1})
+	})
+
+	t.Run("non-unique override errors", func(t *testing.T) {
+		t.Cleanup(cleanup)
+		u1 := mkUser("u1")
+		f1 := mkFFBool("f", true)
+		_, err := ff.NewOverride(ctx, &types.FeatureFlagOverride{UserID: &u1.ID, FlagName: f1.Name, Value: true})
+		require.NoError(t, err)
+		_, err = ff.NewOverride(ctx, &types.FeatureFlagOverride{UserID: &u1.ID, FlagName: f1.Name, Value: true})
+		require.Error(t, err)
+	})
+}
+
+func testListOrgOverrides(t *testing.T) {
+	db := dbtest.NewDB(t, "")
+	ff := FeatureFlags(db)
+	users := Users(db)
+	orgs := Orgs(db)
+	orgMembers := OrgMembers(db)
+	ctx := actor.WithInternalActor(context.Background())
+
+	mkUser := func(name string, orgIDs ...int32) *types.User {
+		u, err := users.Create(ctx, NewUser{Username: name, Password: "p"})
+		require.NoError(t, err)
+		for _, id := range orgIDs {
+			_, err := orgMembers.Create(ctx, id, u.ID)
+			require.NoError(t, err)
+		}
+		return u
+	}
+
+	mkFFBool := func(name string, val bool) *types.FeatureFlag {
+		ff, err := ff.NewFeatureFlag(ctx, &types.FeatureFlag{Name: name, Bool: &types.FeatureFlagBool{Value: val}})
+		require.NoError(t, err)
+		return ff
+	}
+
+	mkOverride := func(org int32, flag string, val bool) *types.FeatureFlagOverride {
+		ffo, err := ff.NewOverride(ctx, &types.FeatureFlagOverride{OrgID: &org, FlagName: flag, Value: val})
+		require.NoError(t, err)
+		return ffo
+	}
+
+	mkOrg := func(name string) *types.Org {
+		o, err := orgs.Create(ctx, name, nil)
+		require.NoError(t, err)
+		return o
+	}
+
+	cleanup := func() {
+		if t.Failed() {
+			// Retain content on failed tests
+			return
+		}
+		db.Exec(`truncate feature_flags cascade;`)
+		db.Exec(`truncate feature_flag_overrides cascade;`)
+		db.Exec(`truncate users cascade;`)
+		db.Exec(`truncate orgs cascade;`)
+		db.Exec(`truncate org_membership cascade;`)
+	}
+
+	t.Run("no overrides", func(t *testing.T) {
+		t.Cleanup(cleanup)
+		u1 := mkUser("u")
+		mkFFBool("f", true)
+		got, err := ff.ListUserOverrides(ctx, u1.ID)
+		require.NoError(t, err)
+		require.Empty(t, got)
+	})
+
+	t.Run("some overrides", func(t *testing.T) {
+		t.Cleanup(cleanup)
+		org1 := mkOrg("org1")
+		u1 := mkUser("u", org1.ID)
+		f1 := mkFFBool("f", true)
+		o1 := mkOverride(org1.ID, f1.Name, false)
+		got, err := ff.ListOrgOverridesForUser(ctx, u1.ID)
+		require.NoError(t, err)
+		require.Equal(t, got, []*types.FeatureFlagOverride{o1})
+	})
+
+	t.Run("non-unique override errors", func(t *testing.T) {
+		t.Cleanup(cleanup)
+		org1 := mkOrg("org1")
+		f1 := mkFFBool("f", true)
+
+		_, err := ff.NewOverride(ctx, &types.FeatureFlagOverride{OrgID: &org1.ID, FlagName: f1.Name, Value: true})
+		require.NoError(t, err)
+		_, err = ff.NewOverride(ctx, &types.FeatureFlagOverride{OrgID: &org1.ID, FlagName: f1.Name, Value: false})
+		require.Error(t, err)
+	})
 }

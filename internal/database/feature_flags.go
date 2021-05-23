@@ -199,21 +199,23 @@ func (f *FeatureFlagStore) NewOverride(ctx context.Context, override *types.Feat
 	`
 	row := f.QueryRow(ctx, sqlf.Sprintf(
 		newFeatureFlagOverrideFmtStr,
-		override.OrgID,
-		override.UserID,
-		override.FlagName,
-		override.Value))
+		&override.OrgID,
+		&override.UserID,
+		&override.FlagName,
+		&override.Value))
 	return scanFeatureFlagOverride(row)
 }
 
+// ListUserOverrides lists the overrides that have been specifically set for the given userID.
+// NOTE: this does not return any overrides for the user orgs. Those are returned separately
+// by ListOrgOverridesForUser so they can be mered in proper priority order.
 func (f *FeatureFlagStore) ListUserOverrides(ctx context.Context, userID int32) ([]*types.FeatureFlagOverride, error) {
 	const listUserOverridesFmtString = `
-		SELECT (
+		SELECT
 			namespace_org_id,
 			namespace_user_id,
 			flag_name,
 			flag_value
-		) 
 		FROM feature_flag_overrides
 		WHERE namespace_user_id = %s;
 	`
@@ -226,14 +228,14 @@ func (f *FeatureFlagStore) ListUserOverrides(ctx context.Context, userID int32) 
 	return scanFeatureFlagOverrides(rows)
 }
 
+// ListOrgOverridesForUser lists the feature flag overrides for all orgs the given user belongs to.
 func (f *FeatureFlagStore) ListOrgOverridesForUser(ctx context.Context, userID int32) ([]*types.FeatureFlagOverride, error) {
 	const listUserOverridesFmtString = `
-		SELECT (
+		SELECT
 			namespace_org_id,
 			namespace_user_id,
 			flag_name,
 			flag_value
-		) 
 		FROM feature_flag_overrides
 		WHERE EXISTS (
 			SELECT org_id
@@ -274,7 +276,9 @@ func scanFeatureFlagOverride(scanner rowScanner) (*types.FeatureFlagOverride, er
 	return &res, err
 }
 
-// UserFlags returns the calculated values for feature flags for the given userID
+// UserFlags returns the calculated values for feature flags for the given userID. This should
+// be the primary entrypoint for getting the user flags since it handles retrieving all the flags,
+// the org overrides, and the user overrides, and merges them in priority order.
 func (f *FeatureFlagStore) UserFlags(ctx context.Context, userID int32) (map[string]bool, error) {
 	g, ctx := errgroup.WithContext(ctx)
 
