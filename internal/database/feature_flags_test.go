@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"testing"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 )
 
 func TestFeatureFlagStore(t *testing.T) {
+	t.Parallel()
 	t.Run("NewFeatureFlag", testNewFeatureFlagRoundtrip)
 	t.Run("ListFeatureFlags", testListFeatureFlags)
 	t.Run("Overrides", func(t *testing.T) {
@@ -19,6 +21,9 @@ func TestFeatureFlagStore(t *testing.T) {
 		t.Run("ListUserOverrides", testListUserOverrides)
 		t.Run("ListOrgOverrides", testListOrgOverrides)
 	})
+	t.Run("UserFlags", testUserFlags)
+	t.Run("AnonymousUserFlags", testAnonymousUserFlags)
+	t.Run("UserlessFeatureFlags", testUserlessFeatureFlags)
 }
 
 func errorContains(s string) require.ErrorAssertionFunc {
@@ -28,7 +33,19 @@ func errorContains(s string) require.ErrorAssertionFunc {
 	}
 }
 
+func cleanup(t *testing.T, db *sql.DB) func() {
+	return func() {
+		if t.Failed() {
+			// Retain content on failed tests
+			return
+		}
+		_, err := db.Exec(`truncate feature_flags, feature_flag_overrides, users, orgs, org_members cascade;`)
+		require.NoError(t, err)
+	}
+}
+
 func testNewFeatureFlagRoundtrip(t *testing.T) {
+	t.Parallel()
 	ff := FeatureFlags(dbtest.NewDB(t, ""))
 	ctx := actor.WithInternalActor(context.Background())
 
@@ -84,6 +101,7 @@ func testNewFeatureFlagRoundtrip(t *testing.T) {
 }
 
 func testListFeatureFlags(t *testing.T) {
+	t.Parallel()
 	ff := FeatureFlags(dbtest.NewDB(t, ""))
 	ctx := actor.WithInternalActor(context.Background())
 
@@ -110,12 +128,13 @@ func testListFeatureFlags(t *testing.T) {
 }
 
 func testNewOverrideRoundtrip(t *testing.T) {
+	t.Parallel()
 	db := dbtest.NewDB(t, "")
 	ff := FeatureFlags(db)
 	users := Users(db)
 	ctx := actor.WithInternalActor(context.Background())
 
-	ff1, err := ff.NewFeatureFlag(ctx, &types.FeatureFlag{Name: "t", Bool: &types.FeatureFlagBool{Value: true}})
+	ff1, err := ff.NewBool(ctx, "t", true)
 	require.NoError(t, err)
 
 	u1, err := users.Create(ctx, NewUser{Username: "u", Password: "p"})
@@ -158,6 +177,7 @@ func testNewOverrideRoundtrip(t *testing.T) {
 }
 
 func testListUserOverrides(t *testing.T) {
+	t.Parallel()
 	db := dbtest.NewDB(t, "")
 	ff := FeatureFlags(db)
 	users := Users(db)
@@ -170,7 +190,7 @@ func testListUserOverrides(t *testing.T) {
 	}
 
 	mkFFBool := func(name string, val bool) *types.FeatureFlag {
-		ff, err := ff.NewFeatureFlag(ctx, &types.FeatureFlag{Name: name, Bool: &types.FeatureFlagBool{Value: val}})
+		ff, err := ff.NewBool(ctx, name, val)
 		require.NoError(t, err)
 		return ff
 	}
@@ -181,18 +201,8 @@ func testListUserOverrides(t *testing.T) {
 		return ffo
 	}
 
-	cleanup := func() {
-		if t.Failed() {
-			// Retain content on failed tests
-			return
-		}
-		db.Exec(`truncate feature_flags cascade;`)
-		db.Exec(`truncate feature_flag_overrides cascade;`)
-		db.Exec(`truncate users cascade;`)
-	}
-
 	t.Run("no overrides", func(t *testing.T) {
-		t.Cleanup(cleanup)
+		t.Cleanup(cleanup(t, db))
 		u1 := mkUser("u")
 		mkFFBool("f", true)
 		got, err := ff.ListUserOverrides(ctx, u1.ID)
@@ -201,7 +211,7 @@ func testListUserOverrides(t *testing.T) {
 	})
 
 	t.Run("some overrides", func(t *testing.T) {
-		t.Cleanup(cleanup)
+		t.Cleanup(cleanup(t, db))
 		u1 := mkUser("u")
 		f1 := mkFFBool("f", true)
 		o1 := mkOverride(u1.ID, f1.Name, false)
@@ -211,7 +221,7 @@ func testListUserOverrides(t *testing.T) {
 	})
 
 	t.Run("overrides for other users", func(t *testing.T) {
-		t.Cleanup(cleanup)
+		t.Cleanup(cleanup(t, db))
 		u1 := mkUser("u1")
 		u2 := mkUser("u2")
 		f1 := mkFFBool("f", true)
@@ -223,7 +233,7 @@ func testListUserOverrides(t *testing.T) {
 	})
 
 	t.Run("non-unique override errors", func(t *testing.T) {
-		t.Cleanup(cleanup)
+		t.Cleanup(cleanup(t, db))
 		u1 := mkUser("u1")
 		f1 := mkFFBool("f", true)
 		_, err := ff.NewOverride(ctx, &types.FeatureFlagOverride{UserID: &u1.ID, FlagName: f1.Name, Value: true})
@@ -234,6 +244,7 @@ func testListUserOverrides(t *testing.T) {
 }
 
 func testListOrgOverrides(t *testing.T) {
+	t.Parallel()
 	db := dbtest.NewDB(t, "")
 	ff := FeatureFlags(db)
 	users := Users(db)
@@ -252,7 +263,7 @@ func testListOrgOverrides(t *testing.T) {
 	}
 
 	mkFFBool := func(name string, val bool) *types.FeatureFlag {
-		ff, err := ff.NewFeatureFlag(ctx, &types.FeatureFlag{Name: name, Bool: &types.FeatureFlagBool{Value: val}})
+		ff, err := ff.NewBool(ctx, name, val)
 		require.NoError(t, err)
 		return ff
 	}
@@ -269,20 +280,8 @@ func testListOrgOverrides(t *testing.T) {
 		return o
 	}
 
-	cleanup := func() {
-		if t.Failed() {
-			// Retain content on failed tests
-			return
-		}
-		db.Exec(`truncate feature_flags cascade;`)
-		db.Exec(`truncate feature_flag_overrides cascade;`)
-		db.Exec(`truncate users cascade;`)
-		db.Exec(`truncate orgs cascade;`)
-		db.Exec(`truncate org_membership cascade;`)
-	}
-
 	t.Run("no overrides", func(t *testing.T) {
-		t.Cleanup(cleanup)
+		t.Cleanup(cleanup(t, db))
 		u1 := mkUser("u")
 		mkFFBool("f", true)
 		got, err := ff.ListUserOverrides(ctx, u1.ID)
@@ -291,7 +290,7 @@ func testListOrgOverrides(t *testing.T) {
 	})
 
 	t.Run("some overrides", func(t *testing.T) {
-		t.Cleanup(cleanup)
+		t.Cleanup(cleanup(t, db))
 		org1 := mkOrg("org1")
 		u1 := mkUser("u", org1.ID)
 		f1 := mkFFBool("f", true)
@@ -302,7 +301,7 @@ func testListOrgOverrides(t *testing.T) {
 	})
 
 	t.Run("non-unique override errors", func(t *testing.T) {
-		t.Cleanup(cleanup)
+		t.Cleanup(cleanup(t, db))
 		org1 := mkOrg("org1")
 		f1 := mkFFBool("f", true)
 
@@ -310,5 +309,240 @@ func testListOrgOverrides(t *testing.T) {
 		require.NoError(t, err)
 		_, err = ff.NewOverride(ctx, &types.FeatureFlagOverride{OrgID: &org1.ID, FlagName: f1.Name, Value: false})
 		require.Error(t, err)
+	})
+}
+
+func testUserFlags(t *testing.T) {
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
+	ff := FeatureFlags(db)
+	users := Users(db)
+	orgs := Orgs(db)
+	orgMembers := OrgMembers(db)
+	ctx := actor.WithInternalActor(context.Background())
+
+	mkUser := func(name string, orgIDs ...int32) *types.User {
+		u, err := users.Create(ctx, NewUser{Username: name, Password: "p"})
+		require.NoError(t, err)
+		for _, id := range orgIDs {
+			_, err := orgMembers.Create(ctx, id, u.ID)
+			require.NoError(t, err)
+		}
+		return u
+	}
+
+	mkFFBool := func(name string, val bool) *types.FeatureFlag {
+		ff, err := ff.NewBool(ctx, name, val)
+		require.NoError(t, err)
+		return ff
+	}
+
+	mkFFBoolVar := func(name string, rollout int) *types.FeatureFlag {
+		ff, err := ff.NewBoolVar(ctx, name, rollout)
+		require.NoError(t, err)
+		return ff
+	}
+
+	mkUserOverride := func(user int32, flag string, val bool) *types.FeatureFlagOverride {
+		ffo, err := ff.NewOverride(ctx, &types.FeatureFlagOverride{UserID: &user, FlagName: flag, Value: val})
+		require.NoError(t, err)
+		return ffo
+	}
+
+	mkOrgOverride := func(org int32, flag string, val bool) *types.FeatureFlagOverride {
+		ffo, err := ff.NewOverride(ctx, &types.FeatureFlagOverride{OrgID: &org, FlagName: flag, Value: val})
+		require.NoError(t, err)
+		return ffo
+	}
+
+	mkOrg := func(name string) *types.Org {
+		o, err := orgs.Create(ctx, name, nil)
+		require.NoError(t, err)
+		return o
+	}
+
+	t.Run("bool vals", func(t *testing.T) {
+		t.Cleanup(cleanup(t, db))
+		u1 := mkUser("u")
+		mkFFBool("f1", true)
+		mkFFBool("f2", false)
+
+		got, err := ff.UserFlags(ctx, u1.ID)
+		require.NoError(t, err)
+		expected := map[string]bool{"f1": true, "f2": false}
+		require.Equal(t, expected, got)
+	})
+
+	t.Run("bool vars", func(t *testing.T) {
+		t.Cleanup(cleanup(t, db))
+		u1 := mkUser("u")
+		mkFFBoolVar("f1", 10000)
+		mkFFBoolVar("f2", 0)
+
+		got, err := ff.UserFlags(ctx, u1.ID)
+		require.NoError(t, err)
+		expected := map[string]bool{"f1": true, "f2": false}
+		require.Equal(t, expected, got)
+	})
+
+	t.Run("bool vals with user override", func(t *testing.T) {
+		t.Cleanup(cleanup(t, db))
+		u1 := mkUser("u")
+		mkFFBool("f1", true)
+		mkFFBool("f2", false)
+		mkUserOverride(u1.ID, "f2", true)
+
+		got, err := ff.UserFlags(ctx, u1.ID)
+		require.NoError(t, err)
+		expected := map[string]bool{"f1": true, "f2": true}
+		require.Equal(t, expected, got)
+	})
+
+	t.Run("bool vars with user override", func(t *testing.T) {
+		t.Cleanup(cleanup(t, db))
+		u1 := mkUser("u")
+		mkFFBoolVar("f1", 10000)
+		mkFFBoolVar("f2", 0)
+		mkUserOverride(u1.ID, "f2", true)
+
+		got, err := ff.UserFlags(ctx, u1.ID)
+		require.NoError(t, err)
+		expected := map[string]bool{"f1": true, "f2": true}
+		require.Equal(t, expected, got)
+	})
+
+	t.Run("bool vals with org override", func(t *testing.T) {
+		t.Cleanup(cleanup(t, db))
+		o1 := mkOrg("o1")
+		u1 := mkUser("u", o1.ID)
+		mkFFBool("f1", true)
+		mkFFBool("f2", false)
+		mkOrgOverride(o1.ID, "f2", true)
+
+		got, err := ff.UserFlags(ctx, u1.ID)
+		require.NoError(t, err)
+		expected := map[string]bool{"f1": true, "f2": true}
+		require.Equal(t, expected, got)
+	})
+
+	t.Run("bool vars with org override", func(t *testing.T) {
+		t.Cleanup(cleanup(t, db))
+		o1 := mkOrg("o1")
+		u1 := mkUser("u", o1.ID)
+		mkFFBoolVar("f1", 10000)
+		mkFFBoolVar("f2", 0)
+		mkOrgOverride(o1.ID, "f2", true)
+
+		got, err := ff.UserFlags(ctx, u1.ID)
+		require.NoError(t, err)
+		expected := map[string]bool{"f1": true, "f2": true}
+		require.Equal(t, expected, got)
+	})
+
+	t.Run("user override beats org override", func(t *testing.T) {
+		t.Cleanup(cleanup(t, db))
+		o1 := mkOrg("o1")
+		u1 := mkUser("u", o1.ID)
+		mkFFBoolVar("f1", 10000)
+		mkFFBoolVar("f2", 0)
+		mkOrgOverride(o1.ID, "f2", true)
+		mkUserOverride(u1.ID, "f2", false)
+
+		got, err := ff.UserFlags(ctx, u1.ID)
+		require.NoError(t, err)
+		expected := map[string]bool{"f1": true, "f2": false}
+		require.Equal(t, expected, got)
+	})
+}
+
+func testAnonymousUserFlags(t *testing.T) {
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
+	ff := FeatureFlags(db)
+	ctx := actor.WithInternalActor(context.Background())
+
+	mkFFBool := func(name string, val bool) *types.FeatureFlag {
+		ff, err := ff.NewBool(ctx, name, val)
+		require.NoError(t, err)
+		return ff
+	}
+
+	mkFFBoolVar := func(name string, rollout int) *types.FeatureFlag {
+		ff, err := ff.NewBoolVar(ctx, name, rollout)
+		require.NoError(t, err)
+		return ff
+	}
+
+	t.Run("bool vals", func(t *testing.T) {
+		t.Cleanup(cleanup(t, db))
+		mkFFBool("f1", true)
+		mkFFBool("f2", false)
+
+		got, err := ff.AnonymousUserFlags(ctx, "testuser")
+		require.NoError(t, err)
+		expected := map[string]bool{"f1": true, "f2": false}
+		require.Equal(t, expected, got)
+	})
+
+	t.Run("bool vars", func(t *testing.T) {
+		t.Cleanup(cleanup(t, db))
+		mkFFBoolVar("f1", 10000)
+		mkFFBoolVar("f2", 0)
+
+		got, err := ff.AnonymousUserFlags(ctx, "testuser")
+		require.NoError(t, err)
+		expected := map[string]bool{"f1": true, "f2": false}
+		require.Equal(t, expected, got)
+	})
+
+	// No override tests for AnonymousUserFlags because no override
+	// can be defined for an anonymous user.
+}
+
+func testUserlessFeatureFlags(t *testing.T) {
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
+	ff := FeatureFlags(db)
+	ctx := actor.WithInternalActor(context.Background())
+
+	mkFFBool := func(name string, val bool) *types.FeatureFlag {
+		ff, err := ff.NewBool(ctx, name, val)
+		require.NoError(t, err)
+		return ff
+	}
+
+	mkFFBoolVar := func(name string, rollout int) *types.FeatureFlag {
+		ff, err := ff.NewBoolVar(ctx, name, rollout)
+		require.NoError(t, err)
+		return ff
+	}
+
+	t.Run("bool vals", func(t *testing.T) {
+		t.Cleanup(cleanup(t, db))
+		mkFFBool("f1", true)
+		mkFFBool("f2", false)
+
+		got, err := ff.UserlessFeatureFlags(ctx)
+		require.NoError(t, err)
+		expected := map[string]bool{"f1": true, "f2": false}
+		require.Equal(t, expected, got)
+	})
+
+	t.Run("bool vars", func(t *testing.T) {
+		t.Cleanup(cleanup(t, db))
+		mkFFBoolVar("f1", 10000)
+		mkFFBoolVar("f2", 0)
+
+		got, err := ff.UserlessFeatureFlags(ctx)
+		require.NoError(t, err)
+
+		// Userless requests don't have a stable user to evaluate
+		// bool variable flags, so none should be defined.
+		//
+		// TODO(camdencheek): consider evaluating rollout feature
+		// flags with a static string so they are defined and stable,
+		// but effectively statically random.
+		expected := map[string]bool{}
+		require.Equal(t, expected, got)
 	})
 }
