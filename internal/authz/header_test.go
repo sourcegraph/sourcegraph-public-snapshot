@@ -1,8 +1,13 @@
 package authz
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 )
 
 func TestParseAuthorizationHeader(t *testing.T) {
@@ -40,6 +45,18 @@ func TestParseAuthorizationHeader(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("disable sudo token for dotcom", func(t *testing.T) {
+		envvar.MockSourcegraphDotComMode(true)
+		defer envvar.MockSourcegraphDotComMode(false)
+
+		_, _, err := ParseAuthorizationHeader(`token-sudo token="tok==", user="alice"`)
+		got := fmt.Sprintf("%v", err)
+		want := "use of access tokens with sudo scope is disabled"
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Fatalf("Mismatch (-want +got):\n%s", diff)
+		}
+	})
 }
 
 func TestParseHTTPCredentials(t *testing.T) {
