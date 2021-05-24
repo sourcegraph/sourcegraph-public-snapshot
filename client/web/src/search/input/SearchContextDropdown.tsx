@@ -89,7 +89,7 @@ const useSearchContextHighlightTour = (
             {
                 id: 'search-contexts-start-tour',
                 text: getHighlightTourStep(() => tour.cancel()),
-                classes: 'web-content shadow-lg card py-4 px-3 search-context-highlight-tour',
+                classes: 'web-content shadow-lg py-4 px-3 search-context-highlight-tour',
                 attachTo: {
                     element: '.search-context-dropdown__button',
                     on: 'bottom',
