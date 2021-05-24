@@ -1766,13 +1766,9 @@ type UserEmail struct {
 	Visibility string `json:"visibility,omitempty"`
 }
 
-var MockGetAuthenticatedUserEmails func(ctx context.Context) ([]*UserEmail, error)
-
 type Org struct {
 	Login string `json:"login,omitempty"`
 }
-
-var MockGetAuthenticatedUserOrgs func(ctx context.Context) ([]*Org, error)
 
 // Collaborator is a collaborator of a repository.
 type Collaborator struct {

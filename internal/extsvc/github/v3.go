@@ -221,6 +221,8 @@ func (c *V3Client) GetAuthenticatedUser(ctx context.Context) (*User, error) {
 	return &u, nil
 }
 
+var MockGetAuthenticatedUserEmails func(ctx context.Context) ([]*UserEmail, error)
+
 // GetAuthenticatedUserEmails returns the first 100 emails associated with the currently
 // authenticated user.
 func (c *V3Client) GetAuthenticatedUserEmails(ctx context.Context) ([]*UserEmail, error) {
@@ -235,6 +237,8 @@ func (c *V3Client) GetAuthenticatedUserEmails(ctx context.Context) ([]*UserEmail
 	}
 	return emails, nil
 }
+
+var MockGetAuthenticatedUserOrgs func(ctx context.Context) ([]*Org, error)
 
 // GetAuthenticatedUserOrgs returns the first 100 organizations associated with the currently
 // authenticated user.
@@ -251,9 +255,14 @@ func (c *V3Client) GetAuthenticatedUserOrgs(ctx context.Context) ([]*Org, error)
 	return orgs, nil
 }
 
+var MockGetAuthenticatedUserOAuthScopes func(ctx context.Context) ([]string, error)
+
 // GetAuthenticatedUserOAuthScopes gets the list of OAuth scopes granted to the
 // currently authenticate user.
 func (c *V3Client) GetAuthenticatedUserOAuthScopes(ctx context.Context) ([]string, error) {
+	if MockGetAuthenticatedUserOAuthScopes != nil {
+		return MockGetAuthenticatedUserOAuthScopes(ctx)
+	}
 	// We only care about headers
 	var dest struct{}
 	header, err := c.requestGetWithHeader(ctx, "/user", &dest)

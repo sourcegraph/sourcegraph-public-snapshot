@@ -1,10 +1,14 @@
 package types
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -272,5 +276,22 @@ func TestSetUserinfoBestEffort(t *testing.T) {
 		if got != c.want {
 			t.Errorf("setUserinfoBestEffort(%q, %q, %q): got %q want %q", c.rawurl, c.username, c.password, got, c.want)
 		}
+	}
+}
+
+func TestGrantedScopes(t *testing.T) {
+	want := []string{"repo"}
+	github.MockGetAuthenticatedUserOAuthScopes = func(ctx context.Context) ([]string, error) {
+		return want, nil
+	}
+
+	ctx := context.Background()
+	have, err := GrantedScopes(ctx, extsvc.KindGitHub, `{}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if diff := cmp.Diff(want, have); diff != "" {
+		t.Fatal(diff)
 	}
 }

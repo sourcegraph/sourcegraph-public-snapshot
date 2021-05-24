@@ -166,3 +166,7 @@ func (r *externalServiceResolver) NextSyncAt() *DateTime {
 	}
 	return &DateTime{Time: r.externalService.NextSyncAt}
 }
+
+func (r *externalServiceResolver) GrantedScopes(ctx context.Context) ([]string, error) {
+	return types.GrantedScopes(ctx, r.externalService.Kind, r.externalService.Config)
+}
