@@ -136,7 +136,7 @@
         $dark-color-variant: var(--secondary-3),
         // Use darker text colors for contrast
         $text-color: var(--body-color),
-        $disabled-text-color: var(--text-muted)
+        $disabled-text-color: var(--text-disabled)
     );
 
     @include redesign-button-variant(
@@ -160,7 +160,7 @@
         $dark-color-variant: var(--warning-3),
         // Use darker text colors for contrast
         $text-color: var(--dark-text),
-        $disabled-text-color: var(--text-muted)
+        $disabled-text-color: var(--text-disabled)
     );
 
     @include redesign-button-variant(
@@ -170,7 +170,7 @@
         $dark-color-variant: var(--info-3),
         // Use darker text colors for contrast
         $text-color: var(--dark-text),
-        $disabled-text-color: var(--text-muted)
+        $disabled-text-color: var(--text-disabled)
     );
 
     @include redesign-button-variant(
