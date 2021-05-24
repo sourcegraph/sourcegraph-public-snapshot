@@ -227,6 +227,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         '/android',
         '/stanford',
         '/stackstorm',
+        '/temporal',
         '/cncf',
     ]
     const isRepogroupPage = repogroupPages.includes(props.location.pathname)

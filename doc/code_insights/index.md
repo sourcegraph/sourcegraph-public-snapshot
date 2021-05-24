@@ -8,3 +8,5 @@ Work-in-progress table of contents:
 
 - [Quickstart](quickstart.md)
 - [Language Insight Quickstart](language_insight_quickstart.md)
+- [Explanations](explanations/index.md)
+    - [Administration and security of Code Insights](explanations/administration_and_security_of_code_insights.md)

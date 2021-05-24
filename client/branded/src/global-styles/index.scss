@@ -117,6 +117,7 @@ $hr-margin-y: 0.25rem;
 
 // Disable transitions
 $input-transition: none;
+$badge-transition: none; // Avoids setting transitions on badges that aren't links
 
 // Apply static redesign variables. Should be done before Bootstrap imports.
 @import './variables-redesign';
