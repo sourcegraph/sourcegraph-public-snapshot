@@ -156,11 +156,13 @@ func (h *handler) handle(ctx context.Context, workerStore dbworkerstore.Store, d
 		}
 
 		if upload.RepositoryID == sourcegraphRepositoryID {
-			for _, pkg := range groupedBundleData.PackageReferences {
-				if err := h.enqueuer.QueueIndexesForPackage(ctx, pkg.Package); err != nil {
-					return errors.Wrap(err, "enqueuer.QueueIndexesForPackage")
+			go func() {
+				for _, pkg := range groupedBundleData.PackageReferences {
+					if err := h.enqueuer.QueueIndexesForPackage(ctx, pkg.Package); err != nil {
+						log15.Error("Failed to enqueue index for package", "error", err)
+					}
 				}
-			}
+			}()
 		}
 
 		if _, err := workerStore.MarkComplete(ctx, upload.ID); err != nil {
@@ -264,6 +266,9 @@ func writeData(ctx context.Context, lsifStore LSIFStore, id int, groupedBundleDa
 	}
 	if err := tx.WriteReferences(ctx, id, groupedBundleData.References); err != nil {
 		return errors.Wrap(err, "store.WriteReferences")
+	}
+	if err := tx.WriteDocumentationPages(ctx, id, groupedBundleData.DocumentationPages); err != nil {
+		return errors.Wrap(err, "store.WriteDocumentationPages")
 	}
 
 	return nil

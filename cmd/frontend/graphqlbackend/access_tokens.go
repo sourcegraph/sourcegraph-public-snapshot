@@ -11,6 +11,7 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -64,6 +65,8 @@ func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAcce
 			// 🚨 SECURITY: Only site admins may create a token with the "site-admin:sudo" scope.
 			if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 				return nil, err
+			} else if envvar.SourcegraphDotComMode() {
+				return nil, errors.New("creation of access tokens with sudo scope is disabled")
 			}
 		default:
 			return nil, fmt.Errorf("unknown access token scope %q (valid scopes: %q)", scope, authz.AllScopes)

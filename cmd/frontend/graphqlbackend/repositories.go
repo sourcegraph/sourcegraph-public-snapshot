@@ -126,7 +126,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 				r.err = err
 				return
 			}
-			// ensure we fetch atleast as many repos as we have indexed.
+			// ensure we fetch at least as many repos as we have indexed
 			if opt2.LimitOffset != nil && opt2.LimitOffset.Limit < len(indexed) {
 				opt2.LimitOffset.Limit = len(indexed) * 2
 			}

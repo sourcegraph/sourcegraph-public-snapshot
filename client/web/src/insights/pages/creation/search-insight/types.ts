@@ -3,10 +3,16 @@ import { InsightVisibility } from '../../../core/types'
 
 export type InsightStep = 'hours' | 'days' | 'weeks' | 'months' | 'years'
 
+export interface EditableDataSeries extends DataSeries {
+    id: string
+    valid: boolean
+    edit: boolean
+}
+
 /** Creation form fields. */
 export interface CreateInsightFormFields {
     /** Code Insight series setting (name of line, line query, color) */
-    series: DataSeries[]
+    series: EditableDataSeries[]
     /** Title of code insight*/
     title: string
     /** Repositories which to be used to get the info for code insights */

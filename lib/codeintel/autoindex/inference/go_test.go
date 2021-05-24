@@ -10,6 +10,39 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
 
+func TestGoPatterns(t *testing.T) {
+	testCases := []struct {
+		path     string
+		expected bool
+	}{
+		{"go.mod", true},
+		{"subdir/go.mod", true},
+		{"vendor/foo/go.mod", true},
+		{"go.mod/subdir", false},
+		{"foo.go", true},
+		{"subdir/foo.go", false},
+	}
+
+	for _, testCase := range testCases {
+		match := false
+		for _, pattern := range GoPatterns() {
+			if pattern.MatchString(testCase.path) {
+				match = true
+				break
+			}
+		}
+
+		if match {
+			if !testCase.expected {
+				t.Error(fmt.Sprintf("did not expect match: %s", testCase.path))
+			}
+
+		} else if testCase.expected {
+			t.Error(fmt.Sprintf("expected match: %s", testCase.path))
+		}
+	}
+}
+
 func TestCanIndexGoRepo(t *testing.T) {
 	testCases := []struct {
 		paths    []string
@@ -20,6 +53,7 @@ func TestCanIndexGoRepo(t *testing.T) {
 		{paths: []string{"package.json"}, expected: false},
 		{paths: []string{"vendor/foo/bar/go.mod"}, expected: false},
 		{paths: []string{"foo/bar-go.mod"}, expected: false},
+		{paths: []string{"main.go"}, expected: true},
 	}
 
 	for _, testCase := range testCases {
@@ -111,26 +145,23 @@ func TestInferGoIndexJobsGoModSubdirs(t *testing.T) {
 	}
 }
 
-func TestGoPatterns(t *testing.T) {
+func TestInferGoIndexJobsNoGoModFile(t *testing.T) {
 	paths := []string{
-		"go.mod",
-		"subdir/go.mod",
-		"vendor/foo/go.mod",
-		"foo/vendor/go.mod",
-		"foo/go.mod/vendor",
+		"lib.go",
+		"lib_test.go",
+		"doc.go",
 	}
 
-	for _, path := range paths {
-		match := false
-		for _, pattern := range GoPatterns() {
-			if pattern.MatchString(path) {
-				match = true
-				break
-			}
-		}
-
-		if !match {
-			t.Error(fmt.Sprintf("failed to match %s", path))
-		}
+	expectedIndexJobs := []config.IndexJob{
+		{
+			Steps:       nil,
+			Root:        "",
+			Indexer:     lsifGoImage,
+			IndexerArgs: []string{"GO111MODULE=off", "lsif-go", "--no-animation"},
+			Outfile:     "",
+		},
+	}
+	if diff := cmp.Diff(expectedIndexJobs, InferGoIndexJobs(NewMockGitClient(), paths)); diff != "" {
+		t.Errorf("unexpected index jobs (-want +got):\n%s", diff)
 	}
 }

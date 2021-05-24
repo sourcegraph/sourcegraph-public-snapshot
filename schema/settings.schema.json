@@ -28,6 +28,14 @@
             "pointer": true
           }
         },
+        "apiDocs": {
+          "description": "Enables API documentation.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
         "showCodeMonitoringTestEmailButton": {
           "description": "Enables the 'Send test email' debugging button for code monitoring.",
           "type": "boolean",
@@ -126,6 +134,14 @@
         },
         "enableFastResultLoading": {
           "description": "Enables optimized search result loading (syntax highlighting / file contents fetching)",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "designRefreshToggleEnabled": {
+          "description": "Enables access to the design refresh toggle in the user menu.",
           "type": "boolean",
           "default": false,
           "!go": {

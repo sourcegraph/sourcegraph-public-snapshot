@@ -244,18 +244,15 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                             target="repo-popover"
                             trigger="legacy"
                             hideArrow={true}
+                            fade={false}
                             popperClassName="border-0"
                         >
-                            <RepositoriesPopover
-                                currentRepo={repoOrError.id}
-                                history={props.history}
-                                location={props.location}
-                            />
+                            <RepositoriesPopover currentRepo={repoOrError.id} />
                         </UncontrolledPopover>
                     </>
                 ),
             }
-        }, [repoOrError, resolvedRevisionOrError, props.history, props.location])
+        }, [repoOrError, resolvedRevisionOrError])
     )
 
     // Update the workspace roots service to reflect the current repo / resolved revision
@@ -444,6 +441,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                         '/-/blob',
                         '/-/tree',
                         '/-/commits',
+                        '/-/docs',
                     ].map(routePath => (
                         <Route
                             path={`${repoMatchURL}${routePath}`}

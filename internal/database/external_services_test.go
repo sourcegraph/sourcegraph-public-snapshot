@@ -1527,3 +1527,76 @@ func TestExternalServicesStore_OneCloudDefaultPerKind(t *testing.T) {
 		}
 	})
 }
+
+func TestExternalServiceStore_SyncDue(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	db := dbtesting.GetDB(t)
+	ctx := context.Background()
+
+	now := time.Now()
+
+	makeService := func() *types.ExternalService {
+		cfg := `{"url": "https://github.com", "token": "abc", "repositoryQuery": ["none"]}`
+		svc := &types.ExternalService{
+			Kind:        extsvc.KindGitHub,
+			DisplayName: "Github - Test",
+			Config:      cfg,
+			CreatedAt:   now,
+			UpdatedAt:   now,
+		}
+		return svc
+	}
+	svc1 := makeService()
+	svc2 := makeService()
+	err := ExternalServices(db).Upsert(ctx, svc1, svc2)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assertDue := func(d time.Duration, want bool) {
+		t.Helper()
+		ids := []int64{svc1.ID, svc2.ID}
+		due, err := ExternalServices(db).SyncDue(ctx, ids, d)
+		if err != nil {
+			t.Error(err)
+		}
+		if due != want {
+			t.Errorf("Want %v, got %v", want, due)
+		}
+	}
+
+	makeSyncJob := func(svcID int64, state string) {
+		_, err = db.Exec(`
+INSERT INTO external_service_sync_jobs (external_service_id, state)
+VALUES ($1,$2)
+`, svcID, state)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// next_sync_at is null, so we expect a sync soon
+	assertDue(1*time.Second, true)
+
+	// next_sync_at in the future
+	_, err = db.Exec("UPDATE external_services SET next_sync_at = $1", now.Add(10*time.Minute))
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertDue(1*time.Second, false)
+	assertDue(11*time.Minute, true)
+
+	// With sync jobs
+	makeSyncJob(svc1.ID, "queued")
+	makeSyncJob(svc2.ID, "completed")
+	assertDue(1*time.Minute, true)
+
+	// Sync jobs not running
+	_, err = db.Exec("UPDATE external_service_sync_jobs SET state = 'completed'")
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertDue(1*time.Minute, false)
+}

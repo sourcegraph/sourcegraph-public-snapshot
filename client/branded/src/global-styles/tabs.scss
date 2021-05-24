@@ -38,23 +38,44 @@
         align-items: center;
         letter-spacing: normal;
         font-size: 0.75rem;
-        padding: 0 0.625rem;
-        margin: 0;
+        margin: 0 0.375rem;
+        padding: 0;
         color: var(--body-color);
         text-transform: none;
+        display: inline-flex;
+        flex-direction: column;
+        justify-content: center;
+        border-bottom: 2px solid transparent;
+        &:active {
+            background-color: transparent;
+        }
         &:hover {
-            border-bottom: 3px solid var(--border-color);
+            border-bottom: 2px solid var(--border-color);
         }
         &[data-selected] {
             color: var(--body-color);
-            font-weight: bold;
-            border-bottom: 3px solid var(--brand-secondary);
+            font-weight: 700;
+            border-bottom: 2px solid var(--brand-secondary);
         }
+        // ::after used here for avoids the CLS when the font-weight change (see: https://css-tricks.com/bold-on-hover-without-the-layout-shift/)
+        &::after {
+            content: attr(data-test-tab);
+            height: 0;
+            text-transform: capitalize;
+            visibility: hidden; // a11y: avoid detection for voice over
+            overflow: hidden;
+            user-select: none;
+            pointer-events: none;
+            font-weight: 700;
+        }
+
         &:focus-visible {
             outline: none;
             box-shadow: none;
             > .tablist-wrapper--tab-label {
-                border-radius: 3px;
+                padding: 0.125rem;
+                margin: 0 -0.125rem;
+                border-radius: var(--border-radius);
                 outline: 1px solid transparent;
                 box-shadow: var(--focus-box-shadow);
             }

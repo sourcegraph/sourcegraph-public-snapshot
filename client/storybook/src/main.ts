@@ -108,6 +108,7 @@ const config = {
             test: /\.tsx?$/,
             loader: require.resolve('babel-loader'),
             options: {
+                cacheDirectory: true,
                 configFile: path.resolve(rootPath, 'babel.config.js'),
             },
         })

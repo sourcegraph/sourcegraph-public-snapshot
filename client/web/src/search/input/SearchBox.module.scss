@@ -1,17 +1,29 @@
 .search-box {
     position: relative;
-    border: 1px solid var(--input-border-color);
-    border-right-color: transparent;
-    background-color: var(--input-bg);
     display: flex;
     align-items: center;
     flex: 1 1 auto;
     min-width: 12rem;
 
-    :global(.theme-redesign) & {
-        border-top-left-radius: 3px;
-        border-bottom-left-radius: 3px;
-        background-color: var(--color-bg-1);
+    &__background-container {
+        display: flex;
+        flex-grow: 1;
+        align-items: center;
+        border: 1px solid var(--input-border-color);
+        border-right-color: transparent;
+        border-left-color: transparent;
+        background-color: var(--input-bg);
+        height: 100%;
+
+        :global(.theme-redesign) & {
+            background-color: var(--color-bg-1);
+        }
+
+        &:first-child {
+            border-top-left-radius: 3px;
+            border-bottom-left-radius: 3px;
+            border-left-color: var(--input-border-color);
+        }
     }
 
     &__focus-container {

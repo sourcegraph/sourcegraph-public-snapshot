@@ -32,6 +32,12 @@ import {
     FetchSearchContextVariables,
     ConvertVersionContextToSearchContextResult,
     ConvertVersionContextToSearchContextVariables,
+    CreateSearchContextResult,
+    CreateSearchContextVariables,
+    UpdateSearchContextVariables,
+    UpdateSearchContextResult,
+    DeleteSearchContextVariables,
+    DeleteSearchContextResult,
 } from '../graphql-operations'
 import { DeployType } from '../jscontext'
 
@@ -237,11 +243,18 @@ const searchContextFragment = gql`
     fragment SearchContextFields on SearchContext {
         __typename
         id
+        name
+        namespace {
+            __typename
+            id
+            namespaceName
+        }
         spec
         description
         public
         autoDefined
         updatedAt
+        viewerCanManage
         repositories {
             __typename
             repository {
@@ -369,6 +382,60 @@ export const fetchSearchContext = (id: Scalars['ID']): Observable<GQL.ISearchCon
         map(dataOrThrowErrors),
         map(data => data.node as GQL.ISearchContext)
     )
+}
+
+export function createSearchContext(variables: CreateSearchContextVariables): Observable<GQL.ISearchContext> {
+    return requestGraphQL<CreateSearchContextResult, CreateSearchContextVariables>(
+        gql`
+            mutation CreateSearchContext(
+                $searchContext: SearchContextInput!
+                $repositories: [SearchContextRepositoryRevisionsInput!]!
+            ) {
+                createSearchContext(searchContext: $searchContext, repositories: $repositories) {
+                    ...SearchContextFields
+                }
+            }
+            ${searchContextFragment}
+        `,
+        variables
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.createSearchContext as GQL.ISearchContext)
+    )
+}
+
+export function updateSearchContext(variables: UpdateSearchContextVariables): Observable<GQL.ISearchContext> {
+    return requestGraphQL<UpdateSearchContextResult, UpdateSearchContextVariables>(
+        gql`
+            mutation UpdateSearchContext(
+                $id: ID!
+                $searchContext: SearchContextEditInput!
+                $repositories: [SearchContextRepositoryRevisionsInput!]!
+            ) {
+                updateSearchContext(id: $id, searchContext: $searchContext, repositories: $repositories) {
+                    ...SearchContextFields
+                }
+            }
+            ${searchContextFragment}
+        `,
+        variables
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.updateSearchContext as GQL.ISearchContext)
+    )
+}
+
+export function deleteSearchContext(id: GQL.ID): Observable<DeleteSearchContextResult> {
+    return requestGraphQL<DeleteSearchContextResult, DeleteSearchContextVariables>(
+        gql`
+            mutation DeleteSearchContext($id: ID!) {
+                deleteSearchContext(id: $id) {
+                    alwaysNil
+                }
+            }
+        `,
+        { id }
+    ).pipe(map(dataOrThrowErrors))
 }
 
 export function isSearchContextAvailable(

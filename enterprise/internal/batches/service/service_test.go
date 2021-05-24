@@ -161,13 +161,8 @@ func TestServicePermissionLevels(t *testing.T) {
 				tc.assertFunc(t, err)
 			})
 
-			t.Run("DetachChangesets", func(t *testing.T) {
-				err := svc.DetachChangesets(currentUserCtx, batchChange.ID, []int64{changeset.ID})
-				tc.assertFunc(t, err)
-			})
-
 			t.Run("CreateChangesetJobs", func(t *testing.T) {
-				_, err := svc.CreateChangesetJobs(currentUserCtx, batchChange.ID, []int64{changeset.ID}, btypes.ChangesetJobTypeComment, btypes.ChangesetJobCommentPayload{Message: "test"})
+				_, err := svc.CreateChangesetJobs(currentUserCtx, batchChange.ID, []int64{changeset.ID}, btypes.ChangesetJobTypeComment, btypes.ChangesetJobCommentPayload{Message: "test"}, store.ListChangesetsOpts{})
 				tc.assertFunc(t, err)
 			})
 		})
@@ -822,61 +817,6 @@ func TestService(t *testing.T) {
 		}
 	})
 
-	t.Run("DetachChangesets", func(t *testing.T) {
-		spec := testBatchSpec(admin.ID)
-		if err := s.CreateBatchSpec(ctx, spec); err != nil {
-			t.Fatal(err)
-		}
-
-		batchChange := testBatchChange(admin.ID, spec)
-		if err := s.CreateBatchChange(ctx, batchChange); err != nil {
-			t.Fatal(err)
-		}
-
-		t.Run("archived changeset", func(t *testing.T) {
-			archivedChangeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
-				Repo:            rs[1].ID,
-				ReconcilerState: btypes.ReconcilerStateCompleted,
-				BatchChange:     batchChange.ID,
-				IsArchived:      true,
-			})
-			if err := svc.DetachChangesets(ctx, batchChange.ID, []int64{archivedChangeset.ID}); err != nil {
-				t.Fatal(err)
-			}
-			ct.ReloadAndAssertChangeset(t, ctx, s, archivedChangeset, ct.ChangesetAssertions{
-				Repo: archivedChangeset.RepoID,
-				// The important fields:
-				AttachedTo:      []int64{},
-				ReconcilerState: btypes.ReconcilerStateQueued,
-				DetachFrom:      []int64{batchChange.ID},
-			})
-
-		})
-		t.Run("attached changeset", func(t *testing.T) {
-			changeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
-				Repo:            rs[0].ID,
-				ReconcilerState: btypes.ReconcilerStateCompleted,
-				BatchChange:     batchChange.ID,
-				IsArchived:      false,
-			})
-			err := svc.DetachChangesets(ctx, batchChange.ID, []int64{changeset.ID})
-			if err != ErrChangesetsToDetachNotFound {
-				t.Fatalf("wrong error. want=%s, got=%s", ErrChangesetsToDetachNotFound, err)
-			}
-		})
-		t.Run("detached changeset", func(t *testing.T) {
-			detachedChangeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
-				Repo:            rs[2].ID,
-				ReconcilerState: btypes.ReconcilerStateCompleted,
-				BatchChanges:    []btypes.BatchChangeAssoc{},
-			})
-			err := svc.DetachChangesets(ctx, batchChange.ID, []int64{detachedChangeset.ID})
-			if err != ErrChangesetsToDetachNotFound {
-				t.Fatalf("wrong error. want=%s, got=%s", ErrChangesetsToDetachNotFound, err)
-			}
-		})
-	})
-
 	t.Run("ValidateAuthenticator", func(t *testing.T) {
 		t.Run("valid", func(t *testing.T) {
 			fakeSource.AuthenticatorIsValid = true
@@ -938,6 +878,7 @@ func TestService(t *testing.T) {
 				[]int64{changeset1.ID, changeset2.ID},
 				btypes.ChangesetJobTypeComment,
 				btypes.ChangesetJobCommentPayload{Message: "test"},
+				store.ListChangesetsOpts{},
 			)
 			if err != nil {
 				t.Fatal(err)
@@ -958,10 +899,45 @@ func TestService(t *testing.T) {
 				[]int64{changeset.ID},
 				btypes.ChangesetJobTypeComment,
 				btypes.ChangesetJobCommentPayload{Message: "test"},
+				store.ListChangesetsOpts{},
 			)
 			if err != ErrChangesetsForJobNotFound {
 				t.Fatalf("wrong error. want=%s, got=%s", ErrChangesetsForJobNotFound, err)
 			}
+		})
+		t.Run("DetachChangesets", func(t *testing.T) {
+			spec := testBatchSpec(admin.ID)
+			if err := s.CreateBatchSpec(ctx, spec); err != nil {
+				t.Fatal(err)
+			}
+
+			batchChange := testBatchChange(admin.ID, spec)
+			if err := s.CreateBatchChange(ctx, batchChange); err != nil {
+				t.Fatal(err)
+			}
+			t.Run("attached changeset", func(t *testing.T) {
+				changeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+					Repo:            rs[0].ID,
+					ReconcilerState: btypes.ReconcilerStateCompleted,
+					BatchChange:     batchChange.ID,
+					IsArchived:      false,
+				})
+				_, err := svc.CreateChangesetJobs(ctx, batchChange.ID, []int64{changeset.ID}, btypes.ChangesetJobTypeDetach, btypes.ChangesetJobDetachPayload{}, store.ListChangesetsOpts{OnlyArchived: true})
+				if err != ErrChangesetsForJobNotFound {
+					t.Fatalf("wrong error. want=%s, got=%s", ErrChangesetsForJobNotFound, err)
+				}
+			})
+			t.Run("detached changeset", func(t *testing.T) {
+				detachedChangeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+					Repo:            rs[2].ID,
+					ReconcilerState: btypes.ReconcilerStateCompleted,
+					BatchChanges:    []btypes.BatchChangeAssoc{},
+				})
+				_, err := svc.CreateChangesetJobs(ctx, batchChange.ID, []int64{detachedChangeset.ID}, btypes.ChangesetJobTypeDetach, btypes.ChangesetJobDetachPayload{}, store.ListChangesetsOpts{OnlyArchived: true})
+				if err != ErrChangesetsForJobNotFound {
+					t.Fatalf("wrong error. want=%s, got=%s", ErrChangesetsForJobNotFound, err)
+				}
+			})
 		})
 	})
 }

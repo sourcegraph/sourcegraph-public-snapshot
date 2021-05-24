@@ -16,12 +16,11 @@ import {
     CopyQueryButtonProps,
     OnboardingTourProps,
     ParsedSearchQueryProps,
-    SearchContextProps,
+    SearchContextInputProps,
 } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { Notices } from '../../global/Notices'
 import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
-import { VersionContextDropdown } from '../../nav/VersionContextDropdown'
 import { Settings } from '../../schema/settings.schema'
 import { VersionContext } from '../../schema/site.schema'
 import { ThemePreferenceProps } from '../../theme'
@@ -29,7 +28,6 @@ import { submitSearch, SubmitSearchParameters } from '../helpers'
 import { QuickLinks } from '../QuickLinks'
 
 import { SearchBox } from './SearchBox'
-import { SearchButton } from './SearchButton'
 import { useSearchOnboardingTour } from './SearchOnboardingTour'
 
 interface Props
@@ -46,10 +44,7 @@ interface Props
         CopyQueryButtonProps,
         Pick<SubmitSearchParameters, 'source'>,
         VersionContextProps,
-        Omit<
-            SearchContextProps,
-            'convertVersionContextToSearchContext' | 'isSearchContextSpecAvailable' | 'fetchSearchContext'
-        >,
+        SearchContextInputProps,
         OnboardingTourProps {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
@@ -93,14 +88,9 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
     ])
     const showOnboardingTour = props.showOnboardingTour && isHomepage
 
-    const {
-        additionalQueryParameters,
-        shouldFocusQueryInput,
-        ...onboardingTourQueryInputProps
-    } = useSearchOnboardingTour({
+    const { shouldFocusQueryInput, ...onboardingTourQueryInputProps } = useSearchOnboardingTour({
         ...props,
         showOnboardingTour,
-        inputLocation: 'search-homepage',
         queryState: userQueryState,
         setQueryState: setUserQueryState,
     })
@@ -113,28 +103,15 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                     ? `${props.hiddenQueryPrefix} ${userQueryState.query}`
                     : userQueryState.query,
                 source: 'home',
-                searchParameters: additionalQueryParameters,
             })
         },
-        [props, userQueryState.query, additionalQueryParameters]
+        [props, userQueryState.query]
     )
 
     return (
         <div className="d-flex flex-row flex-shrink-past-contents">
             <Form className="flex-grow-1 flex-shrink-past-contents" onSubmit={onSubmit}>
                 <div className="search-page__input-container">
-                    {!props.hideVersionContexts && (
-                        <VersionContextDropdown
-                            history={props.history}
-                            caseSensitive={props.caseSensitive}
-                            patternType={props.patternType}
-                            navbarSearchQuery={userQueryState.query}
-                            versionContext={props.versionContext}
-                            setVersionContext={props.setVersionContext}
-                            availableVersionContexts={props.availableVersionContexts}
-                            selectedSearchContextSpec={props.selectedSearchContextSpec}
-                        />
-                    )}
                     <SearchBox
                         {...props}
                         {...onboardingTourQueryInputProps}
@@ -146,7 +123,6 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                         autoFocus={showOnboardingTour ? shouldFocusQueryInput : props.autoFocus !== false}
                         showSearchContextHighlightTourStep={true}
                     />
-                    <SearchButton />
                 </div>
                 {props.showQueryBuilder && (
                     <div className="search-page__input-sub-container">

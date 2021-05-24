@@ -108,9 +108,6 @@ sg run frontend
 
 # Run predefined sets of commands:
 sg run-set enterprise
-
-# TODO: Rebuild and restart a command (if it has `build` defined, see Configuration)
-sg build gitserver
 ```
 
 ### Running tests
@@ -130,7 +127,7 @@ sg test regression
 # Without argument it lists all available tests:
 sg test
 
-# TODO: Arguments are passed along to the command
+# Arguments are passed along to the command
 sg test backend-integration -run TestSearch
 ```
 
@@ -285,13 +282,16 @@ tests:
 
 ## TODOs
 
-- [ ] All of the things marked as TODOs above
+- [ ] Rename `install` to `build` because it's clearer
 - [ ] Add the remaining processes from `<root>/dev/Procfile` to `<root>/sg.config.yaml`
+- [ ] All of the things marked as TODOs above
+  - [ ] Rebuild and restart a command (if it has `build` defined, see Configuration): `sg build gitserver`
+  - [ ] Implement the `sg migration` command
+  - [ ] Implement the `sg generate` command
+  - [ ] Implement `sg edit site-config` and `sg edit external-services`
+  - [ ] Implement `sg tail-log`
 - [ ] Add a _simple_ way to define in the config file when a restart after a rebuild is not necessary
   - Something like `check_binary: .bin/frontend` which would take a SHA256 before and after rebuild and only restart if SHA doesn't match
-- [ ] Rename `install` to `build` because it's clearer
-- [ ] Add support for "dev environment setup"
-  - Something like `sg check` which runs `check_cmds` in the config file and provides helpful output if one of them failed ("check_cmd postgres failed. Install postgres with...")
 - [ ] Add built-in support for "download binary" so that the `caddy` command, for example, would be 3 lines instead of 20
 
 ## Hacking

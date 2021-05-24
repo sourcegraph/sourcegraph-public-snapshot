@@ -1,8 +1,8 @@
 import { storiesOf } from '@storybook/react'
-import { createMemoryHistory } from 'history'
 import React from 'react'
 
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../../components/WebStory'
 import { authUser } from '../../../../search/panels/utils'
@@ -39,12 +39,10 @@ const mockAPI = createMockInsightAPI({
     },
 })
 
-const history = createMemoryHistory()
-
 add('Page', () => (
     <InsightsApiContext.Provider value={mockAPI}>
         <LangStatsInsightCreationPage
-            history={history}
+            telemetryService={NOOP_TELEMETRY_SERVICE}
             platformContext={PLATFORM_CONTEXT}
             settingsCascade={EMPTY_SETTINGS_CASCADE}
             authenticatedUser={authUser}

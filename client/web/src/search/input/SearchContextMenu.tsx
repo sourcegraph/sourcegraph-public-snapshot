@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
+import CloseIcon from 'mdi-react/CloseIcon'
 import React, {
     useCallback,
     useRef,
@@ -18,7 +18,7 @@ import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
-import { SearchContextProps } from '..'
+import { SearchContextInputProps } from '..'
 import { SearchContextFields } from '../../graphql-operations'
 
 const HighlightedSearchTerm: React.FunctionComponent<{ text: string; searchFilter: string }> = ({
@@ -34,7 +34,7 @@ const HighlightedSearchTerm: React.FunctionComponent<{ text: string; searchFilte
             return (
                 <>
                     {before}
-                    <strong>{highlighted}</strong>
+                    <strong className="search-context-menu__item--highlighted">{highlighted}</strong>
                     {after}
                 </>
             )
@@ -59,26 +59,21 @@ const SearchContextMenuItem: React.FunctionComponent<{
             className={classNames('search-context-menu__item', { 'search-context-menu__item--selected': selected })}
             onClick={setContext}
         >
-            <span className="search-context-menu__item-name" title={spec}>
+            <small className="search-context-menu__item-name font-weight-medium" title={spec}>
                 <HighlightedSearchTerm text={spec} searchFilter={searchFilter} />
-            </span>{' '}
-            <span className="search-context-menu__item-description" title={description}>
+            </small>{' '}
+            <small className="search-context-menu__item-description" title={description}>
                 {description}
-            </span>
-            {isDefault && <span className="search-context-menu__item-default">Default</span>}
+            </small>
+            {isDefault && (
+                <span className="badge badge-secondary text-uppercase search-context-menu__item-default">Default</span>
+            )}
         </DropdownItem>
     )
 }
 
 export interface SearchContextMenuProps
-    extends Omit<
-        SearchContextProps,
-        | 'showSearchContext'
-        | 'setSelectedSearchContextSpec'
-        | 'convertVersionContextToSearchContext'
-        | 'isSearchContextSpecAvailable'
-        | 'fetchSearchContext'
-    > {
+    extends Omit<SearchContextInputProps, 'showSearchContext' | 'setSelectedSearchContextSpec'> {
     closeMenu: () => void
     selectSearchContextSpec: (spec: string) => void
 }
@@ -95,7 +90,7 @@ interface NextPageUpdate {
 
 type LoadingState = 'LOADING' | 'LOADING_NEXT_PAGE' | 'DONE' | 'ERROR'
 
-const searchContextsPerPageToLoad = 10
+const searchContextsPerPageToLoad = 15
 
 const getFirstMenuItem = (): HTMLButtonElement | null =>
     document.querySelector('.search-context-menu__item:first-child')
@@ -265,19 +260,28 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
     return (
         // eslint-disable-next-line jsx-a11y/no-static-element-interactions
         <div className="search-context-menu" onKeyDown={onMenuKeyDown}>
+            <div className="search-context-menu__title">
+                <small>Choose search context</small>
+                <button
+                    onClick={closeMenu}
+                    type="button"
+                    className="btn btn-icon search-context-menu__title-close"
+                    aria-label="Close"
+                >
+                    <CloseIcon className="icon-inline" />
+                </button>
+            </div>
             <div className="search-context-menu__header d-flex">
-                <span aria-hidden="true" className="search-context-menu__header-prompt">
-                    <ChevronRightIcon className="icon-inline" />
-                </span>
                 <input
                     ref={inputElement}
                     onInput={onSearchFilterChanged}
                     type="search"
-                    placeholder="Find a context"
-                    className="search-context-menu__header-input"
+                    placeholder="Find..."
+                    aria-label="Find a context"
+                    className="form-control form-control-sm search-context-menu__header-input"
                 />
             </div>
-            <div className="search-context-menu__list" ref={infiniteScrollList}>
+            <div className="search-context-menu__list" ref={infiniteScrollList} role="menu">
                 {loadingState !== 'LOADING' &&
                     filteredList.map(context => (
                         <SearchContextMenuItem
@@ -292,7 +296,7 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
                     ))}
                 {(loadingState === 'LOADING' || loadingState === 'LOADING_NEXT_PAGE') && (
                     <DropdownItem className="search-context-menu__item" disabled={true}>
-                        Loading search contexts...
+                        <small>Loading search contexts...</small>
                     </DropdownItem>
                 )}
                 {loadingState === 'ERROR' && (
@@ -300,15 +304,15 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
                         className="search-context-menu__item search-context-menu__item--error"
                         disabled={true}
                     >
-                        Error occured while loading search contexts
+                        <small>Error occured while loading search contexts</small>
                     </DropdownItem>
                 )}
                 {loadingState === 'DONE' && filteredList.length === 0 && (
                     <DropdownItem className="search-context-menu__item" disabled={true}>
-                        No contexts found
+                        <small>No contexts found</small>
                     </DropdownItem>
                 )}
-                <div ref={infiniteScrollTrigger} />
+                <div ref={infiniteScrollTrigger} className="search-context-menu__infinite-scroll-trigger" />
             </div>
             <div className="search-context-menu__footer">
                 <button
@@ -326,7 +330,7 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
                         className="btn btn-link btn-sm search-context-menu__footer-button"
                         onClick={closeMenu}
                     >
-                        Manage
+                        Manage contexts
                     </Link>
                 )}
             </div>

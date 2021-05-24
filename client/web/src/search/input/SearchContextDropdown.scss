@@ -1,8 +1,4 @@
 .search-context-dropdown {
-    &__highlight-tour-step {
-        width: 17rem;
-    }
-
     &__button {
         color: var(--search-query-text-color);
         margin-left: 0.25rem;
@@ -75,5 +71,15 @@
         width: 1px;
         height: 1.125rem;
         background-color: var(--border-color-2);
+    }
+}
+
+.search-context-highlight-tour {
+    background: var(--color-bg-3);
+    border: none;
+    border-radius: 10px;
+
+    &__step {
+        width: 17rem;
     }
 }

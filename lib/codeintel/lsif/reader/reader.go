@@ -4,7 +4,7 @@ import (
 	"context"
 	"io"
 
-	reader "github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/reader"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/reader"
 )
 
 // ElementMapper is the type of function that is invoked for each parsed element.

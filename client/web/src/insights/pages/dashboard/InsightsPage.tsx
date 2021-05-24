@@ -1,4 +1,3 @@
-import GearIcon from 'mdi-react/GearIcon'
 import PlusIcon from 'mdi-react/PlusIcon'
 import React, { useCallback, useEffect, useMemo, useContext } from 'react'
 
@@ -21,15 +20,13 @@ export interface InsightsPageProps
     extends ExtensionsControllerProps,
         Omit<InsightsViewGridProps, 'views'>,
         TelemetryProps,
-        PlatformContextProps<'updateSettings'> {
-    isCreationUIEnabled: boolean
-}
+        PlatformContextProps<'updateSettings'> {}
 
 /**
  * Renders insight page. (insights grid and navigation for insight)
  */
 export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props => {
-    const { isCreationUIEnabled, settingsCascade, platformContext } = props
+    const { settingsCascade, platformContext } = props
     const { getInsightCombinedViews } = useContext(InsightsApiContext)
 
     const views = useObservable(
@@ -46,15 +43,9 @@ export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props =>
         props.telemetryService.logViewEvent('Insights')
     }, [props.telemetryService])
 
-    const logConfigureClick = useCallback(() => {
-        props.telemetryService.log('InsightConfigureClick')
-    }, [props.telemetryService])
-
     const logAddMoreClick = useCallback(() => {
         props.telemetryService.log('InsightAddMoreClick')
     }, [props.telemetryService])
-
-    const configureURL = isCreationUIEnabled ? '/insights/create-intro' : '/user/settings'
 
     return (
         <div className="w-100">
@@ -63,18 +54,9 @@ export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props =>
                     annotation={<FeedbackBadge status="prototype" feedback={{ mailto: 'support@sourcegraph.com' }} />}
                     path={[{ icon: InsightsIcon, text: 'Code insights' }]}
                     actions={
-                        <>
-                            <Link
-                                to="/extensions?query=category:Insights"
-                                onClick={logAddMoreClick}
-                                className="btn btn-secondary mr-1"
-                            >
-                                <PlusIcon className="icon-inline" /> Add more insights
-                            </Link>
-                            <Link to={configureURL} onClick={logConfigureClick} className="btn btn-secondary">
-                                <GearIcon className="icon-inline" /> Configure insights
-                            </Link>
-                        </>
+                        <Link to="/insights/create-intro" onClick={logAddMoreClick} className="btn btn-secondary mr-1">
+                            <PlusIcon className="icon-inline" /> Create new insight
+                        </Link>
                     }
                     className="mb-3"
                 />
@@ -83,12 +65,7 @@ export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props =>
                         <LoadingSpinner className="my-4" />
                     </div>
                 ) : (
-                    <InsightsViewGrid
-                        {...props}
-                        views={views}
-                        hasContextMenu={isCreationUIEnabled}
-                        onDelete={handleDelete}
-                    />
+                    <InsightsViewGrid {...props} views={views} hasContextMenu={true} onDelete={handleDelete} />
                 )}
             </Page>
         </div>

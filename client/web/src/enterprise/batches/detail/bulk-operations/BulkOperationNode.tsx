@@ -1,11 +1,12 @@
 import classNames from 'classnames'
 import CommentOutlineIcon from 'mdi-react/CommentOutlineIcon'
 import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
+import LinkVariantRemoveIcon from 'mdi-react/LinkVariantRemoveIcon'
 import React from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import { BulkOperationState } from '@sourcegraph/shared/src/graphql-operations'
+import { BulkOperationState, BulkOperationType } from '@sourcegraph/shared/src/graphql-operations'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
 import { ErrorMessage } from '../../../../components/alerts'
@@ -14,6 +15,19 @@ import { Timestamp } from '../../../../components/time/Timestamp'
 import { BulkOperationFields } from '../../../../graphql-operations'
 
 import styles from './BulkOperationNode.module.scss'
+
+const OPERATION_TITLES: Record<BulkOperationType, JSX.Element> = {
+    COMMENT: (
+        <>
+            <CommentOutlineIcon className="icon-inline text-muted" /> Comment on changesets
+        </>
+    ),
+    DETACH: (
+        <>
+            <LinkVariantRemoveIcon className="icon-inline text-muted" /> Detach changesets
+        </>
+    ),
+}
 
 export interface BulkOperationNodeProps {
     node: BulkOperationFields
@@ -33,9 +47,7 @@ export const BulkOperationNode: React.FunctionComponent<BulkOperationNodeProps> 
             </div>
             <div className={styles.bulkOperationNodeDivider} />
             <div className="flex-grow-1 ml-3">
-                <h4>
-                    <CommentOutlineIcon className="icon-inline text-muted" /> Comment on changesets
-                </h4>
+                <h4>{OPERATION_TITLES[node.type]}</h4>
                 <p className="mb-0">
                     <Link to={node.initiator.url}>{node.initiator.username}</Link> <Timestamp date={node.createdAt} />
                 </p>

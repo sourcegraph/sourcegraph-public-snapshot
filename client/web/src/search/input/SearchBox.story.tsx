@@ -34,6 +34,8 @@ const defaultProps: SearchBoxProps = {
     caseSensitive: false,
     setCaseSensitivity: () => {},
     versionContext: undefined,
+    availableVersionContexts: [],
+    setVersionContext: () => Promise.resolve(undefined),
     showSearchContext: false,
     showSearchContextManagement: false,
     selectedSearchContextSpec: 'global',
@@ -44,6 +46,7 @@ const defaultProps: SearchBoxProps = {
     onSubmit: () => {},
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
+    isSearchOnboardingTourVisible: false,
 }
 
 add(

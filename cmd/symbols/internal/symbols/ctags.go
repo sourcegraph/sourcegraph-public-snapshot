@@ -6,8 +6,7 @@ import (
 	"os"
 	"strconv"
 
-	ctags "github.com/sourcegraph/go-ctags"
-
+	"github.com/sourcegraph/go-ctags"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
@@ -21,7 +20,7 @@ var ctagsCommand = env.Get("CTAGS_COMMAND", "universal-ctags", "ctags command (s
 // being highlighted improperly. See https://github.com/sourcegraph/sourcegraph/issues/7668.
 var rawPatternLengthLimit = env.Get("CTAGS_PATTERN_LENGTH_LIMIT", "250", "the maximum length of the patterns output by ctags")
 
-// New runs the ctags command from the CTAGS_COMMAND environment
+// NewParser runs the ctags command from the CTAGS_COMMAND environment
 // variable, falling back to `universal-ctags`.
 func NewParser() (ctags.Parser, error) {
 	patternLengthLimit, err := strconv.Atoi(rawPatternLengthLimit)

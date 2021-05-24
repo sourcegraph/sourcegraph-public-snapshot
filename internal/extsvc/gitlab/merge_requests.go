@@ -245,9 +245,7 @@ func (c *Client) CreateMergeRequestNote(ctx context.Context, project *Project, m
 		return MockCreateMergeRequestNote(c, ctx, project, mr, body)
 	}
 
-	var payload struct {
-		Body string `json:"body"`
-	} = struct {
+	var payload = struct {
 		Body string `json:"body"`
 	}{
 		Body: body,

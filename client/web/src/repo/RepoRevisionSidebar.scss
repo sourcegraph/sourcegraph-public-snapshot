@@ -12,6 +12,7 @@
     &__toggle {
         color: var(--link-color);
         background-color: var(--color-bg-2);
+        border-radius: 0;
         isolation: isolate;
         width: 2.5rem;
         height: 2.5rem;
@@ -19,5 +20,12 @@
         display: flex;
         justify-content: center;
         z-index: 1;
+        .theme-redesign & {
+            border-bottom-right-radius: var(--border-radius);
+            color: var(--body-color);
+            &:hover {
+                background-color: var(--color-bg-3);
+            }
+        }
     }
 }
