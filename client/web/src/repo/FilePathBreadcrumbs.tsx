@@ -25,9 +25,7 @@ export const FilePathBreadcrumbs: React.FunctionComponent<
         return toPrettyBlobURL({ repoName, revision, filePath: partPath })
     }
     const partToClassName = (index: number): string =>
-        index === parts.length - 1
-            ? 'font-weight-bold test-breadcrumb-part-last'
-            : 'part-directory test-breadcrumb-part-directory'
+        index === parts.length - 1 ? 'test-breadcrumb-part-last' : 'part-directory test-breadcrumb-part-directory'
 
     const spans: JSX.Element[] = []
     for (const [index, part] of parts.entries()) {
