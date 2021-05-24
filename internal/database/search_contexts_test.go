@@ -262,6 +262,20 @@ func TestSearchContexts_PaginationAndCount(t *testing.T) {
 			pageOptions:        ListSearchContextsPageOptions{First: 2},
 			totalCount:         3,
 		},
+		{
+			name:               "by namespace name only",
+			wantSearchContexts: []*types.SearchContext{createdSearchContexts[4], createdSearchContexts[5], createdSearchContexts[6]},
+			options:            ListSearchContextsOptions{NamespaceName: "u"},
+			pageOptions:        ListSearchContextsPageOptions{First: 3},
+			totalCount:         3,
+		},
+		{
+			name:               "by namespace name and search context name",
+			wantSearchContexts: []*types.SearchContext{createdSearchContexts[8]},
+			options:            ListSearchContextsOptions{NamespaceName: "org", Name: "v2"},
+			pageOptions:        ListSearchContextsPageOptions{First: 1},
+			totalCount:         1,
+		},
 	}
 
 	for _, tt := range tests {
