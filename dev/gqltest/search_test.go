@@ -109,6 +109,20 @@ func testSearchClient(t *testing.T, client searchClient) {
 	// Temporary test until we have equivalence.
 	_, isStreaming := client.(*gqltestutil.SearchStreamClient)
 
+	const (
+		skipStream = 1 << iota
+		skipGraphQL
+	)
+	doSkip := func(t *testing.T, skip int) {
+		t.Helper()
+		if skip&skipStream != 0 && isStreaming {
+			t.Skip("does not support streaming")
+		}
+		if skip&skipGraphQL != 0 && !isStreaming {
+			t.Skip("does not support graphql")
+		}
+	}
+
 	t.Run("visibility", func(t *testing.T) {
 		tests := []struct {
 			query       string
@@ -834,7 +848,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 			zeroResult      bool
 			exactMatchCount int64
 			wantAlert       *gqltestutil.SearchAlert
-			skipStream      bool
+			skip            int
 		}{
 			{
 				name:  `Or distributive property on content and file`,
@@ -875,14 +889,12 @@ func testSearchClient(t *testing.T, client searchClient) {
 				name:            `Or distributive property on commits deduplicates and merges`,
 				query:           `repo:^github\.com/sgtest/go-diff$ type:commit (message:add or message:file)`,
 				exactMatchCount: 21,
-				skipStream:      true,
+				skip:            skipStream,
 			},
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
-				if test.skipStream && isStreaming {
-					t.Skip("streaming not supported yet")
-				}
+				doSkip(t, test.skip)
 
 				results, err := client.SearchFiles(test.query)
 				if err != nil {
