@@ -509,16 +509,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                         return of('loading' as const)
                     }
 
-                    return wrapRemoteObservable(
-                        viewerData.extensionHostAPI.getStatusBarItems(viewerData.viewerId)
-                    ).pipe(
-                        map(items => [
-                            ...items,
-                            ...new Array(20)
-                                .fill(null)
-                                .map((value, index) => ({ text: 'fake status bar item', key: `${index}` })),
-                        ])
-                    )
+                    return wrapRemoteObservable(viewerData.extensionHostAPI.getStatusBarItems(viewerData.viewerId))
                 })
             ),
         [viewerUpdates]
