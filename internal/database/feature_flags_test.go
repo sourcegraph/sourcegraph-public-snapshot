@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -108,12 +109,19 @@ func testListFeatureFlags(t *testing.T) {
 	flag1 := &types.FeatureFlag{Name: "bool_true", Bool: &types.FeatureFlagBool{Value: true}}
 	flag2 := &types.FeatureFlag{Name: "bool_false", Bool: &types.FeatureFlagBool{Value: false}}
 	flag3 := &types.FeatureFlag{Name: "mid_rollout", BoolVar: &types.FeatureFlagBoolVar{Rollout: 3124}}
-	flags := []*types.FeatureFlag{flag1, flag2, flag3}
+	flag4 := &types.FeatureFlag{Name: "deletable", BoolVar: &types.FeatureFlagBoolVar{Rollout: 3125}}
+	flags := []*types.FeatureFlag{flag1, flag2, flag3, flag4}
 
 	for _, flag := range flags {
 		_, err := ff.NewFeatureFlag(ctx, flag)
 		require.NoError(t, err)
 	}
+
+	// Deleted flag4
+	err := ff.Exec(ctx, sqlf.Sprintf("DELETE FROM feature_flags WHERE flag_name = 'deletable';"))
+	require.NoError(t, err)
+
+	expected := []*types.FeatureFlag{flag1, flag2, flag3}
 
 	res, err := ff.ListFeatureFlags(ctx)
 	require.NoError(t, err)
@@ -124,7 +132,7 @@ func testListFeatureFlags(t *testing.T) {
 		flag.DeletedAt = nil
 	}
 
-	require.EqualValues(t, res, flags)
+	require.EqualValues(t, res, expected)
 }
 
 func testNewOverrideRoundtrip(t *testing.T) {
@@ -232,6 +240,17 @@ func testListUserOverrides(t *testing.T) {
 		require.Equal(t, got, []*types.FeatureFlagOverride{o1})
 	})
 
+	t.Run("deleted override", func(t *testing.T) {
+		t.Cleanup(cleanup(t, db))
+		u1 := mkUser("u1")
+		f1 := mkFFBool("f", true)
+		mkOverride(u1.ID, f1.Name, false)
+		err := ff.Exec(ctx, sqlf.Sprintf("UPDATE feature_flag_overrides SET deleted_at = now()"))
+		got, err := ff.ListUserOverrides(ctx, u1.ID)
+		require.NoError(t, err)
+		require.Empty(t, got)
+	})
+
 	t.Run("non-unique override errors", func(t *testing.T) {
 		t.Cleanup(cleanup(t, db))
 		u1 := mkUser("u1")
@@ -284,6 +303,7 @@ func testListOrgOverrides(t *testing.T) {
 		t.Cleanup(cleanup(t, db))
 		u1 := mkUser("u")
 		mkFFBool("f", true)
+
 		got, err := ff.ListUserOverrides(ctx, u1.ID)
 		require.NoError(t, err)
 		require.Empty(t, got)
@@ -295,9 +315,24 @@ func testListOrgOverrides(t *testing.T) {
 		u1 := mkUser("u", org1.ID)
 		f1 := mkFFBool("f", true)
 		o1 := mkOverride(org1.ID, f1.Name, false)
+
 		got, err := ff.ListOrgOverridesForUser(ctx, u1.ID)
 		require.NoError(t, err)
 		require.Equal(t, got, []*types.FeatureFlagOverride{o1})
+	})
+
+	t.Run("deleted overrides", func(t *testing.T) {
+		t.Cleanup(cleanup(t, db))
+		org1 := mkOrg("org1")
+		u1 := mkUser("u", org1.ID)
+		f1 := mkFFBool("f", true)
+		mkOverride(org1.ID, f1.Name, false)
+		err := ff.Exec(ctx, sqlf.Sprintf("UPDATE feature_flag_overrides SET deleted_at = now();"))
+		require.NoError(t, err)
+
+		got, err := ff.ListOrgOverridesForUser(ctx, u1.ID)
+		require.NoError(t, err)
+		require.Empty(t, got)
 	})
 
 	t.Run("non-unique override errors", func(t *testing.T) {

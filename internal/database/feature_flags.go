@@ -159,7 +159,8 @@ func (f *FeatureFlagStore) ListFeatureFlags(ctx context.Context) ([]*types.Featu
 			created_at,
 			updated_at,
 			deleted_at
-		FROM feature_flags;
+		FROM feature_flags
+		WHERE deleted_at IS NULL;
 	`
 
 	rows, err := f.Query(ctx, sqlf.Sprintf(listFeatureFlagsQuery))
@@ -217,7 +218,8 @@ func (f *FeatureFlagStore) ListUserOverrides(ctx context.Context, userID int32) 
 			flag_name,
 			flag_value
 		FROM feature_flag_overrides
-		WHERE namespace_user_id = %s;
+		WHERE namespace_user_id = %s
+			AND deleted_at IS NULL;
 	`
 	rows, err := f.Query(ctx, sqlf.Sprintf(listUserOverridesFmtString, userID))
 	if err != nil {
@@ -242,7 +244,7 @@ func (f *FeatureFlagStore) ListOrgOverridesForUser(ctx context.Context, userID i
 			FROM org_members
 			WHERE org_members.user_id = %s
 				AND feature_flag_overrides.namespace_org_id = org_members.org_id
-		);
+		) AND deleted_at IS NULL;
 	`
 	rows, err := f.Query(ctx, sqlf.Sprintf(listUserOverridesFmtString, userID))
 	if err != nil {
@@ -371,6 +373,7 @@ SELECT
 	f.flag_type,
 	f.bool_var,
 FROM feature_flags f
+WHERE f.deleted_at IS NULL;
 `
 
 func (f *FeatureFlagStore) UserlessFeatureFlags(ctx context.Context) (map[string]bool, error) {
