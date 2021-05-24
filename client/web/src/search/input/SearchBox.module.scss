@@ -86,6 +86,7 @@
             @media (--xs-breakpoint-down) {
                 display: inline-block;
                 vertical-align: middle;
+                margin-bottom: 0.5rem;
             }
         }
     }
@@ -94,6 +95,7 @@
         :global(.theme-redesign) & {
             @media (--xs-breakpoint-down) {
                 display: inline-block;
+                vertical-align: middle;
                 margin-bottom: 0.5rem;
             }
         }
@@ -136,6 +138,7 @@
         :global(.theme-redesign) & {
             @media (--xs-breakpoint-down) {
                 display: inline-flex;
+                margin-top: 1rem;
             }
         }
     }
@@ -146,6 +149,7 @@
             @media (--xs-breakpoint-down) {
                 display: inline-flex;
                 flex-direction: row-reverse;
+                margin-top: 0.75rem;
                 float: right;
             }
         }
