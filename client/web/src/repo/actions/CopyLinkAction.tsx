@@ -1,6 +1,5 @@
 import classNames from 'classnames'
 import copy from 'copy-to-clipboard'
-import * as H from 'history'
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 import React, { useState, useLayoutEffect } from 'react'
 import { useLocation } from 'react-router'
@@ -12,14 +11,10 @@ import { eventLogger } from '../../tracking/eventLogger'
 
 import styles from './CopyLinkAction.module.scss'
 
-interface Props {
-    location: H.Location
-}
-
 /**
  * A repository header action that copies the current page's URL to the clipboard.
  */
-export const CopyLinkAction: React.FunctionComponent<Props> = () => {
+export const CopyLinkAction: React.FunctionComponent = () => {
     const [isRedesignEnabled] = useRedesignToggle()
     const location = useLocation()
     const [copied, setCopied] = useState(false)
@@ -45,7 +40,7 @@ export const CopyLinkAction: React.FunctionComponent<Props> = () => {
     return (
         <button
             type="button"
-            className={classNames('btn btn-icon', isRedesignEnabled && 'btn-sm')}
+            className={classNames('btn btn-icon my-2', isRedesignEnabled && 'btn-sm')}
             data-tooltip={copied ? 'Copied!' : 'Copy link to clipboard'}
             aria-label="Copy link"
             onClick={onClick}

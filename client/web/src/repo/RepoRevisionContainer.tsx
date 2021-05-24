@@ -325,7 +325,7 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
                 id="copy-link"
                 repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
             >
-                {() => <CopyLinkAction key="copy-link" location={props.location} />}
+                {() => <CopyLinkAction key="copy-link" />}
             </RepoHeaderContributionPortal>
             <RepoHeaderContributionPortal
                 position="right"

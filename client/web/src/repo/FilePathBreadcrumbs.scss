@@ -21,5 +21,9 @@
         // spaces when copy-pasted in Chrome, while margin is ignored.
         margin: 0 0.25rem;
         font-weight: 600;
+
+        .theme-redesign & {
+            margin: 0 0.0625rem;
+        }
     }
 }
