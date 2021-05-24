@@ -97,7 +97,10 @@ type Org struct {
 	Login string `json:"login,omitempty"`
 }
 
-var MockGetAuthenticatedUserOrgs func(ctx context.Context) ([]*Org, error)
+var (
+	MockGetAuthenticatedUserOrgs        func(ctx context.Context) ([]*Org, error)
+	MockGetAuthenticatedUserOAuthScopes func(ctx context.Context) ([]string, error)
+)
 
 // GetAuthenticatedUserOrgs returns the first 100 organizations associated with the currently
 // authenticated user.
@@ -117,6 +120,10 @@ func (c *V3Client) GetAuthenticatedUserOrgs(ctx context.Context) ([]*Org, error)
 // GetAuthenticatedUserOAuthScopes gets the list of OAuth scopes granted to the
 // currently authenticate user.
 func (c *V3Client) GetAuthenticatedUserOAuthScopes(ctx context.Context) ([]string, error) {
+	if MockGetAuthenticatedUserOAuthScopes != nil {
+		return MockGetAuthenticatedUserOAuthScopes(ctx)
+	}
+
 	// We only care about headers
 	var dest struct{}
 	header, err := c.requestGetWithHeader(ctx, "/user", &dest)

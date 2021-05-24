@@ -1947,6 +1947,14 @@ type ExternalService implements Node {
     The timestamp of the next sync job. Null if not scheduled for a re-sync.
     """
     nextSyncAt: DateTime
+
+    """
+    Returns a list of scopes granted by the code host. It is based on the token used
+    when configuring the external service.
+    NOTE: Currently only GitHub is supported and the request consumes rate limit tokens
+    so it should be used sparingly.
+    """
+    grantedScopes: [String!]!
 }
 
 """
