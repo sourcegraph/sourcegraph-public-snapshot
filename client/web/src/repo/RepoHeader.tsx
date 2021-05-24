@@ -262,7 +262,7 @@ export const RepoHeader: React.FunctionComponent<Props> = ({
                                 isOpen={isDropdownOpen}
                                 toggle={toggleDropdownOpen}
                             >
-                                <DropdownToggle className="bg-transparent" nav={true}>
+                                <DropdownToggle className="bg-transparent btn btn-icon repo-header__action" nav={true}>
                                     <DotsVerticalIcon className="icon-inline" />
                                 </DropdownToggle>
                                 <DropdownMenu>
