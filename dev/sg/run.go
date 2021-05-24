@@ -57,9 +57,13 @@ func run(ctx context.Context, cmds ...Command) error {
 
 	wg.Wait()
 
-	failure := <-failures
-	printCmdError(out, failure.cmdName, failure.err)
-	return failure
+	select {
+	case failure := <-failures:
+		printCmdError(out, failure.cmdName, failure.err)
+		return failure
+	default:
+		return nil
+	}
 }
 
 // failedRun is returned by run when a command failed to run and run exits
@@ -138,6 +142,7 @@ func runWatch(ctx context.Context, cmd Command, root string, reload <-chan struc
 			c := exec.CommandContext(ctx, "bash", "-c", cmd.Install)
 			c.Dir = root
 			c.Env = makeEnv(conf.Env, cmd.Env)
+
 			cmdOut, err := c.CombinedOutput()
 			if err != nil {
 				if !startedOnce {
@@ -219,6 +224,9 @@ func runWatch(ctx context.Context, cmd Command, root string, reload <-chan struc
 
 			case err := <-errs:
 				// Exited on its own or errored
+				if err == nil {
+					out.WriteLine(output.Linef("", output.StyleSuccess, "%s%s exited without error%s", output.StyleBold, cmd.Name, output.StyleReset))
+				}
 				return err
 			}
 		}
@@ -373,4 +381,42 @@ func runTest(ctx context.Context, cmd Command, args []string) error {
 	out.WriteLine(output.Linef("", output.StylePending, "Running %s in %q...", c, root))
 
 	return c.Run()
+}
+
+func runChecks(ctx context.Context, checks map[string]Check) error {
+	root, err := root.RepositoryRoot()
+	if err != nil {
+		return err
+	}
+
+	for _, check := range checks {
+		commandCtx, cancel := context.WithCancel(ctx)
+		defer cancel()
+
+		c := exec.CommandContext(commandCtx, "bash", "-c", check.Cmd)
+		c.Dir = root
+		c.Env = makeEnv(conf.Env)
+
+		p := out.Pending(output.Linef(output.EmojiLightbulb, output.StylePending, "Running check %q...", check.Name))
+
+		if cmdOut, err := c.CombinedOutput(); err != nil {
+			p.Complete(output.Linef(output.EmojiFailure, output.StyleWarning, "Check %q failed: %s", check.Name, err))
+
+			out.WriteLine(output.Linef("", output.StyleWarning, "%s", check.FailMessage))
+			if len(cmdOut) != 0 {
+				out.WriteLine(output.Linef("", output.StyleWarning, "Check produced the following output:"))
+				separator := strings.Repeat("-", 80)
+				line := output.Linef(
+					"", output.StyleWarning,
+					"%s\n%s%s%s%s%s",
+					separator, output.StyleReset, cmdOut, output.StyleWarning, separator, output.StyleReset,
+				)
+				out.WriteLine(line)
+			}
+		} else {
+			p.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Check %q success!", check.Name))
+		}
+	}
+
+	return nil
 }

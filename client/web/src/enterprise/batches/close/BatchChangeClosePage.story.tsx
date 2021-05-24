@@ -69,6 +69,13 @@ const batchChangeDefaults: BatchChangeFields = {
         originalInput: 'name: awesome-batch-change\ndescription: somestring',
         supersedingBatchSpec: null,
     },
+    bulkOperations: {
+        totalCount: 0,
+    },
+    activeBulkOperations: {
+        totalCount: 0,
+        nodes: [],
+    },
 }
 
 const queryChangesets: typeof _queryChangesets = () =>

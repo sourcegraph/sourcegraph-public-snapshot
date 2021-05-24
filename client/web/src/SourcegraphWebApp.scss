@@ -30,12 +30,7 @@ body,
 // or identifying the token the references panel is toggled for
 .selection-highlight,
 .selection-highlight-sticky {
-    .theme-dark & {
-        background-color: rgba(217, 72, 15, 0.5);
-    }
-    .theme-light & {
-        background-color: rgba(255, 192, 120, 0.5);
-    }
+    background-color: var(--mark-bg);
 }
 
 .app {
@@ -89,6 +84,7 @@ body,
 @import './search/queryBuilder/index';
 @import './searchContexts/index';
 @import './search/results/SearchResults';
+@import './settings/MonacoSettingsEditor';
 @import './settings/SettingsFile';
 @import './site-admin/init/SiteInitPage';
 @import './site-admin/SiteAdmin';

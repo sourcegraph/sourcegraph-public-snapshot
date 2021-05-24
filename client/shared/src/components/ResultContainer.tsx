@@ -1,8 +1,12 @@
 /* eslint jsx-a11y/click-events-have-key-events: warn, jsx-a11y/no-static-element-interactions: warn */
+import ArrowCollapseUpIcon from 'mdi-react/ArrowCollapseUpIcon'
+import ArrowExpandDownIcon from 'mdi-react/ArrowExpandDownIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
+import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
-import * as React from 'react'
+import React, { useEffect, useState } from 'react'
+
+import { useRedesignToggle } from '../util/useRedesignToggle'
 
 export interface Props {
     /**
@@ -10,6 +14,9 @@ export interface Props {
      * The header is always visible even when the component is not expanded.
      */
     defaultExpanded?: boolean
+
+    /** Expand all results */
+    allExpanded?: boolean
 
     /**
      * Whether the result container can be collapsed. If false, its children
@@ -58,95 +65,93 @@ export interface Props {
     expandLabel?: string
 
     /**
+     * The total number of matches to display
+     */
+    matchCountLabel?: string
+
+    /**
      * This component does not accept children.
      */
     children?: never
-
-    /** Expand all results */
-    allExpanded?: boolean
-}
-
-interface State {
-    /**
-     * Whether this result container is currently expanded.
-     */
-    expanded?: boolean
 }
 
 /**
  * The container component for a result in the SearchResults component.
  */
-export class ResultContainer extends React.PureComponent<Props, State> {
-    constructor(props: Props) {
-        super(props)
-        this.state = { expanded: this.props.allExpanded || this.props.defaultExpanded }
-    }
+export const ResultContainer: React.FunctionComponent<Props> = ({
+    defaultExpanded,
+    allExpanded,
+    collapsible,
+    collapseLabel,
+    expandLabel,
+    collapsedChildren,
+    expandedChildren,
+    icon,
+    title,
+    titleClassName,
+    description,
+    matchCountLabel,
+}) => {
+    const [isRedesignEnabled] = useRedesignToggle()
+    const [expanded, setExpanded] = useState(allExpanded || defaultExpanded)
 
-    public componentDidUpdate(previousProps: Props): void {
-        if (previousProps.allExpanded !== this.props.allExpanded) {
-            if (this.state.expanded === previousProps.allExpanded) {
-                // eslint-disable-next-line react/no-did-update-set-state
-                this.setState({ expanded: this.props.allExpanded })
-            } else {
-                // eslint-disable-next-line react/no-did-update-set-state
-                this.setState({ expanded: this.props.allExpanded })
-            }
+    useEffect(() => setExpanded(allExpanded || defaultExpanded), [allExpanded, defaultExpanded])
+
+    const toggle = (): void => {
+        if (collapsible) {
+            setExpanded(expanded => !expanded)
         }
     }
 
-    public render(): JSX.Element | null {
-        const Icon = this.props.icon
-        return (
-            <div className="test-search-result result-container" data-testid="result-container">
-                {/* TODO: Fix accessibility issues.
-                Issue: https://github.com/sourcegraph/sourcegraph/issues/19272 */}
+    const Icon = icon
+    return (
+        <div className="test-search-result result-container" data-testid="result-container">
+            <div className="result-container__header">
+                <Icon className="icon-inline" />
+                <div className="result-container__header-divider" />
                 <div
-                    className={
-                        'result-container__header' +
-                        (this.props.collapsible ? ' result-container__header--collapsible' : '')
-                    }
-                    onClick={this.toggle}
+                    className={`result-container__header-title ${titleClassName || ''}`}
+                    data-testid="result-container-header"
                 >
-                    <Icon className="icon-inline" />
-                    <div
-                        className={`result-container__header-title ${this.props.titleClassName || ''}`}
-                        data-testid="result-container-header"
-                    >
-                        {this.props.collapsible ? (
-                            // This is to ensure the onClick toggle handler doesn't get called
-                            // We should be able to remove this if we refactor to seperate the toggle to its own button
-                            <span onClick={blockExpandAndCollapse}>{this.props.title}</span>
-                        ) : (
-                            this.props.title
-                        )}
-                        {this.props.description && <span className="ml-2">{this.props.description}</span>}
-                    </div>
-                    {this.props.collapsible &&
-                        (this.state.expanded ? (
-                            <small className="result-container__toggle-matches-container">
-                                {this.props.collapseLabel}
-                                {this.props.collapseLabel && <ChevronUpIcon className="icon-inline" />}
-                                {!this.props.collapseLabel && <ChevronDownIcon className="icon-inline" />}
-                            </small>
-                        ) : (
-                            <small className="result-container__toggle-matches-container">
-                                {this.props.expandLabel}
-                                {this.props.expandLabel && <ChevronDownIcon className="icon-inline" />}
-                                {!this.props.expandLabel && <ChevronRightIcon className="icon-inline" />}
-                            </small>
-                        ))}
+                    {title}
+                    {description && <span className="ml-2">{description}</span>}
                 </div>
-                {!this.state.expanded && this.props.collapsedChildren}
-                {this.state.expanded && this.props.expandedChildren}
+                {matchCountLabel && isRedesignEnabled && (
+                    <>
+                        <small className="mr-1">{matchCountLabel}</small>
+                        {collapsible && <div className="result-container__header-divider" />}
+                    </>
+                )}
+                {collapsible && (
+                    <button
+                        type="button"
+                        className="result-container__toggle-matches-container btn btn-sm btn-link px-1 py-0"
+                        onClick={toggle}
+                    >
+                        {expanded ? (
+                            <>
+                                {collapseLabel && isRedesignEnabled && (
+                                    <ArrowCollapseUpIcon className="icon-inline mr-1" />
+                                )}
+                                {collapseLabel}
+                                {collapseLabel && !isRedesignEnabled && <ChevronUpIcon className="icon-inline" />}
+                                {!collapseLabel && <ChevronDownIcon className="icon-inline" />}
+                            </>
+                        ) : (
+                            <>
+                                {expandLabel && isRedesignEnabled && (
+                                    <ArrowExpandDownIcon className="icon-inline mr-1" />
+                                )}
+                                {expandLabel}
+                                {expandLabel && !isRedesignEnabled && <ChevronDownIcon className="icon-inline" />}
+                                {!expandLabel && <ChevronLeftIcon className="icon-inline" />}
+                            </>
+                        )}
+                    </button>
+                )}
             </div>
-        )
-    }
-
-    private toggle = (): void => {
-        this.setState(state => ({ expanded: !state.expanded }))
-    }
-}
-
-function blockExpandAndCollapse(event: React.MouseEvent<HTMLElement>): void {
-    event.stopPropagation()
+            {!expanded && collapsedChildren}
+            {expanded && expandedChildren}
+        </div>
+    )
 }

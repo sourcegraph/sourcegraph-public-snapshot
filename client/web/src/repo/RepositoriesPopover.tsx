@@ -1,6 +1,5 @@
-import * as H from 'history'
-import * as React from 'react'
-import { Link } from 'react-router-dom'
+import React, { useCallback, useEffect } from 'react'
+import { Link, useHistory, useLocation } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
@@ -10,6 +9,7 @@ import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
+import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { queryGraphQL } from '../backend/graphql'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../components/FilteredConnection'
@@ -63,14 +63,11 @@ const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({ node, cu
     </li>
 )
 
-interface Props {
+interface RepositoriesPopoverProps {
     /**
      * The current repository (shown as selected in the list), if any.
      */
     currentRepo?: Scalars['ID']
-
-    history: H.History
-    location: H.Location
 }
 
 class FilteredRepositoryConnection extends FilteredConnection<GQL.IRepository> {}
@@ -78,36 +75,43 @@ class FilteredRepositoryConnection extends FilteredConnection<GQL.IRepository> {
 /**
  * A popover that displays a searchable list of repositories.
  */
-export class RepositoriesPopover extends React.PureComponent<Props> {
-    public componentDidMount(): void {
+export const RepositoriesPopover: React.FunctionComponent<RepositoriesPopoverProps> = ({ currentRepo }) => {
+    const location = useLocation()
+    const history = useHistory()
+    const [isRedesignEnabled] = useRedesignToggle()
+
+    useEffect(() => {
         eventLogger.logViewEvent('RepositoriesPopover')
-    }
+    }, [])
 
-    public render(): JSX.Element | null {
-        const nodeProps: Pick<RepositoryNodeProps, 'currentRepo'> = { currentRepo: this.props.currentRepo }
+    const queryRepositories = useCallback(
+        (args: FilteredConnectionQueryArguments): Observable<GQL.IRepositoryConnection> =>
+            fetchRepositories({ ...args }),
+        []
+    )
 
-        return (
-            <div className="repositories-popover connection-popover">
-                <FilteredRepositoryConnection
-                    className="connection-popover__content"
-                    showMoreClassName="connection-popover__show-more"
-                    compact={true}
-                    noun="repository"
-                    pluralNoun="repositories"
-                    queryConnection={this.queryRepositories}
-                    nodeComponent={RepositoryNode}
-                    nodeComponentProps={nodeProps}
-                    defaultFirst={10}
-                    autoFocus={true}
-                    history={this.props.history}
-                    location={this.props.location}
-                    noSummaryIfAllNodesVisible={true}
-                    useURLQuery={false}
-                />
-            </div>
-        )
-    }
+    const nodeProps: Pick<RepositoryNodeProps, 'currentRepo'> = { currentRepo }
 
-    private queryRepositories = (args: FilteredConnectionQueryArguments): Observable<GQL.IRepositoryConnection> =>
-        fetchRepositories({ ...args })
+    return (
+        <div className="repositories-popover connection-popover">
+            <FilteredRepositoryConnection
+                className="connection-popover__content"
+                showMoreClassName={isRedesignEnabled ? '' : 'connection-popover__show-more'}
+                inputClassName="connection-popover__input"
+                listClassName="connection-popover__nodes"
+                compact={true}
+                noun="repository"
+                pluralNoun="repositories"
+                queryConnection={queryRepositories}
+                nodeComponent={RepositoryNode}
+                nodeComponentProps={nodeProps}
+                defaultFirst={10}
+                autoFocus={true}
+                history={history}
+                location={location}
+                noSummaryIfAllNodesVisible={true}
+                useURLQuery={false}
+            />
+        </div>
+    )
 }

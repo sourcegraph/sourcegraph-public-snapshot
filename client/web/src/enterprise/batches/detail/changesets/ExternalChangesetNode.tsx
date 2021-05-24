@@ -34,7 +34,6 @@ import styles from './ExternalChangesetNode.module.scss'
 export interface ExternalChangesetNodeProps extends ThemeProps {
     node: ExternalChangesetFields
     viewerCanAdminister: boolean
-    enableSelect?: boolean
     onSelect?: (id: string, selected: boolean) => void
     isSelected?: (id: string) => boolean
     history: H.History
@@ -51,7 +50,6 @@ export interface ExternalChangesetNodeProps extends ThemeProps {
 export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNodeProps> = ({
     node: initialNode,
     viewerCanAdminister,
-    enableSelect,
     onSelect,
     isSelected,
     isLightTheme,
@@ -95,19 +93,17 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
                     <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
                 )}
             </button>
-            {enableSelect && (
-                <div className="p-2">
-                    <input
-                        id={`select-changeset-${node.id}`}
-                        type="checkbox"
-                        className="btn"
-                        checked={selected}
-                        onChange={toggleSelected}
-                        disabled={!viewerCanAdminister}
-                        data-tooltip="Click to select changeset for detaching from batch change"
-                    />
-                </div>
-            )}
+            <div className="p-2">
+                <input
+                    id={`select-changeset-${node.id}`}
+                    type="checkbox"
+                    className="btn"
+                    checked={selected}
+                    onChange={toggleSelected}
+                    disabled={!viewerCanAdminister}
+                    data-tooltip="Click to select changeset for bulk operation"
+                />
+            </div>
             <ChangesetStatusCell
                 id={node.id}
                 state={node.state}
@@ -218,8 +214,8 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
 const SyncerError: React.FunctionComponent<{ syncerError: string }> = ({ syncerError }) => (
     <div className="alert alert-danger" role="alert">
         <h4 className="alert-heading">
-            <AlertCircleIcon className="icon icon-inline" /> Encountered error during last attempt to sync changeset
-            data from code host
+            <AlertCircleIcon className="redesign-d-none icon icon-inline" /> Encountered error during last attempt to
+            sync changeset data from code host
         </h4>
         <ErrorMessage error={syncerError} />
         <hr className="my-2" />
@@ -239,7 +235,7 @@ const ChangesetError: React.FunctionComponent<{
     return (
         <div className="alert alert-danger" role="alert">
             <h4 className="alert-heading">
-                <AlertCircleIcon className="icon icon-inline" /> Failed to run operations on changeset
+                <AlertCircleIcon className="redesign-d-none icon icon-inline" /> Failed to run operations on changeset
             </h4>
             <ErrorMessage error={node.error} />
         </div>

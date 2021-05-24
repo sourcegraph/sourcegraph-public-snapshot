@@ -5,3 +5,4 @@
 *.map
 !img/**
 *.DS_Store
+*.ttf

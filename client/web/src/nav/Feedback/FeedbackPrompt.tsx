@@ -1,5 +1,4 @@
 import classNames from 'classnames'
-import * as H from 'history'
 import CloseIcon from 'mdi-react/CloseIcon'
 import MessageDrawIcon from 'mdi-react/MessageDrawIcon'
 import TickIcon from 'mdi-react/TickIcon'
@@ -55,14 +54,13 @@ const SUBMIT_HAPPINESS_FEEDBACK_QUERY = gql`
 
 interface ContentProps {
     closePrompt: () => void
-    history: H.History
     routeMatch?: string
 }
 
 const LOCAL_STORAGE_KEY_RATING = 'feedbackPromptRating'
 const LOCAL_STORAGE_KEY_TEXT = 'feedbackPromptText'
 
-const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({ closePrompt, history, routeMatch }) => {
+const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({ closePrompt, routeMatch }) => {
     const [rating, setRating] = useLocalStorage<number | undefined>(LOCAL_STORAGE_KEY_RATING, undefined)
     const [text, setText] = useLocalStorage<string>(LOCAL_STORAGE_KEY_TEXT, '')
     const handleRateChange = useCallback((value: number) => setRating(value), [setRating])
@@ -148,7 +146,7 @@ const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({ closePro
                         className="btn btn-block btn-secondary feedback-prompt__button"
                         loading={loading}
                         label="Send"
-                        disabled={!rating || loading}
+                        disabled={!rating || !text || loading}
                     />
                 </Form>
             )}
@@ -158,11 +156,10 @@ const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({ closePro
 
 interface Props {
     open?: boolean
-    history: H.History
     routes: readonly LayoutRouteProps<{}>[]
 }
 
-export const FeedbackPrompt: React.FunctionComponent<Props> = ({ open, history, routes }) => {
+export const FeedbackPrompt: React.FunctionComponent<Props> = ({ open, routes }) => {
     const [isOpen, setIsOpen] = useState(() => !!open)
     const handleToggle = useCallback(() => setIsOpen(open => !open), [])
     const forceClose = useCallback(() => setIsOpen(false), [])
@@ -184,7 +181,7 @@ export const FeedbackPrompt: React.FunctionComponent<Props> = ({ open, history, 
                 <span className={classNames({ 'd-none d-lg-block': !isRedesignEnabled })}>Feedback</span>
             </DropdownToggle>
             <DropdownMenu right={true} className="web-content feedback-prompt__menu">
-                <FeedbackPromptContent closePrompt={forceClose} history={history} routeMatch={match} />
+                <FeedbackPromptContent closePrompt={forceClose} routeMatch={match} />
             </DropdownMenu>
         </ButtonDropdown>
     )

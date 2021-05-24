@@ -1,5 +1,4 @@
 import { render, RenderResult, fireEvent } from '@testing-library/react'
-import { createMemoryHistory } from 'history'
 import React from 'react'
 import * as sinon from 'sinon'
 
@@ -11,7 +10,6 @@ import { FeedbackPrompt, HAPPINESS_FEEDBACK_OPTIONS } from './FeedbackPrompt'
 
 let mockResponse: MutationResult<SubmitHappinessFeedbackResult> = { loading: false }
 const mockSubmitFn = sinon.spy((parameters: SubmitHappinessFeedbackVariables) => undefined)
-const history = createMemoryHistory()
 
 jest.mock('../../hooks', () => ({
     useMutation: () => [mockSubmitFn, mockResponse],
@@ -26,7 +24,7 @@ describe('FeedbackPrompt', () => {
     })
 
     beforeEach(() => {
-        queries = render(<FeedbackPrompt history={history} routes={routes} />)
+        queries = render(<FeedbackPrompt routes={routes} />)
     })
 
     test('Renders heading correctly', () => {
@@ -48,9 +46,17 @@ describe('FeedbackPrompt', () => {
         expect(sendButton.disabled).toBe(true)
     })
 
-    test('Send button is enabled when a happiness rating is selected', () => {
-        fireEvent.click(queries.getByLabelText('Very Happy'))
+    test('Send button is disabled when a happiness rating is selected and textarea is empty', () => {
         const sendButton = queries.getByText('Send') as HTMLButtonElement
+        fireEvent.click(queries.getByLabelText('Very Happy'))
+        expect(sendButton.disabled).toBe(true)
+    })
+
+    test('Send button is disabled when a textarea is not empty and happiness rating is selected', () => {
+        const textArea = queries.getByPlaceholderText('What’s going well? What could be better?')
+        const sendButton = queries.getByText('Send') as HTMLButtonElement
+        fireEvent.change(textArea, { target: { value: 'Lorem ipsum dolor sit amet' } })
+        fireEvent.click(queries.getByLabelText('Very Happy'))
         expect(sendButton.disabled).toBe(false)
     })
 

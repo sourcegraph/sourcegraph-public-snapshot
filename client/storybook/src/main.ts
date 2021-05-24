@@ -108,6 +108,7 @@ const config = {
             test: /\.tsx?$/,
             loader: require.resolve('babel-loader'),
             options: {
+                cacheDirectory: true,
                 configFile: path.resolve(rootPath, 'babel.config.js'),
             },
         })
@@ -180,7 +181,14 @@ const config = {
             include: monacoEditorPaths,
             // Make sure Storybook styles get handled by the Storybook config
             exclude: [storybookDirectory],
-            use: ['style-loader', { loader: 'css-loader', options: { url: false } }],
+            use: ['style-loader', { loader: 'css-loader' }],
+        })
+
+        config.module?.rules.unshift({
+            // TTF rule for monaco-editor
+            test: /\.ttf$/,
+            include: monacoEditorPaths,
+            use: ['file-loader'],
         })
 
         config.module.rules.push({

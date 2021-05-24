@@ -1,12 +1,15 @@
 import { storiesOf } from '@storybook/react'
-import { createMemoryHistory } from 'history'
 import React from 'react'
 
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../../components/WebStory'
 import { authUser } from '../../../../search/panels/utils'
+import { InsightsApiContext } from '../../../core/backend/api-provider'
+import { createMockInsightAPI } from '../../../core/backend/insights-api'
 
+import { getRandomLangStatsMock } from './components/live-preview-chart/live-preview-mock-data'
 import { LangStatsInsightCreationPage, LangStatsInsightCreationPageProps } from './LangStatsInsightCreationPage'
 
 const { add } = storiesOf('web/insights/CreateLangStatsInsightPageProps', module)
@@ -24,13 +27,25 @@ const PLATFORM_CONTEXT: LangStatsInsightCreationPageProps['platformContext'] = {
     },
 }
 
-const history = createMemoryHistory()
+function sleep(delay: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, delay))
+}
+
+const mockAPI = createMockInsightAPI({
+    getLangStatsInsightContent: async () => {
+        await sleep(2000)
+
+        return getRandomLangStatsMock()
+    },
+})
 
 add('Page', () => (
-    <LangStatsInsightCreationPage
-        history={history}
-        platformContext={PLATFORM_CONTEXT}
-        settingsCascade={EMPTY_SETTINGS_CASCADE}
-        authenticatedUser={authUser}
-    />
+    <InsightsApiContext.Provider value={mockAPI}>
+        <LangStatsInsightCreationPage
+            telemetryService={NOOP_TELEMETRY_SERVICE}
+            platformContext={PLATFORM_CONTEXT}
+            settingsCascade={EMPTY_SETTINGS_CASCADE}
+            authenticatedUser={authUser}
+        />
+    </InsightsApiContext.Provider>
 ))

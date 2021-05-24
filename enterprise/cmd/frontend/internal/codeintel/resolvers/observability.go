@@ -5,20 +5,23 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/honeycombio/libhoney-go"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 type operations struct {
-	queryResolver *observation.Operation
-	definitions   *observation.Operation
-	diagnostics   *observation.Operation
-	hover         *observation.Operation
-	ranges        *observation.Operation
-	references    *observation.Operation
+	queryResolver     *observation.Operation
+	definitions       *observation.Operation
+	diagnostics       *observation.Operation
+	hover             *observation.Operation
+	ranges            *observation.Operation
+	references        *observation.Operation
+	documentationPage *observation.Operation
 
 	findClosestDumps *observation.Operation
 }
@@ -49,12 +52,13 @@ func newOperations(observationContext *observation.Context) *operations {
 	}
 
 	return &operations{
-		queryResolver: op("QueryResolver"),
-		definitions:   op("Definitions"),
-		diagnostics:   op("Diagnostics"),
-		hover:         op("Hover"),
-		ranges:        op("Ranges"),
-		references:    op("References"),
+		queryResolver:     op("QueryResolver"),
+		definitions:       op("Definitions"),
+		diagnostics:       op("Diagnostics"),
+		hover:             op("Hover"),
+		ranges:            op("Ranges"),
+		references:        op("References"),
+		documentationPage: op("DocumentationPage"),
 
 		findClosestDumps: subOp("findClosestDumps"),
 	}
@@ -79,14 +83,14 @@ func observeResolver(
 			lowSlowRequest(name, duration, err, observationArgs)
 		}
 		if honey.Enabled() {
-			sendHoneyEvent(name, duration, err, observationArgs)
+			_ = createHoneyEvent(ctx, name, observationArgs, err, duration).Send()
 		}
 	}
 }
 
 func lowSlowRequest(name string, duration time.Duration, err *error, observationArgs observation.Args) {
 	pairs := append(
-		logFieldToPairs(observationArgs),
+		observationArgs.LogFieldPairs(),
 		"type", name,
 		"duration_ms", duration.Milliseconds(),
 	)
@@ -97,25 +101,21 @@ func lowSlowRequest(name string, duration time.Duration, err *error, observation
 	log15.Warn("Slow codeintel request", pairs...)
 }
 
-func logFieldToPairs(observationArgs observation.Args) []interface{} {
-	pairs := make([]interface{}, 0, len(observationArgs.LogFields)*2)
-	for _, field := range observationArgs.LogFields {
-		pairs = append(pairs, field.Key(), field.Value())
+func createHoneyEvent(ctx context.Context, name string, observationArgs observation.Args, err *error, duration time.Duration) *libhoney.Event {
+	fields := map[string]interface{}{
+		"type":        name,
+		"duration_ms": duration.Milliseconds(),
 	}
 
-	return pairs
-}
-
-func sendHoneyEvent(name string, duration time.Duration, err *error, observationArgs observation.Args) {
-	ev := honey.Event("codeintel")
-	for _, field := range observationArgs.LogFields {
-		ev.AddField(field.Key(), field.Value())
-	}
-	ev.AddField("type", name)
-	ev.AddField("duration_ms", duration.Milliseconds())
 	if err != nil && *err != nil {
-		ev.AddField("error", (*err).Error())
+		fields["error"] = (*err).Error()
+	}
+	for key, value := range observationArgs.LogFieldMap() {
+		fields[key] = value
+	}
+	if spanURL := trace.SpanURLFromContext(ctx); spanURL != "" {
+		fields["trace"] = spanURL
 	}
 
-	_ = ev.Send()
+	return honey.EventWithFields("codeintel", fields)
 }

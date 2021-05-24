@@ -762,7 +762,6 @@ export function handleCodeHost({
                         repoExistsOrError={repoExistsOrError}
                         showSignInButton={showSignInButton}
                         // The bound function is constant
-                        // eslint-disable-next-line react/jsx-no-bind
                         onSignInClose={nextSignInClose}
                         onConfigureSourcegraphClick={isInPage ? undefined : onConfigureSourcegraphClick}
                     />,
@@ -818,7 +817,6 @@ export function handleCodeHost({
                                     extensionsController={extensionsController}
                                     buttonProps={codeViewEvent.toolbarButtonProps}
                                     // The bound function is constant
-                                    // eslint-disable-next-line react/jsx-no-bind
                                     onSignInClose={nextSignInClose}
                                     location={H.createLocation(window.location)}
                                 />,
@@ -1155,7 +1153,6 @@ export function handleCodeHost({
                             location={H.createLocation(window.location)}
                             scope={scopeEditor}
                             // The bound function is constant
-                            // eslint-disable-next-line react/jsx-no-bind
                             onSignInClose={nextSignInClose}
                         />,
                         mount

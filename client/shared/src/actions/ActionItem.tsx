@@ -198,6 +198,10 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
             tooltip = this.props.action.description
         }
 
+        if (!this.props.active && tooltip) {
+            tooltip += ' (inactive)'
+        }
+
         const variantClassName = this.props.variant === 'actionItem' ? 'action-item--variant-action-item' : ''
 
         // Simple display if the action is a noop.

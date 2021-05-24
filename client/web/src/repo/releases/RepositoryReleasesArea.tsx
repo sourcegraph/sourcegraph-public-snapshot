@@ -60,7 +60,6 @@ export const RepositoryReleasesArea: React.FunctionComponent<Props> = ({ useBrea
             <div className="container">
                 <div className="container-inner">
                     <Switch>
-                        {/* eslint-disable react/jsx-no-bind */}
                         <Route
                             path={`${routePrefix}/-/tags`}
                             key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
@@ -70,7 +69,6 @@ export const RepositoryReleasesArea: React.FunctionComponent<Props> = ({ useBrea
                             )}
                         />
                         <Route key="hardcoded-key" component={NotFoundPage} />
-                        {/* eslint-enable react/jsx-no-bind */}
                     </Switch>
                 </div>
             </div>

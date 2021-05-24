@@ -149,9 +149,7 @@ monaco.editor.defineTheme(SOURCEGRAPH_DARK_REDESIGN, {
 monaco.editor.defineTheme(SOURCEGRAPH_DARK, {
     base: 'vs-dark',
     inherit: true,
-    colors: {
-        ...darkColors,
-    },
+    colors: darkColors,
     rules: darkRules,
 })
 
@@ -189,7 +187,7 @@ interface Props extends ThemeProps {
     onEditorCreated?: (editor: monaco.editor.IStandaloneCodeEditor) => void
 
     /** Options for the editor. */
-    options: monaco.editor.IEditorOptions
+    options: monaco.editor.IStandaloneEditorConstructionOptions
 
     /** An optional className to add to the editor. */
     className?: string

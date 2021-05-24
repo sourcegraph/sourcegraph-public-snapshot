@@ -21,13 +21,13 @@ import { SearchContextProps } from '../search'
 import styles from './SearchContextPage.module.scss'
 
 export interface SearchContextPageProps
-    extends RouteComponentProps<{ id: Scalars['ID'] }>,
+    extends Pick<RouteComponentProps<{ id: Scalars['ID'] }>, 'match'>,
         Pick<SearchContextProps, 'fetchSearchContext'> {}
 
 export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> = props => {
     const LOADING = 'loading' as const
 
-    const { match, history, fetchSearchContext } = props
+    const { match, fetchSearchContext } = props
 
     const searchContextOrError = useObservable(
         React.useMemo(
@@ -52,21 +52,47 @@ export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> 
                     {searchContextOrError && !isErrorLike(searchContextOrError) && searchContextOrError !== LOADING && (
                         <>
                             <PageTitle title={searchContextOrError.spec} />
-                            <div className="mb-2 d-flex align-items-center">
-                                <Link to="/contexts">
-                                    <ChevronLeftIcon />
-                                </Link>
-                                <PageHeader
-                                    path={[
-                                        {
-                                            text: searchContextOrError.spec,
-                                        },
-                                    ]}
-                                />
-                                {!searchContextOrError.public && (
-                                    <div className="badge badge-pill badge-secondary ml-1">Private</div>
-                                )}
-                            </div>
+                            <PageHeader
+                                className="mb-2"
+                                path={[
+                                    {
+                                        text: (
+                                            <div className="d-flex align-items-center">
+                                                <Link
+                                                    className="d-flex"
+                                                    to="/contexts"
+                                                    aria-label="Back to contexts list"
+                                                    title="Back to contexts list"
+                                                >
+                                                    <ChevronLeftIcon />
+                                                </Link>
+                                                <span>{searchContextOrError.spec}</span>
+                                                {!searchContextOrError.public && (
+                                                    <div
+                                                        className={classNames(
+                                                            'badge badge-pill badge-secondary ml-2',
+                                                            styles.searchContextPagePrivateBadge
+                                                        )}
+                                                    >
+                                                        Private
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ),
+                                    },
+                                ]}
+                                actions={
+                                    searchContextOrError.viewerCanManage && (
+                                        <Link
+                                            to={`/contexts/${searchContextOrError.id}/edit`}
+                                            className="btn btn-secondary"
+                                            data-testid="edit-search-context-link"
+                                        >
+                                            Edit
+                                        </Link>
+                                    )
+                                }
+                            />
                             <div className="text-muted">
                                 <span className="mr-1">{searchContextOrError.repositories.length} repositories</span>
                                 &middot;
@@ -75,10 +101,7 @@ export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> 
                                 </span>
                             </div>
                             <div className="my-2">
-                                <Markdown
-                                    dangerousInnerHTML={renderMarkdown(searchContextOrError.description)}
-                                    history={history}
-                                />
+                                <Markdown dangerousInnerHTML={renderMarkdown(searchContextOrError.description)} />
                             </div>
                             {!searchContextOrError.autoDefined && (
                                 <>

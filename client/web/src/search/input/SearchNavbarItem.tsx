@@ -12,13 +12,12 @@ import {
     CaseSensitivityProps,
     CopyQueryButtonProps,
     OnboardingTourProps,
-    SearchContextProps,
+    SearchContextInputProps,
 } from '..'
+import { VersionContext } from '../../schema/site.schema'
 import { submitSearch, QueryState } from '../helpers'
 
-import { LazyMonacoQueryInput } from './LazyMonacoQueryInput'
-import { SearchButton } from './SearchButton'
-import { useSearchOnboardingTour } from './SearchOnboardingTour'
+import { SearchBox } from './SearchBox'
 
 interface Props
     extends ActivationProps,
@@ -27,10 +26,7 @@ interface Props
         SettingsCascadeProps,
         ThemeProps,
         CopyQueryButtonProps,
-        Omit<
-            SearchContextProps,
-            'convertVersionContextToSearchContext' | 'isSearchContextSpecAvailable' | 'fetchSearchContext'
-        >,
+        SearchContextInputProps,
         VersionContextProps,
         OnboardingTourProps {
     location: H.Location
@@ -41,6 +37,8 @@ interface Props
     globbing: boolean
     enableSmartQuery: boolean
     isSearchAutoFocusRequired?: boolean
+    setVersionContext: (versionContext: string | undefined) => Promise<void>
+    availableVersionContexts: VersionContext[] | undefined
 }
 
 /**
@@ -56,28 +54,21 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
         },
         [props]
     )
-    const onboardingTourQueryInputProps = useSearchOnboardingTour({
-        ...props,
-        inputLocation: 'global-navbar',
-        queryState: props.navbarSearchState,
-        setQueryState: props.onChange,
-    })
 
     return (
         <Form
             className="search--navbar-item d-flex align-items-flex-start flex-grow-1 flex-shrink-past-contents"
             onSubmit={onSubmit}
         >
-            <LazyMonacoQueryInput
+            <SearchBox
                 {...props}
-                {...onboardingTourQueryInputProps}
                 hasGlobalQueryBehavior={true}
                 queryState={props.navbarSearchState}
                 onSubmit={onSubmit}
                 autoFocus={autoFocus}
                 showSearchContextHighlightTourStep={true}
+                isSearchOnboardingTourVisible={false}
             />
-            <SearchButton />
         </Form>
     )
 }

@@ -78,7 +78,8 @@ func TestSearch(t *testing.T) {
 	}
 
 	t.Run("search contexts", func(t *testing.T) {
-		testSearchContexts(t, client)
+		testSearchContextsCRUD(t, client)
+		testListingSearchContexts(t, client)
 	})
 
 	t.Run("graphql", func(t *testing.T) {
@@ -107,6 +108,20 @@ type searchClient interface {
 func testSearchClient(t *testing.T, client searchClient) {
 	// Temporary test until we have equivalence.
 	_, isStreaming := client.(*gqltestutil.SearchStreamClient)
+
+	const (
+		skipStream = 1 << iota
+		skipGraphQL
+	)
+	doSkip := func(t *testing.T, skip int) {
+		t.Helper()
+		if skip&skipStream != 0 && isStreaming {
+			t.Skip("does not support streaming")
+		}
+		if skip&skipGraphQL != 0 && !isStreaming {
+			t.Skip("does not support graphql")
+		}
+	}
 
 	t.Run("visibility", func(t *testing.T) {
 		tests := []struct {
@@ -340,6 +355,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 			zeroResult    bool
 			minMatchCount int64
 			wantAlert     *gqltestutil.SearchAlert
+			skip          int
 		}{
 			// Global search
 			{
@@ -354,6 +370,18 @@ func testSearchClient(t *testing.T, client searchClient) {
 				name:          "something with more than 1000 results and use count:1000",
 				query:         ". count:1000",
 				minMatchCount: 1000,
+			},
+			{
+				name:          "default limit streaming",
+				query:         ".",
+				minMatchCount: 500,
+				skip:          skipGraphQL,
+			},
+			{
+				name:          "default limit graphql",
+				query:         ".",
+				minMatchCount: 30,
+				skip:          skipStream,
 			},
 			{
 				name:  "regular expression without indexed search",
@@ -489,6 +517,8 @@ func testSearchClient(t *testing.T, client searchClient) {
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
+				doSkip(t, test.skip)
+
 				results, err := client.SearchFiles(test.query)
 				if err != nil {
 					t.Fatal(err)
@@ -833,7 +863,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 			zeroResult      bool
 			exactMatchCount int64
 			wantAlert       *gqltestutil.SearchAlert
-			skipStream      bool
+			skip            int
 		}{
 			{
 				name:  `Or distributive property on content and file`,
@@ -874,14 +904,12 @@ func testSearchClient(t *testing.T, client searchClient) {
 				name:            `Or distributive property on commits deduplicates and merges`,
 				query:           `repo:^github\.com/sgtest/go-diff$ type:commit (message:add or message:file)`,
 				exactMatchCount: 21,
-				skipStream:      true,
+				skip:            skipStream,
 			},
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
-				if test.skipStream && isStreaming {
-					t.Skip("streaming not supported yet")
-				}
+				doSkip(t, test.skip)
 
 				results, err := client.SearchFiles(test.query)
 				if err != nil {
@@ -1112,6 +1140,12 @@ func testSearchClient(t *testing.T, client searchClient) {
 				counts: counts{Commit: 1},
 			},
 			{
+				// https://github.com/sourcegraph/sourcegraph/issues/21031
+				name:   `search diffs with file filter and time filters`,
+				query:  `repo:go-diff patterntype:literal type:diff lang:go before:"May 10 2020" after:"May 5 2020" unquotedOrigName`,
+				counts: counts{Commit: 1},
+			},
+			{
 				name:   `select diffs with added lines containing pattern`,
 				query:  `repo:go-diff patterntype:literal type:diff select:commit.diff.added sample_binary_inline`,
 				counts: counts{Commit: 1},
@@ -1260,7 +1294,7 @@ func testSearchOther(t *testing.T) {
 	})
 }
 
-func testSearchContexts(t *testing.T, client *gqltestutil.Client) {
+func testSearchContextsCRUD(t *testing.T, client *gqltestutil.Client) {
 	repo1, err := client.Repository("github.com/sgtest/java-langserver")
 	require.NoError(t, err)
 	repo2, err := client.Repository("github.com/sgtest/jsonrpc2")
@@ -1312,4 +1346,51 @@ func testSearchContexts(t *testing.T, client *gqltestutil.Client) {
 	// Check that retrieving the deleted search context fails
 	_, err = client.GetSearchContext(scID)
 	require.Error(t, err)
+}
+
+func testListingSearchContexts(t *testing.T, client *gqltestutil.Client) {
+	numSearchContexts := 10
+	searchContextIDs := make([]string, 0, numSearchContexts)
+	for i := 0; i < numSearchContexts; i++ {
+		scID, err := client.CreateSearchContext(
+			gqltestutil.CreateSearchContextInput{Name: fmt.Sprintf("SearchContext%d", i), Public: true},
+			[]gqltestutil.SearchContextRepositoryRevisionsInput{},
+		)
+		require.NoError(t, err)
+		searchContextIDs = append(searchContextIDs, scID)
+	}
+	defer func() {
+		for i := 0; i < numSearchContexts; i++ {
+			err := client.DeleteSearchContext(searchContextIDs[i])
+			require.NoError(t, err)
+		}
+	}()
+
+	orderBySpec := gqltestutil.SearchContextsOrderBySpec
+	resultFirstPage, err := client.ListSearchContexts(gqltestutil.ListSearchContextsOptions{
+		First:      5,
+		OrderBy:    &orderBySpec,
+		Descending: true,
+	})
+	require.NoError(t, err)
+	if len(resultFirstPage.Nodes) != 5 {
+		t.Fatalf("expected 5 search contexts, got %d", len(resultFirstPage.Nodes))
+	}
+	if resultFirstPage.Nodes[0].Spec != "SearchContext9" {
+		t.Fatalf("expected first page first search context spec to be SearchContext9, got %s", resultFirstPage.Nodes[0].Spec)
+	}
+
+	resultSecondPage, err := client.ListSearchContexts(gqltestutil.ListSearchContextsOptions{
+		First:      5,
+		After:      resultFirstPage.PageInfo.EndCursor,
+		OrderBy:    &orderBySpec,
+		Descending: true,
+	})
+	require.NoError(t, err)
+	if len(resultSecondPage.Nodes) != 5 {
+		t.Fatalf("expected 5 search contexts, got %d", len(resultSecondPage.Nodes))
+	}
+	if resultSecondPage.Nodes[0].Spec != "SearchContext4" {
+		t.Fatalf("expected second page search context spec to be SearchContext4, got %s", resultSecondPage.Nodes[0].Spec)
+	}
 }

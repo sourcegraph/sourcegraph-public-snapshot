@@ -10,11 +10,11 @@ import (
 func TestParseURL(t *testing.T) {
 	type parseURLTest struct {
 		in      string
-		wantURL *url.URL
+		wantURL *URL
 		wantStr string // expected result of reserializing the URL; empty means same as "in".
 	}
 
-	newParseURLTest := func(in, scheme, user, host, path, str, rawquery string) *parseURLTest {
+	newParseURLTest := func(in string, format urlFormat, scheme, user, host, path, str, rawquery string) *parseURLTest {
 		var userinfo *url.Userinfo
 
 		if user != "" {
@@ -32,13 +32,15 @@ func TestParseURL(t *testing.T) {
 
 		return &parseURLTest{
 			in: in,
-			wantURL: &url.URL{
-				Scheme:   scheme,
-				Host:     host,
-				Path:     path,
-				User:     userinfo,
-				RawQuery: rawquery,
-			},
+			wantURL: &URL{
+				format: format,
+				URL: url.URL{
+					Scheme:   scheme,
+					Host:     host,
+					Path:     path,
+					User:     userinfo,
+					RawQuery: rawquery,
+				}},
 			wantStr: str,
 		}
 	}
@@ -47,170 +49,170 @@ func TestParseURL(t *testing.T) {
 	tests := []*parseURLTest{
 		newParseURLTest(
 			"user@host.xz:path/to/repo.git/",
-			"ssh", "user", "host.xz", "path/to/repo.git/",
-			"ssh://user@host.xz/path/to/repo.git/", "",
+			formatRsync, "", "user", "host.xz", "path/to/repo.git/",
+			"user@host.xz:path/to/repo.git/", "",
 		),
 		newParseURLTest(
 			"host.xz:path/to/repo.git/",
-			"ssh", "", "host.xz", "path/to/repo.git/",
-			"ssh://host.xz/path/to/repo.git/", "",
+			formatRsync, "", "", "host.xz", "path/to/repo.git/",
+			"host.xz:path/to/repo.git/", "",
 		),
 		newParseURLTest(
 			"host.xz:/path/to/repo.git/",
-			"ssh", "", "host.xz", "/path/to/repo.git/",
-			"ssh://host.xz/path/to/repo.git/", "",
+			formatRsync, "", "", "host.xz", "/path/to/repo.git/",
+			"host.xz:/path/to/repo.git/", "",
 		),
 		newParseURLTest(
 			"host.xz:path/to/repo-with_specials.git/",
-			"ssh", "", "host.xz", "path/to/repo-with_specials.git/",
-			"ssh://host.xz/path/to/repo-with_specials.git/", "",
+			formatRsync, "", "", "host.xz", "path/to/repo-with_specials.git/",
+			"host.xz:path/to/repo-with_specials.git/", "",
 		),
 		newParseURLTest(
 			"git://host.xz/path/to/repo.git/",
-			"git", "", "host.xz", "/path/to/repo.git/",
+			formatStdlib, "git", "", "host.xz", "/path/to/repo.git/",
 			"", "",
 		),
 		newParseURLTest(
 			"git://host.xz:1234/path/to/repo.git/",
-			"git", "", "host.xz:1234", "/path/to/repo.git/",
+			formatStdlib, "git", "", "host.xz:1234", "/path/to/repo.git/",
 			"", "",
 		),
 		newParseURLTest(
 			"http://host.xz/path/to/repo.git/",
-			"http", "", "host.xz", "/path/to/repo.git/",
+			formatStdlib, "http", "", "host.xz", "/path/to/repo.git/",
 			"", "",
 		),
 		newParseURLTest(
 			"http://host.xz:1234/path/to/repo.git/",
-			"http", "", "host.xz:1234", "/path/to/repo.git/",
+			formatStdlib, "http", "", "host.xz:1234", "/path/to/repo.git/",
 			"", "",
 		),
 		newParseURLTest(
 			"https://host.xz/path/to/repo.git/",
-			"https", "", "host.xz", "/path/to/repo.git/",
+			formatStdlib, "https", "", "host.xz", "/path/to/repo.git/",
 			"", "",
 		),
 		newParseURLTest(
 			"https://host.xz:1234/path/to/repo.git/",
-			"https", "", "host.xz:1234", "/path/to/repo.git/",
+			formatStdlib, "https", "", "host.xz:1234", "/path/to/repo.git/",
 			"", "",
 		),
 		newParseURLTest(
 			"ftp://host.xz/path/to/repo.git/",
-			"ftp", "", "host.xz", "/path/to/repo.git/",
+			formatStdlib, "ftp", "", "host.xz", "/path/to/repo.git/",
 			"", "",
 		),
 		newParseURLTest(
 			"ftp://host.xz:1234/path/to/repo.git/",
-			"ftp", "", "host.xz:1234", "/path/to/repo.git/",
+			formatStdlib, "ftp", "", "host.xz:1234", "/path/to/repo.git/",
 			"", "",
 		),
 		newParseURLTest(
 			"ftps://host.xz/path/to/repo.git/",
-			"ftps", "", "host.xz", "/path/to/repo.git/",
+			formatStdlib, "ftps", "", "host.xz", "/path/to/repo.git/",
 			"", "",
 		),
 		newParseURLTest(
 			"ftps://host.xz:1234/path/to/repo.git/",
-			"ftps", "", "host.xz:1234", "/path/to/repo.git/",
+			formatStdlib, "ftps", "", "host.xz:1234", "/path/to/repo.git/",
 			"", "",
 		),
 		newParseURLTest(
 			"rsync://host.xz/path/to/repo.git/",
-			"rsync", "", "host.xz", "/path/to/repo.git/",
+			formatStdlib, "rsync", "", "host.xz", "/path/to/repo.git/",
 			"", "",
 		),
 		newParseURLTest(
 			"ssh://user@host.xz:1234/path/to/repo.git/",
-			"ssh", "user", "host.xz:1234", "/path/to/repo.git/",
+			formatStdlib, "ssh", "user", "host.xz:1234", "/path/to/repo.git/",
 			"", "",
 		),
 		newParseURLTest(
 			"ssh://host.xz:1234/path/to/repo.git/",
-			"ssh", "", "host.xz:1234", "/path/to/repo.git/",
+			formatStdlib, "ssh", "", "host.xz:1234", "/path/to/repo.git/",
 			"", "",
 		),
 		newParseURLTest(
 			"ssh://host.xz/path/to/repo.git/",
-			"ssh", "", "host.xz", "/path/to/repo.git/",
+			formatStdlib, "ssh", "", "host.xz", "/path/to/repo.git/",
 			"", "",
 		),
 		newParseURLTest(
 			"git+ssh://host.xz/path/to/repo.git/",
-			"git+ssh", "", "host.xz", "/path/to/repo.git/",
+			formatStdlib, "git+ssh", "", "host.xz", "/path/to/repo.git/",
 			"", "",
 		),
 		// Tests with query strings
 		newParseURLTest(
 			"https://host.xz/organization/repo.git?ref=",
-			"https", "", "host.xz", "/organization/repo.git",
+			formatStdlib, "https", "", "host.xz", "/organization/repo.git",
 			"", "ref=",
 		),
 		newParseURLTest(
 			"https://host.xz/organization/repo.git?ref=test",
-			"https", "", "host.xz", "/organization/repo.git",
+			formatStdlib, "https", "", "host.xz", "/organization/repo.git",
 			"", "ref=test",
 		),
 		newParseURLTest(
 			"https://host.xz/organization/repo.git?ref=feature/test",
-			"https", "", "host.xz", "/organization/repo.git",
+			formatStdlib, "https", "", "host.xz", "/organization/repo.git",
 			"", "ref=feature/test",
 		),
 		newParseURLTest(
 			"git@host.xz:organization/repo.git?ref=test",
-			"ssh", "git", "host.xz", "organization/repo.git",
-			"ssh://git@host.xz/organization/repo.git?ref=test", "ref=test",
+			formatRsync, "", "git", "host.xz", "organization/repo.git",
+			"git@host.xz:organization/repo.git?ref=test", "ref=test",
 		),
 		newParseURLTest(
 			"git@host.xz:organization/repo.git?ref=feature/test",
-			"ssh", "git", "host.xz", "organization/repo.git",
-			"ssh://git@host.xz/organization/repo.git?ref=feature/test", "ref=feature/test",
+			formatRsync, "", "git", "host.xz", "organization/repo.git",
+			"git@host.xz:organization/repo.git?ref=feature/test", "ref=feature/test",
 		),
 		// Tests with user+password and some with query strings
 		newParseURLTest(
 			"https://user:password@host.xz/organization/repo.git/",
-			"https", "user:password", "host.xz", "/organization/repo.git/",
+			formatStdlib, "https", "user:password", "host.xz", "/organization/repo.git/",
 			"", "",
 		),
 		newParseURLTest(
 			"https://user:password@host.xz/organization/repo.git?ref=test",
-			"https", "user:password", "host.xz", "/organization/repo.git",
+			formatStdlib, "https", "user:password", "host.xz", "/organization/repo.git",
 			"", "ref=test",
 		),
 		newParseURLTest(
 			"https://user:password@host.xz/organization/repo.git?ref=feature/test",
-			"https", "user:password", "host.xz", "/organization/repo.git",
+			formatStdlib, "https", "user:password", "host.xz", "/organization/repo.git",
 			"", "ref=feature/test",
 		),
 		newParseURLTest(
 			"user-1234@host.xz:path/to/repo.git/",
-			"ssh", "user-1234", "host.xz", "path/to/repo.git/",
-			"ssh://user-1234@host.xz/path/to/repo.git/", "",
+			formatRsync, "", "user-1234", "host.xz", "path/to/repo.git/",
+			"user-1234@host.xz:path/to/repo.git/", "",
 		),
 		newParseURLTest(
 			"user@host.xz:path/to/repo@domain.git/",
-			"ssh", "user", "host.xz", "path/to/repo@domain.git/",
-			"ssh://user@host.xz/path/to/repo@domain.git/", "",
+			formatRsync, "", "user", "host.xz", "path/to/repo@domain.git/",
+			"user@host.xz:path/to/repo@domain.git/", "",
 		),
 		newParseURLTest(
 			"sourcegraph@gitolite.company.internal:service-config/runtime@east-cluster/action@test-5524",
-			"ssh", "sourcegraph", "gitolite.company.internal", "service-config/runtime@east-cluster/action@test-5524",
-			"ssh://sourcegraph@gitolite.company.internal/service-config/runtime@east-cluster/action@test-5524", "",
+			formatRsync, "", "sourcegraph", "gitolite.company.internal", "service-config/runtime@east-cluster/action@test-5524",
+			"sourcegraph@gitolite.company.internal:service-config/runtime@east-cluster/action@test-5524", "",
 		),
 
 		newParseURLTest(
 			"/path/to/repo.git/",
-			"file", "", "", "/path/to/repo.git/",
+			formatLocal, "file", "", "", "/path/to/repo.git/",
 			"file:///path/to/repo.git/", "",
 		),
 		newParseURLTest(
 			"file:///path/to/repo.git/",
-			"file", "", "", "/path/to/repo.git/",
+			formatStdlib, "file", "", "", "/path/to/repo.git/",
 			"", "",
 		),
 		newParseURLTest(
 			"perforce://admin:pa$$word@ssl:192.168.1.100:1666//Sourcegraph/",
-			"perforce", "admin:pa$$word", "ssl:192.168.1.100:1666", "//Sourcegraph/",
+			formatStdlib, "perforce", "admin:pa$$word", "ssl:192.168.1.100:1666", "//Sourcegraph/",
 			"perforce://admin:pa$$word@ssl:192.168.1.100:1666//Sourcegraph/", "",
 		),
 	}

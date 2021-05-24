@@ -2,13 +2,13 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React from 'react'
 import { RouteComponentProps, Switch, Route } from 'react-router'
 
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
-
+import { AuthenticatedUser } from '../auth'
 import { HeroPage } from '../components/HeroPage'
 import { lazyComponent } from '../util/lazyComponent'
 
 import { SearchInsightCreationPageProps } from './pages/creation/search-insight/SearchInsightCreationPage'
 import { InsightsPageProps } from './pages/dashboard/InsightsPage'
+import { EditInsightPageProps } from './pages/edit/EditInsightPage'
 
 const InsightsLazyPage = lazyComponent(() => import('./pages/dashboard/InsightsPage'), 'InsightsPage')
 
@@ -27,10 +27,7 @@ const LangStatsInsightCreationLazyPage = lazyComponent(
     'LangStatsInsightCreationPage'
 )
 
-/**
- * Feature flag for new code insights creation UI.
- * */
-const CREATION_UI_ENABLED_KEY = 'enableCodeInsightCreationUI'
+const EditInsightLazyPage = lazyComponent(() => import('./pages/edit/EditInsightPage'), 'EditInsightPage')
 
 const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
@@ -42,41 +39,63 @@ const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIco
 export interface InsightsRouterProps
     extends RouteComponentProps,
         Omit<InsightsPageProps, 'isCreationUIEnabled'>,
-        SearchInsightCreationPageProps {}
+        SearchInsightCreationPageProps,
+        Omit<EditInsightPageProps, 'insightID'> {
+    /**
+     * Authenticated user info, Used to decide where code insight will appears
+     * in personal dashboard (private) or in organisation dashboard (public)
+     * */
+    authenticatedUser: Pick<AuthenticatedUser, 'id' | 'organizations' | 'username'> | null
+}
 
 /** Main Insight routing component. Main entry point to code insights UI. */
 export const InsightsRouter: React.FunctionComponent<InsightsRouterProps> = props => {
     const { match, ...outerProps } = props
-    const [isCreationUIEnabled] = useLocalStorage(CREATION_UI_ENABLED_KEY, false)
 
     return (
         <Switch>
+            <Route render={props => <InsightsLazyPage {...outerProps} {...props} />} path={match.url} exact={true} />
+
             <Route
-                /* eslint-disable-next-line react/jsx-no-bind */
-                render={props => (
-                    <InsightsLazyPage isCreationUIEnabled={isCreationUIEnabled} {...outerProps} {...props} />
+                path={`${match.url}/create-search-insight`}
+                render={() => (
+                    <SearchInsightCreationLazyPage
+                        telemetryService={outerProps.telemetryService}
+                        platformContext={outerProps.platformContext}
+                        authenticatedUser={outerProps.authenticatedUser}
+                        settingsCascade={outerProps.settingsCascade}
+                    />
                 )}
-                path={match.url}
-                exact={true}
             />
 
-            {isCreationUIEnabled && (
-                <>
-                    <Route
-                        path={`${match.url}/create-search-insight`}
-                        /* eslint-disable-next-line react/jsx-no-bind */
-                        render={props => <SearchInsightCreationLazyPage {...outerProps} {...props} />}
+            <Route
+                path={`${match.url}/create-lang-stats-insight`}
+                render={() => (
+                    <LangStatsInsightCreationLazyPage
+                        telemetryService={outerProps.telemetryService}
+                        platformContext={outerProps.platformContext}
+                        authenticatedUser={outerProps.authenticatedUser}
+                        settingsCascade={outerProps.settingsCascade}
                     />
+                )}
+            />
 
-                    <Route
-                        path={`${match.url}/create-lang-stats-insight`}
-                        /* eslint-disable-next-line react/jsx-no-bind */
-                        render={props => <LangStatsInsightCreationLazyPage {...outerProps} {...props} />}
+            <Route
+                path={`${match.url}/create-intro`}
+                render={() => <IntroCreationLazyPage telemetryService={outerProps.telemetryService} />}
+            />
+
+            <Route
+                path={`${match.url}/edit/:insightID`}
+                render={(props: RouteComponentProps<{ insightID: string }>) => (
+                    <EditInsightLazyPage
+                        platformContext={outerProps.platformContext}
+                        authenticatedUser={outerProps.authenticatedUser}
+                        settingsCascade={outerProps.settingsCascade}
+                        insightID={props.match.params.insightID}
                     />
-
-                    <Route path={`${match.url}/create-intro`} component={IntroCreationLazyPage} />
-                </>
-            )}
+                )}
+            />
 
             <Route component={NotFoundPage} key="hardcoded-key" />
         </Switch>

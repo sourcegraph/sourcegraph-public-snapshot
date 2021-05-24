@@ -70,8 +70,8 @@ func CheckSiteAdminOrSameUser(ctx context.Context, subjectUserID int32) error {
 	if hasAuthzBypass(ctx) {
 		return nil
 	}
-	actor := actor.FromContext(ctx)
-	if actor.IsAuthenticated() && actor.UID == subjectUserID {
+	a := actor.FromContext(ctx)
+	if a.IsAuthenticated() && a.UID == subjectUserID {
 		return nil
 	}
 	isSiteAdminErr := CheckCurrentUserIsSiteAdmin(ctx)
@@ -83,6 +83,19 @@ func CheckSiteAdminOrSameUser(ctx context.Context, subjectUserID int32) error {
 		return &InsufficientAuthorizationError{fmt.Sprintf("must be authenticated as an admin (%s)", isSiteAdminErr.Error())}
 	}
 	return &InsufficientAuthorizationError{fmt.Sprintf("must be authenticated as %s or as an admin (%s)", subjectUser.Username, isSiteAdminErr.Error())}
+}
+
+// CheckSameUser returns an error if the user is not the user specified by
+// subjectUserID.
+func CheckSameUser(ctx context.Context, subjectUserID int32) error {
+	if hasAuthzBypass(ctx) {
+		return nil
+	}
+	a := actor.FromContext(ctx)
+	if a.IsAuthenticated() && a.UID == subjectUserID {
+		return nil
+	}
+	return &InsufficientAuthorizationError{Message: fmt.Sprintf("Must be authenticated as user with id %d", subjectUserID)}
 }
 
 // CurrentUser gets the current authenticated user

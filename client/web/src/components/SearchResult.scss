@@ -2,6 +2,8 @@
     &__title {
         display: flex;
         align-items: center;
+        flex-grow: 1;
+        min-width: 0;
     }
     &__spacer {
         flex: 1;

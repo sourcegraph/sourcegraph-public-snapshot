@@ -49,7 +49,7 @@ func addWebApp(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":webpack::globe_with_meridians: Build",
 		bk.Cmd("dev/ci/yarn-build.sh client/web"),
 		bk.Env("NODE_ENV", "production"),
-		bk.Env("ENTERPRISE", "0"))
+		bk.Env("ENTERPRISE", ""))
 
 	// Webapp enterprise build
 	pipeline.AddStep(":webpack::globe_with_meridians::moneybag: Enterprise build",
@@ -90,7 +90,7 @@ func addSharedTests(c Config) func(pipeline *bk.Pipeline) {
 			bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
 			bk.ArtifactPaths("./puppeteer/*.png"))
 
-		if c.isMasterDryRun || c.isStorybookAffected() {
+		if c.isMainDryRun || c.isStorybookAffected() {
 			// Upload storybook to Chromatic
 			chromaticCommand := "yarn chromatic --exit-zero-on-changes --exit-once-uploaded"
 			if c.isMainBranch() {
@@ -150,7 +150,7 @@ func addDockerfileLint(pipeline *bk.Pipeline) {
 // Adds backend integration tests step.
 func addBackendIntegrationTests(c Config) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
-		if !c.isBackendDryRun && !c.isMasterDryRun && c.branch != "master" && !c.isMainBranch() {
+		if !c.isBackendDryRun && !c.isMainDryRun && c.branch != "master" && !c.isMainBranch() {
 			return
 		}
 
@@ -292,7 +292,7 @@ func triggerE2EandQA(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 	env["VAGRANT_SERVICE_ACCOUNT"] = "buildkite@sourcegraph-ci.iam.gserviceaccount.com"
 
 	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
-	env["MINIMUM_UPGRADEABLE_VERSION"] = "3.27.4"
+	env["MINIMUM_UPGRADEABLE_VERSION"] = "3.28.0"
 
 	env["DOCKER_CLUSTER_IMAGES_TXT"] = clusterDockerImages(images.SourcegraphDockerImages)
 

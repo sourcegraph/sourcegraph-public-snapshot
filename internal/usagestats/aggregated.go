@@ -150,7 +150,8 @@ func groupAggregatedCodeIntelStats(rawEvents []types.CodeIntelAggregatedEvent) *
 	}
 }
 
-// GetAggregatedSearchStats returns aggregates statistics for search usage.
+// GetAggregatedSearchStats queries the database for search usage and returns
+// the aggregates statistics in the format of our BigQuery schema.
 func GetAggregatedSearchStats(ctx context.Context, db dbutil.DB) (*types.SearchUsageStatistics, error) {
 	events, err := database.EventLogs(db).AggregatedSearchEvents(ctx)
 	if err != nil {
@@ -160,21 +161,27 @@ func GetAggregatedSearchStats(ctx context.Context, db dbutil.DB) (*types.SearchU
 	return groupAggregatedSearchStats(events), nil
 }
 
-func groupAggregatedSearchStats(events []types.AggregatedEvent) *types.SearchUsageStatistics {
+// groupAggregatedSearchStats takes a set of input events (originating from
+// Sourcegraph's Postgres table) and returns a SearchUsageStatistics data type
+// that ends up being stored in BigQuery. SearchUsageStatistics corresponds to
+// the target DB schema.
+func groupAggregatedSearchStats(events []types.SearchAggregatedEvent) *types.SearchUsageStatistics {
 	searchUsageStats := &types.SearchUsageStatistics{
 		Daily:   []*types.SearchUsagePeriod{newSearchEventPeriod()},
 		Weekly:  []*types.SearchUsagePeriod{newSearchEventPeriod()},
 		Monthly: []*types.SearchUsagePeriod{newSearchEventPeriod()},
 	}
 
+	// Iterate over events, updating searchUsageStats for each event
 	for _, event := range events {
-		insertSearchEventStatistics(event, searchUsageStats)
+		populateSearchEventStatistics(event, searchUsageStats)
 	}
 
 	return searchUsageStats
 }
 
-var searchExtractors = map[string]func(p *types.SearchUsagePeriod) *types.SearchEventStatistics{
+// utility functions that resolve a SearchEventStatistics value for a given event name for some SearchUsagePeriod.
+var searchLatencyExtractors = map[string]func(p *types.SearchUsagePeriod) *types.SearchEventStatistics{
 	"search.latencies.literal":    func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Literal },
 	"search.latencies.regexp":     func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Regexp },
 	"search.latencies.structural": func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Structural },
@@ -185,8 +192,21 @@ var searchExtractors = map[string]func(p *types.SearchUsagePeriod) *types.Search
 	"search.latencies.symbol":     func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Symbol },
 }
 
-func insertSearchEventStatistics(event types.AggregatedEvent, statistics *types.SearchUsageStatistics) {
-	extractor, ok := searchExtractors[event.Name]
+// populateSearchEventStatistics is a side-effecting function that populates the
+// `statistics` object. The `statistics` event value is our target output type.
+//
+// Overview how it works:
+// (1) To populate the `statistics` object, we expect an event to have a supported event.Name.
+//
+// (2) Create a SearchUsagePeriod target object based on the event's period (i.e., Month, Week, Day).
+//
+// (3) Use the SearchUsagePeriod object as an argument for the utility functions
+// above, to get a handle on the (currently zero-valued) SearchEventStatistics
+// value that it contains that corresponds to that event type.
+//
+// (4) Populate that SearchEventStatistics object in the SearchUsagePeriod object with usage stats (latencies, etc).
+func populateSearchEventStatistics(event types.SearchAggregatedEvent, statistics *types.SearchUsageStatistics) {
+	extractor, ok := searchLatencyExtractors[event.Name]
 	if !ok {
 		return
 	}

@@ -7,6 +7,7 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -59,9 +60,20 @@ func (r *externalAccountResolver) RefreshURL() *string {
 }
 
 func (r *externalAccountResolver) AccountData(ctx context.Context) (*JSONValue, error) {
-	// 🚨 SECURITY: Only the site admins can view this information, because the auth provider might
-	// provide sensitive information that is not known to the user.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	// 🚨 SECURITY: It is only safe to assume account data of GitHub and GitLab do
+	// not contain sensitive information that is not known to the user (which is
+	// accessible via APIs by users themselves). We cannot take the same assumption
+	// for other types of external accounts.
+	//
+	// Therefore, the site admins and the user can view account data of GitHub and
+	// GitLab, but only site admins can view account data for all other types.
+	var err error
+	if r.account.ServiceType == extsvc.TypeGitHub || r.account.ServiceType == extsvc.TypeGitLab {
+		err = backend.CheckSiteAdminOrSameUser(ctx, actor.FromContext(ctx).UID)
+	} else {
+		err = backend.CheckUserIsSiteAdmin(ctx, actor.FromContext(ctx).UID)
+	}
+	if err != nil {
 		return nil, err
 	}
 

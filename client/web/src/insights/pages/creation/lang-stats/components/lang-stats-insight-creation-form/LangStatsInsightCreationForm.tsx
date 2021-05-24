@@ -1,65 +1,59 @@
 import classnames from 'classnames'
-import React from 'react'
-
-import { Settings } from '@sourcegraph/shared/src/settings/settings'
+import React, { FormEventHandler, RefObject } from 'react'
 
 import { ErrorAlert } from '../../../../../../components/alerts'
 import { LoaderButton } from '../../../../../../components/LoaderButton'
-import { FormGroup } from '../../../../../components/form/form-group/FormGroup'
 import { FormInput } from '../../../../../components/form/form-input/FormInput'
-import { FormRadioInput } from '../../../../../components/form/form-radio-input/FormRadioInput'
-import { useField } from '../../../../../components/form/hooks/useField'
-import { FORM_ERROR, SubmissionErrors, useForm } from '../../../../../components/form/hooks/useForm'
-import { useTitleValidator } from '../../../../../components/form/hooks/useTitleValidator'
-import { createRequiredValidator } from '../../../../../components/form/validators'
-import { InsightTypeSuffix } from '../../../../../core/types'
+import { useFieldAPI } from '../../../../../components/form/hooks/useField'
+import { FORM_ERROR, SubmissionErrors } from '../../../../../components/form/hooks/useForm'
+import {
+    getVisibilityValue,
+    Organization,
+    VisibilityPicker,
+} from '../../../../../components/visibility-picker/VisibilityPicker'
+import { LangStatsCreationFormFields } from '../../types'
 
 import styles from './LangStatsInsightCreationForm.module.scss'
 
-const repositoriesFieldValidator = createRequiredValidator('Repositories is a required field for code insight.')
-const thresholdFieldValidator = createRequiredValidator('Threshold is a required field for code insight.')
-
 export interface LangStatsInsightCreationFormProps {
-    settings: Settings | null
+    mode?: 'creation' | 'edit'
+    innerRef: RefObject<any>
+    handleSubmit: FormEventHandler
+    submitErrors: SubmissionErrors
+    submitting: boolean
     className?: string
-    onSubmit: (values: LangStatsCreationFormFields) => SubmissionErrors | Promise<SubmissionErrors> | void
+
+    title: useFieldAPI<LangStatsCreationFormFields['title']>
+    repository: useFieldAPI<LangStatsCreationFormFields['repository']>
+    threshold: useFieldAPI<LangStatsCreationFormFields['threshold']>
+    visibility: useFieldAPI<LangStatsCreationFormFields['visibility']>
+    organizations: Organization[]
+
     onCancel: () => void
 }
 
-export interface LangStatsCreationFormFields {
-    title: string
-    repository: string
-    threshold: number
-    visibility: 'personal' | 'organization'
-}
-
-const INITIAL_VALUES: Partial<LangStatsCreationFormFields> = {
-    repository: '',
-    title: '',
-    threshold: 3,
-    visibility: 'personal',
-}
-
 export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsightCreationFormProps> = props => {
-    const { className, onSubmit, onCancel, settings } = props
+    const {
+        mode = 'creation',
+        innerRef,
+        handleSubmit,
+        submitErrors,
+        submitting,
+        className,
+        title,
+        repository,
+        threshold,
+        visibility,
+        organizations,
+        onCancel,
+    } = props
 
-    const { handleSubmit, formAPI, ref } = useForm<LangStatsCreationFormFields>({
-        initialValues: INITIAL_VALUES,
-        onSubmit,
-    })
-
-    // We can't have two or more insights with the same name, since we rely on name as on id of insights.
-    const titleValidator = useTitleValidator({ settings, insightType: InsightTypeSuffix.langStats })
-
-    const repository = useField('repository', formAPI, repositoriesFieldValidator)
-    const title = useField('title', formAPI, titleValidator)
-    const threshold = useField('threshold', formAPI, thresholdFieldValidator)
-    const visibility = useField('visibility', formAPI)
+    const isEditMode = mode === 'edit'
 
     return (
         // eslint-disable-next-line react/forbid-elements
         <form
-            ref={ref}
+            ref={innerRef}
             noValidate={true}
             className={classnames(className, 'd-flex flex-column')}
             onSubmit={handleSubmit}
@@ -69,7 +63,8 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
                 autoFocus={true}
                 title="Repository"
                 description="This insight is limited to one repository. You can set up multiple language usage charts for analyzing other repositories."
-                placeholder="Add or search for repository"
+                placeholder="Example: github.com/sourcegraph/sourcegraph"
+                loading={repository.meta.validState === 'CHECKING'}
                 valid={repository.meta.touched && repository.meta.validState === 'VALID'}
                 error={repository.meta.touched && repository.meta.error}
                 {...repository.input}
@@ -80,7 +75,7 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
                 required={true}
                 title="Title"
                 description="Shown as the title for your insight."
-                placeholder="Example: Migration to React function components"
+                placeholder="Example: Language Usage in RepositoryName"
                 valid={title.meta.touched && title.meta.validState === 'VALID'}
                 error={title.meta.touched && title.meta.error}
                 {...title.input}
@@ -102,46 +97,23 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
                 inputSymbol={<span className={styles.formThresholdInputSymbol}>%</span>}
             />
 
-            <FormGroup
-                name="visibility"
-                title="Visibility"
-                description="This insight will be visible only on your personal dashboard. It will not appear for other
-                            users in your organization."
-                className="mb-0 mt-4"
-                contentClassName="d-flex flex-wrap mb-n2"
-            >
-                <FormRadioInput
-                    name="visibility"
-                    value="personal"
-                    title="Personal"
-                    description="only you"
-                    checked={visibility.input.value === 'personal'}
-                    className="mr-3"
-                    onChange={visibility.input.onChange}
-                />
-
-                <FormRadioInput
-                    name="visibility"
-                    value="organization"
-                    title="Organization"
-                    description="all users in your organization"
-                    checked={visibility.input.value === 'organization'}
-                    onChange={visibility.input.onChange}
-                    className="mr-3"
-                />
-            </FormGroup>
+            <VisibilityPicker
+                organizations={organizations}
+                value={visibility.input.value}
+                onChange={event => visibility.input.onChange(getVisibilityValue(event))}
+            />
 
             <hr className={styles.formSeparator} />
 
             <div>
-                {formAPI.submitErrors?.[FORM_ERROR] && <ErrorAlert error={formAPI.submitErrors[FORM_ERROR]} />}
+                {submitErrors?.[FORM_ERROR] && <ErrorAlert error={submitErrors[FORM_ERROR]} />}
 
                 <LoaderButton
                     alwaysShowLabel={true}
-                    loading={formAPI.submitting}
-                    label={formAPI.submitting ? 'Submitting' : 'Create code insight'}
+                    loading={submitting}
+                    label={submitting ? 'Submitting' : isEditMode ? 'Edit insight' : 'Create code insight'}
                     type="submit"
-                    disabled={formAPI.submitting}
+                    disabled={submitting}
                     className="btn btn-primary mr-2"
                 />
 

@@ -1,29 +1,43 @@
-import {
-    EventHandler,
-    FormEventHandler,
-    RefObject,
-    SyntheticEvent,
-    useCallback,
-    useEffect,
-    useRef,
-    useState,
-} from 'react'
+import { debounce, DebouncedFunc } from 'lodash'
+import { EventHandler, FormEventHandler, RefObject, SyntheticEvent, useEffect, useMemo, useRef, useState } from 'react'
+import { noop } from 'rxjs'
+
+import { useDistinctValue } from '../../../hooks/use-distinct-value'
 
 // Special key for the submit error store.
 export const FORM_ERROR = 'useForm/submissionErrors'
 
 export type SubmissionErrors = Record<string, any> | undefined
+export type ValidationResult = string | undefined | void
+
+interface FormChangeEvent<FormValues> {
+    values: FormValues
+    valid: boolean
+}
+
+type ChangeHandler<FormValues> = (event: FormChangeEvent<FormValues>) => void
 
 interface UseFormProps<FormValues extends object> {
     /**
      * Initial values for form fields.
      * */
-    initialValues: Partial<FormValues>
+    initialValues: FormValues
 
     /**
-     * Submit handlers for a form element.
+     * Mark all fields within the form as touched.
+     * */
+    touched?: boolean
+
+    /**
+     * Submit handler for a form element.
      * */
     onSubmit: (values: FormValues) => SubmissionErrors | Promise<SubmissionErrors> | void
+
+    /**
+     * Change handler will be called every time when some field withing the form
+     * has been changed with last fields values.
+     * */
+    onChange?: ChangeHandler<FormValues>
 }
 
 /**
@@ -63,7 +77,7 @@ export interface FormAPI<FormValues> {
      * Initial values also used as field value for first run
      * of sync and async validators on useField level.
      * */
-    initialValues: Partial<FormValues>
+    initialValues: FormValues
 
     /**
      * Mark to understand was there an attempt by user to submit the form?
@@ -71,6 +85,8 @@ export interface FormAPI<FormValues> {
      * user tried submit the form.
      * */
     submitted: boolean
+
+    valid: boolean
 
     /**
      * State to understand there some field is processing async validations.
@@ -90,6 +106,13 @@ export interface FormAPI<FormValues> {
     submitErrors: SubmissionErrors
 
     /**
+     * This prop marks all fields within the form as touched.
+     * This might be useful when you need trigger touched of all fields
+     * programmatically (edit mode for forms scenario)
+     * */
+    touched: boolean
+
+    /**
      * Public api for register fields to the form from useField hook.
      * By this we have field state withing useField hook and in useField.
      * */
@@ -100,13 +123,15 @@ export interface FormAPI<FormValues> {
  * Field state which present public state from useField hook. On order to aggregate
  * state of all fields within the form we store all fields state on form level as well.
  * */
-export interface FieldState<Value> {
+export interface FieldState<Value> extends FieldMetaState {
     /**
      * Field (input) controlled value. This value might be not only some primitive value
      * like string, number but array, object, tuple and other complex types as consumer set.
      * */
-    value: Value | undefined
+    value: Value
+}
 
+export interface FieldMetaState {
     /**
      * State to understand when users focused and blurred input element.
      * */
@@ -132,6 +157,13 @@ export interface FieldState<Value> {
 }
 
 /**
+ * Store object of all fields state within the form element.
+ * Used below to keep tracking of fields value, touched, validity and other
+ * fields state data.
+ * */
+type FieldsState<FormValues> = Record<keyof FormValues, FieldState<FormValues>>
+
+/**
  * Unified form abstraction to track form state and provide form fields management
  * React hook to have all needed state for building proper UX for forms.
  *
@@ -140,26 +172,50 @@ export interface FieldState<Value> {
  * hook.
  * */
 export function useForm<FormValues extends object>(props: UseFormProps<FormValues>): Form<FormValues> {
-    const { onSubmit, initialValues } = props
+    const { onSubmit, initialValues, touched = false, onChange = noop } = props
 
     const [submitted, setSubmitted] = useState(false)
     const [submitting, setSubmitting] = useState(false)
     const [submitErrors, setSubmitErrors] = useState<SubmissionErrors>()
-    const [fields, setFields] = useState<Record<string, FieldState<unknown>>>({})
+    const [fields, setFields] = useState<FieldsState<FormValues>>({} as FieldsState<FormValues>)
 
     const formElementReference = useRef<HTMLFormElement>(null)
     const onSubmitReference = useRef<UseFormProps<FormValues>['onSubmit']>()
+
+    // Debounced onChange handler.
+    const onChangeReference = useRef<DebouncedFunc<ChangeHandler<FormValues>>>(debounce(onChange, 0))
 
     // Track unmounted state to prevent setState if async validation or async submitting
     // will be resolved after component has been unmounted.
     const isUnmounted = useRef<boolean>(false)
 
-    const setFieldState = useCallback((name: keyof FormValues, state: FieldState<unknown>) => {
+    const setFieldState = (name: keyof FormValues, state: FieldState<unknown>): void => {
         setFields(fields => ({ ...fields, [name]: state }))
-    }, [])
+    }
+
+    const changeEvent = useDistinctValue(
+        useMemo(
+            () => ({
+                values: getFormValues(fields),
+                valid: Object.values<Pick<FieldState<unknown>, 'validState'>>(fields).every(
+                    state => state.validState === 'VALID'
+                ),
+            }),
+            [fields]
+        )
+    )
+
+    useEffect(() => {
+        if (Object.keys(changeEvent.values).length === 0) {
+            return
+        }
+
+        onChangeReference.current?.(changeEvent)
+    }, [changeEvent])
 
     useEffect(
         () => () => {
+            onChangeReference.current?.cancel()
             isUnmounted.current = true
         },
         []
@@ -172,10 +228,12 @@ export function useForm<FormValues extends object>(props: UseFormProps<FormValue
     return {
         formAPI: {
             submitted,
+            touched,
             submitting,
             submitErrors,
             initialValues,
             setFieldState,
+            valid: Object.values<FieldState<unknown>>(fields).every(state => state.validState === 'VALID'),
             validating: Object.values<FieldState<unknown>>(fields).some(state => state.validState === 'CHECKING'),
         },
         ref: formElementReference,
@@ -189,15 +247,9 @@ export function useForm<FormValues extends object>(props: UseFormProps<FormValue
             )
 
             if (!hasInvalidField) {
-                // Collect all form fields to pass them to onSubmit handler.
-                const values = Object.keys(fields).reduce<FormValues>(
-                    (values, fieldName) => ({ ...values, [fieldName]: fields[fieldName].value }),
-                    {} as FormValues
-                )
-
                 setSubmitting(true)
 
-                const submitResult = await onSubmitReference.current?.(values)
+                const submitResult = await onSubmitReference.current?.(getFormValues(fields))
 
                 // Check isUnmounted state to prevent calling setState on
                 // unmounted components.
@@ -214,4 +266,15 @@ export function useForm<FormValues extends object>(props: UseFormProps<FormValue
             }
         },
     }
+}
+
+/**
+ * Creates form values object and omits all other internal states of a form field.
+ * Used to form values for onSubmit and onChange handlers.
+ * */
+function getFormValues<FormValues>(fields: Record<string, Pick<FieldState<FormValues>, 'value'>>): FormValues {
+    return Object.keys(fields).reduce(
+        (values, fieldName) => ({ ...values, [fieldName]: fields[fieldName].value }),
+        {} as FormValues
+    )
 }

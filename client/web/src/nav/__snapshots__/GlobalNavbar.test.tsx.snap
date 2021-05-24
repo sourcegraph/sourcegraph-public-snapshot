@@ -19,6 +19,7 @@ exports[`GlobalNavbar default 1`] = `
   >
     <SearchNavbarItem
       authenticatedUser={null}
+      availableVersionContexts={Array []}
       caseSensitive={false}
       copyQueryButton={false}
       defaultSearchContextSpec=""
@@ -104,6 +105,7 @@ exports[`GlobalNavbar default 1`] = `
       setCaseSensitivity={[Function]}
       setPatternType={[Function]}
       setSelectedSearchContextSpec={[Function]}
+      setVersionContext={[Function]}
       settingsCascade={
         Object {
           "final": null,

@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/peterbourgon/ff/v3/ffcli"
+	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -20,7 +22,7 @@ var (
 		ShortHelp:  "Run the given command.",
 		FlagSet:    runFlagSet,
 		Exec:       runExec,
-		UsageFunc:  runUsage,
+		UsageFunc:  printRunUsage,
 	}
 
 	runSetFlagSet = flag.NewFlagSet("sg run-set", flag.ExitOnError)
@@ -30,7 +32,7 @@ var (
 		ShortHelp:  "Run the given command set.",
 		FlagSet:    runSetFlagSet,
 		Exec:       runSetExec,
-		UsageFunc:  runSetUsage,
+		UsageFunc:  printRunSetUsage,
 	}
 
 	startFlagSet = flag.NewFlagSet("sg start", flag.ExitOnError)
@@ -40,7 +42,7 @@ var (
 		ShortHelp:  "Runs the commandset with the name 'start'.",
 		FlagSet:    startFlagSet,
 		Exec:       startExec,
-		UsageFunc:  startUsage,
+		UsageFunc:  printStartUsage,
 	}
 
 	testFlagSet = flag.NewFlagSet("sg test", flag.ExitOnError)
@@ -50,19 +52,33 @@ var (
 		ShortHelp:  "Run the given test suite.",
 		FlagSet:    testFlagSet,
 		Exec:       testExec,
-		UsageFunc:  testUsage,
+		UsageFunc:  printTestUsage,
 	}
+
+	doctorFlagSet = flag.NewFlagSet("sg doctor", flag.ExitOnError)
+	doctorCommand = &ffcli.Command{
+		Name:       "doctor",
+		ShortUsage: "sg doctor",
+		ShortHelp:  "Run the checks defined in the config file to make sure your system is healthy.",
+		FlagSet:    doctorFlagSet,
+		Exec:       doctorExec,
+		UsageFunc:  printDoctorUsage,
+	}
+)
+
+const (
+	defaultConfigFile          = "sg.config.yaml"
+	defaultConfigOverwriteFile = "sg.config.overwrite.yaml"
 )
 
 var (
 	rootFlagSet         = flag.NewFlagSet("sg", flag.ExitOnError)
-	configFlag          = rootFlagSet.String("config", "sg.config.yaml", "configuration file")
-	overwriteConfigFlag = rootFlagSet.String("overwrite", "sg.config.overwrite.yaml", "configuration overwrites file that is gitignored and can be used to, for example, add credentials")
+	configFlag          = rootFlagSet.String("config", defaultConfigFile, "configuration file")
+	overwriteConfigFlag = rootFlagSet.String("overwrite", defaultConfigOverwriteFile, "configuration overwrites file that is gitignored and can be used to, for example, add credentials")
 
 	rootCommand = &ffcli.Command{
-		ShortUsage:  "sg [flags] <subcommand>",
-		FlagSet:     rootFlagSet,
-		Subcommands: []*ffcli.Command{runCommand, runSetCommand, startCommand, testCommand},
+		ShortUsage: "sg [flags] <subcommand>",
+		FlagSet:    rootFlagSet,
 		Exec: func(ctx context.Context, args []string) error {
 			return flag.ErrHelp
 		},
@@ -84,6 +100,7 @@ var (
 
 			return out.String()
 		},
+		Subcommands: []*ffcli.Command{runCommand, runSetCommand, startCommand, testCommand, doctorCommand},
 	}
 )
 
@@ -114,7 +131,22 @@ func parseConf(confFile, overwriteFile string) (bool, output.FancyLine) {
 		return true, output.FancyLine{}
 	}
 
-	var err error
+	// Try to determine root of repository, so we can look for config there
+	repoRoot, err := root.RepositoryRoot()
+	if err != nil {
+		return false, output.Linef("", output.StyleWarning, "Failed to determine repository root location: %s", err)
+	}
+
+	// If the configFlag/overwriteConfigFlag flags have their default value, we
+	// take the value as relative to the root of the repository.
+	if confFile == defaultConfigFile {
+		confFile = filepath.Join(repoRoot, confFile)
+	}
+
+	if overwriteFile == defaultConfigOverwriteFile {
+		overwriteFile = filepath.Join(repoRoot, overwriteFile)
+	}
+
 	conf, err = ParseConfigFile(confFile)
 	if err != nil {
 		return false, output.Linef("", output.StyleWarning, "Failed to parse %s%s%s%s as configuration file:%s\n%s\n", output.StyleBold, confFile, output.StyleReset, output.StyleWarning, output.StyleReset, err)
@@ -205,7 +237,11 @@ func runExec(ctx context.Context, args []string) error {
 	return run(ctx, cmd)
 }
 
-func runUsage(c *ffcli.Command) string {
+func doctorExec(ctx context.Context, args []string) error {
+	return runChecks(ctx, conf.Checks)
+}
+
+func printRunUsage(c *ffcli.Command) string {
 	var out strings.Builder
 
 	fmt.Fprintf(&out, "USAGE\n")
@@ -227,7 +263,7 @@ func runUsage(c *ffcli.Command) string {
 	return out.String()
 }
 
-func testUsage(c *ffcli.Command) string {
+func printTestUsage(c *ffcli.Command) string {
 	var out strings.Builder
 
 	fmt.Fprintf(&out, "USAGE\n")
@@ -249,7 +285,7 @@ func testUsage(c *ffcli.Command) string {
 	return out.String()
 }
 
-func runSetUsage(c *ffcli.Command) string {
+func printRunSetUsage(c *ffcli.Command) string {
 	var out strings.Builder
 
 	fmt.Fprintf(&out, "USAGE\n")
@@ -270,11 +306,20 @@ func runSetUsage(c *ffcli.Command) string {
 	return out.String()
 }
 
-func startUsage(c *ffcli.Command) string {
+func printStartUsage(c *ffcli.Command) string {
 	var out strings.Builder
 
 	fmt.Fprintf(&out, "USAGE\n")
 	fmt.Fprintln(&out, "  sg start")
+
+	return out.String()
+}
+
+func printDoctorUsage(c *ffcli.Command) string {
+	var out strings.Builder
+
+	fmt.Fprintf(&out, "USAGE\n")
+	fmt.Fprintf(&out, "  sg doctor\n")
 
 	return out.String()
 }

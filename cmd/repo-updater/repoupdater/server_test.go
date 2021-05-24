@@ -25,10 +25,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -62,9 +60,7 @@ func TestIntegration(t *testing.T) {
 		name string
 		test func(*testing.T, *repos.Store) func(*testing.T)
 	}{
-		{"Server/SetRepoEnabled", testServerSetRepoEnabled},
 		{"Server/EnqueueRepoUpdate", testServerEnqueueRepoUpdate},
-		{"Server/RepoExternalServices", testServerRepoExternalServices},
 		{"Server/RepoLookup", testRepoLookup(db)},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -179,222 +175,6 @@ func TestServer_handleRepoLookup(t *testing.T) {
 	})
 }
 
-func testServerSetRepoEnabled(t *testing.T, store *repos.Store) func(t *testing.T) {
-	return func(t *testing.T) {
-		githubService := &types.ExternalService{
-			ID:          1,
-			Kind:        extsvc.KindGitHub,
-			DisplayName: "github.com - test",
-			Config: formatJSON(`
-		{
-			// Some comment
-			"url": "https://github.com",
-			"repositoryQuery": ["none"],
-			"token": "secret"
-		}`),
-		}
-
-		githubRepo := (&types.Repo{
-			Name: "github.com/foo/bar",
-			ExternalRepo: api.ExternalRepoSpec{
-				ID:          "bar",
-				ServiceType: extsvc.TypeGitHub,
-				ServiceID:   "http://github.com",
-			},
-			Sources: map[string]*types.SourceInfo{},
-			Metadata: &github.Repository{
-				ID:            "bar",
-				NameWithOwner: "foo/bar",
-			},
-		}).With(types.Opt.RepoSources(githubService.URN()))
-
-		gitlabService := &types.ExternalService{
-			ID:          1,
-			Kind:        extsvc.KindGitLab,
-			DisplayName: "gitlab.com - test",
-			Config: formatJSON(`
-		{
-			// Some comment
-			"url": "https://gitlab.com",
-			"projectQuery": ["none"],
-			"token": "secret"
-		}`),
-		}
-
-		gitlabRepo := (&types.Repo{
-			Name: "gitlab.com/foo/bar",
-			ExternalRepo: api.ExternalRepoSpec{
-				ID:          "1",
-				ServiceType: extsvc.TypeGitLab,
-				ServiceID:   "http://gitlab.com",
-			},
-			Sources: map[string]*types.SourceInfo{},
-			Metadata: &gitlab.Project{
-				ProjectCommon: gitlab.ProjectCommon{
-					ID:                1,
-					PathWithNamespace: "foo/bar",
-				},
-			},
-		}).With(types.Opt.RepoSources(gitlabService.URN()))
-
-		bitbucketServerService := &types.ExternalService{
-			ID:          1,
-			Kind:        extsvc.KindBitbucketServer,
-			DisplayName: "Bitbucket Server - Test",
-			Config: formatJSON(`
-		{
-			// Some comment
-			"url": "https://bitbucketserver.mycorp.com",
-			"token": "secret",
-			"username": "alice",
-			"repositoryQuery": ["none"]
-		}`),
-		}
-
-		bitbucketServerRepo := (&types.Repo{
-			Name: "bitbucketserver.mycorp.com/foo/bar",
-			ExternalRepo: api.ExternalRepoSpec{
-				ID:          "1",
-				ServiceType: "bitbucketServer",
-				ServiceID:   "http://bitbucketserver.mycorp.com",
-			},
-			Sources: map[string]*types.SourceInfo{},
-			Metadata: &bitbucketserver.Repo{
-				ID:   1,
-				Slug: "bar",
-				Project: &bitbucketserver.Project{
-					Key: "foo",
-				},
-			},
-		}).With(types.Opt.RepoSources(bitbucketServerService.URN()))
-
-		type testCase struct {
-			name  string
-			svcs  types.ExternalServices // stored services
-			repos types.Repos            // stored repos
-			kind  string
-			res   *protocol.ExcludeRepoResponse
-			err   string
-		}
-
-		var testCases []testCase
-
-		for _, k := range []struct {
-			svc  *types.ExternalService
-			repo *types.Repo
-		}{
-			{githubService, githubRepo},
-			{bitbucketServerService, bitbucketServerRepo},
-			{gitlabService, gitlabRepo},
-		} {
-			svcs := types.ExternalServices{
-				k.svc,
-				k.svc.With(func(e *types.ExternalService) {
-					e.ID++
-					e.DisplayName += " - Duplicate"
-				}),
-			}
-
-			testCases = append(testCases, testCase{
-				name:  "excluded from every external service of the same kind/" + k.svc.Kind,
-				svcs:  svcs,
-				repos: types.Repos{k.repo}.With(types.Opt.RepoSources()),
-				kind:  k.svc.Kind,
-				res: &protocol.ExcludeRepoResponse{
-					ExternalServices: apiExternalServices(svcs.With(func(e *types.ExternalService) {
-						tmp := &types.Repo{
-							ID:           k.repo.ID,
-							ExternalRepo: k.repo.ExternalRepo,
-							Name:         k.repo.Name,
-							Private:      k.repo.Private,
-							URI:          k.repo.URI,
-							Description:  k.repo.Description,
-							Fork:         k.repo.Fork,
-							Archived:     k.repo.Archived,
-							CreatedAt:    k.repo.CreatedAt,
-							UpdatedAt:    k.repo.UpdatedAt,
-							DeletedAt:    k.repo.DeletedAt,
-							Metadata:     k.repo.Metadata,
-						}
-
-						if err := e.Exclude(tmp); err != nil {
-							panic(err)
-						}
-					})...),
-				},
-			})
-		}
-
-		for _, tc := range testCases {
-			tc := tc
-			t.Run(tc.name, func(t *testing.T) {
-				ctx := context.Background()
-
-				storedSvcs := tc.svcs.Clone()
-				err := store.ExternalServiceStore.Upsert(ctx, storedSvcs...)
-				if err != nil {
-					t.Fatalf("failed to prepare store: %v", err)
-				}
-
-				storedRepos := tc.repos.Clone()
-				err = store.RepoStore.Create(ctx, storedRepos...)
-				if err != nil {
-					t.Fatalf("failed to prepare store: %v", err)
-				}
-
-				s := &Server{Store: store}
-				srv := httptest.NewServer(s.Handler())
-				defer srv.Close()
-				cli := repoupdater.NewClient(srv.URL)
-
-				if tc.err == "" {
-					tc.err = "<nil>"
-				}
-
-				exclude := storedRepos.Filter(func(r *types.Repo) bool {
-					return strings.EqualFold(r.ExternalRepo.ServiceType, tc.kind)
-				})
-
-				if len(exclude) != 1 {
-					t.Fatalf("no stored repo of kind %q", tc.kind)
-				}
-
-				res, err := cli.ExcludeRepo(ctx, exclude[0].ID)
-				if have, want := fmt.Sprint(err), tc.err; have != want {
-					t.Errorf("have err: %q, want: %q", have, want)
-				}
-
-				if have, want := res, tc.res; !reflect.DeepEqual(have, want) {
-					// t.Logf("have: %s\nwant: %s\n", pp.Sprint(have), pp.Sprint(want))
-					t.Errorf("response:\n%s", cmp.Diff(have, want))
-				}
-
-				if res == nil || len(res.ExternalServices) == 0 {
-					return
-				}
-
-				ids := make([]int64, 0, len(res.ExternalServices))
-				for _, s := range res.ExternalServices {
-					ids = append(ids, s.ID)
-				}
-
-				svcs, err := store.ExternalServiceStore.List(ctx, database.ExternalServicesListOptions{
-					IDs:              ids,
-					OrderByDirection: "ASC",
-				})
-				if err != nil {
-					t.Fatalf("failed to read from store: %v", err)
-				}
-
-				have, want := apiExternalServices(svcs...), res.ExternalServices
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Errorf("stored external services:\n%s", diff)
-				}
-			})
-		}
-	}
-}
-
 func testServerEnqueueRepoUpdate(t *testing.T, store *repos.Store) func(t *testing.T) {
 	return func(t *testing.T) {
 		ctx := context.Background()
@@ -453,7 +233,7 @@ func testServerEnqueueRepoUpdate(t *testing.T, store *repos.Store) func(t *testi
 				name:  "missing repo",
 				store: store,
 				repo:  "foo",
-				err:   `repo "foo" not found in store`,
+				err:   `repo foo not found with response: repo "foo" not found in store`,
 			},
 			func() testCase {
 				repo := repo.Clone()
@@ -498,132 +278,6 @@ func testServerEnqueueRepoUpdate(t *testing.T, store *repos.Store) func(t *testi
 			})
 		}
 	}
-}
-
-func testServerRepoExternalServices(t *testing.T, store *repos.Store) func(t *testing.T) {
-	return func(t *testing.T) {
-
-		service1 := &types.ExternalService{
-			Kind:        extsvc.KindGitHub,
-			DisplayName: "github.com - test",
-			Config: formatJSON(`
-		{
-			// Some comment
-			"url": "https://github.com",
-			"token": "secret"
-		}`),
-		}
-
-		service2 := &types.ExternalService{
-			Kind:        extsvc.KindGitHub,
-			DisplayName: "github.com - test2",
-			Config: formatJSON(`
-		{
-			// Some comment
-			"url": "https://github.com",
-			"token": "secret"
-		}`),
-		}
-
-		// We share the store across test cases. Initialize now so we have IDs
-		// set for test cases.
-		ctx := context.Background()
-
-		if err := store.ExternalServiceStore.Upsert(ctx, service1, service2); err != nil {
-			t.Fatal(err)
-		}
-
-		// No sources are repos that are not managed by the syncer
-		repoNoSources := &types.Repo{
-			Name: "gitolite.example.com/oldschool",
-			ExternalRepo: api.ExternalRepoSpec{
-				ID:          "nosources",
-				ServiceType: extsvc.TypeGitolite,
-				ServiceID:   "http://gitolite.my.corp",
-			},
-		}
-
-		repoSources := (&types.Repo{
-			Name: "github.com/foo/sources",
-			ExternalRepo: api.ExternalRepoSpec{
-				ID:          "sources",
-				ServiceType: extsvc.TypeGitHub,
-				ServiceID:   "http://github.com",
-			},
-			Metadata: new(github.Repository),
-		}).With(types.Opt.RepoSources(service1.URN(), service2.URN()))
-
-		if err := store.RepoStore.Create(ctx, repoNoSources, repoSources); err != nil {
-			t.Fatal(err)
-		}
-
-		testCases := []struct {
-			name   string
-			repoID api.RepoID
-			svcs   []api.ExternalService
-			err    string
-		}{{
-			name:   "repo no sources",
-			repoID: repoNoSources.ID,
-			svcs:   nil,
-			err:    "<nil>",
-		}, {
-			name:   "repo sources",
-			repoID: repoSources.ID,
-			svcs:   apiExternalServices(service1, service2),
-			err:    "<nil>",
-		}, {
-			name:   "repo not in store",
-			repoID: 42,
-			svcs:   nil,
-			err:    "repository with ID 42 does not exist",
-		}}
-
-		s := &Server{Store: store}
-		srv := httptest.NewServer(s.Handler())
-		defer srv.Close()
-		cli := repoupdater.NewClient(srv.URL)
-		for _, tc := range testCases {
-			tc := tc
-			t.Run(tc.name, func(t *testing.T) {
-				res, err := cli.RepoExternalServices(ctx, tc.repoID)
-				if have, want := fmt.Sprint(err), tc.err; have != want {
-					t.Errorf("have err: %q, want: %q", have, want)
-				}
-
-				have, want := res, tc.svcs
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Errorf("response:\n%s", cmp.Diff(have, want))
-				}
-			})
-		}
-	}
-}
-
-func apiExternalServices(es ...*types.ExternalService) []api.ExternalService {
-	if len(es) == 0 {
-		return nil
-	}
-
-	svcs := make([]api.ExternalService, 0, len(es))
-	for _, e := range es {
-		svc := api.ExternalService{
-			ID:          e.ID,
-			Kind:        e.Kind,
-			DisplayName: e.DisplayName,
-			Config:      e.Config,
-			CreatedAt:   e.CreatedAt,
-			UpdatedAt:   e.UpdatedAt,
-		}
-
-		if e.IsDeleted() {
-			svc.DeletedAt = e.DeletedAt
-		}
-
-		svcs = append(svcs, svc)
-	}
-
-	return svcs
 }
 
 func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore *repos.Store) func(t *testing.T) {
@@ -1216,12 +870,4 @@ func (t testSource) WithAuthenticator(a auth.Authenticator) (repos.Source, error
 
 func (t testSource) ValidateAuthenticator(ctx context.Context) error {
 	return t.fn()
-}
-
-func formatJSON(s string) string {
-	formatted, err := jsonc.Format(s, nil)
-	if err != nil {
-		panic(err)
-	}
-	return formatted
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"sort"
 
 	"github.com/keegancsmith/sqlf"
@@ -70,19 +71,30 @@ LEFT JOIN orgs o on sc.namespace_org_id = o.id
 WHERE sc.deleted_at IS NULL
 	AND (%s) -- permission conditions
 	AND (%s) -- query conditions
-ORDER BY sc.id ASC
+ORDER BY %s
 LIMIT %d
+OFFSET %d
 `
 
 const countSearchContextsFmtStr = `
 SELECT COUNT(*)
 FROM search_contexts sc
-WHERE sc.deleted_at IS NULL AND (%s)
+WHERE sc.deleted_at IS NULL
+	AND (%s) -- permission conditions
+	AND (%s) -- query conditions
 `
 
+type SearchContextsOrderByOption uint8
+
+const (
+	SearchContextsOrderByID SearchContextsOrderByOption = iota
+	SearchContextsOrderBySpec
+	SearchContextsOrderByUpdatedAt
+)
+
 type ListSearchContextsPageOptions struct {
-	First   int32
-	AfterID int64
+	First int32
+	After int32
 }
 
 // ListSearchContextsOptions specifies the options for listing search contexts.
@@ -97,6 +109,29 @@ type ListSearchContextsOptions struct {
 	// NoNamespace matches search contexts without a namespace ("instance-level contexts").
 	// It ignores the NamespaceUserID and NamespaceOrgID options.
 	NoNamespace bool
+	// OrderBy specifies the ordering option for search contexts. Search contexts are ordered using SearchContextsOrderByID by default.
+	// SearchContextsOrderBySpec option sorts contexts by coallesced namespace names first
+	// (user name and org name) and then by context name. SearchContextsOrderByUpdatedAt option sorts
+	// search contexts by their last update time (updated_at).
+	OrderBy SearchContextsOrderByOption
+	// OrderByDescending specifies the sort direction for the OrderBy option.
+	OrderByDescending bool
+}
+
+func getSearchContextOrderByClause(orderBy SearchContextsOrderByOption, descending bool) *sqlf.Query {
+	orderDirection := "ASC"
+	if descending {
+		orderDirection = "DESC"
+	}
+	switch orderBy {
+	case SearchContextsOrderBySpec:
+		return sqlf.Sprintf(fmt.Sprintf("COALESCE(u.username, o.name) %s, sc.name %s", orderDirection, orderDirection))
+	case SearchContextsOrderByUpdatedAt:
+		return sqlf.Sprintf("sc.updated_at " + orderDirection)
+	case SearchContextsOrderByID:
+		return sqlf.Sprintf("sc.id " + orderDirection)
+	}
+	panic("invalid SearchContextsOrderByOption option")
 }
 
 func getSearchContextNamespaceQueryConditions(namespaceUserID, namespaceOrgID int32) ([]*sqlf.Query, error) {
@@ -130,15 +165,20 @@ func getSearchContextsQueryConditions(opts ListSearchContextsOptions) ([]*sqlf.Q
 		conds = append(conds, sqlf.Sprintf("sc.name LIKE %s", "%"+opts.Name+"%"))
 	}
 
+	if len(conds) == 0 {
+		// If no conditions are present, append a catch-all condition to avoid a SQL syntax error
+		conds = append(conds, sqlf.Sprintf("1 = 1"))
+	}
+
 	return conds, nil
 }
 
-func (s *SearchContextsStore) listSearchContexts(ctx context.Context, cond *sqlf.Query, limit int32) ([]*types.SearchContext, error) {
+func (s *SearchContextsStore) listSearchContexts(ctx context.Context, cond *sqlf.Query, orderBy *sqlf.Query, limit int32, offset int32) ([]*types.SearchContext, error) {
 	permissionsCond, err := searchContextsPermissionsCondition(ctx, s.Handle().DB())
 	if err != nil {
 		return nil, err
 	}
-	rows, err := s.Query(ctx, sqlf.Sprintf(listSearchContextsFmtStr, permissionsCond, cond, limit))
+	rows, err := s.Query(ctx, sqlf.Sprintf(listSearchContextsFmtStr, permissionsCond, cond, orderBy, limit, offset))
 	if err != nil {
 		return nil, err
 	}
@@ -151,13 +191,12 @@ func (s *SearchContextsStore) ListSearchContexts(ctx context.Context, pageOpts L
 		return Mocks.SearchContexts.ListSearchContexts(ctx, pageOpts, opts)
 	}
 
-	listSearchContextsConds, err := getSearchContextsQueryConditions(opts)
+	conds, err := getSearchContextsQueryConditions(opts)
 	if err != nil {
 		return nil, err
 	}
-	conds := []*sqlf.Query{sqlf.Sprintf("sc.id > %d", pageOpts.AfterID)}
-	conds = append(conds, listSearchContextsConds...)
-	return s.listSearchContexts(ctx, sqlf.Join(conds, "\n AND "), pageOpts.First)
+	orderBy := getSearchContextOrderByClause(opts.OrderBy, opts.OrderByDescending)
+	return s.listSearchContexts(ctx, sqlf.Join(conds, "\n AND "), orderBy, pageOpts.First, pageOpts.After)
 }
 
 func (s *SearchContextsStore) CountSearchContexts(ctx context.Context, opts ListSearchContextsOptions) (int32, error) {
@@ -169,12 +208,12 @@ func (s *SearchContextsStore) CountSearchContexts(ctx context.Context, opts List
 	if err != nil {
 		return -1, err
 	}
-	if len(conds) == 0 {
-		// If no conditions are present, append a catch-all condition to avoid a SQL syntax error
-		conds = append(conds, sqlf.Sprintf("1 = 1"))
+	permissionsCond, err := searchContextsPermissionsCondition(ctx, s.Handle().DB())
+	if err != nil {
+		return -1, err
 	}
 	var count int32
-	err = s.QueryRow(ctx, sqlf.Sprintf(countSearchContextsFmtStr, sqlf.Join(conds, "\n AND "))).Scan(&count)
+	err = s.QueryRow(ctx, sqlf.Sprintf(countSearchContextsFmtStr, permissionsCond, sqlf.Join(conds, "\n AND "))).Scan(&count)
 	if err != nil {
 		return -1, err
 	}
@@ -208,7 +247,17 @@ func (s *SearchContextsStore) GetSearchContext(ctx context.Context, opts GetSear
 	if err != nil {
 		return nil, err
 	}
-	rows, err := s.Query(ctx, sqlf.Sprintf(listSearchContextsFmtStr, permissionsCond, sqlf.Join(conds, "\n AND "), 1))
+	rows, err := s.Query(
+		ctx,
+		sqlf.Sprintf(
+			listSearchContextsFmtStr,
+			permissionsCond,
+			sqlf.Join(conds, "\n AND "),
+			getSearchContextOrderByClause(SearchContextsOrderByID, false),
+			1, // limit
+			0, // offset
+		),
+	)
 	if err != nil {
 		return nil, err
 	}

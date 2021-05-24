@@ -6,7 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-var out *output.Output = output.NewOutput(os.Stdout, output.OutputOpts{
+var out = output.NewOutput(os.Stdout, output.OutputOpts{
 	ForceColor: true,
 	ForceTTY:   true,
 })

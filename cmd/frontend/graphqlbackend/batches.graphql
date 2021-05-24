@@ -2076,7 +2076,7 @@ extend type Mutation {
 
     Experimental: This API is likely to change in the future.
     """
-    detachChangesets(batchChange: ID!, changesets: [ID!]!): EmptyResponse!
+    detachChangesets(batchChange: ID!, changesets: [ID!]!): BulkOperation!
 
     """
     Comment on multiple changesets from a batch change.
@@ -2319,6 +2319,10 @@ type BatchChange implements Node {
         Opaque pagination cursor.
         """
         after: String
+        """
+        Filter by createdAt value.
+        """
+        createdAfter: DateTime
     ): BulkOperationConnection!
 }
 
@@ -2350,6 +2354,10 @@ enum BulkOperationType {
     Bulk post comments over all involved changesets.
     """
     COMMENT
+    """
+    Bulk detach changesets from a batch change.
+    """
+    DETACH
 }
 
 """
@@ -2412,6 +2420,16 @@ type BulkOperation implements Node {
     when some operations are still processing.
     """
     finishedAt: DateTime
+
+    """
+    The user who triggered this bulk operation.
+    """
+    initiator: User!
+
+    """
+    The number of changesets involved in this bulk operation.
+    """
+    changesetCount: Int!
 }
 
 """

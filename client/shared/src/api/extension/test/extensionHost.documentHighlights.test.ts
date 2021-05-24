@@ -5,7 +5,7 @@ import { DocumentHighlight } from 'sourcegraph'
 import { Range } from '@sourcegraph/extension-api-classes'
 
 import { SettingsCascade } from '../../../settings/settings'
-import { MainThreadAPI } from '../../contract'
+import { ClientAPI } from '../../client/api/api'
 import { pretendRemote } from '../../util'
 import { proxySubscribable } from '../api/common'
 
@@ -13,7 +13,7 @@ import { initializeExtensionHostTest } from './test-helpers'
 
 describe('getDocumentHighlights from ExtensionHost API, it aims to have more e2e feel', () => {
     // integration(ish) tests for scenarios not covered by providers tests
-    const noopMain = pretendRemote<MainThreadAPI>({
+    const noopMain = pretendRemote<ClientAPI>({
         getEnabledExtensions: () => proxySubscribable(new BehaviorSubject([])),
         getScriptURLForExtension: () => undefined,
     })
@@ -40,7 +40,7 @@ describe('getDocumentHighlights from ExtensionHost API, it aims to have more e2e
         const typescriptFileUri = 'file:///f.ts'
 
         const { extensionHostAPI, extensionAPI } = initializeExtensionHostTest(
-            { initialSettings, clientApplication: 'sourcegraph' },
+            { initialSettings, clientApplication: 'sourcegraph', sourcegraphURL: 'https://example.com/' },
             noopMain
         )
 

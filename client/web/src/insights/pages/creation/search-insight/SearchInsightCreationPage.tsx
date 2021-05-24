@@ -1,12 +1,11 @@
-import * as jsonc from '@sqs/jsonc-parser'
 import classnames from 'classnames'
-import { camelCase } from 'lodash'
-import React, { useCallback, useContext } from 'react'
+import React, { useCallback, useContext, useEffect } from 'react'
 import { Redirect } from 'react-router'
-import { RouteComponentProps } from 'react-router-dom'
+import { useHistory } from 'react-router-dom'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { asError } from '@sourcegraph/shared/src/util/errors'
 
 import { AuthenticatedUser } from '../../../../auth'
@@ -14,24 +13,19 @@ import { Page } from '../../../../components/Page'
 import { PageTitle } from '../../../../components/PageTitle'
 import { FORM_ERROR } from '../../../components/form/hooks/useForm'
 import { InsightsApiContext } from '../../../core/backend/api-provider'
-import { InsightTypeSuffix } from '../../../core/types'
+import { addInsightToCascadeSetting } from '../../../core/jsonc-operation'
 
 import {
-    SearchInsightCreationForm,
-    CreationSearchInsightFormProps,
-} from './components/search-insight-creation-form/SearchInsightCreationForm'
+    SearchInsightCreationContent,
+    SearchInsightCreationContentProps,
+} from './components/search-insight-creation-content/SearchInsightCreationContent'
 import styles from './SearchInsightCreationPage.module.scss'
-
-const defaultFormattingOptions: jsonc.FormattingOptions = {
-    eol: '\n',
-    insertSpaces: true,
-    tabSize: 2,
-}
+import { getSanitizedSearchInsight } from './utils/insight-sanitizer'
 
 export interface SearchInsightCreationPageProps
     extends PlatformContextProps<'updateSettings'>,
-        Pick<RouteComponentProps, 'history'>,
-        SettingsCascadeProps {
+        SettingsCascadeProps,
+        TelemetryProps {
     /**
      * Authenticated user info, Used to decide where code insight will appears
      * in personal dashboard (private) or in organisation dashboard (public)
@@ -41,57 +35,36 @@ export interface SearchInsightCreationPageProps
 
 /** Displays create insight page with creation form. */
 export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCreationPageProps> = props => {
-    const { platformContext, authenticatedUser, history, settingsCascade } = props
+    const { platformContext, authenticatedUser, settingsCascade, telemetryService } = props
     const { updateSubjectSettings, getSubjectSettings } = useContext(InsightsApiContext)
+    const history = useHistory()
 
-    const handleSubmit = useCallback<CreationSearchInsightFormProps['onSubmit']>(
+    useEffect(() => {
+        telemetryService.logViewEvent('CodeInsightsSearchBasedCreationPage')
+    }, [telemetryService])
+
+    const handleSubmit = useCallback<SearchInsightCreationContentProps['onSubmit']>(
         async values => {
             if (!authenticatedUser) {
                 return
             }
 
-            const {
-                id: userID,
-                organizations: { nodes: orgs },
-            } = authenticatedUser
+            const { id: userID } = authenticatedUser
+
             const subjectID =
                 values.visibility === 'personal'
                     ? userID
-                    : // TODO [VK] Add org picker in creation UI and not just pick first organization
-                      orgs[0].id
+                    : // If this is not a 'personal' value than we are dealing with org id
+                      values.visibility
 
             try {
                 const settings = await getSubjectSettings(subjectID).toPromise()
-
-                const newSettingsString = {
-                    title: values.title,
-                    repositories: values.repositories.trim().split(/\s*,\s*/),
-                    series: values.series.map(line => ({
-                        name: line.name,
-                        // Query field is a reg exp field for code insight query setting
-                        // Native html input element adds escape symbols by itself
-                        // to prevent this behavior below we replace double escaping
-                        // with just one series of escape characters e.g. - //
-                        query: line.query.replace(/\\\\/g, '\\'),
-                        stroke: line.color,
-                    })),
-                    step: {
-                        [values.step]: +values.stepValue,
-                    },
-                }
-
-                const edits = jsonc.modify(
-                    settings.contents,
-                    // According to our naming convention <type>.insight.<name>
-                    [`${InsightTypeSuffix.search}.${camelCase(values.title)}`],
-                    newSettingsString,
-                    { formattingOptions: defaultFormattingOptions }
-                )
-
-                const editedSettings = jsonc.applyEdits(settings.contents, edits)
+                const insight = getSanitizedSearchInsight(values)
+                const editedSettings = addInsightToCascadeSetting(settings.contents, insight)
 
                 await updateSubjectSettings(platformContext, subjectID, editedSettings).toPromise()
 
+                telemetryService.log('CodeInsightsSearchBasedCreationPageSubmitClick')
                 history.push('/insights')
             } catch (error) {
                 return { [FORM_ERROR]: asError(error) }
@@ -99,20 +72,25 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
 
             return
         },
-        [history, updateSubjectSettings, getSubjectSettings, platformContext, authenticatedUser]
+        [telemetryService, history, updateSubjectSettings, getSubjectSettings, platformContext, authenticatedUser]
     )
 
     const handleCancel = useCallback(() => {
+        telemetryService.log('CodeInsightsSearchBasedCreationPageCancelClick')
         history.push('/insights')
-    }, [history])
+    }, [history, telemetryService])
 
     // TODO [VK] Move this logic to high order component to simplify logic here
     if (authenticatedUser === null) {
         return <Redirect to="/" />
     }
 
+    const {
+        organizations: { nodes: orgs },
+    } = authenticatedUser
+
     return (
-        <Page className={classnames('col-8', styles.creationPage)}>
+        <Page className={classnames('col-10', styles.creationPage)}>
             <PageTitle title="Create new code insight" />
 
             <div className="mb-5">
@@ -120,19 +98,16 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
 
                 <p className="text-muted">
                     Search-based code insights analyze your code based on any search query.{' '}
-                    <a
-                        href="https://docs.sourcegraph.com/dev/background-information/insights"
-                        target="_blank"
-                        rel="noopener"
-                    >
+                    <a href="https://docs.sourcegraph.com/code_insights" target="_blank" rel="noopener">
                         Learn more.
                     </a>
                 </p>
             </div>
 
-            <SearchInsightCreationForm
+            <SearchInsightCreationContent
                 className="pb-5"
                 settings={settingsCascade.final}
+                organizations={orgs}
                 onSubmit={handleSubmit}
                 onCancel={handleCancel}
             />

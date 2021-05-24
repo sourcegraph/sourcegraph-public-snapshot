@@ -12,11 +12,12 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 
-	searchrepos "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
+	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -165,23 +166,23 @@ func TestAlertForDiffCommitSearchLimits(t *testing.T) {
 	}{
 		{
 			name:                 "diff_search_warns_on_repos_greater_than_search_limit",
-			multiErr:             multierror.Append(&multierror.Error{}, &RepoLimitError{ResultType: "diff", Max: 50}),
+			multiErr:             multierror.Append(&multierror.Error{}, &run.RepoLimitError{ResultType: "diff", Max: 50}),
 			wantAlertDescription: `Diff search can currently only handle searching across 50 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'.`,
 		},
 		{
 			name:                 "commit_search_warns_on_repos_greater_than_search_limit",
-			multiErr:             multierror.Append(&multierror.Error{}, &RepoLimitError{ResultType: "commit", Max: 50}),
+			multiErr:             multierror.Append(&multierror.Error{}, &run.RepoLimitError{ResultType: "commit", Max: 50}),
 			wantAlertDescription: `Commit search can currently only handle searching across 50 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'.`,
 		},
 		{
 			name:                 "commit_search_warns_on_repos_greater_than_search_limit_with_time_filter",
-			multiErr:             multierror.Append(&multierror.Error{}, &TimeLimitError{ResultType: "commit", Max: 10000}),
+			multiErr:             multierror.Append(&multierror.Error{}, &run.TimeLimitError{ResultType: "commit", Max: 10000}),
 			wantAlertDescription: `Commit search can currently only handle searching across 10000 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search.`,
 		},
 	}
 
 	for _, test := range cases {
-		alert := alertForError(test.multiErr, &SearchInputs{})
+		alert := alertForError(test.multiErr, &run.SearchInputs{})
 		haveAlertDescription := alert.description
 		if diff := cmp.Diff(test.wantAlertDescription, haveAlertDescription); diff != "" {
 			t.Fatalf("test %s, mismatched alert (-want, +got):\n%s", test.name, diff)
@@ -215,7 +216,7 @@ func TestErrorToAlertStructuralSearch(t *testing.T) {
 			Errors:      test.errors,
 			ErrorFormat: multierror.ListFormatFunc,
 		}
-		haveAlert := alertForError(multiErr, &SearchInputs{})
+		haveAlert := alertForError(multiErr, &run.SearchInputs{})
 
 		if haveAlert != nil && haveAlert.title != test.wantAlertTitle {
 			t.Fatalf("test %s, have alert: %q, want: %q", test.name, haveAlert.title, test.wantAlertTitle)
@@ -354,7 +355,7 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 			}
 			sr := searchResolver{
 				db: db,
-				SearchInputs: &SearchInputs{
+				SearchInputs: &run.SearchInputs{
 					OriginalQuery: test.query,
 					Plan:          plan,
 					Query:         plan.ToParseTree(),
@@ -429,7 +430,7 @@ func TestAlertForNoResolvedReposWithNonGlobalSearchContext(t *testing.T) {
 	}
 	sr := searchResolver{
 		db: db,
-		SearchInputs: &SearchInputs{
+		SearchInputs: &run.SearchInputs{
 			OriginalQuery: searchQuery,
 			Query:         q,
 			UserSettings:  &schema.Settings{},

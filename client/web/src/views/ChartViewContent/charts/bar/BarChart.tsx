@@ -149,6 +149,8 @@ export function BarChart<Datum extends object>(props: BarChartProps<Datum>): Rea
                                 <MaybeLink
                                     key={`bar-${index}`}
                                     to={linkURLs?.[index]}
+                                    target="_blank"
+                                    rel="noopener"
                                     onClick={onDatumLinkClick}
                                     role={linkURLs?.[index] ? 'link' : 'graphics-dataunit'}
                                     aria-label={ariaLabel}
@@ -161,9 +163,7 @@ export function BarChart<Datum extends object>(props: BarChartProps<Datum>): Rea
                                         height={barHeight}
                                         width={xScale.bandwidth()}
                                         fill={fill}
-                                        /* eslint-disable-next-line react/jsx-no-bind */
                                         onMouseLeave={handleMouseLeave}
-                                        /* eslint-disable-next-line react/jsx-no-bind */
                                         onMouseMove={event => {
                                             if (tooltipTimeout) {
                                                 clearTimeout(tooltipTimeout)

@@ -1,12 +1,11 @@
-import * as jsonc from '@sqs/jsonc-parser'
 import classnames from 'classnames'
-import { camelCase } from 'lodash'
-import React, { useCallback, useContext } from 'react'
+import React, { useCallback, useContext, useEffect } from 'react'
 import { Redirect } from 'react-router'
-import { RouteComponentProps } from 'react-router-dom'
+import { useHistory } from 'react-router-dom'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { asError } from '@sourcegraph/shared/src/util/errors'
 
 import { AuthenticatedUser } from '../../../../auth'
@@ -14,26 +13,21 @@ import { Page } from '../../../../components/Page'
 import { PageTitle } from '../../../../components/PageTitle'
 import { FORM_ERROR } from '../../../components/form/hooks/useForm'
 import { InsightsApiContext } from '../../../core/backend/api-provider'
-import { InsightTypeSuffix } from '../../../core/types'
+import { addInsightToCascadeSetting } from '../../../core/jsonc-operation'
 
 import {
-    LangStatsInsightCreationForm,
-    LangStatsInsightCreationFormProps,
-} from './components/lang-stats-insight-creation-form/LangStatsInsightCreationForm'
+    LangStatsInsightCreationContent,
+    LangStatsInsightCreationContentProps,
+} from './components/lang-stats-insight-creation-content/LangStatsInsightCreationContent'
 import styles from './LangStatsInsightCreationPage.module.scss'
+import { getSanitizedLangStatsInsight } from './utils/insight-sanitizer'
 
 const DEFAULT_FINAL_SETTINGS = {}
 
-const defaultFormattingOptions: jsonc.FormattingOptions = {
-    eol: '\n',
-    insertSpaces: true,
-    tabSize: 2,
-}
-
 export interface LangStatsInsightCreationPageProps
     extends PlatformContextProps<'updateSettings'>,
-        Pick<RouteComponentProps, 'history'>,
-        SettingsCascadeProps {
+        SettingsCascadeProps,
+        TelemetryProps {
     /**
      * Authenticated user info, Used to decide where code insight will appears
      * in personal dashboard (private) or in organization dashboard (public)
@@ -42,48 +36,36 @@ export interface LangStatsInsightCreationPageProps
 }
 
 export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsightCreationPageProps> = props => {
-    const { history, authenticatedUser, settingsCascade, platformContext } = props
+    const { authenticatedUser, settingsCascade, platformContext, telemetryService } = props
     const { getSubjectSettings, updateSubjectSettings } = useContext(InsightsApiContext)
+    const history = useHistory()
 
-    const handleSubmit = useCallback<LangStatsInsightCreationFormProps['onSubmit']>(
+    useEffect(() => {
+        telemetryService.logViewEvent('CodeInsightsCodeStatsCreationPage')
+    }, [telemetryService])
+
+    const handleSubmit = useCallback<LangStatsInsightCreationContentProps['onSubmit']>(
         async values => {
             if (!authenticatedUser) {
                 return
             }
 
-            const {
-                id: userID,
-                organizations: { nodes: orgs },
-            } = authenticatedUser
+            const { id: userID } = authenticatedUser
             const subjectID =
                 values.visibility === 'personal'
                     ? userID
-                    : // TODO [VK] Add org picker in creation UI and not just pick first organization
-                      orgs[0].id
+                    : // If this is not a 'personal' value than we are dealing with org id
+                      values.visibility
 
             try {
                 const settings = await getSubjectSettings(subjectID).toPromise()
 
-                // TODO [VK] Change these settings when multi code insights stats
-                // will be supported in code stats insight extension
-                const newSettingsString = {
-                    title: values.title,
-                    repository: values.repository.trim(),
-                    otherThreshold: values.threshold / 100,
-                }
-
-                const edits = jsonc.modify(
-                    settings.contents,
-                    // According to our naming convention <type>.insight.<name>
-                    [`${InsightTypeSuffix.langStats}.${camelCase(values.title)}`],
-                    newSettingsString,
-                    { formattingOptions: defaultFormattingOptions }
-                )
-
-                const editedSettings = jsonc.applyEdits(settings.contents, edits)
+                const insight = getSanitizedLangStatsInsight(values)
+                const editedSettings = addInsightToCascadeSetting(settings.contents, insight)
 
                 await updateSubjectSettings(platformContext, subjectID, editedSettings).toPromise()
 
+                telemetryService.log('CodeInsightsCodeStatsCreationPageSubmitClick')
                 history.push('/insights')
             } catch (error) {
                 return { [FORM_ERROR]: asError(error) }
@@ -91,19 +73,24 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
 
             return
         },
-        [history, updateSubjectSettings, getSubjectSettings, platformContext, authenticatedUser]
+        [telemetryService, history, updateSubjectSettings, getSubjectSettings, platformContext, authenticatedUser]
     )
 
     const handleCancel = useCallback(() => {
+        telemetryService.log('CodeInsightsCodeStatsCreationPageCancelClick')
         history.push('/insights')
-    }, [history])
+    }, [history, telemetryService])
 
     if (authenticatedUser === null) {
         return <Redirect to="/" />
     }
 
+    const {
+        organizations: { nodes: orgs },
+    } = authenticatedUser
+
     return (
-        <Page className={classnames(styles.creationPage, 'col-8')}>
+        <Page className={classnames(styles.creationPage, 'col-10')}>
             <PageTitle title="Create new code insight" />
 
             <div className="mb-5">
@@ -111,19 +98,16 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
 
                 <p className="text-muted">
                     Shows language usage in your repository based on number of lines of code.{' '}
-                    <a
-                        href="https://docs.sourcegraph.com/dev/background-information/insights"
-                        target="_blank"
-                        rel="noopener"
-                    >
+                    <a href="https://docs.sourcegraph.com/code_insights" target="_blank" rel="noopener">
                         Learn more.
                     </a>
                 </p>
             </div>
 
-            <LangStatsInsightCreationForm
+            <LangStatsInsightCreationContent
                 className="pb-5"
                 settings={settingsCascade.final ?? DEFAULT_FINAL_SETTINGS}
+                organizations={orgs}
                 onSubmit={handleSubmit}
                 onCancel={handleCancel}
             />

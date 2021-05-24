@@ -1,4 +1,11 @@
 .git-ref-node {
+    --git-ref-divider-color: var(--border-color);
+    color: var(--text-muted);
+
+    .theme-redesign & {
+        --git-ref-divider-color: var(--border-color-2);
+    }
+
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -9,8 +16,8 @@
     border-left: none;
     border-right: none;
     border-top: none;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--git-ref-divider-color);
     &:first-of-type {
-        border-top: 1px solid var(--border-color);
+        border-top: 1px solid var(--git-ref-divider-color);
     }
 }

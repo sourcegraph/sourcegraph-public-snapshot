@@ -171,7 +171,7 @@ func TestGroupAggregateSearchStats(t *testing.T) {
 	t2 := t1.Add(time.Hour)
 	t3 := t2.Add(time.Hour)
 
-	searchStats := groupAggregatedSearchStats([]types.AggregatedEvent{
+	searchStats := groupAggregatedSearchStats([]types.SearchAggregatedEvent{
 		{
 			Name:           "search.latencies.structural",
 			Month:          t1,

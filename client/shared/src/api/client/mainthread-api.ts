@@ -171,6 +171,7 @@ export const initMainThreadAPI = (
             return proxySubscribable(getEnabledExtensions(platformContext))
         },
         logEvent: (eventName, eventProperties) => platformContext.telemetryService?.log(eventName, eventProperties),
+        logExtensionMessage: (...data) => console.log(...data),
     }
 
     return { api, exposedToClient, subscription }
@@ -202,7 +203,7 @@ interface SideloadedExtensionManifest extends Omit<ExtensionManifest, 'url'> {
     main: string
 }
 
-const getConfiguredSideloadedExtension = (baseUrl: string): Observable<ConfiguredExtension> =>
+export const getConfiguredSideloadedExtension = (baseUrl: string): Observable<ConfiguredExtension> =>
     fromFetch(`${baseUrl}/package.json`, { selector: response => checkOk(response).json() }).pipe(
         map(
             (response: SideloadedExtensionManifest): ConfiguredExtension => ({

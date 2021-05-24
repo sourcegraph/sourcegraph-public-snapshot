@@ -14,11 +14,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	uploadstoremocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore/mocks"
-	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/bloomfilter"
-	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/bloomfilter"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
 )
 
 func TestHandle(t *testing.T) {
@@ -101,10 +101,12 @@ func TestHandle(t *testing.T) {
 	expectedPackageReferencesDumpID := 42
 	expectedPackageReferences := []semantic.PackageReference{
 		{
-			Scheme:  "scheme A",
-			Name:    "pkg A",
-			Version: "v0.1.0",
-			Filter:  filter,
+			Package: semantic.Package{
+				Scheme:  "scheme A",
+				Name:    "pkg A",
+				Version: "v0.1.0",
+			},
+			Filter: filter,
 		},
 	}
 	if len(mockDBStore.UpdatePackageReferencesFunc.History()) != 1 {

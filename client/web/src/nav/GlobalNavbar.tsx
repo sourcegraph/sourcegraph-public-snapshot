@@ -37,6 +37,7 @@ import {
     KEYBOARD_SHORTCUT_SWITCH_THEME,
 } from '../keyboardShortcuts/keyboardShortcuts'
 import { LayoutRouteProps } from '../routes'
+import { Settings } from '../schema/settings.schema'
 import { VersionContext } from '../schema/site.schema'
 import {
     PatternTypeProps,
@@ -44,9 +45,9 @@ import {
     CopyQueryButtonProps,
     OnboardingTourProps,
     ParsedSearchQueryProps,
-    SearchContextProps,
     isSearchContextSpecAvailable,
     getGlobalSearchContextFilter,
+    SearchContextInputProps,
 } from '../search'
 import { QueryState } from '../search/helpers'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
@@ -56,10 +57,9 @@ import { showDotComMarketing } from '../util/features'
 
 import { NavLinks } from './NavLinks'
 import { ExtensionAlertAnimationProps, UserNavItem } from './UserNavItem'
-import { VersionContextDropdown } from './VersionContextDropdown'
 
 interface Props
-    extends SettingsCascadeProps,
+    extends SettingsCascadeProps<Settings>,
         PlatformContextProps,
         ExtensionsControllerProps,
         KeyboardShortcutsProps,
@@ -73,10 +73,7 @@ interface Props
         CaseSensitivityProps,
         CopyQueryButtonProps,
         VersionContextProps,
-        Omit<
-            SearchContextProps,
-            'convertVersionContextToSearchContext' | 'isSearchContextSpecAvailable' | 'fetchSearchContext'
-        >,
+        SearchContextInputProps,
         CodeMonitoringProps,
         OnboardingTourProps {
     history: H.History
@@ -123,9 +120,6 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     authRequired,
     showSearchBox,
     navbarSearchQueryState,
-    versionContext,
-    setVersionContext,
-    availableVersionContexts,
     caseSensitive,
     patternType,
     onNavbarQueryChange,
@@ -226,7 +220,6 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
             onChange={onNavbarQueryChange}
             location={location}
             history={history}
-            versionContext={versionContext}
             isLightTheme={isLightTheme}
             patternType={patternType}
             caseSensitive={caseSensitive}
@@ -267,26 +260,37 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                                 <ActivationDropdown activation={props.activation} history={history} />
                             </NavItem>
                         )}
+                    </NavGroup>
+                    <NavActions>
                         {!props.authenticatedUser && (
                             <>
                                 {showDotComMarketing && (
-                                    <NavItem>
-                                        <NavLink to="/help">Docs</NavLink>
-                                    </NavItem>
+                                    <NavAction>
+                                        <Link
+                                            className="global-navbar__link font-weight-medium"
+                                            to="/help"
+                                            target="_blank"
+                                        >
+                                            Docs
+                                        </Link>
+                                    </NavAction>
                                 )}
 
-                                <NavItem>
-                                    <NavLink to="https://about.sourcegraph.com" external={true}>
+                                <NavAction>
+                                    <Link
+                                        className="global-navbar__link"
+                                        to="https://about.sourcegraph.com"
+                                        rel="noreferrer noopener"
+                                        target="_blank"
+                                    >
                                         About
-                                    </NavLink>
-                                </NavItem>
+                                    </Link>
+                                </NavAction>
                             </>
                         )}
-                    </NavGroup>
-                    <NavActions>
                         {props.authenticatedUser && (
                             <NavAction>
-                                <FeedbackPrompt history={history} routes={props.routes} />
+                                <FeedbackPrompt routes={props.routes} />
                             </NavAction>
                         )}
                         <NavAction>
@@ -317,17 +321,17 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                         {!props.authenticatedUser ? (
                             <>
                                 <NavAction>
-                                    <Link className="btn btn-sm btn-outline-secondary" to="/sign-in">
-                                        Log in
-                                    </Link>
-                                </NavAction>
-                                <NavAction>
-                                    <Link
-                                        className="btn btn-sm btn-outline-secondary global-navbar__sign-up"
-                                        to="/sign-up"
-                                    >
-                                        Sign up
-                                    </Link>
+                                    <div>
+                                        <Link className="btn btn-sm btn-outline-secondary mr-1" to="/sign-in">
+                                            Log in
+                                        </Link>
+                                        <Link
+                                            className="btn btn-sm btn-outline-secondary global-navbar__sign-up"
+                                            to="/sign-up"
+                                        >
+                                            Sign up
+                                        </Link>
+                                    </div>
                                 </NavAction>
                             </>
                         ) : (
@@ -344,13 +348,20 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                                             props.settingsCascade.final?.['alerts.codeHostIntegrationMessaging']) ||
                                         'browser-extension'
                                     }
+                                    showRedesignToggle={
+                                        !isErrorLike(props.settingsCascade.final) &&
+                                        Boolean(
+                                            props.settingsCascade.final?.experimentalFeatures
+                                                ?.designRefreshToggleEnabled
+                                        )
+                                    }
                                     keyboardShortcutForSwitchTheme={KEYBOARD_SHORTCUT_SWITCH_THEME}
                                 />
                             </NavAction>
                         )}
                     </NavActions>
                 </NavBar>
-                {showSearchBox && <div className="d-flex w-100 px-3 py-2 border-bottom">{searchNavBar}</div>}
+                {showSearchBox && <div className="d-flex w-100 flex-row px-3 py-2 border-bottom">{searchNavBar}</div>}
             </>
         )
     }
@@ -386,16 +397,6 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                         <div className="flex-1" />
                     ) : (
                         <div className="global-navbar__search-box-container d-none d-sm-flex flex-row">
-                            <VersionContextDropdown
-                                history={history}
-                                navbarSearchQuery={navbarSearchQueryState.query}
-                                caseSensitive={caseSensitive}
-                                patternType={patternType}
-                                versionContext={versionContext}
-                                setVersionContext={setVersionContext}
-                                availableVersionContexts={availableVersionContexts}
-                                selectedSearchContextSpec={props.selectedSearchContextSpec}
-                            />
                             {searchNavBar}
                         </div>
                     )}

@@ -111,18 +111,6 @@ type Mutation {
     """
     deleteExternalService(externalService: ID!): EmptyResponse!
     """
-    DEPRECATED: All repositories are accessible or deleted. To prevent a
-    repository from being accessed on Sourcegraph add it to the external
-    service exclude configuration. This mutation will be removed in 3.6.
-
-    Enables or disables a repository. A disabled repository is only accessible
-    to site admins and never appears in search results.
-
-    Only site admins may perform this mutation.
-    """
-    setRepositoryEnabled(repository: ID!, enabled: Boolean!): EmptyResponse
-        @deprecated(reason: "update external service exclude setting.")
-    """
     Tests the connection to a mirror repository's original source repository. This is an
     expensive and slow operation, so it should only be used for interactive diagnostics.
 
@@ -417,6 +405,10 @@ type Mutation {
         The randomly generated unique user ID stored in a browser cookie.
         """
         userCookieID: String!
+        """
+        The first sourcegraph URL visited by the user, stored in a browser cookie.
+        """
+        firstSourceURL: String
         """
         The URL when the event was logged.
         """
@@ -1203,6 +1195,14 @@ type Query {
         If namespaceFilterType is INSTANCE or not set, namespace should not be set.
         """
         namespace: ID
+        """
+        Sort field.
+        """
+        orderBy: SearchContextsOrderBy = SEARCH_CONTEXT_SPEC
+        """
+        Sort direction.
+        """
+        descending: Boolean = false
     ): SearchContextConnection!
     """
     (experimental) Determines whether the search context is within the set of search contexts available to the current user.
@@ -1268,6 +1268,11 @@ type Query {
     the configured code hosts are able to see.
     """
     affiliatedRepositories(user: ID!, codeHost: ID, query: String): CodeHostRepositoryConnection!
+
+    """
+    Returns true if any of the code hosts supplied are syncing now or within "seconds" from now.
+    """
+    codeHostSyncDue(ids: [ID!]!, seconds: Int!): Boolean!
 
     """
     Retrieve all registered out-of-band migrations.
@@ -1942,6 +1947,14 @@ type ExternalService implements Node {
     The timestamp of the next sync job. Null if not scheduled for a re-sync.
     """
     nextSyncAt: DateTime
+
+    """
+    Returns a list of scopes granted by the code host. It is based on the token used
+    when configuring the external service.
+    NOTE: Currently only GitHub is supported and the request consumes rate limit tokens
+    so it should be used sparingly.
+    """
+    grantedScopes: [String!]!
 }
 
 """
@@ -2401,6 +2414,14 @@ type SearchContext implements Node {
     """
     id: ID!
     """
+    The name of the search context.
+    """
+    name: String!
+    """
+    The owner (user or org) of the search context. If nil, search context is considered instance-level.
+    """
+    namespace: Namespace
+    """
     The description of the search context.
     """
     description: String!
@@ -2431,6 +2452,10 @@ type SearchContext implements Node {
     Date and time the search context was last updated.
     """
     updatedAt: DateTime!
+    """
+    If current viewer can manage (edit, delete) the search context.
+    """
+    viewerCanManage: Boolean!
 }
 
 """
@@ -2445,6 +2470,14 @@ type SearchContextRepositoryRevisions {
     The set of revisions to be searched.
     """
     revisions: [String!]!
+}
+
+"""
+SearchContextsOrderBy enumerates the ways a search contexts list can be ordered.
+"""
+enum SearchContextsOrderBy {
+    SEARCH_CONTEXT_SPEC
+    SEARCH_CONTEXT_UPDATED_AT
 }
 
 """

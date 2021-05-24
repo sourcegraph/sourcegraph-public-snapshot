@@ -28,6 +28,7 @@ var _ graphqlbackend.BulkOperationConnectionResolver = &bulkOperationConnectionR
 func (r *bulkOperationConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
 	count, err := r.store.CountBulkOperations(ctx, store.CountBulkOperationsOpts{
 		BatchChangeID: r.batchChangeID,
+		CreatedAfter:  r.opts.CreatedAfter,
 	})
 	if err != nil {
 		return 0, err

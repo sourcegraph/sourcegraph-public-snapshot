@@ -9,8 +9,10 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestGetIndexByID(t *testing.T) {
@@ -19,9 +21,10 @@ func TestGetIndexByID(t *testing.T) {
 	}
 	db := dbtesting.GetDB(t)
 	store := testStore(db)
+	ctx := context.Background()
 
 	// Index does not exist initially
-	if _, exists, err := store.GetIndexByID(context.Background(), 1); err != nil {
+	if _, exists, err := store.GetIndexByID(ctx, 1); err != nil {
 		t.Fatalf("unexpected error getting index: %s", err)
 	} else if exists {
 		t.Fatal("unexpected record")
@@ -59,13 +62,30 @@ func TestGetIndexByID(t *testing.T) {
 
 	insertIndexes(t, db, expected)
 
-	if index, exists, err := store.GetIndexByID(context.Background(), 1); err != nil {
+	if index, exists, err := store.GetIndexByID(ctx, 1); err != nil {
 		t.Fatalf("unexpected error getting index: %s", err)
 	} else if !exists {
 		t.Fatal("expected record to exist")
 	} else if diff := cmp.Diff(expected, index); diff != "" {
 		t.Errorf("unexpected index (-want +got):\n%s", diff)
 	}
+
+	t.Run("enforce repository permissions", func(t *testing.T) {
+		// Enable permissions user mapping forces checking repository permissions
+		// against permissions tables in the database, which should effectively block
+		// all access because permissions tables are empty.
+		before := globals.PermissionsUserMapping()
+		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
+		defer globals.SetPermissionsUserMapping(before)
+
+		_, exists, err := store.GetIndexByID(ctx, 1)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if exists {
+			t.Fatalf("exists: want false but got %v", exists)
+		}
+	})
 }
 
 func TestGetQueuedIndexRank(t *testing.T) {
@@ -126,6 +146,7 @@ func TestGetIndexes(t *testing.T) {
 	}
 	db := dbtesting.GetDB(t)
 	store := testStore(db)
+	ctx := context.Background()
 
 	t1 := time.Unix(1587396557, 0).UTC()
 	t2 := t1.Add(-time.Minute * 1)
@@ -183,7 +204,7 @@ func TestGetIndexes(t *testing.T) {
 			)
 
 			t.Run(name, func(t *testing.T) {
-				indexes, totalCount, err := store.GetIndexes(context.Background(), GetIndexesOptions{
+				indexes, totalCount, err := store.GetIndexes(ctx, GetIndexesOptions{
 					RepositoryID: testCase.repositoryID,
 					State:        testCase.state,
 					Term:         testCase.term,
@@ -208,6 +229,27 @@ func TestGetIndexes(t *testing.T) {
 			})
 		}
 	}
+
+	t.Run("enforce repository permissions", func(t *testing.T) {
+		// Enable permissions user mapping forces checking repository permissions
+		// against permissions tables in the database, which should effectively block
+		// all access because permissions tables are empty.
+		before := globals.PermissionsUserMapping()
+		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
+		defer globals.SetPermissionsUserMapping(before)
+
+		indexes, totalCount, err := store.GetIndexes(ctx,
+			GetIndexesOptions{
+				Limit: 1,
+			},
+		)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(indexes) > 0 || totalCount > 0 {
+			t.Fatalf("Want no index but got %d indexes with totalCount %d", len(indexes), totalCount)
+		}
+	})
 }
 
 func TestIsQueued(t *testing.T) {

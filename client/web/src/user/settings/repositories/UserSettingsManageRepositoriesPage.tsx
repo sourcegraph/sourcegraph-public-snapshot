@@ -12,6 +12,7 @@ import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/er
 import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
 import { PageSelector } from '@sourcegraph/wildcard'
 
+import { ALLOW_NAVIGATION, AwayPrompt } from '../../../components/AwayPrompt'
 import {
     queryExternalServices,
     setExternalServiceRepos,
@@ -35,7 +36,6 @@ import {
 import { eventLogger } from '../../../tracking/eventLogger'
 import { UserRepositoriesUpdateProps } from '../../../util'
 
-import { AwayPrompt, ALLOW_NAVIGATION } from './AwayPrompt'
 import { CheckboxRepositoryNode } from './RepositoryNode'
 
 interface authenticatedUser {
@@ -115,13 +115,15 @@ const isLoading = (status: initialFetchingReposState): boolean => {
 
 const displayWarning = (warning: string, hint?: JSX.Element): JSX.Element => (
     <div key={warning} className="alert alert-warning mt-3 mb-0" role="alert">
-        <AlertCircleIcon className="icon icon-inline" /> {warning}. {hint} {hint ? 'for more details' : null}
+        <AlertCircleIcon className="redesign-d-none icon icon-inline" /> {warning}. {hint}{' '}
+        {hint ? 'for more details' : null}
     </div>
 )
 
 const displayError = (error: ErrorLike, hint?: JSX.Element): JSX.Element => (
     <div key={error.message} className="alert alert-danger mt-3 mb-0" role="alert">
-        <AlertCircleIcon className="icon icon-inline" /> {error.message}. {hint} {hint ? 'for more details' : null}
+        <AlertCircleIcon className="redesign-d-none icon icon-inline" /> {error.message}. {hint}{' '}
+        {hint ? 'for more details' : null}
     </div>
 )
 
@@ -700,6 +702,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     const selectAll = (): void => {
         const newMap = new Map<string, Repo>()
         // if not all repos are selected, we should select all, otherwise empty the selection
+
         if (selectionState.repos.size !== filteredRepos.length) {
             for (const repo of filteredRepos) {
                 newMap.set(getRepoServiceAndName(repo), repo)

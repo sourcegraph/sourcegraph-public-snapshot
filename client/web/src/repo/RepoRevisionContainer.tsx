@@ -2,9 +2,9 @@ import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
-import React, { useMemo } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import { UncontrolledPopover } from 'reactstrap'
+import { Popover } from 'reactstrap'
 
 import {
     CloneInProgressError,
@@ -109,6 +109,46 @@ interface RepoRevisionContainerProps
     globbing: boolean
 }
 
+interface RepoRevisionContainerPopoverProps
+    extends Pick<RepoRevisionContainerProps, 'repo' | 'revision' | 'history' | 'location'> {
+    resolvedRevisionOrError: ResolvedRevision
+}
+
+const RepoRevisionContainerPopover: React.FunctionComponent<RepoRevisionContainerPopoverProps> = ({
+    repo,
+    resolvedRevisionOrError,
+    revision,
+    history,
+    location,
+}) => {
+    const [popoverOpen, setPopoverOpen] = useState(false)
+    const togglePopover = useCallback(() => setPopoverOpen(previous => !previous), [])
+
+    return (
+        <Popover
+            isOpen={popoverOpen}
+            toggle={togglePopover}
+            placement="bottom-start"
+            target="repo-revision-popover"
+            trigger="legacy"
+            hideArrow={true}
+            fade={false}
+            popperClassName="border-0"
+        >
+            <RevisionsPopover
+                repo={repo.id}
+                repoName={repo.name}
+                defaultBranch={resolvedRevisionOrError.defaultBranch}
+                currentRev={revision}
+                currentCommitID={resolvedRevisionOrError.commitID}
+                history={history}
+                location={location}
+                togglePopover={togglePopover}
+            />
+        </Popover>
+    )
+}
+
 /**
  * A container for a repository page that incorporates revisioned Git data. (For example,
  * blob and tree pages are revisioned, but the repository settings page is not.)
@@ -143,34 +183,17 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
                         >
                             <MenuDownIcon className="icon-inline" />
                         </button>
-                        <UncontrolledPopover
-                            placement="bottom-start"
-                            target="repo-revision-popover"
-                            trigger="legacy"
-                            hideArrow={true}
-                            popperClassName="border-0"
-                        >
-                            <RevisionsPopover
-                                repo={props.repo.id}
-                                repoName={props.repo.name}
-                                defaultBranch={props.resolvedRevisionOrError.defaultBranch}
-                                currentRev={props.revision}
-                                currentCommitID={props.resolvedRevisionOrError.commitID}
-                                history={props.history}
-                                location={props.location}
-                            />
-                        </UncontrolledPopover>
+                        <RepoRevisionContainerPopover
+                            repo={props.repo}
+                            resolvedRevisionOrError={props.resolvedRevisionOrError}
+                            revision={props.revision}
+                            history={props.history}
+                            location={props.location}
+                        />
                     </div>
                 ),
             }
-        }, [
-            props.revision,
-            props.resolvedRevisionOrError,
-            props.repo.id,
-            props.repo.name,
-            props.history,
-            props.location,
-        ])
+        }, [props.resolvedRevisionOrError, props.revision, props.repo, props.history, props.location])
     )
 
     if (!props.resolvedRevisionOrError) {
@@ -229,7 +252,6 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
     return (
         <div className="repo-revision-container">
             <Switch>
-                {/* eslint-disable react/jsx-no-bind */}
                 {props.routes.map(
                     ({ path, render, exact, condition = () => true }) =>
                         condition(context) && (
@@ -258,6 +280,7 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
                 {context => (
                     <GoToPermalinkAction
                         key="go-to-permalink"
+                        telemetryService={props.telemetryService}
                         revision={props.revision}
                         commitID={resolvedRevisionOrError.commitID}
                         location={props.location}

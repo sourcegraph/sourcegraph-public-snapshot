@@ -1,20 +1,22 @@
+import classnames from 'classnames'
 import React from 'react'
 
 import { Badge } from '../../components/Badge'
 
 /**
- * Shows a "WIP" badge for extensions.
+ * Shows an "EXPERIMENTAL" badge for work-in-progress extensions.
  */
-export const ExtensionStatusBadge: React.FunctionComponent<{ viewerCanAdminister: boolean }> = ({
+export const ExtensionStatusBadge: React.FunctionComponent<{ viewerCanAdminister: boolean; className?: string }> = ({
     viewerCanAdminister,
+    className,
 }) => (
     <Badge
-        status="wip"
+        status="experimental"
         tooltip={
             viewerCanAdminister
-                ? 'Remove "WIP" from the title when this extension is ready for use.'
+                ? 'Remove "WIP" from the manifest when this extension is ready for use.'
                 : 'Work in progress (not ready for use)'
         }
-        className="text-uppercase"
+        className={classnames('text-uppercase', className)}
     />
 )

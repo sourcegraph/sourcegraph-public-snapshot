@@ -298,6 +298,8 @@ function mockCommonGraphQLResponses(
                     originalInput: 'name: awesome-batch-change\ndescription: somesttring',
                     supersedingBatchSpec: null,
                 },
+                bulkOperations: { totalCount: 0 },
+                activeBulkOperations: { totalCount: 0, nodes: [] },
                 ...batchesOverrides,
             },
         }),
@@ -467,11 +469,11 @@ describe('Batches', () => {
                 await driver.page.waitForSelector('.test-file-diff-node')
 
                 // Switch to view burndown chart.
-                await driver.page.click('.test-batches-chart-tab')
+                await driver.page.click('[data-reach-tab-list] button:nth-child(2)')
                 await driver.page.waitForSelector('.test-batches-chart')
 
                 // Switch to view spec file.
-                await driver.page.click('.test-batches-spec-tab')
+                await driver.page.click('[data-reach-tab-list] button:nth-child(3)')
                 await driver.page.waitForSelector('.test-batches-spec')
 
                 // Go to close page via button.
@@ -569,6 +571,7 @@ describe('Batches', () => {
                                       },
                             supersedingBatchSpec: null,
                             viewerCanAdminister: true,
+                            originalInput: 'name: awesome-batch-change\ndescription: somestring',
                             applyPreview: {
                                 stats: {
                                     close: 10,
@@ -585,6 +588,7 @@ describe('Batches', () => {
                                     modified: 10,
                                     removed: 3,
                                 },
+                                totalCount: 10,
                             },
                             viewerBatchChangesCodeHosts: {
                                 totalCount: 0,

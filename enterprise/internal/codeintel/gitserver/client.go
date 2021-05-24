@@ -12,12 +12,12 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/pathexistence"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/pathexistence"
 )
 
 type Client struct {
@@ -262,6 +262,28 @@ func (c *Client) ListFiles(ctx context.Context, repositoryID int, commit string,
 	}
 
 	return matching, nil
+}
+
+// ListFiles returns a list of root-relative file paths matching the given pattern in a particular
+// commit of a repository.
+func (c *Client) ResolveRevision(ctx context.Context, repositoryID int, versionString string) (commitID api.CommitID, err error) {
+	ctx, endObservation := c.operations.resolveRevision.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+		log.String("versionString", versionString),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	repoName, err := c.repositoryIDToRepo(ctx, repositoryID)
+	if err != nil {
+		return "", err
+	}
+	commitID, err = git.ResolveRevision(ctx, repoName, versionString, git.ResolveRevisionOptions{})
+
+	if err != nil {
+		return "", errors.Wrap(err, "git.ResolveRevision")
+	}
+
+	return commitID, nil
 }
 
 // execGitCommand executes a git command for the given repository by identifier.

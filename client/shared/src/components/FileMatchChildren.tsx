@@ -9,6 +9,7 @@ import { SymbolIcon } from '../symbols/SymbolIcon'
 import { ThemeProps } from '../theme'
 import { isErrorLike } from '../util/errors'
 import { toPositionOrRangeHash, appendSubtreeQueryParameter } from '../util/url'
+import { useRedesignToggle } from '../util/useRedesignToggle'
 
 import { CodeExcerpt, FetchFileParameters } from './CodeExcerpt'
 import { CodeExcerptUnhighlighted } from './CodeExcerptUnhighlighted'
@@ -46,6 +47,8 @@ interface FileMatchProps extends SettingsCascadeProps, ThemeProps {
 const NO_SEARCH_HIGHLIGHTING = localStorage.getItem('noSearchHighlighting') !== null
 
 export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props => {
+    const [isRedesignEnabled] = useRedesignToggle()
+
     // The number of lines of context to show before and after each match.
     let context = 1
 
@@ -122,6 +125,13 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
 
     return (
         <div className="file-match-children">
+            {/* No symbols or line matches means that this is a path match */}
+            {isRedesignEnabled && (!result.symbols || result.symbols.length === 0) && grouped.length === 0 && (
+                <div className="file-match-children__item">
+                    <small>Path match</small>
+                </div>
+            )}
+
             {/* Symbols */}
             {(result.symbols || []).map((symbol: ISymbol) => (
                 <Link

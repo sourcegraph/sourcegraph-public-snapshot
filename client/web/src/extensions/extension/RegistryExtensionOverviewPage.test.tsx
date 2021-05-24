@@ -38,7 +38,6 @@ describe('RegistryExtensionOverviewPage', () => {
                                     },
                                 },
                             }}
-                            history={history}
                             isLightTheme={true}
                         />
                     </Router>
@@ -71,7 +70,6 @@ describe('RegistryExtensionOverviewPage', () => {
                                     },
                                 },
                             }}
-                            history={history}
                             isLightTheme={true}
                         />
                     </Router>
@@ -96,7 +94,6 @@ describe('RegistryExtensionOverviewPage', () => {
                                 categories: ['Programming languages', 'invalid', 'Other'],
                             },
                         }}
-                        history={createMemoryHistory()}
                         isLightTheme={true}
                     />
                 </Router>

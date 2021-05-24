@@ -1,0 +1,58 @@
+.search-box {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex: 1 1 auto;
+    min-width: 12rem;
+
+    &__background-container {
+        display: flex;
+        flex-grow: 1;
+        align-items: center;
+        border: 1px solid var(--input-border-color);
+        border-right-color: transparent;
+        border-left-color: transparent;
+        background-color: var(--input-bg);
+        height: 100%;
+
+        :global(.theme-redesign) & {
+            background-color: var(--color-bg-1);
+        }
+
+        &:first-child {
+            border-top-left-radius: 3px;
+            border-bottom-left-radius: 3px;
+            border-left-color: var(--input-border-color);
+        }
+    }
+
+    &__focus-container {
+        // stylelint-disable-next-line declaration-property-unit-whitelist
+        height: calc(100% + 2px); // add 2 pixels for border
+        display: flex;
+        align-items: center;
+        flex: 1 1 auto;
+        // stylelint-disable-next-line declaration-property-unit-whitelist
+        margin: -1px; // To compensate for the border
+        border: 1px solid transparent;
+        // Match padding from the regular query input.
+        padding-left: 0.75rem;
+
+        &:not(:first-child) {
+            padding-left: 0.5rem; // smaller padding if the search context selector is visible
+            margin-left: 0.0625rem;
+            border-top-left-radius: 0.25rem;
+            border-bottom-left-radius: 0.25rem;
+        }
+
+        &:focus-within {
+            border: 1px solid var(--input-focus-border-color);
+            box-shadow: 0 0 0 2px rgba(28, 126, 214, 0.25);
+        }
+    }
+
+    &__toggle-container {
+        padding-right: 0.5rem;
+        padding-left: 0.35rem;
+    }
+}

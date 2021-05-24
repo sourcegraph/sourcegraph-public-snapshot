@@ -7,12 +7,17 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { AuthenticatedUser } from '../auth'
-import { FilteredConnection, FilteredConnectionFilter, FilterValue } from '../components/FilteredConnection'
+import {
+    FilteredConnection,
+    FilteredConnectionFilter,
+    FilteredConnectionFilterValue,
+} from '../components/FilteredConnection'
 import {
     ListSearchContextsResult,
     ListSearchContextsVariables,
     SearchContextFields,
     SearchContextsNamespaceFilterType,
+    SearchContextsOrderBy,
 } from '../graphql-operations'
 import { SearchContextProps } from '../search'
 
@@ -32,9 +37,11 @@ export const SearchContextsListTab: React.FunctionComponent<SearchContextsListTa
 }) => {
     const queryConnection = useCallback(
         (args: Partial<ListSearchContextsVariables>) => {
-            const { namespace, namespaceFilterType } = args as {
+            const { namespace, namespaceFilterType, orderBy, descending } = args as {
                 namespace: string | undefined
                 namespaceFilterType: SearchContextsNamespaceFilterType | undefined
+                orderBy: SearchContextsOrderBy
+                descending: boolean
             }
             return fetchSearchContexts({
                 first: args.first ?? 10,
@@ -42,6 +49,8 @@ export const SearchContextsListTab: React.FunctionComponent<SearchContextsListTa
                 after: args.after ?? undefined,
                 namespace,
                 namespaceFilterType,
+                orderBy,
+                descending,
             })
         },
         [fetchSearchContexts]
@@ -49,7 +58,7 @@ export const SearchContextsListTab: React.FunctionComponent<SearchContextsListTa
 
     const autoDefinedSearchContexts = useObservable(fetchAutoDefinedSearchContexts.pipe(catchError(() => [])))
 
-    const ownerNamespaceFilterValues: FilterValue[] = authenticatedUser
+    const ownerNamespaceFilterValues: FilteredConnectionFilterValue[] = authenticatedUser
         ? [
               {
                   value: authenticatedUser.id,
@@ -80,13 +89,53 @@ export const SearchContextsListTab: React.FunctionComponent<SearchContextsListTa
                     args: {},
                 },
                 {
-                    value: 'no-owner',
-                    label: 'No owner',
+                    value: 'global-owner',
+                    label: 'Global',
                     args: {
                         namespaceFilterType: SearchContextsNamespaceFilterType.INSTANCE,
                     },
                 },
                 ...ownerNamespaceFilterValues,
+            ],
+        },
+        {
+            label: 'Order by',
+            type: 'select',
+            id: 'order',
+            tooltip: 'Order search contexts',
+            values: [
+                {
+                    value: 'spec-asc',
+                    label: 'Spec (ascending)',
+                    args: {
+                        orderBy: SearchContextsOrderBy.SEARCH_CONTEXT_SPEC,
+                        descending: false,
+                    },
+                },
+                {
+                    value: 'spec-desc',
+                    label: 'Spec (descending)',
+                    args: {
+                        orderBy: SearchContextsOrderBy.SEARCH_CONTEXT_SPEC,
+                        descending: true,
+                    },
+                },
+                {
+                    value: 'updated-at-asc',
+                    label: 'Last update (ascending)',
+                    args: {
+                        orderBy: SearchContextsOrderBy.SEARCH_CONTEXT_UPDATED_AT,
+                        descending: false,
+                    },
+                },
+                {
+                    value: 'updated-at-desc',
+                    label: 'Last update (descending)',
+                    args: {
+                        orderBy: SearchContextsOrderBy.SEARCH_CONTEXT_UPDATED_AT,
+                        descending: true,
+                    },
+                },
             ],
         },
     ]

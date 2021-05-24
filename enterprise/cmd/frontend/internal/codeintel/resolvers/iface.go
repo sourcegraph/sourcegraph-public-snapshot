@@ -4,12 +4,13 @@ import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/config"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
-	"github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
 )
 
 type GitserverClient interface {
@@ -49,9 +50,14 @@ type LSIFStore interface {
 	MonikersByPosition(ctx context.Context, bundleID int, path string, line, character int) ([][]semantic.MonikerData, error)
 	BulkMonikerResults(ctx context.Context, tableName string, ids []int, args []semantic.MonikerData, limit, offset int) (_ []lsifstore.Location, _ int, err error)
 	PackageInformation(ctx context.Context, bundleID int, path string, packageInformationID string) (semantic.PackageInformationData, bool, error)
+	DocumentationPage(ctx context.Context, bundleID int, pathID string) (*semantic.DocumentationPageData, error)
 }
 
 type IndexEnqueuer interface {
-	ForceQueueIndex(ctx context.Context, repositoryID int) error
+	ForceQueueIndexesForRepository(ctx context.Context, repositoryID int) error
 	InferIndexConfiguration(ctx context.Context, repositoryID int) (*config.IndexConfiguration, error)
 }
+
+type RepoUpdaterClient = enqueuer.RepoUpdaterClient
+type EnqueuerDBStore = enqueuer.DBStore
+type EnqueuerGitserverClient = enqueuer.GitserverClient

@@ -18,6 +18,7 @@ type operations struct {
 	head              *observation.Operation
 	listFiles         *observation.Operation
 	rawContents       *observation.Operation
+	resolveRevision   *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -54,5 +55,6 @@ func newOperations(observationContext *observation.Context) *operations {
 		head:              op("Head"),
 		listFiles:         op("ListFiles"),
 		rawContents:       op("RawContents"),
+		resolveRevision:   op("ResolveRevision"),
 	}
 }

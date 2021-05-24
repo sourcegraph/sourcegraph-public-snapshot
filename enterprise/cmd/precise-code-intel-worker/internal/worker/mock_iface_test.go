@@ -7,8 +7,9 @@ import (
 	"sync"
 	"time"
 
-	semantic "github.com/sourcegraph/sourcegraph/enterprise/lib/codeintel/semantic"
+	api "github.com/sourcegraph/sourcegraph/internal/api"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	semantic "github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
 )
 
 // MockDBStore is a mock implementation of the DBStore interface (from the
@@ -1222,6 +1223,9 @@ type MockGitserverClient struct {
 	// DirectoryChildrenFunc is an instance of a mock function object
 	// controlling the behavior of the method DirectoryChildren.
 	DirectoryChildrenFunc *GitserverClientDirectoryChildrenFunc
+	// ResolveRevisionFunc is an instance of a mock function object
+	// controlling the behavior of the method ResolveRevision.
+	ResolveRevisionFunc *GitserverClientResolveRevisionFunc
 }
 
 // NewMockGitserverClient creates a new mock of the GitserverClient
@@ -1239,6 +1243,11 @@ func NewMockGitserverClient() *MockGitserverClient {
 				return nil, nil
 			},
 		},
+		ResolveRevisionFunc: &GitserverClientResolveRevisionFunc{
+			defaultHook: func(context.Context, int, string) (api.CommitID, error) {
+				return "", nil
+			},
+		},
 	}
 }
 
@@ -1252,6 +1261,9 @@ func NewMockGitserverClientFrom(i GitserverClient) *MockGitserverClient {
 		},
 		DirectoryChildrenFunc: &GitserverClientDirectoryChildrenFunc{
 			defaultHook: i.DirectoryChildren,
+		},
+		ResolveRevisionFunc: &GitserverClientResolveRevisionFunc{
+			defaultHook: i.ResolveRevision,
 		},
 	}
 }
@@ -1486,6 +1498,262 @@ func (c GitserverClientDirectoryChildrenFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
+// GitserverClientResolveRevisionFunc describes the behavior when the
+// ResolveRevision method of the parent MockGitserverClient instance is
+// invoked.
+type GitserverClientResolveRevisionFunc struct {
+	defaultHook func(context.Context, int, string) (api.CommitID, error)
+	hooks       []func(context.Context, int, string) (api.CommitID, error)
+	history     []GitserverClientResolveRevisionFuncCall
+	mutex       sync.Mutex
+}
+
+// ResolveRevision delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockGitserverClient) ResolveRevision(v0 context.Context, v1 int, v2 string) (api.CommitID, error) {
+	r0, r1 := m.ResolveRevisionFunc.nextHook()(v0, v1, v2)
+	m.ResolveRevisionFunc.appendCall(GitserverClientResolveRevisionFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ResolveRevision
+// method of the parent MockGitserverClient instance is invoked and the hook
+// queue is empty.
+func (f *GitserverClientResolveRevisionFunc) SetDefaultHook(hook func(context.Context, int, string) (api.CommitID, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ResolveRevision method of the parent MockGitserverClient instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *GitserverClientResolveRevisionFunc) PushHook(hook func(context.Context, int, string) (api.CommitID, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *GitserverClientResolveRevisionFunc) SetDefaultReturn(r0 api.CommitID, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string) (api.CommitID, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *GitserverClientResolveRevisionFunc) PushReturn(r0 api.CommitID, r1 error) {
+	f.PushHook(func(context.Context, int, string) (api.CommitID, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitserverClientResolveRevisionFunc) nextHook() func(context.Context, int, string) (api.CommitID, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverClientResolveRevisionFunc) appendCall(r0 GitserverClientResolveRevisionFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverClientResolveRevisionFuncCall
+// objects describing the invocations of this function.
+func (f *GitserverClientResolveRevisionFunc) History() []GitserverClientResolveRevisionFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverClientResolveRevisionFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverClientResolveRevisionFuncCall is an object that describes an
+// invocation of method ResolveRevision on an instance of
+// MockGitserverClient.
+type GitserverClientResolveRevisionFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 api.CommitID
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverClientResolveRevisionFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverClientResolveRevisionFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// MockIndexEnqueuer is a mock implementation of the IndexEnqueuer interface
+// (from the package
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/worker)
+// used for unit testing.
+type MockIndexEnqueuer struct {
+	// QueueIndexesForPackageFunc is an instance of a mock function object
+	// controlling the behavior of the method QueueIndexesForPackage.
+	QueueIndexesForPackageFunc *IndexEnqueuerQueueIndexesForPackageFunc
+}
+
+// NewMockIndexEnqueuer creates a new mock of the IndexEnqueuer interface.
+// All methods return zero values for all results, unless overwritten.
+func NewMockIndexEnqueuer() *MockIndexEnqueuer {
+	return &MockIndexEnqueuer{
+		QueueIndexesForPackageFunc: &IndexEnqueuerQueueIndexesForPackageFunc{
+			defaultHook: func(context.Context, semantic.Package) error {
+				return nil
+			},
+		},
+	}
+}
+
+// NewMockIndexEnqueuerFrom creates a new mock of the MockIndexEnqueuer
+// interface. All methods delegate to the given implementation, unless
+// overwritten.
+func NewMockIndexEnqueuerFrom(i IndexEnqueuer) *MockIndexEnqueuer {
+	return &MockIndexEnqueuer{
+		QueueIndexesForPackageFunc: &IndexEnqueuerQueueIndexesForPackageFunc{
+			defaultHook: i.QueueIndexesForPackage,
+		},
+	}
+}
+
+// IndexEnqueuerQueueIndexesForPackageFunc describes the behavior when the
+// QueueIndexesForPackage method of the parent MockIndexEnqueuer instance is
+// invoked.
+type IndexEnqueuerQueueIndexesForPackageFunc struct {
+	defaultHook func(context.Context, semantic.Package) error
+	hooks       []func(context.Context, semantic.Package) error
+	history     []IndexEnqueuerQueueIndexesForPackageFuncCall
+	mutex       sync.Mutex
+}
+
+// QueueIndexesForPackage delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockIndexEnqueuer) QueueIndexesForPackage(v0 context.Context, v1 semantic.Package) error {
+	r0 := m.QueueIndexesForPackageFunc.nextHook()(v0, v1)
+	m.QueueIndexesForPackageFunc.appendCall(IndexEnqueuerQueueIndexesForPackageFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// QueueIndexesForPackage method of the parent MockIndexEnqueuer instance is
+// invoked and the hook queue is empty.
+func (f *IndexEnqueuerQueueIndexesForPackageFunc) SetDefaultHook(hook func(context.Context, semantic.Package) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// QueueIndexesForPackage method of the parent MockIndexEnqueuer instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *IndexEnqueuerQueueIndexesForPackageFunc) PushHook(hook func(context.Context, semantic.Package) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *IndexEnqueuerQueueIndexesForPackageFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, semantic.Package) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *IndexEnqueuerQueueIndexesForPackageFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, semantic.Package) error {
+		return r0
+	})
+}
+
+func (f *IndexEnqueuerQueueIndexesForPackageFunc) nextHook() func(context.Context, semantic.Package) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *IndexEnqueuerQueueIndexesForPackageFunc) appendCall(r0 IndexEnqueuerQueueIndexesForPackageFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of IndexEnqueuerQueueIndexesForPackageFuncCall
+// objects describing the invocations of this function.
+func (f *IndexEnqueuerQueueIndexesForPackageFunc) History() []IndexEnqueuerQueueIndexesForPackageFuncCall {
+	f.mutex.Lock()
+	history := make([]IndexEnqueuerQueueIndexesForPackageFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// IndexEnqueuerQueueIndexesForPackageFuncCall is an object that describes
+// an invocation of method QueueIndexesForPackage on an instance of
+// MockIndexEnqueuer.
+type IndexEnqueuerQueueIndexesForPackageFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 semantic.Package
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c IndexEnqueuerQueueIndexesForPackageFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c IndexEnqueuerQueueIndexesForPackageFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
 // MockLSIFStore is a mock implementation of the LSIFStore interface (from
 // the package
 // github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/worker)
@@ -1500,6 +1768,9 @@ type MockLSIFStore struct {
 	// WriteDefinitionsFunc is an instance of a mock function object
 	// controlling the behavior of the method WriteDefinitions.
 	WriteDefinitionsFunc *LSIFStoreWriteDefinitionsFunc
+	// WriteDocumentationPagesFunc is an instance of a mock function object
+	// controlling the behavior of the method WriteDocumentationPages.
+	WriteDocumentationPagesFunc *LSIFStoreWriteDocumentationPagesFunc
 	// WriteDocumentsFunc is an instance of a mock function object
 	// controlling the behavior of the method WriteDocuments.
 	WriteDocumentsFunc *LSIFStoreWriteDocumentsFunc
@@ -1530,6 +1801,11 @@ func NewMockLSIFStore() *MockLSIFStore {
 		},
 		WriteDefinitionsFunc: &LSIFStoreWriteDefinitionsFunc{
 			defaultHook: func(context.Context, int, chan semantic.MonikerLocations) error {
+				return nil
+			},
+		},
+		WriteDocumentationPagesFunc: &LSIFStoreWriteDocumentationPagesFunc{
+			defaultHook: func(context.Context, int, chan *semantic.DocumentationPageData) error {
 				return nil
 			},
 		},
@@ -1568,6 +1844,9 @@ func NewMockLSIFStoreFrom(i LSIFStore) *MockLSIFStore {
 		},
 		WriteDefinitionsFunc: &LSIFStoreWriteDefinitionsFunc{
 			defaultHook: i.WriteDefinitions,
+		},
+		WriteDocumentationPagesFunc: &LSIFStoreWriteDocumentationPagesFunc{
+			defaultHook: i.WriteDocumentationPages,
 		},
 		WriteDocumentsFunc: &LSIFStoreWriteDocumentsFunc{
 			defaultHook: i.WriteDocuments,
@@ -1897,6 +2176,118 @@ func (c LSIFStoreWriteDefinitionsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c LSIFStoreWriteDefinitionsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// LSIFStoreWriteDocumentationPagesFunc describes the behavior when the
+// WriteDocumentationPages method of the parent MockLSIFStore instance is
+// invoked.
+type LSIFStoreWriteDocumentationPagesFunc struct {
+	defaultHook func(context.Context, int, chan *semantic.DocumentationPageData) error
+	hooks       []func(context.Context, int, chan *semantic.DocumentationPageData) error
+	history     []LSIFStoreWriteDocumentationPagesFuncCall
+	mutex       sync.Mutex
+}
+
+// WriteDocumentationPages delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockLSIFStore) WriteDocumentationPages(v0 context.Context, v1 int, v2 chan *semantic.DocumentationPageData) error {
+	r0 := m.WriteDocumentationPagesFunc.nextHook()(v0, v1, v2)
+	m.WriteDocumentationPagesFunc.appendCall(LSIFStoreWriteDocumentationPagesFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// WriteDocumentationPages method of the parent MockLSIFStore instance is
+// invoked and the hook queue is empty.
+func (f *LSIFStoreWriteDocumentationPagesFunc) SetDefaultHook(hook func(context.Context, int, chan *semantic.DocumentationPageData) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// WriteDocumentationPages method of the parent MockLSIFStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *LSIFStoreWriteDocumentationPagesFunc) PushHook(hook func(context.Context, int, chan *semantic.DocumentationPageData) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *LSIFStoreWriteDocumentationPagesFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int, chan *semantic.DocumentationPageData) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *LSIFStoreWriteDocumentationPagesFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int, chan *semantic.DocumentationPageData) error {
+		return r0
+	})
+}
+
+func (f *LSIFStoreWriteDocumentationPagesFunc) nextHook() func(context.Context, int, chan *semantic.DocumentationPageData) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *LSIFStoreWriteDocumentationPagesFunc) appendCall(r0 LSIFStoreWriteDocumentationPagesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of LSIFStoreWriteDocumentationPagesFuncCall
+// objects describing the invocations of this function.
+func (f *LSIFStoreWriteDocumentationPagesFunc) History() []LSIFStoreWriteDocumentationPagesFuncCall {
+	f.mutex.Lock()
+	history := make([]LSIFStoreWriteDocumentationPagesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// LSIFStoreWriteDocumentationPagesFuncCall is an object that describes an
+// invocation of method WriteDocumentationPages on an instance of
+// MockLSIFStore.
+type LSIFStoreWriteDocumentationPagesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 chan *semantic.DocumentationPageData
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c LSIFStoreWriteDocumentationPagesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c LSIFStoreWriteDocumentationPagesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

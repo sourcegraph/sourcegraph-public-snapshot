@@ -1,146 +1,115 @@
 import classnames from 'classnames'
-import React from 'react'
-import { noop } from 'rxjs'
-
-import { Settings } from '@sourcegraph/shared/src/settings/settings'
+import React, { FormEventHandler, RefObject } from 'react'
 
 import { ErrorAlert } from '../../../../../../components/alerts'
 import { LoaderButton } from '../../../../../../components/LoaderButton'
 import { FormGroup } from '../../../../../components/form/form-group/FormGroup'
 import { FormInput } from '../../../../../components/form/form-input/FormInput'
 import { FormRadioInput } from '../../../../../components/form/form-radio-input/FormRadioInput'
-import { useField, Validator } from '../../../../../components/form/hooks/useField'
-import { FORM_ERROR, SubmissionErrors, useForm } from '../../../../../components/form/hooks/useForm'
-import { useTitleValidator } from '../../../../../components/form/hooks/useTitleValidator'
-import { createRequiredValidator } from '../../../../../components/form/validators'
-import { InsightTypeSuffix } from '../../../../../core/types'
-import { DataSeries } from '../../types'
+import { useFieldAPI } from '../../../../../components/form/hooks/useField'
+import { FORM_ERROR, SubmissionErrors } from '../../../../../components/form/hooks/useForm'
+import {
+    getVisibilityValue,
+    Organization,
+    VisibilityPicker,
+} from '../../../../../components/visibility-picker/VisibilityPicker'
+import { CreateInsightFormFields, EditableDataSeries } from '../../types'
 import { FormSeries } from '../form-series/FormSeries'
 
 import styles from './SearchInsightCreationForm.module.scss'
 
-const repositoriesFieldValidator = createRequiredValidator('Repositories is a required field.')
-const requiredStepValueField = createRequiredValidator('Please specify a step between points.')
-/**
- * Custom validator for chart series. Since series has complex type
- * we can't validate this with standard validators.
- * */
-const seriesRequired: Validator<DataSeries[]> = series =>
-    series && series.length > 0 ? undefined : 'Series is empty. You must have at least one series for code insight.'
+interface CreationSearchInsightFormProps {
+    /** This component might be used in edit or creation insight case. */
+    mode?: 'creation' | 'edit'
 
-const INITIAL_VALUES: Partial<CreateInsightFormFields> = {
-    visibility: 'personal',
-    series: [],
-    step: 'months',
-    stepValue: '2',
-    title: '',
-    repositories: '',
-}
-
-/** Public API of code insight creation form. */
-export interface CreationSearchInsightFormProps {
-    /** Final settings cascade. Used for title field validation. */
-    settings?: Settings | null
-    /** Custom class name for root form element. */
+    innerRef: RefObject<any>
+    handleSubmit: FormEventHandler
+    submitErrors: SubmissionErrors
+    submitting: boolean
+    submitted: boolean
     className?: string
-    /** Submit handler for form element. */
-    onSubmit: (values: CreateInsightFormFields) => SubmissionErrors | Promise<SubmissionErrors> | void
-    onCancel?: () => void
+
+    title: useFieldAPI<CreateInsightFormFields['title']>
+    repositories: useFieldAPI<CreateInsightFormFields['repositories']>
+
+    visibility: useFieldAPI<CreateInsightFormFields['visibility']>
+    organizations: Organization[]
+
+    series: useFieldAPI<CreateInsightFormFields['series']>
+    step: useFieldAPI<CreateInsightFormFields['step']>
+    stepValue: useFieldAPI<CreateInsightFormFields['stepValue']>
+
+    onCancel: () => void
+
+    /**
+     * Handler to listen latest value form particular series edit form
+     * Used to get information for live preview chart.
+     * */
+    onSeriesLiveChange: (liveSeries: EditableDataSeries, isValid: boolean, index: number) => void
+
+    /**
+     * Handlers for CRUD operation over series. Add, delete, update and cancel
+     * series edit form.
+     * */
+    onEditSeriesRequest: (openedCardIndex: number) => void
+    onEditSeriesCommit: (seriesIndex: number, editedSeries: EditableDataSeries) => void
+    onEditSeriesCancel: (closedCardIndex: number) => void
+    onSeriesRemove: (removedSeriesIndex: number) => void
 }
 
-/** Creation form fields. */
-export interface CreateInsightFormFields {
-    /** Code Insight series setting (name of line, line query, color) */
-    series: DataSeries[]
-    /** Title of code insight*/
-    title: string
-    /** Repositories which to be used to get the info for code insights */
-    repositories: string
-    /** Visibility setting which responsible for where insight will appear. */
-    visibility: 'personal' | 'organization'
-    /** Setting for set chart step - how often do we collect data. */
-    step: 'hours' | 'days' | 'weeks' | 'months' | 'years'
-    /** Value for insight step setting */
-    stepValue: string
-}
-
-/** Displays creation code insight form (title, visibility, series, etc.) */
+/**
+ * Displays creation code insight form (title, visibility, series, etc.)
+ * UI layer only, all controlled data should be managed by consumer of this component.
+ * */
 export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchInsightFormProps> = props => {
-    const { settings, className, onSubmit, onCancel = noop } = props
+    const {
+        mode,
+        innerRef,
+        handleSubmit,
+        submitErrors,
+        submitting,
+        submitted,
+        title,
+        repositories,
+        visibility,
+        organizations,
+        series,
+        stepValue,
+        step,
+        className,
+        onCancel,
+        onSeriesLiveChange,
+        onEditSeriesRequest,
+        onEditSeriesCommit,
+        onEditSeriesCancel,
+        onSeriesRemove,
+    } = props
 
-    const { formAPI, ref, handleSubmit } = useForm<CreateInsightFormFields>({
-        initialValues: INITIAL_VALUES,
-        onSubmit,
-    })
-
-    // We can't have two or more insights with the same name, since we rely on name as on id of insights.
-    const titleValidator = useTitleValidator({ settings, insightType: InsightTypeSuffix.search })
-
-    const title = useField('title', formAPI, titleValidator)
-    const repositories = useField('repositories', formAPI, repositoriesFieldValidator)
-    const visibility = useField('visibility', formAPI)
-
-    const series = useField('series', formAPI, seriesRequired)
-    const step = useField('step', formAPI)
-    const stepValue = useField('stepValue', formAPI, requiredStepValueField)
+    const isEditMode = mode === 'edit'
 
     return (
         // eslint-disable-next-line react/forbid-elements
         <form
             noValidate={true}
-            ref={ref}
+            ref={innerRef}
             onSubmit={handleSubmit}
             className={classnames(className, 'd-flex flex-column')}
         >
-            <FormInput
-                title="Title"
-                autoFocus={true}
-                required={true}
-                description="Shown as the title for your insight"
-                placeholder="ex. Migration to React function components"
-                valid={title.meta.touched && title.meta.validState === 'VALID'}
-                error={title.meta.touched && title.meta.error}
-                {...title.input}
-                className="mb-0"
-            />
-
-            <FormInput
-                title="Repositories"
-                required={true}
-                description="Create a list of repositories to run your search over. Separate them with commas."
-                placeholder="Add or search for repositories"
-                valid={repositories.meta.touched && repositories.meta.validState === 'VALID'}
-                error={repositories.meta.touched && repositories.meta.error}
-                {...repositories.input}
-                className="mb-0 mt-4"
-            />
-
             <FormGroup
-                name="visibility"
-                title="Visibility"
-                description="This insight will be visible only on your personal dashboard. It will not be show to other
-                            users in your organization."
-                className="mb-0 mt-4"
-                contentClassName="d-flex flex-wrap mb-n2"
+                name="insight repositories"
+                title="Repositories"
+                subtitle="Create a list of repositories to run your search over"
             >
-                <FormRadioInput
-                    name="visibility"
-                    value="personal"
-                    title="Personal"
-                    description="only you"
-                    checked={visibility.input.value === 'personal'}
-                    className="mr-3"
-                    onChange={visibility.input.onChange}
-                />
-
-                <FormRadioInput
-                    name="visibility"
-                    value="organization"
-                    title="Organization"
-                    description="all users in your organization"
-                    checked={visibility.input.value === 'organization'}
-                    onChange={visibility.input.onChange}
-                    className="mr-3"
+                <FormInput
+                    autoFocus={true}
+                    required={true}
+                    description="Separate repositories with comas"
+                    placeholder="Example: github.com/sourcegraph/sourcegraph"
+                    loading={repositories.meta.validState === 'CHECKING'}
+                    valid={repositories.meta.touched && repositories.meta.validState === 'VALID'}
+                    error={repositories.meta.touched && repositories.meta.error}
+                    {...repositories.input}
+                    className="mb-0 d-flex flex-column"
                 />
             </FormGroup>
 
@@ -152,85 +121,113 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                 subtitle="Add any number of data series to your chart"
                 error={series.meta.touched && series.meta.error}
                 innerRef={series.input.ref}
-                className="mb-0"
             >
-                <FormSeries series={series.input.value} onChange={series.input.onChange} />
+                <FormSeries
+                    series={series.input.value}
+                    showValidationErrorsOnMount={submitted}
+                    onLiveChange={onSeriesLiveChange}
+                    onEditSeriesRequest={onEditSeriesRequest}
+                    onEditSeriesCommit={onEditSeriesCommit}
+                    onEditSeriesCancel={onEditSeriesCancel}
+                    onSeriesRemove={onSeriesRemove}
+                />
             </FormGroup>
 
             <hr className={styles.creationInsightFormSeparator} />
 
-            <FormGroup
-                name="insight step group"
-                title="Step between data points"
-                description="The distance between two data points on the chart"
-                error={stepValue.meta.touched && stepValue.meta.error}
-                className="mb-0"
-                contentClassName="d-flex flex-wrap mb-n2"
-            >
+            <FormGroup name="chart settings group" title="Chart settings">
                 <FormInput
-                    placeholder="ex. 2"
+                    title="Title"
                     required={true}
-                    type="number"
-                    min={1}
-                    {...stepValue.input}
-                    valid={stepValue.meta.touched && stepValue.meta.validState === 'VALID'}
-                    errorInputState={stepValue.meta.touched && stepValue.meta.validState === 'INVALID'}
-                    className={classnames(styles.creationInsightFormStepInput)}
+                    description="Shown as the title for your insight"
+                    placeholder="Example: Migration to React function components"
+                    valid={title.meta.touched && title.meta.validState === 'VALID'}
+                    error={title.meta.touched && title.meta.error}
+                    {...title.input}
+                    className="d-flex flex-column"
                 />
 
-                <FormRadioInput
-                    title="Hours"
-                    name="step"
-                    value="hours"
-                    checked={step.input.value === 'hours'}
-                    onChange={step.input.onChange}
-                    className="mr-3"
+                <VisibilityPicker
+                    organizations={organizations}
+                    value={visibility.input.value}
+                    labelClassName={styles.creationInsightFormGroupLabel}
+                    onChange={event => visibility.input.onChange(getVisibilityValue(event))}
                 />
-                <FormRadioInput
-                    title="Days"
-                    name="step"
-                    value="days"
-                    checked={step.input.value === 'days'}
-                    onChange={step.input.onChange}
-                    className="mr-3"
-                />
-                <FormRadioInput
-                    title="Weeks"
-                    name="step"
-                    value="weeks"
-                    checked={step.input.value === 'weeks'}
-                    onChange={step.input.onChange}
-                    className="mr-3"
-                />
-                <FormRadioInput
-                    title="Months"
-                    name="step"
-                    value="months"
-                    checked={step.input.value === 'months'}
-                    onChange={step.input.onChange}
-                    className="mr-3"
-                />
-                <FormRadioInput
-                    title="Years"
-                    name="step"
-                    value="years"
-                    checked={step.input.value === 'years'}
-                    onChange={step.input.onChange}
-                    className="mr-3"
-                />
+
+                <FormGroup
+                    name="insight step group"
+                    title="Granularity: distance between data points"
+                    description="The prototype supports 7 datapoints, so your total x-axis timeframe is 6 times the distance between each point."
+                    error={stepValue.meta.touched && stepValue.meta.error}
+                    className="mt-4"
+                    labelClassName={styles.creationInsightFormGroupLabel}
+                    contentClassName="d-flex flex-wrap mb-n2"
+                >
+                    <FormInput
+                        placeholder="ex. 2"
+                        required={true}
+                        type="number"
+                        min={1}
+                        {...stepValue.input}
+                        valid={stepValue.meta.touched && stepValue.meta.validState === 'VALID'}
+                        errorInputState={stepValue.meta.touched && stepValue.meta.validState === 'INVALID'}
+                        className={classnames(styles.creationInsightFormStepInput)}
+                    />
+
+                    <FormRadioInput
+                        title="Hours"
+                        name="step"
+                        value="hours"
+                        checked={step.input.value === 'hours'}
+                        onChange={step.input.onChange}
+                        className="mr-3"
+                    />
+                    <FormRadioInput
+                        title="Days"
+                        name="step"
+                        value="days"
+                        checked={step.input.value === 'days'}
+                        onChange={step.input.onChange}
+                        className="mr-3"
+                    />
+                    <FormRadioInput
+                        title="Weeks"
+                        name="step"
+                        value="weeks"
+                        checked={step.input.value === 'weeks'}
+                        onChange={step.input.onChange}
+                        className="mr-3"
+                    />
+                    <FormRadioInput
+                        title="Months"
+                        name="step"
+                        value="months"
+                        checked={step.input.value === 'months'}
+                        onChange={step.input.onChange}
+                        className="mr-3"
+                    />
+                    <FormRadioInput
+                        title="Years"
+                        name="step"
+                        value="years"
+                        checked={step.input.value === 'years'}
+                        onChange={step.input.onChange}
+                        className="mr-3"
+                    />
+                </FormGroup>
             </FormGroup>
 
             <hr className={styles.creationInsightFormSeparator} />
 
             <div>
-                {formAPI.submitErrors?.[FORM_ERROR] && <ErrorAlert error={formAPI.submitErrors[FORM_ERROR]} />}
+                {submitErrors?.[FORM_ERROR] && <ErrorAlert error={submitErrors[FORM_ERROR]} />}
 
                 <LoaderButton
                     alwaysShowLabel={true}
-                    loading={formAPI.submitting}
-                    label={formAPI.submitting ? 'Submitting' : 'Create code insight'}
+                    loading={submitting}
+                    label={submitting ? 'Submitting' : isEditMode ? 'Edit insight' : 'Create code insight'}
                     type="submit"
-                    disabled={formAPI.submitting}
+                    disabled={submitting}
                     className="btn btn-primary mr-2"
                 />
 
