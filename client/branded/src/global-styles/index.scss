@@ -61,6 +61,7 @@ $input-btn-focus-width: 2px;
 // should be clearly visible.
 $btn-focus-box-shadow: var(--focus-box-shadow);
 $btn-link-disabled-color: var(--btn-link-disabled-color);
+$btn-padding-x: var(--btn-padding-x);
 
 // Forms don't manipulate the colors at compile time,
 // which is why we can use CSS variables for theming here

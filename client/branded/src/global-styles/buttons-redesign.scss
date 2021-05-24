@@ -121,7 +121,13 @@
     }
 }
 
+:root {
+    --btn-padding-x: 0.75rem;
+}
+
 .theme-redesign {
+    --btn-padding-x: 0.5rem;
+
     @include redesign-button-variant(
         $name: 'primary',
         $base-color: var(--primary),
@@ -200,6 +206,10 @@
             font-size: 0.6875rem;
             @extend %label-uppercase;
         }
+    }
+
+    .btn.btn-icon {
+        color: var(--icon-color);
     }
 }
 
