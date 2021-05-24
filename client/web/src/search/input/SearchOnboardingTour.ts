@@ -14,6 +14,7 @@ import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
 import { daysActiveCount } from '../../marketing/util'
 import { eventLogger } from '../../tracking/eventLogger'
+import { isMacPlatform } from '../../util'
 import { QueryState } from '../helpers'
 
 import { MonacoQueryInputProps } from './MonacoQueryInput'
@@ -275,7 +276,7 @@ const useTourWithSteps = ({ setQueryState }: Pick<UseSearchOnboardingTourOptions
                 text: generateStep({
                     tour,
                     stepNumber: 4,
-                    content: generateStepContent('Search', '(Or press RETURN)'),
+                    content: generateStepContent('Search', `(Or press ${isMacPlatform ? 'RETURN' : 'ENTER'})`),
                 }),
                 when: {
                     show() {
