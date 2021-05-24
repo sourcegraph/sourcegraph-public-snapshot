@@ -90,7 +90,7 @@ interface NextPageUpdate {
 
 type LoadingState = 'LOADING' | 'LOADING_NEXT_PAGE' | 'DONE' | 'ERROR'
 
-const searchContextsPerPageToLoad = 10
+const searchContextsPerPageToLoad = 15
 
 const getFirstMenuItem = (): HTMLButtonElement | null =>
     document.querySelector('.search-context-menu__item:first-child')
@@ -312,7 +312,7 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
                         <small>No contexts found</small>
                     </DropdownItem>
                 )}
-                <div ref={infiniteScrollTrigger} />
+                <div ref={infiniteScrollTrigger} className="search-context-menu__infinite-scroll-trigger" />
             </div>
             <div className="search-context-menu__footer">
                 <button
