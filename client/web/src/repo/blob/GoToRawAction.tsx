@@ -40,7 +40,7 @@ export class GoToRawAction extends React.PureComponent<Props> {
             <a
                 href={to}
                 onClick={this.onClick.bind(this)}
-                className="nav-link"
+                className="btn btn-icon repo-header__action"
                 data-tooltip="Raw (download file)"
                 download={true}
             >

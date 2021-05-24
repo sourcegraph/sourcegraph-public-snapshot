@@ -70,6 +70,7 @@ export class ToggleRenderedFileMode extends React.PureComponent<Props> {
             <ButtonLink
                 to={this.getURLForMode(this.props.location, otherMode)}
                 data-tooltip={otherMode === 'code' ? 'Show raw code file' : 'Show formatted file'}
+                className="btn btn-icon repo-header__action"
             >
                 <EyeIcon className="icon-inline" />{' '}
                 <span className="d-none d-lg-inline">{otherMode === 'code' ? 'Raw' : 'Formatted'}</span>
