@@ -68,10 +68,14 @@
         }
 
         :global(.theme-redesign) & {
+            border-top-left-radius: var(--border-radius);
+            border-bottom-left-radius: var(--border-radius);
+
             @media (--xs-breakpoint-down) {
                 height: auto;
                 flex-wrap: wrap;
                 display: inline;
+                padding-left: 0;
 
                 &:focus-within {
                     border: none;
@@ -117,6 +121,7 @@
     &__input {
         :global(.theme-redesign) & {
             @media (--xs-breakpoint-down) {
+                display: inline-block;
                 width: 100%;
                 border: 1px solid var(--input-border-color);
                 border-radius: var(--border-radius);
@@ -139,6 +144,7 @@
             @media (--xs-breakpoint-down) {
                 display: inline-flex;
                 margin-top: 1rem;
+                padding-left: 0;
             }
         }
     }
