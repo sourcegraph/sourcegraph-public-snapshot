@@ -355,6 +355,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 			zeroResult    bool
 			minMatchCount int64
 			wantAlert     *gqltestutil.SearchAlert
+			skip          int
 		}{
 			// Global search
 			{
@@ -369,6 +370,18 @@ func testSearchClient(t *testing.T, client searchClient) {
 				name:          "something with more than 1000 results and use count:1000",
 				query:         ". count:1000",
 				minMatchCount: 1000,
+			},
+			{
+				name:          "default limit streaming",
+				query:         ".",
+				minMatchCount: 500,
+				skip:          skipGraphQL,
+			},
+			{
+				name:          "default limit graphql",
+				query:         ".",
+				minMatchCount: 30,
+				skip:          skipStream,
 			},
 			{
 				name:  "regular expression without indexed search",
@@ -504,6 +517,8 @@ func testSearchClient(t *testing.T, client searchClient) {
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
+				doSkip(t, test.skip)
+
 				results, err := client.SearchFiles(test.query)
 				if err != nil {
 					t.Fatal(err)
