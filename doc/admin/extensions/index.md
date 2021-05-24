@@ -57,7 +57,9 @@ You can disable extensions from Sourcegraph.com by setting [`extensions.remoteRe
 
 ## Allow only specific extensions from Sourcegraph.com
 
-On Sourcegraph Enterprise, you can set [`extensions.allowRemoteExtensions`](../config/site_config.md) so that only the explicitly specified extensions can be used from Sourcegraph.com:
+On Sourcegraph Enterprise, you can set [`extensions.allowRemoteExtensions`](../config/site_config.md) so that only the explicitly specified extensions can be used from Sourcegraph.com.
+
+Note: When enabling this setting, desired extensions and languages need to be specifically set in the [Sourcegraph site configuration](https://docs.sourcegraph.com/admin/config/site_config) in order to work. Example:
 
 ```json
 {
