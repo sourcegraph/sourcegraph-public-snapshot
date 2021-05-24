@@ -74,13 +74,13 @@ export const ExtensionRegistrySidenav: React.FunctionComponent<
                     {enablementFilterToLabel[enablementFilter]}
                 </DropdownToggle>
                 <DropdownMenu>
-                    <DropdownItem onClick={showAll} disabled={enablementFilter === 'all'} toggle={false}>
+                    <DropdownItem onClick={showAll} disabled={enablementFilter === 'all'}>
                         Show all
                     </DropdownItem>
-                    <DropdownItem onClick={showEnabled} disabled={enablementFilter === 'enabled'} toggle={false}>
+                    <DropdownItem onClick={showEnabled} disabled={enablementFilter === 'enabled'}>
                         Show enabled extensions
                     </DropdownItem>
-                    <DropdownItem onClick={showDisabled} disabled={enablementFilter === 'disabled'} toggle={false}>
+                    <DropdownItem onClick={showDisabled} disabled={enablementFilter === 'disabled'}>
                         Show disabled extensions
                     </DropdownItem>
 
@@ -90,8 +90,6 @@ export const ExtensionRegistrySidenav: React.FunctionComponent<
                         // Hack: clicking <label> inside <DropdownItem> doesn't affect checked state,
                         // so use a <span> for which click events are handled by <DropdownItem>.
                         onClick={toggleExperimentalExtensions}
-                        // Ensure that clicking the checkbox doesn't close the dropdown.
-                        toggle={false}
                     >
                         <div className="d-flex align-items-center">
                             <input
