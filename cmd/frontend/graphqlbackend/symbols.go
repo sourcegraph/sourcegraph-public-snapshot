@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type symbolsArgs struct {
@@ -98,7 +99,7 @@ func indexedSymbolsBranch(ctx context.Context, repository, commit string) string
 	return ""
 }
 
-func searchZoektSymbols(ctx context.Context, commit *GitCommitResolver, branch string, queryString *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
+func searchZoektSymbols(ctx context.Context, repoName types.RepoName, commitID api.CommitID, inputRev *string, branch string, queryString *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
 	raw := *queryString
 	if raw == "" {
 		raw = ".*"
@@ -124,7 +125,7 @@ func searchZoektSymbols(ctx context.Context, commit *GitCommitResolver, branch s
 
 	ands := []zoektquery.Q{
 		&zoektquery.RepoBranches{Set: map[string][]string{
-			commit.repoResolver.Name(): {branch},
+			string(repoName.Name): {branch},
 		}},
 		&zoektquery.Symbol{Expr: query},
 	}
@@ -153,9 +154,9 @@ func searchZoektSymbols(ctx context.Context, commit *GitCommitResolver, branch s
 
 	for _, file := range resp.Files {
 		newFile := &result.File{
-			Repo:     commit.repoResolver.RepoMatch.RepoName(),
-			CommitID: api.CommitID(commit.oid),
-			InputRev: commit.inputRev,
+			Repo:     repoName,
+			CommitID: commitID,
+			InputRev: inputRev,
 			Path:     file.FileName,
 		}
 
@@ -191,7 +192,7 @@ func computeSymbols(ctx context.Context, commit *GitCommitResolver, query *strin
 	// TODO(keegancsmith) we should be able to use indexedSearchRequest here
 	// and remove indexedSymbolsBranch.
 	if branch := indexedSymbolsBranch(ctx, commit.repoResolver.Name(), string(commit.oid)); branch != "" {
-		return searchZoektSymbols(ctx, commit, branch, query, first, includePatterns)
+		return searchZoektSymbols(ctx, commit.repoResolver.RepoMatch.RepoName(), api.CommitID(commit.oid), commit.inputRev, branch, query, first, includePatterns)
 	}
 
 	ctx, done := context.WithTimeout(ctx, 5*time.Second)
