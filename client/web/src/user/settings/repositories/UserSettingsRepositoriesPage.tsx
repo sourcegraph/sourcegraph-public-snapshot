@@ -2,7 +2,7 @@ import AddIcon from 'mdi-react/AddIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { EMPTY, Observable } from 'rxjs'
-import { catchError } from 'rxjs/operators'
+import { catchError, tap } from 'rxjs/operators'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Link } from '@sourcegraph/shared/src/components/Link'
@@ -110,6 +110,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     const [externalServices, setExternalServices] = useState<ExternalServicesResult['externalServices']['nodes']>()
     const [repoFilters, setRepoFilters] = useState<FilteredConnectionFilter[]>([])
     const [status, setStatus] = useState<SyncStatusOrError>()
+    const [updateReposList, setUpdateReposList] = useState(false)
 
     const NoAddedReposBanner = (
         <div className="border rounded p-3">
@@ -251,7 +252,8 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                     repeatUntil(
                         result => {
                             const isScheduledToSync = result.data?.codeHostSyncDue === true
-                            // if all existing code hosts were just added - don't show the "sync in progress" banner
+                            // if all existing code hosts were just added
+                            // created and updated timestamps are the same
                             const areCodeHostsJustAdded = externalServices.every(
                                 ({ updatedAt, createdAt, repoCount }) => updatedAt === createdAt && repoCount === 0
                             )
@@ -268,7 +270,9 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                                 })
                             }
 
-                            return !isScheduledToSync
+                            // don't repeat the query if the sync is not scheduled
+                            // or code host(s) we just added
+                            return !isScheduledToSync || areCodeHostsJustAdded
                         },
                         { delay: 2000 }
                     ),
@@ -289,8 +293,15 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
 
     const queryRepositories = useCallback(
         (args: FilteredConnectionQueryArguments): Observable<RepositoriesResult['repositories']> =>
-            listUserRepositories({ ...args, id: userID }),
-        [userID]
+            listUserRepositories({ ...args, id: userID }).pipe(
+                tap(() => {
+                    if (status === 'schedule-complete') {
+                        setUpdateReposList(!updateReposList)
+                        setStatus(undefined)
+                    }
+                })
+            ),
+        [userID, status, updateReposList]
     )
 
     const onRepoQueryUpdate = useCallback(
@@ -326,6 +337,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
             noun="repository"
             pluralNoun="repositories"
             queryConnection={queryRepositories}
+            updateOnChange={String(updateReposList)}
             nodeComponent={Row}
             listComponent="table"
             listClassName="w-100"
@@ -347,20 +359,34 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
         telemetryService.logViewEvent('UserSettingsRepositories')
     }, [telemetryService])
 
+    const getCodeHostsSyncMessage = useCallback(() => {
+        if (Array.isArray(externalServices) && externalServices) {
+            const names = externalServices.map(service => {
+                const { displayName: name } = service
+                const namespaceStartIndex = name.indexOf('(')
+
+                return namespaceStartIndex !== -1 ? name.slice(0, namespaceStartIndex - 1) : name
+            })
+
+            return `Synching ${names.join(', ')} code host${names.length > 1 ? 's' : ''}.`
+        }
+        return 'Synching code hosts.'
+    }, [externalServices])
+
     return (
         <div className="user-settings-repos">
             {status === 'scheduled' && (
                 <div className="alert alert-info">
-                    <span className="font-weight-bold">Some repositories are still being updated.</span> These
-                    repositories may not appear up-to-date in the list of repositories.
+                    <span className="font-weight-bold">{getCodeHostsSyncMessage()}</span> Repositories list may not be
+                    up-to-date and will refresh once the sync is done.
                 </div>
             )}
-            {status === 'schedule-complete' && (
+            {/* {status === 'schedule-complete' && (
                 <div className="alert alert-success">
-                    <span className="font-weight-bold">All repositories are up to date.</span> Feel free to refresh the
+                    <span className="font-weight-bold">All repositories are up-to-date.</span> Feel free to refresh the
                     page
                 </div>
-            )}
+            )} */}
             {isErrorLike(status) && <ErrorAlert error={status} icon={true} />}
             <PageTitle title="Repositories" />
             <div className="d-flex justify-content-between align-items-center">
