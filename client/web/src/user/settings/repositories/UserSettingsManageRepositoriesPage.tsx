@@ -226,6 +226,8 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         [authenticatedUser.id]
     )
 
+    const getRepoServiceAndName = (repo: Repo): string => `${repo.codeHost?.kind || 'unknown'}/${repo.name}`
+
     const fetchServicesAndAffiliatedRepos = useCallback(async (): Promise<void> => {
         const externalServices = await fetchExternalServices()
 
@@ -308,14 +310,20 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
         const affiliatedReposWithMirrorInfo = affiliatedRepos.map(affiliatedRepo => {
             const foundInSelected = selectedRepos.find(
-                ({ name: selectedRepoName }) =>
-                    // selected repo names formatted like: code-host/owner/repository
-                    selectedRepoName.slice(selectedRepoName.indexOf('/') + 1) === affiliatedRepo.name
+                ({ name, externalRepository: { serviceType: selectedRepoServiceType } }) => {
+                    // selected repo names formatted: code-host/owner/repository
+                    const selectedRepoName = name.slice(name.indexOf('/') + 1)
+
+                    return (
+                        selectedRepoName === affiliatedRepo.name &&
+                        selectedRepoServiceType === affiliatedRepo.codeHost?.kind.toLocaleLowerCase()
+                    )
+                }
             )
 
             if (foundInSelected) {
                 // save off only selected repos
-                selectedAffiliatedRepos.set(affiliatedRepo.name, affiliatedRepo)
+                selectedAffiliatedRepos.set(getRepoServiceAndName(affiliatedRepo), affiliatedRepo)
 
                 // add mirror info object where it exists - will be used for filters
                 return { ...affiliatedRepo, mirrorInfo: foundInSelected.mirrorInfo }
@@ -326,8 +334,8 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
         // sort affiliated repos with already selected repos at the top
         affiliatedReposWithMirrorInfo.sort((repoA, repoB): number => {
-            const isRepoASelected = selectedAffiliatedRepos.has(repoA.name)
-            const isRepoBSelected = selectedAffiliatedRepos.has(repoB.name)
+            const isRepoASelected = selectedAffiliatedRepos.has(getRepoServiceAndName(repoA))
+            const isRepoBSelected = selectedAffiliatedRepos.has(getRepoServiceAndName(repoB))
 
             if (!isRepoASelected && isRepoBSelected) {
                 return 1
@@ -350,9 +358,11 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
          * 2. if only some repos were selected - set radio to 'selected'
          * 3. if no repos selected - empty state
          */
+
         const radioSelectOption =
             ALLOW_SYNC_ALL &&
-            (codeHostsHaveSyncAllQuery.every(Boolean) ||
+            ((externalServices.length === codeHostsHaveSyncAllQuery.length &&
+                codeHostsHaveSyncAllQuery.every(Boolean)) ||
                 affiliatedReposWithMirrorInfo.length === selectedAffiliatedRepos.size)
                 ? 'all'
                 : selectedAffiliatedRepos.size > 0
@@ -671,11 +681,12 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
     const onRepoClicked = useCallback(
         (repo: Repo) => (): void => {
+            const clickedRepo = getRepoServiceAndName(repo)
             const newMap = new Map(selectionState.repos)
-            if (newMap.has(repo.name)) {
-                newMap.delete(repo.name)
+            if (newMap.has(clickedRepo)) {
+                newMap.delete(clickedRepo)
             } else {
-                newMap.set(repo.name, repo)
+                newMap.set(clickedRepo, repo)
             }
             setSelectionState({
                 repos: newMap,
@@ -691,7 +702,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         // if not all repos are selected, we should select all, otherwise empty the selection
         if (selectionState.repos.size !== filteredRepos.length) {
             for (const repo of filteredRepos) {
-                newMap.set(repo.name, repo)
+                newMap.set(getRepoServiceAndName(repo), repo)
             }
         }
         setSelectionState({
@@ -732,12 +743,15 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 if (index < (currentPage - 1) * PER_PAGE || index >= currentPage * PER_PAGE) {
                     return
                 }
+
+                const serviceAndRepoName = getRepoServiceAndName(repo)
+
                 return (
                     <CheckboxRepositoryNode
                         name={repo.name}
-                        key={repo.name}
+                        key={serviceAndRepoName}
                         onClick={onRepoClicked(repo)}
-                        checked={selectionState.repos.has(repo.name)}
+                        checked={selectionState.repos.has(serviceAndRepoName)}
                         serviceType={repo.codeHost?.kind || ''}
                         isPrivate={repo.private}
                     />
