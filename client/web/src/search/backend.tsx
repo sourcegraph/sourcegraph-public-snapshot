@@ -302,6 +302,7 @@ export const fetchAutoDefinedSearchContexts = defer(() =>
 
 export function fetchSearchContexts({
     first,
+    associatedWithCurrentUser,
     namespaceFilterType,
     namespace,
     query,
@@ -311,6 +312,7 @@ export function fetchSearchContexts({
 }: {
     first: number
     query?: string
+    associatedWithCurrentUser?: boolean
     namespace?: Scalars['ID']
     namespaceFilterType?: GQL.SearchContextsNamespaceFilterType
     after?: string
@@ -323,6 +325,7 @@ export function fetchSearchContexts({
                 $first: Int!
                 $after: String
                 $query: String
+                $associatedWithCurrentUser: Boolean
                 $namespaceFilterType: SearchContextsNamespaceFilterType
                 $namespace: ID
                 $orderBy: SearchContextsOrderBy
@@ -332,6 +335,7 @@ export function fetchSearchContexts({
                     first: $first
                     after: $after
                     query: $query
+                    associatedWithCurrentUser: $associatedWithCurrentUser
                     namespaceFilterType: $namespaceFilterType
                     namespace: $namespace
                     orderBy: $orderBy
@@ -353,6 +357,7 @@ export function fetchSearchContexts({
             first,
             after: after ?? null,
             query: query ?? null,
+            associatedWithCurrentUser: associatedWithCurrentUser ?? false,
             namespaceFilterType: namespaceFilterType ?? null,
             namespace: namespace ?? null,
             orderBy: orderBy ?? GQL.SearchContextsOrderBy.SEARCH_CONTEXT_SPEC,

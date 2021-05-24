@@ -47,6 +47,7 @@ export const SearchContextsListTab: React.FunctionComponent<SearchContextsListTa
                 first: args.first ?? 10,
                 query: args.query ?? undefined,
                 after: args.after ?? undefined,
+                associatedWithCurrentUser: true,
                 namespace,
                 namespaceFilterType,
                 orderBy,

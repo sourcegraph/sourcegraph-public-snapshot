@@ -199,6 +199,7 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
                         of(cursor),
                         fetchSearchContexts({
                             first: searchContextsPerPageToLoad,
+                            associatedWithCurrentUser: true,
                             query,
                             after: cursor,
                         }),

@@ -381,7 +381,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         )
 
         this.subscriptions.add(
-            fetchSearchContexts({ first: 1 })
+            fetchSearchContexts({ first: 1, associatedWithCurrentUser: true })
                 .pipe(catchError(error => [asError(error)]))
                 .subscribe(result => {
                     if (!isErrorLike(result)) {
