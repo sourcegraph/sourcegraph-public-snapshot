@@ -167,8 +167,8 @@ func (r *queryResolver) adjustLocations(ctx context.Context, uploadsByID map[int
 }
 
 // adjustLocation translates a location (relative to the indexed commit) into an equivalent location in
-// the requested commit. If the translation fails, then the original commit and range are as the commit
-// and range of the location.
+// the requested commit. If the translation fails, then the original commit and range are used as the 
+// commit and range of the adjusted location.
 func (r *queryResolver) adjustLocation(ctx context.Context, dump store.Dump, location lsifstore.Location) (AdjustedLocation, error) {
 	adjustedCommit, adjustedRange, _, err := r.adjustRange(ctx, dump.RepositoryID, dump.Commit, dump.Root+location.Path, location.Range)
 	if err != nil {
