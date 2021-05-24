@@ -57,7 +57,7 @@ export class ToggleRenderedFileMode extends React.PureComponent<Props> {
         if (this.props.actionType === 'dropdown') {
             return (
                 <ButtonLink
-                    className="nav-link repo-header__file-action"
+                    className="btn repo-header__file-action"
                     to={this.getURLForMode(this.props.location, otherMode)}
                 >
                     <EyeIcon className="icon-inline" />

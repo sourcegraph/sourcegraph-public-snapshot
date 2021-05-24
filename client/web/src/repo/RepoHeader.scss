@@ -20,10 +20,17 @@
 
         &:hover {
             background: var(--color-bg-1);
+
+            .theme-redesign & {
+                background: inherit;
+            }
         }
     }
 
     &__file-action {
+        display: block;
+        text-align: left;
+
         span {
             color: var(--body-color);
             margin-left: 0.5rem;

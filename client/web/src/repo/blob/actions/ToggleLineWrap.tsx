@@ -74,7 +74,7 @@ export class ToggleLineWrap extends React.PureComponent<
     public render(): JSX.Element | null {
         if (this.props.actionType === 'dropdown') {
             return (
-                <ButtonLink onSelect={this.onClick} className="nav-link repo-header__file-action">
+                <ButtonLink onSelect={this.onClick} className="btn repo-header__file-action">
                     {this.state.value ? (
                         <WrapDisabledIcon className="icon-inline" />
                     ) : (

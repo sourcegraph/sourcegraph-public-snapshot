@@ -204,7 +204,7 @@ export const GoToCodeHostAction: React.FunctionComponent<Props & RepoHeaderConte
         return (
             // eslint-disable-next-line jsx-a11y/anchor-is-valid
             <a
-                className="nav-link repo-header__file-action test-go-to-code-host"
+                className="btn repo-header__file-action test-go-to-code-host"
                 // empty href is OK because we always set tabindex=0
                 href={hijackLink ? '' : url}
                 target="_blank"

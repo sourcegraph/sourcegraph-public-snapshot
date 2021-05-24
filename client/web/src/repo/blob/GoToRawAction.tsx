@@ -24,12 +24,7 @@ export class GoToRawAction extends React.PureComponent<Props> {
 
         if (this.props.actionType === 'dropdown') {
             return (
-                <a
-                    href={to}
-                    onClick={this.onClick.bind(this)}
-                    className="nav-link repo-header__file-action"
-                    download={true}
-                >
+                <a href={to} onClick={this.onClick.bind(this)} className="btn repo-header__file-action" download={true}>
                     <FileDownloadOutlineIcon className="icon-inline" />
                     <span>Raw (download file)</span>
                 </a>
