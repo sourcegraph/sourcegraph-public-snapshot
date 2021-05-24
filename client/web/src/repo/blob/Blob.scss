@@ -1,5 +1,9 @@
 @import './LineDecorator.scss';
 
+$blob-status-bar-height: 2rem;
+$blob-status-bar-bottom: 1rem;
+$blob-status-bar-horizontal-gap: 0.5rem;
+
 .blob {
     position: relative;
     overflow: auto;
@@ -16,6 +20,16 @@
 
         table {
             border-collapse: collapse;
+
+            .theme-redesign & {
+                // Give room to view the last few lines of code
+                // without the floating status bar getting in the way.
+                &::after {
+                    content: '';
+                    display: inline-block;
+                    padding-bottom: $blob-status-bar-height + $blob-status-bar-bottom;
+                }
+            }
         }
 
         td.line {
@@ -65,5 +79,28 @@
                 white-space: pre-wrap;
             }
         }
+    }
+
+    &__status-bar {
+        // Make the status bar "float" slightly above the bottom of the code view.
+        position: absolute;
+        bottom: $blob-status-bar-bottom;
+
+        // Override default bootstrap `.w-100`, ensure that the status bar "sticks" to the right side.
+        width: auto !important;
+        right: $blob-status-bar-horizontal-gap;
+        max-width: calc(100% - (2 * #{$blob-status-bar-horizontal-gap}));
+
+        // Misc. style
+        height: $blob-status-bar-height;
+        border-radius: var(--border-radius);
+        border: 1px solid var(--border-color);
+        background-color: var(--body-bg);
+    }
+
+    &__spacer {
+        // Give room to view the last few lines of code
+        // without the floating status bar getting in the way.
+        height: $blob-status-bar-height + $blob-status-bar-bottom;
     }
 }

@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import { Remote } from 'comlink'
 import * as H from 'history'
 import iterate from 'iterare'
@@ -41,6 +42,7 @@ import {
     toURIWithPath,
 } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { getHover, getDocumentHighlights } from '../../backend/features'
 import { WebHoverOverlay } from '../../components/shared'
@@ -507,11 +509,22 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                         return of('loading' as const)
                     }
 
-                    return wrapRemoteObservable(viewerData.extensionHostAPI.getStatusBarItems(viewerData.viewerId))
+                    return wrapRemoteObservable(
+                        viewerData.extensionHostAPI.getStatusBarItems(viewerData.viewerId)
+                    ).pipe(
+                        map(items => [
+                            ...items,
+                            ...new Array(20)
+                                .fill(null)
+                                .map((value, index) => ({ text: 'fake status bar item', key: `${index}` })),
+                        ])
+                    )
                 })
             ),
         [viewerUpdates]
     )
+
+    const [isRedesignEnabled] = useRedesignToggle()
 
     return (
         <>
@@ -519,7 +532,9 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                 <code
                     className={`blob__code ${props.wrapCode ? ' blob__code--wrapped' : ''} test-blob`}
                     ref={nextCodeViewElement}
-                    dangerouslySetInnerHTML={{ __html: blobInfo.html }}
+                    dangerouslySetInnerHTML={{
+                        __html: blobInfo.html,
+                    }}
                 />
                 {hoverState.hoverOverlayProps && (
                     <WebHoverOverlay
@@ -553,6 +568,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                 extensionsController={extensionsController}
                 uri={toURIWithPath(blobInfo)}
                 location={location}
+                className={classNames(isRedesignEnabled && 'blob__status-bar')}
             />
         </>
     )
