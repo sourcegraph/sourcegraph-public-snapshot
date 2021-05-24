@@ -1,4 +1,4 @@
-package graphqlbackend
+package streaming
 
 import (
 	"fmt"
@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
 
 // SearchFilters computes the filters to show a user based on results.
@@ -20,12 +19,12 @@ import (
 // Note: it currently live in graphqlbackend. However, once we have a non
 // resolver based SearchResult type it can be extracted. It lives in its own
 // file to make that more obvious. We already have the filter type extracted
-// (streaming.Filter).
+// (Filter).
 type SearchFilters struct {
 	// Globbing is true if the user has enabled globbing support.
 	Globbing bool
 
-	filters streaming.Filters
+	filters Filters
 }
 
 // commonFileFilters are common filters used. It is used by SearchFilters to
@@ -68,10 +67,10 @@ var commonFileFilters = []struct {
 }
 
 // Update internal state for the results in event.
-func (s *SearchFilters) Update(event streaming.SearchEvent) {
+func (s *SearchFilters) Update(event SearchEvent) {
 	// Initialize state on first call.
 	if s.filters == nil {
-		s.filters = make(streaming.Filters)
+		s.filters = make(Filters)
 	}
 
 	addRepoFilter := func(repoName api.RepoName, repoID api.RepoID, rev string, lineMatchCount int32) {
@@ -157,6 +156,6 @@ func (s *SearchFilters) Update(event streaming.SearchEvent) {
 
 // Compute returns an ordered slice of Filters to present to the user based on
 // events passed to Next.
-func (s *SearchFilters) Compute() []*streaming.Filter {
+func (s *SearchFilters) Compute() []*Filter {
 	return s.filters.Compute()
 }
