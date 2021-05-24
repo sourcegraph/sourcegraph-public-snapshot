@@ -7,6 +7,11 @@
     &:first-child &__button {
         border-top-left-radius: 2px;
         border-bottom-left-radius: 2px;
+
+        .theme-redesign & {
+            border-top-left-radius: var(--border-radius);
+            border-bottom-left-radius: var(--border-radius);
+        }
     }
 
     &:not(:first-child) .version-context-dropdown__button {
@@ -19,8 +24,9 @@
 
         .theme-redesign & {
             @media (--xs-breakpoint-down) {
-                padding: 0.25rem;
+                padding: 0 0.25rem;
                 margin-right: 0.5rem;
+                border-radius: var(--border-radius);
             }
         }
 

@@ -85,6 +85,7 @@
         :global(.theme-redesign) & {
             @media (--xs-breakpoint-down) {
                 display: inline-block;
+                vertical-align: middle;
             }
         }
     }
@@ -93,6 +94,7 @@
         :global(.theme-redesign) & {
             @media (--xs-breakpoint-down) {
                 display: inline-block;
+                margin-bottom: 0.5rem;
             }
         }
     }

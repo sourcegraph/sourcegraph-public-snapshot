@@ -11,6 +11,13 @@
         box-sizing: border-box;
         transition: none;
 
+        .theme-redesign & {
+            @media (--xs-breakpoint-down) {
+                border: 1px solid var(--input-border-color);
+                margin-left: 0;
+            }
+        }
+
         &:hover,
         &:active,
         &:focus {
