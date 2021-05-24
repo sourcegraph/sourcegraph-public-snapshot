@@ -146,7 +146,6 @@ async function determineCommitsToSearch(dates: Date[], repo: string): Promise<Se
         }
 
         if (search.results.results.length === 0) {
-            // throw new Error(`No result for ${commitQueries[index_]}`)
             console.warn(`No result for ${commitQueries[index_]}`)
 
             return { commit: null, date }
