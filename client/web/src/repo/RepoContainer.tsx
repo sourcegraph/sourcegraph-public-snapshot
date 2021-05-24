@@ -232,7 +232,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                             }
                             className={classNames(
                                 'text-nowrap test-repo-header-repo-link',
-                                isRedesignEnabled ? 'btn btn-outline-secondary' : 'font-weight-bold'
+                                isRedesignEnabled ? 'btn btn-sm btn-outline-secondary' : 'font-weight-bold'
                             )}
                         >
                             <SourceRepositoryIcon className="icon-inline" /> {displayRepoName(repoOrError.name)}
@@ -241,8 +241,8 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                             type="button"
                             id="repo-popover"
                             className={classNames(
-                                'btn',
-                                isRedesignEnabled ? 'btn-outline-secondary px-1 mx-1' : 'btn-icon px-0'
+                                'btn repo-container__breadcrumb',
+                                isRedesignEnabled ? 'btn-sm btn-outline-secondary' : 'btn-icon'
                             )}
                             aria-label="Change repository"
                         >
