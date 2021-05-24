@@ -24,12 +24,14 @@ export interface SearchContextDropdownProps
     submitSearchOnSearchContextChange?: boolean
     query: string
     history: H.History
+    isSearchOnboardingTourVisible: boolean
 }
 
 const tourOptions: Shepherd.Tour.TourOptions = {
     ...defaultTourOptions,
     defaultStepOptions: {
         ...defaultTourOptions.defaultStepOptions,
+        arrow: true,
         popperOptions: {
             // Removes default behavior of autofocusing steps
             modifiers: [
@@ -45,7 +47,7 @@ const tourOptions: Shepherd.Tour.TourOptions = {
 
 function getHighlightTourStep(onClose: () => void): HTMLElement {
     const container = document.createElement('div')
-    container.className = 'search-context-dropdown__highlight-tour-step'
+    container.className = 'search-context-highlight-tour__step'
     container.innerHTML = `
         <div>
             <strong>New: Search contexts</strong>
@@ -72,6 +74,59 @@ function getHighlightTourStep(onClose: () => void): HTMLElement {
 
 const HAS_SEEN_HIGHLIGHT_TOUR_STEP_KEY = 'has-seen-search-contexts-dropdown-highlight-tour-step'
 
+const useSearchContextHighlightTour = (
+    showSearchContextHighlightTourStep: boolean,
+    isSearchOnboardingTourVisible: boolean
+): Shepherd.Tour => {
+    const [hasSeenHighlightTourStep, setHasSeenHighlightTourStep] = useLocalStorage(
+        HAS_SEEN_HIGHLIGHT_TOUR_STEP_KEY,
+        false
+    )
+
+    const tour = useMemo(() => new Shepherd.Tour(tourOptions), [])
+    useEffect(() => {
+        tour.addSteps([
+            {
+                id: 'search-contexts-start-tour',
+                text: getHighlightTourStep(() => tour.cancel()),
+                classes: 'web-content shadow-lg card py-4 px-3 search-context-highlight-tour',
+                attachTo: {
+                    element: '.search-context-dropdown__button',
+                    on: 'bottom',
+                },
+                popperOptions: {
+                    modifiers: [{ name: 'offset', options: { offset: [140, 16] } }],
+                },
+            },
+        ])
+    }, [tour])
+
+    useEffect(() => {
+        if (
+            !tour.isActive() &&
+            showSearchContextHighlightTourStep &&
+            !hasSeenHighlightTourStep &&
+            !isSearchOnboardingTourVisible
+        ) {
+            tour.start()
+        }
+    }, [showSearchContextHighlightTourStep, isSearchOnboardingTourVisible, hasSeenHighlightTourStep, tour])
+
+    useEffect(() => {
+        const onCanceled = (): void => {
+            setHasSeenHighlightTourStep(true)
+        }
+        tour.on('cancel', onCanceled)
+        return () => {
+            tour.off('cancel', onCanceled)
+        }
+    }, [tour, setHasSeenHighlightTourStep])
+
+    useEffect(() => () => tour.cancel(), [tour])
+
+    return tour
+}
+
 export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdownProps> = props => {
     const {
         history,
@@ -86,51 +141,10 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         fetchSearchContexts,
         showSearchContextHighlightTourStep = false,
         submitSearchOnSearchContextChange = true,
+        isSearchOnboardingTourVisible,
     } = props
 
-    const [hasSeenHighlightTourStep, setHasSeenHighlightTourStep] = useLocalStorage(
-        HAS_SEEN_HIGHLIGHT_TOUR_STEP_KEY,
-        false
-    )
-
-    const tour = useMemo(() => new Shepherd.Tour(tourOptions), [])
-    useEffect(() => {
-        tour.addSteps([
-            {
-                id: 'search-contexts-start-tour',
-                text: getHighlightTourStep(() => tour.cancel()),
-                attachTo: {
-                    element: '.search-context-dropdown__button',
-                    on: 'bottom',
-                },
-            },
-        ])
-    }, [tour])
-
-    useEffect(() => {
-        if (showSearchContextHighlightTourStep && !hasSeenHighlightTourStep) {
-            tour.start()
-        }
-    }, [showSearchContextHighlightTourStep, hasSeenHighlightTourStep, tour])
-
-    useEffect(() => {
-        const onCanceled = (): void => {
-            setHasSeenHighlightTourStep(true)
-        }
-        tour.on('cancel', onCanceled)
-        return () => {
-            tour.off('cancel', onCanceled)
-        }
-    }, [tour, setHasSeenHighlightTourStep])
-
-    useEffect(
-        () => () => {
-            if (tour.isActive()) {
-                tour.cancel()
-            }
-        },
-        [tour]
-    )
+    const tour = useSearchContextHighlightTour(showSearchContextHighlightTourStep, isSearchOnboardingTourVisible)
 
     const [isOpen, setIsOpen] = useState(false)
     const toggleOpen = useCallback(() => {
