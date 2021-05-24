@@ -28,7 +28,7 @@ type symbolsArgs struct {
 }
 
 func (r *GitTreeEntryResolver) Symbols(ctx context.Context, args *symbolsArgs) (*symbolConnectionResolver, error) {
-	symbols, err := computeSymbols(ctx, r.commit, args.Query, args.First, args.IncludePatterns)
+	symbols, err := computeSymbols(ctx, r.commit.repoResolver.RepoMatch.RepoName(), api.CommitID(r.commit.oid), r.commit.inputRev, args.Query, args.First, args.IncludePatterns)
 	if err != nil && len(symbols) == 0 {
 		return nil, err
 	}
@@ -39,7 +39,7 @@ func (r *GitTreeEntryResolver) Symbols(ctx context.Context, args *symbolsArgs) (
 }
 
 func (r *GitCommitResolver) Symbols(ctx context.Context, args *symbolsArgs) (*symbolConnectionResolver, error) {
-	symbols, err := computeSymbols(ctx, r, args.Query, args.First, args.IncludePatterns)
+	symbols, err := computeSymbols(ctx, r.repoResolver.RepoMatch.RepoName(), api.CommitID(r.oid), r.inputRev, args.Query, args.First, args.IncludePatterns)
 	if err != nil && len(symbols) == 0 {
 		return nil, err
 	}
@@ -188,11 +188,11 @@ func searchZoektSymbols(ctx context.Context, repoName types.RepoName, commitID a
 	return
 }
 
-func computeSymbols(ctx context.Context, commit *GitCommitResolver, query *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
+func computeSymbols(ctx context.Context, repoName types.RepoName, commitID api.CommitID, inputRev *string, query *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
 	// TODO(keegancsmith) we should be able to use indexedSearchRequest here
 	// and remove indexedSymbolsBranch.
-	if branch := indexedSymbolsBranch(ctx, commit.repoResolver.Name(), string(commit.oid)); branch != "" {
-		return searchZoektSymbols(ctx, commit.repoResolver.RepoMatch.RepoName(), api.CommitID(commit.oid), commit.inputRev, branch, query, first, includePatterns)
+	if branch := indexedSymbolsBranch(ctx, string(repoName.Name), string(commitID)); branch != "" {
+		return searchZoektSymbols(ctx, repoName, commitID, inputRev, branch, query, first, includePatterns)
 	}
 
 	ctx, done := context.WithTimeout(ctx, 5*time.Second)
@@ -208,9 +208,9 @@ func computeSymbols(ctx context.Context, commit *GitCommitResolver, query *strin
 	}
 
 	searchArgs := search.SymbolsParameters{
-		CommitID:        api.CommitID(commit.oid),
+		CommitID:        commitID,
 		First:           limitOrDefault(first) + 1, // add 1 so we can determine PageInfo.hasNextPage
-		Repo:            commit.repoResolver.RepoName(),
+		Repo:            repoName.Name,
 		IncludePatterns: includePatternsSlice,
 	}
 	if query != nil {
@@ -225,9 +225,9 @@ func computeSymbols(ctx context.Context, commit *GitCommitResolver, query *strin
 	fileWithPath := func(path string) *result.File {
 		return &result.File{
 			Path:     path,
-			Repo:     commit.repoResolver.RepoMatch.RepoName(),
-			InputRev: commit.inputRev,
-			CommitID: api.CommitID(commit.oid),
+			Repo:     repoName,
+			InputRev: inputRev,
+			CommitID: commitID,
 		}
 	}
 
