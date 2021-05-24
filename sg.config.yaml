@@ -110,7 +110,7 @@ commands:
       HOSTNAME: 127.0.0.1:3178
     watch:
       - cmd/github-proxy
-      - internal/debugserver"
+      - internal/debugserver
       - internal/env
       - internal/logging
       - internal/trace

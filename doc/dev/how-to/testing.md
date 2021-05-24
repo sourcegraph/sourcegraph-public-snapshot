@@ -322,7 +322,7 @@ include:
 
 ### Running backend integration and end-to-end tests in CI
 
-For pull requests, only a limited set of tests are run in CI. If you would like to run the full `main` test suite in a PR, including backend integration tests, e2e, and qa, you can name your branch with the prefix `master-dry-run/` and this will run all the tests that will be ran when the PR is checked into `main`.
+For pull requests, only a limited set of tests are run in CI. If you would like to run the full `main` test suite in a PR, including backend integration tests, e2e, and qa, you can name your branch with the prefix `main-dry-run/` and this will run all the tests that will be ran when the PR is checked into `main`.
 
 ## Release testing
 
