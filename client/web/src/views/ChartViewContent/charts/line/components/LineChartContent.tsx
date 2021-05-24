@@ -12,13 +12,14 @@ import React, { ReactElement, useCallback, useMemo, useState, MouseEvent, useRef
 import { noop } from 'rxjs'
 import { LineChartContent as LineChartContentType } from 'sourcegraph'
 
-import { DEFAULT_LINE_STROKE } from '../colors'
+import { DEFAULT_LINE_STROKE } from '../constants'
 import { generateAccessors } from '../helpers/generate-accessors'
 import { usePointerEventEmitters } from '../helpers/use-event-emitters'
 import { useScales } from '../helpers/use-scales'
 import { onDatumZoneClick } from '../types'
 
 import { ActiveDatum, GlyphContent } from './GlyphContent'
+import { NonActiveBackground } from './NonActvieBackground'
 import { dateTickFormatter, numberFormatter, Tick, getTickXProps, getTickYProps } from './TickComponent'
 import { TooltipContent } from './TooltipContent'
 
@@ -35,7 +36,7 @@ const SCALES_CONFIG = {
         type: 'linear' as const,
         nice: true,
         zero: false,
-        clamp: true,
+        clamp: false,
     },
 }
 
@@ -233,6 +234,7 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                         onPointerUp={handlePointerUp}
                         accessibilityLabel="Line chart content"
                     >
+                        <NonActiveBackground data={sortedData} accessors={accessors} series={series} />
                         <Group aria-label="Chart axes">
                             {/* eslint-disable-next-line jsx-a11y/aria-role */}
                             <Group role="graphics-axis" aria-orientation="horizontal" aria-label="Y axis: number">

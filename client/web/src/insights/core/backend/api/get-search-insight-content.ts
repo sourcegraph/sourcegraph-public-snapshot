@@ -4,27 +4,56 @@ import { defer } from 'rxjs'
 import { retry } from 'rxjs/operators'
 import type { LineChartContent } from 'sourcegraph'
 
+import { EMPTY_DATA_POINT_VALUE } from '../../../../views/ChartViewContent/charts/line/constants'
 import { fetchRawSearchInsightResults, fetchSearchInsightCommits } from '../requests/fetch-search-insight'
 import { SearchInsightSettings } from '../types'
+
+interface RepoCommit {
+    date: Date
+    commit: string
+    repo: string
+}
+
+interface InsightSeriesData {
+    date: number
+    [seriesName: string]: number
+}
 
 /**
  * This logic is a copy of fetch logic of search-based code insight extension.
  * See https://github.com/sourcegraph/sourcegraph-search-insights/blob/master/src/search-insights.ts
  * In order to have live preview for creation UI we had to copy this logic from
  * extension.
- *
  * */
 export async function getSearchInsightContent(insight: SearchInsightSettings): Promise<LineChartContent<any, string>> {
     const step = insight.step || { days: 1 }
     const { repositories: repos } = insight
     const dates = getDaysToQuery(step)
 
-    // Get commits to search for each day
+    // -------- Initialize data ---------
+    const data: InsightSeriesData[] = []
+
+    for (const date of dates) {
+        const dataIndex = dates.indexOf(date)
+
+        // Initialize data series object by all dates.
+        data[dataIndex] = {
+            date: date.getTime(),
+            // Initialize all series to 0
+            ...Object.fromEntries(insight.series.map(series => [series.name, EMPTY_DATA_POINT_VALUE])),
+        }
+    }
+
+    // Get commits to search for each day.
     const repoCommits = (
         await Promise.all(
             repos.map(async repo => (await determineCommitsToSearch(dates, repo)).map(commit => ({ repo, ...commit })))
         )
-    ).flat()
+    )
+        .flat()
+        // For commit which we can't find we should not run search API request
+        // instead of it we will use just EMPTY_DATA_POINT_VALUE
+        .filter(commitData => commitData.commit !== null) as RepoCommit[]
 
     const searchQueries = insight.series.flatMap(({ query, name }) =>
         repoCommits.map(({ date, repo, commit }) => ({
@@ -35,6 +64,7 @@ export async function getSearchInsightContent(insight: SearchInsightSettings): P
             query: `repo:^${escapeRegExp(repo)}$@${commit} ${query} count:99999`,
         }))
     )
+
     const rawSearchResults = await defer(() => fetchRawSearchInsightResults(searchQueries.map(search => search.query)))
         // The bulk search may timeout, but a retry is then likely faster because caches are warm
         .pipe(retry(3))
@@ -43,27 +73,26 @@ export async function getSearchInsightContent(insight: SearchInsightSettings): P
     const searchResults = Object.entries(rawSearchResults).map(([field, result]) => {
         const index = +field.slice('search'.length)
         const query = searchQueries[index]
+
         return { ...query, result }
     })
 
-    const data: {
-        date: number
-        [seriesName: string]: number
-    }[] = []
+    // Merge initial data and search API data
     for (const { name, date, result } of searchResults) {
         const dataKey = name
         const dataIndex = dates.indexOf(date)
-        const object =
-            data[dataIndex] ??
-            (data[dataIndex] = {
-                date: date.getTime(),
-                // Initialize all series to 0
-                ...Object.fromEntries(insight.series.map(series => [series.name, 0])),
-            })
-        // Sum across repos
+        const object = data[dataIndex]
+
         const countForRepo = result?.results.matchCount
 
-        object[dataKey] += countForRepo ?? 0
+        // If we got some data that means for this data points we got
+        // a valid commit in a git history therefore we need write some data
+        // to this series.
+        if (object[dataKey] === EMPTY_DATA_POINT_VALUE) {
+            object[dataKey] = countForRepo ?? 0
+        } else {
+            object[dataKey] += countForRepo ?? 0
+        }
     }
 
     return {
@@ -95,7 +124,12 @@ export async function getSearchInsightContent(insight: SearchInsightSettings): P
     }
 }
 
-async function determineCommitsToSearch(dates: Date[], repo: string): Promise<{ date: Date; commit: string }[]> {
+interface SearchCommit {
+    date: Date
+    commit: string | null
+}
+
+async function determineCommitsToSearch(dates: Date[], repo: string): Promise<SearchCommit[]> {
     const commitQueries = dates.map(date => {
         const before = formatISO(date)
         return `repo:^${escapeRegExp(repo)}$ type:commit before:${before} count:1`
@@ -103,25 +137,30 @@ async function determineCommitsToSearch(dates: Date[], repo: string): Promise<{ 
 
     const commitResults = await fetchSearchInsightCommits(commitQueries).toPromise()
 
-    const commitOids = Object.entries(commitResults).map(([name, search], index) => {
+    return Object.entries(commitResults).map(([name, search], index) => {
         const index_ = +name.slice('search'.length)
+        const date = dates[index_]
 
         if (index_ !== index) {
             throw new Error(`Expected field ${name} to be at index ${index_} of object keys`)
         }
 
         if (search.results.results.length === 0) {
-            throw new Error(`No result for ${commitQueries[index_]}`)
+            // throw new Error(`No result for ${commitQueries[index_]}`)
+            console.warn(`No result for ${commitQueries[index_]}`)
+
+            return { commit: null, date }
         }
 
         const commit = (search?.results.results[0]).commit
 
         // Sanity check
         const commitDate = commit.committer && new Date(commit.committer.date)
-        const date = dates[index_]
+
         if (!commitDate) {
             throw new Error(`Expected commit to have committer: \`${commit.oid}\``)
         }
+
         if (isAfter(commitDate, date)) {
             throw new Error(
                 `Expected commit \`${commit.oid}\` to be before ${formatISO(date)}, but was after: ${formatISO(
@@ -132,8 +171,6 @@ async function determineCommitsToSearch(dates: Date[], repo: string): Promise<{ 
 
         return { commit: commit.oid, date }
     })
-
-    return commitOids
 }
 
 const NUMBER_OF_CHART_POINTS = 7
