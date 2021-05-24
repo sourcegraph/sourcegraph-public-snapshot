@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/url"
 	"os"
+	"sort"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -143,6 +144,24 @@ func TestListAffiliatedRepositories(t *testing.T) {
 				t.Fatalf("Repos mismatch (-want +got):\n%s", diff)
 			}
 		})
+	}
+}
+
+// NOTE: To update VCR for this test, please use the token of "sourcegraph-vcr"
+// for GITHUB_TOKEN, which can be found in 1Password.
+func Test_GetAuthenticatedUserOAuthScopes(t *testing.T) {
+	client, save := newV3TestClient(t, "GetAuthenticatedUserOAuthScopes")
+	defer save()
+
+	scopes, err := client.GetAuthenticatedUserOAuthScopes(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := []string{"admin:enterprise", "admin:gpg_key", "admin:org", "admin:org_hook", "admin:public_key", "admin:repo_hook", "delete:packages", "delete_repo", "gist", "notifications", "repo", "user", "workflow", "write:discussion", "write:packages"}
+	sort.Strings(scopes)
+	if diff := cmp.Diff(want, scopes); diff != "" {
+		t.Fatalf("Scopes mismatch (-want +got):\n%s", diff)
 	}
 }
 

@@ -3,6 +3,7 @@ package github
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/google/go-github/github"
 	"golang.org/x/oauth2"
@@ -111,6 +112,22 @@ func (c *V3Client) GetAuthenticatedUserOrgs(ctx context.Context) ([]*Org, error)
 		return nil, err
 	}
 	return orgs, nil
+}
+
+// GetAuthenticatedUserOAuthScopes gets the list of OAuth scopes granted to the
+// currently authenticate user.
+func (c *V3Client) GetAuthenticatedUserOAuthScopes(ctx context.Context) ([]string, error) {
+	// We only care about headers
+	var dest struct{}
+	header, err := c.requestGetWithHeader(ctx, "/user", &dest)
+	if err != nil {
+		return nil, err
+	}
+	scope := header.Get("x-oauth-scopes")
+	if scope == "" {
+		return []string{}, nil
+	}
+	return strings.Split(scope, ", "), nil
 }
 
 // Collaborator is a collaborator of a repository.
