@@ -27,7 +27,8 @@ $blob-status-bar-horizontal-gap: 0.5rem;
                 &::after {
                     content: '';
                     display: inline-block;
-                    padding-bottom: $blob-status-bar-height + $blob-status-bar-bottom;
+                    padding-bottom: $blob-status-bar-height + $blob-status-bar-bottom + 0.5rem;
+                    // Extra 0.5rem padding on top of the minimum required to expose code;
                 }
             }
         }
