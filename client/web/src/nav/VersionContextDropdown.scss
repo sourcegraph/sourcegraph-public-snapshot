@@ -1,4 +1,5 @@
 @import '~@reach/listbox/styles.css';
+@import 'wildcard/src/global-styles/breakpoints';
 
 .version-context-dropdown {
     width: max-content;
@@ -15,6 +16,13 @@
     &__button {
         display: flex;
         border-radius: 0;
+
+        .theme-redesign & {
+            @media (--xs-breakpoint-down) {
+                padding: 0.25rem;
+                margin-right: 0.5rem;
+            }
+        }
 
         &-text {
             font-size: 0.625rem;

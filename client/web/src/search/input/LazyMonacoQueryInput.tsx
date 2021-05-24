@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import React, { Suspense } from 'react'
 
 import { lazyComponent } from '../../util/lazyComponent'
@@ -12,8 +13,8 @@ const MonacoQueryInput = lazyComponent(() => import('./MonacoQueryInput'), 'Mona
  * It has no suggestions, but still allows to type in and submit queries.
  */
 export const PlainQueryInput: React.FunctionComponent<
-    Pick<MonacoQueryInputProps, 'queryState' | 'autoFocus' | 'onChange'>
-> = ({ queryState, autoFocus, onChange }) => {
+    Pick<MonacoQueryInputProps, 'queryState' | 'autoFocus' | 'onChange' | 'className'>
+> = ({ queryState, autoFocus, onChange, className }) => {
     const onInputChange = React.useCallback(
         (event: React.ChangeEvent<HTMLInputElement>) => {
             onChange({ query: event.target.value })
@@ -24,7 +25,7 @@ export const PlainQueryInput: React.FunctionComponent<
         <input
             type="text"
             autoFocus={autoFocus}
-            className={`form-control text-code ${styles.lazyMonacoQueryInputIntermediateInput}`}
+            className={classNames('form-control text-code', styles.lazyMonacoQueryInputIntermediateInput, className)}
             value={queryState.query}
             onChange={onInputChange}
             spellCheck={false}
@@ -39,4 +40,5 @@ export const LazyMonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps
     <Suspense fallback={<PlainQueryInput {...props} />}>
         <MonacoQueryInput {...props} />
     </Suspense>
+    // <PlainQueryInput {...props} />
 )
