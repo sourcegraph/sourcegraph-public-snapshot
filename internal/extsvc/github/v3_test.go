@@ -2,8 +2,10 @@ package github
 
 import (
 	"context"
+	"flag"
 	"net/url"
 	"os"
+	"regexp"
 	"sort"
 	"testing"
 
@@ -223,4 +225,13 @@ func newV3TestClient(t testing.TB, name string) (*V3Client, func()) {
 	}, doer)
 
 	return cli, save
+}
+
+var updateRegex = flag.String("update", "", "Update testdata of tests matching the given regex")
+
+func update(name string) bool {
+	if updateRegex == nil || *updateRegex == "" {
+		return false
+	}
+	return regexp.MustCompile(*updateRegex).MatchString(name)
 }
