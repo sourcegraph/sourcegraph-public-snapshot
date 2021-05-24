@@ -1,5 +1,6 @@
 import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import React, { useCallback, useMemo, useState } from 'react'
@@ -139,7 +140,7 @@ const RepoRevisionContainerBreadcrumb: React.FunctionComponent<RepoRevisionBread
                     : revision) ||
                     resolvedRevisionOrError.defaultBranch ||
                     'HEAD'}
-                <MenuDownIcon className="icon-inline" />
+                <ChevronDownIcon className="icon-inline" />
                 <RepoRevisionContainerPopover
                     repo={repo}
                     resolvedRevisionOrError={resolvedRevisionOrError}

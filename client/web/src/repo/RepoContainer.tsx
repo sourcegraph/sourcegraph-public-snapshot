@@ -2,6 +2,7 @@ import classNames from 'classnames'
 import * as H from 'history'
 import { escapeRegExp } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
@@ -246,7 +247,11 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                             )}
                             aria-label="Change repository"
                         >
-                            <MenuDownIcon className="icon-inline" />
+                            {isRedesignEnabled ? (
+                                <ChevronDownIcon className="icon-inline" />
+                            ) : (
+                                <MenuDownIcon className="icon-inline" />
+                            )}
                         </button>
                         <UncontrolledPopover
                             placement="bottom-start"
