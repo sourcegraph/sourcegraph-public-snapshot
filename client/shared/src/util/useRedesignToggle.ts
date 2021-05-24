@@ -12,7 +12,7 @@ export const getIsRedesignEnabled = (): boolean => localStorage.getItem(REDESIGN
  * Hook to read and set the flag `isRedesignEnabled` that is persisted to localStorage
  * Used in the Web app and Storybook to toggle global CSS class - `REDESIGN_CLASS_NAME`.
  */
-export const useRedesignToggle = (initialValue = true): [boolean, (value: boolean) => void] => {
+export const useRedesignToggle = (initialValue = false): [boolean, (value: boolean) => void] => {
     const subject = useMemo(() => new LocalStorageSubject<boolean>(REDESIGN_TOGGLE_KEY, initialValue), [initialValue])
     const value = useObservable(subject) ?? subject.value
     const setValue = useCallback((value: boolean) => subject.next(value), [subject])
