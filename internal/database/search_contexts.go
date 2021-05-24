@@ -48,7 +48,18 @@ const searchContextsPermissionsConditionFmtStr = `(
     OR (sc.namespace_user_id IS NULL AND sc.namespace_org_id IS NULL AND EXISTS (SELECT FROM users u WHERE u.id = %d AND u.site_admin))
 )`
 
-func searchContextsPermissionsCondition(ctx context.Context, db dbutil.DB) (*sqlf.Query, error) {
+const userAssociatedSearchContextsPermissionsConditionFmtStr = `(
+	-- Bypass permission check
+    %s
+    -- User contexts are associated with its creator
+    OR (sc.namespace_user_id IS NOT NULL AND sc.namespace_user_id = %d)
+    -- Org contexts are associated with its members
+    OR (sc.namespace_org_id IS NOT NULL AND EXISTS (SELECT FROM org_members om WHERE om.org_id = sc.namespace_org_id AND om.user_id = %d))
+    -- Private instance-level contexts are associated with site-admins and public instance-level contexts are associated with all users
+    OR (sc.namespace_user_id IS NULL AND sc.namespace_org_id IS NULL AND (sc.public OR EXISTS (SELECT FROM users u WHERE u.id = %d AND u.site_admin)))
+)`
+
+func searchContextsPermissionsCondition(ctx context.Context, associatedWithCurrentUser bool, db dbutil.DB) (*sqlf.Query, error) {
 	a := actor.FromContext(ctx)
 	authenticatedUserID := int32(0)
 	bypassPermissionsCheck := a.Internal
@@ -59,7 +70,11 @@ func searchContextsPermissionsCondition(ctx context.Context, db dbutil.DB) (*sql
 		}
 		authenticatedUserID = currentUser.ID
 	}
-	q := sqlf.Sprintf(searchContextsPermissionsConditionFmtStr, bypassPermissionsCheck, authenticatedUserID, authenticatedUserID, authenticatedUserID)
+	permissionsConditionFmtStr := searchContextsPermissionsConditionFmtStr
+	if associatedWithCurrentUser {
+		permissionsConditionFmtStr = userAssociatedSearchContextsPermissionsConditionFmtStr
+	}
+	q := sqlf.Sprintf(permissionsConditionFmtStr, bypassPermissionsCheck, authenticatedUserID, authenticatedUserID, authenticatedUserID)
 	return q, nil
 }
 
@@ -100,6 +115,9 @@ type ListSearchContextsPageOptions struct {
 // ListSearchContextsOptions specifies the options for listing search contexts.
 // If both NamespaceUserID and NamespaceOrgID are 0, instance-level search contexts are matched.
 type ListSearchContextsOptions struct {
+	// AssociatedWithCurrentUser limits results to search contexts associated with the current user. This includes search contexts created by the user,
+	// contexts created by users' organizations, public instance-level search contexts, and private instance-level contexts if current user is a site-admin.
+	AssociatedWithCurrentUser bool
 	// Name is used for partial matching of search contexts by name (case-insensitvely).
 	Name string
 	// NamespaceUserID matches search contexts by user. Mutually exclusive with NamespaceOrgID.
@@ -173,11 +191,7 @@ func getSearchContextsQueryConditions(opts ListSearchContextsOptions) ([]*sqlf.Q
 	return conds, nil
 }
 
-func (s *SearchContextsStore) listSearchContexts(ctx context.Context, cond *sqlf.Query, orderBy *sqlf.Query, limit int32, offset int32) ([]*types.SearchContext, error) {
-	permissionsCond, err := searchContextsPermissionsCondition(ctx, s.Handle().DB())
-	if err != nil {
-		return nil, err
-	}
+func (s *SearchContextsStore) listSearchContexts(ctx context.Context, permissionsCond *sqlf.Query, cond *sqlf.Query, orderBy *sqlf.Query, limit int32, offset int32) ([]*types.SearchContext, error) {
 	rows, err := s.Query(ctx, sqlf.Sprintf(listSearchContextsFmtStr, permissionsCond, cond, orderBy, limit, offset))
 	if err != nil {
 		return nil, err
@@ -190,13 +204,16 @@ func (s *SearchContextsStore) ListSearchContexts(ctx context.Context, pageOpts L
 	if Mocks.SearchContexts.ListSearchContexts != nil {
 		return Mocks.SearchContexts.ListSearchContexts(ctx, pageOpts, opts)
 	}
-
+	permissionsCond, err := searchContextsPermissionsCondition(ctx, opts.AssociatedWithCurrentUser, s.Handle().DB())
+	if err != nil {
+		return nil, err
+	}
 	conds, err := getSearchContextsQueryConditions(opts)
 	if err != nil {
 		return nil, err
 	}
 	orderBy := getSearchContextOrderByClause(opts.OrderBy, opts.OrderByDescending)
-	return s.listSearchContexts(ctx, sqlf.Join(conds, "\n AND "), orderBy, pageOpts.First, pageOpts.After)
+	return s.listSearchContexts(ctx, permissionsCond, sqlf.Join(conds, "\n AND "), orderBy, pageOpts.First, pageOpts.After)
 }
 
 func (s *SearchContextsStore) CountSearchContexts(ctx context.Context, opts ListSearchContextsOptions) (int32, error) {
@@ -208,7 +225,7 @@ func (s *SearchContextsStore) CountSearchContexts(ctx context.Context, opts List
 	if err != nil {
 		return -1, err
 	}
-	permissionsCond, err := searchContextsPermissionsCondition(ctx, s.Handle().DB())
+	permissionsCond, err := searchContextsPermissionsCondition(ctx, opts.AssociatedWithCurrentUser, s.Handle().DB())
 	if err != nil {
 		return -1, err
 	}
@@ -243,7 +260,7 @@ func (s *SearchContextsStore) GetSearchContext(ctx context.Context, opts GetSear
 	}
 	conds = append(conds, sqlf.Sprintf("sc.name = %s", opts.Name))
 
-	permissionsCond, err := searchContextsPermissionsCondition(ctx, s.Handle().DB())
+	permissionsCond, err := searchContextsPermissionsCondition(ctx, false, s.Handle().DB())
 	if err != nil {
 		return nil, err
 	}

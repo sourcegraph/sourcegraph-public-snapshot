@@ -1186,6 +1186,12 @@ type Query {
         """
         query: String
         """
+        Limit results to search contexts associated with the current user. This includes search contexts created by the user,
+        contexts created by users' organizations, public instance-level search contexts, and private instance-level
+        contexts if current user is a site-admin.
+        """
+        associatedWithCurrentUser: Boolean = false
+        """
         Specifies the filter type used to narrow down the search contexts using their namespaces. If not set,
         search contexts are not filtered by namespace.
         """

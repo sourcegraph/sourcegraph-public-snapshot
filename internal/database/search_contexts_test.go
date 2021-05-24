@@ -444,14 +444,14 @@ func TestSearchContexts_Permissions(t *testing.T) {
 	}
 
 	listSearchContextsTests := []struct {
-		name               string
-		userID             int32
-		wantSearchContexts []*types.SearchContext
-		siteAdmin          bool
+		name                      string
+		userID                    int32
+		wantSearchContexts        []*types.SearchContext
+		siteAdmin                 bool
+		associatedWithCurrentUser bool
 	}{
 		{
 			name:               "unauthenticated user only has access to public contexts",
-			userID:             int32(0),
 			wantSearchContexts: []*types.SearchContext{searchContexts[0], searchContexts[2], searchContexts[4]},
 		},
 		{
@@ -470,6 +470,30 @@ func TestSearchContexts_Permissions(t *testing.T) {
 			wantSearchContexts: []*types.SearchContext{searchContexts[0], searchContexts[1], searchContexts[2], searchContexts[4]},
 			siteAdmin:          true,
 		},
+		{
+			name:                      "unauthenticated user only is associated only with public instance-level contexts",
+			wantSearchContexts:        []*types.SearchContext{searchContexts[0]},
+			associatedWithCurrentUser: true,
+		},
+		{
+			name:                      "authenticated user1 is associated with his private context, his orgs private context, and all public contexts",
+			userID:                    user1.ID,
+			wantSearchContexts:        []*types.SearchContext{searchContexts[0], searchContexts[2], searchContexts[3], searchContexts[4], searchContexts[5]},
+			associatedWithCurrentUser: true,
+		},
+		{
+			name:                      "authenticated user2 is associated only with public instance-level context",
+			userID:                    user2.ID,
+			wantSearchContexts:        []*types.SearchContext{searchContexts[0]},
+			associatedWithCurrentUser: true,
+		},
+		{
+			name:                      "site-admin user2 is associated with all instance-level contexts",
+			userID:                    user2.ID,
+			wantSearchContexts:        []*types.SearchContext{searchContexts[0], searchContexts[1]},
+			siteAdmin:                 true,
+			associatedWithCurrentUser: true,
+		},
 	}
 
 	for _, tt := range listSearchContextsTests {
@@ -484,7 +508,7 @@ func TestSearchContexts_Permissions(t *testing.T) {
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: tt.userID})
 			gotSearchContexts, err := sc.ListSearchContexts(ctx,
 				ListSearchContextsPageOptions{First: int32(len(searchContexts))},
-				ListSearchContextsOptions{},
+				ListSearchContextsOptions{AssociatedWithCurrentUser: tt.associatedWithCurrentUser},
 			)
 			if err != nil {
 				t.Fatalf("Expected no error, got %s", err)

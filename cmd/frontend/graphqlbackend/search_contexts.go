@@ -77,13 +77,14 @@ func (r *searchContextRepositoryRevisionsResolver) Revisions(ctx context.Context
 }
 
 type listSearchContextsArgs struct {
-	First               int32
-	After               *string
-	Query               *string
-	NamespaceFilterType *namespaceFilterType
-	Namespace           *graphql.ID
-	OrderBy             searchContextsOrderBy
-	Descending          bool
+	First                     int32
+	After                     *string
+	Query                     *string
+	AssociatedWithCurrentUser bool
+	NamespaceFilterType       *namespaceFilterType
+	Namespace                 *graphql.ID
+	OrderBy                   searchContextsOrderBy
+	Descending                bool
 }
 
 type searchContextConnection struct {
@@ -349,10 +350,11 @@ func (r *schemaResolver) SearchContexts(ctx context.Context, args *listSearchCon
 	}
 
 	opts := database.ListSearchContextsOptions{
-		Name:              searchContextName,
-		NoNamespace:       namespaceFilter == namespaceFilterTypeInstance,
-		OrderBy:           orderBy,
-		OrderByDescending: args.Descending,
+		AssociatedWithCurrentUser: args.AssociatedWithCurrentUser,
+		Name:                      searchContextName,
+		NoNamespace:               namespaceFilter == namespaceFilterTypeInstance,
+		OrderBy:                   orderBy,
+		OrderByDescending:         args.Descending,
 	}
 	if newArgs.Namespace != nil {
 		err := UnmarshalNamespaceID(*newArgs.Namespace, &opts.NamespaceUserID, &opts.NamespaceOrgID)
