@@ -23,7 +23,7 @@ export interface CreateSearchContextPageProps
     extends RouteComponentProps,
         ThemeProps,
         TelemetryProps,
-        Pick<SearchContextProps, 'createSearchContext'> {
+        Pick<SearchContextProps, 'createSearchContext' | 'deleteSearchContext'> {
     authenticatedUser: AuthenticatedUser
 }
 

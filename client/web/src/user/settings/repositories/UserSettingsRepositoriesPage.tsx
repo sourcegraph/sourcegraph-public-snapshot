@@ -23,7 +23,6 @@ import {
 } from '../../../components/FilteredConnection'
 import { PageTitle } from '../../../components/PageTitle'
 import {
-    RepositoriesResult,
     SiteAdminRepositoryFields,
     UserRepositoriesResult,
     UserRepositoriesVariables,
@@ -292,7 +291,9 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     }, [init])
 
     const queryRepositories = useCallback(
-        (args: FilteredConnectionQueryArguments): Observable<RepositoriesResult['repositories']> =>
+        (
+            args: FilteredConnectionQueryArguments
+        ): Observable<NonNullable<UserRepositoriesResult['node']>['repositories']> =>
             listUserRepositories({ ...args, id: userID }).pipe(
                 tap(() => {
                     if (status === 'schedule-complete') {

@@ -2,10 +2,12 @@ import React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
+import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { isLegacyFragment, parseHash, toRepoURL } from '@sourcegraph/shared/src/util/url'
 
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { ActionItemsBar } from '../extensions/components/ActionItemsBar'
+import { Settings } from '../schema/settings.schema'
 import { lazyComponent } from '../util/lazyComponent'
 import { formatHash } from '../util/url'
 
@@ -13,6 +15,10 @@ import { RepoContainerRoute } from './RepoContainer'
 import { RepoRevisionContainerContext, RepoRevisionContainerRoute } from './RepoRevisionContainer'
 
 const BlobPage = lazyComponent(() => import('./blob/BlobPage'), 'BlobPage')
+const RepositoryDocumentationPage = lazyComponent(
+    () => import('./docs/RepositoryDocumentationPage'),
+    'RepositoryDocumentationPage'
+)
 const RepositoryCommitsPage = lazyComponent(() => import('./commits/RepositoryCommitsPage'), 'RepositoryCommitsPage')
 const RepoRevisionSidebar = lazyComponent(() => import('./RepoRevisionSidebar'), 'RepoRevisionSidebar')
 const TreePage = lazyComponent(() => import('./tree/TreePage'), 'TreePage')
@@ -205,6 +211,33 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                     {...context}
                     commitID={commitID}
                     repoHeaderContributionsLifecycleProps={repoHeaderContributionsLifecycleProps}
+                />
+                <ActionItemsBar
+                    useActionItemsBar={context.useActionItemsBar}
+                    location={context.location}
+                    extensionsController={context.extensionsController}
+                    platformContext={context.platformContext}
+                    telemetryService={context.telemetryService}
+                />
+            </>
+        ),
+    },
+    {
+        path: '/-/docs/:pathID*',
+        condition: ({ settingsCascade }) => {
+            if (settingsCascade.final === null || isErrorLike(settingsCascade.final)) {
+                return false
+            }
+            const settings: Settings = settingsCascade.final
+            return !!settings.experimentalFeatures?.apiDocs
+        },
+        render: ({ resolvedRev: { commitID }, match, repoHeaderContributionsLifecycleProps, ...context }: any) => (
+            <>
+                <RepositoryDocumentationPage
+                    {...context}
+                    match={match}
+                    commitID={commitID}
+                    pathID={match.params.pathID ? '/' + decodeURIComponent(match.params.pathID) : '/'}
                 />
                 <ActionItemsBar
                     useActionItemsBar={context.useActionItemsBar}

@@ -41,6 +41,8 @@ export interface SearchBoxProps
     /** Whether comments are parsed and highlighted */
     interpretComments?: boolean
 
+    isSearchOnboardingTourVisible: boolean
+
     /** Don't show the version contexts dropdown. */
     hideVersionContexts?: boolean
 }
@@ -60,22 +62,27 @@ export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
                     setVersionContext={props.setVersionContext}
                     availableVersionContexts={props.availableVersionContexts}
                     selectedSearchContextSpec={props.selectedSearchContextSpec}
+                    className={styles.searchBoxVersionContextDropdown}
                 />
             )}
             <div className={`${styles.searchBoxBackgroundContainer} flex-shrink-past-contents`}>
                 {props.showSearchContext && (
-                    <SearchContextDropdown query={queryState.query} submitSearch={submitSearch} {...props} />
+                    <>
+                        <SearchContextDropdown
+                            {...props}
+                            query={queryState.query}
+                            submitSearch={submitSearch}
+                            className={styles.searchBoxContextDropdown}
+                        />
+                        <div className={styles.searchBoxSeparator} />
+                    </>
                 )}
                 <div className={`${styles.searchBoxFocusContainer} flex-shrink-past-contents`}>
-                    <LazyMonacoQueryInput {...props} />
-                    <Toggles
-                        {...props}
-                        navbarSearchQuery={queryState.query}
-                        className={styles.searchBoxToggleContainer}
-                    />
+                    <LazyMonacoQueryInput {...props} className={styles.searchBoxInput} />
+                    <Toggles {...props} navbarSearchQuery={queryState.query} className={styles.searchBoxToggles} />
                 </div>
             </div>
-            <SearchButton />
+            <SearchButton className={styles.searchBoxButton} />
         </div>
     )
 }

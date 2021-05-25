@@ -1,8 +1,10 @@
 import { subDays } from 'date-fns'
 import expect from 'expect'
+import { range } from 'lodash'
 import { test } from 'mocha'
 
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
@@ -47,7 +49,8 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
     }),
 }
 
-describe('Search contexts', () => {
+// TODO: Disabled because it's flaky. See: https://github.com/sourcegraph/sourcegraph/issues/21350
+describe.skip('Search contexts', () => {
     let driver: Driver
     before(async () => {
         driver = await createDriverForTest()
@@ -303,20 +306,37 @@ describe('Search contexts', () => {
         expect(convertedContexts).toBe(versionContexts.length)
     })
 
-    test('Highlight tour step should be visible with empty local storage', async () => {
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=context:global+test&patternType=regexp')
+    test('Highlight tour step should not be visible with empty local storage on search homepage', async () => {
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
+        await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
+        expect(await isSearchContextHighlightTourStepVisible()).toBeFalsy()
+    })
+
+    test('Highlight tour step should be visible with empty local storage on search results page', async () => {
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test')
         await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
         expect(await isSearchContextHighlightTourStepVisible()).toBeTruthy()
     })
 
-    test('Highlight tour step should not be visible if already seen', async () => {
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=context:global+test&patternType=regexp', {
+    test('Highlight tour step should be visible with cancelled search onboarding tour on search homepage', async () => {
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/search', {
             waitUntil: 'networkidle0',
         })
-        await driver.page.evaluate(() =>
+        await driver.page.evaluate(() => localStorage.setItem('has-cancelled-onboarding-tour', 'true'))
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
+        await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
+        expect(await isSearchContextHighlightTourStepVisible()).toBeTruthy()
+    })
+
+    test('Highlight tour step should not be visible if already seen with cancelled search onboarding tour on search homepage', async () => {
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/search', {
+            waitUntil: 'networkidle0',
+        })
+        await driver.page.evaluate(() => {
+            localStorage.setItem('has-cancelled-onboarding-tour', 'true')
             localStorage.setItem('has-seen-search-contexts-dropdown-highlight-tour-step', 'true')
-        )
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=context:global+test&patternType=regexp')
+        })
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
         await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
         expect(await isSearchContextHighlightTourStepVisible()).toBeFalsy()
     })
@@ -515,5 +535,130 @@ describe('Search contexts', () => {
         await driver.page.waitForSelector('.alert-danger')
         const errorText = await driver.page.evaluate(() => document.querySelector('.alert-danger')?.textContent)
         expect(errorText).toContain('You do not have sufficient permissions to edit this context.')
+    })
+
+    test('Delete search context', async () => {
+        testContext.overrideGraphQL({
+            ...testContextForSearchContexts,
+            RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
+            DeleteSearchContext: () => ({
+                deleteSearchContext: {
+                    alwaysNil: '',
+                },
+            }),
+            FetchSearchContext: ({ id }) => ({
+                node: {
+                    __typename: 'SearchContext',
+                    id,
+                    spec: '@test/context-1',
+                    name: 'context-1',
+                    namespace: {
+                        __typename: 'User',
+                        id: 'u1',
+                        namespaceName: 'test',
+                    },
+                    description: 'description',
+                    public: true,
+                    autoDefined: false,
+                    updatedAt: subDays(new Date(), 1).toISOString(),
+                    viewerCanManage: true,
+                    repositories: [
+                        {
+                            __typename: 'SearchContextRepositoryRevisions',
+                            revisions: ['HEAD'],
+                            repository: { name: 'github.com/example/example' },
+                        },
+                    ],
+                },
+            }),
+        })
+
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/contexts/context-1/edit')
+
+        // Click delete
+        await driver.page.waitForSelector('[data-testid="search-context-delete-button"]')
+        await driver.page.click('[data-testid="search-context-delete-button"]')
+
+        // Wait for modal
+        await driver.page.waitForSelector('[data-testid="delete-search-context-modal"]', { visible: true })
+        await driver.page.click('[data-testid="confirm-delete-search-context"]')
+
+        // Wait for delete request to finish and redirect to list page
+        await driver.page.waitForSelector('.search-contexts-list-page')
+    })
+
+    test('Infinite scrolling in dropdown menu', async () => {
+        // We're loading 15 search contexts per page, and we want to load 2 pages
+        const searchContextsCount = 30
+
+        testContext.overrideGraphQL({
+            ...testContextForSearchContexts,
+            AutoDefinedSearchContexts: () => ({
+                autoDefinedSearchContexts: [],
+            }),
+            ListSearchContexts: ({ after }) => {
+                const searchContexts = range(0, searchContextsCount).map(index => ({
+                    __typename: 'SearchContext',
+                    id: `id-${index}`,
+                    spec: `ctx-${index}`,
+                    name: `ctx-${index}`,
+                    namespace: null,
+                    public: true,
+                    autoDefined: false,
+                    viewerCanManage: false,
+                    description: '',
+                    repositories: [],
+                    updatedAt: subDays(new Date(), 1).toISOString(),
+                })) as ISearchContext[]
+
+                if (after === null) {
+                    return {
+                        searchContexts: {
+                            nodes: searchContexts.slice(0, searchContextsCount / 2),
+                            totalCount: searchContexts.length,
+                            pageInfo: {
+                                hasNextPage: true,
+                                endCursor: 'end-first-page',
+                            },
+                        },
+                    }
+                }
+
+                return {
+                    searchContexts: {
+                        nodes: searchContexts.slice(searchContextsCount / 2),
+                        totalCount: searchContexts.length,
+                        pageInfo: {
+                            hasNextPage: false,
+                            endCursor: null,
+                        },
+                    },
+                }
+            },
+        })
+
+        // Go to search homepage and wait for context selector to load
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
+        await driver.page.waitForSelector('.test-search-context-dropdown', { visible: true })
+
+        // Open dropdown menu
+        await driver.page.click('.test-search-context-dropdown')
+        await driver.page.waitForSelector('.search-context-menu__item', { visible: true })
+
+        // Scroll to the bottom of the list
+        await driver.page.evaluate(() => {
+            const scrollableSection = document.querySelector<HTMLDivElement>('.search-context-menu__list')
+            if (scrollableSection) {
+                scrollableSection.scrollTop = scrollableSection.offsetHeight
+            }
+        })
+
+        // Wait for correct number of total elements to load
+        await driver.page.waitFor(
+            searchContextsCount =>
+                document.querySelectorAll('.search-context-menu__item-name').length === searchContextsCount,
+            {},
+            searchContextsCount
+        )
     })
 })

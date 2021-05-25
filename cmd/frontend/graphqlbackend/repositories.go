@@ -207,10 +207,17 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*Repository
 }
 
 func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *TotalCountArgs) (countptr *int32, err error) {
-	// 🚨 SECURITY: Only site admins or same user can do this, because a total repository count does not respect
-	// repository permissions.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, actor.FromContext(ctx).UID); err != nil {
-		return nil, err
+	if r.opt.UserID != 0 {
+		// 🚨 SECURITY: If filtering by user, restrict to that user
+		if err := backend.CheckSameUser(ctx, r.opt.UserID); err != nil {
+			return nil, err
+		}
+	} else {
+		// 🚨 SECURITY: Only site admins can list all repos, because a total repository
+		// count does not respect repository permissions.
+		if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+			return nil, err
+		}
 	}
 
 	i32ptr := func(v int32) *int32 {

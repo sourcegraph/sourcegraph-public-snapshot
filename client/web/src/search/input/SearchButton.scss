@@ -3,5 +3,11 @@
         // Left side is flush with QueryInput.
         border-top-left-radius: 0;
         border-bottom-left-radius: 0;
+
+        .theme-redesign & {
+            @media (--xs-breakpoint-down) {
+                border-radius: var(--border-radius);
+            }
+        }
     }
 }
