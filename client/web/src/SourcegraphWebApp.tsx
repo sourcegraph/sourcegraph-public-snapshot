@@ -155,11 +155,6 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      */
     searchCaseSensitivity: boolean
 
-    /**
-     * Whether to display the copy query button.
-     */
-    copyQueryButton: boolean
-
     /*
      * The version context the instance is in. If undefined, it means no version context is selected.
      */
@@ -295,7 +290,6 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             parsedSearchQuery: parsedSearchURL.query || '',
             searchPatternType: urlPatternType,
             searchCaseSensitivity: urlCase,
-            copyQueryButton: false,
             versionContext: resolvedVersionContext,
             availableVersionContexts,
             previousVersionContext,
@@ -524,7 +518,6 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     setVersionContext={this.setVersionContext}
                                     availableVersionContexts={this.state.availableVersionContexts}
                                     previousVersionContext={this.state.previousVersionContext}
-                                    copyQueryButton={this.state.copyQueryButton}
                                     // Extensions
                                     platformContext={this.platformContext}
                                     extensionsController={this.extensionsController}

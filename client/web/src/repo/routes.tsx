@@ -115,7 +115,6 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
             setPatternType,
             caseSensitive,
             setCaseSensitivity,
-            copyQueryButton,
             versionContext,
             globbing,
             ...context
@@ -156,7 +155,6 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                 setPatternType,
                 caseSensitive,
                 setCaseSensitivity,
-                copyQueryButton,
                 versionContext,
                 globbing,
             }
