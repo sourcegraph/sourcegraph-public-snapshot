@@ -42,7 +42,10 @@ func NewTx(t testing.TB, db *sql.DB) *sql.Tx {
 	return tx
 }
 
+// Use a shared, locked RNG to avoid issues with multiple concurrent tests getting
+// the same random database number (unlikely, but has been observed).
 var rng = rand.New(rand.NewSource(time.Now().UnixNano()))
+var rngLock sync.Mutex
 
 // NewDB returns a connection to a clean, new temporary testing database
 // with the same schema as Sourcegraph's production Postgres database.
@@ -64,7 +67,9 @@ func NewDB(t testing.TB, dsn string) *sql.DB {
 
 	initTemplateDB(t, config)
 
+	rngLock.Lock()
 	dbname := "sourcegraph-test-" + strconv.FormatUint(rng.Uint64(), 10)
+	rngLock.Unlock()
 
 	db := dbConn(t, config)
 	dbExec(t, db, `CREATE DATABASE `+pq.QuoteIdentifier(dbname)+` TEMPLATE `+pq.QuoteIdentifier(templateDBName()))
