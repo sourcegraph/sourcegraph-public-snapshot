@@ -66,6 +66,8 @@ Note: When enabling this setting, desired extensions and languages need to be sp
   "extensions": { "allowRemoteExtensions": ["chris/token-highlights"] }
 }
 ```
+You will also need to manually enable language extensions for Code Intelligence to work properly by adding them to `"DefaultSettings"` in your site configuration. List of languages can be found here: [Sourcegraph default language settings](
+https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/cmd/frontend/graphqlbackend/default_settings.go#L14-51)
 
 ## [Client-side security and privacy](../../extensions/security.md)
 
