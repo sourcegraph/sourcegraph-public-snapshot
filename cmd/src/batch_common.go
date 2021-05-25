@@ -497,7 +497,7 @@ func printExecutionError(out *output.Output, err error) {
 	out.Write("")
 
 	block := out.Block(output.Line(output.EmojiLightbulb, output.StyleSuggestion, "The troubleshooting documentation can help to narrow down the cause of the errors:"))
-	block.WriteLine(output.Line("", output.StyleSuggestion, "https://docs.sourcegraph.com/batch-changes/references/troubleshooting"))
+	block.WriteLine(output.Line("", output.StyleSuggestion, "https://docs.sourcegraph.com/batch_changes/references/troubleshooting"))
 	block.Close()
 }
 
