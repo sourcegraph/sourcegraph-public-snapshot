@@ -16,10 +16,18 @@ const { add } = storiesOf('shared/HoverOverlay', module)
 const bitbucketClassProps: HoverOverlayClassProps = {
     className: 'aui-dialog',
     actionItemClassName: 'aui-button hover-action-item--bitbucket-server',
-    iconButtonClassName: 'aui-button btn-icon--bitbucket-server',
-    infoAlertClassName: 'aui-message aui-message-info',
-    errorAlertClassName: 'aui-message aui-message-error',
+    closeButtonClassName: 'aui-button btn-icon--bitbucket-server',
     iconClassName: 'aui-icon',
+    getAlertClassName: alertKind => {
+        switch (alertKind) {
+            case 'error':
+                return 'aui-message aui-message-error'
+            case 'warning':
+                return 'aui-message aui-message-info'
+            default:
+                return 'aui-message aui-message-info'
+        }
+    },
 }
 
 add('Bitbucket styles', () => (
