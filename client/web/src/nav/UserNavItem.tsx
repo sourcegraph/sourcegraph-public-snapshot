@@ -20,8 +20,6 @@ import { Badge } from '../components/Badge'
 import { ThemePreference, ThemePreferenceProps } from '../theme'
 import { UserAvatar } from '../user/UserAvatar'
 
-import { RedesignToggle } from './RedesignToggle'
-
 export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps, ExtensionAlertAnimationProps {
     location: H.Location
     authenticatedUser: Pick<
@@ -33,7 +31,6 @@ export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps, Exte
     testIsOpen?: boolean
     codeHostIntegrationMessaging: 'browser-extension' | 'native-integration'
     showRepositorySection?: boolean
-    showRedesignToggle?: boolean
 }
 
 export interface ExtensionAlertAnimationProps {
@@ -206,7 +203,6 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                         <Shortcut key={index} {...keybinding} onMatch={onThemeCycle} />
                     ))}
                 </div>
-                {props.showRedesignToggle && <RedesignToggle />}
                 {props.authenticatedUser.organizations.nodes.length > 0 && (
                     <>
                         <DropdownItem divider={true} />
