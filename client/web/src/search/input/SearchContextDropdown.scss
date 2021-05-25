@@ -75,11 +75,15 @@
 }
 
 .search-context-highlight-tour {
-    background: var(--color-bg-3);
+    background: var(--tour-bg);
     border: none;
     border-radius: 10px;
 
     &__step {
         width: 17rem;
+    }
+
+    .shepherd-arrow::after {
+        border-bottom-color: var(--tour-bg);
     }
 }
