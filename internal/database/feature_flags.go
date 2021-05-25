@@ -8,10 +8,11 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
+	"golang.org/x/sync/errgroup"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"golang.org/x/sync/errgroup"
 )
 
 type FeatureFlagStore struct {

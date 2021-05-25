@@ -7,10 +7,11 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/stretchr/testify/require"
 )
 
 func TestFeatureFlagStore(t *testing.T) {
