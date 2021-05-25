@@ -1,19 +1,19 @@
 sequenceDiagram
-  Providers ->>+ LSIF Provider: References(textDocument, position)
+  Providers ->>+ LSIF provider: References(textDocument, position)
 
   loop
-    LSIF Provider  ->>+ GraphQL API: LSIF.References(position)
-    GraphQL API   -->>- LSIF Provider: references
-    LSIF Provider -->>- Providers: references
+    LSIF provider  ->>+ GraphQL API: LSIF.References(position)
+    GraphQL API   -->>- LSIF provider: references
+    LSIF provider -->>- Providers: references
   end
 
   par
-    Providers       ->>+ Search Provider: References(textDocument, position)
-    Search Provider ->>+ GraphQL API: Regexp Search "repo:^repo$@commit"
-    GraphQL API    -->>- Search Provider: local references
+    Providers       ->>+ Search provider: References(textDocument, position)
+    Search provider ->>+ GraphQL API: Regexp Search "repo:^repo$@commit"
+    GraphQL API    -->>- Search provider: local references
   and
-    Search Provider ->>+ GraphQL API: Regexp Search "-repo:^repo$" index:true
-    GraphQL API    -->>- Search Provider: remote references
+    Search provider ->>+ GraphQL API: Regexp Search "-repo:^repo$" index:true
+    GraphQL API    -->>- Search provider: remote references
   end
 
-  Search Provider -->>- Providers: local references + remote references
+  Search provider -->>- Providers: local references + remote references
