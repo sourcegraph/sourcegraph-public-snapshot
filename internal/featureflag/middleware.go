@@ -20,7 +20,7 @@ func Middleware(ffs *database.FeatureFlagStore, next http.Handler) http.Handler 
 }
 
 func contextWithFeatureFlags(ffs *database.FeatureFlagStore, r *http.Request) context.Context {
-	if a := actor.FromContext(r.Context()); a != nil && a.UID != 0 {
+	if a := actor.FromContext(r.Context()); a.IsAuthenticated() {
 		flags, err := ffs.UserFlags(r.Context(), a.UID)
 		if err == nil {
 			return context.WithValue(r.Context(), flagContextKey{}, FlagSet(flags))
