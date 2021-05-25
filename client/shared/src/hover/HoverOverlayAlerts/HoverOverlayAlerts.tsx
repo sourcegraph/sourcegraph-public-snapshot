@@ -46,7 +46,7 @@ export const HoverOverlayAlerts: React.FunctionComponent<HoverOverlayAlertsProps
     return (
         <div className="hover-overlay__alerts">
             {hoverAlerts.map(({ summary, iconKind, type }, index) => (
-                <div key={index} className={classNames('hover-overlay__alert', getAlertClassName(iconKind || 'info'))}>
+                <div key={index} className={classNames('hover-overlay__alert', getAlertClassName('info'))}>
                     {hoverAlertIconComponent(iconKind, iconClassName)}
                     {summary.kind === 'plaintext' ? (
                         <span className="hover-overlay__content">{summary.value}</span>
