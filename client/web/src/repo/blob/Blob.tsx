@@ -1,10 +1,20 @@
-import classNames from 'classnames'
 import { Remote } from 'comlink'
 import * as H from 'history'
 import iterate from 'iterare'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { BehaviorSubject, combineLatest, EMPTY, from, fromEvent, of, ReplaySubject, Subject, Subscription } from 'rxjs'
-import { catchError, concatMap, filter, first, map, mapTo, switchMap, tap, withLatestFrom } from 'rxjs/operators'
+import {
+    catchError,
+    concatMap,
+    filter,
+    first,
+    map,
+    mapTo,
+    switchMap,
+    tap,
+    throttleTime,
+    withLatestFrom,
+} from 'rxjs/operators'
 import useDeepCompareEffect from 'use-deep-compare-effect'
 
 import { createHoverifier, findPositionsFromEvents, HoveredToken } from '@sourcegraph/codeintellify'
@@ -42,11 +52,11 @@ import {
     toURIWithPath,
 } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { getHover, getDocumentHighlights } from '../../backend/features'
 import { WebHoverOverlay } from '../../components/shared'
 import { StatusBar } from '../../extensions/components/StatusBar'
+import { observeResize } from '../../util/dom'
 import { HoverThresholdProps } from '../RepoContainer'
 
 import { LineDecorator } from './LineDecorator'
@@ -501,6 +511,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     // Passed to HoverOverlay
     const hoverState = useObservable(hoverifier.hoverStateUpdates) || {}
 
+    // Status bar
     const getStatusBarItems = useCallback(
         () =>
             viewerUpdates.pipe(
@@ -515,7 +526,62 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         [viewerUpdates]
     )
 
-    const [isRedesignEnabled] = useRedesignToggle()
+    const statusBarElements = useMemo(() => new ReplaySubject<HTMLDivElement | null>(1), [])
+    const nextStatusBarElement = useCallback(
+        (statusBarElement: HTMLDivElement | null) => statusBarElements.next(statusBarElement),
+        [statusBarElements]
+    )
+
+    // Floating status bar: add scrollbar width with "base" horizontal gap to achieve
+    // our desired horizontal gap between the scrollbar and status bar
+    useObservable(
+        useMemo(
+            () =>
+                combineLatest([blobElements, statusBarElements]).pipe(
+                    switchMap(([blobElement, statusBarElement]) => {
+                        if (!(blobElement && statusBarElement)) {
+                            return EMPTY
+                        }
+
+                        return observeResize(blobElement).pipe(
+                            // Throttle reflow without losing final value.
+                            throttleTime(100, undefined, { leading: true, trailing: true }),
+                            tap(() => {
+                                try {
+                                    // Read
+                                    const blobComputedStyle = window.getComputedStyle(blobElement)
+                                    const borderRightWidth = parseInt(blobComputedStyle.borderRightWidth, 10)
+                                    const borderLeftWidth = parseInt(blobComputedStyle.borderLeftWidth, 10)
+
+                                    const baseHorizontalGap = blobComputedStyle.getPropertyValue(
+                                        '--blob-status-bar-horizontal-gap'
+                                    )
+
+                                    let blobScrollbarWidth =
+                                        blobElement.offsetWidth -
+                                        blobElement.clientWidth -
+                                        (!isNaN(borderRightWidth) ? borderRightWidth : 0) -
+                                        (!isNaN(borderLeftWidth) ? borderLeftWidth : 0)
+
+                                    if (isNaN(blobScrollbarWidth)) {
+                                        blobScrollbarWidth = 0
+                                    }
+
+                                    // Write
+                                    statusBarElement.style.right = `calc(${baseHorizontalGap} + ${blobScrollbarWidth}px)`
+                                    // Maintain an equal gap with the left side of the container when the status bar is overflowing.
+                                    statusBarElement.style.maxWidth = `calc(100% - ((2 * ${baseHorizontalGap}) + ${blobScrollbarWidth}px))`
+                                } catch {
+                                    // noop
+                                }
+                            })
+                        )
+                    }),
+                    mapTo(undefined)
+                ),
+            [blobElements, statusBarElements]
+        )
+    )
 
     return (
         <>
@@ -559,7 +625,8 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                 extensionsController={extensionsController}
                 uri={toURIWithPath(blobInfo)}
                 location={location}
-                className={classNames(isRedesignEnabled && 'blob__status-bar')}
+                className="blob-status-bar__body"
+                statusBarRef={nextStatusBarElement}
             />
         </>
     )

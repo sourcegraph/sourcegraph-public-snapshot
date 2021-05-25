@@ -31,6 +31,8 @@ interface StatusBarProps extends ExtensionsControllerProps<'extHostAPI' | 'execu
     uri?: string
 
     location: H.Location
+
+    statusBarRef?: React.Ref<HTMLDivElement>
 }
 
 export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
@@ -39,6 +41,7 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
     extensionsController,
     uri,
     location,
+    statusBarRef,
 }) => {
     const statusBarItems = useObservable(useMemo(() => getStatusBarItems(), [getStatusBarItems]))
 
@@ -84,6 +87,7 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
                 'percy-hide', // TODO: Fix flaky status bar in Percy tests: https://github.com/sourcegraph/sourcegraph/issues/20751
                 className
             )}
+            ref={statusBarRef}
         >
             <ErrorBoundary
                 location={location}

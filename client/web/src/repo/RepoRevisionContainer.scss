@@ -57,10 +57,5 @@
             border-top-left-radius: 0.1875rem;
             border-top-right-radius: 0.1875rem;
         }
-
-        .theme-redesign & {
-            // For absolute positioned Blob status bar
-            position: relative;
-        }
     }
 }
