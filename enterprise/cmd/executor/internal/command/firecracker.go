@@ -60,7 +60,7 @@ func formatFirecrackerCommand(spec CommandSpec, name, repoDir string, options Op
 // without other issues.
 //
 // https://github.com/weaveworks/ignite/issues/559
-// Following up in TODO.
+// Following up in https://github.com/sourcegraph/sourcegraph/issues/21377.
 var igniteRunLock sync.Mutex
 
 // setupFirecracker invokes a set of commands to provision and prepare a Firecracker virtual
