@@ -679,6 +679,10 @@ Referenced by:
 
 ```
 
+**bool_value**: Bool value only defined when flag_type is bool
+
+**rollout**: Rollout only defined when flag_type is bool_var. Increments of 0.01%
+
 # Table "public.gitserver_repos"
 ```
         Column         |           Type           | Collation | Nullable |      Default       

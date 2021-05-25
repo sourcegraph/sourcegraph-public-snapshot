@@ -5,31 +5,30 @@ CREATE TYPE feature_flag_type AS ENUM ('bool', 'bool_var');
 CREATE TABLE IF NOT EXISTS feature_flags (
 	flag_name text NOT NULL PRIMARY KEY,
 	flag_type feature_flag_type NOT NULL,
-
-	-- Bool value only defined when flag_type is 'bool'
 	bool_value boolean,
-	
-	-- Rollout only defined when flag_type is 'bool_var'. Increments of 0.01%
 	rollout integer CHECK (rollout >= 0 AND rollout <= 10000),
 
 	created_at timestamp with time zone DEFAULT now() NOT NULL,
 	updated_at timestamp with time zone DEFAULT now() NOT NULL,
 	deleted_at timestamp with time zone,
 
-	-- check that bool_value is set IFF flag_type = bool
 	CONSTRAINT required_bool_fields	CHECK ( 1 = CASE
 		WHEN flag_type = 'bool' AND bool_value IS NULL THEN 0
 		WHEN flag_type <> 'bool' AND bool_value IS NOT NULL THEN 0
 		ELSE 1
 	END),
 
-	-- check that rollout is set IFF flag_type = bool_var
 	CONSTRAINT required_bool_var_fields CHECK (1 = CASE
 		WHEN flag_type = 'bool_var' AND rollout IS NULL THEN 0
 		WHEN flag_type <> 'bool_var' AND rollout IS NOT NULL THEN 0
 		ELSE 1
 	END)
 );
+
+COMMENT ON COLUMN feature_flags.bool_value IS 'Bool value only defined when flag_type is bool';
+COMMENT ON COLUMN feature_flags.rollout IS 'Rollout only defined when flag_type is bool_var. Increments of 0.01%';
+COMMENT ON CONSTRAINT required_bool_fields ON feature_flags IS 'Checks that bool_value is set IFF flag_type = bool';
+COMMENT ON CONSTRAINT required_bool_var_fields ON feature_flags IS 'Checks that rollout is set IFF flag_type = bool_var';
 
 CREATE TABLE IF NOT EXISTS feature_flag_overrides (
 	namespace_org_id integer,
