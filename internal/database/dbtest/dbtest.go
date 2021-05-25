@@ -113,11 +113,11 @@ func initTemplateDB(t testing.TB, config *url.URL) {
 			if err != nil {
 				t.Fatalf("failed to construct migrations: %s", err)
 			}
+			defer m.Close()
 			if err = dbconn.DoMigrate(m); err != nil {
 				t.Fatalf("failed to apply migrations: %s", err)
 			}
 		}
-		dbExec(t, db, killClientConnsQuery, templateName)
 	})
 }
 
