@@ -226,34 +226,36 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                 key: 'repository',
                 element: (
                     <>
-                        <Link
-                            to={
-                                resolvedRevisionOrError && !isErrorLike(resolvedRevisionOrError)
-                                    ? resolvedRevisionOrError.rootTreeURL
-                                    : repoOrError.url
-                            }
-                            className={classNames(
-                                'text-nowrap test-repo-header-repo-link',
-                                isRedesignEnabled ? 'btn btn-sm btn-outline-secondary' : 'font-weight-bold'
-                            )}
-                        >
-                            <SourceRepositoryIcon className="icon-inline" /> {displayRepoName(repoOrError.name)}
-                        </Link>
-                        <button
-                            type="button"
-                            id="repo-popover"
-                            className={classNames(
-                                'btn repo-container__breadcrumb',
-                                isRedesignEnabled ? 'btn-sm btn-outline-secondary' : 'btn-icon'
-                            )}
-                            aria-label="Change repository"
-                        >
-                            {isRedesignEnabled ? (
-                                <ChevronDownIcon className="icon-inline" />
-                            ) : (
-                                <MenuDownIcon className="icon-inline" />
-                            )}
-                        </button>
+                        <div className={classNames('d-inline-flex', isRedesignEnabled && 'btn-group')}>
+                            <Link
+                                to={
+                                    resolvedRevisionOrError && !isErrorLike(resolvedRevisionOrError)
+                                        ? resolvedRevisionOrError.rootTreeURL
+                                        : repoOrError.url
+                                }
+                                className={classNames(
+                                    'text-nowrap test-repo-header-repo-link',
+                                    isRedesignEnabled ? 'btn btn-sm btn-outline-secondary' : 'font-weight-bold'
+                                )}
+                            >
+                                <SourceRepositoryIcon className="icon-inline" /> {displayRepoName(repoOrError.name)}
+                            </Link>
+                            <button
+                                type="button"
+                                id="repo-popover"
+                                className={classNames(
+                                    'btn repo-container__repo-change',
+                                    isRedesignEnabled ? 'btn-sm btn-outline-secondary' : 'btn-icon'
+                                )}
+                                aria-label="Change repository"
+                            >
+                                {isRedesignEnabled ? (
+                                    <ChevronDownIcon className="icon-inline" />
+                                ) : (
+                                    <MenuDownIcon className="icon-inline" />
+                                )}
+                            </button>
+                        </div>
                         <UncontrolledPopover
                             placement="bottom-start"
                             target="repo-popover"
