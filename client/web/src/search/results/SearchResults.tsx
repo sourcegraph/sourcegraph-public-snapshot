@@ -13,6 +13,7 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { collectMetrics } from '@sourcegraph/shared/src/search/query/metrics'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -38,7 +39,6 @@ import { Settings } from '../../schema/settings.schema'
 import { eventLogger, EventLogger } from '../../tracking/eventLogger'
 import { shouldDisplayPerformanceWarning } from '../backend'
 import { isSearchResults, submitSearch, toggleSearchFilter, getSearchTypeFromQuery, QueryState } from '../helpers'
-import { queryTelemetryData } from '../queryTelemetry'
 
 import { DynamicSearchFilter, SearchResultsFilterBars } from './SearchResultsFilterBars'
 import { SearchResultsList } from './SearchResultsList'
@@ -156,14 +156,21 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                             versionContext: string | undefined
                         } => !!queryAndPatternTypeAndCase.query && !!queryAndPatternTypeAndCase.patternType
                     ),
-                    tap(({ query, caseSensitive }) => {
-                        const query_data = queryTelemetryData(query, caseSensitive)
+                    tap(({ query }) => {
                         this.props.telemetryService.log('SearchResultsQueried', {
-                            code_search: { query_data },
+                            code_search: {
+                                query_data: {
+                                    // 🚨 PRIVACY: never provide any private data in the `query` field,
+                                    // which maps to { code_search: { query_data: { query } } } in the event logs,
+                                    // and potentially exported in pings data.
+
+                                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                                    query: query ? collectMetrics(query) : undefined,
+                                    combined: query,
+                                    empty: !query,
+                                },
+                            },
                         })
-                        if (query_data.query?.field_type && query_data.query.field_type.value_diff > 0) {
-                            this.props.telemetryService.log('DiffSearchResultsQueried')
-                        }
                     }),
                     switchMap(({ query, patternType, caseSensitive, versionContext }) =>
                         concat(

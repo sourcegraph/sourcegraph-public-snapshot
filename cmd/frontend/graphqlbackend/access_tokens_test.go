@@ -6,11 +6,13 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/errors"
 	"github.com/graph-gophers/graphql-go/gqltesting"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -244,6 +246,30 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		}
 		if result != nil {
 			t.Errorf("got result %v, want nil", result)
+		}
+	})
+
+	t.Run("disable sudo token for dotcom", func(t *testing.T) {
+		database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
+			return &types.User{ID: 1, SiteAdmin: true}, nil
+		}
+		defer func() { database.Mocks.Users.GetByCurrentAuthUser = nil }()
+
+		conf.Get().AuthAccessTokens = &schema.AuthAccessTokens{Allow: string(conf.AccessTokensAdmin)}
+		defer func() { conf.Get().AuthAccessTokens = nil }()
+
+		envvar.MockSourcegraphDotComMode(true)
+		defer envvar.MockSourcegraphDotComMode(false)
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		_, err := (&schemaResolver{db: db}).CreateAccessToken(ctx, &createAccessTokenInput{
+			User:   uid1GQLID,
+			Scopes: []string{authz.ScopeUserAll, authz.ScopeSiteAdminSudo},
+		})
+		got := fmt.Sprintf("%v", err)
+		want := "creation of access tokens with sudo scope is disabled"
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Fatalf("Mismatch (-want +got):\n%s", diff)
 		}
 	})
 }

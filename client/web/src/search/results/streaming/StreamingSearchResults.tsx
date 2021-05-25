@@ -8,6 +8,7 @@ import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExce
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { collectMetrics } from '@sourcegraph/shared/src/search/query/metrics'
 import { updateFilters } from '@sourcegraph/shared/src/search/query/transformer'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -29,7 +30,6 @@ import { CodeMonitoringProps } from '../../../code-monitoring'
 import { PageTitle } from '../../../components/PageTitle'
 import { SavedSearchModal } from '../../../savedSearches/SavedSearchModal'
 import { QueryState, submitSearch } from '../../helpers'
-import { queryTelemetryData } from '../../queryTelemetry'
 import { SearchAlert } from '../SearchAlert'
 import { LATEST_VERSION } from '../SearchResults'
 import { SearchResultsInfoBar } from '../SearchResultsInfoBar'
@@ -89,13 +89,20 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
 
     // Log search query event when URL changes
     useEffect(() => {
-        const query_data = queryTelemetryData(query, caseSensitive)
         telemetryService.log('SearchResultsQueried', {
-            code_search: { query_data },
+            code_search: {
+                query_data: {
+                    // 🚨 PRIVACY: never provide any private data in the `query` field,
+                    // which maps to { code_search: { query_data: { query } } } in the event logs,
+                    // and potentially exported in pings data.
+
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                    query: query ? collectMetrics(query) : undefined,
+                    combined: query,
+                    empty: !query,
+                },
+            },
         })
-        if (query_data.query?.field_type && query_data.query.field_type.value_diff > 0) {
-            telemetryService.log('DiffSearchResultsQueried')
-        }
     }, [caseSensitive, query, telemetryService])
 
     const trace = useMemo(() => new URLSearchParams(location.search).get('trace') ?? undefined, [location.search])
