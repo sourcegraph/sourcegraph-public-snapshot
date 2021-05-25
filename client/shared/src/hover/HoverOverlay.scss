@@ -16,6 +16,8 @@
         margin-left: 0.25rem;
     }
 
+    // Required to overwrite color specified for `.badge-secondary`.
+    .theme-light &__badge.badge-secondary,
     &__badge {
         text-transform: uppercase;
         color: var(--text-muted);
