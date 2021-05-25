@@ -35,6 +35,7 @@ import { AuthenticatedUser } from '../auth'
 import { ErrorMessage } from '../components/alerts'
 import { BreadcrumbSetters, BreadcrumbsProps } from '../components/Breadcrumbs'
 import { ErrorBoundary } from '../components/ErrorBoundary'
+import { FuzzyFinder } from '../components/fuzzyFinder/FuzzyFinder'
 import { HeroPage } from '../components/HeroPage'
 import { ActionItemsBarProps, useWebActionItems } from '../extensions/components/ActionItemsBar'
 import { ExternalLinkFields, RepositoryFields } from '../graphql-operations'
@@ -383,6 +384,12 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
 
     return (
         <div className="repo-container test-repo-container w-100 d-flex flex-column">
+            {!isErrorLike(props.settingsCascade.final) &&
+                props.settingsCascade.final?.experimentalFeatures?.fuzzyFinder &&
+                resolvedRevisionOrError &&
+                !isErrorLike(resolvedRevisionOrError) && (
+                    <FuzzyFinder repoName={repoName} commitID={resolvedRevisionOrError.commitID} />
+                )}
             {showExtensionAlert && (
                 <InstallBrowserExtensionAlert
                     isChrome={IS_CHROME}

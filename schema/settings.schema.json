@@ -147,6 +147,14 @@
           "!go": {
             "pointer": true
           }
+        },
+        "fuzzyFinder": {
+          "description": "Enables fuzzy finder with keyboard shortcut `t`.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
         }
       },
       "group": "Experimental"
