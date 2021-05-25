@@ -38,9 +38,9 @@ func contextWithFeatureFlags(ffs *database.FeatureFlagStore, r *http.Request) co
 
 	flags, err := ffs.UserlessFeatureFlags(r.Context())
 	if err != nil {
-		return context.WithValue(r.Context(), flagContextKey{}, FlagSet(flags))
+		return r.Context()
 	}
-	return r.Context()
+	return context.WithValue(r.Context(), flagContextKey{}, FlagSet(flags))
 }
 
 // FromContext retrieves the current set of flags from the current
