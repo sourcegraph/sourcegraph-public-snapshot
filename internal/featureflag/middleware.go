@@ -10,9 +10,9 @@ import (
 
 type flagContextKey struct{}
 
-// FeatureFlagMiddleware evaluates the feature flags for the current user and adds the
+// Middleware evaluates the feature flags for the current user and adds the
 // feature flags to the current context.
-func FeatureFlagMiddleware(ffs *database.FeatureFlagStore, next http.Handler) http.Handler {
+func Middleware(ffs *database.FeatureFlagStore, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Vary", "Cookie")
 		next.ServeHTTP(w, r.WithContext(contextWithFeatureFlags(ffs, r)))

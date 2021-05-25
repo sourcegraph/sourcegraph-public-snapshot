@@ -66,10 +66,10 @@ func newExternalHTTPHandler(db dbutil.DB, schema *graphql.Schema, gitHubWebhook 
 	appHandler = handlerutil.CSRFMiddleware(appHandler, func() bool {
 		return globals.ExternalURL().Scheme == "https"
 	}) // after appAuthMiddleware because SAML IdP posts data to us w/o a CSRF token
-	appHandler = authMiddlewares.App(appHandler)                                          // 🚨 SECURITY: auth middleware
-	appHandler = session.CookieMiddleware(appHandler)                                     // app accepts cookies
-	appHandler = internalhttpapi.AccessTokenAuthMiddleware(db, appHandler)                // app accepts access tokens
-	appHandler = featureflag.FeatureFlagMiddleware(database.FeatureFlags(db), appHandler) // app accepts access tokens
+	appHandler = authMiddlewares.App(appHandler)                           // 🚨 SECURITY: auth middleware
+	appHandler = session.CookieMiddleware(appHandler)                      // app accepts cookies
+	appHandler = internalhttpapi.AccessTokenAuthMiddleware(db, appHandler) // app accepts access tokens
+	appHandler = featureflag.FeatureFlagMiddleware(database.FeatureFlags(db), appHandler)
 
 	// Mount handlers and assets.
 	sm := http.NewServeMux()
