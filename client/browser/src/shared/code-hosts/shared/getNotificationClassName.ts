@@ -10,12 +10,16 @@ export const createNotificationClassNameGetter = (
     notificationClassNames: NotificationClassNames,
     extraClassName?: string
 ) => (notificationKind: NotificationKind): string => {
-    switch (notificationKind) {
-        case 'error':
-            return classNames(notificationClassNames[NotificationType.Error], extraClassName)
-        case 'warning':
-            return classNames(notificationClassNames[NotificationType.Warning], extraClassName)
-        default:
-            return classNames(notificationClassNames[NotificationType.Info], extraClassName)
+    function getNotificationClassName(): string {
+        switch (notificationKind) {
+            case 'error':
+                return notificationClassNames[NotificationType.Error]
+            case 'warning':
+                return notificationClassNames[NotificationType.Warning]
+            default:
+                return notificationClassNames[NotificationType.Info]
+        }
     }
+
+    return classNames(getNotificationClassName(), extraClassName)
 }
