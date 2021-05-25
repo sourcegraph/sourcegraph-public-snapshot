@@ -76,7 +76,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     >
       <Button
         className="streaming-skipped-item__button py-2 w-100 bg-transparent border-0"
-        color="secondary"
+        color="outline-danger"
         disabled={false}
         onClick={[Function]}
         onKeyDown={[Function]}
@@ -84,7 +84,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       >
         <button
           aria-label={null}
-          className="streaming-skipped-item__button py-2 w-100 bg-transparent border-0 btn btn-secondary"
+          className="streaming-skipped-item__button py-2 w-100 bg-transparent border-0 btn btn-outline-danger"
           disabled={false}
           onClick={[Function]}
           onKeyDown={[Function]}
@@ -188,7 +188,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     >
       <Button
         className="streaming-skipped-item__button py-2 w-100 bg-transparent border-0"
-        color="secondary"
+        color="outline-danger"
         disabled={false}
         onClick={[Function]}
         onKeyDown={[Function]}
@@ -196,7 +196,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       >
         <button
           aria-label={null}
-          className="streaming-skipped-item__button py-2 w-100 bg-transparent border-0 btn btn-secondary"
+          className="streaming-skipped-item__button py-2 w-100 bg-transparent border-0 btn btn-outline-danger"
           disabled={false}
           onClick={[Function]}
           onKeyDown={[Function]}
@@ -300,7 +300,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     >
       <Button
         className="streaming-skipped-item__button py-2 w-100 bg-transparent border-0"
-        color="secondary"
+        color="outline-primary"
         disabled={false}
         onClick={[Function]}
         onKeyDown={[Function]}
@@ -308,7 +308,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       >
         <button
           aria-label={null}
-          className="streaming-skipped-item__button py-2 w-100 bg-transparent border-0 btn btn-secondary"
+          className="streaming-skipped-item__button py-2 w-100 bg-transparent border-0 btn btn-outline-primary"
           disabled={false}
           onClick={[Function]}
           onKeyDown={[Function]}
@@ -412,7 +412,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     >
       <Button
         className="streaming-skipped-item__button py-2 w-100 bg-transparent border-0"
-        color="secondary"
+        color="outline-primary"
         disabled={false}
         onClick={[Function]}
         onKeyDown={[Function]}
@@ -420,7 +420,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       >
         <button
           aria-label={null}
-          className="streaming-skipped-item__button py-2 w-100 bg-transparent border-0 btn btn-secondary"
+          className="streaming-skipped-item__button py-2 w-100 bg-transparent border-0 btn btn-outline-primary"
           disabled={false}
           onClick={[Function]}
           onKeyDown={[Function]}
@@ -524,7 +524,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     >
       <Button
         className="streaming-skipped-item__button py-2 w-100 bg-transparent border-0"
-        color="secondary"
+        color="outline-primary"
         disabled={false}
         onClick={[Function]}
         onKeyDown={[Function]}
@@ -532,7 +532,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       >
         <button
           aria-label={null}
-          className="streaming-skipped-item__button py-2 w-100 bg-transparent border-0 btn btn-secondary"
+          className="streaming-skipped-item__button py-2 w-100 bg-transparent border-0 btn btn-outline-primary"
           disabled={false}
           onClick={[Function]}
           onKeyDown={[Function]}
