@@ -49,7 +49,7 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
     }),
 }
 
-describe('Search contexts', () => {
+describe.skip('Search contexts', () => {
     let driver: Driver
     before(async () => {
         driver = await createDriverForTest()
