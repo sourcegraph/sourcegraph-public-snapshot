@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"database/sql"
+	"strings"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
@@ -181,7 +182,19 @@ SET (clone_status, shard_id, updated_at) =
 // a matching row does not yet exist a new one will be created.
 // If the error value hasn't changed, the row will not be updated.
 func (s *GitserverRepoStore) SetLastError(ctx context.Context, id api.RepoID, error string, shardID string) error {
-	ns := dbutil.NewNullString(error)
+	// Remove any null character terminated string. The nulll character can be represented in one of
+	// the following ways in Go:
+	// Hex: \x00
+	// Unicode: \u0000
+	// Octal digits: \000
+	//
+	// Using any of them to replace the null character has the same effect. See this playground
+	// example: https://play.golang.org/p/8SKPmalJRRW
+	//
+	// See this for a detailed answer:
+	// https://stackoverflow.com/a/38008565/1773961
+	ns := dbutil.NewNullString(strings.Trim(error, "\x00"))
+
 	err := s.Exec(ctx, sqlf.Sprintf(`
 INSERT INTO gitserver_repos(repo_id, last_error, shard_id, updated_at)
 VALUES (%s, %s, %s, now())
