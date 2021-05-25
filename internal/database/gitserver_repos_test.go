@@ -265,8 +265,11 @@ func TestSetLastError(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Set error
-	err = GitserverRepos(db).SetLastError(ctx, gitserverRepo.RepoID, "oops", shardID)
+	// Set error.
+	//
+	// We are using a null terminated string for the last_error column. See
+	// https://stackoverflow.com/a/38008565/1773961 on how to set null terminated strings in Go.
+	err = GitserverRepos(db).SetLastError(ctx, gitserverRepo.RepoID, "oops\x00", shardID)
 	if err != nil {
 		t.Fatal(err)
 	}
