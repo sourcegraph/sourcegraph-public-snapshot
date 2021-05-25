@@ -112,6 +112,18 @@
         }
     }
 
+    // Update text color to better indicate disabled fields
+    .form-control,
+    .custom-select {
+        &:disabled {
+            color: var(--text-disabled);
+
+            &::placeholder {
+                color: var(--text-disabled);
+            }
+        }
+    }
+
     // Valid form inputs and selects
     .was-validated .form-control:valid,
     .was-validated .custom-select:valid,
