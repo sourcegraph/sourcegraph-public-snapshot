@@ -1,7 +1,6 @@
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import React, { useState, useCallback } from 'react'
-import { ButtonDropdown, DropdownToggle, DropdownMenu, DropdownItem } from 'reactstrap'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
@@ -50,9 +49,6 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
         () => setIsRemoveConnectionModalOpen(!isRemoveConnectionModalOpen),
         [isRemoveConnectionModalOpen]
     )
-
-    const [dropdownOpen, setOpen] = useState(false)
-    const toggleDropdown = useCallback((): void => setOpen(!dropdownOpen), [dropdownOpen])
 
     const [oauthInFlight, setOauthInFlight] = useState(false)
 
@@ -111,18 +107,10 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                         Remove
                     </button>
                 ) : (
-                    <ButtonDropdown isOpen={dropdownOpen} toggle={toggleDropdown} direction="down">
-                        <DropdownToggle className="btn-sm" color="outline-secondary" caret={true}>
-                            Connect
-                        </DropdownToggle>
-                        <DropdownMenu right={true}>
-                            <DropdownItem toggle={false} onClick={toAuthProvider}>
-                                Connect with {name}
-                                {oauthInFlight && <LoadingSpinner className="icon-inline ml-2" />}
-                            </DropdownItem>
-                            <DropdownItem onClick={toggleAddConnectionModal}>Connect with access token</DropdownItem>
-                        </DropdownMenu>
-                    </ButtonDropdown>
+                    <button type="button" className="btn btn-primary" onClick={toAuthProvider}>
+                        Connect
+                        {oauthInFlight && <LoadingSpinner className="icon-inline ml-2" />}
+                    </button>
                 )}
             </div>
         </div>
