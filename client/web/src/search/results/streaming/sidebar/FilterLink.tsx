@@ -38,11 +38,7 @@ export const FilterLink: React.FunctionComponent<FilterLinkProps> = ({
         {count && (
             <span
                 className="pl-2 flex-shrink-0"
-                title={`At least ${count} ${pluralize('result', count)} ${pluralize(
-                    'matches',
-                    count,
-                    'match'
-                )} this filter.`}
+                title={`At least ${count} ${pluralize('result matches', count, 'results match')} this filter.`}
             >
                 {count}
                 {limitHit ? '+' : ''}
