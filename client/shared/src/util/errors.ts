@@ -1,7 +1,6 @@
 export interface ErrorLike {
     message: string
     name?: string
-    stack?: string
 }
 
 export const isErrorLike = (value: unknown): value is ErrorLike =>

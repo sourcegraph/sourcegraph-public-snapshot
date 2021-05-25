@@ -661,7 +661,7 @@ function callViewProviders<W extends ContributableViewContainer>(
                                 console.error('View provider errored:', error)
                                 // Pass only primitive copied values because Error object is not
                                 // cloneable in Firefox and Safari
-                                return [{ message: error.message, name: error.name, stack: error.stack }]
+                                return [{ message: error.message, name: error.name, stack: error.stack } as ErrorLike]
                             })
                         )
                     ).pipe(map(view => ({ id, view })))
