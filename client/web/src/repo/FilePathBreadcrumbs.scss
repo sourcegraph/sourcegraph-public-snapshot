@@ -4,6 +4,7 @@
     overflow: hidden;
     align-items: center;
     white-space: nowrap;
+    flex-wrap: wrap;
 
     .part-directory {
         flex: 1 1 1em;
@@ -12,6 +13,10 @@
         overflow: hidden;
         text-overflow: ellipsis;
         text-align: center;
+    }
+
+    .part-file {
+        white-space: normal;
     }
 
     &__separator {

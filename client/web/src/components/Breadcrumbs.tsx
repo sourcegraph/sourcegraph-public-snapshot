@@ -152,7 +152,10 @@ export const Breadcrumbs: React.FunctionComponent<{ breadcrumbs: BreadcrumbAtDep
     breadcrumbs,
     location,
 }) => (
-    <nav className="d-flex py-2 container-fluid flex-nowrap flex-shrink-past-contents" aria-label="Breadcrumbs">
+    <nav
+        className="d-flex pt-2 container-fluid flex-md-nowrap flex-shrink-past-contents justify-content-start"
+        aria-label="Breadcrumbs"
+    >
         {sortBy(breadcrumbs, 'depth')
             .map(({ breadcrumb }) => breadcrumb)
             .filter(isDefined)
@@ -164,7 +167,7 @@ export const Breadcrumbs: React.FunctionComponent<{ breadcrumbs: BreadcrumbAtDep
                     <span
                         key={breadcrumb.key}
                         className={classNames(
-                            'text-muted d-flex align-items-center test-breadcrumb',
+                            'text-muted d-flex align-items-center pb-2 test-breadcrumb',
                             breadcrumb.className
                         )}
                     >

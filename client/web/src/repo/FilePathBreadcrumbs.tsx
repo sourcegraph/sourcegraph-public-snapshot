@@ -53,6 +53,34 @@ export const FilePathBreadcrumbs: React.FunctionComponent<
     }
     return (
         // Important: do not put spaces between the breadcrumbs or spaces will get added when copying the path
-        <span className="file-path-breadcrumbs">{spans}</span>
+        <span className="file-path-breadcrumbs">
+            <LinkOrSpan className="part part-directory test-breadcrumb-part-directory" to="/">
+                Directory
+            </LinkOrSpan>
+            <span className="file-path-breadcrumbs__separator text-muted font-weight-medium">/</span>
+            <LinkOrSpan className="part part-directory test-breadcrumb-part-directory" to="/">
+                Directory-2
+            </LinkOrSpan>
+            <span className="file-path-breadcrumbs__separator text-muted font-weight-medium">/</span>
+            <LinkOrSpan className="part part-directory test-breadcrumb-part-directory" to="/">
+                Directory-3
+            </LinkOrSpan>
+            <span className="file-path-breadcrumbs__separator text-muted font-weight-medium">/</span>
+            <LinkOrSpan className="part part-directory test-breadcrumb-part-directory" to="/">
+                Directory-4
+            </LinkOrSpan>
+            <span className="file-path-breadcrumbs__separator text-muted font-weight-medium">/</span>
+            <LinkOrSpan className="part part-directory test-breadcrumb-part-directory" to="/">
+                Directory-5
+            </LinkOrSpan>
+            <span className="file-path-breadcrumbs__separator text-muted font-weight-medium">/</span>
+            <LinkOrSpan className="part part-directory test-breadcrumb-part-directory" to="/">
+                Directory-6
+            </LinkOrSpan>
+            <span className="file-path-breadcrumbs__separator text-muted font-weight-medium">/</span>
+            <LinkOrSpan className="part part-file font-weight-bold test-breadcrumb-part-last" to="/">
+                Deeply-nested-file-name-that-is-long-and-hard-to-find.tsx
+            </LinkOrSpan>
+        </span>
     )
 }

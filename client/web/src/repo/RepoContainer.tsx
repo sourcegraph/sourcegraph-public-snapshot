@@ -16,7 +16,6 @@ import {
     isRepoSeeOtherErrorLike,
 } from '@sourcegraph/shared/src/backend/errors'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -222,38 +221,29 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                 key: 'repository',
                 element: (
                     <>
-                        <Link
-                            to={
-                                resolvedRevisionOrError && !isErrorLike(resolvedRevisionOrError)
-                                    ? resolvedRevisionOrError.rootTreeURL
-                                    : repoOrError.url
-                            }
-                            className="font-weight-bold text-nowrap test-repo-header-repo-link"
-                        >
-                            <SourceRepositoryIcon className="icon-inline" /> {displayRepoName(repoOrError.name)}
-                        </Link>
                         <button
                             type="button"
+                            className="btn btn-outline-secondary d-flex align-items-center"
                             id="repo-popover"
-                            className="btn btn-icon px-0"
                             aria-label="Change repository"
                         >
+                            <SourceRepositoryIcon className="icon-inline" /> {displayRepoName(repoOrError.name)}
                             <MenuDownIcon className="icon-inline" />
+                            <UncontrolledPopover
+                                placement="bottom-start"
+                                target="repo-popover"
+                                trigger="legacy"
+                                hideArrow={true}
+                                fade={false}
+                                popperClassName="border-0"
+                            >
+                                <RepositoriesPopover currentRepo={repoOrError.id} />
+                            </UncontrolledPopover>
                         </button>
-                        <UncontrolledPopover
-                            placement="bottom-start"
-                            target="repo-popover"
-                            trigger="legacy"
-                            hideArrow={true}
-                            fade={false}
-                            popperClassName="border-0"
-                        >
-                            <RepositoriesPopover currentRepo={repoOrError.id} />
-                        </UncontrolledPopover>
                     </>
                 ),
             }
-        }, [repoOrError, resolvedRevisionOrError])
+        }, [repoOrError])
     )
 
     // Update the workspace roots service to reflect the current repo / resolved revision
