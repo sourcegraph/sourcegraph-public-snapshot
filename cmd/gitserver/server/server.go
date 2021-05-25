@@ -1818,10 +1818,7 @@ func setLastChanged(dir GitDir) error {
 	if _, err := os.Stat(hashFile); os.IsNotExist(err) {
 		// This is the first time we are calculating the hash. Give a more
 		// approriate timestamp for sg_refhash than the current time.
-		stamp, err = computeLatestCommitTimestamp(dir)
-		if err != nil {
-			return errors.Wrapf(err, "computeLatestCommitTimestamp failed for %s", dir)
-		}
+		stamp = computeLatestCommitTimestamp(dir)
 	}
 
 	_, err = updateFileIfDifferent(hashFile, hash)
@@ -1842,8 +1839,8 @@ func setLastChanged(dir GitDir) error {
 
 // computeLatestCommitTimestamp returns the timestamp of the most recent
 // commit if any. If there are no commits or the latest commit is in the
-// future, time.Now is returned.
-func computeLatestCommitTimestamp(dir GitDir) (time.Time, error) {
+// future, or there is any error, time.Now is returned.
+func computeLatestCommitTimestamp(dir GitDir) time.Time {
 	now := time.Now() // return current time if we don't find a more accurate time
 	cmd := exec.Command("git", "rev-list", "--all", "--timestamp", "-n", "1")
 	dir.Set(cmd)
@@ -1851,27 +1848,28 @@ func computeLatestCommitTimestamp(dir GitDir) (time.Time, error) {
 	// If we don't have a more specific stamp, we'll return the current time,
 	// and possibly an error.
 	if err != nil {
-		return now, err
+		log15.Warn("computeLatestCommitTimestamp: failed to execute, defaulting to time.Now", "repo", dir, "error", err)
+		return now
 	}
 
 	words := bytes.Split(output, []byte(" "))
 	// An empty rev-list output, without an error, is okay.
 	if len(words) < 2 {
-		return now, nil
+		return now
 	}
 
 	// We should have a timestamp and a commit hash; format is
 	// 1521316105 ff03fac223b7f16627b301e03bf604e7808989be
 	epoch, err := strconv.ParseInt(string(words[0]), 10, 64)
 	if err != nil {
-		log15.Error("computeLatestCommitTimestamp: ignoring corrupted timestamp", "error", err)
-		return now, nil
+		log15.Warn("computeLatestCommitTimestamp: ignoring corrupted timestamp, defaulting to time.Now", "repo", dir, "timestamp", words[0])
+		return now
 	}
 	stamp := time.Unix(epoch, 0)
 	if stamp.After(now) {
-		return now, nil
+		return now
 	}
-	return stamp, nil
+	return stamp
 }
 
 // computeRefHash returns a hash of the refs for dir. The hash should only
