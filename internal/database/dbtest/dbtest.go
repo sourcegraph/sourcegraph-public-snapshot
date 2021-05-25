@@ -42,6 +42,8 @@ func NewTx(t testing.TB, db *sql.DB) *sql.Tx {
 	return tx
 }
 
+var rng = rand.New(rand.NewSource(time.Now().UnixNano()))
+
 // NewDB returns a connection to a clean, new temporary testing database
 // with the same schema as Sourcegraph's production Postgres database.
 func NewDB(t testing.TB, dsn string) *sql.DB {
@@ -62,7 +64,6 @@ func NewDB(t testing.TB, dsn string) *sql.DB {
 
 	initTemplateDB(t, config)
 
-	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 	dbname := "sourcegraph-test-" + strconv.FormatUint(rng.Uint64(), 10)
 
 	db := dbConn(t, config)
