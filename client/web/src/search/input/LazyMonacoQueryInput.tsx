@@ -40,5 +40,4 @@ export const LazyMonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps
     <Suspense fallback={<PlainQueryInput {...props} />}>
         <MonacoQueryInput {...props} />
     </Suspense>
-    // <PlainQueryInput {...props} />
 )
