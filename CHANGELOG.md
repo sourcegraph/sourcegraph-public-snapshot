@@ -19,7 +19,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
-- The copy query button is now permanently enabled and the `copyQueryButton` experimental feature flag has been removed. [#TODO](todo)
+- The copy query button is now permanently enabled and the `copyQueryButton` experimental feature flag has been removed. [#21364](https://github.com/sourcegraph/sourcegraph/pull/21364)
 
 ### Fixed
 
