@@ -87,7 +87,7 @@ func testNewFeatureFlagRoundtrip(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.flag.Name, func(t *testing.T) {
-			res, err := flagStore.InsertFeatureFlag(ctx, tc.flag)
+			res, err := flagStore.CreateFeatureFlag(ctx, tc.flag)
 			if tc.assertErr != nil {
 				tc.assertErr(t, err)
 				return
@@ -115,7 +115,7 @@ func testListFeatureFlags(t *testing.T) {
 	flags := []*ff.FeatureFlag{flag1, flag2, flag3, flag4}
 
 	for _, flag := range flags {
-		_, err := flagStore.InsertFeatureFlag(ctx, flag)
+		_, err := flagStore.CreateFeatureFlag(ctx, flag)
 		require.NoError(t, err)
 	}
 
@@ -144,7 +144,7 @@ func testNewOverrideRoundtrip(t *testing.T) {
 	users := Users(db)
 	ctx := actor.WithInternalActor(context.Background())
 
-	ff1, err := flagStore.InsertBool(ctx, "t", true)
+	ff1, err := flagStore.CreateBool(ctx, "t", true)
 	require.NoError(t, err)
 
 	u1, err := users.Create(ctx, NewUser{Username: "u", Password: "p"})
@@ -175,7 +175,7 @@ func testNewOverrideRoundtrip(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run("case", func(t *testing.T) {
-			res, err := flagStore.InsertOverride(ctx, tc.override)
+			res, err := flagStore.CreateOverride(ctx, tc.override)
 			if tc.assertErr != nil {
 				tc.assertErr(t, err)
 				return
@@ -200,13 +200,13 @@ func testListUserOverrides(t *testing.T) {
 	}
 
 	mkFFBool := func(name string, val bool) *ff.FeatureFlag {
-		res, err := flagStore.InsertBool(ctx, name, val)
+		res, err := flagStore.CreateBool(ctx, name, val)
 		require.NoError(t, err)
 		return res
 	}
 
 	mkOverride := func(user int32, flag string, val bool) *ff.FeatureFlagOverride {
-		ffo, err := flagStore.InsertOverride(ctx, &ff.FeatureFlagOverride{UserID: &user, FlagName: flag, Value: val})
+		ffo, err := flagStore.CreateOverride(ctx, &ff.FeatureFlagOverride{UserID: &user, FlagName: flag, Value: val})
 		require.NoError(t, err)
 		return ffo
 	}
@@ -258,9 +258,9 @@ func testListUserOverrides(t *testing.T) {
 		t.Cleanup(cleanup(t, db))
 		u1 := mkUser("u1")
 		f1 := mkFFBool("f", true)
-		_, err := flagStore.InsertOverride(ctx, &ff.FeatureFlagOverride{UserID: &u1.ID, FlagName: f1.Name, Value: true})
+		_, err := flagStore.CreateOverride(ctx, &ff.FeatureFlagOverride{UserID: &u1.ID, FlagName: f1.Name, Value: true})
 		require.NoError(t, err)
-		_, err = flagStore.InsertOverride(ctx, &ff.FeatureFlagOverride{UserID: &u1.ID, FlagName: f1.Name, Value: true})
+		_, err = flagStore.CreateOverride(ctx, &ff.FeatureFlagOverride{UserID: &u1.ID, FlagName: f1.Name, Value: true})
 		require.Error(t, err)
 	})
 }
@@ -285,13 +285,13 @@ func testListOrgOverrides(t *testing.T) {
 	}
 
 	mkFFBool := func(name string, val bool) *ff.FeatureFlag {
-		res, err := flagStore.InsertBool(ctx, name, val)
+		res, err := flagStore.CreateBool(ctx, name, val)
 		require.NoError(t, err)
 		return res
 	}
 
 	mkOverride := func(org int32, flag string, val bool) *ff.FeatureFlagOverride {
-		ffo, err := flagStore.InsertOverride(ctx, &ff.FeatureFlagOverride{OrgID: &org, FlagName: flag, Value: val})
+		ffo, err := flagStore.CreateOverride(ctx, &ff.FeatureFlagOverride{OrgID: &org, FlagName: flag, Value: val})
 		require.NoError(t, err)
 		return ffo
 	}
@@ -343,9 +343,9 @@ func testListOrgOverrides(t *testing.T) {
 		org1 := mkOrg("org1")
 		f1 := mkFFBool("f", true)
 
-		_, err := flagStore.InsertOverride(ctx, &ff.FeatureFlagOverride{OrgID: &org1.ID, FlagName: f1.Name, Value: true})
+		_, err := flagStore.CreateOverride(ctx, &ff.FeatureFlagOverride{OrgID: &org1.ID, FlagName: f1.Name, Value: true})
 		require.NoError(t, err)
-		_, err = flagStore.InsertOverride(ctx, &ff.FeatureFlagOverride{OrgID: &org1.ID, FlagName: f1.Name, Value: false})
+		_, err = flagStore.CreateOverride(ctx, &ff.FeatureFlagOverride{OrgID: &org1.ID, FlagName: f1.Name, Value: false})
 		require.Error(t, err)
 	})
 }
@@ -370,25 +370,25 @@ func testUserFlags(t *testing.T) {
 	}
 
 	mkFFBool := func(name string, val bool) *ff.FeatureFlag {
-		res, err := flagStore.InsertBool(ctx, name, val)
+		res, err := flagStore.CreateBool(ctx, name, val)
 		require.NoError(t, err)
 		return res
 	}
 
 	mkFFBoolVar := func(name string, rollout int) *ff.FeatureFlag {
-		res, err := flagStore.InsertBoolVar(ctx, name, rollout)
+		res, err := flagStore.CreateBoolVar(ctx, name, rollout)
 		require.NoError(t, err)
 		return res
 	}
 
 	mkUserOverride := func(user int32, flag string, val bool) *ff.FeatureFlagOverride {
-		ffo, err := flagStore.InsertOverride(ctx, &ff.FeatureFlagOverride{UserID: &user, FlagName: flag, Value: val})
+		ffo, err := flagStore.CreateOverride(ctx, &ff.FeatureFlagOverride{UserID: &user, FlagName: flag, Value: val})
 		require.NoError(t, err)
 		return ffo
 	}
 
 	mkOrgOverride := func(org int32, flag string, val bool) *ff.FeatureFlagOverride {
-		ffo, err := flagStore.InsertOverride(ctx, &ff.FeatureFlagOverride{OrgID: &org, FlagName: flag, Value: val})
+		ffo, err := flagStore.CreateOverride(ctx, &ff.FeatureFlagOverride{OrgID: &org, FlagName: flag, Value: val})
 		require.NoError(t, err)
 		return ffo
 	}
@@ -500,13 +500,13 @@ func testAnonymousUserFlags(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
 
 	mkFFBool := func(name string, val bool) *ff.FeatureFlag {
-		res, err := flagStore.InsertBool(ctx, name, val)
+		res, err := flagStore.CreateBool(ctx, name, val)
 		require.NoError(t, err)
 		return res
 	}
 
 	mkFFBoolVar := func(name string, rollout int) *ff.FeatureFlag {
-		res, err := flagStore.InsertBoolVar(ctx, name, rollout)
+		res, err := flagStore.CreateBoolVar(ctx, name, rollout)
 		require.NoError(t, err)
 		return res
 	}
@@ -544,13 +544,13 @@ func testUserlessFeatureFlags(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
 
 	mkFFBool := func(name string, val bool) *ff.FeatureFlag {
-		res, err := flagStore.InsertBool(ctx, name, val)
+		res, err := flagStore.CreateBool(ctx, name, val)
 		require.NoError(t, err)
 		return res
 	}
 
 	mkFFBoolVar := func(name string, rollout int) *ff.FeatureFlag {
-		res, err := flagStore.InsertBoolVar(ctx, name, rollout)
+		res, err := flagStore.CreateBoolVar(ctx, name, rollout)
 		require.NoError(t, err)
 		return res
 	}

@@ -36,7 +36,7 @@ func (f *FeatureFlagStore) Transact(ctx context.Context) (*FeatureFlagStore, err
 	return &FeatureFlagStore{Store: txBase}, err
 }
 
-func (f *FeatureFlagStore) InsertFeatureFlag(ctx context.Context, flag *ff.FeatureFlag) (*ff.FeatureFlag, error) {
+func (f *FeatureFlagStore) CreateFeatureFlag(ctx context.Context, flag *ff.FeatureFlag) (*ff.FeatureFlag, error) {
 	const newFeatureFlagFmtStr = `
 		INSERT INTO feature_flags (
 			flag_name,
@@ -83,8 +83,8 @@ func (f *FeatureFlagStore) InsertFeatureFlag(ctx context.Context, flag *ff.Featu
 	return scanFeatureFlag(row)
 }
 
-func (f *FeatureFlagStore) InsertBoolVar(ctx context.Context, name string, rollout int) (*ff.FeatureFlag, error) {
-	return f.InsertFeatureFlag(ctx, &ff.FeatureFlag{
+func (f *FeatureFlagStore) CreateBoolVar(ctx context.Context, name string, rollout int) (*ff.FeatureFlag, error) {
+	return f.CreateFeatureFlag(ctx, &ff.FeatureFlag{
 		Name: name,
 		BoolVar: &ff.FeatureFlagBoolVar{
 			Rollout: rollout,
@@ -92,8 +92,8 @@ func (f *FeatureFlagStore) InsertBoolVar(ctx context.Context, name string, rollo
 	})
 }
 
-func (f *FeatureFlagStore) InsertBool(ctx context.Context, name string, value bool) (*ff.FeatureFlag, error) {
-	return f.InsertFeatureFlag(ctx, &ff.FeatureFlag{
+func (f *FeatureFlagStore) CreateBool(ctx context.Context, name string, value bool) (*ff.FeatureFlag, error) {
+	return f.CreateFeatureFlag(ctx, &ff.FeatureFlag{
 		Name: name,
 		Bool: &ff.FeatureFlagBool{
 			Value: value,
@@ -181,7 +181,7 @@ func (f *FeatureFlagStore) GetFeatureFlags(ctx context.Context) ([]*ff.FeatureFl
 	return res, nil
 }
 
-func (f *FeatureFlagStore) InsertOverride(ctx context.Context, override *ff.FeatureFlagOverride) (*ff.FeatureFlagOverride, error) {
+func (f *FeatureFlagStore) CreateOverride(ctx context.Context, override *ff.FeatureFlagOverride) (*ff.FeatureFlagOverride, error) {
 	const newFeatureFlagOverrideFmtStr = `
 		INSERT INTO feature_flag_overrides (
 			namespace_org_id,
