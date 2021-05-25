@@ -16,7 +16,7 @@ import { LOADING, MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import * as clientType from '@sourcegraph/extension-api-types'
 
 import { getModeFromPath } from '../../languages'
-import { ErrorLike } from '../../util/errors'
+import { asError, ErrorLike } from '../../util/errors'
 import { combineLatestOrDefault } from '../../util/rxjs/combineLatestOrDefault'
 import { allOf, isDefined, isExactly, isNot, property } from '../../util/types'
 import { parseRepoURI } from '../../util/url'
@@ -657,11 +657,12 @@ function callViewProviders<W extends ContributableViewContainer>(
                         [undefined],
                         providerResultToObservable(viewProvider.provideView(context)).pipe(
                             defaultIfEmpty<sourcegraph.View | null | undefined>(null),
-                            catchError((error: Error): [ErrorLike] => {
+                            catchError((error: unknown): [ErrorLike] => {
                                 console.error('View provider errored:', error)
                                 // Pass only primitive copied values because Error object is not
                                 // cloneable in Firefox and Safari
-                                return [{ message: error.message, name: error.name, stack: error.stack } as ErrorLike]
+                                const { message, name, stack } = asError(error)
+                                return [{ message, name, stack } as ErrorLike]
                             })
                         )
                     ).pipe(map(view => ({ id, view })))
