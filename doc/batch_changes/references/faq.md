@@ -27,7 +27,7 @@ Note: If you run memory-intensive jobs, you might need to reduce the number of p
 
 ### My batch change does not open changesets on all the repositories it should. Why?
 - Do you have enough permissions? Batch Changes will error on the repositories you don’t have access to. See [Repository permissions for Batch Changes](../explanations/permissions_in_batch_changes.md).
-- Does your `repositoriesMatchingQuery` contain all the necessary flags? If you copied the query from the sourcegraph UI, note that some flags are represented as buttons (case sensitivity, regex, structural search), and do not appear in the query unless the experimental [`copyQueryButton`](https://github.com/sourcegraph/sourcegraph/pull/18317) feature toggle is enabled.
+- Does your `repositoriesMatchingQuery` contain all the necessary flags? If you copied the query from the sourcegraph UI, note that some flags are represented as buttons (case sensitivity, regex, structural search), and do not appear in the query unless you use the copy query button.
 
 ### Can I create tickets or issues along with Batch Changes?
 Batch Changes does not support a declarative syntax for issues or tickets.
