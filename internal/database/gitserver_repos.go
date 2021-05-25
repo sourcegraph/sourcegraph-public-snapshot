@@ -224,7 +224,7 @@ func sanitizeToUTF8(s string) string {
 	// using this function call, inserts for this string in Postgres return the following error:
 	//
 	// ERROR: invalid byte sequence for encoding "UTF8": 0x00 (SQLSTATE 22021)
-	t := strings.Replace(s, "\x00", "", -1)
+	t := strings.ReplaceAll(s, "\x00", "")
 
 	// Sanitize to a valid UTF-8 string and return it.
 	return strings.ToValidUTF8(t, "")
