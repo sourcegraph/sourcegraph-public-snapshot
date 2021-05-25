@@ -16,9 +16,9 @@ add(
         <>
             <div className="alert alert-info">
                 <p>
-                    A container is meant to group content semantically together. It should only be used once per page.
-                    Every page using it should have a header, optionally a description for the page and the container
-                    itself. Depending on the scope of a button, it should live inside or outside of the container.
+                    A container is meant to group content semantically together. Every page using it should have a
+                    header, optionally a description for the page and the container itself. Depending on the scope of a
+                    button, it should live inside or outside of the container.
                 </p>
                 <p>If the button</p>
                 <ul className="mb-0">
