@@ -13,7 +13,6 @@ Array [
   >
     <button
       className="test-sidebar-filter-link btn btn-link sidebarSectionListItem"
-      data-placement="right"
       onClick={[Function]}
       type="button"
     >
@@ -56,7 +55,6 @@ Array [
   >
     <button
       className="test-sidebar-filter-link btn btn-link sidebarSectionListItem"
-      data-placement="right"
       onClick={[Function]}
       type="button"
     >
@@ -98,7 +96,6 @@ Array [
   >
     <button
       className="test-sidebar-filter-link btn btn-link sidebarSectionListItem"
-      data-placement="right"
       onClick={[Function]}
       type="button"
     >
@@ -146,7 +143,6 @@ Array [
   >
     <button
       className="test-sidebar-filter-link btn btn-link sidebarSectionListItem"
-      data-placement="right"
       onClick={[Function]}
       type="button"
     >
@@ -192,7 +188,6 @@ Array [
   >
     <button
       className="test-sidebar-filter-link btn btn-link sidebarSectionListItem"
-      data-placement="right"
       onClick={[Function]}
       type="button"
     >
@@ -240,7 +235,6 @@ Array [
   >
     <button
       className="test-sidebar-filter-link btn btn-link sidebarSectionListItem"
-      data-placement="right"
       onClick={[Function]}
       type="button"
     >
@@ -259,7 +253,6 @@ Array [
   >
     <button
       className="test-sidebar-filter-link btn btn-link sidebarSectionListItem"
-      data-placement="right"
       onClick={[Function]}
       type="button"
     >
@@ -287,7 +280,6 @@ Array [
   >
     <button
       className="test-sidebar-filter-link btn btn-link sidebarSectionListItem"
-      data-placement="right"
       onClick={[Function]}
       type="button"
     >
@@ -333,7 +325,6 @@ Array [
   >
     <button
       className="test-sidebar-filter-link btn btn-link sidebarSectionListItem"
-      data-placement="right"
       onClick={[Function]}
       type="button"
     >
