@@ -87,17 +87,15 @@ exports[`HoverOverlay actions and hover present 1`] = `
   <div
     className="hover-overlay__contents"
   >
-    <React.Fragment>
-      <span
-        className="hover-overlay__content test-tooltip-content"
-        dangerouslySetInnerHTML={
-          Object {
-            "__html": "<p>v</p>
+    <span
+      className="hover-overlay__content test-tooltip-content"
+      dangerouslySetInnerHTML={
+        Object {
+          "__html": "<p>v</p>
 ",
-          }
         }
-      />
-    </React.Fragment>
+      }
+    />
   </div>
   <div
     className="hover-overlay__actions"
@@ -186,17 +184,15 @@ exports[`HoverOverlay actions error, hover present 1`] = `
   <div
     className="hover-overlay__contents"
   >
-    <React.Fragment>
-      <span
-        className="hover-overlay__content test-tooltip-content"
-        dangerouslySetInnerHTML={
-          Object {
-            "__html": "<p>v</p>
+    <span
+      className="hover-overlay__content test-tooltip-content"
+      dangerouslySetInnerHTML={
+        Object {
+          "__html": "<p>v</p>
 ",
-          }
         }
-      />
-    </React.Fragment>
+      }
+    />
   </div>
 </div>
 `;
@@ -303,7 +299,9 @@ exports[`HoverOverlay actions present, hover loading 1`] = `
     <div
       className="hover-overlay__loader-row"
     >
-      <LoadingSpinner />
+      <div
+        className="loading-spinner "
+      />
     </div>
   </div>
   <div
@@ -371,17 +369,15 @@ exports[`HoverOverlay actions, hover and alert present 1`] = `
   <div
     className="hover-overlay__contents"
   >
-    <React.Fragment>
-      <span
-        className="hover-overlay__content test-tooltip-content"
-        dangerouslySetInnerHTML={
-          Object {
-            "__html": "<p>v</p>
+    <span
+      className="hover-overlay__content test-tooltip-content"
+      dangerouslySetInnerHTML={
+        Object {
+          "__html": "<p>v</p>
 ",
-          }
         }
-      />
-    </React.Fragment>
+      }
+    />
   </div>
   <div
     className="hover-overlay__alerts"
@@ -629,17 +625,15 @@ exports[`HoverOverlay hover present, actions loading 1`] = `
   <div
     className="hover-overlay__contents"
   >
-    <React.Fragment>
-      <span
-        className="hover-overlay__content test-tooltip-content"
-        dangerouslySetInnerHTML={
-          Object {
-            "__html": "<p>v</p>
+    <span
+      className="hover-overlay__content test-tooltip-content"
+      dangerouslySetInnerHTML={
+        Object {
+          "__html": "<p>v</p>
 ",
-          }
         }
-      />
-    </React.Fragment>
+      }
+    />
   </div>
 </div>
 `;
