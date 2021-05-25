@@ -2,7 +2,7 @@ import { from, Observable, of } from 'rxjs'
 import { catchError, defaultIfEmpty, map, mergeMap, scan, startWith, switchMap } from 'rxjs/operators'
 import sourcegraph from 'sourcegraph'
 
-import { asError, ErrorLike } from '../../../util/errors'
+import { ErrorLike } from '../../../util/errors'
 import { allOf, isDefined, isExactly, isNot, property } from '../../../util/types'
 import { ContributableViewContainer } from '../../protocol'
 import { RegisteredViewProvider, ViewContexts, ViewProviderResult } from '../extensionHostApi'
@@ -62,7 +62,10 @@ export function callViewProvidersInParallel<W extends ContributableViewContainer
                                   defaultIfEmpty<sourcegraph.View | null | undefined>(null),
                                   catchError((error): [ErrorLike] => {
                                       console.error('View provider errored:', error)
-                                      return [asError(error)]
+
+                                      // Pass only primitive copied values because Error object is not
+                                      // cloneable in Firefox and Safari
+                                      return [{ message: error.message, name: error.name }]
                                   }),
                                   // Add index to view to put response in right position of result views array below in scan operator
                                   map(view => ({ id: provider.id, view, index }))
