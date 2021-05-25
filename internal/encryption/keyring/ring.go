@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/awskms"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/cache"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/cloudkms"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/mounted"
@@ -123,6 +124,8 @@ func NewKey(ctx context.Context, k *schema.EncryptionKey, config *schema.Encrypt
 	switch {
 	case k.Cloudkms != nil:
 		key, err = cloudkms.NewKey(ctx, *k.Cloudkms)
+	case k.Awskms != nil:
+		key, err = awskms.NewKey(ctx, *k.Awskms)
 	case k.Mounted != nil:
 		key, err = mounted.NewKey(ctx, *k.Mounted)
 	case k.Noop != nil:

@@ -1,3 +1,5 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
 // Match Monaco styling for the intermediate input displayed while
 // lazy-loading the MonacoQueryInput, to avoid unstable UI.
 .lazy-monaco-query-input--intermediate-input {
@@ -9,5 +11,12 @@
 
     &:focus {
         box-shadow: none;
+    }
+
+    :global(.theme-redesign) & {
+        @media (--xs-breakpoint-down) {
+            height: auto;
+            padding: 0;
+        }
     }
 }

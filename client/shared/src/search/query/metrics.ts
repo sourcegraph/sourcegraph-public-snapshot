@@ -16,6 +16,7 @@ export const collectMetrics = (query: string): any => {
     let count_select_repo = 0
     let count_select_file = 0
     let count_select_content = 0
+    let count_select_symbol = 0
     let count_select_commit_diff_added = 0
     let count_select_commit_diff_removed = 0
     let count_repo_contains = 0
@@ -81,6 +82,9 @@ export const collectMetrics = (query: string): any => {
                             case 'content':
                                 count_select_content += 1
                                 break
+                            case 'symbol':
+                                count_select_symbol += 1
+                                break
                             case 'commit.diff.added':
                                 count_select_commit_diff_added += 1
                                 break
@@ -133,6 +137,7 @@ export const collectMetrics = (query: string): any => {
         count_select_repo: nonzero(count_select_repo),
         count_select_file: nonzero(count_select_file),
         count_select_content: nonzero(count_select_content),
+        count_select_symbol: nonzero(count_select_symbol),
         count_select_commit_diff_added: nonzero(count_select_commit_diff_added),
         count_select_commit_diff_removed: nonzero(count_select_commit_diff_removed),
         // RFC 384: predicate usage

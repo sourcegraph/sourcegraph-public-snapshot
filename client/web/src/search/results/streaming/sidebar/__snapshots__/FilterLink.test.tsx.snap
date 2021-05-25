@@ -13,8 +13,6 @@ Array [
   >
     <button
       className="test-sidebar-filter-link btn btn-link sidebarSectionListItem"
-      data-placement="right"
-      data-tooltip="lang:go"
       onClick={[Function]}
       type="button"
     >
@@ -39,6 +37,7 @@ Array [
       </span>
       <span
         className="pl-2 flex-shrink-0"
+        title="At least 500 results match this filter."
       >
         500
         +
@@ -56,8 +55,6 @@ Array [
   >
     <button
       className="test-sidebar-filter-link btn btn-link sidebarSectionListItem"
-      data-placement="right"
-      data-tooltip="lang:typescript"
       onClick={[Function]}
       type="button"
     >
@@ -82,13 +79,14 @@ Array [
       </span>
       <span
         className="pl-2 flex-shrink-0"
+        title="At least 241 results match this filter."
       >
         241
       </span>
     </button>
   </FilterLink>,
   <FilterLink
-    count={1230}
+    count={1}
     key="-file:_test\\\\.go$--file:_test\\\\.go$"
     kind="file"
     label="-file:_test\\\\.go$"
@@ -98,8 +96,6 @@ Array [
   >
     <button
       className="test-sidebar-filter-link btn btn-link sidebarSectionListItem"
-      data-placement="right"
-      data-tooltip="-file:_test\\\\.go$"
       onClick={[Function]}
       type="button"
     >
@@ -124,8 +120,9 @@ Array [
       </span>
       <span
         className="pl-2 flex-shrink-0"
+        title="At least 1 result matches this filter."
       >
-        1230
+        1
       </span>
     </button>
   </FilterLink>,
@@ -146,8 +143,6 @@ Array [
   >
     <button
       className="test-sidebar-filter-link btn btn-link sidebarSectionListItem"
-      data-placement="right"
-      data-tooltip="repo:^gitlab\\\\.com/sourcegraph/sourcgreaph$"
       onClick={[Function]}
       type="button"
     >
@@ -162,14 +157,20 @@ Array [
           >
             r:
           </span>
-          <Memo(GitlabIcon)
-            className="icon-inline text-muted sidebarSectionIcon"
-          />
+          <span
+            aria-label="gitlab.com"
+            title="gitlab.com"
+          >
+            <Memo(GitlabIcon)
+              className="icon-inline text-muted sidebarSectionIcon"
+            />
+          </span>
           sourcegraph/sourcegraph
         </span>
       </span>
       <span
         className="pl-2 flex-shrink-0"
+        title="At least 5 results match this filter."
       >
         5
       </span>
@@ -187,8 +188,6 @@ Array [
   >
     <button
       className="test-sidebar-filter-link btn btn-link sidebarSectionListItem"
-      data-placement="right"
-      data-tooltip="repo:^github\\\\.com/microsoft/vscode$"
       onClick={[Function]}
       type="button"
     >
@@ -203,14 +202,20 @@ Array [
           >
             r:
           </span>
-          <Memo(GithubIcon)
-            className="icon-inline text-muted sidebarSectionIcon"
-          />
+          <span
+            aria-label="github.com"
+            title="github.com"
+          >
+            <Memo(GithubIcon)
+              className="icon-inline text-muted sidebarSectionIcon"
+            />
+          </span>
           microsoft/vscode
         </span>
       </span>
       <span
         className="pl-2 flex-shrink-0"
+        title="At least 201 results match this filter."
       >
         201
         +
@@ -230,8 +235,6 @@ Array [
   >
     <button
       className="test-sidebar-filter-link btn btn-link sidebarSectionListItem"
-      data-placement="right"
-      data-tooltip="repo:sourcegraph"
       onClick={[Function]}
       type="button"
     >
@@ -240,9 +243,6 @@ Array [
       >
         This is a search scope with a very long name lorem ipsum dolor sit amet
       </span>
-      <span
-        className="pl-2 flex-shrink-0"
-      />
     </button>
   </FilterLink>,
   <FilterLink
@@ -253,8 +253,6 @@ Array [
   >
     <button
       className="test-sidebar-filter-link btn btn-link sidebarSectionListItem"
-      data-placement="right"
-      data-tooltip="count:all"
       onClick={[Function]}
       type="button"
     >
@@ -263,9 +261,6 @@ Array [
       >
         All results
       </span>
-      <span
-        className="pl-2 flex-shrink-0"
-      />
     </button>
   </FilterLink>,
 ]
@@ -285,8 +280,6 @@ Array [
   >
     <button
       className="test-sidebar-filter-link btn btn-link sidebarSectionListItem"
-      data-placement="right"
-      data-tooltip="repo:^gitlab\\\\.com/sourcegraph/sourcgreaph$"
       onClick={[Function]}
       type="button"
     >
@@ -301,14 +294,20 @@ Array [
           >
             r:
           </span>
-          <Memo(GitlabIcon)
-            className="icon-inline text-muted sidebarSectionIcon"
-          />
+          <span
+            aria-label="gitlab.com"
+            title="gitlab.com"
+          >
+            <Memo(GitlabIcon)
+              className="icon-inline text-muted sidebarSectionIcon"
+            />
+          </span>
           sourcegraph/sourcegraph
         </span>
       </span>
       <span
         className="pl-2 flex-shrink-0"
+        title="At least 5 results match this filter."
       >
         5
       </span>
@@ -326,8 +325,6 @@ Array [
   >
     <button
       className="test-sidebar-filter-link btn btn-link sidebarSectionListItem"
-      data-placement="right"
-      data-tooltip="repo:^github\\\\.com/microsoft/vscode$"
       onClick={[Function]}
       type="button"
     >
@@ -342,14 +339,20 @@ Array [
           >
             r:
           </span>
-          <Memo(GithubIcon)
-            className="icon-inline text-muted sidebarSectionIcon"
-          />
+          <span
+            aria-label="github.com"
+            title="github.com"
+          >
+            <Memo(GithubIcon)
+              className="icon-inline text-muted sidebarSectionIcon"
+            />
+          </span>
           microsoft/vscode
         </span>
       </span>
       <span
         className="pl-2 flex-shrink-0"
+        title="At least 201 results match this filter."
       >
         201
         +

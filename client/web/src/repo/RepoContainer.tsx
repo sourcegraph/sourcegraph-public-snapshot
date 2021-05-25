@@ -1,6 +1,8 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import { escapeRegExp } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
@@ -30,11 +32,13 @@ import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
 import { encodeURIPathComponent, makeRepoURI } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { AuthenticatedUser } from '../auth'
 import { ErrorMessage } from '../components/alerts'
 import { BreadcrumbSetters, BreadcrumbsProps } from '../components/Breadcrumbs'
 import { ErrorBoundary } from '../components/ErrorBoundary'
+import { FuzzyFinder } from '../components/fuzzyFinder/FuzzyFinder'
 import { HeroPage } from '../components/HeroPage'
 import { ActionItemsBarProps, useWebActionItems } from '../extensions/components/ActionItemsBar'
 import { ExternalLinkFields, RepositoryFields } from '../graphql-operations'
@@ -151,6 +155,7 @@ export interface ExtensionAlertProps {
  * Renders a horizontal bar and content for a repository page.
  */
 export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props => {
+    const [isRedesignEnabled] = useRedesignToggle()
     const { repoName, revision, rawRevision, filePath, commitRange, position, range } = parseBrowserRepoURL(
         location.pathname + location.search + location.hash
     )
@@ -221,24 +226,36 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                 key: 'repository',
                 element: (
                     <>
-                        <Link
-                            to={
-                                resolvedRevisionOrError && !isErrorLike(resolvedRevisionOrError)
-                                    ? resolvedRevisionOrError.rootTreeURL
-                                    : repoOrError.url
-                            }
-                            className="font-weight-bold text-nowrap test-repo-header-repo-link"
-                        >
-                            <SourceRepositoryIcon className="icon-inline" /> {displayRepoName(repoOrError.name)}
-                        </Link>
-                        <button
-                            type="button"
-                            id="repo-popover"
-                            className="btn btn-icon px-0"
-                            aria-label="Change repository"
-                        >
-                            <MenuDownIcon className="icon-inline" />
-                        </button>
+                        <div className={classNames('d-inline-flex', isRedesignEnabled && 'btn-group')}>
+                            <Link
+                                to={
+                                    resolvedRevisionOrError && !isErrorLike(resolvedRevisionOrError)
+                                        ? resolvedRevisionOrError.rootTreeURL
+                                        : repoOrError.url
+                                }
+                                className={classNames(
+                                    'text-nowrap test-repo-header-repo-link',
+                                    isRedesignEnabled ? 'btn btn-sm btn-outline-secondary' : 'font-weight-bold'
+                                )}
+                            >
+                                <SourceRepositoryIcon className="icon-inline" /> {displayRepoName(repoOrError.name)}
+                            </Link>
+                            <button
+                                type="button"
+                                id="repo-popover"
+                                className={classNames(
+                                    'btn repo-container__repo-change',
+                                    isRedesignEnabled ? 'btn-sm btn-outline-secondary' : 'btn-icon'
+                                )}
+                                aria-label="Change repository"
+                            >
+                                {isRedesignEnabled ? (
+                                    <ChevronDownIcon className="icon-inline" />
+                                ) : (
+                                    <MenuDownIcon className="icon-inline" />
+                                )}
+                            </button>
+                        </div>
                         <UncontrolledPopover
                             placement="bottom-start"
                             target="repo-popover"
@@ -252,7 +269,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                     </>
                 ),
             }
-        }, [repoOrError, resolvedRevisionOrError])
+        }, [repoOrError, resolvedRevisionOrError, isRedesignEnabled])
     )
 
     // Update the workspace roots service to reflect the current repo / resolved revision
@@ -383,6 +400,12 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
 
     return (
         <div className="repo-container test-repo-container w-100 d-flex flex-column">
+            {!isErrorLike(props.settingsCascade.final) &&
+                props.settingsCascade.final?.experimentalFeatures?.fuzzyFinder &&
+                resolvedRevisionOrError &&
+                !isErrorLike(resolvedRevisionOrError) && (
+                    <FuzzyFinder repoName={repoName} commitID={resolvedRevisionOrError.commitID} />
+                )}
             {showExtensionAlert && (
                 <InstallBrowserExtensionAlert
                     isChrome={IS_CHROME}

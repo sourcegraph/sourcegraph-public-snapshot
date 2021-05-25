@@ -68,7 +68,7 @@ func TestResolvingInvalidSearchContextSpecs(t *testing.T) {
 	}{
 		{name: "invalid format", searchContextSpec: "+user", wantErr: "search context not found"},
 		{name: "user not found", searchContextSpec: "@user", wantErr: "search context \"@user\" not found"},
-		{name: "empty user not found", searchContextSpec: "@", wantErr: "search context \"@\" not found"},
+		{name: "empty user not found", searchContextSpec: "@", wantErr: "search context not found"},
 	}
 
 	db := new(dbtesting.MockDB)

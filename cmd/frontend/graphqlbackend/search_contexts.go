@@ -337,10 +337,12 @@ func (r *schemaResolver) SearchContexts(ctx context.Context, args *listSearchCon
 	newArgs := *args
 	newArgs.First += 1
 
-	// TODO(rok): Parse the query into namespace and search context name components
+	var namespaceName string
 	var searchContextName string
 	if newArgs.Query != nil {
-		searchContextName = *newArgs.Query
+		parsedSearchContextSpec := searchcontexts.ParseSearchContextSpec(*newArgs.Query)
+		searchContextName = parsedSearchContextSpec.SearchContextName
+		namespaceName = parsedSearchContextSpec.NamespaceName
 	}
 
 	afterCursor, err := unmarshalSearchContextCursor(newArgs.After)
@@ -349,6 +351,7 @@ func (r *schemaResolver) SearchContexts(ctx context.Context, args *listSearchCon
 	}
 
 	opts := database.ListSearchContextsOptions{
+		NamespaceName:     namespaceName,
 		Name:              searchContextName,
 		NoNamespace:       namespaceFilter == namespaceFilterTypeInstance,
 		OrderBy:           orderBy,
