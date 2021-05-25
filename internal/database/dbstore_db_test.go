@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
 
@@ -15,7 +14,7 @@ func TestMigrations(t *testing.T) {
 	}
 
 	// Setup a global test database
-	db := dbtest.NewDB(t, "")
+	db := dbtesting.GetDB(t)
 
 	migrate := func() {
 		if err := dbconn.MigrateDB(db, dbconn.Frontend); err != nil {
