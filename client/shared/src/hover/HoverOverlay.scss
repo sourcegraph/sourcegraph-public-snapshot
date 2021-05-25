@@ -16,6 +16,11 @@
         margin-left: 0.25rem;
     }
 
+    &__badge {
+        text-transform: uppercase;
+        color: var(--text-muted);
+    }
+
     &__icon {
         float: left;
         margin-right: 0.25rem;

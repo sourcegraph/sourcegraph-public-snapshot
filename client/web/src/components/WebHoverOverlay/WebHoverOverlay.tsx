@@ -53,6 +53,7 @@ export const WebHoverOverlay: React.FunctionComponent<HoverOverlayProps & HoverT
             iconClassName="icon-inline"
             closeButtonClassName="btn btn-icon"
             actionItemClassName="btn btn-secondary"
+            badgeClassName="badge badge-secondary"
             onAlertDismissed={onAlertDismissed}
             getAlertClassName={getAlertClassName}
         />
