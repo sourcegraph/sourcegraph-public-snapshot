@@ -1864,7 +1864,8 @@ func computeLatestCommitTimestamp(dir GitDir) (time.Time, error) {
 	// 1521316105 ff03fac223b7f16627b301e03bf604e7808989be
 	epoch, err := strconv.ParseInt(string(words[0]), 10, 64)
 	if err != nil {
-		return now, errors.Wrap(err, "invalid timestamp in rev-list output")
+		log15.Error("computeLatestCommitTimestamp: ignoring corrupted timestamp", "error", err)
+		return now, nil
 	}
 	stamp := time.Unix(epoch, 0)
 	if stamp.After(now) {
