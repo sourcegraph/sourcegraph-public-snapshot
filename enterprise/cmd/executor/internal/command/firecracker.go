@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
@@ -52,6 +53,15 @@ func formatFirecrackerCommand(spec CommandSpec, name, repoDir string, options Op
 		Operation: spec.Operation,
 	}
 }
+
+// We've recently seen issues with concurent VM creation. It's likely we
+// can do better here and run an empty VM at application startup, but I
+// want to do this quick and dirty to see if we can raise our concurrency
+// without other issues.
+//
+// https://github.com/weaveworks/ignite/issues/559
+// Following up in TODO.
+var igniteRunLock sync.Mutex
 
 // setupFirecracker invokes a set of commands to provision and prepare a Firecracker virtual
 // machine instance. This is done in several steps:
@@ -118,8 +128,11 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger *Logger,
 		),
 		Operation: operations.SetupFirecrackerStart,
 	}
-	if err := runner.RunCommand(ctx, startCommand, logger); err != nil {
-		return errors.Wrap(err, "failed to start firecracker vm")
+	igniteRunLock.Lock()
+	err := errors.Wrap(runner.RunCommand(ctx, startCommand, logger), "failed to start firecracker vm")
+	igniteRunLock.Unlock()
+	if err != nil {
+		return err
 	}
 
 	// Load images from tar files
