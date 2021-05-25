@@ -1,18 +1,11 @@
-$is-redesign-enabled: false;
-
-// TODO: remove this if statement once redesign is ready for release.
-// Should be implemented as a part of the tracking issue:
-// https://github.com/sourcegraph/sourcegraph/issues/20846
-@if $is-redesign-enabled {
-    // Tell Bootstrap to use colors from redesign colors.
-    $blue: $redesign-blue;
-    $indigo: $redesign-indigo;
-    $purple: $redesign-purple;
-    $pink: $redesign-pink;
-    $red: $redesign-red;
-    $orange: $redesign-orange;
-    $yellow: $redesign-yellow;
-    $green: $redesign-green;
-    $teal: $redesign-teal;
-    $cyan: $redesign-cyan;
-}
+// Tell Bootstrap to use colors from redesign colors.
+$blue: $redesign-blue;
+$indigo: $redesign-indigo;
+$purple: $redesign-purple;
+$pink: $redesign-pink;
+$red: $redesign-red;
+$orange: $redesign-orange;
+$yellow: $redesign-yellow;
+$green: $redesign-green;
+$teal: $redesign-teal;
+$cyan: $redesign-cyan;
