@@ -21,7 +21,7 @@ func Middleware(ffs *database.FeatureFlagStore, next http.Handler) http.Handler 
 
 func contextWithFeatureFlags(ffs *database.FeatureFlagStore, r *http.Request) context.Context {
 	if a := actor.FromContext(r.Context()); a.IsAuthenticated() {
-		flags, err := ffs.UserFlags(r.Context(), a.UID)
+		flags, err := ffs.GetUserFlags(r.Context(), a.UID)
 		if err == nil {
 			return context.WithValue(r.Context(), flagContextKey{}, FlagSet(flags))
 		}
@@ -29,14 +29,14 @@ func contextWithFeatureFlags(ffs *database.FeatureFlagStore, r *http.Request) co
 	}
 
 	if cookie, err := r.Cookie("sourcegraphAnonymousUid"); err != nil {
-		flags, err := ffs.AnonymousUserFlags(r.Context(), cookie.Value)
+		flags, err := ffs.GetAnonymousUserFlags(r.Context(), cookie.Value)
 		if err == nil {
 			return context.WithValue(r.Context(), flagContextKey{}, FlagSet(flags))
 		}
 		// Continue if err != nil
 	}
 
-	flags, err := ffs.UserlessFeatureFlags(r.Context())
+	flags, err := ffs.GetUserlessFeatureFlags(r.Context())
 	if err != nil {
 		return r.Context()
 	}

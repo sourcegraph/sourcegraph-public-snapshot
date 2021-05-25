@@ -36,7 +36,7 @@ func (f *FeatureFlagStore) Transact(ctx context.Context) (*FeatureFlagStore, err
 	return &FeatureFlagStore{Store: txBase}, err
 }
 
-func (f *FeatureFlagStore) NewFeatureFlag(ctx context.Context, flag *types.FeatureFlag) (*types.FeatureFlag, error) {
+func (f *FeatureFlagStore) InsertFeatureFlag(ctx context.Context, flag *types.FeatureFlag) (*types.FeatureFlag, error) {
 	const newFeatureFlagFmtStr = `
 		INSERT INTO feature_flags (
 			flag_name,
@@ -83,8 +83,8 @@ func (f *FeatureFlagStore) NewFeatureFlag(ctx context.Context, flag *types.Featu
 	return scanFeatureFlag(row)
 }
 
-func (f *FeatureFlagStore) NewBoolVar(ctx context.Context, name string, rollout int) (*types.FeatureFlag, error) {
-	return f.NewFeatureFlag(ctx, &types.FeatureFlag{
+func (f *FeatureFlagStore) InsertBoolVar(ctx context.Context, name string, rollout int) (*types.FeatureFlag, error) {
+	return f.InsertFeatureFlag(ctx, &types.FeatureFlag{
 		Name: name,
 		BoolVar: &types.FeatureFlagBoolVar{
 			Rollout: rollout,
@@ -92,8 +92,8 @@ func (f *FeatureFlagStore) NewBoolVar(ctx context.Context, name string, rollout 
 	})
 }
 
-func (f *FeatureFlagStore) NewBool(ctx context.Context, name string, value bool) (*types.FeatureFlag, error) {
-	return f.NewFeatureFlag(ctx, &types.FeatureFlag{
+func (f *FeatureFlagStore) InsertBool(ctx context.Context, name string, value bool) (*types.FeatureFlag, error) {
+	return f.InsertFeatureFlag(ctx, &types.FeatureFlag{
 		Name: name,
 		Bool: &types.FeatureFlagBool{
 			Value: value,
@@ -150,7 +150,7 @@ func scanFeatureFlag(scanner rowScanner) (*types.FeatureFlag, error) {
 	return &res, nil
 }
 
-func (f *FeatureFlagStore) ListFeatureFlags(ctx context.Context) ([]*types.FeatureFlag, error) {
+func (f *FeatureFlagStore) GetFeatureFlags(ctx context.Context) ([]*types.FeatureFlag, error) {
 	const listFeatureFlagsQuery = `
 		SELECT 
 			flag_name,
@@ -181,7 +181,7 @@ func (f *FeatureFlagStore) ListFeatureFlags(ctx context.Context) ([]*types.Featu
 	return res, nil
 }
 
-func (f *FeatureFlagStore) NewOverride(ctx context.Context, override *types.FeatureFlagOverride) (*types.FeatureFlagOverride, error) {
+func (f *FeatureFlagStore) InsertOverride(ctx context.Context, override *types.FeatureFlagOverride) (*types.FeatureFlagOverride, error) {
 	const newFeatureFlagOverrideFmtStr = `
 		INSERT INTO feature_flag_overrides (
 			namespace_org_id,
@@ -208,10 +208,10 @@ func (f *FeatureFlagStore) NewOverride(ctx context.Context, override *types.Feat
 	return scanFeatureFlagOverride(row)
 }
 
-// ListUserOverrides lists the overrides that have been specifically set for the given userID.
+// GetUserOverrides lists the overrides that have been specifically set for the given userID.
 // NOTE: this does not return any overrides for the user orgs. Those are returned separately
 // by ListOrgOverridesForUser so they can be mered in proper priority order.
-func (f *FeatureFlagStore) ListUserOverrides(ctx context.Context, userID int32) ([]*types.FeatureFlagOverride, error) {
+func (f *FeatureFlagStore) GetUserOverrides(ctx context.Context, userID int32) ([]*types.FeatureFlagOverride, error) {
 	const listUserOverridesFmtString = `
 		SELECT
 			namespace_org_id,
@@ -231,8 +231,8 @@ func (f *FeatureFlagStore) ListUserOverrides(ctx context.Context, userID int32) 
 	return scanFeatureFlagOverrides(rows)
 }
 
-// ListOrgOverridesForUser lists the feature flag overrides for all orgs the given user belongs to.
-func (f *FeatureFlagStore) ListOrgOverridesForUser(ctx context.Context, userID int32) ([]*types.FeatureFlagOverride, error) {
+// GetOrgOverridesForUser lists the feature flag overrides for all orgs the given user belongs to.
+func (f *FeatureFlagStore) GetOrgOverridesForUser(ctx context.Context, userID int32) ([]*types.FeatureFlagOverride, error) {
 	const listUserOverridesFmtString = `
 		SELECT
 			namespace_org_id,
@@ -279,29 +279,29 @@ func scanFeatureFlagOverride(scanner rowScanner) (*types.FeatureFlagOverride, er
 	return &res, err
 }
 
-// UserFlags returns the calculated values for feature flags for the given userID. This should
+// GetUserFlags returns the calculated values for feature flags for the given userID. This should
 // be the primary entrypoint for getting the user flags since it handles retrieving all the flags,
 // the org overrides, and the user overrides, and merges them in priority order.
-func (f *FeatureFlagStore) UserFlags(ctx context.Context, userID int32) (map[string]bool, error) {
+func (f *FeatureFlagStore) GetUserFlags(ctx context.Context, userID int32) (map[string]bool, error) {
 	g, ctx := errgroup.WithContext(ctx)
 
 	var flags []*types.FeatureFlag
 	g.Go(func() error {
-		res, err := f.ListFeatureFlags(ctx)
+		res, err := f.GetFeatureFlags(ctx)
 		flags = res
 		return err
 	})
 
 	var orgOverrides []*types.FeatureFlagOverride
 	g.Go(func() error {
-		res, err := f.ListOrgOverridesForUser(ctx, userID)
+		res, err := f.GetOrgOverridesForUser(ctx, userID)
 		orgOverrides = res
 		return err
 	})
 
 	var userOverrides []*types.FeatureFlagOverride
 	g.Go(func() error {
-		res, err := f.ListUserOverrides(ctx, userID)
+		res, err := f.GetUserOverrides(ctx, userID)
 		userOverrides = res
 		return err
 	})
@@ -341,9 +341,9 @@ func hashUserAndFlag(userID int32, flagName string) uint32 {
 	return h.Sum32()
 }
 
-// AnonymousUserFlags returns the calculated values for feature flags for the given anonymousUID
-func (f *FeatureFlagStore) AnonymousUserFlags(ctx context.Context, anonymousUID string) (map[string]bool, error) {
-	flags, err := f.ListFeatureFlags(ctx)
+// GetAnonymousUserFlags returns the calculated values for feature flags for the given anonymousUID
+func (f *FeatureFlagStore) GetAnonymousUserFlags(ctx context.Context, anonymousUID string) (map[string]bool, error) {
+	flags, err := f.GetFeatureFlags(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -377,8 +377,8 @@ FROM feature_flags f
 WHERE f.deleted_at IS NULL;
 `
 
-func (f *FeatureFlagStore) UserlessFeatureFlags(ctx context.Context) (map[string]bool, error) {
-	flags, err := f.ListFeatureFlags(ctx)
+func (f *FeatureFlagStore) GetUserlessFeatureFlags(ctx context.Context) (map[string]bool, error) {
+	flags, err := f.GetFeatureFlags(ctx)
 	if err != nil {
 		return nil, err
 	}
