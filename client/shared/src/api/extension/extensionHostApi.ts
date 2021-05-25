@@ -657,11 +657,11 @@ function callViewProviders<W extends ContributableViewContainer>(
                         [undefined],
                         providerResultToObservable(viewProvider.provideView(context)).pipe(
                             defaultIfEmpty<sourcegraph.View | null | undefined>(null),
-                            catchError((error): [ErrorLike] => {
+                            catchError((error: Error): [ErrorLike] => {
                                 console.error('View provider errored:', error)
                                 // Pass only primitive copied values because Error object is not
                                 // cloneable in Firefox and Safari
-                                return [{ message: error.message, name: error.name }]
+                                return [{ message: error.message, name: error.name, stack: error.stack }]
                             })
                         )
                     ).pipe(map(view => ({ id, view })))
