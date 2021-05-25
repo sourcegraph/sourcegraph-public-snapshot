@@ -12,7 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	ff "github.com/sourcegraph/sourcegraph/internal/featureflag"
 )
 
 type FeatureFlagStore struct {
@@ -36,7 +36,7 @@ func (f *FeatureFlagStore) Transact(ctx context.Context) (*FeatureFlagStore, err
 	return &FeatureFlagStore{Store: txBase}, err
 }
 
-func (f *FeatureFlagStore) InsertFeatureFlag(ctx context.Context, flag *types.FeatureFlag) (*types.FeatureFlag, error) {
+func (f *FeatureFlagStore) InsertFeatureFlag(ctx context.Context, flag *ff.FeatureFlag) (*ff.FeatureFlag, error) {
 	const newFeatureFlagFmtStr = `
 		INSERT INTO feature_flags (
 			flag_name,
@@ -83,19 +83,19 @@ func (f *FeatureFlagStore) InsertFeatureFlag(ctx context.Context, flag *types.Fe
 	return scanFeatureFlag(row)
 }
 
-func (f *FeatureFlagStore) InsertBoolVar(ctx context.Context, name string, rollout int) (*types.FeatureFlag, error) {
-	return f.InsertFeatureFlag(ctx, &types.FeatureFlag{
+func (f *FeatureFlagStore) InsertBoolVar(ctx context.Context, name string, rollout int) (*ff.FeatureFlag, error) {
+	return f.InsertFeatureFlag(ctx, &ff.FeatureFlag{
 		Name: name,
-		BoolVar: &types.FeatureFlagBoolVar{
+		BoolVar: &ff.FeatureFlagBoolVar{
 			Rollout: rollout,
 		},
 	})
 }
 
-func (f *FeatureFlagStore) InsertBool(ctx context.Context, name string, value bool) (*types.FeatureFlag, error) {
-	return f.InsertFeatureFlag(ctx, &types.FeatureFlag{
+func (f *FeatureFlagStore) InsertBool(ctx context.Context, name string, value bool) (*ff.FeatureFlag, error) {
+	return f.InsertFeatureFlag(ctx, &ff.FeatureFlag{
 		Name: name,
-		Bool: &types.FeatureFlagBool{
+		Bool: &ff.FeatureFlagBool{
 			Value: value,
 		},
 	})
@@ -108,9 +108,9 @@ type rowScanner interface {
 	Scan(...interface{}) error
 }
 
-func scanFeatureFlag(scanner rowScanner) (*types.FeatureFlag, error) {
+func scanFeatureFlag(scanner rowScanner) (*ff.FeatureFlag, error) {
 	var (
-		res      types.FeatureFlag
+		res      ff.FeatureFlag
 		flagType string
 		boolVal  *bool
 		rollout  *int
@@ -133,14 +133,14 @@ func scanFeatureFlag(scanner rowScanner) (*types.FeatureFlag, error) {
 		if boolVal == nil {
 			return nil, ErrInvalidColumnState
 		}
-		res.Bool = &types.FeatureFlagBool{
+		res.Bool = &ff.FeatureFlagBool{
 			Value: *boolVal,
 		}
 	case "bool_var":
 		if rollout == nil {
 			return nil, ErrInvalidColumnState
 		}
-		res.BoolVar = &types.FeatureFlagBoolVar{
+		res.BoolVar = &ff.FeatureFlagBoolVar{
 			Rollout: *rollout,
 		}
 	default:
@@ -150,7 +150,7 @@ func scanFeatureFlag(scanner rowScanner) (*types.FeatureFlag, error) {
 	return &res, nil
 }
 
-func (f *FeatureFlagStore) GetFeatureFlags(ctx context.Context) ([]*types.FeatureFlag, error) {
+func (f *FeatureFlagStore) GetFeatureFlags(ctx context.Context) ([]*ff.FeatureFlag, error) {
 	const listFeatureFlagsQuery = `
 		SELECT 
 			flag_name,
@@ -170,7 +170,7 @@ func (f *FeatureFlagStore) GetFeatureFlags(ctx context.Context) ([]*types.Featur
 	}
 	defer rows.Close()
 
-	res := make([]*types.FeatureFlag, 0, 10)
+	res := make([]*ff.FeatureFlag, 0, 10)
 	for rows.Next() {
 		flag, err := scanFeatureFlag(rows)
 		if err != nil {
@@ -181,7 +181,7 @@ func (f *FeatureFlagStore) GetFeatureFlags(ctx context.Context) ([]*types.Featur
 	return res, nil
 }
 
-func (f *FeatureFlagStore) InsertOverride(ctx context.Context, override *types.FeatureFlagOverride) (*types.FeatureFlagOverride, error) {
+func (f *FeatureFlagStore) InsertOverride(ctx context.Context, override *ff.FeatureFlagOverride) (*ff.FeatureFlagOverride, error) {
 	const newFeatureFlagOverrideFmtStr = `
 		INSERT INTO feature_flag_overrides (
 			namespace_org_id,
@@ -211,7 +211,7 @@ func (f *FeatureFlagStore) InsertOverride(ctx context.Context, override *types.F
 // GetUserOverrides lists the overrides that have been specifically set for the given userID.
 // NOTE: this does not return any overrides for the user orgs. Those are returned separately
 // by ListOrgOverridesForUser so they can be mered in proper priority order.
-func (f *FeatureFlagStore) GetUserOverrides(ctx context.Context, userID int32) ([]*types.FeatureFlagOverride, error) {
+func (f *FeatureFlagStore) GetUserOverrides(ctx context.Context, userID int32) ([]*ff.FeatureFlagOverride, error) {
 	const listUserOverridesFmtString = `
 		SELECT
 			namespace_org_id,
@@ -232,7 +232,7 @@ func (f *FeatureFlagStore) GetUserOverrides(ctx context.Context, userID int32) (
 }
 
 // GetOrgOverridesForUser lists the feature flag overrides for all orgs the given user belongs to.
-func (f *FeatureFlagStore) GetOrgOverridesForUser(ctx context.Context, userID int32) ([]*types.FeatureFlagOverride, error) {
+func (f *FeatureFlagStore) GetOrgOverridesForUser(ctx context.Context, userID int32) ([]*ff.FeatureFlagOverride, error) {
 	const listUserOverridesFmtString = `
 		SELECT
 			namespace_org_id,
@@ -256,8 +256,8 @@ func (f *FeatureFlagStore) GetOrgOverridesForUser(ctx context.Context, userID in
 	return scanFeatureFlagOverrides(rows)
 }
 
-func scanFeatureFlagOverrides(rows *sql.Rows) ([]*types.FeatureFlagOverride, error) {
-	var res []*types.FeatureFlagOverride
+func scanFeatureFlagOverrides(rows *sql.Rows) ([]*ff.FeatureFlagOverride, error) {
+	var res []*ff.FeatureFlagOverride
 	for rows.Next() {
 		override, err := scanFeatureFlagOverride(rows)
 		if err != nil {
@@ -268,8 +268,8 @@ func scanFeatureFlagOverrides(rows *sql.Rows) ([]*types.FeatureFlagOverride, err
 	return res, nil
 }
 
-func scanFeatureFlagOverride(scanner rowScanner) (*types.FeatureFlagOverride, error) {
-	var res types.FeatureFlagOverride
+func scanFeatureFlagOverride(scanner rowScanner) (*ff.FeatureFlagOverride, error) {
+	var res ff.FeatureFlagOverride
 	err := scanner.Scan(
 		&res.OrgID,
 		&res.UserID,
@@ -285,21 +285,21 @@ func scanFeatureFlagOverride(scanner rowScanner) (*types.FeatureFlagOverride, er
 func (f *FeatureFlagStore) GetUserFlags(ctx context.Context, userID int32) (map[string]bool, error) {
 	g, ctx := errgroup.WithContext(ctx)
 
-	var flags []*types.FeatureFlag
+	var flags []*ff.FeatureFlag
 	g.Go(func() error {
 		res, err := f.GetFeatureFlags(ctx)
 		flags = res
 		return err
 	})
 
-	var orgOverrides []*types.FeatureFlagOverride
+	var orgOverrides []*ff.FeatureFlagOverride
 	g.Go(func() error {
 		res, err := f.GetOrgOverridesForUser(ctx, userID)
 		orgOverrides = res
 		return err
 	})
 
-	var userOverrides []*types.FeatureFlagOverride
+	var userOverrides []*ff.FeatureFlagOverride
 	g.Go(func() error {
 		res, err := f.GetUserOverrides(ctx, userID)
 		userOverrides = res
@@ -367,15 +367,6 @@ func hashAnonymousUserAndFlag(anonymousUID, flagName string) uint32 {
 	h.Write([]byte(flagName))
 	return h.Sum32()
 }
-
-const listUserlessFlagsFmtStr = `
-SELECT
-	f.flag_name,
-	f.flag_type,
-	f.bool_var,
-FROM feature_flags f
-WHERE f.deleted_at IS NULL;
-`
 
 func (f *FeatureFlagStore) GetUserlessFeatureFlags(ctx context.Context) (map[string]bool, error) {
 	flags, err := f.GetFeatureFlags(ctx)

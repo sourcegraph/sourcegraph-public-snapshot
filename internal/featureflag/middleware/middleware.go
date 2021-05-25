@@ -1,4 +1,4 @@
-package featureflag
+package middlware
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	ff "github.com/sourcegraph/sourcegraph/internal/featureflag"
 )
 
 type flagContextKey struct{}
@@ -23,7 +24,7 @@ func contextWithFeatureFlags(ffs *database.FeatureFlagStore, r *http.Request) co
 	if a := actor.FromContext(r.Context()); a.IsAuthenticated() {
 		flags, err := ffs.GetUserFlags(r.Context(), a.UID)
 		if err == nil {
-			return context.WithValue(r.Context(), flagContextKey{}, FlagSet(flags))
+			return context.WithValue(r.Context(), flagContextKey{}, ff.FlagSet(flags))
 		}
 		// Continue if err != nil
 	}
@@ -31,7 +32,7 @@ func contextWithFeatureFlags(ffs *database.FeatureFlagStore, r *http.Request) co
 	if cookie, err := r.Cookie("sourcegraphAnonymousUid"); err != nil {
 		flags, err := ffs.GetAnonymousUserFlags(r.Context(), cookie.Value)
 		if err == nil {
-			return context.WithValue(r.Context(), flagContextKey{}, FlagSet(flags))
+			return context.WithValue(r.Context(), flagContextKey{}, ff.FlagSet(flags))
 		}
 		// Continue if err != nil
 	}
@@ -40,14 +41,14 @@ func contextWithFeatureFlags(ffs *database.FeatureFlagStore, r *http.Request) co
 	if err != nil {
 		return r.Context()
 	}
-	return context.WithValue(r.Context(), flagContextKey{}, FlagSet(flags))
+	return context.WithValue(r.Context(), flagContextKey{}, ff.FlagSet(flags))
 }
 
 // FromContext retrieves the current set of flags from the current
 // request's context.
-func FromContext(ctx context.Context) FlagSet {
+func FromContext(ctx context.Context) ff.FlagSet {
 	if flags := ctx.Value(flagContextKey{}); flags != nil {
-		return flags.(FlagSet)
+		return flags.(ff.FlagSet)
 	}
 	return nil
 }
