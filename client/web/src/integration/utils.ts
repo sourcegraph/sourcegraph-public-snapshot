@@ -65,16 +65,20 @@ export const setColorScheme = async (
         shouldWaitForCodeHighlighting ? waitForCodeHighlighting(page) : Promise.resolve(),
     ])
 
-    // Check Monaco editor is styled correctly
-    await page.waitForFunction(
-        expectedClassName =>
-            document.querySelector('#monaco-query-input .monaco-editor') &&
-            document.querySelector('#monaco-query-input .monaco-editor')?.classList.contains(expectedClassName),
-        { timeout: 1000 },
-        ColorSchemeToMonacoEditorClassName[scheme]
-    )
-    // Wait a tiny bit for Monaco syntax highlighting to be applied
-    await page.waitForTimeout(500)
+    const searchBarDisplayed = await page.evaluate(() => document.querySelector('#monaco-query-input') !== null)
+    if (searchBarDisplayed) {
+        // Check Monaco editor is styled correctly
+        await page.waitForFunction(
+            expectedClassName =>
+                document.querySelector('#monaco-query-input .monaco-editor') &&
+                document.querySelector('#monaco-query-input .monaco-editor')?.classList.contains(expectedClassName),
+            { timeout: 1000 },
+            ColorSchemeToMonacoEditorClassName[scheme]
+        )
+
+        // Wait a tiny bit for Monaco syntax highlighting to be applied
+        await page.waitForTimeout(500)
+    }
 }
 
 export interface PercySnapshotConfig {
@@ -96,8 +100,11 @@ export const percySnapshotWithVariants = async (
         return
     }
 
-    // Wait for Monaco editor to finish rendering before taking screenshots
-    await page.waitForSelector('#monaco-query-input .monaco-editor', { visible: true })
+    const searchBarDisplayed = await page.evaluate(() => document.querySelector('#monaco-query-input') !== null)
+    if (searchBarDisplayed) {
+        // Wait for Monaco editor to finish rendering before taking screenshots
+        await page.waitForSelector('#monaco-query-input .monaco-editor', { visible: true })
+    }
 
     // Theme-light
     await setColorScheme(page, 'light', config?.waitForCodeHighlighting)
