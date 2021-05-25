@@ -88,14 +88,9 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
     ])
     const showOnboardingTour = props.showOnboardingTour && isHomepage
 
-    const {
-        additionalQueryParameters,
-        shouldFocusQueryInput,
-        ...onboardingTourQueryInputProps
-    } = useSearchOnboardingTour({
+    const { shouldFocusQueryInput, ...onboardingTourQueryInputProps } = useSearchOnboardingTour({
         ...props,
         showOnboardingTour,
-        inputLocation: 'search-homepage',
         queryState: userQueryState,
         setQueryState: setUserQueryState,
     })
@@ -108,10 +103,9 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                     ? `${props.hiddenQueryPrefix} ${userQueryState.query}`
                     : userQueryState.query,
                 source: 'home',
-                searchParameters: additionalQueryParameters,
             })
         },
-        [props, userQueryState.query, additionalQueryParameters]
+        [props, userQueryState.query]
     )
 
     return (

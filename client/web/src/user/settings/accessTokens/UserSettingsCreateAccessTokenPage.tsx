@@ -166,7 +166,7 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<Props> =
                             the user account
                         </label>
                     </div>
-                    {user.siteAdmin && (
+                    {user.siteAdmin && !window.context.sourcegraphDotComMode && (
                         <div className="form-check">
                             <input
                                 className="form-check-input"

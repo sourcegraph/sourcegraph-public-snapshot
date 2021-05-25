@@ -48,8 +48,9 @@ func (s *GitserverRepoStore) Upsert(ctx context.Context, repos ...*types.Gitserv
 		))
 	}
 	err := s.Exec(ctx, sqlf.Sprintf(`
-INSERT INTO 
-    gitserver_repos(repo_id, clone_status, shard_id, last_external_service, last_error, updated_at) 
+-- source: internal/database/gitserver_repos.go:GitserverRepoStore.Upsert
+INSERT INTO
+    gitserver_repos(repo_id, clone_status, shard_id, last_external_service, last_error, updated_at)
     VALUES %s
     ON CONFLICT (repo_id) DO UPDATE
     SET (clone_status, shard_id, last_external_service, last_error, updated_at) =
@@ -69,6 +70,7 @@ func (s *GitserverRepoStore) IterateRepoGitserverStatus(ctx context.Context, rep
 	}
 
 	q := `
+-- source: internal/database/gitserver_repos.go:GitserverRepoStore.IterateRepoGitserverStatus
 SELECT repo.id,
        repo.name,
        gr.clone_status,
@@ -76,7 +78,7 @@ SELECT repo.id,
        gr.last_external_service,
        gr.last_error,
        gr.updated_at
-FROM repo 
+FROM repo
     LEFT JOIN gitserver_repos gr ON gr.repo_id = repo.id
     WHERE repo.deleted_at IS NULL
 `
@@ -128,6 +130,7 @@ FROM repo
 
 func (s *GitserverRepoStore) GetByID(ctx context.Context, id api.RepoID) (*types.GitserverRepo, error) {
 	q := `
+-- source: internal/database/gitserver_repos.go:GitserverRepoStore.GetByID
 SELECT
        repo_id,
        clone_status,
@@ -135,7 +138,7 @@ SELECT
        last_external_service,
        last_error,
        updated_at
-FROM gitserver_repos 
+FROM gitserver_repos
 WHERE repo_id = %s
 `
 
@@ -166,6 +169,7 @@ WHERE repo_id = %s
 // If the status value hasn't changed, the row will not be updated.
 func (s *GitserverRepoStore) SetCloneStatus(ctx context.Context, id api.RepoID, status types.CloneStatus, shardID string) error {
 	err := s.Exec(ctx, sqlf.Sprintf(`
+-- source: internal/database/gitserver_repos.go:GitserverRepoStore.SetCloneStatus
 INSERT INTO gitserver_repos(repo_id, clone_status, shard_id, updated_at)
 VALUES (%s, %s, %s, now())
 ON CONFLICT (repo_id) DO UPDATE
@@ -183,6 +187,7 @@ SET (clone_status, shard_id, updated_at) =
 func (s *GitserverRepoStore) SetLastError(ctx context.Context, id api.RepoID, error string, shardID string) error {
 	ns := dbutil.NewNullString(error)
 	err := s.Exec(ctx, sqlf.Sprintf(`
+-- source: internal/database/gitserver_repos.go:GitserverRepoStore.SetLastError
 INSERT INTO gitserver_repos(repo_id, last_error, shard_id, updated_at)
 VALUES (%s, %s, %s, now())
 ON CONFLICT (repo_id) DO UPDATE

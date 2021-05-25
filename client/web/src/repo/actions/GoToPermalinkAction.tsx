@@ -67,7 +67,7 @@ export class GoToPermalinkAction extends React.PureComponent<
         if (this.props.actionType === 'dropdown') {
             return (
                 <ButtonLink
-                    className="nav-link repo-header__file-action"
+                    className="btn repo-header__file-action"
                     to={this.permalinkURL}
                     onSelect={this.onClick.bind(this)}
                 >
@@ -82,6 +82,7 @@ export class GoToPermalinkAction extends React.PureComponent<
                 to={this.permalinkURL}
                 data-tooltip="Permalink (with full Git commit SHA)"
                 onSelect={this.onClick.bind(this)}
+                className="btn btn-icon repo-header__action"
             >
                 <LinkIcon className="icon-inline" />
             </ButtonLink>

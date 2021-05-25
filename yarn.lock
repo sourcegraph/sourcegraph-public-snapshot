@@ -3817,6 +3817,11 @@
   dependencies:
     "@babel/types" "^7.3.0"
 
+"@types/bloomfilter@^0.0.0":
+  version "0.0.0"
+  resolved "https://registry.npmjs.org/@types/bloomfilter/-/bloomfilter-0.0.0.tgz#fbfdf4fbf1d9f4775ee0ef952e58b138e5dae423"
+  integrity sha512-bZhGgidbIsN1sgI3tLwyxTpSa9Dkd9V5MrDU/O92OiqqEN+CNOxbyzPYAFOoBFw4VAh2EdzqT4XucKZEkrI0JQ==
+
 "@types/body-parser@*":
   version "1.17.0"
   resolved "https://registry.npmjs.org/@types/body-parser/-/body-parser-1.17.0.tgz#9f5c9d9bd04bb54be32d5eb9fc0d8c974e6cf58c"
@@ -6728,6 +6733,11 @@ blob@0.0.5:
   version "0.0.5"
   resolved "https://registry.npmjs.org/blob/-/blob-0.0.5.tgz#d680eeef25f8cd91ad533f5b01eed48e64caf683"
   integrity sha512-gaqbzQPqOoamawKg0LGVd7SzLgXS+JH61oWprSLH+P+abTczqJbhTR8CmJ2u9/bUYNmHTGJx/UEmn6doAvvuig==
+
+bloomfilter@^0.0.18:
+  version "0.0.18"
+  resolved "https://registry.npmjs.org/bloomfilter/-/bloomfilter-0.0.18.tgz#6d55d34f0a214b235287b4eac9203ac623413dab"
+  integrity sha512-CbnyHE78gY1tpXS/Ap+B0RJxKdRWCDzjBnX97UJSG8rdLv1PK8GiTWc/CCQyWu6PWVD4lUceeFrqC6Mf3nMgOA==
 
 bluebird-retry@^0.11.0:
   version "0.11.0"
