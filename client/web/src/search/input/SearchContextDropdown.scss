@@ -1,3 +1,5 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
 .search-context-dropdown {
     &__button {
         color: var(--search-query-text-color);
@@ -8,6 +10,13 @@
         border: 2px solid transparent;
         box-sizing: border-box;
         transition: none;
+
+        .theme-redesign & {
+            @media (--xs-breakpoint-down) {
+                border: 1px solid var(--input-border-color);
+                margin-left: 0;
+            }
+        }
 
         &:hover,
         &:active,
@@ -66,11 +75,13 @@
         }
     }
 
-    &__separator {
-        // stylelint-disable-next-line declaration-property-unit-whitelist
-        width: 1px;
-        height: 1.125rem;
-        background-color: var(--border-color-2);
+    &__menu {
+        .theme-redesign & {
+            @media (--xs-breakpoint-down) {
+                max-width: 85%;
+                transform: none;
+            }
+        }
     }
 }
 
