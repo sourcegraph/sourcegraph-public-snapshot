@@ -1,3 +1,9 @@
-.web-hover-overlay__badge {
-    color: var(--text-muted);
+.web-hover-overlay {
+    border-color: var(--border-color);
+    box-shadow: var(--dropdown-shadow);
+    border-radius: var(--popover-border-radius);
+
+    &__badge {
+        color: var(--text-muted);
+    }
 }

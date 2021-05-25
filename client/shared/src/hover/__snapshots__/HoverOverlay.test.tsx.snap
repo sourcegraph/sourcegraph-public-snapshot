@@ -395,7 +395,7 @@ exports[`HoverOverlay actions, hover and alert present 1`] = `
         }
       />
       <div
-        className="hover-overlay__alert-actions"
+        className="hover-overlay__alert-dismiss"
       >
         <a
           href=""

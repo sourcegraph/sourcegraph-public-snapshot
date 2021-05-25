@@ -143,4 +143,15 @@
             background-color: var(--alert-icon-color);
         }
     }
+
+    .alert a:not(.btn),
+    .alert-link {
+        color: var(--link-color);
+        text-decoration: none;
+        font-weight: 500;
+
+        &:hover {
+            text-decoration: underline;
+        }
+    }
 }
