@@ -368,7 +368,7 @@ func hashAnonymousUserAndFlag(anonymousUID, flagName string) uint32 {
 	return h.Sum32()
 }
 
-func (f *FeatureFlagStore) GetUserlessFeatureFlags(ctx context.Context) (map[string]bool, error) {
+func (f *FeatureFlagStore) GetGlobalFeatureFlags(ctx context.Context) (map[string]bool, error) {
 	flags, err := f.GetFeatureFlags(ctx)
 	if err != nil {
 		return nil, err

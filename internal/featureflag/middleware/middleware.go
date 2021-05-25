@@ -37,7 +37,7 @@ func contextWithFeatureFlags(ffs *database.FeatureFlagStore, r *http.Request) co
 		// Continue if err != nil
 	}
 
-	flags, err := ffs.GetUserlessFeatureFlags(r.Context())
+	flags, err := ffs.GetGlobalFeatureFlags(r.Context())
 	if err != nil {
 		return r.Context()
 	}

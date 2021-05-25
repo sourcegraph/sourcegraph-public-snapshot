@@ -560,7 +560,7 @@ func testUserlessFeatureFlags(t *testing.T) {
 		mkFFBool("f1", true)
 		mkFFBool("f2", false)
 
-		got, err := flagStore.GetUserlessFeatureFlags(ctx)
+		got, err := flagStore.GetGlobalFeatureFlags(ctx)
 		require.NoError(t, err)
 		expected := map[string]bool{"f1": true, "f2": false}
 		require.Equal(t, expected, got)
@@ -571,7 +571,7 @@ func testUserlessFeatureFlags(t *testing.T) {
 		mkFFBoolVar("f1", 10000)
 		mkFFBoolVar("f2", 0)
 
-		got, err := flagStore.GetUserlessFeatureFlags(ctx)
+		got, err := flagStore.GetGlobalFeatureFlags(ctx)
 		require.NoError(t, err)
 
 		// Userless requests don't have a stable user to evaluate
