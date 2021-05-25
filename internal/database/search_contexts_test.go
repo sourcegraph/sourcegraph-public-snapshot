@@ -9,7 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -27,7 +27,8 @@ func createSearchContexts(ctx context.Context, store *SearchContextsStore, searc
 }
 
 func TestSearchContexts_Get(t *testing.T) {
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
+	t.Parallel()
 	ctx := actor.WithInternalActor(context.Background())
 	u := Users(db)
 	o := Orgs(db)
@@ -78,7 +79,8 @@ func TestSearchContexts_Get(t *testing.T) {
 }
 
 func TestSearchContexts_Update(t *testing.T) {
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
+	t.Parallel()
 	ctx := actor.WithInternalActor(context.Background())
 	u := Users(db)
 	o := Orgs(db)
@@ -149,7 +151,8 @@ func TestSearchContexts_Update(t *testing.T) {
 }
 
 func TestSearchContexts_List(t *testing.T) {
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
+	t.Parallel()
 	ctx := actor.WithInternalActor(context.Background())
 	u := Users(db)
 	sc := SearchContexts(db)
@@ -195,7 +198,8 @@ func TestSearchContexts_List(t *testing.T) {
 }
 
 func TestSearchContexts_PaginationAndCount(t *testing.T) {
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
+	t.Parallel()
 	ctx := actor.WithInternalActor(context.Background())
 	u := Users(db)
 	o := Orgs(db)
@@ -292,7 +296,8 @@ func TestSearchContexts_PaginationAndCount(t *testing.T) {
 }
 
 func TestSearchContexts_CaseInsensitiveNames(t *testing.T) {
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
+	t.Parallel()
 	ctx := actor.WithInternalActor(context.Background())
 	u := Users(db)
 	o := Orgs(db)
@@ -352,7 +357,8 @@ func TestSearchContexts_CaseInsensitiveNames(t *testing.T) {
 }
 
 func TestSearchContexts_CreateAndSetRepositoryRevisions(t *testing.T) {
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
+	t.Parallel()
 	ctx := actor.WithInternalActor(context.Background())
 	sc := SearchContexts(db)
 	r := Repos(db)
@@ -413,7 +419,8 @@ func TestSearchContexts_CreateAndSetRepositoryRevisions(t *testing.T) {
 }
 
 func TestSearchContexts_Permissions(t *testing.T) {
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
+	t.Parallel()
 	internalCtx := actor.WithInternalActor(context.Background())
 	u := Users(db)
 	o := Orgs(db)
@@ -615,7 +622,8 @@ func TestSearchContexts_Permissions(t *testing.T) {
 }
 
 func TestSearchContexts_Delete(t *testing.T) {
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
+	t.Parallel()
 	ctx := context.Background()
 	sc := SearchContexts(db)
 
@@ -664,7 +672,8 @@ func getSearchContextNames(s []*types.SearchContext) []string {
 }
 
 func TestSearchContexts_OrderBy(t *testing.T) {
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
+	t.Parallel()
 	internalCtx := actor.WithInternalActor(context.Background())
 	u := Users(db)
 	o := Orgs(db)
