@@ -2,10 +2,22 @@ import { Remote } from 'comlink'
 import * as H from 'history'
 import iterate from 'iterare'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { BehaviorSubject, combineLatest, EMPTY, from, fromEvent, of, ReplaySubject, Subject, Subscription } from 'rxjs'
+import {
+    BehaviorSubject,
+    combineLatest,
+    merge,
+    EMPTY,
+    from,
+    fromEvent,
+    of,
+    ReplaySubject,
+    Subject,
+    Subscription,
+} from 'rxjs'
 import {
     catchError,
     concatMap,
+    distinctUntilChanged,
     filter,
     first,
     map,
@@ -60,6 +72,7 @@ import { observeResize } from '../../util/dom'
 import { HoverThresholdProps } from '../RepoContainer'
 
 import { LineDecorator } from './LineDecorator'
+import { isEqual } from 'lodash'
 
 /**
  * toPortalID builds an ID that will be used for the {@link LineDecorator} portal containers.
@@ -543,41 +556,44 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                             return EMPTY
                         }
 
-                        return observeResize(blobElement).pipe(
+                        // ResizeObserver doesn't reliably fire when navigating between documents
+                        // in Firefox, so recalculate on blobInfoChanges as well.
+                        return merge(observeResize(blobElement), blobInfoChanges).pipe(
                             // Throttle reflow without losing final value.
                             throttleTime(100, undefined, { leading: true, trailing: true }),
-                            tap(() => {
-                                try {
-                                    // Read
-                                    const blobComputedStyle = window.getComputedStyle(blobElement)
-                                    const borderRightWidth = parseInt(blobComputedStyle.borderRightWidth, 10)
-                                    const borderLeftWidth = parseInt(blobComputedStyle.borderLeftWidth, 10)
+                            map(() => {
+                                // Read
+                                const blobComputedStyle = window.getComputedStyle(blobElement)
+                                const borderRightWidth = parseInt(blobComputedStyle.borderRightWidth, 10)
+                                const borderLeftWidth = parseInt(blobComputedStyle.borderLeftWidth, 10)
 
-                                    const baseHorizontalGap = blobComputedStyle.getPropertyValue(
-                                        '--blob-status-bar-horizontal-gap'
-                                    )
+                                const baseHorizontalGap = blobComputedStyle.getPropertyValue(
+                                    '--blob-status-bar-horizontal-gap'
+                                )
 
-                                    let blobScrollbarWidth =
-                                        blobElement.offsetWidth -
-                                        blobElement.clientWidth -
-                                        (!isNaN(borderRightWidth) ? borderRightWidth : 0) -
-                                        (!isNaN(borderLeftWidth) ? borderLeftWidth : 0)
+                                let blobScrollbarWidth =
+                                    blobElement.offsetWidth -
+                                    blobElement.clientWidth -
+                                    (!isNaN(borderRightWidth) ? borderRightWidth : 0) -
+                                    (!isNaN(borderLeftWidth) ? borderLeftWidth : 0)
 
-                                    if (isNaN(blobScrollbarWidth)) {
-                                        blobScrollbarWidth = 0
-                                    }
-
-                                    // Write
-                                    statusBarElement.style.right = `calc(${baseHorizontalGap} + ${blobScrollbarWidth}px)`
-                                    // Maintain an equal gap with the left side of the container when the status bar is overflowing.
-                                    statusBarElement.style.maxWidth = `calc(100% - ((2 * ${baseHorizontalGap}) + ${blobScrollbarWidth}px))`
-                                } catch {
-                                    // noop
+                                if (isNaN(blobScrollbarWidth)) {
+                                    blobScrollbarWidth = 0
                                 }
+
+                                return { baseHorizontalGap, blobScrollbarWidth }
+                            }),
+                            distinctUntilChanged((a, b) => isEqual(a, b)),
+                            tap(({ baseHorizontalGap, blobScrollbarWidth }) => {
+                                // Write
+                                statusBarElement.style.right = `calc(${baseHorizontalGap} + ${blobScrollbarWidth}px)`
+                                // Maintain an equal gap with the left side of the container when the status bar is overflowing.
+                                statusBarElement.style.maxWidth = `calc(100% - ((2 * ${baseHorizontalGap}) + ${blobScrollbarWidth}px))`
                             })
                         )
                     }),
-                    mapTo(undefined)
+                    mapTo(undefined),
+                    catchError(() => EMPTY)
                 ),
             [blobElements, statusBarElements]
         )
