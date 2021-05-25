@@ -14,7 +14,7 @@ To change the current search context, press the contexts selector. All of your s
 
 Search contexts can also be used in the search query itself. Type `context:` to begin defining the context as part of the search query. When a context is defined in the search query itself, it overrides the context shown in the context selector.
 
-You can also search across multiple contexts at once using the `OR` [boolean operator](/code_search/reference/queries#boolean-operators). For example:
+You can also search across multiple contexts at once using the `OR` [boolean operator](../reference/queries.md#boolean-operators). For example:
 
 `(context:release1 OR context:release2 OR context:release3) someTerribleBug` 
 
@@ -22,7 +22,7 @@ You can also search across multiple contexts at once using the `OR` [boolean ope
 
 **Note**: Creating search contexts is only supported on private Sourcegraph instances. Sourcegraph Cloud does not yet support custom search contexts. Want early access to custom contexts on Sourcegraph Cloud? [Let us know](mailto:feedback@sourcegraph.com).
 
-When search contexts are [enabled on your private Sourcegraph instance](/code_search/explanations/features#search-contexts-experimental), you can create your own search contexts.
+When search contexts are [enabled on your private Sourcegraph instance](../explanations/features.md#search-contexts-experimental), you can create your own search contexts.
 
 A search context consists of a name, description, and a set of repositories at one or many revisions.
 
@@ -69,4 +69,4 @@ You will be returned to the list of search contexts. Your new search context wil
 
 ## Search contexts on Sourcegraph Cloud
 
-Please see [searching across repositories you've added to Sourcegraph Cloud with search contexts](searching_with_search_contexts.md).
+Please see [searching across repositories you've added to Sourcegraph Cloud with search contexts](./searching_with_search_contexts.md).

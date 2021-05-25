@@ -148,6 +148,6 @@ Your site admin can enable search contexts on your private instance in global se
 }
 ```
 
-If you currently use [version contexts](#version-contexts), you can automatically [convert your existing version contexts to search contexts](/admin/how-to/converting-version-contexts-to-search-contexts). We recommend migrating to search contexts for a more intuitive, powerful search experience and the latest improvements and updates.
+If you currently use [version contexts](#version-contexts), you can automatically [convert your existing version contexts to search contexts](../../admin/how-to/converting-version-contexts-to-search-contexts.md). We recommend migrating to search contexts for a more intuitive, powerful search experience and the latest improvements and updates.
 
 See the [search contexts](../how-to/search_contexts.md) documentation to learn how to use and create search contexts.

@@ -1,6 +1,6 @@
 # Searching across repositories you've added to Sourcegraph Cloud with search contexts
 
-Once you've [added repositories to Sourcegraph](adding_repositories_to_cloud.md), you can search across those repositories by default using search contexts.
+Once you've [added repositories to Sourcegraph](./adding_repositories_to_cloud.md), you can search across those repositories by default using search contexts.
 
 Sourcegraph Cloud currently supports two search contexts: 
 

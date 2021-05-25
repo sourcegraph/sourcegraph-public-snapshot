@@ -1,6 +1,6 @@
 # How to convert version contexts to search contexts
 
-This guide will provide steps for migrating from [version contexts](/code_search/explanations/features#version-contexts-sunsetting) to [search contexts](/code_search/explanations/features#search-contexts-experimental) on your private Sourcegraph instance.
+This guide will provide steps for migrating from [version contexts](../../code_search/explanations/features.md#version-contexts-sunsetting) to [search contexts](../../code_search/explanations/features.md#search-contexts-experimental) on your private Sourcegraph instance.
 
 ## Prerequisites
 
@@ -20,7 +20,7 @@ Site admins can enable search contexts on private Sourcegraph instances in globa
 
 1. Log in to your private Sourcegraph instance as a site admin.
 2. Navigate to `https://your_sourcegraph_instance.com/contexts`.
-3. Navigate to `Convert version contexts`. A list of [existing version contexts](/code_search/explanations/features#version-contexts-sunsetting) found in the site configuration will be shown.
+3. Navigate to `Convert version contexts`. A list of [existing version contexts](../../code_search/explanations/features.md#version-contexts-sunsetting) found in the site configuration will be shown.
 4. Convert either all version contexts at once, or specific individual version contexts as desired.
 5. Navigate back to `https://your_sourcegraph_instance.com/contexts`. Converted version contexts will be listed.
 
