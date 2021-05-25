@@ -310,7 +310,7 @@ func (f *FeatureFlagStore) UserFlags(ctx context.Context, userID int32) (map[str
 		return nil, err
 	}
 
-	res := make(map[string]bool, 10) // guess on size to avoid small allocations
+	res := make(map[string]bool, max(len(flags), len(orgOverrides), len(userOverrides)))
 	for _, ff := range flags {
 		switch {
 		case ff.Bool != nil:
@@ -347,7 +347,7 @@ func (f *FeatureFlagStore) AnonymousUserFlags(ctx context.Context, anonymousUID 
 		return nil, err
 	}
 
-	res := make(map[string]bool, 10) // guess on size to avoid small allocations
+	res := make(map[string]bool, len(flags))
 	for _, ff := range flags {
 		switch {
 		case ff.Bool != nil:
@@ -382,7 +382,7 @@ func (f *FeatureFlagStore) UserlessFeatureFlags(ctx context.Context) (map[string
 		return nil, err
 	}
 
-	res := make(map[string]bool, 10) // guess on size to avoid small allocations
+	res := make(map[string]bool, len(flags))
 	for _, ff := range flags {
 		switch {
 		case ff.Bool != nil:
@@ -393,4 +393,14 @@ func (f *FeatureFlagStore) UserlessFeatureFlags(ctx context.Context) (map[string
 	}
 
 	return res, nil
+}
+
+func max(vals ...int) int {
+	res := 0
+	for _, val := range vals {
+		if val > res {
+			res = val
+		}
+	}
+	return res
 }
