@@ -14,13 +14,14 @@ require (
 	github.com/aphistic/sweet-junit v0.2.0 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20200907205600-7a23bdc65eef // indirect
 	github.com/avelino/slugify v0.0.0-20180501145920-855f152bd774
-	github.com/aws/aws-sdk-go-v2 v1.2.1
+	github.com/aws/aws-sdk-go-v2 v1.3.2
 	github.com/aws/aws-sdk-go-v2/config v1.1.2
 	github.com/aws/aws-sdk-go-v2/credentials v1.1.2
 	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.0.3
 	github.com/aws/aws-sdk-go-v2/service/codecommit v1.1.2
+	github.com/aws/aws-sdk-go-v2/service/kms v1.2.2
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.2.1
-	github.com/aws/smithy-go v1.2.0
+	github.com/aws/smithy-go v1.3.1
 	github.com/beevik/etree v1.1.0
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
 	github.com/certifi/gocertifi v0.0.0-20200211180108-c7c1fbc02894 // indirect

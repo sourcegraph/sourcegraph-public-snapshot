@@ -42,5 +42,6 @@ The `encryption.Key` interface was built to be simple, and intended to be extend
 ### Implementations
 
 - Cloud KMS
+- AWS KMS
 - Mounted Key
 - No Op
