@@ -4,7 +4,7 @@
 
 import React from 'react'
 
-import { CaseSensitiveFuzzySearch } from '../../fuzzyFinder/CaseSensitiveFuzzySearch'
+import { WordSensitiveFuzzySearch } from '../../fuzzyFinder/WordSensitiveFuzzySearch'
 import { FuzzySearch, FuzzySearchResult, SearchIndexing } from '../../fuzzyFinder/FuzzySearch'
 
 import { FuzzyFinderProps, Indexing, FuzzyFSM } from './FuzzyFinder'
@@ -345,7 +345,7 @@ async function handleEmpty(props: FuzzyModalProps): Promise<void> {
 }
 
 function handleFilenames(filenames: string[]): FuzzyFSM {
-    const indexing = CaseSensitiveFuzzySearch.fromSearchValuesAsync(filenames.map(file => ({ text: file })))
+    const indexing = WordSensitiveFuzzySearch.fromSearchValuesAsync(filenames.map(file => ({ text: file })))
     if (indexing.key === 'ready') {
         return {
             key: 'ready',
