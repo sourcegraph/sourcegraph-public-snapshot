@@ -15,7 +15,9 @@ exports[`HoverOverlay actions and hover empty 1`] = `
   <div
     className="hover-overlay__contents"
   >
-    <i>
+    <i
+      className="hover-overlay__hover-empty"
+    >
       No hover information available.
     </i>
   </div>
@@ -59,7 +61,7 @@ exports[`HoverOverlay actions and hover loading 1`] = `
   }
 >
   <div
-    className="hover-overlay__contents"
+    className="hover-overlay__contents hover-overlay__contents--loading"
   >
     <div
       className="hover-overlay__loader-row"
@@ -294,7 +296,7 @@ exports[`HoverOverlay actions present, hover loading 1`] = `
   }
 >
   <div
-    className="hover-overlay__contents"
+    className="hover-overlay__contents hover-overlay__contents--loading"
   >
     <div
       className="hover-overlay__loader-row"
@@ -569,7 +571,7 @@ exports[`HoverOverlay hover loading 1`] = `
   }
 >
   <div
-    className="hover-overlay__contents"
+    className="hover-overlay__contents hover-overlay__contents--loading"
   >
     <div
       className="hover-overlay__loader-row"

@@ -44,7 +44,6 @@ export const HoverOverlayAlerts: React.FunctionComponent<HoverOverlayAlertsProps
     const { hoverAlerts, iconClassName, onAlertDismissed, getAlertClassName = () => undefined } = props
 
     const [isRedesignEnabled] = useRedesignToggle()
-    const DismissLabelWrapper = isRedesignEnabled ? 'small' : React.Fragment
 
     const createHandleAlertDismissed = (alertType: string) => (event: React.MouseEvent<HTMLAnchorElement>) => {
         event.preventDefault()
@@ -83,7 +82,7 @@ export const HoverOverlayAlerts: React.FunctionComponent<HoverOverlayAlertsProps
                             {/* Ideally this should a <button> but we can't guarantee we have the .btn-link class here. */}
                             {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
                             <a href="" onClick={createHandleAlertDismissed(type)} role="button">
-                                <DismissLabelWrapper>Dismiss</DismissLabelWrapper>
+                                <small>Dismiss</small>
                             </a>
                         </div>
                     )}
