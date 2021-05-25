@@ -2,6 +2,7 @@ package dbtest
 
 import (
 	"database/sql"
+	"errors"
 	"hash/fnv"
 	"math/rand"
 	"net/url"
@@ -11,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jackc/pgconn"
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
@@ -96,8 +98,18 @@ func initTemplateDB(t testing.TB, config *url.URL) {
 	templateOnce.Do(func() {
 		templateName := templateDBName()
 		db := dbConn(t, config)
-		dbExec(t, db, `DROP DATABASE IF EXISTS `+pq.QuoteIdentifier(templateName))
-		dbExec(t, db, `CREATE DATABASE `+pq.QuoteIdentifier(templateName))
+		_, err := db.Exec(`CREATE DATABASE ` + pq.QuoteIdentifier(templateName))
+		if err != nil {
+			pgErr := &pgconn.PgError{}
+			if errors.As(err, &pgErr) && pgErr.Code == "42P04" {
+				// Ignore database already exists errors.
+				// Postgres doesn't support CREATE DATABASE IF NOT EXISTS,
+				// so we just try to create it, and ignore the error if it's
+				// because the database already exists.
+			} else {
+				t.Fatalf("Failed to create database: %s", err)
+			}
+		}
 		defer db.Close()
 
 		cfgCopy := *config
