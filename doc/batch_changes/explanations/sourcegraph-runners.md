@@ -19,16 +19,28 @@ Sourcegraph runner is [open source](TODO).
 
 # Registering a runner
 
+TODO
+
 # Using runners
+
+TODO
 
 ## Who has access to runners
 
+TODO
+
 ## Debugging
 
+TODO
 
 # Administering and monitoring runners
 
+TODO
 
 # How do runners work
 
+TODO
+
 # Runner vs CLI workflow comparison
+
+TODO
