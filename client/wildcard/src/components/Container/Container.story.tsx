@@ -11,30 +11,75 @@ const { add } = storiesOf('wildcard/Container', module).addDecorator(story => (
 ))
 
 add(
-    'Multiple containers',
+    'Overview',
     () => (
-        <div className="row">
-            <div className="col-6">
-                <Container>
-                    <h4>Watch for AWS secrets in commits</h4>
-                    <p>
-                        Use a search query to watch for new search results, and choose how to receive notifications in
-                        response.
-                    </p>
-                    <button className="btn btn-sm btn-secondary">View in docs →</button>
-                </Container>
+        <>
+            <div className="alert alert-info">
+                <p>
+                    A container is meant to group content semantically together. It should only be used once per page.
+                    Every page using it should have a header, optionally a description for the page and the container
+                    itself. Depending on the scope of a button, it should live inside or outside of the container.
+                </p>
+                <p>If the button</p>
+                <ul className="mb-0">
+                    <li>
+                        affects everything inside the container (ie. saves all form fields within the container), it
+                        should live outside of the container. See example 1
+                    </li>
+                    <li>
+                        affects just a subset of content inside the container (ie. submits one of multiple forms), it
+                        should live inside of the container, next to the content it is modifying. See example 2
+                    </li>
+                </ul>
             </div>
-            <div className="col-6">
-                <Container>
-                    <h4>Watch for AWS secrets in commits</h4>
-                    <p>
-                        Use a search query to watch for new search results, and choose how to receive notifications in
-                        response.
-                    </p>
-                    <button className="btn btn-sm btn-secondary">View in docs →</button>
-                </Container>
+            <hr />
+            <h1>Example 1</h1>
+            <h2>Some page explanation</h2>
+            <p className="text-muted">Optional: Add some descriptive text about what this page does.</p>
+            <Container className="mb-3">
+                <h3>Section I</h3>
+                <p>Here you change the username.</p>
+                <div className="form-group">
+                    <input type="text" className="form-control" />
+                </div>
+                <h3>Section II</h3>
+                <p>Here you change your email.</p>
+                <div className="form-group mb-0">
+                    <input type="text" className="form-control" />
+                </div>
+            </Container>
+            <div className="mb-3">
+                <button type="button" className="btn btn-primary mr-2">
+                    Save
+                </button>
+                <button type="button" className="btn btn-secondary">
+                    Cancel
+                </button>
             </div>
-        </div>
+            <hr />
+            <h1>Example 2</h1>
+            <h2>Some page explanation</h2>
+            <p className="text-muted">Optional: Add some descriptive text about what this page does.</p>
+            <Container className="mb-3">
+                <h3>Section I</h3>
+                <p>Here you change the username.</p>
+                <div className="form-group">
+                    <input type="text" className="form-control" />
+                </div>
+                <button type="button" className="btn btn-secondary mb-2">
+                    Save
+                </button>
+                <hr className="mb-2" />
+                <h3>Section II</h3>
+                <p>Here you change your email.</p>
+                <div className="form-group">
+                    <input type="text" className="form-control" />
+                </div>
+                <button type="button" className="btn btn-secondary">
+                    Save
+                </button>
+            </Container>
+        </>
     ),
     {
         design: [
