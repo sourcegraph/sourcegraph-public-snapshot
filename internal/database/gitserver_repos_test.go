@@ -466,5 +466,4 @@ func TestSanitizeToUTF8(t *testing.T) {
 			t.Fatalf("Failed to sanitize to UTF-8, got %q but wanted %q", got, expected)
 		}
 	}
-
 }
