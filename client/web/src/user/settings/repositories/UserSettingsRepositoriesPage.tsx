@@ -287,8 +287,14 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     )
 
     useEffect(() => {
+        // don't re-fetch data when sync is scheduled
+        // we'll refresh once sync is complete
+        if (status === 'scheduled') {
+            return
+        }
+
         init().catch(error => setStatus(asError(error)))
-    }, [init])
+    }, [init, status])
 
     const queryRepositories = useCallback(
         (
@@ -379,15 +385,9 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
             {status === 'scheduled' && (
                 <div className="alert alert-info">
                     <span className="font-weight-bold">{getCodeHostsSyncMessage()}</span> Repositories list may not be
-                    up-to-date and will refresh once the sync is done.
+                    up-to-date and will refresh once the sync is finished.
                 </div>
             )}
-            {/* {status === 'schedule-complete' && (
-                <div className="alert alert-success">
-                    <span className="font-weight-bold">All repositories are up-to-date.</span> Feel free to refresh the
-                    page
-                </div>
-            )} */}
             {isErrorLike(status) && <ErrorAlert error={status} icon={true} />}
             <PageTitle title="Repositories" />
             <div className="d-flex justify-content-between align-items-center">
