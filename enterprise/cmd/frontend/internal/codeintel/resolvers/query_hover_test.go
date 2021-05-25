@@ -68,8 +68,13 @@ func TestHoverRemote(t *testing.T) {
 		Start: lsifstore.Position{Line: 10, Character: 10},
 		End:   lsifstore.Position{Line: 15, Character: 25},
 	}
-	mockLSIFStore.HoverFunc.PushReturn("", lsifstore.Range{}, false, nil)
-	mockLSIFStore.HoverFunc.PushReturn("doctext", expectedRange, true, nil)
+	mockLSIFStore.HoverFunc.PushReturn("", expectedRange, true, nil)
+
+	remoteRange := lsifstore.Range{
+		Start: lsifstore.Position{Line: 30, Character: 30},
+		End:   lsifstore.Position{Line: 35, Character: 45},
+	}
+	mockLSIFStore.HoverFunc.PushReturn("doctext", remoteRange, true, nil)
 
 	remoteUploads := []dbstore.Dump{
 		{ID: 150, Commit: "deadbeef1", Root: "sub1/"},
@@ -78,10 +83,6 @@ func TestHoverRemote(t *testing.T) {
 		{ID: 153, Commit: "deadbeef4", Root: "sub4/"},
 	}
 	mockDBStore.DefinitionDumpsFunc.PushReturn(remoteUploads, nil)
-
-	// upload #150's commit no longer exists; all others do
-	mockGitserverClient.CommitExistsFunc.PushReturn(false, nil)
-	mockGitserverClient.CommitExistsFunc.SetDefaultReturn(true, nil)
 
 	monikers := []semantic.MonikerData{
 		{Kind: "import", Scheme: "tsc", Identifier: "padLeft", PackageInformationID: "51"},
@@ -110,10 +111,7 @@ func TestHoverRemote(t *testing.T) {
 	mockLSIFStore.BulkMonikerResultsFunc.PushReturn(locations, len(locations), nil)
 
 	uploads := []dbstore.Dump{
-		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
-		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
-		{ID: 52, Commit: "deadbeef", Root: "sub3/"},
-		{ID: 53, Commit: "deadbeef", Root: "sub4/"},
+		{ID: 50, Commit: "deadbeef"},
 	}
 	resolver := newQueryResolver(
 		mockDBStore,
@@ -137,7 +135,6 @@ func TestHoverRemote(t *testing.T) {
 	if text != "doctext" {
 		t.Errorf("unexpected text. want=%q have=%q", "doctext", text)
 	}
-
 	if diff := cmp.Diff(expectedRange, rn); diff != "" {
 		t.Errorf("unexpected range (-want +got):\n%s", diff)
 	}

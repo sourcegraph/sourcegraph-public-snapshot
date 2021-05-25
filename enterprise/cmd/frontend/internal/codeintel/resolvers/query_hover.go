@@ -33,6 +33,14 @@ func (r *queryResolver) Hover(ctx context.Context, line, character int) (_ strin
 		return "", lsifstore.Range{}, false, err
 	}
 
+	// Keep track of each adjusted range we know about enclosing the requested position.
+	//
+	// If we don't have hover text within the index where the range is defined, we'll
+	// have to look in the definition index and search for the text there. We don't
+	// want to return the range associated with the definition, as the range is used
+	// as a hint to highlight a range in the current document.
+	adjustedRanges := make([]lsifstore.Range, 0, len(adjustedUploads))
+
 	for i := range adjustedUploads {
 		adjustedUpload := adjustedUploads[i]
 		traceLog(log.Int("uploadID", adjustedUpload.Upload.ID))
@@ -48,7 +56,7 @@ func (r *queryResolver) Hover(ctx context.Context, line, character int) (_ strin
 		if err != nil {
 			return "", lsifstore.Range{}, false, errors.Wrap(err, "lsifStore.Hover")
 		}
-		if !exists || text == "" {
+		if !exists {
 			continue
 		}
 
@@ -57,8 +65,27 @@ func (r *queryResolver) Hover(ctx context.Context, line, character int) (_ strin
 		if err != nil {
 			return "", lsifstore.Range{}, false, err
 		}
+		if text != "" {
+			// Text attached to source range
+			return text, adjustedRange, true, nil
+		}
 
-		return text, adjustedRange, true, nil
+		adjustedRanges = append(adjustedRanges, adjustedRange)
+	}
+
+	// The Slow path:
+	//
+	// The indexes we searched in doesn't attach hover text to externally defined symbols.
+	// Each indexer is free to make that choice as it's a compromise between ease of development,
+	// efficiency of indexing, index output sizes, etc. We can deal with this situation by
+	// looking for hover text attached to the precise definition (if one exists).
+
+	// The range we will end up returning is interpreted within the context of the current text
+	// document, so any range inside of a remote index would be of no use. We'll return the first
+	// (inner-most) range that we adjusted from the source index traversals above.
+	var adjustedRange lsifstore.Range
+	if len(adjustedRanges) > 0 {
+		adjustedRange = adjustedRanges[0]
 	}
 
 	// Gather all import monikers attached to the ranges enclosing the requested position
@@ -73,22 +100,26 @@ func (r *queryResolver) Hover(ctx context.Context, line, character int) (_ strin
 
 	// Determine the set of uploads over which we need to perform a moniker search. This will
 	// include all all indexes which define one of the ordered monikers. This should not include
-	// any of the indexes we have already performed an LSIF graph traversal in.
-	uploads, err := r.dbStore.DefinitionDumps(ctx, orderedMonikers)
+	// any of the indexes we have already performed an LSIF graph traversal in above.
+	uploads, err := r.definitionUploads(ctx, orderedMonikers)
 	if err != nil {
-		return "", lsifstore.Range{}, false, errors.Wrap(err, "dbStore.DefinitionDumps")
+		return "", lsifstore.Range{}, false, err
 	}
 	traceLog(
 		log.Int("numDefinitionUploads", len(uploads)),
 		log.String("definitionUploads", uploadIDsToString(uploads)),
 	)
 
+	// Perform the moniker search. This returns a set of locations defining one of the monikers
+	// attached to one of the source ranges.
 	locations, _, err := r.monikerLocations(ctx, uploads, orderedMonikers, "definitions", DefinitionsLimit, 0)
 	if err != nil {
 		return "", lsifstore.Range{}, false, err
 	}
+	traceLog(log.Int("numLocations", len(locations)))
 
 	for i := range locations {
+		// Fetch hover text attached to a definition in the defining index
 		text, _, exists, err := r.lsifStore.Hover(
 			ctx,
 			locations[i].DumpID,
@@ -96,23 +127,15 @@ func (r *queryResolver) Hover(ctx context.Context, line, character int) (_ strin
 			locations[i].Range.Start.Line,
 			locations[i].Range.Start.Character,
 		)
-		hoverPosition := lsifstore.Position{
-			Line:      line,
-			Character: character,
-		}
-		hoverRange := lsifstore.Range{
-			Start: hoverPosition,
-			End:   hoverPosition,
-		}
 		if err != nil {
-			return "", hoverRange, false, errors.Wrap(err, "lsifStore.Hover")
+			return "", lsifstore.Range{}, false, errors.Wrap(err, "lsifStore.Hover")
 		}
-		if !exists || text == "" {
-			continue
+		if exists && text != "" {
+			// Text attached to definition
+			return text, adjustedRange, true, nil
 		}
-
-		return text, lsifstore.Range{}, true, nil
 	}
 
+	// No text available
 	return "", lsifstore.Range{}, false, nil
 }
