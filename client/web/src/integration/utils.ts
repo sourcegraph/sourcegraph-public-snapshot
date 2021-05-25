@@ -78,19 +78,6 @@ export const setColorScheme = async (
     await page.waitForTimeout(500)
 }
 
-const toggleRedesign = async (page: Page, enabled: boolean): Promise<void> => {
-    await page.evaluate(
-        (className: string, storageKey: string, enabled: boolean) => {
-            document.documentElement.classList.toggle(className, enabled)
-            localStorage.setItem(storageKey, String(enabled))
-            window.dispatchEvent(new StorageEvent('storage', { key: storageKey, newValue: String(enabled) }))
-        },
-        REDESIGN_CLASS_NAME,
-        REDESIGN_TOGGLE_KEY,
-        enabled
-    )
-}
-
 export interface PercySnapshotConfig {
     waitForCodeHighlighting: boolean
 }
@@ -117,19 +104,9 @@ export const percySnapshotWithVariants = async (
     await setColorScheme(page, 'light', config?.waitForCodeHighlighting)
     await percySnapshot(page, `${name} - light theme`)
 
-    // Theme-light with redesign
-    await toggleRedesign(page, true)
-    await percySnapshot(page, `${name} - light theme with redesign enabled`)
-    await toggleRedesign(page, false)
-
     // Theme-dark
     await setColorScheme(page, 'dark', config?.waitForCodeHighlighting)
     await percySnapshot(page, `${name} - dark theme`)
-
-    // Theme-dark with redesign
-    await toggleRedesign(page, true)
-    await percySnapshot(page, `${name} - dark theme with redesign enabled`)
-    await toggleRedesign(page, false)
 
     // Reset to light theme
     await setColorScheme(page, 'light', config?.waitForCodeHighlighting)
