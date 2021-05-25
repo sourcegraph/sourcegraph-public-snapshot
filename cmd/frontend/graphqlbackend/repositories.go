@@ -5,6 +5,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+
 	"github.com/google/zoekt"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -205,8 +207,9 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*Repository
 }
 
 func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *TotalCountArgs) (countptr *int32, err error) {
-	// 🚨 SECURITY: Only site admins can do this, because a total repository count does not respect repository permissions.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	// 🚨 SECURITY: Only site admins or same user can do this, because a total repository count does not respect
+	// repository permissions.
+	if err := backend.CheckSiteAdminOrSameUser(ctx, actor.FromContext(ctx).UID); err != nil {
 		return nil, err
 	}
 
