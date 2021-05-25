@@ -15,7 +15,7 @@ declare global {
 // https://github.com/storybookjs/storybook/discussions/12050#discussioncomment-125658
 const storyStore = window.__STORYBOOK_STORY_STORE__
 
-interface AddStoryOptions extends Pick<CreateChromaticStoryOptions, 'isRedesignEnabled' | 'isDarkModeEnabled'> {
+interface AddStoryOptions extends Pick<CreateChromaticStoryOptions, 'isDarkModeEnabled'> {
     storeItem: PublishedStoreItem
 }
 
@@ -23,14 +23,13 @@ export const addStory = (options: AddStoryOptions): void => {
     const {
         storeItem: { name, kind, storyFn, parameters },
         isDarkModeEnabled,
-        isRedesignEnabled,
     } = options
 
     // Add suffix to the story name based on theme options:
     // 1. Default + Dark:   "Text" -> "Text 🌚"
     // 2. Redesign + Light: "Text" -> "Text [Redesign]"
     // 3. Redesign + Dark:  "Text" -> "Text [Redesign] 🌚"
-    const storyName = [name, isRedesignEnabled && '[Redesign]', isDarkModeEnabled && '🌚'].filter(Boolean).join(' ')
+    const storyName = [name, isDarkModeEnabled && '🌚'].filter(Boolean).join(' ')
 
     /**
      * Use `storyStore.addStory()` to avoid applying decorators to stories, because `PublishedStoreItem.storyFn` already has decorators applied.
@@ -48,7 +47,6 @@ export const addStory = (options: AddStoryOptions): void => {
             storyFn: createChromaticStory({
                 storyFn,
                 isDarkModeEnabled,
-                isRedesignEnabled,
             }),
         },
         {
