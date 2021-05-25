@@ -9,7 +9,6 @@ import { MarkupContent, Badged, AggregableBadge } from 'sourcegraph'
 
 import browserExtensionStyles from '@sourcegraph/browser/src/app.scss'
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
-import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
 import { registerHighlightContributions } from '../highlight/contributions'
 import { PlatformContext } from '../platform/context'
@@ -28,7 +27,7 @@ const NOOP_PLATFORM_CONTEXT: Pick<PlatformContext, 'forceUpdateTooltip' | 'setti
     settings: of({ final: {}, subjects: [] }),
 }
 
-const commonProps = () => ({
+export const commonProps = () => ({
     showCloseButton: boolean('showCloseButton', true),
     location: history.location,
     telemetryService: NOOP_TELEMETRY_SERVICE,
@@ -39,14 +38,7 @@ const commonProps = () => ({
     onAlertDismissed: action('onAlertDismissed'),
     onCloseButtonClick: action('onCloseButtonClick'),
 })
-const webHoverOverlayClassProps: HoverOverlayClassProps = {
-    className: 'card',
-    iconClassName: 'icon-inline',
-    iconButtonClassName: 'btn btn-icon',
-    actionItemClassName: 'btn btn-secondary',
-    infoAlertClassName: 'alert alert-info',
-    errorAlertClassName: 'alert alert-danger',
-}
+
 const bitbucketClassProps: HoverOverlayClassProps = {
     className: 'aui-dialog',
     actionItemClassName: 'aui-button hover-action-item--bitbucket-server',
@@ -56,33 +48,20 @@ const bitbucketClassProps: HoverOverlayClassProps = {
     iconClassName: 'aui-icon',
 }
 
-const FIXTURE_CONTENT: Badged<MarkupContent> = {
+export const FIXTURE_CONTENT: Badged<MarkupContent> = {
     value:
-        '```typescript\nexport interface TestInterface<A, B, C>\n```\n\n' +
-        '---\n\nVeniam voluptate quis magna mollit aliqua enim id ea fugiat. Aliqua anim eiusmod nisi excepteur.\n',
+        '```go\nfunc RegisterMiddlewares(m ...*Middleware)\n```\n\n' +
+        '---\n\nRegisterMiddlewares registers additional authentication middlewares. Currently this is used to register enterprise-only SSO middleware. This should only be called from an init function.\n',
     kind: MarkupKind.Markdown,
 }
 
-const FIXTURE_BADGE: AggregableBadge = {
+export const FIXTURE_SEMANTIC_BADGE: AggregableBadge = {
     text: 'semantic',
     linkURL: 'https://docs.sourcegraph.com/code_intelligence/explanations/precise_code_intelligence',
     hoverMessage: 'Sample hover message',
 }
 
-const FIXTURE_CONTENT_LONG_CODE = {
-    ...FIXTURE_CONTENT,
-    value:
-        '```typescript\nexport interface LongTestInterface<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z>\n```\n\n' +
-        '---\n\nNisi id deserunt culpa dolore aute pariatur ut amet veniam. Proident id Lorem reprehenderit veniam sunt velit.\n',
-}
-
-const FIXTURE_CONTENT_LONG_TEXT_ONLY = {
-    ...FIXTURE_CONTENT,
-    value:
-        'Mollit ea esse magna incididunt aliquip mollit non reprehenderit veniam anim. Veniam in dolor elit sint aliqua non cillum. Est sit pariatur ut cupidatat magna dolore. Sint et culpa voluptate ad sit eu ea dolor. Dolore Lorem cillum esse pariatur elit dolore dolor quis fugiat labore non. Elit nostrud minim aliqua adipisicing laborum ad sunt velit amet. In voluptate est voluptate labore consectetur proident. Nostrud exercitation ut officia enim minim tempor qui adipisicing sunt et occaecat anim irure. Culpa irure reprehenderit reprehenderit dolore sint aliquip non ex excepteur ipsum dolor. Et qui anim officia magna enim laboris enim exercitation pariatur. Cillum consequat elit dolore tempor magna exercitation ad laborum consequat aute consequat.',
-}
-
-const FIXTURE_ACTIONS = [
+export const FIXTURE_ACTIONS = [
     {
         action: {
             id: 'goToDefinition.preloaded',
@@ -105,240 +84,6 @@ const FIXTURE_ACTIONS = [
     },
 ]
 
-add('Loading', () => (
-    <>
-        <style>{webStyles}</style>
-        <HoverOverlay
-            {...commonProps()}
-            {...webHoverOverlayClassProps}
-            hoverOrError="loading"
-            actionsOrError={FIXTURE_ACTIONS}
-        />
-    </>
-))
-
-add('Error', () => (
-    <>
-        <style>{webStyles}</style>
-        <HoverOverlay
-            {...commonProps()}
-            {...webHoverOverlayClassProps}
-            hoverOrError={
-                new Error(
-                    'Something terrible happened: Eiusmod voluptate deserunt in sint cillum pariatur laborum eiusmod.'
-                )
-            }
-            actionsOrError={FIXTURE_ACTIONS}
-        />
-    </>
-))
-
-add('Common content', () => (
-    <>
-        <style>{webStyles}</style>
-        <HoverOverlay
-            {...commonProps()}
-            {...webHoverOverlayClassProps}
-            hoverOrError={{
-                contents: [FIXTURE_CONTENT],
-            }}
-            actionsOrError={FIXTURE_ACTIONS}
-        />
-    </>
-))
-
-add('Aggregated Badges', () => (
-    <>
-        <style>{webStyles}</style>
-        <HoverOverlay
-            {...commonProps()}
-            {...webHoverOverlayClassProps}
-            hoverOrError={{
-                contents: [FIXTURE_CONTENT],
-                aggregatedBadges: [FIXTURE_BADGE],
-            }}
-            actionsOrError={FIXTURE_ACTIONS}
-        />
-    </>
-))
-
-add('Only actions', () => (
-    <>
-        <style>{webStyles}</style>
-        <HoverOverlay
-            {...commonProps()}
-            {...webHoverOverlayClassProps}
-            hoverOrError={null}
-            actionsOrError={FIXTURE_ACTIONS}
-        />
-    </>
-))
-
-add('Long code', () => (
-    <>
-        <style>{webStyles}</style>
-        <HoverOverlay
-            {...commonProps()}
-            {...webHoverOverlayClassProps}
-            hoverOrError={{
-                contents: [FIXTURE_CONTENT_LONG_CODE],
-            }}
-            actionsOrError={FIXTURE_ACTIONS}
-        />
-    </>
-))
-
-add('Long text only', () => (
-    <>
-        <style>{webStyles}</style>
-        <HoverOverlay
-            {...commonProps()}
-            {...webHoverOverlayClassProps}
-            hoverOrError={{
-                contents: [FIXTURE_CONTENT_LONG_TEXT_ONLY],
-            }}
-            actionsOrError={FIXTURE_ACTIONS}
-        />
-    </>
-))
-
-add('Multiple MarkupContents', () => (
-    <>
-        <style>{webStyles}</style>
-        <HoverOverlay
-            {...commonProps()}
-            {...webHoverOverlayClassProps}
-            hoverOrError={{
-                contents: [FIXTURE_CONTENT, FIXTURE_CONTENT, FIXTURE_CONTENT],
-            }}
-            actionsOrError={FIXTURE_ACTIONS}
-        />
-    </>
-))
-
-add('With small-text alert', () => (
-    <>
-        <style>{webStyles}</style>
-        <HoverOverlay
-            {...commonProps()}
-            {...webHoverOverlayClassProps}
-            hoverOrError={{
-                contents: [FIXTURE_CONTENT],
-                alerts: [
-                    {
-                        summary: {
-                            kind: MarkupKind.Markdown,
-                            value:
-                                '<small>This is a test alert. Enim esse quis commodo ex. Pariatur tempor laborum officiairure est do est laborum nostrud cillum. Cupidatat id consectetur et eiusmod Loremproident cupidatat ullamco dolor nostrud. Cupidatat sit do dolor aliqua labore adlaboris cillum deserunt dolor. Sunt labore veniam Lorem reprehenderit quis occaecatsint do mollit aliquip. Consectetur mollit mollit magna eiusmod duis ex. Sint nisilabore labore nulla laboris.</small>',
-                        },
-                        type: 'test-alert-type',
-                    },
-                ],
-            }}
-            actionsOrError={FIXTURE_ACTIONS}
-            onAlertDismissed={action('onAlertDismissed')}
-        />
-    </>
-))
-
-add('With one-line alert', () => (
-    <>
-        <style>{webStyles}</style>
-        <HoverOverlay
-            {...commonProps()}
-            {...webHoverOverlayClassProps}
-            hoverOrError={{
-                contents: [FIXTURE_CONTENT],
-                alerts: [
-                    {
-                        summary: {
-                            kind: MarkupKind.PlainText,
-                            value: 'This is a test alert.',
-                        },
-                    },
-                ],
-            }}
-            actionsOrError={FIXTURE_ACTIONS}
-            onAlertDismissed={action('onAlertDismissed')}
-        />
-    </>
-))
-
-add('With alert with icon', () => (
-    <>
-        <style>{webStyles}</style>
-        <HoverOverlay
-            {...commonProps()}
-            {...webHoverOverlayClassProps}
-            hoverOrError={{
-                contents: [FIXTURE_CONTENT],
-                alerts: [
-                    {
-                        summary: {
-                            kind: MarkupKind.PlainText,
-                            value: 'This is a test alert.',
-                        },
-                        iconKind: 'info',
-                    },
-                ],
-            }}
-            actionsOrError={FIXTURE_ACTIONS}
-            onAlertDismissed={action('onAlertDismissed')}
-        />
-    </>
-))
-
-add('With dismissible alert with icon', () => (
-    <>
-        <style>{webStyles}</style>
-        <HoverOverlay
-            {...commonProps()}
-            {...webHoverOverlayClassProps}
-            hoverOrError={{
-                contents: [FIXTURE_CONTENT],
-                alerts: [
-                    {
-                        summary: {
-                            kind: MarkupKind.Markdown,
-                            value: 'This is a test alert.',
-                        },
-                        type: 'test-alert-type',
-                        iconKind: 'info',
-                    },
-                ],
-            }}
-            actionsOrError={FIXTURE_ACTIONS}
-            onAlertDismissed={action('onAlertDismissed')}
-        />
-    </>
-))
-
-add('With long markdown text dismissible alert with icon.', () => (
-    <>
-        <style>{webStyles}</style>
-        <HoverOverlay
-            {...commonProps()}
-            {...webHoverOverlayClassProps}
-            hoverOrError={{
-                contents: [FIXTURE_CONTENT],
-                alerts: [
-                    {
-                        summary: {
-                            kind: MarkupKind.Markdown,
-                            value:
-                                'This is a test alert. [It uses Markdown.](https://sourcegraph.com) `To render things easily`. *Cool!*',
-                        },
-                        type: 'test-alert-type',
-                        iconKind: 'info',
-                    },
-                ],
-            }}
-            actionsOrError={FIXTURE_ACTIONS}
-            onAlertDismissed={action('onAlertDismissed')}
-        />
-    </>
-))
-
 add('Bitbucket styles', () => (
     <>
         <style>{bitbucketStyles}</style>
@@ -348,7 +93,7 @@ add('Bitbucket styles', () => (
             {...bitbucketClassProps}
             hoverOrError={{
                 contents: [FIXTURE_CONTENT],
-                aggregatedBadges: [FIXTURE_BADGE],
+                aggregatedBadges: [FIXTURE_SEMANTIC_BADGE],
             }}
             actionsOrError={FIXTURE_ACTIONS}
         />
