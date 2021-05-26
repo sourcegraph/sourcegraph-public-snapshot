@@ -2,15 +2,16 @@ package dbtest
 
 import (
 	"database/sql"
+	"encoding/binary"
 	"errors"
 	"hash/fnv"
 	"math/rand"
+	crand "math/rand"
 	"net/url"
 	"os"
 	"strconv"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/jackc/pgconn"
 	"github.com/lib/pq"
@@ -44,7 +45,15 @@ func NewTx(t testing.TB, db *sql.DB) *sql.Tx {
 
 // Use a shared, locked RNG to avoid issues with multiple concurrent tests getting
 // the same random database number (unlikely, but has been observed).
-var rng = rand.New(rand.NewSource(time.Now().UnixNano()))
+// Use crypto/rand.Read() to use an OS source of entropy, since, against all odds,
+// using nanotime was causing conflicts.
+var rng = rand.New(rand.NewSource(func() int64 {
+	b := [8]byte{}
+	if _, err := crand.Read(b[:]); err != nil {
+		panic(err)
+	}
+	return int64(binary.LittleEndian.Uint64(b[:]))
+}()))
 var rngLock sync.Mutex
 
 // NewDB returns a connection to a clean, new temporary testing database
