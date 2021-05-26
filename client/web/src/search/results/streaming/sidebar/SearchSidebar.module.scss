@@ -27,12 +27,11 @@
             display: flex;
             flex-direction: row;
             flex-wrap: wrap;
-            gap: 1.5rem;
+            column-gap: 1.5rem;
         }
 
         @media (--xs-breakpoint-down) {
-            flex-direction: column;
-            flex-wrap: nowrap;
+            display: block;
         }
     }
 }
