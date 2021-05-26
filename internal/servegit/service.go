@@ -1,6 +1,8 @@
 package servegit
 
 import (
+	"compress/gzip"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -63,6 +65,20 @@ func (s *gitServiceHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	body := r.Body
+	defer body.Close()
+
+	if r.Header.Get("Content-Encoding") == "gzip" {
+		gzipReader, err := gzip.NewReader(body)
+		if err != nil {
+			http.Error(w, "malformed payload: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+		defer gzipReader.Close()
+
+		body = gzipReader
+	}
+
 	start := time.Now()
 	defer func() {
 		s.Debug.Printf("git service svc=%s protocol=%s repo=%s duration=%v", svc, r.Header.Get("Git-Protocol"), repo, time.Since(start))
@@ -83,9 +99,6 @@ func (s *gitServiceHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	args = append(args, dir)
 
-	body := r.Body
-	defer body.Close()
-
 	env := os.Environ()
 	if protocol := r.Header.Get("Git-Protocol"); protocol != "" {
 		env = append(env, "GIT_PROTOCOL="+protocol)
@@ -96,7 +109,9 @@ func (s *gitServiceHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	cmd.Stdout = w
 	cmd.Stdin = body
 	if err := cmd.Run(); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		msg := fmt.Sprintf("error running git service command args=%q: %s", args, err.Error())
+		s.Debug.Println(msg)
+		_, _ = w.Write([]byte("\n" + msg + "\n"))
 	}
 }
 
