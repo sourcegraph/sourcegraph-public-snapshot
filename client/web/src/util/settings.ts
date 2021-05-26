@@ -60,7 +60,6 @@ export function defaultCaseSensitiveFromSettings(settingsCascade: SettingsCascad
 export function experimentalFeaturesFromSettings(
     settingsCascade: SettingsCascadeOrError
 ): {
-    copyQueryButton: boolean
     showRepogroupHomepage: boolean
     showOnboardingTour: boolean
     showEnterpriseHomePanels: boolean
@@ -78,7 +77,6 @@ export function experimentalFeaturesFromSettings(
         {}
 
     const {
-        copyQueryButton = false,
         showRepogroupHomepage = false,
         showOnboardingTour = true, // Default to true if not set
         showEnterpriseHomePanels = true, // Default to true if not set
@@ -94,7 +92,6 @@ export function experimentalFeaturesFromSettings(
     } = experimentalFeatures
 
     return {
-        copyQueryButton,
         showRepogroupHomepage,
         showOnboardingTour,
         showSearchContext,

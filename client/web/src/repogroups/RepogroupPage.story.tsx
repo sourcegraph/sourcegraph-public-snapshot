@@ -79,7 +79,6 @@ const commonProps = () =>
         patternType: SearchPatternType.literal,
         setPatternType: action('setPatternType'),
         caseSensitive: false,
-        copyQueryButton: false,
         extensionsController: { ...EXTENSIONS_CONTROLLER },
         platformContext: PLATFORM_CONTEXT,
         keyboardShortcuts: [],

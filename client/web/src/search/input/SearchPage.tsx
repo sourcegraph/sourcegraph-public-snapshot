@@ -18,7 +18,6 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import {
     PatternTypeProps,
     CaseSensitivityProps,
-    CopyQueryButtonProps,
     RepogroupHomepageProps,
     OnboardingTourProps,
     HomePanelsProps,
@@ -51,7 +50,6 @@ export interface SearchPageProps
         TelemetryProps,
         ExtensionsControllerProps<'extHostAPI' | 'executeCommand'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
-        CopyQueryButtonProps,
         VersionContextProps,
         SearchContextInputProps,
         RepogroupHomepageProps,
