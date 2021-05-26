@@ -272,6 +272,7 @@ The `-config` can be anything you want, of course.
 ## Principles
 
 * `sg` should be fun to use.
+* If you think "it would be cool if `sg` could do X": add it! Let's go :)
 * `sg` should make Sourcegraph developers productive and happy.
 * `sg` is not and should not be a build system.
 * `sg` is not and should not be a container orchestrator.
