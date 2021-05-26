@@ -28,16 +28,21 @@
 `sg` is the CLI tool that Sourcegraph developers can use to develop Sourcegraph.
 
 - [Quickstart](#quickstart)
-- [Installation](#installation)
 - [Usage](#usage)
-  - [Start dev environment](#start-dev-environment)
-  - [Running tests](#running-tests)
-  - [Generators](#generators)
-  - [Database migrations](#database-migrations)
-  - [Edit configuration files](#edit-configuration-files)
+  * [`sg [start,run,run-set]` - Start dev environment](#-sg--start-run-run-set-----start-dev-environment)
+  * [`sg test` - Running test suites](#-sg-test----running-test-suites)
+  * [`sg doctor` - Check health of dev environment](#-sg-doctor----check-health-of-dev-environment)
+  * [`sg live` - See currently deployed version](#-sg-live----see-currently-deployed-version)
 - [Configuration](#configuration)
 - [TODOs](#todos)
 - [Hacking](#hacking)
+- [Principles](#principles)
+- [Inspiration](#inspiration)
+- [Ideas](#ideas)
+  * [Generators](#generators)
+  * [Database migrations](#database-migrations)
+  * [Edit configuration files](#edit-configuration-files)
+  * [Tail logs](#tail-logs)
 
 ## Quickstart
 
@@ -85,18 +90,12 @@ go build -o ~/my/path/sg ./dev/sg
 
 Make sure that `~/my/path` is in your `$PATH` then.
 
-## Inspiration
-
-- [GitLab Developer Kit (GDK)](https://gitlab.com/gitlab-org/gitlab-development-kit)
-- Stripe's `pay` command, [described here](https://buttondown.email/nelhage/archive/papers-i-love-gg/)
-- [Stack Exchange Local Environment Setup](https://twitter.com/nick_craver/status/1375871107773956103?s=21) command
-
 ## Usage
 
-### Start dev environment
+### `sg [start,run,run-set]` - Start dev environment
 
 ```bash
-# Run default environment (this starts the 'default' command set defined in config):
+# Run default environment (this starts the 'default' command set defined in `sg.config.yaml`):
 sg start
 
 # Run the enterprise environment:
@@ -106,80 +105,45 @@ sg run-set enterprise
 sg run gitserver
 sg run frontend
 
-# Run predefined sets of commands:
-sg run-set enterprise
+# List available commands:
+sg run -help
+
+# List available command sets:
+sg run-set -help
 ```
 
-### Running tests
+### `sg test` - Running test suites
 
 ```bash
-# Run go tests
+# Run different test suites:
 sg test backend
-
-# Run web e2e integration tests
+sg test backend-integration
+sg test frontend
 sg test frontend-e2e
 
-# Run other tests
-sg test backend-integration
-sg test frontend-snapshot
-sg test regression
-
-# Without argument it lists all available tests:
-sg test
+# List available test suites:
+sg test -help
 
 # Arguments are passed along to the command
 sg test backend-integration -run TestSearch
 ```
 
-### Generators
-
-TODO: Build this
+### `sg doctor` - Check health of dev environment
 
 ```bash
-# Generate code
-sg generate
-
-# Generate only specific things
-sg generate mocks ./internal/enterprise/batches
+# Run the checks defined in sg.config.yaml
+sg doctor
 ```
 
-### Database migrations
-
-TODO: Build this
+### `sg live` - See currently deployed version
 
 ```bash
-# Create a new migration
-sg migration new --name=my-new-migration
-# Create a new migration for the codeintel database
-sg migration new --db=codeintel --name=my-new-migration
+# See which version is deployed on an environment
+sg live dot-com
+sg live k8s
 
-# Run all migrations _up_
-sg migration up
-sg migration down
-```
-
-### Edit configuration files
-
-TODO: Build this
-
-```bash
-# Edit the site configuration
-sg edit site-config # opens site-config in $EDITOR
-# Edit external service configuration
-sg edit external-services # opens external-services.json in $EDITOR
-```
-
-### Tail logs
-
-TODO: Build this
-
-```bash
-# Tail the SQL logs
-sg tail-log sql
-# Tail the http logs
-sg tail-log http
-# Tail all logs
-sg tail-log all
+# List environments:
+sg live -help
 ```
 
 ## Configuration
@@ -282,9 +246,9 @@ tests:
 
 ## TODOs
 
-- [ ] Rename `install` to `build` because it's clearer
+- [ ] Rename `install` in the config files to `build` because it's clearer
 - [ ] Add the remaining processes from `<root>/dev/Procfile` to `<root>/sg.config.yaml`
-- [ ] All of the things marked as TODOs above
+- [ ] All of the [ideas](#ideas) below
   - [ ] Rebuild and restart a command (if it has `build` defined, see Configuration): `sg build gitserver`
   - [ ] Implement the `sg migration` command
   - [ ] Implement the `sg generate` command
@@ -292,12 +256,11 @@ tests:
   - [ ] Implement `sg tail-log`
 - [ ] Add a _simple_ way to define in the config file when a restart after a rebuild is not necessary
   - Something like `check_binary: .bin/frontend` which would take a SHA256 before and after rebuild and only restart if SHA doesn't match
-- [ ] Add built-in support for "download binary" so that the `caddy` command, for example, would be 3 lines instead of 20
+- [ ] Add built-in support for "download binary" so that the `caddy` command, for example, would be 3 lines instead of 20. That would allow us to get rid of the bash code.
 
 ## Hacking
 
-When you want to hack on `sg` it's best to be in the `dev/sg` directory and run
-it from there:
+When you want to hack on `sg` it's best to be in the `dev/sg` directory and run it from there:
 
 ```
 cd dev/sg
@@ -305,3 +268,69 @@ go run . -config ../../sg.config.yaml start
 ```
 
 The `-config` can be anything you want, of course.
+
+## Principles
+
+* `sg` should be fun to use.
+* `sg` should make Sourcegraph developers productive and happy.
+* `sg` is not and should not be a build system.
+* `sg` is not and should not be a container orchestrator.
+* Try to fix [a lot of the problems in this RFC](https://docs.google.com/document/d/18hrRIN0pUBRwUFF7vkcVmstJccqWeHiecNF2t1GAZfU/edit) by encoding conventions in executable code.
+* No bash. `sg` was built to get rid of all the bash scripts in `./dev/`. If you have a chance to build something into `sg` to avoid another bash script: do it. Try to keep shell scripts to easy-to-understand one liners if you must. Replicating something in Go code that could be done in 4 lines of bash is probably a good idea.
+* Duplicated data is fine as long as it's dumb data. Copying some lines in `sg.config.yaml` to get something working is often (but not always) better than trying to be clever.
+
+You can also watch [this video](https://drive.google.com/file/d/1DXjjf1YXr8Od8vG4R74Ko-soLOx_tXa6/view?usp=sharing) to get an overview of the original thinking that lead to `sg`.
+
+## Inspiration
+
+- [GitLab Developer Kit (GDK)](https://gitlab.com/gitlab-org/gitlab-development-kit)
+- Stripe's `pay` command, [described here](https://buttondown.email/nelhage/archive/papers-i-love-gg/)
+- [Stack Exchange Local Environment Setup](https://twitter.com/nick_craver/status/1375871107773956103?s=21) command
+
+## Ideas
+
+The following are ideas for what could/should be built into `sg`:
+
+#### Generators
+
+```bash
+# Generate code, equivalent to current `./dev/generate.sh`
+sg generate
+
+# Generate only specific things
+sg generate mocks ./internal/enterprise/batches
+```
+
+#### Database migrations
+
+```bash
+# Create a new migration
+sg migration new --name=my-new-migration
+# Create a new migration for the codeintel database
+sg migration new --db=codeintel --name=my-new-migration
+
+# Run all migrations _up_
+sg migration up
+sg migration down
+```
+
+#### Edit configuration files
+
+```bash
+# Edit the site configuration
+sg edit site-config # opens site-config in $EDITOR
+# Edit external service configuration
+sg edit external-services # opens external-services.json in $EDITOR
+```
+
+#### Tail logs
+
+```bash
+# Tail the SQL logs
+sg tail-log sql
+# Tail the http logs
+sg tail-log http
+# Tail all logs
+sg tail-log all
+```
+
