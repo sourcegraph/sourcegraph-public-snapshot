@@ -34,7 +34,7 @@ You need a fresh Postgres database and a database user that has full ownership o
 
     The Sourcegraph server reads PostgreSQL connection configuration from the [`PG*` environment variables](http://www.postgresql.org/docs/current/static/libpq-envars.html).
 
-    Add these, for example, in your `~/.bashrc`:
+    The startup script sets default values that work with the setup described here, but if you are using different values you can overwrite them, for example, in your `~/.bashrc`:
 
     ```
     export PGPORT=5432
@@ -54,6 +54,8 @@ You need a fresh Postgres database and a database user that has full ownership o
 ## With Docker
 
 You may also want to run Postgres within a docker container instead of as a system service. Running within a container provides some advantages such as storing the data seperately from the container, you do not need to run it as a system service and its easy to use different database versions or multiple databases.
+
+You can use `docker-compose` as described in [Install Dependencies](./quickstart_1_install_dependencies.md#optional-use-docker-compose-for-postgresql-and-redis) or you can start it manually as explained here.
 
 1. Create a directory to store and mount the database from for persistence:
 
@@ -79,7 +81,7 @@ You may also want to run Postgres within a docker container instead of as a syst
 
     The Sourcegraph server reads PostgreSQL connection configuration from the [`PG*` environment variables](http://www.postgresql.org/docs/current/static/libpq-envars.html).
 
-    Add these, for example, in your `~/.bashrc`:
+    The startup script sets default values that work with the setup described here, but if you are using different values you can overwrite them, for example, in your `~/.bashrc`:
 
     ```
     export PGPORT=5432

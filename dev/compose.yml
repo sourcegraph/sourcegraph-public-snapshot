@@ -1,0 +1,20 @@
+services:
+  redis:
+    image: redis
+    ports:
+      - 6379:6379
+    volumes:
+      - ${REDIS_DATA_DIR:-redis_data}:/data
+  postgres:
+    image: postgres
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_PASSWORD=sourcegraph
+      - POSTGRES_USER=sourcegraph
+      - "POSTGRES_INITDB_ARGS= --encoding=UTF8 "
+    volumes:
+      - ${PGDATA_DIR:-postgres_data}:/var/lib/postgresql/data
+volumes:
+  redis_data:
+  postgres_data:

@@ -3,8 +3,9 @@
 > NOTE: Please see install instructions for [macOS](#macos) and [Ubuntu](#ubuntu) in succeeding sections.
 
 Sourcegraph has the following dependencies:
+
 - [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) (v2.18 or higher)
-- [Go](https://golang.org/doc/install) (v1.14 or higher)
+- [Go](https://golang.org/doc/install) (v1.16 or higher)
 - [Node JS](https://nodejs.org/en/download/) (see current recommended version in [.nvmrc](https://github.com/sourcegraph/sourcegraph/blob/main/.nvmrc))
 - [make](https://www.gnu.org/software/make/)
 - [Docker](https://docs.docker.com/engine/installation/) (v18 or higher)
@@ -180,6 +181,32 @@ The following are two recommendations for installing these dependencies:
 
     [dockerGroup]: https://stackoverflow.com/a/48957722
     [socketPermissions]: https://stackoverflow.com/a/51362528
+
+## (optional) Use docker-compose for PostgreSQL and Redis
+
+Instead of installing PostgreSQL and Redis locally, or manually running it as
+docker containers, you can also use [docker-compose](https://docs.docker.com/compose/)
+to start both containers:
+
+```
+docker-compose -f dev/compose.yml up -d
+```
+
+To stop:
+
+```
+docker-compose -f dev/compose.yml down
+```
+
+To remove containers and data volumes:
+
+```
+docker-compose -f dev/compose.yml down -v
+```
+
+You can use the `PGDATA_DIR` and `REDIS_DATA_DIR` environment variables to specify
+a local folder (instead of a volume) to store the data. See the `dev/compose.yml`
+file for more details.
 
 ## (optional) asdf
 
