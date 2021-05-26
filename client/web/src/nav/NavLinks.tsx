@@ -161,7 +161,7 @@ export const NavLinks: React.FunctionComponent<Props> = props => {
                 ))}
             {/* show status messages if user is logged in and either: user added code is enabled, user is admin or opted-in with a user tag  */}
             {authenticatedUser &&
-                (window.context?.externalServicesUserModeEnabled ||
+                (window.context?.externalServicesUserMode ||
                     authenticatedUser?.siteAdmin ||
                     authenticatedUser?.tags?.some(
                         tag => tag === 'AllowUserExternalServicePublic' || tag === 'AllowUserExternalServicePrivate'

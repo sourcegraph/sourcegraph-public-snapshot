@@ -303,7 +303,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                             />
                         </NavAction>
                         {props.authenticatedUser &&
-                            (window.context?.externalServicesUserModeEnabled ||
+                            (window.context?.externalServicesUserMode ||
                                 props.authenticatedUser?.siteAdmin ||
                                 props.authenticatedUser?.tags?.some(
                                     tag =>

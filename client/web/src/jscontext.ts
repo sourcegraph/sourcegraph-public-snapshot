@@ -90,7 +90,7 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     codeIntelAutoIndexingEnabled: boolean
 
     /** Whether user is allowed to add external services. */
-    externalServicesUserModeEnabled: boolean
+    externalServicesUserMode: 'disabled' | 'public' | 'all' | 'unknown'
 
     /** Authentication provider instances in site config. */
     authProviders: {

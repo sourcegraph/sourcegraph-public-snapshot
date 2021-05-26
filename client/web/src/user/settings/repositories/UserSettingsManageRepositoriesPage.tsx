@@ -54,6 +54,7 @@ interface GitHubConfig {
     token: 'REDACTED'
     url: string
 }
+
 interface GitLabConfig {
     projectQuery: string[]
     projects: { name: string }[]
