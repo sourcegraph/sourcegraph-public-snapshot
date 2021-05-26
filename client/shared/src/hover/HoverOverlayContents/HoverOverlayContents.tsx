@@ -42,7 +42,7 @@ export const HoverOverlayContents: React.FunctionComponent<HoverOverlayContentsP
         return (
             // Show some content to give the close button space
             // and communicate to the user we couldn't find a hover.
-            <em>No hover information available.</em>
+            <i>No hover information available.</i>
         )
     }
 

@@ -36,7 +36,7 @@ function hoverAlertIconComponent(
 export const HoverOverlayAlerts: React.FunctionComponent<HoverOverlayAlertsProps> = props => {
     const { hoverAlerts, iconClassName, onAlertDismissed, getAlertClassName = () => undefined } = props
 
-    const getHandleAlertDismissed = (alertType: string) => (event: React.MouseEvent<HTMLAnchorElement>) => {
+    const createAlertDismissedHandler = (alertType: string) => (event: React.MouseEvent<HTMLAnchorElement>) => {
         event.preventDefault()
 
         if (onAlertDismissed) {
@@ -67,7 +67,7 @@ export const HoverOverlayAlerts: React.FunctionComponent<HoverOverlayAlertsProps
                         <div className="hover-overlay__alert-actions">
                             {/* Ideally this should a <button> but we can't guarantee we have the .btn-link class here. */}
                             {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-                            <a href="" onClick={getHandleAlertDismissed(type)} role="button">
+                            <a href="" onClick={createAlertDismissedHandler(type)} role="button">
                                 <small>Dismiss</small>
                             </a>
                         </div>
