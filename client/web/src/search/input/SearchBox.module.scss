@@ -143,7 +143,7 @@
         :global(.theme-redesign) & {
             @media (--xs-breakpoint-down) {
                 display: inline-flex;
-                margin-top: 1rem;
+                margin-top: 0.75rem;
                 padding-left: 0;
             }
         }
@@ -155,7 +155,7 @@
             @media (--xs-breakpoint-down) {
                 display: inline-flex;
                 flex-direction: row-reverse;
-                margin-top: 0.75rem;
+                margin-top: 0.5rem;
                 float: right;
             }
         }
