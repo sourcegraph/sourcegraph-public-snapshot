@@ -485,6 +485,18 @@ commandsets:
     - zoekt-webserver-1
     - codeinsights-db
 
+  api-only:
+    - enterprise-frontend
+    - enterprise-repo-updater
+    - gitserver
+    - searcher
+    - symbols
+    - github-proxy
+    - zoekt-indexserver-0
+    - zoekt-indexserver-1
+    - zoekt-webserver-0
+    - zoekt-webserver-1
+
 tests:
   # These can be run with `sg test [name]`
   backend:

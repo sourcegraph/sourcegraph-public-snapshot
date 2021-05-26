@@ -49,7 +49,8 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
     }),
 }
 
-describe('Search contexts', () => {
+// TODO: Disabled because it's flaky. See: https://github.com/sourcegraph/sourcegraph/issues/21350
+describe.skip('Search contexts', () => {
     let driver: Driver
     before(async () => {
         driver = await createDriverForTest()

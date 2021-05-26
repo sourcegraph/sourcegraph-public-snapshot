@@ -3,7 +3,7 @@ package conversion
 import (
 	"sort"
 
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/datastructures"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion/datastructures"
 )
 
 // canonicalize deduplicates data in the raw correlation state and collapses range,
