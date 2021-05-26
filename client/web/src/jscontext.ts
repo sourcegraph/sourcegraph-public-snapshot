@@ -89,7 +89,7 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     /** Whether the code intel auto-indexer feature is enabled on the site. */
     codeIntelAutoIndexingEnabled: boolean
 
-    /** Whether user is allowed to add external services. */
+    /** Whether users are allowed to add their own code and at what permission level. */
     externalServicesUserMode: 'disabled' | 'public' | 'all' | 'unknown'
 
     /** Authentication provider instances in site config. */
