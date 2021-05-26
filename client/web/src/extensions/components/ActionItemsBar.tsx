@@ -209,7 +209,7 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(props => {
     }
 
     return (
-        <div className="action-items__bar p-0 border-left position-relative d-flex flex-column" ref={barReference}>
+        <div className="action-items__bar p-0 position-relative d-flex flex-column" ref={barReference}>
             {/* To be clear to users that this isn't an error reported by extensions about e.g. the code they're viewing. */}
             <ErrorBoundary location={props.location} render={error => <span>Component error: {error.message}</span>}>
                 <ActionItemsDivider />
@@ -310,7 +310,7 @@ export const ActionItemsToggle: React.FunctionComponent<ActionItemsToggleProps> 
     return barInPage ? (
         <li
             data-tooltip={`${isOpen ? 'Close' : 'Open'} extensions panel`}
-            className={classNames(className, 'nav-item border-left')}
+            className={classNames(className, 'nav-item position-relative')}
         >
             <div
                 className={classNames(
@@ -318,6 +318,7 @@ export const ActionItemsToggle: React.FunctionComponent<ActionItemsToggleProps> 
                     isOpen && 'action-items__toggle-container--open'
                 )}
             >
+                <div className="action-items__divider--vertical  rounded-sm d-flex" />
                 <ButtonLink
                     className={classNames(actionItemClassName)}
                     onSelect={toggle}

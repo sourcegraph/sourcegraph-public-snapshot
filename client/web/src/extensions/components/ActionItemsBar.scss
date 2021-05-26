@@ -7,7 +7,12 @@ $default-icon-colors: $oc-grape-7, $oc-violet-7, $oc-cyan-9, $oc-indigo-7, $oc-p
     &__bar {
         width: $action-item-container-width;
         background-color: var(--color-bg-2);
+        border-left: 1px solid var(--border-color);
         list-style: none;
+        .theme-redesign & {
+            border: none;
+            background-color: var(--body-bg);
+        }
     }
 
     &__toggle {
@@ -28,12 +33,18 @@ $default-icon-colors: $oc-grape-7, $oc-violet-7, $oc-cyan-9, $oc-indigo-7, $oc-p
     &__toggle-container {
         width: $action-item-container-width;
         background-color: var(--color-bg-2);
+        border-left: 1px solid var(--border-color);
         padding-top: 0.125rem;
         padding-bottom: 0.125rem;
 
         &--open {
             border-bottom: solid var(--color-bg-2) 1px;
             margin-bottom: -0.0625rem;
+        }
+
+        .theme-redesign & {
+            background-color: var(--body-bg);
+            border: none;
         }
     }
 
@@ -46,6 +57,17 @@ $default-icon-colors: $oc-grape-7, $oc-violet-7, $oc-cyan-9, $oc-indigo-7, $oc-p
         &:first-of-type {
             top: 0;
             transform: translateY(-0.0625rem);
+        }
+        &--vertical {
+            display: none;
+            .theme-redesign & {
+                width: 0.0625rem;
+                position: absolute;
+                background-color: var(--border-color);
+                align-self: center;
+                height: 50%;
+                margin-top: 25%;
+            }
         }
     }
 
@@ -113,6 +135,11 @@ $default-icon-colors: $oc-grape-7, $oc-violet-7, $oc-cyan-9, $oc-indigo-7, $oc-p
                     color: var(--disabled-action-text-color) !important;
                 }
             }
+        }
+
+        .theme-redesign & {
+            border-radius: var(--border-radius);
+            color: var(--icon-color);
         }
     }
 
