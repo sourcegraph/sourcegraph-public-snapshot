@@ -199,11 +199,7 @@
           }
         },
         "additionalProperties": false,
-        "required": [
-          "key",
-          "description",
-          "query"
-        ]
+        "required": ["key", "description", "query"]
       }
     },
     "search.globbing": {
@@ -230,9 +226,7 @@
           "anyOf": [
             {
               "type": "object",
-              "required": [
-                "regex"
-              ]
+              "required": ["regex"]
             },
             {
               "type": "string"
@@ -293,10 +287,7 @@
       "items": {
         "title": "Notice",
         "type": "object",
-        "required": [
-          "message",
-          "location"
-        ],
+        "required": ["message", "location"],
         "properties": {
           "message": {
             "description": "The message to display. Markdown formatting is supported.",
@@ -305,10 +296,7 @@
           "location": {
             "description": "The location where this notice is shown: \"top\" for the top of every page, \"home\" for the homepage.",
             "type": "string",
-            "enum": [
-              "top",
-              "home"
-            ]
+            "enum": ["top", "home"]
           },
           "dismissible": {
             "description": "Whether this notice can be dismissed (closed) by the user.",
@@ -334,10 +322,7 @@
     "alerts.codeHostIntegrationMessaging": {
       "description": "What in-app messaging to use around availability of Sourcegraph's code intelligence on code hosts. If the native code host integration is installed, this should be set to \"native-integration\" and users won't need to install the Sourcegraph browser extension to get code intelligence on code hosts.",
       "type": "string",
-      "enum": [
-        "browser-extension",
-        "native-integration"
-      ],
+      "enum": ["browser-extension", "native-integration"],
       "default": "browser-extension"
     },
     "extensions": {
@@ -422,11 +407,7 @@
     "Insight": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "title",
-        "description",
-        "series"
-      ],
+      "required": ["title", "description", "series"],
       "properties": {
         "title": {
           "type": "string",
@@ -448,9 +429,7 @@
     "InsightSeries": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "label"
-      ],
+      "required": ["label"],
       "properties": {
         "label": {
           "type": "string",
@@ -473,10 +452,7 @@
     "SearchScope": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "name",
-        "value"
-      ],
+      "required": ["name", "value"],
       "properties": {
         "name": {
           "type": "string",
@@ -491,10 +467,7 @@
     "QuickLink": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "name",
-        "url"
-      ],
+      "required": ["name", "url"],
       "properties": {
         "name": {
           "type": "string",
