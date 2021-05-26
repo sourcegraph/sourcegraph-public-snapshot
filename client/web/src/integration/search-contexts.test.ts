@@ -49,8 +49,7 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
     }),
 }
 
-// TODO: Disabled because it's flaky. See: https://github.com/sourcegraph/sourcegraph/issues/21350
-describe.skip('Search contexts', () => {
+describe.only('Search contexts', () => {
     let driver: Driver
     before(async () => {
         driver = await createDriverForTest()
@@ -74,9 +73,12 @@ describe.skip('Search contexts', () => {
     })
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(async () => {
+        console.log('before clear')
         await driver.page.evaluate(() => localStorage.clear())
+        console.log('after clear')
         if (testContext) {
             await testContext.dispose()
+            console.log('after dispose')
         }
     })
 
@@ -177,15 +179,28 @@ describe.skip('Search contexts', () => {
         driver.page.evaluate(() => document.querySelector<HTMLButtonElement>('.test-search-context-dropdown')?.disabled)
 
     test('Search context selected based on URL', async () => {
-        testContext.overrideGraphQL({
-            ...testContextForSearchContexts,
-            IsSearchContextAvailable: () => ({
-                isSearchContextAvailable: true,
-            }),
-        })
+        // const client = await driver.page.target().createCDPSession()
+
+        // Set throttling property
+        // await client.send('Network.emulateNetworkConditions', {
+        //     offline: false,
+        //     downloadThroughput: (1 * 1024) / 8,
+        //     uploadThroughput: (1 * 1024) / 8,
+        //     latency: 1000,
+        // })
+
+        // testContext.overrideGraphQL({
+        //     ...testContextForSearchContexts,
+        //     IsSearchContextAvailable: () => ({
+        //         isSearchContextAvailable: true,
+        //     }),
+        // })
+
+        console.log('goes')
         await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=context:%40test+test&patternType=regexp', {
             waitUntil: 'networkidle0',
         })
+        console.log('waiting')
         await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
         expect(await getSelectedSearchContextSpec()).toStrictEqual('context:@test')
     })
