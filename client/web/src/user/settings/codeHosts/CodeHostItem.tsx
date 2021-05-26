@@ -27,13 +27,11 @@ interface CodeHostItemProps {
 }
 
 export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
-    user,
     service,
     kind,
     name,
     icon: Icon,
     navigateToAuthProvider,
-    onDidAdd,
     onDidRemove,
     onDidError,
 }) => {
