@@ -13,7 +13,7 @@ import (
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
@@ -22,9 +22,10 @@ func TestReconcilerWorkerView(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	t.Parallel()
 
 	ctx := context.Background()
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
