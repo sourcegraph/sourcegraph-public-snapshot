@@ -6,6 +6,15 @@ import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
 import { HoverThresholdProps } from '../../repo/RepoContainer'
 
+const iconKindToAlertKind = {
+    info: 'secondary',
+    error: 'danger',
+    warning: 'warning',
+}
+
+const getAlertClassName: HoverOverlayProps['getAlertClassName'] = iconKind =>
+    `alert alert-${iconKindToAlertKind[iconKind]}`
+
 export const WebHoverOverlay: React.FunctionComponent<HoverOverlayProps & HoverThresholdProps> = props => {
     const [dismissedAlerts, setDismissedAlerts] = useLocalStorage<string[]>('WebHoverOverlay.dismissedAlerts', [])
     const onAlertDismissed = useCallback(
@@ -42,11 +51,10 @@ export const WebHoverOverlay: React.FunctionComponent<HoverOverlayProps & HoverT
             {...propsToUse}
             className="card"
             iconClassName="icon-inline"
-            iconButtonClassName="btn btn-icon"
+            closeButtonClassName="btn btn-icon"
             actionItemClassName="btn btn-secondary"
-            infoAlertClassName="alert alert-secondary" // #18931
-            errorAlertClassName="alert alert-danger"
             onAlertDismissed={onAlertDismissed}
+            getAlertClassName={getAlertClassName}
         />
     )
 }

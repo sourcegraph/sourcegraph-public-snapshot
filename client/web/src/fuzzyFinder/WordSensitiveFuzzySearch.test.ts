@@ -1,5 +1,5 @@
-import { CaseSensitiveFuzzySearch, allFuzzyParts, fuzzyMatchesQuery } from './CaseSensitiveFuzzySearch'
 import { FuzzySearchParameters } from './FuzzySearch'
+import { WordSensitiveFuzzySearch, allFuzzyParts, fuzzyMatchesQuery } from './WordSensitiveFuzzySearch'
 
 const all = [
     't1/README.md',
@@ -16,7 +16,7 @@ const all = [
     'test/WorkspaceSymbolProvider.scala',
 ]
 
-const fuzzy = CaseSensitiveFuzzySearch.fromSearchValues(all.map(text => ({ text })))
+const fuzzy = WordSensitiveFuzzySearch.fromSearchValues(all.map(text => ({ text })))
 
 function checkSearch(query: string, expected: string[]) {
     test(`search-${query}`, () => {
@@ -24,7 +24,7 @@ function checkSearch(query: string, expected: string[]) {
         const actual = fuzzy.search(queryProps).links.map(link => link.text)
         expect(actual).toStrictEqual(expected)
         for (const result of expected) {
-            const individualFuzzy = CaseSensitiveFuzzySearch.fromSearchValues([{ text: result }])
+            const individualFuzzy = WordSensitiveFuzzySearch.fromSearchValues([{ text: result }])
             const individualActual = individualFuzzy.search(queryProps).links.map(link => link.text)
             expect(individualActual).toStrictEqual([result])
         }
