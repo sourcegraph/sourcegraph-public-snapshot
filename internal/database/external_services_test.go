@@ -431,7 +431,6 @@ func TestExternalServicesStore_Update(t *testing.T) {
 	tests := []struct {
 		name             string
 		update           *ExternalServiceUpdate
-		wantError        bool
 		wantUnrestricted bool
 		wantCloudDefault bool
 	}{
@@ -450,7 +449,6 @@ func TestExternalServicesStore_Update(t *testing.T) {
 				DisplayName: strptr("GITHUB (updated) #2"),
 				Config:      strptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
 			},
-			wantError:        true,
 			wantUnrestricted: false,
 			wantCloudDefault: false,
 		},
@@ -466,7 +464,6 @@ func TestExternalServicesStore_Update(t *testing.T) {
 	// "authorization": {}
 }`),
 			},
-			wantError:        true,
 			wantUnrestricted: false,
 			wantCloudDefault: false,
 		},
@@ -490,14 +487,8 @@ func TestExternalServicesStore_Update(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			err = ExternalServices(db).Update(ctx, nil, es.ID, test.update)
-			if err != nil && !test.wantError {
-				t.Fatal(err)
-			} else if err == nil && test.wantError {
-				t.Fatal("Want error but got nil")
-			}
-
 			if err != nil {
-				return // No point to continue if error is expected for update
+				t.Fatal(err)
 			}
 
 			// Get and verify update
@@ -520,6 +511,114 @@ func TestExternalServicesStore_Update(t *testing.T) {
 
 			if test.wantCloudDefault != got.CloudDefault {
 				t.Fatalf("Want cloud_default = %v, but got %v", test.wantCloudDefault, got.CloudDefault)
+			}
+		})
+	}
+}
+
+func TestUpsertAuthorizationToExternalService(t *testing.T) {
+	tests := []struct {
+		name   string
+		kind   string
+		config string
+		want   string
+	}{
+		{
+			name: "github with authorization",
+			kind: extsvc.KindGitHub,
+			config: `
+{
+  // Useful comments
+  "url": "https://github.com",
+  "repositoryQuery": ["none"],
+  "token": "def",
+  "authorization": {}
+}`,
+			want: `
+{
+  // Useful comments
+  "url": "https://github.com",
+  "repositoryQuery": ["none"],
+  "token": "def",
+  "authorization": {}
+}`,
+		},
+		{
+			name: "github without authorization",
+			kind: extsvc.KindGitHub,
+			config: `
+{
+  // Useful comments
+  "url": "https://github.com",
+  "repositoryQuery": ["none"],
+  "token": "def"
+}`,
+			want: `
+{
+  // Useful comments
+  "url": "https://github.com",
+  "repositoryQuery": ["none"],
+  "token": "def",
+  "authorization": {}
+}`,
+		},
+		{
+			name: "gitlab with authorization",
+			kind: extsvc.KindGitLab,
+			config: `
+{
+  // Useful comments
+  "url": "https://gitlab.com",
+  "projectQuery": ["none"],
+  "token": "abc",
+  "authorization": {}
+}`,
+			want: `
+{
+  // Useful comments
+  "url": "https://gitlab.com",
+  "projectQuery": ["none"],
+  "token": "abc",
+  "authorization": {
+    "identityProvider": {
+      "type": "oauth"
+    }
+  }
+}`,
+		},
+		{
+			name: "gitlab without authorization",
+			kind: extsvc.KindGitLab,
+			config: `
+{
+  // Useful comments
+  "url": "https://gitlab.com",
+  "projectQuery": ["none"],
+  "token": "abc"
+}`,
+			want: `
+{
+  // Useful comments
+  "url": "https://gitlab.com",
+  "projectQuery": ["none"],
+  "token": "abc",
+  "authorization": {
+    "identityProvider": {
+      "type": "oauth"
+    }
+  }
+}`,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got, err := upsertAuthorizationToExternalService(test.kind, test.config)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(test.want, got); diff != "" {
+				t.Fatalf("Mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}
