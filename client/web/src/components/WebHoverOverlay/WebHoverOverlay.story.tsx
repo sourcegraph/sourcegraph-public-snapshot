@@ -24,9 +24,7 @@ import {
 
 registerHighlightContributions()
 
-const { add } = storiesOf('web/codeintel/WebHoverOverlay', module).addDecorator(story => (
-    <WebStory>{() => story()}</WebStory>
-))
+const { add } = storiesOf('web/WebHoverOverlay', module).addDecorator(story => <WebStory>{() => story()}</WebStory>)
 
 add('Loading', () => <WebHoverOverlay {...commonProps()} hoverOrError="loading" actionsOrError={FIXTURE_ACTIONS} />)
 
