@@ -337,10 +337,12 @@ func (r *schemaResolver) SearchContexts(ctx context.Context, args *listSearchCon
 	newArgs := *args
 	newArgs.First += 1
 
-	// TODO(rok): Parse the query into namespace and search context name components
+	var namespaceName string
 	var searchContextName string
 	if newArgs.Query != nil {
-		searchContextName = *newArgs.Query
+		parsedSearchContextSpec := searchcontexts.ParseSearchContextSpec(*newArgs.Query)
+		searchContextName = parsedSearchContextSpec.SearchContextName
+		namespaceName = parsedSearchContextSpec.NamespaceName
 	}
 
 	afterCursor, err := unmarshalSearchContextCursor(newArgs.After)
@@ -349,6 +351,7 @@ func (r *schemaResolver) SearchContexts(ctx context.Context, args *listSearchCon
 	}
 
 	opts := database.ListSearchContextsOptions{
+		NamespaceName:     namespaceName,
 		Name:              searchContextName,
 		NoNamespace:       namespaceFilter == namespaceFilterTypeInstance,
 		OrderBy:           orderBy,
@@ -443,7 +446,7 @@ func resolveVersionContext(versionContext string) (*schema.VersionContext, error
 func (r *schemaResolver) ConvertVersionContextToSearchContext(ctx context.Context, args *struct {
 	Name string
 }) (*searchContextResolver, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, errors.New("converting a version context to a search context is limited to site admins")
 	}
 	versionContext, err := resolveVersionContext(args.Name)
