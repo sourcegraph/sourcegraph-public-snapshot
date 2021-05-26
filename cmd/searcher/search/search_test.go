@@ -26,6 +26,8 @@ import (
 )
 
 func TestSearch(t *testing.T) {
+	t.Skip("TODO: Disabled because it's flaky. See: https://github.com/sourcegraph/sourcegraph/issues/21382")
+
 	// Create byte buffer of binary file
 	miltonPNG := bytes.Repeat([]byte{0x00}, 32*1024)
 
