@@ -8,8 +8,6 @@ import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { CircleDashedIcon } from '../../../components/CircleDashedIcon'
 import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
 
-import { AddCodeHostConnectionModal } from './AddCodeHostConnectionModal'
-import { hints } from './modalHints'
 import { RemoveCodeHostConnectionModal } from './RemoveCodeHostConnectionModal'
 import { ifNotNavigated } from './UserAddCodeHostsPage'
 
@@ -39,11 +37,6 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
     onDidRemove,
     onDidError,
 }) => {
-    const [isAddConnectionModalOpen, setIsAddConnectionModalOpen] = useState(false)
-    const toggleAddConnectionModal = useCallback(() => setIsAddConnectionModalOpen(!isAddConnectionModalOpen), [
-        isAddConnectionModalOpen,
-    ])
-
     const [isRemoveConnectionModalOpen, setIsRemoveConnectionModalOpen] = useState(false)
     const toggleRemoveConnectionModal = useCallback(
         () => setIsRemoveConnectionModalOpen(!isRemoveConnectionModalOpen),
@@ -62,17 +55,6 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
 
     return (
         <div className="p-2 d-flex align-items-start">
-            {isAddConnectionModalOpen && (
-                <AddCodeHostConnectionModal
-                    userID={user.id}
-                    kind={kind}
-                    name={name}
-                    hintFragment={hints[kind]}
-                    onDidAdd={onDidAdd}
-                    onDidCancel={toggleAddConnectionModal}
-                    onDidError={onDidError}
-                />
-            )}
             {service && isRemoveConnectionModalOpen && (
                 <RemoveCodeHostConnectionModal
                     id={service.id}
