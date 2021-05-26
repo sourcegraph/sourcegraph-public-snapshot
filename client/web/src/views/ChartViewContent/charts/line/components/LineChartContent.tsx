@@ -19,7 +19,7 @@ import { useScales } from '../helpers/use-scales'
 import { onDatumZoneClick } from '../types'
 
 import { ActiveDatum, GlyphContent } from './GlyphContent'
-import { NonActiveBackground } from './NonActvieBackground'
+import { NonActiveBackground } from './NonActiveBackground'
 import { dateTickFormatter, numberFormatter, Tick, getTickXProps, getTickYProps } from './TickComponent'
 import { TooltipContent } from './TooltipContent'
 
