@@ -15,9 +15,9 @@ exports[`HoverOverlay actions and hover empty 1`] = `
   <div
     className="hover-overlay__contents"
   >
-    <em>
+    <i>
       No hover information available.
-    </em>
+    </i>
   </div>
 </div>
 `;
