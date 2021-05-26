@@ -17,6 +17,11 @@ coverage:
           - internal/batches
           - enterprise/internal/batches
           - client/web/src/enterprise/batches
+      insights:
+        informational: true
+        paths:
+          - client/web/src/insights
+          - client/web/src/views/ChartViewContent
       search:
         informational: true
         paths:
