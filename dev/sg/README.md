@@ -29,20 +29,20 @@
 
 - [Quickstart](#quickstart)
 - [Usage](#usage)
-  * [`sg [start,run,run-set]` - Start dev environment](#sg-startrunrun-set---start-dev-environment)
-  * [`sg test` - Running test suites](#sg-test---running-test-suites)
-  * [`sg doctor` - Check health of dev environment](#sg-doctor---check-health-of-dev-environment)
-  * [`sg live` - See currently deployed version](#sg-live---see-currently-deployed-version)
+  - [`sg [start,run,run-set]` - Start dev environment](#sg-startrunrun-set---start-dev-environment)
+  - [`sg test` - Running test suites](#sg-test---running-test-suites)
+  - [`sg doctor` - Check health of dev environment](#sg-doctor---check-health-of-dev-environment)
+  - [`sg live` - See currently deployed version](#sg-live---see-currently-deployed-version)
 - [Configuration](#configuration)
 - [TODOs](#todos)
 - [Hacking](#hacking)
 - [Principles](#principles)
 - [Inspiration](#inspiration)
 - [Ideas](#ideas)
-  * [Generators](#generators)
-  * [Database migrations](#database-migrations)
-  * [Edit configuration files](#edit-configuration-files)
-  * [Tail logs](#tail-logs)
+  - [Generators](#generators)
+  - [Database migrations](#database-migrations)
+  - [Edit configuration files](#edit-configuration-files)
+  - [Tail logs](#tail-logs)
 
 ## Quickstart
 
@@ -271,14 +271,14 @@ The `-config` can be anything you want, of course.
 
 ## Principles
 
-* `sg` should be fun to use.
-* If you think "it would be cool if `sg` could do X": add it! Let's go :)
-* `sg` should make Sourcegraph developers productive and happy.
-* `sg` is not and should not be a build system.
-* `sg` is not and should not be a container orchestrator.
-* Try to fix [a lot of the problems in this RFC](https://docs.google.com/document/d/18hrRIN0pUBRwUFF7vkcVmstJccqWeHiecNF2t1GAZfU/edit) by encoding conventions in executable code.
-* No bash. `sg` was built to get rid of all the bash scripts in `./dev/`. If you have a chance to build something into `sg` to avoid another bash script: do it. Try to keep shell scripts to easy-to-understand one liners if you must. Replicating something in Go code that could be done in 4 lines of bash is probably a good idea.
-* Duplicated data is fine as long as it's dumb data. Copying some lines in `sg.config.yaml` to get something working is often (but not always) better than trying to be clever.
+- `sg` should be fun to use.
+- If you think "it would be cool if `sg` could do X": add it! Let's go :)
+- `sg` should make Sourcegraph developers productive and happy.
+- `sg` is not and should not be a build system.
+- `sg` is not and should not be a container orchestrator.
+- Try to fix [a lot of the problems in this RFC](https://docs.google.com/document/d/18hrRIN0pUBRwUFF7vkcVmstJccqWeHiecNF2t1GAZfU/edit) by encoding conventions in executable code.
+- No bash. `sg` was built to get rid of all the bash scripts in `./dev/`. If you have a chance to build something into `sg` to avoid another bash script: do it. Try to keep shell scripts to easy-to-understand one liners if you must. Replicating something in Go code that could be done in 4 lines of bash is probably a good idea.
+- Duplicated data is fine as long as it's dumb data. Copying some lines in `sg.config.yaml` to get something working is often (but not always) better than trying to be clever.
 
 You can also watch [this video](https://drive.google.com/file/d/1DXjjf1YXr8Od8vG4R74Ko-soLOx_tXa6/view?usp=sharing) to get an overview of the original thinking that lead to `sg`.
 
@@ -334,4 +334,3 @@ sg tail-log http
 # Tail all logs
 sg tail-log all
 ```
-
