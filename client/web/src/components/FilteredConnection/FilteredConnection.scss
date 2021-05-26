@@ -58,10 +58,9 @@ $compact-summary-min-height: 2.75rem;
         }
 
         .theme-redesign & {
-            flex-direction: row;
-            justify-content: space-between;
+            justify-content: center;
             align-items: center;
-            margin-top: 1rem;
+            margin-top: 1.5rem;
         }
     }
     &--compact &__summary-container {
@@ -115,14 +114,13 @@ $compact-summary-min-height: 2.75rem;
     &__show-more {
         flex: 0 0 auto;
         .theme-redesign & {
-            margin-left: auto;
+            margin-top: 0.25rem;
         }
     }
     &--noncompact &__show-more {
         margin-right: auto;
         .theme-redesign & {
             margin-right: initial;
-            // margin-bottom: 1rem;
         }
     }
 }

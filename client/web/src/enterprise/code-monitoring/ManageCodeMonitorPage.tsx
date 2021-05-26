@@ -20,6 +20,8 @@ import {
     deleteCodeMonitor as _deleteCodeMonitor,
 } from './backend'
 import { CodeMonitorForm } from './components/CodeMonitorForm'
+import { PageHeader } from '@sourcegraph/wildcard'
+import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
 
 export interface ManageCodeMonitorPageProps extends RouteComponentProps<{ id: Scalars['ID'] }> {
     authenticatedUser: AuthenticatedUser
@@ -98,13 +100,17 @@ export const ManageCodeMonitorPage: React.FunctionComponent<ManageCodeMonitorPag
     return (
         <div className="container col-8">
             <PageTitle title="Manage code monitor" />
-            <div className="page-header d-flex flex-wrap align-items-center">
-                <h2 className="flex-grow-1">Manage code monitor</h2>
-            </div>
-            Code monitors watch your code for specific triggers and run actions in response.{' '}
-            <a href="https://docs.sourcegraph.com/code_monitoring" target="_blank" rel="noopener">
-                Learn more
-            </a>
+            <PageHeader
+                path={[{ icon: CodeMonitoringLogo, to: '/code-monitoring' }, { text: 'Manage code monitor' }]}
+                description={
+                    <>
+                        Code monitors watch your code for specific triggers and run actions in response.{' '}
+                        <a href="https://docs.sourcegraph.com/code_monitoring" target="_blank" rel="noopener">
+                            Learn more
+                        </a>
+                    </>
+                }
+            />
             {codeMonitorOrError === 'loading' && <LoadingSpinner className="icon-inline" />}
             {codeMonitorOrError && !isErrorLike(codeMonitorOrError) && codeMonitorOrError !== 'loading' && (
                 <>

@@ -9,7 +9,7 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { PageHeader } from '@sourcegraph/wildcard'
+import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
@@ -98,10 +98,20 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                     userHasCodeMonitors &&
                     userHasCodeMonitors !== 'loading' &&
                     !isErrorLike(userHasCodeMonitors) && (
-                        <Link to="/code-monitoring/new" className="btn btn-secondary">
+                        <Link to="/code-monitoring/new" className="btn btn-primary">
                             <PlusIcon className="icon-inline" />
-                            Create code monitor
+                            Create
                         </Link>
+                    )
+                }
+                description={
+                    userHasCodeMonitors &&
+                    userHasCodeMonitors !== 'loading' &&
+                    !isErrorLike(userHasCodeMonitors) && (
+                        <>
+                            Watch your code for changes and trigger actions to get notifications, send webhooks, and
+                            more. <a href="https://docs.sourcegraph.com/code_monitoring">Learn more.</a>
+                        </>
                     )
                 }
                 className="mb-3"
@@ -120,36 +130,40 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                         </Link>
                     </div>
                     <div className="code-monitoring-page__start-points container">
-                        <h3>Starting points for your first monitor</h3>
+                        <h3 className="mb-3">Starting points for your first monitor</h3>
                         <div className="row no-gutters code-monitoring-page__start-points-panel-container mb-3">
                             <div className="col-6">
-                                <div className="code-monitoring-page__start-points-panel">
-                                    <h3>Watch for AWS secrets in commits</h3>
-                                    <p className="text-muted">
-                                        Use a search query to watch for new search results, and choose how to receive
-                                        notifications in response.
-                                    </p>
-                                    <a
-                                        href="https://docs.sourcegraph.com/code_monitoring/how-tos/starting_points#watch-for-potential-secrets"
-                                        className="btn btn-secondary"
-                                    >
-                                        View in docs →
-                                    </a>
+                                <div className="card">
+                                    <div className="card-body">
+                                        <h3>Watch for AWS secrets in commits</h3>
+                                        <p className="text-muted">
+                                            Use a search query to watch for new search results, and choose how to
+                                            receive notifications in response.
+                                        </p>
+                                        <a
+                                            href="https://docs.sourcegraph.com/code_monitoring/how-tos/starting_points#watch-for-potential-secrets"
+                                            className="btn btn-secondary"
+                                        >
+                                            View in docs →
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                             <div className="col-6">
-                                <div className="code-monitoring-page__start-points-panel">
-                                    <h3>Watch for new consumers of deprecated methods</h3>
-                                    <p className="text-muted">
-                                        Keep an eye on commits with new consumers of deprecated methods to keep your
-                                        code base up-to-date.
-                                    </p>
-                                    <a
-                                        href="https://docs.sourcegraph.com/code_monitoring/how-tos/starting_points#watch-for-consumers-of-deprecated-endpoints"
-                                        className="btn btn-secondary"
-                                    >
-                                        View in docs →
-                                    </a>
+                                <div className="card">
+                                    <div className="card-body">
+                                        <h3>Watch for new consumers of deprecated methods</h3>
+                                        <p className="text-muted">
+                                            Keep an eye on commits with new consumers of deprecated methods to keep your
+                                            code base up-to-date.
+                                        </p>
+                                        <a
+                                            href="https://docs.sourcegraph.com/code_monitoring/how-tos/starting_points#watch-for-consumers-of-deprecated-endpoints"
+                                            className="btn btn-secondary"
+                                        >
+                                            View in docs →
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -206,10 +220,6 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
             )}
             {userHasCodeMonitors && userHasCodeMonitors !== 'loading' && !isErrorLike(userHasCodeMonitors) && (
                 <>
-                    <div className="text-muted mb-4">
-                        Watch your code for changes and trigger actions to get notifications, send webhooks, and more.{' '}
-                        <a href="https://docs.sourcegraph.com/code_monitoring">Learn more.</a>
-                    </div>
                     <div className="d-flex flex-column">
                         <div className="code-monitoring-page-tabs border-bottom mb-4">
                             <div className="nav nav-tabs border-bottom-0">
@@ -244,32 +254,34 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                                 <h3 className="mb-2">
                                     {`${monitorListFilter === 'all' ? 'All code monitors' : 'Your code monitors'}`}
                                 </h3>
-                                <FilteredConnection<
-                                    CodeMonitorFields,
-                                    Omit<CodeMonitorNodeProps, 'node'>,
-                                    (ListUserCodeMonitorsResult['node'] & { __typename: 'User' })['monitors']
-                                >
-                                    location={location}
-                                    history={history}
-                                    defaultFirst={10}
-                                    queryConnection={queryConnection}
-                                    hideSearch={true}
-                                    nodeComponent={CodeMonitorNode}
-                                    nodeComponentProps={{
-                                        authentictedUser: authenticatedUser,
-                                        location,
-                                        showCodeMonitoringTestEmailButton:
-                                            (!isErrorLike(settingsCascade.final) &&
-                                                settingsCascade.final?.experimentalFeatures
-                                                    ?.showCodeMonitoringTestEmailButton) ||
-                                            false,
-                                        toggleCodeMonitorEnabled,
-                                    }}
-                                    noun="code monitor"
-                                    pluralNoun="code monitors"
-                                    noSummaryIfAllNodesVisible={true}
-                                    cursorPaging={true}
-                                />
+                                <Container>
+                                    <FilteredConnection<
+                                        CodeMonitorFields,
+                                        Omit<CodeMonitorNodeProps, 'node'>,
+                                        (ListUserCodeMonitorsResult['node'] & { __typename: 'User' })['monitors']
+                                    >
+                                        location={location}
+                                        history={history}
+                                        defaultFirst={10}
+                                        queryConnection={queryConnection}
+                                        hideSearch={true}
+                                        nodeComponent={CodeMonitorNode}
+                                        nodeComponentProps={{
+                                            authenticatedUser,
+                                            location,
+                                            showCodeMonitoringTestEmailButton:
+                                                (!isErrorLike(settingsCascade.final) &&
+                                                    settingsCascade.final?.experimentalFeatures
+                                                        ?.showCodeMonitoringTestEmailButton) ||
+                                                false,
+                                            toggleCodeMonitorEnabled,
+                                        }}
+                                        noun="code monitor"
+                                        pluralNoun="code monitors"
+                                        noSummaryIfAllNodesVisible={true}
+                                        cursorPaging={true}
+                                    />
+                                </Container>
                             </div>
                         </div>
                         <div className="mt-5">
