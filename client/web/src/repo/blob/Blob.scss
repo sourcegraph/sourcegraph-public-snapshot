@@ -92,7 +92,8 @@
             position: relative;
 
             --blob-status-bar-height: 2rem;
-            --blob-status-bar-bottom: 1rem;
+            // Used to calculate status bar `bottom` along with scrollbar width.
+            --blob-status-bar-vertical-gap: 1rem;
             // Used to calculate status bar `right` along with scrollbar width.
             --blob-status-bar-horizontal-gap: 0.5rem;
         }
@@ -106,7 +107,7 @@
         .theme-redesign & {
             // Make the status bar "float" slightly above the bottom of the code view.
             position: absolute;
-            bottom: var(--blob-status-bar-bottom);
+            bottom: var(--blob-status-bar-vertical-gap);
 
             // Override default bootstrap `.w-100`, ensure that the status bar "sticks" to the right side.
             width: auto !important;

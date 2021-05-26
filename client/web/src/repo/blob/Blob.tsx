@@ -1,6 +1,7 @@
 import { Remote } from 'comlink'
 import * as H from 'history'
 import iterate from 'iterare'
+import { isEqual } from 'lodash'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
     BehaviorSubject,
@@ -72,7 +73,6 @@ import { observeResize } from '../../util/dom'
 import { HoverThresholdProps } from '../RepoContainer'
 
 import { LineDecorator } from './LineDecorator'
-import { isEqual } from 'lodash'
 
 /**
  * toPortalID builds an ID that will be used for the {@link LineDecorator} portal containers.
@@ -138,6 +138,9 @@ const domFunctions = {
         return parseInt(numberCell.dataset.line, 10)
     },
 }
+
+const STATUS_BAR_HORIZONTAL_GAP_VAR = '--blob-status-bar-horizontal-gap'
+const STATUS_BAR_VERTICAL_GAP_VAR = '--blob-status-bar-vertical-gap'
 
 /**
  * Renders a code view augmented by Sourcegraph extensions
@@ -545,8 +548,8 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         [statusBarElements]
     )
 
-    // Floating status bar: add scrollbar width with "base" horizontal gap to achieve
-    // our desired horizontal gap between the scrollbar and status bar
+    // Floating status bar: add scrollbar size with "base" gaps to achieve
+    // our desired gap between the scrollbar and status bar
     useObservable(
         useMemo(
             () =>
@@ -566,36 +569,46 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                                 const blobComputedStyle = window.getComputedStyle(blobElement)
                                 const borderRightWidth = parseInt(blobComputedStyle.borderRightWidth, 10)
                                 const borderLeftWidth = parseInt(blobComputedStyle.borderLeftWidth, 10)
+                                const borderTopWidth = parseInt(blobComputedStyle.borderTopWidth, 10)
+                                const borderBottomWidth = parseInt(blobComputedStyle.borderBottomWidth, 10)
 
-                                const baseHorizontalGap = blobComputedStyle.getPropertyValue(
-                                    '--blob-status-bar-horizontal-gap'
-                                )
-
-                                let blobScrollbarWidth =
+                                let blobRightScrollbarWidth =
                                     blobElement.offsetWidth -
                                     blobElement.clientWidth -
                                     (!isNaN(borderRightWidth) ? borderRightWidth : 0) -
                                     (!isNaN(borderLeftWidth) ? borderLeftWidth : 0)
 
-                                if (isNaN(blobScrollbarWidth)) {
-                                    blobScrollbarWidth = 0
+                                if (isNaN(blobRightScrollbarWidth)) {
+                                    blobRightScrollbarWidth = 0
                                 }
 
-                                return { baseHorizontalGap, blobScrollbarWidth }
+                                let blobBottomScollbarHeight =
+                                    blobElement.offsetHeight -
+                                    blobElement.clientHeight -
+                                    (!isNaN(borderTopWidth) ? borderTopWidth : 0) -
+                                    (!isNaN(borderBottomWidth) ? borderBottomWidth : 0)
+
+                                if (isNaN(blobBottomScollbarHeight)) {
+                                    blobBottomScollbarHeight = 0
+                                }
+
+                                return { blobRightScrollbarWidth, blobBottomScollbarHeight }
                             }),
                             distinctUntilChanged((a, b) => isEqual(a, b)),
-                            tap(({ baseHorizontalGap, blobScrollbarWidth }) => {
+                            tap(({ blobRightScrollbarWidth, blobBottomScollbarHeight }) => {
                                 // Write
-                                statusBarElement.style.right = `calc(${baseHorizontalGap} + ${blobScrollbarWidth}px)`
+                                statusBarElement.style.right = `calc(var(${STATUS_BAR_HORIZONTAL_GAP_VAR}) + ${blobRightScrollbarWidth}px)`
+                                statusBarElement.style.bottom = `calc(var(${STATUS_BAR_VERTICAL_GAP_VAR}) + ${blobBottomScollbarHeight}px)`
+
                                 // Maintain an equal gap with the left side of the container when the status bar is overflowing.
-                                statusBarElement.style.maxWidth = `calc(100% - ((2 * ${baseHorizontalGap}) + ${blobScrollbarWidth}px))`
+                                statusBarElement.style.maxWidth = `calc(100% - ((2 * var(${STATUS_BAR_HORIZONTAL_GAP_VAR})) + ${blobRightScrollbarWidth}px))`
                             })
                         )
                     }),
                     mapTo(undefined),
                     catchError(() => EMPTY)
                 ),
-            [blobElements, statusBarElements]
+            [blobElements, statusBarElements, blobInfoChanges]
         )
     )
 
