@@ -89,7 +89,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                 ) : (
                     <button type="button" className="btn btn-primary" onClick={toAuthProvider}>
                         Connect
-                        {oauthInFlight && <LoadingSpinner className="icon-inline ml-2" />}
+                        {oauthInFlight && <LoadingSpinner className="icon-inline ml-2 theme-dark" />}
                     </button>
                 )}
             </div>
