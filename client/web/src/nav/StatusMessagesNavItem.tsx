@@ -234,7 +234,6 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
             })
                 .pipe(
                     switchMap(({ nodes: services }) => {
-                        console.log(services)
                         if (services.length === 0) {
                             return of(ExternalServiceNoActivityReasons.NO_CODEHOSTS)
                         }
