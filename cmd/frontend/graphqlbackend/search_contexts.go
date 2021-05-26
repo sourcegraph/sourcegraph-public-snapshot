@@ -446,7 +446,7 @@ func resolveVersionContext(versionContext string) (*schema.VersionContext, error
 func (r *schemaResolver) ConvertVersionContextToSearchContext(ctx context.Context, args *struct {
 	Name string
 }) (*searchContextResolver, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, errors.New("converting a version context to a search context is limited to site admins")
 	}
 	versionContext, err := resolveVersionContext(args.Name)
