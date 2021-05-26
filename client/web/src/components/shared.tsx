@@ -47,7 +47,7 @@ export const WebActionsNavItems: React.FunctionComponent<ActionsNavItemsProps> =
         listClass={classNames(listClass, 'nav')}
         listItemClass={classNames(listItemClass, 'nav-item')}
         actionItemClass={classNames(actionItemClass, 'nav-link')}
-        actionItemIconClass={classNames(actionItemIconClass, 'icon-inline')}
+        actionItemIconClass={classNames(actionItemIconClass, 'icon-inline-md')}
     />
 )
 WebActionsNavItems.displayName = 'WebActionsNavItems'
