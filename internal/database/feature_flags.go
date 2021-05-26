@@ -3,8 +3,6 @@ package database
 import (
 	"context"
 	"database/sql"
-	"encoding/binary"
-	"hash/fnv"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
@@ -313,12 +311,7 @@ func (f *FeatureFlagStore) GetUserFlags(ctx context.Context, userID int32) (map[
 
 	res := make(map[string]bool, max(len(flags), len(orgOverrides), len(userOverrides)))
 	for _, ff := range flags {
-		switch {
-		case ff.Bool != nil:
-			res[ff.Name] = ff.Bool.Value
-		case ff.Rollout != nil:
-			res[ff.Name] = hashUserAndFlag(userID, ff.Name)%10000 < uint32(ff.Rollout.Rollout)
-		}
+		res[ff.Name] = ff.EvaluateForUser(userID)
 
 		// Org overrides are higher priority than default
 		for _, oo := range orgOverrides {
@@ -334,13 +327,6 @@ func (f *FeatureFlagStore) GetUserFlags(ctx context.Context, userID int32) (map[
 	return res, nil
 }
 
-func hashUserAndFlag(userID int32, flagName string) uint32 {
-	h := fnv.New32()
-	binary.Write(h, binary.LittleEndian, userID)
-	h.Write([]byte(flagName))
-	return h.Sum32()
-}
-
 // GetAnonymousUserFlags returns the calculated values for feature flags for the given anonymousUID
 func (f *FeatureFlagStore) GetAnonymousUserFlags(ctx context.Context, anonymousUID string) (map[string]bool, error) {
 	flags, err := f.GetFeatureFlags(ctx)
@@ -350,22 +336,10 @@ func (f *FeatureFlagStore) GetAnonymousUserFlags(ctx context.Context, anonymousU
 
 	res := make(map[string]bool, len(flags))
 	for _, ff := range flags {
-		switch {
-		case ff.Bool != nil:
-			res[ff.Name] = ff.Bool.Value
-		case ff.Rollout != nil:
-			res[ff.Name] = hashAnonymousUserAndFlag(anonymousUID, ff.Name)%10000 < uint32(ff.Rollout.Rollout)
-		}
+		res[ff.Name] = ff.EvaluateForAnonymousUser(anonymousUID)
 	}
 
 	return res, nil
-}
-
-func hashAnonymousUserAndFlag(anonymousUID, flagName string) uint32 {
-	h := fnv.New32()
-	h.Write([]byte(anonymousUID))
-	h.Write([]byte(flagName))
-	return h.Sum32()
 }
 
 func (f *FeatureFlagStore) GetGlobalFeatureFlags(ctx context.Context) (map[string]bool, error) {
@@ -376,11 +350,8 @@ func (f *FeatureFlagStore) GetGlobalFeatureFlags(ctx context.Context) (map[strin
 
 	res := make(map[string]bool, len(flags))
 	for _, ff := range flags {
-		switch {
-		case ff.Bool != nil:
-			res[ff.Name] = ff.Bool.Value
-		default:
-			// ignore non-concrete feature flags since we have no active user
+		if val, ok := ff.EvaluateGlobal(); ok {
+			res[ff.Name] = val
 		}
 	}
 
