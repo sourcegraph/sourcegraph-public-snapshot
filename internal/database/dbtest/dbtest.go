@@ -1,12 +1,12 @@
 package dbtest
 
 import (
+	crand "crypto/rand"
 	"database/sql"
 	"encoding/binary"
 	"errors"
 	"hash/fnv"
 	"math/rand"
-	crand "crypto/rand"
 	"net/url"
 	"os"
 	"strconv"
