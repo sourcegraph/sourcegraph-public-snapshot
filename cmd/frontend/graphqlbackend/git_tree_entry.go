@@ -181,6 +181,14 @@ func (r *GitTreeEntryResolver) Submodule() *gitSubmoduleResolver {
 	return nil
 }
 
+func (r *GitTreeEntryResolver) FileNames(ctx context.Context) ([]string, error) {
+	return git.LsFiles(
+		ctx,
+		r.commit.repoResolver.RepoName(),
+		api.CommitID(r.commit.OID()),
+	)
+}
+
 func cloneURLToRepoName(ctx context.Context, cloneURL string) (string, error) {
 	repoName, err := cloneurls.ReposourceCloneURLToRepoName(ctx, cloneURL)
 	if err != nil {

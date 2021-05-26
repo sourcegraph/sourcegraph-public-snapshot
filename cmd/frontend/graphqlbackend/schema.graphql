@@ -3782,6 +3782,10 @@ type GitTree implements TreeEntry {
         recursive: Boolean = false
     ): [File!]!
     """
+    A list of file names in this repository.
+    """
+    fileNames: [String!]!
+    """
     A list of entries in this tree.
     """
     entries(

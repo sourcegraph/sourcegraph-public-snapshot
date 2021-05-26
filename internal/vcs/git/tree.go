@@ -132,6 +132,23 @@ var (
 	lsTreeRootCache   = lru.New(5)
 )
 
+// LsFiles returns the output of `git ls-files`
+func LsFiles(ctx context.Context, repo api.RepoName, commit api.CommitID) ([]string, error) {
+	args := []string{
+		"ls-files",
+		"-z",
+		"--with-tree",
+		string(commit),
+	}
+	cmd := gitserver.DefaultClient.Command("git", args...)
+	cmd.Repo = repo
+	out, err := cmd.CombinedOutput(ctx)
+	if err != nil {
+		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args, out))
+	}
+	return strings.Split(string(out), "\x00"), nil
+}
+
 // lsTree returns ls of tree at path.
 func lsTree(ctx context.Context, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]os.FileInfo, error) {
 	if path != "" || !recurse {
