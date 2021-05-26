@@ -1,14 +1,10 @@
-package types
+package repos
 
 import (
-	"context"
 	"fmt"
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
-
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -236,62 +232,5 @@ func TestPerforceCloneURL(t *testing.T) {
 	want := "perforce://admin:pa$$word@ssl:111.222.333.444:1666//Sourcegraph/"
 	if got != want {
 		t.Fatalf("wrong cloneURL, got: %q, want: %q", got, want)
-	}
-}
-
-func TestSetUserinfoBestEffort(t *testing.T) {
-	cases := []struct {
-		rawurl   string
-		username string
-		password string
-		want     string
-	}{
-		// no-op
-		{"https://foo.com/foo/bar", "", "", "https://foo.com/foo/bar"},
-		// invalid name is returned as is
-		{":/foo.com/foo/bar", "u", "p", ":/foo.com/foo/bar"},
-
-		// no user details in rawurl
-		{"https://foo.com/foo/bar", "u", "p", "https://u:p@foo.com/foo/bar"},
-		{"https://foo.com/foo/bar", "u", "", "https://u@foo.com/foo/bar"},
-		{"https://foo.com/foo/bar", "", "p", "https://foo.com/foo/bar"},
-
-		// user set already
-		{"https://x@foo.com/foo/bar", "u", "p", "https://x:p@foo.com/foo/bar"},
-		{"https://x@foo.com/foo/bar", "u", "", "https://x@foo.com/foo/bar"},
-		{"https://x@foo.com/foo/bar", "", "p", "https://x:p@foo.com/foo/bar"},
-
-		// user and password set already
-		{"https://x:y@foo.com/foo/bar", "u", "p", "https://x:y@foo.com/foo/bar"},
-		{"https://x:y@foo.com/foo/bar", "u", "", "https://x:y@foo.com/foo/bar"},
-		{"https://x:y@foo.com/foo/bar", "", "p", "https://x:y@foo.com/foo/bar"},
-
-		// empty password
-		{"https://x:@foo.com/foo/bar", "u", "p", "https://x:@foo.com/foo/bar"},
-		{"https://x:@foo.com/foo/bar", "u", "", "https://x:@foo.com/foo/bar"},
-		{"https://x:@foo.com/foo/bar", "", "p", "https://x:@foo.com/foo/bar"},
-	}
-	for _, c := range cases {
-		got := setUserinfoBestEffort(c.rawurl, c.username, c.password)
-		if got != c.want {
-			t.Errorf("setUserinfoBestEffort(%q, %q, %q): got %q want %q", c.rawurl, c.username, c.password, got, c.want)
-		}
-	}
-}
-
-func TestGrantedScopes(t *testing.T) {
-	want := []string{"repo"}
-	github.MockGetAuthenticatedUserOAuthScopes = func(ctx context.Context) ([]string, error) {
-		return want, nil
-	}
-
-	ctx := context.Background()
-	have, err := GrantedScopes(ctx, extsvc.KindGitHub, `{}`)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if diff := cmp.Diff(want, have); diff != "" {
-		t.Fatal(diff)
 	}
 }

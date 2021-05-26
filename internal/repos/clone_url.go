@@ -1,7 +1,6 @@
-package types
+package repos
 
 import (
-	"context"
 	"fmt"
 	"net/url"
 
@@ -9,7 +8,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -18,46 +16,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// TODO: GrantedScopes and RepoCloneURL don't feel like they should belong in
-// this package. It causes our internal/types package to pull in code host
-// specific packages like sourcegraph/sourcegraph/internal/extsvc/github.
-// Ideally, they should belong in the extsvc package but that also doesn't work
-// since that package can't imported from the code host specific sub-packages
-// which as it leads to a cyclic import.
-
-// GrantedScopes returns a slice of scopes granted by the service based on the token
-// provided in the config.
-//
-// Currently only GitHub is supported.
-func GrantedScopes(ctx context.Context, kind string, rawConfig string) ([]string, error) {
-	if kind != extsvc.KindGitHub {
-		return nil, fmt.Errorf("only GitHub supported")
-	}
-	config, err := extsvc.ParseConfig(kind, rawConfig)
-	if err != nil {
-		return nil, errors.Wrap(err, "parsing config")
-	}
-	switch v := config.(type) {
-	case *schema.GitHubConnection:
-		u, err := url.Parse(v.Url)
-		if err != nil {
-			return nil, errors.Wrap(err, "parsing URL")
-		}
-		client := github.NewV3Client(u, &auth.OAuthBearerToken{Token: v.Token}, nil)
-		return client.GetAuthenticatedUserOAuthScopes(ctx)
-	default:
-		return nil, fmt.Errorf("unsupported config type: %T", v)
-	}
-}
-
-// RepoCloneURL builds a cloneURL for the given repo based on the
-// external service configuration.
-// If authentication information is found in the configuration,
-// it returns an authenticated URL for the selected code host.
-func RepoCloneURL(kind, config string, repo *Repo) (string, error) {
+// CloneURL builds a cloneURL for the given repo based on the external service
+// configuration. If authentication information is found in the configuration, it
+// returns an authenticated URL for the selected code host.
+func CloneURL(kind, config string, repo *types.Repo) (string, error) {
 	parsed, err := extsvc.ParseConfig(kind, config)
 	if err != nil {
 		return "", errors.Wrap(err, "loading service configuration")
@@ -97,7 +63,7 @@ func RepoCloneURL(kind, config string, repo *Repo) (string, error) {
 			return phabricatorCloneURL(r, t), nil
 		}
 	case *schema.OtherExternalServiceConnection:
-		if r, ok := repo.Metadata.(*OtherRepoMetadata); ok {
+		if r, ok := repo.Metadata.(*extsvc.OtherRepoMetadata); ok {
 			return otherCloneURL(repo, r), nil
 		}
 	default:
@@ -277,48 +243,6 @@ func phabricatorCloneURL(repo *phabricator.Repo, _ *schema.PhabricatorConnection
 	return cloneURL
 }
 
-// TODO: this will be moved to the right package once we refactor the RepoCloneURL function.
-type OtherRepoMetadata struct {
-	// RelativePath is relative to ServiceID which is usually the host URL.
-	// Joining them gives you the clone url.
-	RelativePath string
-}
-
-func otherCloneURL(repo *Repo, m *OtherRepoMetadata) string {
+func otherCloneURL(repo *types.Repo, m *extsvc.OtherRepoMetadata) string {
 	return repo.ExternalRepo.ServiceID + m.RelativePath
-}
-
-// setUserinfoBestEffort adds the username and password to rawurl. If user is
-// not set in rawurl, username is used. If password is not set and there is a
-// user, password is used. If anything fails, the original rawurl is returned.
-func setUserinfoBestEffort(rawurl, username, password string) string {
-	u, err := url.Parse(rawurl)
-	if err != nil {
-		return rawurl
-	}
-
-	passwordSet := password != ""
-
-	// Update username and password if specified in rawurl
-	if u.User != nil {
-		if u.User.Username() != "" {
-			username = u.User.Username()
-		}
-		if p, ok := u.User.Password(); ok {
-			password = p
-			passwordSet = true
-		}
-	}
-
-	if username == "" {
-		return rawurl
-	}
-
-	if passwordSet {
-		u.User = url.UserPassword(username, password)
-	} else {
-		u.User = url.User(username)
-	}
-
-	return u.String()
 }
