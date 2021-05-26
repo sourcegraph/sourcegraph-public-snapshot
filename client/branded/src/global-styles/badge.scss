@@ -21,18 +21,18 @@
 .theme-redesign {
     --badge-font-size: #{(12/14)}em;
     --badge-font-weight: 500;
-    --badge-padding-y: 0.125em;
-    --badge-padding-x: 0.375em;
+    --badge-padding-y: #{(2/12)}em;
+    --badge-padding-x: #{(6/12)}em;
 
     .badge {
         background-color: var(--subtle-bg);
         color: var(--link-color);
-        border: 1px solid var(--subtle-bg);
+        border: none;
+        line-height: 1rem;
 
         &:focus,
         &.focus {
             outline: 0;
-            border-color: var(--body-bg);
         }
     }
 
@@ -44,7 +44,6 @@
     small .badge {
         --badge-font-size: #{(11/12)}em;
         --badge-padding-y: 0;
-        line-height: (16/12);
     }
 
     // Variants
@@ -57,12 +56,10 @@
     .badge-merged {
         background-color: var(--badge-base);
         color: var(--badge-text);
-        border: 1px solid var(--badge-base);
 
         @at-root #{selector-unify('a', &)} {
             background-color: var(--badge-base);
             color: var(--badge-text);
-            border: 1px solid var(--badge-base);
 
             &:hover,
             &:focus,
@@ -74,7 +71,6 @@
             &:focus,
             &.focus {
                 outline: 0;
-                border-color: var(--body-bg);
 
                 @at-root #{selector-append('.theme-light', &)} {
                     box-shadow: 0 0 0 0.125rem var(--badge-light);
