@@ -13,10 +13,12 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
+	"runtime/pprof"
 	"sort"
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/search"
@@ -225,29 +227,51 @@ milton.png
 	defer ts.Close()
 
 	for i, test := range cases {
-		if test.arg.IsStructuralPat && os.Getenv("CI") == "" {
-			// If we are not on CI, skip the comby-dependent test.
-			continue
-		}
-
+		doFetchDebug := i == 0
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			if test.arg.IsStructuralPat && os.Getenv("CI") == "" {
+				t.Skip("skipping comby test when not on CI")
+			}
+
+			fetchTimeout := 500 * time.Millisecond
+
+			// https://github.com/sourcegraph/sourcegraph/issues/21382
+			if doFetchDebug {
+				done := make(chan struct{})
+				defer close(done)
+				go func() {
+					now := time.Now()
+					select {
+					case <-time.After(fetchTimeout):
+					case <-done:
+						return
+					}
+
+					fmt.Fprintf(os.Stderr, "!!!!!\nPlease report this failure to keegan or stefan.\n")
+					pprof.Lookup("goroutine").WriteTo(os.Stdout, 2)
+
+					<-done
+					fmt.Fprintf(os.Stderr, "total time taken: %s\n", time.Since(now).String())
+				}()
+			}
+
 			test.arg.PatternMatchesContent = true
 			req := protocol.Request{
 				Repo:         "foo",
 				URL:          "u",
 				Commit:       "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 				PatternInfo:  test.arg,
-				FetchTimeout: "2000ms",
+				FetchTimeout: fetchTimeout.String(),
 			}
 			m, err := doSearch(ts.URL, &req)
 			if err != nil {
-				t.Fatalf("%v failed: %s", test.arg, err)
+				t.Fatalf("%s failed: %s", test.arg.String(), err)
 			}
 			sort.Sort(sortByPath(m))
 			got := toString(m)
 			err = sanityCheckSorted(m)
 			if err != nil {
-				t.Fatalf("%v malformed response: %s\n%s", test.arg, err, got)
+				t.Fatalf("%s malformed response: %s\n%s", test.arg.String(), err, got)
 			}
 			// We have an extra newline to make expected readable
 			if len(test.want) > 0 {

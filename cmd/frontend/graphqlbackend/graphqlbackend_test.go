@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -14,18 +15,17 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
-
-	"github.com/graph-gophers/graphql-go/errors"
+	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/graph-gophers/graphql-go/gqltesting"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -163,48 +163,64 @@ func TestAffiliatedRepositories(t *testing.T) {
 	database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
 		return &types.User{ID: 1, SiteAdmin: true}, nil
 	}
+
+	// Map from path rou
+	httpResponder := map[string]roundTripFunc{
+		// github
+		"/api/v3/user/repos": func(r *http.Request) (*http.Response, error) {
+			buf := &bytes.Buffer{}
+			enc := json.NewEncoder(buf)
+			page := r.URL.Query().Get("page")
+			if page == "1" {
+				if err := enc.Encode([]githubRepository{
+					{
+						FullName: "test-user/test",
+						Private:  false,
+					},
+				}); err != nil {
+					t.Fatal(err)
+				}
+			}
+			// Stop on the second page
+			if page == "2" {
+				if err := enc.Encode([]githubRepository{}); err != nil {
+					t.Fatal(err)
+				}
+			}
+			return &http.Response{
+				Body:       ioutil.NopCloser(buf),
+				StatusCode: http.StatusOK,
+			}, nil
+		},
+
+		// gitlab
+		"/api/v4/projects": func(r *http.Request) (*http.Response, error) {
+			buf := &bytes.Buffer{}
+			enc := json.NewEncoder(buf)
+			if err := enc.Encode([]gitlabRepository{
+				{
+					PathWithNamespace: "test-user2/test2",
+					Visibility:        "public",
+				},
+			}); err != nil {
+				t.Fatal(err)
+			}
+			return &http.Response{
+				Body:       ioutil.NopCloser(buf),
+				StatusCode: http.StatusOK,
+			}, nil
+		},
+	}
+
 	cf = httpcli.NewFactory(
 		nil,
 		func(c *http.Client) error {
 			c.Transport = roundTripFunc(func(r *http.Request) (*http.Response, error) {
-				buf := &bytes.Buffer{}
-				enc := json.NewEncoder(buf)
-				switch r.URL.Path {
-				case "/api/v3/user/repos": // github
-					page := r.URL.Query().Get("page")
-					if page == "1" {
-						if err := enc.Encode([]githubRepository{
-							{
-								FullName: "test-user/test",
-								Private:  false,
-							},
-						}); err != nil {
-							t.Fatal(err)
-						}
-					}
-					// Stop on the second page
-					if page == "2" {
-						if err := enc.Encode([]githubRepository{}); err != nil {
-							t.Fatal(err)
-						}
-					}
-
-				case "/api/v4/projects": //gitlab
-					if err := enc.Encode([]gitlabRepository{
-						{
-							PathWithNamespace: "test-user2/test2",
-							Visibility:        "public",
-						},
-					}); err != nil {
-						t.Fatal(err)
-					}
-				default:
+				fn := httpResponder[r.URL.Path]
+				if fn == nil {
 					t.Fatalf("unexpected path: %s", r.URL.Path)
 				}
-				return &http.Response{
-					Body:       ioutil.NopCloser(buf),
-					StatusCode: http.StatusOK,
-				}, nil
+				return fn(r)
 			})
 			return nil
 		},
@@ -284,11 +300,120 @@ func TestAffiliatedRepositories(t *testing.T) {
 			}
 			`,
 			ExpectedResult: `null`,
-			ExpectedErrors: []*errors.QueryError{
+			ExpectedErrors: []*gqlerrors.QueryError{
 				{
 					Path:          []interface{}{"affiliatedRepositories"},
 					Message:       "Must be authenticated as user with id 1",
 					ResolverError: &backend.InsufficientAuthorizationError{Message: fmt.Sprintf("Must be authenticated as user with id %d", 1)},
+				},
+			},
+		},
+	})
+
+	// One code host failing should not break everything
+	ctx = actor.WithActor(ctx, &actor.Actor{
+		UID: 1,
+	})
+
+	// Make gitlab break
+	httpResponder["/api/v4/projects"] = func(request *http.Request) (*http.Response, error) {
+		buf := &bytes.Buffer{}
+		enc := json.NewEncoder(buf)
+		if err := enc.Encode([]gitlabRepository{
+			{
+				PathWithNamespace: "test-user2/test2",
+				Visibility:        "public",
+			},
+		}); err != nil {
+			t.Fatal(err)
+		}
+		return &http.Response{
+			Body:       nil,
+			StatusCode: http.StatusUnauthorized,
+		}, nil
+	}
+
+	gqltesting.RunTests(t, []*gqltesting.Test{
+		{
+			Context: ctx,
+			Schema:  mustParseGraphQLSchema(t),
+			Query: `
+			{
+				affiliatedRepositories(
+					user: "VXNlcjox"
+				) {
+					nodes {
+						name,
+						private,
+						codeHost {
+							displayName
+						}
+					}
+				}
+			}
+			`,
+			ExpectedResult: `
+				{
+					"affiliatedRepositories": {
+						"nodes": [
+							{
+								"name": "test-user/test",
+								"private": false,
+								"codeHost": {
+									"displayName": "github"
+								}
+							}
+						]
+					}
+				}
+			`,
+		},
+	})
+
+	// Both code hosts failing is an error
+	// Make github break too
+	httpResponder["/api/v3/user/repos"] = func(request *http.Request) (*http.Response, error) {
+		buf := &bytes.Buffer{}
+		enc := json.NewEncoder(buf)
+		if err := enc.Encode([]gitlabRepository{
+			{
+				PathWithNamespace: "test-user2/test2",
+				Visibility:        "public",
+			},
+		}); err != nil {
+			t.Fatal(err)
+		}
+		return &http.Response{
+			Body:       nil,
+			StatusCode: http.StatusUnauthorized,
+		}, nil
+	}
+
+	RunTests(t, []*Test{
+		{
+			Context: ctx,
+			Schema:  mustParseGraphQLSchema(t),
+			Query: `
+			{
+				affiliatedRepositories(
+					user: "VXNlcjox"
+				) {
+					nodes {
+						name,
+						private,
+						codeHost {
+							displayName
+						}
+					}
+				}
+			}
+			`,
+			ExpectedResult: `null`,
+			ExpectedErrors: []*gqlerrors.QueryError{
+				{
+					Path:          []interface{}{"affiliatedRepositories", "nodes"},
+					Message:       "failed to fetch from any code host",
+					ResolverError: errors.New("failed to fetch from any code host"),
 				},
 			},
 		},

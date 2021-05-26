@@ -35,7 +35,7 @@ func checkOrgAccess(ctx context.Context, db dbutil.DB, orgID int32, allowAdmin b
 	if hasAuthzBypass(ctx) {
 		return nil
 	}
-	currentUser, err := CurrentUser(ctx)
+	currentUser, err := CurrentUser(ctx, db)
 	if err != nil {
 		return err
 	}

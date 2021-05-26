@@ -5,12 +5,13 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestUserPublicRepos_Set(t *testing.T) {
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 	u := Users(db)
 	r := Repos(db)
@@ -59,7 +60,8 @@ func TestUserPublicRepos_Set(t *testing.T) {
 }
 
 func TestUserPublicRepos_SetUserRepos(t *testing.T) {
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 	u := Users(db)
 	r := Repos(db)

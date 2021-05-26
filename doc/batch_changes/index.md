@@ -108,4 +108,5 @@ Create a batch change by specifying a search query to get a list of repositories
 - [Batch spec templating](references/batch_spec_templating.md)
 - [Batch spec cheat sheet](references/batch_spec_cheat_sheet.md)
 - [Troubleshooting](references/troubleshooting.md)
+- [FAQ](references/faq.md)
 - [CLI](../cli/references/batch/index.md)

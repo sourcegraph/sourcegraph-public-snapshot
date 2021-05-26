@@ -1,8 +1,10 @@
 import { subDays } from 'date-fns'
 import expect from 'expect'
+import { range } from 'lodash'
 import { test } from 'mocha'
 
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
@@ -70,12 +72,7 @@ describe('Search contexts', () => {
         })
     })
     afterEachSaveScreenshotIfFailed(() => driver.page)
-    afterEach(async () => {
-        await driver.page.evaluate(() => localStorage.clear())
-        if (testContext) {
-            await testContext.dispose()
-        }
-    })
+    afterEach(() => testContext?.dispose())
 
     const getSearchFieldValue = (driver: Driver): Promise<string | undefined> =>
         driver.page.evaluate(() => document.querySelector<HTMLTextAreaElement>('#monaco-query-input textarea')?.value)
@@ -173,6 +170,8 @@ describe('Search contexts', () => {
     const isSearchContextDropdownDisabled = () =>
         driver.page.evaluate(() => document.querySelector<HTMLButtonElement>('.test-search-context-dropdown')?.disabled)
 
+    const clearLocalStorage = () => driver.page.evaluate(() => localStorage.clear())
+
     test('Search context selected based on URL', async () => {
         testContext.overrideGraphQL({
             ...testContextForSearchContexts,
@@ -180,6 +179,7 @@ describe('Search contexts', () => {
                 isSearchContextAvailable: true,
             }),
         })
+
         await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=context:%40test+test&patternType=regexp', {
             waitUntil: 'networkidle0',
         })
@@ -195,6 +195,7 @@ describe('Search contexts', () => {
         await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
         await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
         expect(await getSelectedSearchContextSpec()).toStrictEqual('context:global')
+        await clearLocalStorage()
     })
 
     test('Unavailable search context should remain in the query and disable the search context dropdown', async () => {
@@ -236,6 +237,7 @@ describe('Search contexts', () => {
         })
         await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
         expect(await getSelectedSearchContextSpec()).toStrictEqual('context:global')
+        await clearLocalStorage()
     })
 
     test('Disable dropdown if version context is active', async () => {
@@ -303,22 +305,41 @@ describe('Search contexts', () => {
         expect(convertedContexts).toBe(versionContexts.length)
     })
 
-    test('Highlight tour step should be visible with empty local storage', async () => {
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=context:global+test&patternType=regexp')
+    test('Highlight tour step should not be visible with empty local storage on search homepage', async () => {
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
+        await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
+        expect(await isSearchContextHighlightTourStepVisible()).toBeFalsy()
+    })
+
+    test('Highlight tour step should be visible with empty local storage on search results page', async () => {
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test')
         await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
         expect(await isSearchContextHighlightTourStepVisible()).toBeTruthy()
     })
 
-    test('Highlight tour step should not be visible if already seen', async () => {
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=context:global+test&patternType=regexp', {
+    test('Highlight tour step should be visible with cancelled search onboarding tour on search homepage', async () => {
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/search', {
             waitUntil: 'networkidle0',
         })
-        await driver.page.evaluate(() =>
+        await driver.page.evaluate(() => localStorage.setItem('has-cancelled-onboarding-tour', 'true'))
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
+        await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
+        expect(await isSearchContextHighlightTourStepVisible()).toBeTruthy()
+        await clearLocalStorage()
+    })
+
+    test('Highlight tour step should not be visible if already seen with cancelled search onboarding tour on search homepage', async () => {
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/search', {
+            waitUntil: 'networkidle0',
+        })
+        await driver.page.evaluate(() => {
+            localStorage.setItem('has-cancelled-onboarding-tour', 'true')
             localStorage.setItem('has-seen-search-contexts-dropdown-highlight-tour-step', 'true')
-        )
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=context:global+test&patternType=regexp')
+        })
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
         await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
         expect(await isSearchContextHighlightTourStepVisible()).toBeFalsy()
+        await clearLocalStorage()
     })
 
     test('Create search context', async () => {
@@ -565,5 +586,80 @@ describe('Search contexts', () => {
 
         // Wait for delete request to finish and redirect to list page
         await driver.page.waitForSelector('.search-contexts-list-page')
+    })
+
+    test('Infinite scrolling in dropdown menu', async () => {
+        // We're loading 15 search contexts per page, and we want to load 2 pages
+        const searchContextsCount = 30
+
+        testContext.overrideGraphQL({
+            ...testContextForSearchContexts,
+            AutoDefinedSearchContexts: () => ({
+                autoDefinedSearchContexts: [],
+            }),
+            ListSearchContexts: ({ after }) => {
+                const searchContexts = range(0, searchContextsCount).map(index => ({
+                    __typename: 'SearchContext',
+                    id: `id-${index}`,
+                    spec: `ctx-${index}`,
+                    name: `ctx-${index}`,
+                    namespace: null,
+                    public: true,
+                    autoDefined: false,
+                    viewerCanManage: false,
+                    description: '',
+                    repositories: [],
+                    updatedAt: subDays(new Date(), 1).toISOString(),
+                })) as ISearchContext[]
+
+                if (after === null) {
+                    return {
+                        searchContexts: {
+                            nodes: searchContexts.slice(0, searchContextsCount / 2),
+                            totalCount: searchContexts.length,
+                            pageInfo: {
+                                hasNextPage: true,
+                                endCursor: 'end-first-page',
+                            },
+                        },
+                    }
+                }
+
+                return {
+                    searchContexts: {
+                        nodes: searchContexts.slice(searchContextsCount / 2),
+                        totalCount: searchContexts.length,
+                        pageInfo: {
+                            hasNextPage: false,
+                            endCursor: null,
+                        },
+                    },
+                }
+            },
+        })
+
+        // Go to search homepage and wait for context selector to load
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
+        await driver.page.waitForSelector('.test-search-context-dropdown', { visible: true })
+
+        // Open dropdown menu
+        await driver.page.click('.test-search-context-dropdown')
+        await driver.page.waitForSelector('.search-context-menu__item', { visible: true })
+
+        // Scroll to the bottom of the list
+        await driver.page.evaluate(() => {
+            const scrollableSection = document.querySelector<HTMLDivElement>('.search-context-menu__list')
+            if (scrollableSection) {
+                scrollableSection.scrollTop = scrollableSection.offsetHeight
+            }
+        })
+
+        // Wait for correct number of total elements to load
+        await driver.page.waitFor(
+            searchContextsCount =>
+                document.querySelectorAll('.search-context-menu__item-name').length === searchContextsCount,
+            {},
+            searchContextsCount
+        )
     })
 })

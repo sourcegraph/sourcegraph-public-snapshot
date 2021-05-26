@@ -5,6 +5,11 @@
     align-items: center;
     white-space: nowrap;
 
+    .part {
+        // Ensure focus shadow is not clipped by overflow: hidden
+        margin: 0.125rem;
+    }
+
     .part-directory {
         flex: 1 1 1em;
         min-width: 1em;
@@ -21,5 +26,9 @@
         // spaces when copy-pasted in Chrome, while margin is ignored.
         margin: 0 0.25rem;
         font-weight: 600;
+
+        .theme-redesign & {
+            margin: 0 0.0625rem;
+        }
     }
 }

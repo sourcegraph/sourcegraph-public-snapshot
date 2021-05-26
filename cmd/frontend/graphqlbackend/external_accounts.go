@@ -21,7 +21,7 @@ func (r *siteResolver) ExternalAccounts(ctx context.Context, args *struct {
 	ClientID    *string
 }) (*externalAccountConnectionResolver, error) {
 	// 🚨 SECURITY: Only site admins can list all external accounts.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -50,7 +50,7 @@ func (r *UserResolver) ExternalAccounts(ctx context.Context, args *struct {
 	graphqlutil.ConnectionArgs
 }) (*externalAccountConnectionResolver, error) {
 	// 🚨 SECURITY: Only site admins and the user can list a user's external accounts.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.user.ID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
 		return nil, err
 	}
 
@@ -128,7 +128,7 @@ func (r *schemaResolver) DeleteExternalAccount(ctx context.Context, args *struct
 	}
 
 	// 🚨 SECURITY: Only the user and site admins should be able to see a user's external accounts.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, account.UserID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, account.UserID); err != nil {
 		return nil, err
 	}
 

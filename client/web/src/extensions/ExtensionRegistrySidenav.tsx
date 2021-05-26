@@ -1,11 +1,12 @@
 import classnames from 'classnames'
-import React, { useCallback, useState } from 'react'
+import React, { useState } from 'react'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 
 import { EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
 
 import { ExtensionCategoryOrAll, ExtensionsEnablement } from './ExtensionRegistry'
 import styles from './ExtensionRegistrySidenav.module.scss'
+import { extensionBannerIconURL } from './icons'
 
 const enablementFilterToLabel: Record<ExtensionsEnablement, string> = {
     all: 'Show all',
@@ -20,6 +21,9 @@ interface ExtensionsCategoryFiltersProps {
 interface ExtensionsEnablementDropdownProps {
     enablementFilter: ExtensionsEnablement
     setEnablementFilter: React.Dispatch<React.SetStateAction<ExtensionsEnablement>>
+
+    showExperimentalExtensions: boolean
+    toggleExperimentalExtensions: () => void
 }
 
 /**
@@ -28,13 +32,20 @@ interface ExtensionsEnablementDropdownProps {
  */
 export const ExtensionRegistrySidenav: React.FunctionComponent<
     ExtensionsCategoryFiltersProps & ExtensionsEnablementDropdownProps
-> = ({ selectedCategory, onSelectCategory, enablementFilter, setEnablementFilter }) => {
+> = ({
+    selectedCategory,
+    onSelectCategory,
+    enablementFilter,
+    setEnablementFilter,
+    showExperimentalExtensions,
+    toggleExperimentalExtensions,
+}) => {
     const [isOpen, setIsOpen] = useState(false)
-    const toggleIsOpen = useCallback(() => setIsOpen(open => !open), [])
+    const toggleIsOpen = (): void => setIsOpen(open => !open)
 
-    const showAll = useCallback(() => setEnablementFilter('all'), [setEnablementFilter])
-    const showEnabled = useCallback(() => setEnablementFilter('enabled'), [setEnablementFilter])
-    const showDisabled = useCallback(() => setEnablementFilter('disabled'), [setEnablementFilter])
+    const showAll = (): void => setEnablementFilter('all')
+    const showEnabled = (): void => setEnablementFilter('enabled')
+    const showDisabled = (): void => setEnablementFilter('disabled')
 
     return (
         <div className={classnames(styles.column, 'mr-4 flex-grow-0 flex-shrink-0')}>
@@ -73,8 +84,51 @@ export const ExtensionRegistrySidenav: React.FunctionComponent<
                     <DropdownItem onClick={showDisabled} disabled={enablementFilter === 'disabled'}>
                         Show disabled extensions
                     </DropdownItem>
+
+                    <DropdownItem divider={true} />
+
+                    <DropdownItem
+                        // Hack: clicking <label> inside <DropdownItem> doesn't affect checked state,
+                        // so use a <span> for which click events are handled by <DropdownItem>.
+                        onClick={toggleExperimentalExtensions}
+                    >
+                        <div className="d-flex align-items-center">
+                            <input
+                                type="checkbox"
+                                checked={showExperimentalExtensions}
+                                onChange={toggleExperimentalExtensions}
+                                className=""
+                                aria-labelledby="show-experimental-extensions"
+                            />
+                            <span className="m-0 pl-2" id="show-experimental-extensions">
+                                Show experimental extensions
+                            </span>
+                        </div>
+                    </DropdownItem>
                 </DropdownMenu>
             </ButtonDropdown>
+
+            <ExtensionSidenavBanner />
         </div>
     )
 }
+
+const ExtensionSidenavBanner: React.FunctionComponent = () => (
+    <div className={classnames(styles.banner, 'mx-2')}>
+        <img className={classnames(styles.bannerIcon, 'mb-2')} src={extensionBannerIconURL} alt="" />
+        {/* Override .theme-redesign h4 font-weight */}
+        <h4 className={classnames(styles.header, 'mt-2 font-weight-bold')}>Create custom extensions!</h4>
+        <small>
+            You can improve your workflow by creating custom extensions. See{' '}
+            <a
+                href="https://docs.sourcegraph.com/extensions/authoring"
+                // eslint-disable-next-line react/jsx-no-target-blank
+                target="_blank"
+                rel="noreferrer"
+            >
+                Sourcegraph Docs
+            </a>{' '}
+            for details about writing and publishing.
+        </small>
+    </div>
+)

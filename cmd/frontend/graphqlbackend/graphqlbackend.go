@@ -606,7 +606,7 @@ func (r *schemaResolver) AffiliatedRepositories(ctx context.Context, args *struc
 	User     graphql.ID
 	CodeHost *graphql.ID
 	Query    *string
-}) (*codeHostRepositoryConnectionResolver, error) {
+}) (*affiliatedRepositoriesConnection, error) {
 	userID, err := UnmarshalUserID(args.User)
 	if err != nil {
 		return nil, err
@@ -627,7 +627,7 @@ func (r *schemaResolver) AffiliatedRepositories(ctx context.Context, args *struc
 		query = *args.Query
 	}
 
-	return &codeHostRepositoryConnectionResolver{
+	return &affiliatedRepositoriesConnection{
 		db:       r.db,
 		userID:   userID,
 		codeHost: codeHost,

@@ -40,7 +40,7 @@ func externalServiceByID(ctx context.Context, db dbutil.DB, gqlID graphql.ID) (*
 		return nil, err
 	}
 
-	if err := checkExternalServiceAccess(ctx, es.NamespaceUserID); err != nil {
+	if err := checkExternalServiceAccess(ctx, db, es.NamespaceUserID); err != nil {
 		return nil, err
 	}
 	return &externalServiceResolver{db: db, externalService: es}, nil
@@ -165,4 +165,8 @@ func (r *externalServiceResolver) NextSyncAt() *DateTime {
 		return nil
 	}
 	return &DateTime{Time: r.externalService.NextSyncAt}
+}
+
+func (r *externalServiceResolver) GrantedScopes(ctx context.Context) ([]string, error) {
+	return types.GrantedScopes(ctx, r.externalService.Kind, r.externalService.Config)
 }

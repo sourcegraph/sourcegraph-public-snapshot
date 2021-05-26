@@ -64,7 +64,7 @@ export const DocumentationNode: React.FunctionComponent<Props> = ({ useBreadcrum
     useBreadcrumb(
         useMemo(
             () =>
-                depth === 0 ? null : { key: `node-${depth}`, element: <Link to={thisPage}>{node.label.value}</Link> },
+                depth === 0 ? { key: `node-${depth}`, element: <Link to={thisPage}>{node.label.value}</Link> } : null,
             [depth, node.label.value, thisPage]
         )
     )

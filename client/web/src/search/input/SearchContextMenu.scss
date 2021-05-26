@@ -27,6 +27,7 @@
 
     &__list {
         width: 31rem;
+        max-width: 100%;
         padding: 0.25rem 0;
         max-height: 300px;
         overflow: auto;
@@ -119,5 +120,10 @@
 
             padding: 0;
         }
+    }
+
+    &__infinite-scroll-trigger {
+        // stylelint-disable-next-line declaration-property-unit-whitelist
+        height: 1px;
     }
 }
