@@ -98,7 +98,7 @@ Please use the below table for reference when migrating your data from a Kuberne
 |gitserver|Yes||
 |grafana|Yes||
 |minio|Yes||
-|pgsql|**NO**|This is the main database of Sourcegraph where most of the data are stored|
+|pgsql|**NO**|This is the main database of Sourcegraph where most of the data is stored|
 |prometheus|YES||
 |redis-cache|YES||
 |redis-store|YES||
