@@ -11,7 +11,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/hexops/autogold"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
@@ -69,25 +68,29 @@ func foo(go string) {}
 	}
 	defer cleanup()
 
-	for _, tt := range cases {
-		t.Run(tt.Name, func(t *testing.T) {
-			p.Languages = tt.Languages
-			matches, _, err := structuralSearch(context.Background(), zf, Subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo_foo")
-			if err != nil {
-				t.Fatal(err)
-			}
-			var got []string
-			for _, fileMatches := range matches {
-				for _, m := range fileMatches.LineMatches {
-					got = append(got, m.Preview)
+	t.Run("group", func(t *testing.T) {
+		for _, tt := range cases {
+			tt := tt
+			t.Run(tt.Name, func(t *testing.T) {
+				t.Parallel()
+				p.Languages = tt.Languages
+				matches, _, err := structuralSearch(context.Background(), zf, Subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo_foo")
+				if err != nil {
+					t.Fatal(err)
 				}
-			}
+				var got []string
+				for _, fileMatches := range matches {
+					for _, m := range fileMatches.LineMatches {
+						got = append(got, m.Preview)
+					}
+				}
 
-			if !reflect.DeepEqual(got, tt.Want) {
-				t.Fatalf("got file matches %v, want %v", got, tt.Want)
-			}
-		})
-	}
+				if !reflect.DeepEqual(got, tt.Want) {
+					t.Fatalf("got file matches %v, want %v", got, tt.Want)
+				}
+			})
+		}
+	})
 }
 
 func TestMatcherLookupByExtension(t *testing.T) {
@@ -95,6 +98,8 @@ func TestMatcherLookupByExtension(t *testing.T) {
 	if os.Getenv("CI") == "" {
 		t.Skip("Not on CI, skipping comby-dependent test")
 	}
+
+	t.Parallel()
 
 	input := map[string]string{
 		"file_without_extension": `
@@ -130,7 +135,7 @@ func foo(go.txt) {}
 		extensionHint := filepath.Ext(filename)
 		matches, _, err := structuralSearch(context.Background(), zf, All, extensionHint, "foo(:[args])", "", languages, "repo_foo")
 		if err != nil {
-			return "ERROR"
+			return "ERROR: " + err.Error()
 		}
 		var got []string
 		for _, fileMatches := range matches {
@@ -142,10 +147,45 @@ func foo(go.txt) {}
 		return strings.Join(got, " ")
 	}
 
-	autogold.Want("No language and no file extension => .generic matcher", "foo(go.empty) foo(go.go) foo(go.txt) foo(plain.empty) foo(plain.go) foo(plain.txt)").Equal(t, test("", "file_without_extension"))
-	autogold.Want("No language and .go file extension => .go matcher", "foo(go.empty) foo(go.go) foo(go.txt)").Equal(t, test("", "a/b/c/file.go"))
-	autogold.Want("Language Go and no file extension => .go matcher", "foo(go.empty) foo(go.go) foo(go.txt)").Equal(t, test("go", ""))
-	autogold.Want("Language .go and .txt file extension => .go matcher", "foo(go.empty) foo(go.go) foo(go.txt)").Equal(t, test("go", "file.txt"))
+	cases := []struct {
+		name     string
+		want     string
+		language string
+		filename string
+	}{{
+		name:     "No language and no file extension => .generic matcher",
+		want:     "foo(go.empty) foo(go.go) foo(go.txt) foo(plain.empty) foo(plain.go) foo(plain.txt)",
+		language: "",
+		filename: "file_without_extension",
+	}, {
+		name:     "No language and .go file extension => .go matcher",
+		want:     "foo(go.empty) foo(go.go) foo(go.txt)",
+		language: "",
+		filename: "a/b/c/file.go",
+	}, {
+		name:     "Language Go and no file extension => .go matcher",
+		want:     "foo(go.empty) foo(go.go) foo(go.txt)",
+		language: "go",
+		filename: "",
+	}, {
+		name:     "Language .go and .txt file extension => .go matcher",
+		want:     "foo(go.empty) foo(go.go) foo(go.txt)",
+		language: "go",
+		filename: "file.txt",
+	}}
+	t.Run("group", func(t *testing.T) {
+		for _, tc := range cases {
+			tc := tc
+			t.Run(tc.name, func(t *testing.T) {
+				t.Parallel()
+
+				got := test(tc.language, tc.filename)
+				if d := cmp.Diff(tc.want, got); d != "" {
+					t.Errorf("mismatch (-want +got):\n%s", d)
+				}
+			})
+		}
+	})
 }
 
 // Tests that structural search correctly infers the Go matcher from the .go
