@@ -399,7 +399,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
     }
 
     return (
-        <div className="repo-container test-repo-container w-100 d-flex flex-column">
+        <div className="repo-container test-repo-container w-100 d-flex flex-column action-items">
             {!isErrorLike(props.settingsCascade.final) &&
                 props.settingsCascade.final?.experimentalFeatures?.fuzzyFinder &&
                 resolvedRevisionOrError &&
