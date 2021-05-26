@@ -190,7 +190,7 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                             individual owners.
                         </small>
                     </div>
-                    <hr className="code-monitor-form__horizontal-rule" />
+                    <hr className="code-monitor-form__horizontal-rule my-3" />
                     <div className="code-monitor-form__triggers mb-4">
                         <FormTriggerArea
                             query={currentCodeMonitorState.trigger.query}
@@ -215,9 +215,9 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                             description={currentCodeMonitorState.description}
                         />
                     </div>
-                    <hr className="code-monitor-form__horizontal-rule" />
+                    <hr className="code-monitor-form__horizontal-rule my-3" />
                     <div>
-                        <div className="d-flex my-4">
+                        <div className="d-flex">
                             <div>
                                 <Toggle
                                     title="Active"

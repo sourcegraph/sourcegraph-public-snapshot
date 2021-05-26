@@ -38,6 +38,10 @@
 
         color: var(--body-color);
 
+        &:last-child:hover {
+            margin-bottom: -1px;
+        }
+
         &:focus-visible {
             border-color: transparent;
         }
