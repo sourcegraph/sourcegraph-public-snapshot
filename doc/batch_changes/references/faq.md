@@ -1,3 +1,4 @@
+# FAQ
 
 This is a compilation of some common questions about Batch Changes.
 
@@ -40,7 +41,7 @@ However, [steps](../references/batch_spec_yaml_reference.md#steps-run) can be us
 Unapplied batch specs are removed from the database after 7 days.
 
 ### Can I pull containers from private container registries in a batch change?
-When [executing a batch spec](../explanations/how_src_executes_a_batch_spec.md), `src` will attempt to pull missing docker images. If you are logged into the private container registry, it will pull from it.
+When [executing a batch spec](../explanations/how_src_executes_a_batch_spec.md), `src` will attempt to pull missing docker images. If you are logged into the private container registry, it will pull from it. Also see [`steps.container`](batch_spec_yaml_reference.md#steps-container).
 
 ### What tool can I use for changing/refactoring `<programming-language>`?
 
