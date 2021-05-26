@@ -29,9 +29,9 @@ import {
 import { queryUserPublicRepositories, setUserPublicRepositories } from '../../../site-admin/backend'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { UserRepositoriesUpdateProps } from '../../../util'
+import { externalServiceUserModeFromTags } from '../cloud-ga'
 
 import { CheckboxRepositoryNode } from './RepositoryNode'
-import { externalServiceUserModeFromTags } from '../cloud-ga'
 
 interface authenticatedUser {
     id: string
