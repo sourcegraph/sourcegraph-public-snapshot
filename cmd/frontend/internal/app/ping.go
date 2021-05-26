@@ -17,7 +17,7 @@ import (
 func latestPingHandler(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// 🚨SECURITY: Only site admins may access ping data.
-		if err := backend.CheckCurrentUserIsSiteAdmin(r.Context()); err != nil {
+		if err := backend.CheckCurrentUserIsSiteAdmin(r.Context(), db); err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}

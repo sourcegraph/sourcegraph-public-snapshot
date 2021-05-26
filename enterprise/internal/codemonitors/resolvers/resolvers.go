@@ -204,7 +204,7 @@ func (r *Resolver) UpdateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 // actions (emails, webhooks) immediately. This is useful during development and
 // troubleshooting. Only site admins can call this functions.
 func (r *Resolver) ResetTriggerQueryTimestamps(ctx context.Context, args *graphqlbackend.ResetTriggerQueryTimestampsArgs) (*graphqlbackend.EmptyResponse, error) {
-	err := backend.CheckCurrentUserIsSiteAdmin(ctx)
+	err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.Handle().DB())
 	if err != nil {
 		return nil, err
 	}
@@ -424,7 +424,7 @@ func (r *Resolver) isAllowedToCreate(ctx context.Context, owner graphql.ID) erro
 	}
 	switch kind := relay.UnmarshalKind(owner); kind {
 	case "User":
-		return backend.CheckSiteAdminOrSameUser(ctx, ownerInt32)
+		return backend.CheckSiteAdminOrSameUser(ctx, r.store.Handle().DB(), ownerInt32)
 	case "Org":
 		return backend.CheckOrgAccessOrSiteAdmin(ctx, r.store.Handle().DB(), ownerInt32)
 	default:
