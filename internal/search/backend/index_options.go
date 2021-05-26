@@ -32,6 +32,9 @@ type zoektIndexOptions struct {
 
 	// Error if non-empty indicates the request failed for the repo.
 	Error string `json:",omitempty"`
+
+	// Priority indicates ranking in results, higher first.
+	Priority float64 `json:",omitempty"`
 }
 
 // RepoIndexOptions are the options used by GetIndexOptions for a specific
@@ -44,6 +47,9 @@ type RepoIndexOptions struct {
 	// error is encoded in the body. If the revision is missing, an empty
 	// string should be returned rather than an error.
 	GetVersion func(branch string) (string, error)
+
+	// GetPriority returns the suggested priority for the repo, or 0 if none exists.
+	GetPriority func() float64
 }
 
 // GetIndexOptions returns a json blob for consumption by
@@ -91,6 +97,10 @@ func getIndexOptions(
 		RepoID:     opts.RepoID,
 		LargeFiles: c.SearchLargeFiles,
 		Symbols:    getBoolPtr(c.SearchIndexSymbolsEnabled, true),
+	}
+
+	if opts.GetPriority != nil {
+		o.Priority = opts.GetPriority()
 	}
 
 	// Set of branch names. Always index HEAD

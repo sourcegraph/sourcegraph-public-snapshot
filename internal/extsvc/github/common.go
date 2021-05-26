@@ -1578,8 +1578,8 @@ type Repository struct {
 	ViewerPermission string // ADMIN, WRITE, READ, or empty if unknown. Only the graphql api populates this. https://developer.github.com/v4/enum/repositorypermission/
 
 	// Metadata retained for ranking
-	StargazerCount int `json:"omitempty"`
-	ForkCount      int `json:"omitempty"`
+	StargazerCount int `json:",omitempty"`
+	ForkCount      int `json:",omitempty"`
 }
 
 func ownerNameCacheKey(owner, name string) string       { return "0:" + owner + "/" + name }
