@@ -90,6 +90,7 @@ func printDeployedVersion(e environment) error {
 
 	out.Write("")
 
+	var shaFound bool
 	for _, logLine := range strings.Split(log, "\n") {
 		elems := strings.SplitN(logLine, "|", 4)
 		sha := elems[0]
@@ -102,9 +103,15 @@ func printDeployedVersion(e environment) error {
 		if sha[0:len(buildSha)] == buildSha {
 			emoji = "🚀"
 			style = output.StyleLogo
+			shaFound = true
 		}
 
 		line := output.Linef(emoji, style, "%s (%s, %s): %s", sha, timestamp, author, message)
+		out.WriteLine(line)
+	}
+
+	if !shaFound {
+		line := output.Linef(output.EmojiWarning, output.StyleWarning, "Deployed SHA %s not found in last 20 commits on origin/main :(", buildSha)
 		out.WriteLine(line)
 	}
 
