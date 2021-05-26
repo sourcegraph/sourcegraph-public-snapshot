@@ -28,6 +28,7 @@ describe('SearchContextDropdown', () => {
         submitSearch: () => {},
         isSearchOnboardingTourVisible: false,
         hasUserAddedRepositories: false,
+        hasUserAddedExternalServices: false,
         isSourcegraphDotCom: false,
         authenticatedUser: null,
     }

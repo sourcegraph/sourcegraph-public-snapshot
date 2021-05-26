@@ -25,6 +25,7 @@ export interface SearchContextDropdownProps
     isSourcegraphDotCom: boolean
     authenticatedUser: AuthenticatedUser | null
     hasUserAddedRepositories: boolean
+    hasUserAddedExternalServices: boolean
     submitSearch: (args: SubmitSearchParameters) => void
     submitSearchOnSearchContextChange?: boolean
     query: string
@@ -138,6 +139,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         isSourcegraphDotCom,
         authenticatedUser,
         hasUserAddedRepositories,
+        hasUserAddedExternalServices,
         history,
         patternType,
         caseSensitive,
@@ -231,8 +233,11 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
                 </code>
             </DropdownToggle>
             <DropdownMenu positionFixed={true} className="search-context-dropdown__menu">
-                {isSourcegraphDotCom && !hasUserAddedRepositories ? (
-                    <SearchContextCtaPrompt authenticatedUser={authenticatedUser} />
+                {isSourcegraphDotCom && (!hasUserAddedExternalServices || !hasUserAddedRepositories) ? (
+                    <SearchContextCtaPrompt
+                        authenticatedUser={authenticatedUser}
+                        hasUserAddedExternalServices={hasUserAddedExternalServices}
+                    />
                 ) : (
                     <SearchContextMenu
                         {...props}

@@ -59,6 +59,7 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
     hasUserAddedRepositories: false,
+    hasUserAddedExternalServices: false,
 })
 
 const { add } = storiesOf('web/search/input/SearchPage', module).addParameters({

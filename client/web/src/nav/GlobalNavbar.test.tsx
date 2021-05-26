@@ -58,6 +58,7 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
     hasUserAddedRepositories: false,
+    hasUserAddedExternalServices: false,
 }
 
 describe('GlobalNavbar', () => {

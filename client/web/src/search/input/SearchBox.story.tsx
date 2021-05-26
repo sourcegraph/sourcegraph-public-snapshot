@@ -45,6 +45,7 @@ const defaultProps: SearchBoxProps = {
     isSearchOnboardingTourVisible: false,
     hasUserAddedRepositories: false,
     authenticatedUser: null,
+    hasUserAddedExternalServices: false,
 }
 
 add(

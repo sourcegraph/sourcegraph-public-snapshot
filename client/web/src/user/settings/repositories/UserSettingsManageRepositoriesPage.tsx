@@ -28,7 +28,7 @@ import {
 } from '../../../graphql-operations'
 import { queryUserPublicRepositories, setUserPublicRepositories } from '../../../site-admin/backend'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { UserRepositoriesUpdateProps } from '../../../util'
+import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
 
 import { CheckboxRepositoryNode } from './RepositoryNode'
 
@@ -38,7 +38,7 @@ interface authenticatedUser {
     tags: string[]
 }
 
-interface Props extends RouteComponentProps, TelemetryProps, UserRepositoriesUpdateProps {
+interface Props extends RouteComponentProps, TelemetryProps, UserExternalServicesOrRepositoriesUpdateProps {
     authenticatedUser: authenticatedUser
     routingPrefix: string
 }
@@ -142,7 +142,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     authenticatedUser,
     routingPrefix,
     telemetryService,
-    onUserRepositoriesUpdate,
+    onUserExternalServicesOrRepositoriesUpdate,
 }) => {
     useEffect(() => {
         telemetryService.logViewEvent('UserSettingsRepositories')
@@ -499,7 +499,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                                 )
                             ) {
                                 const repoCount = result.nodes.reduce((sum, codeHost) => sum + codeHost.repoCount, 0)
-                                onUserRepositoriesUpdate(repoCount)
+                                onUserExternalServicesOrRepositoriesUpdate(result.nodes.length, repoCount)
 
                                 // push the user back to the repo list page
                                 // location state is used here to prevent AwayPrompt from blocking
@@ -529,7 +529,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             codeHosts.hosts,
             selectionState.radio,
             selectionState.repos,
-            onUserRepositoriesUpdate,
+            onUserExternalServicesOrRepositoriesUpdate,
             history,
             routingPrefix,
         ]

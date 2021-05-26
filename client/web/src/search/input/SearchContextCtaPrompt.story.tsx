@@ -35,11 +35,33 @@ export const authUser: AuthenticatedUser = {
     databaseID: 0,
 }
 
-add('not authenticated', () => <WebStory>{() => <SearchContextCtaPrompt authenticatedUser={null} />}</WebStory>, {})
+add(
+    'not authenticated',
+    () => (
+        <WebStory>
+            {() => <SearchContextCtaPrompt authenticatedUser={null} hasUserAddedExternalServices={false} />}
+        </WebStory>
+    ),
+    {}
+)
 
 add(
-    'authenticated without private code',
-    () => <WebStory>{() => <SearchContextCtaPrompt authenticatedUser={authUser} />}</WebStory>,
+    'authenticated without added external services',
+    () => (
+        <WebStory>
+            {() => <SearchContextCtaPrompt authenticatedUser={authUser} hasUserAddedExternalServices={false} />}
+        </WebStory>
+    ),
+    {}
+)
+
+add(
+    'authenticated with added external services',
+    () => (
+        <WebStory>
+            {() => <SearchContextCtaPrompt authenticatedUser={authUser} hasUserAddedExternalServices={true} />}
+        </WebStory>
+    ),
     {}
 )
 
@@ -50,6 +72,7 @@ add(
             {() => (
                 <SearchContextCtaPrompt
                     authenticatedUser={{ ...authUser, tags: ['AllowUserExternalServicePrivate'] }}
+                    hasUserAddedExternalServices={false}
                 />
             )}
         </WebStory>

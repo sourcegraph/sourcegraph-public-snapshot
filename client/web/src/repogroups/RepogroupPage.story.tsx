@@ -108,6 +108,7 @@ const commonProps = () =>
         fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
         fetchSearchContexts: mockFetchSearchContexts,
         hasUserAddedRepositories: false,
+        hasUserAddedExternalServices: false,
     })
 
 add('Refactor Python 2 to 3', () => (

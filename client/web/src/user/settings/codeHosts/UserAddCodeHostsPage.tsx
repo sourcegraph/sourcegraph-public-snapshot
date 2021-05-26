@@ -12,14 +12,14 @@ import { PageTitle } from '../../../components/PageTitle'
 import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
 import { SourcegraphContext } from '../../../jscontext'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { UserRepositoriesUpdateProps } from '../../../util'
+import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
 
 import { CodeHostItem } from './CodeHostItem'
 
 type AuthProvider = SourcegraphContext['authProviders'][0]
 type AuthProvidersByKind = Partial<Record<ExternalServiceKind, AuthProvider>>
 
-export interface UserAddCodeHostsPageProps extends UserRepositoriesUpdateProps {
+export interface UserAddCodeHostsPageProps extends UserExternalServicesOrRepositoriesUpdateProps {
     user: { id: Scalars['ID']; tags: string[] }
     codeHostExternalServices: Record<string, AddExternalServiceOptions>
     routingPrefix: string
@@ -59,7 +59,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     codeHostExternalServices,
     routingPrefix,
     context,
-    onUserRepositoriesUpdate,
+    onUserExternalServicesOrRepositoriesUpdate,
 }) => {
     const [statusOrError, setStatusOrError] = useState<Status>()
     const [oauthRequestFor, setOauthRequestFor] = useState<ExternalServiceKind>()
@@ -82,8 +82,8 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         setStatusOrError(services)
 
         const repoCount = fetchedServices.reduce((sum, codeHost) => sum + codeHost.repoCount, 0)
-        onUserRepositoriesUpdate(repoCount)
-    }, [user.id, onUserRepositoriesUpdate])
+        onUserExternalServicesOrRepositoriesUpdate(fetchedServices.length, repoCount)
+    }, [user.id, onUserExternalServicesOrRepositoriesUpdate])
 
     useEffect(() => {
         eventLogger.logViewEvent('UserSettingsCodeHostConnections')
