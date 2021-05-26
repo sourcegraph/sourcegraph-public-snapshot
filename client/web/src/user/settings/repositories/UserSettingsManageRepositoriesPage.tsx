@@ -90,14 +90,6 @@ const initialSelectionState = {
 type initialFetchingReposState = undefined | 'loading'
 type affiliateRepoProblemType = undefined | string | ErrorLike | ErrorLike[]
 
-const isLoading = (status: initialFetchingReposState): boolean => {
-    if (!status) {
-        return false
-    }
-
-    return ['loading'].includes(status)
-}
-
 const displayWarning = (warning: string, hint?: JSX.Element): JSX.Element => (
     <div key={warning} className="alert alert-warning mt-3 mb-0" role="alert">
         <AlertCircleIcon className="redesign-d-none icon icon-inline" /> {warning}. {hint}{' '}
@@ -795,12 +787,12 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             />
             <Form className="mt-4 d-flex" onSubmit={submit}>
                 <LoaderButton
-                    loading={isLoading(fetchingRepos)}
+                    loading={fetchingRepos === 'loading'}
                     className="btn btn-primary test-goto-add-external-service-page mr-2"
                     alwaysShowLabel={true}
                     type="submit"
                     label={fetchingRepos ? 'Saving...' : 'Save'}
-                    disabled={isLoading(fetchingRepos)}
+                    disabled={fetchingRepos === 'loading'}
                 />
 
                 <Link
