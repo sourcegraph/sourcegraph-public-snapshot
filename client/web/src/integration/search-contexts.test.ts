@@ -189,12 +189,12 @@ describe.only('Search contexts', () => {
         //     latency: 1000,
         // })
 
-        // testContext.overrideGraphQL({
-        //     ...testContextForSearchContexts,
-        //     IsSearchContextAvailable: () => ({
-        //         isSearchContextAvailable: true,
-        //     }),
-        // })
+        testContext.overrideGraphQL({
+            ...testContextForSearchContexts,
+            IsSearchContextAvailable: () => ({
+                isSearchContextAvailable: true,
+            }),
+        })
 
         console.log('goes')
         await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=context:%40test+test&patternType=regexp', {
