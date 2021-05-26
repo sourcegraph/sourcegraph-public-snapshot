@@ -64,6 +64,16 @@ var (
 		Exec:       doctorExec,
 		UsageFunc:  printDoctorUsage,
 	}
+
+	liveFlagSet = flag.NewFlagSet("sg live", flag.ExitOnError)
+	liveCommand = &ffcli.Command{
+		Name:       "live",
+		ShortUsage: "sg live <environment>",
+		ShortHelp:  "Reports which version of Sourcegraph is currently live in the given environment",
+		FlagSet:    liveFlagSet,
+		Exec:       liveExec,
+		UsageFunc:  printLiveUsage,
+	}
 )
 
 const (
@@ -100,7 +110,14 @@ var (
 
 			return out.String()
 		},
-		Subcommands: []*ffcli.Command{runCommand, runSetCommand, startCommand, testCommand, doctorCommand},
+		Subcommands: []*ffcli.Command{
+			runCommand,
+			runSetCommand,
+			startCommand,
+			testCommand,
+			doctorCommand,
+			liveCommand,
+		},
 	}
 )
 
@@ -241,6 +258,26 @@ func doctorExec(ctx context.Context, args []string) error {
 	return runChecks(ctx, conf.Checks)
 }
 
+func liveExec(ctx context.Context, args []string) error {
+	if len(args) == 0 {
+		out.WriteLine(output.Linef("", output.StyleWarning, "No environment specified\n"))
+		return flag.ErrHelp
+	}
+
+	if len(args) != 1 {
+		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments\n"))
+		return flag.ErrHelp
+	}
+
+	e, ok := getEnvironment(args[0])
+	if !ok {
+		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: environment %q not found :(\n", args[0]))
+		return flag.ErrHelp
+	}
+
+	return printDeployedVersion(e)
+}
+
 func printRunUsage(c *ffcli.Command) string {
 	var out strings.Builder
 
@@ -320,6 +357,21 @@ func printDoctorUsage(c *ffcli.Command) string {
 
 	fmt.Fprintf(&out, "USAGE\n")
 	fmt.Fprintf(&out, "  sg doctor\n")
+
+	return out.String()
+}
+
+func printLiveUsage(c *ffcli.Command) string {
+	var out strings.Builder
+
+	fmt.Fprintf(&out, "USAGE\n")
+	fmt.Fprintf(&out, "  sg live <environment>\n")
+	fmt.Fprintf(&out, "\n")
+	fmt.Fprintf(&out, "AVAILABLE ENVIRONMENTS\n")
+
+	for _, name := range environmentNames() {
+		fmt.Fprintf(&out, "  %s\n", name)
+	}
 
 	return out.String()
 }
