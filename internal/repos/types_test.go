@@ -7,10 +7,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -261,4 +264,21 @@ type MockExternalServicesLister struct {
 
 func (m MockExternalServicesLister) List(ctx context.Context, args database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 	return m.list(ctx, args)
+}
+
+func TestGrantedScopes(t *testing.T) {
+	want := []string{"repo"}
+	github.MockGetAuthenticatedUserOAuthScopes = func(ctx context.Context) ([]string, error) {
+		return want, nil
+	}
+
+	ctx := context.Background()
+	have, err := GrantedScopes(ctx, extsvc.KindGitHub, `{}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if diff := cmp.Diff(want, have); diff != "" {
+		t.Fatal(diff)
+	}
 }
