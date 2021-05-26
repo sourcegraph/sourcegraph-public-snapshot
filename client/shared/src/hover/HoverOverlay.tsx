@@ -35,15 +35,14 @@ export type HoverContext = RepoSpec & RevisionSpec & FileSpec & ResolvedRevision
 export interface HoverOverlayClassProps {
     /** An optional class name to apply to the outermost element of the HoverOverlay */
     className?: string
-    iconButtonClassName?: string
+    closeButtonClassName?: string
 
     iconClassName?: string
 
     actionItemClassName?: string
     actionItemPressedClassName?: string
 
-    infoAlertClassName?: string
-    errorAlertClassName?: string
+    getAlertClassName?: (kind: Required<HoverAlert>['iconKind']) => string | undefined
 }
 
 export interface HoverOverlayProps
@@ -118,11 +117,14 @@ export class HoverOverlay extends React.PureComponent<HoverOverlayProps> {
             className = '',
             actionItemClassName,
             actionItemPressedClassName,
+            getAlertClassName,
         } = this.props
 
         if (!hoverOrError && (!actionsOrError || isErrorLike(actionsOrError))) {
             return null
         }
+
+        const errorAlertClassName = getAlertClassName?.('error')
 
         return (
             <div
@@ -150,7 +152,7 @@ export class HoverOverlay extends React.PureComponent<HoverOverlayProps> {
                             type="button"
                             className={classNames(
                                 'hover-overlay__close-button',
-                                this.props.iconButtonClassName,
+                                this.props.closeButtonClassName,
                                 hoverOrError === LOADING && 'hover-overlay__close-button--loading'
                             )}
                             onClick={onCloseButtonClick ? transformMouseEvent(onCloseButtonClick) : undefined}
@@ -163,7 +165,7 @@ export class HoverOverlay extends React.PureComponent<HoverOverlayProps> {
                             <LoadingSpinner className={this.props.iconClassName} />
                         </div>
                     ) : isErrorLike(hoverOrError) ? (
-                        <div className={classNames('hover-overlay__hover-error', this.props.errorAlertClassName)}>
+                        <div className={classNames('hover-overlay__hover-error', errorAlertClassName)}>
                             {upperFirst(hoverOrError.message)}
                         </div>
                     ) : hoverOrError === null || (!hoverOrError?.contents.length && hoverOrError?.alerts?.length) ? (
@@ -202,10 +204,7 @@ export class HoverOverlay extends React.PureComponent<HoverOverlayProps> {
                                 } catch (error) {
                                     return (
                                         <div
-                                            className={classNames(
-                                                'hover-overlay__icon',
-                                                this.props.errorAlertClassName
-                                            )}
+                                            className={classNames('hover-overlay__icon', errorAlertClassName)}
                                             key={index}
                                         >
                                             {upperFirst(asError(error).message)}
@@ -229,7 +228,7 @@ export class HoverOverlay extends React.PureComponent<HoverOverlayProps> {
                         <div className="hover-overlay__alerts">
                             {hoverOrError.alerts.map(({ summary, iconKind, type }, index) => (
                                 <div
-                                    className={classNames('hover-overlay__alert', this.props.infoAlertClassName)}
+                                    className={classNames('hover-overlay__alert', getAlertClassName?.('info'))}
                                     key={index}
                                 >
                                     {hoverAlertIconComponent(iconKind, this.props.iconClassName)}

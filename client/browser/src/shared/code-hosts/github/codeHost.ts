@@ -19,6 +19,7 @@ import { fetchBlobContentLines } from '../../repo/backend'
 import { querySelectorAllOrSelf, querySelectorOrSelf } from '../../util/dom'
 import { CodeHost, MountGetter } from '../shared/codeHost'
 import { CodeView, toCodeViewResolver } from '../shared/codeViews'
+import { createNotificationClassNameGetter } from '../shared/getNotificationClassName'
 import { NativeTooltip } from '../shared/nativeTooltips'
 import { getSelectionsFromHash, observeSelectionsFromHash } from '../shared/util/selections'
 import { ViewResolver } from '../shared/views'
@@ -309,6 +310,14 @@ const nativeTooltipResolver: ViewResolver<NativeTooltip> = {
 
 const iconClassName = 'icon--github v-align-text-bottom'
 
+const notificationClassNames = {
+    [NotificationType.Log]: 'flash',
+    [NotificationType.Success]: 'flash flash-success',
+    [NotificationType.Info]: 'flash',
+    [NotificationType.Warning]: 'flash flash-warn',
+    [NotificationType.Error]: 'flash flash-error',
+}
+
 export const githubCodeHost: CodeHost = {
     type: 'github',
     name: checkIsGitHubEnterprise() ? 'GitHub Enterprise' : 'GitHub',
@@ -349,13 +358,7 @@ export const githubCodeHost: CodeHost = {
     },
     check: checkIsGitHub,
     getCommandPaletteMount,
-    notificationClassNames: {
-        [NotificationType.Log]: 'flash',
-        [NotificationType.Success]: 'flash flash-success',
-        [NotificationType.Info]: 'flash',
-        [NotificationType.Warning]: 'flash flash-warn',
-        [NotificationType.Error]: 'flash flash-error',
-    },
+    notificationClassNames,
     commandPaletteClassProps: {
         buttonClassName: 'Header-link',
         popoverClassName: 'Box',
@@ -381,9 +384,8 @@ export const githubCodeHost: CodeHost = {
         className: 'Box',
         actionItemClassName: 'btn btn-secondary',
         actionItemPressedClassName: 'active',
-        iconButtonClassName: 'btn-octicon p-0',
-        infoAlertClassName: 'flash flash-full',
-        errorAlertClassName: 'flash flash-full flash-error',
+        closeButtonClassName: 'btn-octicon p-0',
+        getAlertClassName: createNotificationClassNameGetter(notificationClassNames, 'flash-full'),
         iconClassName,
     },
     setElementTooltip,

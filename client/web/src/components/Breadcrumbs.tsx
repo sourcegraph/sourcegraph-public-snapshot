@@ -8,6 +8,8 @@ import { Unsubscribable } from 'sourcegraph'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { isDefined } from '@sourcegraph/shared/src/util/types'
 
+import styles from './Breadcrumbs.module.scss'
+
 export type Breadcrumb = ElementBreadcrumb | LinkBreadcrumb
 
 interface BaseBreadcrumb {
@@ -152,12 +154,14 @@ export const Breadcrumbs: React.FunctionComponent<{ breadcrumbs: BreadcrumbAtDep
     breadcrumbs,
     location,
 }) => (
-    <nav className="d-flex py-2 container-fluid flex-nowrap flex-shrink-past-contents" aria-label="Breadcrumbs">
+    <nav className="d-flex p-2 container-fluid flex-nowrap flex-shrink-past-contents" aria-label="Breadcrumbs">
         {sortBy(breadcrumbs, 'depth')
             .map(({ breadcrumb }) => breadcrumb)
             .filter(isDefined)
             .map((breadcrumb, index, validBreadcrumbs) => {
-                const divider = breadcrumb.divider ?? <ChevronRightIcon className="icon-inline" />
+                const divider = breadcrumb.divider ?? (
+                    <ChevronRightIcon className={classNames('icon-inline', styles.divider)} />
+                )
                 // When the last breadcrumbs is a link and the hash is empty (to allow user to reset hash),
                 // render link breadcrumbs as plain text
                 return (

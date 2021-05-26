@@ -219,7 +219,7 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 	}
 	tr.LogFields(otlog.Bool("globbing", globbing))
 
-	filters := SearchFilters{
+	filters := streaming.SearchFilters{
 		Globbing: globbing,
 	}
 	filters.Update(streaming.SearchEvent{

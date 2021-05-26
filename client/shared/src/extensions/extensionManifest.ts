@@ -3,6 +3,7 @@ import { isPlainObject } from 'lodash'
 import { ExtensionManifest as ExtensionManifestSchema, EXTENSION_HEADER_COLORS } from '../schema/extensionSchema'
 import { ErrorLike, isErrorLike } from '../util/errors'
 import { parseJSONCOrError } from '../util/jsonc'
+import { isDefined } from '../util/types'
 
 /**
  * Represents an input object that is validated against a subset of properties of the {@link ExtensionManifest}
@@ -11,6 +12,7 @@ import { parseJSONCOrError } from '../util/jsonc'
 export type ExtensionManifest = Pick<
     ExtensionManifestSchema,
     | 'description'
+    | 'wip'
     | 'repository'
     | 'categories'
     | 'tags'
@@ -48,6 +50,9 @@ export function parseExtensionManifestOrError(input: string): ExtensionManifest 
                     problems.push('"repository" property "url" must be a string')
                 }
             }
+        }
+        if (isDefined(value.wip) && typeof value.wip !== 'boolean') {
+            problems.push('"wip" property "type" must be a boolean')
         }
         if (
             value.categories &&

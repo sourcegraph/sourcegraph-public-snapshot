@@ -13,6 +13,8 @@ describe('ExtensionsQueryInputToolbar', () => {
                         onSelectCategory={() => {}}
                         enablementFilter="all"
                         setEnablementFilter={() => {}}
+                        showExperimentalExtensions={true}
+                        toggleExperimentalExtensions={() => {}}
                     />
                 )
                 .toJSON()
