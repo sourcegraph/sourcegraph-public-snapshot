@@ -45,6 +45,14 @@ type AWSCodeCommitGitCredentials struct {
 	// Username description: The Git username
 	Username string `json:"username"`
 }
+
+// AWSKMSEncryptionKey description: AWS KMS Encryption Key, used to encrypt data in AWS environments
+type AWSKMSEncryptionKey struct {
+	CredentialsFile string `json:"credentialsFile,omitempty"`
+	KeyId           string `json:"keyId"`
+	Region          string `json:"region,omitempty"`
+	Type            string `json:"type"`
+}
 type AdditionalProperties struct {
 	// Format description: The expected format of the output. If set, the output is being parsed in that format before being stored in the var. If not set, 'text' is assumed to the format.
 	Format string `json:"format,omitempty"`
@@ -404,6 +412,7 @@ type Dotcom struct {
 // EncryptionKey description: Config for a key
 type EncryptionKey struct {
 	Cloudkms *CloudKMSEncryptionKey
+	Awskms   *AWSKMSEncryptionKey
 	Mounted  *MountedEncryptionKey
 	Noop     *NoOpEncryptionKey
 }
@@ -411,6 +420,9 @@ type EncryptionKey struct {
 func (v EncryptionKey) MarshalJSON() ([]byte, error) {
 	if v.Cloudkms != nil {
 		return json.Marshal(v.Cloudkms)
+	}
+	if v.Awskms != nil {
+		return json.Marshal(v.Awskms)
 	}
 	if v.Mounted != nil {
 		return json.Marshal(v.Mounted)
@@ -428,6 +440,8 @@ func (v *EncryptionKey) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	switch d.DiscriminantProperty {
+	case "awskms":
+		return json.Unmarshal(data, &v.Awskms)
 	case "cloudkms":
 		return json.Unmarshal(data, &v.Cloudkms)
 	case "mounted":
@@ -435,7 +449,7 @@ func (v *EncryptionKey) UnmarshalJSON(data []byte) error {
 	case "noop":
 		return json.Unmarshal(data, &v.Noop)
 	}
-	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"cloudkms", "mounted", "noop"})
+	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"cloudkms", "awskms", "mounted", "noop"})
 }
 
 // EncryptionKeys description: Configuration for encryption keys used to encrypt data at rest in the database.
