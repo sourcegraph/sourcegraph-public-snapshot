@@ -11,6 +11,7 @@
         @media (--xs-breakpoint-down) {
             background-color: var(--color-bg-1);
             border: 1px solid var(--input-border-color);
+            border-radius: var(--border-radius);
             display: inline;
             padding: 0.5rem;
         }
