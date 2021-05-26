@@ -6,6 +6,8 @@ import (
 	"net/url"
 	"sort"
 
+	"github.com/sourcegraph/sourcegraph/internal/repos"
+
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -387,7 +389,7 @@ func extractCloneURL(ctx context.Context, s *database.ExternalServiceStore, repo
 	for _, svc := range svcs {
 		// build the clone url using the external service config instead of using
 		// the source CloneURL field
-		cloneURL, err := types.RepoCloneURL(svc.Kind, svc.Config, repo)
+		cloneURL, err := repos.CloneURL(svc.Kind, svc.Config, repo)
 		if err != nil {
 			return "", err
 		}

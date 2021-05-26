@@ -12,6 +12,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/repos"
+
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 
 	"github.com/inconshreveable/log15"
@@ -34,7 +36,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -103,7 +104,7 @@ func main() {
 					return "", err
 				}
 
-				return types.RepoCloneURL(svc.Kind, svc.Config, r)
+				return repos.CloneURL(svc.Kind, svc.Config, r)
 			}
 			return "", fmt.Errorf("no sources for %q", repo)
 		},
