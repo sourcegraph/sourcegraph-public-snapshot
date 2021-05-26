@@ -2,7 +2,7 @@
 
 exports[`codeHost handleCodeHost() Decorations decorates a diff code view 1`] = `
 <div
-  class="test test-6 sg-mounted"
+  class="test test-test-id sg-mounted"
   id="code"
 >
   <div
@@ -91,7 +91,7 @@ exports[`codeHost handleCodeHost() Decorations decorates a diff code view 1`] = 
 
 exports[`codeHost handleCodeHost() Decorations decorates a diff code view 2`] = `
 <div
-  class="test test-6 sg-mounted"
+  class="test test-test-id sg-mounted"
   id="code"
 >
   <div
@@ -173,7 +173,7 @@ exports[`codeHost handleCodeHost() Decorations decorates a diff code view 2`] = 
 
 exports[`codeHost handleCodeHost() Decorations decorates a diff code view 3`] = `
 <div
-  class="test test-6 sg-mounted"
+  class="test test-test-id sg-mounted"
   id="code"
 >
   <div
