@@ -49,7 +49,7 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
     }),
 }
 
-describe.only('Search contexts', () => {
+describe('Search contexts', () => {
     let driver: Driver
     before(async () => {
         driver = await createDriverForTest()
@@ -72,15 +72,7 @@ describe.only('Search contexts', () => {
         })
     })
     afterEachSaveScreenshotIfFailed(() => driver.page)
-    afterEach(async () => {
-        console.log('before clear')
-        await driver.page.evaluate(() => localStorage.clear())
-        console.log('after clear')
-        if (testContext) {
-            await testContext.dispose()
-            console.log('after dispose')
-        }
-    })
+    afterEach(() => testContext?.dispose())
 
     const getSearchFieldValue = (driver: Driver): Promise<string | undefined> =>
         driver.page.evaluate(() => document.querySelector<HTMLTextAreaElement>('#monaco-query-input textarea')?.value)
@@ -178,17 +170,9 @@ describe.only('Search contexts', () => {
     const isSearchContextDropdownDisabled = () =>
         driver.page.evaluate(() => document.querySelector<HTMLButtonElement>('.test-search-context-dropdown')?.disabled)
 
+    const clearLocalStorage = () => driver.page.evaluate(() => localStorage.clear())
+
     test('Search context selected based on URL', async () => {
-        // const client = await driver.page.target().createCDPSession()
-
-        // Set throttling property
-        // await client.send('Network.emulateNetworkConditions', {
-        //     offline: false,
-        //     downloadThroughput: (1 * 1024) / 8,
-        //     uploadThroughput: (1 * 1024) / 8,
-        //     latency: 1000,
-        // })
-
         testContext.overrideGraphQL({
             ...testContextForSearchContexts,
             IsSearchContextAvailable: () => ({
@@ -196,11 +180,9 @@ describe.only('Search contexts', () => {
             }),
         })
 
-        console.log('goes')
         await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=context:%40test+test&patternType=regexp', {
             waitUntil: 'networkidle0',
         })
-        console.log('waiting')
         await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
         expect(await getSelectedSearchContextSpec()).toStrictEqual('context:@test')
     })
@@ -213,6 +195,7 @@ describe.only('Search contexts', () => {
         await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
         await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
         expect(await getSelectedSearchContextSpec()).toStrictEqual('context:global')
+        await clearLocalStorage()
     })
 
     test('Unavailable search context should remain in the query and disable the search context dropdown', async () => {
@@ -254,6 +237,7 @@ describe.only('Search contexts', () => {
         })
         await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
         expect(await getSelectedSearchContextSpec()).toStrictEqual('context:global')
+        await clearLocalStorage()
     })
 
     test('Disable dropdown if version context is active', async () => {
@@ -341,6 +325,7 @@ describe.only('Search contexts', () => {
         await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
         await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
         expect(await isSearchContextHighlightTourStepVisible()).toBeTruthy()
+        await clearLocalStorage()
     })
 
     test('Highlight tour step should not be visible if already seen with cancelled search onboarding tour on search homepage', async () => {
@@ -354,6 +339,7 @@ describe.only('Search contexts', () => {
         await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
         await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
         expect(await isSearchContextHighlightTourStepVisible()).toBeFalsy()
+        await clearLocalStorage()
     })
 
     test('Create search context', async () => {
