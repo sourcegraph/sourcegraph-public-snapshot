@@ -30,7 +30,7 @@ function hoverAlertIconComponent(
 ): JSX.Element | undefined {
     const PredefinedIcon = iconKind && hoverAlertIconComponents[iconKind]
 
-    return PredefinedIcon && <PredefinedIcon className={classNames('mr-1', className)} />
+    return PredefinedIcon && <PredefinedIcon className={classNames('hover-overlay__alert-icon', className)} />
 }
 
 export const HoverOverlayAlerts: React.FunctionComponent<HoverOverlayAlertsProps> = props => {
