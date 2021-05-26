@@ -63,20 +63,20 @@ func testNewFeatureFlagRoundtrip(t *testing.T) {
 			flag: &ff.FeatureFlag{Name: "bool_false", Bool: &ff.FeatureFlagBool{Value: false}},
 		},
 		{
-			flag: &ff.FeatureFlag{Name: "min_rollout", BoolVar: &ff.FeatureFlagBoolVar{Rollout: 0}},
+			flag: &ff.FeatureFlag{Name: "min_rollout", Rollout: &ff.FeatureFlagRollout{Rollout: 0}},
 		},
 		{
-			flag: &ff.FeatureFlag{Name: "mid_rollout", BoolVar: &ff.FeatureFlagBoolVar{Rollout: 3124}},
+			flag: &ff.FeatureFlag{Name: "mid_rollout", Rollout: &ff.FeatureFlagRollout{Rollout: 3124}},
 		},
 		{
-			flag: &ff.FeatureFlag{Name: "max_rollout", BoolVar: &ff.FeatureFlagBoolVar{Rollout: 10000}},
+			flag: &ff.FeatureFlag{Name: "max_rollout", Rollout: &ff.FeatureFlagRollout{Rollout: 10000}},
 		},
 		{
-			flag:      &ff.FeatureFlag{Name: "err_too_high_rollout", BoolVar: &ff.FeatureFlagBoolVar{Rollout: 10001}},
+			flag:      &ff.FeatureFlag{Name: "err_too_high_rollout", Rollout: &ff.FeatureFlagRollout{Rollout: 10001}},
 			assertErr: errorContains(`violates check constraint "feature_flags_rollout_check"`),
 		},
 		{
-			flag:      &ff.FeatureFlag{Name: "err_too_low_rollout", BoolVar: &ff.FeatureFlagBoolVar{Rollout: -1}},
+			flag:      &ff.FeatureFlag{Name: "err_too_low_rollout", Rollout: &ff.FeatureFlagRollout{Rollout: -1}},
 			assertErr: errorContains(`violates check constraint "feature_flags_rollout_check"`),
 		},
 		{
@@ -98,7 +98,7 @@ func testNewFeatureFlagRoundtrip(t *testing.T) {
 			// Don't bother with the timestamps
 			require.Equal(t, tc.flag.Name, res.Name)
 			require.Equal(t, tc.flag.Bool, res.Bool)
-			require.Equal(t, tc.flag.BoolVar, res.BoolVar)
+			require.Equal(t, tc.flag.Rollout, res.Rollout)
 		})
 	}
 }
@@ -110,8 +110,8 @@ func testListFeatureFlags(t *testing.T) {
 
 	flag1 := &ff.FeatureFlag{Name: "bool_true", Bool: &ff.FeatureFlagBool{Value: true}}
 	flag2 := &ff.FeatureFlag{Name: "bool_false", Bool: &ff.FeatureFlagBool{Value: false}}
-	flag3 := &ff.FeatureFlag{Name: "mid_rollout", BoolVar: &ff.FeatureFlagBoolVar{Rollout: 3124}}
-	flag4 := &ff.FeatureFlag{Name: "deletable", BoolVar: &ff.FeatureFlagBoolVar{Rollout: 3125}}
+	flag3 := &ff.FeatureFlag{Name: "mid_rollout", Rollout: &ff.FeatureFlagRollout{Rollout: 3124}}
+	flag4 := &ff.FeatureFlag{Name: "deletable", Rollout: &ff.FeatureFlagRollout{Rollout: 3125}}
 	flags := []*ff.FeatureFlag{flag1, flag2, flag3, flag4}
 
 	for _, flag := range flags {

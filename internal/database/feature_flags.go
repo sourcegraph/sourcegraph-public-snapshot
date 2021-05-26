@@ -67,9 +67,9 @@ func (f *FeatureFlagStore) CreateFeatureFlag(ctx context.Context, flag *ff.Featu
 	case flag.Bool != nil:
 		flagType = "bool"
 		boolVal = &flag.Bool.Value
-	case flag.BoolVar != nil:
-		flagType = "bool_var"
-		rollout = &flag.BoolVar.Rollout
+	case flag.Rollout != nil:
+		flagType = "rollout"
+		rollout = &flag.Rollout.Rollout
 	default:
 		return nil, errors.New("feature flag must have exactly one type")
 	}
@@ -86,7 +86,7 @@ func (f *FeatureFlagStore) CreateFeatureFlag(ctx context.Context, flag *ff.Featu
 func (f *FeatureFlagStore) CreateBoolVar(ctx context.Context, name string, rollout int) (*ff.FeatureFlag, error) {
 	return f.CreateFeatureFlag(ctx, &ff.FeatureFlag{
 		Name: name,
-		BoolVar: &ff.FeatureFlagBoolVar{
+		Rollout: &ff.FeatureFlagRollout{
 			Rollout: rollout,
 		},
 	})
@@ -136,11 +136,11 @@ func scanFeatureFlag(scanner rowScanner) (*ff.FeatureFlag, error) {
 		res.Bool = &ff.FeatureFlagBool{
 			Value: *boolVal,
 		}
-	case "bool_var":
+	case "rollout":
 		if rollout == nil {
 			return nil, ErrInvalidColumnState
 		}
-		res.BoolVar = &ff.FeatureFlagBoolVar{
+		res.Rollout = &ff.FeatureFlagRollout{
 			Rollout: *rollout,
 		}
 	default:
@@ -316,8 +316,8 @@ func (f *FeatureFlagStore) GetUserFlags(ctx context.Context, userID int32) (map[
 		switch {
 		case ff.Bool != nil:
 			res[ff.Name] = ff.Bool.Value
-		case ff.BoolVar != nil:
-			res[ff.Name] = hashUserAndFlag(userID, ff.Name)%10000 < uint32(ff.BoolVar.Rollout)
+		case ff.Rollout != nil:
+			res[ff.Name] = hashUserAndFlag(userID, ff.Name)%10000 < uint32(ff.Rollout.Rollout)
 		}
 
 		// Org overrides are higher priority than default
@@ -353,8 +353,8 @@ func (f *FeatureFlagStore) GetAnonymousUserFlags(ctx context.Context, anonymousU
 		switch {
 		case ff.Bool != nil:
 			res[ff.Name] = ff.Bool.Value
-		case ff.BoolVar != nil:
-			res[ff.Name] = hashAnonymousUserAndFlag(anonymousUID, ff.Name)%10000 < uint32(ff.BoolVar.Rollout)
+		case ff.Rollout != nil:
+			res[ff.Name] = hashAnonymousUserAndFlag(anonymousUID, ff.Name)%10000 < uint32(ff.Rollout.Rollout)
 		}
 	}
 

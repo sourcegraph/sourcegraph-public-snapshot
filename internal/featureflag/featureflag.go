@@ -8,7 +8,7 @@ type FeatureFlag struct {
 	// A feature flag is one of the following types.
 	// Exactly one of the following will be set.
 	Bool    *FeatureFlagBool
-	BoolVar *FeatureFlagBoolVar
+	Rollout *FeatureFlagRollout
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
@@ -19,7 +19,7 @@ type FeatureFlagBool struct {
 	Value bool
 }
 
-type FeatureFlagBoolVar struct {
+type FeatureFlagRollout struct {
 	// Rollout is an integer between 0 and 10000, representing the percent of
 	// users for which this feature flag will evaluate to 'true' in increments
 	// of 0.01%

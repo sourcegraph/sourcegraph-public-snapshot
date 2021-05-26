@@ -1,6 +1,6 @@
 BEGIN;
 
-CREATE TYPE feature_flag_type AS ENUM ('bool', 'bool_var');
+CREATE TYPE feature_flag_type AS ENUM ('bool', 'rollout');
 
 CREATE TABLE IF NOT EXISTS feature_flags (
 	flag_name text NOT NULL PRIMARY KEY,
@@ -18,17 +18,17 @@ CREATE TABLE IF NOT EXISTS feature_flags (
 		ELSE 1
 	END),
 
-	CONSTRAINT required_bool_var_fields CHECK (1 = CASE
-		WHEN flag_type = 'bool_var' AND rollout IS NULL THEN 0
-		WHEN flag_type <> 'bool_var' AND rollout IS NOT NULL THEN 0
+	CONSTRAINT required_rollout_fields CHECK (1 = CASE
+		WHEN flag_type = 'rollout' AND rollout IS NULL THEN 0
+		WHEN flag_type <> 'rollout' AND rollout IS NOT NULL THEN 0
 		ELSE 1
 	END)
 );
 
 COMMENT ON COLUMN feature_flags.bool_value IS 'Bool value only defined when flag_type is bool';
-COMMENT ON COLUMN feature_flags.rollout IS 'Rollout only defined when flag_type is bool_var. Increments of 0.01%';
+COMMENT ON COLUMN feature_flags.rollout IS 'Rollout only defined when flag_type is rollout. Increments of 0.01%';
 COMMENT ON CONSTRAINT required_bool_fields ON feature_flags IS 'Checks that bool_value is set IFF flag_type = bool';
-COMMENT ON CONSTRAINT required_bool_var_fields ON feature_flags IS 'Checks that rollout is set IFF flag_type = bool_var';
+COMMENT ON CONSTRAINT required_rollout_fields ON feature_flags IS 'Checks that rollout is set IFF flag_type = rollout';
 
 CREATE TABLE IF NOT EXISTS feature_flag_overrides (
 	namespace_org_id integer,
