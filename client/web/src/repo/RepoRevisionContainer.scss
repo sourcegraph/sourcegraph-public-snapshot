@@ -48,5 +48,16 @@
         min-width: 0;
 
         background-color: var(--body-bg);
+
+        .theme-redesign & {
+            background-color: var(--code-bg);
+            border-top-left-radius: var(--border-radius);
+            border-top-right-radius: var(--border-radius);
+            border: 1px solid var(--border-color-2);
+        }
+    }
+
+    .theme-redesign & {
+        padding-right: 1rem;
     }
 }

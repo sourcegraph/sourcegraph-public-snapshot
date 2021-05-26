@@ -3,11 +3,16 @@
 
 .repo-header {
     flex: none;
-    padding: 0;
+    padding: 0 0 0 0.5rem;
     align-items: stretch;
     border-color: var(--border-color);
     border-style: solid;
     border-width: 0 0 1px;
+
+    .theme-redesign & {
+        padding: 0 1rem;
+        border: none;
+    }
 
     &--alert {
         border-width: 1px 0;
