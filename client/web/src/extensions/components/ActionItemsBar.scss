@@ -6,6 +6,7 @@ $default-icon-colors: $oc-grape-7, $oc-violet-7, $oc-cyan-9, $oc-indigo-7, $oc-p
     --action-item-container-width: 2.5625rem; // 2.5rem + 1px
 
     &__bar {
+        flex: 0 0 auto;
         // We won't need hacky container width in the redesign.
         // Remove this var and use --action-item-width everywhere.
         width: var(--action-item-container-width);
@@ -84,7 +85,6 @@ $default-icon-colors: $oc-grape-7, $oc-violet-7, $oc-cyan-9, $oc-indigo-7, $oc-p
 
     &__list {
         overflow-y: auto;
-        width: var(--action-item-width);
 
         scrollbar-width: none;
         &::-webkit-scrollbar {
