@@ -304,12 +304,11 @@ func (f *FeatureFlagStore) GetUserFlags(ctx context.Context, userID int32) (map[
 		return err
 	})
 
-	err := g.Wait()
-	if err != nil {
+	if err := g.Wait(); err != nil {
 		return nil, err
 	}
 
-	res := make(map[string]bool, max(len(flags), len(orgOverrides), len(userOverrides)))
+	res := make(map[string]bool, len(flags))
 	for _, ff := range flags {
 		res[ff.Name] = ff.EvaluateForUser(userID)
 
@@ -356,14 +355,4 @@ func (f *FeatureFlagStore) GetGlobalFeatureFlags(ctx context.Context) (map[strin
 	}
 
 	return res, nil
-}
-
-func max(vals ...int) int {
-	res := 0
-	for _, val := range vals {
-		if val > res {
-			res = val
-		}
-	}
-	return res
 }
