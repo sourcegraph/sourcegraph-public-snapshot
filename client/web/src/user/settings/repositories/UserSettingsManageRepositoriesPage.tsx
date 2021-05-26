@@ -31,6 +31,7 @@ import { eventLogger } from '../../../tracking/eventLogger'
 import { UserRepositoriesUpdateProps } from '../../../util'
 
 import { CheckboxRepositoryNode } from './RepositoryNode'
+import { externalServiceUserModeFromTags } from '../cloud-ga'
 
 interface authenticatedUser {
     id: string
@@ -150,7 +151,8 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     }, [telemetryService])
 
     // if we should tweak UI messaging and copy
-    const ALLOW_PRIVATE_CODE = authenticatedUser.tags.includes('AllowUserExternalServicePrivate')
+    const ALLOW_PRIVATE_CODE = externalServiceUserModeFromTags(authenticatedUser.tags) === 'all'
+
     // if 'sync all' radio button is enabled and users can sync all repos from code hosts
     const ALLOW_SYNC_ALL = authenticatedUser.tags.includes('AllowUserExternalServiceSyncAll')
 

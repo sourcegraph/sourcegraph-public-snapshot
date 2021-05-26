@@ -52,6 +52,7 @@ import {
 import { QueryState } from '../search/helpers'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { ThemePreferenceProps } from '../theme'
+import { userExternalServicesEnabledFromTags } from '../user/settings/cloud-ga'
 import { UserSettingsSidebarItems } from '../user/settings/UserSettingsSidebar'
 import { showDotComMarketing } from '../util/features'
 
@@ -303,13 +304,8 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                             />
                         </NavAction>
                         {props.authenticatedUser &&
-                            (window.context?.externalServicesUserMode ||
-                                props.authenticatedUser?.siteAdmin ||
-                                props.authenticatedUser?.tags?.some(
-                                    tag =>
-                                        tag === 'AllowUserExternalServicePublic' ||
-                                        tag === 'AllowUserExternalServicePrivate'
-                                )) && (
+                            (props.authenticatedUser.siteAdmin ||
+                                userExternalServicesEnabledFromTags(props.authenticatedUser.tags)) && (
                                 <NavAction>
                                     <StatusMessagesNavItem
                                         isSiteAdmin={props.authenticatedUser?.siteAdmin || false}

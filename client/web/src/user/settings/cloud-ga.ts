@@ -7,31 +7,34 @@ export interface UserProps {
 }
 
 export const externalServiceUserMode = (props: UserProps): 'disabled' | 'public' | 'all' | 'unknown' =>
-{
-    const siteMode = window.context.externalServicesUserMode
-    if (siteMode === 'all') {
-        // Site mode already allows all repo types, no need to check user tags
-        return siteMode
-    }
-    if (props.user.tags?.some(tag => tag === 'AllowUserExternalServicePrivate')) {
-        return 'all'
-    }
-    if (props.user.tags?.some(tag => tag === 'AllowUserExternalServicePublic')) {
-        return 'public'
-    }
-    return siteMode
-}
+    externalServiceUserModeFromTags(props.user.tags)
 
-export const userExternalServicesEnabled = (props: UserProps): boolean => {
-    const mode = externalServiceUserMode(props)
-    return mode === 'all' || mode === 'public'
-}
+export const userExternalServicesEnabled = (props: UserProps): boolean => modeEnabled(externalServiceUserMode(props))
 
-export const showPasswordsPage = (props: UserProps): boolean =>
-{
+export const userExternalServicesEnabledFromTags = (tags: string[]): boolean =>
+    modeEnabled(externalServiceUserModeFromTags(tags))
+
+export const showPasswordsPage = (props: UserProps): boolean => {
     // user is signed-in with builtin Auth and External Service is not public
     const mode = externalServiceUserMode(props)
     return props.user.builtinAuth && (mode === 'disabled' || mode === 'unknown')
 }
 
 export const showAccountSecurityPage = (props: UserProps): boolean => !showPasswordsPage(props)
+
+export const externalServiceUserModeFromTags = (tags: string[]): 'disabled' | 'public' | 'all' | 'unknown' => {
+    const siteMode = window.context.externalServicesUserMode
+    if (siteMode === 'all') {
+        // Site mode already allows all repo types, no need to check user tags
+        return siteMode
+    }
+    if (tags?.includes('AllowUserExternalServicePrivate')) {
+        return 'all'
+    }
+    if (tags?.includes('AllowUserExternalServicePublic')) {
+        return 'public'
+    }
+    return siteMode
+}
+
+const modeEnabled = (mode: string): boolean => mode === 'all' || mode === 'public'
