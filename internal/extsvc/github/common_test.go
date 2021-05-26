@@ -128,7 +128,7 @@ func TestClient_GetRepository(t *testing.T) {
 		t.Errorf("mock.count == %d, expected to hit cache", mock.count)
 	}
 	if !reflect.DeepEqual(repo, &want) {
-		t.Errorf("got repository %+v, want %+v", repo, &want)
+		t.Errorf("got cached repository %+v, want %+v", repo, &want)
 	}
 }
 
