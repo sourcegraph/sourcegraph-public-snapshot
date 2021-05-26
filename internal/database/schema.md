@@ -668,10 +668,10 @@ CASE
     WHEN flag_type <> 'bool'::feature_flag_type AND bool_value IS NOT NULL THEN 0
     ELSE 1
 END)
-    "required_bool_var_fields" CHECK (1 =
+    "required_rollout_fields" CHECK (1 =
 CASE
-    WHEN flag_type = 'bool_var'::feature_flag_type AND rollout IS NULL THEN 0
-    WHEN flag_type <> 'bool_var'::feature_flag_type AND rollout IS NOT NULL THEN 0
+    WHEN flag_type = 'rollout'::feature_flag_type AND rollout IS NULL THEN 0
+    WHEN flag_type <> 'rollout'::feature_flag_type AND rollout IS NOT NULL THEN 0
     ELSE 1
 END)
 Referenced by:
@@ -681,7 +681,7 @@ Referenced by:
 
 **bool_value**: Bool value only defined when flag_type is bool
 
-**rollout**: Rollout only defined when flag_type is bool_var. Increments of 0.01%
+**rollout**: Rollout only defined when flag_type is rollout. Increments of 0.01%
 
 # Table "public.gitserver_repos"
 ```
@@ -2177,7 +2177,7 @@ Indexes:
 # Type feature_flag_type
 
 - bool
-- bool_var
+- rollout
 
 # Type lsif_index_state
 
