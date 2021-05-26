@@ -241,13 +241,15 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
         setRepoFilters([statusFilter, updatedCodeHostFilter])
     }, [fetchExternalServices, fetchUserReposCount])
 
+    const TWO_SECONDS = 2
+
     useObservable(
         useMemo(() => {
             if (externalServices && externalServices.length !== 0) {
                 // get serviceIds and check if services will sync in the next 2 seconds
                 const serviceIds = externalServices.map(service => service.id)
 
-                return fetchCodeHostSyncDueStatus(serviceIds, 2).pipe(
+                return fetchCodeHostSyncDueStatus(serviceIds, TWO_SECONDS).pipe(
                     repeatUntil(
                         result => {
                             const isScheduledToSync = result.data?.codeHostSyncDue === true
