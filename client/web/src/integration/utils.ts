@@ -78,7 +78,7 @@ export const setColorScheme = async (
         // Wait a tiny bit for Monaco syntax highlighting to be applied
         await page.waitForTimeout(500)
     } catch {
-        // noop editor may not be present
+        // noop, page doesn't use monaco editor
     }
 }
 
