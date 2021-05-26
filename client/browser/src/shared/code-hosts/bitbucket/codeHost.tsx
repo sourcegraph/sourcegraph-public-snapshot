@@ -8,6 +8,7 @@ import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '@sourceg
 import { querySelectorOrSelf } from '../../util/dom'
 import { CodeHost, MountGetter } from '../shared/codeHost'
 import { CodeView, DOMFunctions } from '../shared/codeViews'
+import { createNotificationClassNameGetter } from '../shared/getNotificationClassName'
 import { ViewResolver } from '../shared/views'
 
 import { getContext } from './context'
@@ -238,9 +239,8 @@ export const bitbucketServerCodeHost: CodeHost = {
     hoverOverlayClassProps: {
         className: 'aui-dialog',
         actionItemClassName: 'aui-button hover-action-item--bitbucket-server',
-        iconButtonClassName: 'aui-button btn-icon--bitbucket-server',
-        infoAlertClassName: notificationClassNames[NotificationType.Info],
-        errorAlertClassName: notificationClassNames[NotificationType.Error],
+        closeButtonClassName: 'aui-button btn-icon--bitbucket-server',
+        getAlertClassName: createNotificationClassNameGetter(notificationClassNames),
         iconClassName,
     },
     getViewContextOnSourcegraphMount,

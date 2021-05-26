@@ -190,7 +190,6 @@ export function listUserRepositories(
                             nodes {
                                 ...SiteAdminRepositoryFields
                             }
-                            totalCount(precise: true)
                             pageInfo {
                                 hasNextPage
                             }

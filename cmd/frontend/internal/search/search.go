@@ -122,7 +122,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		_ = eventWriter.Event("progress", progress.Current())
 	}
 
-	filters := &graphqlbackend.SearchFilters{
+	filters := &streaming.SearchFilters{
 		Globbing: false, // TODO
 	}
 
