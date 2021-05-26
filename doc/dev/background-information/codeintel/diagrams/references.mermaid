@@ -1,34 +1,42 @@
 sequenceDiagram
-  Caller          ->>+ Resolvers: References(repo, commit, file, position)
-  Resolvers       ->>+ Code Intel API: FindClosestDumps(repo, commit, file)
-  Code Intel API  ->>+ Store: FindClosestDumps(repo, commit, file)
-  Store          -->>- Code Intel API: dumps
-  Code Intel API -->>- Resolvers: dumps
+  Caller          ->>+ Resolvers: QueryResolver(repo, commit, file)
+  Resolvers       ->>+ DB store: FindClosestDumps(repo, commit, file)
+  DB store       -->>- Resolvers: dumps
+  Resolvers      -->>- Caller: QueryResolver
+  Caller          ->>+ QueryResolver: References(repo, commit, file, position, cursor)
 
-  loop for each dumps[i]
-    Resolvers         -->>+ Position Adjuster: AdjustPosition(file, position)
-    Position Adjuster -->>- Resolvers: adjusted file, adjusted position
-
-    alt if cursor is supplied
-      Note right of Resolvers: cursor is decoded from request
-    else
-      Resolvers       ->>+ LSIF Store: MonikersForPosition(dumps[i], adjusted file, adjusted position)
-      LSIF Store     -->>- Resolvers: monikers
-
-      Note right of Resolvers: cursor is created from <dump, monikers, adjusted file, adjusted position>
+  alt if cursor is empty
+    loop for each dumps[i]
+      QueryResolver     -->>+ Position adjuster: AdjustPosition(file, position, from: commit, to: dumps[i].commit)
+      Position adjuster -->>- QueryResolver: adjusted file, adjusted position
+      QueryResolver      ->>+ LSIF store: MonikersByPosition(dump, adjusted file, adjusted position)
+      LSIF store        -->>- QueryResolver: monikers
     end
 
-    Resolvers ->>+ Code Intel API: References(cursor)
+    QueryResolver    ->>+ DB store: DefinitionDumps(monikers)
+    DB store        -->>- QueryResolver: definitionDumps
 
-    loop while under page limit
-      Code Intel API           ->>+ Reference Page Resolver: resolvePage(cursor)
-      Reference Page Resolver -->>- Code Intel API: locations, cursor'
-      Note right of Code Intel API: cursor = cursor' on subsequent iteration
-    end
-
-    Code Intel API -->>- Resolvers: locations[0], ..., locations[n], cursor'
+    Note right of Resolvers: Create curso from dumps, definitionDumps, monikers, adjusted files, adjusted positions>
   end
 
-  Resolvers         -->>+ Position Adjuster: AdjustLocations(locations[0], ..., locations[n])
-  Position Adjuster -->>- Resolvers: adjusted locations[i]
-  Resolvers -->>- Caller: adjusted locations, cursor'
+  loop len(locations) < limit and !cursor.RemotePhase
+    QueryResolver -->>+ LSIF store: References
+    LSIF store    -->>- QueryResolver: locations
+
+    Note right of QueryResolver: Update phase, offsets in cursor
+  end
+
+  loop len(locations) < limit and cursor.RemotePhase
+    QueryResolver -->>+ DB store: ReferenceIDsAndFilters
+    DB store      -->>- QueryResolver: references
+    QueryResolver -->>+ DB store: GetDumpsByIDs
+    DB store      -->>- QueryResolver: dumps
+    QueryResolver  ->>+ LSIF store: BulkMonikerResults(monikers)
+    LSIF store    -->>- QueryResolver: locations
+
+    Note right of QueryResolver: Update phase, offsets in cursor
+  end
+
+  QueryResolver     -->>+ Position adjuster: AdjustLocations(locations)
+  Position adjuster -->>- QueryResolver: adjusted locations
+  QueryResolver     -->>- Caller: adjusted locations, cursor

@@ -9,8 +9,8 @@ interface Props {
 export const FeedbackText: React.FunctionComponent<Props> = (props: Props) => (
     <p className={`feedback-text ${props.className || ''}`}>
         {props.headerText || 'Questions/feedback?'} Contact us at{' '}
-        <a href="https://twitter.com/srcgraph" target="_blank" rel="noopener noreferrer">
-            @srcgraph
+        <a href="https://twitter.com/sourcegraph" target="_blank" rel="noopener noreferrer">
+            @sourcegraph
         </a>{' '}
         or{' '}
         <a href="mailto:support@sourcegraph.com" target="_blank" rel="noopener noreferrer">

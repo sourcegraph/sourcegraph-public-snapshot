@@ -1,7 +1,6 @@
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import React, { useState, useCallback } from 'react'
-import { ButtonDropdown, DropdownToggle, DropdownMenu, DropdownItem } from 'reactstrap'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
@@ -9,8 +8,6 @@ import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { CircleDashedIcon } from '../../../components/CircleDashedIcon'
 import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
 
-import { AddCodeHostConnectionModal } from './AddCodeHostConnectionModal'
-import { hints } from './modalHints'
 import { RemoveCodeHostConnectionModal } from './RemoveCodeHostConnectionModal'
 import { ifNotNavigated } from './UserAddCodeHostsPage'
 
@@ -30,29 +27,19 @@ interface CodeHostItemProps {
 }
 
 export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
-    user,
     service,
     kind,
     name,
     icon: Icon,
     navigateToAuthProvider,
-    onDidAdd,
     onDidRemove,
     onDidError,
 }) => {
-    const [isAddConnectionModalOpen, setIsAddConnectionModalOpen] = useState(false)
-    const toggleAddConnectionModal = useCallback(() => setIsAddConnectionModalOpen(!isAddConnectionModalOpen), [
-        isAddConnectionModalOpen,
-    ])
-
     const [isRemoveConnectionModalOpen, setIsRemoveConnectionModalOpen] = useState(false)
     const toggleRemoveConnectionModal = useCallback(
         () => setIsRemoveConnectionModalOpen(!isRemoveConnectionModalOpen),
         [isRemoveConnectionModalOpen]
     )
-
-    const [dropdownOpen, setOpen] = useState(false)
-    const toggleDropdown = useCallback((): void => setOpen(!dropdownOpen), [dropdownOpen])
 
     const [oauthInFlight, setOauthInFlight] = useState(false)
 
@@ -66,17 +53,6 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
 
     return (
         <div className="p-2 d-flex align-items-start">
-            {isAddConnectionModalOpen && (
-                <AddCodeHostConnectionModal
-                    userID={user.id}
-                    kind={kind}
-                    name={name}
-                    hintFragment={hints[kind]}
-                    onDidAdd={onDidAdd}
-                    onDidCancel={toggleAddConnectionModal}
-                    onDidError={onDidError}
-                />
-            )}
             {service && isRemoveConnectionModalOpen && (
                 <RemoveCodeHostConnectionModal
                     id={service.id}
@@ -111,18 +87,10 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                         Remove
                     </button>
                 ) : (
-                    <ButtonDropdown isOpen={dropdownOpen} toggle={toggleDropdown} direction="down">
-                        <DropdownToggle className="btn-sm" color="outline-secondary" caret={true}>
-                            Connect
-                        </DropdownToggle>
-                        <DropdownMenu right={true}>
-                            <DropdownItem toggle={false} onClick={toAuthProvider}>
-                                Connect with {name}
-                                {oauthInFlight && <LoadingSpinner className="icon-inline ml-2" />}
-                            </DropdownItem>
-                            <DropdownItem onClick={toggleAddConnectionModal}>Connect with access token</DropdownItem>
-                        </DropdownMenu>
-                    </ButtonDropdown>
+                    <button type="button" className="btn btn-primary" onClick={toAuthProvider}>
+                        Connect
+                        {oauthInFlight && <LoadingSpinner className="icon-inline ml-2 theme-dark" />}
+                    </button>
                 )}
             </div>
         </div>

@@ -77,9 +77,18 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
     {
         path: '/-/compare/:spec*',
         render: context => (
-            <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
-                <RepositoryCompareArea {...context} />
-            </RepositoryGitDataContainer>
+            <div className="repo-revision-container">
+                <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
+                    <RepositoryCompareArea {...context} />
+                </RepositoryGitDataContainer>
+                <ActionItemsBar
+                    extensionsController={context.extensionsController}
+                    platformContext={context.platformContext}
+                    useActionItemsBar={context.useActionItemsBar}
+                    location={context.location}
+                    telemetryService={context.telemetryService}
+                />
+            </div>
         ),
     },
     {

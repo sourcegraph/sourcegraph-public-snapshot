@@ -57,13 +57,17 @@ You can disable extensions from Sourcegraph.com by setting [`extensions.remoteRe
 
 ## Allow only specific extensions from Sourcegraph.com
 
-On Sourcegraph Enterprise, you can set [`extensions.allowRemoteExtensions`](../config/site_config.md) so that only the explicitly specified extensions can be used from Sourcegraph.com:
+On Sourcegraph Enterprise, you can set [`extensions.allowRemoteExtensions`](../config/site_config.md) so that only the explicitly specified extensions can be used from Sourcegraph.com.
+
+Note: When enabling this setting, desired extensions and languages need to be specifically set in the [Sourcegraph site configuration](https://docs.sourcegraph.com/admin/config/site_config) in order to work. Example:
 
 ```json
 {
   "extensions": { "allowRemoteExtensions": ["chris/token-highlights"] }
 }
 ```
+You will also need to manually enable language extensions for Code Intelligence to work properly by adding them to `"DefaultSettings"` in your site configuration. List of languages can be found here: [Sourcegraph default language settings](
+https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/cmd/frontend/graphqlbackend/default_settings.go#L14-51)
 
 ## [Client-side security and privacy](../../extensions/security.md)
 

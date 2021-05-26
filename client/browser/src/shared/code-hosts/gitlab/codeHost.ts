@@ -6,6 +6,7 @@ import { toAbsoluteBlobURL } from '@sourcegraph/shared/src/util/url'
 
 import { CodeHost } from '../shared/codeHost'
 import { CodeView } from '../shared/codeViews'
+import { createNotificationClassNameGetter } from '../shared/getNotificationClassName'
 import { getSelectionsFromHash, observeSelectionsFromHash } from '../shared/util/selections'
 import { queryWithSelector, ViewResolver } from '../shared/views'
 
@@ -207,10 +208,9 @@ export const gitlabCodeHost = subtypeOf<CodeHost>()({
         className: 'card hover-overlay--gitlab',
         actionItemClassName: 'btn btn-secondary action-item--gitlab',
         actionItemPressedClassName: 'active',
-        iconButtonClassName: 'btn btn-transparent p-0 btn-icon--gitlab',
+        closeButtonClassName: 'btn btn-transparent p-0 btn-icon--gitlab',
         iconClassName: 'square s16',
-        infoAlertClassName: notificationClassNames[NotificationType.Info],
-        errorAlertClassName: notificationClassNames[NotificationType.Error],
+        getAlertClassName: createNotificationClassNameGetter(notificationClassNames),
     },
     codeViewsRequireTokenization: true,
     getHoverOverlayMountLocation: (): string | null => {

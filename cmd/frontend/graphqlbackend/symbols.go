@@ -2,22 +2,13 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
-	"regexp/syntax"
 	"strings"
-	"time"
 
-	"github.com/google/zoekt"
-	zoektquery "github.com/google/zoekt/query"
-
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/search/run"
 )
 
 type symbolsArgs struct {
@@ -27,7 +18,7 @@ type symbolsArgs struct {
 }
 
 func (r *GitTreeEntryResolver) Symbols(ctx context.Context, args *symbolsArgs) (*symbolConnectionResolver, error) {
-	symbols, err := computeSymbols(ctx, r.commit, args.Query, args.First, args.IncludePatterns)
+	symbols, err := run.ComputeSymbols(ctx, r.commit.repoResolver.RepoMatch.RepoName(), api.CommitID(r.commit.oid), r.commit.inputRev, args.Query, args.First, args.IncludePatterns)
 	if err != nil && len(symbols) == 0 {
 		return nil, err
 	}
@@ -38,7 +29,7 @@ func (r *GitTreeEntryResolver) Symbols(ctx context.Context, args *symbolsArgs) (
 }
 
 func (r *GitCommitResolver) Symbols(ctx context.Context, args *symbolsArgs) (*symbolConnectionResolver, error) {
-	symbols, err := computeSymbols(ctx, r, args.Query, args.First, args.IncludePatterns)
+	symbols, err := run.ComputeSymbols(ctx, r.repoResolver.RepoMatch.RepoName(), api.CommitID(r.oid), r.inputRev, args.Query, args.First, args.IncludePatterns)
 	if err != nil && len(symbols) == 0 {
 		return nil, err
 	}
@@ -56,6 +47,14 @@ func symbolResultsToResolvers(db dbutil.DB, commit *GitCommitResolver, symbols [
 	return symbolResolvers
 }
 
+func toSymbolResolver(db dbutil.DB, commit *GitCommitResolver, sr *result.SymbolMatch) symbolResolver {
+	return symbolResolver{
+		db:          db,
+		commit:      commit,
+		SymbolMatch: sr,
+	}
+}
+
 type symbolConnectionResolver struct {
 	first   *int32
 	symbols []symbolResolver
@@ -63,189 +62,9 @@ type symbolConnectionResolver struct {
 
 func limitOrDefault(first *int32) int {
 	if first == nil {
-		return 100
+		return run.DefaultSymbolLimit
 	}
 	return int(*first)
-}
-
-// indexedSymbols checks to see if Zoekt has indexed symbols information for a
-// repository at a specific commit. If it has it returns the branch name (for
-// use when querying zoekt). Otherwise an empty string is returned.
-func indexedSymbolsBranch(ctx context.Context, repository, commit string) string {
-	z := search.Indexed()
-	if !z.Enabled() {
-		return ""
-	}
-
-	ctx, cancel := context.WithTimeout(ctx, time.Second)
-	defer cancel()
-	set, err := z.ListAll(ctx)
-	if err != nil {
-		return ""
-	}
-
-	repo, ok := set[repository]
-	if !ok || !repo.HasSymbols {
-		return ""
-	}
-
-	for _, branch := range repo.Branches {
-		if branch.Version == commit {
-			return branch.Name
-		}
-	}
-
-	return ""
-}
-
-func searchZoektSymbols(ctx context.Context, commit *GitCommitResolver, branch string, queryString *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
-	raw := *queryString
-	if raw == "" {
-		raw = ".*"
-	}
-
-	expr, err := syntax.Parse(raw, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
-	if err != nil {
-		return
-	}
-
-	var query zoektquery.Q
-	if expr.Op == syntax.OpLiteral {
-		query = &zoektquery.Substring{
-			Pattern: string(expr.Rune),
-			Content: true,
-		}
-	} else {
-		query = &zoektquery.Regexp{
-			Regexp:  expr,
-			Content: true,
-		}
-	}
-
-	ands := []zoektquery.Q{
-		&zoektquery.RepoBranches{Set: map[string][]string{
-			commit.repoResolver.Name(): {branch},
-		}},
-		&zoektquery.Symbol{Expr: query},
-	}
-	for _, p := range *includePatterns {
-		q, err := zoektutil.FileRe(p, true)
-		if err != nil {
-			return nil, err
-		}
-		ands = append(ands, q)
-	}
-
-	final := zoektquery.Simplify(zoektquery.NewAnd(ands...))
-	match := limitOrDefault(first) + 1
-	resp, err := search.Indexed().Client.Search(ctx, final, &zoekt.SearchOptions{
-		Trace:                  ot.ShouldTrace(ctx),
-		MaxWallTime:            3 * time.Second,
-		ShardMaxMatchCount:     match * 25,
-		TotalMaxMatchCount:     match * 25,
-		ShardMaxImportantMatch: match * 25,
-		TotalMaxImportantMatch: match * 25,
-		MaxDocDisplayCount:     match,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	for _, file := range resp.Files {
-		newFile := &result.File{
-			Repo:     commit.repoResolver.RepoMatch.RepoName(),
-			CommitID: api.CommitID(commit.oid),
-			InputRev: commit.inputRev,
-			Path:     file.FileName,
-		}
-
-		for _, l := range file.LineMatches {
-			if l.FileName {
-				continue
-			}
-
-			for _, m := range l.LineFragments {
-				if m.SymbolInfo == nil {
-					continue
-				}
-
-				res = append(res, &result.SymbolMatch{
-					Symbol: result.Symbol{
-						Name:       m.SymbolInfo.Sym,
-						Kind:       m.SymbolInfo.Kind,
-						Parent:     m.SymbolInfo.Parent,
-						ParentKind: m.SymbolInfo.ParentKind,
-						Path:       file.FileName,
-						Line:       l.LineNumber,
-						Language:   file.Language,
-					},
-					File: newFile,
-				})
-			}
-		}
-	}
-	return
-}
-
-func computeSymbols(ctx context.Context, commit *GitCommitResolver, query *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
-	// TODO(keegancsmith) we should be able to use indexedSearchRequest here
-	// and remove indexedSymbolsBranch.
-	if branch := indexedSymbolsBranch(ctx, commit.repoResolver.Name(), string(commit.oid)); branch != "" {
-		return searchZoektSymbols(ctx, commit, branch, query, first, includePatterns)
-	}
-
-	ctx, done := context.WithTimeout(ctx, 5*time.Second)
-	defer done()
-	defer func() {
-		if ctx.Err() != nil && len(res) == 0 {
-			err = errors.New("processing symbols is taking longer than expected. Try again in a while")
-		}
-	}()
-	var includePatternsSlice []string
-	if includePatterns != nil {
-		includePatternsSlice = *includePatterns
-	}
-
-	searchArgs := search.SymbolsParameters{
-		CommitID:        api.CommitID(commit.oid),
-		First:           limitOrDefault(first) + 1, // add 1 so we can determine PageInfo.hasNextPage
-		Repo:            commit.repoResolver.RepoName(),
-		IncludePatterns: includePatternsSlice,
-	}
-	if query != nil {
-		searchArgs.Query = *query
-	}
-
-	symbols, err := backend.Symbols.ListTags(ctx, searchArgs)
-	if err != nil {
-		return nil, err
-	}
-
-	fileWithPath := func(path string) *result.File {
-		return &result.File{
-			Path:     path,
-			Repo:     commit.repoResolver.RepoMatch.RepoName(),
-			InputRev: commit.inputRev,
-			CommitID: api.CommitID(commit.oid),
-		}
-	}
-
-	matches := make([]*result.SymbolMatch, 0, len(symbols))
-	for _, symbol := range symbols {
-		matches = append(matches, &result.SymbolMatch{
-			Symbol: symbol,
-			File:   fileWithPath(symbol.Path),
-		})
-	}
-	return matches, err
-}
-
-func toSymbolResolver(db dbutil.DB, commit *GitCommitResolver, sr *result.SymbolMatch) symbolResolver {
-	return symbolResolver{
-		db:          db,
-		commit:      commit,
-		SymbolMatch: sr,
-	}
 }
 
 func (r *symbolConnectionResolver) Nodes(ctx context.Context) ([]symbolResolver, error) {
