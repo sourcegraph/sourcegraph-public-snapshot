@@ -31,11 +31,6 @@ func foo(go string) {}
 `,
 	}
 
-	p := &protocol.PatternInfo{
-		Pattern:         "foo(:[args])",
-		IncludePatterns: []string{"file_without_extension"},
-	}
-
 	cases := []struct {
 		Name      string
 		Languages []string
@@ -73,7 +68,13 @@ func foo(go string) {}
 			tt := tt
 			t.Run(tt.Name, func(t *testing.T) {
 				t.Parallel()
-				p.Languages = tt.Languages
+
+				p := &protocol.PatternInfo{
+					Pattern:         "foo(:[args])",
+					IncludePatterns: []string{"file_without_extension"},
+					Languages:       tt.Languages,
+				}
+
 				matches, _, err := structuralSearch(context.Background(), zf, Subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo_foo")
 				if err != nil {
 					t.Fatal(err)
