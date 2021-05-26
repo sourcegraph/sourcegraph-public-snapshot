@@ -415,3 +415,9 @@ func DecodeURN(urn string) (kind string, id int64) {
 	}
 	return fields[1], id
 }
+
+type OtherRepoMetadata struct {
+	// RelativePath is relative to ServiceID which is usually the host URL.
+	// Joining them gives you the clone url.
+	RelativePath string
+}

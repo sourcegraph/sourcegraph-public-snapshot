@@ -109,7 +109,7 @@ func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigrat
 			// Site admins are exempt from license enforcement screens so that they can
 			// easily update the license key. Also ignore backend.ErrNotAuthenticated
 			// because we need to allow site admins to sign in.
-			err := backend.CheckCurrentUserIsSiteAdmin(r.Context())
+			err := backend.CheckCurrentUserIsSiteAdmin(r.Context(), db)
 			if err == nil || err == backend.ErrNotAuthenticated {
 				next.ServeHTTP(w, r)
 				return

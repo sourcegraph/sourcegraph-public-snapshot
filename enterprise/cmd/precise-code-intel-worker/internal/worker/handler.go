@@ -165,10 +165,6 @@ func (h *handler) handle(ctx context.Context, workerStore dbworkerstore.Store, d
 			}()
 		}
 
-		if _, err := workerStore.MarkComplete(ctx, upload.ID); err != nil {
-			return errors.Wrap(err, "store.MarkComplete")
-		}
-
 		return nil
 	})
 }

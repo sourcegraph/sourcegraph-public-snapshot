@@ -396,7 +396,14 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                 props.settingsCascade.final?.experimentalFeatures?.fuzzyFinder &&
                 resolvedRevisionOrError &&
                 !isErrorLike(resolvedRevisionOrError) && (
-                    <FuzzyFinder repoName={repoName} commitID={resolvedRevisionOrError.commitID} />
+                    <FuzzyFinder
+                        repoName={repoName}
+                        commitID={resolvedRevisionOrError.commitID}
+                        caseInsensitiveFileCountThreshold={
+                            props.settingsCascade.final?.experimentalFeatures
+                                ?.fuzzyFinderCaseInsensitiveFileCountThreshold
+                        }
+                    />
                 )}
             {showExtensionAlert && (
                 <InstallBrowserExtensionAlert

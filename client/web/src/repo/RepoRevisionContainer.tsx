@@ -132,7 +132,7 @@ const RepoRevisionContainerBreadcrumb: React.FunctionComponent<RepoRevisionBread
                 id="repo-revision-popover"
                 aria-label="Change revision"
             >
-                @{' '}
+                <span className="mr-1">@</span>
                 {(revision && revision === resolvedRevisionOrError.commitID
                     ? resolvedRevisionOrError.commitID.slice(0, 7)
                     : revision) ||

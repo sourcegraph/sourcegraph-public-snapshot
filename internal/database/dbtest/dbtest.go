@@ -1,7 +1,9 @@
 package dbtest
 
 import (
+	crand "crypto/rand"
 	"database/sql"
+	"encoding/binary"
 	"errors"
 	"hash/fnv"
 	"math/rand"
@@ -10,7 +12,6 @@ import (
 	"strconv"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/jackc/pgconn"
 	"github.com/lib/pq"
@@ -42,6 +43,19 @@ func NewTx(t testing.TB, db *sql.DB) *sql.Tx {
 	return tx
 }
 
+// Use a shared, locked RNG to avoid issues with multiple concurrent tests getting
+// the same random database number (unlikely, but has been observed).
+// Use crypto/rand.Read() to use an OS source of entropy, since, against all odds,
+// using nanotime was causing conflicts.
+var rng = rand.New(rand.NewSource(func() int64 {
+	b := [8]byte{}
+	if _, err := crand.Read(b[:]); err != nil {
+		panic(err)
+	}
+	return int64(binary.LittleEndian.Uint64(b[:]))
+}()))
+var rngLock sync.Mutex
+
 // NewDB returns a connection to a clean, new temporary testing database
 // with the same schema as Sourcegraph's production Postgres database.
 func NewDB(t testing.TB, dsn string) *sql.DB {
@@ -62,14 +76,16 @@ func NewDB(t testing.TB, dsn string) *sql.DB {
 
 	initTemplateDB(t, config)
 
-	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
+	rngLock.Lock()
 	dbname := "sourcegraph-test-" + strconv.FormatUint(rng.Uint64(), 10)
+	rngLock.Unlock()
 
 	db := dbConn(t, config)
 	dbExec(t, db, `CREATE DATABASE `+pq.QuoteIdentifier(dbname)+` TEMPLATE `+pq.QuoteIdentifier(templateDBName()))
 
 	config.Path = "/" + dbname
 	testDB := dbConn(t, config)
+	testDB.SetMaxOpenConns(3)
 
 	t.Cleanup(func() {
 		defer db.Close()

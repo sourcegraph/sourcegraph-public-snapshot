@@ -147,6 +147,14 @@
           "!go": {
             "pointer": true
           }
+        },
+        "fuzzyFinderCaseInsensitiveFileCountThreshold": {
+          "description": "The maximum number of files a repo can have to use case-insensitive fuzzy finding",
+          "type": "number",
+          "default": 25000,
+          "!go": {
+            "pointer": true
+          }
         }
       },
       "group": "Experimental"

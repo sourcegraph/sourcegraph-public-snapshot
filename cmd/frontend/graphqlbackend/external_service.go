@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -40,7 +41,7 @@ func externalServiceByID(ctx context.Context, db dbutil.DB, gqlID graphql.ID) (*
 		return nil, err
 	}
 
-	if err := checkExternalServiceAccess(ctx, es.NamespaceUserID); err != nil {
+	if err := checkExternalServiceAccess(ctx, db, es.NamespaceUserID); err != nil {
 		return nil, err
 	}
 	return &externalServiceResolver{db: db, externalService: es}, nil
@@ -168,5 +169,5 @@ func (r *externalServiceResolver) NextSyncAt() *DateTime {
 }
 
 func (r *externalServiceResolver) GrantedScopes(ctx context.Context) ([]string, error) {
-	return types.GrantedScopes(ctx, r.externalService.Kind, r.externalService.Config)
+	return repos.GrantedScopes(ctx, r.externalService.Kind, r.externalService.Config)
 }

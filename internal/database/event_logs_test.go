@@ -11,8 +11,9 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
+	"golang.org/x/sync/errgroup"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -22,7 +23,8 @@ func TestEventLogs_ValidInfo(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	var testCases = []struct {
@@ -67,7 +69,8 @@ func TestEventLogs_CountUniqueUsersPerPeriod(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	now := time.Now()
@@ -112,7 +115,8 @@ func TestEventLogs_UsersUsageCounts(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	now := time.Now()
@@ -168,7 +172,8 @@ func TestEventLogs_SiteUsage(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	// This unix timestamp is equivalent to `Friday, May 15, 2020 10:30:00 PM GMT` and is set to
@@ -282,7 +287,8 @@ func TestEventLogs_codeIntelligenceWeeklyUsersCount(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	names := []string{"codeintel.lsifHover", "codeintel.searchReferences", "unknown event"}
@@ -343,7 +349,8 @@ func TestEventLogs_TestCodeIntelligenceRepositoryCounts(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 	now := time.Now()
 
@@ -408,7 +415,8 @@ func TestEventLogs_AggregatedCodeIntelEvents(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	names := []string{"codeintel.lsifHover", "codeintel.searchReferences.xrepo", "unknown event"}
@@ -428,6 +436,8 @@ func TestEventLogs_AggregatedCodeIntelEvents(t *testing.T) {
 		now.Add(-time.Hour * 24 * 40), // Previous month
 	}
 
+	g, gctx := errgroup.WithContext(ctx)
+
 	for _, user := range users {
 		for _, name := range names {
 			for _, day := range days {
@@ -442,12 +452,16 @@ func TestEventLogs_AggregatedCodeIntelEvents(t *testing.T) {
 						Timestamp: day.Add(time.Minute * time.Duration(rand.Intn(60)-30)),
 					}
 
-					if err := EventLogs(db).Insert(ctx, e); err != nil {
-						t.Fatal(err)
-					}
+					g.Go(func() error {
+						return EventLogs(db).Insert(gctx, e)
+					})
 				}
 			}
 		}
+	}
+
+	if err := g.Wait(); err != nil {
+		t.Fatal(err)
 	}
 
 	events, err := EventLogs(db).aggregatedCodeIntelEvents(ctx, now)
@@ -479,7 +493,8 @@ func TestEventLogs_AggregatedSparseCodeIntelEvents(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	// This unix timestamp is equivalent to `Friday, May 15, 2020 10:30:00 PM GMT` and is set to
@@ -528,7 +543,8 @@ func TestEventLogs_AggregatedSparseSearchEvents(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	// This unix timestamp is equivalent to `Friday, May 15, 2020 10:30:00 PM GMT` and is set to
@@ -586,7 +602,8 @@ func TestEventLogs_AggregatedSearchEvents(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	names := []string{"search.latencies.literal", "search.latencies.structural", "unknown event"}
@@ -606,6 +623,8 @@ func TestEventLogs_AggregatedSearchEvents(t *testing.T) {
 		now.Add(-time.Hour * 24 * 12), // This month
 		now.Add(-time.Hour * 24 * 40), // Previous month
 	}
+
+	g, gctx := errgroup.WithContext(ctx)
 
 	durationOffset := 0
 	for _, user := range users {
@@ -629,13 +648,17 @@ func TestEventLogs_AggregatedSearchEvents(t *testing.T) {
 							Timestamp: day.Add(time.Minute * time.Duration(rand.Intn(60)-30)),
 						}
 
-						if err := EventLogs(db).Insert(ctx, e); err != nil {
-							t.Fatal(err)
-						}
+						g.Go(func() error {
+							return EventLogs(db).Insert(gctx, e)
+						})
 					}
 				}
 			}
 		}
+	}
+
+	if err := g.Wait(); err != nil {
+		t.Fatal(err)
 	}
 
 	events, err := EventLogs(db).aggregatedSearchEvents(ctx, now)
@@ -684,7 +707,8 @@ func TestEventLogs_ListAll(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	now := time.Now()
@@ -743,7 +767,8 @@ func TestEventLogs_LatestPing(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 
 	t.Run("with no pings in database", func(t *testing.T) {
 		ctx := context.Background()
