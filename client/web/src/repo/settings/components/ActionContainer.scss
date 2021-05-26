@@ -1,5 +1,8 @@
 .action-container {
     margin: 1.5rem 0;
+    .theme-redesign & {
+        margin: 0;
+    }
     padding: 1rem;
 
     border: 1px solid var(--border-color);

@@ -1,9 +1,12 @@
+import PlusIcon from 'mdi-react/PlusIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
+import { Link } from 'react-router-dom'
 import { Omit } from 'utility-types'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { ErrorAlert } from '../components/alerts'
@@ -79,100 +82,104 @@ export class SavedSearchForm extends React.Component<Props, State> {
 
         return (
             <div className="saved-search-form">
-                <div className="saved-search-form__header">
-                    <h2>{this.props.title}</h2>
-                    <div>Get notifications when there are new results for specific search queries</div>
-                </div>
+                <PageHeader
+                    path={[{ text: this.props.title }]}
+                    headingElement="h2"
+                    description="Get notifications when there are new results for specific search queries."
+                    className="mb-3"
+                />
                 <Form onSubmit={this.handleSubmit}>
-                    <div className="saved-search-form__input">
-                        <label className="saved-search-form__label" htmlFor="saved-search-form-input-description">
-                            Description:
-                        </label>
-                        <input
-                            id="saved-search-form-input-description"
-                            type="text"
-                            name="description"
-                            className="form-control test-saved-search-form-input-description"
-                            placeholder="Description"
-                            required={true}
-                            value={description}
-                            onChange={this.createInputChangeHandler('description')}
-                        />
-                    </div>
-                    <div className="saved-search-form__input">
-                        <label className="saved-search-form__label" htmlFor="saved-search-form-input-query">
-                            Query:
-                        </label>
-                        <input
-                            id="saved-search-form-input-query"
-                            type="text"
-                            name="query"
-                            className="form-control test-saved-search-form-input-query"
-                            placeholder="Query"
-                            required={true}
-                            value={query}
-                            onChange={this.createInputChangeHandler('query')}
-                        />
-                    </div>
-                    <div className="saved-search-form__input">
-                        {/* Label is for visual benefit, input has more specific label attached */}
-                        {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
-                        <label className="saved-search-form__label" id="saved-search-form-email-notifications">
-                            Email notifications:
-                        </label>
-                        <div aria-labelledby="saved-search-form-email-notifications">
-                            <label>
-                                <input
-                                    type="checkbox"
-                                    name="Notify owner"
-                                    className="saved-search-form__checkbox"
-                                    defaultChecked={notify}
-                                    onChange={this.createInputChangeHandler('notify')}
-                                />{' '}
-                                <span>
-                                    {this.props.namespace.__typename === 'Org'
-                                        ? 'Send email notifications to all members of this organization'
-                                        : this.props.namespace.__typename === 'User'
-                                        ? 'Send email notifications to my email'
-                                        : 'Email notifications'}
-                                </span>
-                            </label>
-                        </div>
-                    </div>
-                    {notifySlack && slackWebhookURL && (
-                        <div className="saved-search-form__input">
-                            <label className="saved-search-form__label" htmlFor="saved-search-form-input-slack">
-                                Slack notifications:
+                    <Container className="mb-3">
+                        <div className="form-group">
+                            <label className="saved-search-form__label" htmlFor="saved-search-form-input-description">
+                                Description:
                             </label>
                             <input
-                                id="saved-search-form-input-slack"
+                                id="saved-search-form-input-description"
                                 type="text"
-                                name="Slack webhook URL"
-                                className="form-control"
-                                value={slackWebhookURL}
-                                disabled={true}
-                                onChange={this.createInputChangeHandler('slackWebhookURL')}
+                                name="description"
+                                className="form-control test-saved-search-form-input-description"
+                                placeholder="Description"
+                                required={true}
+                                value={description}
+                                onChange={this.createInputChangeHandler('description')}
                             />
-                            <small>
-                                Slack webhooks are deprecated and will be removed in a future Sourcegraph version.
-                            </small>
                         </div>
-                    )}
-                    {this.isUnsupportedNotifyQuery(this.state.values) && (
-                        <div className="alert alert-warning mb-3">
-                            <strong>Warning:</strong> non-commit searches do not currently support notifications.
-                            Consider adding <code>type:diff</code> or <code>type:commit</code> to your query.
+                        <div className="form-group">
+                            <label className="saved-search-form__label" htmlFor="saved-search-form-input-query">
+                                Query:
+                            </label>
+                            <input
+                                id="saved-search-form-input-query"
+                                type="text"
+                                name="query"
+                                className="form-control test-saved-search-form-input-query"
+                                placeholder="Query"
+                                required={true}
+                                value={query}
+                                onChange={this.createInputChangeHandler('query')}
+                            />
                         </div>
-                    )}
-                    {notify && !window.context.emailEnabled && !this.isUnsupportedNotifyQuery(this.state.values) && (
-                        <div className="alert alert-warning mb-3">
-                            <strong>Warning:</strong> Sending emails is not currently configured on this Sourcegraph
-                            server.{' '}
-                            {this.props.authenticatedUser?.siteAdmin
-                                ? 'Use the email.smtp site configuration setting to enable sending emails.'
-                                : 'Contact your server admin for more information.'}
+                        <div className="form-group mb-0">
+                            {/* Label is for visual benefit, input has more specific label attached */}
+                            {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
+                            <label className="saved-search-form__label" id="saved-search-form-email-notifications">
+                                Email notifications:
+                            </label>
+                            <div aria-labelledby="saved-search-form-email-notifications">
+                                <label>
+                                    <input
+                                        type="checkbox"
+                                        name="Notify owner"
+                                        className="saved-search-form__checkbox"
+                                        defaultChecked={notify}
+                                        onChange={this.createInputChangeHandler('notify')}
+                                    />{' '}
+                                    <span>
+                                        {this.props.namespace.__typename === 'Org'
+                                            ? 'Send email notifications to all members of this organization'
+                                            : this.props.namespace.__typename === 'User'
+                                            ? 'Send email notifications to my email'
+                                            : 'Email notifications'}
+                                    </span>
+                                </label>
+                            </div>
                         </div>
-                    )}
+                        {notifySlack && slackWebhookURL && (
+                            <div className="form-group">
+                                <label className="saved-search-form__label" htmlFor="saved-search-form-input-slack">
+                                    Slack notifications:
+                                </label>
+                                <input
+                                    id="saved-search-form-input-slack"
+                                    type="text"
+                                    name="Slack webhook URL"
+                                    className="form-control"
+                                    value={slackWebhookURL}
+                                    disabled={true}
+                                    onChange={this.createInputChangeHandler('slackWebhookURL')}
+                                />
+                                <small>
+                                    Slack webhooks are deprecated and will be removed in a future Sourcegraph version.
+                                </small>
+                            </div>
+                        )}
+                        {this.isUnsupportedNotifyQuery(this.state.values) && (
+                            <div className="alert alert-warning mb-3">
+                                <strong>Warning:</strong> non-commit searches do not currently support notifications.
+                                Consider adding <code>type:diff</code> or <code>type:commit</code> to your query.
+                            </div>
+                        )}
+                        {notify && !window.context.emailEnabled && !this.isUnsupportedNotifyQuery(this.state.values) && (
+                            <div className="alert alert-warning mb-3">
+                                <strong>Warning:</strong> Sending emails is not currently configured on this Sourcegraph
+                                server.{' '}
+                                {this.props.authenticatedUser?.siteAdmin
+                                    ? 'Use the email.smtp site configuration setting to enable sending emails.'
+                                    : 'Contact your server admin for more information.'}
+                            </div>
+                        )}
+                    </Container>
                     <button
                         type="submit"
                         disabled={this.props.loading}

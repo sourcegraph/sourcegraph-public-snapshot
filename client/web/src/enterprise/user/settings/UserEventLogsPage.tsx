@@ -6,6 +6,7 @@ import { map } from 'rxjs/operators'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { FilteredConnection } from '../../../components/FilteredConnection'
@@ -116,18 +117,21 @@ export const UserEventLogsPage: React.FunctionComponent<UserEventLogsPageProps> 
     return (
         <>
             <PageTitle title="User event log" />
-            <FilteredConnection<UserEventLogFields, {}>
-                key="chronological"
-                defaultFirst={50}
-                className="list-group list-group-flush"
-                hideSearch={true}
-                noun="user event"
-                pluralNoun="user events"
-                queryConnection={queryUserEventLogs}
-                nodeComponent={UserEventNode}
-                history={history}
-                location={location}
-            />
+            <PageHeader path={[{ text: 'User event log' }]} headingElement="h2" className="mb-3" />
+            <Container>
+                <FilteredConnection<UserEventLogFields, {}>
+                    key="chronological"
+                    defaultFirst={50}
+                    className="list-group list-group-flush"
+                    hideSearch={true}
+                    noun="user event"
+                    pluralNoun="user events"
+                    queryConnection={queryUserEventLogs}
+                    nodeComponent={UserEventNode}
+                    history={history}
+                    location={location}
+                />
+            </Container>
         </>
     )
 }

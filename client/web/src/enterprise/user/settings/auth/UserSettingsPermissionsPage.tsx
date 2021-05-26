@@ -3,6 +3,7 @@ import React, { useEffect, useMemo } from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../../components/PageTitle'
 import { Timestamp } from '../../../../components/time/Timestamp'
@@ -29,7 +30,7 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<{ user: UserAr
     return (
         <div className="w-100">
             <PageTitle title="Permissions" />
-            <h2>Permissions</h2>
+            <PageHeader headingElement="h2" path={[{ text: 'Permissions' }]} className="mb-3" />
             {user.siteAdmin && !window.context.site['authz.enforceForSiteAdmins'] ? (
                 <div className="alert alert-info">
                     Site admin can access all repositories in the Sourcegraph instance.
@@ -40,7 +41,7 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<{ user: UserAr
                     is finished.
                 </div>
             ) : (
-                <div>
+                <Container className="mb-3">
                     <table className="table">
                         <tbody>
                             <tr>
@@ -60,11 +61,13 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<{ user: UserAr
                         </tbody>
                     </table>
                     <ScheduleUserPermissionsSyncActionContainer user={user} history={history} />
-                </div>
+                </Container>
             )}
-            <a href="/help/admin/repo/permissions#background-permissions-syncing">
-                Learn more about background permissions syncing.
-            </a>
+            <p>
+                <a href="/help/admin/repo/permissions#background-permissions-syncing">
+                    Learn more about background permissions syncing.
+                </a>
+            </p>
         </div>
     )
 }

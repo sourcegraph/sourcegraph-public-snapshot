@@ -2,7 +2,7 @@
 
 Custom ESLint rules for Sourcegraph. This package should only be used within
 the main Sourcegraph project, and isn't intended for reuse by other packages in
-the Sourcegraph organisation.
+the Sourcegraph organization.
 
 ## Rules
 

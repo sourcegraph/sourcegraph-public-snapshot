@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { PageHeader } from '@sourcegraph/wildcard'
+import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { ORG_DISPLAY_NAME_MAX_LENGTH } from '../..'
 import { ErrorAlert } from '../../../components/alerts'
@@ -67,52 +67,49 @@ export const OrgSettingsProfilePage: React.FunctionComponent<Props> = ({ org, on
         <div className="org-settings-profile-page">
             <PageTitle title={org.name} />
             <PageHeader
-                path={[{ text: 'Organisation profile' }]}
+                path={[{ text: 'Organization profile' }]}
                 headingElement="h2"
-                className="org-settings-profile-page__heading"
-            />
-            <p>
-                {org.displayName ? (
+                description={
                     <>
-                        {org.displayName} ({org.name})
+                        {org.displayName ? (
+                            <>
+                                {org.displayName} ({org.name})
+                            </>
+                        ) : (
+                            org.name
+                        )}{' '}
+                        was created <Timestamp date={org.createdAt} />.
                     </>
-                ) : (
-                    org.name
-                )}{' '}
-                was created <Timestamp date={org.createdAt} />.
-            </p>
-            <Form className="org-settings-profile-page" onSubmit={onSubmit}>
-                <div className="form-group">
-                    <label htmlFor="org-settings-profile-page-display-name">Display name</label>
-                    <input
-                        id="org-settings-profile-page-display-name"
-                        type="text"
-                        className="form-control org-settings-profile-page__display-name"
-                        placeholder="Organization name"
-                        onChange={onDisplayNameFieldChange}
-                        value={displayName}
-                        spellCheck={false}
-                        maxLength={ORG_DISPLAY_NAME_MAX_LENGTH}
-                    />
-                </div>
-                <button
-                    type="submit"
-                    disabled={isLoading === true}
-                    className="btn btn-primary org-settings-profile-page__submit-button"
-                >
-                    Update
-                </button>
-                {isLoading === true && <LoadingSpinner className="icon-inline" />}
-                <div
-                    className={
-                        'org-settings-profile-page__updated-text' +
-                        (updated ? ' org-settings-profile-page__updated-text--visible' : '')
-                    }
-                >
-                    <small>Updated!</small>
-                </div>
-                {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
-            </Form>
+                }
+                className="mb-3"
+            />
+            <Container>
+                <Form className="org-settings-profile-page" onSubmit={onSubmit}>
+                    <div className="form-group">
+                        <label htmlFor="org-settings-profile-page-display-name">Display name</label>
+                        <input
+                            id="org-settings-profile-page-display-name"
+                            type="text"
+                            className="form-control org-settings-profile-page__display-name"
+                            placeholder="Organization name"
+                            onChange={onDisplayNameFieldChange}
+                            value={displayName}
+                            spellCheck={false}
+                            maxLength={ORG_DISPLAY_NAME_MAX_LENGTH}
+                        />
+                    </div>
+                    <button type="submit" disabled={isLoading === true} className="btn btn-primary">
+                        Update
+                    </button>
+                    {isLoading === true && <LoadingSpinner className="icon-inline" />}
+                    {updated && (
+                        <div className="org-settings-profile-page__updated-text org-settings-profile-page__updated-text--visible">
+                            <small>Updated!</small>
+                        </div>
+                    )}
+                    {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
+                </Form>
+            </Container>
         </div>
     )
 }

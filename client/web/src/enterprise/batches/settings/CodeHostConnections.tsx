@@ -2,9 +2,8 @@ import React, { useCallback, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Observable, Subject } from 'rxjs'
 
-import { PageHeader } from '@sourcegraph/wildcard'
+import { Container, PageHeader } from '@sourcegraph/wildcard'
 
-import { BatchChangesIconFlushLeft } from '../../../batches/icons'
 import { FilteredConnection } from '../../../components/FilteredConnection'
 import {
     BatchChangesCodeHostFields,
@@ -54,33 +53,39 @@ export const CodeHostConnections: React.FunctionComponent<CodeHostConnectionsPro
     )
     return (
         <>
-            <PageHeader path={[{ icon: BatchChangesIconFlushLeft, text: 'Batch Changes' }]} className="mb-3" />
-            <h2>Code host tokens</h2>
-            {headerLine}
-            <FilteredConnection<BatchChangesCodeHostFields, Omit<CodeHostConnectionNodeProps, 'node'>>
-                history={history}
-                location={location}
-                useURLQuery={false}
-                nodeComponent={CodeHostConnectionNode}
-                nodeComponentProps={{ userID, updateList }}
-                queryConnection={query}
-                hideSearch={true}
-                defaultFirst={15}
-                noun="code host"
-                pluralNoun="code hosts"
-                listClassName="list-group"
-                updates={updateList}
-                className="mb-3"
-                cursorPaging={true}
-                noSummaryIfAllNodesVisible={true}
-            />
-            <p>
-                Code host not present? Site admins can add a code host in{' '}
-                <a href="https://docs.sourcegraph.com/admin/external_service" target="_blank" rel="noopener noreferrer">
-                    the manage repositories settings
-                </a>
-                .
-            </p>
+            <PageHeader headingElement="h2" path={[{ text: 'Batch Changes' }]} className="mb-3" />
+            <Container>
+                <h3>Code host tokens</h3>
+                {headerLine}
+                <FilteredConnection<BatchChangesCodeHostFields, Omit<CodeHostConnectionNodeProps, 'node'>>
+                    history={history}
+                    location={location}
+                    useURLQuery={false}
+                    nodeComponent={CodeHostConnectionNode}
+                    nodeComponentProps={{ userID, updateList }}
+                    queryConnection={query}
+                    hideSearch={true}
+                    defaultFirst={15}
+                    noun="code host"
+                    pluralNoun="code hosts"
+                    listClassName="list-group"
+                    updates={updateList}
+                    className="mb-3"
+                    cursorPaging={true}
+                    noSummaryIfAllNodesVisible={true}
+                />
+                <p className="mb-0">
+                    Code host not present? Site admins can add a code host in{' '}
+                    <a
+                        href="https://docs.sourcegraph.com/admin/external_service"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        the manage repositories settings
+                    </a>
+                    .
+                </p>
+            </Container>
         </>
     )
 }

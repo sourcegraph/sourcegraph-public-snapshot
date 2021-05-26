@@ -1,4 +1,8 @@
 .registry-new-extension-page {
+    width: 100%;
+    max-width: 30rem;
+    margin: 0 auto;
+
     &__extension-id {
         white-space: pre-wrap;
         word-break: break-all;

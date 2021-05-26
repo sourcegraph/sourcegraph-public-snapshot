@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import React, { useCallback, useState } from 'react'
 
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
-import { PageHeader } from '@sourcegraph/wildcard'
+import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
 import { PageTitle } from '../../../components/PageTitle'
@@ -57,10 +57,14 @@ export const CreateBatchChangePage: React.FunctionComponent<CreateBatchChangePag
     return (
         <>
             <PageTitle title="Create batch change" />
-            <PageHeader path={[{ icon: BatchChangesIcon, text: 'Create batch change' }]} />
-            <div className="pt-3">
+            <PageHeader
+                path={[{ icon: BatchChangesIcon, text: 'Create batch change' }]}
+                headingElement="h2"
+                className="mb-3"
+            />
+            <Container className="mb-3">
                 <h2>1. Write a batch spec YAML file</h2>
-                <p>
+                <p className="mb-0">
                     The batch spec (
                     <a
                         href="https://docs.sourcegraph.com/batch_changes/references/batch_spec_yaml_reference"
@@ -72,18 +76,28 @@ export const CreateBatchChangePage: React.FunctionComponent<CreateBatchChangePag
                     ) describes what the batch change does. You'll provide it when previewing, creating, and updating
                     batch changes. We recommend committing it to source control.
                 </p>
-                <h4>Examples:</h4>
-                <ul className="nav nav-pills mb-2">
-                    {samples.map(sample => (
-                        <SampleTabHeader
-                            key={sample.name}
-                            sample={sample}
-                            active={selectedSample.name === sample.name}
-                            setSelectedSample={setSelectedSample}
-                        />
-                    ))}
-                </ul>
-                <CodeSnippet code={selectedSample.file} language="yaml" className="mb-4" />
+            </Container>
+            <div className="row mb-3">
+                <div className="col-4">
+                    <h3>Examples</h3>
+                    <ul className="nav nav-pills">
+                        {samples.map(sample => (
+                            <SampleTabHeader
+                                key={sample.name}
+                                sample={sample}
+                                active={selectedSample.name === sample.name}
+                                setSelectedSample={setSelectedSample}
+                            />
+                        ))}
+                    </ul>
+                </div>
+                <div className="col-8">
+                    <Container>
+                        <CodeSnippet code={selectedSample.file} language="yaml" className="mb-4" />
+                    </Container>
+                </div>
+            </div>
+            <Container className="mb-3">
                 <h2>2. Preview the batch change with Sourcegraph CLI</h2>
                 <p>
                     Use the{' '}
@@ -93,19 +107,18 @@ export const CreateBatchChangePage: React.FunctionComponent<CreateBatchChangePag
                     to preview the commits and changesets that your batch change will make:
                 </p>
                 <CodeSnippet code={`src batch preview -f ${selectedSample.name}`} language="bash" className="mb-3" />
-                <p>
+                <p className="mb-0">
                     Follow the URL printed in your terminal to see the preview and (when you're ready) create the batch
                     change.
                 </p>
-                <hr className="mt-4" />
-                <p className="text-muted">
-                    Want more help? See{' '}
-                    <a href="/help/batch_changes" rel="noopener noreferrer" target="_blank">
-                        Batch Changes documentation
-                    </a>
-                    .
-                </p>
-            </div>
+            </Container>
+            <p>
+                Want more help? See{' '}
+                <a href="/help/batch_changes" rel="noopener noreferrer" target="_blank">
+                    Batch Changes documentation
+                </a>
+                .
+            </p>
         </>
     )
 }

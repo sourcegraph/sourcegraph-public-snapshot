@@ -6,3 +6,9 @@
         color: var(--color-bg-6);
     }
 }
+
+.inactive-category {
+    &:hover {
+        background-color: var(--color-bg-2);
+    }
+}

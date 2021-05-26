@@ -4,7 +4,7 @@ import EarthIcon from 'mdi-react/EarthIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router-dom'
 
-import { SidebarGroup, SidebarGroupItems, SidebarNavItem } from '../../components/Sidebar'
+import { SidebarGroup, SidebarGroupHeader, SidebarGroupItems, SidebarNavItem } from '../../components/Sidebar'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 import { OrgAreaPageProps } from '../area/OrgArea'
 
@@ -32,6 +32,7 @@ export const OrgSettingsSidebar: React.FunctionComponent<Props> = ({ org, authen
             )}
 
             <SidebarGroup>
+                <SidebarGroupHeader label="Organization" />
                 <SidebarGroupItems>
                     <SidebarNavItem icon={EarthIcon} to={match.url} exact={true}>
                         Organization Settings

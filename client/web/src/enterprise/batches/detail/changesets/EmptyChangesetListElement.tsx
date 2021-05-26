@@ -4,7 +4,7 @@ import React from 'react'
 import styles from './EmptyChangesetListElement.module.scss'
 
 export const EmptyChangesetListElement: React.FunctionComponent<{}> = () => (
-    <div className="col-md-8 offset-md-2 col-sm-12 card mt-5">
+    <div className="col-md-8 offset-md-2 col-sm-12 card mt-5 w-100">
         <div className={classNames(styles.emptyChangesetListElementBody, 'card-body p-5')}>
             <h2 className="text-center mb-4">This batch change does not contain changesets</h2>
             <p>This can occur for several reasons:</p>

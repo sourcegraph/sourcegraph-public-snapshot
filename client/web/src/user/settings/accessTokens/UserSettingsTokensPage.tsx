@@ -7,6 +7,7 @@ import { map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { FilteredConnection } from '../../../components/FilteredConnection'
@@ -76,30 +77,36 @@ export const UserSettingsTokensPage: React.FunctionComponent<Props> = ({
     return (
         <div className="user-settings-tokens-page">
             <PageTitle title="Access tokens" />
-            <div className="d-flex justify-content-between align-items-center">
-                <h2>Access tokens</h2>
-                <Link className="btn btn-primary ml-2" to={`${match.url}/new`}>
-                    <AddIcon className="icon-inline" /> Generate new token
-                </Link>
-            </div>
-            <p>Access tokens may be used to access the Sourcegraph API.</p>
-            <FilteredConnection<AccessTokenFields, Omit<AccessTokenNodeProps, 'node'>>
-                listClassName="list-group list-group-flush"
-                noun="access token"
-                pluralNoun="access tokens"
-                queryConnection={queryUserAccessTokens}
-                nodeComponent={AccessTokenNode}
-                nodeComponentProps={{
-                    afterDelete: onDeleteAccessToken,
-                    showSubject: false,
-                    newToken,
-                }}
-                updates={accessTokenUpdates}
-                hideSearch={true}
-                noSummaryIfAllNodesVisible={true}
-                history={history}
-                location={location}
+            <PageHeader
+                headingElement="h2"
+                path={[{ text: 'Access tokens' }]}
+                description="Access tokens may be used to access the Sourcegraph API."
+                actions={
+                    <Link className="btn btn-primary" to={`${match.url}/new`}>
+                        <AddIcon className="icon-inline" /> Generate new token
+                    </Link>
+                }
+                className="mb-3"
             />
+            <Container>
+                <FilteredConnection<AccessTokenFields, Omit<AccessTokenNodeProps, 'node'>>
+                    listClassName="list-group list-group-flush"
+                    noun="access token"
+                    pluralNoun="access tokens"
+                    queryConnection={queryUserAccessTokens}
+                    nodeComponent={AccessTokenNode}
+                    nodeComponentProps={{
+                        afterDelete: onDeleteAccessToken,
+                        showSubject: false,
+                        newToken,
+                    }}
+                    updates={accessTokenUpdates}
+                    hideSearch={true}
+                    noSummaryIfAllNodesVisible={true}
+                    history={history}
+                    location={location}
+                />
+            </Container>
         </div>
     )
 }

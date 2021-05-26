@@ -13,6 +13,7 @@ import { eventLogger } from '../../../tracking/eventLogger'
 import { UserAreaGQLFragment } from '../../area/UserArea'
 
 import { UserProfileFormFields, UserProfileFormFieldsValue } from './UserProfileFormFields'
+import { Container } from '@sourcegraph/wildcard'
 
 interface Props {
     authenticatedUser: Pick<AuthenticatedUser, 'siteAdmin'>
@@ -89,31 +90,35 @@ export const EditUserProfileForm: React.FunctionComponent<Props> = ({
     )
 
     return (
-        <Form className="w-100" onSubmit={onSubmit}>
-            <UserProfileFormFields
-                value={value}
-                onChange={onChange}
-                usernameFieldDisabled={!user.viewerCanChangeUsername}
-                disabled={opState === true}
-            />
-            <button
-                type="submit"
-                className="btn btn-primary"
-                disabled={opState === true}
-                id="test-EditUserProfileForm__save"
-            >
-                Save
-            </button>
-            {isErrorLike(opState) && <div className="mt-3 alert alert-danger">{opState.message}</div>}
-            {opState === 'success' && (
-                <div className="mt-3 alert alert-success test-EditUserProfileForm__success">User profile updated.</div>
-            )}
-            {after && (
-                <>
-                    <hr className="my-4" />
-                    {after}
-                </>
-            )}
-        </Form>
+        <Container>
+            <Form className="w-100" onSubmit={onSubmit}>
+                <UserProfileFormFields
+                    value={value}
+                    onChange={onChange}
+                    usernameFieldDisabled={!user.viewerCanChangeUsername}
+                    disabled={opState === true}
+                />
+                <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={opState === true}
+                    id="test-EditUserProfileForm__save"
+                >
+                    Save
+                </button>
+                {isErrorLike(opState) && <div className="mt-3 alert alert-danger">{opState.message}</div>}
+                {opState === 'success' && (
+                    <div className="mt-3 alert alert-success test-EditUserProfileForm__success">
+                        User profile updated.
+                    </div>
+                )}
+                {after && (
+                    <>
+                        <hr className="my-4" />
+                        {after}
+                    </>
+                )}
+            </Form>
+        </Container>
     )
 }

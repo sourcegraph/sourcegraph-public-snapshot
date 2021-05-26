@@ -11,6 +11,7 @@ import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
+import { PageHeader } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../components/alerts'
 import { NamespaceProps } from '../namespaces'
@@ -139,20 +140,20 @@ export class SavedSearchListPage extends React.Component<Props, State> {
     public render(): JSX.Element | null {
         return (
             <div className="saved-search-list-page">
-                <div className="saved-search-list-page__title">
-                    <div>
-                        <h2>Saved searches</h2>
-                        <div>Manage notifications and alerts for specific search queries</div>
-                    </div>
-                    <div>
+                <PageHeader
+                    path={[{ text: 'Saved searches' }]}
+                    headingElement="h2"
+                    description="Manage notifications and alerts for specific search queries."
+                    actions={
                         <Link
                             to={`${this.props.match.path}/add`}
                             className="btn btn-primary test-add-saved-search-button"
                         >
                             <PlusIcon className="icon-inline" /> Add saved search
                         </Link>
-                    </div>
-                </div>
+                    }
+                    className="mb-3"
+                />
                 {this.state.savedSearchesOrError && isErrorLike(this.state.savedSearchesOrError) && (
                     <ErrorAlert className="mb-3" error={this.state.savedSearchesOrError} />
                 )}

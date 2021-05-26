@@ -13,6 +13,7 @@ import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { Container } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
@@ -161,8 +162,9 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
             return (
                 <>
                     <PageTitle title="New extension" />
-                    <ModalPage className="registry-new-extension-page mt-4 overflow-hidden">
-                        <h2 className="mb-4">
+                    {/* <ModalPage className="registry-new-extension-page mt-4 overflow-hidden"> */}
+                    <div className="registry-new-extension-page">
+                        <h2>
                             <PuzzleIcon className="icon-inline" /> New extension
                         </h2>
                         <div className="mb-3">
@@ -180,33 +182,35 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                             </a>
                         </div>
                         <Form onSubmit={this.onSubmit}>
-                            <RegistryPublisherFormGroup
-                                value={this.state.publisher}
-                                publishersOrError={this.state.publishersOrError}
-                                onChange={this.onPublisherChange}
-                                disabled={this.state.creationOrError === 'loading'}
-                            />
-                            <RegistryExtensionNameFormGroup
-                                value={this.state.name}
-                                disabled={this.state.creationOrError === 'loading'}
-                                onChange={this.onNameChange}
-                            />
-                            {extensionID && (
-                                <div className="form-group d-flex flex-wrap align-items-baseline">
-                                    <label
-                                        htmlFor="extension-registry-create-extension-page__extensionID"
-                                        className="mr-1 mb-0 mt-1"
-                                    >
-                                        Extension ID:
-                                    </label>
-                                    <code
-                                        id="extension-registry-create-extension-page__extensionID"
-                                        className="registry-new-extension-page__extension-id mt-1"
-                                    >
-                                        <strong>{extensionID}</strong>
-                                    </code>
-                                </div>
-                            )}
+                            <Container className="mb-3">
+                                <RegistryPublisherFormGroup
+                                    value={this.state.publisher}
+                                    publishersOrError={this.state.publishersOrError}
+                                    onChange={this.onPublisherChange}
+                                    disabled={this.state.creationOrError === 'loading'}
+                                />
+                                <RegistryExtensionNameFormGroup
+                                    value={this.state.name}
+                                    disabled={this.state.creationOrError === 'loading'}
+                                    onChange={this.onNameChange}
+                                />
+                                {extensionID && (
+                                    <div className="form-group d-flex flex-wrap align-items-baseline mb-0">
+                                        <label
+                                            htmlFor="extension-registry-create-extension-page__extensionID"
+                                            className="mr-1 mb-0 mt-1"
+                                        >
+                                            Extension ID:
+                                        </label>
+                                        <code
+                                            id="extension-registry-create-extension-page__extensionID"
+                                            className="registry-new-extension-page__extension-id mt-1"
+                                        >
+                                            <strong>{extensionID}</strong>
+                                        </code>
+                                    </div>
+                                )}
+                            </Container>
                             <button
                                 type="submit"
                                 disabled={
@@ -227,7 +231,8 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                         {isErrorLike(this.state.creationOrError) && (
                             <ErrorAlert className="mt-3" error={this.state.creationOrError} />
                         )}
-                    </ModalPage>
+                    </div>
+                    {/* </ModalPage> */}
                 </>
             )
         }

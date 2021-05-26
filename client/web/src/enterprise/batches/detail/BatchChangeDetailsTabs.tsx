@@ -10,6 +10,7 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Container } from '@sourcegraph/wildcard'
 
 import { BatchChangeFields } from '../../../graphql-operations'
 import {
@@ -78,25 +79,39 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
     <BatchChangeTabs history={history} location={location}>
         <BatchChangeTabList>
             <BatchChangeTab index={0} name={TabName.Changesets}>
-                <SourceBranchIcon className="icon-inline text-muted mr-1" />
-                Changesets{' '}
-                <span className="badge badge-pill badge-secondary ml-1">
-                    {batchChange.changesetsStats.total - batchChange.changesetsStats.archived}
+                <span>
+                    <SourceBranchIcon className="icon-inline text-muted mr-1" />
+                    Changesets{' '}
+                    <span className="badge badge-pill badge-secondary ml-1">
+                        {batchChange.changesetsStats.total - batchChange.changesetsStats.archived}
+                    </span>
                 </span>
             </BatchChangeTab>
             <BatchChangeTab index={1} name={TabName.Chart}>
-                <ChartLineVariantIcon className="icon-inline text-muted mr-1" /> Burndown chart
+                <span>
+                    <ChartLineVariantIcon className="icon-inline text-muted mr-1" /> Burndown chart
+                </span>
             </BatchChangeTab>
             <BatchChangeTab index={2} name={TabName.Spec}>
-                <FileDocumentIcon className="icon-inline text-muted mr-1" /> Spec
+                <span>
+                    <FileDocumentIcon className="icon-inline text-muted mr-1" /> Spec
+                </span>
             </BatchChangeTab>
             <BatchChangeTab index={3} name={TabName.Archived}>
-                <ArchiveIcon className="icon-inline text-muted mr-1" /> Archived{' '}
-                <span className="badge badge-pill badge-secondary ml-1">{batchChange.changesetsStats.archived}</span>
+                <span>
+                    <ArchiveIcon className="icon-inline text-muted mr-1" /> Archived{' '}
+                    <span className="badge badge-pill badge-secondary ml-1">
+                        {batchChange.changesetsStats.archived}
+                    </span>
+                </span>
             </BatchChangeTab>
             <BatchChangeTab index={4} name={TabName.BulkOperations}>
-                <MonitorStarIcon className="icon-inline text-muted mr-1" /> Bulk operations{' '}
-                <span className="badge badge-pill badge-secondary ml-1">{batchChange.bulkOperations.totalCount}</span>
+                <span>
+                    <MonitorStarIcon className="icon-inline text-muted mr-1" /> Bulk operations{' '}
+                    <span className="badge badge-pill badge-secondary ml-1">
+                        {batchChange.bulkOperations.totalCount}
+                    </span>
+                </span>
             </BatchChangeTab>
         </BatchChangeTabList>
         <BatchChangeTabPanels>
@@ -123,18 +138,20 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                 />
             </BatchChangeTabPanel>
             <BatchChangeTabPanel index={2}>
-                <div className="d-flex flex-wrap justify-content-between align-items-baseline mb-2 test-batches-spec">
-                    <BatchSpecMeta
-                        createdAt={batchChange.createdAt}
-                        lastApplier={batchChange.lastApplier}
-                        lastAppliedAt={batchChange.lastAppliedAt}
-                    />
-                    <BatchSpecDownloadLink
-                        name={batchChange.name}
-                        originalInput={batchChange.currentSpec.originalInput}
-                    />
-                </div>
-                <BatchSpec originalInput={batchChange.currentSpec.originalInput} />
+                <Container>
+                    <div className="d-flex flex-wrap justify-content-between align-items-baseline mb-2 test-batches-spec">
+                        <BatchSpecMeta
+                            createdAt={batchChange.createdAt}
+                            lastApplier={batchChange.lastApplier}
+                            lastAppliedAt={batchChange.lastAppliedAt}
+                        />
+                        <BatchSpecDownloadLink
+                            name={batchChange.name}
+                            originalInput={batchChange.currentSpec.originalInput}
+                        />
+                    </div>
+                    <BatchSpec originalInput={batchChange.currentSpec.originalInput} />
+                </Container>
             </BatchChangeTabPanel>
             <BatchChangeTabPanel index={3}>
                 <BatchChangeChangesets

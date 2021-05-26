@@ -2,51 +2,51 @@
 // stylelint-disable selector-max-compound-selectors
 
 .web-content {
-    .theme-dark & {
-        color: var(--body-color);
+    // .theme-dark & {
+    //     color: var(--body-color);
 
-        --body-color: #{$gray-06};
-        --link-color: var(--web-content-link-color);
-    }
-    .theme-light & {
-        --link-color: var(--web-content-link-color);
-    }
+    //     --body-color: #{$gray-06};
+    //     --link-color: var(--web-content-link-color);
+    // }
+    // .theme-light & {
+    //     --link-color: var(--web-content-link-color);
+    // }
 
-    h1,
-    h2 {
-        color: $gray-08;
+    // h1,
+    // h2 {
+    //     color: $gray-08;
 
-        .theme-light & {
-            color: $gray-17;
-        }
-    }
+    //     .theme-light & {
+    //         color: $gray-17;
+    //     }
+    // }
 
-    h3 {
-        color: $gray-08;
+    // h3 {
+    //     color: $gray-08;
 
-        .theme-light & {
-            color: $gray-15;
-        }
-    }
+    //     .theme-light & {
+    //         color: $gray-15;
+    //     }
+    // }
 
-    h4 {
-        .theme-light & {
-            color: $gray-14;
-        }
-    }
+    // h4 {
+    //     .theme-light & {
+    //         color: $gray-14;
+    //     }
+    // }
 
-    h5 {
-        color: $gray-04;
+    // h5 {
+    //     color: $gray-04;
 
-        .theme-light & {
-            color: $gray-13;
-        }
-    }
-    h6 {
-        color: $gray-04;
+    //     .theme-light & {
+    //         color: $gray-13;
+    //     }
+    // }
+    // h6 {
+    //     color: $gray-04;
 
-        .theme-light & {
-            color: $gray-13;
-        }
-    }
+    //     .theme-light & {
+    //         color: $gray-13;
+    //     }
+    // }
 }

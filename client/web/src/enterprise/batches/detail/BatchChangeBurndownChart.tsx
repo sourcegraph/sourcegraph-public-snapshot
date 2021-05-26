@@ -16,6 +16,7 @@ import {
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Container } from '@sourcegraph/wildcard'
 
 import { ChangesetCountsOverTimeFields, Scalars } from '../../../graphql-operations'
 
@@ -120,72 +121,77 @@ export const BatchChangeBurndownChart: React.FunctionComponent<Props> = ({
     }
 
     return (
-        <div className={classNames(styles.batchChangeBurndownChartContainer, 'd-flex align-items-center')}>
-            <ResponsiveContainer width={width} height={300} className="test-batches-chart">
-                <ComposedChart
-                    data={changesetCountsOverTime.map(snapshot => ({ ...snapshot, date: Date.parse(snapshot.date) }))}
-                >
-                    <XAxis
-                        dataKey="date"
-                        domain={[
-                            changesetCountsOverTime[0].date,
-                            changesetCountsOverTime[changesetCountsOverTime.length - 1].date,
-                        ]}
-                        name="Time"
-                        tickFormatter={dateTickFormatter}
-                        type="number"
-                        stroke="var(--text-muted)"
-                        scale="time"
-                    />
-                    <YAxis
-                        tickFormatter={toLocaleString}
-                        stroke="var(--text-muted)"
-                        type="number"
-                        allowDecimals={false}
-                        domain={[0, 'dataMax']}
-                    />
-                    <Tooltip
-                        labelFormatter={tooltipLabelFormatter as LabelFormatter}
-                        isAnimationActive={false}
-                        wrapperStyle={{ border: '1px solid var(--border-color)' }}
-                        contentStyle={tooltipStyle}
-                        labelStyle={{ fontWeight: 'bold' }}
-                        itemStyle={tooltipStyle}
-                        itemSorter={tooltipItemSorter}
-                    />
+        <Container>
+            <div className={classNames(styles.batchChangeBurndownChartContainer, 'd-flex align-items-center')}>
+                <ResponsiveContainer width={width} height={300} className="test-batches-chart">
+                    <ComposedChart
+                        data={changesetCountsOverTime.map(snapshot => ({
+                            ...snapshot,
+                            date: Date.parse(snapshot.date),
+                        }))}
+                    >
+                        <XAxis
+                            dataKey="date"
+                            domain={[
+                                changesetCountsOverTime[0].date,
+                                changesetCountsOverTime[changesetCountsOverTime.length - 1].date,
+                            ]}
+                            name="Time"
+                            tickFormatter={dateTickFormatter}
+                            type="number"
+                            stroke="var(--text-muted)"
+                            scale="time"
+                        />
+                        <YAxis
+                            tickFormatter={toLocaleString}
+                            stroke="var(--text-muted)"
+                            type="number"
+                            allowDecimals={false}
+                            domain={[0, 'dataMax']}
+                        />
+                        <Tooltip
+                            labelFormatter={tooltipLabelFormatter as LabelFormatter}
+                            isAnimationActive={false}
+                            wrapperStyle={{ border: '1px solid var(--border-color)' }}
+                            contentStyle={tooltipStyle}
+                            labelStyle={{ fontWeight: 'bold' }}
+                            itemStyle={tooltipStyle}
+                            itemSorter={tooltipItemSorter}
+                        />
 
-                    {Object.entries(states)
-                        .sort(([, a], [, b]) => b.sortOrder - a.sortOrder)
-                        .filter(([dataKey]) => !hiddenStates.has(dataKey as keyof DisplayableChangesetCounts))
-                        .map(([dataKey, state]) => (
-                            <Area
-                                key={state.sortOrder}
-                                dataKey={dataKey}
-                                name={state.label}
-                                fill={state.fill}
-                                // The stroke is used to color the legend, which we
-                                // want to match the fill color for each area.
-                                stroke={state.fill}
-                                {...commonAreaProps}
-                            />
-                        ))}
-                </ComposedChart>
-            </ResponsiveContainer>
-            <div className="flex-grow-0 ml-2">
-                {Object.entries(states).map(([key, state]) => (
-                    <LegendLabel
-                        key={key}
-                        stateKey={key as keyof DisplayableChangesetCounts}
-                        label={state.label}
-                        fill={state.fill}
-                        hiddenStates={hiddenStates}
-                        setHiddenStates={setHiddenStates}
-                    />
-                ))}
-                <hr className="flex-grow-1" />
-                <IncludeArchivedToggle includeArchived={includeArchived} onToggle={toggleIncludeArchived} />
+                        {Object.entries(states)
+                            .sort(([, a], [, b]) => b.sortOrder - a.sortOrder)
+                            .filter(([dataKey]) => !hiddenStates.has(dataKey as keyof DisplayableChangesetCounts))
+                            .map(([dataKey, state]) => (
+                                <Area
+                                    key={state.sortOrder}
+                                    dataKey={dataKey}
+                                    name={state.label}
+                                    fill={state.fill}
+                                    // The stroke is used to color the legend, which we
+                                    // want to match the fill color for each area.
+                                    stroke={state.fill}
+                                    {...commonAreaProps}
+                                />
+                            ))}
+                    </ComposedChart>
+                </ResponsiveContainer>
+                <div className="flex-grow-0 ml-2">
+                    {Object.entries(states).map(([key, state]) => (
+                        <LegendLabel
+                            key={key}
+                            stateKey={key as keyof DisplayableChangesetCounts}
+                            label={state.label}
+                            fill={state.fill}
+                            hiddenStates={hiddenStates}
+                            setHiddenStates={setHiddenStates}
+                        />
+                    ))}
+                    <hr className="flex-grow-1" />
+                    <IncludeArchivedToggle includeArchived={includeArchived} onToggle={toggleIncludeArchived} />
+                </div>
             </div>
-        </div>
+        </Container>
     )
 }
 

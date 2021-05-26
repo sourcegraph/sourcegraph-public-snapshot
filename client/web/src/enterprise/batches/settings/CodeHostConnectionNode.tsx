@@ -1,5 +1,7 @@
+import classNames from 'classnames'
 import CheckboxBlankCircleOutlineIcon from 'mdi-react/CheckboxBlankCircleOutlineIcon'
 import CheckCircleOutlineIcon from 'mdi-react/CheckCircleOutlineIcon'
+import EarthIcon from 'mdi-react/EarthIcon'
 import InfoCircleIcon from 'mdi-react/InfoCircleIcon'
 import React, { useCallback, useState } from 'react'
 import { Subject } from 'rxjs'
@@ -8,6 +10,7 @@ import { defaultExternalServices } from '../../../components/externalServices/ex
 import { BatchChangesCodeHostFields, Scalars } from '../../../graphql-operations'
 
 import { AddCredentialModal } from './AddCredentialModal'
+import styles from './CodeHostConnectionNode.module.scss'
 import { RemoveCredentialModal } from './RemoveCredentialModal'
 import { ViewCredentialModal } from './ViewCredentialModal'
 
@@ -50,7 +53,12 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
 
     return (
         <>
-            <li className="list-group-item p-3 test-code-host-connection-node">
+            <li
+                className={classNames(
+                    styles.codeHostConnectionNodeContainer,
+                    'list-group-item test-code-host-connection-node'
+                )}
+            >
                 <div className="d-flex justify-content-between align-items-center mb-0">
                     <h3 className="text-nowrap mb-0">
                         {isEnabled && (
@@ -65,14 +73,17 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
                                 data-tooltip="No token set"
                             />
                         )}
-                        <Icon className="icon-inline mx-2" /> {node.externalServiceURL}
+                        <Icon className="icon-inline mx-2" /> {node.externalServiceURL}{' '}
+                        {!isEnabled && node.credential?.isSiteCredential && (
+                            <span
+                                className="badge badge-secondary"
+                                data-tooltip="Changesets on this code host will
+                            be created with a global token until a personal access token is added."
+                            >
+                                Global token
+                            </span>
+                        )}
                     </h3>
-                    {!isEnabled && node.credential?.isSiteCredential && (
-                        <span className="text-primary mx-3">
-                            <InfoCircleIcon className="icon-inline" /> Changesets on this code host will be created with
-                            a global token until a personal access token is added.
-                        </span>
-                    )}
                     <div className="mb-0">
                         {isEnabled && (
                             <>

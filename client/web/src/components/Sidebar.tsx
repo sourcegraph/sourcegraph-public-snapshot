@@ -5,7 +5,7 @@ import React, { useCallback, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { Collapse } from 'reactstrap'
 
-export const SIDEBAR_BUTTON_CLASS = 'btn btn-secondary d-block w-100 my-2'
+export const SIDEBAR_BUTTON_CLASS = 'btn text-left inactive-category w-100'
 
 /**
  * Item of `SideBarGroupItems`.
@@ -18,13 +18,18 @@ export const SidebarNavItem: React.FunctionComponent<{
     source?: string
 }> = ({ icon: Icon, children, className, to, exact, source }) =>
     source === 'server' ? (
-        <a href={to} className={classNames('list-group-item list-group-item-action py-2', className)}>
+        <a href={to} className={classNames('btn text-left inactive-category d-flex', className)}>
             {Icon && <Icon className="icon-inline mr-2" />}
             {children}
         </a>
     ) : (
-        <NavLink to={to} exact={exact} className={classNames('list-group-item list-group-item-action py-2', className)}>
-            {Icon && <Icon className="icon-inline mr-2" />}
+        <NavLink
+            to={to}
+            exact={exact}
+            className={classNames('btn text-left inactive-category d-flex', className)}
+            activeClassName="btn-primary"
+        >
+            {Icon && <Icon className="redesign-d-none icon-inline mr-2" />}
             {children}
         </NavLink>
     )
@@ -37,9 +42,9 @@ export const SidebarGroupHeader: React.FunctionComponent<{
     label: string
     children?: undefined
 }> = ({ icon: Icon, label }) => (
-    <div className="card-header">
-        {Icon && <Icon className="icon-inline mr-1" />} {label}
-    </div>
+    <h3>
+        {Icon && <Icon className="icon-inline mr-1 redesign-d-none" />} {label}
+    </h3>
 )
 
 /**
@@ -82,12 +87,29 @@ export const SidebarCollapseItems: React.FunctionComponent<{
  * A box of items in the side bar. Use `SideBarGroupHeader` and `SideBarGroupItems` as children.
  */
 export const SidebarGroup: React.FunctionComponent<{}> = ({ children }) => (
-    <div className="card mb-3 sidebar">{children}</div>
+    <div className="d-flex flex-column mb-3 sidebar">{children}</div>
 )
 
 /**
  * Container for all `SideBarNavItem` in a `SideBarGroup`.
  */
-export const SidebarGroupItems: React.FunctionComponent<{}> = ({ children }) => (
-    <div className="list-group list-group-flush">{children}</div>
-)
+export const SidebarGroupItems: React.FunctionComponent<{}> = ({ children }) => <div className="">{children}</div>
+{
+    /* <div className="d-flex flex-column">
+<h3 className={classnames(styles.header, 'mb-3')}>Categories</h3>
+
+{['All' as const, ...EXTENSION_CATEGORIES].map(category => (
+    <button
+        type="button"
+        className={classnames(
+            'btn text-left',
+            selectedCategory === category ? 'btn-primary' : styles.inactiveCategory
+        )}
+        data-test-extension-category={category}
+        key={category}
+        onClick={() => onSelectCategory(category)}
+    >
+        {category}
+    </button>
+))} */
+}

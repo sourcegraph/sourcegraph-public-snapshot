@@ -1,0 +1,13 @@
+.access-token-node {
+    &__container {
+        border: 0;
+        padding: 0;
+        &:not(:last-child) {
+            margin-bottom: 0.5rem;
+        }
+        + .access-token-node__container {
+            border-top: 1px solid var(--border-color);
+            padding-top: 0.5rem;
+        }
+    }
+}

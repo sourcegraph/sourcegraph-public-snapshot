@@ -61,7 +61,7 @@ export class ActivationChecklist extends React.PureComponent<ActivationChecklist
             <div className={`activation-checklist list-group list-group-flush ${this.props.className || ''}`}>
                 <Accordion collapsible={true}>
                     {this.props.steps.map(step => (
-                        <AccordionItem key={step.id} className="activation-checklist__container list-group-item ">
+                        <AccordionItem key={step.id} className="activation-checklist__container list-group-item">
                             <AccordionButton className="activation-checklist__button list-group-item list-group-item-action btn-link">
                                 <ActivationChecklistItem
                                     key={step.id}

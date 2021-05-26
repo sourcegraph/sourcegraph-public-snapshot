@@ -61,6 +61,7 @@ $compact-summary-min-height: 2.75rem;
             flex-direction: row;
             justify-content: space-between;
             align-items: center;
+            margin-top: 1rem;
         }
     }
     &--compact &__summary-container {
@@ -121,7 +122,7 @@ $compact-summary-min-height: 2.75rem;
         margin-right: auto;
         .theme-redesign & {
             margin-right: initial;
-            margin-bottom: 1rem;
+            // margin-bottom: 1rem;
         }
     }
 }

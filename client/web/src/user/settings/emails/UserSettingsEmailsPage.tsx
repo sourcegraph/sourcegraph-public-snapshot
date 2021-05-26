@@ -4,11 +4,12 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { ErrorAlert } from '../../../components/alerts'
 import { PageTitle } from '../../../components/PageTitle'
-import { UserAreaUserFields, UserEmailsResult, UserEmailsVariables } from '../../../graphql-operations'
+import { Scalars, UserAreaUserFields, UserEmailsResult, UserEmailsVariables } from '../../../graphql-operations'
 import { siteFlags } from '../../../site/backend'
 import { eventLogger } from '../../../tracking/eventLogger'
 
@@ -41,26 +42,7 @@ export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user }) => {
     const fetchEmails = useCallback(async (): Promise<void> => {
         setStatusOrError('loading')
 
-        const fetchedEmails = dataOrThrowErrors(
-            await requestGraphQL<UserEmailsResult, UserEmailsVariables>(
-                gql`
-                    query UserEmails($user: ID!) {
-                        node(id: $user) {
-                            ... on User {
-                                emails {
-                                    email
-                                    isPrimary
-                                    verified
-                                    verificationPending
-                                    viewerCanManuallyVerify
-                                }
-                            }
-                        }
-                    }
-                `,
-                { user: user.id }
-            ).toPromise()
-        )
+        const fetchedEmails = await fetchUserEmails(user.id)
 
         // always cleanup email action errors when re-fetching emails
         setEmailActionError(undefined)
@@ -85,51 +67,72 @@ export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user }) => {
         })
     }, [fetchEmails])
 
+    if (statusOrError === 'loading') {
+        return <LoadingSpinner className="icon-inline" />
+    }
+
+    if (isErrorLike(statusOrError)) {
+        return <ErrorAlert className="mt-2" error={statusOrError} />
+    }
+
     return (
         <div className="user-settings-emails-page">
             <PageTitle title="Emails" />
+            <PageHeader headingElement="h2" path={[{ text: 'Emails' }]} className="mb-3" />
 
             {flags && !flags.sendsEmailVerificationEmails && (
-                <div className="alert alert-warning mt-2">
+                <div className="alert alert-warning">
                     Sourcegraph is not configured to send email verifications. Newly added email addresses must be
                     manually verified by a site admin.
                 </div>
             )}
 
-            {isErrorLike(statusOrError) && <ErrorAlert className="mt-2" error={statusOrError} />}
             {isErrorLike(emailActionError) && <ErrorAlert className="mt-2" error={emailActionError} />}
 
-            <h2>Emails</h2>
-
-            {statusOrError === 'loading' ? (
-                <div className="d-flex justify-content-center">
-                    <LoadingSpinner className="icon-inline" />
-                </div>
-            ) : (
-                <div className="mt-4">
-                    <ul className="list-group">
-                        {emails.map(email => (
-                            <li key={email.email} className="list-group-item p-3">
-                                <UserEmail
-                                    user={user.id}
-                                    email={email}
-                                    onEmailVerify={fetchEmails}
-                                    onEmailResendVerification={fetchEmails}
-                                    onDidRemove={onEmailRemove}
-                                    onError={setEmailActionError}
-                                />
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            )}
-
-            {/* re-fetch emails on onDidAdd to guarantee correct state */}
-            <AddUserEmailForm className="mt-4" user={user.id} onDidAdd={fetchEmails} />
-            <hr className="my-4" />
-            {statusOrError === 'loaded' && (
+            <Container>
+                <ul className="list-group">
+                    {emails.map(email => (
+                        <li key={email.email} className="list-group-item p-3">
+                            <UserEmail
+                                user={user.id}
+                                email={email}
+                                onEmailVerify={fetchEmails}
+                                onEmailResendVerification={fetchEmails}
+                                onDidRemove={onEmailRemove}
+                                onError={setEmailActionError}
+                            />
+                        </li>
+                    ))}
+                    {emails.length === 0 && <li className="list-group-item p-3">No emails.</li>}
+                </ul>
+                {/* re-fetch emails on onDidAdd to guarantee correct state */}
+                <AddUserEmailForm className="mt-4" user={user.id} onDidAdd={fetchEmails} />
+                <hr className="my-4" />
                 <SetUserPrimaryEmailForm user={user.id} emails={emails} onDidSet={fetchEmails} />
-            )}
+            </Container>
         </div>
+    )
+}
+
+async function fetchUserEmails(userID: Scalars['ID']): Promise<UserEmailsResult> {
+    return dataOrThrowErrors(
+        await requestGraphQL<UserEmailsResult, UserEmailsVariables>(
+            gql`
+                query UserEmails($user: ID!) {
+                    node(id: $user) {
+                        ... on User {
+                            emails {
+                                email
+                                isPrimary
+                                verified
+                                verificationPending
+                                viewerCanManuallyVerify
+                            }
+                        }
+                    }
+                }
+            `,
+            { user: userID }
+        ).toPromise()
     )
 }

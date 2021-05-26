@@ -22,6 +22,7 @@ import {
     queryChangesetApplyPreview as _queryChangesetApplyPreview,
 } from './list/backend'
 import { PreviewList } from './list/PreviewList'
+import { Container } from '@sourcegraph/wildcard'
 
 export interface BatchChangePreviewProps extends ThemeProps, TelemetryProps {
     batchSpecID: string
@@ -77,10 +78,12 @@ export const BatchChangePreviewTabs: React.FunctionComponent<BatchChangePreviewT
                 />
             </BatchChangeTabPanel>
             <BatchChangeTabPanel index={1}>
-                <div className="d-flex mb-2 justify-content-end">
-                    <BatchSpecDownloadLink name={spec.description.name} originalInput={spec.originalInput} />
-                </div>
-                <BatchSpec originalInput={spec.originalInput} />
+                <Container>
+                    <div className="d-flex mb-2 justify-content-end">
+                        <BatchSpecDownloadLink name={spec.description.name} originalInput={spec.originalInput} />
+                    </div>
+                    <BatchSpec originalInput={spec.originalInput} />
+                </Container>
             </BatchChangeTabPanel>
         </BatchChangeTabPanels>
     </BatchChangeTabs>

@@ -46,7 +46,7 @@ export const ConnectionNodesSummary = <C extends Connection<N>, N, NP = {}, HP =
 
     if (totalCount !== null && totalCount > 0 && !TotalCountSummaryComponent) {
         return (
-            <p className="filtered-connection__summary" data-testid="summary">
+            <p className="filtered-connection__summary mb-0" data-testid="summary">
                 <small>
                     <span>
                         {totalCount} {pluralize(noun, totalCount, pluralNoun)}{' '}

@@ -85,9 +85,9 @@ export const ChangesetFilterRow: React.FunctionComponent<ChangesetFilterRowProps
 
     return (
         <>
-            <div className="row no-gutters">
+            <div className="row no-gutters mb-2">
                 <div className="m-0 col">
-                    <Form className="form-inline d-flex my-2" onSubmit={onSubmit}>
+                    <Form className="form-inline d-flex" onSubmit={onSubmit}>
                         <input
                             className="form-control flex-grow-1"
                             type="search"
@@ -100,7 +100,7 @@ export const ChangesetFilterRow: React.FunctionComponent<ChangesetFilterRowProps
                 <div className="w-100 d-block d-md-none" />
                 <div className="m-0 col col-md-auto">
                     <div className="row no-gutters">
-                        <div className="col my-2 ml-0 ml-md-2">
+                        <div className="col ml-0 ml-md-2">
                             <ChangesetFilter<ChangesetState>
                                 values={Object.values(ChangesetState)}
                                 label="Status"
@@ -109,7 +109,7 @@ export const ChangesetFilterRow: React.FunctionComponent<ChangesetFilterRowProps
                                 className="w-100"
                             />
                         </div>
-                        <div className="col my-2 ml-2">
+                        <div className="col ml-2">
                             <ChangesetFilter<ChangesetCheckState>
                                 values={Object.values(ChangesetCheckState)}
                                 label="Check state"
@@ -119,7 +119,7 @@ export const ChangesetFilterRow: React.FunctionComponent<ChangesetFilterRowProps
                             />
                         </div>
                         <div className="w-100 d-block d-sm-none" />
-                        <div className="col my-2 ml-0 ml-sm-2">
+                        <div className="col ml-0 ml-sm-2">
                             <ChangesetFilter<ChangesetReviewState>
                                 values={Object.values(ChangesetReviewState)}
                                 label="Review state"

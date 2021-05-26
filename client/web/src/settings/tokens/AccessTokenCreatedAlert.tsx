@@ -26,8 +26,8 @@ export const AccessTokenCreatedAlert: React.FunctionComponent<AccessTokenCreated
     return (
         <div className={classNames('access-token-created-alert alert alert-success', className)}>
             <p>
-                <CheckmarkCircleIcon className="icon-inline" /> Copy the new access token now. You won't be able to see
-                it again.
+                <CheckmarkCircleIcon className="redesign-d-none icon-inline" /> Copy the new access token now. You won't
+                be able to see it again.
             </p>
             <CopyableText className="test-access-token" text={tokenSecret} size={48} />
             <h5 className="mt-4 mb-2">

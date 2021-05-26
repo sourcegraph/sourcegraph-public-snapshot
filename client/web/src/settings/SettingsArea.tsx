@@ -26,6 +26,7 @@ import { eventLogger } from '../tracking/eventLogger'
 
 import { mergeSettingsSchemas } from './configuration'
 import { SettingsPage } from './SettingsPage'
+import { PageHeader } from '@sourcegraph/wildcard'
 
 const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
@@ -165,7 +166,7 @@ export class SettingsArea extends React.Component<Props, State> {
 
         return (
             <div className={`h-100 d-flex flex-column ${this.props.className || ''}`}>
-                <h2>{term} settings</h2>
+                <PageHeader headingElement="h2" path={[{ text: `${term} settings` }]} className="mb-3" />
                 {this.props.extraHeader}
                 <Switch>
                     <Route

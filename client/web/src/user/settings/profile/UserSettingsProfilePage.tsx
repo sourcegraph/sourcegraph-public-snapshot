@@ -5,7 +5,7 @@ import { percentageDone } from '@sourcegraph/shared/src/components/activation/Ac
 import { ActivationChecklist } from '@sourcegraph/shared/src/components/activation/ActivationChecklist'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { PageHeader } from '@sourcegraph/wildcard'
+import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { refreshAuthenticatedUser } from '../../../auth'
 import { PageTitle } from '../../../components/PageTitle'
@@ -66,30 +66,30 @@ export const UserSettingsProfilePage: React.FunctionComponent<Props> = ({
             <PageHeader
                 path={[{ text: 'Profile' }]}
                 headingElement="h2"
+                description={
+                    <>
+                        {user.displayName ? (
+                            <>
+                                {user.displayName} ({user.username})
+                            </>
+                        ) : (
+                            user.username
+                        )}{' '}
+                        started using Sourcegraph <Timestamp date={user.createdAt} />.
+                    </>
+                }
                 className="user-settings-profile-page__heading"
             />
-            <p>
-                {user.displayName ? (
-                    <>
-                        {user.displayName} ({user.username})
-                    </>
-                ) : (
-                    user.username
-                )}{' '}
-                started using Sourcegraph <Timestamp date={user.createdAt} />.
-            </p>
             {props.activation?.completed && percentageDone(props.activation.completed) < 100 && (
-                <div className="card mb-3">
-                    <div className="card-body">
-                        <h3 className="mb-0">Almost there!</h3>
-                        <p className="mb-0">Complete the steps below to finish onboarding to Sourcegraph.</p>
-                    </div>
+                <Container className="mb-3">
+                    <h3>Almost there!</h3>
+                    <p>Complete the steps below to finish onboarding to Sourcegraph.</p>
                     <ActivationChecklist
                         history={props.history}
                         steps={props.activation.steps}
                         completed={props.activation.completed}
                     />
-                </div>
+                </Container>
             )}
             {user && !isErrorLike(user) && (
                 <EditUserProfileForm

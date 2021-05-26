@@ -1,0 +1,16 @@
+.code-host-connection-node {
+    &__container {
+        padding: 1rem;
+        :global(.theme-redesign) & {
+            padding: 0;
+            border: none;
+            &:not(:last-child) {
+                padding-bottom: 1rem;
+            }
+            &:not(:first-child) {
+                padding-top: 1rem;
+                border-top: 1px solid var(--border-color);
+            }
+        }
+    }
+}

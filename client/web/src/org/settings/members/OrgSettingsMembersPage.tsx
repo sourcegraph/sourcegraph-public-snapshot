@@ -8,6 +8,7 @@ import { catchError, distinctUntilChanged, filter, map, startWith, switchMap, ta
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { queryGraphQL } from '../../../backend/graphql'
@@ -92,7 +93,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
     public render(): JSX.Element | null {
         const loading = this.state.removalOrError === undefined
         return (
-            <li className="list-group-item py-2" data-test-username={this.props.node.username}>
+            <li className="list-group-item" data-test-username={this.props.node.username}>
                 <div className="d-flex align-items-center justify-content-between">
                     <div>
                         <Link to={userURL(this.props.node.username)}>
@@ -189,27 +190,30 @@ export class OrgSettingsMembersPage extends React.PureComponent<Props, State> {
         return (
             <div className="org-settings-members-page">
                 <PageTitle title={`Members - ${this.props.org.name}`} />
-                {this.state.viewerCanAdminister && (
-                    <InviteForm
-                        orgID={this.props.org.id}
-                        authenticatedUser={this.props.authenticatedUser}
-                        onOrganizationUpdate={this.props.onOrganizationUpdate}
-                        onDidUpdateOrganizationMembers={this.onDidUpdateOrganizationMembers}
+                <PageHeader path={[{ text: 'Organization members' }]} headingElement="h2" className="mb-3" />
+                <Container>
+                    {this.state.viewerCanAdminister && (
+                        <InviteForm
+                            orgID={this.props.org.id}
+                            authenticatedUser={this.props.authenticatedUser}
+                            onOrganizationUpdate={this.props.onOrganizationUpdate}
+                            onDidUpdateOrganizationMembers={this.onDidUpdateOrganizationMembers}
+                        />
+                    )}
+                    <FilteredConnection<GQL.IUser, Omit<UserNodeProps, 'node'>>
+                        className="list-group list-group-flush test-org-members"
+                        noun="member"
+                        pluralNoun="members"
+                        queryConnection={this.fetchOrgMembers}
+                        nodeComponent={UserNode}
+                        nodeComponentProps={nodeProps}
+                        noShowMore={true}
+                        hideSearch={true}
+                        updates={this.userUpdates}
+                        history={this.props.history}
+                        location={this.props.location}
                     />
-                )}
-                <FilteredConnection<GQL.IUser, Omit<UserNodeProps, 'node'>>
-                    className="list-group list-group-flush mt-3 test-org-members"
-                    noun="member"
-                    pluralNoun="members"
-                    queryConnection={this.fetchOrgMembers}
-                    nodeComponent={UserNode}
-                    nodeComponentProps={nodeProps}
-                    noShowMore={true}
-                    hideSearch={true}
-                    updates={this.userUpdates}
-                    history={this.props.history}
-                    location={this.props.location}
-                />
+                </Container>
             </div>
         )
     }

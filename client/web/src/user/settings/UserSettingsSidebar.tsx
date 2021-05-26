@@ -79,7 +79,7 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
                     {props.items.account.map(
                         ({ label, to, exact, status, condition = () => true }) =>
                             condition(context) && (
-                                <SidebarNavItem key={label} to={props.match.path + to} exact={exact} className="d-flex">
+                                <SidebarNavItem key={label} to={props.match.path + to} exact={exact}>
                                     {label} {status && <Badge className="ml-1" status={status} />}
                                 </SidebarNavItem>
                             )

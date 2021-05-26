@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import React, { useCallback, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { map, mapTo } from 'rxjs/operators'
@@ -18,6 +19,7 @@ import {
 import { userURL } from '../../user'
 
 import { AccessTokenCreatedAlert } from './AccessTokenCreatedAlert'
+import styles from './AccessTokenNode.module.scss'
 
 export const accessTokenFragment = gql`
     fragment AccessTokenFields on AccessToken {
@@ -94,8 +96,11 @@ export const AccessTokenNode: React.FunctionComponent<AccessTokenNodeProps> = ({
     const note = node.note || '(no description)'
 
     return (
-        <li className="list-group-item p-3 d-block" data-test-access-token-description={note}>
-            <div className="d-flex w-100 justify-content-between">
+        <li
+            className={classNames(styles.accessTokenNodeContainer, 'list-group-item d-block')}
+            data-test-access-token-description={note}
+        >
+            <div className="d-flex w-100 justify-content-between align-items-center">
                 <div className="mr-2">
                     {showSubject ? (
                         <>
