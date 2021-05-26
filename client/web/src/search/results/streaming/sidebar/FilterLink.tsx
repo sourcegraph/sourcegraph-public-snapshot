@@ -2,8 +2,9 @@ import classNames from 'classnames'
 import React from 'react'
 
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
+import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { getRepoIcon } from '@sourcegraph/shared/src/util/getRepoIcon'
+import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
 import { SyntaxHighlightedSearchQuery } from '../../../../components/SyntaxHighlightedSearchQuery'
 import { Settings } from '../../../../schema/settings.schema'
@@ -31,15 +32,18 @@ export const FilterLink: React.FunctionComponent<FilterLinkProps> = ({
     <button
         type="button"
         className={classNames('test-sidebar-filter-link btn btn-link', styles.sidebarSectionListItem)}
-        data-tooltip={value}
-        data-placement="right"
         onClick={() => onFilterChosen(value)}
     >
         <span className="flex-grow-1">{labelConverter(label)}</span>
-        <span className="pl-2 flex-shrink-0">
-            {count}
-            {limitHit ? '+' : ''}
-        </span>
+        {count && (
+            <span
+                className="pl-2 flex-shrink-0"
+                title={`At least ${count} ${pluralize('result matches', count, 'results match')} this filter.`}
+            >
+                {count}
+                {limitHit ? '+' : ''}
+            </span>
+        )}
     </button>
 )
 
@@ -48,14 +52,17 @@ export const getRepoFilterLinks = (
     onFilterChosen: (value: string) => void
 ): React.ReactElement[] => {
     function repoLabelConverter(label: string): JSX.Element {
-        const RepoIcon = getRepoIcon(label)
+        const Icon = RepoIcon({
+            repoName: label,
+            className: classNames('icon-inline text-muted', styles.sidebarSectionIcon),
+        })
 
         return (
             <span className={classNames('text-monospace search-query-link', styles.sidebarSectionListItemBreakWords)}>
                 <span className="search-filter-keyword">r:</span>
-                {RepoIcon ? (
+                {Icon ? (
                     <>
-                        <RepoIcon className={classNames('icon-inline text-muted', styles.sidebarSectionIcon)} />
+                        {Icon}
                         {displayRepoName(label)}
                     </>
                 ) : (
