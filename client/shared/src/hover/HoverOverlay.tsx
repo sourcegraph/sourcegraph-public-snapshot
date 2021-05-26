@@ -3,6 +3,7 @@ import CloseIcon from 'mdi-react/CloseIcon'
 import React, { CSSProperties } from 'react'
 
 import { ActionItem, ActionItemComponentProps } from '../actions/ActionItem'
+import { NotificationType } from '../api/extension/extensionHostApi'
 import { PlatformContextProps } from '../platform/context'
 import { TelemetryProps } from '../telemetry/telemetryService'
 import { ThemeProps } from '../theme'
@@ -13,7 +14,7 @@ import { toNativeEvent } from './helpers'
 import { HoverContext, HoverOverlayBaseProps, GetAlertClassName } from './HoverOverlay.types'
 import { HoverOverlayAlerts, HoverOverlayAlertsProps } from './HoverOverlayAlerts'
 import { HoverOverlayContents } from './HoverOverlayContents'
-import { useLogTelemetryEvent } from './useTelemetryEvent'
+import { useLogTelemetryEvent } from './useLogTelemetryEvent'
 
 const LOADING = 'loading' as const
 
@@ -119,7 +120,7 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
                     hoverOrError={hoverOrError}
                     iconClassName={iconClassName}
                     badgeClassName={badgeClassName}
-                    errorAlertClassName={getAlertClassName?.('error')}
+                    errorAlertClassName={getAlertClassName?.(NotificationType.Error)}
                 />
             </div>
             {hoverOrError &&

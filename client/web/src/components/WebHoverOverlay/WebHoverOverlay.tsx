@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect } from 'react'
 
+import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { HoverOverlay, HoverOverlayProps } from '@sourcegraph/shared/src/hover/HoverOverlay'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
@@ -7,9 +8,9 @@ import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 import { HoverThresholdProps } from '../../repo/RepoContainer'
 
 const iconKindToAlertKind = {
-    info: 'secondary',
-    error: 'danger',
-    warning: 'warning',
+    [NotificationType.Info]: 'secondary',
+    [NotificationType.Error]: 'danger',
+    [NotificationType.Warning]: 'warning',
 }
 
 const getAlertClassName: HoverOverlayProps['getAlertClassName'] = iconKind =>

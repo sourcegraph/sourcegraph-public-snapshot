@@ -6,6 +6,7 @@ import InformationIcon from 'mdi-react/InfoCircleOutlineIcon'
 import React from 'react'
 import { HoverAlert } from 'sourcegraph'
 
+import { NotificationType } from '../../api/extension/extensionHostApi'
 import { renderMarkdown } from '../../util/markdown'
 import { GetAlertClassName } from '../HoverOverlay.types'
 
@@ -46,7 +47,10 @@ export const HoverOverlayAlerts: React.FunctionComponent<HoverOverlayAlertsProps
     return (
         <div className="hover-overlay__alerts">
             {hoverAlerts.map(({ summary, iconKind, type }, index) => (
-                <div key={index} className={classNames('hover-overlay__alert', getAlertClassName('info'))}>
+                <div
+                    key={index}
+                    className={classNames('hover-overlay__alert', getAlertClassName(NotificationType.Info))}
+                >
                     {hoverAlertIconComponent(iconKind, iconClassName)}
                     {summary.kind === 'plaintext' ? (
                         <span className="hover-overlay__content">{summary.value}</span>

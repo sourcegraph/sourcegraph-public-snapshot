@@ -1,4 +1,4 @@
-import { HoverAlert } from 'sourcegraph'
+import { NotificationType } from 'sourcegraph'
 
 import { HoverOverlayProps as GenericHoverOverlayProps } from '@sourcegraph/codeintellify'
 
@@ -10,4 +10,6 @@ export type HoverContext = RepoSpec & RevisionSpec & FileSpec & ResolvedRevision
 
 export interface HoverOverlayBaseProps extends GenericHoverOverlayProps<HoverContext, HoverMerged, ActionItemAction> {}
 
-export type GetAlertClassName = (kind: Required<HoverAlert>['iconKind']) => string | undefined
+export type GetAlertClassName = (
+    kind: Exclude<NotificationType, NotificationType.Log | NotificationType.Success>
+) => string | undefined
