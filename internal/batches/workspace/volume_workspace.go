@@ -250,6 +250,9 @@ func (w *dockerVolumeWorkspace) Diff(ctx context.Context) ([]byte, error) {
 	// See: https://github.com/sourcegraph/sourcegraph/blob/82d5e7e1562fef6be5c0b17f18631040fd330835/enterprise/internal/campaigns/service.go#L324-L329
 	//
 	// Also, we need to add --binary so binary file changes are inlined in the patch.
+	//
+	// ATTENTION: When you change the options here, be sure to also update the
+	// ApplyDiff method accordingly.
 	script := `#!/bin/sh
 	
 exec git diff --cached --no-prefix --binary
@@ -261,6 +264,24 @@ exec git diff --cached --no-prefix --binary
 	}
 
 	return out, nil
+}
+
+func (w *dockerVolumeWorkspace) ApplyDiff(ctx context.Context, diff []byte) error {
+	script := fmt.Sprintf(`#!/bin/sh
+
+cat << EOF | exec git apply -p0 -
+%s
+EOF
+
+git add --all > /dev/null
+`, string(diff))
+
+	out, err := w.runScript(ctx, "/work", script)
+	if err != nil {
+		return errors.Wrapf(err, "git apply diff:\n\n%s", string(out))
+	}
+
+	return nil
 }
 
 // DockerVolumeWorkspaceImage is the Docker image we'll run our unzip and git

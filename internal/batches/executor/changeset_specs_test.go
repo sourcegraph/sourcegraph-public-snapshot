@@ -8,22 +8,15 @@ import (
 	"github.com/sourcegraph/batch-change-utils/overridable"
 	"github.com/sourcegraph/src-cli/internal/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/git"
-	"github.com/sourcegraph/src-cli/internal/batches/graphql"
 )
 
 func TestCreateChangesetSpecs(t *testing.T) {
-	srcCLI := &graphql.Repository{
-		ID:            "src-cli",
-		Name:          "github.com/sourcegraph/src-cli",
-		DefaultBranch: &graphql.Branch{Name: "main", Target: graphql.Target{OID: "d34db33f"}},
-	}
-
 	defaultChangesetSpec := &batches.ChangesetSpec{
-		BaseRepository: srcCLI.ID,
+		BaseRepository: testRepo1.ID,
 		CreatedChangeset: &batches.CreatedChangeset{
-			BaseRef:        srcCLI.DefaultBranch.Name,
-			BaseRev:        srcCLI.DefaultBranch.Target.OID,
-			HeadRepository: srcCLI.ID,
+			BaseRef:        testRepo1.DefaultBranch.Name,
+			BaseRev:        testRepo1.DefaultBranch.Target.OID,
+			HeadRepository: testRepo1.ID,
 			HeadRef:        "refs/heads/my-branch",
 			Title:          "The title",
 			Body:           "The body",
@@ -58,7 +51,7 @@ func TestCreateChangesetSpecs(t *testing.T) {
 			},
 			Published: parsePublishedFieldString(t, "false"),
 		},
-		Repository: srcCLI,
+		Repository: testRepo1,
 	}
 
 	taskWith := func(t *Task, f func(t *Task)) *Task {

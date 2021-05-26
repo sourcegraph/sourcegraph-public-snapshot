@@ -15,6 +15,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Changed
 
+- `src batch [apply|preview]` now cache the results of each step when executing a batch spec. That can make re-execution a lot faster when only a subset of the steps has been changed. [#540](https://github.com/sourcegraph/src-cli/pull/540)
+
 ### Fixed
 
 ### Removed

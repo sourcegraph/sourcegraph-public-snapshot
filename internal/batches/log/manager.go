@@ -6,6 +6,14 @@ import (
 	"github.com/hashicorp/go-multierror"
 )
 
+type LogManager interface {
+	AddTask(string) (TaskLogger, error)
+	Close() error
+	LogFiles() []string
+}
+
+var _ LogManager = &Manager{}
+
 type Manager struct {
 	dir      string
 	keepLogs bool
@@ -17,7 +25,7 @@ func NewManager(dir string, keepLogs bool) *Manager {
 	return &Manager{dir: dir, keepLogs: keepLogs}
 }
 
-func (lm *Manager) AddTask(slug string) (*TaskLogger, error) {
+func (lm *Manager) AddTask(slug string) (TaskLogger, error) {
 	tl, err := newTaskLogger(slug, lm.keepLogs, lm.dir)
 	if err != nil {
 		return nil, err
@@ -31,7 +39,7 @@ func (lm *Manager) Close() error {
 	var errs *multierror.Error
 
 	lm.tasks.Range(func(_, v interface{}) bool {
-		logger := v.(*TaskLogger)
+		logger := v.(*FileTaskLogger)
 
 		if err := logger.Close(); err != nil {
 			errs = multierror.Append(errs, err)
@@ -47,7 +55,7 @@ func (lm *Manager) LogFiles() []string {
 	var files []string
 
 	lm.tasks.Range(func(_, v interface{}) bool {
-		files = append(files, v.(*TaskLogger).Path())
+		files = append(files, v.(*FileTaskLogger).Path())
 		return true
 	})
 

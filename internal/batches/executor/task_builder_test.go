@@ -12,8 +12,6 @@ import (
 )
 
 func TestTaskBuilder_BuildTask_IfConditions(t *testing.T) {
-	repo := &graphql.Repository{Name: "github.com/sourcegraph/automation-testing"}
-
 	tests := map[string]struct {
 		spec *batches.BatchSpec
 
@@ -82,11 +80,11 @@ func TestTaskBuilder_BuildTask_IfConditions(t *testing.T) {
 		"if expression that can be partially evaluated to true": {
 			spec: &batches.BatchSpec{
 				Steps: []batches.Step{
-					{Run: "echo 1", If: `${{ matches repository.name "github.com/sourcegraph/automation*" }}`},
+					{Run: "echo 1", If: `${{ matches repository.name "github.com/sourcegraph/src*" }}`},
 				},
 			},
 			wantSteps: []batches.Step{
-				{Run: "echo 1", If: `${{ matches repository.name "github.com/sourcegraph/automation*" }}`},
+				{Run: "echo 1", If: `${{ matches repository.name "github.com/sourcegraph/src*" }}`},
 			},
 		},
 
@@ -126,7 +124,7 @@ func TestTaskBuilder_BuildTask_IfConditions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			task, ok, err := builder.buildTask(repo, "", false)
+			task, ok, err := builder.buildTask(testRepo1, "", false)
 			if err != nil {
 				t.Fatalf("unexpected err: %s", err)
 			}

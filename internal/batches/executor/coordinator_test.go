@@ -3,8 +3,6 @@ package executor
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
-	"os"
 	"strings"
 	"sync"
 	"testing"
@@ -14,42 +12,12 @@ import (
 	"github.com/sourcegraph/src-cli/internal/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/git"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
-	"github.com/sourcegraph/src-cli/internal/batches/log"
+	"github.com/sourcegraph/src-cli/internal/batches/mock"
 )
 
 func TestCoordinator_Execute(t *testing.T) {
-	template := &batches.ChangesetTemplate{
-		Title:  "commit title",
-		Body:   "commit body",
-		Branch: "commit-branch",
-		Commit: batches.ExpandedGitCommitDescription{
-			Message: "commit msg",
-			Author: &batches.GitCommitAuthor{
-				Name:  "Tester",
-				Email: "tester@example.com",
-			},
-		},
-		Published: parsePublishedFieldString(t, "false"),
-	}
-
-	srcCLIRepo := &graphql.Repository{
-		ID:            "src-cli",
-		Name:          "github.com/sourcegraph/src-cli",
-		DefaultBranch: &graphql.Branch{Name: "main", Target: graphql.Target{OID: "d34db33f"}},
-	}
-
-	srcCLITask := &Task{Repository: srcCLIRepo}
-
-	sourcegraphRepo := &graphql.Repository{
-		ID:   "sourcegraph",
-		Name: "github.com/sourcegraph/sourcegraph",
-		DefaultBranch: &graphql.Branch{
-			Name:   "main",
-			Target: graphql.Target{OID: "f00b4r3r"},
-		},
-	}
-
-	sourcegraphTask := &Task{Repository: sourcegraphRepo}
+	srcCLITask := &Task{Repository: testRepo1}
+	sourcegraphTask := &Task{Repository: testRepo2}
 
 	buildSpecFor := func(repo *graphql.Repository, modify func(*batches.ChangesetSpec)) *batches.ChangesetSpec {
 		spec := &batches.ChangesetSpec{
@@ -58,14 +26,14 @@ func TestCoordinator_Execute(t *testing.T) {
 				BaseRef:        repo.BaseRef(),
 				BaseRev:        repo.Rev(),
 				HeadRepository: repo.ID,
-				HeadRef:        "refs/heads/" + template.Branch,
-				Title:          template.Title,
-				Body:           template.Body,
+				HeadRef:        "refs/heads/" + testChangesetTemplate.Branch,
+				Title:          testChangesetTemplate.Title,
+				Body:           testChangesetTemplate.Body,
 				Commits: []batches.GitCommitDescription{
 					{
-						Message:     template.Commit.Message,
-						AuthorName:  template.Commit.Author.Name,
-						AuthorEmail: template.Commit.Author.Email,
+						Message:     testChangesetTemplate.Commit.Message,
+						AuthorName:  testChangesetTemplate.Commit.Author.Name,
+						AuthorEmail: testChangesetTemplate.Commit.Author.Email,
 						Diff:        `dummydiff1`,
 					},
 				},
@@ -98,7 +66,7 @@ func TestCoordinator_Execute(t *testing.T) {
 			batchSpec: &batches.BatchSpec{
 				Name:              "my-batch-change",
 				Description:       "the description",
-				ChangesetTemplate: template,
+				ChangesetTemplate: testChangesetTemplate,
 			},
 
 			executor: &dummyExecutor{
@@ -110,10 +78,10 @@ func TestCoordinator_Execute(t *testing.T) {
 
 			wantCacheEntries: 2,
 			wantSpecs: []*batches.ChangesetSpec{
-				buildSpecFor(srcCLIRepo, func(spec *batches.ChangesetSpec) {
+				buildSpecFor(testRepo1, func(spec *batches.ChangesetSpec) {
 					spec.CreatedChangeset.Commits[0].Diff = `dummydiff1`
 				}),
-				buildSpecFor(sourcegraphRepo, func(spec *batches.ChangesetSpec) {
+				buildSpecFor(testRepo2, func(spec *batches.ChangesetSpec) {
 					spec.CreatedChangeset.Commits[0].Diff = `dummydiff2`
 				}),
 			},
@@ -176,7 +144,7 @@ func TestCoordinator_Execute(t *testing.T) {
 
 			wantCacheEntries: 1,
 			wantSpecs: []*batches.ChangesetSpec{
-				buildSpecFor(srcCLIRepo, func(spec *batches.ChangesetSpec) {
+				buildSpecFor(testRepo1, func(spec *batches.ChangesetSpec) {
 					spec.CreatedChangeset.HeadRef = "refs/heads/templated-branch-myOutputValue1"
 					spec.CreatedChangeset.Title = "output1=myOutputValue1"
 					spec.CreatedChangeset.Body = `output1=myOutputValue1
@@ -208,11 +176,11 @@ func TestCoordinator_Execute(t *testing.T) {
 			tasks: []*Task{srcCLITask, sourcegraphTask},
 
 			batchSpec: &batches.BatchSpec{
-				ChangesetTemplate: template,
+				ChangesetTemplate: testChangesetTemplate,
 				TransformChanges: &batches.TransformChanges{
 					Group: []batches.Group{
 						{Directory: "a/b/c", Branch: "in-directory-c"},
-						{Directory: "a/b", Branch: "in-directory-b", Repository: sourcegraphRepo.Name},
+						{Directory: "a/b", Branch: "in-directory-b", Repository: testRepo2.Name},
 					},
 				},
 			},
@@ -228,20 +196,20 @@ func TestCoordinator_Execute(t *testing.T) {
 			// since we cache per Task, not per resulting changeset spec.
 			wantCacheEntries: 2,
 			wantSpecs: []*batches.ChangesetSpec{
-				buildSpecFor(srcCLIRepo, func(spec *batches.ChangesetSpec) {
-					spec.CreatedChangeset.HeadRef = "refs/heads/" + template.Branch
+				buildSpecFor(testRepo1, func(spec *batches.ChangesetSpec) {
+					spec.CreatedChangeset.HeadRef = "refs/heads/" + testChangesetTemplate.Branch
 					spec.CreatedChangeset.Commits[0].Diff = nestedChangesDiffSubdirA + nestedChangesDiffSubdirB
 				}),
-				buildSpecFor(sourcegraphRepo, func(spec *batches.ChangesetSpec) {
+				buildSpecFor(testRepo2, func(spec *batches.ChangesetSpec) {
 					spec.CreatedChangeset.HeadRef = "refs/heads/in-directory-b"
 					spec.CreatedChangeset.Commits[0].Diff = nestedChangesDiffSubdirB + nestedChangesDiffSubdirC
 				}),
-				buildSpecFor(srcCLIRepo, func(spec *batches.ChangesetSpec) {
+				buildSpecFor(testRepo1, func(spec *batches.ChangesetSpec) {
 					spec.CreatedChangeset.HeadRef = "refs/heads/in-directory-c"
 					spec.CreatedChangeset.Commits[0].Diff = nestedChangesDiffSubdirC
 				}),
-				buildSpecFor(sourcegraphRepo, func(spec *batches.ChangesetSpec) {
-					spec.CreatedChangeset.HeadRef = "refs/heads/" + template.Branch
+				buildSpecFor(testRepo2, func(spec *batches.ChangesetSpec) {
+					spec.CreatedChangeset.HeadRef = "refs/heads/" + testChangesetTemplate.Branch
 					spec.CreatedChangeset.Commits[0].Diff = nestedChangesDiffSubdirA
 				}),
 			},
@@ -255,7 +223,7 @@ func TestCoordinator_Execute(t *testing.T) {
 			batchSpec: &batches.BatchSpec{
 				Name:              "my-batch-change",
 				Description:       "the description",
-				ChangesetTemplate: template,
+				ChangesetTemplate: testChangesetTemplate,
 			},
 
 			// Execution succeeded in srcCLIRepo, but fails in sourcegraphRepo
@@ -276,7 +244,7 @@ func TestCoordinator_Execute(t *testing.T) {
 			// We want 1 cache entry and 1 spec
 			wantCacheEntries: 1,
 			wantSpecs: []*batches.ChangesetSpec{
-				buildSpecFor(srcCLIRepo, func(spec *batches.ChangesetSpec) {
+				buildSpecFor(testRepo1, func(spec *batches.ChangesetSpec) {
 					spec.CreatedChangeset.Commits[0].Diff = `dummydiff1`
 				}),
 			},
@@ -297,13 +265,7 @@ func TestCoordinator_Execute(t *testing.T) {
 				}
 			}
 
-			testTempDir, err := ioutil.TempDir("", "executor-integration-test-*")
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer os.Remove(testTempDir)
-
-			logManager := log.NewManager(testTempDir, false)
+			logManager := mock.LogNoOpManager{}
 
 			cache := newInMemoryExecutionCache()
 			noopPrinter := func([]*TaskStatus) {}
@@ -379,12 +341,154 @@ func TestCoordinator_Execute(t *testing.T) {
 	}
 }
 
+func TestCoordinator_Execute_StepCaching(t *testing.T) {
+	cache := newInMemoryExecutionCache()
+
+	task := &Task{
+		Steps: []batches.Step{
+			{Run: `echo "one"`},
+			{Run: `echo "two"`},
+			{Run: `echo "three"`},
+		},
+		Repository:            testRepo1,
+		BatchChangeAttributes: &BatchChangeAttributes{},
+	}
+
+	executor := &dummyExecutor{}
+	executor.results = []taskResult{{
+		task: task,
+		result: executionResult{
+			Diff:         "dummydiff",
+			ChangedFiles: &git.Changes{},
+			Outputs:      map[string]interface{}{},
+			Path:         "",
+		},
+		stepResults: []stepExecutionResult{
+			{StepIndex: 0, Diff: []byte(`step-0-diff`)},
+			{StepIndex: 1, Diff: []byte(`step-1-diff`)},
+			{StepIndex: 2, Diff: []byte(`step-2-diff`)},
+		},
+	}}
+
+	// First execution. Make sure that the Task executes all steps.
+	execAndEnsure(t, cache, executor, task, assertNoCachedResult(t))
+	// We now expect the cache to have 1+N entries: 1 for the complete task, N
+	// for the steps.
+	wantCacheSize := len(task.Steps) + 1
+	assertCacheSize(t, cache, wantCacheSize)
+
+	// Change the 2nd step's definition:
+	task.Steps[1].Run = `echo "two modified"`
+	// Re-execution should start with the diff produced by steps[0] as the
+	// start state from which steps[1] is then re-executed.
+	execAndEnsure(t, cache, executor, task, assertCachedResultForStep(t, 0))
+	// Cache now contains old entries, plus another "complete task" entry and
+	// two entries for newly executed steps.
+	wantCacheSize += 1 + 2
+	assertCacheSize(t, cache, wantCacheSize)
+
+	// Change the 3rd step's definition:
+	task.Steps[2].Run = `echo "three modified"`
+	// Re-execution should use the diff from steps[1] as start state
+	execAndEnsure(t, cache, executor, task, assertCachedResultForStep(t, 1))
+	// Cache now contains old entries, plus another "complete task" entry and
+	// a single new step entry
+	wantCacheSize += 1 + 1
+	assertCacheSize(t, cache, wantCacheSize)
+}
+
+// execAndEnsure executes the given Task with the given cache and dummyExecutor
+// in a new Coordinator, setting cb as the startCallback on the executor.
+func execAndEnsure(t *testing.T, cache ExecutionCache, exec *dummyExecutor, task *Task, cb startCallback) {
+	t.Helper()
+
+	// Setup dependencies
+	batchSpec := &batches.BatchSpec{ChangesetTemplate: testChangesetTemplate}
+	logManager := mock.LogNoOpManager{}
+	noopPrinter := func([]*TaskStatus) {}
+
+	// Build Coordinator
+	coord := &Coordinator{cache: cache, exec: exec, logManager: logManager}
+
+	// Set the ChangesetTemplate on Task
+	task.Template = batchSpec.ChangesetTemplate
+
+	// Setup the callback
+	exec.startCb = cb
+
+	// Execute
+	specs, _, err := coord.Execute(context.Background(), []*Task{task}, batchSpec, noopPrinter)
+	if err != nil {
+		t.Fatalf("execution of task failed: %s", err)
+	}
+
+	// Sanity check, because we're not interested in the specs
+	if have, want := len(specs), 1; have != want {
+		t.Fatalf("Wrong number of specs. want=%d, have=%d", want, have)
+	}
+
+	// Ensure callback was called
+	if !exec.startCbCalled {
+		t.Fatalf("expected the startCallback to be called, but was not")
+	}
+	exec.startCbCalled = false
+}
+
+// assertCacheSize asserts the cache's size.
+func assertCacheSize(t *testing.T, cache *inMemoryExecutionCache, want int) {
+	t.Helper()
+
+	if have := cache.size(); have != want {
+		t.Fatalf("wrong cache size. have=%d, want=%d", have, want)
+	}
+}
+
+// assertCachedResultForStep returns a function that can be used as a
+// startCallback on dummyExecutor to assert that the first Task has a cached
+// result for the given step.
+func assertCachedResultForStep(t *testing.T, step int) func(context.Context, []*Task, taskStatusHandler) {
+	return func(c context.Context, tasks []*Task, tsh taskStatusHandler) {
+		t.Helper()
+
+		task := tasks[0]
+		if !task.CachedResultFound {
+			t.Fatalf("CachedResultFound not set")
+		}
+
+		if have, want := task.CachedResult.StepIndex, step; have != want {
+			t.Fatalf("CachedResult.Step wrong. have=%d, want=%d", have, want)
+		}
+	}
+}
+
+// expectCachedResultForStep returns a function that can be used as a
+// startCallback on dummyExecutor to assert that the first Task has no cached results.
+func assertNoCachedResult(t *testing.T) func(context.Context, []*Task, taskStatusHandler) {
+	return func(c context.Context, tasks []*Task, tsh taskStatusHandler) {
+		t.Helper()
+
+		task := tasks[0]
+		if task.CachedResultFound {
+			t.Fatalf("CachedResultFound but not expected")
+		}
+	}
+}
+
+type startCallback func(context.Context, []*Task, taskStatusHandler)
+
 type dummyExecutor struct {
+	startCb       startCallback
+	startCbCalled bool
+
 	results []taskResult
 	waitErr error
 }
 
-func (d *dummyExecutor) Start(context.Context, []*Task, taskStatusHandler) {
+func (d *dummyExecutor) Start(ctx context.Context, ts []*Task, status taskStatusHandler) {
+	if d.startCb != nil {
+		d.startCb(ctx, ts, status)
+		d.startCbCalled = true
+	}
 	// "noop noop noop", the crowd screams
 }
 
@@ -394,13 +498,13 @@ func (d *dummyExecutor) Wait(context.Context) ([]taskResult, error) {
 
 // inMemoryExecutionCache provides an in-memory cache for testing purposes.
 type inMemoryExecutionCache struct {
-	cache map[string]executionResult
+	cache map[string]interface{}
 	mu    sync.RWMutex
 }
 
 func newInMemoryExecutionCache() *inMemoryExecutionCache {
 	return &inMemoryExecutionCache{
-		cache: make(map[string]executionResult),
+		cache: make(map[string]interface{}),
 	}
 }
 
@@ -411,7 +515,7 @@ func (c *inMemoryExecutionCache) size() int {
 	return len(c.cache)
 }
 
-func (c *inMemoryExecutionCache) Get(ctx context.Context, key ExecutionCacheKey) (executionResult, bool, error) {
+func (c *inMemoryExecutionCache) getCacheItem(key CacheKeyer) (interface{}, bool, error) {
 	k, err := key.Key()
 	if err != nil {
 		return executionResult{}, false, err
@@ -420,13 +524,21 @@ func (c *inMemoryExecutionCache) Get(ctx context.Context, key ExecutionCacheKey)
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	if res, ok := c.cache[k]; ok {
-		return res, true, nil
-	}
-	return executionResult{}, false, nil
+	res, ok := c.cache[k]
+	return res, ok, nil
 }
 
-func (c *inMemoryExecutionCache) Set(ctx context.Context, key ExecutionCacheKey, result executionResult) error {
+func (c *inMemoryExecutionCache) Get(ctx context.Context, key CacheKeyer) (executionResult, bool, error) {
+	res, ok, err := c.getCacheItem(key)
+	if err != nil || !ok {
+		return executionResult{}, ok, err
+	}
+
+	execResult, ok := res.(executionResult)
+	return execResult, ok, nil
+}
+
+func (c *inMemoryExecutionCache) Set(ctx context.Context, key CacheKeyer, result executionResult) error {
 	k, err := key.Key()
 	if err != nil {
 		return err
@@ -439,7 +551,30 @@ func (c *inMemoryExecutionCache) Set(ctx context.Context, key ExecutionCacheKey,
 	return nil
 }
 
-func (c *inMemoryExecutionCache) Clear(ctx context.Context, key ExecutionCacheKey) error {
+func (c *inMemoryExecutionCache) GetStepResult(ctx context.Context, key CacheKeyer) (stepExecutionResult, bool, error) {
+	res, ok, err := c.getCacheItem(key)
+	if err != nil || !ok {
+		return stepExecutionResult{}, ok, err
+	}
+
+	execResult, ok := res.(stepExecutionResult)
+	return execResult, ok, nil
+}
+
+func (c *inMemoryExecutionCache) SetStepResult(ctx context.Context, key CacheKeyer, result stepExecutionResult) error {
+	k, err := key.Key()
+	if err != nil {
+		return err
+	}
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.cache[k] = result
+	return nil
+}
+
+func (c *inMemoryExecutionCache) Clear(ctx context.Context, key CacheKeyer) error {
 	k, err := key.Key()
 	if err != nil {
 		return err

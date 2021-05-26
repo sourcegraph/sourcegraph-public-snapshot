@@ -17,8 +17,6 @@ import (
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/batches"
-	"github.com/sourcegraph/src-cli/internal/batches/graphql"
-	"github.com/sourcegraph/src-cli/internal/batches/log"
 	"github.com/sourcegraph/src-cli/internal/batches/mock"
 	"github.com/sourcegraph/src-cli/internal/batches/workspace"
 )
@@ -29,21 +27,6 @@ func TestExecutor_Integration(t *testing.T) {
 	}
 
 	addToPath(t, "testdata/dummydocker")
-
-	srcCLIRepo := &graphql.Repository{
-		ID:            "src-cli",
-		Name:          "github.com/sourcegraph/src-cli",
-		DefaultBranch: &graphql.Branch{Name: "main", Target: graphql.Target{OID: "d34db33f"}},
-	}
-
-	sourcegraphRepo := &graphql.Repository{
-		ID:   "sourcegraph",
-		Name: "github.com/sourcegraph/sourcegraph",
-		DefaultBranch: &graphql.Branch{
-			Name:   "main",
-			Target: graphql.Target{OID: "f00b4r3r"},
-		},
-	}
 
 	defaultBatchChangeAttributes := &BatchChangeAttributes{
 		Name:        "integration-test-batch-change",
@@ -78,11 +61,11 @@ func TestExecutor_Integration(t *testing.T) {
 		{
 			name: "success",
 			archives: []mock.RepoArchive{
-				{Repo: srcCLIRepo, Files: map[string]string{
+				{Repo: testRepo1, Files: map[string]string{
 					"README.md": "# Welcome to the README\n",
 					"main.go":   "package main\n\nfunc main() {\n\tfmt.Println(     \"Hello World\")\n}\n",
 				}},
-				{Repo: sourcegraphRepo, Files: map[string]string{
+				{Repo: testRepo2, Files: map[string]string{
 					"README.md": "# Sourcegraph README\n",
 				}},
 			},
@@ -91,14 +74,14 @@ func TestExecutor_Integration(t *testing.T) {
 				{Run: `[[ -f "main.go" ]] && go fmt main.go || exit 0`},
 			},
 			tasks: []*Task{
-				{Repository: srcCLIRepo},
-				{Repository: sourcegraphRepo},
+				{Repository: testRepo1},
+				{Repository: testRepo2},
 			},
 			wantFilesChanged: filesByRepository{
-				srcCLIRepo.ID: filesByPath{
+				testRepo1.ID: filesByPath{
 					rootPath: []string{"README.md", "main.go"},
 				},
-				sourcegraphRepo.ID: {
+				testRepo2.ID: {
 					rootPath: []string{"README.md"},
 				},
 			},
@@ -106,7 +89,7 @@ func TestExecutor_Integration(t *testing.T) {
 		{
 			name: "empty",
 			archives: []mock.RepoArchive{
-				{Repo: srcCLIRepo, Files: map[string]string{
+				{Repo: testRepo1, Files: map[string]string{
 					"README.md": "# Welcome to the README\n",
 					"main.go":   "package main\n\nfunc main() {\n\tfmt.Println(     \"Hello World\")\n}\n",
 				}},
@@ -116,11 +99,11 @@ func TestExecutor_Integration(t *testing.T) {
 			},
 
 			tasks: []*Task{
-				{Repository: srcCLIRepo},
+				{Repository: testRepo1},
 			},
 			// No diff should be generated.
 			wantFilesChanged: filesByRepository{
-				srcCLIRepo.ID: filesByPath{
+				testRepo1.ID: filesByPath{
 					rootPath: []string{},
 				},
 			},
@@ -128,7 +111,7 @@ func TestExecutor_Integration(t *testing.T) {
 		{
 			name: "timeout",
 			archives: []mock.RepoArchive{
-				{Repo: srcCLIRepo, Files: map[string]string{"README.md": "line 1"}},
+				{Repo: testRepo1, Files: map[string]string{"README.md": "line 1"}},
 			},
 			steps: []batches.Step{
 				// This needs to be a loop, because when a process goes to sleep
@@ -139,7 +122,7 @@ func TestExecutor_Integration(t *testing.T) {
 				{Run: `while true; do echo "zZzzZ" && sleep 0.05; done`},
 			},
 			tasks: []*Task{
-				{Repository: srcCLIRepo},
+				{Repository: testRepo1},
 			},
 			executorTimeout: 100 * time.Millisecond,
 			wantErrInclude:  "execution in github.com/sourcegraph/src-cli failed: Timeout reached. Execution took longer than 100ms.",
@@ -147,7 +130,7 @@ func TestExecutor_Integration(t *testing.T) {
 		{
 			name: "templated steps",
 			archives: []mock.RepoArchive{
-				{Repo: srcCLIRepo, Files: map[string]string{
+				{Repo: testRepo1, Files: map[string]string{
 					"README.md": "# Welcome to the README\n",
 					"main.go":   "package main\n\nfunc main() {\n\tfmt.Println(     \"Hello World\")\n}\n",
 				}},
@@ -168,10 +151,10 @@ func TestExecutor_Integration(t *testing.T) {
 			},
 
 			tasks: []*Task{
-				{Repository: srcCLIRepo},
+				{Repository: testRepo1},
 			},
 			wantFilesChanged: filesByRepository{
-				srcCLIRepo.ID: filesByPath{
+				testRepo1.ID: filesByPath{
 					rootPath: []string{
 						"main.go",
 						"modified-main.go.md",
@@ -184,24 +167,24 @@ func TestExecutor_Integration(t *testing.T) {
 		{
 			name: "workspaces",
 			archives: []mock.RepoArchive{
-				{Repo: srcCLIRepo, Path: "", Files: map[string]string{
+				{Repo: testRepo1, Path: "", Files: map[string]string{
 					".gitignore":      "node_modules",
 					"message.txt":     "root-dir",
 					"a/message.txt":   "a-dir",
 					"a/.gitignore":    "node_modules-in-a",
 					"a/b/message.txt": "b-dir",
 				}},
-				{Repo: srcCLIRepo, Path: "a", Files: map[string]string{
+				{Repo: testRepo1, Path: "a", Files: map[string]string{
 					"a/message.txt":   "a-dir",
 					"a/.gitignore":    "node_modules-in-a",
 					"a/b/message.txt": "b-dir",
 				}},
-				{Repo: srcCLIRepo, Path: "a/b", Files: map[string]string{
+				{Repo: testRepo1, Path: "a/b", Files: map[string]string{
 					"a/b/message.txt": "b-dir",
 				}},
 			},
 			additionalFiles: []mock.MockRepoAdditionalFiles{
-				{Repo: srcCLIRepo, AdditionalFiles: map[string]string{
+				{Repo: testRepo1, AdditionalFiles: map[string]string{
 					".gitignore":   "node_modules",
 					"a/.gitignore": "node_modules-in-a",
 				}},
@@ -222,13 +205,13 @@ func TestExecutor_Integration(t *testing.T) {
 				{Run: `if [[ $(basename $(pwd)) == "b" && -f "../.gitignore" ]]; then echo "yes" >> gitignore-exists-in-a; fi`},
 			},
 			tasks: []*Task{
-				{Repository: srcCLIRepo, Path: ""},
-				{Repository: srcCLIRepo, Path: "a"},
-				{Repository: srcCLIRepo, Path: "a/b"},
+				{Repository: testRepo1, Path: ""},
+				{Repository: testRepo1, Path: "a"},
+				{Repository: testRepo1, Path: "a/b"},
 			},
 
 			wantFilesChanged: filesByRepository{
-				srcCLIRepo.ID: filesByPath{
+				testRepo1.ID: filesByPath{
 					rootPath: []string{"hello.txt", "gitignore-exists"},
 					"a":      []string{"a/hello.txt", "a/gitignore-exists"},
 					"a/b":    []string{"a/b/hello.txt", "a/b/gitignore-exists", "a/b/gitignore-exists-in-a"},
@@ -238,10 +221,10 @@ func TestExecutor_Integration(t *testing.T) {
 		{
 			name: "step condition",
 			archives: []mock.RepoArchive{
-				{Repo: srcCLIRepo, Files: map[string]string{
+				{Repo: testRepo1, Files: map[string]string{
 					"README.md": "# Welcome to the README\n",
 				}},
-				{Repo: sourcegraphRepo, Files: map[string]string{
+				{Repo: testRepo2, Files: map[string]string{
 					"README.md": "# Sourcegraph README\n",
 				}},
 			},
@@ -257,14 +240,14 @@ func TestExecutor_Integration(t *testing.T) {
 				},
 			},
 			tasks: []*Task{
-				{Repository: srcCLIRepo},
-				{Repository: sourcegraphRepo, Path: "sub/directory/of/repo"},
+				{Repository: testRepo1},
+				{Repository: testRepo2, Path: "sub/directory/of/repo"},
 			},
 			wantFilesChanged: filesByRepository{
-				srcCLIRepo.ID: filesByPath{
+				testRepo1.ID: filesByPath{
 					rootPath: []string{"README.md"},
 				},
-				sourcegraphRepo.ID: {
+				testRepo2.ID: {
 					"sub/directory/of/repo": []string{"README.md", "hello.txt", "in-path.txt"},
 				},
 			},
@@ -272,10 +255,10 @@ func TestExecutor_Integration(t *testing.T) {
 		{
 			name: "skips errors",
 			archives: []mock.RepoArchive{
-				{Repo: srcCLIRepo, Files: map[string]string{
+				{Repo: testRepo1, Files: map[string]string{
 					"README.md": "# Welcome to the README\n",
 				}},
-				{Repo: sourcegraphRepo, Files: map[string]string{
+				{Repo: testRepo2, Files: map[string]string{
 					"README.md": "# Sourcegraph README\n",
 				}},
 			},
@@ -283,18 +266,18 @@ func TestExecutor_Integration(t *testing.T) {
 				{Run: `echo -e "foobar\n" >> README.md`},
 				{
 					Run: `exit 1`,
-					If:  fmt.Sprintf(`${{ eq repository.name %q }}`, sourcegraphRepo.Name),
+					If:  fmt.Sprintf(`${{ eq repository.name %q }}`, testRepo2.Name),
 				},
 			},
 			tasks: []*Task{
-				{Repository: srcCLIRepo},
-				{Repository: sourcegraphRepo},
+				{Repository: testRepo1},
+				{Repository: testRepo2},
 			},
 			wantFilesChanged: filesByRepository{
-				srcCLIRepo.ID: filesByPath{
+				testRepo1.ID: filesByPath{
 					rootPath: []string{"README.md"},
 				},
-				sourcegraphRepo.ID: {},
+				testRepo2.ID: {},
 			},
 			wantErrInclude: "execution in github.com/sourcegraph/sourcegraph failed: run: exit 1",
 		},
@@ -344,7 +327,7 @@ func TestExecutor_Integration(t *testing.T) {
 			opts := newExecutorOpts{
 				Creator: workspace.NewCreator(context.Background(), "bind", testTempDir, testTempDir, []batches.Step{}),
 				Fetcher: batches.NewRepoFetcher(client, testTempDir, false),
-				Logger:  log.NewManager(testTempDir, false),
+				Logger:  mock.LogNoOpManager{},
 
 				TempDir:     testTempDir,
 				Parallelism: runtime.GOMAXPROCS(0),

@@ -572,6 +572,29 @@ index 06471f4..5f9d3fa 100644
 	})
 }
 
+func TestVolumeWorkspace_ApplyDiff(t *testing.T) {
+	ctx := context.Background()
+	w := &dockerVolumeWorkspace{volume: volumeID}
+
+	expect.Commands(
+		t,
+		expect.NewGlob(
+			expect.Behaviour{ExitCode: 0},
+			"docker", "run", "--rm", "--init", "--workdir", "/work",
+			"--mount", "type=bind,source=*,target=/run.sh,ro",
+			"--user", "0:0",
+			"--mount", "type=volume,source="+volumeID+",target=/work",
+			DockerVolumeWorkspaceImage,
+			"sh", "/run.sh",
+		),
+	)
+
+	err := w.ApplyDiff(ctx, []byte(`dummydiff`))
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+}
+
 func TestVolumeWorkspace_runScript(t *testing.T) {
 	// Since the above tests have thoroughly tested our error handling, this
 	// test just fills in the one logical gap we have in our test coverage: is

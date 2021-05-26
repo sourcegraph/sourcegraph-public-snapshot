@@ -45,6 +45,9 @@ type Workspace interface {
 	// Diff should return the total diff for the workspace. This may be called
 	// multiple times in the life of a workspace.
 	Diff(ctx context.Context) ([]byte, error)
+
+	// ApplyDiff applies the given diff
+	ApplyDiff(ctx context.Context, diff []byte) error
 }
 
 type CreatorType int

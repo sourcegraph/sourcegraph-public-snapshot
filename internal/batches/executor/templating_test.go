@@ -6,7 +6,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/src-cli/internal/batches/git"
-	"github.com/sourcegraph/src-cli/internal/batches/graphql"
 	"gopkg.in/yaml.v3"
 )
 
@@ -34,13 +33,7 @@ func TestEvalStepCondition(t *testing.T) {
 		},
 		Outputs: map[string]interface{}{},
 		// Step is not set when evalStepCondition is called
-		Repository: graphql.Repository{
-			Name: "github.com/sourcegraph/src-cli",
-			FileMatches: map[string]bool{
-				"README.md": true,
-				"main.go":   true,
-			},
-		},
+		Repository: *testRepo1,
 	}
 
 	tests := []struct {
@@ -108,14 +101,8 @@ func TestRenderStepTemplate(t *testing.T) {
 			Stdout: bytes.NewBufferString("this is current step's stdout"),
 			Stderr: bytes.NewBufferString("this is current step's stderr"),
 		},
-		Steps: StepsContext{Changes: testChanges, Path: "sub/directory/of/repo"},
-		Repository: graphql.Repository{
-			Name: "github.com/sourcegraph/src-cli",
-			FileMatches: map[string]bool{
-				"README.md": true,
-				"main.go":   true,
-			},
-		},
+		Steps:      StepsContext{Changes: testChanges, Path: "sub/directory/of/repo"},
+		Repository: *testRepo1,
 	}
 
 	tests := []struct {
@@ -249,14 +236,8 @@ func TestRenderStepMap(t *testing.T) {
 			Stdout: bytes.NewBufferString("this is previous step's stdout"),
 			Stderr: bytes.NewBufferString("this is previous step's stderr"),
 		},
-		Outputs: map[string]interface{}{},
-		Repository: graphql.Repository{
-			Name: "github.com/sourcegraph/src-cli",
-			FileMatches: map[string]bool{
-				"README.md": true,
-				"main.go":   true,
-			},
-		},
+		Outputs:    map[string]interface{}{},
+		Repository: *testRepo1,
 	}
 
 	input := map[string]string{
@@ -299,13 +280,7 @@ func TestRenderChangesetTemplateField(t *testing.T) {
 			"lastLine": "lastLine is this",
 			"project":  parsedYaml,
 		},
-		Repository: graphql.Repository{
-			Name: "github.com/sourcegraph/src-cli",
-			FileMatches: map[string]bool{
-				"README.md": true,
-				"main.go":   true,
-			},
-		},
+		Repository: *testRepo1,
 		Steps: StepsContext{
 			Changes: &git.Changes{
 				Modified: []string{"modified-file.txt"},

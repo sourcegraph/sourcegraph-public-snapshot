@@ -28,7 +28,7 @@ type Coordinator struct {
 
 	cache      ExecutionCache
 	exec       taskExecutor
-	logManager *log.Manager
+	logManager log.LogManager
 }
 
 type repoNameResolver func(ctx context.Context, name string) (*graphql.Repository, error)
@@ -154,6 +154,14 @@ func (c *Coordinator) cacheAndBuildSpec(ctx context.Context, taskResult taskResu
 		return nil, errors.Wrapf(err, "caching result for %q", taskResult.task.Repository.Name)
 	}
 
+	// Save the per-step results
+	for _, stepResult := range taskResult.stepResults {
+		key := StepsCacheKey{Task: taskResult.task, StepIndex: stepResult.StepIndex}
+		if err := c.cache.SetStepResult(ctx, key, stepResult); err != nil {
+			return nil, errors.Wrapf(err, "caching result for step %d in %q", stepResult.StepIndex, taskResult.task.Repository.Name)
+		}
+	}
+
 	// If the steps didn't result in any diff, we don't need to create a
 	// changeset spec that's displayed to the user and send to the server.
 	if taskResult.result.Diff == "" {
@@ -201,6 +209,27 @@ func (c *Coordinator) Execute(ctx context.Context, tasks []*Task, spec *batches.
 				}
 			}
 		}()
+	}
+
+	// If we are here, that means we didn't find anything in the cache for the
+	// complete task. So, what if we have cached results for the steps?
+	for _, t := range tasks {
+		// We start at the back so that we can find the _last_ cached step,
+		// then restart execution on the following step.
+		for i := len(t.Steps) - 1; i > -1; i-- {
+			key := StepsCacheKey{Task: t, StepIndex: i}
+
+			result, found, err := c.cache.GetStepResult(ctx, key)
+			if err != nil {
+				return nil, nil, errors.Wrapf(err, "checking for cached diff for step %d", i)
+			}
+
+			if found {
+				t.CachedResultFound = true
+				t.CachedResult = result
+				break
+			}
+		}
 	}
 
 	// Run executor

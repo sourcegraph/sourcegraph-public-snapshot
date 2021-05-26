@@ -42,15 +42,16 @@ func (e TaskExecutionErr) StatusText() string {
 
 // taskResult is a combination of a Task and the result of its execution.
 type taskResult struct {
-	task   *Task
-	result executionResult
+	task        *Task
+	result      executionResult
+	stepResults []stepExecutionResult
 }
 
 type newExecutorOpts struct {
 	// Dependencies
 	Creator workspace.Creator
 	Fetcher batches.RepoFetcher
-	Logger  *log.Manager
+	Logger  log.LogManager
 
 	// Config
 	AutoAuthorDetails bool
@@ -188,9 +189,12 @@ func (x *executor) do(ctx context.Context, task *Task, status taskStatusHandler)
 				status.CurrentlyExecuting = currentlyExecuting
 			})
 		},
+		// TODO: Why don't we pass the task to this?
+		cachedResultFound: task.CachedResultFound,
+		cachedResult:      task.CachedResult,
 	}
 
-	result, err := runSteps(runCtx, opts)
+	result, stepResults, err := runSteps(runCtx, opts)
 	if err != nil {
 		if reachedTimeout(runCtx, err) {
 			err = &errTimeoutReached{timeout: x.opts.Timeout}
@@ -198,18 +202,19 @@ func (x *executor) do(ctx context.Context, task *Task, status taskStatusHandler)
 		return err
 	}
 
-	x.addResult(task, result)
+	x.addResult(task, result, stepResults)
 
 	return nil
 }
 
-func (x *executor) addResult(task *Task, result executionResult) {
+func (x *executor) addResult(task *Task, result executionResult, stepResults []stepExecutionResult) {
 	x.resultsMu.Lock()
 	defer x.resultsMu.Unlock()
 
 	x.results = append(x.results, taskResult{
-		task:   task,
-		result: result,
+		task:        task,
+		result:      result,
+		stepResults: stepResults,
 	})
 }
 

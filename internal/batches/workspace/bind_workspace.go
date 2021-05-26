@@ -62,7 +62,7 @@ func (wc *dockerBindWorkspaceCreator) unzipToWorkspace(ctx context.Context, repo
 		return nil, errors.Wrap(err, "unzipping the ZIP archive")
 	}
 
-	return &dockerBindWorkspace{dir: workspace}, nil
+	return &dockerBindWorkspace{tempDir: wc.Dir, dir: workspace}, nil
 }
 
 func (wc *dockerBindWorkspaceCreator) copyToWorkspace(ctx context.Context, w *dockerBindWorkspace, files map[string]string) error {
@@ -104,6 +104,8 @@ func (wc *dockerBindWorkspaceCreator) copyToWorkspace(ctx context.Context, w *do
 }
 
 type dockerBindWorkspace struct {
+	tempDir string
+
 	dir string
 }
 
@@ -147,7 +149,35 @@ func (w *dockerBindWorkspace) Diff(ctx context.Context) ([]byte, error) {
 	//
 	// Also, we need to add --binary so binary file changes are inlined in the patch.
 	//
+	// ATTENTION: When you change the options here, be sure to also update the
+	// ApplyDiff method accordingly.
 	return runGitCmd(ctx, w.dir, "diff", "--cached", "--no-prefix", "--binary")
+}
+
+func (w *dockerBindWorkspace) ApplyDiff(ctx context.Context, diff []byte) error {
+	// Write the diff to a temp file so we can pass it to `git apply`
+	tmp, err := ioutil.TempFile(w.tempDir, "bind-workspace-test-*")
+	if err != nil {
+		return errors.Wrap(err, "saving cached diff to temporary file")
+	}
+	defer os.Remove(tmp.Name())
+
+	if _, err := tmp.Write(diff); err != nil {
+		return errors.Wrap(err, "writing to temporary file")
+	}
+
+	if err := tmp.Close(); err != nil {
+		return errors.Wrap(err, "closing temporary file")
+	}
+
+	// Apply diff
+	if _, err = runGitCmd(ctx, w.dir, "apply", "-p0", tmp.Name()); err != nil {
+		return errors.Wrap(err, "applying cached diff")
+	}
+
+	// Add all files to index
+	_, err = runGitCmd(ctx, w.dir, "add", "--all")
+	return err
 }
 
 func fileExists(path string) (bool, error) {

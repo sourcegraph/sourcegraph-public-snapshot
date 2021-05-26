@@ -26,6 +26,9 @@ type Task struct {
 	TransformChanges      *batches.TransformChanges  `json:"-"`
 
 	Archive batches.RepoZip `json:"-"`
+
+	CachedResultFound bool                `json:"-"`
+	CachedResult      stepExecutionResult `json:"-"`
 }
 
 func (t *Task) ArchivePathToFetch() string {
@@ -35,6 +38,6 @@ func (t *Task) ArchivePathToFetch() string {
 	return ""
 }
 
-func (t *Task) cacheKey() ExecutionCacheKey {
-	return ExecutionCacheKey{t}
+func (t *Task) cacheKey() TaskCacheKey {
+	return TaskCacheKey{t}
 }

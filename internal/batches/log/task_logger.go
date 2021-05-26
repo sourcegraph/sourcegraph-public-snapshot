@@ -11,14 +11,23 @@ import (
 	"github.com/pkg/errors"
 )
 
-type TaskLogger struct {
+type TaskLogger interface {
+	Close() error
+	Log(string)
+	Logf(string, ...interface{})
+	MarkErrored()
+	Path() string
+	PrefixWriter(prefix string) io.Writer
+}
+
+type FileTaskLogger struct {
 	f *os.File
 
 	errored bool
 	keep    bool
 }
 
-func newTaskLogger(slug string, keep bool, dir string) (*TaskLogger, error) {
+func newTaskLogger(slug string, keep bool, dir string) (*FileTaskLogger, error) {
 	prefix := "changeset-" + slug
 
 	f, err := ioutil.TempFile(dir, prefix+".*.log")
@@ -26,13 +35,13 @@ func newTaskLogger(slug string, keep bool, dir string) (*TaskLogger, error) {
 		return nil, errors.Wrapf(err, "creating temporary file with prefix %q", prefix)
 	}
 
-	return &TaskLogger{
+	return &FileTaskLogger{
 		f:    f,
 		keep: keep,
 	}, nil
 }
 
-func (tl *TaskLogger) Close() error {
+func (tl *FileTaskLogger) Close() error {
 	if err := tl.f.Close(); err != nil {
 		return err
 	}
@@ -48,28 +57,28 @@ func (tl *TaskLogger) Close() error {
 	return nil
 }
 
-func (tl *TaskLogger) Log(s string) {
+func (tl *FileTaskLogger) Log(s string) {
 	fmt.Fprintf(tl.f, "%s %s\n", time.Now().Format(time.RFC3339Nano), s)
 }
 
-func (tl *TaskLogger) Logf(format string, a ...interface{}) {
+func (tl *FileTaskLogger) Logf(format string, a ...interface{}) {
 	fmt.Fprintf(tl.f, "%s "+format+"\n", append([]interface{}{time.Now().Format(time.RFC3339Nano)}, a...)...)
 }
 
-func (tl *TaskLogger) MarkErrored() {
+func (tl *FileTaskLogger) MarkErrored() {
 	tl.errored = true
 }
 
-func (tl *TaskLogger) Path() string {
+func (tl *FileTaskLogger) Path() string {
 	return tl.f.Name()
 }
 
-func (tl *TaskLogger) PrefixWriter(prefix string) io.Writer {
+func (tl *FileTaskLogger) PrefixWriter(prefix string) io.Writer {
 	return &prefixWriter{tl, prefix}
 }
 
 type prefixWriter struct {
-	logger *TaskLogger
+	logger *FileTaskLogger
 	prefix string
 }
 
