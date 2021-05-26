@@ -190,6 +190,7 @@
             // Align badge vertically with the close button and first row of the text content.
             margin-top: var(--hover-overlay-content-margin-top);
             margin-left: 0.5rem;
+            margin-right: 0.25rem;
             color: var(--text-muted);
             line-height: 1rem;
 
@@ -201,6 +202,7 @@
         &__close-button {
             top: 0.4375rem; // 7px — pixel perfect positioning.
             margin-right: -1.25rem;
+            margin-left: 0;
 
             &--loading {
                 // While loading close-button has an absolute position with the `right` coordinate,

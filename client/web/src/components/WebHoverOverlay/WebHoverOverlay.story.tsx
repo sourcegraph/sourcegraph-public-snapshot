@@ -24,7 +24,15 @@ import {
 
 registerHighlightContributions()
 
-const { add } = storiesOf('web/WebHoverOverlay', module).addDecorator(story => <WebStory>{() => story()}</WebStory>)
+const { add } = storiesOf('web/WebHoverOverlay', module)
+    .addDecorator(story => <WebStory>{() => story()}</WebStory>)
+    .addParameters({
+        design: {
+            type: 'figma',
+            url:
+                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=2877%3A35469',
+        },
+    })
 
 add('Loading', () => <WebHoverOverlay {...commonProps()} hoverOrError="loading" actionsOrError={FIXTURE_ACTIONS} />)
 
