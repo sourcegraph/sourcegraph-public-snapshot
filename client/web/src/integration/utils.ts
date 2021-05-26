@@ -65,8 +65,7 @@ export const setColorScheme = async (
         shouldWaitForCodeHighlighting ? waitForCodeHighlighting(page) : Promise.resolve(),
     ])
 
-    const searchBarDisplayed = await page.evaluate(() => document.querySelector('#monaco-query-input') !== null)
-    if (searchBarDisplayed) {
+    try {
         // Check Monaco editor is styled correctly
         await page.waitForFunction(
             expectedClassName =>
@@ -78,6 +77,8 @@ export const setColorScheme = async (
 
         // Wait a tiny bit for Monaco syntax highlighting to be applied
         await page.waitForTimeout(500)
+    } catch {
+        // noop editor may not be present
     }
 }
 
@@ -100,10 +101,11 @@ export const percySnapshotWithVariants = async (
         return
     }
 
-    const searchBarDisplayed = await page.evaluate(() => document.querySelector('#monaco-query-input') !== null)
-    if (searchBarDisplayed) {
+    try {
         // Wait for Monaco editor to finish rendering before taking screenshots
         await page.waitForSelector('#monaco-query-input .monaco-editor', { visible: true })
+    } catch {
+        // noop, page doesn't use monaco editor
     }
 
     // Theme-light

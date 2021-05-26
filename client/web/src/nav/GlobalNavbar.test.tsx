@@ -59,7 +59,7 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     fetchSearchContexts: mockFetchSearchContexts,
 }
 
-describe('GlobalNavbar', () => {
+describe.skip('GlobalNavbar', () => {
     setLinkComponent(({ children, ...props }) => <a {...props}>{children}</a>)
     afterAll(() => setLinkComponent(() => null)) // reset global env for other tests
 

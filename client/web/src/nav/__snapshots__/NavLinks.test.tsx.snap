@@ -464,7 +464,7 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
         href="#"
       >
         <svg
-          class="mdi-icon icon-inline"
+          class="mdi-icon icon-inline-md"
           data-tooltip="Repositories up to date"
           fill="currentColor"
           height="24"
@@ -493,7 +493,7 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
           >
             <h4>
               <svg
-                class="mdi-icon icon-inline mr-1"
+                class="mdi-icon icon-inline-md mr-1"
                 fill="currentColor"
                 height="24"
                 viewBox="0 0 24 24"
@@ -527,11 +527,11 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
   >
     <span
       class="test-command-list-button command-list__popover-button btn btn-link"
-      id="command-list-popover-button-7"
+      id="command-list-popover-button-test-id"
       role="button"
     >
       <svg
-        class="mdi-icon icon-inline"
+        class="mdi-icon icon-inline-md"
         fill="currentColor"
         height="24"
         viewBox="0 0 24 24"
@@ -622,6 +622,17 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
           href="/extensions"
         >
           Extensions
+        </a>
+        <a
+          class="dropdown-item"
+          href="/contexts"
+        >
+          Search contexts 
+          <span
+            class="badge badge--capitalized d-inline-flex align-items-center badge-info ml-1"
+          >
+            new
+          </span>
         </a>
         <a
           class="dropdown-item"
@@ -1225,7 +1236,7 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
         href="#"
       >
         <svg
-          class="mdi-icon icon-inline"
+          class="mdi-icon icon-inline-md"
           data-tooltip="Repositories up to date"
           fill="currentColor"
           height="24"
@@ -1254,7 +1265,7 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
           >
             <h4>
               <svg
-                class="mdi-icon icon-inline mr-1"
+                class="mdi-icon icon-inline-md mr-1"
                 fill="currentColor"
                 height="24"
                 viewBox="0 0 24 24"
@@ -1288,11 +1299,11 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
   >
     <span
       class="test-command-list-button command-list__popover-button btn btn-link"
-      id="command-list-popover-button-8"
+      id="command-list-popover-button-test-id"
       role="button"
     >
       <svg
-        class="mdi-icon icon-inline"
+        class="mdi-icon icon-inline-md"
         fill="currentColor"
         height="24"
         viewBox="0 0 24 24"
@@ -1383,6 +1394,17 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
           href="/extensions"
         >
           Extensions
+        </a>
+        <a
+          class="dropdown-item"
+          href="/contexts"
+        >
+          Search contexts 
+          <span
+            class="badge badge--capitalized d-inline-flex align-items-center badge-info ml-1"
+          >
+            new
+          </span>
         </a>
         <a
           class="dropdown-item"
@@ -1996,7 +2018,7 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
         href="#"
       >
         <svg
-          class="mdi-icon icon-inline"
+          class="mdi-icon icon-inline-md"
           data-tooltip="Repositories up to date"
           fill="currentColor"
           height="24"
@@ -2025,7 +2047,7 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
           >
             <h4>
               <svg
-                class="mdi-icon icon-inline mr-1"
+                class="mdi-icon icon-inline-md mr-1"
                 fill="currentColor"
                 height="24"
                 viewBox="0 0 24 24"
@@ -2059,11 +2081,11 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
   >
     <span
       class="test-command-list-button command-list__popover-button btn btn-link"
-      id="command-list-popover-button-5"
+      id="command-list-popover-button-test-id"
       role="button"
     >
       <svg
-        class="mdi-icon icon-inline"
+        class="mdi-icon icon-inline-md"
         fill="currentColor"
         height="24"
         viewBox="0 0 24 24"
@@ -2154,6 +2176,17 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
           href="/extensions"
         >
           Extensions
+        </a>
+        <a
+          class="dropdown-item"
+          href="/contexts"
+        >
+          Search contexts 
+          <span
+            class="badge badge--capitalized d-inline-flex align-items-center badge-info ml-1"
+          >
+            new
+          </span>
         </a>
         <a
           class="dropdown-item"
@@ -2738,7 +2771,7 @@ exports[`NavLinks authed self-hosted /search 1`] = `
         href="#"
       >
         <svg
-          class="mdi-icon icon-inline"
+          class="mdi-icon icon-inline-md"
           data-tooltip="Repositories up to date"
           fill="currentColor"
           height="24"
@@ -2767,7 +2800,7 @@ exports[`NavLinks authed self-hosted /search 1`] = `
           >
             <h4>
               <svg
-                class="mdi-icon icon-inline mr-1"
+                class="mdi-icon icon-inline-md mr-1"
                 fill="currentColor"
                 height="24"
                 viewBox="0 0 24 24"
@@ -2801,11 +2834,11 @@ exports[`NavLinks authed self-hosted /search 1`] = `
   >
     <span
       class="test-command-list-button command-list__popover-button btn btn-link"
-      id="command-list-popover-button-6"
+      id="command-list-popover-button-test-id"
       role="button"
     >
       <svg
-        class="mdi-icon icon-inline"
+        class="mdi-icon icon-inline-md"
         fill="currentColor"
         height="24"
         viewBox="0 0 24 24"
@@ -2896,6 +2929,17 @@ exports[`NavLinks authed self-hosted /search 1`] = `
           href="/extensions"
         >
           Extensions
+        </a>
+        <a
+          class="dropdown-item"
+          href="/contexts"
+        >
+          Search contexts 
+          <span
+            class="badge badge--capitalized d-inline-flex align-items-center badge-info ml-1"
+          >
+            new
+          </span>
         </a>
         <a
           class="dropdown-item"
@@ -3323,11 +3367,11 @@ exports[`NavLinks unauthed Sourcegraph.com /foo 1`] = `
   >
     <span
       class="test-command-list-button command-list__popover-button btn btn-link"
-      id="command-list-popover-button-3"
+      id="command-list-popover-button-test-id"
       role="button"
     >
       <svg
-        class="mdi-icon icon-inline"
+        class="mdi-icon icon-inline-md"
         fill="currentColor"
         height="24"
         viewBox="0 0 24 24"
@@ -3660,11 +3704,11 @@ exports[`NavLinks unauthed Sourcegraph.com /search 1`] = `
   >
     <span
       class="test-command-list-button command-list__popover-button btn btn-link"
-      id="command-list-popover-button-4"
+      id="command-list-popover-button-test-id"
       role="button"
     >
       <svg
-        class="mdi-icon icon-inline"
+        class="mdi-icon icon-inline-md"
         fill="currentColor"
         height="24"
         viewBox="0 0 24 24"
@@ -3964,11 +4008,11 @@ exports[`NavLinks unauthed self-hosted /foo 1`] = `
   >
     <span
       class="test-command-list-button command-list__popover-button btn btn-link"
-      id="command-list-popover-button-1"
+      id="command-list-popover-button-test-id"
       role="button"
     >
       <svg
-        class="mdi-icon icon-inline"
+        class="mdi-icon icon-inline-md"
         fill="currentColor"
         height="24"
         viewBox="0 0 24 24"
@@ -4258,11 +4302,11 @@ exports[`NavLinks unauthed self-hosted /search 1`] = `
   >
     <span
       class="test-command-list-button command-list__popover-button btn btn-link"
-      id="command-list-popover-button-2"
+      id="command-list-popover-button-test-id"
       role="button"
     >
       <svg
-        class="mdi-icon icon-inline"
+        class="mdi-icon icon-inline-md"
         fill="currentColor"
         height="24"
         viewBox="0 0 24 24"

@@ -4,8 +4,9 @@
 
 import React from 'react'
 
-import { CaseSensitiveFuzzySearch } from '../../fuzzyFinder/CaseSensitiveFuzzySearch'
-import { FuzzySearch, FuzzySearchResult, SearchIndexing } from '../../fuzzyFinder/FuzzySearch'
+import { CaseInsensitiveFuzzySearch } from '../../fuzzyFinder/CaseInsensitiveFuzzySearch'
+import { FuzzySearch, FuzzySearchResult, SearchIndexing, SearchValue } from '../../fuzzyFinder/FuzzySearch'
+import { WordSensitiveFuzzySearch } from '../../fuzzyFinder/WordSensitiveFuzzySearch'
 
 import { FuzzyFinderProps, Indexing, FuzzyFSM } from './FuzzyFinder'
 import styles from './FuzzyModal.module.scss'
@@ -14,6 +15,11 @@ import { HighlightedLink } from './HighlightedLink'
 // Enable this URL query parameter to see debugging information like latency
 // numbers and the false-positive ratio for the bloom filter.
 const IS_DEBUG = window.location.href.toString().includes('fuzzyFinder=debug')
+
+// The default value of 80k filenames is picked from the following observations:
+// - case-insensitive search is slow but works in the torvalds/linux repo (72k files)
+// - case-insensitive search is almost unusable in the chromium/chromium repo (360k files)
+const DEFAULT_CASE_INSENSITIVE_FILE_COUNT_THRESHOLD = 80000
 
 // Cache for the last fuzzy query. This value is only used to avoid redoing the
 // full fuzzy search on every re-render when the user presses the down/up arrow
@@ -345,7 +351,14 @@ async function handleEmpty(props: FuzzyModalProps): Promise<void> {
 }
 
 function handleFilenames(filenames: string[]): FuzzyFSM {
-    const indexing = CaseSensitiveFuzzySearch.fromSearchValuesAsync(filenames.map(file => ({ text: file })))
+    const values: SearchValue[] = filenames.map(file => ({ text: file }))
+    if (filenames.length < DEFAULT_CASE_INSENSITIVE_FILE_COUNT_THRESHOLD) {
+        return {
+            key: 'ready',
+            fuzzy: new CaseInsensitiveFuzzySearch(values),
+        }
+    }
+    const indexing = WordSensitiveFuzzySearch.fromSearchValuesAsync(values)
     if (indexing.key === 'ready') {
         return {
             key: 'ready',

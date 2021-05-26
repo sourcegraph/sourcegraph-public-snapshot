@@ -209,7 +209,7 @@ func (s GitLabSource) makeRepo(proj *gitlab.Project) *types.Repo {
 // remoteURL returns the GitLab projects's Git remote URL
 //
 // note: this used to contain credentials but that is no longer the case
-// if you need to get an authenticated clone url use types.RepoCloneURL
+// if you need to get an authenticated clone url use repos.CloneURL
 func (s *GitLabSource) remoteURL(proj *gitlab.Project) string {
 	if s.config.GitURLType == "ssh" {
 		return proj.SSHURLToRepo // SSH authentication must be provided out-of-band

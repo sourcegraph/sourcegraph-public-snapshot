@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/database/globalstatedb"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -73,7 +74,8 @@ func TestUsers_ValidUsernames(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	for _, test := range usernamesForTests {
@@ -98,7 +100,8 @@ func TestUsers_Create_checkPasswordLength(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	minPasswordRunes := conf.AuthMinPasswordLength()
@@ -260,7 +263,8 @@ func TestUsers_CheckAndDecrementInviteQuota(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	user, err := Users(db).Create(ctx, NewUser{
@@ -309,7 +313,8 @@ func TestUsers_ListCount(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	user, err := Users(db).Create(ctx, NewUser{
@@ -366,7 +371,8 @@ func TestUsers_Update(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	user, err := Users(db).Create(ctx, NewUser{
@@ -444,7 +450,8 @@ func TestUsers_GetByVerifiedEmail(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	user, err := Users(db).Create(ctx, NewUser{
@@ -478,7 +485,8 @@ func TestUsers_GetByUsernames(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	newUsers := []NewUser{
@@ -521,7 +529,8 @@ func TestUsers_Delete(t *testing.T) {
 			if testing.Short() {
 				t.Skip()
 			}
-			db := dbtesting.GetDB(t)
+			t.Parallel()
+			db := dbtest.NewDB(t, "")
 			ctx := context.Background()
 			ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
@@ -679,7 +688,8 @@ func TestUsers_HasTag(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	var id int32
@@ -716,7 +726,8 @@ func TestUsers_InvalidateSessions(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	newUsers := []NewUser{
@@ -758,7 +769,8 @@ func TestUsers_SetTag(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	// Create user.

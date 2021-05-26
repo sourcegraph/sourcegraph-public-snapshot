@@ -142,7 +142,7 @@ func (s OtherSource) otherRepoFromCloneURL(urn string, u *url.URL) (*types.Repo,
 				CloneURL: repoURL,
 			},
 		},
-		Metadata: &types.OtherRepoMetadata{
+		Metadata: &extsvc.OtherRepoMetadata{
 			RelativePath: strings.TrimPrefix(repoURL, serviceID),
 		},
 	}, nil
@@ -198,7 +198,7 @@ func (s OtherSource) srcExpose(ctx context.Context) ([]*types.Repo, error) {
 				CloneURL: cloneURL,
 			},
 		}
-		r.Metadata = &types.OtherRepoMetadata{
+		r.Metadata = &extsvc.OtherRepoMetadata{
 			RelativePath: strings.TrimPrefix(cloneURL, s.conn.Url),
 		}
 		// The only required field left is Name
