@@ -110,8 +110,12 @@ export const percySnapshotWithVariants = async (
         return
     }
 
-    // Wait for Monaco editor to finish rendering before taking screenshots
-    await page.waitForSelector('#monaco-query-input .monaco-editor', { visible: true })
+    try {
+        // Wait for Monaco editor to finish rendering before taking screenshots
+        await page.waitForSelector('#monaco-query-input .monaco-editor', { visible: true })
+    } catch {
+        // noop, page doesn't use monaco editor
+    }
 
     // Theme-light
     await setColorScheme(page, 'light', config?.waitForCodeHighlighting)
