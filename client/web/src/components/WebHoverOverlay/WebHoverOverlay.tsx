@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import React, { useCallback, useEffect } from 'react'
 
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
@@ -6,6 +7,8 @@ import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
 import { HoverThresholdProps } from '../../repo/RepoContainer'
+
+import styles from './WebHoverOverlay.module.scss'
 
 const iconKindToAlertKind = {
     [NotificationType.Info]: 'secondary',
@@ -54,7 +57,7 @@ export const WebHoverOverlay: React.FunctionComponent<HoverOverlayProps & HoverT
             iconClassName="icon-inline"
             closeButtonClassName="btn btn-icon"
             actionItemClassName="btn btn-secondary"
-            badgeClassName="badge badge-secondary"
+            badgeClassName={classNames('badge badge-secondary', styles.webHoverOverlayBadge)}
             onAlertDismissed={onAlertDismissed}
             getAlertClassName={getAlertClassName}
         />
