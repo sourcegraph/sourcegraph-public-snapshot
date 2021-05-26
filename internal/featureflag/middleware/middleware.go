@@ -29,11 +29,7 @@ func contextWithFeatureFlags(ffs *database.FeatureFlagStore, r *http.Request) co
 		// Continue if err != nil
 	}
 
-	if cookie, err := r.Cookie("sourcegraphAnonymousUid"); err != nil {
-		println("Value", cookie.Value)
-		println("FFS", ffs)
-		println("Context", r.Context())
-
+	if cookie, err := r.Cookie("sourcegraphAnonymousUid"); err == nil {
 		flags, err := ffs.GetAnonymousUserFlags(r.Context(), cookie.Value)
 		if err == nil {
 			return context.WithValue(r.Context(), flagContextKey{}, ff.FlagSet(flags))
