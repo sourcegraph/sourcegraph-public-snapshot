@@ -14,7 +14,7 @@ import (
 func (r BillingResolver) UserURLForSiteAdminBilling(ctx context.Context, userID int32) (*string, error) {
 	// 🚨 SECURITY: Only site admins may view the billing URL, because it may contain sensitive
 	// data or identifiers.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.DB); err != nil {
 		return nil, err
 	}
 	custID, err := dbBilling{db: r.DB}.getUserBillingCustomerID(ctx, userID)
@@ -30,7 +30,7 @@ func (r BillingResolver) UserURLForSiteAdminBilling(ctx context.Context, userID 
 
 func (r BillingResolver) SetUserBilling(ctx context.Context, args *graphqlbackend.SetUserBillingArgs) (*graphqlbackend.EmptyResponse, error) {
 	// 🚨 SECURITY: Only site admins may set a user's billing info.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.DB); err != nil {
 		return nil, err
 	}
 

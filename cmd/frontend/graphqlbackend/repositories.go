@@ -101,7 +101,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 
 		if envvar.SourcegraphDotComMode() {
 			// 🚨 SECURITY: Don't allow non-admins to perform huge queries on Sourcegraph.com.
-			if isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx) == nil; !isSiteAdmin {
+			if isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil; !isSiteAdmin {
 				if opt2.LimitOffset == nil {
 					opt2.LimitOffset = &database.LimitOffset{Limit: 1000}
 				}
@@ -213,7 +213,7 @@ func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *Tot
 	} else {
 		// 🚨 SECURITY: Only site admins can list all repos, because a total repository
 		// count does not respect repository permissions.
-		if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 			return nil, err
 		}
 	}

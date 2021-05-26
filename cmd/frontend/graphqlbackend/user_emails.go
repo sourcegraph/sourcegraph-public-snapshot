@@ -19,7 +19,7 @@ var timeNow = time.Now
 
 func (r *UserResolver) Emails(ctx context.Context) ([]*userEmailResolver, error) {
 	// 🚨 SECURITY: Only the self user and site admins can fetch a user's emails.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.user.ID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
 		return nil, err
 	}
 
@@ -64,7 +64,7 @@ func (r *userEmailResolver) VerificationPending() bool {
 func (r *userEmailResolver) User() *UserResolver { return r.user }
 
 func (r *userEmailResolver) ViewerCanManuallyVerify(ctx context.Context) (bool, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err == backend.ErrNotAuthenticated || err == backend.ErrMustBeSiteAdmin {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err == backend.ErrNotAuthenticated || err == backend.ErrMustBeSiteAdmin {
 		return false, nil
 	} else if err != nil {
 		return false, err
@@ -80,7 +80,7 @@ func (r *schemaResolver) AddUserEmail(ctx context.Context, args *struct {
 	if err != nil {
 		return nil, err
 	}
-	if err := backend.UserEmails.Add(ctx, userID, args.Email); err != nil {
+	if err := backend.UserEmails.Add(ctx, r.db, userID, args.Email); err != nil {
 		return nil, err
 	}
 
@@ -103,7 +103,7 @@ func (r *schemaResolver) RemoveUserEmail(ctx context.Context, args *struct {
 	}
 
 	// 🚨 SECURITY: Only the user and site admins can remove an email address from a user.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, userID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
 		return nil, err
 	}
 
@@ -135,7 +135,7 @@ func (r *schemaResolver) SetUserEmailPrimary(ctx context.Context, args *struct {
 	}
 
 	// 🚨 SECURITY: Only the user and site admins can set the primary email address from a user.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, userID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
 		return nil, err
 	}
 
@@ -159,7 +159,7 @@ func (r *schemaResolver) SetUserEmailVerified(ctx context.Context, args *struct 
 }) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only site admins (NOT users themselves) can manually set email verification
 	// status. Users themselves must go through the normal email verification process.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -194,7 +194,7 @@ func (r *schemaResolver) ResendVerificationEmail(ctx context.Context, args *stru
 		return nil, err
 	}
 	// 🚨 SECURITY: Only the user and site admins can set the primary email address from a user.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, userID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
 		return nil, err
 	}
 

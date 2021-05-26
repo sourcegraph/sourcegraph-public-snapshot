@@ -29,7 +29,7 @@ func externalAccountByID(ctx context.Context, db dbutil.DB, id graphql.ID) (*ext
 	}
 
 	// 🚨 SECURITY: Only the user and site admins should be able to see a user's external accounts.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, account.UserID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, db, account.UserID); err != nil {
 		return nil, err
 	}
 
@@ -69,9 +69,9 @@ func (r *externalAccountResolver) AccountData(ctx context.Context) (*JSONValue, 
 	// GitLab, but only site admins can view account data for all other types.
 	var err error
 	if r.account.ServiceType == extsvc.TypeGitHub || r.account.ServiceType == extsvc.TypeGitLab {
-		err = backend.CheckSiteAdminOrSameUser(ctx, actor.FromContext(ctx).UID)
+		err = backend.CheckSiteAdminOrSameUser(ctx, r.db, actor.FromContext(ctx).UID)
 	} else {
-		err = backend.CheckUserIsSiteAdmin(ctx, actor.FromContext(ctx).UID)
+		err = backend.CheckUserIsSiteAdmin(ctx, r.db, actor.FromContext(ctx).UID)
 	}
 	if err != nil {
 		return nil, err

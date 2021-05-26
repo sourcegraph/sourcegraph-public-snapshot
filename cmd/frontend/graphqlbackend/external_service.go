@@ -40,7 +40,7 @@ func externalServiceByID(ctx context.Context, db dbutil.DB, gqlID graphql.ID) (*
 		return nil, err
 	}
 
-	if err := checkExternalServiceAccess(ctx, es.NamespaceUserID); err != nil {
+	if err := checkExternalServiceAccess(ctx, db, es.NamespaceUserID); err != nil {
 		return nil, err
 	}
 	return &externalServiceResolver{db: db, externalService: es}, nil

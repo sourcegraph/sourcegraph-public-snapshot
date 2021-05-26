@@ -128,7 +128,7 @@ func (r *RepositoryResolver) Description(ctx context.Context) (string, error) {
 }
 
 func (r *RepositoryResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		if err == backend.ErrMustBeSiteAdmin || err == backend.ErrNotAuthenticated {
 			return false, nil // not an error
 		}
