@@ -14,6 +14,7 @@ import {
     OnboardingTourProps,
     SearchContextInputProps,
 } from '..'
+import { AuthenticatedUser } from '../../auth'
 import { VersionContext } from '../../schema/site.schema'
 import { submitSearch, QueryState } from '../helpers'
 
@@ -29,6 +30,8 @@ interface Props
         SearchContextInputProps,
         VersionContextProps,
         OnboardingTourProps {
+    authenticatedUser: AuthenticatedUser | null
+    hasUserAddedRepositories: boolean
     location: H.Location
     history: H.History
     navbarSearchState: QueryState

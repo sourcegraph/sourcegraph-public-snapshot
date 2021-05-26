@@ -10,8 +10,10 @@ import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
 import { CaseSensitivityProps, PatternTypeProps, SearchContextInputProps } from '..'
+import { AuthenticatedUser } from '../../auth'
 import { SubmitSearchParameters } from '../helpers'
 
+import { SearchContextCtaPrompt } from './SearchContextCtaPrompt'
 import { SearchContextMenu } from './SearchContextMenu'
 import { defaultTourOptions } from './tour-options'
 
@@ -20,6 +22,9 @@ export interface SearchContextDropdownProps
         Pick<PatternTypeProps, 'patternType'>,
         Pick<CaseSensitivityProps, 'caseSensitive'>,
         VersionContextProps {
+    isSourcegraphDotCom: boolean
+    authenticatedUser: AuthenticatedUser | null
+    hasUserAddedRepositories: boolean
     submitSearch: (args: SubmitSearchParameters) => void
     submitSearchOnSearchContextChange?: boolean
     query: string
@@ -130,6 +135,9 @@ const useSearchContextHighlightTour = (
 
 export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdownProps> = props => {
     const {
+        isSourcegraphDotCom,
+        authenticatedUser,
+        hasUserAddedRepositories,
         history,
         patternType,
         caseSensitive,
@@ -223,13 +231,17 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
                 </code>
             </DropdownToggle>
             <DropdownMenu positionFixed={true} className="search-context-dropdown__menu">
-                <SearchContextMenu
-                    {...props}
-                    selectSearchContextSpec={selectSearchContextSpec}
-                    fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
-                    fetchSearchContexts={fetchSearchContexts}
-                    closeMenu={toggleOpen}
-                />
+                {isSourcegraphDotCom && !hasUserAddedRepositories ? (
+                    <SearchContextCtaPrompt authenticatedUser={authenticatedUser} />
+                ) : (
+                    <SearchContextMenu
+                        {...props}
+                        selectSearchContextSpec={selectSearchContextSpec}
+                        fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
+                        fetchSearchContexts={fetchSearchContexts}
+                        closeMenu={toggleOpen}
+                    />
+                )}
             </DropdownMenu>
         </Dropdown>
     )

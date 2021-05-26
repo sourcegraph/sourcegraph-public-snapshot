@@ -27,6 +27,9 @@ describe('SearchContextDropdown', () => {
         versionContext: undefined,
         submitSearch: () => {},
         isSearchOnboardingTourVisible: false,
+        hasUserAddedRepositories: false,
+        isSourcegraphDotCom: false,
+        authenticatedUser: null,
     }
     const RealIntersectionObserver = window.IntersectionObserver
     let clock: sinon.SinonFakeTimers

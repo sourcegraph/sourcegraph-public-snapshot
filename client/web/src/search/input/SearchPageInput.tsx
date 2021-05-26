@@ -47,6 +47,7 @@ interface Props
         SearchContextInputProps,
         OnboardingTourProps {
     authenticatedUser: AuthenticatedUser | null
+    hasUserAddedRepositories: boolean
     location: H.Location
     history: H.History
     isSourcegraphDotCom: boolean

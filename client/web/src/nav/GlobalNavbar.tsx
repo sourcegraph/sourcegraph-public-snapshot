@@ -79,6 +79,7 @@ interface Props
     history: H.History
     location: H.Location<{ query: string }>
     authenticatedUser: AuthenticatedUser | null
+    hasUserAddedRepositories: boolean
     authRequired: boolean
     navbarSearchQueryState: QueryState
     onNavbarQueryChange: (queryState: QueryState) => void

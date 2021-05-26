@@ -533,6 +533,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     showRepogroupHomepage={this.state.showRepogroupHomepage}
                                     showOnboardingTour={this.state.showOnboardingTour}
                                     showSearchContext={this.canShowSearchContext()}
+                                    hasUserAddedRepositories={this.state.hasUserAddedRepositories}
                                     showSearchContextManagement={this.state.showSearchContextManagement}
                                     selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
                                     setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}
@@ -617,7 +618,10 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
     }
 
     private canShowSearchContext = (): boolean =>
-        this.state.showSearchContext && (this.state.hasUserAddedRepositories || this.state.hasUserDefinedContexts)
+        this.state.showSearchContext &&
+        (this.state.hasUserAddedRepositories ||
+            this.state.hasUserDefinedContexts ||
+            window.context.sourcegraphDotComMode)
 
     private getSelectedSearchContextSpec = (): string | undefined =>
         this.canShowSearchContext() ? this.state.selectedSearchContextSpec : undefined

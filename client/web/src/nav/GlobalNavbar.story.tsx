@@ -67,6 +67,7 @@ const defaultProps = (
     routes: [],
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
+    hasUserAddedRepositories: false,
 })
 
 const { add } = storiesOf('web/nav/GlobalNav', module)

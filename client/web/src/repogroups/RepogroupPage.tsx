@@ -55,6 +55,7 @@ export interface RepogroupPageProps
         OnboardingTourProps,
         ShowQueryBuilderProps {
     authenticatedUser: AuthenticatedUser | null
+    hasUserAddedRepositories: boolean
     location: H.Location
     history: H.History
     isSourcegraphDotCom: boolean

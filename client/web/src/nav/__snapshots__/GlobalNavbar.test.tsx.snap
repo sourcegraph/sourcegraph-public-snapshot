@@ -45,6 +45,7 @@ exports[`GlobalNavbar default 1`] = `
       }
       fetchSearchContexts={[Function]}
       globbing={false}
+      hasUserAddedRepositories={false}
       history={
         Object {
           "action": "POP",

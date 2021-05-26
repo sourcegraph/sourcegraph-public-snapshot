@@ -4,6 +4,7 @@ import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { CopyQueryButtonProps, SearchContextInputProps } from '..'
+import { AuthenticatedUser } from '../../auth'
 import { VersionContextDropdown } from '../../nav/VersionContextDropdown'
 import { VersionContext } from '../../schema/site.schema'
 import { QueryState, submitSearch } from '../helpers'
@@ -19,6 +20,8 @@ export interface SearchBoxProps
         ThemeProps,
         SearchContextInputProps,
         CopyQueryButtonProps {
+    authenticatedUser: AuthenticatedUser | null
+    hasUserAddedRepositories: boolean
     isSourcegraphDotCom: boolean // significant for query suggestions
     queryState: QueryState
     onChange: (newState: QueryState) => void
