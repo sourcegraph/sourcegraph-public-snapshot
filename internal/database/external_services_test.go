@@ -16,7 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
@@ -97,7 +97,8 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 }
 
 func TestExternalServicesStore_ValidateConfig(t *testing.T) {
-	db := dbtesting.GetDB(t)
+	// Can't currently run in parallel because of global mocks
+	db := dbtest.NewDB(t, "")
 
 	tests := []struct {
 		name            string
@@ -265,7 +266,7 @@ func TestExternalServicesStore_Create(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	envvar.MockSourcegraphDotComMode(true)
@@ -384,7 +385,7 @@ func TestExternalServicesStore_CreateWithTierEnforcement(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
 
 	ctx := context.Background()
 	confGet := func() *conf.Unified { return &conf.Unified{} }
@@ -407,7 +408,7 @@ func TestExternalServicesStore_Update(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	envvar.MockSourcegraphDotComMode(true)
@@ -628,7 +629,8 @@ func TestCountRepoCount(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := actor.WithInternalActor(context.Background())
 
 	// Create a new external service
@@ -677,7 +679,8 @@ func TestExternalServicesStore_Delete(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := actor.WithInternalActor(context.Background())
 
 	// Create a new external service
@@ -769,7 +772,8 @@ func TestExternalServicesStore_GetByID(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	// Create a new external service
@@ -811,7 +815,8 @@ func TestExternalServicesStore_GetByID_Encrypted(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	// Create a new external service
@@ -867,7 +872,8 @@ func TestGetAffiliatedSyncErrors(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	// Create a new external service
@@ -1039,7 +1045,8 @@ func TestGetLastSyncError(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	// Create a new external service
@@ -1112,7 +1119,8 @@ func TestExternalServicesStore_List(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	// Create test user
@@ -1250,7 +1258,8 @@ func TestExternalServicesStore_DistinctKinds(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	t.Run("no external service won't blow up", func(t *testing.T) {
@@ -1317,7 +1326,8 @@ func TestExternalServicesStore_Count(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	// Create a new external service
@@ -1348,7 +1358,8 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	clock := timeutil.NewFakeClock(time.Now(), 0)
@@ -1543,7 +1554,8 @@ func TestExternalServiceStore_GetExternalServiceSyncJobs(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	// Create a new external service
@@ -1587,7 +1599,8 @@ func TestExternalServicesStore_OneCloudDefaultPerKind(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	now := time.Now()
@@ -1631,7 +1644,8 @@ func TestExternalServiceStore_SyncDue(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	now := time.Now()
