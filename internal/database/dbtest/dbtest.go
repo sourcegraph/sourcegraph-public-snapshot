@@ -6,7 +6,7 @@ import (
 	"errors"
 	"hash/fnv"
 	"math/rand"
-	crand "math/rand"
+	crand "crypto/rand"
 	"net/url"
 	"os"
 	"strconv"
