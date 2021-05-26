@@ -3,7 +3,7 @@ module github.com/sourcegraph/sourcegraph
 go 1.16
 
 require (
-	cloud.google.com/go v0.76.0
+	cloud.google.com/go v0.82.0
 	cloud.google.com/go/pubsub v1.3.1
 	cloud.google.com/go/storage v1.10.0
 	github.com/Masterminds/semver v1.5.0
@@ -14,13 +14,14 @@ require (
 	github.com/aphistic/sweet-junit v0.2.0 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20200907205600-7a23bdc65eef // indirect
 	github.com/avelino/slugify v0.0.0-20180501145920-855f152bd774
-	github.com/aws/aws-sdk-go-v2 v1.2.1
+	github.com/aws/aws-sdk-go-v2 v1.3.2
 	github.com/aws/aws-sdk-go-v2/config v1.1.2
 	github.com/aws/aws-sdk-go-v2/credentials v1.1.2
 	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.0.3
 	github.com/aws/aws-sdk-go-v2/service/codecommit v1.1.2
+	github.com/aws/aws-sdk-go-v2/service/kms v1.2.2
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.2.1
-	github.com/aws/smithy-go v1.2.0
+	github.com/aws/smithy-go v1.3.1
 	github.com/beevik/etree v1.1.0
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
 	github.com/certifi/gocertifi v0.0.0-20200211180108-c7c1fbc02894 // indirect
@@ -110,7 +111,6 @@ require (
 	github.com/keegancsmith/rpc v1.3.0
 	github.com/keegancsmith/sqlf v1.1.0
 	github.com/keegancsmith/tmpfriend v0.0.0-20180423180255-86e88902a513
-	github.com/klauspost/compress v1.11.0 // indirect
 	github.com/kr/text v0.2.0
 	github.com/kylelemons/godebug v1.1.0
 	github.com/lib/pq v1.8.0
@@ -183,20 +183,19 @@ require (
 	github.com/xhit/go-str2duration/v2 v2.0.0
 	github.com/zenazn/goji v1.0.1 // indirect
 	go.mongodb.org/mongo-driver v1.4.1 // indirect
-	go.opencensus.io v0.22.6 // indirect
 	go.uber.org/atomic v1.7.0
 	go.uber.org/automaxprocs v1.3.0
 	go.uber.org/ratelimit v0.2.0
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
 	golang.org/x/net v0.0.0-20210510120150-4163338589ed
-	golang.org/x/oauth2 v0.0.0-20210210192628-66670185b0cd
+	golang.org/x/oauth2 v0.0.0-20210514164344-f6687ab2804c
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/sys v0.0.0-20210510120138-977fb7262007
 	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e
-	golang.org/x/tools v0.1.1
-	google.golang.org/api v0.39.0
-	google.golang.org/genproto v0.0.0-20210211221406-4ccc9a5e4183
-	google.golang.org/protobuf v1.25.0
+	golang.org/x/tools v0.1.2
+	google.golang.org/api v0.46.0
+	google.golang.org/genproto v0.0.0-20210517163617-5e0236093d7a
+	google.golang.org/protobuf v1.26.0
 	gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 	gopkg.in/square/go-jose.v2 v2.5.1 // indirect
@@ -215,7 +214,7 @@ require (
 // or intentional forks.
 replace (
 	// We maintain our own fork of Zoekt. Update with ./dev/zoekt/update
-	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20210426140333-978e89d6b912
+	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20210525134535-f669d63e86d5
 	// We use a fork of Alertmanager to allow prom-wrapper to better manipulate Alertmanager configuration.
 	// See https://docs.sourcegraph.com/dev/background-information/observability/prometheus
 	github.com/prometheus/alertmanager => github.com/sourcegraph/alertmanager v0.21.1-0.20200727091526-3e856a90b534

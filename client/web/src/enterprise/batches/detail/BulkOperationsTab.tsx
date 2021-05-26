@@ -77,6 +77,6 @@ export const BulkOperationsListHeadComponent: React.FunctionComponent<{ totalCou
     totalCount,
 }) => (
     <h3 className="mt-4">
-        {totalCount} changeset {pluralize('updates', totalCount ?? 0)}
+        {totalCount} changeset {pluralize('update', totalCount ?? 0)}
     </h3>
 )

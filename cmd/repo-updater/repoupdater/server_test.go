@@ -27,7 +27,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -62,7 +61,6 @@ func TestIntegration(t *testing.T) {
 		test func(*testing.T, *repos.Store) func(*testing.T)
 	}{
 		{"Server/EnqueueRepoUpdate", testServerEnqueueRepoUpdate},
-		{"Server/RepoExternalServices", testServerRepoExternalServices},
 		{"Server/RepoLookup", testRepoLookup(db)},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -282,132 +280,6 @@ func testServerEnqueueRepoUpdate(t *testing.T, store *repos.Store) func(t *testi
 	}
 }
 
-func testServerRepoExternalServices(t *testing.T, store *repos.Store) func(t *testing.T) {
-	return func(t *testing.T) {
-
-		service1 := &types.ExternalService{
-			Kind:        extsvc.KindGitHub,
-			DisplayName: "github.com - test",
-			Config: formatJSON(`
-		{
-			// Some comment
-			"url": "https://github.com",
-			"token": "secret"
-		}`),
-		}
-
-		service2 := &types.ExternalService{
-			Kind:        extsvc.KindGitHub,
-			DisplayName: "github.com - test2",
-			Config: formatJSON(`
-		{
-			// Some comment
-			"url": "https://github.com",
-			"token": "secret"
-		}`),
-		}
-
-		// We share the store across test cases. Initialize now so we have IDs
-		// set for test cases.
-		ctx := context.Background()
-
-		if err := store.ExternalServiceStore.Upsert(ctx, service1, service2); err != nil {
-			t.Fatal(err)
-		}
-
-		// No sources are repos that are not managed by the syncer
-		repoNoSources := &types.Repo{
-			Name: "gitolite.example.com/oldschool",
-			ExternalRepo: api.ExternalRepoSpec{
-				ID:          "nosources",
-				ServiceType: extsvc.TypeGitolite,
-				ServiceID:   "http://gitolite.my.corp",
-			},
-		}
-
-		repoSources := (&types.Repo{
-			Name: "github.com/foo/sources",
-			ExternalRepo: api.ExternalRepoSpec{
-				ID:          "sources",
-				ServiceType: extsvc.TypeGitHub,
-				ServiceID:   "http://github.com",
-			},
-			Metadata: new(github.Repository),
-		}).With(types.Opt.RepoSources(service1.URN(), service2.URN()))
-
-		if err := store.RepoStore.Create(ctx, repoNoSources, repoSources); err != nil {
-			t.Fatal(err)
-		}
-
-		testCases := []struct {
-			name   string
-			repoID api.RepoID
-			svcs   []api.ExternalService
-			err    string
-		}{{
-			name:   "repo no sources",
-			repoID: repoNoSources.ID,
-			svcs:   nil,
-			err:    "<nil>",
-		}, {
-			name:   "repo sources",
-			repoID: repoSources.ID,
-			svcs:   apiExternalServices(service1, service2),
-			err:    "<nil>",
-		}, {
-			name:   "repo not in store",
-			repoID: 42,
-			svcs:   nil,
-			err:    "repository with ID 42 does not exist",
-		}}
-
-		s := &Server{Store: store}
-		srv := httptest.NewServer(s.Handler())
-		defer srv.Close()
-		cli := repoupdater.NewClient(srv.URL)
-		for _, tc := range testCases {
-			tc := tc
-			t.Run(tc.name, func(t *testing.T) {
-				res, err := cli.RepoExternalServices(ctx, tc.repoID)
-				if have, want := fmt.Sprint(err), tc.err; have != want {
-					t.Errorf("have err: %q, want: %q", have, want)
-				}
-
-				have, want := res, tc.svcs
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Errorf("response:\n%s", cmp.Diff(have, want))
-				}
-			})
-		}
-	}
-}
-
-func apiExternalServices(es ...*types.ExternalService) []api.ExternalService {
-	if len(es) == 0 {
-		return nil
-	}
-
-	svcs := make([]api.ExternalService, 0, len(es))
-	for _, e := range es {
-		svc := api.ExternalService{
-			ID:          e.ID,
-			Kind:        e.Kind,
-			DisplayName: e.DisplayName,
-			Config:      e.Config,
-			CreatedAt:   e.CreatedAt,
-			UpdatedAt:   e.UpdatedAt,
-		}
-
-		if e.IsDeleted() {
-			svc.DeletedAt = e.DeletedAt
-		}
-
-		svcs = append(svcs, svc)
-	}
-
-	return svcs
-}
-
 func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore *repos.Store) func(t *testing.T) {
 	return func(t *testing.T, store *repos.Store) func(t *testing.T) {
 		return func(t *testing.T) {
@@ -583,33 +455,34 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore *repos.Store) func(
 						},
 					}},
 				},
-				{
-					name: "found - GitHub.com on Sourcegraph.com",
-					args: protocol.RepoLookupArgs{
-						Repo: api.RepoName("github.com/foo/bar"),
-					},
-					stored: []*types.Repo{},
-					githubDotComSource: &fakeRepoSource{
-						repo: githubRepository,
-					},
-					result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
-						ExternalRepo: api.ExternalRepoSpec{
-							ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-							ServiceType: extsvc.TypeGitHub,
-							ServiceID:   "https://github.com/",
-						},
-						Name:        "github.com/foo/bar",
-						Description: "The description",
-						VCS:         protocol.VCSInfo{URL: "git@github.com:foo/bar.git"},
-						Links: &protocol.RepoLinks{
-							Root:   "github.com/foo/bar",
-							Tree:   "github.com/foo/bar/tree/{rev}/{path}",
-							Blob:   "github.com/foo/bar/blob/{rev}/{path}",
-							Commit: "github.com/foo/bar/commit/{commit}",
-						},
-					}},
-					assert: types.Assert.ReposEqual(githubRepository),
-				},
+				// TODO: Disabled because it's flaky. https://github.com/sourcegraph/sourcegraph/issues/21408
+				// {
+				// 	name: "found - GitHub.com on Sourcegraph.com",
+				// 	args: protocol.RepoLookupArgs{
+				// 		Repo: api.RepoName("github.com/foo/bar"),
+				// 	},
+				// 	stored: []*types.Repo{},
+				// 	githubDotComSource: &fakeRepoSource{
+				// 		repo: githubRepository,
+				// 	},
+				// 	result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
+				// 		ExternalRepo: api.ExternalRepoSpec{
+				// 			ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+				// 			ServiceType: extsvc.TypeGitHub,
+				// 			ServiceID:   "https://github.com/",
+				// 		},
+				// 		Name:        "github.com/foo/bar",
+				// 		Description: "The description",
+				// 		VCS:         protocol.VCSInfo{URL: "git@github.com:foo/bar.git"},
+				// 		Links: &protocol.RepoLinks{
+				// 			Root:   "github.com/foo/bar",
+				// 			Tree:   "github.com/foo/bar/tree/{rev}/{path}",
+				// 			Blob:   "github.com/foo/bar/blob/{rev}/{path}",
+				// 			Commit: "github.com/foo/bar/commit/{commit}",
+				// 		},
+				// 	}},
+				// 	assert: types.Assert.ReposEqual(githubRepository),
+				// },
 				{
 					name: "found - GitHub.com on Sourcegraph.com already exists",
 					args: protocol.RepoLookupArgs{
@@ -998,12 +871,4 @@ func (t testSource) WithAuthenticator(a auth.Authenticator) (repos.Source, error
 
 func (t testSource) ValidateAuthenticator(ctx context.Context) error {
 	return t.fn()
-}
-
-func formatJSON(s string) string {
-	formatted, err := jsonc.Format(s, nil)
-	if err != nil {
-		panic(err)
-	}
-	return formatted
 }

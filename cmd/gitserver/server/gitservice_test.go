@@ -2,11 +2,18 @@ package server
 
 import (
 	"bytes"
+	"fmt"
 	"net/http/httptest"
 	"os/exec"
 	"path/filepath"
 	"testing"
 )
+
+// numTestCommits determines the number of files/commits/tags to create for
+// the local test repo. The value of 25 causes clonev1 and clonev2 to use gzip
+// compression but shallow to be uncompressed. The value of 10 does not trigger
+// this same behavior.
+const numTestCommits = 25
 
 func TestGitServiceHandler(t *testing.T) {
 	root := tmpDir(t)
@@ -14,9 +21,13 @@ func TestGitServiceHandler(t *testing.T) {
 
 	// Setup a repo with a commit so we can add bad refs
 	runCmd(t, root, "git", "init", repo)
-	runCmd(t, repo, "sh", "-c", "echo hello world > hello.txt")
-	runCmd(t, repo, "git", "add", "hello.txt")
-	runCmd(t, repo, "git", "commit", "-m", "hello")
+
+	for i := 0; i < numTestCommits; i++ {
+		runCmd(t, repo, "sh", "-c", fmt.Sprintf("echo hello world > hello-%d.txt", i+1))
+		runCmd(t, repo, "git", "add", fmt.Sprintf("hello-%d.txt", i+1))
+		runCmd(t, repo, "git", "commit", "-m", fmt.Sprintf("c%d", i+1))
+		runCmd(t, repo, "git", "tag", fmt.Sprintf("v%d", i+1))
+	}
 
 	ts := httptest.NewServer(&gitServiceHandler{
 		Dir: func(s string) string {

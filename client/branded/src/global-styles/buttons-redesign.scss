@@ -64,8 +64,7 @@
         &.disabled,
         &:disabled {
             opacity: 1;
-            color: var(--text-muted);
-            background-color: var(--color-bg-1);
+            color: var(--text-disabled);
             border-color: $light-color-variant;
         }
 
@@ -76,7 +75,7 @@
             }
 
             &:hover:not(.focus):not(:focus) {
-                background-color: var(--body-bg);
+                background-color: var(--color-bg-1);
                 @at-root #{selector-append('.theme-light', &)} {
                     color: $dark-color-variant;
                     border-color: $dark-color-variant;
@@ -136,7 +135,7 @@
         $dark-color-variant: var(--secondary-3),
         // Use darker text colors for contrast
         $text-color: var(--body-color),
-        $disabled-text-color: var(--text-muted)
+        $disabled-text-color: var(--text-disabled)
     );
 
     @include redesign-button-variant(
@@ -160,7 +159,7 @@
         $dark-color-variant: var(--warning-3),
         // Use darker text colors for contrast
         $text-color: var(--dark-text),
-        $disabled-text-color: var(--text-muted)
+        $disabled-text-color: var(--text-disabled)
     );
 
     @include redesign-button-variant(
@@ -170,7 +169,7 @@
         $dark-color-variant: var(--info-3),
         // Use darker text colors for contrast
         $text-color: var(--dark-text),
-        $disabled-text-color: var(--text-muted)
+        $disabled-text-color: var(--text-disabled)
     );
 
     @include redesign-button-variant(
@@ -218,7 +217,7 @@
                 color: var(--body-color);
 
                 svg {
-                    fill: var(--body-color);
+                    fill: var(--icon-color);
                 }
             }
 
@@ -230,7 +229,7 @@
             }
 
             svg {
-                fill: var(--body-color);
+                fill: var(--icon-color);
             }
         }
     }

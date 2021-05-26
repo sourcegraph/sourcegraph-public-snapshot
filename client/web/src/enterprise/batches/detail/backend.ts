@@ -628,7 +628,7 @@ export async function detachChangesets(batchChange: Scalars['ID'], changesets: S
         gql`
             mutation DetachChangesets($batchChange: ID!, $changesets: [ID!]!) {
                 detachChangesets(batchChange: $batchChange, changesets: $changesets) {
-                    alwaysNil
+                    id
                 }
             }
         `,

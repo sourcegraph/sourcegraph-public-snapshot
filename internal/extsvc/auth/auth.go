@@ -1,9 +1,11 @@
-// auth provides the Authenticator interface, which can be used to add
+// Package auth provides the Authenticator interface, which can be used to add
 // authentication data to an outbound HTTP request, and concrete implementations
 // for the commonly used authentication types.
 package auth
 
-import "net/http"
+import (
+	"net/http"
+)
 
 // Authenticator instances mutate an outbound request to add whatever headers or
 // other modifications are required to authenticate using the concrete type

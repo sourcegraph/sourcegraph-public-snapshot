@@ -1,5 +1,6 @@
 import classNames from 'classnames'
 import * as H from 'history'
+import PlusIcon from 'mdi-react/PlusIcon'
 import React, { useCallback, useState } from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
@@ -69,6 +70,12 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
                                 text: 'Search contexts',
                             },
                         ]}
+                        actions={
+                            <Link to="/contexts/new" className="btn btn-secondary">
+                                <PlusIcon className="icon-inline" />
+                                Create search context
+                            </Link>
+                        }
                         className="mb-2"
                     />
                     <p className="text-muted">

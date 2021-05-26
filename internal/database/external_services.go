@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/hashicorp/go-multierror"
 	jsoniter "github.com/json-iterator/go"
@@ -472,63 +473,23 @@ func (e *ExternalServiceStore) validateSingleKindPerUser(ctx context.Context, id
 
 // upsertAuthorizationToExternalService adds "authorization" field to the
 // external service config when not yet present for GitHub and GitLab.
-//
-// We will only rewrite user-add code host connections because we expect users
-// to edit code host connections via our UI so no JSON with comments should
-// appear. Therefore it is OK to reset config as normalized. Having the
-// "authorization" field will correctly generate authz.Provider.
-//
-// For site-level code host connections, there usually exists useful comments,
-// naively stripping them off is almost always problematic. Therefore we simply
-// return an error for site admins to add the "authorization" field manually.
-func upsertAuthorizationToExternalService(namespaceUserID int32, kind string, normalized []byte) ([]byte, error) {
-	var err error
+func upsertAuthorizationToExternalService(kind, config string) (string, error) {
 	switch kind {
 	case extsvc.KindGitHub:
-		var c schema.GitHubConnection
-		if err = jsoniter.Unmarshal(normalized, &c); err != nil {
-			return nil, err
-		}
-
-		if c.Authorization != nil {
-			return normalized, nil
-		} else if namespaceUserID == 0 {
-			return nil, errors.New(`The "authorization" field must be presented in the config`)
-		}
-
-		c.Authorization = &schema.GitHubAuthorization{}
-
-		normalized, err = jsoniter.MarshalIndent(c, "", "  ")
-		if err != nil {
-			return nil, err
-		}
+		return jsonc.Edit(config, &schema.GitHubAuthorization{}, "authorization")
 
 	case extsvc.KindGitLab:
-		var c schema.GitLabConnection
-		if err = jsoniter.Unmarshal(normalized, &c); err != nil {
-			return nil, err
-		}
-
-		if c.Authorization != nil {
-			return normalized, nil
-		} else if namespaceUserID == 0 {
-			return nil, errors.New(`The "authorization" field must be presented in the config`)
-		}
-
-		c.Authorization = &schema.GitLabAuthorization{
-			IdentityProvider: schema.IdentityProvider{
-				Oauth: &schema.OAuthIdentity{
-					Type: "oauth",
+		return jsonc.Edit(config,
+			&schema.GitLabAuthorization{
+				IdentityProvider: schema.IdentityProvider{
+					Oauth: &schema.OAuthIdentity{
+						Type: "oauth",
+					},
 				},
 			},
-		}
-
-		normalized, err = jsoniter.MarshalIndent(c, "", "  ")
-		if err != nil {
-			return nil, err
-		}
+			"authorization")
 	}
-	return normalized, nil
+	return config, nil
 }
 
 // Create creates an external service.
@@ -567,11 +528,10 @@ func (e *ExternalServiceStore) Create(ctx context.Context, confGet func() *conf.
 	// Cloud, we always want to enforce repository permissions using OAuth to
 	// prevent unexpected resource leaking.
 	if envvar.SourcegraphDotComMode() {
-		normalized, err = upsertAuthorizationToExternalService(es.NamespaceUserID, es.Kind, normalized)
+		es.Config, err = upsertAuthorizationToExternalService(es.Kind, es.Config)
 		if err != nil {
 			return err
 		}
-		es.Config = string(normalized)
 	}
 
 	es.CreatedAt = timeutil.Now()
@@ -859,11 +819,10 @@ func (e *ExternalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 		// Cloud, we always want to enforce repository permissions using OAuth to
 		// prevent unexpected resource leaking.
 		if envvar.SourcegraphDotComMode() {
-			normalized, err = upsertAuthorizationToExternalService(externalService.NamespaceUserID, externalService.Kind, normalized)
+			config, err := upsertAuthorizationToExternalService(externalService.Kind, *update.Config)
 			if err != nil {
 				return err
 			}
-			config := string(normalized)
 			update.Config = &config
 		}
 
@@ -1035,6 +994,7 @@ func (e *ExternalServiceStore) GetByID(ctx context.Context, id int64) (*types.Ex
 	return ess[0], nil
 }
 
+// GetSyncJobs gets all sync jobs
 func (e *ExternalServiceStore) GetSyncJobs(ctx context.Context) ([]*types.ExternalServiceSyncJob, error) {
 	q := sqlf.Sprintf(`SELECT id, state, failure_message, started_at, finished_at, process_after, num_resets, external_service_id, num_failures
 FROM external_service_sync_jobs ORDER BY started_at desc
@@ -1270,6 +1230,44 @@ func (e *ExternalServiceStore) RepoCount(ctx context.Context, id int64) (int32, 
 	}
 
 	return count, nil
+}
+
+// SyncDue returns true if any of the supplied external services are due to sync
+// now or within given duration from now.
+func (e *ExternalServiceStore) SyncDue(ctx context.Context, intIDs []int64, d time.Duration) (bool, error) {
+	if len(intIDs) == 0 {
+		return false, nil
+	}
+	ids := make([]*sqlf.Query, 0, len(intIDs))
+	for _, id := range intIDs {
+		ids = append(ids, sqlf.Sprintf("%s", id))
+	}
+	idFilter := sqlf.Sprintf("IN (%s)", sqlf.Join(ids, ","))
+	deadline := time.Now().Add(d)
+
+	q := sqlf.Sprintf(`
+SELECT TRUE
+WHERE EXISTS(
+        SELECT
+        FROM external_services
+        WHERE id %s
+          AND (
+                next_sync_at IS NULL
+                OR next_sync_at <= %s)
+    )
+   OR EXISTS(
+        SELECT
+        FROM external_service_sync_jobs
+        WHERE external_service_id %s
+          AND state IN ('queued', 'processing')
+    );
+`, idFilter, deadline, idFilter)
+
+	v, exists, err := basestore.ScanFirstBool(e.Query(ctx, q))
+	if err != nil {
+		return false, err
+	}
+	return v && exists, nil
 }
 
 // MockExternalServices mocks the external services store.

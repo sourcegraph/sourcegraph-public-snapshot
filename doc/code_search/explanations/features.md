@@ -63,15 +63,11 @@ Examples:
 
 Tip: On the statistics page, you can enter an empty query to see statistics across all repositories.
 
-## Version contexts <span class="badge badge-primary">experimental</span>
+## Version contexts <span class="badge badge-primary">sunsetting</span>
 
-> NOTE: This feature is still in active development and must be enabled by a Sourcegraph site admin in site configuration.
+The version contexts feature is being sunset and will be replaced by [search contexts](#search-contexts). Search contexts support all features and capabilities of version contexts.
 
-Many organizations have old versions of code running in production and need to search across all the code for a specific release.
-
-Version contexts allow creating sets of many repositories at specific revisions. When set, a version context limits your searches and code navigation actions (with search-based code intelligence) to the repositories and revisions in the context.
-
-Your site admin can add version contexts in site configuration under the `experimentalFeatures.versionContexts` setting. For example:
+Existing version contexts are managed by site admins in site configuration under the `experimentalFeatures.versionContexts` setting. For example:
 
 ```json
 "experimentalFeatures": {
@@ -96,7 +92,6 @@ Your site admin can add version contexts in site configuration under the `experi
 To specify the default branch, you can set `"rev"` to `"HEAD"` or `""`.
 
 After setting some version contexts, users can select version contexts in the dropdown to the left of the search bar.
-
 
 > NOTE: All revisions specified in version contexts [will be indexed](#multi-branch-indexing-experimental).
 
@@ -125,19 +120,38 @@ Indexing multiple branches will add additional resource requirements to Sourcegr
 
 ## Search contexts <span class="badge badge-primary">experimental</span>
 
-Search contexts help you search the code you care about on Sourcegraph. A search context represents a set of repositories on a Sourcegraph instance that will be targeted by search queries by default.
+Search contexts help you search the code you care about on Sourcegraph. A search context represents a set of repositories at specific revisions on a Sourcegraph instance that will be targeted by search queries by default.
 
-Sourcegraph Cloud currently supports two search contexts: 
+Every search on Sourcegraph uses a search context. Search contexts can be defined with the contexts selector shown in the search input, or entered directly in a search query.
 
-- Your personal context, `context:@username`, which automatically includes all repositories you add to the Sourcegraph instance.
+**Sourcegraph Cloud** currently supports two pre-set search contexts: 
+
+- Your personal context, `context:@username`, which automatically includes all repositories you add to Sourcegraph Cloud.
+- The global context, `context:global`, which includes all repositories on Sourcegraph Cloud.
+
+If no search context is specified, `context:global` is used.
+
+**Private Sourcegraph instances** support custom search contexts:
+
+- Contexts owned by a user, such as `context:@username/context-name`, which can be private to the user or public to all users on the Sourcegraph instance.
+- Contexts at the global level, such as `context:example-context`, which can be private to site admins or public to all users on the Sourcegraph instance.
 - The global context, `context:global`, which includes all repositories on the Sourcegraph instance.
 
-This feature is currently under active development for self-hosted Sourcegraph instances and is therefore disabled by default. If enabled on your instance with the below configuration, users will not see the search context functionality until at least one repository is added by that user (which is not yet available on private instances). 
+This feature is currently under active development for self-hosted Sourcegraph instances and is disabled by default.
 
-To enable search contexts on your private instance, use the following config in your user or organization settings:
+Your site admin can enable search contexts on your private instance in **global settings** using the following:
 
 ```json
 "experimentalFeatures": {  
-  "showSearchContext": true
+  "showSearchContext": true,
+  "showSearchContextManagement": true
 }
 ```
+
+**Note**: While version contexts are located in the site configuration, search contexts are enabled through the global settings.
+
+Reload the page after saving changes to see search contexts enabled.
+
+If you currently use [version contexts](#version-contexts), you can automatically [convert your existing version contexts to search contexts](../../admin/how-to/converting-version-contexts-to-search-contexts.md). We recommend migrating to search contexts for a more intuitive, powerful search experience and the latest improvements and updates.
+
+See the [search contexts](../how-to/search_contexts.md) documentation to learn how to use and create search contexts.

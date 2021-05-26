@@ -28,7 +28,7 @@ import {
     OnboardingTourProps,
     ShowQueryBuilderProps,
     ParsedSearchQueryProps,
-    SearchContextProps,
+    SearchContextInputProps,
 } from '../search'
 import { submitSearch } from '../search/helpers'
 import { SearchPageInput } from '../search/input/SearchPageInput'
@@ -51,10 +51,7 @@ export interface RepogroupPageProps
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
         CopyQueryButtonProps,
         VersionContextProps,
-        Omit<
-            SearchContextProps,
-            'convertVersionContextToSearchContext' | 'isSearchContextSpecAvailable' | 'fetchSearchContext'
-        >,
+        SearchContextInputProps,
         OnboardingTourProps,
         ShowQueryBuilderProps {
     authenticatedUser: AuthenticatedUser | null

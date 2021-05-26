@@ -26,6 +26,7 @@ import {
 } from '../keyboardShortcuts/keyboardShortcuts'
 import { LayoutRouteProps } from '../routes'
 import { Settings } from '../schema/settings.schema'
+import { SearchContextProps } from '../search'
 import { ThemePreferenceProps } from '../theme'
 import { getReactElements } from '../util/getReactElements'
 
@@ -44,7 +45,8 @@ interface Props
         ExtensionAlertAnimationProps,
         TelemetryProps,
         CodeMonitoringProps,
-        ActivationProps {
+        ActivationProps,
+        Pick<SearchContextProps, 'showSearchContext' | 'showSearchContextManagement'> {
     location: H.Location
     history: H.History
     authenticatedUser: AuthenticatedUser | null
@@ -188,6 +190,10 @@ export const NavLinks: React.FunctionComponent<Props> = props => {
                             (!isErrorLike(settingsCascade.final) &&
                                 settingsCascade.final?.['alerts.codeHostIntegrationMessaging']) ||
                             'browser-extension'
+                        }
+                        showRedesignToggle={
+                            !isErrorLike(props.settingsCascade.final) &&
+                            Boolean(props.settingsCascade.final?.experimentalFeatures?.designRefreshToggleEnabled)
                         }
                         keyboardShortcutForSwitchTheme={KEYBOARD_SHORTCUT_SWITCH_THEME}
                     />

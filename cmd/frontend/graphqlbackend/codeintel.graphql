@@ -209,6 +209,28 @@ interface TreeEntryLSIFData {
     Code diagnostics provided through LSIF.
     """
     diagnostics(first: Int): DiagnosticConnection!
+
+    """
+    Returns the documentation page corresponding to the given path ID, where the empty string "/"
+    refers to the current tree entry and can be used to walk all documentation below this tree entry.
+
+    Currently this method is only supported on the root tree entry of a repository.
+
+    A pathID refers to all the structured documentation slugs emitted by the LSIF indexer joined together
+    with a slash, starting at the slug corresponding to this tree entry filepath. A pathID and filepath may
+    sometimes look similar, but are not equal. Some examples include:
+
+    * A documentation page under filepath `internal/pkg/mux` with pathID `/Router/ServeHTTP/examples`.
+    * A documentation page under filepath `/` (repository root) with pathID `/internal/pkg/mux/Router/ServeHTTP/examples`
+
+    In other words, a path ID is said to be the path to the page, relative to the tree entry
+    filepath.
+
+    The components of the pathID are chosen solely by the LSIF indexer, and may vary over time or
+    even dynamically based on e.g. project size. The same is true of pages, e.g. an LSIF indexer
+    may choose to create new pages if an API surface exceeds some threshold size.
+    """
+    documentationPage(pathID: String!): DocumentationPage!
 }
 
 """
@@ -290,6 +312,42 @@ type GitBlobLSIFData implements TreeEntryLSIFData {
     Code diagnostics provided through LSIF.
     """
     diagnostics(first: Int): DiagnosticConnection!
+
+    """
+    Returns the documentation page corresponding to the given path ID, where the path ID "/"
+    refers to the current git blob and can be used to walk all documentation below this git blob.
+
+    Currently this method is only supported on the root git blob of a repository.
+
+    A pathID refers to all the structured documentation slugs emitted by the LSIF indexer joined together
+    with a slash, starting at the slug corresponding to this git blob filepath. A pathID and filepath may
+    sometimes look similar, but are not equal. Some examples include:
+
+    * A documentation page under filepath `internal/pkg/mux` with pathID `/Router/ServeHTTP/examples`.
+    * A documentation page under filepath `/` (repository root) with pathID `/internal/pkg/mux/Router/ServeHTTP/examples`
+
+    In other words, a path ID is said to be the path to the page, relative to the git blob
+    filepath.
+
+    The components of the pathID are chosen solely by the LSIF indexer, and may vary over time or
+    even dynamically based on e.g. project size. The same is true of pages, e.g. an LSIF indexer
+    may choose to create new pages if an API surface exceeds some threshold size.
+    """
+    documentationPage(pathID: String!): DocumentationPage!
+}
+
+"""
+Describes a single page of documentation.
+"""
+type DocumentationPage {
+    """
+    The tree of documentation nodes describing this page's hierarchy. It is a JSON value because
+    GraphQL has terrible support for recursive data structures: https://github.com/graphql/graphql-spec/issues/91
+
+    The exact structure of this value is documented here:
+    https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+type+DocumentationNode+struct&patternType=literal&case=yes
+    """
+    tree: JSONValue!
 }
 
 """

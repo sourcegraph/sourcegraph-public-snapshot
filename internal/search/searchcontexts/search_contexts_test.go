@@ -68,7 +68,7 @@ func TestResolvingInvalidSearchContextSpecs(t *testing.T) {
 	}{
 		{name: "invalid format", searchContextSpec: "+user", wantErr: "search context not found"},
 		{name: "user not found", searchContextSpec: "@user", wantErr: "search context \"@user\" not found"},
-		{name: "empty user not found", searchContextSpec: "@", wantErr: "search context \"@\" not found"},
+		{name: "empty user not found", searchContextSpec: "@", wantErr: "search context not found"},
 	}
 
 	db := new(dbtesting.MockDB)
@@ -363,7 +363,7 @@ func TestSearchContextWriteAccessValidation(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: tt.userID})
 
-			err := validateSearchContextWriteAccessForCurrentUser(ctx, db, tt.namespaceUserID, tt.namespaceOrgID, tt.public)
+			err := ValidateSearchContextWriteAccessForCurrentUser(ctx, db, tt.namespaceUserID, tt.namespaceOrgID, tt.public)
 
 			expectErr := tt.wantErr != ""
 			if !expectErr && err != nil {

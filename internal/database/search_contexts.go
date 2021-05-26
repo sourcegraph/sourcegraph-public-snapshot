@@ -79,7 +79,11 @@ OFFSET %d
 const countSearchContextsFmtStr = `
 SELECT COUNT(*)
 FROM search_contexts sc
-WHERE sc.deleted_at IS NULL AND (%s)
+LEFT JOIN users u on sc.namespace_user_id = u.id
+LEFT JOIN orgs o on sc.namespace_org_id = o.id
+WHERE sc.deleted_at IS NULL
+	AND (%s) -- permission conditions
+	AND (%s) -- query conditions
 `
 
 type SearchContextsOrderByOption uint8
@@ -100,6 +104,8 @@ type ListSearchContextsPageOptions struct {
 type ListSearchContextsOptions struct {
 	// Name is used for partial matching of search contexts by name (case-insensitvely).
 	Name string
+	// NamespaceName is used for partial matching of search context namespaces (user or org) by name (case-insensitvely).
+	NamespaceName string
 	// NamespaceUserID matches search contexts by user. Mutually exclusive with NamespaceOrgID.
 	NamespaceUserID int32
 	// NamespaceOrgID matches search contexts by org. Mutually exclusive with NamespaceUserID.
@@ -163,6 +169,10 @@ func getSearchContextsQueryConditions(opts ListSearchContextsOptions) ([]*sqlf.Q
 		conds = append(conds, sqlf.Sprintf("sc.name LIKE %s", "%"+opts.Name+"%"))
 	}
 
+	if opts.NamespaceName != "" {
+		conds = append(conds, sqlf.Sprintf("COALESCE(u.username, o.name, '') ILIKE %s", "%"+opts.NamespaceName+"%"))
+	}
+
 	if len(conds) == 0 {
 		// If no conditions are present, append a catch-all condition to avoid a SQL syntax error
 		conds = append(conds, sqlf.Sprintf("1 = 1"))
@@ -206,8 +216,12 @@ func (s *SearchContextsStore) CountSearchContexts(ctx context.Context, opts List
 	if err != nil {
 		return -1, err
 	}
+	permissionsCond, err := searchContextsPermissionsCondition(ctx, s.Handle().DB())
+	if err != nil {
+		return -1, err
+	}
 	var count int32
-	err = s.QueryRow(ctx, sqlf.Sprintf(countSearchContextsFmtStr, sqlf.Join(conds, "\n AND "))).Scan(&count)
+	err = s.QueryRow(ctx, sqlf.Sprintf(countSearchContextsFmtStr, permissionsCond, sqlf.Join(conds, "\n AND "))).Scan(&count)
 	if err != nil {
 		return -1, err
 	}

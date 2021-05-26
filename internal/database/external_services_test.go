@@ -16,7 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
@@ -97,7 +97,8 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 }
 
 func TestExternalServicesStore_ValidateConfig(t *testing.T) {
-	db := dbtesting.GetDB(t)
+	// Can't currently run in parallel because of global mocks
+	db := dbtest.NewDB(t, "")
 
 	tests := []struct {
 		name            string
@@ -265,7 +266,7 @@ func TestExternalServicesStore_Create(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	envvar.MockSourcegraphDotComMode(true)
@@ -384,7 +385,7 @@ func TestExternalServicesStore_CreateWithTierEnforcement(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
 
 	ctx := context.Background()
 	confGet := func() *conf.Unified { return &conf.Unified{} }
@@ -407,7 +408,7 @@ func TestExternalServicesStore_Update(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	envvar.MockSourcegraphDotComMode(true)
@@ -431,7 +432,6 @@ func TestExternalServicesStore_Update(t *testing.T) {
 	tests := []struct {
 		name             string
 		update           *ExternalServiceUpdate
-		wantError        bool
 		wantUnrestricted bool
 		wantCloudDefault bool
 	}{
@@ -450,7 +450,6 @@ func TestExternalServicesStore_Update(t *testing.T) {
 				DisplayName: strptr("GITHUB (updated) #2"),
 				Config:      strptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
 			},
-			wantError:        true,
 			wantUnrestricted: false,
 			wantCloudDefault: false,
 		},
@@ -466,7 +465,6 @@ func TestExternalServicesStore_Update(t *testing.T) {
 	// "authorization": {}
 }`),
 			},
-			wantError:        true,
 			wantUnrestricted: false,
 			wantCloudDefault: false,
 		},
@@ -490,14 +488,8 @@ func TestExternalServicesStore_Update(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			err = ExternalServices(db).Update(ctx, nil, es.ID, test.update)
-			if err != nil && !test.wantError {
-				t.Fatal(err)
-			} else if err == nil && test.wantError {
-				t.Fatal("Want error but got nil")
-			}
-
 			if err != nil {
-				return // No point to continue if error is expected for update
+				t.Fatal(err)
 			}
 
 			// Get and verify update
@@ -525,11 +517,120 @@ func TestExternalServicesStore_Update(t *testing.T) {
 	}
 }
 
+func TestUpsertAuthorizationToExternalService(t *testing.T) {
+	tests := []struct {
+		name   string
+		kind   string
+		config string
+		want   string
+	}{
+		{
+			name: "github with authorization",
+			kind: extsvc.KindGitHub,
+			config: `
+{
+  // Useful comments
+  "url": "https://github.com",
+  "repositoryQuery": ["none"],
+  "token": "def",
+  "authorization": {}
+}`,
+			want: `
+{
+  // Useful comments
+  "url": "https://github.com",
+  "repositoryQuery": ["none"],
+  "token": "def",
+  "authorization": {}
+}`,
+		},
+		{
+			name: "github without authorization",
+			kind: extsvc.KindGitHub,
+			config: `
+{
+  // Useful comments
+  "url": "https://github.com",
+  "repositoryQuery": ["none"],
+  "token": "def"
+}`,
+			want: `
+{
+  // Useful comments
+  "url": "https://github.com",
+  "repositoryQuery": ["none"],
+  "token": "def",
+  "authorization": {}
+}`,
+		},
+		{
+			name: "gitlab with authorization",
+			kind: extsvc.KindGitLab,
+			config: `
+{
+  // Useful comments
+  "url": "https://gitlab.com",
+  "projectQuery": ["none"],
+  "token": "abc",
+  "authorization": {}
+}`,
+			want: `
+{
+  // Useful comments
+  "url": "https://gitlab.com",
+  "projectQuery": ["none"],
+  "token": "abc",
+  "authorization": {
+    "identityProvider": {
+      "type": "oauth"
+    }
+  }
+}`,
+		},
+		{
+			name: "gitlab without authorization",
+			kind: extsvc.KindGitLab,
+			config: `
+{
+  // Useful comments
+  "url": "https://gitlab.com",
+  "projectQuery": ["none"],
+  "token": "abc"
+}`,
+			want: `
+{
+  // Useful comments
+  "url": "https://gitlab.com",
+  "projectQuery": ["none"],
+  "token": "abc",
+  "authorization": {
+    "identityProvider": {
+      "type": "oauth"
+    }
+  }
+}`,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got, err := upsertAuthorizationToExternalService(test.kind, test.config)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(test.want, got); diff != "" {
+				t.Fatalf("Mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
 func TestCountRepoCount(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := actor.WithInternalActor(context.Background())
 
 	// Create a new external service
@@ -578,7 +679,8 @@ func TestExternalServicesStore_Delete(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := actor.WithInternalActor(context.Background())
 
 	// Create a new external service
@@ -670,7 +772,8 @@ func TestExternalServicesStore_GetByID(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	// Create a new external service
@@ -712,7 +815,8 @@ func TestExternalServicesStore_GetByID_Encrypted(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	// Create a new external service
@@ -768,7 +872,8 @@ func TestGetAffiliatedSyncErrors(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	// Create a new external service
@@ -940,7 +1045,8 @@ func TestGetLastSyncError(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	// Create a new external service
@@ -1013,7 +1119,8 @@ func TestExternalServicesStore_List(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	// Create test user
@@ -1151,7 +1258,8 @@ func TestExternalServicesStore_DistinctKinds(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	t.Run("no external service won't blow up", func(t *testing.T) {
@@ -1218,7 +1326,8 @@ func TestExternalServicesStore_Count(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	// Create a new external service
@@ -1249,7 +1358,8 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	clock := timeutil.NewFakeClock(time.Now(), 0)
@@ -1444,7 +1554,8 @@ func TestExternalServiceStore_GetExternalServiceSyncJobs(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	// Create a new external service
@@ -1488,7 +1599,8 @@ func TestExternalServicesStore_OneCloudDefaultPerKind(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	now := time.Now()
@@ -1526,4 +1638,78 @@ func TestExternalServicesStore_OneCloudDefaultPerKind(t *testing.T) {
 			t.Fatal("Expected an error")
 		}
 	})
+}
+
+func TestExternalServiceStore_SyncDue(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
+	ctx := context.Background()
+
+	now := time.Now()
+
+	makeService := func() *types.ExternalService {
+		cfg := `{"url": "https://github.com", "token": "abc", "repositoryQuery": ["none"]}`
+		svc := &types.ExternalService{
+			Kind:        extsvc.KindGitHub,
+			DisplayName: "Github - Test",
+			Config:      cfg,
+			CreatedAt:   now,
+			UpdatedAt:   now,
+		}
+		return svc
+	}
+	svc1 := makeService()
+	svc2 := makeService()
+	err := ExternalServices(db).Upsert(ctx, svc1, svc2)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assertDue := func(d time.Duration, want bool) {
+		t.Helper()
+		ids := []int64{svc1.ID, svc2.ID}
+		due, err := ExternalServices(db).SyncDue(ctx, ids, d)
+		if err != nil {
+			t.Error(err)
+		}
+		if due != want {
+			t.Errorf("Want %v, got %v", want, due)
+		}
+	}
+
+	makeSyncJob := func(svcID int64, state string) {
+		_, err = db.Exec(`
+INSERT INTO external_service_sync_jobs (external_service_id, state)
+VALUES ($1,$2)
+`, svcID, state)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// next_sync_at is null, so we expect a sync soon
+	assertDue(1*time.Second, true)
+
+	// next_sync_at in the future
+	_, err = db.Exec("UPDATE external_services SET next_sync_at = $1", now.Add(10*time.Minute))
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertDue(1*time.Second, false)
+	assertDue(11*time.Minute, true)
+
+	// With sync jobs
+	makeSyncJob(svc1.ID, "queued")
+	makeSyncJob(svc2.ID, "completed")
+	assertDue(1*time.Minute, true)
+
+	// Sync jobs not running
+	_, err = db.Exec("UPDATE external_service_sync_jobs SET state = 'completed'")
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertDue(1*time.Minute, false)
 }

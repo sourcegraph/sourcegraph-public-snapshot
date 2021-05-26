@@ -1,10 +1,10 @@
 @import 'bootstrap/scss/badge';
 
 // Light theme badge variants
-.theme-light {
+:where(.theme-light) {
     @each $color, $value in $theme-colors-light {
         .badge-#{$color},
-        a.badge-#{$color} {
+        :where(a).badge-#{$color} {
             @include badge-variant($value);
         }
     }
@@ -32,6 +32,11 @@
             outline: 0;
             border-color: var(--body-bg);
         }
+    }
+
+    a.badge {
+        // Badge acts like btn-link, replicate Bootstrap btn transition
+        transition: $btn-transition;
     }
 
     // Variants

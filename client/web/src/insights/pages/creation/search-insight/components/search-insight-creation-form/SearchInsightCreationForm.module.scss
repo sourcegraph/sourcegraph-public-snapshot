@@ -9,4 +9,14 @@
         flex-basis: 6rem;
         margin-right: 1rem;
     }
+
+    // For some groups in a form we need to change a standard
+    // visual behavior of legend label (reset font size and weight)
+    &__group-label {
+        font-size: 0.875rem;
+
+        // Important needed here to override bootstrap helper font-weight-bold
+        // on group label element.
+        font-weight: normal !important;
+    }
 }

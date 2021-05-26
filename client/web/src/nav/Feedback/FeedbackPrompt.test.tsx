@@ -46,9 +46,17 @@ describe('FeedbackPrompt', () => {
         expect(sendButton.disabled).toBe(true)
     })
 
-    test('Send button is enabled when a happiness rating is selected', () => {
-        fireEvent.click(queries.getByLabelText('Very Happy'))
+    test('Send button is disabled when a happiness rating is selected and textarea is empty', () => {
         const sendButton = queries.getByText('Send') as HTMLButtonElement
+        fireEvent.click(queries.getByLabelText('Very Happy'))
+        expect(sendButton.disabled).toBe(true)
+    })
+
+    test('Send button is disabled when a textarea is not empty and happiness rating is selected', () => {
+        const textArea = queries.getByPlaceholderText('What’s going well? What could be better?')
+        const sendButton = queries.getByText('Send') as HTMLButtonElement
+        fireEvent.change(textArea, { target: { value: 'Lorem ipsum dolor sit amet' } })
+        fireEvent.click(queries.getByLabelText('Very Happy'))
         expect(sendButton.disabled).toBe(false)
     })
 

@@ -112,6 +112,18 @@
         }
     }
 
+    // Update text color to better indicate disabled fields
+    .form-control,
+    .custom-select {
+        &:disabled {
+            color: var(--text-disabled);
+
+            &::placeholder {
+                color: var(--text-disabled);
+            }
+        }
+    }
+
     // Valid form inputs and selects
     .was-validated .form-control:valid,
     .was-validated .custom-select:valid,
@@ -167,4 +179,14 @@
     textarea.form-control {
         background-image: none;
     }
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:hover {
+    // To improve visual styles for autofill state of all inputs
+    // we have to set box-shadow we huge size to override native styles
+
+    // See https://css-tricks.com/snippets/css/change-autocomplete-styles-webkit-browsers/
+    box-shadow: 0 0 0 1000px var(--secondary) inset !important;
 }

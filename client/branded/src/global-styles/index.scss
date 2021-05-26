@@ -5,6 +5,7 @@
 $border-radius: var(--border-radius);
 $border-radius-sm: var(--border-radius-sm);
 $border-radius-lg: var(--border-radius-lg);
+$popover-border-radius: var(--popover-border-radius);
 
 $font-size-base: 0.875rem;
 $line-height-base: (20/14);
@@ -116,6 +117,7 @@ $hr-margin-y: 0.25rem;
 
 // Disable transitions
 $input-transition: none;
+$badge-transition: none; // Avoids setting transitions on badges that aren't links
 
 // Apply static redesign variables. Should be done before Bootstrap imports.
 @import './variables-redesign';
@@ -160,6 +162,14 @@ $input-transition: none;
     background-color: var(--body-bg);
     border: solid 1px var(--border-color);
     border-radius: $border-radius;
+
+    .theme-redesign & {
+        background-color: var(--color-bg-1);
+        box-shadow: var(--dropdown-shadow);
+        border-radius: var(--popover-border-radius);
+        // Ensure content is clipped by border
+        overflow: hidden;
+    }
 }
 
 // Show a focus ring when performing keyboard navigation. Uses the polyfill at

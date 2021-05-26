@@ -13,12 +13,18 @@ const requiredNameField = createRequiredValidator('Name is a required field for 
 const validQuery = createRequiredValidator('Query is a required field for data series.')
 
 interface FormSeriesInputProps {
+    /** Series index. */
+    index: number
+    /**
+     * Show all validation error of all fields within the form.
+     * */
+    showValidationErrorsOnMount?: boolean
     /** Name of series. */
     name?: string
     /** Query value of series. */
     query?: string
     /** Color value for line chart. (series) */
-    color?: string
+    stroke?: string
     /** Enable autofocus behavior of first input of form. */
     autofocus?: boolean
     /** Enable cancel button. */
@@ -29,16 +35,31 @@ interface FormSeriesInputProps {
     onSubmit?: (series: DataSeries) => void
     /** On cancel handler. */
     onCancel?: () => void
+    /** Change handler in order to listen last values of series form. */
+    onChange?: (formValues: DataSeries, valid: boolean) => void
 }
 
 /** Displays form series input (three field - name field, query field and color picker). */
 export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = props => {
-    const { name, query, color, className, cancel = false, autofocus = true, onCancel = noop, onSubmit = noop } = props
+    const {
+        index,
+        showValidationErrorsOnMount = false,
+        name,
+        query,
+        stroke: color,
+        className,
+        cancel = false,
+        autofocus = true,
+        onCancel = noop,
+        onSubmit = noop,
+        onChange = noop,
+    } = props
 
     const hasNameControlledValue = !!name
     const hasQueryControlledValue = !!query
 
     const { formAPI, handleSubmit, ref } = useForm({
+        touched: showValidationErrorsOnMount,
         initialValues: {
             seriesName: name ?? '',
             seriesQuery: query ?? '',
@@ -50,10 +71,22 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
                 query: values.seriesQuery,
                 stroke: values.seriesColor,
             }),
+        onChange: event => {
+            const { values } = event
+
+            onChange(
+                {
+                    name: values.seriesName,
+                    query: values.seriesQuery,
+                    stroke: values.seriesColor,
+                },
+                event.valid
+            )
+        },
     })
 
-    const nameField = useField('seriesName', formAPI, requiredNameField)
-    const queryField = useField('seriesQuery', formAPI, validQuery)
+    const nameField = useField('seriesName', formAPI, { sync: requiredNameField })
+    const queryField = useField('seriesQuery', formAPI, { sync: validQuery })
     const colorField = useField('seriesColor', formAPI)
 
     return (
@@ -86,7 +119,7 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
             />
 
             <FormColorInput
-                name="series color group"
+                name={`color group of ${index} series`}
                 title="Color"
                 className="mt-4"
                 value={colorField.input.value}

@@ -16,9 +16,9 @@ var HTTPAddrInternal = env.Get(
 var sourcegraphDotComMode, _ = strconv.ParseBool(env.Get("SOURCEGRAPHDOTCOM_MODE", "false", "run as Sourcegraph.com, with add'l marketing and redirects"))
 var disableProfiler, _ = strconv.ParseBool(env.Get("SRC_DISABLE_PROFILER", "false", "Disable the gcloud profiler, for use when running locally without gcloud config"))
 
-// SourcegraphDotComMode is true if this server is running Sourcegraph.com (solely by checking the
-// SOURCEGRAPHDOTCOM_MODE env var). Sourcegraph.com shows add'l marketing and sets up some add'l
-// redirects.
+// SourcegraphDotComMode is true if this server is running Sourcegraph.com
+// (solely by checking the SOURCEGRAPHDOTCOM_MODE env var). Sourcegraph.com shows
+// additional marketing and sets up some additional redirects.
 func SourcegraphDotComMode() bool {
 	return sourcegraphDotComMode
 }

@@ -1,3 +1,4 @@
+# FAQ
 
 This is a compilation of some common questions about Batch Changes.
 
@@ -7,12 +8,23 @@ Batch Changes' default behavior is to stop if creating the diff on a repo errors
 ### Can we close a batch change and still leave the changesets open?
 Yes. There is a confirmation page that shows you all the actions that will occur on the various changesets in the batch change after you close it. Open changesets will be marked 'Kept open', which means that batch change won't alter them. See [closing a batch change](../how-tos/closing_or_deleting_a_batch_change.md#closing-a-batch-change).
 
-### How scalable are Batch Changes? How many changesets can I create?
+### How scalable is Batch Changes? How many changesets can I create?
 Batch Changes can create tens of thousands of changesets. This is something we run testing on internally.
 Known limitations:
 
 - Since diffs are created locally by running a docker container, performance depends on the capacity of your machine. See [How `src` executes a batch spec](../explanations/how_src_executes_a_batch_spec.md).
+- Batch Changes creates changesets in parallel locally. You can set up the maximum number of parallel jobs with [`-j`](../../cli/references/batch/apply.md)
 - Manipulating (commenting, notifying users, etc) changesets at that scale can be clumsy. This is a major area of work for future releases.
+
+
+### How long does it take to create a batch change?
+A rule of thumb:
+
+- measure the time it takes to run your change container on a typical repository
+- multiply by the number of repositories
+- divide by the number of changeset creation jobs that will be ran in parallel set by the [`-j`](../../cli/references/batch/apply.md) CLI flag. It defaults to GOMAXPROCS, [roughly](https://golang.org/pkg/runtime/#NumCPU) the number of available cores.
+
+Note: If you run memory-intensive jobs, you might need to reduce the number of parallel job executions. You can run `docker stats` locally to get an idea of memory usage.
 
 ### My batch change does not open changesets on all the repositories it should. Why?
 - Do you have enough permissions? Batch Changes will error on the repositories you don’t have access to. See [Repository permissions for Batch Changes](../explanations/permissions_in_batch_changes.md).
@@ -29,7 +41,7 @@ However, [steps](../references/batch_spec_yaml_reference.md#steps-run) can be us
 Unapplied batch specs are removed from the database after 7 days.
 
 ### Can I pull containers from private container registries in a batch change?
-When [executing a batch spec](../explanations/how_src_executes_a_batch_spec.md), `src` will attempt to pull missing docker images. If you are logged into the private container registry, it will pull from it.
+When [executing a batch spec](../explanations/how_src_executes_a_batch_spec.md), `src` will attempt to pull missing docker images. If you are logged into the private container registry, it will pull from it. Also see [`steps.container`](batch_spec_yaml_reference.md#steps-container).
 
 ### What tool can I use for changing/refactoring `<programming-language>`?
 

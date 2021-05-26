@@ -47,18 +47,22 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
 
     return (
         <div className={classNames(styles.searchSidebar, props.className)}>
-            <StickyBox offsetTop={8} offsetBottom={8}>
-                <SearchSidebarSection header="Search types">{getSearchTypeLinks(props)}</SearchSidebarSection>
-                <SearchSidebarSection header="Dynamic filters">
+            <StickyBox offsetTop={8} offsetBottom={8} className={styles.searchSidebarStickyBox}>
+                <SearchSidebarSection className={styles.searchSidebarItem} header="Search types">
+                    {getSearchTypeLinks(props)}
+                </SearchSidebarSection>
+                <SearchSidebarSection className={styles.searchSidebarItem} header="Dynamic filters">
                     {getDynamicFilterLinks(props.filters, onFilterClicked)}
                 </SearchSidebarSection>
-                <SearchSidebarSection header="Repositories" showSearch={true}>
+                <SearchSidebarSection className={styles.searchSidebarItem} header="Repositories" showSearch={true}>
                     {getRepoFilterLinks(props.filters, onFilterClicked)}
                 </SearchSidebarSection>
-                <SearchSidebarSection header="Search snippets">
+                <SearchSidebarSection className={styles.searchSidebarItem} header="Search snippets">
                     {getSearchScopeLinks(props.settingsCascade, onFilterClicked)}
                 </SearchSidebarSection>
-                <SearchSidebarSection header="Quicklinks">{getQuickLinks(props.settingsCascade)}</SearchSidebarSection>
+                <SearchSidebarSection className={styles.searchSidebarItem} header="Quicklinks">
+                    {getQuickLinks(props.settingsCascade)}
+                </SearchSidebarSection>
             </StickyBox>
         </div>
     )

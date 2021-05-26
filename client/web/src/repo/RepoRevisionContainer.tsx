@@ -1,5 +1,6 @@
 import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import React, { useCallback, useMemo, useState } from 'react'
@@ -21,6 +22,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
+import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { AuthenticatedUser } from '../auth'
 import { ErrorMessage } from '../components/alerts'
@@ -109,6 +111,70 @@ interface RepoRevisionContainerProps
     globbing: boolean
 }
 
+interface RepoRevisionBreadcrumbProps
+    extends Pick<RepoRevisionContainerProps, 'repo' | 'revision' | 'history' | 'location'> {
+    resolvedRevisionOrError: ResolvedRevision
+}
+
+const RepoRevisionContainerBreadcrumb: React.FunctionComponent<RepoRevisionBreadcrumbProps> = ({
+    revision,
+    resolvedRevisionOrError,
+    repo,
+    history,
+    location,
+}) => {
+    const [isRedesignEnabled] = useRedesignToggle()
+
+    if (isRedesignEnabled) {
+        return (
+            <button
+                type="button"
+                className="btn btn-sm btn-outline-secondary d-flex align-items-center text-nowrap"
+                key="repo-revision"
+                id="repo-revision-popover"
+                aria-label="Change revision"
+            >
+                <span className="mr-1">@</span>
+                {(revision && revision === resolvedRevisionOrError.commitID
+                    ? resolvedRevisionOrError.commitID.slice(0, 7)
+                    : revision) ||
+                    resolvedRevisionOrError.defaultBranch ||
+                    'HEAD'}
+                <ChevronDownIcon className="icon-inline" />
+                <RepoRevisionContainerPopover
+                    repo={repo}
+                    resolvedRevisionOrError={resolvedRevisionOrError}
+                    revision={revision}
+                    history={history}
+                    location={location}
+                />
+            </button>
+        )
+    }
+
+    return (
+        <div className="d-flex align-items-center" key="repo-revision">
+            <span className="test-revision">
+                {(revision && revision === resolvedRevisionOrError.commitID
+                    ? resolvedRevisionOrError.commitID.slice(0, 7)
+                    : revision) ||
+                    resolvedRevisionOrError.defaultBranch ||
+                    'HEAD'}
+            </span>
+            <button type="button" id="repo-revision-popover" className="btn btn-icon px-0" aria-label="Change revision">
+                <MenuDownIcon className="icon-inline" />
+            </button>
+            <RepoRevisionContainerPopover
+                repo={repo}
+                resolvedRevisionOrError={resolvedRevisionOrError}
+                revision={revision}
+                history={history}
+                location={location}
+            />
+        </div>
+    )
+}
+
 interface RepoRevisionContainerPopoverProps
     extends Pick<RepoRevisionContainerProps, 'repo' | 'revision' | 'history' | 'location'> {
     resolvedRevisionOrError: ResolvedRevision
@@ -132,6 +198,7 @@ const RepoRevisionContainerPopover: React.FunctionComponent<RepoRevisionContaine
             target="repo-revision-popover"
             trigger="legacy"
             hideArrow={true}
+            fade={false}
             popperClassName="border-0"
         >
             <RevisionsPopover
@@ -156,6 +223,7 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
     useBreadcrumb,
     ...props
 }) => {
+    const [isRedesignEnabled] = useRedesignToggle()
     const breadcrumbSetters = useBreadcrumb(
         useMemo(() => {
             if (!props.resolvedRevisionOrError || isErrorLike(props.resolvedRevisionOrError)) {
@@ -164,35 +232,25 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
 
             return {
                 key: 'revision',
-                divider: <span className="mr-1">@</span>,
+                divider: isRedesignEnabled ? null : <span className="mr-1">@</span>,
                 element: (
-                    <div className="d-flex align-items-center" key="repo-revision">
-                        <span className="test-revision">
-                            {(props.revision && props.revision === props.resolvedRevisionOrError.commitID
-                                ? props.resolvedRevisionOrError.commitID.slice(0, 7)
-                                : props.revision) ||
-                                props.resolvedRevisionOrError.defaultBranch ||
-                                'HEAD'}
-                        </span>
-                        <button
-                            type="button"
-                            id="repo-revision-popover"
-                            className="btn btn-icon px-0"
-                            aria-label="Change revision"
-                        >
-                            <MenuDownIcon className="icon-inline" />
-                        </button>
-                        <RepoRevisionContainerPopover
-                            repo={props.repo}
-                            resolvedRevisionOrError={props.resolvedRevisionOrError}
-                            revision={props.revision}
-                            history={props.history}
-                            location={props.location}
-                        />
-                    </div>
+                    <RepoRevisionContainerBreadcrumb
+                        resolvedRevisionOrError={props.resolvedRevisionOrError}
+                        revision={props.revision}
+                        repo={props.repo}
+                        history={props.history}
+                        location={props.location}
+                    />
                 ),
             }
-        }, [props.resolvedRevisionOrError, props.revision, props.repo, props.history, props.location])
+        }, [
+            props.resolvedRevisionOrError,
+            props.revision,
+            props.repo,
+            props.history,
+            props.location,
+            isRedesignEnabled,
+        ])
     )
 
     if (!props.resolvedRevisionOrError) {
@@ -268,7 +326,7 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
                 id="copy-link"
                 repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
             >
-                {() => <CopyLinkAction key="copy-link" location={props.location} />}
+                {() => <CopyLinkAction key="copy-link" />}
             </RepoHeaderContributionPortal>
             <RepoHeaderContributionPortal
                 position="right"

@@ -139,6 +139,10 @@ func (r *searchContextResolver) ID() graphql.ID {
 	return marshalSearchContextID(searchcontexts.GetSearchContextSpec(r.sc))
 }
 
+func (r *searchContextResolver) Name(ctx context.Context) string {
+	return r.sc.Name
+}
+
 func (r *searchContextResolver) Description(ctx context.Context) string {
 	return r.sc.Description
 }
@@ -157,6 +161,29 @@ func (r *searchContextResolver) Spec(ctx context.Context) string {
 
 func (r *searchContextResolver) UpdatedAt(ctx context.Context) DateTime {
 	return DateTime{Time: r.sc.UpdatedAt}
+}
+
+func (r *searchContextResolver) Namespace(ctx context.Context) (*NamespaceResolver, error) {
+	if r.sc.NamespaceUserID != 0 {
+		n, err := NamespaceByID(ctx, r.db, MarshalUserID(r.sc.NamespaceUserID))
+		if err != nil {
+			return nil, err
+		}
+		return &NamespaceResolver{n}, nil
+	}
+	if r.sc.NamespaceOrgID != 0 {
+		n, err := NamespaceByID(ctx, r.db, MarshalOrgID(r.sc.NamespaceOrgID))
+		if err != nil {
+			return nil, err
+		}
+		return &NamespaceResolver{n}, nil
+	}
+	return nil, nil
+}
+
+func (r *searchContextResolver) ViewerCanManage(ctx context.Context) bool {
+	hasWriteAccess := searchcontexts.ValidateSearchContextWriteAccessForCurrentUser(ctx, r.db, r.sc.NamespaceUserID, r.sc.NamespaceOrgID, r.sc.Public) == nil
+	return !searchcontexts.IsAutoDefinedSearchContext(r.sc) && hasWriteAccess
 }
 
 func (r *searchContextResolver) Repositories(ctx context.Context) ([]*searchContextRepositoryRevisionsResolver, error) {
@@ -310,10 +337,12 @@ func (r *schemaResolver) SearchContexts(ctx context.Context, args *listSearchCon
 	newArgs := *args
 	newArgs.First += 1
 
-	// TODO(rok): Parse the query into namespace and search context name components
+	var namespaceName string
 	var searchContextName string
 	if newArgs.Query != nil {
-		searchContextName = *newArgs.Query
+		parsedSearchContextSpec := searchcontexts.ParseSearchContextSpec(*newArgs.Query)
+		searchContextName = parsedSearchContextSpec.SearchContextName
+		namespaceName = parsedSearchContextSpec.NamespaceName
 	}
 
 	afterCursor, err := unmarshalSearchContextCursor(newArgs.After)
@@ -322,6 +351,7 @@ func (r *schemaResolver) SearchContexts(ctx context.Context, args *listSearchCon
 	}
 
 	opts := database.ListSearchContextsOptions{
+		NamespaceName:     namespaceName,
 		Name:              searchContextName,
 		NoNamespace:       namespaceFilter == namespaceFilterTypeInstance,
 		OrderBy:           orderBy,
@@ -416,7 +446,7 @@ func resolveVersionContext(versionContext string) (*schema.VersionContext, error
 func (r *schemaResolver) ConvertVersionContextToSearchContext(ctx context.Context, args *struct {
 	Name string
 }) (*searchContextResolver, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, errors.New("converting a version context to a search context is limited to site admins")
 	}
 	versionContext, err := resolveVersionContext(args.Name)

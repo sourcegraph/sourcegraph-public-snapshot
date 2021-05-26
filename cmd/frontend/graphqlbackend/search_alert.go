@@ -319,7 +319,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 		}
 
 	case len(repoGroupFilters) == 0 && len(repoFilters) == 1:
-		isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx) == nil
+		isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil
 		if !envvar.SourcegraphDotComMode() {
 			if needsRepoConfig, err := needsRepositoryConfiguration(ctx, r.db); err == nil && needsRepoConfig {
 				if isSiteAdmin {
@@ -426,7 +426,7 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert
 	if envvar.SourcegraphDotComMode() {
 		description = "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results or set up a self-hosted Sourcegraph instance to search an unlimited number of repositories."
 	}
-	if backend.CheckCurrentUserIsSiteAdmin(ctx) == nil {
+	if backend.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil {
 		description += " As a site admin, you can increase the limit by changing maxReposToSearch in site config."
 	}
 
@@ -655,8 +655,8 @@ func capFirst(s string) string {
 func alertForError(err error, inputs *run.SearchInputs) *searchAlert {
 	var (
 		alert *searchAlert
-		rErr  *RepoLimitError
-		tErr  *TimeLimitError
+		rErr  *run.RepoLimitError
+		tErr  *run.TimeLimitError
 		mErr  *missingRepoRevsError
 	)
 
@@ -706,13 +706,6 @@ type alertObserver struct {
 	mu    sync.Mutex
 	alert *searchAlert
 	err   error
-}
-
-// Update AlertObserver's state based on event.
-func (o *alertObserver) Update(event streaming.SearchEvent) {
-	if len(event.Results) > 0 {
-		o.hasResults = true
-	}
 }
 
 func (o *alertObserver) Error(ctx context.Context, err error) {

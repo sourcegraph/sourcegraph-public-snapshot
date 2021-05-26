@@ -29,9 +29,8 @@ export const InsightCardMenu: React.FunctionComponent<InsightCardMenuProps> = pr
             <MenuButton className={classnames(className, 'btn btn-outline p-1')}>
                 <DotsVerticalIcon size={16} />
             </MenuButton>
-            <MenuList className={styles.menuPanel}>
+            <MenuList className={classnames(styles.menuPanel, 'dropdown-menu dropdown-menu-sw')}>
                 <MenuItem
-                    /* eslint-disable-next-line react/jsx-no-bind */
                     onSelect={() => onDelete(insightID)}
                     className={classnames('btn btn-outline-secondary', styles.menuItemButton)}
                 >

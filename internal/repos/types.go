@@ -2,13 +2,18 @@ package repos
 
 import (
 	"context"
+	"fmt"
+	"net/url"
 
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // pick deterministically chooses between a and b a repo to keep and
@@ -98,4 +103,29 @@ func (r *RateLimitSyncer) SyncRateLimiters(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// GrantedScopes returns a slice of scopes granted by the service based on the token
+// provided in the config.
+//
+// Currently only GitHub is supported.
+func GrantedScopes(ctx context.Context, kind string, rawConfig string) ([]string, error) {
+	if kind != extsvc.KindGitHub {
+		return nil, fmt.Errorf("only GitHub supported")
+	}
+	config, err := extsvc.ParseConfig(kind, rawConfig)
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing config")
+	}
+	switch v := config.(type) {
+	case *schema.GitHubConnection:
+		u, err := url.Parse(v.Url)
+		if err != nil {
+			return nil, errors.Wrap(err, "parsing URL")
+		}
+		client := github.NewV3Client(u, &auth.OAuthBearerToken{Token: v.Token}, nil)
+		return client.GetAuthenticatedUserOAuthScopes(ctx)
+	default:
+		return nil, fmt.Errorf("unsupported config type: %T", v)
+	}
 }

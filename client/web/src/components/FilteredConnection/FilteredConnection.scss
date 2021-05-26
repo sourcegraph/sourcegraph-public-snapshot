@@ -71,6 +71,11 @@ $compact-summary-min-height: 2.75rem;
         }
     }
 
+    &__summary {
+        .theme-redesign & {
+            color: var(--text-muted);
+        }
+    }
     &--compact &__summary {
         flex: 0 0;
         padding: var(--popover-item-padding-v) var(--popover-item-padding-h);

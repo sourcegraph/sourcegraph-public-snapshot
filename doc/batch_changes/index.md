@@ -91,6 +91,7 @@ Create a batch change by specifying a search query to get a list of repositories
 - [Handling errored changesets](how-tos/handling_errored_changesets.md)
 - [Creating changesets per project in monorepos](how-tos/creating_changesets_per_project_in_monorepos.md)
 - [Opting out of batch changes](how-tos/opting_out_of_batch_changes.md)
+- [Bulk operations on changesets](how-tos/bulk_operations_on_changesets.md)
 
 ## Tutorials
 
@@ -107,4 +108,5 @@ Create a batch change by specifying a search query to get a list of repositories
 - [Batch spec templating](references/batch_spec_templating.md)
 - [Batch spec cheat sheet](references/batch_spec_cheat_sheet.md)
 - [Troubleshooting](references/troubleshooting.md)
+- [FAQ](references/faq.md)
 - [CLI](../cli/references/batch/index.md)

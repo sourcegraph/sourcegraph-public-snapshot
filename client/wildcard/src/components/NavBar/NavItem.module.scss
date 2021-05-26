@@ -12,18 +12,6 @@
     }
     @media (--sm-breakpoint-down) {
         margin: 0;
-        &:first-of-type {
-            .link {
-                border-top-right-radius: var(--border-radius);
-                border-top-left-radius: var(--border-radius);
-            }
-        }
-        &:last-of-type {
-            .link {
-                border-bottom-right-radius: var(--border-radius);
-                border-bottom-left-radius: var(--border-radius);
-            }
-        }
     }
 }
 
@@ -32,6 +20,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    color: var(--body-color);
     &:hover {
         text-decoration: none;
     }
@@ -40,24 +29,14 @@
         box-shadow: none;
         .link-content {
             outline: 1px solid transparent;
+            border-radius: var(--border-radius);
             box-shadow: 0 0 0 2px var(--primary-2);
-            @media (--md-breakpoint-down) {
-                padding: 0 0.125rem;
-            }
+            padding: 0.125rem;
+            margin: -0.125rem;
         }
-        .icon {
-            @media (--md-breakpoint-down) {
-                outline: 1px solid transparent;
-                box-shadow: 0 0 0 2px var(--primary-2);
-            }
-            @media (--sm-breakpoint-down) {
-                outline: none;
-                box-shadow: none;
-            }
-        }
-        .icon-included {
-            margin-left: 0.125rem;
-            margin-right: -0.125rem;
+        @media (--sm-breakpoint-down) {
+            margin: 0;
+            border: 0;
         }
     }
     &:hover:not(.active) {
@@ -66,7 +45,12 @@
             margin-bottom: -0.125rem;
         }
         @media (--sm-breakpoint-down) {
+            margin: 0;
+            border: 0;
             background-color: var(--link-color);
+            .link-content {
+                margin-bottom: 0;
+            }
             .icon,
             .text {
                 color: var(--light-text);
@@ -87,11 +71,20 @@
 
 .active {
     border-bottom: 2px solid var(--brand-secondary);
+    &:focus-visible {
+        margin-top: 0.125rem;
+        @media (--sm-breakpoint-down) {
+            margin-top: 0;
+        }
+    }
     .link-content {
         margin-bottom: -0.125rem;
     }
     @media (--sm-breakpoint-down) {
-        border: 1px solid transparent;
+        .link-content {
+            margin-bottom: 0;
+        }
+        border: 0;
         background-color: var(--link-color);
     }
     .text,
@@ -126,5 +119,4 @@
 
 .text {
     color: var(--body-color);
-    border-radius: 3px;
 }

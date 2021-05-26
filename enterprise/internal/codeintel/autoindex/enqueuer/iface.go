@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	protocol "github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 )
 
 type DBStore interface {
@@ -69,14 +69,14 @@ func newGitClient(client GitserverClient, repositoryID int, commit string) gitCl
 	}
 }
 
-func (s gitClient) ListFiles(ctx context.Context, pattern *regexp.Regexp) ([]string, error) {
-	return s.client.ListFiles(ctx, s.repositoryID, s.commit, pattern)
+func (c gitClient) ListFiles(ctx context.Context, pattern *regexp.Regexp) ([]string, error) {
+	return c.client.ListFiles(ctx, c.repositoryID, c.commit, pattern)
 }
 
-func (s gitClient) FileExists(ctx context.Context, file string) (bool, error) {
-	return s.client.FileExists(ctx, s.repositoryID, s.commit, file)
+func (c gitClient) FileExists(ctx context.Context, file string) (bool, error) {
+	return c.client.FileExists(ctx, c.repositoryID, c.commit, file)
 }
 
-func (s gitClient) RawContents(ctx context.Context, file string) ([]byte, error) {
-	return s.client.RawContents(ctx, s.repositoryID, s.commit, file)
+func (c gitClient) RawContents(ctx context.Context, file string) ([]byte, error) {
+	return c.client.RawContents(ctx, c.repositoryID, c.commit, file)
 }

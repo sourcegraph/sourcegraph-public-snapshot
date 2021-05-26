@@ -15,6 +15,7 @@ import { reactHooks } from './repogroups/ReactHooks'
 import { RepogroupPage } from './repogroups/RepogroupPage'
 import { stackStorm } from './repogroups/StackStorm'
 import { stanford } from './repogroups/Stanford'
+import { temporal } from './repogroups/Temporal'
 import { StreamingSearchResults } from './search/results/streaming/StreamingSearchResults'
 import { isMacPlatform, UserRepositoriesUpdateProps } from './util'
 import { lazyComponent } from './util/lazyComponent'
@@ -232,6 +233,23 @@ export const routes: readonly LayoutRouteProps<any>[] = [
             !!props.authenticatedUser?.siteAdmin,
     },
     {
+        path: '/contexts/new',
+        render: lazyComponent(() => import('./searchContexts/CreateSearchContextPage'), 'CreateSearchContextPage'),
+        exact: true,
+        condition: props =>
+            !isErrorLike(props.settingsCascade.final) &&
+            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContext &&
+            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContextManagement,
+    },
+    {
+        path: '/contexts/:id/edit',
+        render: lazyComponent(() => import('./searchContexts/EditSearchContextPage'), 'EditSearchContextPage'),
+        condition: props =>
+            !isErrorLike(props.settingsCascade.final) &&
+            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContext &&
+            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContextManagement,
+    },
+    {
         path: '/contexts/:id',
         render: lazyComponent(() => import('./searchContexts/SearchContextPage'), 'SearchContextPage'),
         condition: props =>
@@ -252,6 +270,11 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/stackstorm',
         render: props => <RepogroupPage {...props} repogroupMetadata={stackStorm} />,
+        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
+    },
+    {
+        path: '/temporal',
+        render: props => <RepogroupPage {...props} repogroupMetadata={temporal} />,
         condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
     },
     {

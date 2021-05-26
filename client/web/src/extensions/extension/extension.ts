@@ -10,6 +10,7 @@ import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { quoteIfNeeded } from '../../search'
+import { ExtensionCategoryOrAll } from '../ExtensionRegistry'
 
 /** Pattern for valid extension names. */
 export const EXTENSION_NAME_VALID_PATTERN = '^[a-zA-Z0-9](?:[a-zA-Z0-9]|[_.-](?=[a-zA-Z0-9]))*$'
@@ -72,22 +73,17 @@ export function validCategories(categories: ExtensionManifest['categories']): Ex
  * list page).
  */
 export function extensionsQuery({
-    category,
     tag,
     installed,
     enabled,
     disabled,
 }: {
-    category?: string
     tag?: string
     installed?: boolean
     enabled?: boolean
     disabled?: boolean
 }): string {
     const parts: string[] = []
-    if (category) {
-        parts.push(`category:${quoteIfNeeded(category)}`)
-    }
     if (tag) {
         parts.push(`tag:${quoteIfNeeded(tag)}`)
     }
@@ -107,8 +103,23 @@ export function extensionsQuery({
  * Constructs the URL to the extensions list with the given query string (which can be constructed using
  * {@link extensionsQuery}).
  */
-export function urlToExtensionsQuery(query: string): string {
+export function urlToExtensionsQuery({
+    query,
+    category,
+}: {
+    query?: string
+    category?: ExtensionCategoryOrAll
+}): string {
+    if (!query && !category) {
+        return '/extensions'
+    }
+
     const parameters = new URLSearchParams()
-    parameters.set('query', query)
+    if (query) {
+        parameters.set('query', query)
+    }
+    if (category) {
+        parameters.set('category', category)
+    }
     return `/extensions?${parameters.toString()}`
 }

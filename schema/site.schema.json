@@ -862,6 +862,13 @@
       "group": "Debug",
       "examples": ["1.0"]
     },
+    "insights.query.worker.concurrency": {
+      "description": "Number of concurrent executions of a code insight query on a worker node",
+      "type": "integer",
+      "group": "CodeInsights",
+      "default": 1,
+      "examples": [10]
+    },
     "htmlHeadTop": {
       "description": "HTML to inject at the top of the `<head>` element on each page, for analytics scripts",
       "type": "string",
@@ -1436,12 +1443,15 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["cloudkms", "mounted", "noop"]
+          "enum": ["cloudkms", "awskms", "mounted", "noop"]
         }
       },
       "oneOf": [
         {
           "$ref": "#/definitions/CloudKMSEncryptionKey"
+        },
+        {
+          "$ref": "#/definitions/AWSKMSEncryptionKey"
         },
         {
           "$ref": "#/definitions/MountedEncryptionKey"
@@ -1464,6 +1474,26 @@
           "const": "cloudkms"
         },
         "keyname": {
+          "type": "string"
+        },
+        "credentialsFile": {
+          "type": "string"
+        }
+      }
+    },
+    "AWSKMSEncryptionKey": {
+      "description": "AWS KMS Encryption Key, used to encrypt data in AWS environments",
+      "type": "object",
+      "required": ["type", "keyId"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "awskms"
+        },
+        "keyId": {
+          "type": "string"
+        },
+        "region": {
           "type": "string"
         },
         "credentialsFile": {

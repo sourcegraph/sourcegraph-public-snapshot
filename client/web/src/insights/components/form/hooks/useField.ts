@@ -1,10 +1,16 @@
-import { ChangeEvent, FocusEventHandler, RefObject, useEffect, useRef, useState } from 'react'
+import { ChangeEvent, FocusEventHandler, RefObject, useCallback, useEffect, useRef, useState } from 'react'
 import { noop } from 'rxjs'
 
-import { FieldState, FormAPI } from './useForm'
+import { FieldState, FormAPI, ValidationResult } from './useForm'
+import { getEventValue } from './utils/get-event-value'
+import { AsyncValidator, useAsyncValidation } from './utils/use-async-validation'
 
-export type ValidationResult = string | undefined | void
-export type Validator<FieldValue> = (value: FieldValue | undefined, validity: ValidityState | null) => ValidationResult
+export type Validator<FieldValue> = (value: FieldValue | undefined, validity?: ValidityState | null) => ValidationResult
+
+export interface Validators<FieldValue> {
+    sync?: Validator<FieldValue>
+    async?: AsyncValidator<FieldValue>
+}
 
 /**
  * Public API for input element. Contains all handlers and props for
@@ -20,7 +26,7 @@ export interface useFieldAPI<FieldValue> {
     input: {
         ref: RefObject<HTMLInputElement & HTMLFieldSetElement>
         name: string
-        value: FieldValue | undefined
+        value: FieldValue
         onChange: (event: ChangeEvent<HTMLInputElement> | FieldValue) => void
         onBlur: FocusEventHandler<HTMLInputElement>
     }
@@ -28,7 +34,14 @@ export interface useFieldAPI<FieldValue> {
      * Meta state of form field - like touched, valid state and last
      * native validity state.
      * */
-    meta: FieldState<FieldValue>
+    meta: FieldState<FieldValue> & {
+        /**
+         * Set state handler gives access to set inner state of useField.
+         * Useful for complicated cases when need to deal with custom react input
+         * component.
+         * */
+        setState: (dispatch: (previousState: FieldState<FieldValue>) => FieldState<FieldValue>) => void
+    }
 }
 
 /**
@@ -41,17 +54,26 @@ export interface useFieldAPI<FieldValue> {
 export function useField<FormValues, FieldValueKey extends keyof FormAPI<FormValues>['initialValues']>(
     name: FieldValueKey,
     formApi: FormAPI<FormValues>,
-    validator: Validator<FormValues[FieldValueKey]> = noop
+    validators?: Validators<FormValues[FieldValueKey]>
 ): useFieldAPI<FormValues[FieldValueKey]> {
     const { setFieldState, initialValues, submitted, touched: formTouched } = formApi
 
+    const { sync = noop, async } = validators ?? {}
+
     const inputReference = useRef<HTMLInputElement & HTMLFieldSetElement>(null)
+
     const [state, setState] = useState<FieldState<FormValues[FieldValueKey]>>({
         value: initialValues[name],
         touched: false,
         validState: 'NOT_VALIDATED',
         error: '',
         validity: null,
+    })
+
+    const { start: startAsyncValidation, cancel: cancelAsyncValidation } = useAsyncValidation({
+        inputReference,
+        asyncValidator: async,
+        onValidationChange: asyncState => setState(previousState => ({ ...previousState, ...asyncState })),
     })
 
     // Use useRef for form api handler in order to avoid unnecessary
@@ -73,9 +95,13 @@ export function useField<FormValues, FieldValueKey extends keyof FormAPI<FormVal
         // standard validation error if validator doesn't provide message we fallback
         // on standard validationMessage string [1] (ex. Please fill in input.)
         const nativeErrorMessage = inputElement?.validationMessage ?? ''
-        const customValidation = validator(state.value, validity)
+        const customValidation = sync(state.value, validity)
 
         if (customValidation || !nativeAttributeValidation) {
+            // We have to cancel async validation from previous call
+            // if we got sync validation native or custom.
+            cancelAsyncValidation()
+
             // [1] Custom error message or fallback on native error message
             const validationMessage = customValidation || nativeErrorMessage
 
@@ -89,65 +115,49 @@ export function useField<FormValues, FieldValueKey extends keyof FormAPI<FormVal
             }))
         }
 
+        if (async) {
+            startAsyncValidation({ value: state.value, validity })
+        }
+
         return setState(state => ({
             ...state,
             validState: 'VALID' as const,
             error: '',
             validity,
         }))
-    }, [state.value, validator])
+    }, [state.value, sync, startAsyncValidation, async, cancelAsyncValidation])
 
     // Sync field state with state on form level - useForm hook will used this state to run
     // onSubmit handler and track validation state to prevent onSubmit run when async
     // validation is going.
     useEffect(() => setFieldStateReference.current(name, state), [name, state])
 
+    const handleBlur = useCallback(() => setState(state => ({ ...state, touched: true })), [])
+    const handleChange = useCallback((event: ChangeEvent<HTMLInputElement> | FormValues[FieldValueKey]) => {
+        const value = getEventValue(event)
+
+        setState(state => ({ ...state, value }))
+    }, [])
+
     return {
         input: {
             name: name.toString(),
             ref: inputReference,
             value: state.value,
-            onBlur: () => setState(state => ({ ...state, touched: true })),
-            onChange: (event: ChangeEvent<HTMLInputElement> | FormValues[FieldValueKey]) => {
-                const value = getEventValue(event)
-
-                setState(state => ({ ...state, value }))
-            },
+            onBlur: handleBlur,
+            onChange: handleChange,
         },
         meta: {
             ...state,
             touched: state.touched || submitted || formTouched,
+            /**
+             * Set state dispatcher gives access to set inner state of useField.
+             * Useful for complex cases when you need to deal with custom react input
+             * components.
+             * */
+            setState: dispatch => {
+                setState(state => ({ ...dispatch(state) }))
+            },
         },
     }
-}
-
-/**
- * Type guard for change event. Since useField might be used on custom element there's the case
- * when onChange handler will be called on custom element without synthetic event but with some
- * custom input value.
- * */
-function isChangeEvent<Value>(possibleEvent: ChangeEvent | Value): possibleEvent is ChangeEvent {
-    return !!(possibleEvent as ChangeEvent).target
-}
-
-/**
- * Selector function which takes target value from the event.
- *
- * We can have a few different source of value due to what kind of event
- * we've got. For example: Checkbox - target.checked, input element - target.value
- * and if run onChange on custom form field therefore we've got value as event itself.
- * */
-function getEventValue<Value>(event: ChangeEvent<HTMLInputElement> | Value): Value {
-    if (isChangeEvent(event)) {
-        // Checkbox input case
-        if (event.target.type === 'checkbox') {
-            return (event.target.checked as unknown) as Value
-        }
-
-        // Native input value case
-        return (event.target.value as unknown) as Value
-    }
-
-    // Custom input without event but with value of input itself.
-    return event
 }

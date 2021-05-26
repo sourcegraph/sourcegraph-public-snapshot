@@ -45,6 +45,14 @@ type AWSCodeCommitGitCredentials struct {
 	// Username description: The Git username
 	Username string `json:"username"`
 }
+
+// AWSKMSEncryptionKey description: AWS KMS Encryption Key, used to encrypt data in AWS environments
+type AWSKMSEncryptionKey struct {
+	CredentialsFile string `json:"credentialsFile,omitempty"`
+	KeyId           string `json:"keyId"`
+	Region          string `json:"region,omitempty"`
+	Type            string `json:"type"`
+}
 type AdditionalProperties struct {
 	// Format description: The expected format of the output. If set, the output is being parsed in that format before being stored in the var. If not set, 'text' is assumed to the format.
 	Format string `json:"format,omitempty"`
@@ -404,6 +412,7 @@ type Dotcom struct {
 // EncryptionKey description: Config for a key
 type EncryptionKey struct {
 	Cloudkms *CloudKMSEncryptionKey
+	Awskms   *AWSKMSEncryptionKey
 	Mounted  *MountedEncryptionKey
 	Noop     *NoOpEncryptionKey
 }
@@ -411,6 +420,9 @@ type EncryptionKey struct {
 func (v EncryptionKey) MarshalJSON() ([]byte, error) {
 	if v.Cloudkms != nil {
 		return json.Marshal(v.Cloudkms)
+	}
+	if v.Awskms != nil {
+		return json.Marshal(v.Awskms)
 	}
 	if v.Mounted != nil {
 		return json.Marshal(v.Mounted)
@@ -428,6 +440,8 @@ func (v *EncryptionKey) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	switch d.DiscriminantProperty {
+	case "awskms":
+		return json.Unmarshal(data, &v.Awskms)
 	case "cloudkms":
 		return json.Unmarshal(data, &v.Cloudkms)
 	case "mounted":
@@ -435,7 +449,7 @@ func (v *EncryptionKey) UnmarshalJSON(data []byte) error {
 	case "noop":
 		return json.Unmarshal(data, &v.Noop)
 	}
-	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"cloudkms", "mounted", "noop"})
+	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"cloudkms", "awskms", "mounted", "noop"})
 }
 
 // EncryptionKeys description: Configuration for encryption keys used to encrypt data at rest in the database.
@@ -1288,16 +1302,24 @@ type Settings struct {
 
 // SettingsExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 type SettingsExperimentalFeatures struct {
+	// ApiDocs description: Enables API documentation.
+	ApiDocs *bool `json:"apiDocs,omitempty"`
 	// CodeInsights description: Enables code insights on directory pages.
 	CodeInsights *bool `json:"codeInsights,omitempty"`
 	// CodeMonitoring description: Enables code monitoring.
 	CodeMonitoring *bool `json:"codeMonitoring,omitempty"`
 	// CopyQueryButton description: Enables displaying the copy query button in the search bar when hovering over the global navigation bar.
 	CopyQueryButton *bool `json:"copyQueryButton,omitempty"`
+	// DesignRefreshToggleEnabled description: Enables access to the design refresh toggle in the user menu.
+	DesignRefreshToggleEnabled *bool `json:"designRefreshToggleEnabled,omitempty"`
 	// EnableFastResultLoading description: Enables optimized search result loading (syntax highlighting / file contents fetching)
 	EnableFastResultLoading *bool `json:"enableFastResultLoading,omitempty"`
 	// EnableSmartQuery description: Enables contextual syntax highlighting and hovers for search queries in the web app
 	EnableSmartQuery *bool `json:"enableSmartQuery,omitempty"`
+	// FuzzyFinder description: Enables fuzzy finder with keyboard shortcut `t`.
+	FuzzyFinder *bool `json:"fuzzyFinder,omitempty"`
+	// FuzzyFinderCaseInsensitiveFileCountThreshold description: The maximum number of files a repo can have to use case-insensitive fuzzy finding
+	FuzzyFinderCaseInsensitiveFileCountThreshold *float64 `json:"fuzzyFinderCaseInsensitiveFileCountThreshold,omitempty"`
 	// SearchStats description: Enables a new page that shows language statistics about the results for a search query.
 	SearchStats *bool `json:"searchStats,omitempty"`
 	// SearchStreaming description: Enables experimental streaming support.
@@ -1428,6 +1450,8 @@ type SiteConfiguration struct {
 	InsightsHistoricalFrames int `json:"insights.historical.frames,omitempty"`
 	// InsightsHistoricalSpeedFactor description: (debug) Speed factor for building historical insights data. A value like 1.5 indicates approximately to use 1.5x as much repo-updater and gitserver resources.
 	InsightsHistoricalSpeedFactor *float64 `json:"insights.historical.speedFactor,omitempty"`
+	// InsightsQueryWorkerConcurrency description: Number of concurrent executions of a code insight query on a worker node
+	InsightsQueryWorkerConcurrency int `json:"insights.query.worker.concurrency,omitempty"`
 	// LicenseKey description: The license key associated with a Sourcegraph product subscription, which is necessary to activate Sourcegraph Enterprise functionality. To obtain this value, contact Sourcegraph to purchase a subscription. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.
 	LicenseKey string `json:"licenseKey,omitempty"`
 	// Log description: Configuration for logging and alerting, including to external services.

@@ -3,7 +3,7 @@ package conversion
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/datastructures"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion/datastructures"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/pathexistence"
 )
 

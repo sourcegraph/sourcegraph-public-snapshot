@@ -23,7 +23,6 @@ import {
 } from '../../../components/FilteredConnection'
 import { PageTitle } from '../../../components/PageTitle'
 import {
-    RepositoriesResult,
     SiteAdminRepositoryFields,
     UserRepositoriesResult,
     ListExternalServiceFields,
@@ -65,11 +64,11 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     routingPrefix,
     telemetryService,
 }) => {
-    const [hasRepos, setHasRepos] = useState<boolean | null>(null)
+    const [hasRepos, setHasRepos] = useState(false)
     const [externalServices, setExternalServices] = useState<ListExternalServiceFields[]>()
     const [pendingOrError, setPendingOrError] = useState<Status>()
 
-    const noReposState = (
+    const NoAddedReposBanner = (
         <div className="border rounded p-3">
             <h3>You have not added any repositories to Sourcegraph</h3>
 
@@ -94,33 +93,6 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
             )}
         </div>
     )
-    const showResults = (): JSX.Element => {
-        const emptyState = (
-            <div className="border rounded p-3">
-                <small>No repositories matched.</small>
-            </div>
-        )
-        return (
-            <FilteredConnection<SiteAdminRepositoryFields, Omit<UserRepositoriesResult, 'node'>>
-                className="table mt-3"
-                defaultFirst={15}
-                compact={false}
-                noun="repository"
-                pluralNoun="repositories"
-                queryConnection={queryRepositories}
-                nodeComponent={Row}
-                listComponent="table"
-                listClassName="w-100"
-                onUpdate={updated}
-                filters={filters}
-                history={history}
-                location={location}
-                emptyElement={emptyState}
-                totalCountSummaryComponent={TotalCountSummary}
-                inputClassName="user-settings-repos__filter-input"
-            />
-        )
-    }
 
     const filters =
         useObservable<FilteredConnectionFilter[]>(
@@ -220,7 +192,9 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
         ) || emptyFilters
 
     const queryRepositories = useCallback(
-        (args: FilteredConnectionQueryArguments): Observable<RepositoriesResult['repositories']> =>
+        (
+            args: FilteredConnectionQueryArguments
+        ): Observable<NonNullable<UserRepositoriesResult['node']>['repositories']> =>
             listUserRepositories({ ...args, id: userID }).pipe(
                 repeatUntil(
                     (result): boolean => {
@@ -243,7 +217,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
         [pendingOrError, userID]
     )
 
-    const updated = useCallback(
+    const onRepoQueryUpdate = useCallback(
         (value: Connection<SiteAdminRepositoryFields> | ErrorLike | undefined, query: string): void => {
             if (value as Connection<SiteAdminRepositoryFields>) {
                 const conn = value as Connection<SiteAdminRepositoryFields>
@@ -251,7 +225,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                 // hasRepos is only useful when query is not set since user may
                 // still have repos that don't match given query
                 if (query === '') {
-                    if (conn.totalCount !== 0) {
+                    if (conn.totalCount !== 0 || conn.nodes.length !== 0) {
                         setHasRepos(true)
                     } else {
                         setHasRepos(false)
@@ -261,6 +235,34 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
         },
         []
     )
+
+    const NoMatchedRepos = (
+        <div className="border rounded p-3">
+            <small>No repositories matched.</small>
+        </div>
+    )
+
+    const RepoFilteredConnection = (
+        <FilteredConnection<SiteAdminRepositoryFields, Omit<UserRepositoriesResult, 'node'>>
+            className="table mt-3"
+            defaultFirst={15}
+            compact={false}
+            noun="repository"
+            pluralNoun="repositories"
+            queryConnection={queryRepositories}
+            nodeComponent={Row}
+            listComponent="table"
+            listClassName="w-100"
+            onUpdate={onRepoQueryUpdate}
+            filters={filters}
+            history={history}
+            location={location}
+            emptyElement={NoMatchedRepos}
+            totalCountSummaryComponent={TotalCountSummary}
+            inputClassName="user-settings-repos__filter-input"
+        />
+    )
+
     const logManageRepositoriesClick = useCallback(() => {
         eventLogger.log('UserSettingsRepositoriesManageRepositoriesClick')
     }, [])
@@ -299,15 +301,14 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                     connected code hosts
                 </Link>
             </p>
-            {externalServices ? (
-                <>
-                    {hasRepos === false && noReposState}
-                    {(hasRepos || hasRepos === null) && showResults()}
-                </>
-            ) : (
+            {!externalServices ? (
                 <div className="d-flex justify-content-center mt-4">
                     <LoadingSpinner className="icon-inline" />
                 </div>
+            ) : hasRepos ? (
+                RepoFilteredConnection
+            ) : (
+                NoAddedReposBanner
             )}
         </div>
     )

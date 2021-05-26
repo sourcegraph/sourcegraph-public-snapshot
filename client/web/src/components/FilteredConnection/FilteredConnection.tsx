@@ -646,3 +646,13 @@ export class FilteredConnection<
         return args
     }
 }
+
+/**
+ * Resets the `FilteredConnection` URL query string parameters to the defaults
+ * @param parameters the current URL search parameters
+ */
+export const resetFilteredConnectionURLQuery = (parameters: URLSearchParams): void => {
+    parameters.delete('visible')
+    parameters.delete('first')
+    parameters.delete('after')
+}

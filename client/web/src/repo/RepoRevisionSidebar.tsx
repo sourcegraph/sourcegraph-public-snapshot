@@ -45,7 +45,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
         return (
             <button
                 type="button"
-                className="position-absolute btn btn-icon btn-link border-right border-bottom rounded-0 repo-revision-container__toggle"
+                className="position-absolute btn btn-icon btn-link border-right border-bottom repo-revision-container__toggle"
                 onClick={handleSidebarToggle}
                 data-tooltip="Show sidebar"
             >

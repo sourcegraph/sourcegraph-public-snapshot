@@ -14,6 +14,7 @@ import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
 import { daysActiveCount } from '../../marketing/util'
 import { eventLogger } from '../../tracking/eventLogger'
+import { isMacPlatform } from '../../util'
 import { QueryState } from '../helpers'
 
 import { MonacoQueryInputProps } from './MonacoQueryInput'
@@ -21,12 +22,12 @@ import { defaultTourOptions } from './tour-options'
 
 export const HAS_CANCELLED_TOUR_KEY = 'has-cancelled-onboarding-tour'
 export const HAS_COMPLETED_TOUR_KEY = 'has-completed-onboarding-tour'
-export const HAS_SEEN_TOUR_KEY = 'has-seen-onboarding-tour'
 
 const tourOptions: Shepherd.Tour.TourOptions = {
     ...defaultTourOptions,
     defaultStepOptions: {
         ...defaultTourOptions.defaultStepOptions,
+        classes: 'web-content',
         popperOptions: {
             // Removes default behavior of autofocusing steps
             modifiers: [
@@ -41,110 +42,60 @@ const tourOptions: Shepherd.Tour.TourOptions = {
 }
 
 /**
- * generateStep creates the content for tooltips for the search tour. All steps that just contain
- * simple text should use this function to populate the step's `text` field.
+ * generateStep creates the content for the search tour card. All steps that just contain
+ * static content should use this function to populate the step's `text` field.
  */
-function generateStepTooltip(options: {
-    tour: Shepherd.Tour
-    dangerousTitleHtml: string
-    stepNumber: number
-    totalStepCount: number
-    description?: string
-    additionalContent?: HTMLElement
-}): HTMLElement {
+function generateStep(options: { tour: Shepherd.Tour; stepNumber: number; content: HTMLElement }): HTMLElement {
     const element = document.createElement('div')
-    element.className = `d-flex flex-column test-tour-step-${options.stepNumber}`
-    const titleElement = document.createElement('h4')
-    titleElement.innerHTML = options.dangerousTitleHtml
-    titleElement.className = 'font-weight-bold'
-    element.append(titleElement)
-    if (options.description) {
-        const descriptionElement = document.createElement('p')
-        descriptionElement.textContent = options.description
-        descriptionElement.className = 'tour-card__description mb-0'
-        element.append(descriptionElement)
-    }
-    if (options.additionalContent) {
-        const additionalContentContainer = document.createElement('div')
-        additionalContentContainer.append(options.additionalContent)
-        element.append(options.additionalContent)
-    }
-    const bottomRow = generateBottomRow(options.tour, options.stepNumber, options.totalStepCount)
-    element.append(bottomRow)
+    element.className = `d-flex align-items-center test-tour-step-${options.stepNumber}`
+    element.append(options.content)
+
+    const close = document.createElement('div')
+    close.className = 'd-flex align-items-center'
+    close.innerHTML = `
+        <div class="tour-card__separator mx-3"></div>
+        <div class="tour-card__close">${closeIconSvg}</div>
+    `
+    element.append(close)
+    element.querySelector('.tour-card__close')?.addEventListener('click', () => {
+        options.tour.cancel()
+        eventLogger.log('CloseOnboardingTourClicked', { stage: options.stepNumber })
+    })
+
     return element
 }
 
-/**
- * Generates the bottom row of the tooltip, which shows the current step number and a "close tour" button.
- *
- * @param tour the tour instance.
- * @param stepNumber the step number.
- */
-function generateBottomRow(tour: Shepherd.Tour, stepNumber: number, totalStepCount: number): HTMLElement {
-    const closeTourButton = document.createElement('button')
-    closeTourButton.className = 'btn btn-link p-0 test-tour-close-button'
-    closeTourButton.textContent = 'Close tour'
-    closeTourButton.addEventListener('click', () => {
-        tour.cancel()
-        eventLogger.log('CloseOnboardingTourClicked', { stage: stepNumber })
-    })
-
-    const bottomRow = document.createElement('div')
-    bottomRow.className = 'd-flex justify-content-between mt-2'
-
-    const stepNumberLabel = document.createElement('span')
-    stepNumberLabel.className = 'font-weight-light font-italic'
-    stepNumberLabel.textContent = `${stepNumber} of ${totalStepCount}`
-    bottomRow.append(stepNumberLabel)
-
-    bottomRow.append(closeTourButton)
-    return bottomRow
-}
+const closeIconSvg =
+    '<svg width="16" height="16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12.667 4.274l-.94-.94L8 7.06 4.273 3.334l-.94.94L7.06 8l-3.727 3.727.94.94L8 8.94l3.727 3.727.94-.94L8.94 8l3.727-3.726z" fill="currentColor"/></svg>'
 
 /**
- * Generates the tooltip content for the first step in the tour.
+ * Generates the content for the first step in the tour.
  *
  * @param languageButtonHandler the handler for the "search a language" button.
  * @param repositoryButtonHandler the handler for the "search a repository" button.
  */
-function createStep1Tooltip(
+function generateStep1(
     tour: Shepherd.Tour,
     languageButtonHandler: () => void,
     repositoryButtonHandler: () => void
 ): HTMLElement {
-    const list = document.createElement('ul')
-    list.className = 'my-4 list-dashed'
-    const languageListItem = document.createElement('li')
-    languageListItem.className = 'p-0 mb-2'
-
-    const languageButton = document.createElement('button')
-    languageButton.className = 'btn btn-link p-0 pl-1 test-tour-language-button'
-    languageButton.textContent = 'Search a language'
-    languageListItem.append(languageButton)
-    languageButton.addEventListener('click', () => {
+    const content = document.createElement('div')
+    content.className = 'd-flex align-items-center'
+    content.innerHTML = `
+        <div class="tour-card__title mr-3">Get started</div>
+        <button class="btn btn-link p-0 mr-3 tour-card__link tour-language-button">Search a language</button>
+        <button class="btn btn-link p-0 tour-card__link tour-repo-button">Search a repository</button>
+    `
+    content.querySelector('.tour-language-button')?.addEventListener('click', () => {
         languageButtonHandler()
         eventLogger.log('OnboardingTourLanguageOptionClicked')
     })
-    const repositoryListItem = document.createElement('li')
-    repositoryListItem.className = 'p-0 mb-2 test-tour-repo-button'
-    const repositoryButton = document.createElement('button')
-    repositoryButton.className = 'btn btn-link p-0 pl-1'
-    repositoryButton.textContent = 'Search a repository'
-    repositoryButton.addEventListener('click', () => {
+    content.querySelector('.tour-repo-button')?.addEventListener('click', () => {
         repositoryButtonHandler()
         eventLogger.log('OnboardingTourRepositoryOptionClicked')
     })
-    repositoryListItem.append(repositoryButton)
-    list.append(languageListItem)
-    list.append(repositoryListItem)
-    return generateStepTooltip({
-        tour,
-        dangerousTitleHtml: 'Code search tour',
-        stepNumber: 1,
-        totalStepCount: 5,
-        description: 'How would you like to begin?',
-        additionalContent: list,
-    })
+
+    return generateStep({ tour, content, stepNumber: 1 })
 }
 
 type TourStepID = 'filter-repository' | 'filter-lang' | 'add-query-term'
@@ -221,146 +172,137 @@ const useCurrentStep = (tour: Tour): TourStepID | undefined => {
     return currentStep
 }
 
-const useTourWithSteps = ({
-    inputLocation,
-    setQueryState,
-}: Pick<UseSearchOnboardingTourOptions, 'inputLocation' | 'setQueryState'>): Tour => {
-    const tour = useMemo(() => new Shepherd.Tour(tourOptions), [])
-    useEffect(() => {
-        if (inputLocation === 'search-homepage') {
-            tour.addSteps([
-                {
-                    id: 'start-tour',
-                    text: createStep1Tooltip(
-                        tour,
-                        () => {
-                            setQueryState({ query: 'lang:' })
-                            tour.show('filter-lang')
-                        },
-                        () => {
-                            setQueryState({ query: 'repo:' })
-                            tour.show('filter-repository')
-                        }
-                    ),
-                    attachTo: {
-                        element: '.search-page__input-container',
-                        on: 'bottom',
-                    },
-                },
-                {
-                    id: 'filter-lang',
-                    text: generateStepTooltip({
-                        tour,
-                        dangerousTitleHtml: 'Type to filter the language autocomplete',
-                        stepNumber: 2,
-                        totalStepCount: 5,
-                    }),
-                    when: {
-                        show() {
-                            eventLogger.log('ViewedOnboardingTourFilterLangStep')
-                        },
-                    },
-                    attachTo: {
-                        element: '.search-page__input-container',
-                        on: 'top',
-                    },
-                },
-                {
-                    id: 'filter-repository',
-                    text: generateStepTooltip({
-                        tour,
-                        dangerousTitleHtml:
-                            "Type the name of a repository you've used recently to filter the autocomplete list",
-                        stepNumber: 2,
-                        totalStepCount: 5,
-                    }),
-                    when: {
-                        show() {
-                            eventLogger.log('ViewedOnboardingTourFilterRepoStep')
-                        },
-                    },
-                    attachTo: {
-                        element: '.search-page__input-container',
-                        on: 'top',
-                    },
-                },
-                {
-                    id: 'add-query-term',
-                    text: generateStepTooltip({
-                        tour,
-                        dangerousTitleHtml: 'Add code to your search',
-                        stepNumber: 3,
-                        totalStepCount: 5,
-                        description: 'Type the name of a function, variable or other code.',
-                    }),
-                    when: {
-                        show() {
-                            eventLogger.log('ViewedOnboardingTourAddQueryTermStep')
-                        },
-                    },
-                    attachTo: {
-                        element: '.search-page__input-container',
-                        on: 'bottom',
-                    },
-                },
-                {
-                    id: 'submit-search',
-                    text: generateStepTooltip({
-                        tour,
-                        dangerousTitleHtml: 'Use <kbd>return</kbd> or the search button to run your search',
-                        stepNumber: 4,
-                        totalStepCount: 5,
-                    }),
-                    when: {
-                        show() {
-                            eventLogger.log('ViewedOnboardingTourSubmitSearchStep')
-                        },
-                    },
-                    attachTo: {
-                        element: '.search-button',
-                        on: 'top',
-                    },
-                    advanceOn: { selector: '.search-button__btn', event: 'click' },
-                },
-            ])
-        } else {
-            tour.addSteps([
-                {
-                    id: 'view-search-reference',
-                    text: generateStepTooltip({
-                        tour,
-                        dangerousTitleHtml: 'Review the search reference',
-                        stepNumber: 5,
-                        totalStepCount: 5,
-                    }),
-                    attachTo: {
-                        element: '.search-help-dropdown-button',
-                        on: 'bottom',
-                    },
-                    when: {
-                        show() {
-                            eventLogger.log('ViewedOnboardingTourSearchReferenceStep')
-                        },
-                    },
-                    advanceOn: { selector: '.search-help-dropdown-button', event: 'click' },
-                },
-            ])
-        }
-    }, [tour, inputLocation, setQueryState])
-    return tour
+const generateStepContent = (title: string, description: string): HTMLElement => {
+    const element = document.createElement('div')
+    element.className = 'd-flex align-items-center'
+    element.innerHTML = `
+        <div class="tour-card__title mr-3">${title}</div>
+        <div class="tour-card__description text-monospace">${description}</div>
+    `
+    return element
 }
 
-type OnboardingTourQueryParameters = [{ key: 'onboardingTour'; value: 'true' }]
+const useTourWithSteps = ({ setQueryState }: Pick<UseSearchOnboardingTourOptions, 'setQueryState'>): Tour => {
+    const tour = useMemo(() => new Shepherd.Tour(tourOptions), [])
+    useEffect(() => {
+        tour.addSteps([
+            {
+                id: 'start-tour',
+                text: generateStep1(
+                    tour,
+                    () => {
+                        setQueryState({ query: 'lang:' })
+                        tour.show('filter-lang')
+                    },
+                    () => {
+                        setQueryState({ query: 'repo:' })
+                        tour.show('filter-repository')
+                    }
+                ),
+                classes: 'tour-card tour-card--arrow-left-up',
+                attachTo: {
+                    element: '.search-page__input-container',
+                    on: 'bottom',
+                },
+                popperOptions: {
+                    modifiers: [{ name: 'offset', options: { offset: [100, 8] } }],
+                },
+            },
+            {
+                id: 'filter-lang',
+                text: generateStep({
+                    tour,
+                    stepNumber: 2,
+                    content: generateStepContent('Enter a language', 'Example: Python'),
+                }),
+                when: {
+                    show() {
+                        eventLogger.log('ViewedOnboardingTourFilterLangStep')
+                    },
+                },
+                classes: 'tour-card tour-card--arrow-left-down',
+                attachTo: {
+                    element: '.search-page__input-container',
+                    on: 'top',
+                },
+                popperOptions: {
+                    modifiers: [{ name: 'offset', options: { offset: [100, 8] } }],
+                },
+            },
+            {
+                id: 'filter-repository',
+                text: generateStep({
+                    tour,
+                    stepNumber: 2,
+                    content: generateStepContent('Enter a repository', 'Example: sourcegraph/sourcegraph'),
+                }),
+                when: {
+                    show() {
+                        eventLogger.log('ViewedOnboardingTourFilterRepoStep')
+                    },
+                },
+                classes: 'tour-card tour-card--arrow-left-down',
+                attachTo: {
+                    element: '.search-page__input-container',
+                    on: 'top',
+                },
+                popperOptions: {
+                    modifiers: [{ name: 'offset', options: { offset: [100, 8] } }],
+                },
+            },
+            {
+                id: 'add-query-term',
+                text: generateStep({
+                    tour,
+                    stepNumber: 3,
+                    content: generateStepContent('Enter source code', 'Example: []*Request'),
+                }),
+                when: {
+                    show() {
+                        eventLogger.log('ViewedOnboardingTourAddQueryTermStep')
+                    },
+                },
+                classes: 'tour-card tour-card--arrow-left-up',
+                attachTo: {
+                    element: '.search-page__input-container',
+                    on: 'bottom',
+                },
+                popperOptions: {
+                    modifiers: [{ name: 'offset', options: { offset: [100, 8] } }],
+                },
+            },
+            {
+                id: 'submit-search',
+                text: generateStep({
+                    tour,
+                    stepNumber: 4,
+                    content: generateStepContent('Search', `(Or press ${isMacPlatform ? 'RETURN' : 'ENTER'})`),
+                }),
+                when: {
+                    show() {
+                        eventLogger.log('ViewedOnboardingTourSubmitSearchStep')
+                    },
+                },
+                classes: 'tour-card tour-card--arrow-right-down',
+                attachTo: {
+                    element: '.search-button__btn',
+                    on: 'top',
+                },
+                popperOptions: {
+                    modifiers: [{ name: 'offset', options: { offset: [-140, 8] } }],
+                },
+                advanceOn: { selector: '.search-button__btn', event: 'click' },
+            },
+        ])
+    }, [tour, setQueryState])
+    return tour
+}
 
 interface UseSearchOnboardingTourOptions {
     /**
      * Whether the onboarding tour feature flag is enabled.
      */
     showOnboardingTour: boolean
-    /**
-     * Where the onboarding tour is being displayed.
-     */
-    inputLocation: 'search-homepage' | 'global-navbar'
 
     /**
      * A callback allowing the onboarding tour to trigger
@@ -384,15 +326,11 @@ interface UseSearchOnboardingTourOptions {
 interface UseSearchOnboardingTourReturnValue
     extends Pick<MonacoQueryInputProps, 'onCompletionItemSelected' | 'onSuggestionsInitialized' | 'onFocus'> {
     /**
-     * Query parameters that should be added when submitting a search,
-     * which will trigger the display of further onboarding tour steps on the search result page.
-     */
-    additionalQueryParameters: OnboardingTourQueryParameters | undefined
-    /**
      * Whether the query input should be focused by default
      * (`false` on the search homepage when the tour is active).
      */
     shouldFocusQueryInput: boolean
+    isSearchOnboardingTourVisible: boolean
 }
 
 /**
@@ -403,76 +341,33 @@ interface UseSearchOnboardingTourReturnValue
  */
 export const useSearchOnboardingTour = ({
     showOnboardingTour,
-    inputLocation,
     queryState,
     setQueryState,
-    history,
-    location,
 }: UseSearchOnboardingTourOptions): UseSearchOnboardingTourReturnValue => {
-    const tour = useTourWithSteps({ inputLocation, setQueryState })
-    // True when the user has seen the tour on the search homepage
-    const [hasSeenTour, setHasSeenTour] = useLocalStorage(HAS_SEEN_TOUR_KEY, false)
+    const tour = useTourWithSteps({ setQueryState })
     // True when the user has manually cancelled the tour
     const [hasCancelledTour, setHasCancelledTour] = useLocalStorage(HAS_CANCELLED_TOUR_KEY, false)
     // True when the user has completed the tour on the search results page
-    const [hasCompletedTour, setHasCompletedTour] = useLocalStorage(HAS_COMPLETED_TOUR_KEY, false)
-    const shouldShowTour = useMemo(
-        () =>
-            showOnboardingTour &&
-            daysActiveCount === 1 &&
-            !hasCancelledTour &&
-            !hasCompletedTour &&
-            (inputLocation === 'global-navbar' || !hasSeenTour),
-        [hasCancelledTour, hasCompletedTour, hasSeenTour, showOnboardingTour, inputLocation]
-    )
-
-    // Start the tour on the 'view-search-reference' step if the onboardingTour
-    // query parameter is present in the URL. Clean the parameter from the URL.
-    useEffect(() => {
-        const queryParameters = new URLSearchParams(location.search)
-        if (queryParameters.has('onboardingTour')) {
-            if (shouldShowTour) {
-                tour.start()
-                tour.show('view-search-reference')
-            }
-            queryParameters.delete('onboardingTour')
-            history.replace({
-                search: queryParameters.toString(),
-                hash: history.location.hash,
-            })
-        }
-    }, [tour, shouldShowTour, location.search, history])
+    const [, setHasCompletedTour] = useLocalStorage(HAS_COMPLETED_TOUR_KEY, false)
+    const shouldShowTour = useMemo(() => showOnboardingTour && daysActiveCount === 1 && !hasCancelledTour, [
+        showOnboardingTour,
+        hasCancelledTour,
+    ])
 
     // Start the Tour when the query input is focused on the search homepage.
     const onFocus = useCallback(() => {
-        if (shouldShowTour && !tour.isActive() && inputLocation === 'search-homepage') {
+        if (shouldShowTour && !tour.isActive()) {
             tour.start()
         }
-    }, [shouldShowTour, tour, inputLocation])
-    const shouldFocusQueryInput = useMemo(() => (shouldShowTour ? inputLocation !== 'search-homepage' : true), [
-        shouldShowTour,
-        inputLocation,
-    ])
+    }, [shouldShowTour, tour])
 
     // Hook into Tour cancellation and completion events.
     useEffect(() => {
         const onCancelled = (): void => {
             setHasCancelledTour(true)
-            // If the user closed the tour, we don't want to show
-            // any further popups, so set this to false.
-            setAdditionalQueryParameters(undefined)
         }
         const onCompleted = (): void => {
-            if (inputLocation === 'search-homepage') {
-                // When the tour is 'completed' on the search homepage,
-                // set HAS_SEEN to true, but not HAS_COMPLETED,
-                // as we'll still want the user to see the last step on the
-                // search results page.
-                setHasSeenTour(true)
-            } else {
-                // On other pages, set the tour to completed.
-                setHasCompletedTour(true)
-            }
+            setHasCompletedTour(true)
         }
         tour.on('cancel', onCancelled)
         tour.on('complete', onCompleted)
@@ -480,33 +375,21 @@ export const useSearchOnboardingTour = ({
             tour.off('cancel', onCancelled)
             tour.off('complete', onCompleted)
         }
-    }, [tour, setHasCompletedTour, setHasCancelledTour, setHasSeenTour, inputLocation])
+    }, [tour, setHasCompletedTour, setHasCancelledTour])
 
     // 'Complete' tour on unmount.
-    // This will not necessarily result in HAS_COMPLETED_CODE_MONITOR
-    // being set to true (see completion event handler).
     useEffect(
         () => () => {
-            if (tour.isActive()) {
-                tour.complete()
-            }
+            tour.complete()
         },
         [tour]
     )
-    // Upon mounting, set whether we should add the onboardingTour query parameter upon submitting searches
-    // (used to display further steps of the tour on the search results page),
-    // and log the ViewOnboardingTour event if the tour is being seen on the search homepage.
-    const [additionalQueryParameters, setAdditionalQueryParameters] = useState<
-        OnboardingTourQueryParameters | undefined
-    >()
+
     useEffect(() => {
         if (shouldShowTour) {
-            setAdditionalQueryParameters([{ key: 'onboardingTour', value: 'true' }])
-            if (inputLocation === 'search-homepage') {
-                eventLogger.log('ViewOnboardingTour')
-            }
+            eventLogger.log('ViewOnboardingTour')
         }
-    }, [tour, shouldShowTour, setAdditionalQueryParameters, inputLocation])
+    }, [tour, shouldShowTour])
 
     // A handle allowing to trigger display of the MonacoQueryInput suggestions widget.
     const [suggestions, onSuggestionsInitialized] = useState<{ trigger: () => void }>()
@@ -542,7 +425,7 @@ export const useSearchOnboardingTour = ({
         onCompletionItemSelected,
         onFocus,
         onSuggestionsInitialized,
-        additionalQueryParameters,
-        shouldFocusQueryInput,
+        shouldFocusQueryInput: !shouldShowTour,
+        isSearchOnboardingTourVisible: shouldShowTour,
     }
 }

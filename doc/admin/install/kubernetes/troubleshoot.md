@@ -1,7 +1,7 @@
 # Troubleshooting
 
 If Sourcegraph does not start up or shows unexpected behavior, there are a variety of ways you can determine the root
-cause of the failure. 
+cause of the failure.
 
 ## The most helpful commands:
 
@@ -87,6 +87,7 @@ If one does exist, run `kubectl get storageclass sourcegraph -o=yaml` and verify
 
 
 ### Error: `error retrieving RESTMappings to prune: invalid resource networking.k8s.io/v1, Kind=Ingress, Namespaced=true: no matches for kind "Ingress" in version "networking.k8s.io/v1"`
+
 - Make sure the client version of your kubectl matches the one used by the server. Run `kubectl version` to check.
 - See the ["Configure network access"](configure.md#security-configure-network-access)
 - Check for duplicate `sourcegraph-frontend` using `kubectl get ingresses -A`
@@ -94,6 +95,7 @@ If one does exist, run `kubectl get storageclass sourcegraph -o=yaml` and verify
 
 
 ### Error: `error when creating "base/cadvisor/cadvisor.ClusterRoleBinding.yaml": subjects[0].namespace: Required value`
+
 Add `namespace: default` to the [base/cadvisor/cadvisor.ClusterRoleBinding.yaml](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/base/cadvisor/cadvisor.ClusterRoleBinding.yaml) file under `subjects`.
 
 
@@ -113,23 +115,28 @@ with only one CPU, and that some components request a 2-CPU node. When creating 
 
 
 ### `ImagePullBackOff` / `429 Too Many Requests`
+
 This indicates the instance is getting rate-limited by Docker Hub([link](https://www.docker.com/increase-rate-limits)), where our images are stored, as unauthenticated users are limited to 100 image pulls within a 6 hour period. Possible solutions included:
 - Create a Docker Hub account with a higher rate limit > configure an `ImagePullSecrets` K8S object with your Docker Hub service that contains your docker credentials ([link to tutorial](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/)) > add these credentials to the default service account that's running the same namespace that Sourcegraph is running in ([link to tutorial](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#add-imagepullsecrets-to-a-service-account))
 - Wait until the rate limits are reset
 - [**OPTIONAL**] Upgrade your account to a Docker Pro or Team subscription ([See Docker Hub for more information](https://www.docker.com/increase-rate-limits))
 
 
+
 ### Prometheus Pod is constantly down when using the `namespace` overlays
+
 This is most likely due to cadvisor picking up other metrics from the cluster. 
 You can confirm this theory by checking your [prometheus.ConfigMap.yaml](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph@3.27/-/blob/base/prometheus/prometheus.ConfigMap.yaml#L248-250) file and see if the `source_labels: [container_label_io_kubernetes_pod_namespace]` fields under `metric_relabel_configs` are commented out and if the `regex` field is updated with your namespace.
 
 
 ### You can't access Sourcegraph.
+
 See the [Troubleshooting ingress-nginx docs](https://kubernetes.github.io/ingress-nginx/troubleshooting/). 
+
 If you followed our instructions, the namespace of the ingress-controller is `ingress-nginx`.
 
 
 
-Any other issues? Contact us at [@srcgraph](https://twitter.com/srcgraph)
+Any other issues? Contact us at [@sourcegraph](https://twitter.com/sourcegraph)
 or <mailto:support@sourcegraph.com>, or file issues on
 our [public issue tracker](https://github.com/sourcegraph/issues/issues).

@@ -29,7 +29,7 @@ func externalAccountByID(ctx context.Context, db dbutil.DB, id graphql.ID) (*ext
 	}
 
 	// 🚨 SECURITY: Only the user and site admins should be able to see a user's external accounts.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, account.UserID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, db, account.UserID); err != nil {
 		return nil, err
 	}
 
@@ -60,10 +60,20 @@ func (r *externalAccountResolver) RefreshURL() *string {
 }
 
 func (r *externalAccountResolver) AccountData(ctx context.Context) (*JSONValue, error) {
-	// 🚨 SECURITY: Only the site admins and the user can view this information.
-	// TODO(jchen): Only allow the authenticated user getting back accountData for
-	// GitHub and GitLab, https://github.com/sourcegraph/sourcegraph/issues/20978
-	if err := backend.CheckSiteAdminOrSameUser(ctx, actor.FromContext(ctx).UID); err != nil {
+	// 🚨 SECURITY: It is only safe to assume account data of GitHub and GitLab do
+	// not contain sensitive information that is not known to the user (which is
+	// accessible via APIs by users themselves). We cannot take the same assumption
+	// for other types of external accounts.
+	//
+	// Therefore, the site admins and the user can view account data of GitHub and
+	// GitLab, but only site admins can view account data for all other types.
+	var err error
+	if r.account.ServiceType == extsvc.TypeGitHub || r.account.ServiceType == extsvc.TypeGitLab {
+		err = backend.CheckSiteAdminOrSameUser(ctx, r.db, actor.FromContext(ctx).UID)
+	} else {
+		err = backend.CheckUserIsSiteAdmin(ctx, r.db, actor.FromContext(ctx).UID)
+	}
+	if err != nil {
 		return nil, err
 	}
 

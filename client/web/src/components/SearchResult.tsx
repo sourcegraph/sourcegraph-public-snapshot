@@ -2,10 +2,10 @@ import * as H from 'history'
 import React from 'react'
 
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
+import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
 import { ResultContainer } from '@sourcegraph/shared/src/components/ResultContainer'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { getRepoIcon } from '@sourcegraph/shared/src/util/getRepoIcon'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
@@ -22,18 +22,29 @@ export const SearchResult: React.FunctionComponent<Props> = ({ result, history, 
     const [isRedesignEnabled] = useRedesignToggle()
 
     const renderTitle = (): JSX.Element => {
-        if (isRedesignEnabled && result.__typename === 'Repository') {
-            const RepoIcon = getRepoIcon(repoName)
+        if (isRedesignEnabled) {
             return (
                 <div className="search-result__title">
-                    {RepoIcon && <RepoIcon className="icon-inline text-muted" />}
+                    <RepoIcon repoName={repoName} className="icon-inline text-muted flex-shrink-0" />
                     <Markdown
-                        className="test-search-result-label ml-1"
+                        className="test-search-result-label ml-1 flex-shrink-past-contents text-truncate"
                         dangerousInnerHTML={result.label.html ? result.label.html : renderMarkdown(result.label.text)}
                     />
+                    {result.__typename !== 'Repository' && result.detail && (
+                        <>
+                            <span className="search-result__spacer" />
+                            <Markdown
+                                className="flex-shrink-0"
+                                dangerousInnerHTML={
+                                    result.detail.html ? result.detail.html : renderMarkdown(result.detail.text)
+                                }
+                            />
+                        </>
+                    )}
                 </div>
             )
         }
+
         return (
             <div className="search-result__title">
                 <Markdown
@@ -81,7 +92,8 @@ export const SearchResult: React.FunctionComponent<Props> = ({ result, history, 
     return (
         <ResultContainer
             icon={icon}
-            collapsible={result && result.matches.length > 0}
+            // Don't allow collapsing in the redesign
+            collapsible={!isRedesignEnabled && result && result.matches.length > 0}
             defaultExpanded={true}
             title={renderTitle()}
             expandedChildren={renderBody()}
