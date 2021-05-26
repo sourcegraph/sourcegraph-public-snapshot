@@ -102,7 +102,6 @@
     // Add this class to <StatusBar>
     &__body {
         position: static;
-        max-width: 100% !important; // temporary: only set in case user toggles redesign on and off.
 
         .theme-redesign & {
             // Make the status bar "float" slightly above the bottom of the code view.

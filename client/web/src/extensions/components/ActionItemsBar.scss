@@ -84,7 +84,7 @@ $default-icon-colors: $oc-grape-7, $oc-violet-7, $oc-cyan-9, $oc-indigo-7, $oc-p
 
     &__list {
         overflow-y: auto;
-        flex: 0 1 auto;
+        width: var(--action-item-width);
 
         scrollbar-width: none;
         &::-webkit-scrollbar {
