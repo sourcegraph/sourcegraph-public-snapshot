@@ -5,8 +5,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-
 	"github.com/google/zoekt"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
