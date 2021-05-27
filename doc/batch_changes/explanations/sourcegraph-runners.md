@@ -27,11 +27,14 @@ TODO
 
 ## Who has access to runners
 
-TODO
+All batch changes users on your Sourcegraph instance have access to runners.
 
 ## Debugging
 
 TODO
+
+## Scheduling
+Jobs are executed on a FIFO-basis. Users can interrupt a job from the interface.
 
 # Administering and monitoring runners
 
