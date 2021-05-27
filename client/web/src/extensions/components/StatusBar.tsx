@@ -83,7 +83,7 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
     return (
         <div
             className={classNames(
-                'status-bar w-100 border-top d-flex',
+                'status-bar w-100 d-flex border-bottom',
                 'percy-hide', // TODO: Fix flaky status bar in Percy tests: https://github.com/sourcegraph/sourcegraph/issues/20751
                 className
             )}
@@ -108,7 +108,12 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
                         <LeftIcon className="icon-inline" />
                     </button>
                 )}
-                <div className="status-bar__items d-flex align-items-center px-2" ref={carouselReference}>
+                <div
+                    className={classNames('status-bar__items d-flex align-items-center', {
+                        'px-2': !isRedesignEnabled,
+                    })}
+                    ref={carouselReference}
+                >
                     {!!statusBarItems && statusBarItems !== 'loading' && statusBarItems.length > 0
                         ? statusBarItems.map(statusBarItem => (
                               <StatusBarItem
