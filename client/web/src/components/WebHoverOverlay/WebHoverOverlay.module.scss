@@ -7,7 +7,8 @@
     border-radius: var(--popover-border-radius);
 
     &__close-button {
-        font-size: 1rem;
+        width: 1rem;
+        height: 1rem;
         color: var(--icon-color);
     }
 

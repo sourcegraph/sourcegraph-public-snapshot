@@ -204,7 +204,7 @@
         }
 
         &__close-button {
-            top: 0.4375rem; // 7px — pixel perfect positioning.
+            top: var(--hover-overlay-content-margin-top);
             margin-right: -1.25rem;
             margin-left: 0;
 

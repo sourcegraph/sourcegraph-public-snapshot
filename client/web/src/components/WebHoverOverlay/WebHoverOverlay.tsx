@@ -57,7 +57,7 @@ export const WebHoverOverlay: React.FunctionComponent<HoverOverlayProps & HoverT
         <HoverOverlay
             {...propsToUse}
             className={classNames('card', isRedesignEnabled && styles.webHoverOverlay)}
-            iconClassName="icon-inline"
+            iconClassName={classNames(!isRedesignEnabled && 'icon-inline')}
             closeButtonClassName={classNames('btn btn-icon', isRedesignEnabled && styles.webHoverOverlayCloseButton)}
             actionItemClassName={classNames(
                 'btn btn-secondary',
