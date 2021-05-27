@@ -50,6 +50,7 @@ $badge-border-radius: var(--badge-border-radius);
 // Tooltips
 
 $tooltip-bg: var(--tooltip-bg);
+$tooltip-opacity: 1;
 
 // Forms
 
@@ -150,6 +151,7 @@ $badge-transition: none; // Avoids setting transitions on badges that aren't lin
 @import './highlight';
 @import './web-content';
 @import './tabs';
+@import './tooltips';
 @import '~@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css';
 
 * {
