@@ -1,0 +1,1253 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`GlobalNavbar default 1`] = `
+<DocumentFragment>
+  <nav
+    aria-label="Main Menu"
+    class="navbar"
+  >
+    <h1
+      class="logo"
+    >
+      <a
+        href="/search"
+      >
+        <brandlogo
+          class="global-navbar__logo"
+          variant="symbol"
+        />
+      </a>
+    </h1>
+    <hr
+      class="divider"
+    />
+    <div
+      class="menu"
+    >
+      <button
+        aria-label="Sections Navigation"
+        class="btn menuButton"
+        type="button"
+      >
+        <svg
+          class="mdi-icon icon-inline"
+          fill="currentColor"
+          height="24"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"
+          />
+        </svg>
+        <svg
+          class="mdi-icon icon-inline"
+          fill="currentColor"
+          height="24"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
+          />
+        </svg>
+      </button>
+      <ul
+        class="list menuClose"
+      >
+        <li
+          class="item"
+        >
+          <a
+            class="link"
+            href="/search"
+          >
+            <span
+              class="linkContent"
+            >
+              <svg
+                class="mdi-icon icon-inline icon"
+                fill="currentColor"
+                height="24"
+                viewBox="0 0 24 24"
+                width="24"
+              >
+                <path
+                  d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z"
+                />
+              </svg>
+              <span
+                class="text iconIncluded"
+              >
+                Code Search
+              </span>
+            </span>
+          </a>
+        </li>
+        <li
+          class="item"
+        >
+          <a
+            class="link"
+            href="/code-monitoring"
+          >
+            <span
+              class="linkContent"
+            >
+              <svg
+                class="icon-inline icon"
+                fill="currentColor"
+                height="20"
+                viewBox="0 0 20 20"
+                width="20"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  clip-rule="evenodd"
+                  d="M18.01 8.01C18.01 8.29 18.23 8.51 18.51 8.51C18.79 8.51 19.01 8.29 19.01 8.01C19.01 4.15 15.87 1 12 1C11.72 1 11.5 1.22 11.5 1.5C11.5 1.78 11.72 2 12 2C15.31 2 18.01 4.7 18.01 8.01ZM16.1801 7.96002C15.9001 7.96002 15.6801 7.74002 15.6801 7.46002C15.6801 5.81002 14.3301 4.46002 12.6801 4.46002C12.4001 4.46002 12.1801 4.24002 12.1801 3.96002C12.1801 3.68002 12.4001 3.46002 12.6801 3.46002C14.8901 3.46002 16.6801 5.25002 16.6801 7.46002C16.6801 7.74002 16.4601 7.96002 16.1801 7.96002ZM4.83996 6.79999L13.34 15.3C12.39 15.88 11.29 16.18 10.15 16.18C8.49996 16.18 6.93996 15.54 5.76996 14.37C4.59996 13.2 3.94996 11.65 3.94996 9.98999C3.94996 8.84999 4.25996 7.74999 4.83996 6.79999ZM4.70996 4.54999C1.70996 7.54999 1.70996 12.43 4.70996 15.43C6.20996 16.93 8.17996 17.68 10.15 17.68C12.12 17.68 14.09 16.93 15.59 15.43L4.70996 4.54999ZM4 16.14C3.7 15.84 3.43 15.52 3.18 15.18L2.89 15.69L1 18.97H4.79H8.59L8.31 18.49C6.69 18.14 5.2 17.34 4 16.14ZM13.85 8.04999C13.85 9.01999 13.07 9.79999 12.1 9.79999C11.13 9.79999 10.35 9.01999 10.35 8.04999C10.35 7.07999 11.13 6.29999 12.1 6.29999C13.07 6.29999 13.85 7.07999 13.85 8.04999Z"
+                  fill-rule="evenodd"
+                />
+              </svg>
+              <span
+                class="text iconIncluded"
+              >
+                Monitoring
+              </span>
+            </span>
+          </a>
+        </li>
+        <li
+          class="item"
+        >
+          <a
+            class="link"
+            href="/batch-changes"
+          >
+            <span
+              class="linkContent"
+            >
+              <svg
+                class="icon-inline icon"
+                fill="currentColor"
+                height="20"
+                viewBox="0 -3 38 38"
+                width="20"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  clip-rule="evenodd"
+                  d="M5.829 6.76a1.932 1.932 0 100-3.863 1.932 1.932 0 000 3.863zm0 2.898a4.829 4.829 0 100-9.658 4.829 4.829 0 000 9.658z"
+                  fill-rule="evenodd"
+                />
+                <path
+                  d="M22.473 1.867H30.2v7.726h-7.726V1.867zM22.473 13.07H30.2v7.727h-7.726V13.07zM22.473 24.274H30.2V32h-7.726v-7.726z"
+                />
+                <path
+                  clip-rule="evenodd"
+                  d="M12.014 5.795c0-.8.648-1.449 1.448-1.449h5.795a1.449 1.449 0 110 2.897h-5.795c-.8 0-1.448-.648-1.448-1.448zM6.544 11.047a1.449 1.449 0 00-1.6 1.28l1.44.16-1.44-.16v.011l-.003.023-.008.08c-.006.066-.015.162-.024.283-.018.242-.04.587-.055 1.013a28.23 28.23 0 00.087 3.36c.226 2.602.915 6.018 2.937 8.546 2.08 2.599 5.13 3.566 7.48 3.918a18.29 18.29 0 003.957.15c.111-.008.2-.017.263-.023l.076-.008.023-.003h.008l.003-.001s.002 0-.178-1.438l.18 1.438a1.449 1.449 0 00-.358-2.875M7.824 12.646l-.001.012-.006.055-.02.231a25.333 25.333 0 00.03 3.902c.212 2.43.835 5.14 2.314 6.987 1.42 1.776 3.62 2.56 5.646 2.863a15.408 15.408 0 003.303.127 7.78 7.78 0 00.193-.017l.043-.005h.006M6.544 11.046a1.449 1.449 0 011.28 1.6l-1.28-1.6z"
+                  fill-rule="evenodd"
+                />
+                <path
+                  clip-rule="evenodd"
+                  d="M5.692 11.214a1.449 1.449 0 00-.58 1.965l1.272-.692-1.272.692v.002l.002.002.003.006.008.014.023.04a8.703 8.703 0 00.353.551 12.492 12.492 0 005.602 4.416c2.047.807 4.203 1.038 5.803 1.079a21.55 21.55 0 001.986-.04 16.55 16.55 0 00.742-.067l.047-.006.014-.002h.008l-.193-1.436.192 1.435a1.45 1.45 0 00-.383-2.871h-.002l-.027.003a13.35 13.35 0 01-.594.053c-.416.028-1.012.052-1.716.035-1.424-.037-3.205-.244-4.814-.878a9.594 9.594 0 01-4.286-3.373 5.756 5.756 0 01-.221-.345l-.005-.008a1.449 1.449 0 00-1.962-.575z"
+                  fill-rule="evenodd"
+                />
+              </svg>
+              <span
+                class="text iconIncluded"
+              >
+                Batch Changes
+              </span>
+            </span>
+          </a>
+        </li>
+        <li
+          class="item"
+        >
+          <a
+            class="link"
+            href="/insights"
+          >
+            <span
+              class="linkContent"
+            >
+              <svg
+                class="mdi-icon icon-inline icon"
+                fill="currentColor"
+                height="24"
+                viewBox="0 0 24 24"
+                width="24"
+              >
+                <path
+                  d="M3,22V8H7V22H3M10,22V2H14V22H10M17,22V14H21V22H17Z"
+                />
+              </svg>
+              <span
+                class="text iconIncluded"
+              >
+                Insights
+              </span>
+            </span>
+          </a>
+        </li>
+        <li
+          class="item"
+        >
+          <a
+            class="link"
+            href="/extensions"
+          >
+            <span
+              class="linkContent"
+            >
+              <svg
+                class="mdi-icon icon-inline icon"
+                fill="currentColor"
+                height="24"
+                viewBox="0 0 24 24"
+                width="24"
+              >
+                <path
+                  d="M22,13.5C22,15.26 20.7,16.72 19,16.96V20A2,2 0 0,1 17,22H13.2V21.7A2.7,2.7 0 0,0 10.5,19C9,19 7.8,20.21 7.8,21.7V22H4A2,2 0 0,1 2,20V16.2H2.3C3.79,16.2 5,15 5,13.5C5,12 3.79,10.8 2.3,10.8H2V7A2,2 0 0,1 4,5H7.04C7.28,3.3 8.74,2 10.5,2C12.26,2 13.72,3.3 13.96,5H17A2,2 0 0,1 19,7V10.04C20.7,10.28 22,11.74 22,13.5M17,15H18.5A1.5,1.5 0 0,0 20,13.5A1.5,1.5 0 0,0 18.5,12H17V7H12V5.5A1.5,1.5 0 0,0 10.5,4A1.5,1.5 0 0,0 9,5.5V7H4V9.12C5.76,9.8 7,11.5 7,13.5C7,15.5 5.75,17.2 4,17.88V20H6.12C6.8,18.25 8.5,17 10.5,17C12.5,17 14.2,18.25 14.88,20H17V15Z"
+                />
+              </svg>
+              <span
+                class="text iconIncluded"
+              >
+                Extensions
+              </span>
+            </span>
+          </a>
+        </li>
+      </ul>
+    </div>
+    <ul
+      class="actions"
+    >
+      <li
+        class="action"
+      >
+        <a
+          class="global-navbar__link"
+          rel="noreferrer noopener"
+          target="_blank"
+          to="https://about.sourcegraph.com"
+        >
+          About
+        </a>
+      </li>
+      <li
+        class="action"
+      >
+        <span
+          class="test-command-list-button command-list__popover-button btn btn-link"
+          id="command-list-popover-button-test-id"
+          role="button"
+        >
+          <svg
+            class="mdi-icon icon-inline-md"
+            fill="currentColor"
+            height="24"
+            viewBox="0 0 24 24"
+            width="24"
+          >
+            <path
+              d="M20,19V7H4V19H20M20,3A2,2 0 0,1 22,5V19A2,2 0 0,1 20,21H4A2,2 0 0,1 2,19V5C2,3.89 2.9,3 4,3H20M13,17V15H18V17H13M9.58,13L5.57,9H8.4L11.7,12.3C12.09,12.69 12.09,13.33 11.7,13.72L8.42,17H5.59L9.58,13Z"
+            />
+          </svg>
+          <svg
+            class="mdi-icon icon-inline"
+            fill="currentColor"
+            height="24"
+            viewBox="0 0 24 24"
+            width="24"
+          >
+            <path
+              d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
+            />
+          </svg>
+        </span>
+      </li>
+      <li
+        class="action"
+      >
+        <div>
+          <a
+            class="btn btn-sm btn-outline-secondary mr-1"
+            to="/sign-in"
+          >
+            Log in
+          </a>
+          <a
+            class="btn btn-sm btn-outline-secondary global-navbar__sign-up"
+            to="/sign-up"
+          >
+            Sign up
+          </a>
+        </div>
+      </li>
+    </ul>
+  </nav>
+  <div
+    class="d-flex w-100 flex-row px-3 py-2 border-bottom"
+  >
+    <searchnavbaritem
+      availableversioncontexts=""
+      defaultsearchcontextspec=""
+      extensionscontroller="[object Object]"
+      fetchautodefinedsearchcontexts="[object Object]"
+      history="[object Object]"
+      keyboardshortcuts=""
+      location="[object Object]"
+      navbarsearchstate="[object Object]"
+      parsedsearchquery="r:golang/oauth2 test f:travis"
+      patterntype="literal"
+      platformcontext="[object Object]"
+      routes=""
+      selectedsearchcontextspec=""
+      settingscascade="[object Object]"
+      telemetryservice="[object Object]"
+      themepreference="light"
+    />
+  </div>
+</DocumentFragment>
+`;
+
+exports[`GlobalNavbar low-profile 1`] = `
+<DocumentFragment>
+  <nav
+    aria-label="Main Menu"
+    class="navbar"
+  >
+    <h1
+      class="logo"
+    >
+      <a
+        href="/search"
+      >
+        <brandlogo
+          class="global-navbar__logo"
+          variant="symbol"
+        />
+      </a>
+    </h1>
+    <hr
+      class="divider"
+    />
+    <div
+      class="menu"
+    >
+      <button
+        aria-label="Sections Navigation"
+        class="btn menuButton"
+        type="button"
+      >
+        <svg
+          class="mdi-icon icon-inline"
+          fill="currentColor"
+          height="24"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"
+          />
+        </svg>
+        <svg
+          class="mdi-icon icon-inline"
+          fill="currentColor"
+          height="24"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
+          />
+        </svg>
+      </button>
+      <ul
+        class="list menuClose"
+      >
+        <li
+          class="item"
+        >
+          <a
+            class="link"
+            href="/search"
+          >
+            <span
+              class="linkContent"
+            >
+              <svg
+                class="mdi-icon icon-inline icon"
+                fill="currentColor"
+                height="24"
+                viewBox="0 0 24 24"
+                width="24"
+              >
+                <path
+                  d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z"
+                />
+              </svg>
+              <span
+                class="text iconIncluded"
+              >
+                Code Search
+              </span>
+            </span>
+          </a>
+        </li>
+        <li
+          class="item"
+        >
+          <a
+            class="link"
+            href="/code-monitoring"
+          >
+            <span
+              class="linkContent"
+            >
+              <svg
+                class="icon-inline icon"
+                fill="currentColor"
+                height="20"
+                viewBox="0 0 20 20"
+                width="20"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  clip-rule="evenodd"
+                  d="M18.01 8.01C18.01 8.29 18.23 8.51 18.51 8.51C18.79 8.51 19.01 8.29 19.01 8.01C19.01 4.15 15.87 1 12 1C11.72 1 11.5 1.22 11.5 1.5C11.5 1.78 11.72 2 12 2C15.31 2 18.01 4.7 18.01 8.01ZM16.1801 7.96002C15.9001 7.96002 15.6801 7.74002 15.6801 7.46002C15.6801 5.81002 14.3301 4.46002 12.6801 4.46002C12.4001 4.46002 12.1801 4.24002 12.1801 3.96002C12.1801 3.68002 12.4001 3.46002 12.6801 3.46002C14.8901 3.46002 16.6801 5.25002 16.6801 7.46002C16.6801 7.74002 16.4601 7.96002 16.1801 7.96002ZM4.83996 6.79999L13.34 15.3C12.39 15.88 11.29 16.18 10.15 16.18C8.49996 16.18 6.93996 15.54 5.76996 14.37C4.59996 13.2 3.94996 11.65 3.94996 9.98999C3.94996 8.84999 4.25996 7.74999 4.83996 6.79999ZM4.70996 4.54999C1.70996 7.54999 1.70996 12.43 4.70996 15.43C6.20996 16.93 8.17996 17.68 10.15 17.68C12.12 17.68 14.09 16.93 15.59 15.43L4.70996 4.54999ZM4 16.14C3.7 15.84 3.43 15.52 3.18 15.18L2.89 15.69L1 18.97H4.79H8.59L8.31 18.49C6.69 18.14 5.2 17.34 4 16.14ZM13.85 8.04999C13.85 9.01999 13.07 9.79999 12.1 9.79999C11.13 9.79999 10.35 9.01999 10.35 8.04999C10.35 7.07999 11.13 6.29999 12.1 6.29999C13.07 6.29999 13.85 7.07999 13.85 8.04999Z"
+                  fill-rule="evenodd"
+                />
+              </svg>
+              <span
+                class="text iconIncluded"
+              >
+                Monitoring
+              </span>
+            </span>
+          </a>
+        </li>
+        <li
+          class="item"
+        >
+          <a
+            class="link"
+            href="/batch-changes"
+          >
+            <span
+              class="linkContent"
+            >
+              <svg
+                class="icon-inline icon"
+                fill="currentColor"
+                height="20"
+                viewBox="0 -3 38 38"
+                width="20"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  clip-rule="evenodd"
+                  d="M5.829 6.76a1.932 1.932 0 100-3.863 1.932 1.932 0 000 3.863zm0 2.898a4.829 4.829 0 100-9.658 4.829 4.829 0 000 9.658z"
+                  fill-rule="evenodd"
+                />
+                <path
+                  d="M22.473 1.867H30.2v7.726h-7.726V1.867zM22.473 13.07H30.2v7.727h-7.726V13.07zM22.473 24.274H30.2V32h-7.726v-7.726z"
+                />
+                <path
+                  clip-rule="evenodd"
+                  d="M12.014 5.795c0-.8.648-1.449 1.448-1.449h5.795a1.449 1.449 0 110 2.897h-5.795c-.8 0-1.448-.648-1.448-1.448zM6.544 11.047a1.449 1.449 0 00-1.6 1.28l1.44.16-1.44-.16v.011l-.003.023-.008.08c-.006.066-.015.162-.024.283-.018.242-.04.587-.055 1.013a28.23 28.23 0 00.087 3.36c.226 2.602.915 6.018 2.937 8.546 2.08 2.599 5.13 3.566 7.48 3.918a18.29 18.29 0 003.957.15c.111-.008.2-.017.263-.023l.076-.008.023-.003h.008l.003-.001s.002 0-.178-1.438l.18 1.438a1.449 1.449 0 00-.358-2.875M7.824 12.646l-.001.012-.006.055-.02.231a25.333 25.333 0 00.03 3.902c.212 2.43.835 5.14 2.314 6.987 1.42 1.776 3.62 2.56 5.646 2.863a15.408 15.408 0 003.303.127 7.78 7.78 0 00.193-.017l.043-.005h.006M6.544 11.046a1.449 1.449 0 011.28 1.6l-1.28-1.6z"
+                  fill-rule="evenodd"
+                />
+                <path
+                  clip-rule="evenodd"
+                  d="M5.692 11.214a1.449 1.449 0 00-.58 1.965l1.272-.692-1.272.692v.002l.002.002.003.006.008.014.023.04a8.703 8.703 0 00.353.551 12.492 12.492 0 005.602 4.416c2.047.807 4.203 1.038 5.803 1.079a21.55 21.55 0 001.986-.04 16.55 16.55 0 00.742-.067l.047-.006.014-.002h.008l-.193-1.436.192 1.435a1.45 1.45 0 00-.383-2.871h-.002l-.027.003a13.35 13.35 0 01-.594.053c-.416.028-1.012.052-1.716.035-1.424-.037-3.205-.244-4.814-.878a9.594 9.594 0 01-4.286-3.373 5.756 5.756 0 01-.221-.345l-.005-.008a1.449 1.449 0 00-1.962-.575z"
+                  fill-rule="evenodd"
+                />
+              </svg>
+              <span
+                class="text iconIncluded"
+              >
+                Batch Changes
+              </span>
+            </span>
+          </a>
+        </li>
+        <li
+          class="item"
+        >
+          <a
+            class="link"
+            href="/insights"
+          >
+            <span
+              class="linkContent"
+            >
+              <svg
+                class="mdi-icon icon-inline icon"
+                fill="currentColor"
+                height="24"
+                viewBox="0 0 24 24"
+                width="24"
+              >
+                <path
+                  d="M3,22V8H7V22H3M10,22V2H14V22H10M17,22V14H21V22H17Z"
+                />
+              </svg>
+              <span
+                class="text iconIncluded"
+              >
+                Insights
+              </span>
+            </span>
+          </a>
+        </li>
+        <li
+          class="item"
+        >
+          <a
+            class="link"
+            href="/extensions"
+          >
+            <span
+              class="linkContent"
+            >
+              <svg
+                class="mdi-icon icon-inline icon"
+                fill="currentColor"
+                height="24"
+                viewBox="0 0 24 24"
+                width="24"
+              >
+                <path
+                  d="M22,13.5C22,15.26 20.7,16.72 19,16.96V20A2,2 0 0,1 17,22H13.2V21.7A2.7,2.7 0 0,0 10.5,19C9,19 7.8,20.21 7.8,21.7V22H4A2,2 0 0,1 2,20V16.2H2.3C3.79,16.2 5,15 5,13.5C5,12 3.79,10.8 2.3,10.8H2V7A2,2 0 0,1 4,5H7.04C7.28,3.3 8.74,2 10.5,2C12.26,2 13.72,3.3 13.96,5H17A2,2 0 0,1 19,7V10.04C20.7,10.28 22,11.74 22,13.5M17,15H18.5A1.5,1.5 0 0,0 20,13.5A1.5,1.5 0 0,0 18.5,12H17V7H12V5.5A1.5,1.5 0 0,0 10.5,4A1.5,1.5 0 0,0 9,5.5V7H4V9.12C5.76,9.8 7,11.5 7,13.5C7,15.5 5.75,17.2 4,17.88V20H6.12C6.8,18.25 8.5,17 10.5,17C12.5,17 14.2,18.25 14.88,20H17V15Z"
+                />
+              </svg>
+              <span
+                class="text iconIncluded"
+              >
+                Extensions
+              </span>
+            </span>
+          </a>
+        </li>
+      </ul>
+    </div>
+    <ul
+      class="actions"
+    >
+      <li
+        class="action"
+      >
+        <a
+          class="global-navbar__link"
+          rel="noreferrer noopener"
+          target="_blank"
+          to="https://about.sourcegraph.com"
+        >
+          About
+        </a>
+      </li>
+      <li
+        class="action"
+      >
+        <span
+          class="test-command-list-button command-list__popover-button btn btn-link"
+          id="command-list-popover-button-test-id"
+          role="button"
+        >
+          <svg
+            class="mdi-icon icon-inline-md"
+            fill="currentColor"
+            height="24"
+            viewBox="0 0 24 24"
+            width="24"
+          >
+            <path
+              d="M20,19V7H4V19H20M20,3A2,2 0 0,1 22,5V19A2,2 0 0,1 20,21H4A2,2 0 0,1 2,19V5C2,3.89 2.9,3 4,3H20M13,17V15H18V17H13M9.58,13L5.57,9H8.4L11.7,12.3C12.09,12.69 12.09,13.33 11.7,13.72L8.42,17H5.59L9.58,13Z"
+            />
+          </svg>
+          <svg
+            class="mdi-icon icon-inline"
+            fill="currentColor"
+            height="24"
+            viewBox="0 0 24 24"
+            width="24"
+          >
+            <path
+              d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
+            />
+          </svg>
+        </span>
+      </li>
+      <li
+        class="action"
+      >
+        <div>
+          <a
+            class="btn btn-sm btn-outline-secondary mr-1"
+            to="/sign-in"
+          >
+            Log in
+          </a>
+          <a
+            class="btn btn-sm btn-outline-secondary global-navbar__sign-up"
+            to="/sign-up"
+          >
+            Sign up
+          </a>
+        </div>
+      </li>
+    </ul>
+  </nav>
+  <div
+    class="d-flex w-100 flex-row px-3 py-2 border-bottom"
+  >
+    <searchnavbaritem
+      availableversioncontexts=""
+      defaultsearchcontextspec=""
+      extensionscontroller="[object Object]"
+      fetchautodefinedsearchcontexts="[object Object]"
+      history="[object Object]"
+      keyboardshortcuts=""
+      location="[object Object]"
+      navbarsearchstate="[object Object]"
+      parsedsearchquery="r:golang/oauth2 test f:travis"
+      patterntype="literal"
+      platformcontext="[object Object]"
+      routes=""
+      selectedsearchcontextspec=""
+      settingscascade="[object Object]"
+      telemetryservice="[object Object]"
+      themepreference="light"
+    />
+  </div>
+</DocumentFragment>
+`;
+
+exports[`GlobalNavbar no-search-input 1`] = `
+<DocumentFragment>
+  <nav
+    aria-label="Main Menu"
+    class="navbar"
+  >
+    <h1
+      class="logo"
+    >
+      <a
+        href="/search"
+      >
+        <brandlogo
+          class="global-navbar__logo"
+          variant="symbol"
+        />
+      </a>
+    </h1>
+    <hr
+      class="divider"
+    />
+    <div
+      class="menu"
+    >
+      <button
+        aria-label="Sections Navigation"
+        class="btn menuButton"
+        type="button"
+      >
+        <svg
+          class="mdi-icon icon-inline"
+          fill="currentColor"
+          height="24"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"
+          />
+        </svg>
+        <svg
+          class="mdi-icon icon-inline"
+          fill="currentColor"
+          height="24"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
+          />
+        </svg>
+      </button>
+      <ul
+        class="list menuClose"
+      >
+        <li
+          class="item"
+        >
+          <a
+            class="link"
+            href="/search"
+          >
+            <span
+              class="linkContent"
+            >
+              <svg
+                class="mdi-icon icon-inline icon"
+                fill="currentColor"
+                height="24"
+                viewBox="0 0 24 24"
+                width="24"
+              >
+                <path
+                  d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z"
+                />
+              </svg>
+              <span
+                class="text iconIncluded"
+              >
+                Code Search
+              </span>
+            </span>
+          </a>
+        </li>
+        <li
+          class="item"
+        >
+          <a
+            class="link"
+            href="/code-monitoring"
+          >
+            <span
+              class="linkContent"
+            >
+              <svg
+                class="icon-inline icon"
+                fill="currentColor"
+                height="20"
+                viewBox="0 0 20 20"
+                width="20"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  clip-rule="evenodd"
+                  d="M18.01 8.01C18.01 8.29 18.23 8.51 18.51 8.51C18.79 8.51 19.01 8.29 19.01 8.01C19.01 4.15 15.87 1 12 1C11.72 1 11.5 1.22 11.5 1.5C11.5 1.78 11.72 2 12 2C15.31 2 18.01 4.7 18.01 8.01ZM16.1801 7.96002C15.9001 7.96002 15.6801 7.74002 15.6801 7.46002C15.6801 5.81002 14.3301 4.46002 12.6801 4.46002C12.4001 4.46002 12.1801 4.24002 12.1801 3.96002C12.1801 3.68002 12.4001 3.46002 12.6801 3.46002C14.8901 3.46002 16.6801 5.25002 16.6801 7.46002C16.6801 7.74002 16.4601 7.96002 16.1801 7.96002ZM4.83996 6.79999L13.34 15.3C12.39 15.88 11.29 16.18 10.15 16.18C8.49996 16.18 6.93996 15.54 5.76996 14.37C4.59996 13.2 3.94996 11.65 3.94996 9.98999C3.94996 8.84999 4.25996 7.74999 4.83996 6.79999ZM4.70996 4.54999C1.70996 7.54999 1.70996 12.43 4.70996 15.43C6.20996 16.93 8.17996 17.68 10.15 17.68C12.12 17.68 14.09 16.93 15.59 15.43L4.70996 4.54999ZM4 16.14C3.7 15.84 3.43 15.52 3.18 15.18L2.89 15.69L1 18.97H4.79H8.59L8.31 18.49C6.69 18.14 5.2 17.34 4 16.14ZM13.85 8.04999C13.85 9.01999 13.07 9.79999 12.1 9.79999C11.13 9.79999 10.35 9.01999 10.35 8.04999C10.35 7.07999 11.13 6.29999 12.1 6.29999C13.07 6.29999 13.85 7.07999 13.85 8.04999Z"
+                  fill-rule="evenodd"
+                />
+              </svg>
+              <span
+                class="text iconIncluded"
+              >
+                Monitoring
+              </span>
+            </span>
+          </a>
+        </li>
+        <li
+          class="item"
+        >
+          <a
+            class="link"
+            href="/batch-changes"
+          >
+            <span
+              class="linkContent"
+            >
+              <svg
+                class="icon-inline icon"
+                fill="currentColor"
+                height="20"
+                viewBox="0 -3 38 38"
+                width="20"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  clip-rule="evenodd"
+                  d="M5.829 6.76a1.932 1.932 0 100-3.863 1.932 1.932 0 000 3.863zm0 2.898a4.829 4.829 0 100-9.658 4.829 4.829 0 000 9.658z"
+                  fill-rule="evenodd"
+                />
+                <path
+                  d="M22.473 1.867H30.2v7.726h-7.726V1.867zM22.473 13.07H30.2v7.727h-7.726V13.07zM22.473 24.274H30.2V32h-7.726v-7.726z"
+                />
+                <path
+                  clip-rule="evenodd"
+                  d="M12.014 5.795c0-.8.648-1.449 1.448-1.449h5.795a1.449 1.449 0 110 2.897h-5.795c-.8 0-1.448-.648-1.448-1.448zM6.544 11.047a1.449 1.449 0 00-1.6 1.28l1.44.16-1.44-.16v.011l-.003.023-.008.08c-.006.066-.015.162-.024.283-.018.242-.04.587-.055 1.013a28.23 28.23 0 00.087 3.36c.226 2.602.915 6.018 2.937 8.546 2.08 2.599 5.13 3.566 7.48 3.918a18.29 18.29 0 003.957.15c.111-.008.2-.017.263-.023l.076-.008.023-.003h.008l.003-.001s.002 0-.178-1.438l.18 1.438a1.449 1.449 0 00-.358-2.875M7.824 12.646l-.001.012-.006.055-.02.231a25.333 25.333 0 00.03 3.902c.212 2.43.835 5.14 2.314 6.987 1.42 1.776 3.62 2.56 5.646 2.863a15.408 15.408 0 003.303.127 7.78 7.78 0 00.193-.017l.043-.005h.006M6.544 11.046a1.449 1.449 0 011.28 1.6l-1.28-1.6z"
+                  fill-rule="evenodd"
+                />
+                <path
+                  clip-rule="evenodd"
+                  d="M5.692 11.214a1.449 1.449 0 00-.58 1.965l1.272-.692-1.272.692v.002l.002.002.003.006.008.014.023.04a8.703 8.703 0 00.353.551 12.492 12.492 0 005.602 4.416c2.047.807 4.203 1.038 5.803 1.079a21.55 21.55 0 001.986-.04 16.55 16.55 0 00.742-.067l.047-.006.014-.002h.008l-.193-1.436.192 1.435a1.45 1.45 0 00-.383-2.871h-.002l-.027.003a13.35 13.35 0 01-.594.053c-.416.028-1.012.052-1.716.035-1.424-.037-3.205-.244-4.814-.878a9.594 9.594 0 01-4.286-3.373 5.756 5.756 0 01-.221-.345l-.005-.008a1.449 1.449 0 00-1.962-.575z"
+                  fill-rule="evenodd"
+                />
+              </svg>
+              <span
+                class="text iconIncluded"
+              >
+                Batch Changes
+              </span>
+            </span>
+          </a>
+        </li>
+        <li
+          class="item"
+        >
+          <a
+            class="link"
+            href="/insights"
+          >
+            <span
+              class="linkContent"
+            >
+              <svg
+                class="mdi-icon icon-inline icon"
+                fill="currentColor"
+                height="24"
+                viewBox="0 0 24 24"
+                width="24"
+              >
+                <path
+                  d="M3,22V8H7V22H3M10,22V2H14V22H10M17,22V14H21V22H17Z"
+                />
+              </svg>
+              <span
+                class="text iconIncluded"
+              >
+                Insights
+              </span>
+            </span>
+          </a>
+        </li>
+        <li
+          class="item"
+        >
+          <a
+            class="link"
+            href="/extensions"
+          >
+            <span
+              class="linkContent"
+            >
+              <svg
+                class="mdi-icon icon-inline icon"
+                fill="currentColor"
+                height="24"
+                viewBox="0 0 24 24"
+                width="24"
+              >
+                <path
+                  d="M22,13.5C22,15.26 20.7,16.72 19,16.96V20A2,2 0 0,1 17,22H13.2V21.7A2.7,2.7 0 0,0 10.5,19C9,19 7.8,20.21 7.8,21.7V22H4A2,2 0 0,1 2,20V16.2H2.3C3.79,16.2 5,15 5,13.5C5,12 3.79,10.8 2.3,10.8H2V7A2,2 0 0,1 4,5H7.04C7.28,3.3 8.74,2 10.5,2C12.26,2 13.72,3.3 13.96,5H17A2,2 0 0,1 19,7V10.04C20.7,10.28 22,11.74 22,13.5M17,15H18.5A1.5,1.5 0 0,0 20,13.5A1.5,1.5 0 0,0 18.5,12H17V7H12V5.5A1.5,1.5 0 0,0 10.5,4A1.5,1.5 0 0,0 9,5.5V7H4V9.12C5.76,9.8 7,11.5 7,13.5C7,15.5 5.75,17.2 4,17.88V20H6.12C6.8,18.25 8.5,17 10.5,17C12.5,17 14.2,18.25 14.88,20H17V15Z"
+                />
+              </svg>
+              <span
+                class="text iconIncluded"
+              >
+                Extensions
+              </span>
+            </span>
+          </a>
+        </li>
+      </ul>
+    </div>
+    <ul
+      class="actions"
+    >
+      <li
+        class="action"
+      >
+        <a
+          class="global-navbar__link"
+          rel="noreferrer noopener"
+          target="_blank"
+          to="https://about.sourcegraph.com"
+        >
+          About
+        </a>
+      </li>
+      <li
+        class="action"
+      >
+        <span
+          class="test-command-list-button command-list__popover-button btn btn-link"
+          id="command-list-popover-button-test-id"
+          role="button"
+        >
+          <svg
+            class="mdi-icon icon-inline-md"
+            fill="currentColor"
+            height="24"
+            viewBox="0 0 24 24"
+            width="24"
+          >
+            <path
+              d="M20,19V7H4V19H20M20,3A2,2 0 0,1 22,5V19A2,2 0 0,1 20,21H4A2,2 0 0,1 2,19V5C2,3.89 2.9,3 4,3H20M13,17V15H18V17H13M9.58,13L5.57,9H8.4L11.7,12.3C12.09,12.69 12.09,13.33 11.7,13.72L8.42,17H5.59L9.58,13Z"
+            />
+          </svg>
+          <svg
+            class="mdi-icon icon-inline"
+            fill="currentColor"
+            height="24"
+            viewBox="0 0 24 24"
+            width="24"
+          >
+            <path
+              d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
+            />
+          </svg>
+        </span>
+      </li>
+      <li
+        class="action"
+      >
+        <div>
+          <a
+            class="btn btn-sm btn-outline-secondary mr-1"
+            to="/sign-in"
+          >
+            Log in
+          </a>
+          <a
+            class="btn btn-sm btn-outline-secondary global-navbar__sign-up"
+            to="/sign-up"
+          >
+            Sign up
+          </a>
+        </div>
+      </li>
+    </ul>
+  </nav>
+  <div
+    class="d-flex w-100 flex-row px-3 py-2 border-bottom"
+  >
+    <searchnavbaritem
+      availableversioncontexts=""
+      defaultsearchcontextspec=""
+      extensionscontroller="[object Object]"
+      fetchautodefinedsearchcontexts="[object Object]"
+      history="[object Object]"
+      keyboardshortcuts=""
+      location="[object Object]"
+      navbarsearchstate="[object Object]"
+      parsedsearchquery="r:golang/oauth2 test f:travis"
+      patterntype="literal"
+      platformcontext="[object Object]"
+      routes=""
+      selectedsearchcontextspec=""
+      settingscascade="[object Object]"
+      telemetryservice="[object Object]"
+      themepreference="light"
+    />
+  </div>
+</DocumentFragment>
+`;
+
+exports[`GlobalNavbar other 1`] = `
+<DocumentFragment>
+  <nav
+    aria-label="Main Menu"
+    class="navbar"
+  >
+    <h1
+      class="logo"
+    >
+      <a
+        href="/search"
+      >
+        <brandlogo
+          class="global-navbar__logo"
+          variant="symbol"
+        />
+      </a>
+    </h1>
+    <hr
+      class="divider"
+    />
+    <div
+      class="menu"
+    >
+      <button
+        aria-label="Sections Navigation"
+        class="btn menuButton"
+        type="button"
+      >
+        <svg
+          class="mdi-icon icon-inline"
+          fill="currentColor"
+          height="24"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"
+          />
+        </svg>
+        <svg
+          class="mdi-icon icon-inline"
+          fill="currentColor"
+          height="24"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
+          />
+        </svg>
+      </button>
+      <ul
+        class="list menuClose"
+      >
+        <li
+          class="item"
+        >
+          <a
+            class="link"
+            href="/search"
+          >
+            <span
+              class="linkContent"
+            >
+              <svg
+                class="mdi-icon icon-inline icon"
+                fill="currentColor"
+                height="24"
+                viewBox="0 0 24 24"
+                width="24"
+              >
+                <path
+                  d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z"
+                />
+              </svg>
+              <span
+                class="text iconIncluded"
+              >
+                Code Search
+              </span>
+            </span>
+          </a>
+        </li>
+        <li
+          class="item"
+        >
+          <a
+            class="link"
+            href="/code-monitoring"
+          >
+            <span
+              class="linkContent"
+            >
+              <svg
+                class="icon-inline icon"
+                fill="currentColor"
+                height="20"
+                viewBox="0 0 20 20"
+                width="20"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  clip-rule="evenodd"
+                  d="M18.01 8.01C18.01 8.29 18.23 8.51 18.51 8.51C18.79 8.51 19.01 8.29 19.01 8.01C19.01 4.15 15.87 1 12 1C11.72 1 11.5 1.22 11.5 1.5C11.5 1.78 11.72 2 12 2C15.31 2 18.01 4.7 18.01 8.01ZM16.1801 7.96002C15.9001 7.96002 15.6801 7.74002 15.6801 7.46002C15.6801 5.81002 14.3301 4.46002 12.6801 4.46002C12.4001 4.46002 12.1801 4.24002 12.1801 3.96002C12.1801 3.68002 12.4001 3.46002 12.6801 3.46002C14.8901 3.46002 16.6801 5.25002 16.6801 7.46002C16.6801 7.74002 16.4601 7.96002 16.1801 7.96002ZM4.83996 6.79999L13.34 15.3C12.39 15.88 11.29 16.18 10.15 16.18C8.49996 16.18 6.93996 15.54 5.76996 14.37C4.59996 13.2 3.94996 11.65 3.94996 9.98999C3.94996 8.84999 4.25996 7.74999 4.83996 6.79999ZM4.70996 4.54999C1.70996 7.54999 1.70996 12.43 4.70996 15.43C6.20996 16.93 8.17996 17.68 10.15 17.68C12.12 17.68 14.09 16.93 15.59 15.43L4.70996 4.54999ZM4 16.14C3.7 15.84 3.43 15.52 3.18 15.18L2.89 15.69L1 18.97H4.79H8.59L8.31 18.49C6.69 18.14 5.2 17.34 4 16.14ZM13.85 8.04999C13.85 9.01999 13.07 9.79999 12.1 9.79999C11.13 9.79999 10.35 9.01999 10.35 8.04999C10.35 7.07999 11.13 6.29999 12.1 6.29999C13.07 6.29999 13.85 7.07999 13.85 8.04999Z"
+                  fill-rule="evenodd"
+                />
+              </svg>
+              <span
+                class="text iconIncluded"
+              >
+                Monitoring
+              </span>
+            </span>
+          </a>
+        </li>
+        <li
+          class="item"
+        >
+          <a
+            class="link"
+            href="/batch-changes"
+          >
+            <span
+              class="linkContent"
+            >
+              <svg
+                class="icon-inline icon"
+                fill="currentColor"
+                height="20"
+                viewBox="0 -3 38 38"
+                width="20"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  clip-rule="evenodd"
+                  d="M5.829 6.76a1.932 1.932 0 100-3.863 1.932 1.932 0 000 3.863zm0 2.898a4.829 4.829 0 100-9.658 4.829 4.829 0 000 9.658z"
+                  fill-rule="evenodd"
+                />
+                <path
+                  d="M22.473 1.867H30.2v7.726h-7.726V1.867zM22.473 13.07H30.2v7.727h-7.726V13.07zM22.473 24.274H30.2V32h-7.726v-7.726z"
+                />
+                <path
+                  clip-rule="evenodd"
+                  d="M12.014 5.795c0-.8.648-1.449 1.448-1.449h5.795a1.449 1.449 0 110 2.897h-5.795c-.8 0-1.448-.648-1.448-1.448zM6.544 11.047a1.449 1.449 0 00-1.6 1.28l1.44.16-1.44-.16v.011l-.003.023-.008.08c-.006.066-.015.162-.024.283-.018.242-.04.587-.055 1.013a28.23 28.23 0 00.087 3.36c.226 2.602.915 6.018 2.937 8.546 2.08 2.599 5.13 3.566 7.48 3.918a18.29 18.29 0 003.957.15c.111-.008.2-.017.263-.023l.076-.008.023-.003h.008l.003-.001s.002 0-.178-1.438l.18 1.438a1.449 1.449 0 00-.358-2.875M7.824 12.646l-.001.012-.006.055-.02.231a25.333 25.333 0 00.03 3.902c.212 2.43.835 5.14 2.314 6.987 1.42 1.776 3.62 2.56 5.646 2.863a15.408 15.408 0 003.303.127 7.78 7.78 0 00.193-.017l.043-.005h.006M6.544 11.046a1.449 1.449 0 011.28 1.6l-1.28-1.6z"
+                  fill-rule="evenodd"
+                />
+                <path
+                  clip-rule="evenodd"
+                  d="M5.692 11.214a1.449 1.449 0 00-.58 1.965l1.272-.692-1.272.692v.002l.002.002.003.006.008.014.023.04a8.703 8.703 0 00.353.551 12.492 12.492 0 005.602 4.416c2.047.807 4.203 1.038 5.803 1.079a21.55 21.55 0 001.986-.04 16.55 16.55 0 00.742-.067l.047-.006.014-.002h.008l-.193-1.436.192 1.435a1.45 1.45 0 00-.383-2.871h-.002l-.027.003a13.35 13.35 0 01-.594.053c-.416.028-1.012.052-1.716.035-1.424-.037-3.205-.244-4.814-.878a9.594 9.594 0 01-4.286-3.373 5.756 5.756 0 01-.221-.345l-.005-.008a1.449 1.449 0 00-1.962-.575z"
+                  fill-rule="evenodd"
+                />
+              </svg>
+              <span
+                class="text iconIncluded"
+              >
+                Batch Changes
+              </span>
+            </span>
+          </a>
+        </li>
+        <li
+          class="item"
+        >
+          <a
+            class="link"
+            href="/insights"
+          >
+            <span
+              class="linkContent"
+            >
+              <svg
+                class="mdi-icon icon-inline icon"
+                fill="currentColor"
+                height="24"
+                viewBox="0 0 24 24"
+                width="24"
+              >
+                <path
+                  d="M3,22V8H7V22H3M10,22V2H14V22H10M17,22V14H21V22H17Z"
+                />
+              </svg>
+              <span
+                class="text iconIncluded"
+              >
+                Insights
+              </span>
+            </span>
+          </a>
+        </li>
+        <li
+          class="item"
+        >
+          <a
+            class="link"
+            href="/extensions"
+          >
+            <span
+              class="linkContent"
+            >
+              <svg
+                class="mdi-icon icon-inline icon"
+                fill="currentColor"
+                height="24"
+                viewBox="0 0 24 24"
+                width="24"
+              >
+                <path
+                  d="M22,13.5C22,15.26 20.7,16.72 19,16.96V20A2,2 0 0,1 17,22H13.2V21.7A2.7,2.7 0 0,0 10.5,19C9,19 7.8,20.21 7.8,21.7V22H4A2,2 0 0,1 2,20V16.2H2.3C3.79,16.2 5,15 5,13.5C5,12 3.79,10.8 2.3,10.8H2V7A2,2 0 0,1 4,5H7.04C7.28,3.3 8.74,2 10.5,2C12.26,2 13.72,3.3 13.96,5H17A2,2 0 0,1 19,7V10.04C20.7,10.28 22,11.74 22,13.5M17,15H18.5A1.5,1.5 0 0,0 20,13.5A1.5,1.5 0 0,0 18.5,12H17V7H12V5.5A1.5,1.5 0 0,0 10.5,4A1.5,1.5 0 0,0 9,5.5V7H4V9.12C5.76,9.8 7,11.5 7,13.5C7,15.5 5.75,17.2 4,17.88V20H6.12C6.8,18.25 8.5,17 10.5,17C12.5,17 14.2,18.25 14.88,20H17V15Z"
+                />
+              </svg>
+              <span
+                class="text iconIncluded"
+              >
+                Extensions
+              </span>
+            </span>
+          </a>
+        </li>
+      </ul>
+    </div>
+    <ul
+      class="actions"
+    >
+      <li
+        class="action"
+      >
+        <a
+          class="global-navbar__link"
+          rel="noreferrer noopener"
+          target="_blank"
+          to="https://about.sourcegraph.com"
+        >
+          About
+        </a>
+      </li>
+      <li
+        class="action"
+      >
+        <span
+          class="test-command-list-button command-list__popover-button btn btn-link"
+          id="command-list-popover-button-test-id"
+          role="button"
+        >
+          <svg
+            class="mdi-icon icon-inline-md"
+            fill="currentColor"
+            height="24"
+            viewBox="0 0 24 24"
+            width="24"
+          >
+            <path
+              d="M20,19V7H4V19H20M20,3A2,2 0 0,1 22,5V19A2,2 0 0,1 20,21H4A2,2 0 0,1 2,19V5C2,3.89 2.9,3 4,3H20M13,17V15H18V17H13M9.58,13L5.57,9H8.4L11.7,12.3C12.09,12.69 12.09,13.33 11.7,13.72L8.42,17H5.59L9.58,13Z"
+            />
+          </svg>
+          <svg
+            class="mdi-icon icon-inline"
+            fill="currentColor"
+            height="24"
+            viewBox="0 0 24 24"
+            width="24"
+          >
+            <path
+              d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
+            />
+          </svg>
+        </span>
+      </li>
+      <li
+        class="action"
+      >
+        <div>
+          <a
+            class="btn btn-sm btn-outline-secondary mr-1"
+            to="/sign-in"
+          >
+            Log in
+          </a>
+          <a
+            class="btn btn-sm btn-outline-secondary global-navbar__sign-up"
+            to="/sign-up"
+          >
+            Sign up
+          </a>
+        </div>
+      </li>
+    </ul>
+  </nav>
+  <div
+    class="d-flex w-100 flex-row px-3 py-2 border-bottom"
+  >
+    <searchnavbaritem
+      availableversioncontexts=""
+      defaultsearchcontextspec=""
+      extensionscontroller="[object Object]"
+      fetchautodefinedsearchcontexts="[object Object]"
+      history="[object Object]"
+      keyboardshortcuts=""
+      location="[object Object]"
+      navbarsearchstate="[object Object]"
+      parsedsearchquery="r:golang/oauth2 test f:travis"
+      patterntype="literal"
+      platformcontext="[object Object]"
+      routes=""
+      selectedsearchcontextspec=""
+      settingscascade="[object Object]"
+      telemetryservice="[object Object]"
+      themepreference="light"
+    />
+  </div>
+</DocumentFragment>
+`;
