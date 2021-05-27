@@ -318,7 +318,7 @@ export const ActionItemsToggle: React.FunctionComponent<ActionItemsToggleProps> 
                     isOpen && 'action-items__toggle-container--open'
                 )}
             >
-                <div className="action-items__divider--vertical  rounded-sm d-flex" />
+                <div className="action-items__divider--vertical rounded-sm d-flex" />
                 <ButtonLink
                     className={classNames(actionItemClassName)}
                     onSelect={toggle}
