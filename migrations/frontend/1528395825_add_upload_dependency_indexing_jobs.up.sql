@@ -15,6 +15,6 @@ CREATE TABLE lsif_dependency_indexing_jobs (
 );
 
 COMMENT ON TABLE lsif_dependency_indexing_jobs IS 'Tracks jobs that scan imports of indexes to schedule auto-index jobs.';
-COMMENT ON COLUMN upload_id.id IS 'The identifier of the triggering upload record.';
+COMMENT ON COLUMN lsif_dependency_indexing_jobs.upload_id IS 'The identifier of the triggering upload record.';
 
 COMMIT;
