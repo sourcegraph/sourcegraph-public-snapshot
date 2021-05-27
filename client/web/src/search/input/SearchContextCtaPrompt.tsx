@@ -17,9 +17,11 @@ export const SearchContextCtaPrompt: React.FunctionComponent<SearchContextCtaPro
     authenticatedUser,
     hasUserAddedExternalServices,
 }) => {
-    const repositoriesVisibility = authenticatedUser?.tags.includes('AllowUserExternalServicePrivate')
-        ? 'repositories'
-        : 'public repositories'
+    const repositoriesVisibility =
+        window.context.externalServicesUserMode === 'all' ||
+        authenticatedUser?.tags.includes('AllowUserExternalServicePrivate')
+            ? 'repositories'
+            : 'public repositories'
 
     const copyText = authenticatedUser
         ? `Add your ${repositoriesVisibility} from GitHub or Gitlab to Sourcegraph and power up your searches with your personal search context.`

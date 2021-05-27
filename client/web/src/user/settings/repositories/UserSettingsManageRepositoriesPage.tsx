@@ -35,6 +35,7 @@ import {
 } from '../../../site-admin/backend'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
+import { externalServiceUserModeFromTags } from '../cloud-ga'
 
 import { CheckboxRepositoryNode } from './RepositoryNode'
 
@@ -62,6 +63,7 @@ interface GitHubConfig {
     token: 'REDACTED'
     url: string
 }
+
 interface GitLabConfig {
     projectQuery?: string[]
     projects?: { name: string }[]
@@ -161,7 +163,8 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     }, [telemetryService])
 
     // if we should tweak UI messaging and copy
-    const ALLOW_PRIVATE_CODE = authenticatedUser.tags.includes('AllowUserExternalServicePrivate')
+    const ALLOW_PRIVATE_CODE = externalServiceUserModeFromTags(authenticatedUser.tags) === 'all'
+
     // if 'sync all' radio button is enabled and users can sync all repos from code hosts
     const ALLOW_SYNC_ALL = authenticatedUser.tags.includes('AllowUserExternalServiceSyncAll')
 

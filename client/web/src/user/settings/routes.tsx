@@ -5,7 +5,7 @@ import { Scalars } from '../../graphql-operations'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 import { lazyComponent } from '../../util/lazyComponent'
 
-import { showPasswordsPage, showAccountSecurityPage, allowUserExternalServicePublic } from './cloud-ga'
+import { showPasswordsPage, showAccountSecurityPage, userExternalServicesEnabled } from './cloud-ga'
 import type { UserAddCodeHostsPageContainerProps } from './UserAddCodeHostsPageContainer'
 import { UserSettingsAreaRoute, UserSettingsAreaRouteContext } from './UserSettingsArea'
 
@@ -95,7 +95,7 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
             />
         ),
         exact: true,
-        condition: allowUserExternalServicePublic,
+        condition: userExternalServicesEnabled,
     },
     {
         path: '/repositories/manage',
@@ -111,7 +111,7 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
             />
         ),
         exact: true,
-        condition: allowUserExternalServicePublic,
+        condition: userExternalServicesEnabled,
     },
     {
         path: '/code-hosts',
@@ -124,7 +124,7 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
             />
         ),
         exact: true,
-        condition: allowUserExternalServicePublic,
+        condition: userExternalServicesEnabled,
     },
     {
         path: '/external-services/:id',
@@ -136,7 +136,7 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
             />
         ),
         exact: true,
-        condition: allowUserExternalServicePublic,
+        condition: userExternalServicesEnabled,
     },
     {
         path: '/product-research',
