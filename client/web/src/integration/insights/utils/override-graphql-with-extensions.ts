@@ -1,6 +1,7 @@
 import { View } from 'sourcegraph';
 
-import { ExtensionsResult, SharedGraphQlOperations } from '@sourcegraph/shared/out/src/graphql-operations';
+import { ExtensionsResult, SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations';
+import { ErrorLike } from '@sourcegraph/shared/src/util/errors';
 
 import { WebGraphQlOperations } from '../../../graphql-operations';
 import { WebIntegrationTestContext } from '../../context';
@@ -47,13 +48,18 @@ const extensionNodes: ExtensionsResult['extensionRegistry']['extensions']['nodes
 
 interface OverrideGraphQLExtensionsProps {
     testContext: WebIntegrationTestContext,
-    overrides: Partial<WebGraphQlOperations & SharedGraphQlOperations>
-    insightExtensionsMocks?: Record<string, View>
+    overrides?: Partial<WebGraphQlOperations & SharedGraphQlOperations>
+    insightExtensionsMocks?: Record<string, View | undefined | ErrorLike>
     userSettings?: Record<any, any>
 }
 
 export function overrideGraphQLExtensions(props: OverrideGraphQLExtensionsProps): void {
-    const { testContext, overrides, insightExtensionsMocks, userSettings = {} } = props
+    const {
+        testContext,
+        overrides = {},
+        insightExtensionsMocks = {},
+        userSettings = {}
+    } = props
 
     testContext.overrideGraphQL({
         ...commonWebGraphQlResults,
