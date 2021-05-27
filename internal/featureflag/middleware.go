@@ -9,7 +9,7 @@ import (
 
 type flagContextKey struct{}
 
-type FeatureFlagStorer interface {
+type FeatureFlagStore interface {
 	GetUserFlags(context.Context, int32) (map[string]bool, error)
 	GetAnonymousUserFlags(context.Context, string) (map[string]bool, error)
 	GetGlobalFeatureFlags(context.Context) (map[string]bool, error)
@@ -17,14 +17,14 @@ type FeatureFlagStorer interface {
 
 // Middleware evaluates the feature flags for the current user and adds the
 // feature flags to the current context.
-func Middleware(ffs FeatureFlagStorer, next http.Handler) http.Handler {
+func Middleware(ffs FeatureFlagStore, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Vary", "Cookie")
 		next.ServeHTTP(w, r.WithContext(contextWithFeatureFlags(ffs, r)))
 	})
 }
 
-func contextWithFeatureFlags(ffs FeatureFlagStorer, r *http.Request) context.Context {
+func contextWithFeatureFlags(ffs FeatureFlagStore, r *http.Request) context.Context {
 	if a := actor.FromContext(r.Context()); a.IsAuthenticated() {
 		flags, err := ffs.GetUserFlags(r.Context(), a.UID)
 		if err == nil {
