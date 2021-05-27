@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import { upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import React from 'react'
+import React, { HTMLAttributes } from 'react'
 
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { asError } from '@sourcegraph/shared/src/util/errors'
@@ -44,7 +44,7 @@ export const ErrorAlert: React.FunctionComponent<{
 
     className?: string
     style?: React.CSSProperties
-}> = ({ error, className, icon = true, prefix, ...rest }) => {
+} & HTMLAttributes<HTMLDivElement>> = ({ error, className, icon = true, prefix, ...rest }) => {
     prefix = prefix?.trim().replace(/:+$/, '')
     return (
         <div className={classNames('alert', 'alert-danger', className)} {...rest}>
