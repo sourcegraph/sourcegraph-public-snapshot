@@ -234,7 +234,7 @@
                 color: var(--hover-overlay-content-color);
 
                 // Required for any first content item to align with the close button on the first row.
-                & > *:first-child {
+                > *:first-child {
                     margin-top: var(--hover-overlay-content-margin-top);
                     margin-bottom: 0.5rem;
                 }
