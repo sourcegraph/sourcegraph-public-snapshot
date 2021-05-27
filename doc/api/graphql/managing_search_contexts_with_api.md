@@ -46,7 +46,7 @@ Query goes here
 
 Conclusion goes here.
 
-#### Known limitations
+## Known limitations
 
 There are a few known limitations with the current implementation:
 
