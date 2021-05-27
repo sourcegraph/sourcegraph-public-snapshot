@@ -40,7 +40,11 @@ export const SearchSidebarSection: React.FunctionComponent<{
                 aria-label={collapsed ? 'Expand' : 'Collapse'}
             >
                 <h5 className="flex-grow-1">{header}</h5>
-                {collapsed ? <ChevronLeftIcon className="icon-inline" /> : <ChevronDownIcon className="icon-inline" />}
+                {collapsed ? (
+                    <ChevronLeftIcon className="icon-inline mr-1" />
+                ) : (
+                    <ChevronDownIcon className="icon-inline mr-1" />
+                )}
             </button>
 
             <Collapse isOpen={!collapsed}>

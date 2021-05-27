@@ -28,6 +28,7 @@ import { LayoutRouteProps } from '../routes'
 import { Settings } from '../schema/settings.schema'
 import { SearchContextProps } from '../search'
 import { ThemePreferenceProps } from '../theme'
+import { userExternalServicesEnabledFromTags } from '../user/settings/cloud-ga'
 import { getReactElements } from '../util/getReactElements'
 
 import { FeedbackPrompt } from './Feedback/FeedbackPrompt'
@@ -161,11 +162,7 @@ export const NavLinks: React.FunctionComponent<Props> = props => {
                 ))}
             {/* show status messages if user is logged in and either: user added code is enabled, user is admin or opted-in with a user tag  */}
             {authenticatedUser &&
-                (window.context?.externalServicesUserModeEnabled ||
-                    authenticatedUser?.siteAdmin ||
-                    authenticatedUser?.tags?.some(
-                        tag => tag === 'AllowUserExternalServicePublic' || tag === 'AllowUserExternalServicePrivate'
-                    )) && (
+                (authenticatedUser.siteAdmin || userExternalServicesEnabledFromTags(authenticatedUser.tags)) && (
                     <li className="nav-item">
                         <StatusMessagesNavItem isSiteAdmin={authenticatedUser.siteAdmin} history={history} />
                     </li>

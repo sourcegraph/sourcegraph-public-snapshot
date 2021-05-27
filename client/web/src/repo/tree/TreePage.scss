@@ -7,6 +7,11 @@
     padding: 1rem 2rem;
     flex: 1;
 
+    .theme-redesign & {
+        background-color: var(--code-bg);
+        margin-bottom: 2rem;
+    }
+
     &__title {
         display: flex;
         align-items: center;

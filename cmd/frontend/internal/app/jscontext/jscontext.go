@@ -79,7 +79,7 @@ type JSContext struct {
 
 	ResetPasswordEnabled bool `json:"resetPasswordEnabled"`
 
-	ExternalServicesUserModeEnabled bool `json:"externalServicesUserModeEnabled"`
+	ExternalServicesUserMode string `json:"externalServicesUserMode"`
 
 	AuthProviders []authProviderInfo `json:"authProviders"`
 
@@ -181,7 +181,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 
 		ResetPasswordEnabled: userpasswd.ResetPasswordEnabled(),
 
-		ExternalServicesUserModeEnabled: conf.ExternalServiceUserMode() != conf.ExternalServiceModeDisabled,
+		ExternalServicesUserMode: conf.ExternalServiceUserMode().String(),
 
 		AllowSignup: conf.AuthAllowSignup(),
 
