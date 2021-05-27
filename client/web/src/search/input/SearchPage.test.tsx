@@ -64,6 +64,8 @@ describe('SearchPage', () => {
         fetchRecentFileViews: () => of({ nodes: [], totalCount: 0, pageInfo: { hasNextPage: false, endCursor: null } }),
         fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
         fetchSearchContexts: mockFetchSearchContexts,
+        hasUserAddedRepositories: false,
+        hasUserAddedExternalServices: false,
     }
 
     it('should not show home panels if on Sourcegraph.com and showEnterpriseHomePanels disabled', () => {

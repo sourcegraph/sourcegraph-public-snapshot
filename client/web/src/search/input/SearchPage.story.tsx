@@ -57,6 +57,8 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     now: () => parseISO('2020-09-16T23:15:01Z'),
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
+    hasUserAddedRepositories: false,
+    hasUserAddedExternalServices: false,
 })
 
 const { add } = storiesOf('web/search/input/SearchPage', module).addParameters({

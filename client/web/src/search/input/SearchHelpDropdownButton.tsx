@@ -1,7 +1,10 @@
+import classNames from 'classnames'
 import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
 import React, { useCallback, useState } from 'react'
 import { DropdownItem, DropdownMenu, DropdownToggle, ButtonDropdown } from 'reactstrap'
+
+import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 /**
  * A dropdown button that shows a menu with reference documentation for Sourcegraph search query
@@ -10,7 +13,9 @@ import { DropdownItem, DropdownMenu, DropdownToggle, ButtonDropdown } from 'reac
 export const SearchHelpDropdownButton: React.FunctionComponent = () => {
     const [isOpen, setIsOpen] = useState(false)
     const toggleIsOpen = useCallback(() => setIsOpen(!isOpen), [isOpen])
+    const [isRedesignEnabled] = useRedesignToggle()
     const documentationUrlPrefix = window.context?.sourcegraphDotComMode ? 'https://docs.sourcegraph.com' : '/help'
+
     return (
         <ButtonDropdown isOpen={isOpen} toggle={toggleIsOpen} className="search-help-dropdown-button d-flex">
             <DropdownToggle
@@ -101,7 +106,6 @@ export const SearchHelpDropdownButton: React.FunctionComponent = () => {
                 </ul>
                 <DropdownItem divider={true} className="mb-0" />
                 <a
-                    // eslint-disable-next-line react/jsx-no-target-blank
                     target="_blank"
                     rel="noopener"
                     href={`${documentationUrlPrefix}/code_search/reference/queries`}
@@ -111,7 +115,12 @@ export const SearchHelpDropdownButton: React.FunctionComponent = () => {
                     <ExternalLinkIcon className="icon-inline small" /> All search keywords
                 </a>
                 {window.context?.sourcegraphDotComMode && (
-                    <div className="p-2 alert alert-info small rounded-0 mb-0 mt-1">
+                    <div
+                        className={classNames(
+                            'alert alert-info small rounded-0 mb-0 mt-1',
+                            !isRedesignEnabled && 'p-2'
+                        )}
+                    >
                         On Sourcegraph.com, use a <code>repo:</code> filter to narrow your search to &le;500
                         repositories.
                     </div>

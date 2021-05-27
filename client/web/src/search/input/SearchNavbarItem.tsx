@@ -8,6 +8,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { PatternTypeProps, CaseSensitivityProps, OnboardingTourProps, SearchContextInputProps } from '..'
+import { AuthenticatedUser } from '../../auth'
 import { VersionContext } from '../../schema/site.schema'
 import { submitSearch, QueryState } from '../helpers'
 
@@ -22,6 +23,7 @@ interface Props
         SearchContextInputProps,
         VersionContextProps,
         OnboardingTourProps {
+    authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
     navbarSearchState: QueryState

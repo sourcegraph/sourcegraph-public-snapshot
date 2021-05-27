@@ -12,7 +12,7 @@ import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { CreateAccessTokenResult, UserAreaUserFields } from '../../graphql-operations'
 import { OnboardingTourProps } from '../../search'
-import { UserRepositoriesUpdateProps } from '../../util'
+import { UserExternalServicesOrRepositoriesUpdateProps } from '../../util'
 import { RouteDescriptor } from '../../util/contributions'
 import { UserAreaRouteContext } from '../area/UserArea'
 
@@ -28,7 +28,7 @@ export interface UserSettingsAreaProps
         ThemeProps,
         TelemetryProps,
         OnboardingTourProps,
-        UserRepositoriesUpdateProps {
+        UserExternalServicesOrRepositoriesUpdateProps {
     authenticatedUser: AuthenticatedUser
     sideBarItems: UserSettingsSidebarItems
     routes: readonly UserSettingsAreaRoute[]

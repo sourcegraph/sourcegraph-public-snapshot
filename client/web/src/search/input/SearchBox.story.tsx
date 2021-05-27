@@ -42,6 +42,9 @@ const defaultProps: SearchBoxProps = {
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
     isSearchOnboardingTourVisible: false,
+    hasUserAddedRepositories: false,
+    authenticatedUser: null,
+    hasUserAddedExternalServices: false,
 }
 
 add(
