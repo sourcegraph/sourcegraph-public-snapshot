@@ -3509,6 +3509,10 @@ type GitCommit implements Node {
         recursive: Boolean = false
     ): GitTree
     """
+    A list of file names in this repository.
+    """
+    fileNames: [String!]!
+    """
     The Git blob in this commit at the given path.
     """
     blob(path: String!): GitBlob

@@ -21,7 +21,6 @@ exports[`GlobalNavbar default 1`] = `
       authenticatedUser={null}
       availableVersionContexts={Array []}
       caseSensitive={false}
-      copyQueryButton={false}
       defaultSearchContextSpec=""
       enableCodeMonitoring={false}
       enableSmartQuery={false}
@@ -45,6 +44,8 @@ exports[`GlobalNavbar default 1`] = `
       }
       fetchSearchContexts={[Function]}
       globbing={false}
+      hasUserAddedExternalServices={false}
+      hasUserAddedRepositories={false}
       history={
         Object {
           "action": "POP",

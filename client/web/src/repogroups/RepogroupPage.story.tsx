@@ -79,7 +79,6 @@ const commonProps = () =>
         patternType: SearchPatternType.literal,
         setPatternType: action('setPatternType'),
         caseSensitive: false,
-        copyQueryButton: false,
         extensionsController: { ...EXTENSIONS_CONTROLLER },
         platformContext: PLATFORM_CONTEXT,
         keyboardShortcuts: [],
@@ -107,6 +106,8 @@ const commonProps = () =>
         showQueryBuilder: false,
         fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
         fetchSearchContexts: mockFetchSearchContexts,
+        hasUserAddedRepositories: false,
+        hasUserAddedExternalServices: false,
     })
 
 add('Refactor Python 2 to 3', () => (

@@ -17,6 +17,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/search"
@@ -225,29 +226,34 @@ milton.png
 	defer ts.Close()
 
 	for i, test := range cases {
-		if test.arg.IsStructuralPat && os.Getenv("CI") == "" {
-			// If we are not on CI, skip the comby-dependent test.
-			continue
-		}
-
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			if test.arg.IsStructuralPat && os.Getenv("CI") == "" {
+				t.Skip("skipping comby test when not on CI")
+			}
+
+			// CI can be very busy, so give lots of time to fetchTimeout.
+			fetchTimeout := 500 * time.Millisecond
+			if deadline, ok := t.Deadline(); ok {
+				fetchTimeout = time.Until(deadline) / 2
+			}
+
 			test.arg.PatternMatchesContent = true
 			req := protocol.Request{
 				Repo:         "foo",
 				URL:          "u",
 				Commit:       "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 				PatternInfo:  test.arg,
-				FetchTimeout: "2000ms",
+				FetchTimeout: fetchTimeout.String(),
 			}
 			m, err := doSearch(ts.URL, &req)
 			if err != nil {
-				t.Fatalf("%v failed: %s", test.arg, err)
+				t.Fatalf("%s failed: %s", test.arg.String(), err)
 			}
 			sort.Sort(sortByPath(m))
 			got := toString(m)
 			err = sanityCheckSorted(m)
 			if err != nil {
-				t.Fatalf("%v malformed response: %s\n%s", test.arg, err, got)
+				t.Fatalf("%s malformed response: %s\n%s", test.arg.String(), err, got)
 			}
 			// We have an extra newline to make expected readable
 			if len(test.want) > 0 {

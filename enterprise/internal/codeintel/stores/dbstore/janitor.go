@@ -135,7 +135,7 @@ func (s *Store) RefreshCommitResolvability(ctx context.Context, repositoryID int
 		sqlf.Sprintf("commit_last_checked_at = %s", now),
 	}
 	if delete {
-		assignmentExpressions = append(assignmentExpressions, sqlf.Sprintf("state = 'DELETED'"))
+		assignmentExpressions = append(assignmentExpressions, sqlf.Sprintf("state = 'deleted'"))
 	}
 	assignmentExpression := sqlf.Join(assignmentExpressions, ", ")
 

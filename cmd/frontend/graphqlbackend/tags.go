@@ -16,7 +16,7 @@ func (r *schemaResolver) SetTag(ctx context.Context, args *struct {
 	Present bool
 }) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only site admins may set tags.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 

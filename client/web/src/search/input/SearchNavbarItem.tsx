@@ -7,13 +7,8 @@ import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import {
-    PatternTypeProps,
-    CaseSensitivityProps,
-    CopyQueryButtonProps,
-    OnboardingTourProps,
-    SearchContextInputProps,
-} from '..'
+import { PatternTypeProps, CaseSensitivityProps, OnboardingTourProps, SearchContextInputProps } from '..'
+import { AuthenticatedUser } from '../../auth'
 import { VersionContext } from '../../schema/site.schema'
 import { submitSearch, QueryState } from '../helpers'
 
@@ -25,10 +20,10 @@ interface Props
         CaseSensitivityProps,
         SettingsCascadeProps,
         ThemeProps,
-        CopyQueryButtonProps,
         SearchContextInputProps,
         VersionContextProps,
         OnboardingTourProps {
+    authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
     navbarSearchState: QueryState

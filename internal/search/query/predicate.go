@@ -51,7 +51,7 @@ func (pr predicateRegistry) Get(field, name string) Predicate {
 }
 
 var (
-	predicateRegexp = regexp.MustCompile(`^(?P<name>[a-z\.]+)\((?P<params>.*)\)$`)
+	predicateRegexp = regexp.MustCompile(`^(?P<name>[a-z\.]+)\((?s:(?P<params>.*))\)$`)
 	nameIndex       = predicateRegexp.SubexpIndex("name")
 	paramsIndex     = predicateRegexp.SubexpIndex("params")
 )
@@ -62,7 +62,7 @@ var (
 func ParseAsPredicate(value string) (name, params string) {
 	match := predicateRegexp.FindStringSubmatch(value)
 	if match == nil {
-		panic("Invariant broken: attempt to parse a predicate value " + value + " that has not been validated")
+		panic("Invariant broken: attempt to parse a predicate value " + value + " which appears to have not been properly validated")
 	}
 	name = match[nameIndex]
 	params = match[paramsIndex]

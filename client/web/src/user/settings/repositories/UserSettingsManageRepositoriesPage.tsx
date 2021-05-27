@@ -24,10 +24,17 @@ import {
     ExternalServicesResult,
     Maybe,
     AffiliatedRepositoriesResult,
+    UserRepositoriesResult,
+    SiteAdminRepositoryFields,
 } from '../../../graphql-operations'
-import { queryUserPublicRepositories, setUserPublicRepositories } from '../../../site-admin/backend'
+import {
+    listUserRepositories,
+    queryUserPublicRepositories,
+    setUserPublicRepositories,
+} from '../../../site-admin/backend'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { UserRepositoriesUpdateProps } from '../../../util'
+import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
+import { externalServiceUserModeFromTags } from '../cloud-ga'
 
 import { CheckboxRepositoryNode } from './RepositoryNode'
 
@@ -37,7 +44,7 @@ interface authenticatedUser {
     tags: string[]
 }
 
-interface Props extends RouteComponentProps, TelemetryProps, UserRepositoriesUpdateProps {
+interface Props extends RouteComponentProps, TelemetryProps, UserExternalServicesOrRepositoriesUpdateProps {
     authenticatedUser: authenticatedUser
     routingPrefix: string
 }
@@ -46,21 +53,28 @@ interface Repo {
     name: string
     codeHost: Maybe<{ kind: ExternalServiceKind; id: string; displayName: string }>
     private: boolean
+    mirrorInfo?: SiteAdminRepositoryFields['mirrorInfo']
 }
 
 interface GitHubConfig {
-    repos: string[]
+    repos?: string[]
+    repositoryQuery?: string[]
     token: 'REDACTED'
     url: string
 }
+
 interface GitLabConfig {
-    projectQuery: string[]
-    projects: { name: string }[]
+    projectQuery?: string[]
+    projects?: { name: string }[]
     token: 'REDACTED'
     url: string
 }
 
 const PER_PAGE = 25
+
+// project queries that are used when user syncs all repos from a code host
+const GITLAB_SYNC_ALL_PROJECT_QUERY = 'projects?membership=true&archived=no'
+const GITHUB_SYNC_ALL_PROJECT_QUERY = 'affiliated'
 
 // initial state constants
 const emptyRepos: Repo[] = []
@@ -137,7 +151,8 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     }, [telemetryService])
 
     // if we should tweak UI messaging and copy
-    const ALLOW_PRIVATE_CODE = authenticatedUser.tags.includes('AllowUserExternalServicePrivate')
+    const ALLOW_PRIVATE_CODE = externalServiceUserModeFromTags(authenticatedUser.tags) === 'all'
+
     // if 'sync all' radio button is enabled and users can sync all repos from code hosts
     const ALLOW_SYNC_ALL = authenticatedUser.tags.includes('AllowUserExternalServiceSyncAll')
 
@@ -196,6 +211,16 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         [authenticatedUser.id]
     )
 
+    const fetchSelectedRepositories = useCallback(
+        async (): Promise<NonNullable<UserRepositoriesResult['node']>['repositories']['nodes']> =>
+            listUserRepositories({ id: authenticatedUser.id, first: 2000 })
+                .toPromise()
+                .then(({ nodes }) => nodes),
+        [authenticatedUser.id]
+    )
+
+    const getRepoServiceAndName = (repo: Repo): string => `${repo.codeHost?.kind || 'unknown'}/${repo.name}`
+
     const fetchServicesAndAffiliatedRepos = useCallback(async (): Promise<void> => {
         const externalServices = await fetchExternalServices()
 
@@ -215,11 +240,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             hosts: externalServices,
         })
 
-        // list of the repos user selected
-        const selectedAffiliatedRepos: {
-            name: string
-            kind: ExternalServiceKind
-        }[] = []
+        const codeHostsHaveSyncAllQuery = []
 
         // if external services may return code hosts with errors or warnings -
         // we can't safely continue
@@ -247,23 +268,23 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             switch (host.kind) {
                 case ExternalServiceKind.GITLAB: {
                     const gitLabCfg = cfg as GitLabConfig
-                    if (gitLabCfg.projects !== undefined) {
-                        gitLabCfg.projects.map(project => {
-                            selectedAffiliatedRepos.push({ name: project.name, kind: ExternalServiceKind.GITLAB })
-                        })
+
+                    if (Array.isArray(gitLabCfg.projectQuery)) {
+                        codeHostsHaveSyncAllQuery.push(gitLabCfg.projectQuery.includes(GITLAB_SYNC_ALL_PROJECT_QUERY))
                     }
+
                     break
                 }
 
                 case ExternalServiceKind.GITHUB: {
                     const gitHubCfg = cfg as GitHubConfig
-                    if (gitHubCfg.repos !== undefined) {
-                        const selected = gitHubCfg.repos.map(repoName => ({
-                            name: repoName,
-                            kind: ExternalServiceKind.GITHUB,
-                        }))
-                        selectedAffiliatedRepos.push(...selected)
+
+                    if (Array.isArray(gitHubCfg.repositoryQuery)) {
+                        codeHostsHaveSyncAllQuery.push(
+                            gitHubCfg.repositoryQuery.includes(GITHUB_SYNC_ALL_PROJECT_QUERY)
+                        )
                     }
+
                     break
                 }
             }
@@ -273,22 +294,41 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             setAffiliateRepoProblems(codeHostProblems)
         }
 
-        const affiliatedRepos = await fetchAffiliatedRepos()
+        const [affiliatedRepos, selectedRepos] = await Promise.all([
+            fetchAffiliatedRepos(),
+            fetchSelectedRepositories(),
+        ])
 
-        const selectedRepos = new Map<string, Repo>()
+        const selectedAffiliatedRepos = new Map<string, Repo>()
 
-        // create a map of user selected affiliated repos
-        for (const { name, kind } of selectedAffiliatedRepos) {
-            const affiliatedRepo = affiliatedRepos.find(repo => repo.name === name && repo.codeHost?.kind === kind)
-            if (affiliatedRepo) {
-                selectedRepos.set(`${kind}/${name}`, affiliatedRepo)
+        const affiliatedReposWithMirrorInfo = affiliatedRepos.map(affiliatedRepo => {
+            const foundInSelected = selectedRepos.find(
+                ({ name, externalRepository: { serviceType: selectedRepoServiceType } }) => {
+                    // selected repo names formatted: code-host/owner/repository
+                    const selectedRepoName = name.slice(name.indexOf('/') + 1)
+
+                    return (
+                        selectedRepoName === affiliatedRepo.name &&
+                        selectedRepoServiceType === affiliatedRepo.codeHost?.kind.toLocaleLowerCase()
+                    )
+                }
+            )
+
+            if (foundInSelected) {
+                // save off only selected repos
+                selectedAffiliatedRepos.set(getRepoServiceAndName(affiliatedRepo), affiliatedRepo)
+
+                // add mirror info object where it exists - will be used for filters
+                return { ...affiliatedRepo, mirrorInfo: foundInSelected.mirrorInfo }
             }
-        }
+
+            return affiliatedRepo
+        })
 
         // sort affiliated repos with already selected repos at the top
-        affiliatedRepos.sort((repoA, repoB): number => {
-            const isRepoASelected = selectedRepos.has(repoA.name)
-            const isRepoBSelected = selectedRepos.has(repoB.name)
+        affiliatedReposWithMirrorInfo.sort((repoA, repoB): number => {
+            const isRepoASelected = selectedAffiliatedRepos.has(getRepoServiceAndName(repoA))
+            const isRepoBSelected = selectedAffiliatedRepos.has(getRepoServiceAndName(repoB))
 
             if (!isRepoASelected && isRepoBSelected) {
                 return 1
@@ -302,36 +342,39 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         })
 
         // safe off initial selection state
-        setOnloadSelectedRepos(previousValue => [...previousValue, ...selectedRepos.keys()])
+        setOnloadSelectedRepos(previousValue => [...previousValue, ...selectedAffiliatedRepos.keys()])
 
         /**
-         * 1. if the number of all affiliated repos is equal to the number
-         * of the repos in all of the code hosts - set radio to 'all'
-         * 2. if some repos were selected - set radio to 'selected'
-         * 3. no repos selected - empty state
+         * 1. if every code host has a project query to sync all repos or the
+         * number of affiliated repos equals to the number of selected repos -
+         * set radio to 'all'
+         * 2. if only some repos were selected - set radio to 'selected'
+         * 3. if no repos selected - empty state
          */
+
         const radioSelectOption =
             ALLOW_SYNC_ALL &&
-            selectedAffiliatedRepos.length !== 0 &&
-            selectedAffiliatedRepos.length === affiliatedRepos.length
+            ((externalServices.length === codeHostsHaveSyncAllQuery.length &&
+                codeHostsHaveSyncAllQuery.every(Boolean)) ||
+                affiliatedReposWithMirrorInfo.length === selectedAffiliatedRepos.size)
                 ? 'all'
-                : selectedAffiliatedRepos.length > 0
+                : selectedAffiliatedRepos.size > 0
                 ? 'selected'
                 : ''
 
         // set sorted repos and mark as loaded
         setRepoState(previousRepoState => ({
             ...previousRepoState,
-            repos: affiliatedRepos,
+            repos: affiliatedReposWithMirrorInfo,
             loaded: true,
         }))
 
         setSelectionState({
-            repos: selectedRepos,
+            repos: selectedAffiliatedRepos,
             radio: radioSelectOption,
             loaded: true,
         })
-    }, [fetchExternalServices, fetchAffiliatedRepos, ALLOW_SYNC_ALL])
+    }, [fetchExternalServices, fetchAffiliatedRepos, fetchSelectedRepositories, ALLOW_SYNC_ALL])
 
     useEffect(() => {
         fetchServicesAndAffiliatedRepos().catch(error => {
@@ -464,7 +507,6 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             codeHosts.hosts,
             selectionState.radio,
             selectionState.repos,
-            // onUserRepositoriesUpdate,
             history,
             routingPrefix,
         ]
@@ -578,7 +620,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
     const onRepoClicked = useCallback(
         (repo: Repo) => (): void => {
-            const clickedRepo = `${repo.codeHost?.kind || 'unknown'}/${repo.name}`
+            const clickedRepo = getRepoServiceAndName(repo)
             const newMap = new Map(selectionState.repos)
             if (newMap.has(clickedRepo)) {
                 newMap.delete(clickedRepo)
@@ -600,7 +642,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
         if (selectionState.repos.size !== filteredRepos.length) {
             for (const repo of filteredRepos) {
-                newMap.set(`${repo.codeHost?.kind || 'unknown'}/${repo.name}`, repo)
+                newMap.set(getRepoServiceAndName(repo), repo)
             }
         }
         setSelectionState({
@@ -642,8 +684,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     return
                 }
 
-                const serviceType = `${repo.codeHost?.kind || 'unknown'}`
-                const serviceAndRepoName = `${serviceType}/${repo.name}`
+                const serviceAndRepoName = getRepoServiceAndName(repo)
 
                 return (
                     <CheckboxRepositoryNode
@@ -651,7 +692,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                         key={serviceAndRepoName}
                         onClick={onRepoClicked(repo)}
                         checked={selectionState.repos.has(serviceAndRepoName)}
-                        serviceType={serviceType}
+                        serviceType={repo.codeHost?.kind || 'unknown'}
                         isPrivate={repo.private}
                     />
                 )

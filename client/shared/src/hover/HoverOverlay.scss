@@ -16,6 +16,10 @@
         margin-left: 0.25rem;
     }
 
+    &__badge {
+        text-transform: uppercase;
+    }
+
     &__icon {
         float: left;
         margin-right: 0.25rem;
@@ -107,6 +111,10 @@
         p:last-child {
             display: inline;
         }
+    }
+
+    &__alert-icon {
+        margin-right: 0.25rem;
     }
 
     &__alert-actions {

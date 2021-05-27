@@ -3,13 +3,14 @@
 .theme-redesign {
     .alert-info {
         --alert-border-color: var(--info);
-        --alert-icon-color: var(--info-3);
 
         @include theme-light-rules {
+            --alert-icon-color: var(--info-3);
             --alert-icon-background-color: var(--info-4);
         }
 
         @include theme-dark-rules {
+            --alert-icon-color: var(--info);
             --alert-icon-background-color: var(--info-3);
         }
     }
@@ -17,7 +18,14 @@
     .alert-primary {
         --alert-border-color: var(--primary);
         --alert-icon-background-color: var(--primary-4);
-        --alert-icon-color: var(--primary-3);
+
+        @include theme-light-rules {
+            --alert-icon-color: var(--primary-3);
+        }
+
+        @include theme-dark-rules {
+            --alert-icon-color: var(--primary);
+        }
     }
 
     .alert-secondary {
@@ -49,7 +57,14 @@
     .alert-warning {
         --alert-border-color: var(--warning);
         --alert-icon-background-color: var(--warning-4);
-        --alert-icon-color: var(--warning-3);
+
+        @include theme-light-rules {
+            --alert-icon-color: var(--warning-3);
+        }
+
+        @include theme-dark-rules {
+            --alert-icon-color: var(--warning);
+        }
 
         &::after {
             // Icon: mdi-react/Alert
@@ -62,7 +77,14 @@
     .alert-danger {
         --alert-border-color: var(--danger);
         --alert-icon-background-color: var(--danger-4);
-        --alert-icon-color: var(--danger-3);
+
+        @include theme-light-rules {
+            --alert-icon-color: var(--danger-3);
+        }
+
+        @include theme-dark-rules {
+            --alert-icon-color: var(--danger);
+        }
 
         &::after {
             // Icon: mdi-react/AlertCircle
@@ -75,7 +97,14 @@
     .alert-success {
         --alert-border-color: var(--success);
         --alert-icon-background-color: var(--success-4);
-        --alert-icon-color: var(--success-3);
+
+        @include theme-light-rules {
+            --alert-icon-color: var(--success-3);
+        }
+
+        @include theme-dark-rules {
+            --alert-icon-color: var(--success);
+        }
 
         &::after {
             // Icon: mdi-react/CheckCircle
@@ -88,7 +117,14 @@
     .alert-merged {
         --alert-border-color: var(--merged);
         --alert-icon-background-color: var(--merged-4);
-        --alert-icon-color: var(--merged-3);
+
+        @include theme-light-rules {
+            --alert-icon-color: var(--merged-3);
+        }
+
+        @include theme-dark-rules {
+            --alert-icon-color: var(--merged);
+        }
 
         &::after {
             // Icon: mdi-react/SourceMerge
@@ -137,7 +173,7 @@
 
         &::after {
             mask-repeat: no-repeat;
-            mask-size: 1.25rem;
+            mask-size: 1rem;
             mask-position: 50% 50%;
             // Applied as a fill color for SVG icon because of the mask-image.
             background-color: var(--alert-icon-color);

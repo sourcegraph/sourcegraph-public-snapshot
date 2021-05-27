@@ -40,7 +40,6 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     hideNavLinks: true, // used because reactstrap Popover is incompatible with react-test-renderer
     isExtensionAlertAnimating: false,
     showSearchBox: true,
-    copyQueryButton: false,
     versionContext: undefined,
     setVersionContext: () => Promise.resolve(),
     availableVersionContexts: [],
@@ -57,6 +56,8 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     routes: [],
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
+    hasUserAddedRepositories: false,
+    hasUserAddedExternalServices: false,
 }
 
 describe('GlobalNavbar', () => {

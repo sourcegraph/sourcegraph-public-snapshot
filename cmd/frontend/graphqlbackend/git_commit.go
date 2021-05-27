@@ -232,6 +232,10 @@ func (r *GitCommitResolver) File(ctx context.Context, args *struct {
 	return r.Blob(ctx, args)
 }
 
+func (r *GitCommitResolver) FileNames(ctx context.Context) ([]string, error) {
+	return git.LsFiles(ctx, r.gitRepo, api.CommitID(r.oid))
+}
+
 func (r *GitCommitResolver) Languages(ctx context.Context) ([]string, error) {
 	repo, err := r.repoResolver.repo(ctx)
 	if err != nil {

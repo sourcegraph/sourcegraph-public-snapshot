@@ -61,7 +61,7 @@
           }
         },
         "copyQueryButton": {
-          "description": "Enables displaying the copy query button in the search bar when hovering over the global navigation bar.",
+          "description": "DEPRECATED: This feature is now permanently enabled. Enables displaying the copy query button in the search bar when hovering over the global navigation bar.",
           "type": "boolean",
           "default": false,
           "!go": {
@@ -152,6 +152,14 @@
           "description": "Enables fuzzy finder with keyboard shortcut `t`.",
           "type": "boolean",
           "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "fuzzyFinderCaseInsensitiveFileCountThreshold": {
+          "description": "The maximum number of files a repo can have to use case-insensitive fuzzy finding",
+          "type": "number",
+          "default": 25000,
           "!go": {
             "pointer": true
           }

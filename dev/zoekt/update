@@ -4,6 +4,9 @@ set -e
 
 export GO111MODULE=on
 
+# Disable proxy since it can cache the value of master
+export GOPROXY="${GOPROXY:-direct}"
+
 # Can specify a SHA pushed to our fork instead of master
 version="${1:-master}"
 

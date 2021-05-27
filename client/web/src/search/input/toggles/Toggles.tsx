@@ -11,7 +11,7 @@ import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
-import { PatternTypeProps, CaseSensitivityProps, CopyQueryButtonProps, SearchContextProps } from '../..'
+import { PatternTypeProps, CaseSensitivityProps, SearchContextProps } from '../..'
 import { SearchPatternType } from '../../../graphql-operations'
 import { KEYBOARD_SHORTCUT_COPY_FULL_QUERY } from '../../../keyboardShortcuts/keyboardShortcuts'
 import { isMacPlatform } from '../../../util'
@@ -24,7 +24,6 @@ export interface TogglesProps
     extends PatternTypeProps,
         CaseSensitivityProps,
         SettingsCascadeProps,
-        CopyQueryButtonProps,
         VersionContextProps,
         Pick<SearchContextProps, 'showSearchContext' | 'selectedSearchContextSpec'> {
     navbarSearchQuery: string
@@ -62,7 +61,6 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
         setCaseSensitivity,
         settingsCascade,
         className,
-        copyQueryButton,
         selectedSearchContextSpec,
     } = props
 
@@ -199,17 +197,13 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
                     ]}
                 />
             )}
-            {copyQueryButton && (
-                <>
-                    <div className="toggle-container__separator" />
-                    <CopyQueryButton
-                        fullQuery={fullQuery}
-                        keyboardShortcutForFullCopy={KEYBOARD_SHORTCUT_COPY_FULL_QUERY}
-                        isMacPlatform={isMacPlatform}
-                        className="toggle-container__toggle toggle-container__copy-query-button"
-                    />
-                </>
-            )}
+            <div className="toggle-container__separator" />
+            <CopyQueryButton
+                fullQuery={fullQuery}
+                keyboardShortcutForFullCopy={KEYBOARD_SHORTCUT_COPY_FULL_QUERY}
+                isMacPlatform={isMacPlatform}
+                className="toggle-container__toggle toggle-container__copy-query-button"
+            />
         </div>
     )
 }

@@ -32,6 +32,7 @@ import {
 
 import { authenticatedUser, AuthenticatedUser } from './auth'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { queryExternalServices } from './components/externalServices/backend'
 import { FeedbackText } from './components/FeedbackText'
 import { HeroPage } from './components/HeroPage'
 import { RouterLinkOrAnchor } from './components/RouterLinkOrAnchor'
@@ -155,11 +156,6 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      */
     searchCaseSensitivity: boolean
 
-    /**
-     * Whether to display the copy query button.
-     */
-    copyQueryButton: boolean
-
     /*
      * The version context the instance is in. If undefined, it means no version context is selected.
      */
@@ -187,6 +183,7 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     defaultSearchContextSpec: string
     hasUserDefinedContexts: boolean
     hasUserAddedRepositories: boolean
+    hasUserAddedExternalServices: boolean
 
     /**
      * Whether globbing is enabled for filters.
@@ -295,7 +292,6 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             parsedSearchQuery: parsedSearchURL.query || '',
             searchPatternType: urlPatternType,
             searchCaseSensitivity: urlCase,
-            copyQueryButton: false,
             versionContext: resolvedVersionContext,
             availableVersionContexts,
             previousVersionContext,
@@ -306,6 +302,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             defaultSearchContextSpec: 'global', // global is default for now, user will be able to change this at some point
             hasUserAddedRepositories: false,
             hasUserDefinedContexts: false,
+            hasUserAddedExternalServices: false,
             showEnterpriseHomePanels: false,
             globbing: false,
             showMultilineSearchConsole: false,
@@ -374,14 +371,22 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             combineLatest([this.userRepositoriesUpdates, authenticatedUser])
                 .pipe(
                     switchMap(([, authenticatedUser]) =>
-                        authenticatedUser ? listUserRepositories({ id: authenticatedUser.id, first: 1 }) : of(null)
+                        authenticatedUser
+                            ? combineLatest([
+                                  listUserRepositories({ id: authenticatedUser.id, first: 1 }),
+                                  queryExternalServices({ namespace: authenticatedUser.id, first: 1, after: null }),
+                              ])
+                            : of(null)
                     ),
                     catchError(error => [asError(error)])
                 )
                 .subscribe(result => {
-                    if (!isErrorLike(result)) {
-                        const hasUserAddedRepositories = result !== null && result.nodes.length > 0
-                        this.setState({ hasUserAddedRepositories })
+                    if (!isErrorLike(result) && result !== null) {
+                        const [userRepositoriesResult, externalServicesResult] = result
+                        this.setState({
+                            hasUserAddedRepositories: userRepositoriesResult.nodes.length > 0,
+                            hasUserAddedExternalServices: externalServicesResult.nodes.length > 0,
+                        })
                     }
                 })
         )
@@ -524,7 +529,6 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     setVersionContext={this.setVersionContext}
                                     availableVersionContexts={this.state.availableVersionContexts}
                                     previousVersionContext={this.state.previousVersionContext}
-                                    copyQueryButton={this.state.copyQueryButton}
                                     // Extensions
                                     platformContext={this.platformContext}
                                     extensionsController={this.extensionsController}
@@ -533,6 +537,8 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     showRepogroupHomepage={this.state.showRepogroupHomepage}
                                     showOnboardingTour={this.state.showOnboardingTour}
                                     showSearchContext={this.canShowSearchContext()}
+                                    hasUserAddedRepositories={this.state.hasUserAddedRepositories}
+                                    hasUserAddedExternalServices={this.state.hasUserAddedExternalServices}
                                     showSearchContextManagement={this.state.showSearchContextManagement}
                                     selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
                                     setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}
@@ -555,7 +561,9 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     fetchRecentSearches={fetchRecentSearches}
                                     fetchRecentFileViews={fetchRecentFileViews}
                                     streamSearch={aggregateStreamingSearch}
-                                    onUserRepositoriesUpdate={this.onUserRepositoriesUpdate}
+                                    onUserExternalServicesOrRepositoriesUpdate={
+                                        this.onUserExternalServicesOrRepositoriesUpdate
+                                    }
                                 />
                             )}
                         />
@@ -612,12 +620,21 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         await extensionHostAPI.setVersionContext(resolvedVersionContext)
     }
 
-    private onUserRepositoriesUpdate = (userRepoCount: number): void => {
-        this.setState({ hasUserAddedRepositories: userRepoCount > 0 })
+    private onUserExternalServicesOrRepositoriesUpdate = (
+        externalServicesCount: number,
+        userRepoCount: number
+    ): void => {
+        this.setState({
+            hasUserAddedExternalServices: externalServicesCount > 0,
+            hasUserAddedRepositories: userRepoCount > 0,
+        })
     }
 
     private canShowSearchContext = (): boolean =>
-        this.state.showSearchContext && (this.state.hasUserAddedRepositories || this.state.hasUserDefinedContexts)
+        this.state.showSearchContext &&
+        (this.state.hasUserAddedRepositories ||
+            this.state.hasUserDefinedContexts ||
+            window.context.sourcegraphDotComMode)
 
     private getSelectedSearchContextSpec = (): string | undefined =>
         this.canShowSearchContext() ? this.state.selectedSearchContextSpec : undefined

@@ -12,14 +12,14 @@ import { PageTitle } from '../../../components/PageTitle'
 import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
 import { SourcegraphContext } from '../../../jscontext'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { UserRepositoriesUpdateProps } from '../../../util'
+import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
 
 import { CodeHostItem } from './CodeHostItem'
 
 type AuthProvider = SourcegraphContext['authProviders'][0]
 type AuthProvidersByKind = Partial<Record<ExternalServiceKind, AuthProvider>>
 
-export interface UserAddCodeHostsPageProps extends UserRepositoriesUpdateProps {
+export interface UserAddCodeHostsPageProps extends UserExternalServicesOrRepositoriesUpdateProps {
     user: { id: Scalars['ID']; tags: string[] }
     codeHostExternalServices: Record<string, AddExternalServiceOptions>
     routingPrefix: string
@@ -59,10 +59,9 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     codeHostExternalServices,
     routingPrefix,
     context,
-    onUserRepositoriesUpdate,
+    onUserExternalServicesOrRepositoriesUpdate,
 }) => {
     const [statusOrError, setStatusOrError] = useState<Status>()
-    const [oauthRequestFor, setOauthRequestFor] = useState<ExternalServiceKind>()
 
     const fetchExternalServices = useCallback(async () => {
         setStatusOrError('loading')
@@ -82,8 +81,8 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         setStatusOrError(services)
 
         const repoCount = fetchedServices.reduce((sum, codeHost) => sum + codeHost.repoCount, 0)
-        onUserRepositoriesUpdate(repoCount)
-    }, [user.id, onUserRepositoriesUpdate])
+        onUserExternalServicesOrRepositoriesUpdate(fetchedServices.length, repoCount)
+    }, [user.id, onUserExternalServicesOrRepositoriesUpdate])
 
     useEffect(() => {
         eventLogger.logViewEvent('UserSettingsCodeHostConnections')
@@ -176,6 +175,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
             const authProvider = authProvidersByKind[kind]
 
             if (authProvider) {
+                eventLogger.log('UserAttemptConnectCodeHost', { kind })
                 window.location.assign(
                     `${authProvider.authenticationURL as string}&redirect=${
                         window.location.href
@@ -185,39 +185,6 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         },
         [authProvidersByKind]
     )
-
-    const codeHostOAuthButtons = isServicesByKind(statusOrError)
-        ? Object.values(codeHostExternalServices).reduce(
-              (accumulator: JSX.Element[], { kind, defaultDisplayName, icon: Icon }) => {
-                  if (!statusOrError[kind] && authProvidersByKind[kind]) {
-                      accumulator.push(
-                          <button
-                              key={kind}
-                              type="button"
-                              onClick={() => {
-                                  eventLogger.log('UserAttemptConnectCodeHost', { kind })
-                                  setOauthRequestFor(kind)
-                                  ifNotNavigated(() => {
-                                      setOauthRequestFor(undefined)
-                                  })
-                                  navigateToAuthProvider(kind)
-                              }}
-                              className={`btn mr-2 ${
-                                  kind === 'GITLAB' ? 'user-code-hosts-page__btn--gitlab' : 'btn-dark'
-                              }`}
-                          >
-                              {/* will use dark theme for the spinner because buttons are dark */}
-                              {oauthRequestFor === kind && <LoadingSpinner className="icon-inline mr-2 theme-dark" />}
-                              <Icon className="icon-inline " /> {defaultDisplayName}
-                          </button>
-                      )
-                  }
-
-                  return accumulator
-              },
-              []
-          )
-        : []
 
     return (
         <div className="user-code-hosts-page">
@@ -245,22 +212,6 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 
             {codeHostExternalServices && isServicesByKind(statusOrError) ? (
                 <>
-                    {codeHostOAuthButtons.length > 0 && (
-                        <div className="border rounded p-4 mb-4">
-                            <b>Connect with code host</b>
-                            <div className="container">
-                                <div className="row pt-3">{codeHostOAuthButtons}</div>
-                                <div className="row d-none">
-                                    <span className="text-muted">
-                                        Learn more about{' '}
-                                        <Link className="text-primary" to="/will-be-added-soon">
-                                            code host connections
-                                        </Link>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    )}
                     <ul className="list-group">
                         {Object.entries(codeHostExternalServices).map(([id, { kind, defaultDisplayName, icon }]) =>
                             authProvidersByKind[kind] ? (

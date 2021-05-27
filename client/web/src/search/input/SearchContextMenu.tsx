@@ -53,7 +53,13 @@ export const SearchContextMenuItem: React.FunctionComponent<{
 }
 
 export interface SearchContextMenuProps
-    extends Omit<SearchContextInputProps, 'showSearchContext' | 'setSelectedSearchContextSpec'> {
+    extends Omit<
+        SearchContextInputProps,
+        | 'showSearchContext'
+        | 'setSelectedSearchContextSpec'
+        | 'hasUserAddedRepositories'
+        | 'hasUserAddedExternalServices'
+    > {
     closeMenu: () => void
     selectSearchContextSpec: (spec: string) => void
 }

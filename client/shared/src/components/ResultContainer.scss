@@ -8,6 +8,10 @@
     .theme-redesign & {
         border: none;
         margin-right: 1rem;
+
+        &:not(:last-of-type) {
+            margin-bottom: 0.25rem;
+        }
     }
 
     &__header {
