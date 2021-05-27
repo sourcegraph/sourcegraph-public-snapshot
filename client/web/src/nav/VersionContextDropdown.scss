@@ -23,8 +23,11 @@
         border-radius: 0;
 
         .theme-redesign & {
+            padding: 0.5rem 0.75rem;
+            border: none;
+
             @media (--xs-breakpoint-down) {
-                padding: 0 0.25rem;
+                padding: 0.2rem 0.25rem;
                 margin-right: 0.5rem;
                 border-radius: var(--border-radius);
             }
