@@ -37,6 +37,7 @@ type operations struct {
 	hasRepository                          *observation.Operation
 	indexableRepositories                  *observation.Operation
 	indexQueueSize                         *observation.Operation
+	insertDependencyIndexingJob            *observation.Operation
 	insertIndex                            *observation.Operation
 	insertUpload                           *observation.Operation
 	isQueued                               *observation.Operation
@@ -125,6 +126,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		hasRepository:                          op("HasRepository"),
 		indexableRepositories:                  op("IndexableRepositories"),
 		indexQueueSize:                         op("IndexQueueSize"),
+		insertDependencyIndexingJob:            op("InsertDependencyIndexingJob"),
 		insertIndex:                            op("InsertIndex"),
 		insertUpload:                           op("InsertUpload"),
 		isQueued:                               op("IsQueued"),
