@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import React from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
@@ -42,11 +43,9 @@ export const SearchContextCtaPrompt: React.FunctionComponent<SearchContextCtaPro
                 <span>Search the code you care about</span>
             </div>
             <div className="text-muted">{copyText}</div>
-            <div className={styles.searchContextCtaPromptButton}>
-                <Link className="btn btn-primary" to={linkTo}>
-                    {buttonText}
-                </Link>
-            </div>
+            <Link className={classNames('btn btn-primary', styles.searchContextCtaPromptButton)} to={linkTo}>
+                {buttonText}
+            </Link>
         </div>
     )
 }

@@ -24,8 +24,6 @@ export interface SearchContextDropdownProps
         VersionContextProps {
     isSourcegraphDotCom: boolean
     authenticatedUser: AuthenticatedUser | null
-    hasUserAddedRepositories: boolean
-    hasUserAddedExternalServices: boolean
     submitSearch: (args: SubmitSearchParameters) => void
     submitSearchOnSearchContextChange?: boolean
     query: string

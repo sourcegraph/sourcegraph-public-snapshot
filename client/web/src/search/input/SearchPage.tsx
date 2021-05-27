@@ -59,8 +59,6 @@ export interface SearchPageProps
         HomePanelsProps,
         ShowQueryBuilderProps {
     authenticatedUser: AuthenticatedUser | null
-    hasUserAddedRepositories: boolean
-    hasUserAddedExternalServices: boolean
     location: H.Location
     history: H.History
     isSourcegraphDotCom: boolean

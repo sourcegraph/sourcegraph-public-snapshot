@@ -21,8 +21,6 @@ export interface SearchBoxProps
         SearchContextInputProps,
         CopyQueryButtonProps {
     authenticatedUser: AuthenticatedUser | null
-    hasUserAddedRepositories: boolean
-    hasUserAddedExternalServices: boolean
     isSourcegraphDotCom: boolean // significant for query suggestions
     queryState: QueryState
     onChange: (newState: QueryState) => void

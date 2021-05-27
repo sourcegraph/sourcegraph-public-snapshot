@@ -117,8 +117,6 @@ export interface LayoutProps
     routes: readonly LayoutRouteProps<any>[]
 
     authenticatedUser: AuthenticatedUser | null
-    hasUserAddedRepositories: boolean
-    hasUserAddedExternalServices: boolean
 
     /**
      * The subject GraphQL node ID of the viewer, which is used to look up the viewer's settings. This is either
