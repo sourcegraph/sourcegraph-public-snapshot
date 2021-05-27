@@ -31,7 +31,7 @@ exports[`<ViewOnSourcegraphButton /> existence could not be determined  because 
       />
     </g>
   </svg>
-   
+
   Sign in to Sourcegraph
 </a>
 `;
@@ -67,7 +67,7 @@ exports[`<ViewOnSourcegraphButton /> existence could not be determined  because 
       />
     </g>
   </svg>
-   
+
   Sign in to Sourcegraph
 </a>
 `;
@@ -103,7 +103,7 @@ exports[`<ViewOnSourcegraphButton /> existence could not be determined  because 
       />
     </g>
   </svg>
-   
+
   Error
 </a>
 `;
@@ -139,7 +139,7 @@ exports[`<ViewOnSourcegraphButton /> repository does not exist on the instance r
       />
     </g>
   </svg>
-   
+
   Repository not found
 </a>
 `;
@@ -175,7 +175,7 @@ exports[`<ViewOnSourcegraphButton /> repository does not exist on the instance r
       />
     </g>
   </svg>
-   
+
   Repository not found
 </a>
 `;
@@ -210,7 +210,7 @@ exports[`<ViewOnSourcegraphButton /> repository exists on the instance renders a
       />
     </g>
   </svg>
-   
+
 </a>
 `;
 
@@ -244,7 +244,7 @@ exports[`<ViewOnSourcegraphButton /> repository exists on the instance renders a
       />
     </g>
   </svg>
-   
+
 </a>
 `;
 
