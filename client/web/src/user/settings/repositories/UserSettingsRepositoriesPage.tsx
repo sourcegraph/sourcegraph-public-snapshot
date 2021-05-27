@@ -368,7 +368,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
         telemetryService.logViewEvent('UserSettingsRepositories')
     }, [telemetryService])
 
-    const getCodeHostsSyncMessage = useCallback(() => {
+    const getCodeHostsSyncMessage = (): string => {
         if (Array.isArray(externalServices) && externalServices) {
             const names = externalServices.map(service => {
                 const { displayName: name } = service
@@ -380,7 +380,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
             return `Synching ${names.join(', ')} code host${names.length > 1 ? 's' : ''}.`
         }
         return 'Synching code hosts.'
-    }, [externalServices])
+    }
 
     return (
         <div className="user-settings-repos">
