@@ -1,4 +1,6 @@
 .web-hover-overlay {
+    --hover-overlay-content-color: var(--text-muted);
+
     border-color: var(--border-color);
     box-shadow: var(--dropdown-shadow);
     border-radius: var(--popover-border-radius);
