@@ -1,5 +1,6 @@
-.web-hover-overlay {
+:global(.theme-redesign) .web-hover-overlay {
     --hover-overlay-content-color: var(--text-muted);
+    --hover-overlay-separator-color: var(--border-color-2);
 
     border-color: var(--border-color);
     box-shadow: var(--dropdown-shadow);

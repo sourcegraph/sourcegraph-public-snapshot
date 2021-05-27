@@ -167,6 +167,7 @@
         // Required to avoid close button and text content overlap on scroll.
         --hover-overlay-contents-right-padding: 2rem;
         --hover-overlay-content-margin-top: 0.5rem;
+        --hover-overlay-separator-color: var(--border-color);
 
         padding-bottom: var(--hover-overlay-vertical-padding);
 
@@ -252,7 +253,7 @@
                 // @quinn keast
                 // By using one colour for the border and another for the internal separators,
                 // we create better distinction between the popover and its background content, without making it too strongly contrasted within.
-                background-color: var(--border-color-2);
+                background-color: var(--hover-overlay-separator-color);
             }
 
             p {
@@ -285,7 +286,7 @@
             row-gap: 0.75rem;
             // `padding-top` and `border` are required to separate alerts block from the scrollable content.
             // Otherwise text scrolls right from the alert border which doesn't look good.
-            border-top: 1px solid var(--border-color-2);
+            border-top: 1px solid var(--hover-overlay-separator-color);
             padding-top: 0.75rem;
             padding-bottom: 0.75rem;
         }
@@ -306,7 +307,7 @@
         &__actions {
             padding-top: 0.5rem;
             padding-bottom: 0.5rem;
-            border-top: 1px solid var(--border-color-2);
+            border-top: 1px solid var(--hover-overlay-separator-color);
         }
 
         &__action {
