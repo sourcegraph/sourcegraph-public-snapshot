@@ -46,7 +46,7 @@ export const BrandedStory: React.FunctionComponent<
         }) as EventListener
         window.addEventListener('theme-changed', listener)
         return () => window.removeEventListener('theme-changed', listener)
-    })
+    }, [])
 
     return (
         <MemoryRouter {...memoryRouterProps}>
