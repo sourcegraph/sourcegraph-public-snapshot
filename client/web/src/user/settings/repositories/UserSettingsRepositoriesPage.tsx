@@ -412,7 +412,9 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                     connected code hosts
                 </Link>
             </p>
-            {!externalServices ? (
+            {isErrorLike(status) ? (
+                <h3 className="text-muted">Sorry, we couldn’t fetch your repositories. Try again?</h3>
+            ) : !externalServices ? (
                 <div className="d-flex justify-content-center mt-4">
                     <LoadingSpinner className="icon-inline" />
                 </div>
