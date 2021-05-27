@@ -3,6 +3,11 @@
     box-shadow: var(--dropdown-shadow);
     border-radius: var(--popover-border-radius);
 
+    &__close-button {
+        font-size: 1rem;
+        color: var(--icon-color);
+    }
+
     &__action {
         // Needed to overwrite pre-redesign `border-radius: 0`;
         border-radius: var(--border-radius);

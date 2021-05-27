@@ -191,6 +191,8 @@
             margin-top: var(--hover-overlay-content-margin-top);
             margin-left: 0.5rem;
             margin-right: 0.25rem;
+            // Small margin-bottom to add some space between the badge and long content that wraps around it.
+            margin-bottom: 0.25rem;
             // Needs to be absolute value to align well with the content
             // because it's wrapped into a `small` which might have different font-size.
             line-height: 1rem;
@@ -210,12 +212,6 @@
                 // so `margin-right` is redundant in this state.
                 margin-right: 0;
             }
-        }
-
-        &__close-icon {
-            width: 1.125rem;
-            height: 1.125rem;
-            color: var(--icon-color);
         }
 
         &__contents {
