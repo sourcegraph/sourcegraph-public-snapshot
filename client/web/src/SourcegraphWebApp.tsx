@@ -73,6 +73,7 @@ import {
     createSearchContext,
     updateSearchContext,
     deleteSearchContext,
+    getUserSearchContextNamespaces,
 } from './search/backend'
 import { QueryState } from './search/helpers'
 import { aggregateStreamingSearch } from './search/stream'
@@ -181,7 +182,6 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     showSearchContextManagement: boolean
     selectedSearchContextSpec?: string
     defaultSearchContextSpec: string
-    hasUserDefinedContexts: boolean
     hasUserAddedRepositories: boolean
     hasUserAddedExternalServices: boolean
 
@@ -301,7 +301,6 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             showSearchContextManagement: false,
             defaultSearchContextSpec: 'global', // global is default for now, user will be able to change this at some point
             hasUserAddedRepositories: false,
-            hasUserDefinedContexts: false,
             hasUserAddedExternalServices: false,
             showEnterpriseHomePanels: false,
             globbing: false,
@@ -387,16 +386,6 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                             hasUserAddedRepositories: userRepositoriesResult.nodes.length > 0,
                             hasUserAddedExternalServices: externalServicesResult.nodes.length > 0,
                         })
-                    }
-                })
-        )
-
-        this.subscriptions.add(
-            fetchSearchContexts({ first: 1 })
-                .pipe(catchError(error => [asError(error)]))
-                .subscribe(result => {
-                    if (!isErrorLike(result)) {
-                        this.setState({ hasUserDefinedContexts: result.totalCount > 0 })
                     }
                 })
         )
@@ -536,12 +525,13 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     isSourcegraphDotCom={window.context.sourcegraphDotComMode}
                                     showRepogroupHomepage={this.state.showRepogroupHomepage}
                                     showOnboardingTour={this.state.showOnboardingTour}
-                                    showSearchContext={this.canShowSearchContext()}
+                                    showSearchContext={this.state.showSearchContext}
                                     hasUserAddedRepositories={this.state.hasUserAddedRepositories}
                                     hasUserAddedExternalServices={this.state.hasUserAddedExternalServices}
                                     showSearchContextManagement={this.state.showSearchContextManagement}
                                     selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
                                     setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}
+                                    getUserSearchContextNamespaces={getUserSearchContextNamespaces}
                                     fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
                                     fetchSearchContexts={fetchSearchContexts}
                                     fetchSearchContext={fetchSearchContext}
@@ -630,14 +620,8 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         })
     }
 
-    private canShowSearchContext = (): boolean =>
-        this.state.showSearchContext &&
-        (this.state.hasUserAddedRepositories ||
-            this.state.hasUserDefinedContexts ||
-            window.context.sourcegraphDotComMode)
-
     private getSelectedSearchContextSpec = (): string | undefined =>
-        this.canShowSearchContext() ? this.state.selectedSearchContextSpec : undefined
+        this.state.showSearchContext ? this.state.selectedSearchContextSpec : undefined
 
     private setSelectedSearchContextSpec = (spec: string): void => {
         const { defaultSearchContextSpec } = this.state

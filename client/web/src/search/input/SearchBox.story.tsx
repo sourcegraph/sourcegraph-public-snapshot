@@ -4,7 +4,11 @@ import React from 'react'
 
 import { WebStory } from '../../components/WebStory'
 import { SearchPatternType } from '../../graphql-operations'
-import { mockFetchAutoDefinedSearchContexts, mockFetchSearchContexts } from '../../searchContexts/testHelpers'
+import {
+    mockFetchAutoDefinedSearchContexts,
+    mockFetchSearchContexts,
+    mockGetUserSearchContextNamespaces,
+} from '../../searchContexts/testHelpers'
 
 import { SearchBox, SearchBoxProps } from './SearchBox'
 
@@ -45,6 +49,7 @@ const defaultProps: SearchBoxProps = {
     hasUserAddedRepositories: false,
     authenticatedUser: null,
     hasUserAddedExternalServices: false,
+    getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
 }
 
 add(
