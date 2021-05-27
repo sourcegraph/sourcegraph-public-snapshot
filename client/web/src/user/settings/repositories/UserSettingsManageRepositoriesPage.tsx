@@ -222,7 +222,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
     const fetchSelectedRepositories = useCallback(
         async (): Promise<NonNullable<UserRepositoriesResult['node']>['repositories']['nodes']> =>
-            listUserRepositories({ id: authenticatedUser.id })
+            listUserRepositories({ id: authenticatedUser.id, first: 2000 })
                 .toPromise()
                 .then(({ nodes }) => nodes),
         [authenticatedUser.id]
