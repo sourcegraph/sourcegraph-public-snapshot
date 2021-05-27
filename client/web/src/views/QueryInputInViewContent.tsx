@@ -5,7 +5,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 
-import { CaseSensitivityProps, PatternTypeProps, CopyQueryButtonProps, SearchContextProps } from '../search'
+import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '../search'
 import { submitSearch } from '../search/helpers'
 import { SearchButton } from '../search/input/SearchButton'
 
@@ -13,7 +13,6 @@ interface Props
     extends SettingsCascadeProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        CopyQueryButtonProps,
         VersionContextProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'> {
     implicitQueryPrefix: string

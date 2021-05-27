@@ -40,7 +40,6 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     setCaseSensitivity: () => undefined,
     platformContext: {} as any,
     keyboardShortcuts: [],
-    copyQueryButton: false,
     versionContext: undefined,
     showSearchContext: false,
     showSearchContextManagement: false,

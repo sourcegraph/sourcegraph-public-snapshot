@@ -24,7 +24,6 @@ const mockAPI = createMockAPI()
 const CONTEXT = {
     versionContext: undefined,
     telemetryService: NOOP_TELEMETRY_SERVICE,
-    copyQueryButton: false,
     setCaseSensitivity: noop,
     setPatternType: noop,
     patternType: SearchPatternType.literal,

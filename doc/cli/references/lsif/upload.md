@@ -13,7 +13,7 @@
 | `-indexer` | The name of the indexer that generated the dump. This will override the 'toolInfo.name' field in the metadata vertex of the LSIF dump file. This must be supplied if the indexer does not set this field (in which case the upload will fail with an explicit message). |  |
 | `-json` | Output relevant state in JSON on success. | `false` |
 | `-max-payload-size` | The maximum upload size (in megabytes). Indexes exceeding this limit will be uploaded over multiple HTTP requests. | `100` |
-| `-no-progress` | Do not display a progress bar. | `false` |
+| `-no-progress` | Do not display progress updates. | `false` |
 | `-open` | Open the LSIF upload page in your browser. | `false` |
 | `-repo` | The name of the repository (e.g. github.com/gorilla/mux). By default, derived from the origin remote. |  |
 | `-root` | The path in the repository that matches the LSIF projectRoot (e.g. cmd/project1). Defaults to the directory where the dump file is located. |  |
@@ -42,7 +42,7 @@ Usage of 'src lsif upload':
   -max-payload-size int
     	The maximum upload size (in megabytes). Indexes exceeding this limit will be uploaded over multiple HTTP requests. (default 100)
   -no-progress
-    	Do not display a progress bar.
+    	Do not display progress updates.
   -open
     	Open the LSIF upload page in your browser.
   -repo string

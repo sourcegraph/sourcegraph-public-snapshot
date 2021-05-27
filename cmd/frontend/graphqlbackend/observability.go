@@ -25,7 +25,7 @@ func (r *schemaResolver) TriggerObservabilityTestAlert(ctx context.Context, args
 	Level string
 }) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Do not allow arbitrary users to set off alerts.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 

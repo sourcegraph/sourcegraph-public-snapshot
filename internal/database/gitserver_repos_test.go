@@ -265,8 +265,11 @@ func TestSetLastError(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Set error
-	err = GitserverRepos(db).SetLastError(ctx, gitserverRepo.RepoID, "oops", shardID)
+	// Set error.
+	//
+	// We are using a null terminated string for the last_error column. See
+	// https://stackoverflow.com/a/38008565/1773961 on how to set null terminated strings in Go.
+	err = GitserverRepos(db).SetLastError(ctx, gitserverRepo.RepoID, "oops\x00", shardID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -416,7 +419,11 @@ func TestGitserverRepoUpsert(t *testing.T) {
 	}
 
 	// Change error
-	gitserverRepo.LastError = "Oops"
+
+	// We want to test if Upsert can handle the writing a null character to the last_error
+	// column. See https://stackoverflow.com/a/38008565/1773961 on how to set null terminated
+	// strings in Go.
+	gitserverRepo.LastError = "Oops\x00"
 	if err := GitserverRepos(db).Upsert(ctx, gitserverRepo); err != nil {
 		t.Fatal(err)
 	}
@@ -424,6 +431,10 @@ func TestGitserverRepoUpsert(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	// Set LastError to the expected error string but without the null character, because we expect
+	// our code to work and strip it before writing to the DB.
+	gitserverRepo.LastError = "Oops"
 	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
 		t.Fatal(diff)
 	}
@@ -439,5 +450,20 @@ func TestGitserverRepoUpsert(t *testing.T) {
 	}
 	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
 		t.Fatal(diff)
+	}
+}
+
+func TestSanitizeToUTF8(t *testing.T) {
+	testSet := map[string]string{
+		"test\x00":     "test",
+		"test\x00test": "testtest",
+		"\x00test":     "test",
+	}
+
+	for input, expected := range testSet {
+		got := sanitizeToUTF8(input)
+		if got != expected {
+			t.Fatalf("Failed to sanitize to UTF-8, got %q but wanted %q", got, expected)
+		}
 	}
 }

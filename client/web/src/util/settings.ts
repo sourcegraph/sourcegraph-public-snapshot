@@ -60,7 +60,6 @@ export function defaultCaseSensitiveFromSettings(settingsCascade: SettingsCascad
 export function experimentalFeaturesFromSettings(
     settingsCascade: SettingsCascadeOrError
 ): {
-    copyQueryButton: boolean
     showRepogroupHomepage: boolean
     showOnboardingTour: boolean
     showEnterpriseHomePanels: boolean
@@ -71,13 +70,13 @@ export function experimentalFeaturesFromSettings(
     enableSmartQuery: boolean
     enableCodeMonitoring: boolean
     enableAPIDocs: boolean
+    designRefreshToggleEnabled: boolean
 } {
     const experimentalFeatures: SettingsExperimentalFeatures =
         (settingsCascade.final && !isErrorLike(settingsCascade.final) && settingsCascade.final.experimentalFeatures) ||
         {}
 
     const {
-        copyQueryButton = false,
         showRepogroupHomepage = false,
         showOnboardingTour = true, // Default to true if not set
         showEnterpriseHomePanels = true, // Default to true if not set
@@ -89,10 +88,10 @@ export function experimentalFeaturesFromSettings(
         codeMonitoring = true, // Default to true if not set
         // eslint-disable-next-line unicorn/prevent-abbreviations
         apiDocs = false,
+        designRefreshToggleEnabled = false,
     } = experimentalFeatures
 
     return {
-        copyQueryButton,
         showRepogroupHomepage,
         showOnboardingTour,
         showSearchContext,
@@ -103,5 +102,6 @@ export function experimentalFeaturesFromSettings(
         enableSmartQuery,
         enableCodeMonitoring: codeMonitoring,
         enableAPIDocs: apiDocs,
+        designRefreshToggleEnabled,
     }
 }

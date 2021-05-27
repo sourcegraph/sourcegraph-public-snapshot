@@ -1484,10 +1484,6 @@ A search result. Every type of search result, except FileMatch, must implement t
 """
 interface GenericSearchResultInterface {
     """
-    DEPRECATED
-    """
-    icon: String! @deprecated(reason: "Our API will not support returning icons in a future release")
-    """
     A markdown string that is rendered prominently.
     """
     label: Markdown!
@@ -1783,10 +1779,6 @@ A search result that is a Git commit.
 """
 type CommitSearchResult implements GenericSearchResultInterface {
     """
-    DEPRECATED
-    """
-    icon: String! @deprecated(reason: "Our API will not support returning icons in a future release")
-    """
     A markdown string that is rendered prominently.
     """
     label: Markdown!
@@ -1953,6 +1945,14 @@ type ExternalService implements Node {
     The timestamp of the next sync job. Null if not scheduled for a re-sync.
     """
     nextSyncAt: DateTime
+
+    """
+    Returns a list of scopes granted by the code host. It is based on the token used
+    when configuring the external service.
+    NOTE: Currently only GitHub is supported and the request consumes rate limit tokens
+    so it should be used sparingly.
+    """
+    grantedScopes: [String!]!
 }
 
 """
@@ -2192,10 +2192,6 @@ type Repository implements Node & GenericSearchResultInterface {
     Whether the viewer has admin privileges on this repository.
     """
     viewerCanAdminister: Boolean!
-    """
-    DEPRECATED
-    """
-    icon: String! @deprecated(reason: "Our API will not support returning icons in a future release")
     """
     A markdown string that is rendered prominently.
     """

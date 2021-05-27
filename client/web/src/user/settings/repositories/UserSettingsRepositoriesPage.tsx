@@ -23,7 +23,6 @@ import {
 } from '../../../components/FilteredConnection'
 import { PageTitle } from '../../../components/PageTitle'
 import {
-    RepositoriesResult,
     SiteAdminRepositoryFields,
     UserRepositoriesResult,
     ListExternalServiceFields,
@@ -193,7 +192,9 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
         ) || emptyFilters
 
     const queryRepositories = useCallback(
-        (args: FilteredConnectionQueryArguments): Observable<RepositoriesResult['repositories']> =>
+        (
+            args: FilteredConnectionQueryArguments
+        ): Observable<NonNullable<UserRepositoriesResult['node']>['repositories']> =>
             listUserRepositories({ ...args, id: userID }).pipe(
                 repeatUntil(
                     (result): boolean => {

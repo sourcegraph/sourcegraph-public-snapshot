@@ -72,12 +72,7 @@ describe('Search contexts', () => {
         })
     })
     afterEachSaveScreenshotIfFailed(() => driver.page)
-    afterEach(async () => {
-        await driver.page.evaluate(() => localStorage.clear())
-        if (testContext) {
-            await testContext.dispose()
-        }
-    })
+    afterEach(() => testContext?.dispose())
 
     const getSearchFieldValue = (driver: Driver): Promise<string | undefined> =>
         driver.page.evaluate(() => document.querySelector<HTMLTextAreaElement>('#monaco-query-input textarea')?.value)
@@ -175,6 +170,8 @@ describe('Search contexts', () => {
     const isSearchContextDropdownDisabled = () =>
         driver.page.evaluate(() => document.querySelector<HTMLButtonElement>('.test-search-context-dropdown')?.disabled)
 
+    const clearLocalStorage = () => driver.page.evaluate(() => localStorage.clear())
+
     test('Search context selected based on URL', async () => {
         testContext.overrideGraphQL({
             ...testContextForSearchContexts,
@@ -182,6 +179,7 @@ describe('Search contexts', () => {
                 isSearchContextAvailable: true,
             }),
         })
+
         await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=context:%40test+test&patternType=regexp', {
             waitUntil: 'networkidle0',
         })
@@ -197,6 +195,7 @@ describe('Search contexts', () => {
         await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
         await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
         expect(await getSelectedSearchContextSpec()).toStrictEqual('context:global')
+        await clearLocalStorage()
     })
 
     test('Unavailable search context should remain in the query and disable the search context dropdown', async () => {
@@ -238,6 +237,7 @@ describe('Search contexts', () => {
         })
         await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
         expect(await getSelectedSearchContextSpec()).toStrictEqual('context:global')
+        await clearLocalStorage()
     })
 
     test('Disable dropdown if version context is active', async () => {
@@ -325,6 +325,7 @@ describe('Search contexts', () => {
         await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
         await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
         expect(await isSearchContextHighlightTourStepVisible()).toBeTruthy()
+        await clearLocalStorage()
     })
 
     test('Highlight tour step should not be visible if already seen with cancelled search onboarding tour on search homepage', async () => {
@@ -338,6 +339,7 @@ describe('Search contexts', () => {
         await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
         await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
         expect(await isSearchContextHighlightTourStepVisible()).toBeFalsy()
+        await clearLocalStorage()
     })
 
     test('Create search context', async () => {

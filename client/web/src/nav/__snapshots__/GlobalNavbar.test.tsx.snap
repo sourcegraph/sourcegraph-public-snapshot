@@ -21,7 +21,6 @@ exports[`GlobalNavbar default 1`] = `
       authenticatedUser={null}
       availableVersionContexts={Array []}
       caseSensitive={false}
-      copyQueryButton={false}
       defaultSearchContextSpec=""
       enableCodeMonitoring={false}
       enableSmartQuery={false}
