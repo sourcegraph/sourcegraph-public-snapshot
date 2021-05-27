@@ -4,6 +4,7 @@ import React from 'react'
 
 import browserExtensionStyles from '@sourcegraph/browser/src/app.scss'
 
+import { NotificationType } from '../api/extension/extensionHostApi'
 import { registerHighlightContributions } from '../highlight/contributions'
 
 import { HoverOverlay, HoverOverlayClassProps } from './HoverOverlay'
@@ -20,10 +21,8 @@ const bitbucketClassProps: HoverOverlayClassProps = {
     iconClassName: 'aui-icon',
     getAlertClassName: alertKind => {
         switch (alertKind) {
-            case 'error':
+            case NotificationType.Error:
                 return 'aui-message aui-message-error'
-            case 'warning':
-                return 'aui-message aui-message-info'
             default:
                 return 'aui-message aui-message-info'
         }

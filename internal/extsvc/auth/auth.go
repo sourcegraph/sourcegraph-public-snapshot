@@ -3,7 +3,9 @@
 // for the commonly used authentication types.
 package auth
 
-import "net/http"
+import (
+	"net/http"
+)
 
 // Authenticator instances mutate an outbound request to add whatever headers or
 // other modifications are required to authenticate using the concrete type

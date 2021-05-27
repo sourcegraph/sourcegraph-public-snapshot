@@ -53,7 +53,6 @@ describe('Toggles', () => {
                         caseSensitive={false}
                         setCaseSensitivity={() => undefined}
                         settingsCascade={{ subjects: null, final: {} }}
-                        copyQueryButton={false}
                         versionContext={undefined}
                         selectedSearchContextSpec="global"
                         showSearchContext={false}
@@ -74,7 +73,6 @@ describe('Toggles', () => {
                         caseSensitive={false}
                         setCaseSensitivity={() => undefined}
                         settingsCascade={{ subjects: null, final: {} }}
-                        copyQueryButton={false}
                         versionContext={undefined}
                         selectedSearchContextSpec="global"
                         showSearchContext={false}
@@ -95,7 +93,6 @@ describe('Toggles', () => {
                         caseSensitive={false}
                         setCaseSensitivity={() => undefined}
                         settingsCascade={{ subjects: null, final: {} }}
-                        copyQueryButton={false}
                         versionContext={undefined}
                         selectedSearchContextSpec="global"
                         showSearchContext={false}

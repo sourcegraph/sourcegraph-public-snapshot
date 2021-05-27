@@ -166,16 +166,16 @@ describe('Search', () => {
             await driver.page.waitForSelector('#monaco-query-input')
             await driver.replaceText({
                 selector: '#monaco-query-input',
-                newText: '-repo',
+                newText: '-file',
                 enterTextMethod: 'type',
             })
             await driver.page.waitForSelector('.monaco-query-input .suggest-widget.visible')
-            await driver.findElementWithText('-repo', {
+            await driver.findElementWithText('-file', {
                 action: 'click',
                 wait: { timeout: 5000 },
                 selector: '.monaco-query-input .suggest-widget.visible span',
             })
-            expect(await getSearchFieldValue(driver)).toStrictEqual('-repo:')
+            expect(await getSearchFieldValue(driver)).toStrictEqual('-file:')
         })
     })
 

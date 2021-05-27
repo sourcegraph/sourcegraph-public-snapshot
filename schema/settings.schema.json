@@ -60,14 +60,6 @@
             "pointer": true
           }
         },
-        "copyQueryButton": {
-          "description": "Enables displaying the copy query button in the search bar when hovering over the global navigation bar.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
         "showRepogroupHomepage": {
           "description": "Enables the repository group homepage ",
           "type": "boolean",
