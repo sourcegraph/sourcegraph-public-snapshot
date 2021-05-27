@@ -255,11 +255,15 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(props => {
                                     'action-items__action--inactive',
                                     !hasIconURL && 'action-items__action--no-icon-inactive'
                                 )
+                                const listItemClassName = classNames(
+                                    'action-items__list-item',
+                                    index !== items.length - 1 && 'mb-1'
+                                )
 
                                 const dataContent = !hasIconURL ? item.action.category?.slice(0, 1) : undefined
 
                                 return (
-                                    <li key={item.action.id} className="action-items__list-item">
+                                    <li key={item.action.id} className={listItemClassName}>
                                         <ActionItem
                                             {...props}
                                             {...item}
