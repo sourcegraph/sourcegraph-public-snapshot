@@ -226,7 +226,7 @@ export const FileDiffHunks: React.FunctionComponent<FileHunksProps> = ({
     }, [codeElements, extensionInfoChanges])
 
     return (
-        <>
+        <div className="file-diff-node__body">
             {extensionInfo && (
                 <StatusBar
                     getStatusBarItems={getStatusBarItems}
@@ -292,6 +292,6 @@ export const FileDiffHunks: React.FunctionComponent<FileHunksProps> = ({
                     </div>
                 )}
             </div>
-        </>
+        </div>
     )
 }

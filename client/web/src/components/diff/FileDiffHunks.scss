@@ -3,7 +3,7 @@ $color-deletion: $red;
 
 .diff-boundary {
     &__num {
-        background-color: var(--color-bg-2);
+        background-color: var(--code-bg);
     }
     &__num,
     &__content {
@@ -17,7 +17,7 @@ $color-deletion: $red;
 
 .diff-hunk {
     &__num {
-        background-color: var(--color-bg-2);
+        background-color: var(--code-bg);
         min-width: 2.5rem;
         font-size: 0.75rem;
         line-height: (20/12);
@@ -34,6 +34,9 @@ $color-deletion: $red;
                 color: var(--body-color);
                 text-decoration: none;
             }
+            .theme-redesign & {
+                color: var(--line-number-color);
+            }
         }
     }
     &__content {
@@ -42,15 +45,25 @@ $color-deletion: $red;
         font-family: $code-font-family;
         white-space: pre-wrap;
         font-size: 0.75rem;
+        background-color: var(--code-bg);
         &::before {
             padding-right: 0.5rem;
             content: attr(data-diff-marker);
         }
         &--empty {
             background-color: var(--color-bg-2);
+            .theme-redesign & {
+                background-color: var(--body-bg);
+            }
             // This cell is always empty opacity will not affect any content
             opacity: 0.5;
         }
+    }
+
+    // TODO: look for this specificity, is not working at the moment.
+    td.diff-hunk__num:nth-child(3) {
+        background: red;
+        border-left: 1px solid var(--border-color);
     }
 
     &--split {
@@ -67,18 +80,27 @@ $color-deletion: $red;
                 background-color: rgba($oc-yellow-5, 0.17) !important;
                 &-num {
                     background-color: rgba($oc-yellow-5, 0.25);
+                    .theme-redesign & {
+                        background-color: rgba($oc-yellow-5, 0.17);
+                    }
                 }
             }
             &--addition {
                 background-color: rgba($color-addition, 0.17);
                 &-num {
                     background-color: rgba($color-addition, 0.25);
+                    .theme-redesign & {
+                        background-color: rgba($color-addition, 0.17);
+                    }
                 }
             }
             &--deletion {
                 background-color: rgba($color-deletion, 0.17);
                 &-num {
                     background-color: rgba($color-deletion, 0.25);
+                    .theme-redesign & {
+                        background-color: rgba($color-deletion, 0.17);
+                    }
                 }
             }
         }
@@ -104,7 +126,7 @@ $color-deletion: $red;
     }
     &__line--both &__num,
     &__num--both {
-        background-color: var(--color-bg-2);
+        background-color: var(--code-bg);
     }
 }
 
