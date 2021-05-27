@@ -69,6 +69,11 @@
         border-radius: 2px 0 0 2px;
     }
 
+    &__search-button {
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+    }
+
     &__repo-item {
         white-space: nowrap;
         overflow: hidden;
