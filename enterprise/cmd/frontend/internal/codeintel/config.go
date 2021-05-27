@@ -36,6 +36,8 @@ type Config struct {
 	DocumentColumnSplitMigrationBatchInterval time.Duration
 	CommittedAtMigrationBatchSize             int
 	CommittedAtMigrationBatchInterval         time.Duration
+	DependencyIndexerSchedulerPollInterval    time.Duration
+	DependencyIndexerSchedulerConcurrency     int
 }
 
 var config = &Config{}
@@ -70,4 +72,6 @@ func init() {
 	config.DocumentColumnSplitMigrationBatchInterval = config.GetInterval("PRECISE_CODE_INTEL_DOCUMENT_COLUMN_SPLIT_MIGRATION_BATCH_INTERVAL", "1s", "The timeout between processing migration batches.")
 	config.CommittedAtMigrationBatchSize = config.GetInt("PRECISE_CODE_INTEL_COMMITTED_AT_MIGRATION_BATCH_SIZE", "100", "The maximum number of upload records to migrate at a time.")
 	config.CommittedAtMigrationBatchInterval = config.GetInterval("PRECISE_CODE_INTEL_COMMITTED_AT_MIGRATION_BATCH_INTERVAL", "1s", "The timeout between processing migration batches.")
+	config.DependencyIndexerSchedulerPollInterval = config.GetInterval("PRECISE_CODE_INTEL_DEPENDENCY_INDEXER_SCHEDULER_POLL_INTERVAL", "1s", "Interval between queries to the dependency indexing job queue.")
+	config.DependencyIndexerSchedulerConcurrency = config.GetInt("PRECISE_CODE_INTEL_DEPENDENCY_INDEXER_SCHEDULER_CONCURRENCY", "1", "The maximum number of dependency graphs that can be processed concurrently.")
 }
