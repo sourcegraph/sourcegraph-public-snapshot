@@ -191,7 +191,9 @@
             margin-top: var(--hover-overlay-content-margin-top);
             margin-left: 0.5rem;
             margin-right: 0.25rem;
-            line-height: (16/11);
+            // Needs to be absolute value to align well with the content
+            // because it's wrapped into a `small` which might have different font-size.
+            line-height: 1rem;
 
             &-label {
                 vertical-align: top;
