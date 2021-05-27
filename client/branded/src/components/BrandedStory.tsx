@@ -44,8 +44,8 @@ export const BrandedStory: React.FunctionComponent<
         const listener = ((event: CustomEvent<boolean>): void => {
             setIsLightTheme(event.detail)
         }) as EventListener
-        window.addEventListener('theme-changed', listener)
-        return () => window.removeEventListener('theme-changed', listener)
+        document.body.addEventListener('chromatic-light-theme-toggled', listener)
+        return () => document.body.removeEventListener('chromatic-light-theme-toggled', listener)
     }, [])
 
     return (
