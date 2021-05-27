@@ -69,6 +69,7 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, tx dbwo
 		}
 	}()
 
+	var errs []error
 	for {
 		packageReference, exists, err := scanner.Next()
 		if err != nil {
@@ -84,11 +85,18 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, tx dbwo
 			Version: packageReference.Package.Version,
 		}
 		if err := h.indexEnqueuer.QueueIndexesForPackage(ctx, pkg); err != nil {
-			err = multierror.Append(err, errors.Wrap(err, "enqueuer.QueueIndexesForPackage"))
+			errs = append(errs, errors.Wrap(err, "enqueuer.QueueIndexesForPackage"))
 		}
 	}
 
-	return err
+	if len(errs) == 0 {
+		return nil
+	}
+	if len(errs) == 1 {
+		return errs[1]
+	}
+
+	return multierror.Append(errs[0], errs[1:]...)
 }
 
 var dependencyIndexingRepositoryIDs = []int{
