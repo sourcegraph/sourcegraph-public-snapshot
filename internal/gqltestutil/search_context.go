@@ -156,24 +156,20 @@ mutation DeleteSearchContext($id: ID!) {
 	return nil
 }
 
-type SearchContextsNamespaceFilterType string
 type SearchContextsOrderBy string
 
 const (
-	SearchContextsNamespaceFilterTypeInstance  SearchContextsNamespaceFilterType = "INSTANCE"
-	SearchContextsNamespaceFilterTypeNamespace SearchContextsNamespaceFilterType = "NAMESPACE"
-	SearchContextsOrderByUpdatedAt             SearchContextsOrderBy             = "SEARCH_CONTEXT_UPDATED_AT"
-	SearchContextsOrderBySpec                  SearchContextsOrderBy             = "SEARCH_CONTEXT_SPEC"
+	SearchContextsOrderByUpdatedAt SearchContextsOrderBy = "SEARCH_CONTEXT_UPDATED_AT"
+	SearchContextsOrderBySpec      SearchContextsOrderBy = "SEARCH_CONTEXT_SPEC"
 )
 
 type ListSearchContextsOptions struct {
-	First               int32                              `json:"first"`
-	After               *string                            `json:"after"`
-	Query               *string                            `json:"query"`
-	NamespaceFilterType *SearchContextsNamespaceFilterType `json:"namespaceFilterType"`
-	Namespace           *string                            `json:"namespace"`
-	OrderBy             *SearchContextsOrderBy             `json:"orderBy"`
-	Descending          bool                               `json:"descending"`
+	First      int32                  `json:"first"`
+	After      *string                `json:"after"`
+	Query      *string                `json:"query"`
+	Namespaces []*string              `json:"namespaces"`
+	OrderBy    *SearchContextsOrderBy `json:"orderBy"`
+	Descending bool                   `json:"descending"`
 }
 
 type ListSearchContextsResult struct {
@@ -192,8 +188,7 @@ query ListSearchContexts(
 	$first: Int!
 	$after: String
 	$query: String
-	$namespaceFilterType: SearchContextsNamespaceFilterType
-	$namespace: ID
+	$namespaces: [ID]
 	$orderBy: SearchContextsOrderBy
 	$descending: Boolean
 ) {
@@ -201,8 +196,7 @@ query ListSearchContexts(
 		first: $first
 		after: $after
 		query: $query
-		namespaceFilterType: $namespaceFilterType
-		namespace: $namespace
+		namespaces: $namespaces
 		orderBy: $orderBy
 		descending: $descending
 	) {
@@ -232,13 +226,12 @@ query ListSearchContexts(
 	}
 
 	variables := map[string]interface{}{
-		"first":               options.First,
-		"after":               options.After,
-		"query":               options.Query,
-		"namespaceFilterType": options.NamespaceFilterType,
-		"namespace":           options.Namespace,
-		"orderBy":             orderBy,
-		"descending":          options.Descending,
+		"first":      options.First,
+		"after":      options.After,
+		"query":      options.Query,
+		"namespaces": options.Namespaces,
+		"orderBy":    orderBy,
+		"descending": options.Descending,
 	}
 
 	var resp struct {
