@@ -116,10 +116,11 @@ type ScopeCache interface {
 // GrantedScopes returns a slice of scopes granted by the service based on the token
 // provided in the config. It makes a request to the code host.
 //
-// Currently only GitHub is supported.
+// Currently only GitHub is supported, other code hosts will simply return an
+// empty slice
 func GrantedScopes(ctx context.Context, cache ScopeCache, kind string, rawConfig string) ([]string, error) {
 	if kind != extsvc.KindGitHub {
-		return nil, fmt.Errorf("only GitHub supported")
+		return nil, nil
 	}
 	config, err := extsvc.ParseConfig(kind, rawConfig)
 	if err != nil {
