@@ -157,9 +157,6 @@ describe('Search contexts', () => {
     const getSelectedSearchContextSpec = () =>
         driver.page.evaluate(() => document.querySelector('.test-selected-search-context-spec')?.textContent)
 
-    const isSearchContextDropdownVisible = () =>
-        driver.page.evaluate(() => document.querySelector<HTMLButtonElement>('.test-search-context-dropdown') !== null)
-
     const isSearchContextHighlightTourStepVisible = () =>
         driver.page.evaluate(
             () =>
