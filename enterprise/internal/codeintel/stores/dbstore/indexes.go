@@ -301,11 +301,13 @@ SELECT COUNT(*) WHERE EXISTS (
 `
 
 // InsertIndex inserts a new index and returns its identifier.
-func (s *Store) InsertIndex(ctx context.Context, index Index) (_ int, err error) {
-	ctx, endObservation := s.operations.insertIndex.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("id", index.ID),
-	}})
-	defer endObservation(1, observation.Args{})
+func (s *Store) InsertIndex(ctx context.Context, index Index) (id int, err error) {
+	ctx, endObservation := s.operations.insertIndex.With(ctx, &err, observation.Args{})
+	defer func() {
+		endObservation(1, observation.Args{LogFields: []log.Field{
+			log.Int("id", id),
+		}})
+	}()
 
 	if index.DockerSteps == nil {
 		index.DockerSteps = []DockerStep{}
@@ -317,7 +319,7 @@ func (s *Store) InsertIndex(ctx context.Context, index Index) (_ int, err error)
 		index.LocalSteps = []string{}
 	}
 
-	id, _, err := basestore.ScanFirstInt(s.Store.Query(
+	id, _, err = basestore.ScanFirstInt(s.Store.Query(
 		ctx,
 		sqlf.Sprintf(
 			insertIndexQuery,

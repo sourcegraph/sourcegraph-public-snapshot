@@ -354,17 +354,19 @@ func makeSearchCondition(term string) *sqlf.Query {
 }
 
 // InsertUpload inserts a new upload and returns its identifier.
-func (s *Store) InsertUpload(ctx context.Context, upload Upload) (_ int, err error) {
-	ctx, endObservation := s.operations.insertUpload.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("id", upload.ID),
-	}})
-	defer endObservation(1, observation.Args{})
+func (s *Store) InsertUpload(ctx context.Context, upload Upload) (id int, err error) {
+	ctx, endObservation := s.operations.insertUpload.With(ctx, &err, observation.Args{})
+	defer func() {
+		endObservation(1, observation.Args{LogFields: []log.Field{
+			log.Int("id", id),
+		}})
+	}()
 
 	if upload.UploadedParts == nil {
 		upload.UploadedParts = []int{}
 	}
 
-	id, _, err := basestore.ScanFirstInt(s.Store.Query(
+	id, _, err = basestore.ScanFirstInt(s.Store.Query(
 		ctx,
 		sqlf.Sprintf(
 			insertUploadQuery,
