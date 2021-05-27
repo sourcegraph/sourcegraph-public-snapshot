@@ -96,7 +96,7 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, tx dbwo
 		return errs[1]
 	}
 
-	return multierror.Append(errs[0], errs[1:]...)
+	return multierror.Append(nil, errs...)
 }
 
 var dependencyIndexingRepositoryIDs = []int{
