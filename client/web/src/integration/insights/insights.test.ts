@@ -42,7 +42,14 @@ const extensionNodes: ExtensionsResult['extensionRegistry']['extensions']['nodes
     },
 ]
 
-function overrideGraphQLExtensions(testContext: WebIntegrationTestContext, overrides: Partial<WebGraphQlOperations & SharedGraphQlOperations>) {
+interface OverrideGraphQLExtensionsProps {
+    testContext: WebIntegrationTestContext,
+    overrides: Partial<WebGraphQlOperations & SharedGraphQlOperations>
+}
+
+function overrideGraphQLExtensions(props: OverrideGraphQLExtensionsProps) {
+    const { testContext, overrides } = props
+
     testContext.overrideGraphQL({
         ...commonWebGraphQlResults,
         ...overrides,
@@ -200,6 +207,7 @@ describe('Code insights page', () => {
             }),
         })
     })
+
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
 
