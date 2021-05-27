@@ -30,18 +30,20 @@ TODO: explanations
 
 2. Register the runner from the Sourcegraph instance from the Batch Changes menu in the site admin.
 
-<img src="https://sourcegraphstatic.com/docs/images/runners-mvp-site-admin-register-runner.png" class="screenshot">
+<img src="https://sourcegraphstatic.com/runners-mvp-site-admin-register-runner.png" class="screenshot">
 
 
 3. After completing those steps, you should see the following message in the runner's terminal.
-```
-Connected to Sourcegraph. Runner ready to run.
+
+```txt
+Connected to Sourcegraph.
+Runner ready to run.
 2021-05-27 07:34:22Z Listening for jobs
 ```
 
 # Using runners
 
-TODO:mockup or decriptio
+TODO:mockup or decription
 
 ## Who has access to runners
 
@@ -70,4 +72,4 @@ TODO
 
 The current version of Sourcegraph runners has known limitations
 - access control: if a runner is enabled, all Batch Changes users on the instance can submit jobs to it
-- 
+-
