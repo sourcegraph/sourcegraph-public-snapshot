@@ -16,7 +16,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/src-cli/internal/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/git"
-	"github.com/sourcegraph/src-cli/internal/batches/graphql"
 	"github.com/sourcegraph/src-cli/internal/batches/log"
 	"github.com/sourcegraph/src-cli/internal/batches/workspace"
 
@@ -54,36 +53,26 @@ type executionResult struct {
 }
 
 type executionOpts struct {
-	archive batches.RepoZip
+	wc workspace.Creator
 
-	wc   workspace.Creator
-	path string
-
-	batchChangeAttributes *BatchChangeAttributes
-	repo                  *graphql.Repository
-	steps                 []batches.Step
+	task *Task
 
 	tempDir string
 
 	logger         log.TaskLogger
 	reportProgress func(string)
-
-	// cachedResultFound determines whether all steps are executed or only
-	// steps >= cachedResult.Step.
-	cachedResultFound bool
-	cachedResult      stepExecutionResult
 }
 
 func runSteps(ctx context.Context, opts *executionOpts) (result executionResult, stepResults []stepExecutionResult, err error) {
 	opts.reportProgress("Downloading archive")
-	err = opts.archive.Fetch(ctx)
+	err = opts.task.Archive.Fetch(ctx)
 	if err != nil {
 		return executionResult{}, nil, errors.Wrap(err, "fetching repo")
 	}
-	defer opts.archive.Close()
+	defer opts.task.Archive.Close()
 
 	opts.reportProgress("Initializing workspace")
-	workspace, err := opts.wc.Create(ctx, opts.repo, opts.steps, opts.archive)
+	workspace, err := opts.wc.Create(ctx, opts.task.Repository, opts.task.Steps, opts.task.Archive)
 	if err != nil {
 		return executionResult{}, nil, errors.Wrap(err, "creating workspace")
 	}
@@ -91,16 +80,16 @@ func runSteps(ctx context.Context, opts *executionOpts) (result executionResult,
 
 	execResult := executionResult{
 		Outputs: make(map[string]interface{}),
-		Path:    opts.path,
+		Path:    opts.task.Path,
 	}
-	results := make([]StepResult, len(opts.steps))
+	results := make([]StepResult, len(opts.task.Steps))
 
 	var startStep int
-	if opts.cachedResultFound {
+	if opts.task.CachedResultFound {
 		// Set the Outputs to the cached outputs
-		execResult.Outputs = opts.cachedResult.Outputs
+		execResult.Outputs = opts.task.CachedResult.Outputs
 
-		startStep = opts.cachedResult.StepIndex + 1
+		startStep = opts.task.CachedResult.StepIndex + 1
 
 		switch startStep {
 		case 1:
@@ -112,25 +101,25 @@ func runSteps(ctx context.Context, opts *executionOpts) (result executionResult,
 		startStep = 0
 	}
 
-	for i := startStep; i < len(opts.steps); i++ {
-		step := opts.steps[i]
+	for i := startStep; i < len(opts.task.Steps); i++ {
+		step := opts.task.Steps[i]
 
 		stepContext := StepContext{
-			BatchChange: *opts.batchChangeAttributes,
-			Repository:  *opts.repo,
+			BatchChange: *opts.task.BatchChangeAttributes,
+			Repository:  *opts.task.Repository,
 			Outputs:     execResult.Outputs,
 			Steps: StepsContext{
 				Path: execResult.Path,
 			},
 		}
 
-		if opts.cachedResultFound && i == startStep {
-			if err := workspace.ApplyDiff(ctx, []byte(opts.cachedResult.Diff)); err != nil {
+		if opts.task.CachedResultFound && i == startStep {
+			if err := workspace.ApplyDiff(ctx, []byte(opts.task.CachedResult.Diff)); err != nil {
 				return execResult, nil, errors.Wrap(err, "getting changed files in step")
 			}
 
-			results[i-1] = opts.cachedResult.PreviousStepResult
-			stepContext.Outputs = opts.cachedResult.Outputs
+			results[i-1] = opts.task.CachedResult.PreviousStepResult
+			stepContext.Outputs = opts.task.CachedResult.Outputs
 		}
 
 		if i > 0 {
@@ -152,7 +141,7 @@ func runSteps(ctx context.Context, opts *executionOpts) (result executionResult,
 		// Find a location that we can use for a cidfile, which will contain the
 		// container ID that is used below. We can then use this to remove the
 		// container on a successful run, rather than leaving it dangling.
-		cidFile, err := ioutil.TempFile(opts.tempDir, opts.repo.Slug()+"-container-id")
+		cidFile, err := ioutil.TempFile(opts.tempDir, opts.task.Repository.Slug()+"-container-id")
 		if err != nil {
 			return execResult, nil, errors.Wrap(err, "Creating a CID file failed")
 		}
@@ -270,8 +259,8 @@ func runSteps(ctx context.Context, opts *executionOpts) (result executionResult,
 
 		// Where should we execute the steps.run script?
 		scriptWorkDir := workDir
-		if opts.path != "" {
-			scriptWorkDir = workDir + "/" + opts.path
+		if opts.task.Path != "" {
+			scriptWorkDir = workDir + "/" + opts.task.Path
 		}
 
 		args := append([]string{

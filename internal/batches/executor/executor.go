@@ -176,22 +176,15 @@ func (x *executor) do(ctx context.Context, task *Task, status taskStatusHandler)
 
 	// Actually execute the steps.
 	opts := &executionOpts{
-		archive:               task.Archive,
-		batchChangeAttributes: task.BatchChangeAttributes,
-		repo:                  task.Repository,
-		path:                  task.Path,
-		steps:                 task.Steps,
-		wc:                    x.opts.Creator,
-		logger:                log,
-		tempDir:               x.opts.TempDir,
+		task:    task,
+		logger:  log,
+		wc:      x.opts.Creator,
+		tempDir: x.opts.TempDir,
 		reportProgress: func(currentlyExecuting string) {
 			status.Update(task, func(status *TaskStatus) {
 				status.CurrentlyExecuting = currentlyExecuting
 			})
 		},
-		// TODO: Why don't we pass the task to this?
-		cachedResultFound: task.CachedResultFound,
-		cachedResult:      task.CachedResult,
 	}
 
 	result, stepResults, err := runSteps(runCtx, opts)
