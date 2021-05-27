@@ -76,7 +76,7 @@
         overflow-x: auto;
         word-wrap: normal;
 
-        // Descendant selectors are needed here to style rendered markdown
+        // Descendant selectors are needed here to style rendered markdown.
         // stylelint-disable selector-max-compound-selectors
         p,
         pre {
@@ -227,6 +227,15 @@
                 padding: var(--hover-overlay-vertical-padding) var(--hover-overlay-horizontal-padding);
             }
 
+            // These styles should not be applied to content inside of the alerts block.
+            .hover-overlay__content {
+                // Required to apply Body/Small styles. We cannot wrap only text into `<small>` element
+                // because it's part of the markdown which could contain `<code>` and `<small>` too.
+                font-size: 0.75rem;
+                line-height: (16/12);
+                color: var(--text-muted);
+            }
+
             // Descendant selectors are needed here to style rendered markdown.
             // stylelint-disable selector-max-compound-selectors
             hr {
@@ -243,12 +252,8 @@
             }
 
             p {
-                // Required to apply Body/Small styles. We cannot wrap only text into `<small>` element
-                // because it's part of the markdown which could contain `<code>` and `<small>` too.
-                font-size: 0.75rem;
                 margin-top: 0.75rem;
                 margin-bottom: 0.75rem;
-                line-height: (16/12);
             }
 
             pre {
@@ -258,15 +263,15 @@
                 line-height: 1;
             }
 
+            code {
+                font-size: 0.75rem;
+            }
+
             // Required for only-text content to align with the close button on the first row.
             &:first-child p:first-child {
                 margin-top: var(--hover-overlay-content-margin-top);
                 margin-bottom: 0.5rem;
             }
-        }
-
-        &__content {
-            color: var(--text-muted);
         }
 
         // Every block inside of the overlay should have equal horizontal padding.
@@ -293,6 +298,11 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 0;
+
+            // Descendant selector is needed here to style rendered markdown.
+            p:last-child {
+                margin-bottom: 0;
+            }
         }
 
         &__actions {

@@ -30,7 +30,11 @@ export const HoverOverlayContent: React.FunctionComponent<HoverOverlayContentPro
     const [isRedesignEnabled] = useRedesignToggle()
 
     if (content.kind !== 'markdown') {
-        return <span className="hover-overlay__content">{content.value}</span>
+        return (
+            <span className="hover-overlay__content">
+                <p>{content.value}</p>
+            </span>
+        )
     }
 
     const markdownOrError = tryMarkdownRender(content.value)
