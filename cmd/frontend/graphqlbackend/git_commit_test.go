@@ -7,8 +7,11 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/graph-gophers/graphql-go/gqltesting"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -106,5 +109,49 @@ func TestGitCommitResolver(t *testing.T) {
 				}
 			})
 		}
+	})
+}
+
+func TestGitCommitFileNames(t *testing.T) {
+	resetMocks()
+	database.Mocks.ExternalServices.List = func(opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+		return nil, nil
+	}
+	database.Mocks.Repos.MockGetByName(t, "github.com/gorilla/mux", 2)
+	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
+		if repo.ID != 2 || rev != exampleCommitSHA1 {
+			t.Error("wrong arguments to Repos.ResolveRev")
+		}
+		return exampleCommitSHA1, nil
+	}
+	backend.Mocks.Repos.MockGetCommit_Return_NoCheck(t, &git.Commit{ID: exampleCommitSHA1})
+	git.Mocks.LsFiles = func(repo api.RepoName, commit api.CommitID) ([]string, error) {
+		return []string{"a", "b"}, nil
+	}
+
+	defer git.ResetMocks()
+
+	gqltesting.RunTests(t, []*gqltesting.Test{
+		{
+			Schema: mustParseGraphQLSchema(t),
+			Query: `
+				{
+					repository(name: "github.com/gorilla/mux") {
+						commit(rev: "` + exampleCommitSHA1 + `") {
+							fileNames
+						}
+					}
+				}
+			`,
+			ExpectedResult: `
+{
+  "repository": {
+    "commit": {
+		"fileNames": ["a", "b"]
+    }
+  }
+}
+			`,
+		},
 	})
 }
