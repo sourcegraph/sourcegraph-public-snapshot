@@ -37,12 +37,14 @@ const defaultProps: SearchBoxProps = {
     selectedSearchContextSpec: 'global',
     setSelectedSearchContextSpec: () => {},
     defaultSearchContextSpec: 'global',
-    copyQueryButton: false,
     onChange: () => {},
     onSubmit: () => {},
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
     isSearchOnboardingTourVisible: false,
+    hasUserAddedRepositories: false,
+    authenticatedUser: null,
+    hasUserAddedExternalServices: false,
 }
 
 add(
@@ -84,16 +86,6 @@ add(
     () => (
         <WebStory>
             {props => <SearchBox {...defaultProps} caseSensitive={true} isLightTheme={props.isLightTheme} />}
-        </WebStory>
-    ),
-    {}
-)
-
-add(
-    'with copy query button',
-    () => (
-        <WebStory>
-            {props => <SearchBox {...defaultProps} copyQueryButton={true} isLightTheme={props.isLightTheme} />}
         </WebStory>
     ),
     {}

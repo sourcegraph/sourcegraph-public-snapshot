@@ -17,7 +17,7 @@ import { stackStorm } from './repogroups/StackStorm'
 import { stanford } from './repogroups/Stanford'
 import { temporal } from './repogroups/Temporal'
 import { StreamingSearchResults } from './search/results/streaming/StreamingSearchResults'
-import { isMacPlatform, UserRepositoriesUpdateProps } from './util'
+import { isMacPlatform, UserExternalServicesOrRepositoriesUpdateProps } from './util'
 import { lazyComponent } from './util/lazyComponent'
 
 const SearchPage = lazyComponent(() => import('./search/input/SearchPage'), 'SearchPage')
@@ -36,7 +36,7 @@ export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof
         BreadcrumbsProps,
         BreadcrumbSetters,
         ExtensionAlertProps,
-        UserRepositoriesUpdateProps {
+        UserExternalServicesOrRepositoriesUpdateProps {
     isSourcegraphDotCom: boolean
     isRedesignEnabled: boolean
 }

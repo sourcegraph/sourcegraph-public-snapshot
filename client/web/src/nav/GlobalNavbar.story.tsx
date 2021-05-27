@@ -48,7 +48,6 @@ const defaultProps = (
     setCaseSensitivity: () => undefined,
     platformContext: {} as any,
     keyboardShortcuts: [],
-    copyQueryButton: false,
     versionContext: undefined,
     showSearchContext: false,
     showSearchContextManagement: false,
@@ -67,6 +66,8 @@ const defaultProps = (
     routes: [],
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
+    hasUserAddedRepositories: false,
+    hasUserAddedExternalServices: false,
 })
 
 const { add } = storiesOf('web/nav/GlobalNav', module)

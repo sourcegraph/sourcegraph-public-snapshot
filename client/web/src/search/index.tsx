@@ -179,10 +179,6 @@ export interface MutableVersionContextProps extends VersionContextProps {
     previousVersionContext: string | null
 }
 
-export interface CopyQueryButtonProps {
-    copyQueryButton: boolean
-}
-
 export interface RepogroupHomepageProps {
     showRepogroupHomepage: boolean
 }
@@ -195,6 +191,8 @@ export interface SearchContextProps {
     showSearchContext: boolean
     showSearchContextManagement: boolean
     showSearchContextHighlightTourStep?: boolean
+    hasUserAddedRepositories: boolean
+    hasUserAddedExternalServices: boolean
     defaultSearchContextSpec: string
     selectedSearchContextSpec?: string
     setSelectedSearchContextSpec: (spec: string) => void
@@ -211,6 +209,8 @@ export interface SearchContextProps {
 export type SearchContextInputProps = Pick<
     SearchContextProps,
     | 'showSearchContext'
+    | 'hasUserAddedRepositories'
+    | 'hasUserAddedExternalServices'
     | 'showSearchContextManagement'
     | 'showSearchContextHighlightTourStep'
     | 'defaultSearchContextSpec'

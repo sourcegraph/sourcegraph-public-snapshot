@@ -9,6 +9,10 @@
     border-style: solid;
     border-width: 0 0 1px;
 
+    .theme-redesign & {
+        border: none;
+    }
+
     &--alert {
         border-width: 1px 0;
     }

@@ -13,6 +13,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -167,6 +169,8 @@ func (r *externalServiceResolver) NextSyncAt() *DateTime {
 	return &DateTime{Time: r.externalService.NextSyncAt}
 }
 
+var scopeCache = rcache.New("extsvc_token_scope")
+
 func (r *externalServiceResolver) GrantedScopes(ctx context.Context) ([]string, error) {
-	return types.GrantedScopes(ctx, r.externalService.Kind, r.externalService.Config)
+	return repos.GrantedScopes(ctx, scopeCache, r.externalService.Kind, r.externalService.Config)
 }

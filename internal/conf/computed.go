@@ -360,6 +360,19 @@ const (
 	ExternalServiceModeAll      ExternalServiceMode = 2
 )
 
+func (e ExternalServiceMode) String() string {
+	switch e {
+	case ExternalServiceModeDisabled:
+		return "disabled"
+	case ExternalServiceModePublic:
+		return "public"
+	case ExternalServiceModeAll:
+		return "all"
+	default:
+		return "unknown"
+	}
+}
+
 // ExternalServiceUserMode returns the site level mode describing if users are
 // allowed to add external services for public and private repositories. It does
 // NOT take into account permissions granted to the current user.

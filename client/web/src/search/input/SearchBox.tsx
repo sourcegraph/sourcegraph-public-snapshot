@@ -3,7 +3,8 @@ import React from 'react'
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import { CopyQueryButtonProps, SearchContextInputProps } from '..'
+import { SearchContextInputProps } from '..'
+import { AuthenticatedUser } from '../../auth'
 import { VersionContextDropdown } from '../../nav/VersionContextDropdown'
 import { VersionContext } from '../../schema/site.schema'
 import { QueryState, submitSearch } from '../helpers'
@@ -14,11 +15,8 @@ import { SearchButton } from './SearchButton'
 import { SearchContextDropdown } from './SearchContextDropdown'
 import { Toggles, TogglesProps } from './toggles/Toggles'
 
-export interface SearchBoxProps
-    extends Omit<TogglesProps, 'navbarSearchQuery'>,
-        ThemeProps,
-        SearchContextInputProps,
-        CopyQueryButtonProps {
+export interface SearchBoxProps extends Omit<TogglesProps, 'navbarSearchQuery'>, ThemeProps, SearchContextInputProps {
+    authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean // significant for query suggestions
     queryState: QueryState
     onChange: (newState: QueryState) => void

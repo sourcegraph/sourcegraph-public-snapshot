@@ -124,7 +124,6 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
             setPatternType,
             caseSensitive,
             setCaseSensitivity,
-            copyQueryButton,
             versionContext,
             globbing,
             ...context
@@ -165,7 +164,6 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                 setPatternType,
                 caseSensitive,
                 setCaseSensitivity,
-                copyQueryButton,
                 versionContext,
                 globbing,
             }
@@ -182,7 +180,9 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                         defaultBranch={defaultBranch || 'HEAD'}
                     />
                     {!hideRepoRevisionContent && (
-                        <div className="repo-revision-container__content">
+                        // Add `.blob-status-bar__container` because this is the
+                        // lowest common ancestor of Blob and the absolutely-positioned Blob status bar
+                        <div className="repo-revision-container__content blob-status-bar__container">
                             <ErrorBoundary location={context.location}>
                                 {objectType === 'blob' ? (
                                     <BlobPage

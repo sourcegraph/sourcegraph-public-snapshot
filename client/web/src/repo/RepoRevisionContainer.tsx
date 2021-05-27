@@ -30,7 +30,7 @@ import { BreadcrumbSetters } from '../components/Breadcrumbs'
 import { HeroPage } from '../components/HeroPage'
 import { ActionItemsBarProps } from '../extensions/components/ActionItemsBar'
 import { RepositoryFields } from '../graphql-operations'
-import { PatternTypeProps, CaseSensitivityProps, CopyQueryButtonProps, SearchContextProps } from '../search'
+import { PatternTypeProps, CaseSensitivityProps, SearchContextProps } from '../search'
 import { RouteDescriptor } from '../util/contributions'
 
 import { CopyLinkAction } from './actions/CopyLinkAction'
@@ -57,7 +57,6 @@ export interface RepoRevisionContainerContext
         Omit<RepoContainerContext, 'onDidUpdateExternalLinks'>,
         PatternTypeProps,
         CaseSensitivityProps,
-        CopyQueryButtonProps,
         VersionContextProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         RevisionSpec,
@@ -87,7 +86,6 @@ interface RepoRevisionContainerProps
         ActivationProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        CopyQueryButtonProps,
         VersionContextProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         RevisionSpec,

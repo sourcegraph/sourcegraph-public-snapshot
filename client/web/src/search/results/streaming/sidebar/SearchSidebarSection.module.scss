@@ -3,7 +3,7 @@
         display: flex;
         align-items: center;
         text-align: left;
-        width: 100%;
+        width: calc(100% + 0.5rem); // Take full width + account for negative margin
         border: none;
         padding: 0.25rem;
         margin: 0 -0.25rem;
@@ -20,7 +20,7 @@
 
     &__search-box {
         display: block;
-        margin: 0.5rem 0;
+        margin: 0.25rem 0;
     }
 
     &__list-item {
