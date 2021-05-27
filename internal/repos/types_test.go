@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
+
 	"github.com/google/go-cmp/cmp"
 	"golang.org/x/time/rate"
 
@@ -267,18 +269,35 @@ func (m MockExternalServicesLister) List(ctx context.Context, args database.Exte
 }
 
 func TestGrantedScopes(t *testing.T) {
+	rcache.SetupForTest(t)
+	cache := rcache.New("TestGrantedScopes")
+
 	want := []string{"repo"}
 	github.MockGetAuthenticatedUserOAuthScopes = func(ctx context.Context) ([]string, error) {
 		return want, nil
 	}
 
-	ctx := context.Background()
-	have, err := GrantedScopes(ctx, extsvc.KindGitHub, `{}`)
+	// Run twice to use cache
+	for i := 0; i < 2; i++ {
+		ctx := context.Background()
+		have, err := GrantedScopes(ctx, cache, extsvc.KindGitHub, `{"token": "abc"}`)
+		if err != nil {
+			t.Fatal(i, err)
+		}
+		if diff := cmp.Diff(want, have); diff != "" {
+			t.Fatal(i, diff)
+		}
+	}
+}
+
+func TestHashToken(t *testing.T) {
+	// Sanity check output of hash function
+	h, err := hashToken("token")
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	if diff := cmp.Diff(want, have); diff != "" {
-		t.Fatal(diff)
+	want := "47a1037c"
+	if want != h {
+		t.Fatalf("Want %q, got %q", want, h)
 	}
 }
