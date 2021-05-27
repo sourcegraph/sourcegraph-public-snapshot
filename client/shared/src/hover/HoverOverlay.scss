@@ -234,6 +234,12 @@
                 font-size: 0.75rem;
                 line-height: (16/12);
                 color: var(--text-muted);
+
+                // Required for any first content item to align with the close button on the first row.
+                & > *:first-child {
+                    margin-top: var(--hover-overlay-content-margin-top);
+                    margin-bottom: 0.5rem;
+                }
             }
 
             // Descendant selectors are needed here to style rendered markdown.
@@ -265,12 +271,6 @@
 
             code {
                 font-size: 0.75rem;
-            }
-
-            // Required for any first content item to align with the close button on the first row.
-            &:first-child *:first-child {
-                margin-top: var(--hover-overlay-content-margin-top);
-                margin-bottom: 0.5rem;
             }
         }
 
