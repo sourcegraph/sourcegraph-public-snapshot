@@ -28,9 +28,11 @@ export function prependCSSToDocumentHead(css: string): HTMLStyleElement {
 export const BrandedStory: React.FunctionComponent<
     WebStoryProps & {
         styles?: string
+        forceDarkMode?: boolean
     }
-> = ({ children: Children, styles = brandedStyles, ...memoryRouterProps }) => {
-    const [isLightTheme, setIsLightTheme] = useState(!useDarkMode())
+> = ({ children: Children, styles = brandedStyles, forceDarkMode, ...memoryRouterProps }) => {
+    const darkMode = useDarkMode()
+    const isLightTheme = forceDarkMode !== undefined ? !forceDarkMode : !darkMode
 
     useLayoutEffect(() => {
         const styleTag = prependCSSToDocumentHead(styles)
@@ -39,14 +41,6 @@ export const BrandedStory: React.FunctionComponent<
             styleTag.remove()
         }
     }, [styles])
-
-    useLayoutEffect(() => {
-        const listener = ((event: CustomEvent<boolean>): void => {
-            setIsLightTheme(event.detail)
-        }) as EventListener
-        document.body.addEventListener('chromatic-light-theme-toggled', listener)
-        return () => document.body.removeEventListener('chromatic-light-theme-toggled', listener)
-    }, [])
 
     return (
         <MemoryRouter {...memoryRouterProps}>

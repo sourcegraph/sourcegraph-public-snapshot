@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useMemo, useState } from 'react'
+import React, { useLayoutEffect, useMemo } from 'react'
 import { MemoryRouter, MemoryRouterProps, RouteComponentProps, withRouter } from 'react-router'
 import { useDarkMode } from 'storybook-dark-mode'
 
@@ -24,9 +24,11 @@ export interface WebStoryProps extends MemoryRouterProps {
 export const WebStory: React.FunctionComponent<
     WebStoryProps & {
         webStyles?: string
+        forceDarkMode?: boolean
     }
-> = ({ children, webStyles = _webStyles, ...memoryRouterProps }) => {
-    const [isLightTheme, setIsLightTheme] = useState(!useDarkMode())
+> = ({ children, webStyles = _webStyles, forceDarkMode, ...memoryRouterProps }) => {
+    const darkMode = useDarkMode()
+    const isLightTheme = forceDarkMode !== undefined ? !forceDarkMode : !darkMode
     const breadcrumbSetters = useBreadcrumbs()
     const Children = useMemo(() => withRouter(children), [children])
 
@@ -37,14 +39,6 @@ export const WebStory: React.FunctionComponent<
             styleTag.remove()
         }
     }, [webStyles])
-
-    useLayoutEffect(() => {
-        const listener = ((event: CustomEvent<boolean>): void => {
-            setIsLightTheme(event.detail)
-        }) as EventListener
-        document.body.addEventListener('chromatic-light-theme-toggled', listener)
-        return () => document.body.removeEventListener('chromatic-light-theme-toggled', listener)
-    }, [])
 
     return (
         <MemoryRouter {...memoryRouterProps}>
