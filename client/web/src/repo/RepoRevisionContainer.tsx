@@ -132,7 +132,6 @@ const RepoRevisionContainerBreadcrumb: React.FunctionComponent<RepoRevisionBread
                 id="repo-revision-popover"
                 aria-label="Change revision"
             >
-                <span className="mr-1">@</span>
                 {(revision && revision === resolvedRevisionOrError.commitID
                     ? resolvedRevisionOrError.commitID.slice(0, 7)
                     : revision) ||
@@ -221,7 +220,6 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
     useBreadcrumb,
     ...props
 }) => {
-    const [isRedesignEnabled] = useRedesignToggle()
     const breadcrumbSetters = useBreadcrumb(
         useMemo(() => {
             if (!props.resolvedRevisionOrError || isErrorLike(props.resolvedRevisionOrError)) {
@@ -230,7 +228,7 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
 
             return {
                 key: 'revision',
-                divider: isRedesignEnabled ? null : <span className="mr-1">@</span>,
+                divider: <span className="mr-1">@</span>,
                 element: (
                     <RepoRevisionContainerBreadcrumb
                         resolvedRevisionOrError={props.resolvedRevisionOrError}
@@ -241,14 +239,7 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
                     />
                 ),
             }
-        }, [
-            props.resolvedRevisionOrError,
-            props.revision,
-            props.repo,
-            props.history,
-            props.location,
-            isRedesignEnabled,
-        ])
+        }, [props.resolvedRevisionOrError, props.revision, props.repo, props.history, props.location])
     )
 
     if (!props.resolvedRevisionOrError) {

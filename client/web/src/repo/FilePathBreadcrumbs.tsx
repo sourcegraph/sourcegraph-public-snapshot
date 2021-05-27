@@ -53,9 +53,5 @@ export const FilePathBreadcrumbs: React.FunctionComponent<
     }
 
     // Important: do not put spaces between the breadcrumbs or spaces will get added when copying the path
-    if (isRedesignEnabled) {
-        return <small className="file-path-breadcrumbs">{spans}</small>
-    }
-
     return <span className="file-path-breadcrumbs">{spans}</span>
 }
