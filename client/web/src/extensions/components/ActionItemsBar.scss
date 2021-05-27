@@ -32,10 +32,6 @@ $default-icon-colors: $oc-grape-7, $oc-violet-7, $oc-cyan-9, $oc-indigo-7, $oc-p
 
         .theme-redesign & {
             background-color: var(--body-bg);
-
-            svg {
-                color: var(--icon-color);
-            }
         }
 
         &--open {
@@ -166,6 +162,13 @@ $default-icon-colors: $oc-grape-7, $oc-violet-7, $oc-cyan-9, $oc-indigo-7, $oc-p
                     background-color: nth($default-icon-colors, $i);
                 }
             }
+        }
+    }
+
+    // e.g. "close extensions panel", "add extensions"
+    &__aux-icon {
+        .theme-redesign & {
+            color: var(--icon-color);
         }
     }
 

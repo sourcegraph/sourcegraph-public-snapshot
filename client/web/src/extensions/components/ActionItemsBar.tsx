@@ -294,7 +294,10 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(props => {
                     <li className="action-items__list-item">
                         <Link
                             to="/extensions"
-                            className={classNames(actionItemClassName, 'action-items__list-item')}
+                            className={classNames(
+                                actionItemClassName,
+                                'action-items__list-item action-items__aux-icon'
+                            )}
                             data-tooltip="Add extensions"
                         >
                             <PlusIcon className="icon-inline" />
@@ -334,7 +337,7 @@ export const ActionItemsToggle: React.FunctionComponent<ActionItemsToggleProps> 
                     )}
                 >
                     <ButtonLink
-                        className={classNames(actionItemClassName)}
+                        className={classNames(actionItemClassName, 'action-items__aux-icon')}
                         onSelect={toggle}
                         buttonLinkRef={toggleReference}
                     >
