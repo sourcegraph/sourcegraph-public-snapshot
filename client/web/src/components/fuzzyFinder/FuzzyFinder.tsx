@@ -133,9 +133,7 @@ async function downloadFilenames(props: FuzzyFinderProps): Promise<string[]> {
             query FileNames($repository: String!, $commit: String!) {
                 repository(name: $repository) {
                     commit(rev: $commit) {
-                        tree(recursive: true) {
-                            fileNames
-                        }
+                        fileNames
                     }
                 }
             }
@@ -145,7 +143,7 @@ async function downloadFilenames(props: FuzzyFinderProps): Promise<string[]> {
             commit: props.commitID,
         }
     ).toPromise()
-    const filenames = gqlResult.data?.repository?.commit?.tree?.fileNames
+    const filenames = gqlResult.data?.repository?.commit?.fileNames
     if (!filenames) {
         throw new Error(JSON.stringify(gqlResult))
     }
