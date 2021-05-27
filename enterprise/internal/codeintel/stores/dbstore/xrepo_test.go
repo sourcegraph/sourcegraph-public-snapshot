@@ -373,11 +373,11 @@ func TestReferencesForUpload(t *testing.T) {
 	)
 
 	insertPackageReferences(t, store, []lsifstore.PackageReference{
-		{Package: lsifstore.Package{DumpID: 1, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f1")},
-		{Package: lsifstore.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f2")},
-		{Package: lsifstore.Package{DumpID: 3, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f3")},
-		{Package: lsifstore.Package{DumpID: 4, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f4")},
-		{Package: lsifstore.Package{DumpID: 5, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f5")},
+		{Package: lsifstore.Package{DumpID: 1, Scheme: "gomod", Name: "leftpad", Version: "1.1.0"}, Filter: []byte("f1")},
+		{Package: lsifstore.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "2.1.0"}, Filter: []byte("f2")},
+		{Package: lsifstore.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "3.1.0"}, Filter: []byte("f3")},
+		{Package: lsifstore.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "4.1.0"}, Filter: []byte("f4")},
+		{Package: lsifstore.Package{DumpID: 3, Scheme: "gomod", Name: "leftpad", Version: "5.1.0"}, Filter: []byte("f5")},
 	})
 
 	scanner, err := store.ReferencesForUpload(context.Background(), 2)
@@ -391,9 +391,9 @@ func TestReferencesForUpload(t *testing.T) {
 	}
 
 	expected := []lsifstore.PackageReference{
-		{Package: lsifstore.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f2")},
-		{Package: lsifstore.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f3")},
-		{Package: lsifstore.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}, Filter: []byte("f4")},
+		{Package: lsifstore.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "2.1.0"}, Filter: nil},
+		{Package: lsifstore.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "3.1.0"}, Filter: nil},
+		{Package: lsifstore.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "4.1.0"}, Filter: nil},
 	}
 	if diff := cmp.Diff(expected, filters); diff != "" {
 		t.Errorf("unexpected filters (-want +got):\n%s", diff)
