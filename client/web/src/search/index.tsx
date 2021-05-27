@@ -179,10 +179,6 @@ export interface MutableVersionContextProps extends VersionContextProps {
     previousVersionContext: string | null
 }
 
-export interface CopyQueryButtonProps {
-    copyQueryButton: boolean
-}
-
 export interface RepogroupHomepageProps {
     showRepogroupHomepage: boolean
 }

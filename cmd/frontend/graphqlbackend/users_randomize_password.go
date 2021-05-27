@@ -35,7 +35,7 @@ func (r *schemaResolver) RandomizeUserPassword(ctx context.Context, args *struct
 	User graphql.ID
 }) (*randomizeUserPasswordResult, error) {
 	// 🚨 SECURITY: Only site admins can randomize user passwords.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 

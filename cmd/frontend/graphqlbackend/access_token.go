@@ -35,7 +35,7 @@ func accessTokenByID(ctx context.Context, db dbutil.DB, id graphql.ID) (*accessT
 		return nil, err
 	}
 	// 🚨 SECURITY: Only the user (token owner) and site admins may retrieve the token.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, accessToken.SubjectUserID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, db, accessToken.SubjectUserID); err != nil {
 		return nil, err
 	}
 	return &accessTokenResolver{db: db, accessToken: *accessToken}, nil

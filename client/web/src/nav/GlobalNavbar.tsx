@@ -42,7 +42,6 @@ import { VersionContext } from '../schema/site.schema'
 import {
     PatternTypeProps,
     CaseSensitivityProps,
-    CopyQueryButtonProps,
     OnboardingTourProps,
     ParsedSearchQueryProps,
     isSearchContextSpecAvailable,
@@ -71,7 +70,6 @@ interface Props
         Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
         PatternTypeProps,
         CaseSensitivityProps,
-        CopyQueryButtonProps,
         VersionContextProps,
         SearchContextInputProps,
         CodeMonitoringProps,

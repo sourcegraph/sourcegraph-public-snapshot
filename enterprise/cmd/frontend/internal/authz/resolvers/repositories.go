@@ -76,7 +76,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 
 func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*graphqlbackend.RepositoryResolver, error) {
 	// 🚨 SECURITY: Only site admins may access this method.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -93,7 +93,7 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*graphqlbac
 
 func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *graphqlbackend.TotalCountArgs) (*int32, error) {
 	// 🚨 SECURITY: Only site admins may access this method.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -103,7 +103,7 @@ func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *gra
 
 func (r *repositoryConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
 	// 🚨 SECURITY: Only site admins may access this method.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 

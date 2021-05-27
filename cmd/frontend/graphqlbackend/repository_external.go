@@ -45,7 +45,7 @@ func (r *RepositoryResolver) ExternalServices(ctx context.Context, args *struct 
 	graphqlutil.ConnectionArgs
 }) (*computedExternalServiceConnectionResolver, error) {
 	// 🚨 SECURITY: Only site admins may read external services (they have secrets).
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 

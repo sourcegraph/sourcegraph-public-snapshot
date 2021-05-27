@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
 func TestWebhooksIntegration(t *testing.T) {
@@ -14,7 +14,7 @@ func TestWebhooksIntegration(t *testing.T) {
 
 	t.Parallel()
 
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
 
 	user := ct.CreateTestUser(t, db, false)
 

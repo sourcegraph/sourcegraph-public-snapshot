@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
@@ -84,15 +85,15 @@ func checkEmailAbuse(ctx context.Context, userID int32) (abused bool, reason str
 
 // Add adds an email address to a user. If email verification is required, it sends an email
 // verification email.
-func (userEmails) Add(ctx context.Context, userID int32, email string) error {
+func (userEmails) Add(ctx context.Context, db dbutil.DB, userID int32, email string) error {
 	// 🚨 SECURITY: Only the user and site admins can add an email address to a user.
-	if err := CheckSiteAdminOrSameUser(ctx, userID); err != nil {
+	if err := CheckSiteAdminOrSameUser(ctx, db, userID); err != nil {
 		return err
 	}
 
 	// Prevent abuse (users adding emails of other people whom they want to annoy) with the
 	// following abuse prevention checks.
-	if isSiteAdmin := CheckCurrentUserIsSiteAdmin(ctx) == nil; !isSiteAdmin {
+	if isSiteAdmin := CheckCurrentUserIsSiteAdmin(ctx, db) == nil; !isSiteAdmin {
 		abused, reason, err := checkEmailAbuse(ctx, userID)
 		if err != nil {
 			return err

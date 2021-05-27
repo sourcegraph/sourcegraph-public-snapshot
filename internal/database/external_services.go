@@ -473,63 +473,23 @@ func (e *ExternalServiceStore) validateSingleKindPerUser(ctx context.Context, id
 
 // upsertAuthorizationToExternalService adds "authorization" field to the
 // external service config when not yet present for GitHub and GitLab.
-//
-// We will only rewrite user-add code host connections because we expect users
-// to edit code host connections via our UI so no JSON with comments should
-// appear. Therefore it is OK to reset config as normalized. Having the
-// "authorization" field will correctly generate authz.Provider.
-//
-// For site-level code host connections, there usually exists useful comments,
-// naively stripping them off is almost always problematic. Therefore we simply
-// return an error for site admins to add the "authorization" field manually.
-func upsertAuthorizationToExternalService(namespaceUserID int32, kind string, normalized []byte) ([]byte, error) {
-	var err error
+func upsertAuthorizationToExternalService(kind, config string) (string, error) {
 	switch kind {
 	case extsvc.KindGitHub:
-		var c schema.GitHubConnection
-		if err = jsoniter.Unmarshal(normalized, &c); err != nil {
-			return nil, err
-		}
-
-		if c.Authorization != nil {
-			return normalized, nil
-		} else if namespaceUserID == 0 {
-			return nil, errors.New(`The "authorization" field must be presented in the config`)
-		}
-
-		c.Authorization = &schema.GitHubAuthorization{}
-
-		normalized, err = jsoniter.MarshalIndent(c, "", "  ")
-		if err != nil {
-			return nil, err
-		}
+		return jsonc.Edit(config, &schema.GitHubAuthorization{}, "authorization")
 
 	case extsvc.KindGitLab:
-		var c schema.GitLabConnection
-		if err = jsoniter.Unmarshal(normalized, &c); err != nil {
-			return nil, err
-		}
-
-		if c.Authorization != nil {
-			return normalized, nil
-		} else if namespaceUserID == 0 {
-			return nil, errors.New(`The "authorization" field must be presented in the config`)
-		}
-
-		c.Authorization = &schema.GitLabAuthorization{
-			IdentityProvider: schema.IdentityProvider{
-				Oauth: &schema.OAuthIdentity{
-					Type: "oauth",
+		return jsonc.Edit(config,
+			&schema.GitLabAuthorization{
+				IdentityProvider: schema.IdentityProvider{
+					Oauth: &schema.OAuthIdentity{
+						Type: "oauth",
+					},
 				},
 			},
-		}
-
-		normalized, err = jsoniter.MarshalIndent(c, "", "  ")
-		if err != nil {
-			return nil, err
-		}
+			"authorization")
 	}
-	return normalized, nil
+	return config, nil
 }
 
 // Create creates an external service.
@@ -568,11 +528,10 @@ func (e *ExternalServiceStore) Create(ctx context.Context, confGet func() *conf.
 	// Cloud, we always want to enforce repository permissions using OAuth to
 	// prevent unexpected resource leaking.
 	if envvar.SourcegraphDotComMode() {
-		normalized, err = upsertAuthorizationToExternalService(es.NamespaceUserID, es.Kind, normalized)
+		es.Config, err = upsertAuthorizationToExternalService(es.Kind, es.Config)
 		if err != nil {
 			return err
 		}
-		es.Config = string(normalized)
 	}
 
 	es.CreatedAt = timeutil.Now()
@@ -860,11 +819,10 @@ func (e *ExternalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 		// Cloud, we always want to enforce repository permissions using OAuth to
 		// prevent unexpected resource leaking.
 		if envvar.SourcegraphDotComMode() {
-			normalized, err = upsertAuthorizationToExternalService(externalService.NamespaceUserID, externalService.Kind, normalized)
+			config, err := upsertAuthorizationToExternalService(externalService.Kind, *update.Config)
 			if err != nil {
 				return err
 			}
-			config := string(normalized)
 			update.Config = &config
 		}
 

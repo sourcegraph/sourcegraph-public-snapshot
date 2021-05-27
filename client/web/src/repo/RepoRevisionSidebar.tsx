@@ -60,7 +60,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
             handlePosition="right"
             storageKey={SIZE_STORAGE_KEY}
             element={
-                <div className={classnames('d-flex w-100 border-right', !isRedesignEnabled && 'bg-2')}>
+                <div className={classnames('d-flex w-100', !isRedesignEnabled && 'bg-2 border-right')}>
                     <Tabs
                         className="w-100 test-repo-revision-sidebar"
                         defaultIndex={tabIndex}

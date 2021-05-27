@@ -21,7 +21,6 @@ const commonProps: Omit<React.ComponentProps<typeof ViewPage>, 'viewID' | 'extra
     history: H.createMemoryHistory(),
     location: H.createLocation('/'),
     telemetryService: { log: noop, logViewEvent: noop },
-    copyQueryButton: false,
     versionContext: undefined,
     selectedSearchContextSpec: 'global',
     globbing: false,

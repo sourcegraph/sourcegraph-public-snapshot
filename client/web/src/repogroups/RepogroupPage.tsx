@@ -24,7 +24,6 @@ import { VersionContext } from '../schema/site.schema'
 import {
     PatternTypeProps,
     CaseSensitivityProps,
-    CopyQueryButtonProps,
     OnboardingTourProps,
     ShowQueryBuilderProps,
     ParsedSearchQueryProps,
@@ -49,7 +48,6 @@ export interface RepogroupPageProps
         KeyboardShortcutsProps,
         ExtensionsControllerProps<'executeCommand'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
-        CopyQueryButtonProps,
         VersionContextProps,
         SearchContextInputProps,
         OnboardingTourProps,

@@ -13,7 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -124,7 +124,8 @@ func TestRepos_Count(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
@@ -175,7 +176,8 @@ func TestRepos_Delete(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
@@ -208,7 +210,8 @@ func TestRepos_Upsert(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
@@ -290,7 +293,8 @@ func TestRepos_UpsertForkAndArchivedFields(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
@@ -327,7 +331,8 @@ func TestRepos_Create(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
@@ -376,6 +381,9 @@ func TestListDefaultReposUncloned(t *testing.T) {
 		t.Skip()
 	}
 
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
+
 	reposToAdd := []types.RepoName{
 		{
 			ID:   api.RepoID(1),
@@ -391,7 +399,6 @@ func TestListDefaultReposUncloned(t *testing.T) {
 		},
 	}
 
-	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 	// Add an external service
 	_, err := db.ExecContext(ctx, `INSERT INTO external_services(id, kind, display_name, config, cloud_default) VALUES (1, 'github', 'github', '{}', true);`)
