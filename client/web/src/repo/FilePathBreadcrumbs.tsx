@@ -3,7 +3,6 @@ import * as React from 'react'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { RepoRevision, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { toTreeURL } from '../util/url'
 
@@ -17,7 +16,6 @@ export const FilePathBreadcrumbs: React.FunctionComponent<
         isDir: boolean
     }
 > = ({ repoName, revision, filePath, isDir }) => {
-    const [isRedesignEnabled] = useRedesignToggle()
     const parts = filePath.split('/')
     const partToUrl = (index: number): string => {
         const partPath = parts.slice(0, index + 1).join('/')
