@@ -24,6 +24,7 @@ type DBStore interface {
 	UpdatePackageReferences(ctx context.Context, dumpID int, packageReferences []semantic.PackageReference) error
 	MarkRepositoryAsDirty(ctx context.Context, repositoryID int) error
 	DeleteOverlappingDumps(ctx context.Context, repositoryID int, commit, root, indexer string) error
+	InsertDependencyIndexingJob(ctx context.Context, uploadID int) (int, error)
 	UpdateCommitedAt(ctx context.Context, dumpID int, committedAt time.Time) error
 }
 
@@ -73,8 +74,4 @@ type GitserverClient interface {
 	DirectoryChildren(ctx context.Context, repositoryID int, commit string, dirnames []string) (map[string][]string, error)
 	CommitDate(ctx context.Context, repositoryID int, commit string) (time.Time, error)
 	ResolveRevision(ctx context.Context, repositoryID int, versionString string) (api.CommitID, error)
-}
-
-type IndexEnqueuer interface {
-	QueueIndexesForPackage(ctx context.Context, pkg semantic.Package) error
 }

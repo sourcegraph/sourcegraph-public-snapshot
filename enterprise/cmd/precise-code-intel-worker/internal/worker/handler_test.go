@@ -117,6 +117,12 @@ func TestHandle(t *testing.T) {
 		t.Errorf("unexpected UpdatePackageReferencesFunc args (-want +got):\n%s", diff)
 	}
 
+	if len(mockDBStore.InsertDependencyIndexingJobFunc.History()) != 1 {
+		t.Errorf("unexpected number of InsertDependencyIndexingJob calls. want=%d have=%d", 1, len(mockDBStore.InsertDependencyIndexingJobFunc.History()))
+	} else if mockDBStore.InsertDependencyIndexingJobFunc.History()[0].Arg1 != 42 {
+		t.Errorf("unexpected value for upload id. want=%d have=%d", 42, mockDBStore.InsertDependencyIndexingJobFunc.History()[0].Arg1)
+	}
+
 	if len(mockDBStore.DeleteOverlappingDumpsFunc.History()) != 1 {
 		t.Errorf("unexpected number of DeleteOverlappingDumps calls. want=%d have=%d", 1, len(mockDBStore.DeleteOverlappingDumpsFunc.History()))
 	} else if mockDBStore.DeleteOverlappingDumpsFunc.History()[0].Arg1 != 50 {

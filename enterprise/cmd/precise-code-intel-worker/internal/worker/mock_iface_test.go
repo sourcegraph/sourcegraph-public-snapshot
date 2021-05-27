@@ -26,6 +26,10 @@ type MockDBStore struct {
 	// HandleFunc is an instance of a mock function object controlling the
 	// behavior of the method Handle.
 	HandleFunc *DBStoreHandleFunc
+	// InsertDependencyIndexingJobFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// InsertDependencyIndexingJob.
+	InsertDependencyIndexingJobFunc *DBStoreInsertDependencyIndexingJobFunc
 	// MarkRepositoryAsDirtyFunc is an instance of a mock function object
 	// controlling the behavior of the method MarkRepositoryAsDirty.
 	MarkRepositoryAsDirtyFunc *DBStoreMarkRepositoryAsDirtyFunc
@@ -66,6 +70,11 @@ func NewMockDBStore() *MockDBStore {
 		HandleFunc: &DBStoreHandleFunc{
 			defaultHook: func() *basestore.TransactableHandle {
 				return nil
+			},
+		},
+		InsertDependencyIndexingJobFunc: &DBStoreInsertDependencyIndexingJobFunc{
+			defaultHook: func(context.Context, int) (int, error) {
+				return 0, nil
 			},
 		},
 		MarkRepositoryAsDirtyFunc: &DBStoreMarkRepositoryAsDirtyFunc{
@@ -118,6 +127,9 @@ func NewMockDBStoreFrom(i DBStore) *MockDBStore {
 		},
 		HandleFunc: &DBStoreHandleFunc{
 			defaultHook: i.Handle,
+		},
+		InsertDependencyIndexingJobFunc: &DBStoreInsertDependencyIndexingJobFunc{
+			defaultHook: i.InsertDependencyIndexingJob,
 		},
 		MarkRepositoryAsDirtyFunc: &DBStoreMarkRepositoryAsDirtyFunc{
 			defaultHook: i.MarkRepositoryAsDirty,
@@ -459,6 +471,118 @@ func (c DBStoreHandleFuncCall) Args() []interface{} {
 // invocation.
 func (c DBStoreHandleFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// DBStoreInsertDependencyIndexingJobFunc describes the behavior when the
+// InsertDependencyIndexingJob method of the parent MockDBStore instance is
+// invoked.
+type DBStoreInsertDependencyIndexingJobFunc struct {
+	defaultHook func(context.Context, int) (int, error)
+	hooks       []func(context.Context, int) (int, error)
+	history     []DBStoreInsertDependencyIndexingJobFuncCall
+	mutex       sync.Mutex
+}
+
+// InsertDependencyIndexingJob delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockDBStore) InsertDependencyIndexingJob(v0 context.Context, v1 int) (int, error) {
+	r0, r1 := m.InsertDependencyIndexingJobFunc.nextHook()(v0, v1)
+	m.InsertDependencyIndexingJobFunc.appendCall(DBStoreInsertDependencyIndexingJobFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// InsertDependencyIndexingJob method of the parent MockDBStore instance is
+// invoked and the hook queue is empty.
+func (f *DBStoreInsertDependencyIndexingJobFunc) SetDefaultHook(hook func(context.Context, int) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// InsertDependencyIndexingJob method of the parent MockDBStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *DBStoreInsertDependencyIndexingJobFunc) PushHook(hook func(context.Context, int) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBStoreInsertDependencyIndexingJobFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBStoreInsertDependencyIndexingJobFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context, int) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *DBStoreInsertDependencyIndexingJobFunc) nextHook() func(context.Context, int) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBStoreInsertDependencyIndexingJobFunc) appendCall(r0 DBStoreInsertDependencyIndexingJobFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBStoreInsertDependencyIndexingJobFuncCall
+// objects describing the invocations of this function.
+func (f *DBStoreInsertDependencyIndexingJobFunc) History() []DBStoreInsertDependencyIndexingJobFuncCall {
+	f.mutex.Lock()
+	history := make([]DBStoreInsertDependencyIndexingJobFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBStoreInsertDependencyIndexingJobFuncCall is an object that describes an
+// invocation of method InsertDependencyIndexingJob on an instance of
+// MockDBStore.
+type DBStoreInsertDependencyIndexingJobFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBStoreInsertDependencyIndexingJobFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBStoreInsertDependencyIndexingJobFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // DBStoreMarkRepositoryAsDirtyFunc describes the behavior when the
@@ -1610,148 +1734,6 @@ func (c GitserverClientResolveRevisionFuncCall) Args() []interface{} {
 // invocation.
 func (c GitserverClientResolveRevisionFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
-}
-
-// MockIndexEnqueuer is a mock implementation of the IndexEnqueuer interface
-// (from the package
-// github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/worker)
-// used for unit testing.
-type MockIndexEnqueuer struct {
-	// QueueIndexesForPackageFunc is an instance of a mock function object
-	// controlling the behavior of the method QueueIndexesForPackage.
-	QueueIndexesForPackageFunc *IndexEnqueuerQueueIndexesForPackageFunc
-}
-
-// NewMockIndexEnqueuer creates a new mock of the IndexEnqueuer interface.
-// All methods return zero values for all results, unless overwritten.
-func NewMockIndexEnqueuer() *MockIndexEnqueuer {
-	return &MockIndexEnqueuer{
-		QueueIndexesForPackageFunc: &IndexEnqueuerQueueIndexesForPackageFunc{
-			defaultHook: func(context.Context, semantic.Package) error {
-				return nil
-			},
-		},
-	}
-}
-
-// NewMockIndexEnqueuerFrom creates a new mock of the MockIndexEnqueuer
-// interface. All methods delegate to the given implementation, unless
-// overwritten.
-func NewMockIndexEnqueuerFrom(i IndexEnqueuer) *MockIndexEnqueuer {
-	return &MockIndexEnqueuer{
-		QueueIndexesForPackageFunc: &IndexEnqueuerQueueIndexesForPackageFunc{
-			defaultHook: i.QueueIndexesForPackage,
-		},
-	}
-}
-
-// IndexEnqueuerQueueIndexesForPackageFunc describes the behavior when the
-// QueueIndexesForPackage method of the parent MockIndexEnqueuer instance is
-// invoked.
-type IndexEnqueuerQueueIndexesForPackageFunc struct {
-	defaultHook func(context.Context, semantic.Package) error
-	hooks       []func(context.Context, semantic.Package) error
-	history     []IndexEnqueuerQueueIndexesForPackageFuncCall
-	mutex       sync.Mutex
-}
-
-// QueueIndexesForPackage delegates to the next hook function in the queue
-// and stores the parameter and result values of this invocation.
-func (m *MockIndexEnqueuer) QueueIndexesForPackage(v0 context.Context, v1 semantic.Package) error {
-	r0 := m.QueueIndexesForPackageFunc.nextHook()(v0, v1)
-	m.QueueIndexesForPackageFunc.appendCall(IndexEnqueuerQueueIndexesForPackageFuncCall{v0, v1, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the
-// QueueIndexesForPackage method of the parent MockIndexEnqueuer instance is
-// invoked and the hook queue is empty.
-func (f *IndexEnqueuerQueueIndexesForPackageFunc) SetDefaultHook(hook func(context.Context, semantic.Package) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// QueueIndexesForPackage method of the parent MockIndexEnqueuer instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *IndexEnqueuerQueueIndexesForPackageFunc) PushHook(hook func(context.Context, semantic.Package) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
-func (f *IndexEnqueuerQueueIndexesForPackageFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, semantic.Package) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
-func (f *IndexEnqueuerQueueIndexesForPackageFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, semantic.Package) error {
-		return r0
-	})
-}
-
-func (f *IndexEnqueuerQueueIndexesForPackageFunc) nextHook() func(context.Context, semantic.Package) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *IndexEnqueuerQueueIndexesForPackageFunc) appendCall(r0 IndexEnqueuerQueueIndexesForPackageFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of IndexEnqueuerQueueIndexesForPackageFuncCall
-// objects describing the invocations of this function.
-func (f *IndexEnqueuerQueueIndexesForPackageFunc) History() []IndexEnqueuerQueueIndexesForPackageFuncCall {
-	f.mutex.Lock()
-	history := make([]IndexEnqueuerQueueIndexesForPackageFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// IndexEnqueuerQueueIndexesForPackageFuncCall is an object that describes
-// an invocation of method QueueIndexesForPackage on an instance of
-// MockIndexEnqueuer.
-type IndexEnqueuerQueueIndexesForPackageFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 semantic.Package
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c IndexEnqueuerQueueIndexesForPackageFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c IndexEnqueuerQueueIndexesForPackageFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
 }
 
 // MockLSIFStore is a mock implementation of the LSIFStore interface (from

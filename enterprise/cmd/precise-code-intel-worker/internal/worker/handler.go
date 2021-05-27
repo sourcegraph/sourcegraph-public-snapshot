@@ -31,7 +31,6 @@ type handler struct {
 	dbStore         DBStore
 	lsifStore       LSIFStore
 	uploadStore     uploadstore.Store
-	enqueuer        IndexEnqueuer
 	gitserverClient GitserverClient
 	enableBudget    bool
 	budgetRemaining int64
@@ -140,6 +139,13 @@ func (h *handler) handle(ctx context.Context, workerStore dbworkerstore.Store, d
 				return errors.Wrap(err, "store.DeleteOverlappingDumps")
 			}
 
+			// Insert a companion record to this upload that will asynchronously trigger another worker to
+			// queue auto-index records for the monikers written into the lsif_references table attached by
+			// this index processing job.
+			if _, err := tx.InsertDependencyIndexingJob(ctx, upload.ID); err != nil {
+				return errors.Wrap(err, "store.InsertDependencyIndexingJob")
+			}
+
 			// Mark this repository so that the commit updater process will pull the full commit graph from
 			// gitserver and recalculate the nearest upload for each commit as well as which uploads are visible
 			// from the tip of the default branch. We don't do this inside of the transaction as we re-calcalute
@@ -155,22 +161,9 @@ func (h *handler) handle(ctx context.Context, workerStore dbworkerstore.Store, d
 			return err
 		}
 
-		if upload.RepositoryID == sourcegraphRepositoryID {
-			go func() {
-				for _, pkg := range groupedBundleData.PackageReferences {
-					if err := h.enqueuer.QueueIndexesForPackage(ctx, pkg.Package); err != nil {
-						log15.Error("Failed to enqueue index for package", "error", err)
-					}
-				}
-			}()
-		}
-
 		return nil
 	})
 }
-
-// sourcegraphRepositoryID is the repository id of sg/sg on Cloud
-const sourcegraphRepositoryID = 36809250
 
 func inTransaction(ctx context.Context, dbStore DBStore, fn func(tx DBStore) error) (err error) {
 	tx, err := dbStore.Transact(ctx)

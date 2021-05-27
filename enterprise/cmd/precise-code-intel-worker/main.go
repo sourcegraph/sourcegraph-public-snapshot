@@ -15,7 +15,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/internal/worker"
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
@@ -31,7 +30,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -83,7 +81,6 @@ func main() {
 	workerStore := dbstore.WorkerutilUploadStore(dbStore, observationContext)
 	lsifStore := lsifstore.NewStore(codeIntelDB, observationContext)
 	gitserverClient := gitserver.New(dbStore, observationContext)
-	enqueuer := enqueuer.NewIndexEnqueuer(&enqueuer.DBStoreShim{dbStore}, gitserverClient, repoupdater.DefaultClient, observationContext)
 
 	uploadStore, err := uploadstore.CreateLazy(context.Background(), config.UploadStoreConfig, observationContext)
 	if err != nil {
@@ -103,7 +100,6 @@ func main() {
 		&worker.LSIFStoreShim{Store: lsifStore},
 		uploadStore,
 		gitserverClient,
-		enqueuer,
 		config.WorkerPollInterval,
 		config.WorkerConcurrency,
 		config.WorkerBudget,
