@@ -10,6 +10,7 @@ import (
 
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/inference"
@@ -97,11 +98,19 @@ func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg semantic
 
 	resp, err := s.repoUpdater.EnqueueRepoUpdate(ctx, api.RepoName(repoName))
 	if err != nil {
+		if isNotFoundError(err) {
+			return nil
+		}
+
 		return errors.Wrap(err, "repoUpdater.EnqueueRepoUpdate")
 	}
 
 	commit, err := s.gitserverClient.ResolveRevision(ctx, int(resp.ID), revision)
 	if err != nil {
+		if isNotFoundError(err) {
+			return nil
+		}
+
 		return errors.Wrap(err, "gitserverClient.ResolveRevision")
 	}
 
@@ -136,7 +145,7 @@ func (s *IndexEnqueuer) queueIndexForRepository(ctx context.Context, repositoryI
 // If the force flag is false, then the presence of an upload or index record for this given repository and commit
 // will cause this method to no-op. Note that this is NOT a guarantee that there will never be any duplicate records
 // when the flag is false.
-func (s *IndexEnqueuer) queueIndexForRepositoryAndCommit(ctx context.Context, repositoryID int, commit string, force bool, traceLog observation.TraceLogger) (err error) {
+func (s *IndexEnqueuer) queueIndexForRepositoryAndCommit(ctx context.Context, repositoryID int, commit string, force bool, traceLog observation.TraceLogger) error {
 	if !force {
 		isQueued, err := s.dbStore.IsQueued(ctx, repositoryID, commit)
 		if err != nil {
@@ -220,4 +229,14 @@ func (s *IndexEnqueuer) inferIndexJobsFromRepositoryStructure(ctx context.Contex
 	}
 
 	return indexes, nil
+}
+
+func isNotFoundError(err error) bool {
+	for ex := err; ex != nil; ex = errors.Unwrap(ex) {
+		if errcode.IsNotFound(ex) {
+			return true
+		}
+	}
+
+	return false
 }
