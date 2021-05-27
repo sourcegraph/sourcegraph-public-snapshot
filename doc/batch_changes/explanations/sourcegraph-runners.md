@@ -19,11 +19,29 @@ Sourcegraph runner is [open source](TODO).
 
 # Registering a runner
 
-TODO
+Only site admin can register runners to Sourcegraph. Once added, all Sourcegraph users will be able to submit batch changes jobs to the runner.
+
+1. Install the [runner agent](TODO)
+TODO: explanations
+- clone this repository
+- do This
+- do That
+- run `src-runner up`
+
+2. Register the runner from the Sourcegraph instance from the Batch Changes menu in the site admin.
+
+<img src="https://sourcegraphstatic.com/docs/images/runners-mvp-site-admin-register-runner.png" class="screenshot">
+
+
+3. After completing those steps, you should see the following message in the runner's terminal.
+```
+Connected to Sourcegraph. Runner ready to run.
+2021-05-27 07:34:22Z Listening for jobs
+```
 
 # Using runners
 
-TODO
+TODO:mockup or decriptio
 
 ## Who has access to runners
 
@@ -31,7 +49,7 @@ All batch changes users on your Sourcegraph instance have access to runners.
 
 ## Debugging
 
-TODO
+TODO: mockups or decription
 
 ## Scheduling
 Jobs are executed on a FIFO-basis. Users can interrupt a job from the interface.
@@ -47,3 +65,9 @@ TODO
 # Runner vs CLI workflow comparison
 
 TODO
+
+# Limitations
+
+The current version of Sourcegraph runners has known limitations
+- access control: if a runner is enabled, all Batch Changes users on the instance can submit jobs to it
+- 
