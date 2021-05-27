@@ -303,7 +303,6 @@
 
         &__action {
             flex-grow: 0;
-            border-radius: var(--border-radius);
 
             &:not(:first-child) {
                 border-left: none;
