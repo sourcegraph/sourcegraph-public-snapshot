@@ -12,6 +12,7 @@ export function generateSearchInsightExtensionBundle(data?: Record<string, View 
     return `
         var sourcegraph = require('sourcegraph')
         var insightViewStore = JSON.parse('${injectedDataString}')
+        var subscriptions = []
 
         function activate(context) {
 
@@ -23,7 +24,7 @@ export function generateSearchInsightExtensionBundle(data?: Record<string, View 
 
                     var provideView = () => insightViewStore[id]
 
-                    context.subscriptions.add(sourcegraph.app.registerViewProvider(id + '.insightsPage', {
+                    subscriptions.push(sourcegraph.app.registerViewProvider(id + '.insightsPage', {
                         where: 'insightsPage',
                         provideView,
                     }))
@@ -32,6 +33,9 @@ export function generateSearchInsightExtensionBundle(data?: Record<string, View 
 
             sourcegraph.configuration.subscribe(() => {
                 var config = sourcegraph.configuration.get().value
+
+                subscriptions.forEach(unsubscribe => unsubscribe())
+                subscriptions = []
 
                 handleInsights(config)
             })
