@@ -134,6 +134,9 @@ var (
 
 // LsFiles returns the output of `git ls-files`
 func LsFiles(ctx context.Context, repo api.RepoName, commit api.CommitID) ([]string, error) {
+	if Mocks.LsFiles != nil {
+		return Mocks.LsFiles(repo, commit)
+	}
 	args := []string{
 		"ls-files",
 		"-z",
