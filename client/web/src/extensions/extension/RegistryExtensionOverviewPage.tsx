@@ -220,10 +220,18 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<Props> = ({
                                 </div>
                             )}
                         </dd>
-                        {isSourcegraphExtension && (
+                        {isSourcegraphExtension ? (
                             <dd className="mt-2 py-2">
                                 <SourcegraphExtensionFeedback extensionID={extension.id} />
                             </dd>
+                        ) : (
+                            extension.manifest &&
+                            !isErrorLike(extension.manifest) &&
+                            extension.manifest.feedbackEmail && (
+                                <dd className="mt-2 py-2">
+                                    <a href={`mailto:${extension.manifest.feedbackEmail}`}>Message the author</a>
+                                </dd>
+                            )
                         )}
                     </dl>
                 </small>
