@@ -270,6 +270,7 @@ func (m MockExternalServicesLister) List(ctx context.Context, args database.Exte
 func TestGrantedScopes(t *testing.T) {
 	rcache.SetupForTest(t)
 	cache := rcache.New("TestGrantedScopes")
+	ctx := context.Background()
 
 	want := []string{"repo"}
 	github.MockGetAuthenticatedUserOAuthScopes = func(ctx context.Context) ([]string, error) {
@@ -278,7 +279,6 @@ func TestGrantedScopes(t *testing.T) {
 
 	// Run twice to use cache
 	for i := 0; i < 2; i++ {
-		ctx := context.Background()
 		have, err := GrantedScopes(ctx, cache, extsvc.KindGitHub, `{"token": "abc"}`)
 		if err != nil {
 			t.Fatal(i, err)
