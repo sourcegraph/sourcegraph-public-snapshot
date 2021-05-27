@@ -53,51 +53,19 @@ You need a fresh Postgres database and a database user that has full ownership o
 
 ## With Docker
 
-You may also want to run Postgres within a docker container instead of as a system service. Running within a container provides some advantages such as storing the data seperately from the container, you do not need to run it as a system service and its easy to use different database versions or multiple databases.
+The Sourcegraph server reads PostgreSQL connection configuration from the [`PG*` environment variables](http://www.postgresql.org/docs/current/static/libpq-envars.html).
 
-You can use `docker-compose` as described in [Install Dependencies](./quickstart_1_install_dependencies.md#optional-use-docker-compose-for-postgresql-and-redis) or you can start it manually as explained here.
+The development server startup script as well as the docker compose file provide default settings, so it will work out of the box.
 
-1. Create a directory to store and mount the database from for persistence:
+You can overwrite these settings e.g. via your `~/.bashrc`:
 
-    ```
-    # Create a seperate dir to store the database
-    mkdir PGDATA_DIR
+```
+export PGUSER=sourcegraph
+export PGPASSWORD=sourcegraph
+export PGDATABASE=sourcegraph
+```
 
-   # Also add this to your '~/.bashrc'
-    export PGDATA_DIR=/path/to/PGDATA_DIR/
-    ```
-
-2. Run the container:
-
-  ```
-   docker run -d  -p 5432:5432 -e POSTGRES_PASSWORD=sourcegraph \
-   -e POSTGRES_USER=sourcegraph -e POSTGRES_INITDB_ARGS=" --encoding=UTF8 " \
-   -v $PGDATA_DIR:/var/lib/postgresql/data postgres
-   ```
-
-3. Ensure you can connect to the database in your container using `docker exec -it <container-id> psql -U sourcegraph` and enter password `sourcegraph`. You can use the command `docker ps` to view the container-id.
-
-4. Configure database settings in your environment:
-
-    The Sourcegraph server reads PostgreSQL connection configuration from the [`PG*` environment variables](http://www.postgresql.org/docs/current/static/libpq-envars.html).
-
-    The startup script sets default values that work with the setup described here, but if you are using different values you can overwrite them, for example, in your `~/.bashrc`:
-
-    ```
-    export PGPORT=5432
-    export PGHOST=localhost
-    export PGUSER=sourcegraph
-    export PGPASSWORD=sourcegraph
-    export PGDATABASE=sourcegraph
-    export PGSSLMODE=disable
-    ```
-
-    You can also use a tool like [`envdir`][envdir] or [a `.dotenv` file][dotenv] to source these env vars on demand when you start the server.
-
-    [envdir]: https://cr.yp.to/daemontools/envdir.html
-    [dotenv]: https://github.com/joho/godotenv
-
-5. On restarting docker, you may need to start the container again. Find the image with `docker ps --all` and then `docker run <$containerID>` to start again.
+You can also use the `PGDATA_DIR` environment variable to specify a local folder (instead of a volume) to store the database files. See the `dev/compose.yml` file for more details.
 
 ## More info
 
