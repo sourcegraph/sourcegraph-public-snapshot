@@ -23,7 +23,7 @@ import { Page } from '../../components/Page'
 import { UserAreaUserFields, UserAreaResult, UserAreaVariables } from '../../graphql-operations'
 import { NamespaceProps } from '../../namespaces'
 import { PatternTypeProps, OnboardingTourProps } from '../../search'
-import { UserRepositoriesUpdateProps } from '../../util'
+import { UserExternalServicesOrRepositoriesUpdateProps } from '../../util'
 import { RouteDescriptor } from '../../util/contributions'
 import { EditUserProfilePageGQLFragment } from '../settings/profile/UserSettingsProfilePage'
 import { UserSettingsAreaRoute } from '../settings/UserSettingsArea'
@@ -98,7 +98,7 @@ interface UserAreaProps
         BreadcrumbsProps,
         BreadcrumbSetters,
         Omit<PatternTypeProps, 'setPatternType'>,
-        UserRepositoriesUpdateProps {
+        UserExternalServicesOrRepositoriesUpdateProps {
     userAreaRoutes: readonly UserAreaRoute[]
     userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[]
     userSettingsSideBarItems: UserSettingsSidebarItems
@@ -128,7 +128,7 @@ export interface UserAreaRouteContext
         BreadcrumbsProps,
         BreadcrumbSetters,
         Omit<PatternTypeProps, 'setPatternType'>,
-        UserRepositoriesUpdateProps {
+        UserExternalServicesOrRepositoriesUpdateProps {
     /** The user area main URL. */
     url: string
 

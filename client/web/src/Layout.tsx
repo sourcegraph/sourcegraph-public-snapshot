@@ -69,7 +69,7 @@ import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
-import { UserRepositoriesUpdateProps } from './util'
+import { UserExternalServicesOrRepositoriesUpdateProps } from './util'
 import { parseBrowserRepoURL } from './util/url'
 
 export interface LayoutProps
@@ -93,7 +93,7 @@ export interface LayoutProps
         SearchStreamingProps,
         CodeMonitoringProps,
         SearchContextProps,
-        UserRepositoriesUpdateProps {
+        UserExternalServicesOrRepositoriesUpdateProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
     extensionsAreaRoutes: readonly ExtensionsAreaRoute[]
