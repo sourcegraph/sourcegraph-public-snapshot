@@ -5,13 +5,17 @@ import (
 	"database/sql"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"hash/fnv"
 	"math/rand"
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/jackc/pgconn"
 	"github.com/lib/pq"
@@ -43,6 +47,36 @@ func NewTx(t testing.TB, db *sql.DB) *sql.Tx {
 	return tx
 }
 
+// recycleC is a channel that is used to recycle migrated databases
+var recycleC = make(chan *sql.DB)
+var inflightDBs int32
+
+func tryGetRecycledDB(t testing.TB) (*sql.DB, bool) {
+	// Only attempt to re-use a migrated database if there are more than 4 already created
+	if atomic.LoadInt32(&inflightDBs) >= 4 {
+		select {
+		case migratedDB := <-recycleC:
+			// If another test finishes with its database, truncate all tables and return it
+			emptyDBPreserveSchema(t, migratedDB)
+			return migratedDB, true
+		case <-time.After(100 * time.Millisecond):
+			// Only wait for 100 milliseconds before just creating a new database
+		}
+	}
+	return nil, false
+}
+
+func tryPutRecycledDB(db *sql.DB) bool {
+	select {
+	case recycleC <- db:
+		return true
+	default:
+		// The getter waits for 100 milliseconds,
+		// so don't block cleanup trying to recycle a database
+		return false
+	}
+}
+
 // Use a shared, locked RNG to avoid issues with multiple concurrent tests getting
 // the same random database number (unlikely, but has been observed).
 // Use crypto/rand.Read() to use an OS source of entropy, since, against all odds,
@@ -59,6 +93,10 @@ var rngLock sync.Mutex
 // NewDB returns a connection to a clean, new temporary testing database
 // with the same schema as Sourcegraph's production Postgres database.
 func NewDB(t testing.TB, dsn string) *sql.DB {
+	if recycled, ok := tryGetRecycledDB(t); ok {
+		return recycled
+	}
+
 	var err error
 	var config *url.URL
 	if dsn == "" {
@@ -95,13 +133,19 @@ func NewDB(t testing.TB, dsn string) *sql.DB {
 			return
 		}
 
+		if tryPutRecycledDB(testDB) {
+			return
+		}
+
 		if err := testDB.Close(); err != nil {
 			t.Fatalf("failed to close test database: %s", err)
 		}
+		atomic.AddInt32(&inflightDBs, -1)
 		dbExec(t, db, killClientConnsQuery, dbname)
 		dbExec(t, db, `DROP DATABASE `+pq.QuoteIdentifier(dbname))
 	})
 
+	atomic.AddInt32(&inflightDBs, 1)
 	return testDB
 }
 
@@ -211,5 +255,42 @@ func updateDSNFromEnv(dsn *url.URL) {
 		qry := dsn.Query()
 		qry.Set("sslmode", sslmode)
 		dsn.RawQuery = qry.Encode()
+	}
+}
+
+func emptyDBPreserveSchema(t testing.TB, d *sql.DB) {
+	_, err := d.Exec(`SELECT * FROM schema_migrations`)
+	if err != nil {
+		t.Fatalf("Table schema_migrations not found: %v", err)
+	}
+
+	var conds []string
+	conds = append(conds, fmt.Sprintf("table_name != '%s'", dbconn.Frontend.MigrationsTable))
+	conds = append(conds, fmt.Sprintf("table_name != '%s'", dbconn.CodeIntel.MigrationsTable))
+
+	rows, err := d.Query("SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE' AND " + strings.Join(conds, " AND "))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var tables []string
+	for rows.Next() {
+		var table string
+		if err := rows.Scan(&table); err != nil {
+			t.Fatal(err)
+		}
+		tables = append(tables, table)
+	}
+	if err := rows.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatal(err)
+	}
+	if testing.Verbose() {
+		t.Logf("Truncating all %d tables", len(tables))
+	}
+	_, err = d.Exec("TRUNCATE " + strings.Join(tables, ", ") + " RESTART IDENTITY")
+	if err != nil {
+		t.Fatal(err)
 	}
 }
