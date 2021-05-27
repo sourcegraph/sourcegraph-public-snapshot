@@ -63,6 +63,7 @@ export interface ExtensionManifest {
         type?: string
         url: string
     }
+    feedbackEmail?: string
 
     /**
      * The element type includes `string` because this value has not been validated. Use {@link knownCategories} to

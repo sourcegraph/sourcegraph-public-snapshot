@@ -59,6 +59,10 @@
         }
       }
     },
+    "feedbackEmail": {
+      "description": "Optional email address to which users can send feedback through the extension registry.",
+      "type": "string"
+    },
     "categories": {
       "description": "The categories that describe this extension, to help users browsing the extension registry to discover this extension.",
       "type": "array",

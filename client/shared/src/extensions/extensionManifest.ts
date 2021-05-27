@@ -15,6 +15,7 @@ export type ExtensionManifest = Pick<
     | 'wip'
     | 'repository'
     | 'categories'
+    | 'feedbackEmail'
     | 'tags'
     | 'readme'
     | 'url'
@@ -59,6 +60,9 @@ export function parseExtensionManifestOrError(input: string): ExtensionManifest 
             (!Array.isArray(value.categories) || !value.categories.every(category => typeof category === 'string'))
         ) {
             problems.push('"categories" property must be an array of strings')
+        }
+        if (value.feedbackEmail && typeof value.feedbackEmail !== 'string') {
+            problems.push('"feedbackEmail" property must be a string')
         }
         if (value.tags && (!Array.isArray(value.tags) || !value.tags.every(tag => typeof tag === 'string'))) {
             problems.push('"tags" property must be an array of strings')
