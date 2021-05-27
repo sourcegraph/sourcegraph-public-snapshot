@@ -46,7 +46,7 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 
 	// 🚨 SECURITY: Only site admins may add external services if user mode is disabled.
 	namespaceUserID := int32(0)
-	isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx) == nil
+	isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil
 	allowUserExternalServices, err := database.Users(r.db).CurrentUserAllowedExternalServices(ctx)
 	if err != nil {
 		return nil, err
@@ -125,7 +125,7 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 
 	// 🚨 SECURITY: Site admins can only update site level external services.
 	// Otherwise, the current user can only update their own external services.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		if es.NamespaceUserID == 0 {
 			return nil, err
 		} else if actor.FromContext(ctx).UID != es.NamespaceUserID {
@@ -222,7 +222,7 @@ func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *delete
 
 	// 🚨 SECURITY: Only site admins may delete all or a user's external services.
 	// Otherwise, the authenticated user can only delete external services under the same namespace.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		if es.NamespaceUserID == 0 {
 			return nil, err
 		} else if actor.FromContext(ctx).UID != es.NamespaceUserID {
@@ -260,14 +260,14 @@ var errNoAccessExternalService = errors.New("the authenticated user does not hav
 //
 // 🚨 SECURITY: Site admins can view external services with no owner, otherwise
 // only the owner of the external service is allowed to access it.
-func checkExternalServiceAccess(ctx context.Context, namespaceUserID int32) error {
+func checkExternalServiceAccess(ctx context.Context, db dbutil.DB, namespaceUserID int32) error {
 	// Fast path that doesn't need to hit DB as we can get id from context
 	if a := actor.FromContext(ctx); a.IsAuthenticated() && namespaceUserID == a.UID {
 		return nil
 	}
 
 	// Special case when external service has no owner
-	if namespaceUserID == 0 && backend.CheckCurrentUserIsSiteAdmin(ctx) == nil {
+	if namespaceUserID == 0 && backend.CheckCurrentUserIsSiteAdmin(ctx, db) == nil {
 		return nil
 	}
 
@@ -290,7 +290,7 @@ func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalSer
 		}
 	}
 
-	if err := checkExternalServiceAccess(ctx, namespaceUserID); err != nil {
+	if err := checkExternalServiceAccess(ctx, r.db, namespaceUserID); err != nil {
 		return nil, err
 	}
 

@@ -48,5 +48,14 @@
         min-width: 0;
 
         background-color: var(--body-bg);
+
+        // Add border to repo revision container content
+        // but enable variable margin-bottom (by setting it on child div)
+        // without having to repeat border styles.
+        .theme-redesign & > div:first-of-type {
+            border: 1px solid var(--border-color);
+            border-top-left-radius: 0.1875rem;
+            border-top-right-radius: 0.1875rem;
+        }
     }
 }

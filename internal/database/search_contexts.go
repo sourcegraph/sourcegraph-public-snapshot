@@ -94,6 +94,8 @@ OFFSET %d
 const countSearchContextsFmtStr = `
 SELECT COUNT(*)
 FROM search_contexts sc
+LEFT JOIN users u on sc.namespace_user_id = u.id
+LEFT JOIN orgs o on sc.namespace_org_id = o.id
 WHERE sc.deleted_at IS NULL
 	AND (%s) -- permission conditions
 	AND (%s) -- query conditions
@@ -120,6 +122,8 @@ type ListSearchContextsOptions struct {
 	AssociatedWithCurrentUser bool
 	// Name is used for partial matching of search contexts by name (case-insensitvely).
 	Name string
+	// NamespaceName is used for partial matching of search context namespaces (user or org) by name (case-insensitvely).
+	NamespaceName string
 	// NamespaceUserID matches search contexts by user. Mutually exclusive with NamespaceOrgID.
 	NamespaceUserID int32
 	// NamespaceOrgID matches search contexts by org. Mutually exclusive with NamespaceUserID.
@@ -181,6 +185,10 @@ func getSearchContextsQueryConditions(opts ListSearchContextsOptions) ([]*sqlf.Q
 	if opts.Name != "" {
 		// name column has type citext which automatically performs case-insensitive comparison
 		conds = append(conds, sqlf.Sprintf("sc.name LIKE %s", "%"+opts.Name+"%"))
+	}
+
+	if opts.NamespaceName != "" {
+		conds = append(conds, sqlf.Sprintf("COALESCE(u.username, o.name, '') ILIKE %s", "%"+opts.NamespaceName+"%"))
 	}
 
 	if len(conds) == 0 {

@@ -9,6 +9,7 @@ import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '@sourceg
 import { fetchBlobContentLines } from '../../repo/backend'
 import { CodeHost } from '../shared/codeHost'
 import { CodeView, toCodeViewResolver } from '../shared/codeViews'
+import { createNotificationClassNameGetter } from '../shared/getNotificationClassName'
 import { ViewResolver } from '../shared/views'
 
 import { diffDomFunctions, diffusionDOMFns } from './domFunctions'
@@ -171,6 +172,14 @@ const phabSourceCodeViewResolver = toCodeViewResolver('.phabricator-source-code-
     resolveFileInfo: resolveDiffusionFileInfo,
 })
 
+const notificationClassNames = {
+    [NotificationType.Log]: 'phui-info-view phui-info-severity-plain',
+    [NotificationType.Success]: 'phui-info-view phui-info-severity-success',
+    [NotificationType.Info]: 'phui-info-view phui-info-severity-notice',
+    [NotificationType.Warning]: 'phui-info-view phui-info-severity-warning',
+    [NotificationType.Error]: 'phui-info-view phui-info-severity-error',
+}
+
 export const checkIsPhabricator = (): boolean => !!document.querySelector('.phabricator-wordmark')
 
 export const phabricatorCodeHost: CodeHost = {
@@ -189,20 +198,13 @@ export const phabricatorCodeHost: CodeHost = {
         actionItemClass: 'button grey action-item--phabricator',
         actionItemIconClass: 'icon--phabricator',
     },
-    notificationClassNames: {
-        [NotificationType.Log]: 'phui-info-view phui-info-severity-plain',
-        [NotificationType.Success]: 'phui-info-view phui-info-severity-success',
-        [NotificationType.Info]: 'phui-info-view phui-info-severity-notice',
-        [NotificationType.Warning]: 'phui-info-view phui-info-severity-warning',
-        [NotificationType.Error]: 'phui-info-view phui-info-severity-error',
-    },
+    notificationClassNames,
     hoverOverlayClassProps: {
         className: 'aphront-dialog-view hover-overlay--phabricator',
         actionItemClassName: 'button grey hover-overlay-action-item--phabricator',
-        iconButtonClassName: 'button grey btn-icon--phabricator',
+        closeButtonClassName: 'button grey btn-icon--phabricator',
         iconClassName: 'icon--phabricator',
-        infoAlertClassName: 'phui-info-view phui-info-severity-notice',
-        errorAlertClassName: 'phui-info-view phui-info-severity-error',
+        getAlertClassName: createNotificationClassNameGetter(notificationClassNames),
     },
     codeViewsRequireTokenization: true,
 }

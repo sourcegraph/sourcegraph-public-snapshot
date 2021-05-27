@@ -60,14 +60,6 @@
             "pointer": true
           }
         },
-        "copyQueryButton": {
-          "description": "Enables displaying the copy query button in the search bar when hovering over the global navigation bar.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
         "showRepogroupHomepage": {
           "description": "Enables the repository group homepage ",
           "type": "boolean",
@@ -144,6 +136,22 @@
           "description": "Enables access to the design refresh toggle in the user menu.",
           "type": "boolean",
           "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "fuzzyFinder": {
+          "description": "Enables fuzzy finder with keyboard shortcut `t`.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "fuzzyFinderCaseInsensitiveFileCountThreshold": {
+          "description": "The maximum number of files a repo can have to use case-insensitive fuzzy finding",
+          "type": "number",
+          "default": 25000,
           "!go": {
             "pointer": true
           }

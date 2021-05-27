@@ -48,7 +48,6 @@ const defaultProps = (
     setCaseSensitivity: () => undefined,
     platformContext: {} as any,
     keyboardShortcuts: [],
-    copyQueryButton: false,
     versionContext: undefined,
     showSearchContext: false,
     showSearchContextManagement: false,
