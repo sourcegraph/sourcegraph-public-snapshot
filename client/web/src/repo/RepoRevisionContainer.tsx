@@ -228,7 +228,7 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
 
             return {
                 key: 'revision',
-                divider: <span className="mr-1">@</span>,
+                divider: <span className="repo-revision-container__divider">@</span>,
                 element: (
                     <RepoRevisionContainerBreadcrumb
                         resolvedRevisionOrError={props.resolvedRevisionOrError}
