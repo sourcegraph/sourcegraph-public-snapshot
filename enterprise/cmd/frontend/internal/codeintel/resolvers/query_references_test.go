@@ -95,8 +95,14 @@ func TestReferencesRemote(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error encoding bloom filter: %s", err)
 	}
-	scanner1 := dbstore.PackageReferenceScannerFromSlice(lsifstore.PackageReference{DumpID: 250, Filter: filter}, lsifstore.PackageReference{DumpID: 251, Filter: filter})
-	scanner2 := dbstore.PackageReferenceScannerFromSlice(lsifstore.PackageReference{DumpID: 252, Filter: filter}, lsifstore.PackageReference{DumpID: 253, Filter: filter})
+	scanner1 := dbstore.PackageReferenceScannerFromSlice(
+		lsifstore.PackageReference{Package: lsifstore.Package{DumpID: 250}, Filter: filter},
+		lsifstore.PackageReference{Package: lsifstore.Package{DumpID: 251}, Filter: filter},
+	)
+	scanner2 := dbstore.PackageReferenceScannerFromSlice(
+		lsifstore.PackageReference{Package: lsifstore.Package{DumpID: 252}, Filter: filter},
+		lsifstore.PackageReference{Package: lsifstore.Package{DumpID: 253}, Filter: filter},
+	)
 	mockDBStore.ReferenceIDsAndFiltersFunc.PushReturn(scanner1, 4, nil)
 	mockDBStore.ReferenceIDsAndFiltersFunc.PushReturn(scanner2, 2, nil)
 
