@@ -48,4 +48,9 @@ const PinnedTooltip: React.FunctionComponent = () => {
         </>
     )
 }
-add('Pinned', () => <PinnedTooltip />)
+add('Pinned', () => <PinnedTooltip />, {
+    chromatic: {
+        // Chromatic pauses CSS animations by default and resets them to their initial state
+        pauseAnimationAtEnd: true,
+    },
+})
