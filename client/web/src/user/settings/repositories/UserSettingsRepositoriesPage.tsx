@@ -289,9 +289,9 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     )
 
     useEffect(() => {
-        // don't re-fetch data when sync is scheduled
-        // we'll refresh once sync is complete
-        if (status === 'scheduled') {
+        // don't re-fetch data when sync is scheduled or we had an error
+        // we should fetch only on the page load or once the sync is complete
+        if (status === 'scheduled' || isErrorLike(status)) {
             return
         }
 
