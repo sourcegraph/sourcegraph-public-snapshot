@@ -755,7 +755,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                         key={serviceAndRepoName}
                         onClick={onRepoClicked(repo)}
                         checked={selectionState.repos.has(serviceAndRepoName)}
-                        serviceType={repo.codeHost?.kind || ''}
+                        serviceType={repo.codeHost?.kind || 'unknown'}
                         isPrivate={repo.private}
                     />
                 )
