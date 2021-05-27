@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import { isPlainObject } from 'lodash'
+import { debounce, isPlainObject } from 'lodash'
 import * as Monaco from 'monaco-editor'
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { Subscription, Observable, Unsubscribable, ReplaySubject } from 'rxjs'
@@ -163,6 +163,12 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
 }) => {
     const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
 
+    const [value, setValue] = useState(queryState.query)
+
+    useLayoutEffect(() => {
+        setValue(queryState.query)
+    }, [queryState.query])
+
     // Trigger a layout of the Monaco editor when its container gets resized.
     // The Monaco editor doesn't auto-resize with its container:
     // https://github.com/microsoft/monaco-editor/issues/28
@@ -194,8 +200,8 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     const [monacoInstance, setMonacoInstance] = useState<typeof Monaco>()
     const searchQueries = useMemo(() => new ReplaySubject<string>(1), [])
     useLayoutEffect(() => {
-        searchQueries.next(queryState.query)
-    }, [queryState.query, searchQueries])
+        searchQueries.next(value)
+    }, [value, searchQueries])
 
     useEffect(() => {
         if (!monacoInstance) {
@@ -315,8 +321,13 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
         if (!editor) {
             return
         }
+
+        const debounceOnChange = debounce((newValue: string) => onChange({ query: newValue, fromUserInput: true }), 50)
+
         const disposable = editor.onDidChangeModelContent(() => {
-            onChange({ query: editor.getValue().replace(/[\n\r↵]/g, ''), fromUserInput: true })
+            const newValue = editor.getValue().replace(/[\n\r↵]/g, '')
+            setValue(newValue)
+            debounceOnChange(newValue)
         })
         return () => disposable.dispose()
     }, [editor, onChange])
@@ -379,7 +390,7 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
             <MonacoEditor
                 id="monaco-query-input"
                 language={SOURCEGRAPH_SEARCH}
-                value={queryState.query}
+                value={value}
                 height={17}
                 isLightTheme={isLightTheme}
                 editorWillMount={setMonacoInstance}
