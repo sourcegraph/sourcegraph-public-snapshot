@@ -137,7 +137,7 @@ WHERE (r.scheme, r.name, r.version) IN (%s) AND r.dump_id IN (SELECT * FROM visi
 `
 
 const referenceIDsAndFiltersQuery = referenceIDsAndFiltersCTEDefinitions + `
-SELECT r.dump_id, r.filter
+SELECT r.dump_id, r.scheme, r.name, r.version, r.filter
 ` + referenceIDsAndFiltersBaseQuery + `
 ORDER BY dump_id
 LIMIT %s OFFSET %s
@@ -155,3 +155,28 @@ func monikersToString(vs []semantic.QualifiedMonikerData) string {
 
 	return strings.Join(strs, ", ")
 }
+
+// ReferencesForUpload returns the set of import monikers attached to the given upload identifier. The
+// scanner will return nulls for the Filter field as it's expected to be unused (and rather heavy) by
+// callers.
+func (s *Store) ReferencesForUpload(ctx context.Context, uploadID int) (_ PackageReferenceScanner, err error) {
+	ctx, endObservation := s.operations.referencesForUpload.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("uploadID", uploadID),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	rows, err := s.Query(ctx, sqlf.Sprintf(referencesForUploadQuery, uploadID))
+	if err != nil {
+		return nil, err
+	}
+
+	return packageReferenceScannerFromRows(rows), nil
+}
+
+const referencesForUploadQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/xrepo.go:ReferencesForUpload
+SELECT r.dump_id, r.scheme, r.name, r.version, NULL as filter
+FROM lsif_references r
+WHERE dump_id = %s
+ORDER BY r.scheme, r.name, r.version
+`

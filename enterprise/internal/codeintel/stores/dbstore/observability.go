@@ -51,6 +51,7 @@ type operations struct {
 	markRepositoryAsDirty                  *observation.Operation
 	queueSize                              *observation.Operation
 	referenceIDsAndFilters                 *observation.Operation
+	referencesForUpload                    *observation.Operation
 	refreshCommitResolvability             *observation.Operation
 	repoName                               *observation.Operation
 	repoUsageStatistics                    *observation.Operation
@@ -140,6 +141,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		markRepositoryAsDirty:                  op("MarkRepositoryAsDirty"),
 		queueSize:                              op("QueueSize"),
 		referenceIDsAndFilters:                 op("ReferenceIDsAndFilters"),
+		referencesForUpload:                    op("ReferencesForUpload"),
 		refreshCommitResolvability:             op("RefreshCommitResolvability"),
 		repoName:                               op("RepoName"),
 		repoUsageStatistics:                    op("RepoUsageStatistics"),
