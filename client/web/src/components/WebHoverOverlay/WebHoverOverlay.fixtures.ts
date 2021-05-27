@@ -1,13 +1,19 @@
 import { MarkupContent, Badged, AggregableBadge, HoverAlert } from 'sourcegraph'
 
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
-import { FIXTURE_SEMANTIC_BADGE, FIXTURE_CONTENT } from '@sourcegraph/shared/src/hover/HoverOverlay.fixtures'
+import { FIXTURE_SEMANTIC_BADGE } from '@sourcegraph/shared/src/hover/HoverOverlay.fixtures'
 
 export const FIXTURE_CONTENT_LONG_CODE: Badged<MarkupContent> = {
-    ...FIXTURE_CONTENT,
+    kind: MarkupKind.Markdown,
     value:
         '```typescript\nexport interface LongTestInterface<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z>\n```\n\n' +
         '---\n\nNisi id deserunt culpa dolore aute pariatur ut amet veniam. Proident id Lorem reprehenderit veniam sunt velit.\n',
+}
+
+export const FIXTURE_CONTENT_MARKDOWN: Badged<MarkupContent> = {
+    kind: MarkupKind.Markdown,
+    value:
+        '<div>Hello from the unexpected value! It uses Markdown and wraps content into a "div" element. To render things easily. <b>Cool!<b></div>',
 }
 
 export const FIXTURE_CONTENT_LONG_TEXT_ONLY: Badged<MarkupContent> = {

@@ -17,6 +17,7 @@ import { WebHoverOverlay } from './WebHoverOverlay'
 import {
     FIXTURE_CONTENT_LONG_CODE,
     FIXTURE_CONTENT_LONG_TEXT_ONLY,
+    FIXTURE_CONTENT_MARKDOWN,
     FIXTURE_PARTIAL_BADGE,
     FIXTURE_SMALL_TEXT_MARKDOWN_ALERT,
     FIXTURE_WARNING_MARKDOWN_ALERT,
@@ -93,6 +94,16 @@ add('Long text only', () => (
         {...commonProps()}
         hoverOrError={{
             contents: [FIXTURE_CONTENT_LONG_TEXT_ONLY],
+        }}
+        actionsOrError={FIXTURE_ACTIONS}
+    />
+))
+
+add('Long markdown with <div>', () => (
+    <WebHoverOverlay
+        {...commonProps()}
+        hoverOrError={{
+            contents: [FIXTURE_CONTENT_MARKDOWN],
         }}
         actionsOrError={FIXTURE_ACTIONS}
     />
