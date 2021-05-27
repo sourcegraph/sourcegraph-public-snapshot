@@ -137,15 +137,6 @@ func (s *IndexEnqueuer) queueIndexForRepository(ctx context.Context, repositoryI
 // will cause this method to no-op. Note that this is NOT a guarantee that there will never be any duplicate records
 // when the flag is false.
 func (s *IndexEnqueuer) queueIndexForRepositoryAndCommit(ctx context.Context, repositoryID int, commit string, force bool, traceLog observation.TraceLogger) (err error) {
-	indexes, err := s.getIndexRecords(ctx, repositoryID, commit)
-	if err != nil {
-		return err
-	}
-	if len(indexes) == 0 {
-		return nil
-	}
-	traceLog(log.Int("numIndexes", len(indexes)))
-
 	if !force {
 		isQueued, err := s.dbStore.IsQueued(ctx, repositoryID, commit)
 		if err != nil {
@@ -155,6 +146,15 @@ func (s *IndexEnqueuer) queueIndexForRepositoryAndCommit(ctx context.Context, re
 			return nil
 		}
 	}
+
+	indexes, err := s.getIndexRecords(ctx, repositoryID, commit)
+	if err != nil {
+		return err
+	}
+	if len(indexes) == 0 {
+		return nil
+	}
+	traceLog(log.Int("numIndexes", len(indexes)))
 
 	return s.queueIndexes(ctx, repositoryID, commit, indexes)
 }

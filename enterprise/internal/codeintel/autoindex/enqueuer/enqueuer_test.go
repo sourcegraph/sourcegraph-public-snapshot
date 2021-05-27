@@ -319,8 +319,8 @@ func TestQueueIndexesForRepositoryInferred(t *testing.T) {
 		}
 	}
 
-	if len(mockDBStore.IsQueuedFunc.History()) != 2 {
-		t.Errorf("unexpected number of calls to IsQueued. want=%d have=%d", 2, len(mockDBStore.IsQueuedFunc.History()))
+	if len(mockDBStore.IsQueuedFunc.History()) != 4 {
+		t.Errorf("unexpected number of calls to IsQueued. want=%d have=%d", 4, len(mockDBStore.IsQueuedFunc.History()))
 	} else {
 		var commits []string
 		for _, call := range mockDBStore.IsQueuedFunc.History() {
@@ -328,7 +328,7 @@ func TestQueueIndexesForRepositoryInferred(t *testing.T) {
 		}
 		sort.Strings(commits)
 
-		if diff := cmp.Diff([]string{"c42", "c44"}, commits); diff != "" {
+		if diff := cmp.Diff([]string{"c41", "c42", "c43", "c44"}, commits); diff != "" {
 			t.Errorf("unexpected commits (-want +got):\n%s", diff)
 		}
 	}
