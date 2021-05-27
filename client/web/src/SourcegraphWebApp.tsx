@@ -55,6 +55,7 @@ import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import { LayoutRouteProps } from './routes'
 import { VersionContext } from './schema/site.schema'
+import { fetchFeatureFlags, FlagSet } from './featureFlags/featureFlags'
 import {
     resolveVersionContext,
     parseSearchURL,
@@ -218,6 +219,11 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      * Whether the design refresh toggle is enabled.
      */
     designRefreshToggleEnabled: boolean
+
+    /**
+     * Evaluated feature flags for the current viewer
+     */
+    featureFlags: FlagSet
 }
 
 const notificationClassNames = {
@@ -312,6 +318,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             // eslint-disable-next-line react/no-unused-state
             enableAPIDocs: false,
             designRefreshToggleEnabled: false,
+            featureFlags: {},
         }
     }
 
@@ -407,6 +414,12 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                         location.reload()
                     }
                 })
+        )
+
+        this.subscriptions.add(
+            fetchFeatureFlags().subscribe(event => {
+                this.setState({ featureFlags: event })
+            })
         )
 
         if (this.state.parsedSearchQuery && !filterExists(this.state.parsedSearchQuery, FilterType.context)) {
