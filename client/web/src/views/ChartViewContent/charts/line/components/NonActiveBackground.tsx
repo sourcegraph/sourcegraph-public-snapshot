@@ -18,7 +18,7 @@ export interface NonActiveBackgroundProps<Datum extends object, Key extends keyo
 }
 
 /**
- * Displays custom pattern background for area where we don't have a data points.
+ * Displays custom pattern background for area where we don't have any data points.
  * Example:
  * ┌──────────────────────────────────┐
  * │``````````````````                │ 10
@@ -53,8 +53,8 @@ export function NonActiveBackground<Datum extends object>(
         }
 
         const lastNullablePointX = firstNonNullablePoints.reduce((xCoord, datum) => {
-            // In case if first non nullable element is the first element of data we don't need to
-            // render non active background at all
+            // In case if the first non nullable element is the first element
+            // of data that means we don't need to render non active background.
             if (!datum || datum === data[0]) {
                 return null
             }
@@ -63,7 +63,8 @@ export function NonActiveBackground<Datum extends object>(
             return accessors.x(datum)
         }, null as Date | number | null)
 
-        // If we didn't find any non-nullable elements we don't to need render background
+        // If we didn't find any non-nullable elements we don't need to render
+        // non-active background.
         if (!lastNullablePointX) {
             return 0
         }
@@ -74,7 +75,8 @@ export function NonActiveBackground<Datum extends object>(
         return +xValue
     }, [data, series, accessors, xScale])
 
-    // Early return values not available in context
+    // Early return values not available in context or we don't need render
+    // non active background.
     if (!backgroundWidth || !width || !height || !margin || !theme) {
         return null
     }

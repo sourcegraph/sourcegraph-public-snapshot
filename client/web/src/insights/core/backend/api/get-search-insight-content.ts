@@ -30,7 +30,6 @@ export async function getSearchInsightContent(insight: SearchInsightSettings): P
     const { repositories: repos } = insight
     const dates = getDaysToQuery(step)
 
-    // -------- Initialize data ---------
     const data: InsightSeriesData[] = []
 
     for (const date of dates) {
@@ -39,7 +38,7 @@ export async function getSearchInsightContent(insight: SearchInsightSettings): P
         // Initialize data series object by all dates.
         data[dataIndex] = {
             date: date.getTime(),
-            // Initialize all series to 0
+            // Initialize all series with EMPTY_DATA_POINT_VALUE
             ...Object.fromEntries(insight.series.map(series => [series.name, EMPTY_DATA_POINT_VALUE])),
         }
     }
@@ -51,8 +50,8 @@ export async function getSearchInsightContent(insight: SearchInsightSettings): P
         )
     )
         .flat()
-        // For commit which we can't find we should not run search API request
-        // instead of it we will use just EMPTY_DATA_POINT_VALUE
+        // For commit which we couldn't find we should not run search API request.
+        // Instead of it we will use just EMPTY_DATA_POINT_VALUE
         .filter(commitData => commitData.commit !== null) as RepoCommit[]
 
     const searchQueries = insight.series.flatMap(({ query, name }) =>
@@ -66,7 +65,8 @@ export async function getSearchInsightContent(insight: SearchInsightSettings): P
     )
 
     const rawSearchResults = await defer(() => fetchRawSearchInsightResults(searchQueries.map(search => search.query)))
-        // The bulk search may timeout, but a retry is then likely faster because caches are warm
+        // The bulk search may timeout, but a retry is then likely faster
+        // because caches are warm
         .pipe(retry(3))
         .toPromise()
 
@@ -86,8 +86,8 @@ export async function getSearchInsightContent(insight: SearchInsightSettings): P
         const countForRepo = result?.results.matchCount
 
         // If we got some data that means for this data points we got
-        // a valid commit in a git history therefore we need write some data
-        // to this series.
+        // a valid commit in a git history therefore we need to write
+        // some data to this series.
         if (object[dataKey] === EMPTY_DATA_POINT_VALUE) {
             object[dataKey] = countForRepo ?? 0
         } else {
