@@ -191,7 +191,7 @@
             margin-top: var(--hover-overlay-content-margin-top);
             margin-left: 0.5rem;
             margin-right: 0.25rem;
-            line-height: 1rem;
+            line-height: (16/11);
 
             &-label {
                 vertical-align: top;
@@ -248,14 +248,14 @@
                 font-size: 0.75rem;
                 margin-top: 0.75rem;
                 margin-bottom: 0.75rem;
-                line-height: 1rem;
+                line-height: (16/12);
             }
 
             pre {
                 margin-top: var(--hover-overlay-content-margin-top);
                 margin-bottom: 0.5rem;
                 // Required for the correct line-height of the `<code>` element.
-                line-height: 0.875rem;
+                line-height: 1;
             }
 
             // Required for only-text content to align with the close button on the first row.
