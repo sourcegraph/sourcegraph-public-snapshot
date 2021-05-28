@@ -6,7 +6,7 @@ import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
 import { requestGraphQL } from '../../backend/graphql'
 import { FuzzySearch, SearchIndexing } from '../../fuzzyFinder/FuzzySearch'
-import { FilesResult, FilesVariables } from '../../graphql-operations'
+import { FileNamesResult, FileNamesVariables } from '../../graphql-operations'
 import {
     KEYBOARD_SHORTCUT_CLOSE_FUZZY_FINDER,
     KEYBOARD_SHORTCUT_FUZZY_FINDER,
@@ -128,16 +128,12 @@ export interface Failed {
 }
 
 async function downloadFilenames(props: FuzzyFinderProps): Promise<string[]> {
-    const gqlResult = await requestGraphQL<FilesResult, FilesVariables>(
+    const gqlResult = await requestGraphQL<FileNamesResult, FileNamesVariables>(
         gql`
-            query Files($repository: String!, $commit: String!) {
+            query FileNames($repository: String!, $commit: String!) {
                 repository(name: $repository) {
                     commit(rev: $commit) {
-                        tree(recursive: true) {
-                            files(first: 1000000, recursive: true) {
-                                path
-                            }
-                        }
+                        fileNames
                     }
                 }
             }
@@ -147,7 +143,7 @@ async function downloadFilenames(props: FuzzyFinderProps): Promise<string[]> {
             commit: props.commitID,
         }
     ).toPromise()
-    const filenames = gqlResult.data?.repository?.commit?.tree?.files?.map(file => file.path)
+    const filenames = gqlResult.data?.repository?.commit?.fileNames
     if (!filenames) {
         throw new Error(JSON.stringify(gqlResult))
     }

@@ -301,16 +301,6 @@ func triggerE2EandQA(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 			return
 		}
 
-		pipeline.AddTrigger(":chromium: Trigger E2E",
-			bk.Trigger("sourcegraph-e2e"),
-			bk.Async(async),
-			bk.Build(bk.BuildOptions{
-				Message: os.Getenv("BUILDKITE_MESSAGE"),
-				Commit:  c.commit,
-				Branch:  c.branch,
-				Env:     env,
-			}),
-		)
 		pipeline.AddTrigger(":chromium: Trigger QA",
 			bk.Trigger("qa"),
 			bk.Async(async),

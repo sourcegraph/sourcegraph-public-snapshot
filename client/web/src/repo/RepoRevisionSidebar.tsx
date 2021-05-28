@@ -88,11 +88,11 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
                         <div
                             aria-hidden={true}
                             className={classnames(
-                                'd-flex repo-revision-container__tabpanels explorer overflow-auto',
+                                'd-flex repo-revision-container__tabpanels explorer',
                                 isRedesignEnabled && 'px-3'
                             )}
                         >
-                            <TabPanels className="w-100">
+                            <TabPanels className="w-100 overflow-auto">
                                 <TabPanel tabIndex={-1}>
                                     {tabIndex === 0 && (
                                         <Tree
