@@ -40,6 +40,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Extensions can now log messages through `sourcegraph.app.log` to aid debugging user issues. [#20474](https://github.com/sourcegraph/sourcegraph/pull/20474)
 - Bulk comments on many changesets are now available in Batch Changes. [#20361](https://github.com/sourcegraph/sourcegraph/pull/20361)
 - Batch specs are now viewable when previewing changesets. [#19534](https://github.com/sourcegraph/sourcegraph/issues/19534)
+- Added a new UI for creating code insights. [#20212](https://github.com/sourcegraph/sourcegraph/issues/20212)
 
 ### Changed
 
