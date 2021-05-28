@@ -73,3 +73,7 @@ TODO
 The current version of Sourcegraph runners has known limitations
 - access control: if a runner is enabled, all Batch Changes users on the instance can submit jobs to it
 -
+
+# FAQ
+
+TODO after a first round of feedback.
