@@ -9,7 +9,7 @@ import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { PatternTypeProps, CaseSensitivityProps, ParsedSearchQueryProps, SearchContextProps } from '..'
 import { toggleSearchType } from '../helpers'
 
-import { SearchType } from './SearchResults'
+import { SearchType } from './streaming/StreamingSearchResults'
 
 interface Props
     extends Omit<PatternTypeProps, 'setPatternType'>,

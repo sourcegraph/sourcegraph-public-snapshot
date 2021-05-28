@@ -62,7 +62,6 @@ import {
     isSearchContextSpecAvailable,
 } from './search'
 import {
-    search,
     fetchSavedSearches,
     fetchRecentSearches,
     fetchRecentFileViews,
@@ -507,7 +506,6 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     navbarSearchQueryState={this.state.navbarSearchQueryState}
                                     onNavbarQueryChange={this.onNavbarQueryChange}
                                     fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
-                                    searchRequest={search}
                                     parsedSearchQuery={this.state.parsedSearchQuery}
                                     setParsedSearchQuery={this.setParsedSearchQuery}
                                     patternType={this.state.searchPatternType}

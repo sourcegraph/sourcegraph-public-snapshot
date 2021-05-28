@@ -6,7 +6,7 @@ import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
 import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '../../..'
 import { toggleSearchType } from '../../../helpers'
-import { SearchType } from '../../SearchResults'
+import { SearchType } from '../StreamingSearchResults'
 
 import styles from './SearchSidebarSection.module.scss'
 

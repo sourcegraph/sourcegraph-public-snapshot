@@ -16,12 +16,14 @@ import { RepogroupPage } from './repogroups/RepogroupPage'
 import { stackStorm } from './repogroups/StackStorm'
 import { stanford } from './repogroups/Stanford'
 import { temporal } from './repogroups/Temporal'
-import { StreamingSearchResults } from './search/results/streaming/StreamingSearchResults'
 import { isMacPlatform, UserExternalServicesOrRepositoriesUpdateProps } from './util'
 import { lazyComponent } from './util/lazyComponent'
 
 const SearchPage = lazyComponent(() => import('./search/input/SearchPage'), 'SearchPage')
-const SearchResults = lazyComponent(() => import('./search/results/SearchResults'), 'SearchResults')
+const StreamingSearchResults = lazyComponent(
+    () => import('./search/results/streaming/StreamingSearchResults'),
+    'StreamingSearchResults'
+)
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
 const ExtensionsArea = lazyComponent(() => import('./extensions/ExtensionsArea'), 'ExtensionsArea')
 const SearchConsolePage = lazyComponent(() => import('./search/SearchConsolePage'), 'SearchConsolePage')
@@ -128,11 +130,6 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/organizations',
         render: lazyComponent(() => import('./org/OrgsArea'), 'OrgsArea'),
-    },
-    {
-        path: '/search',
-        render: props => <SearchResults {...props} deployType={window.context.deployType} />,
-        exact: true,
     },
     {
         path: '/site-admin/init',
