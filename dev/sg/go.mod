@@ -3,6 +3,7 @@ module github.com/sourcegraph/sourcegraph/dev/sg
 go 1.16
 
 require (
+	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/peterbourgon/ff/v3 v3.0.0
 	github.com/pkg/errors v0.9.1

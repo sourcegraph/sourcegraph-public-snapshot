@@ -2,15 +2,17 @@ package main
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
+	"github.com/Masterminds/semver"
 	"github.com/peterbourgon/ff/v3/ffcli"
+	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -418,12 +420,122 @@ func migrationSquashExec(ctx context.Context, args []string) error {
 		return flag.ErrHelp
 	}
 
-	if !isValidDatabaseName(*migrationSquashDatabaseNameFlag) {
-		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: database %q not found :(\n", *migrationSquashDatabaseNameFlag))
+	var (
+		databaseName  = *migrationSquashDatabaseNameFlag
+		migrationName = args[0]
+	)
+
+	if !isValidDatabaseName(databaseName) {
+		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: database %q not found :(\n", databaseName))
 		return flag.ErrHelp
 	}
 
+	currentVersion, err := semver.NewVersion(migrationName)
+	if err != nil {
+		return err
+	}
+
+	commit := fmt.Sprintf("v%d.%d.0", currentVersion.Major(), currentVersion.Minor()-3) // TODO - define this as a constant
+
+	lastMigrationIndex, ok, err := lastMigrationIndexAtCommit(databaseName, commit)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return fmt.Errorf("no migrations exist at commit %s", commit)
+	}
+
+	cmd := exec.Command(
+		"docker", "run",
+		"--rm", "-d",
+		"--name", "squasher",
+		"-p", "5432:5432",
+		"-e", "POSTGRES_HOST_AUTH_METHOD=trust",
+		"postgres:12.6",
+	)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		return errors.Wrapf(err, "'docker %s' failed: %s", strings.Join(args, " "), out)
+	}
+
 	// TODO
+
+	// DBNAME='squasher'
+	// SERVER_VERSION=$(psql --version)
+
+	// if [ "${SERVER_VERSION}" != 12.6 ]; then
+	//   echo "running PostgreSQL 12.6 in docker since local version is ${SERVER_VERSION}"
+	//   docker image inspect postgres:12.6 >/dev/null || docker pull postgres:12.6
+	//   docker rm --force "${DBNAME}" 2>/dev/null || true
+	//   docker run --rm --name "${DBNAME}" -p 5433:5432 -e POSTGRES_HOST_AUTH_METHOD=trust -d postgres:12.6
+
+	//   function kill() {
+	//     docker kill "${DBNAME}" >/dev/null
+	//   }
+	//   trap kill EXIT
+
+	//   sleep 5
+	//   docker exec -u postgres "${DBNAME}" createdb "${DBNAME}"
+	//   export PGHOST=127.0.0.1
+	//   export PGPORT=5433
+	//   export PGDATABASE="${DBNAME}"
+	//   export PGUSER=postgres
+	// fi
+
+	// # First, apply migrations up to the version we want to squash
+	// migrate -database "postgres://${PGHOST}:${PGPORT}/${PGDATABASE}?sslmode=disable&x-migrations-table=${migrations_table}" -path . goto "${VERSION}"
+
+	// # Dump the database into a temporary file that we need to post-process
+	// pg_dump --schema-only --no-owner --no-comments --exclude-table='*schema_migrations' -f tmp_squashed.sql
+
+	// # Remove settings header from pg_dump output
+	// sed -i '' -e 's/^SET .*$//g' tmp_squashed.sql
+	// sed -i '' -e 's/^SELECT pg_catalog.set_config.*$//g' tmp_squashed.sql
+
+	// # Do not drop extensions if they already exist. This causes some
+	// # weird problems with the back-compat tests as the extensions are
+	// # not dropped in the correct order to honor dependencies.
+	// sed -i '' -e 's/^DROP EXTENSION .*$//g' tmp_squashed.sql
+
+	// # Remove references to public schema
+	// sed -i '' -e 's/public\.//g' tmp_squashed.sql
+	// sed -i '' -e 's/ WITH SCHEMA public//g' tmp_squashed.sql
+
+	// # Remove comments, multiple blank lines
+	// sed -i '' -e 's/^--.*$//g' tmp_squashed.sql
+	// sed -i '' -e '/^$/N;/^\n$/D' tmp_squashed.sql
+
+	// # Now clean up all of the old migration files. `ls` will return files in
+	// # alphabetical order, so we can delete all files from the migration directory
+	// # until we hit our squashed migration.
+
+	filenames, err := removeMigrationFilesBefore(databaseName, lastMigrationIndex)
+	if err != nil {
+		return err
+	}
+
+	for _, filename := range filenames {
+		fmt.Printf("> Squashed migration file %s\n", filename)
+	}
+
+	// # Wrap squashed migration in transaction
+	// printf "BEGIN;\n" >"./${VERSION}_squashed_migrations.up.sql"
+	// cat tmp_squashed.sql >>"./${VERSION}_squashed_migrations.up.sql"
+	// printf "\nCOMMIT;\n" >>"./${VERSION}_squashed_migrations.up.sql"
+	// rm tmp_squashed.sql
+
+	// cat >"./${VERSION}_squashed_migrations.down.sql" <<EOL
+	// DROP SCHEMA IF EXISTS public CASCADE;
+	// CREATE SCHEMA public;
+
+	// CREATE TABLE IF NOT EXISTS ${migrations_table} (
+	//     version bigint NOT NULL PRIMARY KEY,
+	//     dirty boolean NOT NULL
+	// );
+	// EOL
+
+	// echo ""
+	// echo "squashed migrations written to ${VERSION}_squashed_migrations.{up,down}.sql"
+
 	return errors.New("squash unimplemented")
 }
 
