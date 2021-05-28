@@ -89,6 +89,7 @@ commands:
       # frontend processes need this to be so that the paths to the assets are rendered correctly
       WEBPACK_DEV_SERVER: 1
     watch:
+      - lib
       - internal
       - cmd/frontend
 
@@ -108,9 +109,10 @@ commands:
       # frontend processes need this to be so that the paths to the assets are rendered correctly
       WEBPACK_DEV_SERVER: 1
     watch:
+      - lib
       - internal
-      - enterprise/internal
       - cmd/frontend
+      - enterprise/internal
       - enterprise/cmd/frontend
 
   gitserver:
@@ -119,6 +121,7 @@ commands:
     env:
       HOSTNAME: 127.0.0.1:3178
     watch:
+      - lib
       - internal
       - cmd/gitserver
 
@@ -128,17 +131,15 @@ commands:
     env:
       HOSTNAME: 127.0.0.1:3178
     watch:
+      - lib
+      - internal
       - cmd/github-proxy
-      - internal/debugserver
-      - internal/env
-      - internal/logging
-      - internal/trace
-      - internal/tracer
 
   repo-updater:
     cmd: .bin/repo-updater
     install: go build -o .bin/repo-updater github.com/sourcegraph/sourcegraph/cmd/repo-updater
     watch:
+      - lib
       - internal
       - cmd/repo-updater
 
@@ -149,15 +150,17 @@ commands:
       HOSTNAME: $SRC_GIT_SERVER_1
       ENTERPRISE: 1
     watch:
+      - lib
       - internal
-      - enterprise/internal
       - cmd/repo-updater
+      - enterprise/internal
       - enterprise/cmd/repo-updater
 
   query-runner:
     cmd: .bin/query-runner
     install: go build -o .bin/query-runner github.com/sourcegraph/sourcegraph/cmd/query-runner
     watch:
+      - lib
       - internal
       - cmd/query-runner
 
@@ -172,6 +175,7 @@ commands:
       CTAGS_COMMAND: cmd/symbols/universal-ctags-dev
       CTAGS_PROCESSES: 2
     watch:
+      - lib
       - internal
       - cmd/symbols
 
@@ -179,6 +183,7 @@ commands:
     cmd: .bin/searcher
     install: go build -o .bin/searcher github.com/sourcegraph/sourcegraph/cmd/searcher
     watch:
+      - lib
       - internal
       - cmd/searcher
 
@@ -339,8 +344,9 @@ commands:
     install: |
       go build -o .bin/precise-code-intel-worker github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker
     watch:
+      - lib
       - internal
-      - cmd/enterprise/precise-code-intel-worker
+      - enterprise/cmd/precise-code-intel-worker
       - enterprise/internal
       - lib/codeintel
 
@@ -349,10 +355,10 @@ commands:
     install: |
       go build -o .bin/executor-queue github.com/sourcegraph/sourcegraph/enterprise/cmd/executor-queue
     watch:
+      - lib
       - internal
-      - cmd/enterprise/executor-queue
       - enterprise/internal
-      - lib/codeintel
+      - enterprise/cmd/executor-queue
 
   codeintel-executor:
     cmd: .bin/executor
@@ -361,6 +367,11 @@ commands:
     env:
       EXECUTOR_QUEUE_NAME: codeintel
       TMPDIR: $HOME/.sourcegraph/indexer-temp
+    watch:
+      - lib
+      - internal
+      - enterprise/internal
+      - enterprise/cmd/executor
 
   minio:
     cmd: |
