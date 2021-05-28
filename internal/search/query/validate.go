@@ -68,7 +68,9 @@ func exists(nodes []Node, fn func(node Node) bool) bool {
 			return true
 		}
 		if operator, ok := node.(Operator); ok {
-			return exists(operator.Operands, fn)
+			if exists(operator.Operands, fn) {
+				return true
+			}
 		}
 	}
 	return found
@@ -386,6 +388,30 @@ func validateCommitParameters(nodes []Node) error {
 	return nil
 }
 
+func validateTypeStructural(nodes []Node) error {
+	seenStructural := false
+	seenType := false
+	typeDiff := false
+	invalid := exists(nodes, func(node Node) bool {
+		if p, ok := node.(Pattern); ok && p.Annotation.Labels.IsSet(Structural) {
+			seenStructural = true
+		}
+		if p, ok := node.(Parameter); ok && p.Field == FieldType {
+			seenType = true
+			typeDiff = p.Value == "diff"
+		}
+		return seenStructural && seenType
+	})
+	if invalid {
+		basic := "this structural search query specifies `type:` and is not supported. Structural search syntax only applies to searching file contents"
+		if typeDiff {
+			basic = basic + " and is not currently supported for diff searches"
+		}
+		return errors.New(basic)
+	}
+	return nil
+}
+
 // validatePredicates validates predicate parameters with respect to their validation logic.
 func validatePredicates(nodes []Node) error {
 	var err error
@@ -499,6 +525,7 @@ func validate(nodes []Node) error {
 		validateRepoHasFile,
 		validateCommitParameters,
 		validatePredicates,
+		validateTypeStructural,
 	)
 }
 

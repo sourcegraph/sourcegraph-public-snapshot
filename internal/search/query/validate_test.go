@@ -95,6 +95,16 @@ func TestAndOrQuery_Validation(t *testing.T) {
 			input: "type:symbol select:symbol.timelime",
 			want:  "invalid field 'timelime' on select type 'symbol'",
 		},
+		{
+			input:      "nice try type:repo",
+			want:       "this structural search query specifies `type:` and is not supported. Structural search syntax only applies to searching file contents",
+			searchType: SearchTypeStructural,
+		},
+		{
+			input:      "type:diff nice try",
+			want:       "this structural search query specifies `type:` and is not supported. Structural search syntax only applies to searching file contents and is not currently supported for diff searches",
+			searchType: SearchTypeStructural,
+		},
 	}
 	for _, c := range cases {
 		t.Run("validate and/or query", func(t *testing.T) {
