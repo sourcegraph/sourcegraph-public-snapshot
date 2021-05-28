@@ -28,8 +28,6 @@ describe('Code insights page', () => {
     after(() => driver?.close())
 
     beforeEach(async function () {
-
-        this.timeout(Infinity)
         testContext = await createWebIntegrationTestContext({
             driver,
             currentTest: this.currentTest!,
@@ -160,7 +158,7 @@ describe('Code insights page', () => {
         await percySnapshotWithVariants(driver.page, 'Code insights page with search-based insights only')
     })
 
-    it.only('should update user/org settings if delete happened', async() => {
+    it('should update user/org settings if delete happened', async() => {
         const settings = {
             'searchInsights.insight.graphQLTypesMigration': {},
             'searchInsights.insight.teamSize': {},

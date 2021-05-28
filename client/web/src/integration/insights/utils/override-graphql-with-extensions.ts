@@ -8,18 +8,18 @@ import { WebIntegrationTestContext } from '../../context';
 import { commonWebGraphQlResults } from '../../graphQlResults';
 import { siteGQLID, siteID } from '../../jscontext';
 
-import { generateSearchInsightExtensionBundle } from './search-based-insight-extension';
+import { getCodeStatsInsightExtensionBundle, getSearchInsightExtensionBundle } from './insight-extension-bundles';
 
 /**
  * Search based fake bundle URL.
  * */
-const searchBasedInsightBundleURL = 'https://sourcegraph.com/-/static/extension/search-based-insight.js'
+const searchBasedInsightExtensionBundleURL = 'https://sourcegraph.com/-/static/extension/search-based-insight.js'
 
 /**
  * Fake manifest of search based insight extension.
  * */
 const searchBasedInsightRawManifest = JSON.stringify({
-    url: searchBasedInsightBundleURL,
+    url: searchBasedInsightExtensionBundleURL,
     activationEvents: ['*'],
     browserslist: [],
     contributes: {},
@@ -36,12 +36,45 @@ const searchBasedInsightRawManifest = JSON.stringify({
     version: '0.0.0-DEVELOPMENT',
 })
 
+/**
+ * Code stats insight fake extension bundle URL.
+ * */
+const codeStatsInsightExtensionBundleURL = 'https://sourcegraph.com/-/static/extension/code-stats-insight.js'
+
+/**
+ * Fake manifest of code stats insight extension.
+ * */
+const codeStatsInsightRawManifest = JSON.stringify({
+    url: codeStatsInsightExtensionBundleURL,
+    activationEvents: ['*'],
+    browserslist: [],
+    contributes: {},
+    description: 'Code stats insight extension',
+    devDependencies: {},
+    extensionID: 'code-stats-insight',
+    license: 'MIT',
+    main: 'dist/code-stats-insight.js',
+    name: 'code-stats-insight',
+    publisher: 'mock-author',
+    readme: '# Code stats insight (Sourcegraph extension))\n',
+    scripts: {},
+    title: 'Code stats insight',
+    version: '0.0.0-DEVELOPMENT',
+})
+
 const extensionNodes: ExtensionsResult['extensionRegistry']['extensions']['nodes'] = [
     {
         extensionID: 'search-based-insight',
-        id: 'test-extension',
+        id: 'test-search-extension',
         manifest: { raw: searchBasedInsightRawManifest },
         url: '/extensions/search-based-insight',
+        viewerCanAdminister: false,
+    },
+    {
+        extensionID: 'code-stats-insight',
+        id: 'test-code-stats-extension',
+        manifest: { raw: codeStatsInsightRawManifest },
+        url: '/extensions/code-stats-insight',
         viewerCanAdminister: false,
     },
 ]
@@ -99,7 +132,10 @@ export function overrideGraphQLExtensions(props: OverrideGraphQLExtensionsProps)
                         latestSettings: {
                             id: 310,
                             contents: JSON.stringify({
-                                extensions: { 'search-based-insight': true },
+                                extensions: {
+                                    'search-based-insight': true,
+                                    'code-stats-insight': true,
+                                },
                                 ...userSettings
                             }),
                         },
@@ -118,8 +154,13 @@ export function overrideGraphQLExtensions(props: OverrideGraphQLExtensionsProps)
     })
 
     // Mock extension bundle
-    testContext.server.get(searchBasedInsightBundleURL).intercept((request, response) => {
+    testContext.server.get(searchBasedInsightExtensionBundleURL).intercept((request, response) => {
         response.type('application/javascript; charset=utf-8')
-            .send(generateSearchInsightExtensionBundle(insightExtensionsMocks))
+            .send(getSearchInsightExtensionBundle(insightExtensionsMocks))
+    })
+
+    testContext.server.get(codeStatsInsightExtensionBundleURL).intercept((request, response) => {
+        response.type('application/javascript; charset=utf-8')
+            .send(getCodeStatsInsightExtensionBundle(insightExtensionsMocks))
     })
 }
