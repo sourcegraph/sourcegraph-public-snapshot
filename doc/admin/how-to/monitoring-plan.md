@@ -2,7 +2,7 @@
 Please visit our [Observability Docs](./observability) for more in-depth information about observability.
 
 ## What should I be monitoring?
-Sourcegraph comes with built-in monitoring in the form of [Grafana](./observability/metrics#grafana) using [Prometheus](./observability/metrics#prometheus) for metrics and alerting. Generally, you can access Grafana by visiting `https://<your-sourcegraph-url>/-/debug/grafana` for monitoring purpose.
+Sourcegraph comes with built-in monitoring in the form of [Grafana](./observability/metrics#grafana) using [Prometheus](./observability/metrics#prometheus) for metrics and alerting. Generally, you can access Grafana by visiting `https://<your-sourcegraph-url>/-/debug/grafana` for monitoring purposes.
 
 ## When should I be monitoring?
 Whenever you see an alert on the Grafana dashboard.
