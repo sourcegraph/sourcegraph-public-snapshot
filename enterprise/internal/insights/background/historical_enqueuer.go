@@ -89,7 +89,6 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 
 	historicalEnqueuer := &historicalEnqueuer{
 		now:           time.Now,
-		sleep:         time.Sleep,
 		settingStore:  settingStore,
 		insightsStore: insightsStore,
 		repoStore:     database.Repos(workerBaseStore.Handle().DB()),
@@ -197,7 +196,6 @@ type RepoStore interface {
 type historicalEnqueuer struct {
 	// Required fields used for mocking in tests.
 	now                   func() time.Time
-	sleep                 func(t time.Duration)
 	settingStore          discovery.SettingStore
 	insightsStore         store.Interface
 	repoStore             RepoStore
