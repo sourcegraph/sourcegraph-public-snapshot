@@ -40,7 +40,7 @@ var (
 	startFlagSet = flag.NewFlagSet("sg start", flag.ExitOnError)
 	startCommand = &ffcli.Command{
 		Name:       "start",
-		ShortUsage: "sg start>",
+		ShortUsage: "sg start",
 		ShortHelp:  "Runs the commandset with the name 'start'.",
 		FlagSet:    startFlagSet,
 		Exec:       startExec,
