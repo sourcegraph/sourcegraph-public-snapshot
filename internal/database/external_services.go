@@ -53,6 +53,17 @@ type ExternalServiceStore struct {
 	mu sync.Mutex
 }
 
+func (e *ExternalServiceStore) copy() *ExternalServiceStore {
+	return &ExternalServiceStore{
+		Store:                     e.Store,
+		key:                       e.key,
+		GitHubValidators:          e.GitHubValidators,
+		GitLabValidators:          e.GitLabValidators,
+		BitbucketServerValidators: e.BitbucketServerValidators,
+		PerforceValidators:        e.PerforceValidators,
+	}
+}
+
 // ExternalServices instantiates and returns a new ExternalServicesStore with prepared statements.
 func ExternalServices(db dbutil.DB) *ExternalServiceStore {
 	return &ExternalServiceStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
@@ -64,11 +75,15 @@ func ExternalServicesWith(other basestore.ShareableStore) *ExternalServiceStore 
 }
 
 func (e *ExternalServiceStore) With(other basestore.ShareableStore) *ExternalServiceStore {
-	return &ExternalServiceStore{Store: e.Store.With(other), key: e.key}
+	s := e.copy()
+	s.Store = e.Store.With(other)
+	return s
 }
 
 func (e *ExternalServiceStore) WithEncryptionKey(key encryption.Key) *ExternalServiceStore {
-	return &ExternalServiceStore{Store: e.Store, key: key}
+	s := e.copy()
+	s.key = key
+	return s
 }
 
 func (e *ExternalServiceStore) Transact(ctx context.Context) (*ExternalServiceStore, error) {
@@ -76,14 +91,9 @@ func (e *ExternalServiceStore) Transact(ctx context.Context) (*ExternalServiceSt
 		return Mocks.ExternalServices.Transact(ctx)
 	}
 	txBase, err := e.Store.Transact(ctx)
-	return &ExternalServiceStore{
-		Store:                     txBase,
-		key:                       e.key,
-		GitHubValidators:          e.GitHubValidators,
-		GitLabValidators:          e.GitLabValidators,
-		BitbucketServerValidators: e.BitbucketServerValidators,
-		PerforceValidators:        e.PerforceValidators,
-	}, err
+	s := e.copy()
+	s.Store = txBase
+	return s, err
 }
 
 func (e *ExternalServiceStore) Done(err error) error {
