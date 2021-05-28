@@ -102,7 +102,12 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
             className={classNames('hover-overlay', className)}
             ref={hoverRef}
         >
-            <div className="hover-overlay__contents">
+            <div
+                className={classNames(
+                    'hover-overlay__contents',
+                    hoverOrError === LOADING && 'hover-overlay__contents--loading'
+                )}
+            >
                 {showCloseButton && (
                     <button
                         type="button"
