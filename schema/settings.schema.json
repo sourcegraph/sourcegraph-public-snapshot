@@ -53,7 +53,7 @@
           }
         },
         "searchStreaming": {
-          "description": "Enables experimental streaming support.",
+          "description": "DEPRECATED: This feature is now permanently enabled. Enables streaming search support.",
           "type": "boolean",
           "default": false,
           "!go": {

@@ -79,18 +79,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     },
     {
         path: '/search',
-        render: props =>
-            props.parsedSearchQuery ? (
-                props.isRedesignEnabled || // Force streaming search if redesing is enabled
-                (!isErrorLike(props.settingsCascade.final) &&
-                    props.settingsCascade.final?.experimentalFeatures?.searchStreaming) ? (
-                    <StreamingSearchResults {...props} />
-                ) : (
-                    <SearchResults {...props} deployType={window.context.deployType} />
-                )
-            ) : (
-                <SearchPage {...props} />
-            ),
+        render: props => (props.parsedSearchQuery ? <StreamingSearchResults {...props} /> : <SearchPage {...props} />),
         exact: true,
     },
     {
