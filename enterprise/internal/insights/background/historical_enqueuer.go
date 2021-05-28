@@ -8,6 +8,8 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/time/rate"
+
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
@@ -72,6 +74,9 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 		Metrics: metrics,
 	})
 
+	//TODO: add a setting (or migrate the similar setting InsightsHistoricalSpeedFactor) for this rate limiter
+	limiter := rate.NewLimiter(10, 1)
+
 	repoStore := database.Repos(workerBaseStore.Handle().DB())
 
 	historicalEnqueuer := &historicalEnqueuer{
@@ -80,6 +85,7 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 		settingStore:  settingStore,
 		insightsStore: insightsStore,
 		repoStore:     database.Repos(workerBaseStore.Handle().DB()),
+		limiter:       limiter,
 		enqueueQueryRunnerJob: func(ctx context.Context, job *queryrunner.Job) error {
 			_, err := queryrunner.EnqueueJob(ctx, workerBaseStore, job)
 			return err
@@ -184,6 +190,7 @@ type historicalEnqueuer struct {
 
 	// The iterator to use for walking over all repositories on Sourcegraph.
 	allReposIterator func(ctx context.Context, each func(repoName string) error) error
+	limiter          *rate.Limiter
 }
 
 func (h *historicalEnqueuer) timeSince(t time.Time) time.Duration {
@@ -282,22 +289,9 @@ func (h *historicalEnqueuer) buildFrame(
 	//    loop for potentially 500,000+ repositories if there is actually no work to
 	//    perform (because all have had historical data built already.)
 	//
-	lastIteration := h.now()
-	yield := func() {
-		yieldTime := 100 * time.Millisecond
-		if factor := conf.Get().InsightsHistoricalSpeedFactor; factor != nil {
-			yieldTime = time.Duration(float64(yieldTime) * *factor)
-		}
-		if diff := h.timeSince(lastIteration); diff < yieldTime {
-			h.sleep(yieldTime - diff)
-			lastIteration = h.now()
-		}
-	}
 
 	// For every repository that we want to potentially gather historical data for.
 	hardErr = h.allReposIterator(ctx, func(repoName string) error {
-		yield()
-
 		// Lookup the repository (we need its database ID)
 		repo, err := h.repoStore.GetByName(ctx, api.RepoName(repoName))
 		if err != nil {
@@ -325,7 +319,10 @@ func (h *historicalEnqueuer) buildFrame(
 		// For every series that we want to potentially gather historical data for, try.
 		for _, seriesID := range sortedSeriesIDs {
 			series := uniqueSeries[seriesID]
-			yield()
+			err := h.limiter.Wait(ctx)
+			if err != nil {
+				return err
+			}
 
 			// If we already have data for this frame+repo+series, then there's nothing to do.
 			var numDataPoints int
