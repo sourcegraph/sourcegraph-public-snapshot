@@ -1186,15 +1186,13 @@ type Query {
         """
         query: String
         """
-        Specifies the filter type used to narrow down the search contexts using their namespaces. If not set,
-        search contexts are not filtered by namespace.
+        Include search contexts matching the provided namespaces. A union of all matching search contexts is returned.
+        ID can either be a user ID, org ID, or nil to match instance-level contexts. Empty namespaces list
+        defaults to returning all available search contexts.
+        Example: `namespaces: [user1, org1, org2, nil]` will return search contexts created by user1 + contexts
+        created by org1 + contexts created by org2 + all instance-level contexts.
         """
-        namespaceFilterType: SearchContextsNamespaceFilterType
-        """
-        Limit search contexts to a specific namespace (user or org). Namespace parameter has to be set if namespaceFilterType is set to NAMESPACE.
-        If namespaceFilterType is INSTANCE or not set, namespace should not be set.
-        """
-        namespace: ID
+        namespaces: [ID] = []
         """
         Sort field.
         """
@@ -2377,20 +2375,6 @@ type VersionContext {
     The description of the version context.
     """
     description: String!
-}
-
-"""
-(experimental) Search context namespace filter types available to narrow down contexts when querying.
-"""
-enum SearchContextsNamespaceFilterType {
-    """
-    Limits available search contexts to instance-level contexts (without a namespace).
-    """
-    INSTANCE
-    """
-    Limits available search contexts to a specific namespace (user or org).
-    """
-    NAMESPACE
 }
 
 """

@@ -27,7 +27,8 @@ img.icon-inline,
     height: $icon-inline-size;
     // Match color of the text
     fill: currentColor;
-    .theme-redesign & {
+
+    :where(.theme-redesign) & {
         width: $icon-inline-redesign-size;
         height: $icon-inline-redesign-size;
         vertical-align: middle;

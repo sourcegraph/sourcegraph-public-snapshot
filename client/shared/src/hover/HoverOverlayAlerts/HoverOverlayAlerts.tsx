@@ -8,6 +8,7 @@ import { HoverAlert } from 'sourcegraph'
 
 import { NotificationType } from '../../api/extension/extensionHostApi'
 import { renderMarkdown } from '../../util/markdown'
+import { useRedesignToggle } from '../../util/useRedesignToggle'
 import { GetAlertClassName } from '../HoverOverlay.types'
 
 export interface HoverOverlayAlertsProps {
@@ -33,8 +34,16 @@ function hoverAlertIconComponent(
     return PredefinedIcon && <PredefinedIcon className={classNames('hover-overlay__alert-icon', className)} />
 }
 
+const iconKindToNotificationType: Record<Required<HoverAlert>['iconKind'], Parameters<GetAlertClassName>[0]> = {
+    info: NotificationType.Info,
+    warning: NotificationType.Warning,
+    error: NotificationType.Error,
+}
+
 export const HoverOverlayAlerts: React.FunctionComponent<HoverOverlayAlertsProps> = props => {
     const { hoverAlerts, iconClassName, onAlertDismissed, getAlertClassName = () => undefined } = props
+
+    const [isRedesignEnabled] = useRedesignToggle()
 
     const createAlertDismissedHandler = (alertType: string) => (event: React.MouseEvent<HTMLAnchorElement>) => {
         event.preventDefault()
@@ -49,9 +58,14 @@ export const HoverOverlayAlerts: React.FunctionComponent<HoverOverlayAlertsProps
             {hoverAlerts.map(({ summary, iconKind, type }, index) => (
                 <div
                     key={index}
-                    className={classNames('hover-overlay__alert', getAlertClassName(NotificationType.Info))}
+                    className={classNames(
+                        isRedesignEnabled ? 'hover-overlay__alert-redesign' : 'hover-overlay__alert',
+                        isRedesignEnabled
+                            ? getAlertClassName(iconKind ? iconKindToNotificationType[iconKind] : NotificationType.Info)
+                            : getAlertClassName(NotificationType.Info)
+                    )}
                 >
-                    {hoverAlertIconComponent(iconKind, iconClassName)}
+                    {!isRedesignEnabled && hoverAlertIconComponent(iconKind, iconClassName)}
                     {summary.kind === 'plaintext' ? (
                         <span className="hover-overlay__content">{summary.value}</span>
                     ) : (
@@ -64,7 +78,7 @@ export const HoverOverlayAlerts: React.FunctionComponent<HoverOverlayAlertsProps
                     {/* Show dismiss button when an alert has a dismissal type. */}
                     {/* If no type is provided, the alert is not dismissible. */}
                     {type && (
-                        <div className="hover-overlay__alert-actions">
+                        <div className="hover-overlay__alert-dismiss">
                             {/* Ideally this should a <button> but we can't guarantee we have the .btn-link class here. */}
                             {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
                             <a href="" onClick={createAlertDismissedHandler(type)} role="button">

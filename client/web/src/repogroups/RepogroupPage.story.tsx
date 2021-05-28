@@ -11,7 +11,11 @@ import { subtypeOf } from '@sourcegraph/shared/src/util/types'
 import { AuthenticatedUser } from '../auth'
 import { WebStory } from '../components/WebStory'
 import { SearchPatternType } from '../graphql-operations'
-import { mockFetchAutoDefinedSearchContexts, mockFetchSearchContexts } from '../searchContexts/testHelpers'
+import {
+    mockFetchAutoDefinedSearchContexts,
+    mockFetchSearchContexts,
+    mockGetUserSearchContextNamespaces,
+} from '../searchContexts/testHelpers'
 import { ThemePreference } from '../theme'
 
 import { cncf } from './cncf'
@@ -108,6 +112,7 @@ const commonProps = () =>
         fetchSearchContexts: mockFetchSearchContexts,
         hasUserAddedRepositories: false,
         hasUserAddedExternalServices: false,
+        getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
     })
 
 add('Refactor Python 2 to 3', () => (

@@ -1,0 +1,24 @@
+# This files provides an easy way to start Redis and PostgreSQL servers for
+# development, via docker-compose.
+# See doc/dev/getting-started/quickstart_6_start_server.md for how to
+# use it.
+services:
+  redis:
+    image: redis
+    ports:
+      - 6379:6379
+    volumes:
+      - ${REDIS_DATA_DIR:-redis_data}:/data
+  postgresql:
+    image: postgres
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_PASSWORD=${PGUSER:-sourcegraph}
+      - POSTGRES_USER=${PGPASSWORD:-sourcegraph}
+      - "POSTGRES_INITDB_ARGS= --encoding=UTF8 "
+    volumes:
+      - ${PGDATA_DIR:-postgres_data}:/var/lib/postgresql/data
+volumes:
+  redis_data:
+  postgres_data:

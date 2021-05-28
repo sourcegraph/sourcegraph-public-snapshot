@@ -10,6 +10,7 @@ import { SearchSuggestion } from '@sourcegraph/shared/src/search/suggestions'
 import { asError, createAggregateError, ErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 
+import { AuthenticatedUser } from '../auth'
 import { queryGraphQL, requestGraphQL } from '../backend/graphql'
 import {
     SearchPatternType,
@@ -38,6 +39,7 @@ import {
     UpdateSearchContextResult,
     DeleteSearchContextVariables,
     DeleteSearchContextResult,
+    Maybe,
 } from '../graphql-operations'
 import { DeployType } from '../jscontext'
 
@@ -300,10 +302,15 @@ export const fetchAutoDefinedSearchContexts = defer(() =>
     refCount()
 )
 
+export function getUserSearchContextNamespaces(authenticatedUser: AuthenticatedUser | null): Maybe<Scalars['ID']>[] {
+    return authenticatedUser
+        ? [null, authenticatedUser.id, ...authenticatedUser.organizations.nodes.map(org => org.id)]
+        : [null]
+}
+
 export function fetchSearchContexts({
     first,
-    namespaceFilterType,
-    namespace,
+    namespaces,
     query,
     after,
     orderBy,
@@ -311,8 +318,7 @@ export function fetchSearchContexts({
 }: {
     first: number
     query?: string
-    namespace?: Scalars['ID']
-    namespaceFilterType?: GQL.SearchContextsNamespaceFilterType
+    namespaces?: Maybe<Scalars['ID']>[]
     after?: string
     orderBy?: GQL.SearchContextsOrderBy
     descending?: boolean
@@ -323,8 +329,7 @@ export function fetchSearchContexts({
                 $first: Int!
                 $after: String
                 $query: String
-                $namespaceFilterType: SearchContextsNamespaceFilterType
-                $namespace: ID
+                $namespaces: [ID]
                 $orderBy: SearchContextsOrderBy
                 $descending: Boolean
             ) {
@@ -332,8 +337,7 @@ export function fetchSearchContexts({
                     first: $first
                     after: $after
                     query: $query
-                    namespaceFilterType: $namespaceFilterType
-                    namespace: $namespace
+                    namespaces: $namespaces
                     orderBy: $orderBy
                     descending: $descending
                 ) {
@@ -353,8 +357,7 @@ export function fetchSearchContexts({
             first,
             after: after ?? null,
             query: query ?? null,
-            namespaceFilterType: namespaceFilterType ?? null,
-            namespace: namespace ?? null,
+            namespaces: namespaces ?? [],
             orderBy: orderBy ?? GQL.SearchContextsOrderBy.SEARCH_CONTEXT_SPEC,
             descending: descending ?? false,
         }

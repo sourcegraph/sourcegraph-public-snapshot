@@ -1,6 +1,8 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+
 import { AuthenticatedUser } from '../../auth'
 import { WebStory } from '../../components/WebStory'
 
@@ -39,7 +41,13 @@ add(
     'not authenticated',
     () => (
         <WebStory>
-            {() => <SearchContextCtaPrompt authenticatedUser={null} hasUserAddedExternalServices={false} />}
+            {() => (
+                <SearchContextCtaPrompt
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
+                    authenticatedUser={null}
+                    hasUserAddedExternalServices={false}
+                />
+            )}
         </WebStory>
     ),
     {}
@@ -49,7 +57,13 @@ add(
     'authenticated without added external services',
     () => (
         <WebStory>
-            {() => <SearchContextCtaPrompt authenticatedUser={authUser} hasUserAddedExternalServices={false} />}
+            {() => (
+                <SearchContextCtaPrompt
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
+                    authenticatedUser={authUser}
+                    hasUserAddedExternalServices={false}
+                />
+            )}
         </WebStory>
     ),
     {}
@@ -59,7 +73,13 @@ add(
     'authenticated with added external services',
     () => (
         <WebStory>
-            {() => <SearchContextCtaPrompt authenticatedUser={authUser} hasUserAddedExternalServices={true} />}
+            {() => (
+                <SearchContextCtaPrompt
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
+                    authenticatedUser={authUser}
+                    hasUserAddedExternalServices={true}
+                />
+            )}
         </WebStory>
     ),
     {}
@@ -71,6 +91,7 @@ add(
         <WebStory>
             {() => (
                 <SearchContextCtaPrompt
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
                     authenticatedUser={{ ...authUser, tags: ['AllowUserExternalServicePrivate'] }}
                     hasUserAddedExternalServices={false}
                 />

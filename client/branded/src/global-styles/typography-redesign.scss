@@ -53,6 +53,7 @@
         // Bootstrap applies `font-weight: 400;` to `small` element,
         // but we want to control `font-weight` only with `strong` or `.font-weight-medium`.
         font-weight: inherit;
+        line-height: 1rem;
     }
 
     // Input / Small
