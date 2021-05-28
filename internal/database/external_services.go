@@ -73,7 +73,14 @@ func (e *ExternalServiceStore) WithEncryptionKey(key encryption.Key) *ExternalSe
 
 func (e *ExternalServiceStore) Transact(ctx context.Context) (*ExternalServiceStore, error) {
 	txBase, err := e.Store.Transact(ctx)
-	return &ExternalServiceStore{Store: txBase, key: e.key}, err
+	return &ExternalServiceStore{
+		Store:                     txBase,
+		key:                       e.key,
+		GitHubValidators:          e.GitHubValidators,
+		GitLabValidators:          e.GitLabValidators,
+		BitbucketServerValidators: e.BitbucketServerValidators,
+		PerforceValidators:        e.PerforceValidators,
+	}, err
 }
 
 // ensureStore instantiates a basestore.Store if necessary, using the dbconn.Global handle.

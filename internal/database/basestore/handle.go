@@ -52,7 +52,7 @@ func (h *TransactableHandle) InTransaction() bool {
 // Note that it is not valid to call Transact or Done on the same database handle from distinct goroutines.
 // Because we support properly nested transactions via savepoints, calling Transact from two different
 // goroutines on the same handle will not be deterministic: either transaction could nest the other one,
-// and callaing Done in one goroutine may not finalize the expected unit of work.
+// and calling Done in one goroutine may not finalize the expected unit of work.
 func (h *TransactableHandle) Transact(ctx context.Context) (*TransactableHandle, error) {
 	if h.InTransaction() {
 		savepoint, err := newSavepoint(ctx, h.db)

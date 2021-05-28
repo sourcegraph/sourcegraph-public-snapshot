@@ -10,6 +10,7 @@ import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../.
 
 import { RemoveCodeHostConnectionModal } from './RemoveCodeHostConnectionModal'
 import { ifNotNavigated } from './UserAddCodeHostsPage'
+import { githubRepoScopeRequired } from '../cloud-ga'
 
 interface CodeHostItemProps {
     user: { id: Scalars['ID']; tags: string[] }
@@ -27,6 +28,7 @@ interface CodeHostItemProps {
 }
 
 export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
+    user,
     service,
     kind,
     name,
@@ -50,6 +52,8 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
         })
         navigateToAuthProvider(kind)
     }, [kind, navigateToAuthProvider])
+
+    const updateAuthRequired = service?.kind === 'GITHUB' && githubRepoScopeRequired(user.tags, service.grantedScopes)
 
     return (
         <div className="p-2 d-flex align-items-start">
@@ -92,6 +96,14 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                         {oauthInFlight && <LoadingSpinner className="icon-inline ml-2 theme-dark" />}
                     </button>
                 )}
+            </div>
+            <div className="align-self-center">
+                {updateAuthRequired && (
+                    <button type="button" className="btn btn-secondary" onClick={toAuthProvider}>
+                        Update
+                        {oauthInFlight && <LoadingSpinner className="icon-inline ml-2 theme-dark" />}
+                    </button>
+            )}
             </div>
         </div>
     )
