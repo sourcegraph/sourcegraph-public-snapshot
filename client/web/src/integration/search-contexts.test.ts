@@ -8,7 +8,7 @@ import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { RepoGroupsResult, SearchSuggestionsResult, WebGraphQlOperations, SearchResult } from '../graphql-operations'
+import { RepoGroupsResult, SearchSuggestionsResult, WebGraphQlOperations } from '../graphql-operations'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { createRepositoryRedirectResult } from './graphQlResponseHelpers'
