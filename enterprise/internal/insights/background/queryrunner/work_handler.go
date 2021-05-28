@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"golang.org/x/time/rate"
+
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
@@ -25,6 +27,7 @@ var _ dbworker.Handler = &workHandler{}
 type workHandler struct {
 	workerBaseStore *basestore.Store
 	insightsStore   *store.Store
+	limiter         *rate.Limiter
 }
 
 func (r *workHandler) Handle(ctx context.Context, workerStore dbworkerstore.Store, record workerutil.Record) (err error) {
@@ -40,6 +43,10 @@ func (r *workHandler) Handle(ctx context.Context, workerStore dbworkerstore.Stor
 		return err
 	}
 
+	err = r.limiter.Wait(ctx)
+	if err != nil {
+		return err
+	}
 	// Actually perform the search query.
 	//
 	// 🚨 SECURITY: The request is performed without authentication, we get back results from every

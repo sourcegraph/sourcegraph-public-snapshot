@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"golang.org/x/time/rate"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 
 	"github.com/keegancsmith/sqlf"
@@ -42,9 +44,14 @@ func NewWorker(ctx context.Context, workerBaseStore *basestore.Store, insightsSt
 		Interval:    5 * time.Second,
 		Metrics:     metrics,
 	}
+
+	//TODO: add a setting for this rate limiter
+	limiter := rate.NewLimiter(2, 1)
+
 	return dbworker.NewWorker(ctx, workerStore, &workHandler{
 		workerBaseStore: workerBaseStore,
 		insightsStore:   insightsStore,
+		limiter:         limiter,
 	}, options)
 }
 
