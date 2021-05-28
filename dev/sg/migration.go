@@ -105,10 +105,10 @@ func generateSquashedMigrations(databaseName string, migrationIndex int) (up, do
 	return upMigration, downMigration, nil
 }
 
-// removeMigrationFilesBefore removes migration files for the given database falling on or
-// before the given migration index. This method returns the names of the files that were
+// removeMigrationFilesUpToIndex removes migration files for the given database falling on
+// or before the given migration index. This method returns the names of the files that were
 // removed.
-func removeMigrationFilesBefore(databaseName string, targetIndex int) ([]string, error) {
+func removeMigrationFilesUpToIndex(databaseName string, targetIndex int) ([]string, error) {
 	baseDir, err := migrationDirectoryForDatabase(databaseName)
 	if err != nil {
 		return nil, err
@@ -260,9 +260,15 @@ const (
 // runPostgresContainer runs a postgres:12.6 daemon with an empty db with the given name.
 // This method returns a teardown function that filters the error value of the calling
 // function, as well as any immediate synchronous error.
-func runPostgresContainer(databaseName string) (func(err error) error, error) {
-	pending := out.Pending(output.Line("", output.StylePending, "Running PostgreSQL 12 in a container..."))
-	defer pending.Close()
+func runPostgresContainer(databaseName string) (_ func(err error) error, err error) {
+	pending := out.Pending(output.Line("", output.StylePending, "Starting PostgreSQL 12 in a container..."))
+	defer func() {
+		if err == nil {
+			pending.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Started PostgreSQL in a container"))
+		} else {
+			pending.Destroy()
+		}
+	}()
 
 	teardown := func(err error) error {
 		killArgs := []string{
@@ -288,10 +294,10 @@ func runPostgresContainer(databaseName string) (func(err error) error, error) {
 		return nil, err
 	}
 
-	pending.Write("Waiting for container to start up")
-	time.Sleep(5 * time.Second) // TODO - check health instead
-
-	pending.Writef("Creating database %s", databaseName)
+	// TODO - check health instead
+	pending.Write("Waiting for container to start up...")
+	time.Sleep(5 * time.Second)
+	pending.Write("PostgreSQL is accepting connections")
 
 	execArgs := []string{
 		"exec",
@@ -308,9 +314,15 @@ func runPostgresContainer(databaseName string) (func(err error) error, error) {
 
 // runMigrations runs the `migrate` utility to migrate up to the given migration index.
 // TODO: Rewrite this in Go by using our own database utilities.
-func runMigrations(databaseName string, migrationIndex int, postgresDSN string) error {
-	pending := out.Pending(output.Line("", output.StylePending, "Running migrations..."))
-	defer pending.Close()
+func runMigrations(databaseName string, migrationIndex int, postgresDSN string) (err error) {
+	pending := out.Pending(output.Line("", output.StylePending, "Migrating PostgreSQL schema..."))
+	defer func() {
+		if err == nil {
+			pending.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Migrated PostgreSQL schema"))
+		} else {
+			pending.Destroy()
+		}
+	}()
 
 	baseDir, err := migrationDirectoryForDatabase(databaseName)
 	if err != nil {
@@ -331,16 +343,22 @@ func runMigrations(databaseName string, migrationIndex int, postgresDSN string) 
 
 // generateSquashedUpMigration returns the contents of an up migration file containing the
 // current contents of the given database.
-func generateSquashedUpMigration(postgresDSN string) (string, error) {
-	pending := out.Pending(output.Line("", output.StylePending, "Dumping..."))
-	defer pending.Close()
+func generateSquashedUpMigration(postgresDSN string) (_ string, err error) {
+	pending := out.Pending(output.Line("", output.StylePending, "Dumping current database..."))
+	defer func() {
+		if err == nil {
+			pending.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Dumped current database"))
+		} else {
+			pending.Destroy()
+		}
+	}()
 
 	cmd := exec.Command(
 		"pg_dump",
 		postgresDSN,
 		"--no-owner",
 		"--schema-only",
-		"--exclude-table='*schema_migrations'",
+		"--exclude-table", "*schema_migrations",
 	)
 	cmd.Env = []string{}
 	pgDumpOutput, err := runCommandInRoot(cmd)

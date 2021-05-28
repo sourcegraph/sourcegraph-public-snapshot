@@ -391,7 +391,7 @@ func migrationUpExec(ctx context.Context, args []string) error {
 		return flag.ErrHelp
 	}
 
-	// TODO
+	// TODO - implement sg migration up
 	return errors.New("up unimplemented")
 }
 
@@ -406,7 +406,7 @@ func migrationDownExec(ctx context.Context, args []string) error {
 		return flag.ErrHelp
 	}
 
-	// TODO
+	// TODO - implement sg migration down
 	return errors.New("down unimplemented")
 }
 
@@ -458,14 +458,16 @@ func migrationSquashExec(ctx context.Context, args []string) (err error) {
 		return err
 	}
 
-	block := out.Block(output.Linef("", output.StyleBold, "Updating filesystem"))
-	defer block.Close()
-
 	// Remove the migration file pairs that were just squashed
-	filenames, err := removeMigrationFilesBefore(databaseName, lastMigrationIndex)
+	filenames, err := removeMigrationFilesUpToIndex(databaseName, lastMigrationIndex)
 	if err != nil {
 		return err
 	}
+
+	out.Write("")
+	block := out.Block(output.Linef("", output.StyleBold, "Updated filesystem"))
+	defer block.Close()
+
 	for _, filename := range filenames {
 		block.Writef("Deleted: %s", filename)
 	}
