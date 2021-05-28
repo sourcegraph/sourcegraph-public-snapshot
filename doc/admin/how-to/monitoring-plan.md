@@ -31,4 +31,4 @@ All alerts are important, but more important when they are in red as that indica
 See our Observability Docs on [setting up alerting](./observability/alerting#setting-up-alerting).
 
 ## How to create a custom alert?
-Creating a customer alert is not recommended and currently not supported by Sourcegraph.
+Creating a customer alert is not recommended and currently not supported by Sourcegraph. However, please provide feedback on the monitoring dashboards and alerts if you find anything could be improved.
