@@ -3,15 +3,14 @@ import { test } from 'mocha'
 import { Key } from 'ts-key-enum'
 
 import { SharedGraphQlOperations, SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
-import { Driver, createDriverForTest, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
+import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { RepoGroupsResult, SearchResult, SearchSuggestionsResult, WebGraphQlOperations } from '../graphql-operations'
+import { RepoGroupsResult, SearchSuggestionsResult, WebGraphQlOperations } from '../graphql-operations'
 import { SearchEvent } from '../search/stream'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
-import { siteGQLID, siteID } from './jscontext'
 import {
     commitHighlightResult,
     commitSearchStreamEvents,
@@ -23,64 +22,31 @@ import {
 } from './streaming-search-mocks'
 import { percySnapshotWithVariants } from './utils'
 
-const searchResults = (): SearchResult => ({
-    search: {
-        results: {
-            __typename: 'SearchResults',
-            limitHit: true,
-            matchCount: 30,
-            approximateResultCount: '30+',
-            missing: [],
-            cloning: [],
-            repositoriesCount: 372,
-            timedout: [],
-            indexUnavailable: false,
-            dynamicFilters: [
-                {
-                    value: 'archived:yes',
-                    label: 'archived:yes',
-                    count: 5,
-                    limitHit: true,
-                    kind: 'repo',
-                },
-                {
-                    value: 'fork:yes',
-                    label: 'fork:yes',
-                    count: 46,
-                    limitHit: true,
-                    kind: 'repo',
-                },
-                {
-                    value: 'repo:^github\\.com/Algorilla/manta-ray$',
-                    label: 'github.com/Algorilla/manta-ray',
-                    count: 1,
-                    limitHit: false,
-                    kind: 'repo',
-                },
-            ],
-            results: [
-                {
-                    __typename: 'Repository',
-                    id: 'UmVwb3NpdG9yeTozODcxOTM4Nw==',
-                    name: 'github.com/Algorilla/manta-ray',
-                    label: {
-                        html:
-                            '\u003Cp\u003E\u003Ca href="/github.com/Algorilla/manta-ray" rel="nofollow"\u003Egithub.com/Algorilla/manta-ray\u003C/a\u003E\u003C/p\u003E\n',
-                    },
-                    url: '/github.com/Algorilla/manta-ray',
-                    detail: { html: '\u003Cp\u003ERepository match\u003C/p\u003E\n' },
-                    matches: [],
-                },
-            ],
-            alert: null,
-            elapsedMilliseconds: 103,
-        },
+const mockDefaultStreamEvents: SearchEvent[] = [
+    {
+        type: 'matches',
+        data: [{ type: 'repo', repository: 'github.com/Algorilla/manta-ray' }],
     },
-})
+    { type: 'progress', data: { matchCount: 30, durationMs: 103, skipped: [] } },
+    {
+        type: 'filters',
+        data: [
+            { label: 'archived:yes', value: 'archived:yes', count: 5, kind: 'generic', limitHit: true },
+            { label: 'fork:yes', value: 'fork:yes', count: 46, kind: 'generic', limitHit: true },
+            {
+                label: 'github.com/Algorilla/manta-ray',
+                value: 'repo:^github\\.com/Algorilla/manta-ray$',
+                count: 1,
+                kind: 'repo',
+                limitHit: true,
+            },
+        ],
+    },
+    { type: 'done', data: {} },
+]
 
 const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
     ...commonWebGraphQlResults,
-    Search: searchResults,
     SearchSuggestions: (): SearchSuggestionsResult => ({
         search: {
             suggestions: [],
@@ -116,21 +82,13 @@ describe('Search', () => {
     const getSearchFieldValue = (driver: Driver): Promise<string | undefined> =>
         driver.page.evaluate(() => document.querySelector<HTMLTextAreaElement>('#monaco-query-input textarea')?.value)
 
-    test('Styled correctly on GraphQL search results page', async () => {
-        testContext.overrideGraphQL({
-            ...commonSearchGraphQLResults,
-        })
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=foo')
-        await driver.page.waitForSelector('#monaco-query-input')
-        // GraphQL search is not supported with redesign enabled so no need to take snapshots of variants
-        await percySnapshot(driver.page, 'Search results page')
-    })
-
     describe('Search filters', () => {
         test('Search filters are shown on search result pages and clicking them triggers a new search', async () => {
             testContext.overrideGraphQL({
                 ...commonSearchGraphQLResults,
             })
+            testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
+
             const dynamicFilters = ['archived:yes', 'repo:^github\\.com/Algorilla/manta-ray$']
             const origQuery = 'foo'
             for (const filter of dynamicFilters) {
@@ -162,6 +120,8 @@ describe('Search', () => {
                     },
                 }),
             })
+            testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
+
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
             await driver.page.waitForSelector('#monaco-query-input')
             await driver.replaceText({
@@ -212,6 +172,8 @@ describe('Search', () => {
                     },
                 }),
             })
+            testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
+
             // Repo autocomplete from homepage
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
             // Using id selector rather than `test-` classes as Monaco doesn't allow customizing classes
@@ -261,6 +223,8 @@ describe('Search', () => {
             testContext.overrideGraphQL({
                 ...commonSearchGraphQLResults,
             })
+            testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
+
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=foo')
             await driver.page.waitForSelector('#monaco-query-input')
             expect(await getSearchFieldValue(driver)).toStrictEqual('foo')
@@ -279,6 +243,8 @@ describe('Search', () => {
             testContext.overrideGraphQL({
                 ...commonSearchGraphQLResults,
             })
+            testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
+
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
             await driver.page.waitForSelector('.test-query-input', { visible: true })
             await driver.page.waitForSelector('.test-case-sensitivity-toggle')
@@ -292,6 +258,8 @@ describe('Search', () => {
             testContext.overrideGraphQL({
                 ...commonSearchGraphQLResults,
             })
+            testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
+
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=literal&case=yes')
             await driver.page.waitForSelector('.test-query-input', { visible: true })
             await driver.page.waitForSelector('.test-case-sensitivity-toggle')
@@ -305,6 +273,8 @@ describe('Search', () => {
             testContext.overrideGraphQL({
                 ...commonSearchGraphQLResults,
             })
+            testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
+
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
             await driver.page.waitForSelector('.test-query-input', { visible: true })
             await driver.page.waitForSelector('.test-structural-search-toggle')
@@ -318,6 +288,8 @@ describe('Search', () => {
             testContext.overrideGraphQL({
                 ...commonSearchGraphQLResults,
             })
+            testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
+
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
             await waitAndFocusInput()
             await driver.page.waitForSelector('.test-query-input', { visible: true })
@@ -330,6 +302,8 @@ describe('Search', () => {
             testContext.overrideGraphQL({
                 ...commonSearchGraphQLResults,
             })
+            testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
+
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=structural')
             await driver.page.waitForSelector('.test-query-input', { visible: true })
             await driver.page.waitForSelector('.test-structural-search-toggle')
@@ -343,6 +317,7 @@ describe('Search', () => {
             testContext.overrideGraphQL({
                 ...commonSearchGraphQLResults,
             })
+            testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
 
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
             await driver.page.waitForSelector('.test-search-button', { visible: true })
@@ -353,37 +328,7 @@ describe('Search', () => {
         })
     })
 
-    describe('Streaming search', () => {
-        const viewerSettingsWithStreamingSearch: Partial<WebGraphQlOperations> = {
-            ViewerSettings: () => ({
-                viewerSettings: {
-                    subjects: [
-                        {
-                            __typename: 'DefaultSettings',
-                            settingsURL: null,
-                            viewerCanAdminister: false,
-                            latestSettings: {
-                                id: 0,
-                                contents: JSON.stringify({ experimentalFeatures: { searchStreaming: true } }),
-                            },
-                        },
-                        {
-                            __typename: 'Site',
-                            id: siteGQLID,
-                            siteID,
-                            latestSettings: {
-                                id: 470,
-                                contents: JSON.stringify({ experimentalFeatures: { searchStreaming: true } }),
-                            },
-                            settingsURL: '/site-admin/global-settings',
-                            viewerCanAdminister: true,
-                        },
-                    ],
-                    final: JSON.stringify({}),
-                },
-            }),
-        }
-
+    describe('Verify search streaming event handling', () => {
         test('Streaming search', async () => {
             const searchStreamEvents: SearchEvent[] = [
                 {
@@ -415,7 +360,7 @@ describe('Search', () => {
                 { type: 'done', data: {} },
             ]
 
-            testContext.overrideGraphQL({ ...commonSearchGraphQLResults, ...viewerSettingsWithStreamingSearch })
+            testContext.overrideGraphQL({ ...commonSearchGraphQLResults })
             testContext.overrideSearchStreamEvents(searchStreamEvents)
 
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
@@ -442,7 +387,7 @@ describe('Search', () => {
                 },
             ]
 
-            testContext.overrideGraphQL({ ...commonSearchGraphQLResults, ...viewerSettingsWithStreamingSearch })
+            testContext.overrideGraphQL({ ...commonSearchGraphQLResults })
             testContext.overrideSearchStreamEvents(searchStreamEvents)
 
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
@@ -453,11 +398,12 @@ describe('Search', () => {
             )
             expect(results).toContain('Search is invalid')
         })
+    })
 
-        test('Streaming diff search syntax highlighting', async () => {
+    describe('Search results snapshots', () => {
+        test('diff search syntax highlighting', async () => {
             testContext.overrideGraphQL({
                 ...commonSearchGraphQLResults,
-                ...viewerSettingsWithStreamingSearch,
                 ...diffHighlightResult,
             })
             testContext.overrideSearchStreamEvents(diffSearchStreamEvents)
@@ -473,10 +419,9 @@ describe('Search', () => {
             })
         })
 
-        test('Streaming commit search syntax highlighting', async () => {
+        test('commit search syntax highlighting', async () => {
             testContext.overrideGraphQL({
                 ...commonSearchGraphQLResults,
-                ...viewerSettingsWithStreamingSearch,
                 ...commitHighlightResult,
             })
             testContext.overrideSearchStreamEvents(commitSearchStreamEvents)
@@ -492,10 +437,9 @@ describe('Search', () => {
             })
         })
 
-        test('Streaming search code, file and repo results with filter suggestions', async () => {
+        test('code, file and repo results with filter suggestions', async () => {
             testContext.overrideGraphQL({
                 ...commonSearchGraphQLResults,
-                ...viewerSettingsWithStreamingSearch,
                 ...highlightFileResult,
             })
             testContext.overrideSearchStreamEvents(mixedSearchStreamEvents)
@@ -515,10 +459,9 @@ describe('Search', () => {
             )
         })
 
-        test('Streaming search symbols', async () => {
+        test('symbol results', async () => {
             testContext.overrideGraphQL({
                 ...commonSearchGraphQLResults,
-                ...viewerSettingsWithStreamingSearch,
             })
             testContext.overrideSearchStreamEvents(symbolSearchStreamEvents)
 

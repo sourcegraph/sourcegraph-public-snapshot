@@ -62,10 +62,8 @@ func defaultSettings(db dbutil.DB) map[string]interface{} {
 	}
 
 	return map[string]interface{}{
-		"experimentalFeatures": map[string]interface{}{
-			"searchStreaming": true,
-		},
-		"extensions": extensions,
+		"experimentalFeatures": map[string]interface{}{},
+		"extensions":           extensions,
 	}
 }
 

@@ -20,7 +20,8 @@ All notable changes to Sourcegraph are documented in this file.
 ### Changed
 
 - SSH public keys generated to access code hosts with batch changes now include a comment indicating they originated from Sourcegraph. [#20523](https://github.com/sourcegraph/sourcegraph/issues/20523)
-- The copy query button is now permanently enabled and the `copyQueryButton` experimental feature flag has been removed. [#21364](https://github.com/sourcegraph/sourcegraph/pull/21364)
+- The copy query button is now permanently enabled and `experimentalFeatures.copyQueryButton` setting has been deprecated. [#21364](https://github.com/sourcegraph/sourcegraph/pull/21364)
+- Search streaming is now permanently enabled and `experimentalFeatures.searchStreaming` setting has been deprecated. [#TODO](https://github.com/sourcegraph/sourcegraph/pull/TODO)
 
 ### Fixed
 
