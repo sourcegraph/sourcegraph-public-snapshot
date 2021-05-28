@@ -74,8 +74,16 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 		Metrics: metrics,
 	})
 
-	//TODO: add a setting (or migrate the similar setting InsightsHistoricalSpeedFactor) for this rate limiter
-	limiter := rate.NewLimiter(10, 1)
+	defaultRateLimit := rate.Limit(10.0)
+	getRateLimit := getRateLimit(defaultRateLimit)
+
+	limiter := rate.NewLimiter(getRateLimit(), 1)
+
+	go conf.Watch(func() {
+		val := getRateLimit()
+		log15.Info(fmt.Sprintf("Updating insights/historical-worker rate limit value=%v", val))
+		limiter.SetLimit(val)
+	})
 
 	repoStore := database.Repos(workerBaseStore.Handle().DB())
 
@@ -131,6 +139,21 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 		"insights_historical_enqueuer",
 		historicalEnqueuer.Handler,
 	), operation)
+}
+
+func getRateLimit(defaultValue rate.Limit) func() rate.Limit {
+	return func() rate.Limit {
+		val := conf.Get().InsightsHistoricalWorkerRateLimit
+
+		var result rate.Limit
+		if val == nil {
+			result = defaultValue
+		} else {
+			result = rate.Limit(*val)
+		}
+
+		return result
+	}
 }
 
 // RepoStore is a subset of the API exposed by the database.Repos() store (only the subset used by

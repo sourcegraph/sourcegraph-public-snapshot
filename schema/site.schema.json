@@ -877,6 +877,14 @@
       "examples": [10.0, 0.5],
       "!go": { "pointer": true }
     },
+    "insights.historical.worker.rateLimit": {
+      "description": "Maximum number of historical Code Insights data frames that may be analyzed per second.",
+      "type": "number",
+      "group": "CodeInsights",
+      "default": 10,
+      "examples": [50.0, 0.5],
+      "!go": { "pointer": true }
+    },
     "htmlHeadTop": {
       "description": "HTML to inject at the top of the `<head>` element on each page, for analytics scripts",
       "type": "string",
