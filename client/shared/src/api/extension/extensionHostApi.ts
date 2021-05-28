@@ -455,7 +455,11 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
             return proxySubscribable(
                 viewer.mergedStatusBarItems.pipe(
                     debounceTime(0),
-                    map(statusBarItems => statusBarItems.sort((a, b) => a.text.charCodeAt(0) - b.text.charCodeAt(0)))
+                    map(statusBarItems =>
+                        statusBarItems.sort(
+                            (a, b) => a.text[0].toLowerCase().charCodeAt(0) - b.text[0].toLowerCase().charCodeAt(0)
+                        )
+                    )
                 )
             )
         },
