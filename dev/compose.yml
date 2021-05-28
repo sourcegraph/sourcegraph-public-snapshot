@@ -9,7 +9,7 @@ services:
       - 6379:6379
     volumes:
       - ${REDIS_DATA_DIR:-redis_data}:/data
-  postgres:
+  postgresql:
     image: postgres
     ports:
       - 5432:5432

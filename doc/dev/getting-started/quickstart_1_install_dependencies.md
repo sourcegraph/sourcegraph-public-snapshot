@@ -18,7 +18,7 @@ Sourcegraph has the following dependencies:
 - [Comby](https://github.com/comby-tools/comby/) (v0.11.3 or higher)
 - [Watchman](https://facebook.github.io/watchman/)
 
-You can choose to install Redis and PostgreSQL directly on your system, or you can run them as docker containers with [docker compose](https://docs.docker.com/compose/). The following instructions will describe both options.
+You can choose to install Redis and/or PostgreSQL directly on your system, or you can run them as docker containers with [docker compose](https://docs.docker.com/compose/). The following instructions will describe both options.
 
 Running within a container provides some advantages such as storing the data separately from the container, you do not need to run it as a system service and its easy to use different database versions or multiple databases.
 
@@ -47,12 +47,12 @@ The following are two recommendations for installing these dependencies:
 
 4. (without docker) Install PostgreSQL and Redis
 
-    If you want to run Redis and PostgreSQL directly on your system install them with the follwing command:
+    If you want to run Redis and/or PostgreSQL directly on your system install them with the follwing command:
 
     ```
-    brew install redis postgresql
+    brew install postgresql
+    brew install redis
     ```
-
 
 5. (with docker) Install Docker Compose
 
@@ -159,8 +159,9 @@ The following are two recommendations for installing these dependencies:
     ```
     sudo apt install -y make git-all libpcre3-dev libsqlite3-dev pkg-config golang-go musl-tools docker-ce docker-ce-cli containerd.io yarn jq libnss3-tools
 
-    # (without docker) install PostgreSQL and Redis if you don't want to run them as docker containers
-    sudo apt install -y postgresql postgresql-contrib redis-server 
+    # (without docker) install PostgreSQL and/or Redis if you don't want to run them as docker containers
+    sudo apt install -y redis-server
+    sudo apt install -y postgresql postgresql-contrib
 
     # install golang-migrate (you must rename the extracted binary to `golang-migrate` and move the binary into your $PATH)
     curl -L https://github.com/golang-migrate/migrate/releases/download/v4.7.0/migrate.linux-amd64.tar.gz | tar xvz

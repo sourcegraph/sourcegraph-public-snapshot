@@ -12,6 +12,14 @@
     docker-compose -f dev/compose.yml up -d
     ```
 
+    You can also start either Redis or PostgreSQL, if you are running the other one directly on your system:
+
+    ```
+    docker-compose -f dev/compose.yml up -d redis
+    # or
+    docker-compose -f dev/compose.yml up -d postgresql
+    ```
+
     When you want to stop the containers, run:
 
     ```
