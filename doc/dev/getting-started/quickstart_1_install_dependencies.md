@@ -39,7 +39,7 @@ The following are two recommendations for installing these dependencies:
     brew install --cask docker
     ```
 
-3.  Install Go, Node Version Manager, Git, golang-migrate, Comby, SQLite tools, and jq with the following command:
+3.  Install Go, Yarn, Git, golang-migrate, Comby, SQLite tools, and jq with the following command:
 
     ```
     brew install go yarn git gnu-sed golang-migrate comby sqlite pcre FiloSottile/musl-cross/musl-cross jq watchman
