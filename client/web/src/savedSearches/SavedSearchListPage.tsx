@@ -8,9 +8,11 @@ import { Link } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
+import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../components/alerts'
 import { NamespaceProps } from '../namespaces'
@@ -96,7 +98,7 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
     }
 
     private onDelete = (): void => {
-        if (!window.confirm(`Delete the external service ${this.props.savedSearch.description}?`)) {
+        if (!window.confirm(`Delete the saved search ${this.props.savedSearch.description}?`)) {
             return
         }
         this.setState({ isDeleting: true })
@@ -121,14 +123,7 @@ export class SavedSearchListPage extends React.Component<Props, State> {
             this.refreshRequests
                 .pipe(
                     startWith(undefined),
-                    switchMap(() =>
-                        fetchSavedSearches().pipe(
-                            catchError(error => {
-                                console.error(error)
-                                return [asError(error)]
-                            })
-                        )
-                    ),
+                    switchMap(() => fetchSavedSearches().pipe(catchError(error => [asError(error)]))),
                     map(savedSearchesOrError => ({ savedSearchesOrError }))
                 )
                 .subscribe(newState => this.setState(newState as State))
@@ -137,32 +132,22 @@ export class SavedSearchListPage extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        return (
-            <div className="saved-search-list-page">
-                <div className="saved-search-list-page__title">
-                    <div>
-                        <h2>Saved searches</h2>
-                        <div>Manage notifications and alerts for specific search queries</div>
-                    </div>
-                    <div>
-                        <Link
-                            to={`${this.props.match.path}/add`}
-                            className="btn btn-primary test-add-saved-search-button"
-                        >
-                            <PlusIcon className="icon-inline" /> Add saved search
-                        </Link>
-                    </div>
-                </div>
-                {this.state.savedSearchesOrError && isErrorLike(this.state.savedSearchesOrError) && (
-                    <ErrorAlert className="mb-3" error={this.state.savedSearchesOrError} />
-                )}
-                <div className="list-group list-group-flush">
-                    {this.state.savedSearchesOrError &&
-                        !isErrorLike(this.state.savedSearchesOrError) &&
-                        this.state.savedSearchesOrError.length > 0 &&
-                        this.state.savedSearchesOrError
-                            .filter(search => this.props.namespace.id === search.namespace.id)
-                            .map(search => (
+        let body: JSX.Element
+        if (this.state.savedSearchesOrError === undefined) {
+            body = <LoadingSpinner />
+        } else if (isErrorLike(this.state.savedSearchesOrError)) {
+            body = <ErrorAlert className="mb-3" error={this.state.savedSearchesOrError} />
+        } else {
+            const namespaceSavedSearches = this.state.savedSearchesOrError.filter(
+                search => this.props.namespace.id === search.namespace.id
+            )
+            if (namespaceSavedSearches.length === 0) {
+                body = <Container className="text-center text-muted">You haven't created a saved search yet.</Container>
+            } else {
+                body = (
+                    <Container>
+                        <div className="list-group list-group-flush">
+                            {namespaceSavedSearches.map(search => (
                                 <SavedSearchNode
                                     key={search.id}
                                     {...this.props}
@@ -170,7 +155,28 @@ export class SavedSearchListPage extends React.Component<Props, State> {
                                     onDelete={this.onDelete}
                                 />
                             ))}
-                </div>
+                        </div>
+                    </Container>
+                )
+            }
+        }
+        return (
+            <div className="saved-search-list-page">
+                <PageHeader
+                    path={[{ text: 'Saved searches' }]}
+                    headingElement="h2"
+                    description="Manage notifications and alerts for specific search queries."
+                    actions={
+                        <Link
+                            to={`${this.props.match.path}/add`}
+                            className="btn btn-primary test-add-saved-search-button"
+                        >
+                            <PlusIcon className="icon-inline" /> Add saved search
+                        </Link>
+                    }
+                    className="mb-3"
+                />
+                {body}
             </div>
         )
     }
