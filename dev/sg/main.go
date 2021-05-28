@@ -294,7 +294,7 @@ func testExec(ctx context.Context, args []string) error {
 
 func startExec(ctx context.Context, args []string) error {
 	if len(args) != 0 {
-		fmt.Printf("ERROR: this command doesn't take arguments\n\n")
+		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments\n"))
 		return flag.ErrHelp
 	}
 
@@ -360,8 +360,17 @@ func migrationAddExec(ctx context.Context, args []string) error {
 		return flag.ErrHelp
 	}
 
-	// TODO
-	return errors.New("add unimplemented")
+	upFile, downFile, err := createNewMigration(*migrationAddDatabaseNameFlag, args[0])
+	if err != nil {
+		return err
+	}
+
+	block := out.Block(output.Linef("", output.StyleBold, "Migration files created"))
+	block.Writef("Up migration: %s", upFile)
+	block.Writef("Down migration: %s", downFile)
+	block.Close()
+
+	return nil
 }
 
 func migrationUpExec(ctx context.Context, args []string) error {
