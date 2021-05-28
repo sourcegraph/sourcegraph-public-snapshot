@@ -311,14 +311,6 @@ func (r *schemaResolver) DeleteSearchContext(ctx context.Context, args struct {
 	return &EmptyResponse{}, nil
 }
 
-func idsMapToSlice(idsMap map[int32]struct{}) []int32 {
-	ids := make([]int32, 0, len(idsMap))
-	for id := range idsMap {
-		ids = append(ids, id)
-	}
-	return ids
-}
-
 func (r *schemaResolver) SearchContexts(ctx context.Context, args *listSearchContextsArgs) (*searchContextConnection, error) {
 	orderBy := database.SearchContextsOrderBySpec
 	if args.OrderBy == searchContextsOrderByUpdatedAt {
@@ -342,8 +334,8 @@ func (r *schemaResolver) SearchContexts(ctx context.Context, args *listSearchCon
 		return nil, err
 	}
 
-	namespaceUserIDs := make(map[int32]struct{})
-	namespaceOrgIDs := make(map[int32]struct{})
+	namespaceUserIDs := []int32{}
+	namespaceOrgIDs := []int32{}
 	noNamespace := false
 	for _, namespace := range args.Namespaces {
 		if namespace == nil {
@@ -355,10 +347,10 @@ func (r *schemaResolver) SearchContexts(ctx context.Context, args *listSearchCon
 				return nil, err
 			}
 			if namespaceUserID != 0 {
-				namespaceUserIDs[namespaceUserID] = struct{}{}
+				namespaceUserIDs = append(namespaceUserIDs, namespaceUserID)
 			}
 			if namespaceOrgID != 0 {
-				namespaceOrgIDs[namespaceOrgID] = struct{}{}
+				namespaceOrgIDs = append(namespaceOrgIDs, namespaceOrgID)
 			}
 		}
 	}
@@ -366,8 +358,8 @@ func (r *schemaResolver) SearchContexts(ctx context.Context, args *listSearchCon
 	opts := database.ListSearchContextsOptions{
 		NamespaceName:     namespaceName,
 		Name:              searchContextName,
-		NamespaceUserIDs:  idsMapToSlice(namespaceUserIDs),
-		NamespaceOrgIDs:   idsMapToSlice(namespaceOrgIDs),
+		NamespaceUserIDs:  namespaceUserIDs,
+		NamespaceOrgIDs:   namespaceOrgIDs,
 		NoNamespace:       noNamespace,
 		OrderBy:           orderBy,
 		OrderByDescending: args.Descending,
