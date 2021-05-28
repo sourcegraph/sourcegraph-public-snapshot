@@ -1218,7 +1218,7 @@ func testSearchOther(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		scID, err := client.CreateSearchContext(
+		scID1, err := client.CreateSearchContext(
 			gqltestutil.CreateSearchContextInput{Name: "SuggestionSearchContext", Public: true},
 			[]gqltestutil.SearchContextRepositoryRevisionsInput{
 				{RepositoryID: repo1.ID, Revisions: []string{"HEAD"}},
@@ -1227,8 +1227,16 @@ func testSearchOther(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		scID2, err := client.CreateSearchContext(gqltestutil.CreateSearchContextInput{Name: "EmptySearchContext", Public: true}, []gqltestutil.SearchContextRepositoryRevisionsInput{})
+		if err != nil {
+			t.Fatal(err)
+		}
 		defer func() {
-			err = client.DeleteSearchContext(scID)
+			err = client.DeleteSearchContext(scID1)
+			if err != nil {
+				t.Fatal(err)
+			}
+			err = client.DeleteSearchContext(scID2)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1240,6 +1248,7 @@ func testSearchOther(t *testing.T) {
 		}{
 			{query: `repo:sourcegraph-typescript$ type:file file:deploy`, suggestionCount: 11},
 			{query: `context:SuggestionSearchContext repo:`, suggestionCount: 2},
+			{query: `context:Empty`, suggestionCount: 1},
 		}
 
 		for _, test := range tests {

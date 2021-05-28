@@ -151,7 +151,7 @@ func (r *searchContextResolver) AutoDefined(ctx context.Context) bool {
 	return searchcontexts.IsAutoDefinedSearchContext(r.sc)
 }
 
-func (r *searchContextResolver) Spec(ctx context.Context) string {
+func (r *searchContextResolver) Spec() string {
 	return searchcontexts.GetSearchContextSpec(r.sc)
 }
 
