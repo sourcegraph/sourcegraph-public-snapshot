@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/inconshreveable/log15"
+
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -45,14 +47,37 @@ func NewWorker(ctx context.Context, workerBaseStore *basestore.Store, insightsSt
 		Metrics:     metrics,
 	}
 
-	//TODO: add a setting for this rate limiter
-	limiter := rate.NewLimiter(2, 1)
+	defaultRateLimit := rate.Limit(2.0)
+	getRateLimit := getRateLimit(defaultRateLimit)
+
+	limiter := rate.NewLimiter(getRateLimit(), 1)
+
+	go conf.Watch(func() {
+		val := getRateLimit()
+		log15.Info(fmt.Sprintf("Updating insights/query-worker rate limit value=%v", val))
+		limiter.SetLimit(val)
+	})
 
 	return dbworker.NewWorker(ctx, workerStore, &workHandler{
 		workerBaseStore: workerBaseStore,
 		insightsStore:   insightsStore,
 		limiter:         limiter,
 	}, options)
+}
+
+func getRateLimit(defaultValue rate.Limit) func() rate.Limit {
+	return func() rate.Limit {
+		val := conf.Get().InsightsQueryWorkerRateLimit
+
+		var result rate.Limit
+		if val == nil {
+			result = defaultValue
+		} else {
+			result = rate.Limit(*val)
+		}
+
+		return result
+	}
 }
 
 // NewResetter returns a resetter that will reset pending query runner jobs if they take too long
