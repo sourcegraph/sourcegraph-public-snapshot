@@ -3,6 +3,7 @@ import React, { useEffect, useMemo } from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../../components/PageTitle'
 import { Timestamp } from '../../../../components/time/Timestamp'
@@ -11,6 +12,7 @@ import { ActionContainer } from '../../../../repo/settings/components/ActionCont
 import { eventLogger } from '../../../../tracking/eventLogger'
 
 import { scheduleUserPermissionsSync, userPermissionsInfo } from './backend'
+import styles from './UserSettingsPermissionsPage.module.scss'
 
 /**
  * The user settings permissions page.
@@ -29,7 +31,7 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<{ user: UserAr
     return (
         <div className="w-100">
             <PageTitle title="Permissions" />
-            <h2>Permissions</h2>
+            <PageHeader headingElement="h2" path={[{ text: 'Permissions' }]} className="mb-3" />
             {user.siteAdmin && !window.context.site['authz.enforceForSiteAdmins'] ? (
                 <div className="alert alert-info">
                     Site admin can access all repositories in the Sourcegraph instance.
@@ -40,15 +42,15 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<{ user: UserAr
                     is finished.
                 </div>
             ) : (
-                <div>
+                <Container className="mb-3">
                     <table className="table">
                         <tbody>
                             <tr>
-                                <th>Last complete sync</th>
-                                <td>
+                                <th className="border-0">Last complete sync</th>
+                                <td className="border-0">
                                     {permissionsInfo.syncedAt ? <Timestamp date={permissionsInfo.syncedAt} /> : 'Never'}
                                 </td>
-                                <td className="text-muted">Updated by user permissions syncing</td>
+                                <td className="text-muted border-0">Updated by user permissions syncing</td>
                             </tr>
                             <tr>
                                 <th>Last incremental sync</th>
@@ -60,11 +62,13 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<{ user: UserAr
                         </tbody>
                     </table>
                     <ScheduleUserPermissionsSyncActionContainer user={user} history={history} />
-                </div>
+                </Container>
             )}
-            <a href="/help/admin/repo/permissions#background-permissions-syncing">
-                Learn more about background permissions syncing.
-            </a>
+            <p>
+                <a href="/help/admin/repo/permissions#background-permissions-syncing">
+                    Learn more about background permissions syncing.
+                </a>
+            </p>
         </div>
     )
 }
@@ -84,6 +88,7 @@ class ScheduleUserPermissionsSyncActionContainer extends React.PureComponent<Sch
                 flashText="Added to queue"
                 run={this.scheduleUserPermissions}
                 history={this.props.history}
+                className={styles.userSettingsPermissionsPageSyncContainer}
             />
         )
     }
