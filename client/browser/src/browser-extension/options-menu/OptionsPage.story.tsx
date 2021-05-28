@@ -30,6 +30,9 @@ const requestPermissionsHandler = action('requestPermission')
 
 storiesOf('browser/Options/OptionsPage', module)
     .addDecorator(story => <BrandedStory styles={brandedStyles}>{() => story()}</BrandedStory>)
+    .addParameters({
+        chromatic: { delay: 500 },
+    })
     .add('Default', () => (
         <OptionsPage
             {...commonProps()}
