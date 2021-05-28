@@ -140,6 +140,7 @@ func (x *executor) do(ctx context.Context, task *Task, status taskStatusHandler)
 	// Ensure that the status is updated when we're done.
 	defer func() {
 		status.Update(task, func(status *TaskStatus) {
+			status.FinishedAt = time.Now()
 			status.CurrentlyExecuting = ""
 			status.Err = err
 		})

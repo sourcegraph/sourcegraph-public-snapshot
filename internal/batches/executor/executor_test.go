@@ -340,7 +340,7 @@ func TestExecutor_Integration(t *testing.T) {
 
 			executor := newExecutor(opts)
 
-			statusHandler := NewTaskStatusCollection([]*Task{})
+			statusHandler := NewTaskStatusCollection(tc.tasks)
 
 			// Run executor
 			executor.Start(context.Background(), tc.tasks, statusHandler)
@@ -426,6 +426,21 @@ func TestExecutor_Integration(t *testing.T) {
 					}
 				}
 			}
+
+			// Make sure that all the TaskStatus have been updated correctly
+			statusHandler.CopyStatuses(func(statuses []*TaskStatus) {
+				for i, status := range statuses {
+					if status.StartedAt.IsZero() {
+						t.Fatalf("status %d: StartedAt is zero", i)
+					}
+					if status.FinishedAt.IsZero() {
+						t.Fatalf("status %d: FinishedAt is zero", i)
+					}
+					if status.CurrentlyExecuting != "" {
+						t.Fatalf("status %d: CurrentlyExecuting not reset", i)
+					}
+				}
+			})
 		})
 	}
 }
