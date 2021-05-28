@@ -214,10 +214,6 @@ type historicalEnqueuer struct {
 	limiter          *rate.Limiter
 }
 
-func (h *historicalEnqueuer) timeSince(t time.Time) time.Duration {
-	return h.now().Sub(t)
-}
-
 func (h *historicalEnqueuer) Handler(ctx context.Context) error {
 	// Discover all insights on the instance.
 	insights, err := discovery.Discover(ctx, h.settingStore)
