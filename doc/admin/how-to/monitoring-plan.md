@@ -24,7 +24,7 @@ All resources have provisioning indicators that will fire up alerts when the con
 ## How much resources should I add after receiving alerts about running out of resources?
 You should make the decision based on the metrics from your Grafana Dashboard. 
 
-## What are some of the important alerts that I should beaware of?
+## What are some of the important alerts that I should be aware of?
 All alerts are important, but more important when they are in red as that indicate there are issues occuring continuously that require attention.
 
 ## How to set up alerts?
