@@ -15,14 +15,13 @@ import (
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	githubsvc "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func init() {
