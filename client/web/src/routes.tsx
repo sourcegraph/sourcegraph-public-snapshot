@@ -107,14 +107,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         path: '/search/console',
         render: props =>
             props.showMultilineSearchConsole ? (
-                <SearchConsolePage
-                    {...props}
-                    isMacPlatform={isMacPlatform}
-                    allExpanded={false}
-                    showSavedQueryModal={false}
-                    deployType={window.context.deployType}
-                    showSavedQueryButton={false}
-                />
+                <SearchConsolePage {...props} isMacPlatform={isMacPlatform} />
             ) : (
                 <Redirect to="/search" />
             ),

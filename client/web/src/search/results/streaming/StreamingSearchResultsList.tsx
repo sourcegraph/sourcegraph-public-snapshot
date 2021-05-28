@@ -25,7 +25,7 @@ import { StreamingSearchResultFooter } from './StreamingSearchResultsFooter'
 const initialItemsToShow = 15
 const incrementalItemsToShow = 10
 
-interface StreamingSearchResultsListProps extends ThemeProps, SettingsCascadeProps, TelemetryProps {
+export interface StreamingSearchResultsListProps extends ThemeProps, SettingsCascadeProps, TelemetryProps {
     results?: AggregateStreamingSearchResults
 
     location: H.Location
