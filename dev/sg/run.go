@@ -159,6 +159,16 @@ func printCmdError(out *output.Output, cmdName string, err error) {
 func runWatch(ctx context.Context, cmd Command, root string, reload <-chan struct{}) error {
 	startedOnce := false
 
+	var (
+		md5hash    string
+		md5changed bool
+	)
+
+	var cancelFuncs []context.CancelFunc
+
+	errs := make(chan error, 1)
+	defer close(errs)
+
 	for {
 		// Build it
 		if cmd.Install != "" {
@@ -189,72 +199,94 @@ func runWatch(ctx context.Context, cmd Command, root string, reload <-chan struc
 			}
 
 			out.WriteLine(output.Linef("", output.StyleSuccess, "%sSuccessfully installed %s%s", output.StyleBold, cmd.Name, output.StyleReset))
-		}
 
-		// Run it
-		out.WriteLine(output.Linef("", output.StylePending, "Running %s...", cmd.Name))
+			if cmd.CheckBinary != "" {
+				c = exec.CommandContext(ctx, "bash", "-c", fmt.Sprintf("md5 -q %s", cmd.CheckBinary))
+				c.Dir = root
 
-		commandCtx, cancel := context.WithCancel(ctx)
-		defer cancel()
-
-		c := exec.CommandContext(commandCtx, "bash", "-c", cmd.Cmd)
-		c.Dir = root
-		c.Env = makeEnv(conf.Env, cmd.Env)
-
-		var (
-			stdoutBuf = &prefixSuffixSaver{N: 32 << 10}
-			stderrBuf = &prefixSuffixSaver{N: 32 << 10}
-		)
-
-		logger := newCmdLogger(cmd.Name, out)
-		if cmd.IgnoreStdout {
-			out.WriteLine(output.Linef("", output.StyleSuggestion, "Ignoring stdout of %s", cmd.Name))
-		} else {
-			c.Stdout = io.MultiWriter(logger, stdoutBuf)
-		}
-		if cmd.IgnoreStderr {
-			out.WriteLine(output.Linef("", output.StyleSuggestion, "Ignoring stderr of %s", cmd.Name))
-		} else {
-			c.Stderr = io.MultiWriter(logger, stderrBuf)
-		}
-
-		if err := c.Start(); err != nil {
-			return err
-		}
-
-		errs := make(chan error, 1)
-		go func() {
-			defer close(errs)
-
-			errs <- (func() error {
-				if err := c.Wait(); err != nil {
-					if exitErr, ok := err.(*exec.ExitError); ok {
-						return runErr{
-							cmdName:  cmd.Name,
-							exitCode: exitErr.ExitCode(),
-							stderr:   string(stderrBuf.Bytes()),
-							stdout:   string(stdoutBuf.Bytes()),
-						}
-					}
-
-					return err
+				cmdOut, err := c.CombinedOutput()
+				if err != nil {
+					return installErr{cmdName: cmd.Name, output: string(cmdOut)}
 				}
 
-				return nil
-			})()
-		}()
+				clean := strings.TrimSpace(string(cmdOut))
+				md5changed = md5hash != clean
+				md5hash = clean
+			}
+		}
 
-		// TODO: We should probably only set this after N seconds (or when
-		// we're sure that the command has booted up -- maybe healthchecks?)
-		startedOnce = true
+		out.WriteLine(output.Linef("", output.StylePending, "%s. md5: %s, md5changed: %t", cmd.Name, md5hash, md5changed))
+
+		if cmd.CheckBinary == "" || md5changed {
+			for _, cancel := range cancelFuncs {
+				cancel() // Stop command
+				<-errs   // Wait for exit
+			}
+			cancelFuncs = nil
+
+			// Run it
+			out.WriteLine(output.Linef("", output.StylePending, "Running %s...", cmd.Name))
+
+			commandCtx, cancel := context.WithCancel(ctx)
+			defer cancel()
+			cancelFuncs = append(cancelFuncs, cancel)
+
+			c := exec.CommandContext(commandCtx, "bash", "-c", cmd.Cmd)
+			c.Dir = root
+			c.Env = makeEnv(conf.Env, cmd.Env)
+
+			var (
+				stdoutBuf = &prefixSuffixSaver{N: 32 << 10}
+				stderrBuf = &prefixSuffixSaver{N: 32 << 10}
+			)
+
+			logger := newCmdLogger(cmd.Name, out)
+			if cmd.IgnoreStdout {
+				out.WriteLine(output.Linef("", output.StyleSuggestion, "Ignoring stdout of %s", cmd.Name))
+			} else {
+				c.Stdout = io.MultiWriter(logger, stdoutBuf)
+			}
+			if cmd.IgnoreStderr {
+				out.WriteLine(output.Linef("", output.StyleSuggestion, "Ignoring stderr of %s", cmd.Name))
+			} else {
+				c.Stderr = io.MultiWriter(logger, stderrBuf)
+			}
+
+			if err := c.Start(); err != nil {
+				return err
+			}
+
+			go func() {
+				errs <- (func() error {
+					if err := c.Wait(); err != nil {
+						if exitErr, ok := err.(*exec.ExitError); ok {
+							return runErr{
+								cmdName:  cmd.Name,
+								exitCode: exitErr.ExitCode(),
+								stderr:   string(stderrBuf.Bytes()),
+								stdout:   string(stdoutBuf.Bytes()),
+							}
+						}
+
+						return err
+					}
+
+					return nil
+				})()
+			}()
+
+			// TODO: We should probably only set this after N seconds (or when
+			// we're sure that the command has booted up -- maybe healthchecks?)
+			startedOnce = true
+		} else {
+			out.WriteLine(output.Linef("", output.StylePending, "Binary did not change. Not restarting."))
+		}
 	outer:
 		for {
 			select {
 			case <-reload:
 				out.WriteLine(output.Linef("", output.StylePending, "Change detected. Reloading %s...", cmd.Name))
 
-				cancel()    // Stop command
-				<-errs      // Wait for exit
 				break outer // Reinstall
 
 			case err := <-errs:

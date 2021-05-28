@@ -83,6 +83,7 @@ commands:
   frontend:
     cmd: ulimit -n 10000 && .bin/frontend
     install: go build -o .bin/frontend github.com/sourcegraph/sourcegraph/cmd/frontend
+    checkBinary: .bin/frontend
     env:
       CONFIGURATION_MODE: server
       USE_ENHANCED_LANGUAGE_DETECTION: false
