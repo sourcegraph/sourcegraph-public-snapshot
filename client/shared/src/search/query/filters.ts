@@ -18,7 +18,6 @@ export enum FilterType {
     count = 'count',
     file = 'file',
     fork = 'fork',
-    index = 'index',
     lang = 'lang',
     message = 'message',
     patterntype = 'patterntype',
@@ -252,11 +251,6 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     [FilterType.fork]: {
         discreteValues: () => ['yes', 'no', 'only'].map(value => ({ label: value })),
         description: 'Include results from forked repositories.',
-        singular: true,
-    },
-    [FilterType.index]: {
-        discreteValues: () => ['yes', 'no', 'only'].map(value => ({ label: value })),
-        description: 'Include results from indexed repositories',
         singular: true,
     },
     [FilterType.lang]: {
