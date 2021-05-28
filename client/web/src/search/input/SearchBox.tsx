@@ -1,6 +1,7 @@
 import React from 'react'
 
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { SearchContextInputProps } from '..'
@@ -15,7 +16,11 @@ import { SearchButton } from './SearchButton'
 import { SearchContextDropdown } from './SearchContextDropdown'
 import { Toggles, TogglesProps } from './toggles/Toggles'
 
-export interface SearchBoxProps extends Omit<TogglesProps, 'navbarSearchQuery'>, ThemeProps, SearchContextInputProps {
+export interface SearchBoxProps
+    extends Omit<TogglesProps, 'navbarSearchQuery'>,
+        ThemeProps,
+        SearchContextInputProps,
+        TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean // significant for query suggestions
     queryState: QueryState
