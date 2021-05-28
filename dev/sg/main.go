@@ -5,8 +5,8 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -410,7 +410,7 @@ func migrationDownExec(ctx context.Context, args []string) error {
 	return errors.New("down unimplemented")
 }
 
-func migrationSquashExec(ctx context.Context, args []string) error {
+func migrationSquashExec(ctx context.Context, args []string) (err error) {
 	if len(args) == 0 {
 		out.WriteLine(output.Linef("", output.StyleWarning, "No current-version specified\n"))
 		return flag.ErrHelp
@@ -419,7 +419,6 @@ func migrationSquashExec(ctx context.Context, args []string) error {
 		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments\n"))
 		return flag.ErrHelp
 	}
-
 	var (
 		databaseName  = *migrationSquashDatabaseNameFlag
 		migrationName = args[0]
@@ -435,8 +434,8 @@ func migrationSquashExec(ctx context.Context, args []string) error {
 		return err
 	}
 
-	commit := fmt.Sprintf("v%d.%d.0", currentVersion.Major(), currentVersion.Minor()-3) // TODO - define this as a constant
-
+	// TODO - define minimum squash distance
+	commit := fmt.Sprintf("v%d.%d.0", currentVersion.Major(), currentVersion.Minor()-3)
 	lastMigrationIndex, ok, err := lastMigrationIndexAtCommit(databaseName, commit)
 	if err != nil {
 		return err
@@ -445,68 +444,10 @@ func migrationSquashExec(ctx context.Context, args []string) error {
 		return fmt.Errorf("no migrations exist at commit %s", commit)
 	}
 
-	cmd := exec.Command(
-		"docker", "run",
-		"--rm", "-d",
-		"--name", "squasher",
-		"-p", "5432:5432",
-		"-e", "POSTGRES_HOST_AUTH_METHOD=trust",
-		"postgres:12.6",
-	)
-	if out, err := cmd.CombinedOutput(); err != nil {
-		return errors.Wrapf(err, "'docker %s' failed: %s", strings.Join(args, " "), out)
+	squashedUpMigration, squashedDownMigration, err := generateSquashedMigrations(databaseName, lastMigrationIndex)
+	if err != nil {
+		return err
 	}
-
-	// TODO
-
-	// DBNAME='squasher'
-	// SERVER_VERSION=$(psql --version)
-
-	// if [ "${SERVER_VERSION}" != 12.6 ]; then
-	//   echo "running PostgreSQL 12.6 in docker since local version is ${SERVER_VERSION}"
-	//   docker image inspect postgres:12.6 >/dev/null || docker pull postgres:12.6
-	//   docker rm --force "${DBNAME}" 2>/dev/null || true
-	//   docker run --rm --name "${DBNAME}" -p 5433:5432 -e POSTGRES_HOST_AUTH_METHOD=trust -d postgres:12.6
-
-	//   function kill() {
-	//     docker kill "${DBNAME}" >/dev/null
-	//   }
-	//   trap kill EXIT
-
-	//   sleep 5
-	//   docker exec -u postgres "${DBNAME}" createdb "${DBNAME}"
-	//   export PGHOST=127.0.0.1
-	//   export PGPORT=5433
-	//   export PGDATABASE="${DBNAME}"
-	//   export PGUSER=postgres
-	// fi
-
-	// # First, apply migrations up to the version we want to squash
-	// migrate -database "postgres://${PGHOST}:${PGPORT}/${PGDATABASE}?sslmode=disable&x-migrations-table=${migrations_table}" -path . goto "${VERSION}"
-
-	// # Dump the database into a temporary file that we need to post-process
-	// pg_dump --schema-only --no-owner --no-comments --exclude-table='*schema_migrations' -f tmp_squashed.sql
-
-	// # Remove settings header from pg_dump output
-	// sed -i '' -e 's/^SET .*$//g' tmp_squashed.sql
-	// sed -i '' -e 's/^SELECT pg_catalog.set_config.*$//g' tmp_squashed.sql
-
-	// # Do not drop extensions if they already exist. This causes some
-	// # weird problems with the back-compat tests as the extensions are
-	// # not dropped in the correct order to honor dependencies.
-	// sed -i '' -e 's/^DROP EXTENSION .*$//g' tmp_squashed.sql
-
-	// # Remove references to public schema
-	// sed -i '' -e 's/public\.//g' tmp_squashed.sql
-	// sed -i '' -e 's/ WITH SCHEMA public//g' tmp_squashed.sql
-
-	// # Remove comments, multiple blank lines
-	// sed -i '' -e 's/^--.*$//g' tmp_squashed.sql
-	// sed -i '' -e '/^$/N;/^\n$/D' tmp_squashed.sql
-
-	// # Now clean up all of the old migration files. `ls` will return files in
-	// # alphabetical order, so we can delete all files from the migration directory
-	// # until we hit our squashed migration.
 
 	filenames, err := removeMigrationFilesBefore(databaseName, lastMigrationIndex)
 	if err != nil {
@@ -517,26 +458,20 @@ func migrationSquashExec(ctx context.Context, args []string) error {
 		fmt.Printf("> Squashed migration file %s\n", filename)
 	}
 
-	// # Wrap squashed migration in transaction
-	// printf "BEGIN;\n" >"./${VERSION}_squashed_migrations.up.sql"
-	// cat tmp_squashed.sql >>"./${VERSION}_squashed_migrations.up.sql"
-	// printf "\nCOMMIT;\n" >>"./${VERSION}_squashed_migrations.up.sql"
-	// rm tmp_squashed.sql
+	upPath, downPath, err := makeMigrationFilenames(databaseName, lastMigrationIndex, "squashed_migrations")
+	if err != nil {
+		return err
+	}
 
-	// cat >"./${VERSION}_squashed_migrations.down.sql" <<EOL
-	// DROP SCHEMA IF EXISTS public CASCADE;
-	// CREATE SCHEMA public;
+	if err := ioutil.WriteFile(upPath, []byte(squashedUpMigration), os.ModePerm); err != nil {
+		return err
+	}
+	if err := ioutil.WriteFile(downPath, []byte(squashedDownMigration), os.ModePerm); err != nil {
+		return err
+	}
 
-	// CREATE TABLE IF NOT EXISTS ${migrations_table} (
-	//     version bigint NOT NULL PRIMARY KEY,
-	//     dirty boolean NOT NULL
-	// );
-	// EOL
-
-	// echo ""
-	// echo "squashed migrations written to ${VERSION}_squashed_migrations.{up,down}.sql"
-
-	return errors.New("squash unimplemented")
+	fmt.Printf("> Squashed to %s\n", upPath)
+	return nil
 }
 
 func printRunUsage(c *ffcli.Command) string {
