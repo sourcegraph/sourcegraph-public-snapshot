@@ -66,7 +66,7 @@ add(
                     <Link to="/page" className="btn btn-secondary mr-2">
                         Secondary
                     </Link>
-                    <Link to="/page" className="btn btn-primary mr-2">
+                    <Link to="/page" className="btn btn-primary text-nowrap">
                         <PlusIcon className="icon-inline" /> Create
                     </Link>
                 </div>
