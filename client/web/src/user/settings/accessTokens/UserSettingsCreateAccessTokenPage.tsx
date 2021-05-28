@@ -11,6 +11,7 @@ import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { AccessTokenScopes } from '../../../auth/accessToken'
 import { requestGraphQL } from '../../../backend/graphql'
@@ -119,7 +120,7 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<Props> =
     return (
         <div className="user-settings-create-access-token-page">
             <PageTitle title="Create access token" />
-            <h2>New access token</h2>
+            <PageHeader path={[{ text: 'New access token' }]} headingElement="h2" className="mb-3" />
 
             {siteAdminViewingOtherUser && (
                 <SiteAdminAlert className="sidebar__alert">
@@ -128,85 +129,89 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<Props> =
             )}
 
             <Form onSubmit={onSubmit}>
-                <div className="form-group">
-                    <label htmlFor="user-settings-create-access-token-page__note">Token description</label>
-                    <input
-                        type="text"
-                        className="form-control test-create-access-token-description"
-                        id="user-settings-create-access-token-page__note"
-                        onChange={onNoteChange}
-                        required={true}
-                        autoFocus={true}
-                        placeholder="Description"
-                    />
-                    <small className="form-help text-muted">What's this token for?</small>
-                </div>
-                <div className="form-group">
-                    <div className="mb-1">Token scope</div>
-                    <div>
-                        <small className="form-help text-muted">
-                            Tokens with limited user scopes are not yet supported.
-                        </small>
-                    </div>
-                    <div className="form-check">
+                <Container className="mb-3">
+                    <div className="form-group">
+                        <label htmlFor="user-settings-create-access-token-page__note">Token description</label>
                         <input
-                            className="form-check-input"
-                            type="checkbox"
-                            id="user-settings-create-access-token-page__scope-user:all"
-                            checked={true}
-                            value={AccessTokenScopes.UserAll}
-                            onChange={onScopesChange}
-                            disabled={true}
+                            type="text"
+                            className="form-control test-create-access-token-description"
+                            id="user-settings-create-access-token-page__note"
+                            onChange={onNoteChange}
+                            required={true}
+                            autoFocus={true}
+                            placeholder="Description"
                         />
-                        <label
-                            className="form-check-label"
-                            htmlFor="user-settings-create-access-token-page__scope-user:all"
-                        >
-                            <strong>{AccessTokenScopes.UserAll}</strong> — Full control of all resources accessible to
-                            the user account
-                        </label>
+                        <small className="form-help text-muted">What's this token for?</small>
                     </div>
-                    {user.siteAdmin && !window.context.sourcegraphDotComMode && (
+                    <div className="form-group mb-0">
+                        <label htmlFor="user-settings-create-access-token-page__scope-user:all">Token scope</label>
+                        <p>
+                            <small className="form-help text-muted">
+                                Tokens with limited user scopes are not yet supported.
+                            </small>
+                        </p>
                         <div className="form-check">
                             <input
                                 className="form-check-input"
                                 type="checkbox"
-                                id="user-settings-create-access-token-page__scope-site-admin:sudo"
-                                checked={scopes.includes(AccessTokenScopes.SiteAdminSudo)}
-                                value={AccessTokenScopes.SiteAdminSudo}
+                                id="user-settings-create-access-token-page__scope-user:all"
+                                checked={true}
+                                value={AccessTokenScopes.UserAll}
                                 onChange={onScopesChange}
+                                disabled={true}
                             />
                             <label
                                 className="form-check-label"
-                                htmlFor="user-settings-create-access-token-page__scope-site-admin:sudo"
+                                htmlFor="user-settings-create-access-token-page__scope-user:all"
                             >
-                                <strong>{AccessTokenScopes.SiteAdminSudo}</strong> — Ability to perform any action as
-                                any other user
+                                <strong>{AccessTokenScopes.UserAll}</strong> — Full control of all resources accessible
+                                to the user account
                             </label>
                         </div>
-                    )}
+                        {user.siteAdmin && !window.context.sourcegraphDotComMode && (
+                            <div className="form-check mt-2">
+                                <input
+                                    className="form-check-input"
+                                    type="checkbox"
+                                    id="user-settings-create-access-token-page__scope-site-admin:sudo"
+                                    checked={scopes.includes(AccessTokenScopes.SiteAdminSudo)}
+                                    value={AccessTokenScopes.SiteAdminSudo}
+                                    onChange={onScopesChange}
+                                />
+                                <label
+                                    className="form-check-label"
+                                    htmlFor="user-settings-create-access-token-page__scope-site-admin:sudo"
+                                >
+                                    <strong>{AccessTokenScopes.SiteAdminSudo}</strong> — Ability to perform any action
+                                    as any other user
+                                </label>
+                            </div>
+                        )}
+                    </div>
+                </Container>
+                <div className="mb-3">
+                    <button
+                        type="submit"
+                        disabled={creationOrError === 'loading'}
+                        className="btn btn-primary test-create-access-token-submit"
+                    >
+                        {creationOrError === 'loading' ? (
+                            <LoadingSpinner className="icon-inline" />
+                        ) : (
+                            <AddIcon className="icon-inline" />
+                        )}{' '}
+                        Generate token
+                    </button>
+                    <Link
+                        className="btn btn-secondary ml-2 test-create-access-token-cancel"
+                        to={match.url.replace(/\/new$/, '')}
+                    >
+                        Cancel
+                    </Link>
                 </div>
-                <button
-                    type="submit"
-                    disabled={creationOrError === 'loading'}
-                    className="btn btn-success test-create-access-token-submit"
-                >
-                    {creationOrError === 'loading' ? (
-                        <LoadingSpinner className="icon-inline" />
-                    ) : (
-                        <AddIcon className="icon-inline" />
-                    )}{' '}
-                    Generate token
-                </button>
-                <Link
-                    className="btn btn-secondary ml-1 test-create-access-token-cancel"
-                    to={match.url.replace(/\/new$/, '')}
-                >
-                    Cancel
-                </Link>
             </Form>
 
-            {isErrorLike(creationOrError) && <ErrorAlert className="invite-form__alert" error={creationOrError} />}
+            {isErrorLike(creationOrError) && <ErrorAlert className="my-3" error={creationOrError} />}
         </div>
     )
 }
