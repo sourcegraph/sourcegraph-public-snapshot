@@ -236,6 +236,8 @@ const squashedDownMigrationTemplate = `
 DROP SCHEMA IF EXISTS public CASCADE;
 CREATE SCHEMA public;
 
+
+
 CREATE TABLE IF NOT EXISTS %s (
 	version bigint NOT NULL PRIMARY KEY,
 	dirty boolean NOT NULL
@@ -249,6 +251,8 @@ func generateSquashedMigrations(databaseName string, migrationIndex int) (up, do
 		return "", "", err
 	}
 	migrationsTable := migrationsTableForDatabase(databaseName)
+
+	fmt.Printf("LAUNCHING DOCKER\n")
 
 	runArgs := []string{
 		"run",
@@ -326,10 +330,11 @@ func generateSquashedMigrations(databaseName string, migrationIndex int) (up, do
 
 var (
 	migrationDumpRemovePrefixes = []string{
-		"--",                            // remove comments
-		"SET ",                          // remove settings header
-		"SELECT pg_catalog.set_config.", // remove settings header
-		"DROP EXTENSION ",               // do not drop extensions if they already exist
+		"--",                                    // remove comments
+		"SET ",                                  // remove settings header
+		"SELECT pg_catalog.set_config.",         // remove settings header
+		"DROP EXTENSION ",                       // do not drop extensions if they already exist
+		`could not find a "pg_dump" to execute`, // common warning in docker container
 	}
 
 	migrationDumpRemovePatterns = map[*regexp.Regexp]string{
