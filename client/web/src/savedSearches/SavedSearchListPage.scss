@@ -1,5 +1,8 @@
 .saved-search-list-page {
     padding: 0 0.75rem;
+    .theme-redesign & {
+        padding: 0;
+    }
 
     &__row {
         display: flex;
@@ -7,6 +10,10 @@
         justify-content: space-between;
         padding: 0.75rem;
         font-weight: bold;
+
+        .theme-redesign & {
+            padding: 0;
+        }
 
         &--icon {
             margin-right: 0.5rem;

@@ -11,13 +11,14 @@ import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { PageHeader } from '@sourcegraph/wildcard'
+import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../components/alerts'
 import { NamespaceProps } from '../namespaces'
 import { PatternTypeProps } from '../search'
 import { deleteSavedSearch, fetchSavedSearches } from '../search/backend'
 import { eventLogger } from '../tracking/eventLogger'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 
 interface NodeProps extends RouteComponentProps, Omit<PatternTypeProps, 'setPatternType'> {
     savedSearch: GQL.ISavedSearch
@@ -97,7 +98,7 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
     }
 
     private onDelete = (): void => {
-        if (!window.confirm(`Delete the external service ${this.props.savedSearch.description}?`)) {
+        if (!window.confirm(`Delete the saved search ${this.props.savedSearch.description}?`)) {
             return
         }
         this.setState({ isDeleting: true })
@@ -125,7 +126,6 @@ export class SavedSearchListPage extends React.Component<Props, State> {
                     switchMap(() =>
                         fetchSavedSearches().pipe(
                             catchError(error => {
-                                console.error(error)
                                 return [asError(error)]
                             })
                         )
@@ -138,6 +138,34 @@ export class SavedSearchListPage extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
+        let body: JSX.Element
+        if (this.state.savedSearchesOrError === undefined) {
+            body = <LoadingSpinner />
+        } else if (isErrorLike(this.state.savedSearchesOrError)) {
+            body = <ErrorAlert className="mb-3" error={this.state.savedSearchesOrError} />
+        } else {
+            const namespaceSavedSearches = this.state.savedSearchesOrError.filter(
+                search => this.props.namespace.id === search.namespace.id
+            )
+            if (namespaceSavedSearches.length === 0) {
+                body = <Container className="text-center text-muted">You haven't created a saved search yet.</Container>
+            } else {
+                body = (
+                    <Container>
+                        <div className="list-group list-group-flush">
+                            {namespaceSavedSearches.map(search => (
+                                <SavedSearchNode
+                                    key={search.id}
+                                    {...this.props}
+                                    savedSearch={search}
+                                    onDelete={this.onDelete}
+                                />
+                            ))}
+                        </div>
+                    </Container>
+                )
+            }
+        }
         return (
             <div className="saved-search-list-page">
                 <PageHeader
@@ -154,24 +182,7 @@ export class SavedSearchListPage extends React.Component<Props, State> {
                     }
                     className="mb-3"
                 />
-                {this.state.savedSearchesOrError && isErrorLike(this.state.savedSearchesOrError) && (
-                    <ErrorAlert className="mb-3" error={this.state.savedSearchesOrError} />
-                )}
-                <div className="list-group list-group-flush">
-                    {this.state.savedSearchesOrError &&
-                        !isErrorLike(this.state.savedSearchesOrError) &&
-                        this.state.savedSearchesOrError.length > 0 &&
-                        this.state.savedSearchesOrError
-                            .filter(search => this.props.namespace.id === search.namespace.id)
-                            .map(search => (
-                                <SavedSearchNode
-                                    key={search.id}
-                                    {...this.props}
-                                    savedSearch={search}
-                                    onDelete={this.onDelete}
-                                />
-                            ))}
-                </div>
+                {body}
             </div>
         )
     }

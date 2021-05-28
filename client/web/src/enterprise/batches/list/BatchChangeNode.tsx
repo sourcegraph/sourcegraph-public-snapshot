@@ -61,7 +61,7 @@ export const BatchChangeNode: React.FunctionComponent<BatchChangeNodeProps> = ({
                 </small>
             </div>
             <Markdown
-                className={classNames('text-truncate d-none d-md-block', !node.description && 'text-muted font-italic')}
+                className={classNames('text-truncate text-muted d-none d-md-block', !node.description && 'font-italic')}
                 dangerousInnerHTML={
                     node.description ? renderMarkdown(node.description, { plainText: true }) : 'No description'
                 }
