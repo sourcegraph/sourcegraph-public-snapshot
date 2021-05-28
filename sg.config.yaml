@@ -276,7 +276,7 @@ commands:
       # This is not needed actually
       INSECURE_DEV: 1
 
-  zoekt-indexserver-template: &zoekttemplate
+  zoekt-indexserver-template: &zoekt_indexserver_template
     cmd: |
       .bin/zoekt-sourcegraph-indexserver \
         -sourcegraph_url 'http://localhost:3090' \
@@ -298,7 +298,7 @@ commands:
       PATH: .bin:$PATH
 
   zoekt-indexserver-0:
-    <<: *zoekttemplate
+    <<: *zoekt_indexserver_template
     env:
       <<: *zoektenv
       ZOEKT_NUM: 0
@@ -306,18 +306,14 @@ commands:
       ZOEKT_LISTEN_PORT: 6072
 
   zoekt-indexserver-1:
-    <<: *zoekttemplate
+    <<: *zoekt_indexserver_template
     env:
       <<: *zoektenv
       ZOEKT_NUM: 1
       ZOEKT_HOSTNAME_PORT: 3071
       ZOEKT_LISTEN_PORT: 6073
 
-  zoekt-webserver-0:
-    cmd: |
-      .bin/zoekt-webserver \
-        -index "$HOME/.sourcegraph/zoekt/index-0" \
-        -pprof -rpc -listen ":3070"
+  zoekt-webserver-template: &zoekt_webserver_template
     install: |
       mkdir -p .bin
       env GOBIN="${PWD}/.bin" GO111MODULE=on go install github.com/google/zoekt/cmd/zoekt-webserver
@@ -326,18 +322,13 @@ commands:
       GOGC: 50
       PATH: .bin:$PATH
 
+  zoekt-webserver-0:
+    <<: *zoekt_webserver_template
+    cmd: .bin/zoekt-webserver -index "$HOME/.sourcegraph/zoekt/index-0" -pprof -rpc -listen ":3070"
+
   zoekt-webserver-1:
-    cmd: |
-      .bin/zoekt-webserver \
-        -index "$HOME/.sourcegraph/zoekt/index-1" \
-        -pprof -rpc -listen ":3071"
-    install: |
-      mkdir -p .bin
-      env GOBIN="${PWD}/.bin" GO111MODULE=on go install github.com/google/zoekt/cmd/zoekt-webserver
-    env:
-      JAEGER_DISABLED: false
-      GOGC: 50
-      PATH: .bin:$PATH
+    <<: *zoekt_webserver_template
+    cmd: .bin/zoekt-webserver -index "$HOME/.sourcegraph/zoekt/index-1" -pprof -rpc -listen ":3071"
 
   precise-code-intel-worker:
     cmd: .bin/precise-code-intel-worker
