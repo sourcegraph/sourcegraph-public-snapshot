@@ -312,9 +312,6 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 				return
 			}
 
-			maxLineMatches := 25 + k
-			maxLineFragmentMatches := 3 + k
-
 			<-reposResolved
 			// getRepoInputRev is nil only if we encountered an error during repo resolution.
 			if getRepoInputRev == nil {
@@ -324,11 +321,6 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 			matches := make([]*result.FileMatch, 0, len(files))
 			for _, file := range files {
 				fileLimitHit := false
-				if len(file.LineMatches) > maxLineMatches {
-					file.LineMatches = file.LineMatches[:maxLineMatches]
-					fileLimitHit = true
-					limitHit = true
-				}
 				mu.Lock()
 				repo, inputRevs, ok := getRepoInputRev(&file)
 				mu.Unlock()
@@ -338,7 +330,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 
 				var lines []*result.LineMatch
 				if typ != symbolRequest {
-					lines = zoektFileMatchToLineMatches(maxLineFragmentMatches, &file)
+					lines = zoektFileMatchToLineMatches(&file)
 				}
 
 				for _, inputRev := range inputRevs {
@@ -452,7 +444,7 @@ func zoektSearchReposOnly(ctx context.Context, client zoekt.Streamer, query zoek
 	return nil
 }
 
-func zoektFileMatchToLineMatches(maxLineFragmentMatches int, file *zoekt.FileMatch) []*result.LineMatch {
+func zoektFileMatchToLineMatches(file *zoekt.FileMatch) []*result.LineMatch {
 	lines := make([]*result.LineMatch, 0, len(file.LineMatches))
 
 	for _, l := range file.LineMatches {
@@ -460,9 +452,6 @@ func zoektFileMatchToLineMatches(maxLineFragmentMatches int, file *zoekt.FileMat
 			continue
 		}
 
-		if len(l.LineFragments) > maxLineFragmentMatches {
-			l.LineFragments = l.LineFragments[:maxLineFragmentMatches]
-		}
 		offsets := make([][2]int32, len(l.LineFragments))
 		for k, m := range l.LineFragments {
 			offset := utf8.RuneCount(l.Line[:m.LineOffset])
