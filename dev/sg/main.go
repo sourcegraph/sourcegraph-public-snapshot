@@ -410,6 +410,14 @@ func migrationDownExec(ctx context.Context, args []string) error {
 	return errors.New("down unimplemented")
 }
 
+// minimumMigrationSquashDistance is the minimum number of releases a migration is guaranteed to exist
+// as a non-squashed file.
+//
+// A squash distance of 1 will allow one minor downgrade.
+// A squash distance of 2 will allow two minor downgrades.
+// etc
+const minimumMigrationSquashDistance = 2
+
 func migrationSquashExec(ctx context.Context, args []string) (err error) {
 	if len(args) == 0 {
 		out.WriteLine(output.Linef("", output.StyleWarning, "No current-version specified\n"))
@@ -434,8 +442,8 @@ func migrationSquashExec(ctx context.Context, args []string) (err error) {
 		return err
 	}
 
-	// TODO - define minimum squash distance
-	commit := fmt.Sprintf("v%d.%d.0", currentVersion.Major(), currentVersion.Minor()-3)
+	// Get the last migration that existed in the version _before_ `minimumMigrationSquashDistance` releases ago
+	commit := fmt.Sprintf("v%d.%d.0", currentVersion.Major(), currentVersion.Minor()-minimumMigrationSquashDistance-1)
 	lastMigrationIndex, ok, err := lastMigrationIndexAtCommit(databaseName, commit)
 	if err != nil {
 		return err
@@ -444,25 +452,29 @@ func migrationSquashExec(ctx context.Context, args []string) (err error) {
 		return fmt.Errorf("no migrations exist at commit %s", commit)
 	}
 
+	// Run migrations up to last migration index and dump the database into a single migration file pair
 	squashedUpMigration, squashedDownMigration, err := generateSquashedMigrations(databaseName, lastMigrationIndex)
 	if err != nil {
 		return err
 	}
 
+	block := out.Block(output.Linef("", output.StyleBold, "Updating filesystem"))
+	defer block.Close()
+
+	// Remove the migration file pairs that were just squashed
 	filenames, err := removeMigrationFilesBefore(databaseName, lastMigrationIndex)
 	if err != nil {
 		return err
 	}
-
 	for _, filename := range filenames {
-		fmt.Printf("> Squashed migration file %s\n", filename)
+		block.Writef("Deleted: %s", filename)
 	}
 
+	// Write the replacement migration pair
 	upPath, downPath, err := makeMigrationFilenames(databaseName, lastMigrationIndex, "squashed_migrations")
 	if err != nil {
 		return err
 	}
-
 	if err := ioutil.WriteFile(upPath, []byte(squashedUpMigration), os.ModePerm); err != nil {
 		return err
 	}
@@ -470,7 +482,8 @@ func migrationSquashExec(ctx context.Context, args []string) (err error) {
 		return err
 	}
 
-	fmt.Printf("> Squashed to %s\n", upPath)
+	block.Writef("Created: %s", upPath)
+	block.Writef("Created: %s", downPath)
 	return nil
 }
 

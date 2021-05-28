@@ -14,7 +14,9 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 var (
@@ -27,7 +29,6 @@ var (
 	defaultDatabaseName = databaseNames[0]
 )
 
-// TODO - document
 func isValidDatabaseName(name string) bool {
 	for _, candidate := range databaseNames {
 		if candidate == name {
@@ -36,15 +37,6 @@ func isValidDatabaseName(name string) bool {
 	}
 
 	return false
-}
-
-// TODO - document
-func migrationsTableForDatabase(databaseName string) string {
-	if databaseName == defaultDatabaseName {
-		return "schema_migrations"
-	}
-
-	return fmt.Sprintf("%s_schema_migrations", databaseName)
 }
 
 // createNewMigration creates a new up/down migration file pair for the given database and
@@ -67,6 +59,9 @@ func createNewMigration(databaseName, migrationName string) (up, down string, _ 
 	}
 
 	upPath, downPath, err := makeMigrationFilenames(databaseName, lastMigrationIndex+1, migrationName)
+	if err != nil {
+		return "", "", err
+	}
 
 	if err := writeMigrationFiles(upPath, downPath); err != nil {
 		return "", "", err
@@ -75,16 +70,39 @@ func createNewMigration(databaseName, migrationName string) (up, down string, _ 
 	return upPath, downPath, nil
 }
 
-// TODO - document
-func makeMigrationFilenames(databaseName string, migrationIndex int, migrationName string) (up string, down string, _ error) {
-	baseDir, err := migrationDirectoryForDatabase(databaseName)
+// generateSquashedMigrations generates the content of a migration file pair that contains the contents
+// of a database up to a given migration index. This function will launch a daemon Postgres container,
+// migrate a fresh database up to the given migration index, then dump and sanitize the contents.
+func generateSquashedMigrations(databaseName string, migrationIndex int) (up, down string, err error) {
+	postgresDSN := fmt.Sprintf(
+		"postgres://postgres@127.0.0.1:%d/%s?sslmode=disable",
+		squasherContainerExposedPort,
+		databaseName,
+	)
+
+	teardown, err := runPostgresContainer(databaseName)
+	if err != nil {
+		return "", "", err
+	}
+	defer func() {
+		err = teardown(err)
+	}()
+
+	if err := runMigrations(databaseName, migrationIndex, postgresDSN); err != nil {
+		return "", "", err
+	}
+
+	upMigration, err := generateSquashedUpMigration(postgresDSN)
 	if err != nil {
 		return "", "", err
 	}
 
-	upPath := filepath.Join(baseDir, fmt.Sprintf("%d_%s.up.sql", migrationIndex, migrationName))
-	downPath := filepath.Join(baseDir, fmt.Sprintf("%d_%s.down.sql", migrationIndex, migrationName))
-	return upPath, downPath, nil
+	downMigration, err := generateSquashedDownMigration(databaseName)
+	if err != nil {
+		return "", "", err
+	}
+
+	return upMigration, downMigration, nil
 }
 
 // removeMigrationFilesBefore removes migration files for the given database falling on or
@@ -137,6 +155,15 @@ func lastMigrationIndexAtCommit(databaseName, commit string) (int, bool, error) 
 	return lastMigrationIndex, ok, nil
 }
 
+// migrationsTableForDatabase returns the name of the migration table for the given database.
+func migrationsTableForDatabase(databaseName string) string {
+	if databaseName == defaultDatabaseName {
+		return "schema_migrations"
+	}
+
+	return fmt.Sprintf("%s_schema_migrations", databaseName)
+}
+
 // migrationDirectoryForDatabase returns the directory where migration files are stored for the
 // given database.
 func migrationDirectoryForDatabase(databaseName string) (string, error) {
@@ -146,6 +173,32 @@ func migrationDirectoryForDatabase(databaseName string) (string, error) {
 	}
 
 	return filepath.Join(repoRoot, "migrations", databaseName), nil
+}
+
+// makeMigrationFilenames makes a pair of (absolute) paths to migration files with the
+// given  migration index and name.
+func makeMigrationFilenames(databaseName string, migrationIndex int, migrationName string) (up string, down string, _ error) {
+	baseDir, err := migrationDirectoryForDatabase(databaseName)
+	if err != nil {
+		return "", "", err
+	}
+
+	upPath := filepath.Join(baseDir, fmt.Sprintf("%d_%s.up.sql", migrationIndex, migrationName))
+	downPath := filepath.Join(baseDir, fmt.Sprintf("%d_%s.down.sql", migrationIndex, migrationName))
+	return upPath, downPath, nil
+}
+
+// parseMigrationIndex parse a filename and returns the migration index if the filename
+// looks like a migration. Each migration filename has the form {unique_id}_{name}.{dir}.sql.
+// This function returns a false-valued flag on failure. Leading directories are stripped
+// from the input, so a basename or a full path can be supplied.
+func parseMigrationIndex(name string) (int, bool) {
+	index, err := strconv.Atoi(strings.Split(filepath.Base(name), "_")[0])
+	if err != nil {
+		return 0, false
+	}
+
+	return index, true
 }
 
 // parseLastMigrationIndex parses a list of filenames and returns the highest migration
@@ -164,19 +217,6 @@ func parseLastMigrationIndex(names []string) (int, bool) {
 	}
 
 	return indices[len(indices)-1], true
-}
-
-// parseMigrationIndex parse a filename and returns the migration index if the filename
-// looks like a migration. Each migration filename has the form {unique_id}_{name}.{dir}.sql.
-// This function returns a false-valued flag on failure. Leading directories are stripped
-// from the input, so a basename or a full path can be supplied.
-func parseMigrationIndex(name string) (int, bool) {
-	index, err := strconv.Atoi(strings.Split(filepath.Base(name), "_")[0])
-	if err != nil {
-		return 0, false
-	}
-
-	return index, true
 }
 
 const migrationFileTemplate = `
@@ -212,47 +252,29 @@ func writeMigrationFiles(paths ...string) (err error) {
 	return nil
 }
 
-// readFilenamesNamesInDirectory returns a list of names in the given directory.
-func readFilenamesNamesInDirectory(dir string) ([]string, error) {
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		return nil, err
-	}
-
-	names := make([]string, 0, len(entries))
-	for _, entry := range entries {
-		names = append(names, entry.Name())
-	}
-
-	return names, nil
-}
-
 const (
 	squasherContainerName        = "squasher"
 	squasherContainerExposedPort = 5433
 )
 
-const squashedDownMigrationTemplate = `
-DROP SCHEMA IF EXISTS public CASCADE;
-CREATE SCHEMA public;
+// runPostgresContainer runs a postgres:12.6 daemon with an empty db with the given name.
+// This method returns a teardown function that filters the error value of the calling
+// function, as well as any immediate synchronous error.
+func runPostgresContainer(databaseName string) (func(err error) error, error) {
+	pending := out.Pending(output.Line("", output.StylePending, "Running PostgreSQL 12 in a container..."))
+	defer pending.Close()
 
+	teardown := func(err error) error {
+		killArgs := []string{
+			"kill",
+			squasherContainerName,
+		}
+		if _, killErr := runDockerCmd(killArgs...); killErr != nil {
+			err = multierror.Append(err, fmt.Errorf("failed to stop docker container: %s", killErr))
+		}
 
-
-CREATE TABLE IF NOT EXISTS %s (
-	version bigint NOT NULL PRIMARY KEY,
-	dirty boolean NOT NULL
-);
-`
-
-// TODO - document
-func generateSquashedMigrations(databaseName string, migrationIndex int) (up, down string, err error) {
-	baseDir, err := migrationDirectoryForDatabase(databaseName)
-	if err != nil {
-		return "", "", err
+		return err
 	}
-	migrationsTable := migrationsTableForDatabase(databaseName)
-
-	fmt.Printf("LAUNCHING DOCKER\n")
 
 	runArgs := []string{
 		"run",
@@ -263,22 +285,13 @@ func generateSquashedMigrations(databaseName string, migrationIndex int) (up, do
 		"postgres:12.6",
 	}
 	if _, err := runDockerCmd(runArgs...); err != nil {
-		return "", "", err
+		return nil, err
 	}
-	defer func() {
-		killArgs := []string{
-			"kill",
-			squasherContainerName,
-		}
-		if _, killErr := runDockerCmd(killArgs...); killErr != nil {
-			err = multierror.Append(err, fmt.Errorf("failed to stop docker container: %s", killErr))
-		}
-	}()
 
-	// TODO - check health instead
-	time.Sleep(5 * time.Second)
+	pending.Write("Waiting for container to start up")
+	time.Sleep(5 * time.Second) // TODO - check health instead
 
-	fmt.Printf("CREATING DB\n")
+	pending.Writef("Creating database %s", databaseName)
 
 	execArgs := []string{
 		"exec",
@@ -287,64 +300,91 @@ func generateSquashedMigrations(databaseName string, migrationIndex int) (up, do
 		"createdb", databaseName,
 	}
 	if _, err := runDockerCmd(execArgs...); err != nil {
-		return "", "", err
+		return nil, teardown(err)
 	}
 
-	fmt.Printf("MIGRATING\n")
+	return teardown, nil
+}
+
+// runMigrations runs the `migrate` utility to migrate up to the given migration index.
+// TODO: Rewrite this in Go by using our own database utilities.
+func runMigrations(databaseName string, migrationIndex int, postgresDSN string) error {
+	pending := out.Pending(output.Line("", output.StylePending, "Running migrations..."))
+	defer pending.Close()
+
+	baseDir, err := migrationDirectoryForDatabase(databaseName)
+	if err != nil {
+		return err
+	}
 
 	if _, err := runCommandInRoot(exec.Command(
 		"migrate",
-		"-database", fmt.Sprintf(
-			"postgres://postgres@127.0.0.1:%d/%s?sslmode=disable&x-migrations-table=%s",
-			squasherContainerExposedPort,
-			databaseName,
-			migrationsTable,
-		),
+		"-database", postgresDSN+fmt.Sprintf("&x-migrations-table=%s", migrationsTableForDatabase(databaseName)),
 		"-path", baseDir,
 		"goto", strconv.FormatInt(int64(migrationIndex), 10),
 	)); err != nil {
-		return "", "", err
+		return err
 	}
 
-	fmt.Printf("DUMPING\n")
+	return nil
+}
+
+// generateSquashedUpMigration returns the contents of an up migration file containing the
+// current contents of the given database.
+func generateSquashedUpMigration(postgresDSN string) (string, error) {
+	pending := out.Pending(output.Line("", output.StylePending, "Dumping..."))
+	defer pending.Close()
 
 	cmd := exec.Command(
 		"pg_dump",
-		"--exclude-table='*schema_migrations'",
+		postgresDSN,
 		"--no-owner",
 		"--schema-only",
+		"--exclude-table='*schema_migrations'",
 	)
-	cmd.Env = []string{
-		"PGHOST=127.0.0.1",
-		fmt.Sprintf("PGPORT=%d", squasherContainerExposedPort),
-		fmt.Sprintf("PGDATABASE=%s", databaseName),
-		"PGUSER=postgres",
-	}
+	cmd.Env = []string{}
 	pgDumpOutput, err := runCommandInRoot(cmd)
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
 
-	return sanitizePgDumpOutput(pgDumpOutput), fmt.Sprintf(squashedDownMigrationTemplate, migrationsTable), nil
+	return sanitizePgDumpOutput(pgDumpOutput), nil
+}
+
+const squashedDownMigrationTemplate = `
+DROP SCHEMA IF EXISTS public CASCADE;
+CREATE SCHEMA public;
+
+CREATE TABLE IF NOT EXISTS %s (
+	version bigint NOT NULL PRIMARY KEY,
+	dirty boolean NOT NULL
+);
+`
+
+// generateSquashedDownMigration returns the contents of a down migration file containing the
+// canned down migration for this database.
+func generateSquashedDownMigration(databaseName string) (string, error) {
+	return fmt.Sprintf(squashedDownMigrationTemplate, migrationsTableForDatabase(databaseName)), nil
 }
 
 var (
 	migrationDumpRemovePrefixes = []string{
 		"--",                                    // remove comments
 		"SET ",                                  // remove settings header
-		"SELECT pg_catalog.set_config.",         // remove settings header
+		"SELECT pg_catalog.set_config",          // remove settings header
+		`could not find a "pg_dump" to execute`, // remove common warning from docker container
 		"DROP EXTENSION ",                       // do not drop extensions if they already exist
-		`could not find a "pg_dump" to execute`, // common warning in docker container
 	}
 
 	migrationDumpRemovePatterns = map[*regexp.Regexp]string{
-		regexp.MustCompile(`\bpublic\.`):             "",
-		regexp.MustCompile(`\bWITH SCHEMA public\b`): "",
-		regexp.MustCompile(`\n{3,}`):                 "\n\n",
+		regexp.MustCompile(`\bpublic\.`):              "",
+		regexp.MustCompile(`\s*WITH SCHEMA public\b`): "",
+		regexp.MustCompile(`\n{3,}`):                  "\n\n",
 	}
 )
 
-// TODO - document
+// sanitizePgDumpOutput sanitizes the output of pg_dump and wraps the content in a
+// transaction block to fit the style of our other migrations.
 func sanitizePgDumpOutput(content string) string {
 	lines := strings.Split(content, "\n")
 
@@ -366,4 +406,19 @@ outer:
 	}
 
 	return fmt.Sprintf("BEGIN;\n\n%s\n\nCOMMIT;\n", strings.TrimSpace(filteredContent))
+}
+
+// readFilenamesNamesInDirectory returns a list of names in the given directory.
+func readFilenamesNamesInDirectory(dir string) ([]string, error) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return nil, err
+	}
+
+	names := make([]string, 0, len(entries))
+	for _, entry := range entries {
+		names = append(names, entry.Name())
+	}
+
+	return names, nil
 }
