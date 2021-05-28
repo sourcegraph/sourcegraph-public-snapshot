@@ -355,12 +355,17 @@ func migrationAddExec(ctx context.Context, args []string) error {
 		return flag.ErrHelp
 	}
 
-	if !isValidDatabaseName(*migrationAddDatabaseNameFlag) {
-		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: database %q not found :(\n", *migrationAddDatabaseNameFlag))
+	var (
+		databaseName  = *migrationAddDatabaseNameFlag
+		migrationName = args[0]
+	)
+
+	if !isValidDatabaseName(databaseName) {
+		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: database %q not found :(\n", databaseName))
 		return flag.ErrHelp
 	}
 
-	upFile, downFile, err := createNewMigration(*migrationAddDatabaseNameFlag, args[0])
+	upFile, downFile, err := createNewMigration(databaseName, migrationName)
 	if err != nil {
 		return err
 	}
