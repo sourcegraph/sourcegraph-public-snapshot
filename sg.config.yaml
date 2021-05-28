@@ -68,6 +68,10 @@ env:
   EXECUTOR_USE_FIRECRACKER: false
   EXECUTOR_IMAGE_ARCHIVE_PATH: $HOME/.sourcegraph/images
 
+  # Disable auto-indexing the CNCF repo group (this only works in Cloud)
+  # This setting will be going away soon
+  DISABLE_CNCF: notonmybox
+
   # Code Insights uses a separate database, because it's easier to run TimescaleDB in
   # Docker than install as a Postgres extension in dev environments.
   CODEINSIGHTS_PGDATASOURCE: postgres://postgres:password@127.0.0.1:5435/postgres
