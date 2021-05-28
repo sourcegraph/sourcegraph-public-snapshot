@@ -149,6 +149,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const isSearchRelatedPage = (routeMatch === '/:repoRevAndRest+' || routeMatch?.startsWith('/search')) ?? false
     const minimalNavLinks = routeMatch === '/cncf'
     const isSearchHomepage = props.location.pathname === '/search' && !parseSearchURLQuery(props.location.search)
+    const isSearchConsolePage = routeMatch?.startsWith('/search/console')
 
     // Update parsedSearchQuery, patternType, caseSensitivity, versionContext, and selectedSearchContextSpec based on current URL
     const {
@@ -291,7 +292,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 <GlobalNavbar
                     {...props}
                     authRequired={!!authRequired}
-                    showSearchBox={isSearchRelatedPage && !isSearchHomepage && !isRepogroupPage}
+                    showSearchBox={isSearchRelatedPage && !isSearchHomepage && !isRepogroupPage && !isSearchConsolePage}
                     variant={
                         hideGlobalSearchInput
                             ? 'no-search-input'
