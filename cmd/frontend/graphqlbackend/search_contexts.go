@@ -18,13 +18,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-type namespaceFilterType string
 type searchContextsOrderBy string
 
 const (
 	searchContextCursorKind                              = "SearchContextCursor"
-	namespaceFilterTypeInstance    namespaceFilterType   = "INSTANCE"
-	namespaceFilterTypeNamespace   namespaceFilterType   = "NAMESPACE"
 	searchContextsOrderByUpdatedAt searchContextsOrderBy = "SEARCH_CONTEXT_UPDATED_AT"
 	searchContextsOrderBySpec      searchContextsOrderBy = "SEARCH_CONTEXT_SPEC"
 )
@@ -77,13 +74,12 @@ func (r *searchContextRepositoryRevisionsResolver) Revisions(ctx context.Context
 }
 
 type listSearchContextsArgs struct {
-	First               int32
-	After               *string
-	Query               *string
-	NamespaceFilterType *namespaceFilterType
-	Namespace           *graphql.ID
-	OrderBy             searchContextsOrderBy
-	Descending          bool
+	First      int32
+	After      *string
+	Query      *string
+	Namespaces []*graphql.ID
+	OrderBy    searchContextsOrderBy
+	Descending bool
 }
 
 type searchContextConnection struct {
@@ -316,21 +312,9 @@ func (r *schemaResolver) DeleteSearchContext(ctx context.Context, args struct {
 }
 
 func (r *schemaResolver) SearchContexts(ctx context.Context, args *listSearchContextsArgs) (*searchContextConnection, error) {
-	var namespaceFilter namespaceFilterType
-	if args.NamespaceFilterType != nil {
-		namespaceFilter = *args.NamespaceFilterType
-	}
-
 	orderBy := database.SearchContextsOrderBySpec
 	if args.OrderBy == searchContextsOrderByUpdatedAt {
 		orderBy = database.SearchContextsOrderByUpdatedAt
-	}
-
-	if args.Namespace != nil && namespaceFilter != namespaceFilterTypeNamespace {
-		return nil, errors.New("namespace can only be used if namespaceFilterType is NAMESPACE")
-	}
-	if args.Namespace == nil && namespaceFilter == namespaceFilterTypeNamespace {
-		return nil, errors.New("namespace has to be non-nil if namespaceFilterType is NAMESPACE")
 	}
 
 	// Request one extra to determine if there are more pages
@@ -350,18 +334,35 @@ func (r *schemaResolver) SearchContexts(ctx context.Context, args *listSearchCon
 		return nil, err
 	}
 
+	namespaceUserIDs := []int32{}
+	namespaceOrgIDs := []int32{}
+	noNamespace := false
+	for _, namespace := range args.Namespaces {
+		if namespace == nil {
+			noNamespace = true
+		} else {
+			var namespaceUserID, namespaceOrgID int32
+			err := UnmarshalNamespaceID(*namespace, &namespaceUserID, &namespaceOrgID)
+			if err != nil {
+				return nil, err
+			}
+			if namespaceUserID != 0 {
+				namespaceUserIDs = append(namespaceUserIDs, namespaceUserID)
+			}
+			if namespaceOrgID != 0 {
+				namespaceOrgIDs = append(namespaceOrgIDs, namespaceOrgID)
+			}
+		}
+	}
+
 	opts := database.ListSearchContextsOptions{
 		NamespaceName:     namespaceName,
 		Name:              searchContextName,
-		NoNamespace:       namespaceFilter == namespaceFilterTypeInstance,
+		NamespaceUserIDs:  namespaceUserIDs,
+		NamespaceOrgIDs:   namespaceOrgIDs,
+		NoNamespace:       noNamespace,
 		OrderBy:           orderBy,
 		OrderByDescending: args.Descending,
-	}
-	if newArgs.Namespace != nil {
-		err := UnmarshalNamespaceID(*newArgs.Namespace, &opts.NamespaceUserID, &opts.NamespaceOrgID)
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	searchContextsStore := database.SearchContexts(r.db)

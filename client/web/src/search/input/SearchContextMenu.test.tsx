@@ -5,11 +5,11 @@ import { DropdownItem, DropdownMenu, UncontrolledDropdown } from 'reactstrap'
 import { Observable, of, throwError } from 'rxjs'
 import sinon from 'sinon'
 
-import { Scalars, SearchContextsNamespaceFilterType } from '@sourcegraph/shared/src/graphql-operations'
 import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/util/MockIntersectionObserver'
 
 import { ListSearchContextsResult, SearchContextFields } from '../../graphql-operations'
+import { mockGetUserSearchContextNamespaces } from '../../searchContexts/testHelpers'
 
 import { SearchContextMenu, SearchContextMenuProps } from './SearchContextMenu'
 
@@ -47,19 +47,7 @@ const mockFetchAutoDefinedSearchContexts = () =>
         },
     ] as ISearchContext[])
 
-const mockFetchSearchContexts = ({
-    first,
-    namespaceFilterType,
-    namespace,
-    query,
-    after,
-}: {
-    first: number
-    query?: string
-    namespace?: Scalars['ID']
-    namespaceFilterType?: SearchContextsNamespaceFilterType
-    after?: string
-}) => {
+const mockFetchSearchContexts = ({ query }: { first: number; query?: string; after?: string }) => {
     const nodes = [
         {
             __typename: 'SearchContext',
@@ -109,6 +97,7 @@ const mockFetchSearchContexts = ({
 
 describe('SearchContextMenu', () => {
     const defaultProps: SearchContextMenuProps = {
+        authenticatedUser: null,
         showSearchContextManagement: false,
         defaultSearchContextSpec: 'global',
         selectedSearchContextSpec: 'global',
@@ -116,6 +105,7 @@ describe('SearchContextMenu', () => {
         fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
         fetchSearchContexts: mockFetchSearchContexts,
         closeMenu: () => {},
+        getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
     }
 
     const RealIntersectionObserver = window.IntersectionObserver

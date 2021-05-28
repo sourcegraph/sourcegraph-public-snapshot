@@ -157,9 +157,6 @@ describe('Search contexts', () => {
     const getSelectedSearchContextSpec = () =>
         driver.page.evaluate(() => document.querySelector('.test-selected-search-context-spec')?.textContent)
 
-    const isSearchContextDropdownVisible = () =>
-        driver.page.evaluate(() => document.querySelector<HTMLButtonElement>('.test-search-context-dropdown') !== null)
-
     const isSearchContextHighlightTourStepVisible = () =>
         driver.page.evaluate(
             () =>
@@ -207,24 +204,6 @@ describe('Search contexts', () => {
         await driver.page.waitForSelector('#monaco-query-input')
         expect(await getSearchFieldValue(driver)).toStrictEqual('context:@unavailableCtx test')
         expect(await isSearchContextDropdownDisabled()).toBeTruthy()
-    })
-
-    test('Search context dropdown should not be visible if user has no repositories', async () => {
-        testContext.overrideGraphQL({
-            ...testContextForSearchContexts,
-            UserRepositories: () => ({
-                node: {
-                    repositories: {
-                        totalCount: 0,
-                        nodes: [],
-                        pageInfo: { hasNextPage: false },
-                    },
-                },
-            }),
-        })
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
-        await driver.page.waitForSelector('#monaco-query-input')
-        expect(await isSearchContextDropdownVisible()).toBeFalsy()
     })
 
     test('Reset unavailable search context from localStorage if query is not present', async () => {

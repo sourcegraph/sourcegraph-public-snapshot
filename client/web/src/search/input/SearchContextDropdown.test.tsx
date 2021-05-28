@@ -8,7 +8,11 @@ import sinon from 'sinon'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/util/MockIntersectionObserver'
 
 import { SearchPatternType } from '../../graphql-operations'
-import { mockFetchAutoDefinedSearchContexts, mockFetchSearchContexts } from '../../searchContexts/testHelpers'
+import {
+    mockFetchAutoDefinedSearchContexts,
+    mockFetchSearchContexts,
+    mockGetUserSearchContextNamespaces,
+} from '../../searchContexts/testHelpers'
 
 import { SearchContextDropdown, SearchContextDropdownProps } from './SearchContextDropdown'
 
@@ -18,6 +22,7 @@ describe('SearchContextDropdown', () => {
         showSearchContextManagement: false,
         fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(1),
         fetchSearchContexts: mockFetchSearchContexts,
+        getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
         defaultSearchContextSpec: '',
         selectedSearchContextSpec: '',
         setSelectedSearchContextSpec: () => {},
