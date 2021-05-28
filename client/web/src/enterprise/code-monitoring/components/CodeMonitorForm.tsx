@@ -261,7 +261,7 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                             <div>
                                 <button
                                     type="button"
-                                    className="btn btn-danger test-delete-monitor"
+                                    className="btn btn-outline-danger test-delete-monitor"
                                     onClick={toggleDeleteModal}
                                 >
                                     Delete

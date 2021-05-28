@@ -134,9 +134,10 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
                 <div className="code-monitor-form__card card p-3">
                     <div className="font-weight-bold">Send email notifications</div>
                     <span className="text-muted">Deliver email notifications to specified recipients.</span>
-                    <div className="mt-4 test-action-form">
-                        Recipients
+                    <div className="form-group mt-4 test-action-form">
+                        <label htmlFor="code-monitoring-form-actions-recipients">Recipients</label>
                         <input
+                            id="code-monitoring-form-actions-recipients"
                             type="text"
                             className="form-control my-2"
                             value={`${authenticatedUser.email || ''} (you)`}
@@ -148,7 +149,7 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
                             Code monitors are currently limited to sending emails to your primary email address.
                         </small>
                     </div>
-                    <div className="flex mt-4">
+                    <div className="flex mt-1">
                         <button
                             type="button"
                             className={`btn btn-sm mr-2 ${
