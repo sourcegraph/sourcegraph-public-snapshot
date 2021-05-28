@@ -85,7 +85,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                 {service?.id ? (
                     <button
                         type="button"
-                        className="btn btn-link btn-sm text-danger px-0 shadow-none"
+                        className="btn btn-link btn-sm text-danger shadow-none"
                         onClick={toggleRemoveConnectionModal}
                     >
                         Remove
@@ -96,14 +96,12 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                         {oauthInFlight && <LoadingSpinner className="icon-inline ml-2 theme-dark" />}
                     </button>
                 )}
-            </div>
-            <div className="align-self-center">
                 {updateAuthRequired && (
                     <button type="button" className="btn btn-secondary" onClick={toAuthProvider}>
                         Update
                         {oauthInFlight && <LoadingSpinner className="icon-inline ml-2 theme-dark" />}
                     </button>
-            )}
+                )}
             </div>
         </div>
     )
