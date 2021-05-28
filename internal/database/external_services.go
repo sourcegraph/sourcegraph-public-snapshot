@@ -72,6 +72,9 @@ func (e *ExternalServiceStore) WithEncryptionKey(key encryption.Key) *ExternalSe
 }
 
 func (e *ExternalServiceStore) Transact(ctx context.Context) (*ExternalServiceStore, error) {
+	if Mocks.ExternalServices.Transact != nil {
+		return Mocks.ExternalServices.Transact(ctx)
+	}
 	txBase, err := e.Store.Transact(ctx)
 	return &ExternalServiceStore{
 		Store:                     txBase,
@@ -81,6 +84,13 @@ func (e *ExternalServiceStore) Transact(ctx context.Context) (*ExternalServiceSt
 		BitbucketServerValidators: e.BitbucketServerValidators,
 		PerforceValidators:        e.PerforceValidators,
 	}, err
+}
+
+func (e *ExternalServiceStore) Done(err error) error {
+	if Mocks.ExternalServices.Done != nil {
+		return Mocks.ExternalServices.Done(err)
+	}
+	return e.Store.Done(err)
 }
 
 // ensureStore instantiates a basestore.Store if necessary, using the dbconn.Global handle.
@@ -1288,4 +1298,6 @@ type MockExternalServices struct {
 	Update           func(ctx context.Context, ps []schema.AuthProviders, id int64, update *ExternalServiceUpdate) error
 	Count            func(ctx context.Context, opt ExternalServicesListOptions) (int, error)
 	Upsert           func(ctx context.Context, services ...*types.ExternalService) error
+	Transact         func(ctx context.Context) (*ExternalServiceStore, error)
+	Done             func(error) error
 }
