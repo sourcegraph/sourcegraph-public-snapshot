@@ -22,25 +22,6 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
             suggestions: [],
         },
     }),
-    Search: (): SearchResult => ({
-        search: {
-            results: {
-                __typename: 'SearchResults',
-                limitHit: true,
-                matchCount: 30,
-                approximateResultCount: '30+',
-                missing: [],
-                cloning: [],
-                repositoriesCount: 372,
-                timedout: [],
-                indexUnavailable: false,
-                dynamicFilters: [],
-                results: [],
-                alert: null,
-                elapsedMilliseconds: 103,
-            },
-        },
-    }),
     RepoGroups: (): RepoGroupsResult => ({
         repoGroups: [],
     }),
@@ -63,6 +44,7 @@ describe('Search contexts', () => {
             directory: __dirname,
         })
         testContext.overrideGraphQL(testContextForSearchContexts)
+        testContext.overrideSearchStreamEvents([{ type: 'done', data: {} }])
         const context = createJsContext({ sourcegraphBaseUrl: driver.sourcegraphBaseUrl })
         testContext.overrideJsContext({
             ...context,
