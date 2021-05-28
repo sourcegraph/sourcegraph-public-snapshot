@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import React, { useCallback } from 'react'
+import React from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -40,14 +40,11 @@ export const SearchContextCtaPrompt: React.FunctionComponent<SearchContextCtaPro
             : `/users/${authenticatedUser.username}/settings/code-hosts`
         : '/sign-up'
 
-    const onClick = useCallback(() => {
-        const actionKind = authenticatedUser
-            ? hasUserAddedExternalServices
-                ? 'AddRepositories'
-                : 'ConnectCodeHost'
-            : 'SignUp'
+    const onClick = (): void => {
+        const authenticatedActionKind = hasUserAddedExternalServices ? 'AddRepositories' : 'ConnectCodeHost'
+        const actionKind = authenticatedUser ? authenticatedActionKind : 'SignUp'
         telemetryService.log(`SearchContextCtaPrompt${actionKind}Click`)
-    }, [authenticatedUser, hasUserAddedExternalServices, telemetryService])
+    }
 
     return (
         <div className={styles.searchContextCtaPrompt}>
