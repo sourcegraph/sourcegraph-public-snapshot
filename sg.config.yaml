@@ -336,12 +336,12 @@ commands:
       - lib/codeintel
 
   codeintel-executor:
-    cmd: .bin/codeintel-executor
-    install:
+    cmd: .bin/executor
+    install: |
+      go build -o .bin/executor github.com/sourcegraph/sourcegraph/enterprise/cmd/executor
     env:
       EXECUTOR_QUEUE_NAME: codeintel
       TMPDIR: $HOME/.sourcegraph/indexer-temp
-
 
   minio:
     cmd: |
