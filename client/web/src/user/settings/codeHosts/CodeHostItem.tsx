@@ -90,16 +90,23 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                     >
                         Remove
                     </button>
+                ) : oauthInFlight ? (
+                    <button type="button" className="btn btn-primary disabled" onClick={toAuthProvider}>
+                        <LoadingSpinner className="icon-inline ml-2 theme-dark" />
+                    </button>
                 ) : (
                     <button type="button" className="btn btn-primary" onClick={toAuthProvider}>
                         Connect
-                        {oauthInFlight && <LoadingSpinner className="icon-inline ml-2 theme-dark" />}
                     </button>
                 )}
-                {updateAuthRequired && (
+                {updateAuthRequired && !oauthInFlight && (
                     <button type="button" className="btn btn-secondary" onClick={toAuthProvider}>
                         Update
-                        {oauthInFlight && <LoadingSpinner className="icon-inline ml-2 theme-dark" />}
+                    </button>
+                )}
+                {updateAuthRequired && oauthInFlight && (
+                    <button type="button" className="btn btn-secondary disabled" onClick={toAuthProvider}>
+                        <LoadingSpinner className="icon-inline ml-2 theme-dark" />
                     </button>
                 )}
             </div>
