@@ -3,8 +3,8 @@ package main
 var (
 	databaseNames = []string{
 		"frontend",
-		"codeintel-db",
-		"codeinsights-db",
+		"codeintel",
+		"codeinsights",
 	}
 
 	defaultDatabaseName = databaseNames[0]
