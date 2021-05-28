@@ -21,8 +21,15 @@
                 <i class="fas fa-link ml-2"></i>
             </div>
         {{end}}
+
+        <div class="mt-5 w-9/12" id="Index">
+          <li><a href="#Schedule">Schedule</a></li>
+          <li><a href="#Update_Queue">Update Queue</a></li>
+          <li><a href="#Sync_Jobs">Sync Jobs</a></li>
+        </div>
+
         <div class="mt-5 w-9/12">
-            <h4 class="mb-3">Schedule</h4>
+            <h4 class="mb-3" id="Schedule">Schedule</h4>
             <p>
                 The schedule of when repositories get enqueued into the Update Queue.
             </p>
@@ -59,9 +66,10 @@
                 {{end}}
                 </tbody>
             </table>
+            <span><a href="#Index">Back to top</a></span>
         </div>
         <div class="mt-5 w-9/12">
-            <h4 class="mb-3">Update Queue</h4>
+            <h4 class="mb-3" id="Update_Queue">Update Queue</h4>
             <p>
                 A priority queue of repositories to update.
                 A worker continuously dequeues them and sends updates to gitserver.
@@ -96,9 +104,10 @@
                 {{end}}
                 </tbody>
             </table>
+            <span><a href="#Index">Back to top</a></span>
         </div>
         <div class="mt-5 w-9/12">
-            <h4 class="mb-3">Sync jobs</h4>
+            <h4 class="mb-3" id="Sync_Jobs">Sync jobs</h4>
             <p>
                 The current list of external service sync jobs, ordered by start date descending
             </p>
@@ -130,6 +139,7 @@
                 {{end}}
                 </tbody>
             </table>
+            <span><a href="#Index">Back to top</a></span>
         </div>
     </div>
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
