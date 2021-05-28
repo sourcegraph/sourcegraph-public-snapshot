@@ -17,6 +17,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Fixed
 
+- The step-wise caching for `src batch [apply|preview]` introduced in 3.28.1 could break if a cached diff contained quoted. This fixes the application by disabling any unquoting/expansion.
+
 ### Removed
 
 ## 3.28.1

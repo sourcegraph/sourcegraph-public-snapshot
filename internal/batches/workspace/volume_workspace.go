@@ -269,7 +269,7 @@ exec git diff --cached --no-prefix --binary
 func (w *dockerVolumeWorkspace) ApplyDiff(ctx context.Context, diff []byte) error {
 	script := fmt.Sprintf(`#!/bin/sh
 
-cat << EOF | exec git apply -p0 -
+cat <<'EOF' | exec git apply -p0 -
 %s
 EOF
 
