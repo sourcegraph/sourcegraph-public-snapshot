@@ -1,6 +1,6 @@
 # How to troubleshoot a dirty database
 
-This document with take you through how to resolve a 'dirty database' error. During an upgrade, the database has to be migrated. If the upgrade was interrupted during the migration, this can result in a 'dirty database' error.
+This document will take you through how to resolve a 'dirty database' error. During an upgrade, the database has to be migrated. If the upgrade was interrupted during the migration, this can result in a 'dirty database' error.
 
 The error will look something like this:
 
