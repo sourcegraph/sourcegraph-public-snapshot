@@ -140,3 +140,4 @@ storybook-static/
 
 # sg command specific things, see ./dev/sg
 sg.config.overwrite.yaml
+doc/admin/how-to/result-mismatch.md
