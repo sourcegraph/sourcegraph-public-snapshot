@@ -32,7 +32,9 @@ if [ -f .env ]; then
   set +o allexport
 fi
 
-# Verify postgresql config.
+# Verify PostgreSQL config and set all env vars explicitly if unset (instead of relying on psql's
+# defaults, such as PGUSER and PGDATABASE defaulting to $USER, which aren't consistently implemented
+# by other client libraries).
 hash psql 2>/dev/null || {
   # "brew install postgres" does not put psql on the $PATH by default;
   # try to fix this automatically if we can.
@@ -52,8 +54,8 @@ if ! psql -wc '\x' >/dev/null; then
   export PGSSLMODE=${PGSSLMODE:-disable}
 
   if ! psql -wc '\x' >/dev/null; then
-    echo "FAIL: postgreSQL config invalid or missing OR postgreSQL is still starting up."
-    echo "You probably need, at least, PGUSER and PGPASSWORD set in the environment."
+    echo "FAIL: PostgreSQL client config env vars invalid/missing, or PostgreSQL is still starting up."
+    echo "You probably need at least PGUSER and PGPASSWORD set in the environment."
     exit 1
   fi
 fi
