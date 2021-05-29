@@ -43,6 +43,8 @@ exports[`UserNavItem simple 1`] = `
       onThemePreferenceChange={[Function]}
       showDotComMarketing={true}
       showRepositorySection={true}
+      showSearchContext={true}
+      showSearchContextManagement={true}
       themePreference="light"
     >
       <ButtonDropdown
@@ -205,6 +207,24 @@ exports[`UserNavItem simple 1`] = `
                   </Link>
                   <Link
                     className="dropdown-item"
+                    to="/extensions"
+                  >
+                    <LinkAnchor
+                      className="dropdown-item"
+                      href="/extensions"
+                      navigate={[Function]}
+                    >
+                      <a
+                        className="dropdown-item"
+                        href="/extensions"
+                        onClick={[Function]}
+                      >
+                        Extensions
+                      </a>
+                    </LinkAnchor>
+                  </Link>
+                  <Link
+                    className="dropdown-item"
                     to="/users/alice/settings/repositories"
                   >
                     <LinkAnchor
@@ -233,19 +253,29 @@ exports[`UserNavItem simple 1`] = `
                   </Link>
                   <Link
                     className="dropdown-item"
-                    to="/extensions"
+                    to="/contexts"
                   >
                     <LinkAnchor
                       className="dropdown-item"
-                      href="/extensions"
+                      href="/contexts"
                       navigate={[Function]}
                     >
                       <a
                         className="dropdown-item"
-                        href="/extensions"
+                        href="/contexts"
                         onClick={[Function]}
                       >
-                        Extensions
+                        Search contexts 
+                        <Badge
+                          className="ml-1"
+                          status="new"
+                        >
+                          <span
+                            className="badge badge--capitalized d-inline-flex align-items-center badge-info ml-1"
+                          >
+                            new
+                          </span>
+                        </Badge>
                       </a>
                     </LinkAnchor>
                   </Link>

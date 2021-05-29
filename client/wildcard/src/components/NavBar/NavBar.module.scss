@@ -53,6 +53,7 @@
     @media (--sm-breakpoint-down) {
         border-radius: var(--border-radius);
         border: 1px solid var(--border-color-2);
+        overflow: hidden;
         width: 9.5rem;
         height: auto;
         flex-direction: column;

@@ -15,8 +15,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	nettrace "golang.org/x/net/trace"
 
-	ctags "github.com/sourcegraph/go-ctags"
-
+	"github.com/sourcegraph/go-ctags"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"

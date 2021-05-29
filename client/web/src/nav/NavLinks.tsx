@@ -26,7 +26,9 @@ import {
 } from '../keyboardShortcuts/keyboardShortcuts'
 import { LayoutRouteProps } from '../routes'
 import { Settings } from '../schema/settings.schema'
+import { SearchContextProps } from '../search'
 import { ThemePreferenceProps } from '../theme'
+import { userExternalServicesEnabledFromTags } from '../user/settings/cloud-ga'
 import { getReactElements } from '../util/getReactElements'
 
 import { FeedbackPrompt } from './Feedback/FeedbackPrompt'
@@ -44,7 +46,8 @@ interface Props
         ExtensionAlertAnimationProps,
         TelemetryProps,
         CodeMonitoringProps,
-        ActivationProps {
+        ActivationProps,
+        Pick<SearchContextProps, 'showSearchContext' | 'showSearchContextManagement'> {
     location: H.Location
     history: H.History
     authenticatedUser: AuthenticatedUser | null
@@ -159,11 +162,7 @@ export const NavLinks: React.FunctionComponent<Props> = props => {
                 ))}
             {/* show status messages if user is logged in and either: user added code is enabled, user is admin or opted-in with a user tag  */}
             {authenticatedUser &&
-                (window.context?.externalServicesUserModeEnabled ||
-                    authenticatedUser?.siteAdmin ||
-                    authenticatedUser?.tags?.some(
-                        tag => tag === 'AllowUserExternalServicePublic' || tag === 'AllowUserExternalServicePrivate'
-                    )) && (
+                (authenticatedUser.siteAdmin || userExternalServicesEnabledFromTags(authenticatedUser.tags)) && (
                     <li className="nav-item">
                         <StatusMessagesNavItem isSiteAdmin={authenticatedUser.siteAdmin} history={history} />
                     </li>
@@ -188,6 +187,10 @@ export const NavLinks: React.FunctionComponent<Props> = props => {
                             (!isErrorLike(settingsCascade.final) &&
                                 settingsCascade.final?.['alerts.codeHostIntegrationMessaging']) ||
                             'browser-extension'
+                        }
+                        showRedesignToggle={
+                            !isErrorLike(props.settingsCascade.final) &&
+                            Boolean(props.settingsCascade.final?.experimentalFeatures?.designRefreshToggleEnabled)
                         }
                         keyboardShortcutForSwitchTheme={KEYBOARD_SHORTCUT_SWITCH_THEME}
                     />

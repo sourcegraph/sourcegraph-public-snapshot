@@ -126,8 +126,8 @@ This overlay adds a namespace declaration to all the manifests.
     git checkout -b 3.26-kustomize   
     ```
 
-1. Change the namespace by replacing `ns-sourcegraph` to the name of your choice (`<EXAMPLE NAMESPACE>` in this example) in the
-[overlays/namespaced/kustomization.yaml](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/overlays/namespaced/kustomization.yaml) file.
+1. Change the namespace by replacing `ns-sourcegraph` to the name of your choice everywhere within the
+[overlays/namespaced/](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/overlays/namespaced/) directory. 
 
 1. Generate the overlay by running this command from the `root` directory:
 

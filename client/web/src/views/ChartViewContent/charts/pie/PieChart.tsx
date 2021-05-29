@@ -105,6 +105,8 @@ export function PieChart<Datum extends object>(props: PieChartProps<Datum>): Rea
                                     <MaybeLink
                                         key={getKey(arc)}
                                         to={getLink(arc)}
+                                        target="_blank"
+                                        rel="noopener"
                                         className="pie-chart__link"
                                         role={getLink(arc) ? 'link' : 'graphics-dataunit'}
                                         aria-label={`Element ${index + 1} of ${arcs.length}. Name: ${getKey(

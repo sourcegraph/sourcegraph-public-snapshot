@@ -1,6 +1,6 @@
 import * as jsonc from '@sqs/jsonc-parser'
 
-import { Insight } from './types'
+import { Insight, isLangStatsInsight, isSearchBasedInsight } from './types'
 
 export const defaultFormattingOptions: jsonc.FormattingOptions = {
     eol: '\n',
@@ -8,12 +8,31 @@ export const defaultFormattingOptions: jsonc.FormattingOptions = {
     tabSize: 2,
 }
 
+const getExtensionNameByInsight = (insight: Insight): string => {
+    if (isSearchBasedInsight(insight)) {
+        return 'sourcegraph/search-insights'
+    }
+
+    if (isLangStatsInsight(insight)) {
+        return 'sourcegraph/code-stats-insights'
+    }
+
+    return ''
+}
+
 export const addInsightToCascadeSetting = (settings: string, insight: Insight): string => {
     const { id, visibility, ...originInsight } = insight
 
-    const edits = jsonc.modify(settings, [id], originInsight, { formattingOptions: defaultFormattingOptions })
+    const extensionName = getExtensionNameByInsight(insight)
+    // Turn on extension if user in creation code insight.
+    const addingExtensionKeyEdits = jsonc.modify(settings, ['extensions', extensionName], true, {
+        formattingOptions: defaultFormattingOptions,
+    })
+    const addingInsightEdits = jsonc.modify(settings, [id], originInsight, {
+        formattingOptions: defaultFormattingOptions,
+    })
 
-    return jsonc.applyEdits(settings, edits)
+    return jsonc.applyEdits(settings, [...addingExtensionKeyEdits, ...addingInsightEdits])
 }
 
 export const removeInsightFromSetting = (settings: string, insightID: string): string => {

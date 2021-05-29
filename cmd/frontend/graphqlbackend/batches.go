@@ -205,8 +205,9 @@ type DetachChangesetsArgs struct {
 }
 
 type ListBatchChangeBulkOperationArgs struct {
-	First int32
-	After *string
+	First        int32
+	After        *string
+	CreatedAfter *DateTime
 }
 
 type CreateChangesetCommentsArgs struct {
@@ -241,7 +242,7 @@ type BatchChangesResolver interface {
 	CreateChangesetSpec(ctx context.Context, args *CreateChangesetSpecArgs) (ChangesetSpecResolver, error)
 	SyncChangeset(ctx context.Context, args *SyncChangesetArgs) (*EmptyResponse, error)
 	ReenqueueChangeset(ctx context.Context, args *ReenqueueChangesetArgs) (ChangesetResolver, error)
-	DetachChangesets(ctx context.Context, args *DetachChangesetsArgs) (*EmptyResponse, error)
+	DetachChangesets(ctx context.Context, args *DetachChangesetsArgs) (BulkOperationResolver, error)
 	CreateChangesetComments(ctx context.Context, args *CreateChangesetCommentsArgs) (BulkOperationResolver, error)
 
 	// Queries
@@ -271,6 +272,8 @@ type BulkOperationResolver interface {
 	State() string
 	Progress() float64
 	Errors(ctx context.Context) ([]ChangesetJobErrorResolver, error)
+	Initiator(ctx context.Context) (*UserResolver, error)
+	ChangesetCount() int32
 	CreatedAt() DateTime
 	FinishedAt() *DateTime
 }

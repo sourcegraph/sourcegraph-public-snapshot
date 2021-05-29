@@ -606,13 +606,13 @@ func (r *schemaResolver) AffiliatedRepositories(ctx context.Context, args *struc
 	User     graphql.ID
 	CodeHost *graphql.ID
 	Query    *string
-}) (*codeHostRepositoryConnectionResolver, error) {
+}) (*affiliatedRepositoriesConnection, error) {
 	userID, err := UnmarshalUserID(args.User)
 	if err != nil {
 		return nil, err
 	}
-	// 🚨 SECURITY: make sure the user is either site admin or the same user being requested
-	if err := backend.CheckSiteAdminOrSameUser(ctx, userID); err != nil {
+	// 🚨 SECURITY: Make sure the user is the same user being requested
+	if err := backend.CheckSameUser(ctx, userID); err != nil {
 		return nil, err
 	}
 	var codeHost int64
@@ -627,10 +627,30 @@ func (r *schemaResolver) AffiliatedRepositories(ctx context.Context, args *struc
 		query = *args.Query
 	}
 
-	return &codeHostRepositoryConnectionResolver{
+	return &affiliatedRepositoriesConnection{
 		db:       r.db,
 		userID:   userID,
 		codeHost: codeHost,
 		query:    query,
 	}, nil
+}
+
+// CodeHostSyncDue returns true if any of the supplied code hosts are due to sync
+// now or within "seconds" from now.
+func (r *schemaResolver) CodeHostSyncDue(ctx context.Context, args *struct {
+	IDs     []graphql.ID
+	Seconds int32
+}) (bool, error) {
+	if len(args.IDs) == 0 {
+		return false, errors.New("no ids supplied")
+	}
+	ids := make([]int64, len(args.IDs))
+	for i, gqlID := range args.IDs {
+		id, err := unmarshalExternalServiceID(gqlID)
+		if err != nil {
+			return false, errors.New("unable to unmarshal id")
+		}
+		ids[i] = id
+	}
+	return database.ExternalServices(r.db).SyncDue(ctx, ids, time.Duration(args.Seconds)*time.Second)
 }

@@ -9,9 +9,9 @@ import (
 	"github.com/neelance/parallel"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -33,6 +33,13 @@ func (srs *searchResultsStats) Languages(ctx context.Context) ([]*languageStatis
 		wrapped[i] = &languageStatisticsResolver{lang}
 	}
 	return wrapped, nil
+}
+
+func (srs *searchResultsStats) getResults(ctx context.Context) (*SearchResultsResolver, error) {
+	srs.once.Do(func() {
+		srs.srs, srs.srsErr = srs.sr.doResults(ctx, result.TypeEmpty)
+	})
+	return srs.srs, srs.srsErr
 }
 
 func searchResultsStatsLanguages(ctx context.Context, matches []result.Match) ([]inventory.Lang, error) {

@@ -196,7 +196,7 @@ func (r *batchSpecResolver) ExpiresAt() *graphqlbackend.DateTime {
 }
 
 func (r *batchSpecResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
-	return checkSiteAdminOrSameUser(ctx, r.batchSpec.UserID)
+	return checkSiteAdminOrSameUser(ctx, r.store.DB(), r.batchSpec.UserID)
 }
 
 type batchChangeDescriptionResolver struct {

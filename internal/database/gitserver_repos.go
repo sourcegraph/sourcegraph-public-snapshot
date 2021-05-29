@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"database/sql"
+	"strings"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
@@ -42,14 +43,21 @@ func (s *GitserverRepoStore) Transact(ctx context.Context) (*GitserverRepoStore,
 func (s *GitserverRepoStore) Upsert(ctx context.Context, repos ...*types.GitserverRepo) error {
 	values := make([]*sqlf.Query, 0, len(repos))
 	for _, gr := range repos {
-		values = append(values, sqlf.Sprintf(
-			"(%s, %s, %s, %s, %s, now())",
-			gr.RepoID, gr.CloneStatus, dbutil.NewNullString(gr.ShardID), dbutil.NewNullInt64(gr.LastExternalService), dbutil.NewNullString(gr.LastError),
-		))
+		q := sqlf.Sprintf("(%s, %s, %s, %s, %s, now())",
+			gr.RepoID,
+			gr.CloneStatus,
+			dbutil.NewNullString(gr.ShardID),
+			dbutil.NewNullInt64(gr.LastExternalService),
+			dbutil.NewNullString(sanitizeToUTF8(gr.LastError)),
+		)
+
+		values = append(values, q)
 	}
+
 	err := s.Exec(ctx, sqlf.Sprintf(`
-INSERT INTO 
-    gitserver_repos(repo_id, clone_status, shard_id, last_external_service, last_error, updated_at) 
+-- source: internal/database/gitserver_repos.go:GitserverRepoStore.Upsert
+INSERT INTO
+    gitserver_repos(repo_id, clone_status, shard_id, last_external_service, last_error, updated_at)
     VALUES %s
     ON CONFLICT (repo_id) DO UPDATE
     SET (clone_status, shard_id, last_external_service, last_error, updated_at) =
@@ -69,6 +77,7 @@ func (s *GitserverRepoStore) IterateRepoGitserverStatus(ctx context.Context, rep
 	}
 
 	q := `
+-- source: internal/database/gitserver_repos.go:GitserverRepoStore.IterateRepoGitserverStatus
 SELECT repo.id,
        repo.name,
        gr.clone_status,
@@ -76,7 +85,7 @@ SELECT repo.id,
        gr.last_external_service,
        gr.last_error,
        gr.updated_at
-FROM repo 
+FROM repo
     LEFT JOIN gitserver_repos gr ON gr.repo_id = repo.id
     WHERE repo.deleted_at IS NULL
 `
@@ -128,6 +137,7 @@ FROM repo
 
 func (s *GitserverRepoStore) GetByID(ctx context.Context, id api.RepoID) (*types.GitserverRepo, error) {
 	q := `
+-- source: internal/database/gitserver_repos.go:GitserverRepoStore.GetByID
 SELECT
        repo_id,
        clone_status,
@@ -135,7 +145,7 @@ SELECT
        last_external_service,
        last_error,
        updated_at
-FROM gitserver_repos 
+FROM gitserver_repos
 WHERE repo_id = %s
 `
 
@@ -166,6 +176,7 @@ WHERE repo_id = %s
 // If the status value hasn't changed, the row will not be updated.
 func (s *GitserverRepoStore) SetCloneStatus(ctx context.Context, id api.RepoID, status types.CloneStatus, shardID string) error {
 	err := s.Exec(ctx, sqlf.Sprintf(`
+-- source: internal/database/gitserver_repos.go:GitserverRepoStore.SetCloneStatus
 INSERT INTO gitserver_repos(repo_id, clone_status, shard_id, updated_at)
 VALUES (%s, %s, %s, now())
 ON CONFLICT (repo_id) DO UPDATE
@@ -180,9 +191,11 @@ SET (clone_status, shard_id, updated_at) =
 // SetLastError will attempt to update ONLY the last error of a GitServerRepo. If
 // a matching row does not yet exist a new one will be created.
 // If the error value hasn't changed, the row will not be updated.
-func (s *GitserverRepoStore) SetLastError(ctx context.Context, id api.RepoID, error string, shardID string) error {
-	ns := dbutil.NewNullString(error)
+func (s *GitserverRepoStore) SetLastError(ctx context.Context, id api.RepoID, error, shardID string) error {
+	ns := dbutil.NewNullString(sanitizeToUTF8(error))
+
 	err := s.Exec(ctx, sqlf.Sprintf(`
+-- source: internal/database/gitserver_repos.go:GitserverRepoStore.SetLastError
 INSERT INTO gitserver_repos(repo_id, last_error, shard_id, updated_at)
 VALUES (%s, %s, %s, now())
 ON CONFLICT (repo_id) DO UPDATE
@@ -192,4 +205,32 @@ SET (last_error, shard_id, updated_at) =
 `, id, ns, shardID))
 
 	return errors.Wrap(err, "setting last error")
+}
+
+// sanitizeToUTF8 will remove any null character terminated string. The null character can be
+// represented in one of the following ways in Go:
+//
+// Hex: \x00
+// Unicode: \u0000
+// Octal digits: \000
+//
+// Using any of them to replace the null character has the same effect. See this playground
+// example: https://play.golang.org/p/8SKPmalJRRW
+//
+// See this for a detailed answer:
+// https://stackoverflow.com/a/38008565/1773961
+func sanitizeToUTF8(s string) string {
+	// Replace any null characters in the string. We would have expected strings.ToValidUTF8 to take
+	// care of replacing any null characters, but it seems like this character is treated as valid a
+	// UTF-8 character. See
+	// https://stackoverflow.com/questions/6907297/can-utf-8-contain-zero-byte/6907327#6907327.
+
+	// And it only appears that Postgres has a different idea of UTF-8 (only slightly). Without
+	// using this function call, inserts for this string in Postgres return the following error:
+	//
+	// ERROR: invalid byte sequence for encoding "UTF8": 0x00 (SQLSTATE 22021)
+	t := strings.ReplaceAll(s, "\x00", "")
+
+	// Sanitize to a valid UTF-8 string and return it.
+	return strings.ToValidUTF8(t, "")
 }

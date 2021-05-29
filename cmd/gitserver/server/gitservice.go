@@ -1,6 +1,7 @@
 package server
 
 import (
+	"compress/gzip"
 	"io"
 	"net/http"
 	"os"
@@ -67,6 +68,20 @@ func (s *gitServiceHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	body := r.Body
+	defer body.Close()
+
+	if r.Header.Get("Content-Encoding") == "gzip" {
+		gzipReader, err := gzip.NewReader(body)
+		if err != nil {
+			http.Error(w, "malformed payload: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+		defer gzipReader.Close()
+
+		body = gzipReader
+	}
+
 	start := time.Now()
 	metricServiceRunning.WithLabelValues(svc).Inc()
 	defer func() {
@@ -91,9 +106,6 @@ func (s *gitServiceHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	args = append(args, dir)
-
-	body := r.Body
-	defer body.Close()
 
 	env := os.Environ()
 	if protocol := r.Header.Get("Git-Protocol"); protocol != "" {

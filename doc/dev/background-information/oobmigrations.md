@@ -30,7 +30,7 @@ Each out-of-band migration is associated with a _migrator_ instance, which perio
 - Perform a batch of the migration _in reverse_
 - Determine the percentage of data that has been migrated
 
-For every registered migrator, the migration runner will periodically check for the migration progress (even if it's finished). If the migrator has more work to do, then the runner will periodically have it perform a batch of the migration in the background. Errors that occur during migrations are logged to teh migration record and are exposed to the site-admin.
+For every registered migrator, the migration runner will periodically check for the migration progress (even if it's finished). If the migrator has more work to do, then the runner will periodically have it perform a batch of the migration in the background. Errors that occur during migrations are logged to the migration record and are exposed to the site-admin.
 
 #### Upgrades
 

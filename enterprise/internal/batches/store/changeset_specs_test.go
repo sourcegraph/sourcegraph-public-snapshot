@@ -499,7 +499,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 		// Create some test data
 		user := ct.CreateTestUser(t, s.DB(), true)
 		batchSpec := ct.CreateBatchSpec(t, ctx, s, "get-rewirer-mappings", user.ID)
-		var mappings btypes.RewirerMappings = make(btypes.RewirerMappings, 3)
+		var mappings = make(btypes.RewirerMappings, 3)
 		changesetSpecIDs := make([]int64, 0, cap(mappings))
 		for i := 0; i < cap(mappings); i++ {
 			spec := ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{

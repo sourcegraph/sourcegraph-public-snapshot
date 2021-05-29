@@ -99,7 +99,7 @@ func (r *batchChangeResolver) SpecCreator(ctx context.Context) (*graphqlbackend.
 }
 
 func (r *batchChangeResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
-	return checkSiteAdminOrSameUser(ctx, r.batchChange.InitialApplierID)
+	return checkSiteAdminOrSameUser(ctx, r.store.DB(), r.batchChange.InitialApplierID)
 }
 
 func (r *batchChangeResolver) URL(ctx context.Context) (string, error) {
@@ -274,6 +274,10 @@ func (r *batchChangeResolver) BulkOperations(
 			return nil, err
 		}
 		opts.Cursor = int64(id)
+	}
+
+	if args.CreatedAfter != nil {
+		opts.CreatedAfter = args.CreatedAfter.Time
 	}
 
 	return &bulkOperationConnectionResolver{

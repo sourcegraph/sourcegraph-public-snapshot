@@ -39,7 +39,7 @@ type Config struct {
 	patch               bool
 	patchNoTest         bool
 	isQuick             bool
-	isMasterDryRun      bool
+	isMainDryRun        bool
 	isBackendDryRun     bool
 
 	// profilingEnabled, if true, tells buildkite to print timing and resource utilization information
@@ -75,7 +75,7 @@ func ComputeConfig() Config {
 
 	isBackendDryRun := strings.HasPrefix(branch, "backend-dry-run/")
 
-	isMasterDryRun := strings.HasPrefix(branch, "master-dry-run/")
+	isMainDryRun := strings.HasPrefix(branch, "main-dry-run/") || strings.HasPrefix(branch, "master-dry-run/")
 
 	isQuick := strings.HasPrefix(branch, "quick/")
 
@@ -112,7 +112,7 @@ func ComputeConfig() Config {
 		patch:               patch,
 		patchNoTest:         patchNoTest,
 		isQuick:             isQuick,
-		isMasterDryRun:      isMasterDryRun,
+		isMainDryRun:        isMainDryRun,
 		isBackendDryRun:     isBackendDryRun,
 		profilingEnabled:    profilingEnabled,
 		isBextNightly:       os.Getenv("BEXT_NIGHTLY") == "true",
@@ -162,7 +162,7 @@ func (c Config) isPR() bool {
 		!c.taggedRelease &&
 		c.branch != "master" &&
 		!c.isMainBranch() &&
-		!c.isMasterDryRun &&
+		!c.isMainDryRun &&
 		!c.patch
 }
 
@@ -185,7 +185,7 @@ func (c Config) isGoOnly() bool {
 }
 
 func (c Config) shouldRunE2EandQA() bool {
-	return c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch || c.isMainBranch() || c.isMasterDryRun
+	return c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch || c.isMainBranch() || c.isMainDryRun
 }
 
 // candidateImageTag provides the tag for a candidate image built for this Buildkite run.

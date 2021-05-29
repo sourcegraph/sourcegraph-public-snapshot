@@ -7,16 +7,14 @@ import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { useField } from '../../../../../components/form/hooks/useField'
 import { SubmissionErrors, useForm } from '../../../../../components/form/hooks/useForm'
 import { useTitleValidator } from '../../../../../components/form/hooks/useTitleValidator'
-import { createRequiredValidator } from '../../../../../components/form/validators'
+import { Organization } from '../../../../../components/visibility-picker/VisibilityPicker'
 import { InsightTypePrefix } from '../../../../../core/types'
 import { LangStatsCreationFormFields } from '../../types'
 import { LangStatsInsightCreationForm } from '../lang-stats-insight-creation-form/LangStatsInsightCreationForm'
 import { LangStatsInsightLivePreview } from '../live-preview-chart/LangStatsInsightLivePreview'
 
 import styles from './LangStatsInsightCreationContent.module.scss'
-
-const repositoriesFieldValidator = createRequiredValidator('Repositories is a required field for code insight.')
-const thresholdFieldValidator = createRequiredValidator('Threshold is a required field for code insight.')
+import { repositoriesFieldValidator, repositoryFieldAsyncValidator, thresholdFieldValidator } from './validators'
 
 const INITIAL_VALUES: LangStatsCreationFormFields = {
     repository: '',
@@ -34,6 +32,8 @@ export interface LangStatsInsightCreationContentProps {
     mode?: 'creation' | 'edit'
     /** Final settings cascade. Used for title field validation. */
     settings?: Settings | null
+
+    organizations?: Organization[]
     /** Initial value for all form fields. */
     initialValues?: LangStatsCreationFormFields
     /** Custom class name for root form element. */
@@ -45,7 +45,15 @@ export interface LangStatsInsightCreationContentProps {
 }
 
 export const LangStatsInsightCreationContent: React.FunctionComponent<LangStatsInsightCreationContentProps> = props => {
-    const { mode = 'creation', settings, initialValues = INITIAL_VALUES, className, onSubmit, onCancel = noop } = props
+    const {
+        mode = 'creation',
+        settings,
+        organizations = [],
+        initialValues = INITIAL_VALUES,
+        className,
+        onSubmit,
+        onCancel = noop,
+    } = props
 
     const { handleSubmit, formAPI, ref } = useForm<LangStatsCreationFormFields>({
         initialValues,
@@ -56,14 +64,19 @@ export const LangStatsInsightCreationContent: React.FunctionComponent<LangStatsI
     // We can't have two or more insights with the same name, since we rely on name as on id of insights.
     const titleValidator = useTitleValidator({ settings, insightType: InsightTypePrefix.langStats })
 
-    const repository = useField('repository', formAPI, repositoriesFieldValidator)
-    const title = useField('title', formAPI, titleValidator)
-    const threshold = useField('threshold', formAPI, thresholdFieldValidator)
+    const repository = useField('repository', formAPI, {
+        sync: repositoriesFieldValidator,
+        async: repositoryFieldAsyncValidator,
+    })
+    const title = useField('title', formAPI, { sync: titleValidator })
+    const threshold = useField('threshold', formAPI, { sync: thresholdFieldValidator })
     const visibility = useField('visibility', formAPI)
 
     // If some fields that needed to run live preview  are invalid
     // we should disabled live chart preview
-    const allFieldsForPreviewAreValid = repository.meta.validState === 'VALID' && threshold.meta.validState === 'VALID'
+    const allFieldsForPreviewAreValid =
+        repository.meta.validState === 'VALID' ||
+        (repository.meta.validState === 'CHECKING' && threshold.meta.validState === 'VALID')
 
     return (
         <div className={classnames(styles.content, className)}>
@@ -77,6 +90,7 @@ export const LangStatsInsightCreationContent: React.FunctionComponent<LangStatsI
                 repository={repository}
                 threshold={threshold}
                 visibility={visibility}
+                organizations={organizations}
                 onCancel={onCancel}
                 className={styles.contentForm}
             />

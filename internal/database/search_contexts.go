@@ -79,7 +79,11 @@ OFFSET %d
 const countSearchContextsFmtStr = `
 SELECT COUNT(*)
 FROM search_contexts sc
-WHERE sc.deleted_at IS NULL AND (%s)
+LEFT JOIN users u on sc.namespace_user_id = u.id
+LEFT JOIN orgs o on sc.namespace_org_id = o.id
+WHERE sc.deleted_at IS NULL
+	AND (%s) -- permission conditions
+	AND (%s) -- query conditions
 `
 
 type SearchContextsOrderByOption uint8
@@ -96,16 +100,18 @@ type ListSearchContextsPageOptions struct {
 }
 
 // ListSearchContextsOptions specifies the options for listing search contexts.
-// If both NamespaceUserID and NamespaceOrgID are 0, instance-level search contexts are matched.
+// It produces a union of all search contexts that match NamespaceUserIDs, or NamespaceOrgIDs, or NoNamespace. If none of those
+// are specified, it produces all available search contexts.
 type ListSearchContextsOptions struct {
 	// Name is used for partial matching of search contexts by name (case-insensitvely).
 	Name string
-	// NamespaceUserID matches search contexts by user. Mutually exclusive with NamespaceOrgID.
-	NamespaceUserID int32
-	// NamespaceOrgID matches search contexts by org. Mutually exclusive with NamespaceUserID.
-	NamespaceOrgID int32
+	// NamespaceName is used for partial matching of search context namespaces (user or org) by name (case-insensitvely).
+	NamespaceName string
+	// NamespaceUserIDs matches search contexts by user namespace. If multiple IDs are specified, then a union of all matching results is returned.
+	NamespaceUserIDs []int32
+	// NamespaceOrgIDs matches search contexts by org. If multiple IDs are specified, then a union of all matching results is returned.
+	NamespaceOrgIDs []int32
 	// NoNamespace matches search contexts without a namespace ("instance-level contexts").
-	// It ignores the NamespaceUserID and NamespaceOrgID options.
 	NoNamespace bool
 	// OrderBy specifies the ordering option for search contexts. Search contexts are ordered using SearchContextsOrderByID by default.
 	// SearchContextsOrderBySpec option sorts contexts by coallesced namespace names first
@@ -146,21 +152,38 @@ func getSearchContextNamespaceQueryConditions(namespaceUserID, namespaceOrgID in
 	return conds, nil
 }
 
+func idsToQueries(ids []int32) []*sqlf.Query {
+	queries := make([]*sqlf.Query, 0, len(ids))
+	for _, id := range ids {
+		queries = append(queries, sqlf.Sprintf("%s", id))
+	}
+	return queries
+}
+
 func getSearchContextsQueryConditions(opts ListSearchContextsOptions) ([]*sqlf.Query, error) {
-	conds := []*sqlf.Query{}
+	namespaceConds := []*sqlf.Query{}
 	if opts.NoNamespace {
-		conds = append(conds, sqlf.Sprintf("sc.namespace_user_id IS NULL"), sqlf.Sprintf("sc.namespace_org_id IS NULL"))
-	} else {
-		namespaceConds, err := getSearchContextNamespaceQueryConditions(opts.NamespaceUserID, opts.NamespaceOrgID)
-		if err != nil {
-			return nil, err
-		}
-		conds = append(conds, namespaceConds...)
+		namespaceConds = append(namespaceConds, sqlf.Sprintf("(sc.namespace_user_id IS NULL AND sc.namespace_org_id IS NULL)"))
+	}
+	if len(opts.NamespaceUserIDs) > 0 {
+		namespaceConds = append(namespaceConds, sqlf.Sprintf("sc.namespace_user_id IN (%s)", sqlf.Join(idsToQueries(opts.NamespaceUserIDs), ",")))
+	}
+	if len(opts.NamespaceOrgIDs) > 0 {
+		namespaceConds = append(namespaceConds, sqlf.Sprintf("sc.namespace_org_id IN (%s)", sqlf.Join(idsToQueries(opts.NamespaceOrgIDs), ",")))
+	}
+
+	conds := []*sqlf.Query{}
+	if len(namespaceConds) > 0 {
+		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(namespaceConds, " OR ")))
 	}
 
 	if opts.Name != "" {
 		// name column has type citext which automatically performs case-insensitive comparison
 		conds = append(conds, sqlf.Sprintf("sc.name LIKE %s", "%"+opts.Name+"%"))
+	}
+
+	if opts.NamespaceName != "" {
+		conds = append(conds, sqlf.Sprintf("COALESCE(u.username, o.name, '') ILIKE %s", "%"+opts.NamespaceName+"%"))
 	}
 
 	if len(conds) == 0 {
@@ -206,8 +229,12 @@ func (s *SearchContextsStore) CountSearchContexts(ctx context.Context, opts List
 	if err != nil {
 		return -1, err
 	}
+	permissionsCond, err := searchContextsPermissionsCondition(ctx, s.Handle().DB())
+	if err != nil {
+		return -1, err
+	}
 	var count int32
-	err = s.QueryRow(ctx, sqlf.Sprintf(countSearchContextsFmtStr, sqlf.Join(conds, "\n AND "))).Scan(&count)
+	err = s.QueryRow(ctx, sqlf.Sprintf(countSearchContextsFmtStr, permissionsCond, sqlf.Join(conds, "\n AND "))).Scan(&count)
 	if err != nil {
 		return -1, err
 	}

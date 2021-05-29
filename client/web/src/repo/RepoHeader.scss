@@ -9,6 +9,10 @@
     border-style: solid;
     border-width: 0 0 1px;
 
+    .theme-redesign & {
+        border: none;
+    }
+
     &--alert {
         border-width: 1px 0;
     }
@@ -20,14 +24,26 @@
 
         &:hover {
             background: var(--color-bg-1);
+
+            .theme-redesign & {
+                background: inherit;
+            }
         }
     }
 
     &__file-action {
+        display: block;
+        text-align: left;
+
         span {
             color: var(--body-color);
             margin-left: 0.5rem;
         }
+    }
+
+    &__action {
+        margin: 0.5rem 0.625rem 0.5rem 0;
+        padding: 0.25rem;
     }
 
     .navbar-nav {

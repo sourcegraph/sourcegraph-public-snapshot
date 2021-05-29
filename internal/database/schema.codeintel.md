@@ -68,6 +68,26 @@ Tracks the range of schema_versions for each upload in the lsif_data_definitions
 
 **min_schema_version**: A lower-bound on the `lsif_data_definitions.schema_version` where `lsif_data_definitions.dump_id = dump_id`.
 
+# Table "public.lsif_data_documentation_pages"
+```
+ Column  |  Type   | Collation | Nullable | Default 
+---------+---------+-----------+----------+---------
+ dump_id | integer |           | not null | 
+ path_id | text    |           | not null | 
+ data    | bytea   |           |          | 
+Indexes:
+    "lsif_data_documentation_pages_pkey" PRIMARY KEY, btree (dump_id, path_id)
+
+```
+
+Associates documentation pathIDs to their documentation page hierarchy chunk.
+
+**data**: A gob-encoded payload conforming to a `type DocumentationPageData struct` pointer (lib/codeintel/semantic/types.go)
+
+**dump_id**: The identifier of the associated dump in the lsif_uploads table (state=completed).
+
+**path_id**: The documentation page path ID, see see GraphQL codeintel.schema:documentationPage for what this is.
+
 # Table "public.lsif_data_documents"
 ```
      Column      |  Type   | Collation | Nullable | Default 

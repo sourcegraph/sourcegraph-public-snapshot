@@ -22,7 +22,7 @@ type JSONWriter interface {
 
 type jsonWriter struct {
 	wg             sync.WaitGroup
-	ch             chan (interface{})
+	ch             chan interface{}
 	bufferedWriter *bufio.Writer
 	err            error
 }

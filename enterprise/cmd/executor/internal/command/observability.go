@@ -10,6 +10,7 @@ import (
 type Operations struct {
 	SetupGitInit              *observation.Operation
 	SetupGitFetch             *observation.Operation
+	SetupAddRemote            *observation.Operation
 	SetupGitCheckout          *observation.Operation
 	SetupDockerPull           *observation.Operation
 	SetupDockerSave           *observation.Operation
@@ -40,6 +41,7 @@ func NewOperations(observationContext *observation.Context) *Operations {
 	return &Operations{
 		SetupGitInit:              op("setup.git.init"),
 		SetupGitFetch:             op("setup.git.fetch"),
+		SetupAddRemote:            op("setup.git.add-remote"),
 		SetupGitCheckout:          op("setup.git.checkout"),
 		SetupDockerPull:           op("setup.docker.pull"),
 		SetupDockerSave:           op("setup.docker.save"),

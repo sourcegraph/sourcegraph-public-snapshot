@@ -1,4 +1,5 @@
-import { ValidationResult, Validator } from './hooks/useField'
+import { Validator } from './hooks/useField'
+import { ValidationResult } from './hooks/useForm'
 
 /**
  * Validator for required form field which returns error massage

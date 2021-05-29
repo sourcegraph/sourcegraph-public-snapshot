@@ -149,9 +149,7 @@ monaco.editor.defineTheme(SOURCEGRAPH_DARK_REDESIGN, {
 monaco.editor.defineTheme(SOURCEGRAPH_DARK, {
     base: 'vs-dark',
     inherit: true,
-    colors: {
-        ...darkColors,
-    },
+    colors: darkColors,
     rules: darkRules,
 })
 

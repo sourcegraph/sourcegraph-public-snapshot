@@ -1,4 +1,8 @@
 .search-context-page {
+    &__private-badge {
+        font-size: 0.625rem;
+    }
+
     &__repo-revs-row {
         border-bottom: 1px solid var(--border-color-2);
         padding-top: 0.75rem;

@@ -146,7 +146,7 @@ const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({ closePro
                         className="btn btn-block btn-secondary feedback-prompt__button"
                         loading={loading}
                         label="Send"
-                        disabled={!rating || loading}
+                        disabled={!rating || !text || loading}
                     />
                 </Form>
             )}

@@ -181,6 +181,7 @@ export const AddCredentialModal: React.FunctionComponent<AddCredentialModalProps
                                     type="text"
                                     className="form-control test-add-credential-modal-input"
                                     required={true}
+                                    spellCheck="false"
                                     minLength={1}
                                     value={credential}
                                     onChange={onChangeCredential}

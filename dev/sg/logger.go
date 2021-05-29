@@ -9,7 +9,7 @@ import (
 
 // tickDuration is the time to wait before writing the buffer contents
 // without having received a newline.
-var tickDuration time.Duration = 2 * time.Millisecond
+var tickDuration = 2 * time.Millisecond
 
 // cmdLogger is a simplified version of goreman's logger:
 // https://github.com/mattn/goreman/blob/master/log.go

@@ -15,12 +15,13 @@ import (
 )
 
 type operations struct {
-	queryResolver *observation.Operation
-	definitions   *observation.Operation
-	diagnostics   *observation.Operation
-	hover         *observation.Operation
-	ranges        *observation.Operation
-	references    *observation.Operation
+	queryResolver     *observation.Operation
+	definitions       *observation.Operation
+	diagnostics       *observation.Operation
+	hover             *observation.Operation
+	ranges            *observation.Operation
+	references        *observation.Operation
+	documentationPage *observation.Operation
 
 	findClosestDumps *observation.Operation
 }
@@ -51,12 +52,13 @@ func newOperations(observationContext *observation.Context) *operations {
 	}
 
 	return &operations{
-		queryResolver: op("QueryResolver"),
-		definitions:   op("Definitions"),
-		diagnostics:   op("Diagnostics"),
-		hover:         op("Hover"),
-		ranges:        op("Ranges"),
-		references:    op("References"),
+		queryResolver:     op("QueryResolver"),
+		definitions:       op("Definitions"),
+		diagnostics:       op("Diagnostics"),
+		hover:             op("Hover"),
+		ranges:            op("Ranges"),
+		references:        op("References"),
+		documentationPage: op("DocumentationPage"),
 
 		findClosestDumps: subOp("findClosestDumps"),
 	}

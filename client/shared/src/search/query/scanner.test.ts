@@ -211,4 +211,10 @@ describe('scanSearchQuery() with predicate', () => {
             '{"type":"success","term":[{"type":"filter","range":{"start":0,"end":29},"field":{"type":"literal","value":"repo","range":{"start":0,"end":4}},"value":{"type":"literal","value":"contains(file:README.md)","range":{"start":5,"end":29},"quoted":false},"negated":false},{"type":"whitespace","range":{"start":29,"end":31}},{"type":"filter","range":{"start":31,"end":54},"field":{"type":"literal","value":"repo","range":{"start":31,"end":35}},"value":{"type":"literal","value":"contains.file(foo)","range":{"start":36,"end":54},"quoted":false},"negated":false}]}'
         )
     })
+
+    test('recognize parenthesized predicate', () => {
+        expect(scanSearchQuery('(repo:contains(file:bar))')).toMatchInlineSnapshot(
+            '{"type":"success","term":[{"type":"openingParen","range":{"start":0,"end":1}},{"type":"filter","range":{"start":1,"end":24},"field":{"type":"literal","value":"repo","range":{"start":1,"end":5}},"value":{"type":"literal","value":"contains(file:bar)","range":{"start":6,"end":24},"quoted":false},"negated":false},{"type":"closingParen","range":{"start":24,"end":25}}]}'
+        )
+    })
 })

@@ -140,6 +140,7 @@ type QueueAutoIndexJobArgs struct {
 
 type GitTreeLSIFDataResolver interface {
 	Diagnostics(ctx context.Context, args *LSIFDiagnosticsArgs) (DiagnosticConnectionResolver, error)
+	DocumentationPage(ctx context.Context, args *LSIFDocumentationPageArgs) (DocumentationPageResolver, error)
 }
 
 type CodeIntelligenceCommitGraphResolver interface {

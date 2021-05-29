@@ -80,14 +80,18 @@ export class ToggleHistoryPanel extends React.PureComponent<
 
         if (this.props.actionType === 'dropdown') {
             return (
-                <ButtonLink className="nav-link repo-header__file-action" onSelect={this.onClick}>
+                <ButtonLink className="btn repo-header__file-action" onSelect={this.onClick}>
                     <HistoryIcon className="icon-inline" />
                     <span>{visible ? 'Hide' : 'Show'} history (Alt+H/Opt+H)</span>
                 </ButtonLink>
             )
         }
         return (
-            <ButtonLink onSelect={this.onClick} data-tooltip={`${visible ? 'Hide' : 'Show'} history (Alt+H/Opt+H)`}>
+            <ButtonLink
+                className="btn btn-icon repo-header__action"
+                onSelect={this.onClick}
+                data-tooltip={`${visible ? 'Hide' : 'Show'} history (Alt+H/Opt+H)`}
+            >
                 <HistoryIcon className="icon-inline" />
             </ButtonLink>
         )

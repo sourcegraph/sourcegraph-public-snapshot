@@ -254,6 +254,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                 {context => (
                     <GoToRawAction
                         {...context}
+                        telemetryService={props.telemetryService}
                         key="raw-action"
                         repoName={repoName}
                         revision={props.revision}

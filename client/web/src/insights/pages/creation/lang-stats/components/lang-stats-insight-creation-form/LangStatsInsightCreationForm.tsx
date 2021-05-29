@@ -3,11 +3,14 @@ import React, { FormEventHandler, RefObject } from 'react'
 
 import { ErrorAlert } from '../../../../../../components/alerts'
 import { LoaderButton } from '../../../../../../components/LoaderButton'
-import { FormGroup } from '../../../../../components/form/form-group/FormGroup'
 import { FormInput } from '../../../../../components/form/form-input/FormInput'
-import { FormRadioInput } from '../../../../../components/form/form-radio-input/FormRadioInput'
 import { useFieldAPI } from '../../../../../components/form/hooks/useField'
 import { FORM_ERROR, SubmissionErrors } from '../../../../../components/form/hooks/useForm'
+import {
+    getVisibilityValue,
+    Organization,
+    VisibilityPicker,
+} from '../../../../../components/visibility-picker/VisibilityPicker'
 import { LangStatsCreationFormFields } from '../../types'
 
 import styles from './LangStatsInsightCreationForm.module.scss'
@@ -24,6 +27,7 @@ export interface LangStatsInsightCreationFormProps {
     repository: useFieldAPI<LangStatsCreationFormFields['repository']>
     threshold: useFieldAPI<LangStatsCreationFormFields['threshold']>
     visibility: useFieldAPI<LangStatsCreationFormFields['visibility']>
+    organizations: Organization[]
 
     onCancel: () => void
 }
@@ -40,6 +44,7 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
         repository,
         threshold,
         visibility,
+        organizations,
         onCancel,
     } = props
 
@@ -58,7 +63,8 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
                 autoFocus={true}
                 title="Repository"
                 description="This insight is limited to one repository. You can set up multiple language usage charts for analyzing other repositories."
-                placeholder="Add or search for repository"
+                placeholder="Example: github.com/sourcegraph/sourcegraph"
+                loading={repository.meta.validState === 'CHECKING'}
                 valid={repository.meta.touched && repository.meta.validState === 'VALID'}
                 error={repository.meta.touched && repository.meta.error}
                 {...repository.input}
@@ -69,7 +75,7 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
                 required={true}
                 title="Title"
                 description="Shown as the title for your insight."
-                placeholder="Example: Migration to React function components"
+                placeholder="Example: Language Usage in RepositoryName"
                 valid={title.meta.touched && title.meta.validState === 'VALID'}
                 error={title.meta.touched && title.meta.error}
                 {...title.input}
@@ -91,34 +97,11 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
                 inputSymbol={<span className={styles.formThresholdInputSymbol}>%</span>}
             />
 
-            <FormGroup
-                name="visibility"
-                title="Visibility"
-                description="This insight will be visible only on your personal dashboard. It will not appear for other
-                            users in your organization."
-                className="mb-0 mt-4"
-                contentClassName="d-flex flex-wrap mb-n2"
-            >
-                <FormRadioInput
-                    name="visibility"
-                    value="personal"
-                    title="Personal"
-                    description="only you"
-                    checked={visibility.input.value === 'personal'}
-                    className="mr-3"
-                    onChange={visibility.input.onChange}
-                />
-
-                <FormRadioInput
-                    name="visibility"
-                    value="organization"
-                    title="Organization"
-                    description="all users in your organization"
-                    checked={visibility.input.value === 'organization'}
-                    onChange={visibility.input.onChange}
-                    className="mr-3"
-                />
-            </FormGroup>
+            <VisibilityPicker
+                organizations={organizations}
+                value={visibility.input.value}
+                onChange={event => visibility.input.onChange(getVisibilityValue(event))}
+            />
 
             <hr className={styles.formSeparator} />
 

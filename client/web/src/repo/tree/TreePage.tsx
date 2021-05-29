@@ -1,5 +1,6 @@
 import { subYears, formatISO } from 'date-fns'
 import * as H from 'history'
+import BookOpenVariantIcon from 'mdi-react/BookOpenVariantIcon'
 import FolderIcon from 'mdi-react/FolderIcon'
 import HistoryIcon from 'mdi-react/HistoryIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
@@ -44,7 +45,7 @@ import { PageTitle } from '../../components/PageTitle'
 import { GitCommitFields, Scalars, TreePageRepositoryFields } from '../../graphql-operations'
 import { InsightsApiContext, InsightsViewGrid } from '../../insights'
 import { Settings } from '../../schema/settings.schema'
-import { PatternTypeProps, CaseSensitivityProps, CopyQueryButtonProps, SearchContextProps } from '../../search'
+import { PatternTypeProps, CaseSensitivityProps, SearchContextProps } from '../../search'
 import { basename } from '../../util/path'
 import { fetchTreeEntries } from '../backend'
 import { GitCommitNode, GitCommitNodeProps } from '../commits/GitCommitNode'
@@ -110,7 +111,6 @@ interface Props
         ActivationProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        CopyQueryButtonProps,
         VersionContextProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         BreadcrumbSetters {
@@ -263,6 +263,9 @@ export const TreePage: React.FunctionComponent<Props> = ({
         )
     )
 
+    // eslint-disable-next-line unicorn/prevent-abbreviations
+    const enableAPIDocs = !isErrorLike(settingsCascade.final) && !!settingsCascade.final?.experimentalFeatures?.apiDocs
+
     const { getCombinedViews } = useContext(InsightsApiContext)
     const views = useObservable(
         useMemo(
@@ -370,6 +373,11 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                 </h2>
                                 {repo.description && <p>{repo.description}</p>}
                                 <div className="btn-group mb-3">
+                                    {enableAPIDocs && (
+                                        <Link className="btn btn-secondary" to={`${treeOrError.url}/-/docs`}>
+                                            <BookOpenVariantIcon className="icon-inline" /> API docs
+                                        </Link>
+                                    )}
                                     <Link className="btn btn-secondary" to={`${treeOrError.url}/-/commits`}>
                                         <SourceCommitIcon className="icon-inline" /> Commits
                                     </Link>

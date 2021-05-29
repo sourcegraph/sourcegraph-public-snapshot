@@ -13,7 +13,7 @@ import (
 )
 
 func (r *schemaResolver) StatusMessages(ctx context.Context) ([]*statusMessageResolver, error) {
-	currentUser, err := backend.CurrentUser(ctx)
+	currentUser, err := backend.CurrentUser(ctx, r.db)
 	if err != nil {
 		return nil, err
 	}

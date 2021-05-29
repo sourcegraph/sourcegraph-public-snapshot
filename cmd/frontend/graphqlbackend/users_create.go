@@ -20,7 +20,7 @@ func (r *schemaResolver) CreateUser(ctx context.Context, args *struct {
 	Email    *string
 }) (*createUserResult, error) {
 	// 🚨 SECURITY: Only site admins can create user accounts.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 

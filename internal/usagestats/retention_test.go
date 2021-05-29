@@ -83,7 +83,7 @@ func TestRetentionUsageStatistics(t *testing.T) {
 
 	for i := 1; i <= 11; i++ {
 		weekly = append(weekly, &types.WeeklyRetentionStats{
-			WeekStart:  userCreationDate.Add((time.Hour * time.Duration(168*i) * -1)).UTC(),
+			WeekStart:  userCreationDate.Add(time.Hour * time.Duration(168*i) * -1).UTC(),
 			CohortSize: nil,
 			Week0:      nil,
 			Week1:      nil,

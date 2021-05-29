@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 )
 
 const (
@@ -52,6 +54,10 @@ func ParseAuthorizationHeader(headerValue string) (token, sudoUser string, err e
 		case SchemeTokenSudo:
 			return "", "", errors.New(`HTTP Authorization request header value must be of the following form: token="TOKEN",user="USERNAME"`)
 		}
+	}
+
+	if envvar.SourcegraphDotComMode() {
+		return "", "", errors.New("use of access tokens with sudo scope is disabled")
 	}
 
 	token = params["token"]

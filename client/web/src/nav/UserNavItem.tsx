@@ -17,12 +17,17 @@ import { useTimeoutManager } from '@sourcegraph/shared/src/util/useTimeoutManage
 
 import { AuthenticatedUser } from '../auth'
 import { Badge } from '../components/Badge'
+import { SearchContextProps } from '../search'
 import { ThemePreference, ThemePreferenceProps } from '../theme'
 import { UserAvatar } from '../user/UserAvatar'
 
 import { RedesignToggle } from './RedesignToggle'
 
-export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps, ExtensionAlertAnimationProps {
+export interface UserNavItemProps
+    extends ThemeProps,
+        ThemePreferenceProps,
+        ExtensionAlertAnimationProps,
+        Pick<SearchContextProps, 'showSearchContext' | 'showSearchContextManagement'> {
     location: H.Location
     authenticatedUser: Pick<
         AuthenticatedUser,
@@ -33,6 +38,7 @@ export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps, Exte
     testIsOpen?: boolean
     codeHostIntegrationMessaging: 'browser-extension' | 'native-integration'
     showRepositorySection?: boolean
+    showRedesignToggle?: boolean
 }
 
 export interface ExtensionAlertAnimationProps {
@@ -159,6 +165,9 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                 <Link to={props.authenticatedUser.settingsURL!} className="dropdown-item">
                     Settings
                 </Link>
+                <Link to="/extensions" className="dropdown-item">
+                    Extensions
+                </Link>
                 {props.showRepositorySection && (
                     <Link
                         to={`/users/${props.authenticatedUser.username}/settings/repositories`}
@@ -167,9 +176,11 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                         Repositories <Badge className="ml-1" status="new" />
                     </Link>
                 )}
-                <Link to="/extensions" className="dropdown-item">
-                    Extensions
-                </Link>
+                {props.showSearchContext && props.showSearchContextManagement && (
+                    <Link to="/contexts" className="dropdown-item">
+                        Search contexts <Badge className="ml-1" status="new" />
+                    </Link>
+                )}
                 <Link to={`/users/${props.authenticatedUser.username}/searches`} className="dropdown-item">
                     Saved searches
                 </Link>
@@ -205,8 +216,7 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                         <Shortcut key={index} {...keybinding} onMatch={onThemeCycle} />
                     ))}
                 </div>
-                {/* NODE_ENV check ensures that this logic won't propagate to non-dev builds via Webpack dead code elimination */}
-                {process.env.NODE_ENV === 'development' && <RedesignToggle />}
+                {props.showRedesignToggle && <RedesignToggle />}
                 {props.authenticatedUser.organizations.nodes.length > 0 && (
                     <>
                         <DropdownItem divider={true} />

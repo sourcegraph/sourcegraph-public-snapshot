@@ -5,11 +5,11 @@ import { DropdownItem, DropdownMenu, UncontrolledDropdown } from 'reactstrap'
 import { Observable, of, throwError } from 'rxjs'
 import sinon from 'sinon'
 
-import { Scalars, SearchContextsNamespaceFilterType } from '@sourcegraph/shared/src/graphql-operations'
 import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/util/MockIntersectionObserver'
 
 import { ListSearchContextsResult, SearchContextFields } from '../../graphql-operations'
+import { mockGetUserSearchContextNamespaces } from '../../searchContexts/testHelpers'
 
 import { SearchContextMenu, SearchContextMenuProps } from './SearchContextMenu'
 
@@ -19,57 +19,69 @@ const mockFetchAutoDefinedSearchContexts = () =>
             __typename: 'SearchContext',
             id: '1',
             spec: 'global',
+            name: 'global',
+            namespace: null,
             autoDefined: true,
             description: 'All repositories on Sourcegraph',
             repositories: [],
             public: true,
             updatedAt: '2021-03-15T19:39:11Z',
+            viewerCanManage: false,
         },
         {
             __typename: 'SearchContext',
             id: '2',
             spec: '@username',
+            name: 'username',
+            namespace: {
+                __typename: 'User',
+                id: 'u1',
+                namespaceName: 'username',
+            },
             autoDefined: true,
             description: 'Your repositories on Sourcegraph',
             repositories: [],
             public: true,
             updatedAt: '2021-03-15T19:39:11Z',
+            viewerCanManage: false,
         },
     ] as ISearchContext[])
 
-const mockFetchSearchContexts = ({
-    first,
-    namespaceFilterType,
-    namespace,
-    query,
-    after,
-}: {
-    first: number
-    query?: string
-    namespace?: Scalars['ID']
-    namespaceFilterType?: SearchContextsNamespaceFilterType
-    after?: string
-}) => {
+const mockFetchSearchContexts = ({ query }: { first: number; query?: string; after?: string }) => {
     const nodes = [
         {
             __typename: 'SearchContext',
             id: '3',
             spec: '@username/test-version-1.5',
+            name: 'test-version-1.5',
+            namespace: {
+                __typename: 'User',
+                id: 'u1',
+                namespaceName: 'username',
+            },
             autoDefined: false,
             public: true,
             description: 'Only code in version 1.5',
             updatedAt: '2021-03-15T19:39:11Z',
             repositories: [],
+            viewerCanManage: true,
         },
         {
             __typename: 'SearchContext',
             id: '4',
             spec: '@org/test-version-1.6',
+            name: 'test-version-1.6',
+            namespace: {
+                __typename: 'Org',
+                id: 'o1',
+                namespaceName: 'org',
+            },
             autoDefined: false,
             public: true,
             description: 'Only code in version 1.6',
             updatedAt: '2021-03-15T19:39:11Z',
             repositories: [],
+            viewerCanManage: true,
         },
     ].filter(context => !query || context.spec.toLowerCase().includes(query.toLowerCase())) as SearchContextFields[]
     const result: ListSearchContextsResult['searchContexts'] = {
@@ -85,6 +97,7 @@ const mockFetchSearchContexts = ({
 
 describe('SearchContextMenu', () => {
     const defaultProps: SearchContextMenuProps = {
+        authenticatedUser: null,
         showSearchContextManagement: false,
         defaultSearchContextSpec: 'global',
         selectedSearchContextSpec: 'global',
@@ -92,6 +105,7 @@ describe('SearchContextMenu', () => {
         fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
         fetchSearchContexts: mockFetchSearchContexts,
         closeMenu: () => {},
+        getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
     }
 
     const RealIntersectionObserver = window.IntersectionObserver

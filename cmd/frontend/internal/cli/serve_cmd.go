@@ -20,6 +20,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/throttled/throttled/v2/store/redigostore"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
@@ -251,10 +252,15 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 	globals.WatchExternalURL(defaultExternalURL(nginxAddr, httpAddr))
 	globals.WatchPermissionsUserMapping()
 
+	// bgInit is a group of background goroutines that need to finish before
+	// we are marked as ready.
+	var bgInit errgroup.Group
+	bgInit.Go(func() error { return backend.Warmup(ctx) })
+
 	goroutine.Go(func() { bg.CheckRedisCacheEvictionPolicy() })
 	goroutine.Go(func() { bg.DeleteOldCacheDataInRedis() })
 	goroutine.Go(func() { bg.DeleteOldEventLogsInPostgres(context.Background(), db) })
-	go updatecheck.Start(db)
+	goroutine.Go(func() { updatecheck.Start(db) })
 
 	// Parse GraphQL schema and set up resolvers that depend on dbconn.Global
 	// being initialized
@@ -267,11 +273,10 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 		return err
 	}
 
-	ratelimitStore, err := redigostore.New(redispool.Cache, "gql:rl:", 0)
+	rateLimitWatcher, err := makeRateLimitWatcher()
 	if err != nil {
 		return err
 	}
-	rateLimitWatcher := graphqlbackend.NewBasicLimitWatcher(ratelimitStore)
 
 	server, err := makeExternalAPI(db, schema, enterprise, rateLimitWatcher)
 	if err != nil {
@@ -289,6 +294,10 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 	}
 	if internalAPI != nil {
 		routines = append(routines, internalAPI)
+	}
+
+	if err := bgInit.Wait(); err != nil {
+		return err
 	}
 
 	if printLogo {
@@ -358,4 +367,12 @@ func isAllowedOrigin(origin string, allowedOrigins []string) bool {
 		}
 	}
 	return false
+}
+
+func makeRateLimitWatcher() (*graphqlbackend.BasicLimitWatcher, error) {
+	ratelimitStore, err := redigostore.New(redispool.Cache, "gql:rl:", 0)
+	if err != nil {
+		return nil, err
+	}
+	return graphqlbackend.NewBasicLimitWatcher(ratelimitStore), nil
 }

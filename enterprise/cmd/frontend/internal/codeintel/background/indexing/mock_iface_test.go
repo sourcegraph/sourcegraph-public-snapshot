@@ -1412,16 +1412,17 @@ func (c GitserverClientResolveRevisionFuncCall) Results() []interface{} {
 // github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/background/indexing)
 // used for unit testing.
 type MockIndexEnqueuer struct {
-	// QueueIndexFunc is an instance of a mock function object controlling
-	// the behavior of the method QueueIndex.
-	QueueIndexFunc *IndexEnqueuerQueueIndexFunc
+	// QueueIndexesForRepositoryFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// QueueIndexesForRepository.
+	QueueIndexesForRepositoryFunc *IndexEnqueuerQueueIndexesForRepositoryFunc
 }
 
 // NewMockIndexEnqueuer creates a new mock of the IndexEnqueuer interface.
 // All methods return zero values for all results, unless overwritten.
 func NewMockIndexEnqueuer() *MockIndexEnqueuer {
 	return &MockIndexEnqueuer{
-		QueueIndexFunc: &IndexEnqueuerQueueIndexFunc{
+		QueueIndexesForRepositoryFunc: &IndexEnqueuerQueueIndexesForRepositoryFunc{
 			defaultHook: func(context.Context, int) error {
 				return nil
 			},
@@ -1434,41 +1435,43 @@ func NewMockIndexEnqueuer() *MockIndexEnqueuer {
 // overwritten.
 func NewMockIndexEnqueuerFrom(i IndexEnqueuer) *MockIndexEnqueuer {
 	return &MockIndexEnqueuer{
-		QueueIndexFunc: &IndexEnqueuerQueueIndexFunc{
-			defaultHook: i.QueueIndex,
+		QueueIndexesForRepositoryFunc: &IndexEnqueuerQueueIndexesForRepositoryFunc{
+			defaultHook: i.QueueIndexesForRepository,
 		},
 	}
 }
 
-// IndexEnqueuerQueueIndexFunc describes the behavior when the QueueIndex
-// method of the parent MockIndexEnqueuer instance is invoked.
-type IndexEnqueuerQueueIndexFunc struct {
+// IndexEnqueuerQueueIndexesForRepositoryFunc describes the behavior when
+// the QueueIndexesForRepository method of the parent MockIndexEnqueuer
+// instance is invoked.
+type IndexEnqueuerQueueIndexesForRepositoryFunc struct {
 	defaultHook func(context.Context, int) error
 	hooks       []func(context.Context, int) error
-	history     []IndexEnqueuerQueueIndexFuncCall
+	history     []IndexEnqueuerQueueIndexesForRepositoryFuncCall
 	mutex       sync.Mutex
 }
 
-// QueueIndex delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockIndexEnqueuer) QueueIndex(v0 context.Context, v1 int) error {
-	r0 := m.QueueIndexFunc.nextHook()(v0, v1)
-	m.QueueIndexFunc.appendCall(IndexEnqueuerQueueIndexFuncCall{v0, v1, r0})
+// QueueIndexesForRepository delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockIndexEnqueuer) QueueIndexesForRepository(v0 context.Context, v1 int) error {
+	r0 := m.QueueIndexesForRepositoryFunc.nextHook()(v0, v1)
+	m.QueueIndexesForRepositoryFunc.appendCall(IndexEnqueuerQueueIndexesForRepositoryFuncCall{v0, v1, r0})
 	return r0
 }
 
-// SetDefaultHook sets function that is called when the QueueIndex method of
-// the parent MockIndexEnqueuer instance is invoked and the hook queue is
-// empty.
-func (f *IndexEnqueuerQueueIndexFunc) SetDefaultHook(hook func(context.Context, int) error) {
+// SetDefaultHook sets function that is called when the
+// QueueIndexesForRepository method of the parent MockIndexEnqueuer instance
+// is invoked and the hook queue is empty.
+func (f *IndexEnqueuerQueueIndexesForRepositoryFunc) SetDefaultHook(hook func(context.Context, int) error) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// QueueIndex method of the parent MockIndexEnqueuer instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *IndexEnqueuerQueueIndexFunc) PushHook(hook func(context.Context, int) error) {
+// QueueIndexesForRepository method of the parent MockIndexEnqueuer instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *IndexEnqueuerQueueIndexesForRepositoryFunc) PushHook(hook func(context.Context, int) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1476,7 +1479,7 @@ func (f *IndexEnqueuerQueueIndexFunc) PushHook(hook func(context.Context, int) e
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *IndexEnqueuerQueueIndexFunc) SetDefaultReturn(r0 error) {
+func (f *IndexEnqueuerQueueIndexesForRepositoryFunc) SetDefaultReturn(r0 error) {
 	f.SetDefaultHook(func(context.Context, int) error {
 		return r0
 	})
@@ -1484,13 +1487,13 @@ func (f *IndexEnqueuerQueueIndexFunc) SetDefaultReturn(r0 error) {
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *IndexEnqueuerQueueIndexFunc) PushReturn(r0 error) {
+func (f *IndexEnqueuerQueueIndexesForRepositoryFunc) PushReturn(r0 error) {
 	f.PushHook(func(context.Context, int) error {
 		return r0
 	})
 }
 
-func (f *IndexEnqueuerQueueIndexFunc) nextHook() func(context.Context, int) error {
+func (f *IndexEnqueuerQueueIndexesForRepositoryFunc) nextHook() func(context.Context, int) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1503,26 +1506,28 @@ func (f *IndexEnqueuerQueueIndexFunc) nextHook() func(context.Context, int) erro
 	return hook
 }
 
-func (f *IndexEnqueuerQueueIndexFunc) appendCall(r0 IndexEnqueuerQueueIndexFuncCall) {
+func (f *IndexEnqueuerQueueIndexesForRepositoryFunc) appendCall(r0 IndexEnqueuerQueueIndexesForRepositoryFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of IndexEnqueuerQueueIndexFuncCall objects
-// describing the invocations of this function.
-func (f *IndexEnqueuerQueueIndexFunc) History() []IndexEnqueuerQueueIndexFuncCall {
+// History returns a sequence of
+// IndexEnqueuerQueueIndexesForRepositoryFuncCall objects describing the
+// invocations of this function.
+func (f *IndexEnqueuerQueueIndexesForRepositoryFunc) History() []IndexEnqueuerQueueIndexesForRepositoryFuncCall {
 	f.mutex.Lock()
-	history := make([]IndexEnqueuerQueueIndexFuncCall, len(f.history))
+	history := make([]IndexEnqueuerQueueIndexesForRepositoryFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// IndexEnqueuerQueueIndexFuncCall is an object that describes an invocation
-// of method QueueIndex on an instance of MockIndexEnqueuer.
-type IndexEnqueuerQueueIndexFuncCall struct {
+// IndexEnqueuerQueueIndexesForRepositoryFuncCall is an object that
+// describes an invocation of method QueueIndexesForRepository on an
+// instance of MockIndexEnqueuer.
+type IndexEnqueuerQueueIndexesForRepositoryFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -1536,12 +1541,12 @@ type IndexEnqueuerQueueIndexFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c IndexEnqueuerQueueIndexFuncCall) Args() []interface{} {
+func (c IndexEnqueuerQueueIndexesForRepositoryFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c IndexEnqueuerQueueIndexFuncCall) Results() []interface{} {
+func (c IndexEnqueuerQueueIndexesForRepositoryFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }

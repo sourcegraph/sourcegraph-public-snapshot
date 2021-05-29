@@ -147,6 +147,8 @@ export const LANGUAGES: string[] = [
     'C#',
     'CSS',
     'Dart',
+    'Elixir',
+    'Erlang',
     'Go',
     'GraphQL',
     'Haskell',

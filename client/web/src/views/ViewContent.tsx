@@ -11,7 +11,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { hasProperty } from '@sourcegraph/shared/src/util/types'
 
-import { CaseSensitivityProps, PatternTypeProps, CopyQueryButtonProps, SearchContextProps } from '../search'
+import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '../search'
 
 import { ChartViewContent } from './ChartViewContent/ChartViewContent'
 import { QueryInputInViewContent } from './QueryInputInViewContent'
@@ -23,7 +23,6 @@ export interface ViewContentProps
     extends SettingsCascadeProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        CopyQueryButtonProps,
         VersionContextProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         TelemetryProps {

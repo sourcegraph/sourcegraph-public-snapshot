@@ -51,7 +51,6 @@ import {
     parseSearchURLQuery,
     PatternTypeProps,
     CaseSensitivityProps,
-    CopyQueryButtonProps,
     RepogroupHomepageProps,
     OnboardingTourProps,
     HomePanelsProps,
@@ -70,7 +69,7 @@ import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
-import { UserRepositoriesUpdateProps } from './util'
+import { UserExternalServicesOrRepositoriesUpdateProps } from './util'
 import { parseBrowserRepoURL } from './util/url'
 
 export interface LayoutProps
@@ -86,7 +85,6 @@ export interface LayoutProps
         ParsedSearchQueryProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        CopyQueryButtonProps,
         MutableVersionContextProps,
         RepogroupHomepageProps,
         OnboardingTourProps,
@@ -95,7 +93,7 @@ export interface LayoutProps
         SearchStreamingProps,
         CodeMonitoringProps,
         SearchContextProps,
-        UserRepositoriesUpdateProps {
+        UserExternalServicesOrRepositoriesUpdateProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
     extensionsAreaRoutes: readonly ExtensionsAreaRoute[]
@@ -151,6 +149,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const isSearchRelatedPage = (routeMatch === '/:repoRevAndRest+' || routeMatch?.startsWith('/search')) ?? false
     const minimalNavLinks = routeMatch === '/cncf'
     const isSearchHomepage = props.location.pathname === '/search' && !parseSearchURLQuery(props.location.search)
+    const isSearchConsolePage = routeMatch?.startsWith('/search/console')
 
     // Update parsedSearchQuery, patternType, caseSensitivity, versionContext, and selectedSearchContextSpec based on current URL
     const {
@@ -227,6 +226,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         '/android',
         '/stanford',
         '/stackstorm',
+        '/temporal',
         '/cncf',
     ]
     const isRepogroupPage = repogroupPages.includes(props.location.pathname)
@@ -292,7 +292,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 <GlobalNavbar
                     {...props}
                     authRequired={!!authRequired}
-                    showSearchBox={isSearchRelatedPage && !isSearchHomepage && !isRepogroupPage}
+                    showSearchBox={isSearchRelatedPage && !isSearchHomepage && !isRepogroupPage && !isSearchConsolePage}
                     variant={
                         hideGlobalSearchInput
                             ? 'no-search-input'

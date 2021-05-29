@@ -1,6 +1,7 @@
 import classnames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useContext, useMemo, useState } from 'react'
+import { Redirect } from 'react-router'
 import { useHistory, Link } from 'react-router-dom'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -64,7 +65,7 @@ export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = pr
         // initial values for edit components
         const insight: Insight = {
             id: insightID,
-            visibility: userID === subject.subject.id ? 'personal' : 'organization',
+            visibility: userID === subject.subject.id ? 'personal' : subject.subject.id,
             ...subject.settings[insightID],
         }
 
@@ -145,17 +146,27 @@ export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = pr
                 title="Oops, we couldn't find insight"
                 subtitle={
                     <span>
-                        Try find insight with id: <code className="badge badge-secondary">{insightID}</code> in{' '}
+                        We couldn't find that insight. Try to find the insight with ID:{' '}
+                        <code className="badge badge-secondary">{insightID}</code> in your{' '}
                         {authenticatedUser ? (
-                            <Link to={`/users/${authenticatedUser?.username}/settings`}>user/org settings</Link>
+                            <Link to={`/users/${authenticatedUser?.username}/settings`}>user or org settings</Link>
                         ) : (
-                            <span>user/org settings</span>
+                            <span>user or org settings</span>
                         )}
                     </span>
                 }
             />
         )
     }
+
+    // TODO [VK] Move this logic to high order component to simplify logic here
+    if (authenticatedUser === null) {
+        return <Redirect to="/" />
+    }
+
+    const {
+        organizations: { nodes: orgs },
+    } = authenticatedUser
 
     return (
         <Page className={classnames('col-10', styles.creationPage)}>
@@ -166,11 +177,7 @@ export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = pr
 
                 <p className="text-muted">
                     Insights analyze your code based on any search query.{' '}
-                    <a
-                        href="https://docs.sourcegraph.com/dev/background-information/insights"
-                        target="_blank"
-                        rel="noopener"
-                    >
+                    <a href="https://docs.sourcegraph.com/code_insights" target="_blank" rel="noopener">
                         Learn more.
                     </a>
                 </p>
@@ -180,7 +187,7 @@ export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = pr
                 <EditSearchBasedInsight
                     insight={insight}
                     finalSettings={finalSettings}
-                    /* eslint-disable-next-line react/jsx-no-bind */
+                    organizations={orgs}
                     onSubmit={handleSubmit}
                 />
             )}
@@ -189,7 +196,7 @@ export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = pr
                 <EditLangStatsInsight
                     insight={insight}
                     finalSettings={finalSettings}
-                    /* eslint-disable-next-line react/jsx-no-bind */
+                    organizations={orgs}
                     onSubmit={handleSubmit}
                 />
             )}

@@ -12,8 +12,6 @@ import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { asError } from '@sourcegraph/shared/src/util/errors'
-import { pluralize } from '@sourcegraph/shared/src/util/strings'
 import { property, isDefined } from '@sourcegraph/shared/src/util/types'
 import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
@@ -21,10 +19,9 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { getHover, getDocumentHighlights } from '../../../../backend/features'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
 import { WebHoverOverlay } from '../../../../components/shared'
-import { ChangesetFields, Scalars } from '../../../../graphql-operations'
+import { AllChangesetIDsVariables, ChangesetFields, Scalars } from '../../../../graphql-operations'
 import { getLSPTextDocumentPositionParameters } from '../../utils'
 import {
-    detachChangesets,
     queryChangesets as _queryChangesets,
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
 } from '../backend'
@@ -46,8 +43,6 @@ interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, Extens
 
     hideFilters?: boolean
     onlyArchived?: boolean
-
-    enableSelect?: boolean
 
     /** For testing only. */
     queryChangesets?: typeof _queryChangesets
@@ -74,66 +69,66 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
     queryExternalChangesetWithFileDiffs,
     expandByDefault,
     onlyArchived,
-    enableSelect,
 }) => {
-    const [availableChangesets, setAvailableChangesets] = useState<Set<string>>(new Set())
-
-    const [selectedChangesets, setSelectedChangesets] = useState<Set<string>>(new Set())
-    const onSelect = useCallback(
-        (id: string, selected: boolean): void => {
-            if (selected) {
-                setSelectedChangesets(previous => new Set(previous).add(id))
-            } else {
-                setSelectedChangesets(previous => {
-                    const newSet = new Set(previous)
-                    newSet.delete(id)
-                    return newSet
-                })
-            }
-        },
-        [setSelectedChangesets]
-    )
-
-    const changesetSelected = useCallback((id: string): boolean => selectedChangesets.has(id), [selectedChangesets])
+    // Whether all the changesets are selected, beyond the scope of what's on screen right now.
     const [allSelected, setAllSelected] = useState<boolean>(false)
+    // The overall amount of all changesets in the connection.
+    const [totalChangesetCount, setTotalChangesetCount] = useState<number>(0)
+    // All changesets that are currently in view and can be selected. That currently
+    // just means they are visible.
+    const [availableChangesets, setAvailableChangesets] = useState<Set<Scalars['ID']>>(new Set())
+    // The list of all selected changesets. This list does not reflect the selection
+    // when `allSelected` is true.
+    const [selectedChangesets, setSelectedChangesets] = useState<Set<Scalars['ID']>>(new Set())
 
-    const deselectAll = useCallback((): void => setSelectedChangesets(new Set()), [setSelectedChangesets])
-    const selectAll = useCallback((): void => setSelectedChangesets(availableChangesets), [
-        availableChangesets,
-        setSelectedChangesets,
+    const onSelect = useCallback((id: string, selected: boolean): void => {
+        if (selected) {
+            setSelectedChangesets(previous => {
+                const newSet = new Set(previous).add(id)
+                return newSet
+            })
+            return
+        }
+        setSelectedChangesets(previous => {
+            const newSet = new Set(previous)
+            newSet.delete(id)
+            return newSet
+        })
+        setAllSelected(false)
+    }, [])
+
+    /**
+     * Whether the given changeset is currently selected. Returns always true, if `allSelected` is true.
+     */
+    const changesetSelected = useCallback((id: Scalars['ID']): boolean => allSelected || selectedChangesets.has(id), [
+        allSelected,
+        selectedChangesets,
     ])
 
+    const deselectAll = useCallback((): void => {
+        setSelectedChangesets(new Set())
+        setAllSelected(false)
+    }, [setSelectedChangesets])
+
+    const selectAll = useCallback((): void => {
+        setSelectedChangesets(availableChangesets)
+    }, [availableChangesets, setSelectedChangesets])
+
+    // True when all in the current list are selected. It ticks the header row
+    // checkbox when true.
+    const allSelectedCheckboxChecked = allSelected || selectedChangesets.size === availableChangesets.size
+
     const toggleSelectAll = useCallback((): void => {
-        setAllSelected(previous => !previous)
-        if (allSelected) {
+        if (allSelectedCheckboxChecked) {
             deselectAll()
         } else {
             selectAll()
         }
-    }, [setAllSelected, allSelected, selectAll, deselectAll])
+    }, [allSelectedCheckboxChecked, selectAll, deselectAll])
 
-    const [isSubmittingSelected, setIsSubmittingSelected] = useState<boolean | Error>(false)
-    const onSubmitSelected = useCallback(async () => {
-        if (
-            !confirm(
-                `Are you sure you want to detach ${selectedChangesets.size} ${pluralize(
-                    'changeset',
-                    selectedChangesets.size
-                )}?`
-            )
-        ) {
-            return
-        }
-        setIsSubmittingSelected(true)
-        try {
-            await detachChangesets(batchChangeID, [...selectedChangesets])
-            deselectAll()
-            setAllSelected(false)
-            telemetryService.logViewEvent('BatchChangeDetailsPageDetachArchivedChangesets')
-        } catch (error) {
-            setIsSubmittingSelected(asError(error))
-        }
-    }, [batchChangeID, selectedChangesets, setIsSubmittingSelected, deselectAll, setAllSelected, telemetryService])
+    const onSelectAll = useCallback(() => {
+        setAllSelected(true)
+    }, [])
 
     const [changesetFilters, setChangesetFilters] = useState<ChangesetFilters>({
         checkState: null,
@@ -145,15 +140,16 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
     const setChangesetFiltersAndDeselectAll = useCallback(
         (filters: ChangesetFilters) => {
             deselectAll()
-            setAllSelected(false)
             setChangesetFilters(filters)
         },
         [deselectAll, setChangesetFilters]
     )
 
+    const [queryArguments, setQueryArguments] = useState<Omit<AllChangesetIDsVariables, 'after'>>()
+
     const queryChangesetsConnection = useCallback(
-        (args: FilteredConnectionQueryArguments) =>
-            queryChangesets({
+        (args: FilteredConnectionQueryArguments) => {
+            const passedArguments = {
                 state: changesetFilters.state,
                 reviewState: changesetFilters.reviewState,
                 checkState: changesetFilters.checkState,
@@ -163,9 +159,25 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
                 onlyPublishedByThisBatchChange: null,
                 search: changesetFilters.search,
                 onlyArchived: !!onlyArchived,
-            })
-                .pipe(tap(data => setAvailableChangesets(new Set(data.nodes.map(node => node.id)))))
-                .pipe(repeatWhen(notifier => notifier.pipe(delay(5000)))),
+            }
+            return queryChangesets(passedArguments)
+                .pipe(
+                    tap(data => {
+                        // Store the query arguments used for the current connection.
+                        setQueryArguments(passedArguments)
+                        // Available changesets are all changesets that the user
+                        // can view.
+                        setAvailableChangesets(
+                            new Set(
+                                data.nodes.filter(node => node.__typename === 'ExternalChangeset').map(node => node.id)
+                            )
+                        )
+                        // Remember the totalCount.
+                        setTotalChangesetCount(data.totalCount)
+                    })
+                )
+                .pipe(repeatWhen(notifier => notifier.pipe(delay(5000))))
+        },
         [
             batchChangeID,
             changesetFilters.state,
@@ -231,20 +243,27 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
         componentRerenders.next()
     }, [componentRerenders, hoverState])
 
+    const showSelectRow = viewerCanAdminister && selectedChangesets.size > 0
+
     return (
         <>
-            {!hideFilters && (
+            {!hideFilters && !showSelectRow && (
                 <ChangesetFilterRow
                     history={history}
                     location={location}
-                    onFiltersChange={enableSelect ? setChangesetFiltersAndDeselectAll : setChangesetFilters}
+                    onFiltersChange={setChangesetFiltersAndDeselectAll}
                 />
             )}
-            {viewerCanAdminister && enableSelect && availableChangesets.size > 0 && (
+            {showSelectRow && queryArguments && (
                 <ChangesetSelectRow
+                    batchChangeID={batchChangeID}
                     selected={selectedChangesets}
-                    onSubmit={onSubmitSelected}
-                    isSubmitting={isSubmittingSelected}
+                    onSubmit={deselectAll}
+                    totalCount={totalChangesetCount}
+                    allVisibleSelected={allSelectedCheckboxChecked}
+                    allSelected={allSelected}
+                    setAllSelected={onSelectAll}
+                    queryArguments={queryArguments}
                 />
             )}
             <div className="list-group position-relative" ref={nextContainerElement}>
@@ -259,7 +278,6 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
                         extensionInfo: { extensionsController, hoverifier },
                         expandByDefault,
                         queryExternalChangesetWithFileDiffs,
-                        enableSelect,
                         onSelect,
                         isSelected: changesetSelected,
                     }}
@@ -272,17 +290,12 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
                     location={location}
                     useURLQuery={true}
                     listComponent="div"
-                    listClassName={classNames(
-                        enableSelect && styles.batchChangeChangesetsGridWithCheckboxes,
-                        !enableSelect && styles.batchChangeChangesetsGrid,
-                        'mb-3'
-                    )}
+                    listClassName={classNames(styles.batchChangeChangesetsGrid, 'mb-3')}
                     headComponent={BatchChangeChangesetsHeader}
                     headComponentProps={{
-                        enableSelect,
-                        allSelected,
+                        allSelected: allSelectedCheckboxChecked,
                         toggleSelectAll,
-                        disabled: !(viewerCanAdminister && !isSubmittingSelected),
+                        disabled: !viewerCanAdminister,
                     }}
                     // Only show the empty element, if no filters are selected.
                     emptyElement={

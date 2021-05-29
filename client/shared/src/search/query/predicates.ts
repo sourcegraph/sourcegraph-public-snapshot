@@ -51,6 +51,12 @@ export const resolveAccess = (path: string[], tree: Access[]): Access[] | undefi
     return resolveAccess(path.slice(1), subtree.fields)
 }
 
+// scans a string up to closing parentheses. Examples:
+// - `foo` succeeds, parentheses are absent, so it is vacuously balanced
+// - `foo(...)` succeeds up to the closing `)`
+// - `foo(...))` succeeds up to the first `)`, which is recognized as the closing paren
+// - `foo(` does not succeed, it is not balanced
+// - `foo)` does not succeed, it is not balanced
 export const scanBalancedParens = (input: string): string | undefined => {
     let adjustedStart = 0
     let balanced = 0
@@ -70,6 +76,10 @@ export const scanBalancedParens = (input: string): string | undefined => {
         } else if (current === ')') {
             balanced -= 1
             result.push(current)
+            if (balanced === 0) {
+                // we've reached a closing parenthesis where the string is balanced
+                break
+            }
         } else if (current === '\\') {
             if (input[adjustedStart] !== undefined) {
                 nextChar() // consume escaped

@@ -149,6 +149,8 @@ export function BarChart<Datum extends object>(props: BarChartProps<Datum>): Rea
                                 <MaybeLink
                                     key={`bar-${index}`}
                                     to={linkURLs?.[index]}
+                                    target="_blank"
+                                    rel="noopener"
                                     onClick={onDatumLinkClick}
                                     role={linkURLs?.[index] ? 'link' : 'graphics-dataunit'}
                                     aria-label={ariaLabel}

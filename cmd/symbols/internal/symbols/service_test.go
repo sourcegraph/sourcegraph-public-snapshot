@@ -11,8 +11,7 @@ import (
 	"reflect"
 	"testing"
 
-	ctags "github.com/sourcegraph/go-ctags"
-
+	"github.com/sourcegraph/go-ctags"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/sqliteutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"

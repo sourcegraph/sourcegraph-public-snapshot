@@ -12,7 +12,7 @@ import { isDefined } from '@sourcegraph/shared/src/util/types'
 
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
-import { DefaultIcon } from '../icons'
+import { DefaultExtensionIcon, DefaultSourcegraphExtensionIcon } from '../icons'
 
 import { extensionIDPrefix, extensionsQuery, urlToExtensionsQuery, validCategories } from './extension'
 import { ExtensionAreaRouteContext } from './ExtensionArea'
@@ -53,10 +53,9 @@ const RegistryExtensionOverviewIcon: React.FunctionComponent<Pick<Props, 'extens
     }
 
     if (manifest?.publisher === 'sourcegraph') {
-        return <DefaultIcon className="registry-extension-overview-page__icon mb-3" />
+        return <DefaultSourcegraphExtensionIcon className="registry-extension-overview-page__icon mb-3" />
     }
-
-    return null
+    return <DefaultExtensionIcon className="registry-extension-overview-page__icon mb-3" />
 }
 
 /** A page that displays overview information about a registry extension. */
@@ -108,7 +107,7 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<Props> = ({
                             {categories.map(category => (
                                 <li key={category} className="list-inline-item mb-2">
                                     <Link
-                                        to={urlToExtensionsQuery(extensionsQuery({ category }))}
+                                        to={urlToExtensionsQuery({ category })}
                                         className="btn btn-outline-secondary btn-sm"
                                     >
                                         {category}
@@ -128,7 +127,7 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<Props> = ({
                                 {extension.manifest.tags.map(tag => (
                                     <li key={tag} className="list-inline-item mb-2">
                                         <Link
-                                            to={urlToExtensionsQuery(extensionsQuery({ tag }))}
+                                            to={urlToExtensionsQuery({ query: extensionsQuery({ tag }) })}
                                             className="btn btn-outline-secondary btn-sm registry-extension-overview-page__tag"
                                         >
                                             {tag}

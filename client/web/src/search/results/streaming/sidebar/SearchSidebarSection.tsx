@@ -10,8 +10,9 @@ import styles from './SearchSidebarSection.module.scss'
 export const SearchSidebarSection: React.FunctionComponent<{
     header: string
     children?: React.ReactElement[]
+    className?: string
     showSearch?: boolean // Search only works if children are FilterLink
-}> = ({ header, children = [], showSearch = false }) => {
+}> = ({ header, children = [], className, showSearch = false }) => {
     const [filter, setFilter] = useState('')
 
     // Clear filter when children change
@@ -31,7 +32,7 @@ export const SearchSidebarSection: React.FunctionComponent<{
     const [collapsed, setCollapsed] = useState(false)
 
     return children.length > 0 ? (
-        <div>
+        <div className={className}>
             <button
                 type="button"
                 className={classNames('btn btn-outline-secondary', styles.sidebarSectionCollapseButton)}
@@ -39,7 +40,11 @@ export const SearchSidebarSection: React.FunctionComponent<{
                 aria-label={collapsed ? 'Expand' : 'Collapse'}
             >
                 <h5 className="flex-grow-1">{header}</h5>
-                {collapsed ? <ChevronLeftIcon className="icon-inline" /> : <ChevronDownIcon className="icon-inline" />}
+                {collapsed ? (
+                    <ChevronLeftIcon className="icon-inline mr-1" />
+                ) : (
+                    <ChevronDownIcon className="icon-inline mr-1" />
+                )}
             </button>
 
             <Collapse isOpen={!collapsed}>

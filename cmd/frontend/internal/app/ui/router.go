@@ -39,6 +39,7 @@ const (
 	routeRepoSettings   = "repo-settings"
 	routeRepoCommit     = "repo-commit"
 	routeRepoBranches   = "repo-branches"
+	routeRepoDocs       = "repo-docs"
 	routeRepoCommits    = "repo-commits"
 	routeRepoTags       = "repo-tags"
 	routeRepoCompare    = "repo-compare"
@@ -163,7 +164,7 @@ func newRouter() *mux.Router {
 
 	// Repogroup pages. Must mirror web/src/Layout.tsx
 	if envvar.SourcegraphDotComMode() {
-		repogroups := []string{"refactor-python2-to-3", "kubernetes", "golang", "react-hooks", "android", "stanford", "stackstorm"}
+		repogroups := []string{"refactor-python2-to-3", "kubernetes", "golang", "react-hooks", "android", "stanford", "stackstorm", "temporal"}
 		r.Path("/{Path:(?:" + strings.Join(repogroups, "|") + ")}").Methods("GET").Name(routeRepoGroups)
 		r.Path("/cncf").Methods("GET").Name(routeCncf)
 	}
@@ -181,6 +182,7 @@ func newRouter() *mux.Router {
 	repoRev := r.PathPrefix(repoRevPath + "/" + routevar.RepoPathDelim).Subrouter()
 	repoRev.Path("/tree{Path:.*}").Methods("GET").Name(routeTree)
 
+	repoRev.PathPrefix("/docs").Methods("GET").Name(routeRepoDocs)
 	repoRev.PathPrefix("/commits").Methods("GET").Name(routeRepoCommits)
 
 	// blob
@@ -241,6 +243,7 @@ func initRouter(db dbutil.DB, router *mux.Router) {
 	router.Get(routeRepoSettings).Handler(handler(serveBrandedPageString("Repository settings", nil)))
 	router.Get(routeRepoCommit).Handler(handler(serveBrandedPageString("Commit", nil)))
 	router.Get(routeRepoBranches).Handler(handler(serveBrandedPageString("Branches", nil)))
+	router.Get(routeRepoDocs).Handler(handler(serveBrandedPageString("API docs", nil)))
 	router.Get(routeRepoCommits).Handler(handler(serveBrandedPageString("Commits", nil)))
 	router.Get(routeRepoTags).Handler(handler(serveBrandedPageString("Tags", nil)))
 	router.Get(routeRepoCompare).Handler(handler(serveBrandedPageString("Compare", nil)))

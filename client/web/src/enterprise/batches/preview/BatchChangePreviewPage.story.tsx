@@ -63,6 +63,7 @@ const batchSpec = (): BatchSpecFields => ({
         totalCount: 0,
         nodes: [],
     },
+    originalInput: 'name: awesome-batch-change\ndescription: somestring',
     applyPreview: {
         stats: {
             close: 10,
@@ -79,6 +80,7 @@ const batchSpec = (): BatchSpecFields => ({
             modified: 10,
             removed: 3,
         },
+        totalCount: 18,
     },
 })
 
@@ -184,6 +186,27 @@ add('Missing credentials', () => (
                 expandChangesetDescriptions={true}
                 batchSpecID="123123"
                 fetchBatchSpecById={fetchBatchSpecMissingCredentials}
+                queryChangesetApplyPreview={queryChangesetApplyPreview}
+                queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
+                authenticatedUser={{
+                    url: '/users/alice',
+                    displayName: 'Alice',
+                    username: 'alice',
+                    email: 'alice@email.test',
+                }}
+            />
+        )}
+    </EnterpriseWebStory>
+))
+
+add('Spec file', () => (
+    <EnterpriseWebStory initialEntries={['/users/alice/batch-changes/awesome-batch-change?tab=spec']}>
+        {props => (
+            <BatchChangePreviewPage
+                {...props}
+                expandChangesetDescriptions={true}
+                batchSpecID="123123"
+                fetchBatchSpecById={fetchBatchSpecCreate}
                 queryChangesetApplyPreview={queryChangesetApplyPreview}
                 queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
                 authenticatedUser={{

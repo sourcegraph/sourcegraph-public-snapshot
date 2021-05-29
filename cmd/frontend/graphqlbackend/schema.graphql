@@ -111,18 +111,6 @@ type Mutation {
     """
     deleteExternalService(externalService: ID!): EmptyResponse!
     """
-    DEPRECATED: All repositories are accessible or deleted. To prevent a
-    repository from being accessed on Sourcegraph add it to the external
-    service exclude configuration. This mutation will be removed in 3.6.
-
-    Enables or disables a repository. A disabled repository is only accessible
-    to site admins and never appears in search results.
-
-    Only site admins may perform this mutation.
-    """
-    setRepositoryEnabled(repository: ID!, enabled: Boolean!): EmptyResponse
-        @deprecated(reason: "update external service exclude setting.")
-    """
     Tests the connection to a mirror repository's original source repository. This is an
     expensive and slow operation, so it should only be used for interactive diagnostics.
 
@@ -1198,15 +1186,13 @@ type Query {
         """
         query: String
         """
-        Specifies the filter type used to narrow down the search contexts using their namespaces. If not set,
-        search contexts are not filtered by namespace.
+        Include search contexts matching the provided namespaces. A union of all matching search contexts is returned.
+        ID can either be a user ID, org ID, or nil to match instance-level contexts. Empty namespaces list
+        defaults to returning all available search contexts.
+        Example: `namespaces: [user1, org1, org2, nil]` will return search contexts created by user1 + contexts
+        created by org1 + contexts created by org2 + all instance-level contexts.
         """
-        namespaceFilterType: SearchContextsNamespaceFilterType
-        """
-        Limit search contexts to a specific namespace (user or org). Namespace parameter has to be set if namespaceFilterType is set to NAMESPACE.
-        If namespaceFilterType is INSTANCE or not set, namespace should not be set.
-        """
-        namespace: ID
+        namespaces: [ID] = []
         """
         Sort field.
         """
@@ -1280,6 +1266,11 @@ type Query {
     the configured code hosts are able to see.
     """
     affiliatedRepositories(user: ID!, codeHost: ID, query: String): CodeHostRepositoryConnection!
+
+    """
+    Returns true if any of the code hosts supplied are syncing now or within "seconds" from now.
+    """
+    codeHostSyncDue(ids: [ID!]!, seconds: Int!): Boolean!
 
     """
     Retrieve all registered out-of-band migrations.
@@ -1484,10 +1475,6 @@ type Markdown {
 A search result. Every type of search result, except FileMatch, must implement this interface.
 """
 interface GenericSearchResultInterface {
-    """
-    DEPRECATED
-    """
-    icon: String! @deprecated(reason: "Our API will not support returning icons in a future release")
     """
     A markdown string that is rendered prominently.
     """
@@ -1784,10 +1771,6 @@ A search result that is a Git commit.
 """
 type CommitSearchResult implements GenericSearchResultInterface {
     """
-    DEPRECATED
-    """
-    icon: String! @deprecated(reason: "Our API will not support returning icons in a future release")
-    """
     A markdown string that is rendered prominently.
     """
     label: Markdown!
@@ -1954,6 +1937,14 @@ type ExternalService implements Node {
     The timestamp of the next sync job. Null if not scheduled for a re-sync.
     """
     nextSyncAt: DateTime
+
+    """
+    Returns a list of scopes granted by the code host. It is based on the token used
+    when configuring the external service.
+    NOTE: Currently only GitHub is supported and the request consumes rate limit tokens
+    so it should be used sparingly.
+    """
+    grantedScopes: [String!]!
 }
 
 """
@@ -2194,10 +2185,6 @@ type Repository implements Node & GenericSearchResultInterface {
     """
     viewerCanAdminister: Boolean!
     """
-    DEPRECATED
-    """
-    icon: String! @deprecated(reason: "Our API will not support returning icons in a future release")
-    """
     A markdown string that is rendered prominently.
     """
     label: Markdown!
@@ -2391,20 +2378,6 @@ type VersionContext {
 }
 
 """
-(experimental) Search context namespace filter types available to narrow down contexts when querying.
-"""
-enum SearchContextsNamespaceFilterType {
-    """
-    Limits available search contexts to instance-level contexts (without a namespace).
-    """
-    INSTANCE
-    """
-    Limits available search contexts to a specific namespace (user or org).
-    """
-    NAMESPACE
-}
-
-"""
 (experimental) A search context. Specifies a set of repositories to be searched.
 """
 type SearchContext implements Node {
@@ -2412,6 +2385,14 @@ type SearchContext implements Node {
     The unique id of the search context.
     """
     id: ID!
+    """
+    The name of the search context.
+    """
+    name: String!
+    """
+    The owner (user or org) of the search context. If nil, search context is considered instance-level.
+    """
+    namespace: Namespace
     """
     The description of the search context.
     """
@@ -2443,6 +2424,10 @@ type SearchContext implements Node {
     Date and time the search context was last updated.
     """
     updatedAt: DateTime!
+    """
+    If current viewer can manage (edit, delete) the search context.
+    """
+    viewerCanManage: Boolean!
 }
 
 """
@@ -3507,6 +3492,10 @@ type GitCommit implements Node {
         """
         recursive: Boolean = false
     ): GitTree
+    """
+    A list of file names in this repository.
+    """
+    fileNames: [String!]!
     """
     The Git blob in this commit at the given path.
     """

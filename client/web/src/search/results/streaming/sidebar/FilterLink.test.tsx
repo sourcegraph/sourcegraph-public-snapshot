@@ -45,7 +45,7 @@ describe('FilterLink', () => {
     const fileFilter: Filter = {
         label: '-file:_test\\.go$',
         value: '-file:_test\\.go$',
-        count: 1230,
+        count: 1,
         limitHit: false,
         kind: 'file',
     }

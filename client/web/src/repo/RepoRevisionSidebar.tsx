@@ -45,7 +45,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
         return (
             <button
                 type="button"
-                className="position-absolute btn btn-icon btn-link border-right border-bottom rounded-0 repo-revision-container__toggle"
+                className="position-absolute btn btn-icon btn-link border-right border-bottom repo-revision-container__toggle"
                 onClick={handleSidebarToggle}
                 data-tooltip="Show sidebar"
             >
@@ -60,7 +60,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
             handlePosition="right"
             storageKey={SIZE_STORAGE_KEY}
             element={
-                <div className={classnames('d-flex w-100 border-right', !isRedesignEnabled && 'bg-2')}>
+                <div className={classnames('d-flex w-100', !isRedesignEnabled && 'bg-2 border-right')}>
                     <Tabs
                         className="w-100 test-repo-revision-sidebar"
                         defaultIndex={tabIndex}
@@ -88,11 +88,11 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
                         <div
                             aria-hidden={true}
                             className={classnames(
-                                'd-flex repo-revision-container__tabpanels explorer overflow-auto',
+                                'd-flex repo-revision-container__tabpanels explorer',
                                 isRedesignEnabled && 'px-3'
                             )}
                         >
-                            <TabPanels className="w-100">
+                            <TabPanels className="w-100 overflow-auto">
                                 <TabPanel tabIndex={-1}>
                                     {tabIndex === 0 && (
                                         <Tree

@@ -19,11 +19,7 @@ import {
 import { UserAreaUserFields } from '../../graphql-operations'
 import { OrgAvatar } from '../../org/OrgAvatar'
 import { OnboardingTourProps } from '../../search'
-import {
-    HAS_SEEN_TOUR_KEY,
-    HAS_CANCELLED_TOUR_KEY,
-    HAS_COMPLETED_TOUR_KEY,
-} from '../../search/input/SearchOnboardingTour'
+import { HAS_CANCELLED_TOUR_KEY, HAS_COMPLETED_TOUR_KEY } from '../../search/input/SearchOnboardingTour'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 import { NavItemDescriptor } from '../../util/contributions'
 import { UserAreaRouteContext } from '../area/UserArea'
@@ -50,7 +46,6 @@ export interface UserSettingsSidebarProps extends UserAreaRouteContext, Onboardi
 }
 
 function reEnableSearchTour(): void {
-    localStorage.setItem(HAS_SEEN_TOUR_KEY, 'false')
     localStorage.setItem(HAS_CANCELLED_TOUR_KEY, 'false')
     localStorage.setItem(HAS_COMPLETED_TOUR_KEY, 'false')
 }

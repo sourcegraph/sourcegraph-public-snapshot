@@ -1,0 +1,19 @@
+// unsets the defaults; can probably go away with the redesign
+.batch-change-tabs {
+    .nav-link {
+        color: var(--link-color);
+    }
+
+    [data-reach-tab],
+    [data-reach-tab]:hover,
+    [data-reach-tab][data-selected] {
+        // stylelint-disable-next-line declaration-property-unit-whitelist
+        margin-bottom: -1px;
+        border-bottom: 0;
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+        font-weight: normal;
+        text-transform: none;
+        letter-spacing: normal;
+    }
+}

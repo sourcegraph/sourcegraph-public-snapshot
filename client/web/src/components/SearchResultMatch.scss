@@ -88,6 +88,10 @@
         padding-right: 0;
         color: var(--body-color);
 
+        .theme-redesign & {
+            padding: 0 0.5rem;
+        }
+
         table {
             margin-bottom: 0 !important; // Override docsite Markdown table CSS. A currently open PR removes that CSS and lets us remove this override.
         }

@@ -1,13 +1,9 @@
 import { ParentSize } from '@visx/responsive'
 import * as H from 'history'
-import React, { FunctionComponent, useMemo } from 'react'
+import React, { FunctionComponent, useCallback } from 'react'
 import { ChartContent } from 'sourcegraph'
 
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import {
-    createLinkClickHandler,
-    createProgrammaticLinkHandler,
-} from '@sourcegraph/shared/src/util/link-click-handler/linkClickHandler'
 
 import { BarChart } from './charts/bar/BarChart'
 import { LineChart } from './charts/line/LineChart'
@@ -33,31 +29,27 @@ export interface ChartViewContentProps {
  * Display chart content with different type of charts (line, bar, pie)
  */
 export const ChartViewContent: FunctionComponent<ChartViewContentProps> = props => {
-    const { content, className = '', history, viewID, telemetryService } = props
+    const { content, className = '', viewID, telemetryService } = props
 
-    const handleDatumLinkClick = useMemo(() => {
-        const nativeLinkHandler = createLinkClickHandler(history)
-
-        return (event: React.MouseEvent) => {
-            telemetryService.log('InsightDataPointClick', { insightType: getInsightTypeByViewId(viewID) })
-            nativeLinkHandler(event)
-        }
-    }, [viewID, telemetryService, history])
+    const handleDatumLinkClick = useCallback((): void => {
+        telemetryService.log('InsightDataPointClick', { insightType: getInsightTypeByViewId(viewID) })
+    }, [viewID, telemetryService])
 
     // Click link-zone handler for line chart only. Catch click around point and redirect user by
     // link which we've got from nearest datum point to user cursor position. This allows user
     // not to aim on small point on the chart and just click somewhere around the point.
-    const linkHandler = useMemo(() => {
-        const linkHandler = createProgrammaticLinkHandler(history)
-        return (event: DatumZoneClickEvent): void => {
+    const linkHandler = useCallback(
+        (event: DatumZoneClickEvent): void => {
             if (!event.link) {
                 return
             }
 
             telemetryService.log('InsightDataPointClick', { insightType: getInsightTypeByViewId(viewID) })
-            linkHandler(event.originEvent, event.link)
-        }
-    }, [history, viewID, telemetryService])
+
+            window.open(event.link, '_blank', 'noopener')?.focus()
+        },
+        [viewID, telemetryService]
+    )
 
     return (
         <div className={`chart-view-content ${className}`}>

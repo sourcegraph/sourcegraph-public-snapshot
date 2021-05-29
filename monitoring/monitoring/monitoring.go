@@ -559,7 +559,7 @@ func (o Observable) validate() error {
 		return errors.New("Owner must be defined")
 	}
 
-	allAlertsEmpty := (o.Warning.isEmpty() && o.Critical.isEmpty())
+	allAlertsEmpty := o.Warning.isEmpty() && o.Critical.isEmpty()
 	if allAlertsEmpty || o.NoAlert {
 		// Ensure lack of alerts is intentional
 		if allAlertsEmpty && !o.NoAlert {

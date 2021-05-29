@@ -1,0 +1,17 @@
+.bulk-operation-node {
+    &__progress-bar {
+        max-width: 200px;
+    }
+    &__divider {
+        border-left: 1px solid var(--border-color-2);
+        height: 2rem;
+    }
+    &__container {
+        + .bulk-operation-node__container {
+            border-top: 1px solid var(--border-color-2);
+        }
+    }
+    &__errors {
+        background-color: var(--body-bg);
+    }
+}

@@ -6,7 +6,6 @@ Array [
     activeClassName="test-case-sensitivity-toggle--active"
     caseSensitive={false}
     className="test-case-sensitivity-toggle"
-    copyQueryButton={false}
     disableOn={
       Array [
         Object {
@@ -82,7 +81,6 @@ Array [
     activeClassName="test-case-sensitivity-toggle--active"
     caseSensitive={false}
     className="test-case-sensitivity-toggle"
-    copyQueryButton={false}
     disableOn={
       Array [
         Object {
@@ -158,7 +156,6 @@ Array [
     activeClassName="test-regexp-toggle--active"
     caseSensitive={false}
     className="toggle-container__regexp-button test-regexp-toggle"
-    copyQueryButton={false}
     disableOn={
       Array [
         Object {

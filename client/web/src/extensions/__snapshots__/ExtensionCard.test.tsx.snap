@@ -2,71 +2,91 @@
 
 exports[`ExtensionCard renders 1`] = `
 <div
-  className="d-flex"
+  className="extension-card card position-relative flex-1"
 >
   <div
-    className="extension-card card position-relative flex-1"
+    className="card-body p-0 extension-card__body d-flex flex-column position-relative"
   >
     <div
-      className="extension-card__shadow rounded"
-    />
+      className="extension-card__background-section d-flex align-items-center blue"
+    >
+      <img
+        alt=""
+        className="extension-card__icon"
+        src="data:image/png,abcd"
+      />
+    </div>
     <div
-      className="card-body extension-card__body d-flex position-relative"
+      className="extension-card__details-section w-100 flex-grow-1"
     >
       <div
-        className="flex-shrink-0 mr-2"
+        className="mb-2"
       >
-        <img
-          alt=""
-          className="extension-card__icon"
-          src="data:image/png,abcd"
-        />
+        <h3
+          className="mb-0 mr-1 text-truncate flex-1"
+        >
+          <a
+            href="/extensions/x/y"
+            onClick={[Function]}
+          >
+            y
+          </a>
+        </h3>
+        <span>
+          by 
+          x
+        </span>
       </div>
       <div
-        className="text-truncate w-100"
+        className="mt-3 extension-card__description"
       >
-        <div
-          className="d-flex align-items-center"
+        <span
+          className=""
+        >
+          d
+        </span>
+      </div>
+    </div>
+    <div
+      className="extension-card__toggles-section d-flex flex-column align-items-end mt-1"
+    >
+      <div
+        className="px-1"
+      >
+        <span
+          className="text-muted small"
+        >
+          Disabled
+        </span>
+      </div>
+      <div
+        className="px-1 mt-2"
+      >
+        <span
+          className="text-muted"
+        >
+          Disabled
+           by default for all
+        </span>
+        <button
+          aria-checked={false}
+          className="toggle mx-2"
+          data-test="extension-toggle-x/y"
+          disabled={false}
+          onClick={[Function]}
+          role="switch"
+          title="Click to enable"
+          type="button"
+          value={0}
         >
           <span
-            className="mb-0 mr-1 text-truncate flex-1"
-          >
-            <a
-              className="font-weight-bold"
-              href="/extensions/x/y"
-              onClick={[Function]}
-            >
-              y
-            </a>
-            <span
-              className="text-muted"
-            >
-               
-              by
-               
-              <span
-                className=""
-              >
-                x
-              </span>
-            </span>
-          </span>
-        </div>
-        <div
-          className="mt-1"
-        >
-          <div
-            className="text-truncate"
-          >
-            d
-          </div>
-        </div>
+            className="toggle__bar"
+          />
+          <span
+            className="toggle__knob"
+          />
+        </button>
       </div>
-      <span
-        className="text-muted small"
-      >
-        Disabled
-      </span>
     </div>
   </div>
 </div>

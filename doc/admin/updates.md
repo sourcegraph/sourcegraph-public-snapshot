@@ -2,6 +2,9 @@
 
 ## Updating to a new version of Sourcegraph
 
+> :warning: **Regardless of your deployment type:** upgrade one version at a time, e.g. v3.26 --> v3.27 --> v3.28.
+> <br>(Note that patches, e.g. vX.X.4 vs. vX.X.5 do not have to be adopted when moving between vX.X versions)
+
 Please see the instructions for your deployment type:
 
 - [Single-container `sourcegraph/server` deployments](updates/server.md)

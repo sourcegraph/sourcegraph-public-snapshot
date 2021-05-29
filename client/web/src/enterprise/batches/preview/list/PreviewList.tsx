@@ -65,8 +65,6 @@ export const PreviewList: React.FunctionComponent<Props> = ({
 
     return (
         <>
-            <h3>Preview</h3>
-            <hr className="mb-3" />
             <PreviewFilterRow history={history} location={location} onFiltersChange={setFilters} />
             <FilteredConnection<ChangesetApplyPreviewFields, Omit<ChangesetApplyPreviewNodeProps, 'node'>>
                 className="mt-2"

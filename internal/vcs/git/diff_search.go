@@ -372,7 +372,6 @@ func rawShowSearch(ctx context.Context, repo api.RepoName, opt RawLogDiffSearchO
 	if hasPathFilters {
 		showArgs = append(showArgs, "--patch")
 	}
-	showArgs = append(showArgs, logDiffCommonArgs(opt)...)
 	if !isAllowedGitCmd(showArgs) {
 		return nil, false, fmt.Errorf("command failed: %q is not a allowed git command", showArgs)
 	}

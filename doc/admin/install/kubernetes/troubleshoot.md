@@ -1,7 +1,7 @@
 # Troubleshooting
 
 If Sourcegraph does not start up or shows unexpected behavior, there are a variety of ways you can determine the root
-cause of the failure. 
+cause of the failure.
 
 ## The most helpful commands:
 
@@ -95,7 +95,7 @@ Add `namespace: default` to the [base/cadvisor/cadvisor.ClusterRoleBinding.yaml]
 #### `error when creating "base/prometheus/prometheus.ClusterRoleBinding.yaml": subjects[0].namespace: Required value`
 Add `namespace: default` to the [base/prometheus/prometheus.ClusterRoleBinding.yaml](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/base/prometheus/prometheus.ClusterRoleBinding.yaml) file under `subjects`.
 
-#### Many pods are stuck in Pending status. 
+#### Many pods are stuck in Pending status.
 
 One thing to check for is insufficient resources. To obtain a dump of the logs: `kubectl cluster-info dump > dump.txt`
 
@@ -117,11 +117,11 @@ This indicates the instance is getting rate-limited by Docker Hub([link](https:/
 
 
 #### You can't access Sourcegraph.
-See the [Troubleshooting ingress-nginx docs](https://kubernetes.github.io/ingress-nginx/troubleshooting/). 
+See the [Troubleshooting ingress-nginx docs](https://kubernetes.github.io/ingress-nginx/troubleshooting/).
 If you followed our instructions, the namespace of the ingress-controller is `ingress-nginx`.
 
 
 
-Any other issues? Contact us at [@srcgraph](https://twitter.com/srcgraph)
+Any other issues? Contact us at [@sourcegraph](https://twitter.com/sourcegraph)
 or <mailto:support@sourcegraph.com>, or file issues on
 our [public issue tracker](https://github.com/sourcegraph/issues/issues).

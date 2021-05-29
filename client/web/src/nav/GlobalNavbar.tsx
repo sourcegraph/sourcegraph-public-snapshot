@@ -37,29 +37,29 @@ import {
     KEYBOARD_SHORTCUT_SWITCH_THEME,
 } from '../keyboardShortcuts/keyboardShortcuts'
 import { LayoutRouteProps } from '../routes'
+import { Settings } from '../schema/settings.schema'
 import { VersionContext } from '../schema/site.schema'
 import {
     PatternTypeProps,
     CaseSensitivityProps,
-    CopyQueryButtonProps,
     OnboardingTourProps,
     ParsedSearchQueryProps,
-    SearchContextProps,
     isSearchContextSpecAvailable,
     getGlobalSearchContextFilter,
+    SearchContextInputProps,
 } from '../search'
 import { QueryState } from '../search/helpers'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { ThemePreferenceProps } from '../theme'
+import { userExternalServicesEnabledFromTags } from '../user/settings/cloud-ga'
 import { UserSettingsSidebarItems } from '../user/settings/UserSettingsSidebar'
 import { showDotComMarketing } from '../util/features'
 
 import { NavLinks } from './NavLinks'
 import { ExtensionAlertAnimationProps, UserNavItem } from './UserNavItem'
-import { VersionContextDropdown } from './VersionContextDropdown'
 
 interface Props
-    extends SettingsCascadeProps,
+    extends SettingsCascadeProps<Settings>,
         PlatformContextProps,
         ExtensionsControllerProps,
         KeyboardShortcutsProps,
@@ -71,12 +71,8 @@ interface Props
         Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
         PatternTypeProps,
         CaseSensitivityProps,
-        CopyQueryButtonProps,
         VersionContextProps,
-        Omit<
-            SearchContextProps,
-            'convertVersionContextToSearchContext' | 'isSearchContextSpecAvailable' | 'fetchSearchContext'
-        >,
+        SearchContextInputProps,
         CodeMonitoringProps,
         OnboardingTourProps {
     history: H.History
@@ -123,9 +119,6 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     authRequired,
     showSearchBox,
     navbarSearchQueryState,
-    versionContext,
-    setVersionContext,
-    availableVersionContexts,
     caseSensitive,
     patternType,
     onNavbarQueryChange,
@@ -226,7 +219,6 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
             onChange={onNavbarQueryChange}
             location={location}
             history={history}
-            versionContext={versionContext}
             isLightTheme={isLightTheme}
             patternType={patternType}
             caseSensitive={caseSensitive}
@@ -310,13 +302,8 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                             />
                         </NavAction>
                         {props.authenticatedUser &&
-                            (window.context?.externalServicesUserModeEnabled ||
-                                props.authenticatedUser?.siteAdmin ||
-                                props.authenticatedUser?.tags?.some(
-                                    tag =>
-                                        tag === 'AllowUserExternalServicePublic' ||
-                                        tag === 'AllowUserExternalServicePrivate'
-                                )) && (
+                            (props.authenticatedUser.siteAdmin ||
+                                userExternalServicesEnabledFromTags(props.authenticatedUser.tags)) && (
                                 <NavAction>
                                     <StatusMessagesNavItem
                                         isSiteAdmin={props.authenticatedUser?.siteAdmin || false}
@@ -355,6 +342,13 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                                             props.settingsCascade.final?.['alerts.codeHostIntegrationMessaging']) ||
                                         'browser-extension'
                                     }
+                                    showRedesignToggle={
+                                        !isErrorLike(props.settingsCascade.final) &&
+                                        Boolean(
+                                            props.settingsCascade.final?.experimentalFeatures
+                                                ?.designRefreshToggleEnabled
+                                        )
+                                    }
                                     keyboardShortcutForSwitchTheme={KEYBOARD_SHORTCUT_SWITCH_THEME}
                                 />
                             </NavAction>
@@ -362,18 +356,8 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                     </NavActions>
                 </NavBar>
                 {showSearchBox && (
-                    <div className="d-flex w-100 flex-row px-3 py-2 border-bottom">
-                        <VersionContextDropdown
-                            history={history}
-                            navbarSearchQuery={navbarSearchQueryState.query}
-                            caseSensitive={caseSensitive}
-                            patternType={patternType}
-                            versionContext={versionContext}
-                            setVersionContext={setVersionContext}
-                            availableVersionContexts={availableVersionContexts}
-                            selectedSearchContextSpec={props.selectedSearchContextSpec}
-                        />
-                        {searchNavBar}
+                    <div className="w-100 px-3 py-2">
+                        <div className="pb-2 border-bottom">{searchNavBar}</div>
                     </div>
                 )}
             </>
@@ -411,16 +395,6 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                         <div className="flex-1" />
                     ) : (
                         <div className="global-navbar__search-box-container d-none d-sm-flex flex-row">
-                            <VersionContextDropdown
-                                history={history}
-                                navbarSearchQuery={navbarSearchQueryState.query}
-                                caseSensitive={caseSensitive}
-                                patternType={patternType}
-                                versionContext={versionContext}
-                                setVersionContext={setVersionContext}
-                                availableVersionContexts={availableVersionContexts}
-                                selectedSearchContextSpec={props.selectedSearchContextSpec}
-                            />
                             {searchNavBar}
                         </div>
                     )}

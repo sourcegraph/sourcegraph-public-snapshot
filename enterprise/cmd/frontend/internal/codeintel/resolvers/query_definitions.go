@@ -80,7 +80,7 @@ func (r *queryResolver) Definitions(ctx context.Context, line, character int) (_
 
 	// Determine the set of uploads over which we need to perform a moniker search. This will
 	// include all all indexes which define one of the ordered monikers. This should not include
-	// any of the indexes we have already performed an LSIF graph traversal in.
+	// any of the indexes we have already performed an LSIF graph traversal in above.
 	uploads, err := r.definitionUploads(ctx, orderedMonikers)
 	if err != nil {
 		return nil, err

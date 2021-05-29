@@ -6,7 +6,10 @@ import ArrowExpandDownIcon from 'mdi-react/ArrowExpandDownIcon'
 import ArrowExpandVerticalIcon from 'mdi-react/ArrowExpandVerticalIcon'
 import DownloadIcon from 'mdi-react/DownloadIcon'
 import FormatQuoteOpenIcon from 'mdi-react/FormatQuoteOpenIcon'
-import React, { useMemo } from 'react'
+import MenuDownIcon from 'mdi-react/MenuDownIcon'
+import MenuIcon from 'mdi-react/MenuIcon'
+import MenuUpIcon from 'mdi-react/MenuUpIcon'
+import React, { useMemo, useState } from 'react'
 
 import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
 import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
@@ -50,6 +53,8 @@ export interface SearchResultsInfoBarProps
     className?: string
 
     stats: JSX.Element
+
+    onShowFiltersChanged?: (show: boolean) => void
 }
 
 /**
@@ -141,13 +146,41 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
 
     const extraContext = useMemo(() => ({ searchQuery: props.query || null }), [props.query])
 
+    const [showFilters, setShowFilters] = useState(false)
+    const onShowFiltersClicked = (): void => {
+        const newShowFilters = !showFilters
+        setShowFilters(newShowFilters)
+        props.onShowFiltersChanged?.(newShowFilters)
+    }
+
     return (
         <div className={classNames(props.className, 'search-results-info-bar')} data-testid="results-info-bar">
             <div className="search-results-info-bar__row">
+                {isRedesignEnabled && (
+                    <button
+                        type="button"
+                        className={classNames(
+                            'btn btn-sm btn-outline-secondary d-flex d-lg-none',
+                            showFilters && 'active'
+                        )}
+                        aria-pressed={showFilters}
+                        onClick={onShowFiltersClicked}
+                    >
+                        <MenuIcon className="icon-inline mr-1" />
+                        Filters
+                        {showFilters ? (
+                            <MenuUpIcon className="icon-inline" />
+                        ) : (
+                            <MenuDownIcon className="icon-inline" />
+                        )}
+                    </button>
+                )}
                 {props.stats}
                 <QuotesInterpretedLiterallyNotice {...props} />
 
-                <ul className="nav align-items-center justify-content-end">
+                <div className="search-results-info-bar__expander" />
+
+                <ul className={classNames('nav align-items-center', !isRedesignEnabled && 'justify-content-end')}>
                     <ActionsNavItems
                         {...props}
                         extraContext={extraContext}

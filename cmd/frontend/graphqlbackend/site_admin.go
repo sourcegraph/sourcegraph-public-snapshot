@@ -18,7 +18,7 @@ func (r *schemaResolver) DeleteUser(ctx context.Context, args *struct {
 	Hard *bool
 }) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only site admins can delete users.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -101,7 +101,7 @@ func (r *schemaResolver) DeleteOrganization(ctx context.Context, args *struct {
 	Organization graphql.ID
 }) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only site admins can delete orgs.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -122,7 +122,7 @@ func (r *schemaResolver) SetUserIsSiteAdmin(ctx context.Context, args *struct {
 }) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only site admins can promote other users to site admin (or demote from site
 	// admin).
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -149,7 +149,7 @@ func (r *schemaResolver) InvalidateSessionsByID(ctx context.Context, args *struc
 	UserID graphql.ID
 }) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only the site admin can invalidate the sessions of a user
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 	userID, err := UnmarshalUserID(args.UserID)

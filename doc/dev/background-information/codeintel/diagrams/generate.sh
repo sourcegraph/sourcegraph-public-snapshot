@@ -10,7 +10,6 @@ declare mermaid_diagrams=(
   extension-references
   hover
   references
-  resolve-page
   upload
 )
 

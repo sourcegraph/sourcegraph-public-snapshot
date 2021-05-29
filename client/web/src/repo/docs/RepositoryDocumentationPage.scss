@@ -1,0 +1,31 @@
+.repository-docs-page {
+    width: 100%;
+    display: flex;
+    overflow: hidden;
+    &__sidebar {
+        padding: 1rem;
+    }
+    &__container {
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        overflow: auto;
+        width: 100%;
+        padding: 1rem;
+        &--sidebar-visible {
+            justify-content: unset;
+        }
+        &-content {
+            width: 60rem;
+        }
+    }
+    a.h1,
+    a.h2,
+    a.h3,
+    a.h4,
+    a.h5,
+    a.h6 {
+        display: inline-block;
+        margin-top: 1rem;
+    }
+}

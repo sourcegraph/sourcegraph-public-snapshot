@@ -93,7 +93,7 @@ func summary(ctx context.Context, args []string) error {
 	return nil
 }
 
-// summaryTraverse returns a set of packages related to teh given package via the given
+// summaryTraverse returns a set of packages related to the given package via the given
 // relation. Each package is returned with a boolean value indicating whether or not the
 // relation is direct (true) or transitive (false).k
 func summaryTraverse(pkg string, relation map[string][]string) map[string]bool {

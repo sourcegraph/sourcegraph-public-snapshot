@@ -89,7 +89,7 @@ func (s *IndexScheduler) Handle(ctx context.Context) error {
 
 	var queueErr error
 	for _, repositoryID := range deduplicateRepositoryIDs(configuredRepositoryIDs, indexableRepositoryIDs) {
-		if err := s.indexEnqueuer.QueueIndex(ctx, repositoryID); err != nil {
+		if err := s.indexEnqueuer.QueueIndexesForRepository(ctx, repositoryID); err != nil {
 			if isRepoNotExist(err) {
 				continue
 			}

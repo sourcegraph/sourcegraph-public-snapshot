@@ -21,6 +21,10 @@
             background-color: var(--link-hover-bg-color);
         }
 
+        .theme-redesign & {
+            color: var(--icon-color);
+        }
+
         &--disabled {
             visibility: hidden;
             width: 0;

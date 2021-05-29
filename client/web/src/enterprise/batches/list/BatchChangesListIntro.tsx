@@ -13,43 +13,36 @@ export interface BatchChangesListIntroProps {
 }
 
 export const BatchChangesListIntro: React.FunctionComponent<BatchChangesListIntroProps> = ({ licensed }) => (
-    <>
-        <div className="row">
+    <div className="row mb-2">
+        {licensed === true ? (
             <div className="col-12">
-                <BatchChangesRenameAlert />
+                <BatchChangesChangelogAlert />
             </div>
-        </div>
-        <div className="row mb-2">
-            {licensed === true ? (
-                <div className="col-12">
-                    <BatchChangesChangelogAlert />
-                </div>
-            ) : (
-                <>
-                    {licensed === false && (
-                        <>
-                            <div className="col-12 col-md-6">
-                                <BatchChangesUnlicensedAlert />
-                            </div>
-                            <div className="col-12 col-md-6">
-                                <BatchChangesChangelogAlert />
-                            </div>
-                        </>
-                    )}
-                </>
-            )}
-        </div>
-    </>
+        ) : (
+            <>
+                {licensed === false && (
+                    <>
+                        <div className="col-12 col-md-6">
+                            <BatchChangesUnlicensedAlert />
+                        </div>
+                        <div className="col-12 col-md-6">
+                            <BatchChangesChangelogAlert />
+                        </div>
+                    </>
+                )}
+            </>
+        )}
+    </div>
 )
 
 const BatchChangesChangelogAlert: React.FunctionComponent = () => (
     <DismissibleAlert
         className={styles.batchChangesListIntroAlert}
-        partialStorageKey="batch-changes-list-intro-changelog-3.27"
+        partialStorageKey="batch-changes-list-intro-changelog-3.28"
     >
         <div className={classNames(styles.batchChangesListIntroCard, 'card h-100 p-2')}>
             <div className="card-body">
-                <h4>New Batch Changes features in version 3.27</h4>
+                <h4>New Batch Changes features in version 3.28</h4>
                 <ul className="text-muted mb-0 pl-3">
                     <li>
                         <WarningIcon className="icon-inline text-warning" /> <strong>Deprecation:</strong> Starting with
@@ -61,50 +54,31 @@ const BatchChangesChangelogAlert: React.FunctionComponent = () => (
                 </ul>
                 <ul className="text-muted mb-0 pl-3">
                     <li>
-                        Site admins can now configure a global service account to be used when creating and updating
-                        changesets on code hosts and the user has no credential configured.
+                        Commenting on changesets{' '}
+                        <Link to="https://docs.sourcegraph.com/batch_changes/how-tos/bulk_operations_on_changesets">
+                            is now supported
+                        </Link>
+                        .
                     </li>
                 </ul>
                 <ul className="text-muted mb-0 pl-3">
                     <li>
-                        The site configuration now supports defining batch change rollout windows, which can be used to
-                        slow or disable pushing changesets at particular times of day or days of the week.
+                        Steps in batch specs can be run conditionally using{' '}
+                        <Link to="https://docs.sourcegraph.com/batch_changes/references/batch_spec_yaml_reference#steps-if">
+                            the `if:` property
+                        </Link>
+                        .
                     </li>
-                </ul>
-                <ul className="text-muted mb-0 pl-3">
-                    <li>Changesets will now be archived by default when not part of a batch change anymore.</li>
                 </ul>
                 <ul className="text-muted mb-0 pl-3">
                     <li>
-                        Ignore repositories in batch changes with{' '}
-                        <a
-                            href="https://docs.sourcegraph.com/batch_changes/how-tos/opting_out_of_batch_changes"
-                            target="_blank"
-                            rel="noopener"
-                        >
-                            <span className="text-monospace">.batchignore</span>
-                        </a>{' '}
-                        files.
+                        User and site credentials can be encrypted in the database by adding a key to{' '}
+                        <Link to="https://docs.sourcegraph.com/admin/config/encryption">
+                            the `batchChangesCredentialKey` property
+                        </Link>{' '}
+                        of `encryption.keys` in the site configuration.
                     </li>
                 </ul>
-            </div>
-        </div>
-    </DismissibleAlert>
-)
-
-const BatchChangesRenameAlert: React.FunctionComponent = () => (
-    <DismissibleAlert
-        className={classNames(styles.batchChangesListIntroAlert, 'mb-4')}
-        partialStorageKey="batch-changes-list-intro-rename"
-    >
-        <div className={classNames(styles.batchChangesListIntroCard, 'card h-100 p-2')}>
-            <div className="card-body">
-                <h4>Campaigns is now Batch Changes</h4>
-                <p className="text-muted mb-0">
-                    Campaigns was renamed to Sourcegraph Batch Changes in version 3.26. If you were already using it
-                    under the previous name (campaigns), backwards compatibility has been preserved.{' '}
-                    <a href="https://docs.sourcegraph.com/batch_changes/references/name-change">Read more.</a>
-                </p>
             </div>
         </div>
     </DismissibleAlert>

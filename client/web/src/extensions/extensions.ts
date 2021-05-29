@@ -1,12 +1,13 @@
 import {
     ConfiguredRegistryExtension,
-    toConfiguredRegistryExtension,
     isExtensionEnabled,
+    toConfiguredRegistryExtension,
 } from '@sourcegraph/shared/src/extensions/extension'
 import { ExtensionCategory, EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { createRecord } from '@sourcegraph/shared/src/util/createRecord'
-import { isErrorLike, ErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { isDefined } from '@sourcegraph/shared/src/util/types'
 
 import { RegistryExtensionFieldsForList } from '../graphql-operations'
 
@@ -84,52 +85,55 @@ export function configureExtensionRegistry(
     return { extensions, extensionIDsByCategory }
 }
 
-/** Groups extensions by category */
-export function applyCategoryFilter(
-    extensionIDsByCategory: ConfiguredExtensionRegistry['extensionIDsByCategory'],
-    categories: ExtensionCategory[],
-    selectedCategories: ExtensionCategory[]
-): Record<ExtensionCategory, string[]> {
-    if (selectedCategories.length === 0) {
-        // Primary categories
-        return createRecord(categories, category => [...extensionIDsByCategory[category].primaryExtensionIDs])
+/**
+ * Removes extensions that do not satify the enablement filter.
+ *
+ * For example, if the user wants to see only enabled extensions, remove disabled extensions.
+ */
+export function applyEnablementFilter(
+    extensionIDs: string[],
+    enablementFilter: ExtensionsEnablement,
+    settings: Settings | ErrorLike | null
+): string[] {
+    if (enablementFilter === 'all') {
+        return extensionIDs
     }
 
-    // Categorize in toggle order, make sure the same extension doesn't appear twice.
-    const filteredCategorizedExtensions = createRecord<ExtensionCategory, string[]>(selectedCategories, () => [])
+    return extensionIDs.filter(extensionID => {
+        const showEnabled = enablementFilter === 'enabled'
+        const isEnabled = isExtensionEnabled(settings, extensionID)
 
-    // To "blacklist" extension ID after it has been used
-    const takenIDs = new Set<string>()
-
-    for (const category of selectedCategories) {
-        for (const extensionID of extensionIDsByCategory[category].allExtensionIDs) {
-            if (!takenIDs.has(extensionID)) {
-                filteredCategorizedExtensions[category].push(extensionID)
-
-                takenIDs.add(extensionID)
-            }
-        }
-    }
-
-    return filteredCategorizedExtensions
+        return showEnabled === isEnabled
+    })
 }
 
 /**
- * Filters categorized registry extensions by enablement (enabled | disabled | all)
+ * Removes extensions that do not satisfy the WIP/experimental filter.
+ *
+ * For example, if the user does not want to see experimental extensions,
+ * remove all extensions where WIP === true.
  */
-export function applyExtensionsEnablement(
-    categorizedExtensions: Record<ExtensionCategory, string[]>,
-    filteredCategoryIDs: ExtensionCategory[],
-    enablement: ExtensionsEnablement,
-    settings: Settings | ErrorLike | null
-): Record<ExtensionCategory, string[]> {
-    if (enablement === 'all') {
-        return categorizedExtensions
+export function applyWIPFilter(
+    extensionIDs: string[],
+    wipFilter: boolean,
+    extensions: ConfiguredRegistryExtensions
+): string[] {
+    if (wipFilter === true) {
+        return extensionIDs
     }
 
-    return createRecord(filteredCategoryIDs, category =>
-        categorizedExtensions[category].filter(
-            extensionID => (enablement === 'enabled') === isExtensionEnabled(settings, extensionID)
-        )
-    )
+    return extensionIDs.filter(extensionID => {
+        const extension = extensions[extensionID]
+        if (!extension) {
+            return false // Shouldn't be reached
+        }
+
+        if (extension.manifest && !isErrorLike(extension.manifest) && isDefined(extension.manifest.wip)) {
+            return !extension.manifest.wip // Don't include WIP extensions
+        }
+
+        // Don't filter it out if we don't have enough information to determine
+        // that the extension is WIP.
+        return true
+    })
 }

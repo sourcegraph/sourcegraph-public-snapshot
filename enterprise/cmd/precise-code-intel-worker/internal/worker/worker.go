@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -18,7 +17,7 @@ func NewWorker(
 	lsifStore LSIFStore,
 	uploadStore uploadstore.Store,
 	gitserverClient GitserverClient,
-	enqueuer enqueuer.Enqueuer,
+	enqueuer IndexEnqueuer,
 	pollInterval time.Duration,
 	numProcessorRoutines int,
 	budgetMax int64,

@@ -28,7 +28,7 @@ func Postgres() *monitoring.Container {
 						Name:              "connections",
 						Description:       "active connections",
 						Owner:             monitoring.ObservableOwnerCoreApplication,
-						Query:             `sum by (datname) (pg_stat_activity_count{datname!~"template.*|postgres|cloudsqladmin"})`,
+						Query:             `sum by (job) (pg_stat_activity_count{datname!~"template.*|postgres|cloudsqladmin"})`,
 						Panel:             monitoring.Panel().LegendFormat("{{datname}}"),
 						Warning:           monitoring.Alert().LessOrEqual(5, nil).For(5 * time.Minute),
 						PossibleSolutions: "none",

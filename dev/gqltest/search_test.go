@@ -109,6 +109,20 @@ func testSearchClient(t *testing.T, client searchClient) {
 	// Temporary test until we have equivalence.
 	_, isStreaming := client.(*gqltestutil.SearchStreamClient)
 
+	const (
+		skipStream = 1 << iota
+		skipGraphQL
+	)
+	doSkip := func(t *testing.T, skip int) {
+		t.Helper()
+		if skip&skipStream != 0 && isStreaming {
+			t.Skip("does not support streaming")
+		}
+		if skip&skipGraphQL != 0 && !isStreaming {
+			t.Skip("does not support graphql")
+		}
+	}
+
 	t.Run("visibility", func(t *testing.T) {
 		tests := []struct {
 			query       string
@@ -341,6 +355,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 			zeroResult    bool
 			minMatchCount int64
 			wantAlert     *gqltestutil.SearchAlert
+			skip          int
 		}{
 			// Global search
 			{
@@ -355,6 +370,18 @@ func testSearchClient(t *testing.T, client searchClient) {
 				name:          "something with more than 1000 results and use count:1000",
 				query:         ". count:1000",
 				minMatchCount: 1000,
+			},
+			{
+				name:          "default limit streaming",
+				query:         ".",
+				minMatchCount: 500,
+				skip:          skipGraphQL,
+			},
+			{
+				name:          "default limit graphql",
+				query:         ".",
+				minMatchCount: 30,
+				skip:          skipStream,
 			},
 			{
 				name:  "regular expression without indexed search",
@@ -490,6 +517,8 @@ func testSearchClient(t *testing.T, client searchClient) {
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
+				doSkip(t, test.skip)
+
 				results, err := client.SearchFiles(test.query)
 				if err != nil {
 					t.Fatal(err)
@@ -834,7 +863,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 			zeroResult      bool
 			exactMatchCount int64
 			wantAlert       *gqltestutil.SearchAlert
-			skipStream      bool
+			skip            int
 		}{
 			{
 				name:  `Or distributive property on content and file`,
@@ -875,14 +904,12 @@ func testSearchClient(t *testing.T, client searchClient) {
 				name:            `Or distributive property on commits deduplicates and merges`,
 				query:           `repo:^github\.com/sgtest/go-diff$ type:commit (message:add or message:file)`,
 				exactMatchCount: 21,
-				skipStream:      true,
+				skip:            skipStream,
 			},
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
-				if test.skipStream && isStreaming {
-					t.Skip("streaming not supported yet")
-				}
+				doSkip(t, test.skip)
 
 				results, err := client.SearchFiles(test.query)
 				if err != nil {
@@ -1110,6 +1137,12 @@ func testSearchClient(t *testing.T, client searchClient) {
 			{
 				name:   `search diffs with file start anchor`,
 				query:  `repo:go-diff patterntype:literal type:diff file:^README.md$ installing`,
+				counts: counts{Commit: 1},
+			},
+			{
+				// https://github.com/sourcegraph/sourcegraph/issues/21031
+				name:   `search diffs with file filter and time filters`,
+				query:  `repo:go-diff patterntype:literal type:diff lang:go before:"May 10 2020" after:"May 5 2020" unquotedOrigName`,
 				counts: counts{Commit: 1},
 			},
 			{

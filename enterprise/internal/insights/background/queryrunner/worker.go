@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
@@ -28,9 +30,15 @@ import (
 // results into the code insights database.
 func NewWorker(ctx context.Context, workerBaseStore *basestore.Store, insightsStore *store.Store, metrics workerutil.WorkerMetrics) *workerutil.Worker {
 	workerStore := createDBWorkerStore(workerBaseStore)
+
+	numHandlers := conf.Get().InsightsQueryWorkerConcurrency
+	if numHandlers <= 0 {
+		numHandlers = 1
+	}
+
 	options := workerutil.WorkerOptions{
 		Name:        "insights_query_runner_worker",
-		NumHandlers: 1,
+		NumHandlers: numHandlers,
 		Interval:    5 * time.Second,
 		Metrics:     metrics,
 	}

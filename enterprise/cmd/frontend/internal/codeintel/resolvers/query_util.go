@@ -167,9 +167,10 @@ func (r *queryResolver) adjustLocations(ctx context.Context, uploadsByID map[int
 }
 
 // adjustLocation translates a location (relative to the indexed commit) into an equivalent location in
-// the requested commit.
+// the requested commit. If the translation fails, then the original commit and range are used as the
+// commit and range of the adjusted location.
 func (r *queryResolver) adjustLocation(ctx context.Context, dump store.Dump, location lsifstore.Location) (AdjustedLocation, error) {
-	adjustedCommit, adjustedRange, err := r.adjustRange(ctx, dump.RepositoryID, dump.Commit, dump.Root+location.Path, location.Range)
+	adjustedCommit, adjustedRange, _, err := r.adjustRange(ctx, dump.RepositoryID, dump.Commit, dump.Root+location.Path, location.Range)
 	if err != nil {
 		return AdjustedLocation{}, err
 	}
@@ -183,20 +184,21 @@ func (r *queryResolver) adjustLocation(ctx context.Context, dump store.Dump, loc
 }
 
 // adjustRange translates a range (relative to the indexed commit) into an equivalent range in the requested
-// commit.
-func (r *queryResolver) adjustRange(ctx context.Context, repositoryID int, commit, path string, rn lsifstore.Range) (string, lsifstore.Range, error) {
+// commit. If the translation fails, then the original commit and range are returned along with a false-valued
+// flag.
+func (r *queryResolver) adjustRange(ctx context.Context, repositoryID int, commit, path string, rn lsifstore.Range) (string, lsifstore.Range, bool, error) {
 	if repositoryID != r.repositoryID {
 		// No diffs between distinct repositories
-		return commit, rn, nil
+		return commit, rn, true, nil
 	}
 
 	if _, adjustedRange, ok, err := r.positionAdjuster.AdjustRange(ctx, commit, path, rn, true); err != nil {
-		return "", lsifstore.Range{}, errors.Wrap(err, "positionAdjuster.AdjustRange")
+		return "", lsifstore.Range{}, false, errors.Wrap(err, "positionAdjuster.AdjustRange")
 	} else if ok {
-		return r.commit, adjustedRange, nil
+		return r.commit, adjustedRange, true, nil
 	}
 
-	return commit, rn, nil
+	return commit, rn, false, nil
 }
 
 // filterUploadsWithCommits removes the uploads for commits which are unknown to gitserver from the given

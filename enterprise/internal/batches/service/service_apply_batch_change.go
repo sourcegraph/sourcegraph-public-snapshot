@@ -60,7 +60,7 @@ func (s *Service) ApplyBatchChange(ctx context.Context, opts ApplyBatchChangeOpt
 	}
 
 	// 🚨 SECURITY: Only site-admins or the creator of batchSpec can apply it.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, batchSpec.UserID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, s.store.DB(), batchSpec.UserID); err != nil {
 		return nil, err
 	}
 

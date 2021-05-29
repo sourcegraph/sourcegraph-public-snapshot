@@ -1,45 +1,71 @@
 @import '../../../branded/src/components/Toggle.scss';
 
 .extension-card {
+    &__background-section {
+        height: 4.25rem;
+        position: relative;
+
+        // To manipulate opacity of hex color without affecting children
+        &::before {
+            // Fallback that shouldn't be reached. `<ExtensionCard>` should apply
+            // colors from "./ExtensionHeader.module.scss"
+            background-color: var(--oc-indigo-3);
+            opacity: 0.1;
+            height: 100%;
+            width: 100%;
+            content: '';
+
+            .theme-dark & {
+                opacity: 0.15;
+            }
+        }
+    }
+
     &__icon {
         width: 3rem;
         height: 3rem;
         object-fit: contain;
+
+        position: absolute;
+        left: 0;
+        margin-left: 0.75rem;
+    }
+
+    &__badge {
+        position: absolute;
+        right: 0;
+        top: 0;
+        margin: 0.75rem;
+    }
+
+    &__details-section {
+        padding: 0.5rem 0.75rem 0.75rem;
+    }
+
+    &__toggles-section {
+        border-top: 1px solid var(--border-color-2);
+        padding: 0.75rem 0;
     }
 
     &__footer {
         background: unset;
     }
 
+    &__description {
+        // Truncation for multiple lines
+        // stylelint-disable-next-line value-no-vendor-prefix
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+
+        &--featured {
+            -webkit-line-clamp: 3;
+        }
+    }
+
     &--enabled {
-        .theme-light & {
-            background-color: rgba($success, 0.2);
-        }
-        .theme-dark & {
-            background-color: rgba($success, 0.2);
-        }
-    }
-
-    &__shadow {
-        position: absolute;
-        top: 0;
-        right: 0;
-        bottom: 0;
-        left: 0;
-
-        opacity: 0;
-        transition: opacity 500ms;
-
-        .theme-light & {
-            box-shadow: 0 0 0 6px rgba($success, 0.7);
-        }
-        .theme-dark & {
-            box-shadow: 0 0 0 6px rgba($success, 0.7);
-        }
-    }
-
-    &__shadow--show {
-        opacity: 1;
+        animation: extension-card__glow 2s ease-out;
     }
 
     &__logo {
@@ -47,12 +73,37 @@
         flex: 0 0 auto;
     }
 
-    &__disabled-feedback {
+    &__alert {
         position: absolute;
         top: -1.625rem;
         // feedback is centered on top of toggle, so right is pr (0.5rem) + 50% of toggle width
         right: 0.5rem + ($toggle-width / 2);
         transform: translateX(50%);
         z-index: 1;
+    }
+}
+
+// 2 second glow after enabling extension.
+@keyframes extension-card__glow {
+    0% {
+        box-shadow: none;
+    }
+
+    // 300ms delay. We could use `animation-delay`, but the
+    // percentages are cleaner with 2s vs 1.7s.
+    15% {
+        box-shadow: none;
+    }
+
+    40% {
+        box-shadow: 0 0 0 6px rgba($success, 0.17);
+    }
+
+    75% {
+        box-shadow: 0 0 0 6px rgba($success, 0.17);
+    }
+
+    100% {
+        box-shadow: none;
     }
 }

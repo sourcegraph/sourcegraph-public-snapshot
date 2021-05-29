@@ -57,6 +57,7 @@ const config = {
     require.resolve('abort-controller/polyfill'),
     path.join(__dirname, 'client/shared/dev/fetch'),
     path.join(__dirname, 'client/shared/dev/setLinkComponentForTest.ts'),
+    path.join(__dirname, 'client/shared/dev/mockUniqueId.ts'),
     // Enzyme setup file
     path.join(__dirname, 'client/shared/dev/enzymeSetup.js'),
   ],

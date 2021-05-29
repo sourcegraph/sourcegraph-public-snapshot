@@ -31,12 +31,14 @@ type BulkOperation struct {
 	ID string
 	// DBID is only used internally for pagination. Don't make any assumptions
 	// about this field.
-	DBID       int64
-	Type       ChangesetJobType
-	State      BulkOperationState
-	Progress   float64
-	CreatedAt  time.Time
-	FinishedAt time.Time
+	DBID           int64
+	Type           ChangesetJobType
+	State          BulkOperationState
+	Progress       float64
+	UserID         int32
+	ChangesetCount int32
+	CreatedAt      time.Time
+	FinishedAt     time.Time
 }
 
 // BulkOperationError represents an error on a changeset that occurred within a bulk

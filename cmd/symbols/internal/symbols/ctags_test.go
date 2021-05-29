@@ -6,7 +6,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	ctags "github.com/sourcegraph/go-ctags"
+
+	"github.com/sourcegraph/go-ctags"
 )
 
 func TestParser(t *testing.T) {

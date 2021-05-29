@@ -53,6 +53,7 @@ type LSIFStore interface {
 	WriteResultChunks(ctx context.Context, bundleID int, resultChunks chan semantic.IndexedResultChunkData) error
 	WriteDefinitions(ctx context.Context, bundleID int, monikerLocations chan semantic.MonikerLocations) error
 	WriteReferences(ctx context.Context, bundleID int, monikerLocations chan semantic.MonikerLocations) error
+	WriteDocumentationPages(ctx context.Context, bundleID int, documentation chan *semantic.DocumentationPageData) error
 }
 
 type LSIFStoreShim struct {
@@ -72,4 +73,8 @@ type GitserverClient interface {
 	DirectoryChildren(ctx context.Context, repositoryID int, commit string, dirnames []string) (map[string][]string, error)
 	CommitDate(ctx context.Context, repositoryID int, commit string) (time.Time, error)
 	ResolveRevision(ctx context.Context, repositoryID int, versionString string) (api.CommitID, error)
+}
+
+type IndexEnqueuer interface {
+	QueueIndexesForPackage(ctx context.Context, pkg semantic.Package) error
 }

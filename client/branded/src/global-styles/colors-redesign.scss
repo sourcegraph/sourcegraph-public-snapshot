@@ -69,7 +69,7 @@ $theme-colors-redesign: (
     --warning-2: #fbd999;
     --danger: var(--red);
     --danger-2: #e9aaaa;
-    --merged: var(--purple);
+    --merged: #7048e8;
     --merged-2: #c6b6f6;
     --merged-3: #6b47d6;
     --light-text: var(--white);
@@ -104,9 +104,10 @@ $theme-colors-redesign: (
     --color-bg-1: var(--white);
     --color-bg-2: var(--gray-03);
     --color-bg-3: var(--gray-04);
-    --mark-bg: rgba(255, 218, 30, 0.5);
+    --mark-bg: #f8e688;
     --merged-4: #eee9fd;
     --text-muted: var(--gray-07);
+    --text-disabled: var(--gray-05);
     --link-color: var(--primary);
     --link-color-2: #0766cc;
     --link-active-color: #0c7bf0;
@@ -122,6 +123,7 @@ $theme-colors-redesign: (
     --code-bg: var(--white);
     --intel-bg: var(--white);
     --subtle-bg: var(--gray-02);
+    --search-input-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 
     // TODO: Remove from use, replace with the variables referenced here.
     // Issue: https://github.com/sourcegraph/sourcegraph/issues/19973
@@ -152,9 +154,10 @@ $theme-colors-redesign: (
     --color-bg-1: var(--gray-11);
     --color-bg-2: var(--gray-10);
     --color-bg-3: var(--gray-08);
-    --mark-bg: rgba(16, 104, 2, 0.5);
+    --mark-bg: #7a341e;
     --merged-4: #1f0a5c;
     --text-muted: var(--gray-05);
+    --text-disabled: var(--gray-07);
     --link-color: #4393e7;
     --link-color-2: #70b0f3;
     --link-active-color: #489ffa;
@@ -170,6 +173,7 @@ $theme-colors-redesign: (
     --code-bg: var(--gray-10);
     --intel-bg: var(--gray-12);
     --subtle-bg: var(--gray-09);
+    --search-input-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
 
     // TODO: Remove from use, replace with the variables referenced here.
     // Issue: https://github.com/sourcegraph/sourcegraph/issues/19973

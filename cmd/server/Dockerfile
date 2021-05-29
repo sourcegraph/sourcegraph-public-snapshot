@@ -42,7 +42,7 @@ RUN apk update && apk add --no-cache \
     git-p4 \
     python2 \
     'nginx>=1.18.0' openssh-client pcre sqlite-libs su-exec 'nodejs-current=14.5.0-r0' \
-    postgresql=12.6-r0 \
+    postgresql=12.7-r0 \
     postgresql-contrib
 
 # IMPORTANT: If you update the syntect_server version below, you MUST confirm

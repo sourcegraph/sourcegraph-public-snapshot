@@ -1,0 +1,46 @@
+.live-preview {
+    display: flex;
+    flex-direction: column;
+
+    &__chart-container {
+        position: relative;
+        width: 100%;
+        flex-grow: 1;
+        padding: 1rem;
+    }
+
+    &__chart {
+        width: 100%;
+        height: 100%;
+    }
+
+    &__chart--with-mock {
+        filter: blur(4px);
+        pointer-events: none;
+        opacity: 0.4;
+
+        // In order to turn off any interactions with chart like
+        // tooltip or chart shutter for user cursor we have to
+        // override pointer events. Since visx charts add pointer events
+        // by html attribute we have to use important statement.
+        :global(.visx-group) {
+            pointer-events: none !important;
+        }
+    }
+
+    &__loader {
+        background-color: var(--color-bg-2);
+        height: 100%;
+    }
+
+    &__loading-chart-info {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 100%;
+        padding: 3rem;
+        display: flex;
+        justify-content: center;
+    }
+}

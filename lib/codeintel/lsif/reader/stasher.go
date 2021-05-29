@@ -1,6 +1,6 @@
 package reader
 
-import reader "github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/reader"
+import "github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/reader"
 
 // Stasher maintains a mapping from identifiers to vertex and edge elements.
 type Stasher struct {

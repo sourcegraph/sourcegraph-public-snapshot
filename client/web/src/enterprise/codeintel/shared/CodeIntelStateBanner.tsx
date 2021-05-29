@@ -25,7 +25,7 @@ export const CodeIntelStateBanner: FunctionComponent<CodeIntelStateBannerProps> 
 }) => (
     <div className={classNames('alert', className)}>
         <span className="icon-inline">
-            <CodeIntelStateIcon className="mr-2" state={state} />
+            <CodeIntelStateIcon className="mr-2 redesign-d-none" state={state} />
         </span>
         <span>
             <CodeIntelStateDescription
