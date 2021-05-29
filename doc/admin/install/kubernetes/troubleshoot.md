@@ -122,11 +122,15 @@ This indicates the instance is getting rate-limited by Docker Hub([link](https:/
 - [**OPTIONAL**] Upgrade your account to a Docker Pro or Team subscription ([See Docker Hub for more information](https://www.docker.com/increase-rate-limits))
 
 
-
 ### Prometheus Pod is constantly down when using the namespace overlays.
 
 This is most likely due to cadvisor picking up other metrics from the cluster. 
 You can confirm this theory by checking your [prometheus.ConfigMap.yaml](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph@3.27/-/blob/base/prometheus/prometheus.ConfigMap.yaml#L248-250) file, where the `source_labels: [container_label_io_kubernetes_pod_namespace]` fields under `metric_relabel_configs` should be commented out and the `regex` field must be updated with your namespace.
+
+
+### I don't see any metrics on my Grafana Dashboard.
+
+This means Sourcegraph is having issues connecting to the Kubernetes API. For instance, using the non-privileged overlay is most likely going to prevent Sourcegraph from picking up metrics from the Kubernetes API. One of the potential solutions is to give Prometheus and cAdvisor root access by adding the ClusterRoleBinding.yaml files for both services from the base layer to the non-privileged overlay.
 
 
 ### Which metrics are using the most resources?
