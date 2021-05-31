@@ -59,6 +59,7 @@ func (r *schemaResolver) Repositories(args *struct {
 			opt.CursorDirection = "next"
 		}
 	}
+	opt.FailedFetch = args.FailedFetch
 	args.ConnectionArgs.Set(&opt.LimitOffset)
 	return &repositoryConnectionResolver{
 		db:          r.db,
