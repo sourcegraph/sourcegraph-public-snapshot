@@ -7,10 +7,10 @@ import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { CircleDashedIcon } from '../../../components/CircleDashedIcon'
 import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
+import { githubRepoScopeRequired } from '../cloud-ga'
 
 import { RemoveCodeHostConnectionModal } from './RemoveCodeHostConnectionModal'
 import { ifNotNavigated } from './UserAddCodeHostsPage'
-import { githubRepoScopeRequired } from '../cloud-ga'
 
 interface CodeHostItemProps {
     user: { id: Scalars['ID']; tags: string[] }

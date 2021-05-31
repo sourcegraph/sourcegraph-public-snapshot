@@ -13,9 +13,9 @@ import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../.
 import { SourcegraphContext } from '../../../jscontext'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
+import { githubRepoScopeRequired } from '../cloud-ga'
 
 import { CodeHostItem } from './CodeHostItem'
-import { githubRepoScopeRequired } from '../cloud-ga'
 
 type AuthProvider = SourcegraphContext['authProviders'][0]
 type AuthProvidersByKind = Partial<Record<ExternalServiceKind, AuthProvider>>
