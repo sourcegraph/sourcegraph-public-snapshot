@@ -455,34 +455,33 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore *repos.Store) func(
 						},
 					}},
 				},
-				// TODO: Disabled because it's flaky. https://github.com/sourcegraph/sourcegraph/issues/21408
-				// {
-				// 	name: "found - GitHub.com on Sourcegraph.com",
-				// 	args: protocol.RepoLookupArgs{
-				// 		Repo: api.RepoName("github.com/foo/bar"),
-				// 	},
-				// 	stored: []*types.Repo{},
-				// 	githubDotComSource: &fakeRepoSource{
-				// 		repo: githubRepository,
-				// 	},
-				// 	result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
-				// 		ExternalRepo: api.ExternalRepoSpec{
-				// 			ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-				// 			ServiceType: extsvc.TypeGitHub,
-				// 			ServiceID:   "https://github.com/",
-				// 		},
-				// 		Name:        "github.com/foo/bar",
-				// 		Description: "The description",
-				// 		VCS:         protocol.VCSInfo{URL: "git@github.com:foo/bar.git"},
-				// 		Links: &protocol.RepoLinks{
-				// 			Root:   "github.com/foo/bar",
-				// 			Tree:   "github.com/foo/bar/tree/{rev}/{path}",
-				// 			Blob:   "github.com/foo/bar/blob/{rev}/{path}",
-				// 			Commit: "github.com/foo/bar/commit/{commit}",
-				// 		},
-				// 	}},
-				// 	assert: types.Assert.ReposEqual(githubRepository),
-				// },
+				{
+					name: "found - GitHub.com on Sourcegraph.com",
+					args: protocol.RepoLookupArgs{
+						Repo: api.RepoName("github.com/foo/bar"),
+					},
+					stored: []*types.Repo{},
+					githubDotComSource: &fakeRepoSource{
+						repo: githubRepository,
+					},
+					result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
+						ExternalRepo: api.ExternalRepoSpec{
+							ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+							ServiceType: extsvc.TypeGitHub,
+							ServiceID:   "https://github.com/",
+						},
+						Name:        "github.com/foo/bar",
+						Description: "The description",
+						VCS:         protocol.VCSInfo{URL: "git@github.com:foo/bar.git"},
+						Links: &protocol.RepoLinks{
+							Root:   "github.com/foo/bar",
+							Tree:   "github.com/foo/bar/tree/{rev}/{path}",
+							Blob:   "github.com/foo/bar/blob/{rev}/{path}",
+							Commit: "github.com/foo/bar/commit/{commit}",
+						},
+					}},
+					assert: types.Assert.ReposEqual(githubRepository),
+				},
 				{
 					name: "found - GitHub.com on Sourcegraph.com already exists",
 					args: protocol.RepoLookupArgs{
@@ -572,32 +571,33 @@ func testRepoLookup(db *sql.DB) func(t *testing.T, repoStore *repos.Store) func(
 					}},
 					assert: types.Assert.ReposEqual(gitlabRepository),
 				},
-				{
-					name: "found - gitlab.com on Sourcegraph.com already exists",
-					args: protocol.RepoLookupArgs{
-						Repo: api.RepoName("gitlab.com/foo/bar"),
-					},
-					stored: []*types.Repo{gitlabRepository},
-					gitlabDotComSource: &fakeRepoSource{
-						repo: gitlabRepository,
-					},
-					result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
-						Name:        "gitlab.com/gitlab-org/gitaly",
-						Description: "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
-						Fork:        false,
-						Archived:    false,
-						VCS: protocol.VCSInfo{
-							URL: "https://gitlab.com/gitlab-org/gitaly.git",
-						},
-						Links: &protocol.RepoLinks{
-							Root:   "https://gitlab.com/gitlab-org/gitaly",
-							Tree:   "https://gitlab.com/gitlab-org/gitaly/tree/{rev}/{path}",
-							Blob:   "https://gitlab.com/gitlab-org/gitaly/blob/{rev}/{path}",
-							Commit: "https://gitlab.com/gitlab-org/gitaly/commit/{commit}",
-						},
-						ExternalRepo: gitlabRepository.ExternalRepo,
-					}},
-				},
+				// TODO: Disabled because it's flaky. https://github.com/sourcegraph/sourcegraph/issues/21408
+				// {
+				// 	name: "found - gitlab.com on Sourcegraph.com already exists",
+				// 	args: protocol.RepoLookupArgs{
+				// 		Repo: api.RepoName("gitlab.com/foo/bar"),
+				// 	},
+				// 	stored: []*types.Repo{gitlabRepository},
+				// 	gitlabDotComSource: &fakeRepoSource{
+				// 		repo: gitlabRepository,
+				// 	},
+				// 	result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
+				// 		Name:        "gitlab.com/gitlab-org/gitaly",
+				// 		Description: "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
+				// 		Fork:        false,
+				// 		Archived:    false,
+				// 		VCS: protocol.VCSInfo{
+				// 			URL: "https://gitlab.com/gitlab-org/gitaly.git",
+				// 		},
+				// 		Links: &protocol.RepoLinks{
+				// 			Root:   "https://gitlab.com/gitlab-org/gitaly",
+				// 			Tree:   "https://gitlab.com/gitlab-org/gitaly/tree/{rev}/{path}",
+				// 			Blob:   "https://gitlab.com/gitlab-org/gitaly/blob/{rev}/{path}",
+				// 			Commit: "https://gitlab.com/gitlab-org/gitaly/commit/{commit}",
+				// 		},
+				// 		ExternalRepo: gitlabRepository.ExternalRepo,
+				// 	}},
+				// },
 				{
 					name: "GithubDotcomSource on Sourcegraph.com ignores non-Github.com repos",
 					args: protocol.RepoLookupArgs{

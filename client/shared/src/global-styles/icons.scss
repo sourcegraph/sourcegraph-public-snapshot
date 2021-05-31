@@ -31,7 +31,7 @@ img.icon-inline,
     :where(.theme-redesign) & {
         width: $icon-inline-redesign-size;
         height: $icon-inline-redesign-size;
-        vertical-align: middle;
+        vertical-align: text-bottom;
     }
 }
 

@@ -1669,7 +1669,7 @@ type Language {
 """
 A search suggestion.
 """
-union SearchSuggestion = Repository | File | Symbol | Language
+union SearchSuggestion = Repository | File | Symbol | Language | SearchContext
 
 """
 A search-related alert message.
