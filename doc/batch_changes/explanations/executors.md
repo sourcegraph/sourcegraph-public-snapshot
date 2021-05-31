@@ -1,5 +1,7 @@
 # Configuring Sourcegraph executors to compute Batch Changes
 
+> Note: This is a draft documentation page describing the potential end state of a  feature. It should serve only for discussion purporses.
+
 By default, Batch Changes uses a command line interface in your local environment to compute diffs and create changesets. This can be impractical for creating batch changes affecting hundreds or thousands of repositories, with large numbers of workspaces, or if the batch change steps require CPU, memory, or disk resources that are unavailable locally.
 
 <!-- aharvey: This is definitely not a sentence we'd generally write in a real documentation page of this nature, but I get the framing. -->
@@ -9,9 +11,7 @@ If you are on a developer tool team rolling out batch changes to your company, t
 **The Sourcegraph executor is an application that allows users to offload expensive tasks, such as computing Batch Changes and generating LSIF data for [precise code intelligence](../../code_intelligence/explanations/precise_code_intelligence.md).**
 
 - If you use Sourcegraph enterprise on-premise, you can install Sourcegraph executors on infrastructure you own or manage.
-- If you use a managed Sourcegraph instance, TODO.
-<!-- aharvey: This is hard to write around, since this is even more speculative right now than the rest of this. Do we need this for the customers you're going to be reaching out to in the short term? -->
-- Sourcegraph.com offers a batch change execution environment based on Sourcegraph runner. You don't have to do anything to use it.
+- Sourcegraph.com offers a batch change execution environment based on Sourcegraph executor. You don't have to do anything to use it.
 
 The Sourcegraph executor is written in [Go](https://golang.org), and is available to [Sourcegraph Enterprise](../../admin/subscriptions.md) customers.
 
@@ -60,7 +60,7 @@ docker run -d --name sourcegraph-executor --restart always \
 
 #### Kubernetes
 
-_TODO: I think we're going to end up with something like https://docs.gitlab.com/runner/install/kubernetes.html here: we ship a Helm chart. I'd love Distribution to weigh in on this, though._
+_TODO: I think we're going to end up with something like https://docs.gitlab.com/executor/install/kubernetes.html here: we ship a Helm chart. I'd love Distribution to weigh in on this, though._
 
 ### From an RPM/DEB repository
 
@@ -110,7 +110,7 @@ The Sourcegraph executor is configured through environment variables. The first 
 | `EXECUTOR_REGISTRATION_TOKEN` | **No default; must be provided** | The executor registration token, as downloaded from the [Sourcegraph site settings](TODO). |
 | `EXECUTOR_BACKEND` | `docker` | The backend that should be used to execute tasks; either `docker` or `kubernetes`. |
 | `EXECUTOR_MAX_NUM_JOBS` | `1` | The maximum number of jobs (or tasks) that will be run concurrently by this executor. |
-<!-- aharvey: There are lots of other options at https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3b1fbde4e2207de103a6736706bbfd0adaa579b6/-/blob/enterprise/cmd/executor/config.go#L36-52; most aren't super relevant for user facing documentation. What we _will_ need is whatever options we need to wire up executing jobs on k8s. -->
+<!-- aharvey: There are lots of othe  r options at https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3b1fbde4e2207de103a6736706bbfd0adaa579b6/-/blob/enterprise/cmd/executor/config.go#L36-52; most aren't super relevant for user facing documentation. What we _will_ need is whatever options we need to wire up executing jobs on k8s. -->
 
 <!-- aharvey: TODO: I might want to replace this with "connecting". -->
 ## Registering the executor
@@ -123,13 +123,15 @@ The Sourcegraph executor should register itself automatically when started with 
 
 If the executor fails to register, check the output of the executor container: it should include an error that points towards the problem. If not, please contact Sourcegraph support!
 
-# Using runners
+# Using executors
 
-TODO:mockup or decription
+If one or several executors are registered with the Sourcegraph instance, they will be used to create changesets by default. You can choose to use your local environment to compute the changeset by adding the `--local` flag to the CLI command.
 
-## Who has access to runners
+When running a batch change, the executor will attempt to pull missing container images. The environment running the executor must have access to the docker registry hosting the requested images.
 
-All batch changes users on your Sourcegraph instance have access to runners.
+## Who has access to executors
+
+All batch changes users on your Sourcegraph instance have access to executors.
 
 ## Debugging
 
@@ -141,20 +143,19 @@ Jobs are executed on a FIFO-basis. Users can interrupt a job from the interface.
 
 Each executor will run one job at a time: you should scale the number of executors you have running to the maximum concurrency you wish to support. <!-- TODO: get some input on autoscaling for k8s -->
 
-# Administering and monitoring runners
+# Administering and monitoring executors
 
 TODO
 
-# How do runners work
+# How do executors work
 
 TODO
 
-# Runner vs CLI workflow comparison
+# executor vs CLI workflow comparison
 
-TODO
+<img src="https://mermaid.ink/svg/eyJjb2RlIjoiZ3JhcGggTFJcbiAgICBBKEluc3RhbGwgc3JjIENMSSkgLS0-IEIoV3JpdGUgc3BlYylcbiAgICAgLS0-IEMoUnVuIENMSSB0byA8YnIvPiBjcmVhdGUgY2hhbmdlc2V0cylcbiAgICAgLS0-IEQoUHJldmlldylcbiAgICAgLS0-IEUoQXBwbHkpXG4gICAgIC0tPiBGKFRyYWNrIHByb2dyZXNzKVxuICAgICBHKCAgKSAtLT4gSChXcml0ZSBzcGVjKSBcbiAgICAgLS0-IEkoRXhlY3V0b3IgY3JlYXRlcyA8YnIvPiBjaGFuZ2VzZXRzKVxuICAgICAtLT4gSihQcmV2aWV3KVxuICAgICAtLT4gSyhBcHBseSlcbiAgICAgLS0-IEwoVHJhY2sgcHJvZ3Jlc3MpXG4gICAgIE0obG9jYWxseSlcbiAgICAgTihvbiBTb3VyY2VncmFwaClcblxuc3R5bGUgTSBzdHJva2U6I0ZGNTU0Mywgc3Ryb2tlLXdpZHRoOjNweFxuc3R5bGUgQSBzdHJva2U6I0ZGNTU0Mywgc3Ryb2tlLXdpZHRoOjNweFxuc3R5bGUgQiBzdHJva2U6I0ZGNTU0Mywgc3Ryb2tlLXdpZHRoOjNweFxuc3R5bGUgQyBzdHJva2U6I0ZGNTU0Mywgc3Ryb2tlLXdpZHRoOjNweFxuXG5zdHlsZSBOIHN0cm9rZTojQTExMkZGLCBzdHJva2Utd2lkdGg6M3B4XG5zdHlsZSBEIHN0cm9rZTojQTExMkZGLCBzdHJva2Utd2lkdGg6M3B4XG5zdHlsZSBFIHN0cm9rZTojQTExMkZGLCBzdHJva2Utd2lkdGg6M3B4XG5zdHlsZSBGIHN0cm9rZTojQTExMkZGLCBzdHJva2Utd2lkdGg6M3B4XG5zdHlsZSBHIHN0cm9rZTojRkZGRkZGLCBmaWxsOiNGRkZGRkZcbnN0eWxlIEggc3Ryb2tlOiNBMTEyRkYsIHN0cm9rZS13aWR0aDozcHhcbnN0eWxlIEkgc3Ryb2tlOiNBMTEyRkYsIHN0cm9rZS13aWR0aDozcHhcbnN0eWxlIEogc3Ryb2tlOiNBMTEyRkYsIHN0cm9rZS13aWR0aDozcHhcbnN0eWxlIEsgc3Ryb2tlOiNBMTEyRkYsIHN0cm9rZS13aWR0aDozcHhcbnN0eWxlIEwgc3Ryb2tlOiNBMTEyRkYsIHN0cm9rZS13aWR0aDozcHhcblxubGlua1N0eWxlIDUgc3Ryb2tlLXdpZHRoOjBweFxuIiwibWVybWFpZCI6eyJ0aGVtZSI6ImRlZmF1bHQifSwidXBkYXRlRWRpdG9yIjpmYWxzZX0">
 
 # Limitations
 
-The current version of Sourcegraph runners has known limitations
-- access control: if a runner is enabled, all Batch Changes users on the instance can submit jobs to it
--
+The current version of Sourcegraph executors has known limitations
+- access control: if a executor is enabled, all Batch Changes users on the instance can submit jobs to it. In future versions, we may allow site admin to authorize only a group of users.
