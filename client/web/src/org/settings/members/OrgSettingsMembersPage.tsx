@@ -93,7 +93,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
     public render(): JSX.Element | null {
         const loading = this.state.removalOrError === undefined
         return (
-            <li className="list-group-item" data-test-username={this.props.node.username}>
+            <li className="user-node__container list-group-item" data-test-username={this.props.node.username}>
                 <div className="d-flex align-items-center justify-content-between">
                     <div>
                         <Link to={userURL(this.props.node.username)}>
