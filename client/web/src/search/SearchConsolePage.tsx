@@ -1,37 +1,30 @@
 import * as H from 'history'
 import * as Monaco from 'monaco-editor'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { BehaviorSubject, concat, NEVER, of } from 'rxjs'
+import { BehaviorSubject } from 'rxjs'
+import { debounceTime } from 'rxjs/operators'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { MonacoEditor } from '../components/MonacoEditor'
 import { PageTitle } from '../components/PageTitle'
 import { SearchPatternType } from '../graphql-operations'
 
-import { fetchSuggestions, search, shouldDisplayPerformanceWarning } from './backend'
+import { fetchSuggestions } from './backend'
 import { addSourcegraphSearchCodeIntelligence } from './input/MonacoQueryInput'
-import { SearchResultsList, SearchResultsListProps } from './results/SearchResultsList'
+import { LATEST_VERSION } from './results/SearchResults'
+import {
+    StreamingSearchResultsList,
+    StreamingSearchResultsListProps,
+} from './results/streaming/StreamingSearchResultsList'
 
-import { parseSearchURLQuery, parseSearchURLPatternType } from '.'
+import { parseSearchURLQuery, parseSearchURLPatternType, SearchStreamingProps } from '.'
 
 interface SearchConsolePageProps
-    extends ThemeProps,
-        Omit<
-            SearchResultsListProps,
-            | 'extensionsController'
-            | 'onSavedQueryModalClose'
-            | 'onShowMoreResultsClick'
-            | 'onExpandAllResultsToggle'
-            | 'onSavedQueryModalClose'
-            | 'onSaveQueryClick'
-            | 'shouldDisplayPerformanceWarning'
-        >,
+    extends SearchStreamingProps,
+        Omit<StreamingSearchResultsListProps, 'allExpanded'>,
         ExtensionsControllerProps<'executeCommand' | 'extHostAPI'> {
     globbing: boolean
     isMacPlatform: boolean
@@ -62,37 +55,38 @@ const options: Monaco.editor.IStandaloneEditorConstructionOptions = {
 }
 
 export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> = props => {
+    const { globbing, streamSearch } = props
+
     const searchQuery = useMemo(() => new BehaviorSubject<string>(parseSearchURLQuery(props.location.search) ?? ''), [
         props.location.search,
     ])
+
     const patternType = useMemo(
         () => parseSearchURLPatternType(props.location.search) || SearchPatternType.structural,
         [props.location.search]
     )
+
     const triggerSearch = useCallback(() => {
         props.history.push('/search/console?q=' + encodeURIComponent(searchQuery.value))
     }, [props.history, searchQuery])
+
     // Fetch search results when the `q` URL query parameter changes
-    const resultsOrError = useObservable<'loading' | GQL.ISearchResults | ErrorLike>(
+    const results = useObservable(
         useMemo(() => {
             const query = parseSearchURLQuery(props.location.search)
-            return query
-                ? concat(
-                      of('loading' as const),
-                      search(
-                          query.replace(/\/\/.*/g, ''),
-                          'V2',
-                          patternType,
-                          undefined,
-                          props.extensionsController.extHostAPI
-                      )
-                  )
-                : NEVER
-        }, [patternType, props.extensionsController, props.location.search])
+            return streamSearch({
+                query: query?.replace(/\/\/.*/g, '') || '',
+                version: LATEST_VERSION,
+                patternType: patternType ?? SearchPatternType.literal,
+                caseSensitive: false,
+                versionContext: undefined,
+                trace: undefined,
+            }).pipe(debounceTime(500))
+        }, [patternType, props.location.search, streamSearch])
     )
-    const [allExpanded, setAllExpanded] = useState(false)
+
     const [monacoInstance, setMonacoInstance] = useState<typeof Monaco>()
-    const { globbing } = props
+
     useEffect(() => {
         if (!monacoInstance) {
             return
@@ -116,6 +110,7 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
         })
         return () => disposable.dispose()
     }, [editorInstance, searchQuery, props.history])
+
     useEffect(() => {
         if (!editorInstance) {
             return
@@ -128,15 +123,6 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
         })
         return () => disposable.dispose()
     }, [editorInstance, triggerSearch])
-
-    const onExpandAllResultsToggle = useCallback((): void => {
-        setAllExpanded(allExpanded => {
-            props.telemetryService.log(allExpanded ? 'allResultsExpanded' : 'allResultsCollapsed')
-            return allExpanded
-        })
-    }, [setAllExpanded, props.telemetryService])
-
-    const voidCallback = useCallback(() => undefined, [])
 
     return (
         <div className="w-100 p-2">
@@ -160,20 +146,11 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
                     />
                 </div>
                 <div className="flex-1 p-1 search-console-page__results">
-                    {resultsOrError &&
-                        (resultsOrError === 'loading' ? (
+                    {results &&
+                        (results.state === 'loading' ? (
                             <LoadingSpinner />
                         ) : (
-                            <SearchResultsList
-                                {...props}
-                                allExpanded={allExpanded}
-                                resultsOrError={resultsOrError}
-                                onExpandAllResultsToggle={onExpandAllResultsToggle}
-                                showSavedQueryButton={false}
-                                onSavedQueryModalClose={voidCallback}
-                                onSaveQueryClick={voidCallback}
-                                shouldDisplayPerformanceWarning={shouldDisplayPerformanceWarning}
-                            />
+                            <StreamingSearchResultsList {...props} allExpanded={false} results={results} />
                         ))}
                 </div>
             </div>

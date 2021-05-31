@@ -19,6 +19,7 @@ import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { SearchContextInputProps } from '..'
+import { AuthenticatedUser } from '../../auth'
 import { SearchContextFields } from '../../graphql-operations'
 
 import { HighlightedSearchContextSpec } from './HighlightedSearchContextSpec'
@@ -60,6 +61,7 @@ export interface SearchContextMenuProps
         | 'hasUserAddedRepositories'
         | 'hasUserAddedExternalServices'
     > {
+    authenticatedUser: AuthenticatedUser | null
     closeMenu: () => void
     selectSearchContextSpec: (spec: string) => void
 }
@@ -82,9 +84,11 @@ const getFirstMenuItem = (): HTMLButtonElement | null =>
     document.querySelector('.search-context-menu__item:first-child')
 
 export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> = ({
+    authenticatedUser,
     selectedSearchContextSpec,
     defaultSearchContextSpec,
     selectSearchContextSpec,
+    getUserSearchContextNamespaces,
     fetchAutoDefinedSearchContexts,
     fetchSearchContexts,
     closeMenu,
@@ -187,6 +191,7 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
                             first: searchContextsPerPageToLoad,
                             query,
                             after: cursor,
+                            namespaces: getUserSearchContextNamespaces(authenticatedUser),
                         }),
                     ])
                 ),
@@ -209,7 +214,14 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
             })
 
         return () => subscription.unsubscribe()
-    }, [loadNextPageUpdates, setSearchContexts, setLastPageInfo, fetchSearchContexts])
+    }, [
+        authenticatedUser,
+        loadNextPageUpdates,
+        setSearchContexts,
+        setLastPageInfo,
+        getUserSearchContextNamespaces,
+        fetchSearchContexts,
+    ])
 
     const autoDefinedSearchContexts = useObservable(
         fetchAutoDefinedSearchContexts.pipe(catchError(error => [asError(error)]))

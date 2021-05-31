@@ -571,7 +571,7 @@ func TestEventLogs_AggregatedSparseSearchEvents(t *testing.T) {
 		}
 	}
 
-	events, err := EventLogs(db).aggregatedSearchEvents(ctx, now)
+	events, err := EventLogs(db).AggregatedSearchEvents(ctx, now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -626,6 +626,7 @@ func TestEventLogs_AggregatedSearchEvents(t *testing.T) {
 
 	g, gctx := errgroup.WithContext(ctx)
 
+	// add some latencies
 	durationOffset := 0
 	for _, user := range users {
 		for _, name := range names {
@@ -657,11 +658,37 @@ func TestEventLogs_AggregatedSearchEvents(t *testing.T) {
 		}
 	}
 
+	e := &Event{
+		UserID: 3,
+		Name:   "SearchResultsQueried",
+		URL:    "test",
+		Source: "test",
+		Argument: json.RawMessage(`
+{
+   "code_search":{
+      "query_data":{
+         "query":{
+             "count_and":3,
+             "count_repo_contains_commit_after":2
+         },
+         "empty":false,
+         "combined":"don't care"
+      }
+   }
+}`),
+		// Jitter current time +/- 30 minutes
+		Timestamp: now.Add(-time.Hour * 24 * 3).Add(time.Minute * time.Duration(rand.Intn(60)-30)),
+	}
+
+	if err := EventLogs(db).Insert(gctx, e); err != nil {
+		t.Fatal(err)
+	}
+
 	if err := g.Wait(); err != nil {
 		t.Fatal(err)
 	}
 
-	events, err := EventLogs(db).aggregatedSearchEvents(ctx, now)
+	events, err := EventLogs(db).AggregatedSearchEvents(ctx, now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -696,6 +723,28 @@ func TestEventLogs_AggregatedSearchEvents(t *testing.T) {
 			LatenciesMonth: []float64{1394, 2222.1, 2289.51},
 			LatenciesWeek:  []float64{1369, 2202.1, 2242.51},
 			LatenciesDay:   []float64{1344, 2182.1, 2195.51},
+		},
+		{
+			Name:         "count_and",
+			Month:        time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
+			Week:         now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5),
+			Day:          now.Truncate(time.Hour * 24),
+			TotalMonth:   3,
+			TotalWeek:    3,
+			TotalDay:     0,
+			UniquesMonth: 1,
+			UniquesWeek:  1,
+		},
+		{
+			Name:         "count_repo_contains_commit_after",
+			Month:        time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
+			Week:         now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5),
+			Day:          now.Truncate(time.Hour * 24),
+			TotalMonth:   2,
+			TotalWeek:    2,
+			TotalDay:     0,
+			UniquesMonth: 1,
+			UniquesWeek:  1,
 		},
 	}
 	if diff := cmp.Diff(expectedEvents, events); diff != "" {

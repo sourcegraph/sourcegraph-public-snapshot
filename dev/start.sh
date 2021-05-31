@@ -33,6 +33,12 @@ if [ -f .env ]; then
 fi
 
 # Verify postgresql config.
+export PGPORT=${PGPORT:-5432}
+export PGHOST=${PGHOST:-localhost}
+export PGUSER=${PGUSER:-sourcegraph}
+export PGPASSWORD=${PGPASSWORD:-sourcegraph}
+export PGDATABASE=${PGDATABASE:-sourcegraph}
+export PGSSLMODE=${PGSSLMODE:-disable}
 hash psql 2>/dev/null || {
   # "brew install postgres" does not put psql on the $PATH by default;
   # try to fix this automatically if we can.

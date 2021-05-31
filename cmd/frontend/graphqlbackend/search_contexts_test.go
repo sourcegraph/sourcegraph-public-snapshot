@@ -6,6 +6,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/graph-gophers/graphql-go"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -60,8 +63,6 @@ func TestSearchContexts(t *testing.T) {
 	userID := int32(1)
 	graphqlUserID := MarshalUserID(userID)
 
-	namespaceFilter := namespaceFilterType("NAMESPACE")
-	instanceFilter := namespaceFilterType("INSTANCE")
 	query := "ctx"
 	tests := []struct {
 		name     string
@@ -71,33 +72,18 @@ func TestSearchContexts(t *testing.T) {
 	}{
 		{
 			name:     "filtering by namespace",
-			args:     &listSearchContextsArgs{Query: &query, Namespace: &graphqlUserID, NamespaceFilterType: &namespaceFilter},
-			wantOpts: database.ListSearchContextsOptions{Name: query, NamespaceUserID: userID, OrderBy: database.SearchContextsOrderBySpec},
+			args:     &listSearchContextsArgs{Query: &query, Namespaces: []*graphql.ID{&graphqlUserID}},
+			wantOpts: database.ListSearchContextsOptions{Name: query, NamespaceUserIDs: []int32{userID}, NamespaceOrgIDs: []int32{}, OrderBy: database.SearchContextsOrderBySpec},
 		},
 		{
 			name:     "filtering by instance",
-			args:     &listSearchContextsArgs{Query: &query, NamespaceFilterType: &instanceFilter},
-			wantOpts: database.ListSearchContextsOptions{Name: query, NoNamespace: true, OrderBy: database.SearchContextsOrderBySpec},
+			args:     &listSearchContextsArgs{Query: &query, Namespaces: []*graphql.ID{nil}},
+			wantOpts: database.ListSearchContextsOptions{Name: query, NamespaceUserIDs: []int32{}, NamespaceOrgIDs: []int32{}, NoNamespace: true, OrderBy: database.SearchContextsOrderBySpec},
 		},
 		{
 			name:     "get all",
 			args:     &listSearchContextsArgs{Query: &query},
-			wantOpts: database.ListSearchContextsOptions{Name: query, OrderBy: database.SearchContextsOrderBySpec},
-		},
-		{
-			name:    "cannot filter by namespace with nil namespace",
-			args:    &listSearchContextsArgs{Query: &query, NamespaceFilterType: &namespaceFilter},
-			wantErr: "namespace has to be non-nil if namespaceFilterType is NAMESPACE",
-		},
-		{
-			name:    "cannot filter by instance with non-nil namespace",
-			args:    &listSearchContextsArgs{Query: &query, Namespace: &graphqlUserID, NamespaceFilterType: &instanceFilter},
-			wantErr: "namespace can only be used if namespaceFilterType is NAMESPACE",
-		},
-		{
-			name:    "cannot use non-nil namespace if no filter is present",
-			args:    &listSearchContextsArgs{Query: &query, Namespace: &graphqlUserID},
-			wantErr: "namespace can only be used if namespaceFilterType is NAMESPACE",
+			wantOpts: database.ListSearchContextsOptions{Name: query, NamespaceUserIDs: []int32{}, NamespaceOrgIDs: []int32{}, OrderBy: database.SearchContextsOrderBySpec},
 		},
 	}
 
@@ -109,8 +95,8 @@ func TestSearchContexts(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			database.Mocks.SearchContexts.ListSearchContexts = func(ctx context.Context, pageOpts database.ListSearchContextsPageOptions, opts database.ListSearchContextsOptions) ([]*types.SearchContext, error) {
-				if !reflect.DeepEqual(tt.wantOpts, opts) {
-					t.Fatalf("wanted %+v opts, got %+v", tt.wantOpts, opts)
+				if diff := cmp.Diff(tt.wantOpts, opts); diff != "" {
+					t.Fatalf("Mismatch (-want +got):\n%s", diff)
 				}
 				return []*types.SearchContext{}, nil
 			}

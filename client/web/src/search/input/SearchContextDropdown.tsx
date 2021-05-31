@@ -7,6 +7,7 @@ import Shepherd from 'shepherd.js'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
 import { CaseSensitivityProps, PatternTypeProps, SearchContextInputProps } from '..'
@@ -21,7 +22,8 @@ export interface SearchContextDropdownProps
     extends Omit<SearchContextInputProps, 'showSearchContext'>,
         Pick<PatternTypeProps, 'patternType'>,
         Pick<CaseSensitivityProps, 'caseSensitive'>,
-        VersionContextProps {
+        VersionContextProps,
+        TelemetryProps {
     isSourcegraphDotCom: boolean
     authenticatedUser: AuthenticatedUser | null
     submitSearch: (args: SubmitSearchParameters) => void
@@ -233,6 +235,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
             <DropdownMenu positionFixed={true} className="search-context-dropdown__menu">
                 {isSourcegraphDotCom && (!hasUserAddedExternalServices || !hasUserAddedRepositories) ? (
                     <SearchContextCtaPrompt
+                        telemetryService={props.telemetryService}
                         authenticatedUser={authenticatedUser}
                         hasUserAddedExternalServices={hasUserAddedExternalServices}
                     />

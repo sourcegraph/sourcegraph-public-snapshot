@@ -9,7 +9,6 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
 import { PageSelector } from '@sourcegraph/wildcard'
 
 import { ALLOW_NAVIGATION, AwayPrompt } from '../../../components/AwayPrompt'
@@ -72,8 +71,6 @@ interface GitLabConfig {
 }
 
 const PER_PAGE = 25
-const SIX_SECONDS = 6000
-const EIGHT_SECONDS = 8000
 
 // project queries that are used when user syncs all repos from a code host
 const GITLAB_SYNC_ALL_PROJECT_QUERY = 'projects?membership=true&archived=no'
@@ -104,16 +101,8 @@ const initialSelectionState = {
     radio: '',
 }
 
-type initialFetchingReposState = undefined | 'loading' | 'slow' | 'slower'
+type initialFetchingReposState = undefined | 'loading'
 type affiliateRepoProblemType = undefined | string | ErrorLike | ErrorLike[]
-
-const isLoading = (status: initialFetchingReposState): boolean => {
-    if (!status) {
-        return false
-    }
-
-    return ['loading', 'slow', 'slower'].includes(status)
-}
 
 const displayWarning = (warning: string, hint?: JSX.Element): JSX.Element => (
     <div key={warning} className="alert alert-warning mt-3 mb-0" role="alert">
@@ -156,7 +145,6 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     authenticatedUser,
     routingPrefix,
     telemetryService,
-    onUserExternalServicesOrRepositoriesUpdate,
 }) => {
     useEffect(() => {
         telemetryService.logViewEvent('UserSettingsRepositories')
@@ -481,12 +469,10 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 return history.push(routingPrefix + '/repositories', ALLOW_NAVIGATION)
             }
 
-            const syncTimes = new Map<string, string | null>()
             const codeHostRepoPromises = []
 
             for (const host of codeHosts.hosts) {
                 const repos: string[] = []
-                syncTimes.set(host.id, host.lastSyncAt)
                 for (const repo of selectionState.repos.values()) {
                     if (repo.codeHost?.id !== host.id) {
                         continue
@@ -511,59 +497,8 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 return
             }
 
-            const started = Date.now()
-            externalServiceSubscription.current = queryExternalServices({
-                first: null,
-                after: null,
-                namespace: authenticatedUser.id,
-            })
-                .pipe(
-                    repeatUntil(
-                        result => {
-                            // if the background job takes too long we should update the button
-                            // text to indicate we're still working on it.
-
-                            const now = Date.now()
-                            const timeDiff = now - started
-
-                            // setting the same state multiple times won't cause
-                            // re-renders in Function components
-                            if (timeDiff >= SIX_SECONDS + EIGHT_SECONDS) {
-                                setFetchingRepos('slower')
-                            } else if (timeDiff >= SIX_SECONDS) {
-                                setFetchingRepos('slow')
-                            }
-
-                            // if the lastSyncAt has changed for all hosts then we're done
-                            if (
-                                result.nodes.every(
-                                    codeHost =>
-                                        codeHost.lastSyncAt && codeHost.lastSyncAt !== syncTimes.get(codeHost.id)
-                                )
-                            ) {
-                                const repoCount = result.nodes.reduce((sum, codeHost) => sum + codeHost.repoCount, 0)
-                                onUserExternalServicesOrRepositoriesUpdate(result.nodes.length, repoCount)
-
-                                // push the user back to the repo list page
-                                // location state is used here to prevent AwayPrompt from blocking
-                                history.push(routingPrefix + '/repositories', ALLOW_NAVIGATION)
-
-                                // cancel the repeatUntil
-                                return true
-                            }
-                            // keep repeating
-                            return false
-                        },
-                        { delay: 2000 }
-                    )
-                )
-                .subscribe(
-                    () => {},
-                    error => setAffiliateRepoProblems(asError(error)),
-                    () => {
-                        externalServiceSubscription.current?.unsubscribe()
-                    }
-                )
+            // location state is used here to prevent AwayPrompt from blocking
+            return history.push(routingPrefix + '/repositories', ALLOW_NAVIGATION)
         },
         [
             publicRepoState.repos,
@@ -572,7 +507,6 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             codeHosts.hosts,
             selectionState.radio,
             selectionState.repos,
-            onUserExternalServicesOrRepositoriesUpdate,
             history,
             routingPrefix,
         ]
@@ -894,17 +828,12 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             />
             <Form className="mt-4 d-flex" onSubmit={submit}>
                 <LoaderButton
-                    loading={isLoading(fetchingRepos)}
+                    loading={fetchingRepos === 'loading'}
                     className="btn btn-primary test-goto-add-external-service-page mr-2"
                     alwaysShowLabel={true}
                     type="submit"
-                    label={
-                        (!fetchingRepos && 'Save') ||
-                        (fetchingRepos === 'loading' && 'Saving...') ||
-                        (fetchingRepos === 'slow' && 'Still saving...') ||
-                        'Any time now...'
-                    }
-                    disabled={isLoading(fetchingRepos)}
+                    label={fetchingRepos ? 'Saving...' : 'Save'}
+                    disabled={fetchingRepos === 'loading'}
                 />
 
                 <Link

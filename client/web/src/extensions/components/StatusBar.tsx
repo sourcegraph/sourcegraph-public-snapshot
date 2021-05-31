@@ -108,7 +108,7 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
                         <LeftIcon className="icon-inline" />
                     </button>
                 )}
-                <div className="status-bar__items d-flex px-2" ref={carouselReference}>
+                <div className="status-bar__items d-flex align-items-center px-2" ref={carouselReference}>
                     {!!statusBarItems && statusBarItems !== 'loading' && statusBarItems.length > 0
                         ? statusBarItems.map(statusBarItem => (
                               <StatusBarItem

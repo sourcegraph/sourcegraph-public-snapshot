@@ -35,6 +35,13 @@ func (srs *searchResultsStats) Languages(ctx context.Context) ([]*languageStatis
 	return wrapped, nil
 }
 
+func (srs *searchResultsStats) getResults(ctx context.Context) (*SearchResultsResolver, error) {
+	srs.once.Do(func() {
+		srs.srs, srs.srsErr = srs.sr.doResults(ctx, result.TypeEmpty)
+	})
+	return srs.srs, srs.srsErr
+}
+
 func searchResultsStatsLanguages(ctx context.Context, matches []result.Match) ([]inventory.Lang, error) {
 	// Batch our operations by repo-commit.
 	type repoCommit struct {
