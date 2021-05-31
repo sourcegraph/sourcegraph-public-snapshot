@@ -22,12 +22,10 @@ interface Props {
 
 type Status = undefined | 'loading' | ErrorLike
 
-// There is always exactly one primary email returned from the backend
-// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-const findPrimaryEmail = (emails: UserEmail[]): string => emails.find(email => email.isPrimary)!.email
+const findPrimaryEmail = (emails: UserEmail[]): string | undefined => emails.find(email => email.isPrimary)?.email
 
 export const SetUserPrimaryEmailForm: FunctionComponent<Props> = ({ user, emails, onDidSet, className }) => {
-    const [primaryEmail, setPrimaryEmail] = useState<string>(findPrimaryEmail(emails))
+    const [primaryEmail, setPrimaryEmail] = useState<string | undefined>(findPrimaryEmail(emails))
     const [statusOrError, setStatusOrError] = useState<Status>()
 
     // options should include all verified emails + a primary one
@@ -39,6 +37,9 @@ export const SetUserPrimaryEmailForm: FunctionComponent<Props> = ({ user, emails
     const onSubmit: React.FormEventHandler<HTMLFormElement> = useCallback(
         async event => {
             event.preventDefault()
+            if (primaryEmail === undefined) {
+                return
+            }
             setStatusOrError('loading')
 
             try {
