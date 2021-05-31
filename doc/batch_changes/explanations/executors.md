@@ -151,11 +151,25 @@ TODO
 
 TODO
 
-# executor vs CLI workflow comparison
+# Executor vs CLI workflow comparison
+
+With the CLI workflow, the changeset creation step has to be ran locally, which can take a long time for large, complex batch changes. With the executor workflow, the changeset creation step is offloaded to the executor, which means that all the steps can happen in the same user interface, and processing is offloaded to the executor.
 
 <img src="https://mermaid.ink/svg/eyJjb2RlIjoiZ3JhcGggTFJcbiAgICBBKEluc3RhbGwgc3JjIENMSSkgLS0-IEIoV3JpdGUgc3BlYylcbiAgICAgLS0-IEMoUnVuIENMSSB0byA8YnIvPiBjcmVhdGUgY2hhbmdlc2V0cylcbiAgICAgLS0-IEQoUHJldmlldylcbiAgICAgLS0-IEUoQXBwbHkpXG4gICAgIC0tPiBGKFRyYWNrIHByb2dyZXNzKVxuICAgICBHKCAgKSAtLT4gSChXcml0ZSBzcGVjKSBcbiAgICAgLS0-IEkoRXhlY3V0b3IgY3JlYXRlcyA8YnIvPiBjaGFuZ2VzZXRzKVxuICAgICAtLT4gSihQcmV2aWV3KVxuICAgICAtLT4gSyhBcHBseSlcbiAgICAgLS0-IEwoVHJhY2sgcHJvZ3Jlc3MpXG4gICAgIE0obG9jYWxseSlcbiAgICAgTihvbiBTb3VyY2VncmFwaClcblxuc3R5bGUgTSBzdHJva2U6I0ZGNTU0Mywgc3Ryb2tlLXdpZHRoOjNweFxuc3R5bGUgQSBzdHJva2U6I0ZGNTU0Mywgc3Ryb2tlLXdpZHRoOjNweFxuc3R5bGUgQiBzdHJva2U6I0ZGNTU0Mywgc3Ryb2tlLXdpZHRoOjNweFxuc3R5bGUgQyBzdHJva2U6I0ZGNTU0Mywgc3Ryb2tlLXdpZHRoOjNweFxuXG5zdHlsZSBOIHN0cm9rZTojQTExMkZGLCBzdHJva2Utd2lkdGg6M3B4XG5zdHlsZSBEIHN0cm9rZTojQTExMkZGLCBzdHJva2Utd2lkdGg6M3B4XG5zdHlsZSBFIHN0cm9rZTojQTExMkZGLCBzdHJva2Utd2lkdGg6M3B4XG5zdHlsZSBGIHN0cm9rZTojQTExMkZGLCBzdHJva2Utd2lkdGg6M3B4XG5zdHlsZSBHIHN0cm9rZTojRkZGRkZGLCBmaWxsOiNGRkZGRkZcbnN0eWxlIEggc3Ryb2tlOiNBMTEyRkYsIHN0cm9rZS13aWR0aDozcHhcbnN0eWxlIEkgc3Ryb2tlOiNBMTEyRkYsIHN0cm9rZS13aWR0aDozcHhcbnN0eWxlIEogc3Ryb2tlOiNBMTEyRkYsIHN0cm9rZS13aWR0aDozcHhcbnN0eWxlIEsgc3Ryb2tlOiNBMTEyRkYsIHN0cm9rZS13aWR0aDozcHhcbnN0eWxlIEwgc3Ryb2tlOiNBMTEyRkYsIHN0cm9rZS13aWR0aDozcHhcblxubGlua1N0eWxlIDUgc3Ryb2tlLXdpZHRoOjBweFxuIiwibWVybWFpZCI6eyJ0aGVtZSI6ImRlZmF1bHQifSwidXBkYXRlRWRpdG9yIjpmYWxzZX0">
 
 # Limitations
 
 The current version of Sourcegraph executors has known limitations
+
 - access control: if a executor is enabled, all Batch Changes users on the instance can submit jobs to it. In future versions, we may allow site admin to authorize only a group of users.
+
+# FAQ
+
+#### Can large batch changes execution be distributed on multiple executors?
+Answer
+
+#### I have several machines configured as executors, and they don't have the same specs (eg. memory). Can I submit some bacth changes specifically to a given machine?
+Answer
+
+#### What happens if execution fails?
+Answer
