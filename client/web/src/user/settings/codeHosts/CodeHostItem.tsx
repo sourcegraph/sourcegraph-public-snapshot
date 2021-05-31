@@ -7,6 +7,7 @@ import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { CircleDashedIcon } from '../../../components/CircleDashedIcon'
 import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
+import { githubRepoScopeRequired } from '../cloud-ga'
 
 import { RemoveCodeHostConnectionModal } from './RemoveCodeHostConnectionModal'
 import { ifNotNavigated } from './UserAddCodeHostsPage'
@@ -27,6 +28,7 @@ interface CodeHostItemProps {
 }
 
 export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
+    user,
     service,
     kind,
     name,
@@ -50,6 +52,8 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
         })
         navigateToAuthProvider(kind)
     }, [kind, navigateToAuthProvider])
+
+    const updateAuthRequired = service?.kind === 'GITHUB' && githubRepoScopeRequired(user.tags, service.grantedScopes)
 
     return (
         <div className="p-2 d-flex align-items-start">
@@ -81,15 +85,28 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                 {service?.id ? (
                     <button
                         type="button"
-                        className="btn btn-link btn-sm text-danger px-0 shadow-none"
+                        className="btn btn-link btn-sm text-danger shadow-none"
                         onClick={toggleRemoveConnectionModal}
                     >
                         Remove
                     </button>
+                ) : oauthInFlight ? (
+                    <button type="button" className="btn btn-primary disabled" onClick={toAuthProvider}>
+                        <LoadingSpinner className="icon-inline ml-2 theme-dark" />
+                    </button>
                 ) : (
                     <button type="button" className="btn btn-primary" onClick={toAuthProvider}>
                         Connect
-                        {oauthInFlight && <LoadingSpinner className="icon-inline ml-2 theme-dark" />}
+                    </button>
+                )}
+                {updateAuthRequired && !oauthInFlight && (
+                    <button type="button" className="btn btn-secondary" onClick={toAuthProvider}>
+                        Update
+                    </button>
+                )}
+                {updateAuthRequired && oauthInFlight && (
+                    <button type="button" className="btn btn-secondary disabled" onClick={toAuthProvider}>
+                        <LoadingSpinner className="icon-inline ml-2 theme-dark" />
                     </button>
                 )}
             </div>

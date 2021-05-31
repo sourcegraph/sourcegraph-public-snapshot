@@ -13,6 +13,7 @@ import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../.
 import { SourcegraphContext } from '../../../jscontext'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
+import { githubRepoScopeRequired } from '../cloud-ga'
 
 import { CodeHostItem } from './CodeHostItem'
 
@@ -94,6 +95,13 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         })
     }, [fetchExternalServices])
 
+    const getGitHubUpdateAuthBanner = (needsUpdate: boolean): JSX.Element | null =>
+        needsUpdate ? (
+            <div className="alert alert-info mb-4" role="alert" key="add-repos">
+                Update your GiHub code host connection to search private code with Sourcegraph.
+            </div>
+        ) : null
+
     const getAddReposBanner = (services: string[]): JSX.Element | null =>
         services.length > 0 ? (
             <div className="alert alert-success mb-4" role="alert" key="add-repos">
@@ -107,6 +115,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     const getErrorAndSuccessBanners = (status: Status): (JSX.Element | null)[] => {
         const servicesWithProblems = []
         const notYetSyncedServiceNames = []
+        let updateAuthRequired = false
 
         // check if services are fetched
         if (isServicesByKind(status)) {
@@ -135,10 +144,20 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                         notYetSyncedServiceNames.push(serviceName)
                     }
                 }
+
+                // If we have a GitHub service, check whether we need to prompt the user to
+                // update their scope
+                if (service.kind === 'GITHUB') {
+                    updateAuthRequired = githubRepoScopeRequired(user.tags, service.grantedScopes)
+                }
             }
         }
 
-        return [...servicesWithProblems.map(getServiceWarningFragment), getAddReposBanner(notYetSyncedServiceNames)]
+        return [
+            ...servicesWithProblems.map(getServiceWarningFragment),
+            getAddReposBanner(notYetSyncedServiceNames),
+            getGitHubUpdateAuthBanner(updateAuthRequired),
+        ]
     }
 
     const addNewService = useCallback(
