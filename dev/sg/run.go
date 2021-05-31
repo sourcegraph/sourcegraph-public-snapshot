@@ -3,10 +3,12 @@ package main
 import (
 	"bytes"
 	"context"
+	"crypto/md5"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -201,21 +203,15 @@ func runWatch(ctx context.Context, cmd Command, root string, reload <-chan struc
 			out.WriteLine(output.Linef("", output.StyleSuccess, "%sSuccessfully installed %s%s", output.StyleBold, cmd.Name, output.StyleReset))
 
 			if cmd.CheckBinary != "" {
-				c = exec.CommandContext(ctx, "bash", "-c", fmt.Sprintf("md5 -q %s", cmd.CheckBinary))
-				c.Dir = root
-
-				cmdOut, err := c.CombinedOutput()
+				newHash, err := md5HashFile(filepath.Join(root, cmd.CheckBinary))
 				if err != nil {
 					return installErr{cmdName: cmd.Name, output: string(cmdOut)}
 				}
 
-				clean := strings.TrimSpace(string(cmdOut))
-				md5changed = md5hash != clean
-				md5hash = clean
+				md5changed = md5hash != newHash
+				md5hash = newHash
 			}
 		}
-
-		out.WriteLine(output.Linef("", output.StylePending, "%s. md5: %s, md5changed: %t", cmd.Name, md5hash, md5changed))
 
 		if cmd.CheckBinary == "" || md5changed {
 			for _, cancel := range cancelFuncs {
@@ -329,6 +325,21 @@ func makeEnv(envs ...map[string]string) []string {
 	}
 
 	return combined
+}
+
+func md5HashFile(filename string) (string, error) {
+	f, err := os.Open(filename)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+
+	h := md5.New()
+	if _, err := io.Copy(h, f); err != nil {
+		return "", err
+	}
+
+	return string(h.Sum(nil)), nil
 }
 
 //
