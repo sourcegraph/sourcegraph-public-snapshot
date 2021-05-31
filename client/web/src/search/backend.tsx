@@ -490,6 +490,10 @@ export function fetchSuggestions(query: string): Observable<SearchSuggestion[]> 
                                     }
                                 }
                             }
+                            ... on SearchContext {
+                                spec
+                                description
+                            }
                         }
                     }
                 }
