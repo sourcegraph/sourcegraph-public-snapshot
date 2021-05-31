@@ -4,6 +4,11 @@ $color-deletion: $red;
 .diff-boundary {
     &__num {
         background-color: var(--code-bg);
+        &:nth-child(3) {
+            .theme-redesign & {
+                border-left: 1px solid var(--border-color);
+            }
+        }
     }
     &__num,
     &__content {
@@ -38,6 +43,16 @@ $color-deletion: $red;
                 color: var(--line-number-color);
             }
         }
+        &--empty {
+            .theme-redesign & {
+                background-color: var(--body-bg);
+            }
+        }
+        .theme-redesign & {
+            &:nth-child(3) {
+                border-left: 1px solid var(--border-color);
+            }
+        }
     }
     &__content {
         padding-left: 0.5rem;
@@ -60,12 +75,6 @@ $color-deletion: $red;
         }
     }
 
-    // TODO: look for this specificity, is not working at the moment.
-    td.diff-hunk__num:nth-child(3) {
-        background: red;
-        border-left: 1px solid var(--border-color);
-    }
-
     &--split {
         table-layout: fixed;
         &__line {
@@ -78,28 +87,37 @@ $color-deletion: $red;
             }
             &--active {
                 background-color: rgba($oc-yellow-5, 0.17) !important;
+                .theme-redesign & {
+                    background-color: var(--code-line-highlight-color);
+                }
                 &-num {
                     background-color: rgba($oc-yellow-5, 0.25);
                     .theme-redesign & {
-                        background-color: rgba($oc-yellow-5, 0.17);
+                        background-color: var(--code-line-highlight-color);
                     }
                 }
             }
             &--addition {
                 background-color: rgba($color-addition, 0.17);
+                .theme-redesign & {
+                    background-color: var(--code-line-addition-color);
+                }
                 &-num {
                     background-color: rgba($color-addition, 0.25);
                     .theme-redesign & {
-                        background-color: rgba($color-addition, 0.17);
+                        background-color: var(--code-line-addition-color);
                     }
                 }
             }
             &--deletion {
                 background-color: rgba($color-deletion, 0.17);
+                .theme-redesign & {
+                    background-color: var(--code-line-deletion-color);
+                }
                 &-num {
                     background-color: rgba($color-deletion, 0.25);
                     .theme-redesign & {
-                        background-color: rgba($color-deletion, 0.17);
+                        background-color: var(--code-line-deletion-color);
                     }
                 }
             }
@@ -108,21 +126,39 @@ $color-deletion: $red;
 
     &__line--active &__num {
         background-color: rgba($oc-yellow-5, 0.35) !important;
+        .theme-redesign & {
+            background-color: var(--code-line-highlight-color) !important;
+        }
     }
     &__line--active &__content {
         background-color: rgba($oc-yellow-5, 0.25) !important;
+        .theme-redesign & {
+            background-color: var(--code-line-highlight-color) !important;
+        }
     }
     &__line--addition &__num {
         background-color: rgba($color-addition, 0.25);
+        .theme-redesign & {
+            background-color: var(--code-line-addition-color);
+        }
     }
     &__line--addition &__content {
         background-color: rgba($color-addition, 0.17);
+        .theme-redesign & {
+            background-color: var(--code-line-addition-color);
+        }
     }
     &__line--deletion &__num {
         background-color: rgba($color-deletion, 0.25);
+        .theme-redesign & {
+            background-color: var(--code-line-deletion-color);
+        }
     }
     &__line--deletion &__content {
         background-color: rgba($color-deletion, 0.17);
+        .theme-redesign & {
+            background-color: var(--code-line-deletion-color);
+        }
     }
     &__line--both &__num,
     &__num--both {

@@ -260,7 +260,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                             </div>
                         </div>
                         <DiffModeSelector
-                            className="py-2 text-right"
+                            className="py-2 text-right border-bottom"
                             // eslint-disable-next-line @typescript-eslint/unbound-method
                             handleDiffMode={this.handleDiffMode}
                             diffMode={this.state.diffMode}
