@@ -36,4 +36,21 @@
             overflow: auto;
         }
     }
+
+    .theme-redesign & {
+        border-top: 2px solid var(--border-color-2);
+
+        &__header {
+            padding: 0 1rem;
+            background-color: var(--color-bg-1);
+        }
+
+        &__dismiss {
+            color: var(--icon-color);
+        }
+
+        [data-reach-tab]:first-child {
+            margin-left: 0;
+        }
+    }
 }

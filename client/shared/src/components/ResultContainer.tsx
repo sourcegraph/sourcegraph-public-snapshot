@@ -107,7 +107,7 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
     return (
         <div className="test-search-result result-container" data-testid="result-container">
             <div className="result-container__header">
-                <Icon className="icon-inline" />
+                <Icon className="icon-inline flex-shrink-0" />
                 <div className="result-container__header-divider" />
                 <div
                     className={`result-container__header-title ${titleClassName || ''}`}
