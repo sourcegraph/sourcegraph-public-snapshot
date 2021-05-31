@@ -95,7 +95,7 @@ import {
     defaultPatternTypeFromSettings,
     experimentalFeaturesFromSettings,
 } from './util/settings'
-import {githubRepoScopeRequired} from './user/settings/cloud-ga';
+import { githubRepoScopeRequired } from './user/settings/cloud-ga'
 
 export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
@@ -377,6 +377,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                             ? combineLatest([
                                   listUserRepositories({ id: authenticatedUser.id, first: 1 }),
                                   queryExternalServices({ namespace: authenticatedUser.id, first: null, after: null }),
+                                  of(authenticatedUser),
                               ])
                             : of(null)
                     ),
@@ -384,13 +385,14 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                 )
                 .subscribe(result => {
                     if (!isErrorLike(result) && result !== null) {
-                        const [userRepositoriesResult, externalServicesResult] = result
+                        const [userRepositoriesResult, externalServicesResult, authenticatedUser] = result
                         const githubNodes = externalServicesResult.nodes.filter(node => node.kind === 'GITHUB')
-                        // TODO: How do I get hold of the authenticated user here?
                         this.setState({
                             hasUserAddedRepositories: userRepositoriesResult.nodes.length > 0,
                             hasUserAddedExternalServices: externalServicesResult.nodes.length > 0,
-                            githubRepoScopeRequired:  (githubNodes.length > 0) && githubRepoScopeRequired( [''],  githubNodes[0].grantedScopes ),
+                            githubRepoScopeRequired:
+                                githubNodes.length > 0 &&
+                                githubRepoScopeRequired(authenticatedUser.tags, githubNodes[0].grantedScopes),
                         })
                     }
                 })
