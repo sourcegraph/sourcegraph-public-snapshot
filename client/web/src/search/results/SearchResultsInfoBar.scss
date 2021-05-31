@@ -13,6 +13,10 @@
 
     .mdi-icon {
         margin-right: 0.125rem;
+
+        .theme-redesign & {
+            margin-right: 0;
+        }
     }
 
     &__row {
