@@ -95,6 +95,7 @@ import {
     defaultPatternTypeFromSettings,
     experimentalFeaturesFromSettings,
 } from './util/settings'
+import {githubRepoScopeRequired} from './user/settings/cloud-ga';
 
 export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
@@ -184,6 +185,7 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     defaultSearchContextSpec: string
     hasUserAddedRepositories: boolean
     hasUserAddedExternalServices: boolean
+    githubRepoScopeRequired: boolean
 
     /**
      * Whether globbing is enabled for filters.
@@ -302,6 +304,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             defaultSearchContextSpec: 'global', // global is default for now, user will be able to change this at some point
             hasUserAddedRepositories: false,
             hasUserAddedExternalServices: false,
+            githubRepoScopeRequired: false,
             showEnterpriseHomePanels: false,
             globbing: false,
             showMultilineSearchConsole: false,
@@ -373,7 +376,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                         authenticatedUser
                             ? combineLatest([
                                   listUserRepositories({ id: authenticatedUser.id, first: 1 }),
-                                  queryExternalServices({ namespace: authenticatedUser.id, first: 1, after: null }),
+                                  queryExternalServices({ namespace: authenticatedUser.id, first: null, after: null }),
                               ])
                             : of(null)
                     ),
@@ -382,9 +385,12 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                 .subscribe(result => {
                     if (!isErrorLike(result) && result !== null) {
                         const [userRepositoriesResult, externalServicesResult] = result
+                        const githubNodes = externalServicesResult.nodes.filter(node => node.kind === 'GITHUB')
+                        // TODO: How do I get hold of the authenticated user here?
                         this.setState({
                             hasUserAddedRepositories: userRepositoriesResult.nodes.length > 0,
                             hasUserAddedExternalServices: externalServicesResult.nodes.length > 0,
+                            githubRepoScopeRequired:  (githubNodes.length > 0) && githubRepoScopeRequired( [''],  githubNodes[0].grantedScopes ),
                         })
                     }
                 })
@@ -528,6 +534,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     showSearchContext={this.state.showSearchContext}
                                     hasUserAddedRepositories={this.state.hasUserAddedRepositories}
                                     hasUserAddedExternalServices={this.state.hasUserAddedExternalServices}
+                                    githubRepoScopeRequired={this.state.githubRepoScopeRequired}
                                     showSearchContextManagement={this.state.showSearchContextManagement}
                                     selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
                                     setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}

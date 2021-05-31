@@ -194,6 +194,7 @@ export interface SearchContextProps {
     showSearchContextHighlightTourStep?: boolean
     hasUserAddedRepositories: boolean
     hasUserAddedExternalServices: boolean
+    githubRepoScopeRequired: boolean
     defaultSearchContextSpec: string
     selectedSearchContextSpec?: string
     setSelectedSearchContextSpec: (spec: string) => void
