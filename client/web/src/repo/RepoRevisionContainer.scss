@@ -51,15 +51,9 @@
 
         .theme-redesign & {
             background-color: var(--code-bg);
-
-            // Add border to repo revision container content
-            // but enable variable margin-bottom (by setting it on child div)
-            // without having to repeat border styles.
-            > div:first-of-type {
-                border: 1px solid var(--border-color-2);
-                border-top-left-radius: var(--border-radius);
-                border-top-right-radius: var(--border-radius);
-            }
+            border: 1px solid var(--border-color-2);
+            border-top-left-radius: var(--border-radius);
+            border-top-right-radius: var(--border-radius);
         }
     }
 }
