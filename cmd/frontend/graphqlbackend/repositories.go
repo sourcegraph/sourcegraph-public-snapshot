@@ -19,15 +19,16 @@ import (
 
 func (r *schemaResolver) Repositories(args *struct {
 	graphqlutil.ConnectionArgs
-	Query      *string
-	Names      *[]string
-	Cloned     bool
-	NotCloned  bool
-	Indexed    bool
-	NotIndexed bool
-	OrderBy    string
-	Descending bool
-	After      *string
+	Query       *string
+	Names       *[]string
+	Cloned      bool
+	NotCloned   bool
+	Indexed     bool
+	NotIndexed  bool
+	FailedFetch bool
+	OrderBy     string
+	Descending  bool
+	After       *string
 }) (*repositoryConnectionResolver, error) {
 	opt := database.ReposListOptions{
 		OrderBy: database.RepoListOrderBy{{
@@ -60,12 +61,13 @@ func (r *schemaResolver) Repositories(args *struct {
 	}
 	args.ConnectionArgs.Set(&opt.LimitOffset)
 	return &repositoryConnectionResolver{
-		db:         r.db,
-		opt:        opt,
-		cloned:     args.Cloned,
-		notCloned:  args.NotCloned,
-		indexed:    args.Indexed,
-		notIndexed: args.NotIndexed,
+		db:          r.db,
+		opt:         opt,
+		cloned:      args.Cloned,
+		notCloned:   args.NotCloned,
+		indexed:     args.Indexed,
+		notIndexed:  args.NotIndexed,
+		failedFetch: args.FailedFetch,
 	}, nil
 }
 
@@ -82,12 +84,13 @@ type RepositoryConnectionResolver interface {
 var _ RepositoryConnectionResolver = &repositoryConnectionResolver{}
 
 type repositoryConnectionResolver struct {
-	db         dbutil.DB
-	opt        database.ReposListOptions
-	cloned     bool
-	notCloned  bool
-	indexed    bool
-	notIndexed bool
+	db          dbutil.DB
+	opt         database.ReposListOptions
+	cloned      bool
+	notCloned   bool
+	indexed     bool
+	notIndexed  bool
+	failedFetch bool
 
 	// cache results because they are used by multiple fields
 	once  sync.Once
@@ -140,6 +143,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			// explicitly set to false by the client.
 			opt2.OnlyCloned = true
 		}
+		opt2.FailedFetch = r.failedFetch
 
 		for {
 			// Cursor-based pagination requires that we fetch limit+1 records, so
