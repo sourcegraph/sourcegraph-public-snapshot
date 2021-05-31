@@ -1,11 +1,13 @@
 import React from 'react'
 
+import { Container } from '@sourcegraph/wildcard'
+
 export interface BatchChangesListEmptyProps {
     // Nothing for now.
 }
 
 export const BatchChangesListEmpty: React.FunctionComponent<BatchChangesListEmptyProps> = () => (
-    <div className="web-content">
+    <Container>
         <h2 className="mb-4">Get started with batch changes</h2>
         <h3 className="mb-3">Tutorials to help with your first batch change</h3>
         <div className="row">
@@ -133,7 +135,7 @@ export const BatchChangesListEmpty: React.FunctionComponent<BatchChangesListEmpt
                 allowFullScreen={true}
             />
         </div>
-    </div>
+    </Container>
 )
 
 const FindReplaceIcon: React.FunctionComponent<{ className?: string }> = ({ className }) => (
