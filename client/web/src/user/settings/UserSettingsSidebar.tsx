@@ -20,7 +20,6 @@ import { UserAreaUserFields } from '../../graphql-operations'
 import { OrgAvatar } from '../../org/OrgAvatar'
 import { OnboardingTourProps } from '../../search'
 import { HAS_CANCELLED_TOUR_KEY, HAS_COMPLETED_TOUR_KEY } from '../../search/input/SearchOnboardingTour'
-import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 import { NavItemDescriptor } from '../../util/contributions'
 import { UserAreaRouteContext } from '../area/UserArea'
 
@@ -66,13 +65,6 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
 
     return (
         <div className={props.className}>
-            {/* Indicate when the site admin is viewing another user's account */}
-            {siteAdminViewingOtherUser && (
-                <SiteAdminAlert className="sidebar__alert">
-                    Viewing account for <strong>{props.user.username}</strong>
-                </SiteAdminAlert>
-            )}
-
             <SidebarGroup>
                 <SidebarGroupHeader label="User account" icon={AccountCircleIcon} />
                 <SidebarGroupItems>
