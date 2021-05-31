@@ -166,10 +166,14 @@ func runWatch(ctx context.Context, cmd Command, root string, reload <-chan struc
 		md5changed bool
 	)
 
+	var wg sync.WaitGroup
 	var cancelFuncs []context.CancelFunc
 
 	errs := make(chan error, 1)
-	defer close(errs)
+	defer func() {
+		wg.Wait()
+		close(errs)
+	}()
 
 	for {
 		// Build it
@@ -223,7 +227,11 @@ func runWatch(ctx context.Context, cmd Command, root string, reload <-chan struc
 			// Run it
 			out.WriteLine(output.Linef("", output.StylePending, "Running %s...", cmd.Name))
 
-			commandCtx, cancel := context.WithCancel(ctx)
+			c, cancel, err := startCmd(ctx, root, cmd)
+			if err != nil {
+				return err
+			}
+
 			defer cancel()
 			cancelFuncs = append(cancelFuncs, cancel)
 
@@ -247,28 +255,24 @@ func runWatch(ctx context.Context, cmd Command, root string, reload <-chan struc
 			} else {
 				c.Stderr = io.MultiWriter(logger, stderrBuf)
 			}
-
-			if err := c.Start(); err != nil {
-				return err
-			}
-
+			wg.Add(1)
 			go func() {
-				errs <- (func() error {
-					if err := c.Wait(); err != nil {
-						if exitErr, ok := err.(*exec.ExitError); ok {
-							return runErr{
-								cmdName:  cmd.Name,
-								exitCode: exitErr.ExitCode(),
-								stderr:   string(stderrBuf.Bytes()),
-								stdout:   string(stdoutBuf.Bytes()),
-							}
-						}
+				defer wg.Done()
 
-						return err
+				if err := c.Wait(); err == nil {
+					return
+				}
+
+				if exitErr, ok := err.(*exec.ExitError); ok {
+					err = runErr{
+						cmdName:  cmd.Name,
+						exitCode: exitErr.ExitCode(),
+						stderr:   string(stderrBuf.Bytes()),
+						stdout:   string(stdoutBuf.Bytes()),
 					}
+				}
 
-					return nil
-				})()
+				errs <- err
 			}()
 
 			// TODO: We should probably only set this after N seconds (or when
@@ -292,6 +296,32 @@ func runWatch(ctx context.Context, cmd Command, root string, reload <-chan struc
 			return err
 		}
 	}
+}
+
+func startCmd(ctx context.Context, dir string, cmd Command) (*exec.Cmd, func(), error) {
+	commandCtx, cancel := context.WithCancel(ctx)
+
+	c := exec.CommandContext(commandCtx, "bash", "-c", cmd.Cmd)
+	c.Dir = dir
+	c.Env = makeEnv(conf.Env, cmd.Env)
+
+	logger := newCmdLogger(cmd.Name, out)
+	if cmd.IgnoreStdout {
+		out.WriteLine(output.Linef("", output.StyleSuggestion, "Ignoring stdout of %s", cmd.Name))
+	} else {
+		c.Stdout = logger
+	}
+	if cmd.IgnoreStderr {
+		out.WriteLine(output.Linef("", output.StyleSuggestion, "Ignoring stderr of %s", cmd.Name))
+	} else {
+		c.Stderr = logger
+	}
+
+	if err := c.Start(); err != nil {
+		return nil, cancel, err
+	}
+
+	return c, cancel, nil
 }
 
 func makeEnv(envs ...map[string]string) []string {
