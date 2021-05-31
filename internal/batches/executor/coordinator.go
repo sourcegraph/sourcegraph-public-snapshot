@@ -139,6 +139,36 @@ func (c *Coordinator) checkCacheForTask(ctx context.Context, task *Task) (specs 
 	return specs, true, nil
 }
 
+func (c *Coordinator) setCachedStepResults(ctx context.Context, task *Task) error {
+	// We start at the back so that we can find the _last_ cached step,
+	// then restart execution on the following step.
+	for i := len(task.Steps) - 1; i > -1; i-- {
+		key := StepsCacheKey{Task: task, StepIndex: i}
+
+		// If we need to clear the cache, we optimistically try this for every
+		// step.
+		if c.opts.ClearCache {
+			if err := c.cache.Clear(ctx, key); err != nil {
+				return errors.Wrapf(err, "clearing cache for step %d in %q", i, task.Repository.Name)
+			}
+		} else {
+			result, found, err := c.cache.GetStepResult(ctx, key)
+			if err != nil {
+				return errors.Wrapf(err, "checking for cached diff for step %d", i)
+			}
+
+			// Found a cached result, we're done
+			if found {
+				task.CachedResultFound = true
+				task.CachedResult = result
+				return nil
+			}
+		}
+	}
+
+	return nil
+}
+
 func (c *Coordinator) cacheAndBuildSpec(ctx context.Context, taskResult taskResult, status taskStatusHandler) (specs []*batches.ChangesetSpec, err error) {
 	defer func() {
 		// Set these two fields in any case
@@ -214,21 +244,8 @@ func (c *Coordinator) Execute(ctx context.Context, tasks []*Task, spec *batches.
 	// If we are here, that means we didn't find anything in the cache for the
 	// complete task. So, what if we have cached results for the steps?
 	for _, t := range tasks {
-		// We start at the back so that we can find the _last_ cached step,
-		// then restart execution on the following step.
-		for i := len(t.Steps) - 1; i > -1; i-- {
-			key := StepsCacheKey{Task: t, StepIndex: i}
-
-			result, found, err := c.cache.GetStepResult(ctx, key)
-			if err != nil {
-				return nil, nil, errors.Wrapf(err, "checking for cached diff for step %d", i)
-			}
-
-			if found {
-				t.CachedResultFound = true
-				t.CachedResult = result
-				break
-			}
+		if err := c.setCachedStepResults(ctx, t); err != nil {
+			return nil, nil, err
 		}
 	}
 

@@ -17,6 +17,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Fixed
 
+- Cached step results produced by `src batch [apply|preview]` are now properly cleared when using the `-clear-cache` command line flag.
+
 ### Removed
 
 ## 3.28.2
