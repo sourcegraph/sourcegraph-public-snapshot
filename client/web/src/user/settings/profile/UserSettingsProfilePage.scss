@@ -2,4 +2,18 @@
     &__heading {
         margin-bottom: 0.875rem;
     }
+    &__activation-container {
+        html:not(.theme-redesign) & {
+            @extend .card;
+            h3,
+            p {
+                margin-bottom: 0;
+            }
+        }
+    }
+    &__activation-header {
+        html:not(.theme-redesign) & {
+            @extend .card-body;
+        }
+    }
 }
