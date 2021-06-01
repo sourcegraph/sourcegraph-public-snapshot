@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import * as React from 'react'
 
@@ -10,8 +11,9 @@ export const BaseActionContainer: React.FunctionComponent<{
     description: React.ReactFragment
     action: React.ReactFragment
     details?: React.ReactFragment
-}> = ({ title, description, action, details }) => (
-    <div className="action-container">
+    className?: string
+}> = ({ title, description, action, details, className }) => (
+    <div className={classNames('action-container', className)}>
         <div className="action-container__row">
             <div className="action-container__description">
                 <h4 className="action-container__title">{title}</h4>
@@ -31,6 +33,7 @@ interface Props {
     buttonSubtitle?: string
     buttonDisabled?: boolean
     info?: React.ReactNode
+    className?: string
 
     /** The message to briefly display below the button when the action is successful. */
     flashText?: string
@@ -67,6 +70,7 @@ export class ActionContainer extends React.PureComponent<Props, State> {
             <BaseActionContainer
                 title={this.props.title}
                 description={this.props.description}
+                className={this.props.className}
                 action={
                     <>
                         <button

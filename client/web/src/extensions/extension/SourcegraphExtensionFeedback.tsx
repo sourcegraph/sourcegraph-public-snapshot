@@ -19,8 +19,8 @@ export const SourcegraphExtensionFeedback: React.FunctionComponent<SourcegraphEx
 
     return (
         <>
-            <button type="button" className="btn btn-sm btn-link p-0" onClick={toggleIsOpen}>
-                Message the author
+            <button type="button" className="btn btn-link p-0" onClick={toggleIsOpen}>
+                <small>Message the author</small>
             </button>
             {isOpen && (
                 <Dialog

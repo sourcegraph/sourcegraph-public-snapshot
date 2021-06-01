@@ -102,78 +102,70 @@ export const InviteForm: React.FunctionComponent<Props> = ({
 
     return (
         <div className="invite-form">
-            <div className="card invite-form__container">
-                <div className="card-body">
-                    <h4 className="card-title">
-                        {viewerCanAddUserToOrganization ? 'Add or invite member' : 'Invite member'}
-                    </h4>
-                    <Form className="form-inline align-items-start" onSubmit={onSubmit}>
-                        <label className="sr-only" htmlFor="invite-form__username">
-                            Username
-                        </label>
-                        <input
-                            type="text"
-                            className="form-control mb-2 mr-sm-2"
-                            id="invite-form__username"
-                            placeholder="Username"
-                            onChange={onUsernameChange}
-                            value={username}
-                            autoComplete="off"
-                            autoCapitalize="off"
-                            autoCorrect="off"
-                            required={true}
-                            spellCheck={false}
-                            size={30}
-                        />
-                        <div className="d-block d-md-inline">
-                            {viewerCanAddUserToOrganization && (
-                                <button
-                                    type="submit"
-                                    disabled={
-                                        loading === 'addUserToOrganization' || loading === 'inviteUserToOrganization'
-                                    }
-                                    className="btn btn-primary mr-2"
-                                    data-tooltip="Add immediately without sending invitation (site admins only)"
-                                >
-                                    {loading === 'addUserToOrganization' ? (
-                                        <LoadingSpinner className="icon-inline" />
-                                    ) : (
-                                        <AddIcon className="icon-inline" />
-                                    )}{' '}
-                                    Add member
-                                </button>
-                            )}
-                            {(emailInvitesEnabled || !viewerCanAddUserToOrganization) && (
-                                <button
-                                    type={viewerCanAddUserToOrganization ? 'button' : 'submit'}
-                                    disabled={
-                                        loading === 'addUserToOrganization' || loading === 'inviteUserToOrganization'
-                                    }
-                                    className={`btn ${
-                                        viewerCanAddUserToOrganization ? 'btn-secondary' : 'btn-primary'
-                                    }`}
-                                    data-tooltip={
-                                        emailInvitesEnabled
-                                            ? 'Send invitation email with link to join this organization'
-                                            : 'Generate invitation link to manually send to user'
-                                    }
-                                    onClick={viewerCanAddUserToOrganization ? onInviteClick : undefined}
-                                >
-                                    {loading === 'inviteUserToOrganization' ? (
-                                        <LoadingSpinner className="icon-inline" />
-                                    ) : (
-                                        <EmailOpenOutlineIcon className="icon-inline" />
-                                    )}{' '}
-                                    {emailInvitesEnabled
-                                        ? viewerCanAddUserToOrganization
-                                            ? 'Send invitation to join'
-                                            : 'Send invitation'
-                                        : 'Generate invitation link'}
-                                </button>
-                            )}
-                        </div>
-                    </Form>
-                </div>
+            <div className="invite-form__container">
+                <label htmlFor="invite-form__username">
+                    {viewerCanAddUserToOrganization ? 'Add or invite member' : 'Invite member'}
+                </label>
+                <Form className="form-inline align-items-start" onSubmit={onSubmit}>
+                    <input
+                        type="text"
+                        className="form-control mb-2 mr-sm-2"
+                        id="invite-form__username"
+                        placeholder="Username"
+                        onChange={onUsernameChange}
+                        value={username}
+                        autoComplete="off"
+                        autoCapitalize="off"
+                        autoCorrect="off"
+                        required={true}
+                        spellCheck={false}
+                        size={30}
+                    />
+                    <div className="d-block d-md-inline">
+                        {viewerCanAddUserToOrganization && (
+                            <button
+                                type="submit"
+                                disabled={loading === 'addUserToOrganization' || loading === 'inviteUserToOrganization'}
+                                className="btn btn-primary mr-2"
+                                data-tooltip="Add immediately without sending invitation (site admins only)"
+                            >
+                                {loading === 'addUserToOrganization' ? (
+                                    <LoadingSpinner className="icon-inline" />
+                                ) : (
+                                    <AddIcon className="icon-inline" />
+                                )}{' '}
+                                Add member
+                            </button>
+                        )}
+                        {(emailInvitesEnabled || !viewerCanAddUserToOrganization) && (
+                            <button
+                                type={viewerCanAddUserToOrganization ? 'button' : 'submit'}
+                                disabled={loading === 'addUserToOrganization' || loading === 'inviteUserToOrganization'}
+                                className={classNames(
+                                    'btn',
+                                    viewerCanAddUserToOrganization ? 'btn-secondary' : 'btn-primary'
+                                )}
+                                data-tooltip={
+                                    emailInvitesEnabled
+                                        ? 'Send invitation email with link to join this organization'
+                                        : 'Generate invitation link to manually send to user'
+                                }
+                                onClick={viewerCanAddUserToOrganization ? onInviteClick : undefined}
+                            >
+                                {loading === 'inviteUserToOrganization' ? (
+                                    <LoadingSpinner className="icon-inline" />
+                                ) : (
+                                    <EmailOpenOutlineIcon className="icon-inline" />
+                                )}{' '}
+                                {emailInvitesEnabled
+                                    ? viewerCanAddUserToOrganization
+                                        ? 'Send invitation to join'
+                                        : 'Send invitation'
+                                    : 'Generate invitation link'}
+                            </button>
+                        )}
+                    </div>
+                </Form>
             </div>
             {authenticatedUser?.siteAdmin && !emailInvitesEnabled && (
                 <DismissibleAlert className="alert-info" partialStorageKey="org-invite-email-config">

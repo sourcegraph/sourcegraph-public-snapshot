@@ -366,7 +366,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                         data-reach-accordion=""
                       >
                         <div
-                          class="activation-checklist__container list-group-item "
+                          class="activation-checklist__container list-group-item"
                           data-reach-accordion-item=""
                           data-state="collapsed"
                         >
@@ -450,7 +450,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                           </div>
                         </div>
                         <div
-                          class="activation-checklist__container list-group-item "
+                          class="activation-checklist__container list-group-item"
                           data-reach-accordion-item=""
                           data-state="collapsed"
                         >
@@ -547,7 +547,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                           </div>
                         </div>
                         <div
-                          class="activation-checklist__container list-group-item "
+                          class="activation-checklist__container list-group-item"
                           data-reach-accordion-item=""
                           data-state="collapsed"
                         >
@@ -631,7 +631,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                           </div>
                         </div>
                         <div
-                          class="activation-checklist__container list-group-item "
+                          class="activation-checklist__container list-group-item"
                           data-reach-accordion-item=""
                           data-state="collapsed"
                         >
@@ -1223,11 +1223,11 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                             data-reach-accordion=""
                           >
                             <AccordionItem
-                              className="activation-checklist__container list-group-item "
+                              className="activation-checklist__container list-group-item"
                               key="ConnectedCodeHost"
                             >
                               <div
-                                className="activation-checklist__container list-group-item "
+                                className="activation-checklist__container list-group-item"
                                 data-reach-accordion-item=""
                                 data-state="collapsed"
                               >
@@ -1307,11 +1307,11 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                               </div>
                             </AccordionItem>
                             <AccordionItem
-                              className="activation-checklist__container list-group-item "
+                              className="activation-checklist__container list-group-item"
                               key="DidSearch"
                             >
                               <div
-                                className="activation-checklist__container list-group-item "
+                                className="activation-checklist__container list-group-item"
                                 data-reach-accordion-item=""
                                 data-state="collapsed"
                               >
@@ -1419,11 +1419,11 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                               </div>
                             </AccordionItem>
                             <AccordionItem
-                              className="activation-checklist__container list-group-item "
+                              className="activation-checklist__container list-group-item"
                               key="FoundReferences"
                             >
                               <div
-                                className="activation-checklist__container list-group-item "
+                                className="activation-checklist__container list-group-item"
                                 data-reach-accordion-item=""
                                 data-state="collapsed"
                               >
@@ -1503,11 +1503,11 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                               </div>
                             </AccordionItem>
                             <AccordionItem
-                              className="activation-checklist__container list-group-item "
+                              className="activation-checklist__container list-group-item"
                               key="EnabledSharing"
                             >
                               <div
-                                className="activation-checklist__container list-group-item "
+                                className="activation-checklist__container list-group-item"
                                 data-reach-accordion-item=""
                                 data-state="collapsed"
                               >

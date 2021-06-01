@@ -1,13 +1,42 @@
 # Quickstart step 6: Start the server
 
-```bash
-cd sourcegraph
-./dev/start.sh
-```
+1. Navigate to the sourcegraph source code folder
+
+    ```
+    cd sourcegraph
+    ```
+
+2. (with docker) Start the Redis and PostgreSQL containers in the background with:
+
+    ```
+    docker-compose -f dev/compose.yml up -d
+    ```
+
+    You can also start either Redis or PostgreSQL, if you are running the other one directly on your system:
+
+    ```
+    docker-compose -f dev/compose.yml up -d redis
+    # or
+    docker-compose -f dev/compose.yml up -d postgresql
+    ```
+
+    When you want to stop the containers, run:
+
+    ```
+    docker-compose -f dev/compose.yml down
+    ```
+
+3. Start the server with
+
+    ```
+    ./dev/start.sh
+    ```
 
 This will continuously compile your code and live reload your locally running instance of Sourcegraph.
 
 Navigate your browser to https://sourcegraph.test:3443 to see if everything worked.
+
+If the script exits with errors or outputs errors, have a look at [Troubleshooting](../how-to/troubleshooting_local_development.md).
 
 ## Environment
 

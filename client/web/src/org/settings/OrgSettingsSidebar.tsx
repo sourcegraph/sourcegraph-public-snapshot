@@ -1,12 +1,15 @@
+import classNames from 'classnames'
 import AccountMultipleIcon from 'mdi-react/AccountMultipleIcon'
 import ClipboardAccountOutlineIcon from 'mdi-react/ClipboardAccountOutlineIcon'
 import EarthIcon from 'mdi-react/EarthIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router-dom'
 
-import { SidebarGroup, SidebarGroupItems, SidebarNavItem } from '../../components/Sidebar'
+import { SidebarGroup, SidebarGroupHeader, SidebarGroupItems, SidebarNavItem } from '../../components/Sidebar'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 import { OrgAreaPageProps } from '../area/OrgArea'
+
+import styles from './OrgSettingsSidebar.module.scss'
 
 interface Props extends OrgAreaPageProps, RouteComponentProps<{}> {
     className?: string
@@ -23,7 +26,7 @@ export const OrgSettingsSidebar: React.FunctionComponent<Props> = ({ org, authen
     const siteAdminViewingOtherOrg = authenticatedUser && org.viewerCanAdminister && !org.viewerIsMember
 
     return (
-        <div className={className}>
+        <div className={classNames(styles.orgSettingsSidebar, className)}>
             {/* Indicate when the site admin is viewing another org's settings */}
             {siteAdminViewingOtherOrg && (
                 <SiteAdminAlert className="sidebar__alert">
@@ -32,6 +35,7 @@ export const OrgSettingsSidebar: React.FunctionComponent<Props> = ({ org, authen
             )}
 
             <SidebarGroup>
+                <SidebarGroupHeader label="Organization" />
                 <SidebarGroupItems>
                     <SidebarNavItem icon={EarthIcon} to={match.url} exact={true}>
                         Organization Settings

@@ -75,7 +75,7 @@ export const AddUserEmailForm: FunctionComponent<Props> = ({ user, className, on
                     'text-danger font-weight-bold': emailState.kind === 'INVALID',
                 })}
             >
-                Email address
+                Add email address
             </label>
             {/* eslint-disable-next-line react/forbid-elements */}
             <form className="form-inline" onSubmit={onSubmit} noValidate={true}>

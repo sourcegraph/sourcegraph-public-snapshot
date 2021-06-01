@@ -168,6 +168,18 @@ func TestGetIndexOptions(t *testing.T) {
 				{Name: "rev2", Version: "!rev2"},
 			},
 		},
+	}, {
+		name: "with a priority value",
+		conf: schema.SiteConfiguration{},
+		repo: "priority",
+		want: zoektIndexOptions{
+			RepoID:  4,
+			Symbols: true,
+			Branches: []zoekt.RepositoryBranch{
+				{Name: "HEAD", Version: "!HEAD"},
+			},
+			Priority: 10,
+		},
 	}}
 
 	{
@@ -197,17 +209,22 @@ func TestGetIndexOptions(t *testing.T) {
 
 	getRepoIndexOptions := func(repo string) (*RepoIndexOptions, error) {
 		repoID := int32(1)
-		for _, r := range []string{"repo", "foo", "not_in_version_context"} {
+		for _, r := range []string{"repo", "foo", "not_in_version_context", "priority"} {
 			if r == repo {
 				break
 			}
 			repoID++
+		}
+		var getPriority func() float64 = nil
+		if repo == "priority" {
+			getPriority = func() float64 { return 10 }
 		}
 		return &RepoIndexOptions{
 			RepoID: repoID,
 			GetVersion: func(branch string) (string, error) {
 				return "!" + branch, nil
 			},
+			GetPriority: getPriority,
 		}, nil
 	}
 
