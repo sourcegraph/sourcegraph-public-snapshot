@@ -30,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func serveReposGetByName(w http.ResponseWriter, r *http.Request) error {
@@ -158,6 +159,22 @@ func serveConfiguration(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
+func repoRankFromConfig(siteConfig schema.SiteConfiguration, repoName string) float64 {
+	val := 0.0
+	if len(siteConfig.RepoRankScores) > 0 {
+		// try every "directory" in the repo name to assign it a value, so a repoName like
+		// "github.com/sourcegraph/zoekt" will have "github.com", "github.com/sourcegraph",
+		// and "github.com/sourcegraph/zoekt" tested.
+		for i := 0; i < len(repoName); i++ {
+			if repoName[i] == '/' {
+				val += siteConfig.RepoRankScores[repoName[:i]]
+			}
+		}
+		val += siteConfig.RepoRankScores[repoName]
+	}
+	return val
+}
+
 // serveSearchConfiguration is _only_ used by the zoekt index server. Zoekt does
 // not depend on frontend and therefore does not have access to `conf.Watch`.
 // Additionally, it only cares about certain search specific settings so this
@@ -188,11 +205,13 @@ func serveSearchConfiguration(w http.ResponseWriter, r *http.Request) error {
 		}
 
 		getPriority := func() float64 {
+			val := repoRankFromConfig(siteConfig, repoName)
+
 			switch m := repo.Metadata.(type) {
 			case *github.Repository:
-				return float64(m.StargazerCount)
+				val += float64(m.StargazerCount)
 			}
-			return 0.0
+			return val
 		}
 
 		return &searchbackend.RepoIndexOptions{

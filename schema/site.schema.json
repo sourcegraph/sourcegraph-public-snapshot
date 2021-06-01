@@ -456,6 +456,15 @@
       "default": 1,
       "group": "External services"
     },
+    "repoRankScores": {
+      "description": "a map of URI directories to numeric scores for specifying search result importance, like {\"github.com\": 500, \"github.com/sourcegraph\": 300, \"github.com/sourcegraph/sourcegraph\": 100}. Would rank \"github.com/sourcegraph/sourcegraph\" as 500+300+100=900, and \"github.com/other/foo\" as 500.",
+      "type": "object",
+      "default": {},
+      "group": "Search",
+      "additionalProperties": {
+        "type": "number"
+      }
+    },
     "repoConcurrentExternalServiceSyncers": {
       "description": "The number of concurrent external service syncers that can run.",
       "type": "integer",
