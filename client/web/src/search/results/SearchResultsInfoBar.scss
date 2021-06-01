@@ -8,6 +8,7 @@
 
     .theme-redesign & {
         padding-top: 0;
+        padding-left: 0;
     }
 
     .alert {
@@ -62,9 +63,5 @@
             flex-grow: 1;
             margin-right: 0; // Reset gap
         }
-    }
-
-    .theme-redesign & {
-        padding-left: 0;
     }
 }
