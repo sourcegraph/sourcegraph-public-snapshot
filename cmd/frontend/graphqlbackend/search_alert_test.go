@@ -11,6 +11,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
@@ -182,7 +183,7 @@ func TestAlertForDiffCommitSearchLimits(t *testing.T) {
 	}
 
 	for _, test := range cases {
-		alert := alertForError(test.multiErr, &run.SearchInputs{})
+		alert := alertForError(test.multiErr)
 		haveAlertDescription := alert.description
 		if diff := cmp.Diff(test.wantAlertDescription, haveAlertDescription); diff != "" {
 			t.Fatalf("test %s, mismatched alert (-want, +got):\n%s", test.name, diff)
@@ -216,7 +217,7 @@ func TestErrorToAlertStructuralSearch(t *testing.T) {
 			Errors:      test.errors,
 			ErrorFormat: multierror.ListFormatFunc,
 		}
-		haveAlert := alertForError(multiErr, &run.SearchInputs{})
+		haveAlert := alertForError(multiErr)
 
 		if haveAlert != nil && haveAlert.title != test.wantAlertTitle {
 			t.Fatalf("test %s, have alert: %q, want: %q", test.name, haveAlert.title, test.wantAlertTitle)
@@ -369,7 +370,10 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 			if test.cancelContext {
 				cancel()
 			}
-			alert := sr.alertForOverRepoLimit(ctx)
+			alert, err := errorToAlert(sr.errorForOverRepoLimit(ctx))
+			if err != nil {
+				t.Fatalf("unexpected error: %s", err)
+			}
 
 			wantAlert := test.wantAlert
 			if !reflect.DeepEqual(alert, wantAlert) {
@@ -437,8 +441,7 @@ func TestAlertForNoResolvedReposWithNonGlobalSearchContext(t *testing.T) {
 		},
 	}
 
-	alert := sr.alertForNoResolvedRepos(context.Background())
-	if !reflect.DeepEqual(alert, wantAlert) {
-		t.Fatalf("have alert %+v, want: %+v", alert, wantAlert)
-	}
+	alert, err := errorToAlert(sr.errorForNoResolvedRepos(context.Background()))
+	require.NoError(t, err)
+	require.Equal(t, wantAlert, alert)
 }

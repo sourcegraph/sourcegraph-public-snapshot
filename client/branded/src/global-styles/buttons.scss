@@ -1,3 +1,9 @@
+:root {
+    --btn-padding-y-sm: 0.25rem;
+}
+
+$btn-padding-y-sm: var(--btn-padding-y-sm);
+
 @import 'bootstrap/scss/buttons';
 @import 'bootstrap/scss/button-group';
 

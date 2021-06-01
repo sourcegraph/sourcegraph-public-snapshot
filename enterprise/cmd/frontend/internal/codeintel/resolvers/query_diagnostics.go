@@ -113,7 +113,7 @@ func (r *queryResolver) adjustDiagnostic(ctx context.Context, adjustedUpload adj
 	// call below, and is also reflected in the embedded diagnostic value in the return.
 	diagnostic.Path = adjustedUpload.Upload.Root + diagnostic.Path
 
-	adjustedCommit, adjustedRange, err := r.adjustRange(
+	adjustedCommit, adjustedRange, _, err := r.adjustRange(
 		ctx,
 		adjustedUpload.Upload.RepositoryID,
 		adjustedUpload.Upload.Commit,

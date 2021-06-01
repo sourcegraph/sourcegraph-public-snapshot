@@ -70,3 +70,7 @@ Repositories can also placed onto the `updateQueue` if we receive a webhook indi
 The [update scheduler](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.14.0/-/blob/cmd/repo-updater/repos/scheduler.go#L165:27) has [`conf.GitMaxConcurrentClones`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.14.0/-/blob/schema/site.schema.json#L235-240) workers processing the `updateQueue` and issuing git clone/fetch commands.
 
 >NOTE: gitserver also enforces `GitMaxConcurrentClones` per shard. So it is possible to have `GitMaxConcurrentClones * GITSERVER_REPLICA_COUNT` clone/fetch running, although uncommon.
+
+## Identity Coherence
+
+Repositories can be referenced using an internal id that is coherent across updates, deletes, and even re-adding the original repository name to Sourcegraph after deleting. This id refers to the primary key column [`id`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/types/types.go#L33) in the [`repo` table](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.14.0/-/blob/cmd/frontend/db/schema.md#table-public-repo).

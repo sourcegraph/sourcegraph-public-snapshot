@@ -5,6 +5,7 @@ import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensio
 import { HoverOverlay, HoverOverlayProps } from '@sourcegraph/shared/src/hover/HoverOverlay'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
+import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { HoverThresholdProps } from '../../repo/RepoContainer'
 
@@ -50,14 +51,24 @@ export const WebHoverOverlay: React.FunctionComponent<HoverOverlayProps & HoverT
         }
     }, [hoveredToken?.filePath, hoveredToken?.line, hoveredToken?.character, onHoverShown, hoverHasValue])
 
+    const [isRedesignEnabled] = useRedesignToggle()
+
     return (
         <HoverOverlay
             {...propsToUse}
-            className="card"
-            iconClassName="icon-inline"
-            closeButtonClassName="btn btn-icon"
-            actionItemClassName="btn btn-secondary"
-            badgeClassName={classNames('badge badge-secondary', styles.webHoverOverlayBadge)}
+            className={classNames('card', styles.webHoverOverlay)}
+            iconClassName={classNames(!isRedesignEnabled && 'icon-inline')}
+            closeButtonClassName={classNames('btn btn-icon', styles.webHoverOverlayCloseButton)}
+            actionItemClassName={classNames(
+                'btn btn-secondary',
+                styles.webHoverOverlayAction,
+                isRedesignEnabled && 'btn-sm'
+            )}
+            badgeClassName={classNames(
+                'badge badge-secondary',
+                styles.webHoverOverlayBadge,
+                isRedesignEnabled && 'badge-sm'
+            )}
             onAlertDismissed={onAlertDismissed}
             getAlertClassName={getAlertClassName}
         />

@@ -9,11 +9,11 @@ import {
 import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 // Components from shared with web-styling class names applied
-
 export { WebHoverOverlay } from './WebHoverOverlay'
 
 export const WebCommandListPopoverButton: React.FunctionComponent<CommandListPopoverButtonProps> = props => {
     const [isRedesignEnabled] = useRedesignToggle()
+
     return (
         <CommandListPopoverButton
             {...props}

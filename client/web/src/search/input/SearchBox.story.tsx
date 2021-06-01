@@ -2,9 +2,15 @@ import { storiesOf } from '@storybook/react'
 import { createMemoryHistory } from 'history'
 import React from 'react'
 
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+
 import { WebStory } from '../../components/WebStory'
 import { SearchPatternType } from '../../graphql-operations'
-import { mockFetchAutoDefinedSearchContexts, mockFetchSearchContexts } from '../../searchContexts/testHelpers'
+import {
+    mockFetchAutoDefinedSearchContexts,
+    mockFetchSearchContexts,
+    mockGetUserSearchContextNamespaces,
+} from '../../searchContexts/testHelpers'
 
 import { SearchBox, SearchBoxProps } from './SearchBox'
 
@@ -14,6 +20,7 @@ const { add } = storiesOf('web/search/input/SearchBox', module)
 
 const history = createMemoryHistory()
 const defaultProps: SearchBoxProps = {
+    telemetryService: NOOP_TELEMETRY_SERVICE,
     location: history.location,
     history,
     settingsCascade: {
@@ -45,6 +52,7 @@ const defaultProps: SearchBoxProps = {
     hasUserAddedRepositories: false,
     authenticatedUser: null,
     hasUserAddedExternalServices: false,
+    getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
 }
 
 add(

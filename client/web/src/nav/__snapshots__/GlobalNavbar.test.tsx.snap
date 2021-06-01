@@ -43,6 +43,7 @@ exports[`GlobalNavbar default 1`] = `
         }
       }
       fetchSearchContexts={[Function]}
+      getUserSearchContextNamespaces={[Function]}
       globbing={false}
       hasUserAddedExternalServices={false}
       hasUserAddedRepositories={false}

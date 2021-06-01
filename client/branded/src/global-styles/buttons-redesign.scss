@@ -121,6 +121,8 @@
 }
 
 .theme-redesign {
+    --btn-padding-y-sm: 0.375rem;
+
     @include redesign-button-variant(
         $name: 'primary',
         $base-color: var(--primary),

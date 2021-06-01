@@ -37,4 +37,11 @@ export const externalServiceUserModeFromTags = (tags: string[]): 'disabled' | 'p
     return siteMode
 }
 
+export const githubRepoScopeRequired = (tags: string[], scopes: string[]): boolean => {
+    const allowedPrivate = externalServiceUserModeFromTags(tags) === 'all'
+    // If the user is allowed to add private code but they don't have the 'repo' scope
+    // then we need to request it.
+    return allowedPrivate && !scopes.includes('repo')
+}
+
 const modeEnabled = (mode: string): boolean => mode === 'all' || mode === 'public'

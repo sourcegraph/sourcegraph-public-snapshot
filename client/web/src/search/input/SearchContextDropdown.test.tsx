@@ -5,19 +5,26 @@ import { act } from 'react-dom/test-utils'
 import { Dropdown, DropdownItem, DropdownToggle } from 'reactstrap'
 import sinon from 'sinon'
 
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/util/MockIntersectionObserver'
 
 import { SearchPatternType } from '../../graphql-operations'
-import { mockFetchAutoDefinedSearchContexts, mockFetchSearchContexts } from '../../searchContexts/testHelpers'
+import {
+    mockFetchAutoDefinedSearchContexts,
+    mockFetchSearchContexts,
+    mockGetUserSearchContextNamespaces,
+} from '../../searchContexts/testHelpers'
 
 import { SearchContextDropdown, SearchContextDropdownProps } from './SearchContextDropdown'
 
 describe('SearchContextDropdown', () => {
     const defaultProps: SearchContextDropdownProps = {
+        telemetryService: NOOP_TELEMETRY_SERVICE,
         query: '',
         showSearchContextManagement: false,
         fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(1),
         fetchSearchContexts: mockFetchSearchContexts,
+        getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
         defaultSearchContextSpec: '',
         selectedSearchContextSpec: '',
         setSelectedSearchContextSpec: () => {},

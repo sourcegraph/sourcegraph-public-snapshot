@@ -41,7 +41,7 @@ $alert-padding-x: 0.75rem;
 
 // Badges
 
-$badge-font-size: 0.75em;
+$badge-font-size: var(--badge-font-size);
 $badge-font-weight: var(--badge-font-weight);
 $badge-padding-y: var(--badge-padding-y);
 $badge-padding-x: var(--badge-padding-x);

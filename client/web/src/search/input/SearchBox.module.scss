@@ -8,9 +8,12 @@
     min-width: 12rem;
 
     :global(.theme-redesign) & {
+        box-shadow: var(--search-input-shadow);
+
         @media (--xs-breakpoint-down) {
             background-color: var(--color-bg-1);
             border: 1px solid var(--input-border-color);
+            border-radius: var(--border-radius);
             display: inline;
             padding: 0.5rem;
         }
@@ -76,6 +79,7 @@
                 flex-wrap: wrap;
                 display: inline;
                 padding-left: 0;
+                margin-left: 0;
 
                 &:focus-within {
                     border: none;
@@ -143,7 +147,7 @@
         :global(.theme-redesign) & {
             @media (--xs-breakpoint-down) {
                 display: inline-flex;
-                margin-top: 1rem;
+                margin-top: 0.75rem;
                 padding-left: 0;
             }
         }
@@ -155,7 +159,7 @@
             @media (--xs-breakpoint-down) {
                 display: inline-flex;
                 flex-direction: row-reverse;
-                margin-top: 0.75rem;
+                margin-top: 0.5rem;
                 float: right;
             }
         }

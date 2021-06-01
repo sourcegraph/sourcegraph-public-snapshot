@@ -187,7 +187,7 @@ func TestSearchContexts_List(t *testing.T) {
 	gotUserSearchContexts, err := sc.ListSearchContexts(
 		ctx,
 		ListSearchContextsPageOptions{First: 1},
-		ListSearchContextsOptions{NamespaceUserID: user.ID},
+		ListSearchContextsOptions{NamespaceUserIDs: []int32{user.ID}},
 	)
 	if err != nil {
 		t.Fatalf("Expected no error, got %s", err)
@@ -248,14 +248,14 @@ func TestSearchContexts_PaginationAndCount(t *testing.T) {
 		{
 			name:               "user-level contexts",
 			wantSearchContexts: createdSearchContexts[6:7],
-			options:            ListSearchContextsOptions{NamespaceUserID: user.ID},
+			options:            ListSearchContextsOptions{NamespaceUserIDs: []int32{user.ID}},
 			pageOptions:        ListSearchContextsPageOptions{First: 1, After: 2},
 			totalCount:         3,
 		},
 		{
 			name:               "org-level contexts",
 			wantSearchContexts: createdSearchContexts[7:9],
-			options:            ListSearchContextsOptions{NamespaceOrgID: org.ID},
+			options:            ListSearchContextsOptions{NamespaceOrgIDs: []int32{org.ID}},
 			pageOptions:        ListSearchContextsPageOptions{First: 2},
 			totalCount:         3,
 		},

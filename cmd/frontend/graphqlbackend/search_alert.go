@@ -17,6 +17,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -25,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 type searchAlert struct {
@@ -102,14 +104,6 @@ func alertForTimeout(usedTime time.Duration, suggestTime time.Duration, r *searc
 	}
 }
 
-func alertForStalePermissions() *searchAlert {
-	return &searchAlert{
-		prometheusType: "no_resolved_repos__stale_permissions",
-		title:          "Permissions syncing in progress",
-		description:    "Permissions are being synced from your code host, please wait for a minute and try again.",
-	}
-}
-
 // reposExist returns true if one or more repos resolve. If the attempt
 // returns 0 repos or fails, it returns false. It is a helper function for
 // raising NoResolvedRepos alerts with suggestions when we know the original
@@ -125,7 +119,18 @@ func (r *searchResolver) reposExist(ctx context.Context, options searchrepos.Opt
 	return err == nil && len(resolved.RepoRevs) > 0
 }
 
-func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAlert {
+type errNoResolvedRepos struct {
+	PrometheusType  string
+	Title           string
+	Description     string
+	ProposedQueries []*searchQueryDescription
+}
+
+func (e *errNoResolvedRepos) Error() string {
+	return "no resolved repositories"
+}
+
+func (r *searchResolver) errorForNoResolvedRepos(ctx context.Context) *errNoResolvedRepos {
 	globbing := getBoolPtr(r.UserSettings.SearchGlobbing, false)
 
 	repoFilters, minusRepoFilters := r.Query.Repositories()
@@ -142,24 +147,24 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 
 	// Handle repogroup-only scenarios.
 	if len(repoFilters) == 0 && len(repoGroupFilters) == 0 {
-		return &searchAlert{
-			prometheusType: "no_resolved_repos__no_repositories",
-			title:          "Add repositories or connect repository hosts",
-			description:    "There are no repositories to search. Add an external service connection to your code host.",
+		return &errNoResolvedRepos{
+			PrometheusType: "no_resolved_repos__no_repositories",
+			Title:          "Add repositories or connect repository hosts",
+			Description:    "There are no repositories to search. Add an external service connection to your code host.",
 		}
 	}
 	if len(repoFilters) == 0 && len(repoGroupFilters) == 1 {
-		return &searchAlert{
-			prometheusType: "no_resolved_repos__repogroup_empty",
-			title:          fmt.Sprintf("Add repositories to repogroup:%s to see results", repoGroupFilters[0]),
-			description:    fmt.Sprintf("The repository group %q is empty. See the documentation for configuration and troubleshooting.", repoGroupFilters[0]),
+		return &errNoResolvedRepos{
+			PrometheusType: "no_resolved_repos__repogroup_empty",
+			Title:          fmt.Sprintf("Add repositories to repogroup:%s to see results", repoGroupFilters[0]),
+			Description:    fmt.Sprintf("The repository group %q is empty. See the documentation for configuration and troubleshooting.", repoGroupFilters[0]),
 		}
 	}
 	if len(repoFilters) == 0 && len(repoGroupFilters) > 1 {
-		return &searchAlert{
-			prometheusType: "no_resolved_repos__repogroup_none_in_common",
-			title:          "Repository groups have no repositories in common",
-			description:    "No repository exists in all of the specified repository groups.",
+		return &errNoResolvedRepos{
+			PrometheusType: "no_resolved_repos__repogroup_none_in_common",
+			Title:          "Repository groups have no repositories in common",
+			Description:    "No repository exists in all of the specified repository groups.",
 		}
 	}
 	if len(contextFilters) == 1 && !searchcontexts.IsGlobalSearchContextSpec(contextFilters[0]) && (len(repoFilters) > 0 || len(repoGroupFilters) > 0) {
@@ -170,10 +175,10 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 			patternType: r.PatternType,
 		}}
 
-		return &searchAlert{
-			prometheusType:  "no_resolved_repos__context_none_in_common",
-			title:           fmt.Sprintf("No repositories found for your query within the context %s", contextFilters[0]),
-			proposedQueries: proposedQueries,
+		return &errNoResolvedRepos{
+			PrometheusType:  "no_resolved_repos__context_none_in_common",
+			Title:           fmt.Sprintf("No repositories found for your query within the context %s", contextFilters[0]),
+			ProposedQueries: proposedQueries,
 		}
 	}
 
@@ -184,18 +189,18 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 	switch {
 	case len(repoGroupFilters) > 1:
 		// This is a rare case, so don't bother proposing queries.
-		return &searchAlert{
-			prometheusType: "no_resolved_repos__more_than_one_repogroup",
-			title:          "No repository exists in all specified groups and satisfies all of your repo: filters.",
-			description:    "Expand your repository filters to see results",
+		return &errNoResolvedRepos{
+			PrometheusType: "no_resolved_repos__more_than_one_repogroup",
+			Title:          "No repository exists in all specified groups and satisfies all of your repo: filters.",
+			Description:    "Expand your repository filters to see results",
 		}
 
 	case len(repoGroupFilters) == 1 && len(repoFilters) > 1:
 		if globbing {
-			return &searchAlert{
-				prometheusType: "no_resolved_repos__try_remove_filters_for_repogroup",
-				title:          fmt.Sprintf("No repositories in repogroup:%s satisfied all of your repo: filters.", repoGroupFilters[0]),
-				description:    "Remove repo: filters to see results",
+			return &errNoResolvedRepos{
+				PrometheusType: "no_resolved_repos__try_remove_filters_for_repogroup",
+				Title:          fmt.Sprintf("No repositories in repogroup:%s satisfied all of your repo: filters.", repoGroupFilters[0]),
+				Description:    "Remove repo: filters to see results",
 			}
 		}
 		proposedQueries := []*searchQueryDescription{}
@@ -238,19 +243,19 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 			})
 		}
 
-		return &searchAlert{
-			prometheusType:  "no_resolved_repos__try_remove_filters_for_repogroup",
-			title:           fmt.Sprintf("No repositories in repogroup:%s satisfied all of your repo: filters.", repoGroupFilters[0]),
-			description:     "Expand your repository filters to see results",
-			proposedQueries: proposedQueries,
+		return &errNoResolvedRepos{
+			PrometheusType:  "no_resolved_repos__try_remove_filters_for_repogroup",
+			Title:           fmt.Sprintf("No repositories in repogroup:%s satisfied all of your repo: filters.", repoGroupFilters[0]),
+			Description:     "Expand your repository filters to see results",
+			ProposedQueries: proposedQueries,
 		}
 
 	case len(repoGroupFilters) == 1 && len(repoFilters) == 1:
 		if globbing {
-			return &searchAlert{
-				prometheusType: "no_resolved_repogroups",
-				title:          fmt.Sprintf("No repositories in repogroup:%s satisfied all of your repo: filters.", repoGroupFilters[0]),
-				description:    "Remove repo: filters to see results",
+			return &errNoResolvedRepos{
+				PrometheusType: "no_resolved_repogroups",
+				Title:          fmt.Sprintf("No repositories in repogroup:%s satisfied all of your repo: filters.", repoGroupFilters[0]),
+				Description:    "Remove repo: filters to see results",
 			}
 		}
 		proposedQueries := []*searchQueryDescription{}
@@ -275,19 +280,19 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 			query:       withoutRepoFields,
 			patternType: r.PatternType,
 		})
-		return &searchAlert{
-			prometheusType:  "no_resolved_repogroups",
-			title:           fmt.Sprintf("No repositories in repogroup:%s satisfied all of your repo: filters.", repoGroupFilters[0]),
-			description:     "Expand your repository filters to see results",
-			proposedQueries: proposedQueries,
+		return &errNoResolvedRepos{
+			PrometheusType:  "no_resolved_repogroups",
+			Title:           fmt.Sprintf("No repositories in repogroup:%s satisfied all of your repo: filters.", repoGroupFilters[0]),
+			Description:     "Expand your repository filters to see results",
+			ProposedQueries: proposedQueries,
 		}
 
 	case len(repoGroupFilters) == 0 && len(repoFilters) > 1:
 		if globbing {
-			return &searchAlert{
-				prometheusType: "no_resolved_repos__suggest_add_remove_repos",
-				title:          "No repositories satisfied all of your repo: filters.",
-				description:    "Remove repo: filters to see results",
+			return &errNoResolvedRepos{
+				PrometheusType: "no_resolved_repos__suggest_add_remove_repos",
+				Title:          "No repositories satisfied all of your repo: filters.",
+				Description:    "Remove repo: filters to see results",
 			}
 		}
 		proposedQueries := []*searchQueryDescription{}
@@ -311,11 +316,11 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 			description: "remove repo: filters",
 			query:       withoutRepoFields,
 		})
-		return &searchAlert{
-			prometheusType:  "no_resolved_repos__suggest_add_remove_repos",
-			title:           "No repositories satisfied all of your repo: filters.",
-			description:     "Expand your repo: filters to see results",
-			proposedQueries: proposedQueries,
+		return &errNoResolvedRepos{
+			PrometheusType:  "no_resolved_repos__suggest_add_remove_repos",
+			Title:           "No repositories satisfied all of your repo: filters.",
+			Description:     "Expand your repo: filters to see results",
+			ProposedQueries: proposedQueries,
 		}
 
 	case len(repoGroupFilters) == 0 && len(repoFilters) == 1:
@@ -323,25 +328,25 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 		if !envvar.SourcegraphDotComMode() {
 			if needsRepoConfig, err := needsRepositoryConfiguration(ctx, r.db); err == nil && needsRepoConfig {
 				if isSiteAdmin {
-					return &searchAlert{
-						title:       "No repositories or code hosts configured",
-						description: "To start searching code, first go to site admin to configure repositories and code hosts.",
+					return &errNoResolvedRepos{
+						Title:       "No repositories or code hosts configured",
+						Description: "To start searching code, first go to site admin to configure repositories and code hosts.",
 					}
 
 				} else {
-					return &searchAlert{
-						title:       "No repositories or code hosts configured",
-						description: "To start searching code, ask the site admin to configure and enable repositories.",
+					return &errNoResolvedRepos{
+						Title:       "No repositories or code hosts configured",
+						Description: "To start searching code, ask the site admin to configure and enable repositories.",
 					}
 				}
 			}
 		}
 
 		if globbing {
-			return &searchAlert{
-				prometheusType: "no_resolved_repos__generic",
-				title:          "No repositories satisfied your repo: filter",
-				description:    "Modify your repo: filter to see results",
+			return &errNoResolvedRepos{
+				PrometheusType: "no_resolved_repos__generic",
+				Title:          "No repositories satisfied your repo: filter",
+				Description:    "Modify your repo: filter to see results",
 			}
 		}
 
@@ -385,29 +390,30 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 				patternType: r.PatternType,
 			})
 		}
-		return &searchAlert{
-			prometheusType:  "no_resolved_repos__generic",
-			title:           "No repositories satisfied your repo: filter",
-			description:     "Modify your repo: filter to see results",
-			proposedQueries: proposedQueries,
+		return &errNoResolvedRepos{
+			PrometheusType:  "no_resolved_repos__generic",
+			Title:           "No repositories satisfied your repo: filter",
+			Description:     "Modify your repo: filter to see results",
+			ProposedQueries: proposedQueries,
 		}
 	}
 	// Should be unreachable. Return a generic alert if reached.
-	return &searchAlert{
-		title:       "No repository results.",
-		description: "There are no repositories to search.",
+	return &errNoResolvedRepos{
+		Title:       "No repository results.",
+		Description: "There are no repositories to search.",
 	}
 }
 
-func (r *searchResolver) alertForInvalidRevision(revision string) *searchAlert {
-	revision = strings.TrimSuffix(revision, "^0")
-	return &searchAlert{
-		title:       "Invalid revision syntax",
-		description: fmt.Sprintf("We don't know how to interpret the revision (%s) you specified. Learn more about the revision syntax in our documentation: https://docs.sourcegraph.com/code_search/reference/queries#repository-revisions.", revision),
-	}
+type errOverRepoLimit struct {
+	ProposedQueries []*searchQueryDescription
+	Description     string
 }
 
-func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert {
+func (e *errOverRepoLimit) Error() string {
+	return "Too many matching repositories"
+}
+
+func (r *searchResolver) errorForOverRepoLimit(ctx context.Context) *errOverRepoLimit {
 	// Try to suggest the most helpful repo: filters to narrow the query.
 	//
 	// For example, suppose the query contains "repo:kubern" and it matches > 30
@@ -430,19 +436,17 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert
 		description += " As a site admin, you can increase the limit by changing maxReposToSearch in site config."
 	}
 
-	buildAlert := func(proposedQueries []*searchQueryDescription, description string) *searchAlert {
-		return &searchAlert{
-			prometheusType:  "over_repo_limit",
-			title:           "Too many matching repositories",
-			proposedQueries: proposedQueries,
-			description:     description,
+	buildErr := func(proposedQueries []*searchQueryDescription, description string) *errOverRepoLimit {
+		return &errOverRepoLimit{
+			ProposedQueries: proposedQueries,
+			Description:     description,
 		}
 	}
 
 	// If globbing is active we return a simple alert for now. The alert is still
 	// helpful but it doesn't contain any proposed queries.
 	if getBoolPtr(r.UserSettings.SearchGlobbing, false) {
-		return buildAlert(proposedQueries, description)
+		return buildErr(proposedQueries, description)
 	}
 
 	q, err := query.ParseLiteral(r.rawQuery()) // Invariant: query is already validated; guard against error anyway.
@@ -450,7 +454,7 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert
 		// If the query is not basic, the assumptions that other logic
 		// makes to propose queries do not hold. Return a default alert
 		// without proposed queries.
-		return buildAlert(proposedQueries, description)
+		return buildErr(proposedQueries, description)
 	}
 
 	resolved, _ := r.resolveRepositories(ctx, nil)
@@ -486,7 +490,7 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert
 			if ctx.Err() != nil {
 				continue
 			} else if err != nil {
-				return buildAlert([]*searchQueryDescription{}, description)
+				return buildErr([]*searchQueryDescription{}, description)
 			}
 
 			var more string
@@ -525,7 +529,7 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert
 			}
 		}
 	}
-	return buildAlert(proposedQueries, description)
+	return buildErr(proposedQueries, description)
 }
 
 func alertForStructuralSearchNotSet(queryString string) *searchAlert {
@@ -652,7 +656,7 @@ func capFirst(s string) string {
 	}, s)
 }
 
-func alertForError(err error, inputs *run.SearchInputs) *searchAlert {
+func alertForError(err error) *searchAlert {
 	var (
 		alert *searchAlert
 		rErr  *run.RepoLimitError
@@ -695,6 +699,100 @@ func alertForError(err error, inputs *run.SearchInputs) *searchAlert {
 	return alert
 }
 
+// errorToAlert is intended to be a catch-all function for converting all errors into alerts.
+// The intent here is to create alerts as close to the API boundary as possible, so this should be called
+// immediately before creating the SearchResultsResolver.
+func errorToAlert(err error) (*searchAlert, error) {
+	if err == nil {
+		return nil, nil
+	}
+
+	if me, ok := err.(*multierror.Error); ok {
+		return multierrorToAlert(me)
+	}
+
+	if errors.Is(err, authz.ErrStalePermissions{}) {
+		return alertForStalePermissions(), nil
+	}
+
+	{
+		e := git.BadCommitError{}
+		if errors.As(err, &e) {
+			return alertForInvalidRevision(e.Spec), nil
+		}
+	}
+
+	{
+		e := &errOverRepoLimit{}
+		if errors.As(err, &e) {
+			return &searchAlert{
+				prometheusType:  "over_repo_limit",
+				title:           "Too many matching repositories",
+				proposedQueries: e.ProposedQueries,
+				description:     e.Description,
+			}, nil
+		}
+	}
+
+	{
+		e := &errNoResolvedRepos{}
+		if errors.As(err, &e) {
+			return &searchAlert{
+				prometheusType:  e.PrometheusType,
+				title:           e.Title,
+				proposedQueries: e.ProposedQueries,
+				description:     e.Description,
+			}, nil
+		}
+	}
+
+	return nil, err
+}
+
+func maxAlertByPriority(a, b *searchAlert) *searchAlert {
+	if a == nil {
+		return b
+	}
+	if b == nil {
+		return a
+	}
+
+	if a.priority < b.priority {
+		return b
+	}
+
+	return a
+}
+
+// multierrorToAlert converts a multierror.Error into the highest priority alert
+// for the errors contained in it, and a new error with all the errors that could
+// not be converted to alerts.
+func multierrorToAlert(me *multierror.Error) (resAlert *searchAlert, resErr error) {
+	for _, err := range me.Errors {
+		alert, err := errorToAlert(err)
+		resAlert = maxAlertByPriority(resAlert, alert)
+		multierror.Append(resErr, err)
+	}
+
+	return resAlert, resErr
+}
+
+func alertForStalePermissions() *searchAlert {
+	return &searchAlert{
+		prometheusType: "no_resolved_repos__stale_permissions",
+		title:          "Permissions syncing in progress",
+		description:    "Permissions are being synced from your code host, please wait for a minute and try again.",
+	}
+}
+
+func alertForInvalidRevision(revision string) *searchAlert {
+	revision = strings.TrimSuffix(revision, "^0")
+	return &searchAlert{
+		title:       "Invalid revision syntax",
+		description: fmt.Sprintf("We don't know how to interpret the revision (%s) you specified. Learn more about the revision syntax in our documentation: https://docs.sourcegraph.com/code_search/reference/queries#repository-revisions.", revision),
+	}
+}
+
 type alertObserver struct {
 	// Inputs are used to generate alert messages based on the query.
 	Inputs *run.SearchInputs
@@ -715,7 +813,7 @@ func (o *alertObserver) Error(ctx context.Context, err error) {
 	}
 
 	// We can compute the alert outside of the critical section.
-	alert := alertForError(err, o.Inputs)
+	alert := alertForError(err)
 
 	o.mu.Lock()
 	defer o.mu.Unlock()
