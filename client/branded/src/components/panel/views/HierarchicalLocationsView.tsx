@@ -8,7 +8,6 @@ import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { Location } from '@sourcegraph/extension-api-types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
-import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
@@ -17,6 +16,7 @@ import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/er
 import { parseRepoURI } from '@sourcegraph/shared/src/util/url'
 
 import { FileLocations, FileLocationsError, FileLocationsNotFound } from './FileLocations'
+import { HierarchicalLocationsViewButton } from './HierarchicalLocationsViewButton'
 import { groupLocations } from './locations'
 
 /** The maximum number of results we'll receive from a provider before we truncate and display a banner. */
@@ -241,28 +241,15 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                                         element={
                                             <div className="list-group list-group-flush hierarchical-locations-view__list test-hierarchical-locations-view-list">
                                                 {groups[index].map((group, innerIndex) => (
-                                                    <button
+                                                    <HierarchicalLocationsViewButton
                                                         key={innerIndex}
-                                                        type="button"
-                                                        className={`list-group-item list-group-item-action hierarchical-locations-view__item ${
-                                                            selectedGroups[index] === group.key ? 'active' : ''
-                                                        }`}
+                                                        groupKey={group.key}
+                                                        groupCount={group.count}
+                                                        isActive={selectedGroups[index] === group.key}
                                                         onClick={event =>
                                                             this.onSelectTree(event, selectedGroups, index, group.key)
                                                         }
-                                                    >
-                                                        <span
-                                                            className="hierarchical-locations-view__item-name"
-                                                            title={group.key}
-                                                        >
-                                                            <span className="hierarchical-locations-view__item-name-text">
-                                                                <RepoLink to={null} repoName={group.key} />
-                                                            </span>
-                                                        </span>
-                                                        <span className="badge badge-secondary badge-pill hierarchical-locations-view__item-badge">
-                                                            {group.count}
-                                                        </span>
-                                                    </button>
+                                                    />
                                                 ))}
                                                 {this.state.locationsOrError.isLoading && (
                                                     <LoadingSpinner className="icon-inline m-2 flex-shrink-0 test-loading-spinner" />

@@ -25,6 +25,7 @@ import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import {
+    NOT_REDESIGN_CLASS_NAME,
     REDESIGN_CLASS_NAME,
     getIsRedesignEnabled,
     REDESIGN_TOGGLE_KEY,
@@ -451,6 +452,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         }
 
         document.documentElement.classList.toggle(REDESIGN_CLASS_NAME, getIsRedesignEnabled())
+        document.documentElement.classList.toggle(NOT_REDESIGN_CLASS_NAME, !getIsRedesignEnabled())
     }
 
     public render(): React.ReactFragment | null {

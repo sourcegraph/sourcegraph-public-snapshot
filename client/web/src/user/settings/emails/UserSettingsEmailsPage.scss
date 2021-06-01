@@ -6,4 +6,20 @@
     &__dot {
         color: var(--border-color);
     }
+    &__list-item {
+        padding: 1rem;
+        .theme-redesign & {
+            border: 0;
+            padding: 1rem 0;
+            + .user-settings-emails-page__list-item {
+                border-top: 1px solid var(--border-color);
+            }
+        }
+    }
+    &__email-form {
+        padding-top: 1.5rem;
+        .theme-redesign & {
+            padding-top: 0.5rem;
+        }
+    }
 }
