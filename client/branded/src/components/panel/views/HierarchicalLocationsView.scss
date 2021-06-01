@@ -102,6 +102,7 @@
 
             &.active {
                 background-color: var(--primary);
+                margin-top: 0;
 
                 &:hover {
                     color: var(--light-text);
