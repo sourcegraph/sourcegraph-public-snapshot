@@ -1,6 +1,6 @@
 import { DecoratorFunction } from '@storybook/addons'
 import isChromatic from 'chromatic/isChromatic'
-import React, { ReactElement, useEffect } from 'react'
+import { ReactElement, useEffect } from 'react'
 
 import { useRedesignToggle, REDESIGN_CLASS_NAME } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
