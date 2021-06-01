@@ -105,7 +105,7 @@ const FILTERS: FilteredConnectionFilter[] = [
                 value: 'failed-fetch',
                 tooltip: 'Show only repositories that have failed to fetch or clone',
                 args: { failedFetch: true },
-            }
+            },
         ],
     },
 ]
