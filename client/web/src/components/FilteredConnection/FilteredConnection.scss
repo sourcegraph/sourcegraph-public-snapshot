@@ -125,3 +125,31 @@ $compact-summary-min-height: 2.75rem;
         }
     }
 }
+
+.filtered-connection__centered-summary {
+    .filtered-connection {
+        &__summary-container {
+            .theme-redesign & {
+                flex-direction: column;
+                justify-content: center;
+                margin-top: 0.5rem;
+            }
+        }
+        &__summary {
+            .theme-redesign & {
+                margin-bottom: 0;
+            }
+        }
+        &__show-more {
+            .theme-redesign & {
+                margin-left: 0;
+                margin-top: 0.25rem;
+            }
+        }
+        &--noncompact &__show-more {
+            .theme-redesign & {
+                margin-bottom: 0;
+            }
+        }
+    }
+}
