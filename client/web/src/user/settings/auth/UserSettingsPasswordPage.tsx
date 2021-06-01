@@ -15,6 +15,7 @@ import { PageTitle } from '../../../components/PageTitle'
 import { UserAreaUserFields } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { updatePassword } from '../backend'
+import styles from './UserSettingsPasswordPage.module.scss'
 
 interface Props extends RouteComponentProps<{}> {
     user: UserAreaUserFields
@@ -105,8 +106,8 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
                     <>
                         {this.state.error && <ErrorAlert className="mb-3" error={this.state.error} />}
                         {this.state.saved && <div className="alert alert-success mb-3">Password changed!</div>}
-                        <Container>
-                            <Form onSubmit={this.handleSubmit}>
+                        <Form onSubmit={this.handleSubmit}>
+                            <Container className="mb-3">
                                 {/* Include a username field as a hint for password managers to update the saved password. */}
                                 <input
                                     type="text"
@@ -127,6 +128,7 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
                                         aria-label="old password"
                                         placeholder=" "
                                         autoComplete="current-password"
+                                        className={styles.userSettingsPasswordPageInput}
                                     />
                                 </div>
 
@@ -141,10 +143,12 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
                                         aria-label="new password"
                                         placeholder=" "
                                         autoComplete="new-password"
+                                        minLength={12}
+                                        className={styles.userSettingsPasswordPageInput}
                                     />
                                     <small className="form-help text-muted">At least 12 characters</small>
                                 </div>
-                                <div className="form-group">
+                                <div className="form-group mb-0">
                                     <label htmlFor="newPasswordConfirmation">Confirm new password</label>
                                     <PasswordInput
                                         value={this.state.newPasswordConfirmation}
@@ -156,22 +160,23 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
                                         placeholder=" "
                                         inputRef={this.setNewPasswordConfirmationField}
                                         autoComplete="new-password"
+                                        className={styles.userSettingsPasswordPageInput}
                                     />
                                 </div>
-                                <button
-                                    className="btn btn-primary user-settings-password-page__button"
-                                    type="submit"
-                                    disabled={this.state.loading}
-                                >
-                                    Update password
-                                </button>
-                                {this.state.loading && (
-                                    <div className="icon-inline">
-                                        <LoadingSpinner className="icon-inline" />
-                                    </div>
-                                )}
-                            </Form>
-                        </Container>
+                            </Container>
+                            <button
+                                className="btn btn-primary user-settings-password-page__button"
+                                type="submit"
+                                disabled={this.state.loading}
+                            >
+                                Update password
+                            </button>
+                            {this.state.loading && (
+                                <div className="icon-inline">
+                                    <LoadingSpinner className="icon-inline" />
+                                </div>
+                            )}
+                        </Form>
                     </>
                 )}
             </div>
