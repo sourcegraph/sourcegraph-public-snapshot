@@ -120,7 +120,7 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
                 user={{ id: props.authenticatedUser.id, tags: props.authenticatedUser.tags }}
                 context={window.context}
                 routingPrefix={props.user.url + '/settings'}
-                onUserRepositoriesUpdate={props.onUserRepositoriesUpdate}
+                onUserExternalServicesOrRepositoriesUpdate={props.onUserExternalServicesOrRepositoriesUpdate}
             />
         ),
         exact: true,

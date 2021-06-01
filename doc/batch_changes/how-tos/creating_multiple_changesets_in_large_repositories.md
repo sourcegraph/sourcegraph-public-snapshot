@@ -17,9 +17,11 @@
 
 ## Overview
 
-Batch Changes can produce a lot of changes in a single repository and in order to make reviewing and merging them easier, it might make sense to split the changes up into multiple changesets.
+Batch changes can produce a lot of changes in a single repository. In order to make reviewing and merging the changes easier, it can be helpful to split the changes up into multiple changesets.
 
 That can be done by using [`transformChanges`](../references/batch_spec_yaml_reference.md#transformchanges) in the batch spec to group the changes produced in one single repository by directory and create a changeset for each group.
+
+> NOTE: In some monorepos it makes more sense to run the batch spec [`steps`][steps] _per project_. Take a look at "[Creating changesets per project in monorepos](./creating_changesets_per_project_in_monorepos.md)" to find out how to use the [`workspaces`][workspaces] property to do that.
 
 ## Using `transformChanges`
 
@@ -78,3 +80,8 @@ In case no changes have been made in a `directory` specified in a `group`, no ad
 If the optional `repository` property is specified only the changes in that repository will be grouped.
 
 See the [batch spec YAML reference on `transformChanges`](../references/batch_spec_yaml_reference.md#transformchanges) for more details.
+
+<!-- References for easier reading of text above: -->
+
+[steps]: ../references/batch_spec_yaml_reference.md#steps
+[workspaces]: ../references/batch_spec_yaml_reference.md#workspaces

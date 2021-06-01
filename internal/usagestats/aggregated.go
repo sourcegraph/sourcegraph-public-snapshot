@@ -3,6 +3,7 @@ package usagestats
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -153,7 +154,7 @@ func groupAggregatedCodeIntelStats(rawEvents []types.CodeIntelAggregatedEvent) *
 // GetAggregatedSearchStats queries the database for search usage and returns
 // the aggregates statistics in the format of our BigQuery schema.
 func GetAggregatedSearchStats(ctx context.Context, db dbutil.DB) (*types.SearchUsageStatistics, error) {
-	events, err := database.EventLogs(db).AggregatedSearchEvents(ctx)
+	events, err := database.EventLogs(db).AggregatedSearchEvents(ctx, time.Now().UTC())
 	if err != nil {
 		return nil, err
 	}
@@ -175,6 +176,7 @@ func groupAggregatedSearchStats(events []types.SearchAggregatedEvent) *types.Sea
 	// Iterate over events, updating searchUsageStats for each event
 	for _, event := range events {
 		populateSearchEventStatistics(event, searchUsageStats)
+		populateSearchFilterCountStatistics(event, searchUsageStats)
 	}
 
 	return searchUsageStats
@@ -190,6 +192,26 @@ var searchLatencyExtractors = map[string]func(p *types.SearchUsagePeriod) *types
 	"search.latencies.diff":       func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Diff },
 	"search.latencies.commit":     func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Commit },
 	"search.latencies.symbol":     func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Symbol },
+}
+
+var searchFilterCountExtractors = map[string]func(p *types.SearchUsagePeriod) *types.SearchCountStatistics{
+	"count_or":                          func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.OperatorOr },
+	"count_and":                         func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.OperatorAnd },
+	"count_not":                         func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.OperatorNot },
+	"count_select_repo":                 func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.SelectRepo },
+	"count_select_file":                 func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.SelectFile },
+	"count_select_content":              func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.SelectContent },
+	"count_select_symbol":               func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.SelectSymbol },
+	"count_select_commit_diff_added":    func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.SelectCommitDiffAdded },
+	"count_select_commit_diff_removed":  func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.SelectCommitDiffRemoved },
+	"count_repo_contains":               func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.RepoContains },
+	"count_repo_contains_file":          func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.RepoContainsFile },
+	"count_repo_contains_content":       func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.RepoContainsContent },
+	"count_repo_contains_commit_after":  func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.RepoContainsCommitAfter },
+	"count_count_all":                   func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.CountAll },
+	"count_non_global_context":          func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.NonGlobalContext },
+	"count_only_patterns":               func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.OnlyPatterns },
+	"count_only_patterns_three_or_more": func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.OnlyPatternsThreeOrMore },
 }
 
 // populateSearchEventStatistics is a side-effecting function that populates the
@@ -239,16 +261,59 @@ func populateSearchEventStatistics(event types.SearchAggregatedEvent, statistics
 	day.EventLatencies = makeLatencies(event.LatenciesDay)
 }
 
+func populateSearchFilterCountStatistics(event types.SearchAggregatedEvent, statistics *types.SearchUsageStatistics) {
+	extractor, ok := searchFilterCountExtractors[event.Name]
+	if !ok {
+		return
+	}
+
+	statistics.Monthly[0].StartTime = event.Month
+	month := extractor(statistics.Monthly[0])
+	month.EventsCount = &event.TotalMonth
+	month.UserCount = &event.UniquesMonth
+
+	statistics.Weekly[0].StartTime = event.Week
+	week := extractor(statistics.Weekly[0])
+	week.EventsCount = &event.TotalMonth
+	week.UserCount = &event.UniquesMonth
+
+	statistics.Daily[0].StartTime = event.Day
+	day := extractor(statistics.Daily[0])
+	day.EventsCount = &event.TotalMonth
+	day.UserCount = &event.UniquesMonth
+}
+
 func newSearchEventPeriod() *types.SearchUsagePeriod {
 	return &types.SearchUsagePeriod{
-		Literal:            newSearchEventStatistics(),
-		Regexp:             newSearchEventStatistics(),
-		Structural:         newSearchEventStatistics(),
-		File:               newSearchEventStatistics(),
-		Repo:               newSearchEventStatistics(),
-		Diff:               newSearchEventStatistics(),
-		Commit:             newSearchEventStatistics(),
-		Symbol:             newSearchEventStatistics(),
+		Literal:    newSearchEventStatistics(),
+		Regexp:     newSearchEventStatistics(),
+		Structural: newSearchEventStatistics(),
+		File:       newSearchEventStatistics(),
+		Repo:       newSearchEventStatistics(),
+		Diff:       newSearchEventStatistics(),
+		Commit:     newSearchEventStatistics(),
+		Symbol:     newSearchEventStatistics(),
+
+		// Counts of search query attributes. Ref: RFC 384.
+		OperatorOr:              newSearchCountStatistics(),
+		OperatorAnd:             newSearchCountStatistics(),
+		OperatorNot:             newSearchCountStatistics(),
+		SelectRepo:              newSearchCountStatistics(),
+		SelectFile:              newSearchCountStatistics(),
+		SelectContent:           newSearchCountStatistics(),
+		SelectSymbol:            newSearchCountStatistics(),
+		SelectCommitDiffAdded:   newSearchCountStatistics(),
+		SelectCommitDiffRemoved: newSearchCountStatistics(),
+		RepoContains:            newSearchCountStatistics(),
+		RepoContainsFile:        newSearchCountStatistics(),
+		RepoContainsContent:     newSearchCountStatistics(),
+		RepoContainsCommitAfter: newSearchCountStatistics(),
+		CountAll:                newSearchCountStatistics(),
+		NonGlobalContext:        newSearchCountStatistics(),
+		OnlyPatterns:            newSearchCountStatistics(),
+		OnlyPatternsThreeOrMore: newSearchCountStatistics(),
+
+		// DEPRECATED.
 		Case:               newSearchCountStatistics(),
 		Committer:          newSearchCountStatistics(),
 		Lang:               newSearchCountStatistics(),

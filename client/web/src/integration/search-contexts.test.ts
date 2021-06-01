@@ -8,7 +8,7 @@ import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { RepoGroupsResult, SearchSuggestionsResult, WebGraphQlOperations, SearchResult } from '../graphql-operations'
+import { RepoGroupsResult, SearchSuggestionsResult, WebGraphQlOperations } from '../graphql-operations'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { createRepositoryRedirectResult } from './graphQlResponseHelpers'
@@ -20,25 +20,6 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
     SearchSuggestions: (): SearchSuggestionsResult => ({
         search: {
             suggestions: [],
-        },
-    }),
-    Search: (): SearchResult => ({
-        search: {
-            results: {
-                __typename: 'SearchResults',
-                limitHit: true,
-                matchCount: 30,
-                approximateResultCount: '30+',
-                missing: [],
-                cloning: [],
-                repositoriesCount: 372,
-                timedout: [],
-                indexUnavailable: false,
-                dynamicFilters: [],
-                results: [],
-                alert: null,
-                elapsedMilliseconds: 103,
-            },
         },
     }),
     RepoGroups: (): RepoGroupsResult => ({
@@ -63,6 +44,7 @@ describe('Search contexts', () => {
             directory: __dirname,
         })
         testContext.overrideGraphQL(testContextForSearchContexts)
+        testContext.overrideSearchStreamEvents([{ type: 'done', data: {} }])
         const context = createJsContext({ sourcegraphBaseUrl: driver.sourcegraphBaseUrl })
         testContext.overrideJsContext({
             ...context,
@@ -157,9 +139,6 @@ describe('Search contexts', () => {
     const getSelectedSearchContextSpec = () =>
         driver.page.evaluate(() => document.querySelector('.test-selected-search-context-spec')?.textContent)
 
-    const isSearchContextDropdownVisible = () =>
-        driver.page.evaluate(() => document.querySelector<HTMLButtonElement>('.test-search-context-dropdown') !== null)
-
     const isSearchContextHighlightTourStepVisible = () =>
         driver.page.evaluate(
             () =>
@@ -210,25 +189,6 @@ describe('Search contexts', () => {
         await driver.page.waitForSelector('#monaco-query-input')
         expect(await getSearchFieldValue(driver)).toStrictEqual('context:@unavailableCtx test')
         expect(await isSearchContextDropdownDisabled()).toBeTruthy()
-    })
-
-    // TODO: Fix test before enabling refresh
-    test.skip('Search context dropdown should not be visible if user has no repositories', async () => {
-        testContext.overrideGraphQL({
-            ...testContextForSearchContexts,
-            UserRepositories: () => ({
-                node: {
-                    repositories: {
-                        totalCount: 0,
-                        nodes: [],
-                        pageInfo: { hasNextPage: false },
-                    },
-                },
-            }),
-        })
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
-        await driver.page.waitForSelector('#monaco-query-input')
-        expect(await isSearchContextDropdownVisible()).toBeFalsy()
     })
 
     test('Reset unavailable search context from localStorage if query is not present', async () => {

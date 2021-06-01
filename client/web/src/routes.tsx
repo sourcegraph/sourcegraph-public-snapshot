@@ -17,7 +17,7 @@ import { stackStorm } from './repogroups/StackStorm'
 import { stanford } from './repogroups/Stanford'
 import { temporal } from './repogroups/Temporal'
 import { StreamingSearchResults } from './search/results/streaming/StreamingSearchResults'
-import { isMacPlatform, UserRepositoriesUpdateProps } from './util'
+import { isMacPlatform, UserExternalServicesOrRepositoriesUpdateProps } from './util'
 import { lazyComponent } from './util/lazyComponent'
 
 const SearchPage = lazyComponent(() => import('./search/input/SearchPage'), 'SearchPage')
@@ -36,7 +36,7 @@ export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof
         BreadcrumbsProps,
         BreadcrumbSetters,
         ExtensionAlertProps,
-        UserRepositoriesUpdateProps {
+        UserExternalServicesOrRepositoriesUpdateProps {
     isSourcegraphDotCom: boolean
     isRedesignEnabled: boolean
 }
@@ -79,18 +79,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     },
     {
         path: '/search',
-        render: props =>
-            props.parsedSearchQuery ? (
-                props.isRedesignEnabled || // Force streaming search if redesing is enabled
-                (!isErrorLike(props.settingsCascade.final) &&
-                    props.settingsCascade.final?.experimentalFeatures?.searchStreaming) ? (
-                    <StreamingSearchResults {...props} />
-                ) : (
-                    <SearchResults {...props} deployType={window.context.deployType} />
-                )
-            ) : (
-                <SearchPage {...props} />
-            ),
+        render: props => (props.parsedSearchQuery ? <StreamingSearchResults {...props} /> : <SearchPage {...props} />),
         exact: true,
     },
     {
@@ -107,14 +96,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         path: '/search/console',
         render: props =>
             props.showMultilineSearchConsole ? (
-                <SearchConsolePage
-                    {...props}
-                    isMacPlatform={isMacPlatform}
-                    allExpanded={false}
-                    showSavedQueryModal={false}
-                    deployType={window.context.deployType}
-                    showSavedQueryButton={false}
-                />
+                <SearchConsolePage {...props} isMacPlatform={isMacPlatform} />
             ) : (
                 <Redirect to="/search" />
             ),

@@ -23,6 +23,7 @@ import {
     createSearchContext,
     updateSearchContext,
     deleteSearchContext,
+    getUserSearchContextNamespaces,
 } from './backend'
 import { AggregateStreamingSearchResults, StreamSearchOptions } from './stream'
 
@@ -191,9 +192,12 @@ export interface SearchContextProps {
     showSearchContext: boolean
     showSearchContextManagement: boolean
     showSearchContextHighlightTourStep?: boolean
+    hasUserAddedRepositories: boolean
+    hasUserAddedExternalServices: boolean
     defaultSearchContextSpec: string
     selectedSearchContextSpec?: string
     setSelectedSearchContextSpec: (spec: string) => void
+    getUserSearchContextNamespaces: typeof getUserSearchContextNamespaces
     fetchAutoDefinedSearchContexts: typeof fetchAutoDefinedSearchContexts
     fetchSearchContexts: typeof fetchSearchContexts
     convertVersionContextToSearchContext: typeof convertVersionContextToSearchContext
@@ -207,6 +211,8 @@ export interface SearchContextProps {
 export type SearchContextInputProps = Pick<
     SearchContextProps,
     | 'showSearchContext'
+    | 'hasUserAddedRepositories'
+    | 'hasUserAddedExternalServices'
     | 'showSearchContextManagement'
     | 'showSearchContextHighlightTourStep'
     | 'defaultSearchContextSpec'
@@ -214,6 +220,7 @@ export type SearchContextInputProps = Pick<
     | 'setSelectedSearchContextSpec'
     | 'fetchAutoDefinedSearchContexts'
     | 'fetchSearchContexts'
+    | 'getUserSearchContextNamespaces'
 >
 
 export interface ShowQueryBuilderProps {

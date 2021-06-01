@@ -289,26 +289,30 @@ exports[`GlobalNavbar default 1`] = `
     </ul>
   </nav>
   <div
-    class="d-flex w-100 flex-row px-3 py-2 border-bottom"
+    class="w-100 px-3 py-2"
   >
-    <searchnavbaritem
-      availableversioncontexts=""
-      defaultsearchcontextspec=""
-      extensionscontroller="[object Object]"
-      fetchautodefinedsearchcontexts="[object Object]"
-      history="[object Object]"
-      keyboardshortcuts=""
-      location="[object Object]"
-      navbarsearchstate="[object Object]"
-      parsedsearchquery="r:golang/oauth2 test f:travis"
-      patterntype="literal"
-      platformcontext="[object Object]"
-      routes=""
-      selectedsearchcontextspec=""
-      settingscascade="[object Object]"
-      telemetryservice="[object Object]"
-      themepreference="light"
-    />
+    <div
+      class="pb-2 border-bottom"
+    >
+      <searchnavbaritem
+        availableversioncontexts=""
+        defaultsearchcontextspec=""
+        extensionscontroller="[object Object]"
+        fetchautodefinedsearchcontexts="[object Object]"
+        history="[object Object]"
+        keyboardshortcuts=""
+        location="[object Object]"
+        navbarsearchstate="[object Object]"
+        parsedsearchquery="r:golang/oauth2 test f:travis"
+        patterntype="literal"
+        platformcontext="[object Object]"
+        routes=""
+        selectedsearchcontextspec=""
+        settingscascade="[object Object]"
+        telemetryservice="[object Object]"
+        themepreference="light"
+      />
+    </div>
   </div>
 </DocumentFragment>
 `;
@@ -602,26 +606,30 @@ exports[`GlobalNavbar low-profile 1`] = `
     </ul>
   </nav>
   <div
-    class="d-flex w-100 flex-row px-3 py-2 border-bottom"
+    class="w-100 px-3 py-2"
   >
-    <searchnavbaritem
-      availableversioncontexts=""
-      defaultsearchcontextspec=""
-      extensionscontroller="[object Object]"
-      fetchautodefinedsearchcontexts="[object Object]"
-      history="[object Object]"
-      keyboardshortcuts=""
-      location="[object Object]"
-      navbarsearchstate="[object Object]"
-      parsedsearchquery="r:golang/oauth2 test f:travis"
-      patterntype="literal"
-      platformcontext="[object Object]"
-      routes=""
-      selectedsearchcontextspec=""
-      settingscascade="[object Object]"
-      telemetryservice="[object Object]"
-      themepreference="light"
-    />
+    <div
+      class="pb-2 border-bottom"
+    >
+      <searchnavbaritem
+        availableversioncontexts=""
+        defaultsearchcontextspec=""
+        extensionscontroller="[object Object]"
+        fetchautodefinedsearchcontexts="[object Object]"
+        history="[object Object]"
+        keyboardshortcuts=""
+        location="[object Object]"
+        navbarsearchstate="[object Object]"
+        parsedsearchquery="r:golang/oauth2 test f:travis"
+        patterntype="literal"
+        platformcontext="[object Object]"
+        routes=""
+        selectedsearchcontextspec=""
+        settingscascade="[object Object]"
+        telemetryservice="[object Object]"
+        themepreference="light"
+      />
+    </div>
   </div>
 </DocumentFragment>
 `;
@@ -915,26 +923,30 @@ exports[`GlobalNavbar no-search-input 1`] = `
     </ul>
   </nav>
   <div
-    class="d-flex w-100 flex-row px-3 py-2 border-bottom"
+    class="w-100 px-3 py-2"
   >
-    <searchnavbaritem
-      availableversioncontexts=""
-      defaultsearchcontextspec=""
-      extensionscontroller="[object Object]"
-      fetchautodefinedsearchcontexts="[object Object]"
-      history="[object Object]"
-      keyboardshortcuts=""
-      location="[object Object]"
-      navbarsearchstate="[object Object]"
-      parsedsearchquery="r:golang/oauth2 test f:travis"
-      patterntype="literal"
-      platformcontext="[object Object]"
-      routes=""
-      selectedsearchcontextspec=""
-      settingscascade="[object Object]"
-      telemetryservice="[object Object]"
-      themepreference="light"
-    />
+    <div
+      class="pb-2 border-bottom"
+    >
+      <searchnavbaritem
+        availableversioncontexts=""
+        defaultsearchcontextspec=""
+        extensionscontroller="[object Object]"
+        fetchautodefinedsearchcontexts="[object Object]"
+        history="[object Object]"
+        keyboardshortcuts=""
+        location="[object Object]"
+        navbarsearchstate="[object Object]"
+        parsedsearchquery="r:golang/oauth2 test f:travis"
+        patterntype="literal"
+        platformcontext="[object Object]"
+        routes=""
+        selectedsearchcontextspec=""
+        settingscascade="[object Object]"
+        telemetryservice="[object Object]"
+        themepreference="light"
+      />
+    </div>
   </div>
 </DocumentFragment>
 `;

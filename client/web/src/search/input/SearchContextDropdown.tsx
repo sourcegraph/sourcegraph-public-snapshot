@@ -7,11 +7,14 @@ import Shepherd from 'shepherd.js'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
 import { CaseSensitivityProps, PatternTypeProps, SearchContextInputProps } from '..'
+import { AuthenticatedUser } from '../../auth'
 import { SubmitSearchParameters } from '../helpers'
 
+import { SearchContextCtaPrompt } from './SearchContextCtaPrompt'
 import { SearchContextMenu } from './SearchContextMenu'
 import { defaultTourOptions } from './tour-options'
 
@@ -19,7 +22,10 @@ export interface SearchContextDropdownProps
     extends Omit<SearchContextInputProps, 'showSearchContext'>,
         Pick<PatternTypeProps, 'patternType'>,
         Pick<CaseSensitivityProps, 'caseSensitive'>,
-        VersionContextProps {
+        VersionContextProps,
+        TelemetryProps {
+    isSourcegraphDotCom: boolean
+    authenticatedUser: AuthenticatedUser | null
     submitSearch: (args: SubmitSearchParameters) => void
     submitSearchOnSearchContextChange?: boolean
     query: string
@@ -130,6 +136,10 @@ const useSearchContextHighlightTour = (
 
 export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdownProps> = props => {
     const {
+        isSourcegraphDotCom,
+        authenticatedUser,
+        hasUserAddedRepositories,
+        hasUserAddedExternalServices,
         history,
         patternType,
         caseSensitive,
@@ -223,13 +233,21 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
                 </code>
             </DropdownToggle>
             <DropdownMenu positionFixed={true} className="search-context-dropdown__menu">
-                <SearchContextMenu
-                    {...props}
-                    selectSearchContextSpec={selectSearchContextSpec}
-                    fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
-                    fetchSearchContexts={fetchSearchContexts}
-                    closeMenu={toggleOpen}
-                />
+                {isSourcegraphDotCom && (!hasUserAddedExternalServices || !hasUserAddedRepositories) ? (
+                    <SearchContextCtaPrompt
+                        telemetryService={props.telemetryService}
+                        authenticatedUser={authenticatedUser}
+                        hasUserAddedExternalServices={hasUserAddedExternalServices}
+                    />
+                ) : (
+                    <SearchContextMenu
+                        {...props}
+                        selectSearchContextSpec={selectSearchContextSpec}
+                        fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
+                        fetchSearchContexts={fetchSearchContexts}
+                        closeMenu={toggleOpen}
+                    />
+                )}
             </DropdownMenu>
         </Dropdown>
     )

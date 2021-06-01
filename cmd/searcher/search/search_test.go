@@ -13,7 +13,6 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
-	"runtime/pprof"
 	"sort"
 	"strconv"
 	"strings"
@@ -227,32 +226,15 @@ milton.png
 	defer ts.Close()
 
 	for i, test := range cases {
-		doFetchDebug := i == 0
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
 			if test.arg.IsStructuralPat && os.Getenv("CI") == "" {
 				t.Skip("skipping comby test when not on CI")
 			}
 
+			// CI can be very busy, so give lots of time to fetchTimeout.
 			fetchTimeout := 500 * time.Millisecond
-
-			// https://github.com/sourcegraph/sourcegraph/issues/21382
-			if doFetchDebug {
-				done := make(chan struct{})
-				defer close(done)
-				go func() {
-					now := time.Now()
-					select {
-					case <-time.After(fetchTimeout):
-					case <-done:
-						return
-					}
-
-					fmt.Fprintf(os.Stderr, "!!!!!\nPlease report this failure to keegan or stefan.\n")
-					pprof.Lookup("goroutine").WriteTo(os.Stdout, 2)
-
-					<-done
-					fmt.Fprintf(os.Stderr, "total time taken: %s\n", time.Since(now).String())
-				}()
+			if deadline, ok := t.Deadline(); ok {
+				fetchTimeout = time.Until(deadline) / 2
 			}
 
 			test.arg.PatternMatchesContent = true

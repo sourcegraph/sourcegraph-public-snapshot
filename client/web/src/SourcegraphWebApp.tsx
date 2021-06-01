@@ -32,6 +32,7 @@ import {
 
 import { authenticatedUser, AuthenticatedUser } from './auth'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { queryExternalServices } from './components/externalServices/backend'
 import { FeedbackText } from './components/FeedbackText'
 import { HeroPage } from './components/HeroPage'
 import { RouterLinkOrAnchor } from './components/RouterLinkOrAnchor'
@@ -72,6 +73,7 @@ import {
     createSearchContext,
     updateSearchContext,
     deleteSearchContext,
+    getUserSearchContextNamespaces,
 } from './search/backend'
 import { QueryState } from './search/helpers'
 import { aggregateStreamingSearch } from './search/stream'
@@ -180,8 +182,8 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     showSearchContextManagement: boolean
     selectedSearchContextSpec?: string
     defaultSearchContextSpec: string
-    hasUserDefinedContexts: boolean
     hasUserAddedRepositories: boolean
+    hasUserAddedExternalServices: boolean
 
     /**
      * Whether globbing is enabled for filters.
@@ -299,7 +301,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             showSearchContextManagement: false,
             defaultSearchContextSpec: 'global', // global is default for now, user will be able to change this at some point
             hasUserAddedRepositories: false,
-            hasUserDefinedContexts: false,
+            hasUserAddedExternalServices: false,
             showEnterpriseHomePanels: false,
             globbing: false,
             showMultilineSearchConsole: false,
@@ -368,24 +370,22 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             combineLatest([this.userRepositoriesUpdates, authenticatedUser])
                 .pipe(
                     switchMap(([, authenticatedUser]) =>
-                        authenticatedUser ? listUserRepositories({ id: authenticatedUser.id, first: 1 }) : of(null)
+                        authenticatedUser
+                            ? combineLatest([
+                                  listUserRepositories({ id: authenticatedUser.id, first: 1 }),
+                                  queryExternalServices({ namespace: authenticatedUser.id, first: 1, after: null }),
+                              ])
+                            : of(null)
                     ),
                     catchError(error => [asError(error)])
                 )
                 .subscribe(result => {
-                    if (!isErrorLike(result)) {
-                        const hasUserAddedRepositories = result !== null && result.nodes.length > 0
-                        this.setState({ hasUserAddedRepositories })
-                    }
-                })
-        )
-
-        this.subscriptions.add(
-            fetchSearchContexts({ first: 1 })
-                .pipe(catchError(error => [asError(error)]))
-                .subscribe(result => {
-                    if (!isErrorLike(result)) {
-                        this.setState({ hasUserDefinedContexts: result.totalCount > 0 })
+                    if (!isErrorLike(result) && result !== null) {
+                        const [userRepositoriesResult, externalServicesResult] = result
+                        this.setState({
+                            hasUserAddedRepositories: userRepositoriesResult.nodes.length > 0,
+                            hasUserAddedExternalServices: externalServicesResult.nodes.length > 0,
+                        })
                     }
                 })
         )
@@ -525,10 +525,13 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     isSourcegraphDotCom={window.context.sourcegraphDotComMode}
                                     showRepogroupHomepage={this.state.showRepogroupHomepage}
                                     showOnboardingTour={this.state.showOnboardingTour}
-                                    showSearchContext={this.canShowSearchContext()}
+                                    showSearchContext={this.state.showSearchContext}
+                                    hasUserAddedRepositories={this.state.hasUserAddedRepositories}
+                                    hasUserAddedExternalServices={this.state.hasUserAddedExternalServices}
                                     showSearchContextManagement={this.state.showSearchContextManagement}
                                     selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
                                     setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}
+                                    getUserSearchContextNamespaces={getUserSearchContextNamespaces}
                                     fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
                                     fetchSearchContexts={fetchSearchContexts}
                                     fetchSearchContext={fetchSearchContext}
@@ -548,7 +551,9 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     fetchRecentSearches={fetchRecentSearches}
                                     fetchRecentFileViews={fetchRecentFileViews}
                                     streamSearch={aggregateStreamingSearch}
-                                    onUserRepositoriesUpdate={this.onUserRepositoriesUpdate}
+                                    onUserExternalServicesOrRepositoriesUpdate={
+                                        this.onUserExternalServicesOrRepositoriesUpdate
+                                    }
                                 />
                             )}
                         />
@@ -605,15 +610,18 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         await extensionHostAPI.setVersionContext(resolvedVersionContext)
     }
 
-    private onUserRepositoriesUpdate = (userRepoCount: number): void => {
-        this.setState({ hasUserAddedRepositories: userRepoCount > 0 })
+    private onUserExternalServicesOrRepositoriesUpdate = (
+        externalServicesCount: number,
+        userRepoCount: number
+    ): void => {
+        this.setState({
+            hasUserAddedExternalServices: externalServicesCount > 0,
+            hasUserAddedRepositories: userRepoCount > 0,
+        })
     }
 
-    private canShowSearchContext = (): boolean =>
-        this.state.showSearchContext && (this.state.hasUserAddedRepositories || this.state.hasUserDefinedContexts)
-
     private getSelectedSearchContextSpec = (): string | undefined =>
-        this.canShowSearchContext() ? this.state.selectedSearchContextSpec : undefined
+        this.state.showSearchContext ? this.state.selectedSearchContextSpec : undefined
 
     private setSelectedSearchContextSpec = (spec: string): void => {
         const { defaultSearchContextSpec } = this.state
