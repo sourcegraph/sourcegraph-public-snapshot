@@ -235,31 +235,12 @@ func runWatch(ctx context.Context, cmd Command, root string, reload <-chan struc
 			defer cancel()
 			cancelFuncs = append(cancelFuncs, cancel)
 
-			c := exec.CommandContext(commandCtx, "bash", "-c", cmd.Cmd)
-			c.Dir = root
-			c.Env = makeEnv(conf.Env, cmd.Env)
-
-			var (
-				stdoutBuf = &prefixSuffixSaver{N: 32 << 10}
-				stderrBuf = &prefixSuffixSaver{N: 32 << 10}
-			)
-
-			logger := newCmdLogger(cmd.Name, out)
-			if cmd.IgnoreStdout {
-				out.WriteLine(output.Linef("", output.StyleSuggestion, "Ignoring stdout of %s", cmd.Name))
-			} else {
-				c.Stdout = io.MultiWriter(logger, stdoutBuf)
-			}
-			if cmd.IgnoreStderr {
-				out.WriteLine(output.Linef("", output.StyleSuggestion, "Ignoring stderr of %s", cmd.Name))
-			} else {
-				c.Stderr = io.MultiWriter(logger, stderrBuf)
-			}
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
 
-				if err := c.Wait(); err == nil {
+				err := c.Wait()
+				if err == nil {
 					return
 				}
 
@@ -267,8 +248,8 @@ func runWatch(ctx context.Context, cmd Command, root string, reload <-chan struc
 					err = runErr{
 						cmdName:  cmd.Name,
 						exitCode: exitErr.ExitCode(),
-						stderr:   string(stderrBuf.Bytes()),
-						stdout:   string(stdoutBuf.Bytes()),
+						// stderr:   string(stderrBuf.Bytes()),
+						// stdout:   string(stdoutBuf.Bytes()),
 					}
 				}
 
@@ -305,16 +286,21 @@ func startCmd(ctx context.Context, dir string, cmd Command) (*exec.Cmd, func(), 
 	c.Dir = dir
 	c.Env = makeEnv(conf.Env, cmd.Env)
 
+	var (
+		stdoutBuf = &prefixSuffixSaver{N: 32 << 10}
+		stderrBuf = &prefixSuffixSaver{N: 32 << 10}
+	)
+
 	logger := newCmdLogger(cmd.Name, out)
 	if cmd.IgnoreStdout {
 		out.WriteLine(output.Linef("", output.StyleSuggestion, "Ignoring stdout of %s", cmd.Name))
 	} else {
-		c.Stdout = logger
+		c.Stdout = io.MultiWriter(logger, stdoutBuf)
 	}
 	if cmd.IgnoreStderr {
 		out.WriteLine(output.Linef("", output.StyleSuggestion, "Ignoring stderr of %s", cmd.Name))
 	} else {
-		c.Stderr = logger
+		c.Stderr = io.MultiWriter(logger, stderrBuf)
 	}
 
 	if err := c.Start(); err != nil {
