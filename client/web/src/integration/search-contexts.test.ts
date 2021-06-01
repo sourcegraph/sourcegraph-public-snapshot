@@ -151,8 +151,7 @@ describe('Search contexts', () => {
 
     const clearLocalStorage = () => driver.page.evaluate(() => localStorage.clear())
 
-    // TODO: Fix test before enabling refresh
-    test.skip('Search context selected based on URL', async () => {
+    test('Search context selected based on URL', async () => {
         testContext.overrideGraphQL({
             ...testContextForSearchContexts,
             IsSearchContextAvailable: () => ({
@@ -167,8 +166,7 @@ describe('Search contexts', () => {
         expect(await getSelectedSearchContextSpec()).toStrictEqual('context:@test')
     })
 
-    // TODO: Fix test before enabling refresh
-    test.skip('Missing context filter should default to global context', async () => {
+    test('Missing context filter should default to global context', async () => {
         // Initialize localStorage to a valid context, that should not be used
         await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
         await driver.page.evaluate(() => localStorage.setItem('sg-last-search-context', '@test'))
@@ -179,8 +177,7 @@ describe('Search contexts', () => {
         await clearLocalStorage()
     })
 
-    // TODO: Fix test before enabling refresh
-    test.skip('Unavailable search context should remain in the query and disable the search context dropdown', async () => {
+    test('Unavailable search context should remain in the query and disable the search context dropdown', async () => {
         await driver.page.goto(
             driver.sourcegraphBaseUrl + '/search?q=context:%40unavailableCtx+test&patternType=regexp',
             { waitUntil: 'networkidle0' }
@@ -204,8 +201,7 @@ describe('Search contexts', () => {
         await clearLocalStorage()
     })
 
-    // TODO: Fix test before enabling refresh
-    test.skip('Disable dropdown if version context is active', async () => {
+    test('Disable dropdown if version context is active', async () => {
         await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp&c=version-context-1')
         await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
         expect(await isSearchContextDropdownDisabled()).toBeTruthy()
@@ -276,8 +272,7 @@ describe('Search contexts', () => {
         expect(await isSearchContextHighlightTourStepVisible()).toBeFalsy()
     })
 
-    // TODO: Fix test before enabling refresh
-    test.skip('Highlight tour step should be visible with empty local storage on search results page', async () => {
+    test('Highlight tour step should be visible with empty local storage on search results page', async () => {
         await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test')
         await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
         expect(await isSearchContextHighlightTourStepVisible()).toBeTruthy()

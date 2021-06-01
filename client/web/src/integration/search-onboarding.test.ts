@@ -90,8 +90,7 @@ describe('Search onboarding', () => {
             expect(tourCard).toBeTruthy()
         })
 
-        // TODO: Fix test before enabling refresh
-        it.skip('displays all steps in the language onboarding flow', async () => {
+        it('displays all steps in the language onboarding flow', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
             await resetOnboardingTour()
             await waitAndFocusInput()
@@ -116,8 +115,7 @@ describe('Search onboarding', () => {
             await driver.page.click('.test-search-button')
         })
 
-        // TODO: Fix test before enabling refresh
-        it.skip('displays all steps in the repo onboarding flow', async () => {
+        it('displays all steps in the repo onboarding flow', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
             await resetOnboardingTour()
             await waitAndFocusInput()

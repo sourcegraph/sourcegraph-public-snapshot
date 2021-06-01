@@ -57,8 +57,7 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
     }),
 }
 
-// TODO: Fix tests before enabling refresh
-describe.skip('Search', () => {
+describe('Search', () => {
     let driver: Driver
     before(async () => {
         driver = await createDriverForTest()
