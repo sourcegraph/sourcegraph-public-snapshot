@@ -233,7 +233,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
                 </code>
             </DropdownToggle>
             <DropdownMenu positionFixed={true} className="search-context-dropdown__menu">
-                {isSourcegraphDotCom && (!hasUserAddedExternalServices || !hasUserAddedRepositories) ? (
+                {isSourcegraphDotCom && !hasUserAddedRepositories ? (
                     <SearchContextCtaPrompt
                         telemetryService={props.telemetryService}
                         authenticatedUser={authenticatedUser}
