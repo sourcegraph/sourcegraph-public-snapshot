@@ -109,9 +109,7 @@ export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = pr
                 await updateSubjectSettings(platformContext, originSubjectID, editedSettings).toPromise()
             }
 
-            const {
-                id: userID,
-            } = authenticatedUser
+            const { id: userID } = authenticatedUser
 
             const subjectID = newInsight.visibility === 'personal' ? userID : newInsight.visibility
 

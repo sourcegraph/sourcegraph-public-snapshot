@@ -1,4 +1,4 @@
-import { View } from 'sourcegraph';
+import { View } from 'sourcegraph'
 
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
@@ -10,9 +10,9 @@ import {
     BACKEND_INSIGHTS,
     CODE_STATS_INSIGHT_LANG_USAGE,
     INSIGHT_VIEW_TEAM_SIZE,
-    INSIGHT_VIEW_TYPES_MIGRATION
-} from './utils/insight-mock-data';
-import { overrideGraphQLExtensions } from './utils/override-graphql-with-extensions';
+    INSIGHT_VIEW_TYPES_MIGRATION,
+} from './utils/insight-mock-data'
+import { overrideGraphQLExtensions } from './utils/override-graphql-with-extensions'
 
 describe('[VISUAL] Code insights page', () => {
     let driver: Driver
@@ -36,7 +36,6 @@ describe('[VISUAL] Code insights page', () => {
     afterEach(() => testContext?.dispose())
 
     it('is styled correctly with back-end insights', async () => {
-
         overrideGraphQLExtensions({
             testContext,
             overrides: {
@@ -44,7 +43,7 @@ describe('[VISUAL] Code insights page', () => {
                  * Mock back-end insights with standard gql API handler.
                  * */
                 Insights: () => ({ insights: { nodes: BACKEND_INSIGHTS } }),
-            }
+            },
         })
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights')
@@ -68,14 +67,14 @@ describe('[VISUAL] Code insights page', () => {
             },
             insightExtensionsMocks: {
                 'searchInsights.insight.teamSize': INSIGHT_VIEW_TEAM_SIZE,
-                'searchInsights.insight.graphQLTypesMigration': INSIGHT_VIEW_TYPES_MIGRATION
+                'searchInsights.insight.graphQLTypesMigration': INSIGHT_VIEW_TYPES_MIGRATION,
             },
             overrides: {
                 /**
                  * Mock back-end insights with standard gql API handler.
                  * */
                 Insights: () => ({ insights: { nodes: [] } }),
-            }
+            },
         })
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights')
@@ -98,15 +97,15 @@ describe('[VISUAL] Code insights page', () => {
                 'searchInsights.insight.teamSize': {},
             },
             insightExtensionsMocks: {
-                'searchInsights.insight.teamSize': { message: 'Error message', name: 'hello'} as unknown as View,
-                'searchInsights.insight.graphQLTypesMigration': INSIGHT_VIEW_TYPES_MIGRATION
+                'searchInsights.insight.teamSize': ({ message: 'Error message', name: 'hello' } as unknown) as View,
+                'searchInsights.insight.graphQLTypesMigration': INSIGHT_VIEW_TYPES_MIGRATION,
             },
             overrides: {
                 /**
                  * Mock back-end insights with standard gql API handler.
                  * */
                 Insights: () => ({ insights: { nodes: [] } }),
-            }
+            },
         })
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights')
@@ -132,14 +131,14 @@ describe('[VISUAL] Code insights page', () => {
             insightExtensionsMocks: {
                 'codeStatsInsights.insight.langUsage': CODE_STATS_INSIGHT_LANG_USAGE,
                 'searchInsights.insight.teamSize': INSIGHT_VIEW_TEAM_SIZE,
-                'searchInsights.insight.graphQLTypesMigration': INSIGHT_VIEW_TYPES_MIGRATION
+                'searchInsights.insight.graphQLTypesMigration': INSIGHT_VIEW_TYPES_MIGRATION,
             },
             overrides: {
                 /**
                  * Mock back-end insights with standard gql API handler.
                  * */
                 Insights: () => ({ insights: { nodes: BACKEND_INSIGHTS } }),
-            }
+            },
         })
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights')

@@ -1,20 +1,20 @@
-import { View } from 'sourcegraph';
+import { View } from 'sourcegraph'
 
-import { ExtensionsResult, SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations';
-import { testUserID } from '@sourcegraph/shared/src/testing/integration/graphQlResults';
-import { ErrorLike } from '@sourcegraph/shared/src/util/errors';
+import { ExtensionsResult, SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import { testUserID } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
+import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import {
     BulkSearchCommits,
     BulkSearchFields,
     BulkSearchRepositories,
-    WebGraphQlOperations
-} from '../../../graphql-operations';
-import { WebIntegrationTestContext } from '../../context';
-import { commonWebGraphQlResults } from '../../graphQlResults';
-import { siteGQLID, siteID } from '../../jscontext';
+    WebGraphQlOperations,
+} from '../../../graphql-operations'
+import { WebIntegrationTestContext } from '../../context'
+import { commonWebGraphQlResults } from '../../graphQlResults'
+import { siteGQLID, siteID } from '../../jscontext'
 
-import { getCodeStatsInsightExtensionBundle, getSearchInsightExtensionBundle } from './insight-extension-bundles';
+import { getCodeStatsInsightExtensionBundle, getSearchInsightExtensionBundle } from './insight-extension-bundles'
 
 /**
  * Search based fake bundle URL.
@@ -104,7 +104,7 @@ interface CustomInsightsOperations {
 
 interface OverrideGraphQLExtensionsProps {
     /** Page driver context. */
-    testContext: WebIntegrationTestContext,
+    testContext: WebIntegrationTestContext
     /** Overrides for gql API calls. */
     overrides?: Partial<WebGraphQlOperations & SharedGraphQlOperations & CustomInsightsOperations>
     /**
@@ -125,13 +125,7 @@ interface OverrideGraphQLExtensionsProps {
  * @param props - Custom override for code insight APIs (gql, user setting, extensions)
  */
 export function overrideGraphQLExtensions(props: OverrideGraphQLExtensionsProps): void {
-    const {
-        testContext,
-        overrides = {},
-        insightExtensionsMocks = {},
-        userSettings = {},
-        orgSettings = {}
-    } = props
+    const { testContext, overrides = {}, insightExtensionsMocks = {}, userSettings = {}, orgSettings = {} } = props
 
     testContext.overrideGraphQL({
         ...commonWebGraphQlResults,
@@ -156,9 +150,9 @@ export function overrideGraphQLExtensions(props: OverrideGraphQLExtensionsProps)
                             displayName: 'Test organization',
                             id: 'Org_test_id',
                             settingsURL: '/organizations/test_organization/settings',
-                            url: '/organizations/test_organization/settings'
-                        }
-                    ]
+                            url: '/organizations/test_organization/settings',
+                        },
+                    ],
                 },
                 session: { canSignOut: true },
                 viewerCanAdminister: true,
@@ -200,8 +194,8 @@ export function overrideGraphQLExtensions(props: OverrideGraphQLExtensionsProps)
                             id: 320,
                             contents: JSON.stringify({
                                 extensions: {},
-                                ...orgSettings
-                            })
+                                ...orgSettings,
+                            }),
                         },
                     },
                     {
@@ -218,7 +212,7 @@ export function overrideGraphQLExtensions(props: OverrideGraphQLExtensionsProps)
                                     'search-based-insight': true,
                                     'code-stats-insight': true,
                                 },
-                                ...userSettings
+                                ...userSettings,
                             }),
                         },
                     },
@@ -238,12 +232,14 @@ export function overrideGraphQLExtensions(props: OverrideGraphQLExtensionsProps)
 
     // Mock extension bundle
     testContext.server.get(searchBasedInsightExtensionBundleURL).intercept((request, response) => {
-        response.type('application/javascript; charset=utf-8')
+        response
+            .type('application/javascript; charset=utf-8')
             .send(getSearchInsightExtensionBundle(insightExtensionsMocks))
     })
 
     testContext.server.get(codeStatsInsightExtensionBundleURL).intercept((request, response) => {
-        response.type('application/javascript; charset=utf-8')
+        response
+            .type('application/javascript; charset=utf-8')
             .send(getCodeStatsInsightExtensionBundle(insightExtensionsMocks))
     })
 }

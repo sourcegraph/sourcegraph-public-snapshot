@@ -1,16 +1,13 @@
-import assert from 'assert';
+import assert from 'assert'
 
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
-import { emptyResponse } from '@sourcegraph/shared/src/testing/integration/graphQlResults';
+import { emptyResponse } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../context'
 
-import {
-    INSIGHT_VIEW_TEAM_SIZE,
-    INSIGHT_VIEW_TYPES_MIGRATION
-} from './utils/insight-mock-data';
-import { overrideGraphQLExtensions } from './utils/override-graphql-with-extensions';
+import { INSIGHT_VIEW_TEAM_SIZE, INSIGHT_VIEW_TYPES_MIGRATION } from './utils/insight-mock-data'
+import { overrideGraphQLExtensions } from './utils/override-graphql-with-extensions'
 
 describe('Code insights page', () => {
     let driver: Driver
@@ -63,7 +60,7 @@ describe('Code insights page', () => {
                 OverwriteSettings: () => ({
                     settingsMutation: {
                         overwriteSettings: {
-                            empty: emptyResponse
+                            empty: emptyResponse,
                         },
                     },
                 }),
@@ -72,21 +69,21 @@ describe('Code insights page', () => {
                     settingsSubject: {
                         latestSettings: {
                             id: 310,
-                            contents: JSON.stringify(settings)
-                        }
-                    }
-                })
-
-            }
+                            contents: JSON.stringify(settings),
+                        },
+                    },
+                }),
+            },
         })
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights')
         await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
 
         const variables = await testContext.waitForGraphQLRequest(async () => {
-            await driver.page.click('[data-testid="InsightCard.searchInsights.insight.graphQLTypesMigration.insightsPage"] [data-testid="InsightContextMenuButton"]')
+            await driver.page.click(
+                '[data-testid="InsightCard.searchInsights.insight.graphQLTypesMigration.insightsPage"] [data-testid="InsightContextMenuButton"]'
+            )
             await driver.page.click('[data-testid="InsightContextMenuDeleteButton"]')
-
         }, 'OverwriteSettings')
 
         assert.deepStrictEqual(JSON.parse(variables.contents), {

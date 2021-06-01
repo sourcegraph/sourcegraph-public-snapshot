@@ -6,7 +6,7 @@ import {
     useEffect,
     useLayoutEffect,
     useRef,
-    useState
+    useState,
 } from 'react'
 import { noop } from 'rxjs'
 
