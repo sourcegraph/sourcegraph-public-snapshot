@@ -87,8 +87,8 @@ export const UserSubscriptionsProductSubscriptionsPage: React.FunctionComponent<
                 }
                 description={
                     <>
-                        A subscription gives you a license key to run a self-hosted Sourcegraph instance. See{' '}
-                        <a href="https://about.sourcegraph.com/pricing">Sourcegraph pricing</a> for more information.
+                        Purchase a subscription for a self-hosted Sourcegraph instance.{' '}
+                        <a href="https://about.sourcegraph.com/pricing">pricing</a> for more information.
                     </>
                 }
                 className="mb-3"

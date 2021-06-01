@@ -31,44 +31,58 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<{ user: UserAr
     return (
         <div className="w-100">
             <PageTitle title="Permissions" />
-            <PageHeader headingElement="h2" path={[{ text: 'Permissions' }]} className="mb-3" />
-            {user.siteAdmin && !window.context.site['authz.enforceForSiteAdmins'] ? (
-                <div className="alert alert-info">
-                    Site admin can access all repositories in the Sourcegraph instance.
-                </div>
-            ) : !permissionsInfo ? (
-                <div className="alert alert-info">
-                    This user is queued to sync permissions, it can only access non-private repositories until syncing
-                    is finished.
-                </div>
-            ) : (
-                <Container className="mb-3">
-                    <table className="table">
-                        <tbody>
-                            <tr>
-                                <th className="border-0">Last complete sync</th>
-                                <td className="border-0">
-                                    {permissionsInfo.syncedAt ? <Timestamp date={permissionsInfo.syncedAt} /> : 'Never'}
-                                </td>
-                                <td className="text-muted border-0">Updated by user permissions syncing</td>
-                            </tr>
-                            <tr>
-                                <th>Last incremental sync</th>
-                                <td>
-                                    <Timestamp date={permissionsInfo.updatedAt} />
-                                </td>
-                                <td className="text-muted">Updated by repository permissions syncing</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                    <ScheduleUserPermissionsSyncActionContainer user={user} history={history} />
-                </Container>
-            )}
-            <p>
-                <a href="/help/admin/repo/permissions#background-permissions-syncing">
-                    Learn more about background permissions syncing.
-                </a>
-            </p>
+            <PageHeader
+                headingElement="h2"
+                path={[{ text: 'Permissions' }]}
+                description={
+                    <>
+                        Learn more about{' '}
+                        <a href="/help/admin/repo/permissions#background-permissions-syncing">
+                            background permissions syncing
+                        </a>
+                        .
+                    </>
+                }
+                className="mb-3"
+            />
+            <Container className="mb-3">
+                {user.siteAdmin && !window.context.site['authz.enforceForSiteAdmins'] ? (
+                    <div className="alert alert-info mb-0">
+                        Site admin can access all repositories in the Sourcegraph instance.
+                    </div>
+                ) : !permissionsInfo ? (
+                    <div className="alert alert-info mb-0">
+                        This user is queued to sync permissions, it can only access non-private repositories until
+                        syncing is finished.
+                    </div>
+                ) : (
+                    <>
+                        <table className="table">
+                            <tbody>
+                                <tr>
+                                    <th className="border-0">Last complete sync</th>
+                                    <td className="border-0">
+                                        {permissionsInfo.syncedAt ? (
+                                            <Timestamp date={permissionsInfo.syncedAt} />
+                                        ) : (
+                                            'Never'
+                                        )}
+                                    </td>
+                                    <td className="text-muted border-0">Updated by user permissions syncing</td>
+                                </tr>
+                                <tr>
+                                    <th>Last incremental sync</th>
+                                    <td>
+                                        <Timestamp date={permissionsInfo.updatedAt} />
+                                    </td>
+                                    <td className="text-muted">Updated by repository permissions syncing</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <ScheduleUserPermissionsSyncActionContainer user={user} history={history} />
+                    </>
+                )}
+            </Container>
         </div>
     )
 }
