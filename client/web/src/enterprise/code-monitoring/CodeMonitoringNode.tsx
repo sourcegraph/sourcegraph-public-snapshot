@@ -17,7 +17,7 @@ import { sendTestEmail, toggleCodeMonitorEnabled as _toggleCodeMonitorEnabled } 
 export interface CodeMonitorNodeProps {
     node: CodeMonitorFields
     location: H.Location
-    authentictedUser: AuthenticatedUser
+    authenticatedUser: AuthenticatedUser
     showCodeMonitoringTestEmailButton: boolean
 
     toggleCodeMonitorEnabled?: typeof _toggleCodeMonitorEnabled
@@ -28,7 +28,7 @@ const LOADING = 'LOADING' as const
 export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
     location,
     node,
-    authentictedUser,
+    authenticatedUser: authentictedUser,
     showCodeMonitoringTestEmailButton,
     toggleCodeMonitorEnabled = _toggleCodeMonitorEnabled,
 }: CodeMonitorNodeProps) => {
@@ -84,7 +84,7 @@ export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
     const hasEnabledAction = useMemo(() => node.actions.nodes.filter(node => node.enabled).length > 0, [node.actions])
 
     return (
-        <Link to={`${location.pathname}/${node.id}`} className="code-monitoring-node card p-3">
+        <Link to={`${location.pathname}/${node.id}`} className="code-monitoring-node card">
             <div className="d-flex justify-content-between align-items-center">
                 <div className="d-flex flex-column">
                     <div className="font-weight-bold">{node.description}</div>

@@ -2,6 +2,7 @@
     // stylelint-disable-next-line declaration-property-unit-whitelist
     margin: -1px -1px calc(0.5rem - 1px) -1px;
     color: var(--link-hover-color);
+    padding: 1rem;
 
     &__toggle-wrapper {
         // stylelint-disable-next-line declaration-property-unit-whitelist
@@ -32,14 +33,22 @@
     }
 
     .theme-redesign & {
+        border: none;
+        padding: 0;
+
         color: var(--body-color);
+
+        &:last-child:hover {
+            margin-bottom: -1px;
+        }
 
         &:focus-visible {
             border-color: transparent;
         }
 
         &:hover {
-            border-color: var(--border-active-color);
+            border: none;
+            margin: -1px -1px calc(0.5rem - 1px) -1px;
         }
     }
 }
