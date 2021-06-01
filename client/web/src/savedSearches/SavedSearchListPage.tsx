@@ -132,34 +132,6 @@ export class SavedSearchListPage extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        let body: JSX.Element
-        if (this.state.savedSearchesOrError === undefined) {
-            body = <LoadingSpinner />
-        } else if (isErrorLike(this.state.savedSearchesOrError)) {
-            body = <ErrorAlert className="mb-3" error={this.state.savedSearchesOrError} />
-        } else {
-            const namespaceSavedSearches = this.state.savedSearchesOrError.filter(
-                search => this.props.namespace.id === search.namespace.id
-            )
-            if (namespaceSavedSearches.length === 0) {
-                body = <Container className="text-center text-muted">You haven't created a saved search yet.</Container>
-            } else {
-                body = (
-                    <Container>
-                        <div className="list-group list-group-flush">
-                            {namespaceSavedSearches.map(search => (
-                                <SavedSearchNode
-                                    key={search.id}
-                                    {...this.props}
-                                    savedSearch={search}
-                                    onDelete={this.onDelete}
-                                />
-                            ))}
-                        </div>
-                    </Container>
-                )
-            }
-        }
         return (
             <div className="saved-search-list-page">
                 <PageHeader
@@ -176,12 +148,43 @@ export class SavedSearchListPage extends React.Component<Props, State> {
                     }
                     className="mb-3"
                 />
-                {body}
+                <SavedSearchListPageContent onDelete={this.onDelete} {...this.props} {...this.state} />
             </div>
         )
     }
 
     private onDelete = (): void => {
         this.refreshRequests.next()
+    }
+}
+
+interface SavedSearchListPageContentProps extends Props, State {
+    onDelete: () => void
+}
+
+const SavedSearchListPageContent: React.FunctionComponent<SavedSearchListPageContentProps> = ({
+    namespace,
+    savedSearchesOrError,
+    ...props
+}) => {
+    if (savedSearchesOrError === undefined) {
+        return <LoadingSpinner />
+    } else if (isErrorLike(savedSearchesOrError)) {
+        return <ErrorAlert className="mb-3" error={savedSearchesOrError} />
+    } else {
+        const namespaceSavedSearches = savedSearchesOrError.filter(search => namespace.id === search.namespace.id)
+        if (namespaceSavedSearches.length === 0) {
+            return <Container className="text-center text-muted">You haven't created a saved search yet.</Container>
+        } else {
+            return (
+                <Container>
+                    <div className="list-group list-group-flush">
+                        {namespaceSavedSearches.map(search => (
+                            <SavedSearchNode key={search.id} {...props} savedSearch={search} />
+                        ))}
+                    </div>
+                </Container>
+            )
+        }
     }
 }
