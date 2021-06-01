@@ -9,13 +9,7 @@ import { Link, RouteComponentProps } from 'react-router-dom'
 
 import { AuthenticatedUser } from '../../auth'
 import { Badge, BadgeStatus } from '../../components/Badge'
-import {
-    SIDEBAR_BUTTON_CLASS,
-    SidebarGroup,
-    SidebarGroupHeader,
-    SidebarGroupItems,
-    SidebarNavItem,
-} from '../../components/Sidebar'
+import { SidebarGroup, SidebarGroupHeader, SidebarGroupItems, SidebarNavItem } from '../../components/Sidebar'
 import { UserAreaUserFields } from '../../graphql-operations'
 import { OrgAvatar } from '../../org/OrgAvatar'
 import { OnboardingTourProps } from '../../search'
@@ -33,10 +27,7 @@ type UserSettingsSidebarItem = NavItemDescriptor<UserSettingsSidebarItemConditio
     status?: BadgeStatus
 }
 
-export interface UserSettingsSidebarItems {
-    account: readonly UserSettingsSidebarItem[]
-    misc?: readonly UserSettingsSidebarItem[]
-}
+export type UserSettingsSidebarItems = readonly UserSettingsSidebarItem[]
 
 export interface UserSettingsSidebarProps extends UserAreaRouteContext, OnboardingTourProps, RouteComponentProps<{}> {
     items: UserSettingsSidebarItems
@@ -68,30 +59,16 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
             <SidebarGroup>
                 <SidebarGroupHeader label="User account" icon={AccountCircleIcon} />
                 <SidebarGroupItems>
-                    {props.items.account.map(
+                    {props.items.map(
                         ({ label, to, exact, status, condition = () => true }) =>
                             condition(context) && (
-                                <SidebarNavItem key={label} to={props.match.path + to} exact={exact} className="d-flex">
+                                <SidebarNavItem key={label} to={props.match.path + to} exact={exact}>
                                     {label} {status && <Badge className="ml-1" status={status} />}
                                 </SidebarNavItem>
                             )
                     )}
                 </SidebarGroupItems>
             </SidebarGroup>
-            {props.items.misc?.length && (
-                <SidebarGroup>
-                    <SidebarGroupItems>
-                        {props.items.misc.map(
-                            ({ label, to, exact, condition = () => true }) =>
-                                condition(context) && (
-                                    <SidebarNavItem key={label} to={props.match.path + to} exact={exact}>
-                                        {label}
-                                    </SidebarNavItem>
-                                )
-                        )}
-                    </SidebarGroupItems>
-                </SidebarGroup>
-            )}
             {(props.user.organizations.nodes.length > 0 || !siteAdminViewingOtherUser) && (
                 <SidebarGroup>
                     <SidebarGroupHeader label="Organizations" icon={DomainIcon} />
@@ -107,27 +84,42 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
                         ))}
                     </SidebarGroupItems>
                     {!siteAdminViewingOtherUser && (
-                        <Link to="/organizations/new" className="btn btn-secondary btn-sm w-100">
-                            <AddIcon className="icon-inline" /> New organization
-                        </Link>
+                        <div className="user-settings-sidebar__new-org-btn-wrapper">
+                            <Link
+                                to="/organizations/new"
+                                className="user-settings-sidebar__new-org-btn btn btn-outline-secondary btn-sm"
+                            >
+                                <AddIcon className="icon-inline" /> New organization
+                            </Link>
+                        </div>
                     )}
                 </SidebarGroup>
             )}
-            {!siteAdminViewingOtherUser && (
-                <Link to="/api/console" className={SIDEBAR_BUTTON_CLASS}>
-                    <ConsoleIcon className="icon-inline" /> API console
-                </Link>
-            )}
-            {props.authenticatedUser.siteAdmin && (
-                <Link to="/site-admin" className={SIDEBAR_BUTTON_CLASS}>
-                    <ServerIcon className="icon-inline list-group-item-action-icon" /> Site admin
-                </Link>
-            )}
-            {props.showOnboardingTour && (
-                <button type="button" onClick={reEnableSearchTour} className={SIDEBAR_BUTTON_CLASS}>
-                    <MapSearchOutlineIcon className="icon-inline list-group-item-action-icon" /> Show search tour
-                </button>
-            )}
+            <SidebarGroup>
+                <SidebarGroupHeader label="Other actions" />
+                <SidebarGroupItems>
+                    {!siteAdminViewingOtherUser && (
+                        <SidebarNavItem to="/api/console" icon={ConsoleIcon}>
+                            API console
+                        </SidebarNavItem>
+                    )}
+                    {props.authenticatedUser.siteAdmin && (
+                        <SidebarNavItem to="/site-admin" icon={ServerIcon}>
+                            Site admin
+                        </SidebarNavItem>
+                    )}
+                    {props.showOnboardingTour && (
+                        <button
+                            type="button"
+                            className="btn text-left sidebar__link--inactive d-flex sidebar-nav-link w-100"
+                            onClick={reEnableSearchTour}
+                        >
+                            <MapSearchOutlineIcon className="icon-inline list-group-item-action-icon redesign-d-none" />{' '}
+                            Show search tour
+                        </button>
+                    )}
+                </SidebarGroupItems>
+            </SidebarGroup>
             <div>Version: {window.context.version}</div>
         </div>
     )
