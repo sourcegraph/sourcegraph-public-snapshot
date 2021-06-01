@@ -29,7 +29,7 @@ export const InsightCardMenu: React.FunctionComponent<InsightCardMenuProps> = pr
             <MenuButton data-testid='InsightContextMenuButton' className={classnames(className, 'btn btn-outline p-1')}>
                 <DotsVerticalIcon size={16} />
             </MenuButton>
-            <MenuList className={classnames(styles.menuPanel, 'dropdown-menu dropdown-menu-sw')}>
+            <MenuList data-test-id={`context-menu.${normalizedInsightID}`} className={classnames(styles.menuPanel, 'dropdown-menu dropdown-menu-sw')}>
                 <MenuItem
                     data-testid='InsightContextMenuDeleteButton'
                     onSelect={() => onDelete(insightID)}
