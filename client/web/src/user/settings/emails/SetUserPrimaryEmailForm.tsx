@@ -71,11 +71,8 @@ export const SetUserPrimaryEmailForm: FunctionComponent<Props> = ({ user, emails
 
     return (
         <div className={`add-user-email-form ${className || ''}`}>
-            <p className="mb-2">Primary email address</p>
+            <label htmlFor="setUserPrimaryEmailForm-email">Primary email address</label>
             <Form className="form-inline" onSubmit={onSubmit}>
-                <label className="sr-only" htmlFor="setUserPrimaryEmailForm-email">
-                    Email address
-                </label>
                 <select
                     id="setUserPrimaryEmailForm-email"
                     className="custom-select form-control-lg mr-sm-2"
