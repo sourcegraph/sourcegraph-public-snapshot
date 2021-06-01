@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import React, { useEffect, useState } from 'react'
 import { Observable } from 'rxjs'
@@ -133,7 +134,10 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
                         target="_blank"
                         rel="noopener noreferrer"
                         data-tooltip={badge.hoverMessage}
-                        className="badge badge-secondary text-muted text-uppercase file-match__badge"
+                        className={classNames(
+                            'badge badge-secondary text-muted text-uppercase file-match__badge',
+                            isRedesignEnabled && 'badge-sm'
+                        )}
                     >
                         {badge.text}
                     </LinkOrSpan>

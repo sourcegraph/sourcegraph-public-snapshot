@@ -43,4 +43,76 @@
         flex: 1;
         width: 100%;
     }
+
+    .theme-redesign & {
+        padding: 0.25rem 1rem;
+
+        &__content {
+            margin-right: -1rem;
+        }
+
+        &__resizable {
+            padding: 0.5rem;
+            overflow-y: auto;
+
+            &:first-child {
+                padding-left: 0;
+            }
+
+            &:last-of-type {
+                margin-right: 0.5rem;
+            }
+
+            .resizable__handle {
+                border-right: 1px solid var(--border-color-2);
+                margin: 0;
+                margin-right: 0.5rem;
+                width: 0;
+                padding-left: 0.5rem;
+                transition: opacity 150ms;
+
+                &:hover {
+                    opacity: 1;
+                }
+            }
+        }
+
+        &__list {
+            border-right: none;
+            // Move overflow-y to the parent element to avoid cutting down box-shadow on focus.
+            overflow-y: visible;
+            overflow-x: hidden;
+        }
+
+        &__item {
+            border-radius: var(--border-radius);
+            font-size: 0.75rem;
+            line-height: (16/12);
+            border: none;
+            outline: none;
+
+            &:focus-visible {
+                // Show item outline over the active item background instead of cutting it.
+                z-index: 2;
+            }
+
+            &-badge {
+                opacity: 1;
+                color: var(--primary);
+            }
+
+            &.active {
+                background-color: var(--primary);
+                margin-top: 0;
+
+                &:hover {
+                    color: var(--light-text);
+                }
+
+                .hierarchical-locations-view__item-badge {
+                    color: var(--light-text);
+                }
+            }
+        }
+    }
 }
