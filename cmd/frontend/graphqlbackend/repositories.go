@@ -17,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-type RepositoryArgs struct {
+type repositoryArgs struct {
 	graphqlutil.ConnectionArgs
 	Query       *string
 	Names       *[]string
@@ -31,7 +31,7 @@ type RepositoryArgs struct {
 	After       *string
 }
 
-func (r *schemaResolver) Repositories(args *RepositoryArgs) (*repositoryConnectionResolver, error) {
+func (r *schemaResolver) Repositories(args *repositoryArgs) (*repositoryConnectionResolver, error) {
 	opt := database.ReposListOptions{
 		OrderBy: database.RepoListOrderBy{{
 			Field:      toDBRepoListColumn(args.OrderBy),
