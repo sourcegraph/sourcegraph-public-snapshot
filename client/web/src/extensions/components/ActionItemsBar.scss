@@ -32,6 +32,8 @@ $default-icon-colors: $oc-grape-7, $oc-violet-7, $oc-cyan-9, $oc-indigo-7, $oc-p
 
         .theme-redesign & {
             background-color: var(--body-bg);
+            padding-top: 0;
+            padding-bottom: 0;
         }
 
         &--open {
