@@ -81,6 +81,7 @@
             border-right: none;
             // Move overflow-y to the parent element to avoid cutting down box-shadow on focus.
             overflow-y: visible;
+            overflow-x: hidden;
         }
 
         &__item {
