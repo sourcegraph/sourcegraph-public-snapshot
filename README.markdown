@@ -126,3 +126,7 @@ mv /usr/local/bin/src /usr/local/bin/src-cli
 ```
 
 You can then invoke it via `src-cli`.
+
+## Development
+
+Some useful notes on developing `src` can be found in [DEVELOPMENT.md](DEVELOPMENT.md).
