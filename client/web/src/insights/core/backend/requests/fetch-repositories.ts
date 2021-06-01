@@ -20,7 +20,6 @@ const bulkSearchRepositoriesFragment = gql`
 export function fetchRepositories(repositories: string[]): Observable<BulkSearchRepositories[]> {
     return requestGraphQL<Record<string, BulkSearchRepositories>>(
         `
-        ${bulkSearchRepositoriesFragment}
         query BulkRepositoriesSearch(${repositories.map((repo, index) => `$query${index}: String!`).join(', ')}) {
             ${repositories
                 .map(
@@ -32,6 +31,7 @@ export function fetchRepositories(repositories: string[]): Observable<BulkSearch
                 )
                 .join('\n')}
         }
+        ${bulkSearchRepositoriesFragment}
     `,
         Object.fromEntries(repositories.map((query, index) => [`query${index}`, query]))
     ).pipe(
