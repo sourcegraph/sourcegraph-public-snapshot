@@ -3933,10 +3933,10 @@
   dependencies:
     postcss "5 - 7"
 
-"@types/d3-axis@1.0.12":
-  version "1.0.12"
-  resolved "https://registry.npmjs.org/@types/d3-axis/-/d3-axis-1.0.12.tgz#8c124edfcc02f3b3a9cdaa2a28b8a20341401799"
-  integrity sha512-BZISgSD5M8TgURyNtcPAmUB9sk490CO1Thb6/gIn0WZTt3Y50IssX+2Z0vTccoqZksUDTep0b+o4ofXslvNbqg==
+"@types/d3-axis@2.1.0":
+  version "2.1.0"
+  resolved "https://registry.npmjs.org/@types/d3-axis/-/d3-axis-2.1.0.tgz#5314adec80e4303d4eb02d23bdb5b8c600f6ee2c"
+  integrity sha512-6ekm+D+EG/LVT3oiwwU9wsm0+SBAQpxSSOsZq92fp+tnpaa19YMHpj8sRZQAeksSBcqNWzEMjuRPXR9s38YFaw==
   dependencies:
     "@types/d3-selection" "*"
 
@@ -8710,10 +8710,10 @@ d3-array@^2.3.0, d3-array@^2.6.0:
   dependencies:
     internmap "^1.0.0"
 
-d3-axis@^1.0.12:
-  version "1.0.12"
-  resolved "https://registry.npmjs.org/d3-axis/-/d3-axis-1.0.12.tgz#cdf20ba210cfbb43795af33756886fb3638daac9"
-  integrity sha512-ejINPfPSNdGFKEOAtnBtdkpr24c4d4jsei6Lg98mxf424ivoDP2956/5HDpIAtmHo85lqT4pruy+zEgvRUBqaQ==
+d3-axis@^2.1.0:
+  version "2.1.0"
+  resolved "https://registry.npmjs.org/d3-axis/-/d3-axis-2.1.0.tgz#978db534092711117d032fad5d733d206307f6a0"
+  integrity sha512-z/G2TQMyuf0X3qP+Mh+2PimoJD41VOCjViJzT0BHeL/+JQAofkiWZbWxlwFGb1N8EN+Cl/CW+MUKbVzr1689Cw==
 
 d3-collection@1:
   version "1.0.7"
