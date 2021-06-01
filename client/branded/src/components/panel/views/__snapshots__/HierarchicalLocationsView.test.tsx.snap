@@ -57,7 +57,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                   </a>
                 </div>
                 <span
-                  className="ml-2"
+                  className="result-container__header-description ml-2"
                 />
               </div>
               <button
@@ -285,7 +285,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                   </a>
                 </div>
                 <span
-                  className="ml-2"
+                  className="result-container__header-description ml-2"
                 />
               </div>
               <button
@@ -463,7 +463,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                   </a>
                 </div>
                 <span
-                  className="ml-2"
+                  className="result-container__header-description ml-2"
                 />
               </div>
               <button
