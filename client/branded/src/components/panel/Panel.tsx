@@ -235,11 +235,7 @@ export const Panel = React.memo<Props>(props => {
     }
 
     if (!items) {
-        return (
-            <EmptyPanelWrapper {...(!isRedesignEnabled && { className: 'panel' })}>
-                <EmptyPanelView />
-            </EmptyPanelWrapper>
-        )
+        return <EmptyPanelView />
     }
 
     const activeTab: PanelItem | undefined = items[tabIndex]
