@@ -44,5 +44,7 @@ export const RedesignToggleDecorator: DecoratorFunction<ReactElement> = (Story, 
         updateManager(isRedesignEnabled)
     }, [isRedesignEnabled])
 
-    return <Story {...context} />
+    // Required instead of the <Story {...context} /> until the issue below is resolved
+    // https://github.com/storybookjs/storybook/issues/12255#issuecomment-697956943
+    return Story(context)
 }
