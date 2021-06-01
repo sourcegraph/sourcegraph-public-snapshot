@@ -169,22 +169,24 @@ const SavedSearchListPageContent: React.FunctionComponent<SavedSearchListPageCon
 }) => {
     if (savedSearchesOrError === undefined) {
         return <LoadingSpinner />
-    } else if (isErrorLike(savedSearchesOrError)) {
-        return <ErrorAlert className="mb-3" error={savedSearchesOrError} />
-    } else {
-        const namespaceSavedSearches = savedSearchesOrError.filter(search => namespace.id === search.namespace.id)
-        if (namespaceSavedSearches.length === 0) {
-            return <Container className="text-center text-muted">You haven't created a saved search yet.</Container>
-        } else {
-            return (
-                <Container>
-                    <div className="list-group list-group-flush">
-                        {namespaceSavedSearches.map(search => (
-                            <SavedSearchNode key={search.id} {...props} savedSearch={search} />
-                        ))}
-                    </div>
-                </Container>
-            )
-        }
     }
+
+    if (isErrorLike(savedSearchesOrError)) {
+        return <ErrorAlert className="mb-3" error={savedSearchesOrError} />
+    }
+
+    const namespaceSavedSearches = savedSearchesOrError.filter(search => namespace.id === search.namespace.id)
+    if (namespaceSavedSearches.length === 0) {
+        return <Container className="text-center text-muted">You haven't created a saved search yet.</Container>
+    }
+
+    return (
+        <Container>
+            <div className="list-group list-group-flush">
+                {namespaceSavedSearches.map(search => (
+                    <SavedSearchNode key={search.id} {...props} savedSearch={search} />
+                ))}
+            </div>
+        </Container>
+    )
 }
