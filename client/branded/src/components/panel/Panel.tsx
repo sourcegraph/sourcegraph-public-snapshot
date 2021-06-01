@@ -228,7 +228,7 @@ export const Panel = React.memo<Props>(props => {
 
     if (!areExtensionsReady) {
         return (
-            <EmptyPanelWrapper {...(isRedesignEnabled && { className: 'panel' })}>
+            <EmptyPanelWrapper {...(!isRedesignEnabled && { className: 'panel' })}>
                 <ExtensionsLoadingPanelView />
             </EmptyPanelWrapper>
         )
@@ -236,7 +236,7 @@ export const Panel = React.memo<Props>(props => {
 
     if (!items) {
         return (
-            <EmptyPanelWrapper {...(isRedesignEnabled && { className: 'panel' })}>
+            <EmptyPanelWrapper {...(!isRedesignEnabled && { className: 'panel' })}>
                 <EmptyPanelView />
             </EmptyPanelWrapper>
         )

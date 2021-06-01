@@ -45,9 +45,36 @@
     }
 
     .theme-redesign & {
+        padding: 0.25rem 1rem;
+
+        &__content {
+            margin-right: -1rem;
+        }
+
         &__resizable {
-            padding: 0.75rem 1rem;
+            padding: 0.5rem;
             overflow-y: auto;
+
+            &:first-child {
+                padding-left: 0;
+            }
+
+            &:last-of-type {
+                margin-right: 0.5rem;
+            }
+
+            .resizable__handle {
+                border-right: 1px solid var(--border-color-2);
+                margin: 0;
+                margin-right: 0.5rem;
+                width: 0;
+                padding-left: 0.5rem;
+                transition: opacity 150ms;
+
+                &:hover {
+                    opacity: 1;
+                }
+            }
         }
 
         &__list {
