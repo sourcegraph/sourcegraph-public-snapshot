@@ -52,7 +52,7 @@ export const EditSearchBasedInsight: React.FunctionComponent<EditSearchBasedInsi
             initialValue={insightFormValues}
             settings={finalSettings}
             organizations={organizations}
-            dataTestId='SearchInsightEditPageContent'
+            dataTestId="SearchInsightEditPageContent"
             onSubmit={handleSubmit}
             onCancel={handleCancel}
         />

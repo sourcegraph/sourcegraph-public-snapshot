@@ -1,30 +1,30 @@
-import assert from 'assert';
+import assert from 'assert'
 
-import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver';
-import { emptyResponse } from '@sourcegraph/shared/src/testing/integration/graphQlResults';
-import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter';
+import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
+import { emptyResponse } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
+import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../context';
-import { percySnapshotWithVariants } from '../utils';
+import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../context'
+import { percySnapshotWithVariants } from '../utils'
 
 import {
     INSIGHT_TYPES_MIGRATION_BULK_SEARCH,
     INSIGHT_TYPES_MIGRATION_COMMITS,
     INSIGHT_VIEW_TEAM_SIZE,
-    INSIGHT_VIEW_TYPES_MIGRATION
-} from './utils/insight-mock-data';
-import { overrideGraphQLExtensions } from './utils/override-graphql-with-extensions';
+    INSIGHT_VIEW_TYPES_MIGRATION,
+} from './utils/insight-mock-data'
+import { overrideGraphQLExtensions } from './utils/override-graphql-with-extensions'
 
 interface InsightValues {
     series: {
-        name?: string | null,
-        query?: string | null,
-        stroke?: string | null,
-    }[],
-    repositories?: string,
-    title?: string,
+        name?: string | null
+        query?: string | null
+        stroke?: string | null
+    }[]
+    repositories?: string
+    title?: string
     visibility?: string
-    step: Record<string, string|number|undefined>
+    step: Record<string, string | number | undefined>
 }
 
 function getInsightFormValues(): InsightValues {
@@ -34,19 +34,20 @@ function getInsightFormValues(): InsightValues {
     const granularityType = document.querySelector<HTMLInputElement>('input[name="step"]:checked')?.value ?? ''
     const granularityValue = document.querySelector<HTMLInputElement>('input[name="stepValue"]')?.value
 
-    const series = [...document.querySelectorAll('[data-test-id="form-series"] [data-test-id="series-card"]')]
-        .map(card => ({
+    const series = [...document.querySelectorAll('[data-test-id="form-series"] [data-test-id="series-card"]')].map(
+        card => ({
             name: card.querySelector('[data-test-id="series-name"]')?.textContent,
             query: card.querySelector('[data-test-id="series-query"]')?.textContent,
-            stroke: card.querySelector<HTMLElement>('[data-test-id="series-color-mark"]')?.style.color
-        }))
+            stroke: card.querySelector<HTMLElement>('[data-test-id="series-color-mark"]')?.style.color,
+        })
+    )
 
     return {
         series,
         repositories,
         title,
         visibility,
-        step: { [granularityType]: granularityValue }
+        step: { [granularityType]: granularityValue },
     }
 }
 
@@ -80,25 +81,23 @@ describe('Code insight edit insight page', () => {
         const userSettings = {
             'searchInsights.insight.teamSize': {},
             'searchInsights.insight.graphQLTypesMigration': {
-                'title': 'Migration to new GraphQL TS types',
-                'repositories': [
-                    'github.com/sourcegraph/sourcegraph'
-                ],
-                'series': [
+                title: 'Migration to new GraphQL TS types',
+                repositories: ['github.com/sourcegraph/sourcegraph'],
+                series: [
                     {
-                        'name': 'Imports of old GQL.* types',
-                        'query': 'patternType:regex case:yes \\*\\sas\\sGQL',
-                        'stroke': 'var(--oc-red-7)'
+                        name: 'Imports of old GQL.* types',
+                        query: 'patternType:regex case:yes \\*\\sas\\sGQL',
+                        stroke: 'var(--oc-red-7)',
                     },
                     {
-                        'name': 'Imports of new graphql-operations types',
-                        'query': "patternType:regexp case:yes /graphql-operations'",
-                        'stroke': 'var(--oc-blue-7)'
-                    }
+                        name: 'Imports of new graphql-operations types',
+                        query: "patternType:regexp case:yes /graphql-operations'",
+                        stroke: 'var(--oc-blue-7)',
+                    },
                 ],
-                'step': {
-                    'weeks': 6
-                }
+                step: {
+                    weeks: 6,
+                },
             },
         }
 
@@ -128,7 +127,7 @@ describe('Code insight edit insight page', () => {
                 OverwriteSettings: () => ({
                     settingsMutation: {
                         overwriteSettings: {
-                            empty: emptyResponse
+                            empty: emptyResponse,
                         },
                     },
                 }),
@@ -139,30 +138,30 @@ describe('Code insight edit insight page', () => {
                             settingsSubject: {
                                 latestSettings: {
                                     id: 310,
-                                    contents: JSON.stringify(userSettings)
-                                }
-                            }
+                                    contents: JSON.stringify(userSettings),
+                                },
+                            },
                         }
                     }
 
                     if (id === 'Org_test_id') {
-                        return ({
+                        return {
                             settingsSubject: {
                                 latestSettings: {
                                     id: 320,
-                                    contents: JSON.stringify(orgSettings)
-                                }
-                            }
-                        })
+                                    contents: JSON.stringify(orgSettings),
+                                },
+                            },
+                        }
                     }
 
                     return {
                         settingsSubject: {
                             latestSettings: {
                                 id: 100,
-                                contents: '{ "a": "b" }'
-                            }
-                        }
+                                contents: '{ "a": "b" }',
+                            },
+                        },
                     }
                 },
 
@@ -170,19 +169,21 @@ describe('Code insight edit insight page', () => {
                  * Mock for async repositories field validation.
                  * */
                 BulkRepositoriesSearch: () => ({
-                    repoSearch0: { name: 'github.com/sourcegraph/sourcegraph'},
-                    repoSearch1: { name: 'github.com/sourcegraph/about'},
+                    repoSearch0: { name: 'github.com/sourcegraph/sourcegraph' },
+                    repoSearch1: { name: 'github.com/sourcegraph/about' },
                 }),
 
                 /**
                  * Mocks of commits searching and data search itself for live preview chart
                  * */
                 BulkSearchCommits: () => INSIGHT_TYPES_MIGRATION_COMMITS,
-                BulkSearch: () => INSIGHT_TYPES_MIGRATION_BULK_SEARCH
-            }
+                BulkSearch: () => INSIGHT_TYPES_MIGRATION_BULK_SEARCH,
+            },
         })
 
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/edit/searchInsights.insight.graphQLTypesMigration')
+        await driver.page.goto(
+            driver.sourcegraphBaseUrl + '/insights/edit/searchInsights.insight.graphQLTypesMigration'
+        )
 
         // Waiting for all important part of creation form will be rendered.
         await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
@@ -196,18 +197,38 @@ describe('Code insight edit insight page', () => {
         await clearAndType(driver, 'input[name="title"]', 'Test insight title')
 
         // Edit first insight series
-        await driver.page.click('[data-test-id="form-series"] [data-test-id="series-card"]:nth-child(1) [data-test-id="series-edit-button"]')
-        await clearAndType(driver,'[data-test-id="series-form"]:nth-child(1) input[name="seriesName"]', 'test edited series title')
-        await clearAndType(driver, '[data-test-id="series-form"]:nth-child(1) input[name="seriesQuery"]', 'test edited series query')
+        await driver.page.click(
+            '[data-test-id="form-series"] [data-test-id="series-card"]:nth-child(1) [data-test-id="series-edit-button"]'
+        )
+        await clearAndType(
+            driver,
+            '[data-test-id="series-form"]:nth-child(1) input[name="seriesName"]',
+            'test edited series title'
+        )
+        await clearAndType(
+            driver,
+            '[data-test-id="series-form"]:nth-child(1) input[name="seriesQuery"]',
+            'test edited series query'
+        )
         await driver.page.click('[data-test-id="series-form"]:nth-child(1) label[title="Cyan"]')
 
         // Remove second insight series
-        await driver.page.click('[data-test-id="form-series"] [data-test-id="series-card"] [data-test-id="series-delete-button"]')
+        await driver.page.click(
+            '[data-test-id="form-series"] [data-test-id="series-card"] [data-test-id="series-delete-button"]'
+        )
 
         // Add new series
         await driver.page.click('[data-test-id="form-series"] [data-test-id="add-series-button"]')
-        await clearAndType(driver,'[data-test-id="series-form"]:nth-child(2) input[name="seriesName"]', 'new test series title')
-        await clearAndType(driver,'[data-test-id="series-form"]:nth-child(2) input[name="seriesQuery"]', 'new test series query')
+        await clearAndType(
+            driver,
+            '[data-test-id="series-form"]:nth-child(2) input[name="seriesName"]',
+            'new test series title'
+        )
+        await clearAndType(
+            driver,
+            '[data-test-id="series-form"]:nth-child(2) input[name="seriesQuery"]',
+            'new test series query'
+        )
 
         // Change visibility to test org by org ID mock - 'Org_test_id'
         await driver.page.click('input[name="visibility"][value="Org_test_id"]')
@@ -230,56 +251,51 @@ describe('Code insight edit insight page', () => {
         // Check that new org settings config has edited insight
         assert.deepStrictEqual(JSON.parse(addToOrgConfigRequest.contents), {
             extensions: {
-                'sourcegraph/search-insights': true
+                'sourcegraph/search-insights': true,
             },
             'searchInsights.insight.orgTeamSize': {},
             'searchInsights.insight.testInsightTitle': {
                 title: 'Test insight title',
-                repositories: [
-                    'github.com/sourcegraph/sourcegraph',
-                    'github.com/sourcegraph/about',
-                ],
+                repositories: ['github.com/sourcegraph/sourcegraph', 'github.com/sourcegraph/about'],
                 series: [
                     {
                         name: 'test edited series title',
                         query: 'test edited series query',
-                        stroke: 'var(--oc-cyan-7)'
+                        stroke: 'var(--oc-cyan-7)',
                     },
                     {
                         name: 'new test series title',
                         query: 'new test series query',
                         stroke: 'var(--oc-grape-7)',
-                    }
+                    },
                 ],
                 step: {
-                    days: 62
-                }
-            }
+                    days: 62,
+                },
+            },
         })
     })
 
     it('should open the edit page with pre-filled fields with values from user/org settings', async () => {
         const settings = {
             'searchInsights.insight.graphQLTypesMigration': {
-                'title': 'Migration to new GraphQL TS types',
-                'repositories': [
-                    'github.com/sourcegraph/sourcegraph'
-                ],
-                'series': [
+                title: 'Migration to new GraphQL TS types',
+                repositories: ['github.com/sourcegraph/sourcegraph'],
+                series: [
                     {
-                        'name': 'Imports of old GQL.* types',
-                        'query': 'patternType:regex case:yes \\*\\sas\\sGQL',
-                        'stroke': 'var(--oc-red-7)'
+                        name: 'Imports of old GQL.* types',
+                        query: 'patternType:regex case:yes \\*\\sas\\sGQL',
+                        stroke: 'var(--oc-red-7)',
                     },
                     {
-                        'name': 'Imports of new graphql-operations types',
-                        'query': "patternType:regexp case:yes /graphql-operations'",
-                        'stroke': 'var(--oc-blue-7)'
-                    }
+                        name: 'Imports of new graphql-operations types',
+                        query: "patternType:regexp case:yes /graphql-operations'",
+                        stroke: 'var(--oc-blue-7)',
+                    },
                 ],
-                'step': {
-                    'weeks': 6
-                }
+                step: {
+                    weeks: 6,
+                },
             },
         }
 
@@ -301,26 +317,33 @@ describe('Code insight edit insight page', () => {
                  * Mock for async repositories field validation.
                  * */
                 BulkRepositoriesSearch: () => ({
-                    repoSearch0: { name: 'github.com/sourcegraph/sourcegraph'}
+                    repoSearch0: { name: 'github.com/sourcegraph/sourcegraph' },
                 }),
 
                 /**
                  * Mocks of commits searching and data search itself for live preview chart
                  * */
                 BulkSearchCommits: () => INSIGHT_TYPES_MIGRATION_COMMITS,
-                BulkSearch: () => INSIGHT_TYPES_MIGRATION_BULK_SEARCH
-            }
+                BulkSearch: () => INSIGHT_TYPES_MIGRATION_BULK_SEARCH,
+            },
         })
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights')
         await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
 
         // Click on edit button of insight context menu (three dots-menu)
-        await driver.page.click('[data-testid="InsightCard.searchInsights.insight.graphQLTypesMigration.insightsPage"] [data-testid="InsightContextMenuButton"]')
-        await driver.page.click('[data-test-id="context-menu.searchInsights.insight.graphQLTypesMigration"] [data-testid="InsightContextMenuEditLink"]')
+        await driver.page.click(
+            '[data-testid="InsightCard.searchInsights.insight.graphQLTypesMigration.insightsPage"] [data-testid="InsightContextMenuButton"]'
+        )
+        await driver.page.click(
+            '[data-test-id="context-menu.searchInsights.insight.graphQLTypesMigration"] [data-testid="InsightContextMenuEditLink"]'
+        )
 
         // Check redirect URL for edit insight page
-        assert.strictEqual(driver.page.url().endsWith('/insights/edit/searchInsights.insight.graphQLTypesMigration'), true)
+        assert.strictEqual(
+            driver.page.url().endsWith('/insights/edit/searchInsights.insight.graphQLTypesMigration'),
+            true
+        )
 
         // Waiting for all important part of creation form will be rendered.
         await driver.page.waitForSelector('[data-test-id="SearchInsightEditPageContent"]')
@@ -331,28 +354,25 @@ describe('Code insight edit insight page', () => {
         // Gather all filled inputs within a creation UI form.
         const grabbedInsightInfo = await driver.page.evaluate(getInsightFormValues)
 
-        assert.deepStrictEqual(
-            grabbedInsightInfo,
-            {
-                title: 'Migration to new GraphQL TS types',
-                repositories: 'github.com/sourcegraph/sourcegraph',
-                visibility: 'personal',
-                series: [
-                    {
-                        'name': 'Imports of old GQL.* types',
-                        'query': 'patternType:regex case:yes \\*\\sas\\sGQL',
-                        'stroke': 'var(--oc-red-7)'
-                    },
-                    {
-                        'name': 'Imports of new graphql-operations types',
-                        'query': "patternType:regexp case:yes /graphql-operations'",
-                        'stroke': 'var(--oc-blue-7)'
-                    }
-                ],
-                'step': {
-                    'weeks': '6'
+        assert.deepStrictEqual(grabbedInsightInfo, {
+            title: 'Migration to new GraphQL TS types',
+            repositories: 'github.com/sourcegraph/sourcegraph',
+            visibility: 'personal',
+            series: [
+                {
+                    name: 'Imports of old GQL.* types',
+                    query: 'patternType:regex case:yes \\*\\sas\\sGQL',
+                    stroke: 'var(--oc-red-7)',
                 },
-            }
-        )
+                {
+                    name: 'Imports of new graphql-operations types',
+                    query: "patternType:regexp case:yes /graphql-operations'",
+                    stroke: 'var(--oc-blue-7)',
+                },
+            ],
+            step: {
+                weeks: '6',
+            },
+        })
     })
 })

@@ -1,9 +1,8 @@
+import { View } from 'sourcegraph'
 
-import { View } from 'sourcegraph';
+import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
 
-import { ErrorLike } from '@sourcegraph/shared/src/util/errors';
-
-import { InsightTypePrefix } from '../../../insights/core/types';
+import { InsightTypePrefix } from '../../../insights/core/types'
 
 /**
  * Generates simplify version of search insight extension for testing purpose.
@@ -28,7 +27,10 @@ export function getCodeStatsInsightExtensionBundle(data?: Record<string, View | 
  * Testing extension bundle listen setting cascade, filters setting and finds insights
  * configs by type param and provides mock data for insights by id from data param.
  * */
-function getUniversalInsightExtensionBundle(type: InsightTypePrefix, data: Record<string, View | undefined | ErrorLike>): string {
+function getUniversalInsightExtensionBundle(
+    type: InsightTypePrefix,
+    data: Record<string, View | undefined | ErrorLike>
+): string {
     const injectedDataString = JSON.stringify(data ?? {})
 
     return `

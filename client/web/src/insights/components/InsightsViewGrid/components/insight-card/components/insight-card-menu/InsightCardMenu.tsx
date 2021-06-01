@@ -26,12 +26,15 @@ export const InsightCardMenu: React.FunctionComponent<InsightCardMenuProps> = pr
 
     return (
         <Menu>
-            <MenuButton data-testid='InsightContextMenuButton' className={classnames(className, 'btn btn-outline p-1')}>
+            <MenuButton data-testid="InsightContextMenuButton" className={classnames(className, 'btn btn-outline p-1')}>
                 <DotsVerticalIcon size={16} />
             </MenuButton>
-            <MenuList data-test-id={`context-menu.${normalizedInsightID}`} className={classnames(styles.menuPanel, 'dropdown-menu dropdown-menu-sw')}>
+            <MenuList
+                data-test-id={`context-menu.${normalizedInsightID}`}
+                className={classnames(styles.menuPanel, 'dropdown-menu dropdown-menu-sw')}
+            >
                 <MenuItem
-                    data-testid='InsightContextMenuDeleteButton'
+                    data-testid="InsightContextMenuDeleteButton"
                     onSelect={() => onDelete(insightID)}
                     className={classnames('btn btn-outline-secondary', styles.menuItemButton)}
                 >
@@ -39,7 +42,7 @@ export const InsightCardMenu: React.FunctionComponent<InsightCardMenuProps> = pr
                 </MenuItem>
 
                 <Link
-                    data-testid='InsightContextMenuEditLink'
+                    data-testid="InsightContextMenuEditLink"
                     className={classnames('btn btn-outline-secondary', styles.menuItemButton)}
                     to={`/insights/edit/${normalizedInsightID}`}
                 >
