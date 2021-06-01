@@ -1,9 +1,15 @@
 import { View } from 'sourcegraph';
 
 import { ExtensionsResult, SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations';
+import { testUserID } from '@sourcegraph/shared/src/testing/integration/graphQlResults';
 import { ErrorLike } from '@sourcegraph/shared/src/util/errors';
 
-import { WebGraphQlOperations } from '../../../graphql-operations';
+import {
+    BulkSearchCommits,
+    BulkSearchFields,
+    BulkSearchRepositories,
+    WebGraphQlOperations
+} from '../../../graphql-operations';
 import { WebIntegrationTestContext } from '../../context';
 import { commonWebGraphQlResults } from '../../graphQlResults';
 import { siteGQLID, siteID } from '../../jscontext';
@@ -79,24 +85,85 @@ const extensionNodes: ExtensionsResult['extensionRegistry']['extensions']['nodes
     },
 ]
 
-interface OverrideGraphQLExtensionsProps {
-    testContext: WebIntegrationTestContext,
-    overrides?: Partial<WebGraphQlOperations & SharedGraphQlOperations>
-    insightExtensionsMocks?: Record<string, View | undefined | ErrorLike>
-    userSettings?: Record<any, any>
+/**
+ * Some of insight creation UI gql api requests do not have
+ * generated types due their dynamic nature. Because of that we
+ * must write these api call types below manually for testing purposes.
+ */
+interface CustomInsightsOperations {
+    /** API handler used for repositories field async validation. */
+    BulkRepositoriesSearch: () => Record<string, BulkSearchRepositories>
+    /** Internal API handler for fetching commits data for live preview chart. */
+    BulkSearchCommits: () => Record<string, BulkSearchCommits>
+    /**
+     * Internal API handler for fetching actual data according to search commits
+     * for live preview chart.
+     */
+    BulkSearch: () => Record<string, BulkSearchFields>
 }
 
+interface OverrideGraphQLExtensionsProps {
+    /** Page driver context. */
+    testContext: WebIntegrationTestContext,
+    /** Overrides for gql API calls. */
+    overrides?: Partial<WebGraphQlOperations & SharedGraphQlOperations & CustomInsightsOperations>
+    /**
+     * Mock map data for insight extension mocking system.
+     * Key is an insight ID and value is mocked insight data
+     */
+    insightExtensionsMocks?: Record<string, View | undefined | ErrorLike>
+    /** User settings. */
+    userSettings?: Record<any, any>
+    /** Organization setting. */
+    orgSettings?: Record<any, any>
+}
+
+/**
+ * Test setup handler used for mocking common parts of API, extension insight API and
+ * extension js bundle requests.
+ *
+ * @param props - Custom override for code insight APIs (gql, user setting, extensions)
+ */
 export function overrideGraphQLExtensions(props: OverrideGraphQLExtensionsProps): void {
     const {
         testContext,
         overrides = {},
         insightExtensionsMocks = {},
-        userSettings = {}
+        userSettings = {},
+        orgSettings = {}
     } = props
 
     testContext.overrideGraphQL({
         ...commonWebGraphQlResults,
-        ...overrides,
+        Insights: () => ({ insights: { nodes: [] } }),
+        CurrentAuthState: () => ({
+            currentUser: {
+                __typename: 'User',
+                id: testUserID,
+                databaseID: 1,
+                username: 'test',
+                avatarURL: null,
+                email: 'vova@sourcegraph.com',
+                displayName: null,
+                siteAdmin: true,
+                tags: [],
+                url: '/users/test',
+                settingsURL: '/users/test/settings',
+                organizations: {
+                    nodes: [
+                        {
+                            name: 'test organization',
+                            displayName: 'Test organization',
+                            id: 'Org_test_id',
+                            settingsURL: '/organizations/test_organization/settings',
+                            url: '/organizations/test_organization/settings'
+                        }
+                    ]
+                },
+                session: { canSignOut: true },
+                viewerCanAdminister: true,
+            },
+        }),
         ViewerSettings: () => ({
             viewerSettings: {
                 subjects: [
@@ -123,8 +190,23 @@ export function overrideGraphQLExtensions(props: OverrideGraphQLExtensionsProps)
                         viewerCanAdminister: true,
                     },
                     {
+                        __typename: 'Org',
+                        name: 'test organization',
+                        displayName: 'Test organization',
+                        id: 'Org_test_id',
+                        viewerCanAdminister: true,
+                        settingsURL: '/organizations/test_organization/settings',
+                        latestSettings: {
+                            id: 320,
+                            contents: JSON.stringify({
+                                extensions: {},
+                                ...orgSettings
+                            })
+                        },
+                    },
+                    {
                         __typename: 'User',
-                        id: 'TestGQLUserID',
+                        id: testUserID,
                         username: 'testusername',
                         settingsURL: '/user/testusername/settings',
                         displayName: 'test',
@@ -151,6 +233,7 @@ export function overrideGraphQLExtensions(props: OverrideGraphQLExtensionsProps)
                 },
             },
         }),
+        ...overrides,
     })
 
     // Mock extension bundle

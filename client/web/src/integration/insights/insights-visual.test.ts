@@ -1,10 +1,6 @@
-
-import assert from 'assert';
-
 import { View } from 'sourcegraph';
 
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
-import { emptyResponse } from '@sourcegraph/shared/src/testing/integration/graphQlResults';
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../context'
@@ -12,12 +8,13 @@ import { percySnapshotWithVariants } from '../utils'
 
 import {
     BACKEND_INSIGHTS,
+    CODE_STATS_INSIGHT_LANG_USAGE,
     INSIGHT_VIEW_TEAM_SIZE,
     INSIGHT_VIEW_TYPES_MIGRATION
 } from './utils/insight-mock-data';
 import { overrideGraphQLExtensions } from './utils/override-graphql-with-extensions';
 
-describe('Code insights page', () => {
+describe('[VISUAL] Code insights page', () => {
     let driver: Driver
     let testContext: WebIntegrationTestContext
 
@@ -71,10 +68,7 @@ describe('Code insights page', () => {
             },
             insightExtensionsMocks: {
                 'searchInsights.insight.teamSize': INSIGHT_VIEW_TEAM_SIZE,
-                'searchInsights.insight.graphQLTypesMigration': {
-                    ...INSIGHT_VIEW_TYPES_MIGRATION,
-                    title: 'Migration to new GraphQL TS types',
-                }
+                'searchInsights.insight.graphQLTypesMigration': INSIGHT_VIEW_TYPES_MIGRATION
             },
             overrides: {
                 /**
@@ -90,7 +84,7 @@ describe('Code insights page', () => {
         await percySnapshotWithVariants(driver.page, 'Code insights page with search-based insights only')
     })
 
-    it('is styled correctly with search-based errored insight', async () => {
+    it('is styled correctly with errored insight', async () => {
         overrideGraphQLExtensions({
             testContext,
 
@@ -105,10 +99,7 @@ describe('Code insights page', () => {
             },
             insightExtensionsMocks: {
                 'searchInsights.insight.teamSize': { message: 'Error message', name: 'hello'} as unknown as View,
-                'searchInsights.insight.graphQLTypesMigration': {
-                    ...INSIGHT_VIEW_TYPES_MIGRATION,
-                    title: 'Migration to new GraphQL TS types',
-                }
+                'searchInsights.insight.graphQLTypesMigration': INSIGHT_VIEW_TYPES_MIGRATION
             },
             overrides: {
                 /**
@@ -124,7 +115,7 @@ describe('Code insights page', () => {
         await percySnapshotWithVariants(driver.page, 'Code insights page with search-based errored insight')
     })
 
-    it('is styled correctly with all types insights ', async () => {
+    it('is styled correctly with all types of insight', async () => {
         overrideGraphQLExtensions({
             testContext,
 
@@ -136,13 +127,12 @@ describe('Code insights page', () => {
             userSettings: {
                 'searchInsights.insight.graphQLTypesMigration': {},
                 'searchInsights.insight.teamSize': {},
+                'codeStatsInsights.insight.langUsage': {},
             },
             insightExtensionsMocks: {
+                'codeStatsInsights.insight.langUsage': CODE_STATS_INSIGHT_LANG_USAGE,
                 'searchInsights.insight.teamSize': INSIGHT_VIEW_TEAM_SIZE,
-                'searchInsights.insight.graphQLTypesMigration': {
-                    ...INSIGHT_VIEW_TYPES_MIGRATION,
-                    title: 'Migration to new GraphQL TS types',
-                }
+                'searchInsights.insight.graphQLTypesMigration': INSIGHT_VIEW_TYPES_MIGRATION
             },
             overrides: {
                 /**
@@ -155,67 +145,6 @@ describe('Code insights page', () => {
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights')
         await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
 
-        await percySnapshotWithVariants(driver.page, 'Code insights page with search-based insights only')
-    })
-
-    it('should update user/org settings if delete happened', async() => {
-        const settings = {
-            'searchInsights.insight.graphQLTypesMigration': {},
-            'searchInsights.insight.teamSize': {},
-        }
-
-        overrideGraphQLExtensions({
-            testContext,
-
-            /**
-             * Since search insight and code stats insight are working via user/org
-             * settings. We have to mock them by mocking user settings and provide
-             * mock data - mocking extension work.
-             * */
-            userSettings: settings,
-            insightExtensionsMocks: {
-                'searchInsights.insight.graphQLTypesMigration': {
-                    ...INSIGHT_VIEW_TYPES_MIGRATION,
-                    title: 'Migration to new GraphQL TS types',
-                },
-                'searchInsights.insight.teamSize': INSIGHT_VIEW_TEAM_SIZE,
-            },
-            overrides: {
-                /**
-                 * Mock back-end insights with standard gql API handler.
-                 * */
-                Insights: () => ({ insights: { nodes: [] } }),
-                OverwriteSettings: () => ({
-                    settingsMutation: {
-                        overwriteSettings: {
-                            empty: emptyResponse
-                        },
-                    },
-                }),
-
-                SubjectSettings: () => ({
-                    settingsSubject: {
-                        latestSettings: {
-                            id: 310,
-                            contents: JSON.stringify(settings)
-                        }
-                    }
-                })
-
-            }
-        })
-
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights')
-        await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
-
-        const variables = await testContext.waitForGraphQLRequest(async () => {
-            await driver.page.click('[data-testid="InsightCard.searchInsights.insight.graphQLTypesMigration.insightsPage"] [data-testid="InsightContextMenuButton"]')
-            await driver.page.click('[data-testid="InsightContextMenuDeleteButton"]')
-
-        }, 'OverwriteSettings')
-
-        assert.deepStrictEqual(JSON.parse(variables.contents), {
-            'searchInsights.insight.teamSize': {},
-        })
+        await percySnapshotWithVariants(driver.page, 'Code insights page with all types of insight')
     })
 })
