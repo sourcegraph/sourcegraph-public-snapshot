@@ -9,10 +9,12 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared"
 	codeintelshared "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
 type initializer struct{}
@@ -48,8 +50,16 @@ func (i *initializer) Routines(ctx context.Context) ([]goroutine.BackgroundRouti
 	}
 
 	return []goroutine.BackgroundRoutine{
+		NewDependencyIndexingScheduler(
+			&DBStoreShim{Store: dbStore},
+			dbstore.WorkerutilDependencyIndexingJobStore(dbStore, observationContext),
+			indexEnqueuer,
+			config.DependencyIndexerSchedulerPollInterval,
+			config.DependencyIndexerSchedulerConcurrency,
+			workerutil.NewMetrics(observationContext, "codeintel_dependency_indexing_processor", nil),
+		),
 		NewIndexScheduler(
-			dbStore,
+			&DBStoreShim{Store: dbStore},
 			indexEnqueuer,
 			config.IndexBatchSize,
 			config.MinimumTimeSinceLastEnqueue,
@@ -60,7 +70,7 @@ func (i *initializer) Routines(ctx context.Context) ([]goroutine.BackgroundRouti
 			observationContext,
 		),
 		NewIndexabilityUpdater(
-			dbStore,
+			&DBStoreShim{Store: dbStore},
 			gitserverClient,
 			config.MinimumSearchCount,
 			float64(config.MinimumSearchRatio)/100,

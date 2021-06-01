@@ -13,7 +13,7 @@ import (
 
 // MockDBStore is a mock implementation of the DBStore interface (from the
 // package
-// github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/background/commitgraph)
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/commitgraph)
 // used for unit testing.
 type MockDBStore struct {
 	// CalculateVisibleUploadsFunc is an instance of a mock function object
@@ -530,7 +530,7 @@ func (c DBStoreLockFuncCall) Results() []interface{} {
 
 // MockGitserverClient is a mock implementation of the GitserverClient
 // interface (from the package
-// github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/background/commitgraph)
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/commitgraph)
 // used for unit testing.
 type MockGitserverClient struct {
 	// CommitGraphFunc is an instance of a mock function object controlling

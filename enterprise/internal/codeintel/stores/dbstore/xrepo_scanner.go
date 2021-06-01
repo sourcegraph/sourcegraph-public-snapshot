@@ -38,7 +38,13 @@ func (s *rowScanner) Next() (reference lsifstore.PackageReference, _ bool, _ err
 		return lsifstore.PackageReference{}, false, nil
 	}
 
-	if err := s.rows.Scan(&reference.DumpID, &reference.Filter); err != nil {
+	if err := s.rows.Scan(
+		&reference.DumpID,
+		&reference.Scheme,
+		&reference.Name,
+		&reference.Version,
+		&reference.Filter,
+	); err != nil {
 		return lsifstore.PackageReference{}, false, err
 	}
 

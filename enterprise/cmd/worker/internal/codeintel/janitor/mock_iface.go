@@ -13,7 +13,7 @@ import (
 
 // MockDBStore is a mock implementation of the DBStore interface (from the
 // package
-// github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/background/janitor)
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/janitor)
 // used for unit testing.
 type MockDBStore struct {
 	// DeleteIndexesWithoutRepositoryFunc is an instance of a mock function
@@ -1620,7 +1620,7 @@ func (c DBStoreTransactFuncCall) Results() []interface{} {
 
 // MockLSIFStore is a mock implementation of the LSIFStore interface (from
 // the package
-// github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/background/janitor)
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/janitor)
 // used for unit testing.
 type MockLSIFStore struct {
 	// ClearFunc is an instance of a mock function object controlling the

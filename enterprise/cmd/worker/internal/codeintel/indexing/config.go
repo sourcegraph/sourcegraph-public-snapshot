@@ -9,13 +9,15 @@ import (
 type Config struct {
 	env.BaseConfig
 
-	AutoIndexingTaskInterval       time.Duration
-	AutoIndexingSkipManualInterval time.Duration
-	IndexBatchSize                 int
-	MinimumTimeSinceLastEnqueue    time.Duration
-	MinimumSearchCount             int
-	MinimumSearchRatio             int
-	MinimumPreciseCount            int
+	AutoIndexingTaskInterval               time.Duration
+	AutoIndexingSkipManualInterval         time.Duration
+	IndexBatchSize                         int
+	MinimumTimeSinceLastEnqueue            time.Duration
+	MinimumSearchCount                     int
+	MinimumSearchRatio                     int
+	MinimumPreciseCount                    int
+	DependencyIndexerSchedulerPollInterval time.Duration
+	DependencyIndexerSchedulerConcurrency  int
 }
 
 var config = &Config{}
@@ -62,4 +64,17 @@ func (c *Config) Load() {
 		"1",
 		"The minimum number of precise code intel events that triggers auto-indexing on a repository.",
 	)
+
+	config.DependencyIndexerSchedulerPollInterval = config.GetInterval(
+		"PRECISE_CODE_INTEL_DEPENDENCY_INDEXER_SCHEDULER_POLL_INTERVAL",
+		"1s",
+		"Interval between queries to the dependency indexing job queue.",
+	)
+
+	config.DependencyIndexerSchedulerConcurrency = config.GetInt(
+		"PRECISE_CODE_INTEL_DEPENDENCY_INDEXER_SCHEDULER_CONCURRENCY",
+		"1",
+		"The maximum number of dependency graphs that can be processed concurrently.",
+	)
+
 }
