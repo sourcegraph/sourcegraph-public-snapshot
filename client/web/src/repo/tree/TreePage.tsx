@@ -320,7 +320,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
     const emptyElement = showOlderCommits ? (
         <>No commits in this tree.</>
     ) : (
-        <div className="w-100 test-tree-page-no-recent-commits">
+        <div className="test-tree-page-no-recent-commits">
             No commits in this tree in the past year.
             <br />
             <button
