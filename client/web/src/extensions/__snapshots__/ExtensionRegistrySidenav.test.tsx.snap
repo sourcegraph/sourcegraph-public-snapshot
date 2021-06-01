@@ -5,82 +5,75 @@ exports[`ExtensionsQueryInputToolbar renders 1`] = `
   className="column mr-4 flex-grow-0 flex-shrink-0"
 >
   <div
-    className="mb-3 sidebar card"
+    className="mb-3 sidebar"
   >
-    <div
-      className="card-header"
-    >
-       
+    <h3>
       Categories
-    </div>
-    <div
-      className="list-group list-group-flush"
+    </h3>
+    <button
+      className="btn text-left sidebar__link--inactive d-flex sidebar-nav-link w-100"
+      data-test-extension-category="All"
+      onClick={[Function]}
+      type="button"
     >
-      <button
-        className="btn text-left sidebar__link--inactive d-flex sidebar-nav-link w-100"
-        data-test-extension-category="All"
-        onClick={[Function]}
-        type="button"
-      >
-        All
-      </button>
-      <button
-        className="btn text-left sidebar__link--inactive d-flex sidebar-nav-link w-100"
-        data-test-extension-category="External services"
-        onClick={[Function]}
-        type="button"
-      >
-        External services
-      </button>
-      <button
-        className="btn text-left sidebar__link--inactive d-flex sidebar-nav-link w-100"
-        data-test-extension-category="Reports and stats"
-        onClick={[Function]}
-        type="button"
-      >
-        Reports and stats
-      </button>
-      <button
-        className="btn text-left sidebar__link--inactive d-flex sidebar-nav-link w-100"
-        data-test-extension-category="Linters"
-        onClick={[Function]}
-        type="button"
-      >
-        Linters
-      </button>
-      <button
-        className="btn text-left sidebar__link--inactive d-flex sidebar-nav-link w-100"
-        data-test-extension-category="Code editors"
-        onClick={[Function]}
-        type="button"
-      >
-        Code editors
-      </button>
-      <button
-        className="btn text-left sidebar__link--inactive d-flex sidebar-nav-link w-100 btn-primary"
-        data-test-extension-category="Code analysis"
-        onClick={[Function]}
-        type="button"
-      >
-        Code analysis
-      </button>
-      <button
-        className="btn text-left sidebar__link--inactive d-flex sidebar-nav-link w-100"
-        data-test-extension-category="Programming languages"
-        onClick={[Function]}
-        type="button"
-      >
-        Programming languages
-      </button>
-      <button
-        className="btn text-left sidebar__link--inactive d-flex sidebar-nav-link w-100"
-        data-test-extension-category="Other"
-        onClick={[Function]}
-        type="button"
-      >
-        Other
-      </button>
-    </div>
+      All
+    </button>
+    <button
+      className="btn text-left sidebar__link--inactive d-flex sidebar-nav-link w-100"
+      data-test-extension-category="External services"
+      onClick={[Function]}
+      type="button"
+    >
+      External services
+    </button>
+    <button
+      className="btn text-left sidebar__link--inactive d-flex sidebar-nav-link w-100"
+      data-test-extension-category="Reports and stats"
+      onClick={[Function]}
+      type="button"
+    >
+      Reports and stats
+    </button>
+    <button
+      className="btn text-left sidebar__link--inactive d-flex sidebar-nav-link w-100"
+      data-test-extension-category="Linters"
+      onClick={[Function]}
+      type="button"
+    >
+      Linters
+    </button>
+    <button
+      className="btn text-left sidebar__link--inactive d-flex sidebar-nav-link w-100"
+      data-test-extension-category="Code editors"
+      onClick={[Function]}
+      type="button"
+    >
+      Code editors
+    </button>
+    <button
+      className="btn text-left sidebar__link--inactive d-flex sidebar-nav-link w-100 btn-primary"
+      data-test-extension-category="Code analysis"
+      onClick={[Function]}
+      type="button"
+    >
+      Code analysis
+    </button>
+    <button
+      className="btn text-left sidebar__link--inactive d-flex sidebar-nav-link w-100"
+      data-test-extension-category="Programming languages"
+      onClick={[Function]}
+      type="button"
+    >
+      Programming languages
+    </button>
+    <button
+      className="btn text-left sidebar__link--inactive d-flex sidebar-nav-link w-100"
+      data-test-extension-category="Other"
+      onClick={[Function]}
+      type="button"
+    >
+      Other
+    </button>
   </div>
   <hr
     className="my-3 divider"

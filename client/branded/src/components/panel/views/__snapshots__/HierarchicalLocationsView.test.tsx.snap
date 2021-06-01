@@ -201,7 +201,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
             </span>
           </span>
           <span
-            className="hierarchical-locations-view__item-badge badge badge-secondary badge-pill "
+            className="hierarchical-locations-view__item-badge ml-1"
           >
             2
           </span>
@@ -229,7 +229,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
             </span>
           </span>
           <span
-            className="hierarchical-locations-view__item-badge badge badge-secondary badge-pill "
+            className="hierarchical-locations-view__item-badge ml-1"
           >
             3
           </span>
