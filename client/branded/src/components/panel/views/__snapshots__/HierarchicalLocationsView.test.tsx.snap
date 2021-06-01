@@ -23,7 +23,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
               className="result-container__header"
             >
               <svg
-                className="mdi-icon icon-inline"
+                className="mdi-icon icon-inline flex-shrink-0"
                 fill="currentColor"
                 height={24}
                 viewBox="0 0 24 24"
@@ -195,13 +195,13 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
             </span>
           </span>
           <span
-            className="badge badge-secondary badge-pill hierarchical-locations-view__item-badge"
+            className="hierarchical-locations-view__item-badge badge badge-secondary badge-pill "
           >
             2
           </span>
         </button>
         <button
-          className="list-group-item list-group-item-action hierarchical-locations-view__item "
+          className="list-group-item list-group-item-action hierarchical-locations-view__item"
           onClick={[Function]}
           type="button"
         >
@@ -223,7 +223,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
             </span>
           </span>
           <span
-            className="badge badge-secondary badge-pill hierarchical-locations-view__item-badge"
+            className="hierarchical-locations-view__item-badge badge badge-secondary badge-pill "
           >
             3
           </span>
@@ -251,7 +251,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
               className="result-container__header"
             >
               <svg
-                className="mdi-icon icon-inline"
+                className="mdi-icon icon-inline flex-shrink-0"
                 fill="currentColor"
                 height={24}
                 viewBox="0 0 24 24"
@@ -429,7 +429,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
               className="result-container__header"
             >
               <svg
-                className="mdi-icon icon-inline"
+                className="mdi-icon icon-inline flex-shrink-0"
                 fill="currentColor"
                 height={24}
                 viewBox="0 0 24 24"
