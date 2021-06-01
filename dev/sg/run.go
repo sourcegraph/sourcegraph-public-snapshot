@@ -227,19 +227,19 @@ func runWatch(ctx context.Context, cmd Command, root string, reload <-chan struc
 			// Run it
 			out.WriteLine(output.Linef("", output.StylePending, "Running %s...", cmd.Name))
 
-			c, cancel, err := startCmd(ctx, root, cmd)
+			sc, err := startCmd(ctx, root, cmd)
 			if err != nil {
 				return err
 			}
 
-			defer cancel()
-			cancelFuncs = append(cancelFuncs, cancel)
+			defer sc.cancel()
+			cancelFuncs = append(cancelFuncs, sc.cancel)
 
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
 
-				err := c.Wait()
+				err := sc.Wait()
 				if err == nil {
 					return
 				}
@@ -248,8 +248,8 @@ func runWatch(ctx context.Context, cmd Command, root string, reload <-chan struc
 					err = runErr{
 						cmdName:  cmd.Name,
 						exitCode: exitErr.ExitCode(),
-						// stderr:   string(stderrBuf.Bytes()),
-						// stdout:   string(stdoutBuf.Bytes()),
+						stderr:   sc.CapturedStderr(),
+						stdout:   sc.CapturedStdout(),
 					}
 				}
 
@@ -279,35 +279,61 @@ func runWatch(ctx context.Context, cmd Command, root string, reload <-chan struc
 	}
 }
 
-func startCmd(ctx context.Context, dir string, cmd Command) (*exec.Cmd, func(), error) {
+type startedCmd struct {
+	*exec.Cmd
+
+	cancel func()
+
+	stdoutBuf *prefixSuffixSaver
+	stderrBuf *prefixSuffixSaver
+}
+
+func (sc *startedCmd) CapturedStdout() string {
+	if sc.stdoutBuf == nil {
+		return ""
+	}
+
+	return string(sc.stdoutBuf.Bytes())
+}
+
+func (sc *startedCmd) CapturedStderr() string {
+	if sc.stderrBuf == nil {
+		return ""
+	}
+
+	return string(sc.stderrBuf.Bytes())
+}
+
+func startCmd(ctx context.Context, dir string, cmd Command) (*startedCmd, error) {
+	sc := &startedCmd{
+		stdoutBuf: &prefixSuffixSaver{N: 32 << 10},
+		stderrBuf: &prefixSuffixSaver{N: 32 << 10},
+	}
+
 	commandCtx, cancel := context.WithCancel(ctx)
+	sc.cancel = cancel
 
-	c := exec.CommandContext(commandCtx, "bash", "-c", cmd.Cmd)
-	c.Dir = dir
-	c.Env = makeEnv(conf.Env, cmd.Env)
-
-	var (
-		stdoutBuf = &prefixSuffixSaver{N: 32 << 10}
-		stderrBuf = &prefixSuffixSaver{N: 32 << 10}
-	)
+	sc.Cmd = exec.CommandContext(commandCtx, "bash", "-c", cmd.Cmd)
+	sc.Cmd.Dir = dir
+	sc.Cmd.Env = makeEnv(conf.Env, cmd.Env)
 
 	logger := newCmdLogger(cmd.Name, out)
 	if cmd.IgnoreStdout {
 		out.WriteLine(output.Linef("", output.StyleSuggestion, "Ignoring stdout of %s", cmd.Name))
 	} else {
-		c.Stdout = io.MultiWriter(logger, stdoutBuf)
+		sc.Cmd.Stdout = io.MultiWriter(logger, sc.stdoutBuf)
 	}
 	if cmd.IgnoreStderr {
 		out.WriteLine(output.Linef("", output.StyleSuggestion, "Ignoring stderr of %s", cmd.Name))
 	} else {
-		c.Stderr = io.MultiWriter(logger, stderrBuf)
+		sc.Cmd.Stderr = io.MultiWriter(logger, sc.stderrBuf)
 	}
 
-	if err := c.Start(); err != nil {
-		return nil, cancel, err
+	if err := sc.Start(); err != nil {
+		return sc, err
 	}
 
-	return c, cancel, nil
+	return sc, nil
 }
 
 func makeEnv(envs ...map[string]string) []string {
