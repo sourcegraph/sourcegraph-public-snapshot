@@ -12,7 +12,6 @@ import (
 
 	"github.com/Masterminds/semver"
 	"github.com/peterbourgon/ff/v3/ffcli"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -95,7 +94,7 @@ var (
 	migrationUpNFlag            = migrationUpFlagSet.Int("n", 1, "How many migrations to apply.")
 	migrationUpCommand          = &ffcli.Command{
 		Name:       "up",
-		ShortUsage: fmt.Sprintf("sg migration up [-db=%s] [-n=1]", defaultDatabaseName),
+		ShortUsage: fmt.Sprintf("sg migration up [-db=%s] [-n]", defaultDatabaseName),
 		ShortHelp:  "Run up migration files",
 		FlagSet:    migrationUpFlagSet,
 		Exec:       migrationUpExec,
@@ -390,9 +389,21 @@ func migrationUpExec(ctx context.Context, args []string) error {
 		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: database %q not found :(\n", *migrationUpDatabaseNameFlag))
 		return flag.ErrHelp
 	}
+	databaseName := *migrationUpDatabaseNameFlag
 
-	// TODO - implement sg migration up
-	return errors.New("up unimplemented")
+	var n *int
+	migrationUpFlagSet.Visit(func(f *flag.Flag) {
+		if f.Name == "n" {
+			n = migrationUpNFlag
+		}
+	})
+
+	// Only pass the value of n here if the user actually set it
+	// We have to do the dance above because the flags package
+	// requires you to define a default value for each flag.
+	out, err := runMigrationsUp(databaseName, n)
+	fmt.Printf("%s\n", out)
+	return err
 }
 
 func migrationDownExec(ctx context.Context, args []string) error {
@@ -405,9 +416,11 @@ func migrationDownExec(ctx context.Context, args []string) error {
 		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: database %q not found :(\n", *migrationDownDatabaseNameFlag))
 		return flag.ErrHelp
 	}
+	databaseName := *migrationDownDatabaseNameFlag
 
-	// TODO - implement sg migration down
-	return errors.New("down unimplemented")
+	out, err := runMigrationsDown(databaseName, *migrationDownNFlag)
+	fmt.Printf("%s\n", out)
+	return err
 }
 
 // minimumMigrationSquashDistance is the minimum number of releases a migration is guaranteed to exist
@@ -625,7 +638,7 @@ func printMigrationUpUsage(c *ffcli.Command) string {
 	var out strings.Builder
 
 	fmt.Fprintf(&out, "USAGE\n")
-	fmt.Fprintf(&out, "  sg migration up [-db=%s] [-n=1]\n", defaultDatabaseName)
+	fmt.Fprintf(&out, "  sg migration up [-db=%s] [-n]\n", defaultDatabaseName)
 	fmt.Fprintf(&out, "\n")
 	fmt.Fprintf(&out, "AVAILABLE DATABASES\n")
 

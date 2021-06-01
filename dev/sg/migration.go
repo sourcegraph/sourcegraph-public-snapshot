@@ -88,7 +88,7 @@ func generateSquashedMigrations(databaseName string, migrationIndex int) (up, do
 		err = teardown(err)
 	}()
 
-	if err := runMigrations(databaseName, migrationIndex, postgresDSN); err != nil {
+	if err := runMigrationsGoto(databaseName, migrationIndex, postgresDSN); err != nil {
 		return "", "", err
 	}
 
@@ -312,9 +312,9 @@ func runPostgresContainer(databaseName string) (_ func(err error) error, err err
 	return teardown, nil
 }
 
-// runMigrations runs the `migrate` utility to migrate up to the given migration index.
-// TODO: Rewrite this in Go by using our own database utilities.
-func runMigrations(databaseName string, migrationIndex int, postgresDSN string) (err error) {
+// runMigrationsGoto runs the `migrate` utility to migrate up or down to the given
+// migration index.
+func runMigrationsGoto(databaseName string, migrationIndex int, postgresDSN string) (err error) {
 	pending := out.Pending(output.Line("", output.StylePending, "Migrating PostgreSQL schema..."))
 	defer func() {
 		if err == nil {
@@ -324,21 +324,62 @@ func runMigrations(databaseName string, migrationIndex int, postgresDSN string) 
 		}
 	}()
 
+	_, err = runMigrate(
+		databaseName,
+		postgresDSN+fmt.Sprintf("&x-migrations-table=%s", migrationsTableForDatabase(databaseName)),
+		"goto", strconv.FormatInt(int64(migrationIndex), 10),
+	)
+	return err
+}
+
+// runMigrationsUp runs the `migrate` utility to migrate up the given number of steps.
+// If n is nil then all migrations are ran.
+func runMigrationsUp(databaseName string, n *int) (string, error) {
+	args := []string{"up"}
+	if n != nil {
+		args = append(args, strconv.Itoa(*n))
+	}
+
+	return runMigrate(databaseName, makePostgresDSN(databaseName), args...)
+}
+
+// runMigrationsDown runs the `migrate` utility to migrate up the given number of steps.
+func runMigrationsDown(databaseName string, n int) (string, error) {
+	return runMigrate(databaseName, makePostgresDSN(databaseName), "down", strconv.Itoa(n))
+}
+
+// runMigrate runs the migrate utility with the given arguments.
+// TODO - replace with our db utilities
+func runMigrate(databaseName, postgresDSN string, args ...string) (string, error) {
 	baseDir, err := migrationDirectoryForDatabase(databaseName)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	if _, err := runCommandInRoot(exec.Command(
-		"migrate",
-		"-database", postgresDSN+fmt.Sprintf("&x-migrations-table=%s", migrationsTableForDatabase(databaseName)),
-		"-path", baseDir,
-		"goto", strconv.FormatInt(int64(migrationIndex), 10),
-	)); err != nil {
-		return err
+	return runCommandInRoot(exec.Command("migrate", append([]string{"-database", postgresDSN, "-path", baseDir}, args...)...))
+}
+
+// makePostgresDSN returns a PostresDSN for the given database. For all databases except
+// the default, the PG* environment variables are prefixed with the database name. The
+// resulting address depends on the environment.
+func makePostgresDSN(databaseName string) string {
+	var prefix string
+	if databaseName != defaultDatabaseName {
+		prefix = strings.ToUpper(databaseName) + "_"
 	}
 
-	return nil
+	var port string
+	if value := os.Getenv(fmt.Sprintf("%sPGPORT", prefix)); value != "" {
+		port = ":" + value
+	}
+
+	return fmt.Sprintf(
+		"postgres://%s%s/%s?x-migrations-table=%s",
+		os.Getenv(fmt.Sprintf("%sPGHOST", prefix)),
+		port,
+		os.Getenv(fmt.Sprintf("%sPGDATABASE", prefix)),
+		migrationsTableForDatabase(databaseName),
+	)
 }
 
 // generateSquashedUpMigration returns the contents of an up migration file containing the
