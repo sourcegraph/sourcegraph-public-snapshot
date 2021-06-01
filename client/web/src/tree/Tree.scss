@@ -37,9 +37,9 @@
             color: $white;
         }
 
-        .theme-redesign.theme-light &--active,
-        .theme-redesign.theme-light &--selected,
-        .theme-redesign.theme-light &:hover {
+        .theme-light.theme-redesign &--active,
+        .theme-light.theme-redesign &--selected,
+        .theme-light.theme-redesign &:hover {
             meter {
                 --meter-background: var(--gray-05);
             }
