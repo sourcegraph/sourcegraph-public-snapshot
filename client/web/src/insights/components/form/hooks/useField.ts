@@ -1,4 +1,13 @@
-import { ChangeEvent, FocusEventHandler, RefObject, useCallback, useEffect, useRef, useState } from 'react'
+import {
+    ChangeEvent,
+    FocusEventHandler,
+    RefObject,
+    useCallback,
+    useEffect,
+    useLayoutEffect,
+    useRef,
+    useState
+} from 'react'
 import { noop } from 'rxjs'
 
 import { FieldState, FormAPI, ValidationResult } from './useForm'
@@ -81,7 +90,7 @@ export function useField<FormValues, FieldValueKey extends keyof FormAPI<FormVal
     const setFieldStateReference = useRef<FormAPI<FormValues>['setFieldState']>(setFieldState)
     setFieldStateReference.current = setFieldState
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         const inputElement = inputReference.current
 
         // Clear custom validity from the last validation call.
