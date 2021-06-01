@@ -216,178 +216,257 @@ export const BACKEND_INSIGHTS = [
  * {@link INSIGHT_VIEW_TYPES_MIGRATION}
  * */
 export const INSIGHT_TYPES_MIGRATION_COMMITS = {
-    search0: {
-        results: {
-            results: [
+    'search0': {
+        'results': {
+            'results': [
                 {
-                    commit: {
-                        oid: '82b7370d6e909e502bd24c87d22fb8ecd5f70274',
-                        committer: {
-                            date: '2020-09-20T17:06:27Z',
-                        },
-                    },
-                },
-            ],
-        },
+                    'commit': {
+                        'oid': '2a1cd8a30c72780ad884159161d0ec828cfe69a3',
+                        'committer': {
+                            'date': '2020-05-30T19:48:57Z'
+                        }
+                    }
+                }
+            ]
+        }
     },
-    search1: {
-        results: {
-            results: [
+    'search1': {
+        'results': {
+            'results': [
                 {
-                    commit: {
-                        oid: '3f5277e49e09394c76f4404b1874ef05c7639de7',
-                        committer: {
-                            date: '2020-11-01T15:32:02Z',
-                        },
-                    },
-                },
-            ],
-        },
+                    'commit': {
+                        'oid': '68afed3a2812a197096720c80df928eba0ea0703',
+                        'committer': {
+                            'date': '2020-07-31T20:36:59Z'
+                        }
+                    }
+                }
+            ]
+        }
     },
-    search2: {
-        results: {
-            results: [
+    'search2': {
+        'results': {
+            'results': [
                 {
-                    commit: {
-                        oid: 'c26569dfca7ebf5bf2d4e960db618170b71efeb8',
-                        committer: {
-                            date: '2020-12-13T02:26:56Z',
-                        },
-                    },
-                },
-            ],
-        },
+                    'commit': {
+                        'oid': 'f62cb0864d367cfd09fb6f755807e6c25b44e6dd',
+                        'committer': {
+                            'date': '2020-09-30T20:22:52Z'
+                        }
+                    }
+                }
+            ]
+        }
     },
-    search3: {
-        results: {
-            results: [
+    'search3': {
+        'results': {
+            'results': [
                 {
-                    commit: {
-                        oid: '0da5e7f43c629bdf530e7a0b42f227a1591fff50',
-                        committer: {
-                            date: '2021-01-23T02:26:10Z',
-                        },
-                    },
-                },
-            ],
-        },
+                    'commit': {
+                        'oid': 'ccede06037725365c3391e36b9d90c85eb00b71a',
+                        'committer': {
+                            'date': '2020-11-30T20:27:10Z'
+                        }
+                    }
+                }
+            ]
+        }
     },
-    search4: {
-        results: {
-            results: [
+    'search4': {
+        'results': {
+            'results': [
                 {
-                    commit: {
-                        oid: 'f134e4efb416733415765b4fb31a64402a70da74',
-                        committer: {
-                            date: '2021-03-06T17:44:04Z',
-                        },
-                    },
-                },
-            ],
-        },
+                    'commit': {
+                        'oid': 'b29a72431e10adac2267cd4e5097f11d517e9139',
+                        'committer': {
+                            'date': '2021-01-30T00:52:56Z'
+                        }
+                    }
+                }
+            ]
+        }
     },
-    search5: {
-        results: {
-            results: [
+    'search5': {
+        'results': {
+            'results': [
                 {
-                    commit: {
-                        oid: 'ef666e3150e2caabc6ad9484a0893bfc4d68ea97',
-                        committer: {
-                            date: '2021-04-16T23:10:38Z',
-                        },
-                    },
-                },
-            ],
-        },
+                    'commit': {
+                        'oid': '4e565e36dc880f75c12982e2aba41f2445eeb4e1',
+                        'committer': {
+                            'date': '2021-03-31T20:47:08Z'
+                        }
+                    }
+                }
+            ]
+        }
     },
-    search6: {
-        results: {
-            results: [
+    'search6': {
+        'results': {
+            'results': [
                 {
-                    commit: {
-                        oid: 'ab060a1d051ea997beb27fbbb61a24d15c4478bd',
-                        committer: {
-                            date: '2021-05-28T22:22:49Z',
-                        },
-                    },
-                },
-            ],
-        },
-    },
+                    'commit': {
+                        'oid': '1c2601a76662f6a0700b614a4a68406335075c29',
+                        'committer': {
+                            'date': '2021-05-31T17:05:12Z'
+                        }
+                    }
+                }
+            ]
+        }
+    }
 }
 
 /**
  * Mock Bulk Search gql api for live preview chart of `INSIGHT_VIEW_TYPES_MIGRATION` insight.
  * */
 export const INSIGHT_TYPES_MIGRATION_BULK_SEARCH = {
-    search0: {
-        results: {
-            matchCount: 188,
-        },
+    'search0': {
+        'results': {
+            'matchCount': 256
+        }
     },
-    search1: {
-        results: {
-            matchCount: 178,
-        },
+    'search1': {
+        'results': {
+            'matchCount': 254
+        }
     },
-    search2: {
-        results: {
-            matchCount: 162,
-        },
+    'search2': {
+        'results': {
+            'matchCount': 182
+        }
     },
-    search3: {
-        results: {
-            matchCount: 139,
-        },
+    'search3': {
+        'results': {
+            'matchCount': 179
+        }
     },
-    search4: {
-        results: {
-            matchCount: 139,
-        },
+    'search4': {
+        'results': {
+            'matchCount': 139
+        }
     },
-    search5: {
-        results: {
-            matchCount: 139,
-        },
+    'search5': {
+        'results': {
+            'matchCount': 139
+        }
     },
-    search6: {
-        results: {
-            matchCount: 130,
-        },
+    'search6': {
+        'results': {
+            'matchCount': 130
+        }
     },
-    search7: {
-        results: {
-            matchCount: 204,
-        },
+    'search7': {
+        'results': {
+            'matchCount': 0
+        }
     },
-    search8: {
-        results: {
-            matchCount: 234,
-        },
+    'search8': {
+        'results': {
+            'matchCount': 27
+        }
     },
-    search9: {
-        results: {
-            matchCount: 283,
-        },
+    'search9': {
+        'results': {
+            'matchCount': 208
+        }
     },
-    search10: {
-        results: {
-            matchCount: 340,
-        },
+    'search10': {
+        'results': {
+            'matchCount': 258
+        }
     },
-    search11: {
-        results: {
-            matchCount: 359,
-        },
+    'search11': {
+        'results': {
+            'matchCount': 340
+        }
     },
-    search12: {
-        results: {
-            matchCount: 381,
-        },
+    'search12': {
+        'results': {
+            'matchCount': 359
+        }
     },
-    search13: {
-        results: {
-            matchCount: 422,
+    'search13': {
+        'results': {
+            'matchCount': 422
+        }
+    }
+}
+
+/**
+ * Code stats insight (gql query - LangStatsInsightContent) live preview mock.
+ */
+export const LangStatsInsightContent = {
+    'search': {
+        'results': {
+            'limitHit': false
         },
-    },
+        'stats': {
+            'languages': [
+                {
+                    'name': 'Markdown',
+                    'totalLines': 83176
+                },
+                {
+                    'name': 'SVG',
+                    'totalLines': 17369
+                },
+                {
+                    'name': 'YAML',
+                    'totalLines': 16226
+                },
+                {
+                    'name': 'TypeScript',
+                    'totalLines': 9164
+                },
+                {
+                    'name': 'SCSS',
+                    'totalLines': 2597
+                },
+                {
+                    'name': 'JSON',
+                    'totalLines': 1801
+                },
+                {
+                    'name': 'HTML',
+                    'totalLines': 1281
+                },
+                {
+                    'name': 'CSS',
+                    'totalLines': 1188
+                },
+                {
+                    'name': 'JavaScript',
+                    'totalLines': 473
+                },
+                {
+                    'name': 'Go',
+                    'totalLines': 260
+                },
+                {
+                    'name': 'Text',
+                    'totalLines': 174
+                },
+                {
+                    'name': 'TOML',
+                    'totalLines': 106
+                },
+                {
+                    'name': 'EditorConfig',
+                    'totalLines': 20
+                },
+                {
+                    'name': 'Jsonnet',
+                    'totalLines': 15
+                },
+                {
+                    'name': 'Makefile',
+                    'totalLines': 12
+                },
+                {
+                    'name': 'Ignore List',
+                    'totalLines': 8
+                }
+            ]
+        }
+    }
 }
