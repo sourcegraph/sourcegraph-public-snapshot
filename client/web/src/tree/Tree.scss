@@ -36,6 +36,14 @@
             background-color: var(--primary);
             color: $white;
         }
+
+        .theme-redesign.theme-light &--active,
+        .theme-redesign.theme-light &--selected,
+        .theme-redesign.theme-light &:hover {
+            meter {
+                --meter-background: var(--gray-05);
+            }
+        }
     }
 
     &__row-alert {
