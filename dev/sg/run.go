@@ -1,11 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -97,6 +100,19 @@ func (e reinstallErr) Error() string {
 	return fmt.Sprintf("reinstalling %s failed: %s", e.cmdName, e.output)
 }
 
+// runErr is used internally by runWatch to print a message when a
+// command failed to reinstall.
+type runErr struct {
+	cmdName  string
+	exitCode int
+	stderr   string
+	stdout   string
+}
+
+func (e runErr) Error() string {
+	return fmt.Sprintf("failed to run %s.\nstderr:\n%s\nstdout:\n%s\n", e.cmdName, e.stderr, e.stdout)
+}
+
 func printCmdError(out *output.Output, cmdName string, err error) {
 	var message, cmdOut string
 
@@ -107,6 +123,15 @@ func printCmdError(out *output.Output, cmdName string, err error) {
 	case reinstallErr:
 		message = "Failed to rebuild " + cmdName
 		cmdOut = e.output
+	case runErr:
+		message = "Failed to run " + cmdName
+		cmdOut = e.stderr
+
+		formattedStdout := "\t" + strings.Join(strings.Split(e.stdout, "\n"), "\n\t")
+		formattedStderr := "\t" + strings.Join(strings.Split(e.stderr, "\n"), "\n\t")
+
+		cmdOut = fmt.Sprintf("Exit code: %d\n\nStandard out:\n%s\nStandard err:\n%s\n", e.exitCode, formattedStdout, formattedStderr)
+
 	default:
 		message = fmt.Sprintf("Failed to run %s: %s", cmdName, err)
 	}
@@ -176,16 +201,21 @@ func runWatch(ctx context.Context, cmd Command, root string, reload <-chan struc
 		c.Dir = root
 		c.Env = makeEnv(conf.Env, cmd.Env)
 
+		var (
+			stdoutBuf = &prefixSuffixSaver{N: 32 << 10}
+			stderrBuf = &prefixSuffixSaver{N: 32 << 10}
+		)
+
 		logger := newCmdLogger(cmd.Name, out)
 		if cmd.IgnoreStdout {
 			out.WriteLine(output.Linef("", output.StyleSuggestion, "Ignoring stdout of %s", cmd.Name))
 		} else {
-			c.Stdout = logger
+			c.Stdout = io.MultiWriter(logger, stdoutBuf)
 		}
 		if cmd.IgnoreStderr {
 			out.WriteLine(output.Linef("", output.StyleSuggestion, "Ignoring stderr of %s", cmd.Name))
 		} else {
-			c.Stderr = logger
+			c.Stderr = io.MultiWriter(logger, stderrBuf)
 		}
 
 		if err := c.Start(); err != nil {
@@ -199,7 +229,12 @@ func runWatch(ctx context.Context, cmd Command, root string, reload <-chan struc
 			errs <- (func() error {
 				if err := c.Wait(); err != nil {
 					if exitErr, ok := err.(*exec.ExitError); ok {
-						return fmt.Errorf("exited with %d", exitErr.ExitCode())
+						return runErr{
+							cmdName:  cmd.Name,
+							exitCode: exitErr.ExitCode(),
+							stderr:   string(stderrBuf.Bytes()),
+							stdout:   string(stdoutBuf.Bytes()),
+						}
 					}
 
 					return err
@@ -419,4 +454,83 @@ func runChecks(ctx context.Context, checks map[string]Check) error {
 	}
 
 	return nil
+}
+
+// prefixSuffixSaver is an io.Writer which retains the first N bytes
+// and the last N bytes written to it. The Bytes() methods reconstructs
+// it with a pretty error message.
+//
+// Copy of https://sourcegraph.com/github.com/golang/go@3b770f2ccb1fa6fecc22ea822a19447b10b70c5c/-/blob/src/os/exec/exec.go#L661-729
+type prefixSuffixSaver struct {
+	N         int // max size of prefix or suffix
+	prefix    []byte
+	suffix    []byte // ring buffer once len(suffix) == N
+	suffixOff int    // offset to write into suffix
+	skipped   int64
+
+	// TODO(bradfitz): we could keep one large []byte and use part of it for
+	// the prefix, reserve space for the '... Omitting N bytes ...' message,
+	// then the ring buffer suffix, and just rearrange the ring buffer
+	// suffix when Bytes() is called, but it doesn't seem worth it for
+	// now just for error messages. It's only ~64KB anyway.
+}
+
+func (w *prefixSuffixSaver) Write(p []byte) (n int, err error) {
+	lenp := len(p)
+	p = w.fill(&w.prefix, p)
+
+	// Only keep the last w.N bytes of suffix data.
+	if overage := len(p) - w.N; overage > 0 {
+		p = p[overage:]
+		w.skipped += int64(overage)
+	}
+	p = w.fill(&w.suffix, p)
+
+	// w.suffix is full now if p is non-empty. Overwrite it in a circle.
+	for len(p) > 0 { // 0, 1, or 2 iterations.
+		n := copy(w.suffix[w.suffixOff:], p)
+		p = p[n:]
+		w.skipped += int64(n)
+		w.suffixOff += n
+		if w.suffixOff == w.N {
+			w.suffixOff = 0
+		}
+	}
+	return lenp, nil
+}
+
+// fill appends up to len(p) bytes of p to *dst, such that *dst does not
+// grow larger than w.N. It returns the un-appended suffix of p.
+func (w *prefixSuffixSaver) fill(dst *[]byte, p []byte) (pRemain []byte) {
+	if remain := w.N - len(*dst); remain > 0 {
+		add := minInt(len(p), remain)
+		*dst = append(*dst, p[:add]...)
+		p = p[add:]
+	}
+	return p
+}
+
+func (w *prefixSuffixSaver) Bytes() []byte {
+	if w.suffix == nil {
+		return w.prefix
+	}
+	if w.skipped == 0 {
+		return append(w.prefix, w.suffix...)
+	}
+	var buf bytes.Buffer
+	buf.Grow(len(w.prefix) + len(w.suffix) + 50)
+	buf.Write(w.prefix)
+	buf.WriteString("\n... omitting ")
+	buf.WriteString(strconv.FormatInt(w.skipped, 10))
+	buf.WriteString(" bytes ...\n")
+	buf.Write(w.suffix[w.suffixOff:])
+	buf.Write(w.suffix[:w.suffixOff])
+	return buf.Bytes()
+}
+
+func minInt(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
