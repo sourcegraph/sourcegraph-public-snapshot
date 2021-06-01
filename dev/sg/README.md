@@ -254,8 +254,6 @@ tests:
   - [ ] Implement the `sg generate` command
   - [ ] Implement `sg edit site-config` and `sg edit external-services`
   - [ ] Implement `sg tail-log`
-- [ ] Add a _simple_ way to define in the config file when a restart after a rebuild is not necessary
-  - Something like `check_binary: .bin/frontend` which would take a SHA256 before and after rebuild and only restart if SHA doesn't match
 - [ ] Add built-in support for "download binary" so that the `caddy` command, for example, would be 3 lines instead of 20. That would allow us to get rid of the bash code.
 
 ## Hacking
