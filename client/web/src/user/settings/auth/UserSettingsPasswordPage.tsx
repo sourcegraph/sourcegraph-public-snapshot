@@ -15,6 +15,7 @@ import { PageTitle } from '../../../components/PageTitle'
 import { UserAreaUserFields } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { updatePassword } from '../backend'
+
 import styles from './UserSettingsPasswordPage.module.scss'
 
 interface Props extends RouteComponentProps<{}> {
