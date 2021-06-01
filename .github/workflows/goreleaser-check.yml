@@ -1,4 +1,4 @@
-name: GoReleaser
+name: GoReleaser check
 
 on:
   - push

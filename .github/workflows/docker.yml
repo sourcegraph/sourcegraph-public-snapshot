@@ -28,15 +28,7 @@ jobs:
         with:
           platforms: arm64
 
-      - run: ./docker/batch-change-volume-workspace/push.py -d ./docker/batch-change-volume-workspace/Dockerfile -i sourcegraph/src-batch-change-volume-workspace -p linux/amd64,linux/arm64,linux/386
+      - run: ./docker/batch-change-volume-workspace/push.py -d ./docker/batch-change-volume-workspace/Dockerfile -i sourcegraph/src-batch-change-volume-workspace -p linux/amd64,linux/arm64,linux/386 --readme ./docker/batch-change-volume-workspace/README.md
         env:
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
           DOCKER_USERNAME: sourcegraphci
-
-      - name: Update Docker Hub description
-        uses: peter-evans/dockerhub-description@v2
-        with:
-          username: sourcegraphci
-          password: ${{ secrets.DOCKER_PASSWORD }}
-          repository: sourcegraph/src-batch-change-volume-workspace
-          readme-filepath: ./docker/batch-change-volume-workspace/README.md

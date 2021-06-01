@@ -29,12 +29,17 @@
 # More instructions on this can be found at
 # https://docs.docker.com/buildx/working-with-buildx/#build-multi-platform-images.
 
+from __future__ import annotations
+
 import argparse
 import itertools
+import json
 import os
 import subprocess
 
-from typing import BinaryIO, Optional, Sequence
+from ssl import SSLContext
+from typing import BinaryIO, Optional, Sequence, TextIO
+from urllib.request import urlopen, Request
 
 
 def calculate_tags(ref: str) -> Sequence[str]:
@@ -65,7 +70,7 @@ def calculate_tags(ref: str) -> Sequence[str]:
     return tags
 
 
-def docker_build(
+def docker_cli_build(
     dockerfile: BinaryIO, platform: Optional[str], image: str, tags: Sequence[str]
 ):
     args = ["docker", "buildx", "build", "--push"]
@@ -84,12 +89,53 @@ def docker_build(
     run(args, stdin=dockerfile)
 
 
-def docker_login(username: str, password: str):
+def docker_cli_login(username: str, password: str):
     run(
         ["docker", "login", f"-u={username}", "--password-stdin"],
         input=password,
         text=True,
     )
+
+
+class DockerHub:
+    context: SSLContext
+    token: str
+
+    @staticmethod
+    def login(username: str, password: str) -> DockerHub:
+        context = SSLContext()
+        context.load_default_certs()
+
+        with urlopen(
+            Request(
+                "https://hub.docker.com/v2/users/login",
+                method="POST",
+                data=json.dumps({"username": username, "password": password}).encode(
+                    "utf-8"
+                ),
+                headers={"Content-Type": "application/json; charset=utf-8"},
+            ),
+            context=context,
+        ) as resp:
+            hub = DockerHub()
+            hub.context = context
+            hub.token = json.load(resp)["token"]
+
+            return hub
+
+    def update_description(self, image: str, file: TextIO) -> None:
+        urlopen(
+            Request(
+                f"https://hub.docker.com/v2/repositories/{image}/",
+                method="PATCH",
+                data=json.dumps({"full_description": file.read()}).encode("utf-8"),
+                headers={
+                    "Content-Type": "application/json; charset=utf-8",
+                    "Authorization": f"JWT {self.token}",
+                },
+            ),
+            context=self.context,
+        )
 
 
 def run(args: Sequence[str], /, **kwargs) -> subprocess.CompletedProcess:
@@ -114,6 +160,11 @@ def main():
         default=os.environ.get("GITHUB_REF"),
         help="current ref in refs/heads/... or refs/tags/... form",
     )
+    parser.add_argument(
+        "--readme",
+        default="./README.md",
+        help="README to update the Docker Hub description from",
+    )
     args = parser.parse_args()
 
     tags = calculate_tags(args.ref)
@@ -121,13 +172,19 @@ def main():
 
     print("logging into Docker Hub")
     try:
-        docker_login(os.environ["DOCKER_USERNAME"], os.environ["DOCKER_PASSWORD"])
+        docker_cli_login(os.environ["DOCKER_USERNAME"], os.environ["DOCKER_PASSWORD"])
     except KeyError as e:
         print(f"error retrieving environment variables: {e}")
         raise
 
     print("building and pushing image")
-    docker_build(open(args.dockerfile, "rb"), args.platform, args.image, tags)
+    docker_cli_build(open(args.dockerfile, "rb"), args.platform, args.image, tags)
+
+    print("acquiring token to update description")
+    hub = DockerHub.login(os.environ["DOCKER_USERNAME"], os.environ["DOCKER_PASSWORD"])
+
+    print("updating description")
+    hub.update_description(args.image, open(args.readme, "r"))
 
     print("success!")
 
