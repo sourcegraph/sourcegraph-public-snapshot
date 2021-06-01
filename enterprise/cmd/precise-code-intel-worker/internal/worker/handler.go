@@ -280,12 +280,11 @@ func writeData(ctx context.Context, lsifStore LSIFStore, id int, groupedBundleDa
 }
 
 func isUniqueConstraintViolation(err error) bool {
-	for ex := err; ex != nil; ex = errors.Unwrap(ex) {
-		if pgErr, ok := ex.(*pgconn.PgError); ok {
-			return pgErr.Code == "23505"
-		}
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) {
+		return pgErr.Code == "23505"
 	}
-
+	
 	return false
 }
 
