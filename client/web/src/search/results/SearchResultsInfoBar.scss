@@ -14,7 +14,7 @@
     .mdi-icon {
         margin-right: 0.125rem;
 
-        .theme-redesign & {
+        &:only-child {
             margin-right: 0;
         }
     }
