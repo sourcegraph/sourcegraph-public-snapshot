@@ -106,6 +106,13 @@ describe('Code insight edit insight page', () => {
             'searchInsights.insight.orgTeamSize': {},
         }
 
+        // Mock `Date.now` to stabilize timestamps
+        await driver.page.evaluateOnNewDocument(() => {
+            // Number of ms between Unix epoch and June 31, 2021
+            const mockMs = new Date('June 1, 2021 00:00:00 UTC').getTime()
+            Date.now = () => mockMs
+        })
+
         overrideGraphQLExtensions({
             testContext,
             /**
@@ -298,6 +305,13 @@ describe('Code insight edit insight page', () => {
                 },
             },
         }
+
+        // Mock `Date.now` to stabilize timestamps
+        await driver.page.evaluateOnNewDocument(() => {
+            // Number of ms between Unix epoch and June 31, 2021
+            const mockMs = new Date('June 1, 2021 00:00:00 UTC').getTime()
+            Date.now = () => mockMs
+        })
 
         overrideGraphQLExtensions({
             testContext,
