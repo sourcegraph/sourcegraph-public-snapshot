@@ -6,10 +6,15 @@ import (
 	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/commitgraph"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/indexing"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/janitor"
 )
 
 var setupHooks = map[string]shared.SetupHook{
-	// Empty for now
+	"codeintel-commitgraph": commitgraph.NewInitializer(),
+	"codeintel-janitor":     janitor.NewInitializer(),
+	"codeintel-indexing":    indexing.NewInitializer(),
 }
 
 func main() {

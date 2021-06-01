@@ -4,8 +4,11 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"sort"
 	"strings"
 	"sync"
+
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -15,25 +18,30 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 )
 
-// SetupHook creates configuration struct and background routine instances
-// to be run as part of the worker process.
-type SetupHook interface {
-	// Config returns a set of configuration struct pointers that should
-	// be loaded and validated as part of application startup.
-	Config() []env.Config
-
-	// Routines constructs and returns the set of background routines that
-	// should run as part of the worker process. Service initialization should
-	// be shared between setup hooks when possible (e.g. sync.Once initialization).
-	Routines(ctx context.Context) ([]goroutine.BackgroundRoutine, error)
-}
-
-var setupHooks = map[string]SetupHook{
-	// Empty for now
-}
-
 func Main(enterpriseSetupHooks map[string]SetupHook) {
-	for _, setupHook := range enterpriseSetupHooks {
+	allHooks := map[string]SetupHook{}
+	for name, setupHook := range setupHooks {
+		allHooks[name] = setupHook
+	}
+	for name, setupHook := range enterpriseSetupHooks {
+		allHooks[name] = setupHook
+	}
+
+	// Load worker service config which will determine which of
+	// the registered setup hooks to invoke on application startup.
+
+	names := make([]string, 0, len(allHooks))
+	for name := range allHooks {
+		names = append(names, name)
+	}
+	config.names = names
+	config.Load()
+
+	// Load all other registered configs. We load all configs
+	// regardless if their attached hook will run to encourage
+	// consistency in deployments.
+
+	for _, setupHook := range allHooks {
 		for _, config := range setupHook.Config() {
 			config.Load()
 		}
@@ -45,19 +53,28 @@ func Main(enterpriseSetupHooks map[string]SetupHook) {
 	tracer.Init()
 	trace.Init(true)
 
-	var validationErrors []error
-	for _, setupHook := range enterpriseSetupHooks {
+	// Validate the loaded configs. If there are errors at this
+	// point, collect all that are relevant, log, then exit.
+
+	validationErrors := map[string][]error{}
+	if err := config.Validate(); err != nil {
+		log.Fatalf("Failed to load configuration: %s", err)
+	}
+	for name, setupHook := range allHooks {
 		for _, config := range setupHook.Config() {
 			if err := config.Validate(); err != nil {
-				validationErrors = append(validationErrors, err)
+				validationErrors[name] = append(validationErrors[name], err)
 			}
 		}
 	}
 	if len(validationErrors) > 0 {
-		descriptions := make([]string, 0, len(validationErrors))
-		for _, err := range validationErrors {
-			descriptions = append(descriptions, "  - "+err.Error())
+		var descriptions []string
+		for name, errs := range validationErrors {
+			for _, err := range errs {
+				descriptions = append(descriptions, fmt.Sprintf("  - %s: %s ", name, err))
+			}
 		}
+		sort.Strings(descriptions)
 
 		log.Fatalf("Failed to load configuration:\n%s", strings.Join(descriptions, "\n"))
 	}
@@ -72,11 +89,13 @@ func Main(enterpriseSetupHooks map[string]SetupHook) {
 	// quickly one set of routines initializes.
 
 	var wg sync.WaitGroup
-	results := make(chan routinesResult, len(setupHooks)+len(enterpriseSetupHooks))
+	results := make(chan routinesResult, len(allHooks))
 	ctx, cancel := context.WithCancel(context.Background())
 
-	queue := func(setupHooks map[string]SetupHook) {
-		for name, setupHook := range setupHooks {
+	for name, setupHook := range allHooks {
+		if shouldRunSetupHook(name) {
+			log15.Info("Running setup hook", "name", name)
+
 			wg.Add(1)
 
 			go func(name string, setupHook SetupHook) {
@@ -88,10 +107,10 @@ func Main(enterpriseSetupHooks map[string]SetupHook) {
 					cancel()
 				}
 			}(name, setupHook)
+		} else {
+			log15.Info("Skipping setup hook", "name", name)
 		}
 	}
-	queue(setupHooks)
-	queue(enterpriseSetupHooks)
 
 	wg.Wait()
 	cancel()
@@ -112,6 +131,7 @@ func Main(enterpriseSetupHooks map[string]SetupHook) {
 		}
 	}
 	if len(descriptions) > 0 {
+		sort.Strings(descriptions)
 		log.Fatalf("Failed to initialize worker:\n%s", strings.Join(descriptions, "\n"))
 	}
 
