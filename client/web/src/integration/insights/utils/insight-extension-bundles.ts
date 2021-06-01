@@ -33,10 +33,10 @@ function getUniversalInsightExtensionBundle(type: InsightTypePrefix, data: Recor
 
     return `
         var sourcegraph = require('sourcegraph')
-        var insightViewStore = JSON.parse('${injectedDataString}')
-        var subscriptions = []
 
         function activate(context) {
+            var insightViewStore = JSON.parse('${injectedDataString}')
+            var subscriptions = []
 
             function handleInsights(config) {
                 const insights = Object.entries(config).filter(([key]) => key.startsWith('${type}.'))
@@ -44,7 +44,7 @@ function getUniversalInsightExtensionBundle(type: InsightTypePrefix, data: Recor
                 for (var insight of insights) {
                     const [id, settings] = insight;
 
-                    var provideView = () => insightViewStore[id]
+                    var provideView =  () => insightViewStore[id]
 
                     subscriptions.push(sourcegraph.app.registerViewProvider(id + '.insightsPage', {
                         where: 'insightsPage',
@@ -56,7 +56,7 @@ function getUniversalInsightExtensionBundle(type: InsightTypePrefix, data: Recor
             sourcegraph.configuration.subscribe(() => {
                 var config = sourcegraph.configuration.get().value
 
-                subscriptions.forEach(unsubscribe => unsubscribe())
+                subscriptions.forEach(sub => sub.unsubscribe())
                 subscriptions = []
 
                 handleInsights(config)
