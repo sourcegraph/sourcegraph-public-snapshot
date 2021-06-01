@@ -10,6 +10,7 @@ import (
 
 	"github.com/honeycombio/libhoney-go"
 	"github.com/inconshreveable/log15"
+	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 
@@ -103,10 +104,18 @@ func (h *handler) handle(ctx context.Context, workerStore dbworkerstore.Store, d
 			return errors.Wrap(err, "conversion.Correlate")
 		}
 
-		// Note: this is writing to a different database than the block below, so the same comments
-		// do not apply here.
+		// Note: this is writing to a different database than the block below, so we need to use a
+		// different transaction context (managed by the writeData function).
 		if err := writeData(ctx, h.lsifStore, upload.ID, groupedBundleData); err != nil {
-			return err
+			if isUniqueConstraintViolation(err) {
+				// If this is a unique constraint violation, then we've previously processed this same
+				// upload record up to this point, but failed to perform the transaction below. We can
+				// safely assume that the entire index's data is in the codeintel database, as it's
+				// parsed determinstically and written atomically.
+				log15.Warn("LSIF data already exists for upload record")
+			} else {
+				return err
+			}
 		}
 
 		// Start a nested transaction with Postgres savepoints. In the event that something after this
@@ -268,6 +277,15 @@ func writeData(ctx context.Context, lsifStore LSIFStore, id int, groupedBundleDa
 	}
 
 	return nil
+}
+
+func isUniqueConstraintViolation(err error) bool {
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) {
+		return pgErr.Code == "23505"
+	}
+
+	return false
 }
 
 func createHoneyEvent(ctx context.Context, upload store.Upload, err error, duration time.Duration) *libhoney.Event {
