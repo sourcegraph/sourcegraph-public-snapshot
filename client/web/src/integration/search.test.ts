@@ -95,8 +95,8 @@ describe('Search', () => {
                 await driver.page.goto(
                     `${driver.sourcegraphBaseUrl}/search?q=${encodeURIComponent(origQuery)}&patternType=literal`
                 )
-                await driver.page.waitForSelector(`[data-testid="filter-chip"][value=${JSON.stringify(filter)}]`)
-                await driver.page.click(`[data-testid="filter-chip"][value=${JSON.stringify(filter)}]`)
+                await driver.page.waitForSelector(`[data-testid="filter-link"][value=${JSON.stringify(filter)}]`)
+                await driver.page.click(`[data-testid="filter-link"][value=${JSON.stringify(filter)}]`)
                 await driver.page.waitForFunction(
                     expectedQuery => {
                         const url = new URL(document.location.href)
