@@ -78,7 +78,7 @@ func (c *Container) renderDashboard() *sdk.Board {
 		Label:      "Filter alert level",
 		Name:       "alert_level",
 		AllValue:   ".*",
-		Current:    sdk.Current{Text: "all", Value: "$__all"},
+		Current:    sdk.Current{Text: &sdk.StringSliceString{Value: []string{"all"}, Valid: true}, Value: "$__all"},
 		IncludeAll: true,
 		Options: []sdk.Option{
 			{Text: "all", Value: "$__all", Selected: true},
