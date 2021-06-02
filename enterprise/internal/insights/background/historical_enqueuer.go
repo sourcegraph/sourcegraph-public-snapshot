@@ -8,6 +8,8 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/time/rate"
+
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
@@ -72,14 +74,25 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 		Metrics: metrics,
 	})
 
+	defaultRateLimit := rate.Limit(10.0)
+	getRateLimit := getRateLimit(defaultRateLimit)
+
+	limiter := rate.NewLimiter(getRateLimit(), 1)
+
+	go conf.Watch(func() {
+		val := getRateLimit()
+		log15.Info(fmt.Sprintf("Updating insights/historical-worker rate limit value=%v", val))
+		limiter.SetLimit(val)
+	})
+
 	repoStore := database.Repos(workerBaseStore.Handle().DB())
 
 	historicalEnqueuer := &historicalEnqueuer{
 		now:           time.Now,
-		sleep:         time.Sleep,
 		settingStore:  settingStore,
 		insightsStore: insightsStore,
 		repoStore:     database.Repos(workerBaseStore.Handle().DB()),
+		limiter:       limiter,
 		enqueueQueryRunnerJob: func(ctx context.Context, job *queryrunner.Job) error {
 			_, err := queryrunner.EnqueueJob(ctx, workerBaseStore, job)
 			return err
@@ -127,6 +140,21 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 	), operation)
 }
 
+func getRateLimit(defaultValue rate.Limit) func() rate.Limit {
+	return func() rate.Limit {
+		val := conf.Get().InsightsHistoricalWorkerRateLimit
+
+		var result rate.Limit
+		if val == nil {
+			result = defaultValue
+		} else {
+			result = rate.Limit(*val)
+		}
+
+		return result
+	}
+}
+
 // RepoStore is a subset of the API exposed by the database.Repos() store (only the subset used by
 // historicalEnqueuer.)
 type RepoStore interface {
@@ -168,7 +196,6 @@ type RepoStore interface {
 type historicalEnqueuer struct {
 	// Required fields used for mocking in tests.
 	now                   func() time.Time
-	sleep                 func(t time.Duration)
 	settingStore          discovery.SettingStore
 	insightsStore         store.Interface
 	repoStore             RepoStore
@@ -184,10 +211,7 @@ type historicalEnqueuer struct {
 
 	// The iterator to use for walking over all repositories on Sourcegraph.
 	allReposIterator func(ctx context.Context, each func(repoName string) error) error
-}
-
-func (h *historicalEnqueuer) timeSince(t time.Time) time.Duration {
-	return h.now().Sub(t)
+	limiter          *rate.Limiter
 }
 
 func (h *historicalEnqueuer) Handler(ctx context.Context) error {
@@ -282,22 +306,9 @@ func (h *historicalEnqueuer) buildFrame(
 	//    loop for potentially 500,000+ repositories if there is actually no work to
 	//    perform (because all have had historical data built already.)
 	//
-	lastIteration := h.now()
-	yield := func() {
-		yieldTime := 100 * time.Millisecond
-		if factor := conf.Get().InsightsHistoricalSpeedFactor; factor != nil {
-			yieldTime = time.Duration(float64(yieldTime) * *factor)
-		}
-		if diff := h.timeSince(lastIteration); diff < yieldTime {
-			h.sleep(yieldTime - diff)
-			lastIteration = h.now()
-		}
-	}
 
 	// For every repository that we want to potentially gather historical data for.
 	hardErr = h.allReposIterator(ctx, func(repoName string) error {
-		yield()
-
 		// Lookup the repository (we need its database ID)
 		repo, err := h.repoStore.GetByName(ctx, api.RepoName(repoName))
 		if err != nil {
@@ -325,7 +336,10 @@ func (h *historicalEnqueuer) buildFrame(
 		// For every series that we want to potentially gather historical data for, try.
 		for _, seriesID := range sortedSeriesIDs {
 			series := uniqueSeries[seriesID]
-			yield()
+			err := h.limiter.Wait(ctx)
+			if err != nil {
+				return err
+			}
 
 			// If we already have data for this frame+repo+series, then there's nothing to do.
 			var numDataPoints int

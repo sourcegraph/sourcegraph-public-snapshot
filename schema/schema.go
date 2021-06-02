@@ -1450,8 +1450,12 @@ type SiteConfiguration struct {
 	InsightsHistoricalFrames int `json:"insights.historical.frames,omitempty"`
 	// InsightsHistoricalSpeedFactor description: (debug) Speed factor for building historical insights data. A value like 1.5 indicates approximately to use 1.5x as much repo-updater and gitserver resources.
 	InsightsHistoricalSpeedFactor *float64 `json:"insights.historical.speedFactor,omitempty"`
+	// InsightsHistoricalWorkerRateLimit description: Maximum number of historical Code Insights data frames that may be analyzed per second.
+	InsightsHistoricalWorkerRateLimit *float64 `json:"insights.historical.worker.rateLimit,omitempty"`
 	// InsightsQueryWorkerConcurrency description: Number of concurrent executions of a code insight query on a worker node
 	InsightsQueryWorkerConcurrency int `json:"insights.query.worker.concurrency,omitempty"`
+	// InsightsQueryWorkerRateLimit description: Maximum number of Code Insights queries initiated per second on a worker node.
+	InsightsQueryWorkerRateLimit *float64 `json:"insights.query.worker.rateLimit,omitempty"`
 	// LicenseKey description: The license key associated with a Sourcegraph product subscription, which is necessary to activate Sourcegraph Enterprise functionality. To obtain this value, contact Sourcegraph to purchase a subscription. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.
 	LicenseKey string `json:"licenseKey,omitempty"`
 	// Log description: Configuration for logging and alerting, including to external services.
