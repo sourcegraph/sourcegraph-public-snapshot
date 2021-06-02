@@ -28,6 +28,7 @@ import {
     RevisionSpec,
     UIPositionSpec,
 } from '@sourcegraph/shared/src/util/url'
+import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { getHover, getDocumentHighlights } from '../../backend/features'
 import { requestGraphQL } from '../../backend/graphql'
@@ -50,6 +51,7 @@ import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { queryRepositoryComparisonFileDiffs } from '../compare/RepositoryCompareDiffPage'
 
 import { DiffModeSelector } from './DiffModeSelector'
+import classNames from 'classnames'
 
 const queryCommit = memoizeObservable(
     (args: { repo: Scalars['ID']; revspec: string }): Observable<GitCommitFields> =>
@@ -93,7 +95,6 @@ interface Props
         ExtensionsControllerProps,
         ThemeProps {
     repo: RepositoryFields
-
     onDidUpdateExternalLinks: (externalLinks: ExternalLinkFields[] | undefined) => void
 }
 
@@ -108,8 +109,14 @@ interface State extends HoverState<HoverContext, HoverMerged, ActionItemAction> 
 
 const DIFF_MODE_VISUALIZER = 'diff-mode-visualizer'
 
+export const RepositoryCommitPage: React.FC<Props> = ({ ...props }) => {
+    const [isRedesignEnabled] = useRedesignToggle()
+
+    return <RepositoryCommitPageDetails {...props} isRedesignEnabled={isRedesignEnabled} />
+}
+
 /** Displays a commit. */
-export class RepositoryCommitPage extends React.Component<Props, State> {
+export class RepositoryCommitPageDetails extends React.Component<Props & { isRedesignEnabled: boolean }, State> {
     private componentUpdates = new Subject<Props>()
 
     /** Emits whenever the ref callback for the hover element is called */
@@ -250,21 +257,31 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                     <ErrorAlert className="mt-2" error={this.state.commitOrError} />
                 ) : (
                     <>
-                        <div className="card repository-commit-page__card">
-                            <div className="card-body">
+                        <div
+                            className={classNames(
+                                this.props.isRedesignEnabled
+                                    ? 'border-bottom pb-2'
+                                    : 'card repository-commit-page__card'
+                            )}
+                        >
+                            <div className={classNames(!this.props.isRedesignEnabled && 'card-body')}>
                                 <GitCommitNode
                                     node={this.state.commitOrError}
                                     expandCommitMessageBody={true}
                                     showSHAAndParentsRow={true}
+                                    diffMode={this.state.diffMode}
+                                    handleDiffMode={this.handleDiffMode}
                                 />
                             </div>
                         </div>
-                        <DiffModeSelector
-                            className="py-2 text-right border-bottom"
-                            // eslint-disable-next-line @typescript-eslint/unbound-method
-                            handleDiffMode={this.handleDiffMode}
-                            diffMode={this.state.diffMode}
-                        />
+                        {!this.props.isRedesignEnabled && (
+                            <DiffModeSelector
+                                className="py-2 text-right border-bottom"
+                                // eslint-disable-next-line @typescript-eslint/unbound-method
+                                handleDiffMode={this.handleDiffMode}
+                                diffMode={this.state.diffMode}
+                            />
+                        )}
                         <FileDiffConnection
                             listClassName="list-group list-group-flush"
                             noun="changed file"
