@@ -402,24 +402,10 @@ func NewSchema(db dbutil.DB, batchChanges BatchChangesResolver, codeIntel CodeIn
 	)
 }
 
-var queryValidationSchema = func() *graphql.Schema {
-	schemas := []string{
-		mainSchema,
-		batchesSchema,
-		codeIntelSchema,
-		insightsSchema,
-		authzSchema,
-		codeMonitorsSchema,
-		licenseSchema,
-		dotcomSchema,
-	}
-	return graphql.MustParseSchema(strings.Join(schemas, "\n"), nil)
-}()
-
 // ValidatedQuery takes a query string and returns the validated query.
 // If query validation fails, it will panic.
 func ValidatedQuery(s string) string {
-	if errs := queryValidationSchema.Validate(s); len(errs) > 0 {
+	if errs := allSchemasParsed.Validate(s); len(errs) > 0 {
 		panic(fmt.Sprintf("query does not pass schema validation: %s", errs))
 	}
 	return s
@@ -428,7 +414,7 @@ func ValidatedQuery(s string) string {
 // ValidatedQuery takes a query string and an example set of variables and returns
 // the validated query. If query validation fails, it will panic.
 func ValidatedQueryWithVariables(s string, vars map[string]interface{}) string {
-	if errs := queryValidationSchema.ValidateWithVariables(s, vars); len(errs) > 0 {
+	if errs := allSchemasParsed.ValidateWithVariables(s, vars); len(errs) > 0 {
 		panic(fmt.Sprintf("query does not pass schema validation: %s", errs))
 	}
 	return s
