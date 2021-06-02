@@ -426,7 +426,7 @@ func ValidatedQuery(s string) string {
 }
 
 // ValidatedQuery takes a query string and an example set of variables and returns
-// the validated query.  If query validation fails, it will panic.
+// the validated query. If query validation fails, it will panic.
 func ValidatedQueryWithVariables(s string, vars map[string]interface{}) string {
 	if errs := queryValidationSchema.ValidateWithVariables(s, vars); len(errs) > 0 {
 		panic(fmt.Sprintf("query does not pass schema validation: %s", errs))
