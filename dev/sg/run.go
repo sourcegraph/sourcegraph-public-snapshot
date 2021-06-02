@@ -228,11 +228,12 @@ func runWatch(ctx context.Context, cmd Command, root string, reload <-chan struc
 			out.WriteLine(output.Linef("", output.StylePending, "Running %s...", cmd.Name))
 
 			sc, err := startCmd(ctx, root, cmd)
+			defer sc.cancel()
+
 			if err != nil {
 				return err
 			}
 
-			defer sc.cancel()
 			cancelFuncs = append(cancelFuncs, sc.cancel)
 
 			wg.Add(1)
@@ -240,9 +241,6 @@ func runWatch(ctx context.Context, cmd Command, root string, reload <-chan struc
 				defer wg.Done()
 
 				err := sc.Wait()
-				if err == nil {
-					return
-				}
 
 				if exitErr, ok := err.(*exec.ExitError); ok {
 					err = runErr{
