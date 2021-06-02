@@ -270,6 +270,7 @@ class RepositoryCommitPageDetails extends React.Component<Props & { isRedesignEn
                                     expandCommitMessageBody={true}
                                     showSHAAndParentsRow={true}
                                     diffMode={this.state.diffMode}
+                                    // eslint-disable-next-line @typescript-eslint/unbound-method
                                     handleDiffMode={this.handleDiffMode}
                                 />
                             </div>
