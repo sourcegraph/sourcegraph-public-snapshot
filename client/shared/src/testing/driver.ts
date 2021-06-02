@@ -208,6 +208,7 @@ export class Driver {
             localStorage.setItem('has-dismissed-browser-ext-toast', 'true')
             localStorage.setItem('has-dismissed-integrations-toast', 'true')
             localStorage.setItem('has-dismissed-survey-toast', 'true')
+            localStorage.setItem('isRedesignEnabled', 'true')
         })
         const url = new URL(this.page.url())
         if (url.pathname === '/site-admin/init') {
