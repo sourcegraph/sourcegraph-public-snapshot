@@ -1,4 +1,5 @@
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
+import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useHistory, useLocation } from 'react-router'
@@ -24,6 +25,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { combineLatestOrDefault } from '@sourcegraph/shared/src/util/rxjs/combineLatestOrDefault'
 import { isDefined } from '@sourcegraph/shared/src/util/types'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { registerPanelToolbarContributions } from './views/contributions'
 import { EmptyPanelView } from './views/EmptyPanelView'
@@ -221,19 +223,27 @@ export const Panel = React.memo<Props>(props => {
         setTabIndex(items.findIndex(({ id }) => id === currentTabID))
     }, [items, hash, currentTabID])
 
-    const activeTab: PanelItem | undefined = items[tabIndex]
+    const [isRedesignEnabled] = useRedesignToggle()
+    const EmptyPanelWrapper = isRedesignEnabled ? React.Fragment : 'div'
 
     if (!areExtensionsReady) {
-        return <ExtensionsLoadingPanelView />
+        return (
+            <EmptyPanelWrapper {...(!isRedesignEnabled && { className: 'panel' })}>
+                <ExtensionsLoadingPanelView />
+            </EmptyPanelWrapper>
+        )
     }
 
     if (!items) {
         return <EmptyPanelView />
     }
 
+    const activeTab: PanelItem | undefined = items[tabIndex]
+    const ActionsWrapper = isRedesignEnabled ? 'small' : React.Fragment
+
     return (
         <Tabs className="panel" index={tabIndex} onChange={handleActiveTab}>
-            <div className="tablist-wrapper bg-body d-flex justify-content-between">
+            <div className="panel__header tablist-wrapper bg-body d-flex justify-content-between">
                 <TabList>
                     <div className="d-flex w-100">
                         {items.map(({ label, id }) => (
@@ -243,30 +253,32 @@ export const Panel = React.memo<Props>(props => {
                         ))}
                     </div>
                 </TabList>
-                <div className="align-items-center d-flex mr-2">
-                    {activeTab && (
-                        <ActionsNavItems
-                            {...props}
-                            // TODO remove references to Bootstrap from shared, get class name from prop
-                            // This is okay for now because the Panel is currently only used in the webapp
-                            listClass="d-flex justify-content-end list-unstyled m-0 align-items-center"
-                            listItemClass="pr-4"
-                            // actionItemClass="d-flex flex-nowrap"
-                            actionItemIconClass="icon-inline"
-                            menu={ContributableMenu.PanelToolbar}
-                            scope={{
-                                type: 'panelView',
-                                id: activeTab.id,
-                                hasLocations: Boolean(activeTab.hasLocations),
-                            }}
-                            wrapInList={true}
-                            location={location}
-                        />
-                    )}
+                <div className={classNames('align-items-center d-flex', !isRedesignEnabled && 'mr-2')}>
+                    <ActionsWrapper>
+                        {activeTab && (
+                            <ActionsNavItems
+                                {...props}
+                                // TODO remove references to Bootstrap from shared, get class name from prop
+                                // This is okay for now because the Panel is currently only used in the webapp
+                                listClass="d-flex justify-content-end list-unstyled m-0 align-items-center"
+                                listItemClass={isRedesignEnabled ? 'px-2 mx-2' : 'pr-4'}
+                                actionItemClass={classNames(isRedesignEnabled && 'font-weight-medium')}
+                                actionItemIconClass="icon-inline"
+                                menu={ContributableMenu.PanelToolbar}
+                                scope={{
+                                    type: 'panelView',
+                                    id: activeTab.id,
+                                    hasLocations: Boolean(activeTab.hasLocations),
+                                }}
+                                wrapInList={true}
+                                location={location}
+                            />
+                        )}
+                    </ActionsWrapper>
                     <button
                         type="button"
                         onClick={handlePanelClose}
-                        className="btn btn-icon"
+                        className={classNames('btn btn-icon', isRedesignEnabled && 'panel__dismiss ml-2')}
                         title="Close panel"
                         data-tooltip="Close panel"
                         data-placement="left"

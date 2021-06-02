@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
@@ -186,9 +187,18 @@ func serveSearchConfiguration(w http.ResponseWriter, r *http.Request) error {
 			return string(commitID), err
 		}
 
+		getPriority := func() float64 {
+			switch m := repo.Metadata.(type) {
+			case *github.Repository:
+				return float64(m.StargazerCount)
+			}
+			return 0.0
+		}
+
 		return &searchbackend.RepoIndexOptions{
-			RepoID:     int32(repo.ID),
-			GetVersion: getVersion,
+			RepoID:      int32(repo.ID),
+			GetVersion:  getVersion,
+			GetPriority: getPriority,
 		}, nil
 	}
 

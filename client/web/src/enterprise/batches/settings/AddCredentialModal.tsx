@@ -28,14 +28,12 @@ export interface AddCredentialModalProps {
     initialStep?: Step
 }
 
+const HELP_TEXT_LINK_URL = 'https://docs.sourcegraph.com/batch_changes/quickstart#configure-code-host-credentials'
+
 const helpTexts: Record<ExternalServiceKind, JSX.Element> = {
     [ExternalServiceKind.GITHUB]: (
         <>
-            <a
-                href="https://docs.sourcegraph.com/batch_changes/quickstart#configure-code-host-connections"
-                rel="noreferrer noopener"
-                target="_blank"
-            >
+            <a href={HELP_TEXT_LINK_URL} rel="noreferrer noopener" target="_blank">
                 Create a new access token
             </a>{' '}
             with <code>repo</code>, <code>read:org</code>, <code>user:email</code>, and <code>read:discussion</code>{' '}
@@ -44,11 +42,7 @@ const helpTexts: Record<ExternalServiceKind, JSX.Element> = {
     ),
     [ExternalServiceKind.GITLAB]: (
         <>
-            <a
-                href="https://docs.sourcegraph.com/batch_changes/quickstart#configure-code-host-connections"
-                rel="noreferrer noopener"
-                target="_blank"
-            >
+            <a href={HELP_TEXT_LINK_URL} rel="noreferrer noopener" target="_blank">
                 Create a new access token
             </a>{' '}
             with <code>api</code>, <code>read_repository</code>, and <code>write_repository</code> scopes.
@@ -56,11 +50,7 @@ const helpTexts: Record<ExternalServiceKind, JSX.Element> = {
     ),
     [ExternalServiceKind.BITBUCKETSERVER]: (
         <>
-            <a
-                href="https://docs.sourcegraph.com/batch_changes/quickstart#configure-code-host-connections"
-                rel="noreferrer noopener"
-                target="_blank"
-            >
+            <a href={HELP_TEXT_LINK_URL} rel="noreferrer noopener" target="_blank">
                 Create a new access token
             </a>{' '}
             with <code>write</code> permissions on the project and repository level.

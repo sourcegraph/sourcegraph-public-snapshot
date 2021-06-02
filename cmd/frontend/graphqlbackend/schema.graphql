@@ -997,6 +997,10 @@ type Query {
         """
         notIndexed: Boolean = true
         """
+        Include repositories that have encountered errors when cloning or fetching
+        """
+        failedFetch: Boolean = false
+        """
         Sort field.
         """
         orderBy: RepositoryOrderBy = REPOSITORY_NAME

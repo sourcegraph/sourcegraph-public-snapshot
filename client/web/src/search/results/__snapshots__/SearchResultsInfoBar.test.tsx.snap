@@ -55,7 +55,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
           type="button"
         >
           <svg
-            className="mdi-icon icon-inline"
+            className="mdi-icon icon-inline mr-0"
             fill="currentColor"
             height={24}
             viewBox="0 0 24 24"
@@ -154,7 +154,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
           type="button"
         >
           <svg
-            className="mdi-icon icon-inline"
+            className="mdi-icon icon-inline mr-0"
             fill="currentColor"
             height={24}
             viewBox="0 0 24 24"
@@ -200,7 +200,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
           type="button"
         >
           <svg
-            className="mdi-icon icon-inline"
+            className="mdi-icon icon-inline mr-0"
             fill="currentColor"
             height={24}
             viewBox="0 0 24 24"
@@ -302,7 +302,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
           type="button"
         >
           <svg
-            className="mdi-icon icon-inline"
+            className="mdi-icon icon-inline mr-0"
             fill="currentColor"
             height={24}
             viewBox="0 0 24 24"

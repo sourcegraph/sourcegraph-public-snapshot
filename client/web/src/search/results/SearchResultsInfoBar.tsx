@@ -208,14 +208,14 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                                 >
                                     {props.allExpanded ? (
                                         isRedesignEnabled ? (
-                                            <ArrowCollapseUpIcon className="icon-inline" />
+                                            <ArrowCollapseUpIcon className="icon-inline mr-0" />
                                         ) : (
-                                            <ArrowCollapseVerticalIcon className="icon-inline" />
+                                            <ArrowCollapseVerticalIcon className="icon-inline mr-0" />
                                         )
                                     ) : isRedesignEnabled ? (
-                                        <ArrowExpandDownIcon className="icon-inline" />
+                                        <ArrowExpandDownIcon className="icon-inline mr-0" />
                                     ) : (
-                                        <ArrowExpandVerticalIcon className="icon-inline" />
+                                        <ArrowExpandVerticalIcon className="icon-inline mr-0" />
                                     )}
                                 </button>
                             </li>

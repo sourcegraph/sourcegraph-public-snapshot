@@ -70,7 +70,7 @@ export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<P
                 {productSubscription !== LOADING &&
                     !isErrorLike(productSubscription) &&
                     productSubscription.urlForSiteAdmin && (
-                        <SiteAdminAlert className="small m-0 p-1">
+                        <SiteAdminAlert className="small m-0">
                             <Link to={productSubscription.urlForSiteAdmin} className="mt-2 d-block">
                                 View subscription
                             </Link>
