@@ -4,10 +4,11 @@ package commitgraph
 
 import (
 	"context"
-	gitserver "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
-	locker "github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"sync"
 	"time"
+
+	gitserver "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
+	locker "github.com/sourcegraph/sourcegraph/internal/database/locker"
 )
 
 // MockDBStore is a mock implementation of the DBStore interface (from the
