@@ -40,10 +40,10 @@ export interface GitCommitNodeProps {
     afterElement?: React.ReactFragment
 
     /** Determine the igt diff visualization UI */
-    diffMode: DiffMode
+    diffMode?: DiffMode
 
     /** Handler for change the diff mode */
-    handleDiffMode: (mode: DiffMode) => void
+    handleDiffMode?: (mode: DiffMode) => void
 }
 
 /** Displays a Git commit. */

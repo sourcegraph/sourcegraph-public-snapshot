@@ -15,7 +15,7 @@ interface Props {
     committer: SignatureFields | null
     className?: string
     compact?: boolean
-    messageElement: JSX.Element
+    messageElement?: JSX.Element
     commitMessageBody?: JSX.Element
 }
 
