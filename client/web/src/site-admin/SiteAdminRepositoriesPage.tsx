@@ -100,6 +100,12 @@ const FILTERS: FilteredConnectionFilter[] = [
                 tooltip: 'Show only repositories that need to be indexed',
                 args: { indexed: false },
             },
+            {
+                label: 'Failed fetch/clone',
+                value: 'failed-fetch',
+                tooltip: 'Show only repositories that have failed to fetch or clone',
+                args: { failedFetch: true },
+            },
         ],
     },
 ]

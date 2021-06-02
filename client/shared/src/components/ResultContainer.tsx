@@ -1,4 +1,5 @@
 /* eslint jsx-a11y/click-events-have-key-events: warn, jsx-a11y/no-static-element-interactions: warn */
+import classNames from 'classnames'
 import ArrowCollapseUpIcon from 'mdi-react/ArrowCollapseUpIcon'
 import ArrowExpandDownIcon from 'mdi-react/ArrowExpandDownIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
@@ -107,14 +108,14 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
     return (
         <div className="test-search-result result-container" data-testid="result-container">
             <div className="result-container__header">
-                <Icon className="icon-inline" />
+                <Icon className="icon-inline flex-shrink-0" />
                 <div className="result-container__header-divider" />
                 <div
-                    className={`result-container__header-title ${titleClassName || ''}`}
+                    className={classNames('result-container__header-title', titleClassName)}
                     data-testid="result-container-header"
                 >
                     {title}
-                    {description && <span className="ml-2">{description}</span>}
+                    {description && <span className="result-container__header-description ml-2">{description}</span>}
                 </div>
                 {matchCountLabel && isRedesignEnabled && (
                     <>

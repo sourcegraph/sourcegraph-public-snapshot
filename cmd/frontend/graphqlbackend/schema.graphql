@@ -997,6 +997,10 @@ type Query {
         """
         notIndexed: Boolean = true
         """
+        Include repositories that have encountered errors when cloning or fetching
+        """
+        failedFetch: Boolean = false
+        """
         Sort field.
         """
         orderBy: RepositoryOrderBy = REPOSITORY_NAME
@@ -1669,7 +1673,7 @@ type Language {
 """
 A search suggestion.
 """
-union SearchSuggestion = Repository | File | Symbol | Language
+union SearchSuggestion = Repository | File | Symbol | Language | SearchContext
 
 """
 A search-related alert message.

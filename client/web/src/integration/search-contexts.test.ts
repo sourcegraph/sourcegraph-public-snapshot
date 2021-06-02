@@ -8,7 +8,7 @@ import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { RepoGroupsResult, SearchSuggestionsResult, WebGraphQlOperations, SearchResult } from '../graphql-operations'
+import { RepoGroupsResult, SearchSuggestionsResult, WebGraphQlOperations } from '../graphql-operations'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { createRepositoryRedirectResult } from './graphQlResponseHelpers'
@@ -20,25 +20,6 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
     SearchSuggestions: (): SearchSuggestionsResult => ({
         search: {
             suggestions: [],
-        },
-    }),
-    Search: (): SearchResult => ({
-        search: {
-            results: {
-                __typename: 'SearchResults',
-                limitHit: true,
-                matchCount: 30,
-                approximateResultCount: '30+',
-                missing: [],
-                cloning: [],
-                repositoriesCount: 372,
-                timedout: [],
-                indexUnavailable: false,
-                dynamicFilters: [],
-                results: [],
-                alert: null,
-                elapsedMilliseconds: 103,
-            },
         },
     }),
     RepoGroups: (): RepoGroupsResult => ({
@@ -63,6 +44,7 @@ describe('Search contexts', () => {
             directory: __dirname,
         })
         testContext.overrideGraphQL(testContextForSearchContexts)
+        testContext.overrideSearchStreamEvents([{ type: 'done', data: {} }])
         const context = createJsContext({ sourcegraphBaseUrl: driver.sourcegraphBaseUrl })
         testContext.overrideJsContext({
             ...context,

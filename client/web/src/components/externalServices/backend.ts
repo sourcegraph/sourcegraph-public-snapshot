@@ -203,6 +203,7 @@ export const listExternalServiceFragment = gql`
             namespaceName
             url
         }
+        grantedScopes
     }
 `
 

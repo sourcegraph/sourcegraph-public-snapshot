@@ -7,6 +7,10 @@ code,
     font-size: $code-font-size;
     line-height: (16/12);
     white-space: pre;
+
+    .theme-redesign & {
+        line-height: 1rem;
+    }
 }
 
 .bg-code {

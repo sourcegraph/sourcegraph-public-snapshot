@@ -25,6 +25,7 @@ import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import {
+    NOT_REDESIGN_CLASS_NAME,
     REDESIGN_CLASS_NAME,
     getIsRedesignEnabled,
     REDESIGN_TOGGLE_KEY,
@@ -62,7 +63,6 @@ import {
     isSearchContextSpecAvailable,
 } from './search'
 import {
-    search,
     fetchSavedSearches,
     fetchRecentSearches,
     fetchRecentFileViews,
@@ -451,6 +451,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         }
 
         document.documentElement.classList.toggle(REDESIGN_CLASS_NAME, getIsRedesignEnabled())
+        document.documentElement.classList.toggle(NOT_REDESIGN_CLASS_NAME, !getIsRedesignEnabled())
     }
 
     public render(): React.ReactFragment | null {
@@ -507,7 +508,6 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     navbarSearchQueryState={this.state.navbarSearchQueryState}
                                     onNavbarQueryChange={this.onNavbarQueryChange}
                                     fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
-                                    searchRequest={search}
                                     parsedSearchQuery={this.state.parsedSearchQuery}
                                     setParsedSearchQuery={this.setParsedSearchQuery}
                                     patternType={this.state.searchPatternType}

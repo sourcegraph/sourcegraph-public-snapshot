@@ -17,6 +17,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { isDefined } from '@sourcegraph/shared/src/util/types'
+import { PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { queryGraphQL } from '../backend/graphql'
@@ -165,7 +166,7 @@ export class SettingsArea extends React.Component<Props, State> {
 
         return (
             <div className={`h-100 d-flex flex-column ${this.props.className || ''}`}>
-                <h2>{term} settings</h2>
+                <PageHeader headingElement="h2" path={[{ text: `${term} settings` }]} className="mb-3" />
                 {this.props.extraHeader}
                 <Switch>
                     <Route

@@ -12,6 +12,7 @@ import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { CreateAccessTokenResult, UserAreaUserFields } from '../../graphql-operations'
 import { OnboardingTourProps } from '../../search'
+import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../util'
 import { RouteDescriptor } from '../../util/contributions'
 import { UserAreaRouteContext } from '../area/UserArea'
@@ -76,37 +77,46 @@ export const UserSettingsArea = withAuthenticatedUser(
             const context: UserSettingsAreaRouteContext = {
                 ...props,
             }
+            const siteAdminViewingOtherUser = props.user.id !== props.authenticatedUser.id
 
             return (
-                <div className="d-flex">
-                    <UserSettingsSidebar
-                        items={this.props.sideBarItems}
-                        {...this.props}
-                        className="flex-0 mr-3 user-settings-sidebar"
-                    />
-                    <div className="flex-1">
-                        <ErrorBoundary location={this.props.location}>
-                            <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
-                                <Switch>
-                                    {this.props.routes.map(
-                                        ({ path, exact, render, condition = () => true }) =>
-                                            condition(context) && (
-                                                <Route
-                                                    render={routeComponentProps =>
-                                                        render({ ...context, ...routeComponentProps })
-                                                    }
-                                                    path={this.props.match.url + path}
-                                                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                                    exact={exact}
-                                                />
-                                            )
-                                    )}
-                                    <Route component={NotFoundPage} key="hardcoded-key" />
-                                </Switch>
-                            </React.Suspense>
-                        </ErrorBoundary>
+                <>
+                    {/* Indicate when the site admin is viewing another user's account */}
+                    {siteAdminViewingOtherUser && (
+                        <SiteAdminAlert>
+                            Viewing account for <strong>{props.user.username}</strong>
+                        </SiteAdminAlert>
+                    )}
+                    <div className="d-flex">
+                        <UserSettingsSidebar
+                            items={this.props.sideBarItems}
+                            {...this.props}
+                            className="flex-0 mr-3 user-settings-sidebar"
+                        />
+                        <div className="flex-1">
+                            <ErrorBoundary location={this.props.location}>
+                                <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
+                                    <Switch>
+                                        {this.props.routes.map(
+                                            ({ path, exact, render, condition = () => true }) =>
+                                                condition(context) && (
+                                                    <Route
+                                                        render={routeComponentProps =>
+                                                            render({ ...context, ...routeComponentProps })
+                                                        }
+                                                        path={this.props.match.url + path}
+                                                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                                        exact={exact}
+                                                    />
+                                                )
+                                        )}
+                                        <Route component={NotFoundPage} key="hardcoded-key" />
+                                    </Switch>
+                                </React.Suspense>
+                            </ErrorBoundary>
+                        </div>
                     </div>
-                </div>
+                </>
             )
         }
     }

@@ -5,9 +5,11 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { ORG_NAME_MAX_LENGTH, VALID_ORG_NAME_REGEXP } from '..'
 import { ErrorAlert } from '../../components/alerts'
+import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { createOrganization } from '../backend'
@@ -53,63 +55,70 @@ export const NewOrganizationPage: React.FunctionComponent<Props> = ({ history })
     )
 
     return (
-        <div className="new-org-page">
+        <Page className="new-org-page">
             <PageTitle title="New organization" />
+            <PageHeader
+                path={[{ text: 'Create a new organization' }]}
+                description={
+                    <>
+                        An organization is a set of users with associated configuration. See{' '}
+                        <Link to="/help/admin/organizations">Sourcegraph documentation</Link> for information about
+                        configuring organizations.
+                    </>
+                }
+                className="mb-3"
+            />
             <Form className="settings-form" onSubmit={onSubmit}>
-                <h1>Create a new organization</h1>
-                <p>
-                    An organization is a set of users with associated configuration. See{' '}
-                    <Link to="/help/admin/organizations">Sourcegraph documentation</Link> for information about
-                    configuring organizations.
-                </p>
-                {isErrorLike(loading) && <ErrorAlert className="mb-3" error={loading} />}
-                <div className="form-group">
-                    <label htmlFor="new-org-page__form-name">Organization name</label>
-                    <input
-                        id="new-org-page__form-name"
-                        type="text"
-                        className="form-control test-new-org-name-input"
-                        placeholder="acme-corp"
-                        pattern={VALID_ORG_NAME_REGEXP}
-                        maxLength={ORG_NAME_MAX_LENGTH}
-                        required={true}
-                        autoCorrect="off"
-                        autoComplete="off"
-                        autoFocus={true}
-                        value={name}
-                        onChange={onNameChange}
-                        disabled={loading === true}
-                        aria-describedby="new-org-page__form-name-help"
-                    />
-                    <small id="new-org-page__form-name-help" className="form-text text-muted">
-                        An organization name consists of letters, numbers, hyphens (-), dots (.) and may not begin or
-                        end with a dot, nor begin with a hyphen.
-                    </small>
-                </div>
+                <Container className="mb-3">
+                    {isErrorLike(loading) && <ErrorAlert className="mb-3" error={loading} />}
+                    <div className="form-group">
+                        <label htmlFor="new-org-page__form-name">Organization name</label>
+                        <input
+                            id="new-org-page__form-name"
+                            type="text"
+                            className="form-control test-new-org-name-input"
+                            placeholder="acme-corp"
+                            pattern={VALID_ORG_NAME_REGEXP}
+                            maxLength={ORG_NAME_MAX_LENGTH}
+                            required={true}
+                            autoCorrect="off"
+                            autoComplete="off"
+                            autoFocus={true}
+                            value={name}
+                            onChange={onNameChange}
+                            disabled={loading === true}
+                            aria-describedby="new-org-page__form-name-help"
+                        />
+                        <small id="new-org-page__form-name-help" className="form-text text-muted">
+                            An organization name consists of letters, numbers, hyphens (-), dots (.) and may not begin
+                            or end with a dot, nor begin with a hyphen.
+                        </small>
+                    </div>
 
-                <div className="form-group">
-                    <label htmlFor="new-org-page__form-display-name">Display name</label>
-                    <input
-                        id="new-org-page__form-display-name"
-                        type="text"
-                        className="form-control test-new-org-display-name-input"
-                        placeholder="ACME Corporation"
-                        autoCorrect="off"
-                        value={displayName}
-                        onChange={onDisplayNameChange}
-                        disabled={loading === true}
-                    />
-                </div>
+                    <div className="form-group mb-0">
+                        <label htmlFor="new-org-page__form-display-name">Display name</label>
+                        <input
+                            id="new-org-page__form-display-name"
+                            type="text"
+                            className="form-control test-new-org-display-name-input"
+                            placeholder="ACME Corporation"
+                            autoCorrect="off"
+                            value={displayName}
+                            onChange={onDisplayNameChange}
+                            disabled={loading === true}
+                        />
+                    </div>
+                </Container>
 
                 <button
                     type="submit"
                     className="btn btn-primary test-create-org-submit-button"
                     disabled={loading === true}
                 >
+                    {loading === true && <LoadingSpinner className="icon-inline" />}
                     Create organization
                 </button>
-                {loading === true && <LoadingSpinner className="icon-inline" />}
             </Form>
-        </div>
+        </Page>
     )
 }

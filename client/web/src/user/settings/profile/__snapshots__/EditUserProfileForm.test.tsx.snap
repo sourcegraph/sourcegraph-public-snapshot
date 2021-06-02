@@ -23,40 +23,46 @@ exports[`EditUserProfileForm simple 1`] = `
     }
   }
 >
-  <Form
-    className="w-100"
-    onSubmit={[Function]}
-  >
-    <form
-      className="w-100 "
-      onInvalid={[Function]}
-      onSubmit={[Function]}
+  <Container>
+    <div
+      className="container"
     >
-      <mock-UserProfileFormFields
-        disabled={false}
-        onChange={[Function]}
-        usernameFieldDisabled={false}
-        value={
-          Object {
-            "avatarURL": "https://example.com/image.jpg",
-            "displayName": "d",
-            "username": "u",
-          }
-        }
-      />
-      <button
-        className="btn btn-primary"
-        disabled={false}
-        id="test-EditUserProfileForm__save"
-        type="submit"
+      <Form
+        className="w-100"
+        onSubmit={[Function]}
       >
-        Save
-      </button>
-      <hr
-        className="my-4"
-      />
-      AFTER
-    </form>
-  </Form>
+        <form
+          className="w-100 "
+          onInvalid={[Function]}
+          onSubmit={[Function]}
+        >
+          <mock-UserProfileFormFields
+            disabled={false}
+            onChange={[Function]}
+            usernameFieldDisabled={false}
+            value={
+              Object {
+                "avatarURL": "https://example.com/image.jpg",
+                "displayName": "d",
+                "username": "u",
+              }
+            }
+          />
+          <button
+            className="btn btn-primary"
+            disabled={false}
+            id="test-EditUserProfileForm__save"
+            type="submit"
+          >
+            Save
+          </button>
+          <hr
+            className="my-4"
+          />
+          AFTER
+        </form>
+      </Form>
+    </div>
+  </Container>
 </EditUserProfileForm>
 `;
