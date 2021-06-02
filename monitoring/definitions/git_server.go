@@ -26,7 +26,7 @@ func GitServer() *monitoring.Container {
 				Sort:       3,
 				IncludeAll: true,
 				AllValue:   ".*",
-				Current:    sdk.Current{Text: "all", Value: "$__all"},
+				Current:    sdk.Current{Text: &sdk.StringSliceString{Value: []string{"all"}, Valid: true}, Value: "$__all"},
 			},
 		},
 		Groups: []monitoring.Group{
