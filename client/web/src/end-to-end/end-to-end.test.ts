@@ -51,6 +51,7 @@ describe('e2e test suite', () => {
         ]
         const alwaysCloningRepoSlugs = ['sourcegraphtest/AlwaysCloningTest']
         await driver.ensureLoggedIn({ username: 'test', password: config.testUserPassword, email: 'test@test.com' })
+        await driver.page.evaluate(() => localStorage.setItem('isRedesignEnabled', 'true'))
         await driver.resetUserSettings()
         await driver.ensureHasExternalService({
             kind: ExternalServiceKind.GITHUB,
