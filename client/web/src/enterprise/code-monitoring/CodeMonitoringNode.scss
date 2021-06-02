@@ -6,6 +6,15 @@
         padding: 1rem;
     }
 
+    &__toggle-wrapper {
+        // stylelint-disable-next-line declaration-property-unit-whitelist
+        margin-top: 1px; // For visual alignment with the edit button
+    }
+
+    &__edit-button {
+        padding: 0;
+    }
+
     &:hover {
         .theme-classic & {
             text-decoration: none;
@@ -31,14 +40,6 @@
         }
     }
 
-    &__toggle-wrapper {
-        // stylelint-disable-next-line declaration-property-unit-whitelist
-        margin-top: 1px; // For visual alignment with the edit button
-    }
-
-    &__edit-button {
-        padding: 0;
-    }
     .theme-redesign & {
         &:not(:last-of-type) {
             margin-bottom: 1rem;
