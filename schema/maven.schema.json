@@ -11,13 +11,26 @@
   ],
   "properties": {
     "repositories": {
-      "description": "The url at which the maven repository can be found.",
+      "description": "The URL of the Maven-based repository to resolve from.",
       "type": "array",
       "items": {
         "type": "string"
       },
       "default": [
         "central"
+      ],
+      "examples": [
+        [
+          "https://maven.google.com",
+          "https://artifactory.mycompany.com",
+          "central"
+        ],
+        [
+          "https://nexus.mycompany.com",
+          "jcenter",
+          "clojars",
+          "jitpack"
+        ]
       ]
     },
     "credentials": {
@@ -50,7 +63,7 @@
         "requestsPerHour": 5000
       }
     },
-    "artifacts": {
+    "manuallyMirroredArtifacts": {
       "description": "An array of artifact \"groupID:artifactID:version\" strings specifying which Maven artifacts to mirror on Sourcegraph.",
       "type": "array",
       "items": {
@@ -59,28 +72,11 @@
       },
       "examples": [
         [
-          "groupID:artifactID"
+          "groupID:artifactID:version"
         ],
         [
-          "org.apache.commons:commons-csv",
-          "com.google.guava:guava"
-        ]
-      ]
-    },
-    "groups": {
-      "description": "An array of Maven groups whose artifacts should be mirrored on Sourcegraph.",
-      "type": "array",
-      "items": {
-        "type": "string",
-        "pattern": "^[\\w-]+$"
-      },
-      "examples": [
-        [
-          "groupID"
-        ],
-        [
-          "org.apache.",
-          "com.google.guava."
+          "junit:junit:4.13.2",
+          "com.google.guava:guava:30.1-jre"
         ]
       ]
     }

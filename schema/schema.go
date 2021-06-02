@@ -873,7 +873,7 @@ type Log struct {
 // MavenConnection description: Configuration for a connection to a Maven repository.
 type MavenConnection struct {
 	// Artifacts description: An array of artifact "groupID:artifactID" strings specifying which Maven artifacts to mirror on Sourcegraph.
-	Artifacts []string `json:"artifacts,omitempty"`
+	Artifacts []string `json:"manuallyMirroredArtifacts,omitempty"`
 	// Credentials description: Contents of a coursier.credentials file needed for accessing the Maven repositories.
 	Credentials string `json:"credentials,omitempty"`
 	// Groups description: An array of Maven groups whose artifacts should be mirrored on Sourcegraph.

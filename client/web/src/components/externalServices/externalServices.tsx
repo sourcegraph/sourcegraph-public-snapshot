@@ -1176,6 +1176,7 @@ const PERFORCE: AddExternalServiceOptions = {
         },
     ],
 }
+
 const MAVEN: AddExternalServiceOptions = {
     kind: ExternalServiceKind.MAVEN,
     title: 'Maven',
@@ -1184,25 +1185,20 @@ const MAVEN: AddExternalServiceOptions = {
     defaultDisplayName: 'Maven',
     defaultConfig: `{
         "repositories": ["central"],
+        "artifacts": ["junit:junit:4.13.2", "org.hamcrest:hamcrest-core:1.3"],
 }`,
     instructions: (
         <div>
             <ol>
                 <li>
                     In the configuration below, set <Field>maven.repositories</Field> to the list of Maven repositories
+                    such as <code>https://maven.google.com</code>.
+                </li>
+                <li>
+                    In the configuration below, set <Field>maven.manualArtifacts</Field> to the list of artifacts that
+                    you want to manually add such as <code>junit:junit:4.13.2</code>.
                 </li>
             </ol>
-            <p>
-                See{' '}
-                <a
-                    rel="noopener noreferrer"
-                    target="_blank"
-                    href="https://docs.sourcegraph.com/admin/repo/maven#configuration"
-                >
-                    the docs for more advanced options
-                </a>
-                , or try one of the buttons below.
-            </p>
         </div>
     ),
     editorActions: [],

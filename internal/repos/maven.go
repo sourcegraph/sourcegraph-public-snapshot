@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"strings"
 
 	"github.com/inconshreveable/log15"
 
@@ -88,18 +87,15 @@ func (e *mavenArtifactNotFound) Error() string {
 	return fmt.Sprintf("not found: maven dependency '%v'", e.dependency)
 }
 
-func MavenRepoName(dependency string) string {
-	return "maven/" + strings.ReplaceAll(dependency, ":", "/")
-}
 func MavenCloneURL(dependency string) string {
 	cloneURL := url.URL{
-		Path: MavenRepoName(dependency),
+		Path: reposource.MavenRepoName(dependency),
 	}
 	return cloneURL.String()
 }
 
 func (s MavenSource) makeRepo(dependency string) *types.Repo {
-	repoName := MavenRepoName(dependency)
+	repoName := reposource.MavenRepoName(dependency)
 	urn := s.svc.URN()
 	cloneURL := MavenCloneURL(dependency)
 	log15.Info("maven", "cloneURL", cloneURL)
