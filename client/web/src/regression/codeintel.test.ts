@@ -273,6 +273,7 @@ async function testCodeNavigation(
     const goToDefinitionButton = await driver.findElementWithText('Go to definition')
     console.log('About to click go to definition, URL is:', driver.page.url())
     await goToDefinitionButton.click()
+    await new Promise(resolve => setTimeout(resolve, 2000))
 
     console.log('Clicked go to definition, URL is:', driver.page.url())
 
