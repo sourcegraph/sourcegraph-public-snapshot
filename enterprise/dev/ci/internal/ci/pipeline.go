@@ -98,7 +98,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addPostgresBackcompat,         // ~0.25m
 		}
 
-	case c.isSgOnly():
+	case c.isPR() && c.isSgOnly():
 		// If the changes are only in ./dev/sg then we only need to run a subset of steps.
 		pipelineOperations = []func(*bk.Pipeline){
 			addGoTestsSg,
