@@ -174,12 +174,7 @@ describe('Code intelligence regression test suite', () => {
                 line: 225,
                 token: 'SamplePair',
                 expectedHoverContains: 'SamplePair pairs a SampleValue with a Timestamp.',
-                // TODO(efritz) - determine why reference panel shows up during this test,
-                // but only when automated - doing the same flow manually works correctly.
-                expectedDefinition: [
-                    // Replace array with this single definition
-                    // `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go#L78:1`,
-                ],
+                expectedDefinition: `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go#L78:1`,
                 expectedReferences: [
                     `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go?subtree=true#L97:10`,
                     `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go?subtree=true#L225:11`,
