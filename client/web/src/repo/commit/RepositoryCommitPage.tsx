@@ -116,7 +116,7 @@ export const RepositoryCommitPage: React.FC<Props> = ({ ...props }) => {
 }
 
 /** Displays a commit. */
-export class RepositoryCommitPageDetails extends React.Component<Props & { isRedesignEnabled: boolean }, State> {
+class RepositoryCommitPageDetails extends React.Component<Props & { isRedesignEnabled: boolean }, State> {
     private componentUpdates = new Subject<Props & { isRedesignEnabled: boolean }>()
 
     /** Emits whenever the ref callback for the hover element is called */

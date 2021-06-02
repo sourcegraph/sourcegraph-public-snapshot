@@ -13,22 +13,7 @@ exports[`GitCommitNodeByline author (compact) 1`] = `
       src="http://example.com/alice.png"
     />
   </div>
-  <div>
-    committed by 
-    <span
-      className="font-weight-bold "
-      data-tooltip="alice@example.com"
-    >
-      Alice Zhao
-    </span>
-     
-    <span
-      className="timestamp"
-      data-tooltip="1990-01-01"
-    >
-      about 16 years ago
-    </span>
-  </div>
+  <div />
 </div>
 `;
 
@@ -45,22 +30,7 @@ exports[`GitCommitNodeByline author 1`] = `
       src="http://example.com/alice.png"
     />
   </div>
-  <div>
-    committed by 
-    <span
-      className="font-weight-bold "
-      data-tooltip="alice@example.com"
-    >
-      Alice Zhao
-    </span>
-     
-    <span
-      className="timestamp"
-      data-tooltip="1990-01-01"
-    >
-      about 16 years ago
-    </span>
-  </div>
+  <div />
 </div>
 `;
 
@@ -173,22 +143,7 @@ exports[`GitCommitNodeByline omit GitHub committer 1`] = `
       src="http://example.com/alice.png"
     />
   </div>
-  <div>
-    committed by 
-    <span
-      className="font-weight-bold "
-      data-tooltip="alice@example.com"
-    >
-      Alice Zhao
-    </span>
-     
-    <span
-      className="timestamp"
-      data-tooltip="1990-01-01"
-    >
-      about 16 years ago
-    </span>
-  </div>
+  <div />
 </div>
 `;
 
@@ -205,21 +160,6 @@ exports[`GitCommitNodeByline same author and committer 1`] = `
       src="http://example.com/alice.png"
     />
   </div>
-  <div>
-    committed by 
-    <span
-      className="font-weight-bold "
-      data-tooltip="alice@example.com"
-    >
-      Alice Zhao
-    </span>
-     
-    <span
-      className="timestamp"
-      data-tooltip="1990-01-01"
-    >
-      about 16 years ago
-    </span>
-  </div>
+  <div />
 </div>
 `;
