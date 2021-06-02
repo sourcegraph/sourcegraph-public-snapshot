@@ -299,6 +299,7 @@
   "dependencies": {
     "@hot-loader/react-dom": "^16.14.0",
     "@reach/accordion": "^0.10.2",
+    "@reach/combobox": "^0.15.1",
     "@reach/dialog": "^0.11.2",
     "@reach/listbox": "^0.10.1",
     "@reach/menu-button": "0.10.2",
