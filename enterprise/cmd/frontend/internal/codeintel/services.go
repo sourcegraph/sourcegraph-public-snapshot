@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -26,6 +27,7 @@ import (
 
 var services struct {
 	dbStore         *store.Store
+	locker          *locker.Locker
 	lsifStore       *lsifstore.Store
 	uploadStore     uploadstore.Store
 	gitserverClient *gitserver.Client
@@ -54,6 +56,7 @@ func initServices(ctx context.Context, db dbutil.DB) error {
 
 		// Initialize stores
 		dbStore := store.NewWithDB(db, observationContext)
+		locker := locker.NewWithDB(db, "codeintel")
 		lsifStore := lsifstore.NewStore(codeIntelDB, observationContext)
 		uploadStore, err := uploadstore.CreateLazy(context.Background(), config.UploadStoreConfig, observationContext)
 		if err != nil {
@@ -67,6 +70,7 @@ func initServices(ctx context.Context, db dbutil.DB) error {
 		indexEnqueuer := enqueuer.NewIndexEnqueuer(&enqueuer.DBStoreShim{dbStore}, gitserverClient, repoupdater.DefaultClient, observationContext)
 
 		services.dbStore = dbStore
+		services.locker = locker
 		services.lsifStore = lsifStore
 		services.uploadStore = uploadStore
 		services.gitserverClient = gitserverClient
