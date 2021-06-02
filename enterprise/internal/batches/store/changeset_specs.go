@@ -372,11 +372,14 @@ func listChangesetSpecsQuery(opts *ListChangesetSpecsOpts) *sqlf.Query {
 	)
 }
 
-// DeleteExpiredChangesetSpecs deletes ChangesetSpecs that have not been
-// attached to a BatchSpec within ChangesetSpecTTL.
+// DeleteExpiredChangesetSpecs deletes each ChangesetSpec that has not been
+// attached to a BatchSpec within ChangesetSpecTTL, OR that is attached
+// to a BatchSpec that is not applied and is not attached to a Changeset
+// within BatchSpecTTL
 func (s *Store) DeleteExpiredChangesetSpecs(ctx context.Context) error {
-	expirationTime := s.now().Add(-btypes.ChangesetSpecTTL)
-	q := sqlf.Sprintf(deleteExpiredChangesetSpecsQueryFmtstr, expirationTime)
+	changesetSpecTTLExpiration := s.now().Add(-btypes.ChangesetSpecTTL)
+	batchSpecTTLExpiration := s.now().Add(-btypes.BatchSpecTTL)
+	q := sqlf.Sprintf(deleteExpiredChangesetSpecsQueryFmtstr, changesetSpecTTLExpiration, batchSpecTTLExpiration)
 	return s.Store.Exec(ctx, q)
 }
 
@@ -385,23 +388,24 @@ var deleteExpiredChangesetSpecsQueryFmtstr = `
 DELETE FROM
   changeset_specs cspecs
 WHERE
-  created_at < %s
-AND
 (
-  -- It was never attached to a batch_spec
+  -- The spec is older than the ChangesetSpecTTL
+  created_at < %s
+  AND
+  -- and it was never attached to a batch_spec
   batch_spec_id IS NULL
-
-  OR
-
-  (
-    -- The batch_spec is not applied to a batch_change
-    NOT EXISTS(SELECT 1 FROM batch_changes WHERE batch_spec_id = cspecs.batch_spec_id)
-    AND
-    -- and the changeset_spec is not attached to a changeset
-    NOT EXISTS(SELECT 1 FROM changesets WHERE current_spec_id = cspecs.id OR previous_spec_id = cspecs.id)
-  )
-);
-`
+)
+OR
+(
+  -- The spec is older than the BatchSpecTTL
+  created_at < %s
+  AND
+  -- and the batch_spec it is attached to is not applied to a batch_change
+  NOT EXISTS(SELECT 1 FROM batch_changes WHERE batch_spec_id = cspecs.batch_spec_id)
+  AND
+  -- and it is not attached to a changeset
+  NOT EXISTS(SELECT 1 FROM changesets WHERE current_spec_id = cspecs.id OR previous_spec_id = cspecs.id)
+);`
 
 func scanChangesetSpec(c *btypes.ChangesetSpec, s scanner) error {
 	var spec json.RawMessage
