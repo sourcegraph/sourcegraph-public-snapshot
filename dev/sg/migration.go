@@ -29,7 +29,7 @@ var (
 	defaultDatabaseName = databaseNames[0]
 
 	dataTables = map[string][]string{
-		"frontend": []string{"out_of_band_migrations"},
+		"frontend": {"out_of_band_migrations"},
 	}
 )
 
