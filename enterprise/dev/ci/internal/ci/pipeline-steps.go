@@ -134,13 +134,6 @@ func addGoTests(pipeline *bk.Pipeline) {
 		bk.Cmd("dev/ci/codecov.sh -c -F go"))
 }
 
-// Adds the Go test step that only runs the tests in ./dev/sg.
-func addGoTestsSg(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":go: Test sg",
-		bk.Cmd("./dev/ci/go-test-sg.sh"),
-		bk.Cmd("dev/ci/codecov.sh -c -F go"))
-}
-
 // Builds the OSS and Enterprise Go commands.
 func addGoBuild(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":go: Build",
