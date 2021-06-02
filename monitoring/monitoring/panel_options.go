@@ -51,29 +51,46 @@ type panelOptionsLibrary struct{}
 // All ObservablePanelOptions start with this option.
 func (panelOptionsLibrary) basicPanel() ObservablePanelOption {
 	return func(o Observable, p *sdk.Panel) {
-		g := p.GraphPanel
-		g.Legend.Show = true
-		g.Fill = 1
-		g.Lines = true
-		g.Linewidth = 1
-		g.Pointradius = 2
-		g.AliasColors = map[string]string{}
-		g.Xaxis = sdk.Axis{
-			Show: true,
-		}
-		g.Targets = []sdk.Target{{
-			Expr: o.Query,
-		}}
-		g.Yaxes = []sdk.Axis{
-			{
-				Decimals: 0,
-				LogBase:  1,
-				Show:     true,
-			},
-			{
-				// Most graphs will not need the right Y axis, disable by default.
-				Show: false,
-			},
+		switch p.OfType {
+		case sdk.GraphType:
+			g := p.GraphPanel
+			if g == nil {
+				return
+			}
+			g.Legend.Show = true
+			g.Fill = 1
+			g.Lines = true
+			g.Linewidth = 1
+			g.Pointradius = 2
+			g.AliasColors = map[string]string{}
+			g.Xaxis = sdk.Axis{
+				Show: true,
+			}
+			g.Targets = []sdk.Target{{
+				Expr: o.Query,
+			}}
+			g.Yaxes = []sdk.Axis{
+				{
+					Decimals: 0,
+					LogBase:  1,
+					Show:     true,
+				},
+				{
+					// Most graphs will not need the right Y axis, disable by default.
+					Show: false,
+				},
+			}
+		case sdk.HeatmapType:
+			h := p.HeatmapPanel
+			h.Targets = []sdk.Target{{
+				Expr: o.Query,
+			}}
+			h.Color.Mode = "spectrum"
+			h.Color.ColorScheme = "interpolateViridis"
+			h.YAxis.LogBase = 2
+			h.Tooltip.Show = true
+			h.Tooltip.ShowHistogram = true
+			h.Legend.Show = true
 		}
 	}
 }

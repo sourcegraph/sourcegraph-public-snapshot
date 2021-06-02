@@ -12,6 +12,9 @@ import (
 type ObservablePanel struct {
 	options []ObservablePanelOption
 
+	// panelType is "graph" or "heatmap"
+	panelType string
+
 	// unitType is used by other parts of the generator
 	unitType UnitType
 }
@@ -20,6 +23,7 @@ type ObservablePanel struct {
 // with recommended defaults.
 func Panel() ObservablePanel {
 	return ObservablePanel{
+		panelType: "graph",
 		options: []ObservablePanelOption{
 			PanelOptions.basicPanel(), // required basic values
 			PanelOptions.OpinionatedDefaults(),
@@ -34,6 +38,18 @@ func Panel() ObservablePanel {
 // In general, we advise using Panel() instead to start with recommended defaults.
 func PanelMinimal() ObservablePanel {
 	return ObservablePanel{
+		panelType: "graph",
+		options: []ObservablePanelOption{
+			PanelOptions.basicPanel(), // required basic values
+		},
+	}
+}
+
+// PanelHeatmap provides a builder for customizing an Observable visualization starting
+// with an extremely minimal heatmap panel.
+func PanelHeatmap() ObservablePanel {
+	return ObservablePanel{
+		panelType: "heatmap",
 		options: []ObservablePanelOption{
 			PanelOptions.basicPanel(), // required basic values
 		},
