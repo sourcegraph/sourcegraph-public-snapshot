@@ -234,36 +234,50 @@ async function testCodeNavigation(
     await driver.page.goto(config.sourcegraphBaseUrl + page)
     await driver.page.waitForSelector('.test-blob')
     const tokenElement = await findTokenElement(driver, line, token)
+    console.log('Loaded blob, URL is:', driver.page.url())
 
     // Check hover
     await tokenElement.hover()
     await waitForHover(driver, expectedHoverContains)
+
+    console.log('Hovered token, URL is:', driver.page.url())
 
     // Check click
     await clickOnEmptyPartOfCodeView(driver)
     await tokenElement.click()
     await waitForHover(driver, expectedHoverContains)
 
+    console.log('Clicked token, URL is:', driver.page.url())
+
     // Find-references
     if (expectedReferences && expectedReferences.length > 0) {
         await clickOnEmptyPartOfCodeView(driver)
         await tokenElement.hover()
         await waitForHover(driver, expectedHoverContains)
+        console.log('About to click references, URL is:', driver.page.url())
+
         await (await driver.findElementWithText('Find references')).click()
 
         await driver.page.waitForSelector('.test-search-result')
+        console.log('Clicked find references, URL is:', driver.page.url())
+
         const referenceLinks = await collectLinks(driver)
         for (const expectedReference of expectedReferences) {
             expect(referenceLinks).toContainEqual(expectedReference)
         }
         await clickOnEmptyPartOfCodeView(driver)
+        console.log('Clicked off references, URL is:', driver.page.url())
     }
 
     // Go-to-definition
     await clickOnEmptyPartOfCodeView(driver)
     await tokenElement.hover()
     await waitForHover(driver, expectedHoverContains)
+    console.log('About to click go to definition, URL is:', driver.page.url())
+
     await (await driver.findElementWithText('Go to definition')).click()
+
+    console.log('Clicked go to definition, URL is:', driver.page.url())
 
     if (Array.isArray(expectedDefinition)) {
         await driver.page.waitForSelector('.hierarchical-locations-view')
@@ -272,15 +286,17 @@ async function testCodeNavigation(
             expect(defLinks).toContainEqual(definition)
         }
     } else {
-        const url = driver.page.url()
-        console.log('--------- On URL:', url)
-        console.log('location.href: ' + (await driver.page.evaluate(() => document.location.href)))
+        console.log('Checking for updated go to definition href, URL is:', driver.page.url())
         console.log('--------- Expected href ends with', expectedDefinition)
-        await driver.page.waitForFunction(
-            defURL => document.location.href.endsWith(defURL),
-            { timeout: 2000 },
-            expectedDefinition
-        )
+        try {
+            await driver.page.waitForFunction(
+                defURL => document.location.href.endsWith(defURL),
+                { timeout: 2000 },
+                expectedDefinition
+            )
+        } catch {
+            console.log('Did not find expected url, current URL is', driver.page.url())
+        }
 
         await driver.page.goBack()
     }
