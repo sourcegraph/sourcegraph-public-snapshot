@@ -77,7 +77,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
         />
     )
 
-    const MessageWrapper = isRedesignEnabled ? 'small' : React.Fragment
+    const MessageWrapper = isRedesignEnabled && compact ? 'small' : React.Fragment
     const messageElement = (
         <div className="git-commit-node__message flex-grow-1">
             <Link to={node.canonicalURL} className="git-commit-node__message-subject" title={node.message}>
