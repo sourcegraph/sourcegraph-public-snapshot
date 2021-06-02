@@ -54,10 +54,12 @@ func transformRecord(index store.Index, config *Config) (apiclient.Job, error) {
 	}
 
 	return apiclient.Job{
-		ID:             index.ID,
-		Commit:         index.Commit,
-		RepositoryName: index.RepositoryName,
-		DockerSteps:    dockerSteps,
+		ID:     index.ID,
+		Commit: index.Commit,
+		Workspace: apiclient.Workspace{
+			RepositoryName: index.RepositoryName,
+		},
+		DockerSteps: dockerSteps,
 		CliSteps: []apiclient.CliStep{
 			{
 				Commands: []string{

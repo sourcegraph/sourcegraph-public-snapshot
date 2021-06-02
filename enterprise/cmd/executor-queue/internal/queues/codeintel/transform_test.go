@@ -38,9 +38,11 @@ func TestTransformRecord(t *testing.T) {
 	}
 
 	expected := apiclient.Job{
-		ID:                  42,
-		Commit:              "deadbeef",
-		RepositoryName:      "linux",
+		ID:     42,
+		Commit: "deadbeef",
+		Workspace: apiclient.Workspace{
+			RepositoryName: "linux",
+		},
 		VirtualMachineFiles: nil,
 		DockerSteps: []apiclient.DockerStep{
 			{
@@ -115,9 +117,11 @@ func TestTransformRecordWithoutIndexer(t *testing.T) {
 	}
 
 	expected := apiclient.Job{
-		ID:                  42,
-		Commit:              "deadbeef",
-		RepositoryName:      "linux",
+		ID:     42,
+		Commit: "deadbeef",
+		Workspace: apiclient.Workspace{
+			RepositoryName: "linux",
+		},
 		VirtualMachineFiles: nil,
 		DockerSteps: []apiclient.DockerStep{
 			{
