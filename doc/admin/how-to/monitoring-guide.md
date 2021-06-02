@@ -1,13 +1,13 @@
 # Monitoring Guide
-Please visit our [Observability Docs](./observability/index.md) for more in-depth information about observability.
+Please visit our [Observability Docs](https://docs.sourcegraph.com/admin/observability) for more in-depth information about observability.
 
 
 ## What should I look at when my instance is having performance issues?
-Sourcegraph comes with built-in monitoring in the form of [Grafana](./observability/metrics.md#grafana), connected to [Prometheus](./observability/metrics.md#prometheus) for metrics and alerting. You can access Grafana by visiting `https://<your-sourcegraph-url>/-/debug/grafana` for monitoring purposes. Generally, Grafana should be the first stop you make when experiencing a system performance issue. From there you can look for system alerts or metrics that would provide you with more insights on what’s causing the performance issue.
+Sourcegraph comes with built-in monitoring in the form of [Grafana](https://docs.sourcegraph.com/admin/observability/metrics#grafana), connected to [Prometheus](https://docs.sourcegraph.com/admin/observability/metrics#prometheus) for metrics and alerting. You can access Grafana by visiting `https://<your-sourcegraph-url>/-/debug/grafana` for monitoring purposes. Generally, Grafana should be the first stop you make when experiencing a system performance issue. From there you can look for system alerts or metrics that would provide you with more insights on what’s causing the performance issue.
 
 
 ## What are the key values / alerts to look for when looking at the Grafana Dashboard?
-All key values are defined as either warnings or critical. Please visit our [Observability Docs](./observability/alerting.md#understanding-alerts) to 
+All key values are defined as either warnings or critical. Please visit our [Observability Docs](https://docs.sourcegraph.com/admin/observability/alerting#understanding-alerts) to 
 learn how they are defined. Warnings are typically not as important as critical but should be investigated. 
 All alerts turn red when they fire. Critical alerts should be investigated and reported if they are occurring repeatedly.
 
@@ -17,7 +17,7 @@ All resources contain a dashboard called `Provisioning indicators` that provide 
 
 
 ## What does this `<ALERT-MESSAGE>` mean?
-See [Alert solutions](./observability/alert_solutions.md) to learn about each alert and their possible solutions. 
+See [Alert solutions](https://docs.sourcegraph.com/admin/observability/alert_solutions) to learn about each alert and their possible solutions. 
 
   
 ## What’s the threshold for each resource?
@@ -33,7 +33,7 @@ We recommend paying closer attention to critical alerts, especially when they tu
 
   
 ## How to set up alerts?
-See our Observability Docs on [setting up alerting](./observability/alerting#setting-up-alerting.md).
+See our Observability Docs on [setting up alerting](https://docs.sourcegraph.com/admin/observability/alerting#setting-up-alerting).
 
   
 ## How to create a custom alert?
