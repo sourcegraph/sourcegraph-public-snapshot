@@ -20,6 +20,7 @@ Site administrators are the admins responsible for deploying, managing, and conf
 - [Monorepo](monorepo.md)
 - [Repository webhooks](repo/webhooks.md)
 - [User authentication](auth/index.md)
+- [Migrations](migrations.md)
 - [Upgrading Sourcegraph](updates.md)
 - [Setting the URL for your instance](url.md)
 - [Observability](observability.md)
