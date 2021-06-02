@@ -267,7 +267,7 @@ async function testCodeNavigation(
 
     // Go-to-definition
     await clickOnEmptyPartOfCodeView(driver)
-    await tokenElement.hover()
+    await tokenElement.click()
     await waitForHover(driver, expectedHoverContains)
 
     const goToDefinitionButton = await driver.findElementWithText('Go to definition')
