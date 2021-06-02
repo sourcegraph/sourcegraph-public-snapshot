@@ -254,9 +254,10 @@ async function testCodeNavigation(
         await clickOnEmptyPartOfCodeView(driver)
         await tokenElement.hover()
         await waitForHover(driver, expectedHoverContains)
-        console.log('About to click references, URL is:', driver.page.url())
 
-        await (await driver.findElementWithText('Find references')).click()
+        const findReferencesButton = await driver.findElementWithText('Find references')
+        console.log('About to click references, URL is:', driver.page.url())
+        await findReferencesButton.click()
 
         await driver.page.waitForSelector('.test-search-result')
         console.log('Clicked find references, URL is:', driver.page.url())
@@ -273,9 +274,10 @@ async function testCodeNavigation(
     await clickOnEmptyPartOfCodeView(driver)
     await tokenElement.hover()
     await waitForHover(driver, expectedHoverContains)
-    console.log('About to click go to definition, URL is:', driver.page.url())
 
-    await (await driver.findElementWithText('Go to definition')).click()
+    const goToDefinitionButton = await driver.findElementWithText('Go to definition')
+    console.log('About to click go to definition, URL is:', driver.page.url())
+    await goToDefinitionButton.click()
 
     console.log('Clicked go to definition, URL is:', driver.page.url())
 
@@ -291,7 +293,7 @@ async function testCodeNavigation(
         try {
             await driver.page.waitForFunction(
                 defURL => document.location.href.endsWith(defURL),
-                { timeout: 2000 },
+                { timeout: 10000 },
                 expectedDefinition
             )
         } catch {
