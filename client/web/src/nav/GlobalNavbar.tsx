@@ -356,7 +356,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                     </NavActions>
                 </NavBar>
                 {showSearchBox && (
-                    <div className="w-100 px-3 py-2">
+                    <div className="w-100 px-3 pt-2">
                         <div className="pb-2 border-bottom">{searchNavBar}</div>
                     </div>
                 )}

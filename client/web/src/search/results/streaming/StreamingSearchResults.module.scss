@@ -10,6 +10,7 @@
         grid-template-columns: auto 1fr;
         grid-template-rows: auto 1fr;
         height: min-content;
+        padding-top: 0.5rem;
 
         @media (--md-breakpoint-down) {
             grid-template-columns: auto;
