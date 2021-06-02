@@ -45,7 +45,7 @@ describe('Code intelligence regression test suite', () => {
     ]
 
     const prometheusCommonHeadCommit = 'b5fe7d854c42dc7842e48d1ca58f60feae09d77b' // HEAD
-    const prometheusRedefinitionsHeadCommit = 'c68f0e063cf8a98e7ce3428cfd50588746010f1f'
+    // const prometheusRedefinitionsHeadCommit = 'c68f0e063cf8a98e7ce3428cfd50588746010f1f'
 
     let driver: Driver
     let gqlClient: GraphQLClient
@@ -175,11 +175,6 @@ describe('Code intelligence regression test suite', () => {
                 token: 'SamplePair',
                 expectedHoverContains: 'SamplePair pairs a SampleValue with a Timestamp.',
                 expectedDefinition: `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go#L78:6`,
-                expectedReferences: [
-                    `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go?subtree=true#L97:10`,
-                    `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go?subtree=true#L225:11`,
-                    `/github.com/sourcegraph-testing/prometheus-redefinitions@${prometheusRedefinitionsHeadCommit}/-/blob/sample.go?subtree=true#L7:6`,
-                ],
             }))
     })
 })
