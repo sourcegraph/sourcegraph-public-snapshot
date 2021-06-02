@@ -1,0 +1,12 @@
+.git-commit-node-byline {
+    &__avatar--compact {
+        min-height: 1.5rem;
+        min-width: 1.5rem;
+    }
+
+    &__person--compact {
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+}

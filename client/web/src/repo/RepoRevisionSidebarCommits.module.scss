@@ -1,0 +1,27 @@
+:global(.theme-redesign) .repo-revision-sidebar-commits {
+    &__list {
+        padding-top: 0.5rem;
+    }
+
+    &__commit-container {
+        border: none;
+        border-bottom: 1px solid var(--border-color-2);
+    }
+
+    &__commit-node {
+        padding: 0.25rem 0;
+    }
+
+    &__loader {
+        border-top: none;
+    }
+
+    &__summary {
+        padding: 0;
+        border-top: none;
+    }
+
+    &__file-icon {
+        color: var(--icon-color);
+    }
+}

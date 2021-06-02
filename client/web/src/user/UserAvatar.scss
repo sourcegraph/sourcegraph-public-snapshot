@@ -2,7 +2,7 @@
     border-radius: 50%;
 }
 
-.theme-redesign {
+:where(.theme-redesign) {
     .user-avatar {
         display: inline-flex;
         border-radius: 50%;
