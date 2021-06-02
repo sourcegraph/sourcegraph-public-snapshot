@@ -188,6 +188,10 @@ func TestGetInsightTimeIntervals(t *testing.T) {
 		return now
 	})
 
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	if !cmp.Equal(want, got) {
 		t.Fatal(fmt.Sprintf("want: %v got: %v", want, got))
 	}
@@ -227,6 +231,10 @@ func TestGetInsightCountsByOrg(t *testing.T) {
 	got, err := GetInsightCountsByOrg(ctx, db, func() time.Time {
 		return now
 	})
+
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	if !cmp.Equal(want, got) {
 		t.Fatal(fmt.Sprintf("want: %v got: %v", want, got))

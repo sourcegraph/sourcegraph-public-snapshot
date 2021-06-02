@@ -254,10 +254,10 @@ type TimeWindow string
 
 const (
 	Hour  TimeWindow = "hour"
-	Day              = "day"
-	Week             = "week"
-	Month            = "month"
-	Year             = "year"
+	Day   TimeWindow = "day"
+	Week  TimeWindow = "week"
+	Month TimeWindow = "month"
+	Year  TimeWindow = "year"
 )
 
 const templatePingQueryStr = `
