@@ -108,6 +108,12 @@ export const GitCommitNodeByline: React.FunctionComponent<Props> = ({
                 />
             </div>
             <div>
+                {!compact && !isRedesignEnabled && (
+                    <>
+                        <PersonLink person={author.person} className="font-weight-bold" /> committed{' '}
+                        <Timestamp date={author.date} />
+                    </>
+                )}
                 {!compact && isRedesignEnabled && (
                     <>
                         {messageElement}
