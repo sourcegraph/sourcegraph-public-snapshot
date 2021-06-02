@@ -168,7 +168,7 @@ describe('Code intelligence regression test suite', () => {
             )
         })
 
-        test.skip('Definitions, references, and hovers', () =>
+        test('Definitions, references, and hovers', () =>
             testCodeNavigation(driver, config, {
                 page: `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go`,
                 line: 225,
@@ -274,6 +274,7 @@ async function testCodeNavigation(
     } else {
         const url = driver.page.url()
         console.log('--------- On URL:', url)
+        console.log('location.href: ' + (await driver.page.evaluate(() => document.location.href)))
         console.log('--------- Expected href ends with', expectedDefinition)
         await driver.page.waitForFunction(
             defURL => document.location.href.endsWith(defURL),
