@@ -31,6 +31,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Removed
 
 - The deprecated GraphQL `icon` field on CommitSearchResult and Repository was removed. [#21310](https://github.com/sourcegraph/sourcegraph/pull/21310)
+- The undocumented `index` filter was removed from search type-ahead suggestions. [#18806](https://github.com/sourcegraph/sourcegraph/issues/18806)
 
 ## 3.28.0
 
