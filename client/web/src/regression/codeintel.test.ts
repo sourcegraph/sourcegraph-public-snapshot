@@ -272,7 +272,7 @@ async function testCodeNavigation(
             expect(defLinks).toContainEqual(definition)
         }
     } else {
-        const url = await driver.page.url()
+        const url = driver.page.url()
         console.log('--------- On URL:', url)
         console.log('--------- Expected href ends with', expectedDefinition)
         await driver.page.waitForFunction(
