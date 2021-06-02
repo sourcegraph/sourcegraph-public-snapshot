@@ -71,6 +71,6 @@ func validateOutOfBandMigrationRunner(ctx context.Context, outOfBandMigrationRun
 		oobmigration.NewVersion(int(currentSemver.Major()), int(currentSemver.Minor())),
 		oobmigration.NewVersion(int(firstVersionSemver.Major()), int(firstVersionSemver.Minor())),
 	); err != nil {
-		log.Fatalf("Unfinished migrations: %v", err)
+		log.Fatalf("ERROR: %v", err)
 	}
 }

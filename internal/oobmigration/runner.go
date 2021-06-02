@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/derision-test/glock"
-	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 
@@ -157,14 +158,24 @@ func (r *Runner) Validate(ctx context.Context, currentVersion, firstVersion Vers
 		}
 	}
 
+	return wrapMigrationErrors(errs...)
+}
+
+func wrapMigrationErrors(errs ...error) error {
 	if len(errs) == 0 {
 		return nil
 	}
-	if len(errs) == 1 {
-		return errs[0]
-	}
 
-	return multierror.Append(nil, errs...)
+	descriptions := make([]string, 0, len(errs))
+	for _, err := range errs {
+		descriptions = append(descriptions, fmt.Sprintf("  - %s\n", err))
+	}
+	sort.Strings(descriptions)
+
+	return fmt.Errorf(
+		"Unfinished migrations. Please revert Sourcegraph to the previous version and wait for the following migrations to complete.\n\n%s\n",
+		strings.Join(descriptions, "\n"),
+	)
 }
 
 // Start runs registered migrators on a loop until they complete. This method will periodically

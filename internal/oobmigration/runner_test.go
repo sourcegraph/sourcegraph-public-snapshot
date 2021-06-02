@@ -9,7 +9,6 @@ import (
 
 	"github.com/derision-test/glock"
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -338,10 +337,8 @@ func TestRunnerValidate(t *testing.T) {
 
 	runner := newRunner(store, nil, &observation.TestContext)
 	statusErr := runner.Validate(context.Background(), NewVersion(3, 12), NewVersion(0, 0))
-	expectedErr := error(nil)
-
-	if diff := cmp.Diff(expectedErr, statusErr, cmpopts.EquateErrors()); diff != "" {
-		t.Errorf("unexpected status error (-want +got):\n%s", diff)
+	if statusErr != nil {
+		t.Errorf("unexpected status error: %s ", statusErr)
 	}
 }
 
@@ -354,7 +351,7 @@ func TestRunnerValidateUnfinishedUp(t *testing.T) {
 	runner := newRunner(store, nil, &observation.TestContext)
 	statusErr := runner.Validate(context.Background(), NewVersion(3, 12), NewVersion(0, 0))
 
-	if diff := cmp.Diff(newMigrationStatusError(1, 1, 0.65), statusErr, cmpopts.EquateErrors()); diff != "" {
+	if diff := cmp.Diff(wrapMigrationErrors(newMigrationStatusError(1, 1, 0.65)).Error(), statusErr.Error()); diff != "" {
 		t.Errorf("unexpected status error (-want +got):\n%s", diff)
 	}
 }
@@ -368,7 +365,7 @@ func TestRunnerValidateUnfinishedDown(t *testing.T) {
 	runner := newRunner(store, nil, &observation.TestContext)
 	statusErr := runner.Validate(context.Background(), NewVersion(3, 12), NewVersion(0, 0))
 
-	if diff := cmp.Diff(newMigrationStatusError(1, 0, 0.15), statusErr, cmpopts.EquateErrors()); diff != "" {
+	if diff := cmp.Diff(wrapMigrationErrors(newMigrationStatusError(1, 0, 0.15)).Error(), statusErr.Error()); diff != "" {
 		t.Errorf("unexpected status error (-want +got):\n%s", diff)
 	}
 }
