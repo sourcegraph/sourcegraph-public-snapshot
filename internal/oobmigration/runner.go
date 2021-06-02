@@ -3,10 +3,12 @@ package oobmigration
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 
 	"github.com/derision-test/glock"
+	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 
@@ -84,6 +86,85 @@ func (r *Runner) Register(id int, migrator Migrator, options MigratorOptions) er
 		ticker: options.ticker,
 	}}
 	return nil
+}
+
+type migrationStatusError struct {
+	id               int
+	expectedProgress float64
+	actualProgress   float64
+}
+
+func newMigrationStatusError(id int, expectedProgress, actualProgress float64) error {
+	return migrationStatusError{
+		id:               id,
+		expectedProgress: expectedProgress,
+		actualProgress:   actualProgress,
+	}
+}
+
+func (e migrationStatusError) Error() string {
+	return fmt.Sprintf("migration %d expected to be at %.2f%% (at %.2f%%)", e.id, e.expectedProgress*100, e.actualProgress*100)
+}
+
+// Validate checks the migration records present in the database (including their progress) and returns
+// an error if there are unfinished migrations relative to the given version. Specifically, it is illegal
+// for a Sourcegraph instance to start up with a migration that has one of the following properties:
+//
+// - A migration with progress != 0 is introduced _after_ the given version
+// - A migration with progress != 1 is deprecated _on or before_ the given version
+//
+// This error is used to block startup of the application with an informative message indicating that
+// the site admin must either (1) run the previous version of Sourcegraph longer to allow the unfinished
+// migrations to complete in the case of a premature upgrade, or (2) run a standalone migration utility
+// to rewind changes on an unmoving database in the case of a premature downgrade.
+func (r *Runner) Validate(ctx context.Context, currentVersion, firstVersion Version) error {
+	migrations, err := r.store.List(ctx)
+	if err != nil {
+		return err
+	}
+
+	errs := make([]error, 0, len(migrations))
+	for _, migration := range migrations {
+		currentVersionCmpIntroduced, err := compareVersions(currentVersion, migration.Introduced)
+		if err != nil {
+			return err
+		}
+		if currentVersionCmpIntroduced == VersionOrderBefore && migration.Progress != 0 {
+			// Unfinished rollback: currentVersion before introduced version and progress > 0
+			errs = append(errs, newMigrationStatusError(migration.ID, 0, migration.Progress))
+		}
+
+		if migration.Deprecated == nil {
+			continue
+		}
+
+		firstVersionCmpDeprecated, err := compareVersions(firstVersion, *migration.Deprecated)
+		if err != nil {
+			return err
+		}
+		if firstVersionCmpDeprecated != VersionOrderBefore {
+			// Edge case: sourcegraph instance booted on or after deprecation version
+			continue
+		}
+
+		currentVersionCmpDeprecated, err := compareVersions(currentVersion, *migration.Deprecated)
+		if err != nil {
+			return err
+		}
+		if currentVersionCmpDeprecated != VersionOrderBefore && migration.Progress != 1 {
+			// Unfinished migration: currentVersion on or after deprecated version, progress < 1
+			errs = append(errs, newMigrationStatusError(migration.ID, 1, migration.Progress))
+		}
+	}
+
+	if len(errs) == 0 {
+		return nil
+	}
+	if len(errs) == 1 {
+		return errs[0]
+	}
+
+	return multierror.Append(nil, errs...)
 }
 
 // Start runs registered migrators on a loop until they complete. This method will periodically

@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/derision-test/glock"
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -321,5 +323,52 @@ func runMigratorWrapped(store storeIface, migrator Migrator, ticker glock.Ticker
 func tickN(ticker *glock.MockTicker, n int) {
 	for i := 0; i < n; i++ {
 		ticker.BlockingAdvance(time.Second)
+	}
+}
+
+func TestRunnerValidate(t *testing.T) {
+	store := NewMockStoreIface()
+	store.ListFunc.SetDefaultReturn([]Migration{
+		{ID: 1, Introduced: NewVersion(3, 10), Progress: 1, Deprecated: newVersionPtr(3, 11)},
+		{ID: 1, Introduced: NewVersion(3, 11), Progress: 1, Deprecated: newVersionPtr(3, 13)},
+		{ID: 1, Introduced: NewVersion(3, 11), Progress: 1, Deprecated: newVersionPtr(3, 12)},
+		{ID: 1, Introduced: NewVersion(3, 12), Progress: 0},
+		{ID: 1, Introduced: NewVersion(3, 13), Progress: 0},
+	}, nil)
+
+	runner := newRunner(store, nil, &observation.TestContext)
+	statusErr := runner.Validate(context.Background(), NewVersion(3, 12), NewVersion(0, 0))
+	expectedErr := error(nil)
+
+	if diff := cmp.Diff(expectedErr, statusErr, cmpopts.EquateErrors()); diff != "" {
+		t.Errorf("unexpected status error (-want +got):\n%s", diff)
+	}
+}
+
+func TestRunnerValidateUnfinishedUp(t *testing.T) {
+	store := NewMockStoreIface()
+	store.ListFunc.SetDefaultReturn([]Migration{
+		{ID: 1, Introduced: NewVersion(3, 11), Progress: 0.65, Deprecated: newVersionPtr(3, 12)},
+	}, nil)
+
+	runner := newRunner(store, nil, &observation.TestContext)
+	statusErr := runner.Validate(context.Background(), NewVersion(3, 12), NewVersion(0, 0))
+
+	if diff := cmp.Diff(newMigrationStatusError(1, 1, 0.65), statusErr, cmpopts.EquateErrors()); diff != "" {
+		t.Errorf("unexpected status error (-want +got):\n%s", diff)
+	}
+}
+
+func TestRunnerValidateUnfinishedDown(t *testing.T) {
+	store := NewMockStoreIface()
+	store.ListFunc.SetDefaultReturn([]Migration{
+		{ID: 1, Introduced: NewVersion(3, 13), Progress: 0.15, Deprecated: newVersionPtr(3, 15), ApplyReverse: true},
+	}, nil)
+
+	runner := newRunner(store, nil, &observation.TestContext)
+	statusErr := runner.Validate(context.Background(), NewVersion(3, 12), NewVersion(0, 0))
+
+	if diff := cmp.Diff(newMigrationStatusError(1, 0, 0.15), statusErr, cmpopts.EquateErrors()); diff != "" {
+		t.Errorf("unexpected status error (-want +got):\n%s", diff)
 	}
 }
