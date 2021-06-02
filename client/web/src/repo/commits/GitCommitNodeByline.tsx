@@ -23,7 +23,7 @@ interface Props {
 export const GitCommitNodeByline: React.FunctionComponent<Props> = ({ author, committer, className = '', compact }) => {
     const [isRedesignEnabled] = useRedesignToggle()
 
-    const avatarMarginClass = isRedesignEnabled ? 'mr-2' : 'mr-1'
+    const avatarMarginClass = isRedesignEnabled && compact ? 'mr-2' : 'mr-1'
     const avatarClassName = classNames('icon-inline mr-1', compact && styles.gitCommitNodeBylineAvatarCompact)
 
     // Omit GitHub as committer to reduce noise. (Edits and squash commits made in the GitHub UI
