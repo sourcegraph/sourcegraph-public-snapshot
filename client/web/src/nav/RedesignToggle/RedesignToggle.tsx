@@ -22,7 +22,7 @@ export const RedesignToggle: React.FunctionComponent = () => {
         <div className="px-2 py-1">
             <div className="d-flex align-items-center justify-content-between mb-1">
                 <div className="mr-2">
-                    Redesign <Badge status="wip" className="text-uppercase" />
+                    Redesign Test <Badge status="wip" className="text-uppercase" />
                 </div>
                 <Toggle title="Redesign theme enabled" value={isRedesignEnabled} onToggle={handleRedesignToggle} />
             </div>
