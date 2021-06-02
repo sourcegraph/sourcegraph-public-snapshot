@@ -228,7 +228,15 @@ func (c *Container) renderDashboard() *sdk.Board {
 			offsetY++
 			for i, o := range row {
 				panelTitle := strings.ToTitle(string([]rune(o.Description)[0])) + string([]rune(o.Description)[1:])
-				panel := sdk.NewGraph(panelTitle)
+
+				var panel *sdk.Panel
+				switch o.Panel.panelType {
+				case "graph":
+					panel = sdk.NewGraph(panelTitle)
+				case "heatmap":
+					panel = sdk.NewHeatmap(panelTitle)
+				}
+
 				panel.ID = observablePanelID(groupIndex, rowIndex, i)
 
 				// Set positioning
@@ -528,7 +536,7 @@ type Observable struct {
 	// Interpretation is Markdown that can serve as a reference for interpreting this
 	// observable. For example, Interpretation could provide guidance on what sort of
 	// patterns to look for in the observable's graph and document why this observable is
-	// usefule.
+	// useful.
 	//
 	// If no alerts are configured for an observable, this field is required. If the
 	// Description is sufficient to capture what this Observable describes, "none" must be
@@ -552,11 +560,17 @@ func (o Observable) validate() error {
 	if strings.Contains(o.Name, " ") || strings.ToLower(o.Name) != o.Name {
 		return fmt.Errorf("Name must be in lower_snake_case; found \"%s\"", o.Name)
 	}
+	if len(o.Description) == 0 {
+		return errors.New("Description must be set")
+	}
 	if v := string([]rune(o.Description)[0]); v != strings.ToLower(v) {
 		return fmt.Errorf("Description must be lowercase; found \"%s\"", o.Description)
 	}
 	if o.Owner == "" {
 		return errors.New("Owner must be defined")
+	}
+	if o.Panel.panelType != "graph" && o.Panel.panelType != "heatmap" {
+		return errors.New(`Panel.panelType must be "", "graph", or "heatmap"`)
 	}
 
 	allAlertsEmpty := o.Warning.isEmpty() && o.Critical.isEmpty()
