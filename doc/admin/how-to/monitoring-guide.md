@@ -2,7 +2,7 @@
 Please visit our [Observability Docs](./observability) for more in-depth information about observability.
 
 
-## What should I look at when my instance is having performance issue?
+## What should I look at when my instance is having performance issues?
 Sourcegraph comes with built-in monitoring in the form of [Grafana](./observability/metrics#grafana), connected to [Prometheus](./observability/metrics#prometheus) for metrics and alerting. You can access Grafana by visiting `https://<your-sourcegraph-url>/-/debug/grafana` for monitoring purposes. Generally, Grafana should be the first stop you make when experiencing a system performance issue. From there you can look for system alerts or metrics that would provide you with more insights on what’s causing the performance issue.
 
 
