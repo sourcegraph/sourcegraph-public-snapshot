@@ -37,6 +37,11 @@
             text-overflow: ellipsis;
             color: var(--body-color);
         }
+        &-small {
+            .theme-redesign & {
+                font-size: 0.875rem;
+            }
+        }
         &-toggle {
             flex: none;
             font-size: 0.5625rem;

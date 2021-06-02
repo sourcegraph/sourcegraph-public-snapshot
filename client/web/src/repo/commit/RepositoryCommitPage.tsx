@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import { isEqual } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -51,7 +52,6 @@ import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { queryRepositoryComparisonFileDiffs } from '../compare/RepositoryCompareDiffPage'
 
 import { DiffModeSelector } from './DiffModeSelector'
-import classNames from 'classnames'
 
 const queryCommit = memoizeObservable(
     (args: { repo: Scalars['ID']; revspec: string }): Observable<GitCommitFields> =>
@@ -117,7 +117,7 @@ export const RepositoryCommitPage: React.FC<Props> = ({ ...props }) => {
 
 /** Displays a commit. */
 export class RepositoryCommitPageDetails extends React.Component<Props & { isRedesignEnabled: boolean }, State> {
-    private componentUpdates = new Subject<Props>()
+    private componentUpdates = new Subject<Props & { isRedesignEnabled: boolean }>()
 
     /** Emits whenever the ref callback for the hover element is called */
     private hoverOverlayElements = new Subject<HTMLElement | null>()
@@ -138,7 +138,7 @@ export class RepositoryCommitPageDetails extends React.Component<Props & { isRed
         ActionItemAction
     >
 
-    constructor(props: Props) {
+    constructor(props: Props & { isRedesignEnabled: boolean }) {
         super(props)
         this.hoverifier = createHoverifier<
             RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec,

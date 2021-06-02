@@ -88,7 +88,7 @@ $color-deletion: $red;
             &--active {
                 background-color: rgba($oc-yellow-5, 0.17) !important;
                 .theme-redesign & {
-                    background-color: var(--code-line-highlight-color);
+                    background-color: var(--code-line-highlight-color) !important;
                 }
                 &-num {
                     background-color: rgba($oc-yellow-5, 0.25);
