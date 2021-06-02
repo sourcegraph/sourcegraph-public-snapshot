@@ -4,19 +4,24 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 )
+
+const addr = ":3189"
 
 func Main(enterpriseSetupHooks map[string]SetupHook) {
 	allHooks := map[string]SetupHook{}
@@ -134,6 +139,14 @@ func Main(enterpriseSetupHooks map[string]SetupHook) {
 		sort.Strings(descriptions)
 		log.Fatalf("Failed to initialize worker:\n%s", strings.Join(descriptions, "\n"))
 	}
+
+	// Initialize health server
+	server := httpserver.NewFromAddr(addr, &http.Server{
+		ReadTimeout:  75 * time.Second,
+		WriteTimeout: 10 * time.Minute,
+		Handler:      httpserver.NewHandler(nil),
+	})
+	allRoutines = append(allRoutines, server)
 
 	close(ready)
 	goroutine.MonitorBackgroundRoutines(context.Background(), allRoutines...)
