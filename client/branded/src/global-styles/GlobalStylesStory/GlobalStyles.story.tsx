@@ -375,7 +375,10 @@ add(
             </table>
 
             <h2>Reference</h2>
-            <BadgeVariants variants={SEMANTIC_COLORS} />
+            <BadgeVariants variants={[...SEMANTIC_COLORS, 'outline-secondary']} />
+            <h3>Size</h3>
+            <p>We can also make our badges smaller.</p>
+            <BadgeVariants small={true} variants={['primary', 'secondary']} />
             <h2>Pill badges</h2>
             <p>Pill badges are commonly used to display counts.</p>
             <div className="mb-4">

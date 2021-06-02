@@ -15,7 +15,7 @@
     --badge-font-weight: 600;
     --badge-padding-y: 0.34em;
     --badge-padding-x: 0.6em;
-    --badge-border-radius: 2px;
+    --badge-border-radius: 3px;
 }
 
 .theme-redesign {
@@ -40,6 +40,7 @@
         --badge-font-size: #{(11/16)}rem;
         --badge-padding-y: 0;
         --badge-padding-x: 0.25rem;
+        --badge-border-radius: 2px;
     }
 
     a.badge {
@@ -54,9 +55,11 @@
     .badge-danger,
     .badge-info,
     .badge-warning,
-    .badge-merged {
+    .badge-merged,
+    .badge-outline-secondary {
         background-color: var(--badge-base);
         color: var(--badge-text);
+        border: var(--badge-border, none);
 
         @at-root #{selector-unify('a', &)} {
             background-color: var(--badge-base);
@@ -131,21 +134,38 @@
         --badge-dark: var(--merged-3);
         --badge-text: var(--light-text);
     }
+
+    .badge-outline-secondary {
+        --badge-base: transparent;
+        --badge-light: var(--secondary-2);
+        --badge-dark: var(--secondary-3);
+        --badge-text: var(--text-muted);
+        --badge-border: 1px solid var(--secondary);
+    }
 }
 
 .theme-light.theme-redesign,
 .theme-dark.theme-redesign {
     // Update secondary text color and focus state for better contrast
+    a.badge-secondary,
+    a.badge-outline-secondary {
+        &:focus,
+        &.focus {
+            box-shadow: var(--focus-box-shadow);
+        }
+    }
     a.badge-secondary {
         &:hover,
         &:focus,
         &.focus {
             color: var(--body-color);
         }
-
+    }
+    a.badge-outline-secondary {
+        &:hover,
         &:focus,
         &.focus {
-            box-shadow: var(--focus-box-shadow);
+            background-color: var(--color-bg-1);
         }
     }
 }
