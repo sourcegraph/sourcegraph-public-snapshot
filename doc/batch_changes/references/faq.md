@@ -49,6 +49,8 @@ However, outside of the spec, `src` pulls an image from Docker Hub when running 
 2. If you have a way of replicating trusted images onto your private registry, you can replicate [our image](https://hub.docker.com/r/sourcegraph/src-batch-change-volume-workspace) to your private registry. Ensure that the replicated image has the same tags, or this will fail.
 3. If you have the ability to ad hoc pull images from public Docker Hub, you can run `docker pull -a sourcegraph/src-batch-change-volume-workspace` to pull the image and its tags.
 
+> NOTE: If you choose to replicate or pull the Docker image, you should ensure that it is frequently synchronized, as a new tag is pushed each time `src` is released.
+
 ### What tool can I use for changing/refactoring `<programming-language>`?
 
 Batch Changes supports any tool that can run in a container and changes file contents on disk. You can use the tool/script that works for your stack or build your own, but here is a list of [examples](https://github.com/sourcegraph/batch-change-examples) to get started.
