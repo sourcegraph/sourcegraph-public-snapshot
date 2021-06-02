@@ -8,8 +8,10 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
+import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
 import { PageTitle } from '../../components/PageTitle'
 import { CodeMonitorFields, MonitorEmailPriority } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -20,8 +22,6 @@ import {
     deleteCodeMonitor as _deleteCodeMonitor,
 } from './backend'
 import { CodeMonitorForm } from './components/CodeMonitorForm'
-import { PageHeader } from '@sourcegraph/wildcard'
-import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
 
 export interface ManageCodeMonitorPageProps extends RouteComponentProps<{ id: Scalars['ID'] }> {
     authenticatedUser: AuthenticatedUser

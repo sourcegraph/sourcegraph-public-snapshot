@@ -195,6 +195,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
               className="container"
             >
               <FilteredConnection
+                className="filtered-connection__centered-summary"
                 cursorPaging={true}
                 defaultFirst={10}
                 hideSearch={true}
@@ -220,7 +221,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                 useURLQuery={true}
               >
                 <div
-                  className="filtered-connection test-filtered-connection filtered-connection--noncompact"
+                  className="filtered-connection test-filtered-connection filtered-connection--noncompact filtered-connection__centered-summary"
                 >
                   <ConnectionNodes
                     connection={
@@ -565,72 +566,79 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         showCodeMonitoringTestEmailButton={false}
                         toggleCodeMonitorEnabled={[Function]}
                       >
-                        <AnchorLink
-                          className="code-monitoring-node card"
-                          to="/code-monitoring/foo0"
+                        <div
+                          className="code-monitoring-node"
                         >
-                          <a
-                            className="code-monitoring-node card"
-                            href="/code-monitoring/foo0"
+                          <div
+                            className="d-flex justify-content-between align-items-center"
                           >
                             <div
-                              className="d-flex justify-content-between align-items-center"
+                              className="d-flex flex-column"
                             >
                               <div
-                                className="d-flex flex-column"
+                                className="font-weight-bold"
                               >
-                                <div
-                                  className="font-weight-bold"
+                                <AnchorLink
+                                  to="/code-monitoring/foo0"
                                 >
-                                  Test code monitor
-                                </div>
-                                <div
-                                  className="d-flex text-muted"
-                                >
-                                  New search result → Sends email notifications
-                                   
-                                </div>
+                                  <a
+                                    href="/code-monitoring/foo0"
+                                  >
+                                    Test code monitor
+                                  </a>
+                                </AnchorLink>
                               </div>
                               <div
-                                className="d-flex"
+                                className="d-flex text-muted"
                               >
-                                <div
-                                  className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
-                                >
-                                  <Toggle
-                                    className="mr-3"
-                                    disabled={false}
-                                    onClick={[Function]}
-                                    value={true}
-                                  >
-                                    <button
-                                      aria-checked={true}
-                                      className="toggle mr-3"
-                                      disabled={false}
-                                      onClick={[Function]}
-                                      role="switch"
-                                      type="button"
-                                      value={1}
-                                    >
-                                      <span
-                                        className="toggle__bar toggle__bar--on"
-                                      />
-                                      <span
-                                        className="toggle__knob toggle__knob--on"
-                                      />
-                                    </button>
-                                  </Toggle>
-                                </div>
-                                <button
-                                  className="btn btn-link code-monitoring-node__edit-button"
-                                  type="button"
-                                >
-                                  Edit
-                                </button>
+                                New search result → Sends email notifications
+                                 
                               </div>
                             </div>
-                          </a>
-                        </AnchorLink>
+                            <div
+                              className="d-flex"
+                            >
+                              <div
+                                className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                              >
+                                <Toggle
+                                  className="mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  value={true}
+                                >
+                                  <button
+                                    aria-checked={true}
+                                    className="toggle mr-3"
+                                    disabled={false}
+                                    onClick={[Function]}
+                                    role="switch"
+                                    type="button"
+                                    value={1}
+                                  >
+                                    <span
+                                      className="toggle__bar toggle__bar--on"
+                                    />
+                                    <span
+                                      className="toggle__knob toggle__knob--on"
+                                    />
+                                  </button>
+                                </Toggle>
+                              </div>
+                              <AnchorLink
+                                className="btn btn-link code-monitoring-node__edit-button"
+                                to="/code-monitoring/foo0"
+                              >
+                                <a
+                                  className="btn btn-link code-monitoring-node__edit-button"
+                                  href="/code-monitoring/foo0"
+                                >
+                                  Edit
+                                </a>
+                              </AnchorLink>
+                            </div>
+                          </div>
+                        </div>
                       </CodeMonitorNode>
                       <CodeMonitorNode
                         authenticatedUser={
@@ -673,72 +681,79 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         showCodeMonitoringTestEmailButton={false}
                         toggleCodeMonitorEnabled={[Function]}
                       >
-                        <AnchorLink
-                          className="code-monitoring-node card"
-                          to="/code-monitoring/foo1"
+                        <div
+                          className="code-monitoring-node"
                         >
-                          <a
-                            className="code-monitoring-node card"
-                            href="/code-monitoring/foo1"
+                          <div
+                            className="d-flex justify-content-between align-items-center"
                           >
                             <div
-                              className="d-flex justify-content-between align-items-center"
+                              className="d-flex flex-column"
                             >
                               <div
-                                className="d-flex flex-column"
+                                className="font-weight-bold"
                               >
-                                <div
-                                  className="font-weight-bold"
+                                <AnchorLink
+                                  to="/code-monitoring/foo1"
                                 >
-                                  Second test code monitor
-                                </div>
-                                <div
-                                  className="d-flex text-muted"
-                                >
-                                  New search result → Sends email notifications
-                                   
-                                </div>
+                                  <a
+                                    href="/code-monitoring/foo1"
+                                  >
+                                    Second test code monitor
+                                  </a>
+                                </AnchorLink>
                               </div>
                               <div
-                                className="d-flex"
+                                className="d-flex text-muted"
                               >
-                                <div
-                                  className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
-                                >
-                                  <Toggle
-                                    className="mr-3"
-                                    disabled={false}
-                                    onClick={[Function]}
-                                    value={true}
-                                  >
-                                    <button
-                                      aria-checked={true}
-                                      className="toggle mr-3"
-                                      disabled={false}
-                                      onClick={[Function]}
-                                      role="switch"
-                                      type="button"
-                                      value={1}
-                                    >
-                                      <span
-                                        className="toggle__bar toggle__bar--on"
-                                      />
-                                      <span
-                                        className="toggle__knob toggle__knob--on"
-                                      />
-                                    </button>
-                                  </Toggle>
-                                </div>
-                                <button
-                                  className="btn btn-link code-monitoring-node__edit-button"
-                                  type="button"
-                                >
-                                  Edit
-                                </button>
+                                New search result → Sends email notifications
+                                 
                               </div>
                             </div>
-                          </a>
-                        </AnchorLink>
+                            <div
+                              className="d-flex"
+                            >
+                              <div
+                                className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                              >
+                                <Toggle
+                                  className="mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  value={true}
+                                >
+                                  <button
+                                    aria-checked={true}
+                                    className="toggle mr-3"
+                                    disabled={false}
+                                    onClick={[Function]}
+                                    role="switch"
+                                    type="button"
+                                    value={1}
+                                  >
+                                    <span
+                                      className="toggle__bar toggle__bar--on"
+                                    />
+                                    <span
+                                      className="toggle__knob toggle__knob--on"
+                                    />
+                                  </button>
+                                </Toggle>
+                              </div>
+                              <AnchorLink
+                                className="btn btn-link code-monitoring-node__edit-button"
+                                to="/code-monitoring/foo1"
+                              >
+                                <a
+                                  className="btn btn-link code-monitoring-node__edit-button"
+                                  href="/code-monitoring/foo1"
+                                >
+                                  Edit
+                                </a>
+                              </AnchorLink>
+                            </div>
+                          </div>
+                        </div>
                       </CodeMonitorNode>
                       <CodeMonitorNode
                         authenticatedUser={
@@ -781,72 +796,79 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         showCodeMonitoringTestEmailButton={false}
                         toggleCodeMonitorEnabled={[Function]}
                       >
-                        <AnchorLink
-                          className="code-monitoring-node card"
-                          to="/code-monitoring/foo2"
+                        <div
+                          className="code-monitoring-node"
                         >
-                          <a
-                            className="code-monitoring-node card"
-                            href="/code-monitoring/foo2"
+                          <div
+                            className="d-flex justify-content-between align-items-center"
                           >
                             <div
-                              className="d-flex justify-content-between align-items-center"
+                              className="d-flex flex-column"
                             >
                               <div
-                                className="d-flex flex-column"
+                                className="font-weight-bold"
                               >
-                                <div
-                                  className="font-weight-bold"
+                                <AnchorLink
+                                  to="/code-monitoring/foo2"
                                 >
-                                  Third test code monitor
-                                </div>
-                                <div
-                                  className="d-flex text-muted"
-                                >
-                                  New search result → Sends email notifications
-                                   
-                                </div>
+                                  <a
+                                    href="/code-monitoring/foo2"
+                                  >
+                                    Third test code monitor
+                                  </a>
+                                </AnchorLink>
                               </div>
                               <div
-                                className="d-flex"
+                                className="d-flex text-muted"
                               >
-                                <div
-                                  className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
-                                >
-                                  <Toggle
-                                    className="mr-3"
-                                    disabled={false}
-                                    onClick={[Function]}
-                                    value={true}
-                                  >
-                                    <button
-                                      aria-checked={true}
-                                      className="toggle mr-3"
-                                      disabled={false}
-                                      onClick={[Function]}
-                                      role="switch"
-                                      type="button"
-                                      value={1}
-                                    >
-                                      <span
-                                        className="toggle__bar toggle__bar--on"
-                                      />
-                                      <span
-                                        className="toggle__knob toggle__knob--on"
-                                      />
-                                    </button>
-                                  </Toggle>
-                                </div>
-                                <button
-                                  className="btn btn-link code-monitoring-node__edit-button"
-                                  type="button"
-                                >
-                                  Edit
-                                </button>
+                                New search result → Sends email notifications
+                                 
                               </div>
                             </div>
-                          </a>
-                        </AnchorLink>
+                            <div
+                              className="d-flex"
+                            >
+                              <div
+                                className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                              >
+                                <Toggle
+                                  className="mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  value={true}
+                                >
+                                  <button
+                                    aria-checked={true}
+                                    className="toggle mr-3"
+                                    disabled={false}
+                                    onClick={[Function]}
+                                    role="switch"
+                                    type="button"
+                                    value={1}
+                                  >
+                                    <span
+                                      className="toggle__bar toggle__bar--on"
+                                    />
+                                    <span
+                                      className="toggle__knob toggle__knob--on"
+                                    />
+                                  </button>
+                                </Toggle>
+                              </div>
+                              <AnchorLink
+                                className="btn btn-link code-monitoring-node__edit-button"
+                                to="/code-monitoring/foo2"
+                              >
+                                <a
+                                  className="btn btn-link code-monitoring-node__edit-button"
+                                  href="/code-monitoring/foo2"
+                                >
+                                  Edit
+                                </a>
+                              </AnchorLink>
+                            </div>
+                          </div>
+                        </div>
                       </CodeMonitorNode>
                       <CodeMonitorNode
                         authenticatedUser={
@@ -889,72 +911,79 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         showCodeMonitoringTestEmailButton={false}
                         toggleCodeMonitorEnabled={[Function]}
                       >
-                        <AnchorLink
-                          className="code-monitoring-node card"
-                          to="/code-monitoring/foo3"
+                        <div
+                          className="code-monitoring-node"
                         >
-                          <a
-                            className="code-monitoring-node card"
-                            href="/code-monitoring/foo3"
+                          <div
+                            className="d-flex justify-content-between align-items-center"
                           >
                             <div
-                              className="d-flex justify-content-between align-items-center"
+                              className="d-flex flex-column"
                             >
                               <div
-                                className="d-flex flex-column"
+                                className="font-weight-bold"
                               >
-                                <div
-                                  className="font-weight-bold"
+                                <AnchorLink
+                                  to="/code-monitoring/foo3"
                                 >
-                                  Fourth test code monitor
-                                </div>
-                                <div
-                                  className="d-flex text-muted"
-                                >
-                                  New search result → Sends email notifications
-                                   
-                                </div>
+                                  <a
+                                    href="/code-monitoring/foo3"
+                                  >
+                                    Fourth test code monitor
+                                  </a>
+                                </AnchorLink>
                               </div>
                               <div
-                                className="d-flex"
+                                className="d-flex text-muted"
                               >
-                                <div
-                                  className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
-                                >
-                                  <Toggle
-                                    className="mr-3"
-                                    disabled={false}
-                                    onClick={[Function]}
-                                    value={true}
-                                  >
-                                    <button
-                                      aria-checked={true}
-                                      className="toggle mr-3"
-                                      disabled={false}
-                                      onClick={[Function]}
-                                      role="switch"
-                                      type="button"
-                                      value={1}
-                                    >
-                                      <span
-                                        className="toggle__bar toggle__bar--on"
-                                      />
-                                      <span
-                                        className="toggle__knob toggle__knob--on"
-                                      />
-                                    </button>
-                                  </Toggle>
-                                </div>
-                                <button
-                                  className="btn btn-link code-monitoring-node__edit-button"
-                                  type="button"
-                                >
-                                  Edit
-                                </button>
+                                New search result → Sends email notifications
+                                 
                               </div>
                             </div>
-                          </a>
-                        </AnchorLink>
+                            <div
+                              className="d-flex"
+                            >
+                              <div
+                                className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                              >
+                                <Toggle
+                                  className="mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  value={true}
+                                >
+                                  <button
+                                    aria-checked={true}
+                                    className="toggle mr-3"
+                                    disabled={false}
+                                    onClick={[Function]}
+                                    role="switch"
+                                    type="button"
+                                    value={1}
+                                  >
+                                    <span
+                                      className="toggle__bar toggle__bar--on"
+                                    />
+                                    <span
+                                      className="toggle__knob toggle__knob--on"
+                                    />
+                                  </button>
+                                </Toggle>
+                              </div>
+                              <AnchorLink
+                                className="btn btn-link code-monitoring-node__edit-button"
+                                to="/code-monitoring/foo3"
+                              >
+                                <a
+                                  className="btn btn-link code-monitoring-node__edit-button"
+                                  href="/code-monitoring/foo3"
+                                >
+                                  Edit
+                                </a>
+                              </AnchorLink>
+                            </div>
+                          </div>
+                        </div>
                       </CodeMonitorNode>
                       <CodeMonitorNode
                         authenticatedUser={
@@ -997,72 +1026,79 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         showCodeMonitoringTestEmailButton={false}
                         toggleCodeMonitorEnabled={[Function]}
                       >
-                        <AnchorLink
-                          className="code-monitoring-node card"
-                          to="/code-monitoring/foo4"
+                        <div
+                          className="code-monitoring-node"
                         >
-                          <a
-                            className="code-monitoring-node card"
-                            href="/code-monitoring/foo4"
+                          <div
+                            className="d-flex justify-content-between align-items-center"
                           >
                             <div
-                              className="d-flex justify-content-between align-items-center"
+                              className="d-flex flex-column"
                             >
                               <div
-                                className="d-flex flex-column"
+                                className="font-weight-bold"
                               >
-                                <div
-                                  className="font-weight-bold"
+                                <AnchorLink
+                                  to="/code-monitoring/foo4"
                                 >
-                                  Fifth test code monitor
-                                </div>
-                                <div
-                                  className="d-flex text-muted"
-                                >
-                                  New search result → Sends email notifications
-                                   
-                                </div>
+                                  <a
+                                    href="/code-monitoring/foo4"
+                                  >
+                                    Fifth test code monitor
+                                  </a>
+                                </AnchorLink>
                               </div>
                               <div
-                                className="d-flex"
+                                className="d-flex text-muted"
                               >
-                                <div
-                                  className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
-                                >
-                                  <Toggle
-                                    className="mr-3"
-                                    disabled={false}
-                                    onClick={[Function]}
-                                    value={true}
-                                  >
-                                    <button
-                                      aria-checked={true}
-                                      className="toggle mr-3"
-                                      disabled={false}
-                                      onClick={[Function]}
-                                      role="switch"
-                                      type="button"
-                                      value={1}
-                                    >
-                                      <span
-                                        className="toggle__bar toggle__bar--on"
-                                      />
-                                      <span
-                                        className="toggle__knob toggle__knob--on"
-                                      />
-                                    </button>
-                                  </Toggle>
-                                </div>
-                                <button
-                                  className="btn btn-link code-monitoring-node__edit-button"
-                                  type="button"
-                                >
-                                  Edit
-                                </button>
+                                New search result → Sends email notifications
+                                 
                               </div>
                             </div>
-                          </a>
-                        </AnchorLink>
+                            <div
+                              className="d-flex"
+                            >
+                              <div
+                                className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                              >
+                                <Toggle
+                                  className="mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  value={true}
+                                >
+                                  <button
+                                    aria-checked={true}
+                                    className="toggle mr-3"
+                                    disabled={false}
+                                    onClick={[Function]}
+                                    role="switch"
+                                    type="button"
+                                    value={1}
+                                  >
+                                    <span
+                                      className="toggle__bar toggle__bar--on"
+                                    />
+                                    <span
+                                      className="toggle__knob toggle__knob--on"
+                                    />
+                                  </button>
+                                </Toggle>
+                              </div>
+                              <AnchorLink
+                                className="btn btn-link code-monitoring-node__edit-button"
+                                to="/code-monitoring/foo4"
+                              >
+                                <a
+                                  className="btn btn-link code-monitoring-node__edit-button"
+                                  href="/code-monitoring/foo4"
+                                >
+                                  Edit
+                                </a>
+                              </AnchorLink>
+                            </div>
+                          </div>
+                        </div>
                       </CodeMonitorNode>
                       <CodeMonitorNode
                         authenticatedUser={
@@ -1105,72 +1141,79 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         showCodeMonitoringTestEmailButton={false}
                         toggleCodeMonitorEnabled={[Function]}
                       >
-                        <AnchorLink
-                          className="code-monitoring-node card"
-                          to="/code-monitoring/foo5"
+                        <div
+                          className="code-monitoring-node"
                         >
-                          <a
-                            className="code-monitoring-node card"
-                            href="/code-monitoring/foo5"
+                          <div
+                            className="d-flex justify-content-between align-items-center"
                           >
                             <div
-                              className="d-flex justify-content-between align-items-center"
+                              className="d-flex flex-column"
                             >
                               <div
-                                className="d-flex flex-column"
+                                className="font-weight-bold"
                               >
-                                <div
-                                  className="font-weight-bold"
+                                <AnchorLink
+                                  to="/code-monitoring/foo5"
                                 >
-                                  Sixth test code monitor
-                                </div>
-                                <div
-                                  className="d-flex text-muted"
-                                >
-                                  New search result → Sends email notifications
-                                   
-                                </div>
+                                  <a
+                                    href="/code-monitoring/foo5"
+                                  >
+                                    Sixth test code monitor
+                                  </a>
+                                </AnchorLink>
                               </div>
                               <div
-                                className="d-flex"
+                                className="d-flex text-muted"
                               >
-                                <div
-                                  className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
-                                >
-                                  <Toggle
-                                    className="mr-3"
-                                    disabled={false}
-                                    onClick={[Function]}
-                                    value={true}
-                                  >
-                                    <button
-                                      aria-checked={true}
-                                      className="toggle mr-3"
-                                      disabled={false}
-                                      onClick={[Function]}
-                                      role="switch"
-                                      type="button"
-                                      value={1}
-                                    >
-                                      <span
-                                        className="toggle__bar toggle__bar--on"
-                                      />
-                                      <span
-                                        className="toggle__knob toggle__knob--on"
-                                      />
-                                    </button>
-                                  </Toggle>
-                                </div>
-                                <button
-                                  className="btn btn-link code-monitoring-node__edit-button"
-                                  type="button"
-                                >
-                                  Edit
-                                </button>
+                                New search result → Sends email notifications
+                                 
                               </div>
                             </div>
-                          </a>
-                        </AnchorLink>
+                            <div
+                              className="d-flex"
+                            >
+                              <div
+                                className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                              >
+                                <Toggle
+                                  className="mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  value={true}
+                                >
+                                  <button
+                                    aria-checked={true}
+                                    className="toggle mr-3"
+                                    disabled={false}
+                                    onClick={[Function]}
+                                    role="switch"
+                                    type="button"
+                                    value={1}
+                                  >
+                                    <span
+                                      className="toggle__bar toggle__bar--on"
+                                    />
+                                    <span
+                                      className="toggle__knob toggle__knob--on"
+                                    />
+                                  </button>
+                                </Toggle>
+                              </div>
+                              <AnchorLink
+                                className="btn btn-link code-monitoring-node__edit-button"
+                                to="/code-monitoring/foo5"
+                              >
+                                <a
+                                  className="btn btn-link code-monitoring-node__edit-button"
+                                  href="/code-monitoring/foo5"
+                                >
+                                  Edit
+                                </a>
+                              </AnchorLink>
+                            </div>
+                          </div>
+                        </div>
                       </CodeMonitorNode>
                       <CodeMonitorNode
                         authenticatedUser={
@@ -1213,72 +1256,79 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         showCodeMonitoringTestEmailButton={false}
                         toggleCodeMonitorEnabled={[Function]}
                       >
-                        <AnchorLink
-                          className="code-monitoring-node card"
-                          to="/code-monitoring/foo6"
+                        <div
+                          className="code-monitoring-node"
                         >
-                          <a
-                            className="code-monitoring-node card"
-                            href="/code-monitoring/foo6"
+                          <div
+                            className="d-flex justify-content-between align-items-center"
                           >
                             <div
-                              className="d-flex justify-content-between align-items-center"
+                              className="d-flex flex-column"
                             >
                               <div
-                                className="d-flex flex-column"
+                                className="font-weight-bold"
                               >
-                                <div
-                                  className="font-weight-bold"
+                                <AnchorLink
+                                  to="/code-monitoring/foo6"
                                 >
-                                  Seventh test code monitor
-                                </div>
-                                <div
-                                  className="d-flex text-muted"
-                                >
-                                  New search result → Sends email notifications
-                                   
-                                </div>
+                                  <a
+                                    href="/code-monitoring/foo6"
+                                  >
+                                    Seventh test code monitor
+                                  </a>
+                                </AnchorLink>
                               </div>
                               <div
-                                className="d-flex"
+                                className="d-flex text-muted"
                               >
-                                <div
-                                  className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
-                                >
-                                  <Toggle
-                                    className="mr-3"
-                                    disabled={false}
-                                    onClick={[Function]}
-                                    value={true}
-                                  >
-                                    <button
-                                      aria-checked={true}
-                                      className="toggle mr-3"
-                                      disabled={false}
-                                      onClick={[Function]}
-                                      role="switch"
-                                      type="button"
-                                      value={1}
-                                    >
-                                      <span
-                                        className="toggle__bar toggle__bar--on"
-                                      />
-                                      <span
-                                        className="toggle__knob toggle__knob--on"
-                                      />
-                                    </button>
-                                  </Toggle>
-                                </div>
-                                <button
-                                  className="btn btn-link code-monitoring-node__edit-button"
-                                  type="button"
-                                >
-                                  Edit
-                                </button>
+                                New search result → Sends email notifications
+                                 
                               </div>
                             </div>
-                          </a>
-                        </AnchorLink>
+                            <div
+                              className="d-flex"
+                            >
+                              <div
+                                className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                              >
+                                <Toggle
+                                  className="mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  value={true}
+                                >
+                                  <button
+                                    aria-checked={true}
+                                    className="toggle mr-3"
+                                    disabled={false}
+                                    onClick={[Function]}
+                                    role="switch"
+                                    type="button"
+                                    value={1}
+                                  >
+                                    <span
+                                      className="toggle__bar toggle__bar--on"
+                                    />
+                                    <span
+                                      className="toggle__knob toggle__knob--on"
+                                    />
+                                  </button>
+                                </Toggle>
+                              </div>
+                              <AnchorLink
+                                className="btn btn-link code-monitoring-node__edit-button"
+                                to="/code-monitoring/foo6"
+                              >
+                                <a
+                                  className="btn btn-link code-monitoring-node__edit-button"
+                                  href="/code-monitoring/foo6"
+                                >
+                                  Edit
+                                </a>
+                              </AnchorLink>
+                            </div>
+                          </div>
+                        </div>
                       </CodeMonitorNode>
                       <CodeMonitorNode
                         authenticatedUser={
@@ -1321,72 +1371,79 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         showCodeMonitoringTestEmailButton={false}
                         toggleCodeMonitorEnabled={[Function]}
                       >
-                        <AnchorLink
-                          className="code-monitoring-node card"
-                          to="/code-monitoring/foo7"
+                        <div
+                          className="code-monitoring-node"
                         >
-                          <a
-                            className="code-monitoring-node card"
-                            href="/code-monitoring/foo7"
+                          <div
+                            className="d-flex justify-content-between align-items-center"
                           >
                             <div
-                              className="d-flex justify-content-between align-items-center"
+                              className="d-flex flex-column"
                             >
                               <div
-                                className="d-flex flex-column"
+                                className="font-weight-bold"
                               >
-                                <div
-                                  className="font-weight-bold"
+                                <AnchorLink
+                                  to="/code-monitoring/foo7"
                                 >
-                                  Eighth test code monitor
-                                </div>
-                                <div
-                                  className="d-flex text-muted"
-                                >
-                                  New search result → Sends email notifications
-                                   
-                                </div>
+                                  <a
+                                    href="/code-monitoring/foo7"
+                                  >
+                                    Eighth test code monitor
+                                  </a>
+                                </AnchorLink>
                               </div>
                               <div
-                                className="d-flex"
+                                className="d-flex text-muted"
                               >
-                                <div
-                                  className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
-                                >
-                                  <Toggle
-                                    className="mr-3"
-                                    disabled={false}
-                                    onClick={[Function]}
-                                    value={true}
-                                  >
-                                    <button
-                                      aria-checked={true}
-                                      className="toggle mr-3"
-                                      disabled={false}
-                                      onClick={[Function]}
-                                      role="switch"
-                                      type="button"
-                                      value={1}
-                                    >
-                                      <span
-                                        className="toggle__bar toggle__bar--on"
-                                      />
-                                      <span
-                                        className="toggle__knob toggle__knob--on"
-                                      />
-                                    </button>
-                                  </Toggle>
-                                </div>
-                                <button
-                                  className="btn btn-link code-monitoring-node__edit-button"
-                                  type="button"
-                                >
-                                  Edit
-                                </button>
+                                New search result → Sends email notifications
+                                 
                               </div>
                             </div>
-                          </a>
-                        </AnchorLink>
+                            <div
+                              className="d-flex"
+                            >
+                              <div
+                                className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                              >
+                                <Toggle
+                                  className="mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  value={true}
+                                >
+                                  <button
+                                    aria-checked={true}
+                                    className="toggle mr-3"
+                                    disabled={false}
+                                    onClick={[Function]}
+                                    role="switch"
+                                    type="button"
+                                    value={1}
+                                  >
+                                    <span
+                                      className="toggle__bar toggle__bar--on"
+                                    />
+                                    <span
+                                      className="toggle__knob toggle__knob--on"
+                                    />
+                                  </button>
+                                </Toggle>
+                              </div>
+                              <AnchorLink
+                                className="btn btn-link code-monitoring-node__edit-button"
+                                to="/code-monitoring/foo7"
+                              >
+                                <a
+                                  className="btn btn-link code-monitoring-node__edit-button"
+                                  href="/code-monitoring/foo7"
+                                >
+                                  Edit
+                                </a>
+                              </AnchorLink>
+                            </div>
+                          </div>
+                        </div>
                       </CodeMonitorNode>
                       <CodeMonitorNode
                         authenticatedUser={
@@ -1429,72 +1486,79 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         showCodeMonitoringTestEmailButton={false}
                         toggleCodeMonitorEnabled={[Function]}
                       >
-                        <AnchorLink
-                          className="code-monitoring-node card"
-                          to="/code-monitoring/foo9"
+                        <div
+                          className="code-monitoring-node"
                         >
-                          <a
-                            className="code-monitoring-node card"
-                            href="/code-monitoring/foo9"
+                          <div
+                            className="d-flex justify-content-between align-items-center"
                           >
                             <div
-                              className="d-flex justify-content-between align-items-center"
+                              className="d-flex flex-column"
                             >
                               <div
-                                className="d-flex flex-column"
+                                className="font-weight-bold"
                               >
-                                <div
-                                  className="font-weight-bold"
+                                <AnchorLink
+                                  to="/code-monitoring/foo9"
                                 >
-                                  Ninth test code monitor
-                                </div>
-                                <div
-                                  className="d-flex text-muted"
-                                >
-                                  New search result → Sends email notifications
-                                   
-                                </div>
+                                  <a
+                                    href="/code-monitoring/foo9"
+                                  >
+                                    Ninth test code monitor
+                                  </a>
+                                </AnchorLink>
                               </div>
                               <div
-                                className="d-flex"
+                                className="d-flex text-muted"
                               >
-                                <div
-                                  className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
-                                >
-                                  <Toggle
-                                    className="mr-3"
-                                    disabled={false}
-                                    onClick={[Function]}
-                                    value={true}
-                                  >
-                                    <button
-                                      aria-checked={true}
-                                      className="toggle mr-3"
-                                      disabled={false}
-                                      onClick={[Function]}
-                                      role="switch"
-                                      type="button"
-                                      value={1}
-                                    >
-                                      <span
-                                        className="toggle__bar toggle__bar--on"
-                                      />
-                                      <span
-                                        className="toggle__knob toggle__knob--on"
-                                      />
-                                    </button>
-                                  </Toggle>
-                                </div>
-                                <button
-                                  className="btn btn-link code-monitoring-node__edit-button"
-                                  type="button"
-                                >
-                                  Edit
-                                </button>
+                                New search result → Sends email notifications
+                                 
                               </div>
                             </div>
-                          </a>
-                        </AnchorLink>
+                            <div
+                              className="d-flex"
+                            >
+                              <div
+                                className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                              >
+                                <Toggle
+                                  className="mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  value={true}
+                                >
+                                  <button
+                                    aria-checked={true}
+                                    className="toggle mr-3"
+                                    disabled={false}
+                                    onClick={[Function]}
+                                    role="switch"
+                                    type="button"
+                                    value={1}
+                                  >
+                                    <span
+                                      className="toggle__bar toggle__bar--on"
+                                    />
+                                    <span
+                                      className="toggle__knob toggle__knob--on"
+                                    />
+                                  </button>
+                                </Toggle>
+                              </div>
+                              <AnchorLink
+                                className="btn btn-link code-monitoring-node__edit-button"
+                                to="/code-monitoring/foo9"
+                              >
+                                <a
+                                  className="btn btn-link code-monitoring-node__edit-button"
+                                  href="/code-monitoring/foo9"
+                                >
+                                  Edit
+                                </a>
+                              </AnchorLink>
+                            </div>
+                          </div>
+                        </div>
                       </CodeMonitorNode>
                       <CodeMonitorNode
                         authenticatedUser={
@@ -1537,72 +1601,79 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                         showCodeMonitoringTestEmailButton={false}
                         toggleCodeMonitorEnabled={[Function]}
                       >
-                        <AnchorLink
-                          className="code-monitoring-node card"
-                          to="/code-monitoring/foo10"
+                        <div
+                          className="code-monitoring-node"
                         >
-                          <a
-                            className="code-monitoring-node card"
-                            href="/code-monitoring/foo10"
+                          <div
+                            className="d-flex justify-content-between align-items-center"
                           >
                             <div
-                              className="d-flex justify-content-between align-items-center"
+                              className="d-flex flex-column"
                             >
                               <div
-                                className="d-flex flex-column"
+                                className="font-weight-bold"
                               >
-                                <div
-                                  className="font-weight-bold"
+                                <AnchorLink
+                                  to="/code-monitoring/foo10"
                                 >
-                                  Tenth test code monitor
-                                </div>
-                                <div
-                                  className="d-flex text-muted"
-                                >
-                                  New search result → Sends email notifications
-                                   
-                                </div>
+                                  <a
+                                    href="/code-monitoring/foo10"
+                                  >
+                                    Tenth test code monitor
+                                  </a>
+                                </AnchorLink>
                               </div>
                               <div
-                                className="d-flex"
+                                className="d-flex text-muted"
                               >
-                                <div
-                                  className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
-                                >
-                                  <Toggle
-                                    className="mr-3"
-                                    disabled={false}
-                                    onClick={[Function]}
-                                    value={true}
-                                  >
-                                    <button
-                                      aria-checked={true}
-                                      className="toggle mr-3"
-                                      disabled={false}
-                                      onClick={[Function]}
-                                      role="switch"
-                                      type="button"
-                                      value={1}
-                                    >
-                                      <span
-                                        className="toggle__bar toggle__bar--on"
-                                      />
-                                      <span
-                                        className="toggle__knob toggle__knob--on"
-                                      />
-                                    </button>
-                                  </Toggle>
-                                </div>
-                                <button
-                                  className="btn btn-link code-monitoring-node__edit-button"
-                                  type="button"
-                                >
-                                  Edit
-                                </button>
+                                New search result → Sends email notifications
+                                 
                               </div>
                             </div>
-                          </a>
-                        </AnchorLink>
+                            <div
+                              className="d-flex"
+                            >
+                              <div
+                                className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                              >
+                                <Toggle
+                                  className="mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  value={true}
+                                >
+                                  <button
+                                    aria-checked={true}
+                                    className="toggle mr-3"
+                                    disabled={false}
+                                    onClick={[Function]}
+                                    role="switch"
+                                    type="button"
+                                    value={1}
+                                  >
+                                    <span
+                                      className="toggle__bar toggle__bar--on"
+                                    />
+                                    <span
+                                      className="toggle__knob toggle__knob--on"
+                                    />
+                                  </button>
+                                </Toggle>
+                              </div>
+                              <AnchorLink
+                                className="btn btn-link code-monitoring-node__edit-button"
+                                to="/code-monitoring/foo10"
+                              >
+                                <a
+                                  className="btn btn-link code-monitoring-node__edit-button"
+                                  href="/code-monitoring/foo10"
+                                >
+                                  Edit
+                                </a>
+                              </AnchorLink>
+                            </div>
+                          </div>
+                        </div>
                       </CodeMonitorNode>
                     </ul>
                     <div
@@ -2106,6 +2177,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
               className="container"
             >
               <FilteredConnection
+                className="filtered-connection__centered-summary"
                 cursorPaging={true}
                 defaultFirst={10}
                 hideSearch={true}
@@ -2131,7 +2203,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                 useURLQuery={true}
               >
                 <div
-                  className="filtered-connection test-filtered-connection filtered-connection--noncompact"
+                  className="filtered-connection test-filtered-connection filtered-connection--noncompact filtered-connection__centered-summary"
                 >
                   <ConnectionNodes
                     connection={
@@ -2294,72 +2366,79 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                         showCodeMonitoringTestEmailButton={false}
                         toggleCodeMonitorEnabled={[Function]}
                       >
-                        <AnchorLink
-                          className="code-monitoring-node card"
-                          to="/code-monitoring/foo0"
+                        <div
+                          className="code-monitoring-node"
                         >
-                          <a
-                            className="code-monitoring-node card"
-                            href="/code-monitoring/foo0"
+                          <div
+                            className="d-flex justify-content-between align-items-center"
                           >
                             <div
-                              className="d-flex justify-content-between align-items-center"
+                              className="d-flex flex-column"
                             >
                               <div
-                                className="d-flex flex-column"
+                                className="font-weight-bold"
                               >
-                                <div
-                                  className="font-weight-bold"
+                                <AnchorLink
+                                  to="/code-monitoring/foo0"
                                 >
-                                  Test code monitor
-                                </div>
-                                <div
-                                  className="d-flex text-muted"
-                                >
-                                  New search result → Sends email notifications
-                                   
-                                </div>
+                                  <a
+                                    href="/code-monitoring/foo0"
+                                  >
+                                    Test code monitor
+                                  </a>
+                                </AnchorLink>
                               </div>
                               <div
-                                className="d-flex"
+                                className="d-flex text-muted"
                               >
-                                <div
-                                  className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
-                                >
-                                  <Toggle
-                                    className="mr-3"
-                                    disabled={false}
-                                    onClick={[Function]}
-                                    value={true}
-                                  >
-                                    <button
-                                      aria-checked={true}
-                                      className="toggle mr-3"
-                                      disabled={false}
-                                      onClick={[Function]}
-                                      role="switch"
-                                      type="button"
-                                      value={1}
-                                    >
-                                      <span
-                                        className="toggle__bar toggle__bar--on"
-                                      />
-                                      <span
-                                        className="toggle__knob toggle__knob--on"
-                                      />
-                                    </button>
-                                  </Toggle>
-                                </div>
-                                <button
-                                  className="btn btn-link code-monitoring-node__edit-button"
-                                  type="button"
-                                >
-                                  Edit
-                                </button>
+                                New search result → Sends email notifications
+                                 
                               </div>
                             </div>
-                          </a>
-                        </AnchorLink>
+                            <div
+                              className="d-flex"
+                            >
+                              <div
+                                className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                              >
+                                <Toggle
+                                  className="mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  value={true}
+                                >
+                                  <button
+                                    aria-checked={true}
+                                    className="toggle mr-3"
+                                    disabled={false}
+                                    onClick={[Function]}
+                                    role="switch"
+                                    type="button"
+                                    value={1}
+                                  >
+                                    <span
+                                      className="toggle__bar toggle__bar--on"
+                                    />
+                                    <span
+                                      className="toggle__knob toggle__knob--on"
+                                    />
+                                  </button>
+                                </Toggle>
+                              </div>
+                              <AnchorLink
+                                className="btn btn-link code-monitoring-node__edit-button"
+                                to="/code-monitoring/foo0"
+                              >
+                                <a
+                                  className="btn btn-link code-monitoring-node__edit-button"
+                                  href="/code-monitoring/foo0"
+                                >
+                                  Edit
+                                </a>
+                              </AnchorLink>
+                            </div>
+                          </div>
+                        </div>
                       </CodeMonitorNode>
                       <CodeMonitorNode
                         authenticatedUser={
@@ -2402,72 +2481,79 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                         showCodeMonitoringTestEmailButton={false}
                         toggleCodeMonitorEnabled={[Function]}
                       >
-                        <AnchorLink
-                          className="code-monitoring-node card"
-                          to="/code-monitoring/foo1"
+                        <div
+                          className="code-monitoring-node"
                         >
-                          <a
-                            className="code-monitoring-node card"
-                            href="/code-monitoring/foo1"
+                          <div
+                            className="d-flex justify-content-between align-items-center"
                           >
                             <div
-                              className="d-flex justify-content-between align-items-center"
+                              className="d-flex flex-column"
                             >
                               <div
-                                className="d-flex flex-column"
+                                className="font-weight-bold"
                               >
-                                <div
-                                  className="font-weight-bold"
+                                <AnchorLink
+                                  to="/code-monitoring/foo1"
                                 >
-                                  Second test code monitor
-                                </div>
-                                <div
-                                  className="d-flex text-muted"
-                                >
-                                  New search result → Sends email notifications
-                                   
-                                </div>
+                                  <a
+                                    href="/code-monitoring/foo1"
+                                  >
+                                    Second test code monitor
+                                  </a>
+                                </AnchorLink>
                               </div>
                               <div
-                                className="d-flex"
+                                className="d-flex text-muted"
                               >
-                                <div
-                                  className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
-                                >
-                                  <Toggle
-                                    className="mr-3"
-                                    disabled={false}
-                                    onClick={[Function]}
-                                    value={true}
-                                  >
-                                    <button
-                                      aria-checked={true}
-                                      className="toggle mr-3"
-                                      disabled={false}
-                                      onClick={[Function]}
-                                      role="switch"
-                                      type="button"
-                                      value={1}
-                                    >
-                                      <span
-                                        className="toggle__bar toggle__bar--on"
-                                      />
-                                      <span
-                                        className="toggle__knob toggle__knob--on"
-                                      />
-                                    </button>
-                                  </Toggle>
-                                </div>
-                                <button
-                                  className="btn btn-link code-monitoring-node__edit-button"
-                                  type="button"
-                                >
-                                  Edit
-                                </button>
+                                New search result → Sends email notifications
+                                 
                               </div>
                             </div>
-                          </a>
-                        </AnchorLink>
+                            <div
+                              className="d-flex"
+                            >
+                              <div
+                                className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                              >
+                                <Toggle
+                                  className="mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  value={true}
+                                >
+                                  <button
+                                    aria-checked={true}
+                                    className="toggle mr-3"
+                                    disabled={false}
+                                    onClick={[Function]}
+                                    role="switch"
+                                    type="button"
+                                    value={1}
+                                  >
+                                    <span
+                                      className="toggle__bar toggle__bar--on"
+                                    />
+                                    <span
+                                      className="toggle__knob toggle__knob--on"
+                                    />
+                                  </button>
+                                </Toggle>
+                              </div>
+                              <AnchorLink
+                                className="btn btn-link code-monitoring-node__edit-button"
+                                to="/code-monitoring/foo1"
+                              >
+                                <a
+                                  className="btn btn-link code-monitoring-node__edit-button"
+                                  href="/code-monitoring/foo1"
+                                >
+                                  Edit
+                                </a>
+                              </AnchorLink>
+                            </div>
+                          </div>
+                        </div>
                       </CodeMonitorNode>
                       <CodeMonitorNode
                         authenticatedUser={
@@ -2510,72 +2596,79 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                         showCodeMonitoringTestEmailButton={false}
                         toggleCodeMonitorEnabled={[Function]}
                       >
-                        <AnchorLink
-                          className="code-monitoring-node card"
-                          to="/code-monitoring/foo2"
+                        <div
+                          className="code-monitoring-node"
                         >
-                          <a
-                            className="code-monitoring-node card"
-                            href="/code-monitoring/foo2"
+                          <div
+                            className="d-flex justify-content-between align-items-center"
                           >
                             <div
-                              className="d-flex justify-content-between align-items-center"
+                              className="d-flex flex-column"
                             >
                               <div
-                                className="d-flex flex-column"
+                                className="font-weight-bold"
                               >
-                                <div
-                                  className="font-weight-bold"
+                                <AnchorLink
+                                  to="/code-monitoring/foo2"
                                 >
-                                  Third test code monitor
-                                </div>
-                                <div
-                                  className="d-flex text-muted"
-                                >
-                                  New search result → Sends email notifications
-                                   
-                                </div>
+                                  <a
+                                    href="/code-monitoring/foo2"
+                                  >
+                                    Third test code monitor
+                                  </a>
+                                </AnchorLink>
                               </div>
                               <div
-                                className="d-flex"
+                                className="d-flex text-muted"
                               >
-                                <div
-                                  className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
-                                >
-                                  <Toggle
-                                    className="mr-3"
-                                    disabled={false}
-                                    onClick={[Function]}
-                                    value={true}
-                                  >
-                                    <button
-                                      aria-checked={true}
-                                      className="toggle mr-3"
-                                      disabled={false}
-                                      onClick={[Function]}
-                                      role="switch"
-                                      type="button"
-                                      value={1}
-                                    >
-                                      <span
-                                        className="toggle__bar toggle__bar--on"
-                                      />
-                                      <span
-                                        className="toggle__knob toggle__knob--on"
-                                      />
-                                    </button>
-                                  </Toggle>
-                                </div>
-                                <button
-                                  className="btn btn-link code-monitoring-node__edit-button"
-                                  type="button"
-                                >
-                                  Edit
-                                </button>
+                                New search result → Sends email notifications
+                                 
                               </div>
                             </div>
-                          </a>
-                        </AnchorLink>
+                            <div
+                              className="d-flex"
+                            >
+                              <div
+                                className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                              >
+                                <Toggle
+                                  className="mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  value={true}
+                                >
+                                  <button
+                                    aria-checked={true}
+                                    className="toggle mr-3"
+                                    disabled={false}
+                                    onClick={[Function]}
+                                    role="switch"
+                                    type="button"
+                                    value={1}
+                                  >
+                                    <span
+                                      className="toggle__bar toggle__bar--on"
+                                    />
+                                    <span
+                                      className="toggle__knob toggle__knob--on"
+                                    />
+                                  </button>
+                                </Toggle>
+                              </div>
+                              <AnchorLink
+                                className="btn btn-link code-monitoring-node__edit-button"
+                                to="/code-monitoring/foo2"
+                              >
+                                <a
+                                  className="btn btn-link code-monitoring-node__edit-button"
+                                  href="/code-monitoring/foo2"
+                                >
+                                  Edit
+                                </a>
+                              </AnchorLink>
+                            </div>
+                          </div>
+                        </div>
                       </CodeMonitorNode>
                     </ul>
                     <div
@@ -2897,6 +2990,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
               className="container"
             >
               <FilteredConnection
+                className="filtered-connection__centered-summary"
                 cursorPaging={true}
                 defaultFirst={10}
                 hideSearch={true}
@@ -2922,7 +3016,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                 useURLQuery={true}
               >
                 <div
-                  className="filtered-connection test-filtered-connection filtered-connection--noncompact"
+                  className="filtered-connection test-filtered-connection filtered-connection--noncompact filtered-connection__centered-summary"
                 >
                   <ConnectionNodes
                     connection={
@@ -3319,72 +3413,79 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         showCodeMonitoringTestEmailButton={false}
                         toggleCodeMonitorEnabled={[Function]}
                       >
-                        <AnchorLink
-                          className="code-monitoring-node card"
-                          to="/code-monitoring/foo0"
+                        <div
+                          className="code-monitoring-node"
                         >
-                          <a
-                            className="code-monitoring-node card"
-                            href="/code-monitoring/foo0"
+                          <div
+                            className="d-flex justify-content-between align-items-center"
                           >
                             <div
-                              className="d-flex justify-content-between align-items-center"
+                              className="d-flex flex-column"
                             >
                               <div
-                                className="d-flex flex-column"
+                                className="font-weight-bold"
                               >
-                                <div
-                                  className="font-weight-bold"
+                                <AnchorLink
+                                  to="/code-monitoring/foo0"
                                 >
-                                  Test code monitor
-                                </div>
-                                <div
-                                  className="d-flex text-muted"
-                                >
-                                  New search result → Sends email notifications
-                                   
-                                </div>
+                                  <a
+                                    href="/code-monitoring/foo0"
+                                  >
+                                    Test code monitor
+                                  </a>
+                                </AnchorLink>
                               </div>
                               <div
-                                className="d-flex"
+                                className="d-flex text-muted"
                               >
-                                <div
-                                  className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
-                                >
-                                  <Toggle
-                                    className="mr-3"
-                                    disabled={false}
-                                    onClick={[Function]}
-                                    value={true}
-                                  >
-                                    <button
-                                      aria-checked={true}
-                                      className="toggle mr-3"
-                                      disabled={false}
-                                      onClick={[Function]}
-                                      role="switch"
-                                      type="button"
-                                      value={1}
-                                    >
-                                      <span
-                                        className="toggle__bar toggle__bar--on"
-                                      />
-                                      <span
-                                        className="toggle__knob toggle__knob--on"
-                                      />
-                                    </button>
-                                  </Toggle>
-                                </div>
-                                <button
-                                  className="btn btn-link code-monitoring-node__edit-button"
-                                  type="button"
-                                >
-                                  Edit
-                                </button>
+                                New search result → Sends email notifications
+                                 
                               </div>
                             </div>
-                          </a>
-                        </AnchorLink>
+                            <div
+                              className="d-flex"
+                            >
+                              <div
+                                className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                              >
+                                <Toggle
+                                  className="mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  value={true}
+                                >
+                                  <button
+                                    aria-checked={true}
+                                    className="toggle mr-3"
+                                    disabled={false}
+                                    onClick={[Function]}
+                                    role="switch"
+                                    type="button"
+                                    value={1}
+                                  >
+                                    <span
+                                      className="toggle__bar toggle__bar--on"
+                                    />
+                                    <span
+                                      className="toggle__knob toggle__knob--on"
+                                    />
+                                  </button>
+                                </Toggle>
+                              </div>
+                              <AnchorLink
+                                className="btn btn-link code-monitoring-node__edit-button"
+                                to="/code-monitoring/foo0"
+                              >
+                                <a
+                                  className="btn btn-link code-monitoring-node__edit-button"
+                                  href="/code-monitoring/foo0"
+                                >
+                                  Edit
+                                </a>
+                              </AnchorLink>
+                            </div>
+                          </div>
+                        </div>
                       </CodeMonitorNode>
                       <CodeMonitorNode
                         authenticatedUser={
@@ -3427,72 +3528,79 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         showCodeMonitoringTestEmailButton={false}
                         toggleCodeMonitorEnabled={[Function]}
                       >
-                        <AnchorLink
-                          className="code-monitoring-node card"
-                          to="/code-monitoring/foo1"
+                        <div
+                          className="code-monitoring-node"
                         >
-                          <a
-                            className="code-monitoring-node card"
-                            href="/code-monitoring/foo1"
+                          <div
+                            className="d-flex justify-content-between align-items-center"
                           >
                             <div
-                              className="d-flex justify-content-between align-items-center"
+                              className="d-flex flex-column"
                             >
                               <div
-                                className="d-flex flex-column"
+                                className="font-weight-bold"
                               >
-                                <div
-                                  className="font-weight-bold"
+                                <AnchorLink
+                                  to="/code-monitoring/foo1"
                                 >
-                                  Second test code monitor
-                                </div>
-                                <div
-                                  className="d-flex text-muted"
-                                >
-                                  New search result → Sends email notifications
-                                   
-                                </div>
+                                  <a
+                                    href="/code-monitoring/foo1"
+                                  >
+                                    Second test code monitor
+                                  </a>
+                                </AnchorLink>
                               </div>
                               <div
-                                className="d-flex"
+                                className="d-flex text-muted"
                               >
-                                <div
-                                  className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
-                                >
-                                  <Toggle
-                                    className="mr-3"
-                                    disabled={false}
-                                    onClick={[Function]}
-                                    value={true}
-                                  >
-                                    <button
-                                      aria-checked={true}
-                                      className="toggle mr-3"
-                                      disabled={false}
-                                      onClick={[Function]}
-                                      role="switch"
-                                      type="button"
-                                      value={1}
-                                    >
-                                      <span
-                                        className="toggle__bar toggle__bar--on"
-                                      />
-                                      <span
-                                        className="toggle__knob toggle__knob--on"
-                                      />
-                                    </button>
-                                  </Toggle>
-                                </div>
-                                <button
-                                  className="btn btn-link code-monitoring-node__edit-button"
-                                  type="button"
-                                >
-                                  Edit
-                                </button>
+                                New search result → Sends email notifications
+                                 
                               </div>
                             </div>
-                          </a>
-                        </AnchorLink>
+                            <div
+                              className="d-flex"
+                            >
+                              <div
+                                className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                              >
+                                <Toggle
+                                  className="mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  value={true}
+                                >
+                                  <button
+                                    aria-checked={true}
+                                    className="toggle mr-3"
+                                    disabled={false}
+                                    onClick={[Function]}
+                                    role="switch"
+                                    type="button"
+                                    value={1}
+                                  >
+                                    <span
+                                      className="toggle__bar toggle__bar--on"
+                                    />
+                                    <span
+                                      className="toggle__knob toggle__knob--on"
+                                    />
+                                  </button>
+                                </Toggle>
+                              </div>
+                              <AnchorLink
+                                className="btn btn-link code-monitoring-node__edit-button"
+                                to="/code-monitoring/foo1"
+                              >
+                                <a
+                                  className="btn btn-link code-monitoring-node__edit-button"
+                                  href="/code-monitoring/foo1"
+                                >
+                                  Edit
+                                </a>
+                              </AnchorLink>
+                            </div>
+                          </div>
+                        </div>
                       </CodeMonitorNode>
                       <CodeMonitorNode
                         authenticatedUser={
@@ -3535,72 +3643,79 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         showCodeMonitoringTestEmailButton={false}
                         toggleCodeMonitorEnabled={[Function]}
                       >
-                        <AnchorLink
-                          className="code-monitoring-node card"
-                          to="/code-monitoring/foo2"
+                        <div
+                          className="code-monitoring-node"
                         >
-                          <a
-                            className="code-monitoring-node card"
-                            href="/code-monitoring/foo2"
+                          <div
+                            className="d-flex justify-content-between align-items-center"
                           >
                             <div
-                              className="d-flex justify-content-between align-items-center"
+                              className="d-flex flex-column"
                             >
                               <div
-                                className="d-flex flex-column"
+                                className="font-weight-bold"
                               >
-                                <div
-                                  className="font-weight-bold"
+                                <AnchorLink
+                                  to="/code-monitoring/foo2"
                                 >
-                                  Third test code monitor
-                                </div>
-                                <div
-                                  className="d-flex text-muted"
-                                >
-                                  New search result → Sends email notifications
-                                   
-                                </div>
+                                  <a
+                                    href="/code-monitoring/foo2"
+                                  >
+                                    Third test code monitor
+                                  </a>
+                                </AnchorLink>
                               </div>
                               <div
-                                className="d-flex"
+                                className="d-flex text-muted"
                               >
-                                <div
-                                  className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
-                                >
-                                  <Toggle
-                                    className="mr-3"
-                                    disabled={false}
-                                    onClick={[Function]}
-                                    value={true}
-                                  >
-                                    <button
-                                      aria-checked={true}
-                                      className="toggle mr-3"
-                                      disabled={false}
-                                      onClick={[Function]}
-                                      role="switch"
-                                      type="button"
-                                      value={1}
-                                    >
-                                      <span
-                                        className="toggle__bar toggle__bar--on"
-                                      />
-                                      <span
-                                        className="toggle__knob toggle__knob--on"
-                                      />
-                                    </button>
-                                  </Toggle>
-                                </div>
-                                <button
-                                  className="btn btn-link code-monitoring-node__edit-button"
-                                  type="button"
-                                >
-                                  Edit
-                                </button>
+                                New search result → Sends email notifications
+                                 
                               </div>
                             </div>
-                          </a>
-                        </AnchorLink>
+                            <div
+                              className="d-flex"
+                            >
+                              <div
+                                className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                              >
+                                <Toggle
+                                  className="mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  value={true}
+                                >
+                                  <button
+                                    aria-checked={true}
+                                    className="toggle mr-3"
+                                    disabled={false}
+                                    onClick={[Function]}
+                                    role="switch"
+                                    type="button"
+                                    value={1}
+                                  >
+                                    <span
+                                      className="toggle__bar toggle__bar--on"
+                                    />
+                                    <span
+                                      className="toggle__knob toggle__knob--on"
+                                    />
+                                  </button>
+                                </Toggle>
+                              </div>
+                              <AnchorLink
+                                className="btn btn-link code-monitoring-node__edit-button"
+                                to="/code-monitoring/foo2"
+                              >
+                                <a
+                                  className="btn btn-link code-monitoring-node__edit-button"
+                                  href="/code-monitoring/foo2"
+                                >
+                                  Edit
+                                </a>
+                              </AnchorLink>
+                            </div>
+                          </div>
+                        </div>
                       </CodeMonitorNode>
                       <CodeMonitorNode
                         authenticatedUser={
@@ -3643,72 +3758,79 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         showCodeMonitoringTestEmailButton={false}
                         toggleCodeMonitorEnabled={[Function]}
                       >
-                        <AnchorLink
-                          className="code-monitoring-node card"
-                          to="/code-monitoring/foo3"
+                        <div
+                          className="code-monitoring-node"
                         >
-                          <a
-                            className="code-monitoring-node card"
-                            href="/code-monitoring/foo3"
+                          <div
+                            className="d-flex justify-content-between align-items-center"
                           >
                             <div
-                              className="d-flex justify-content-between align-items-center"
+                              className="d-flex flex-column"
                             >
                               <div
-                                className="d-flex flex-column"
+                                className="font-weight-bold"
                               >
-                                <div
-                                  className="font-weight-bold"
+                                <AnchorLink
+                                  to="/code-monitoring/foo3"
                                 >
-                                  Fourth test code monitor
-                                </div>
-                                <div
-                                  className="d-flex text-muted"
-                                >
-                                  New search result → Sends email notifications
-                                   
-                                </div>
+                                  <a
+                                    href="/code-monitoring/foo3"
+                                  >
+                                    Fourth test code monitor
+                                  </a>
+                                </AnchorLink>
                               </div>
                               <div
-                                className="d-flex"
+                                className="d-flex text-muted"
                               >
-                                <div
-                                  className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
-                                >
-                                  <Toggle
-                                    className="mr-3"
-                                    disabled={false}
-                                    onClick={[Function]}
-                                    value={true}
-                                  >
-                                    <button
-                                      aria-checked={true}
-                                      className="toggle mr-3"
-                                      disabled={false}
-                                      onClick={[Function]}
-                                      role="switch"
-                                      type="button"
-                                      value={1}
-                                    >
-                                      <span
-                                        className="toggle__bar toggle__bar--on"
-                                      />
-                                      <span
-                                        className="toggle__knob toggle__knob--on"
-                                      />
-                                    </button>
-                                  </Toggle>
-                                </div>
-                                <button
-                                  className="btn btn-link code-monitoring-node__edit-button"
-                                  type="button"
-                                >
-                                  Edit
-                                </button>
+                                New search result → Sends email notifications
+                                 
                               </div>
                             </div>
-                          </a>
-                        </AnchorLink>
+                            <div
+                              className="d-flex"
+                            >
+                              <div
+                                className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                              >
+                                <Toggle
+                                  className="mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  value={true}
+                                >
+                                  <button
+                                    aria-checked={true}
+                                    className="toggle mr-3"
+                                    disabled={false}
+                                    onClick={[Function]}
+                                    role="switch"
+                                    type="button"
+                                    value={1}
+                                  >
+                                    <span
+                                      className="toggle__bar toggle__bar--on"
+                                    />
+                                    <span
+                                      className="toggle__knob toggle__knob--on"
+                                    />
+                                  </button>
+                                </Toggle>
+                              </div>
+                              <AnchorLink
+                                className="btn btn-link code-monitoring-node__edit-button"
+                                to="/code-monitoring/foo3"
+                              >
+                                <a
+                                  className="btn btn-link code-monitoring-node__edit-button"
+                                  href="/code-monitoring/foo3"
+                                >
+                                  Edit
+                                </a>
+                              </AnchorLink>
+                            </div>
+                          </div>
+                        </div>
                       </CodeMonitorNode>
                       <CodeMonitorNode
                         authenticatedUser={
@@ -3751,72 +3873,79 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         showCodeMonitoringTestEmailButton={false}
                         toggleCodeMonitorEnabled={[Function]}
                       >
-                        <AnchorLink
-                          className="code-monitoring-node card"
-                          to="/code-monitoring/foo4"
+                        <div
+                          className="code-monitoring-node"
                         >
-                          <a
-                            className="code-monitoring-node card"
-                            href="/code-monitoring/foo4"
+                          <div
+                            className="d-flex justify-content-between align-items-center"
                           >
                             <div
-                              className="d-flex justify-content-between align-items-center"
+                              className="d-flex flex-column"
                             >
                               <div
-                                className="d-flex flex-column"
+                                className="font-weight-bold"
                               >
-                                <div
-                                  className="font-weight-bold"
+                                <AnchorLink
+                                  to="/code-monitoring/foo4"
                                 >
-                                  Fifth test code monitor
-                                </div>
-                                <div
-                                  className="d-flex text-muted"
-                                >
-                                  New search result → Sends email notifications
-                                   
-                                </div>
+                                  <a
+                                    href="/code-monitoring/foo4"
+                                  >
+                                    Fifth test code monitor
+                                  </a>
+                                </AnchorLink>
                               </div>
                               <div
-                                className="d-flex"
+                                className="d-flex text-muted"
                               >
-                                <div
-                                  className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
-                                >
-                                  <Toggle
-                                    className="mr-3"
-                                    disabled={false}
-                                    onClick={[Function]}
-                                    value={true}
-                                  >
-                                    <button
-                                      aria-checked={true}
-                                      className="toggle mr-3"
-                                      disabled={false}
-                                      onClick={[Function]}
-                                      role="switch"
-                                      type="button"
-                                      value={1}
-                                    >
-                                      <span
-                                        className="toggle__bar toggle__bar--on"
-                                      />
-                                      <span
-                                        className="toggle__knob toggle__knob--on"
-                                      />
-                                    </button>
-                                  </Toggle>
-                                </div>
-                                <button
-                                  className="btn btn-link code-monitoring-node__edit-button"
-                                  type="button"
-                                >
-                                  Edit
-                                </button>
+                                New search result → Sends email notifications
+                                 
                               </div>
                             </div>
-                          </a>
-                        </AnchorLink>
+                            <div
+                              className="d-flex"
+                            >
+                              <div
+                                className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                              >
+                                <Toggle
+                                  className="mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  value={true}
+                                >
+                                  <button
+                                    aria-checked={true}
+                                    className="toggle mr-3"
+                                    disabled={false}
+                                    onClick={[Function]}
+                                    role="switch"
+                                    type="button"
+                                    value={1}
+                                  >
+                                    <span
+                                      className="toggle__bar toggle__bar--on"
+                                    />
+                                    <span
+                                      className="toggle__knob toggle__knob--on"
+                                    />
+                                  </button>
+                                </Toggle>
+                              </div>
+                              <AnchorLink
+                                className="btn btn-link code-monitoring-node__edit-button"
+                                to="/code-monitoring/foo4"
+                              >
+                                <a
+                                  className="btn btn-link code-monitoring-node__edit-button"
+                                  href="/code-monitoring/foo4"
+                                >
+                                  Edit
+                                </a>
+                              </AnchorLink>
+                            </div>
+                          </div>
+                        </div>
                       </CodeMonitorNode>
                       <CodeMonitorNode
                         authenticatedUser={
@@ -3859,72 +3988,79 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         showCodeMonitoringTestEmailButton={false}
                         toggleCodeMonitorEnabled={[Function]}
                       >
-                        <AnchorLink
-                          className="code-monitoring-node card"
-                          to="/code-monitoring/foo5"
+                        <div
+                          className="code-monitoring-node"
                         >
-                          <a
-                            className="code-monitoring-node card"
-                            href="/code-monitoring/foo5"
+                          <div
+                            className="d-flex justify-content-between align-items-center"
                           >
                             <div
-                              className="d-flex justify-content-between align-items-center"
+                              className="d-flex flex-column"
                             >
                               <div
-                                className="d-flex flex-column"
+                                className="font-weight-bold"
                               >
-                                <div
-                                  className="font-weight-bold"
+                                <AnchorLink
+                                  to="/code-monitoring/foo5"
                                 >
-                                  Sixth test code monitor
-                                </div>
-                                <div
-                                  className="d-flex text-muted"
-                                >
-                                  New search result → Sends email notifications
-                                   
-                                </div>
+                                  <a
+                                    href="/code-monitoring/foo5"
+                                  >
+                                    Sixth test code monitor
+                                  </a>
+                                </AnchorLink>
                               </div>
                               <div
-                                className="d-flex"
+                                className="d-flex text-muted"
                               >
-                                <div
-                                  className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
-                                >
-                                  <Toggle
-                                    className="mr-3"
-                                    disabled={false}
-                                    onClick={[Function]}
-                                    value={true}
-                                  >
-                                    <button
-                                      aria-checked={true}
-                                      className="toggle mr-3"
-                                      disabled={false}
-                                      onClick={[Function]}
-                                      role="switch"
-                                      type="button"
-                                      value={1}
-                                    >
-                                      <span
-                                        className="toggle__bar toggle__bar--on"
-                                      />
-                                      <span
-                                        className="toggle__knob toggle__knob--on"
-                                      />
-                                    </button>
-                                  </Toggle>
-                                </div>
-                                <button
-                                  className="btn btn-link code-monitoring-node__edit-button"
-                                  type="button"
-                                >
-                                  Edit
-                                </button>
+                                New search result → Sends email notifications
+                                 
                               </div>
                             </div>
-                          </a>
-                        </AnchorLink>
+                            <div
+                              className="d-flex"
+                            >
+                              <div
+                                className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                              >
+                                <Toggle
+                                  className="mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  value={true}
+                                >
+                                  <button
+                                    aria-checked={true}
+                                    className="toggle mr-3"
+                                    disabled={false}
+                                    onClick={[Function]}
+                                    role="switch"
+                                    type="button"
+                                    value={1}
+                                  >
+                                    <span
+                                      className="toggle__bar toggle__bar--on"
+                                    />
+                                    <span
+                                      className="toggle__knob toggle__knob--on"
+                                    />
+                                  </button>
+                                </Toggle>
+                              </div>
+                              <AnchorLink
+                                className="btn btn-link code-monitoring-node__edit-button"
+                                to="/code-monitoring/foo5"
+                              >
+                                <a
+                                  className="btn btn-link code-monitoring-node__edit-button"
+                                  href="/code-monitoring/foo5"
+                                >
+                                  Edit
+                                </a>
+                              </AnchorLink>
+                            </div>
+                          </div>
+                        </div>
                       </CodeMonitorNode>
                       <CodeMonitorNode
                         authenticatedUser={
@@ -3967,72 +4103,79 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         showCodeMonitoringTestEmailButton={false}
                         toggleCodeMonitorEnabled={[Function]}
                       >
-                        <AnchorLink
-                          className="code-monitoring-node card"
-                          to="/code-monitoring/foo6"
+                        <div
+                          className="code-monitoring-node"
                         >
-                          <a
-                            className="code-monitoring-node card"
-                            href="/code-monitoring/foo6"
+                          <div
+                            className="d-flex justify-content-between align-items-center"
                           >
                             <div
-                              className="d-flex justify-content-between align-items-center"
+                              className="d-flex flex-column"
                             >
                               <div
-                                className="d-flex flex-column"
+                                className="font-weight-bold"
                               >
-                                <div
-                                  className="font-weight-bold"
+                                <AnchorLink
+                                  to="/code-monitoring/foo6"
                                 >
-                                  Seventh test code monitor
-                                </div>
-                                <div
-                                  className="d-flex text-muted"
-                                >
-                                  New search result → Sends email notifications
-                                   
-                                </div>
+                                  <a
+                                    href="/code-monitoring/foo6"
+                                  >
+                                    Seventh test code monitor
+                                  </a>
+                                </AnchorLink>
                               </div>
                               <div
-                                className="d-flex"
+                                className="d-flex text-muted"
                               >
-                                <div
-                                  className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
-                                >
-                                  <Toggle
-                                    className="mr-3"
-                                    disabled={false}
-                                    onClick={[Function]}
-                                    value={true}
-                                  >
-                                    <button
-                                      aria-checked={true}
-                                      className="toggle mr-3"
-                                      disabled={false}
-                                      onClick={[Function]}
-                                      role="switch"
-                                      type="button"
-                                      value={1}
-                                    >
-                                      <span
-                                        className="toggle__bar toggle__bar--on"
-                                      />
-                                      <span
-                                        className="toggle__knob toggle__knob--on"
-                                      />
-                                    </button>
-                                  </Toggle>
-                                </div>
-                                <button
-                                  className="btn btn-link code-monitoring-node__edit-button"
-                                  type="button"
-                                >
-                                  Edit
-                                </button>
+                                New search result → Sends email notifications
+                                 
                               </div>
                             </div>
-                          </a>
-                        </AnchorLink>
+                            <div
+                              className="d-flex"
+                            >
+                              <div
+                                className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                              >
+                                <Toggle
+                                  className="mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  value={true}
+                                >
+                                  <button
+                                    aria-checked={true}
+                                    className="toggle mr-3"
+                                    disabled={false}
+                                    onClick={[Function]}
+                                    role="switch"
+                                    type="button"
+                                    value={1}
+                                  >
+                                    <span
+                                      className="toggle__bar toggle__bar--on"
+                                    />
+                                    <span
+                                      className="toggle__knob toggle__knob--on"
+                                    />
+                                  </button>
+                                </Toggle>
+                              </div>
+                              <AnchorLink
+                                className="btn btn-link code-monitoring-node__edit-button"
+                                to="/code-monitoring/foo6"
+                              >
+                                <a
+                                  className="btn btn-link code-monitoring-node__edit-button"
+                                  href="/code-monitoring/foo6"
+                                >
+                                  Edit
+                                </a>
+                              </AnchorLink>
+                            </div>
+                          </div>
+                        </div>
                       </CodeMonitorNode>
                       <CodeMonitorNode
                         authenticatedUser={
@@ -4075,72 +4218,79 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         showCodeMonitoringTestEmailButton={false}
                         toggleCodeMonitorEnabled={[Function]}
                       >
-                        <AnchorLink
-                          className="code-monitoring-node card"
-                          to="/code-monitoring/foo7"
+                        <div
+                          className="code-monitoring-node"
                         >
-                          <a
-                            className="code-monitoring-node card"
-                            href="/code-monitoring/foo7"
+                          <div
+                            className="d-flex justify-content-between align-items-center"
                           >
                             <div
-                              className="d-flex justify-content-between align-items-center"
+                              className="d-flex flex-column"
                             >
                               <div
-                                className="d-flex flex-column"
+                                className="font-weight-bold"
                               >
-                                <div
-                                  className="font-weight-bold"
+                                <AnchorLink
+                                  to="/code-monitoring/foo7"
                                 >
-                                  Eighth test code monitor
-                                </div>
-                                <div
-                                  className="d-flex text-muted"
-                                >
-                                  New search result → Sends email notifications
-                                   
-                                </div>
+                                  <a
+                                    href="/code-monitoring/foo7"
+                                  >
+                                    Eighth test code monitor
+                                  </a>
+                                </AnchorLink>
                               </div>
                               <div
-                                className="d-flex"
+                                className="d-flex text-muted"
                               >
-                                <div
-                                  className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
-                                >
-                                  <Toggle
-                                    className="mr-3"
-                                    disabled={false}
-                                    onClick={[Function]}
-                                    value={true}
-                                  >
-                                    <button
-                                      aria-checked={true}
-                                      className="toggle mr-3"
-                                      disabled={false}
-                                      onClick={[Function]}
-                                      role="switch"
-                                      type="button"
-                                      value={1}
-                                    >
-                                      <span
-                                        className="toggle__bar toggle__bar--on"
-                                      />
-                                      <span
-                                        className="toggle__knob toggle__knob--on"
-                                      />
-                                    </button>
-                                  </Toggle>
-                                </div>
-                                <button
-                                  className="btn btn-link code-monitoring-node__edit-button"
-                                  type="button"
-                                >
-                                  Edit
-                                </button>
+                                New search result → Sends email notifications
+                                 
                               </div>
                             </div>
-                          </a>
-                        </AnchorLink>
+                            <div
+                              className="d-flex"
+                            >
+                              <div
+                                className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                              >
+                                <Toggle
+                                  className="mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  value={true}
+                                >
+                                  <button
+                                    aria-checked={true}
+                                    className="toggle mr-3"
+                                    disabled={false}
+                                    onClick={[Function]}
+                                    role="switch"
+                                    type="button"
+                                    value={1}
+                                  >
+                                    <span
+                                      className="toggle__bar toggle__bar--on"
+                                    />
+                                    <span
+                                      className="toggle__knob toggle__knob--on"
+                                    />
+                                  </button>
+                                </Toggle>
+                              </div>
+                              <AnchorLink
+                                className="btn btn-link code-monitoring-node__edit-button"
+                                to="/code-monitoring/foo7"
+                              >
+                                <a
+                                  className="btn btn-link code-monitoring-node__edit-button"
+                                  href="/code-monitoring/foo7"
+                                >
+                                  Edit
+                                </a>
+                              </AnchorLink>
+                            </div>
+                          </div>
+                        </div>
                       </CodeMonitorNode>
                       <CodeMonitorNode
                         authenticatedUser={
@@ -4183,72 +4333,79 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         showCodeMonitoringTestEmailButton={false}
                         toggleCodeMonitorEnabled={[Function]}
                       >
-                        <AnchorLink
-                          className="code-monitoring-node card"
-                          to="/code-monitoring/foo9"
+                        <div
+                          className="code-monitoring-node"
                         >
-                          <a
-                            className="code-monitoring-node card"
-                            href="/code-monitoring/foo9"
+                          <div
+                            className="d-flex justify-content-between align-items-center"
                           >
                             <div
-                              className="d-flex justify-content-between align-items-center"
+                              className="d-flex flex-column"
                             >
                               <div
-                                className="d-flex flex-column"
+                                className="font-weight-bold"
                               >
-                                <div
-                                  className="font-weight-bold"
+                                <AnchorLink
+                                  to="/code-monitoring/foo9"
                                 >
-                                  Ninth test code monitor
-                                </div>
-                                <div
-                                  className="d-flex text-muted"
-                                >
-                                  New search result → Sends email notifications
-                                   
-                                </div>
+                                  <a
+                                    href="/code-monitoring/foo9"
+                                  >
+                                    Ninth test code monitor
+                                  </a>
+                                </AnchorLink>
                               </div>
                               <div
-                                className="d-flex"
+                                className="d-flex text-muted"
                               >
-                                <div
-                                  className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
-                                >
-                                  <Toggle
-                                    className="mr-3"
-                                    disabled={false}
-                                    onClick={[Function]}
-                                    value={true}
-                                  >
-                                    <button
-                                      aria-checked={true}
-                                      className="toggle mr-3"
-                                      disabled={false}
-                                      onClick={[Function]}
-                                      role="switch"
-                                      type="button"
-                                      value={1}
-                                    >
-                                      <span
-                                        className="toggle__bar toggle__bar--on"
-                                      />
-                                      <span
-                                        className="toggle__knob toggle__knob--on"
-                                      />
-                                    </button>
-                                  </Toggle>
-                                </div>
-                                <button
-                                  className="btn btn-link code-monitoring-node__edit-button"
-                                  type="button"
-                                >
-                                  Edit
-                                </button>
+                                New search result → Sends email notifications
+                                 
                               </div>
                             </div>
-                          </a>
-                        </AnchorLink>
+                            <div
+                              className="d-flex"
+                            >
+                              <div
+                                className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                              >
+                                <Toggle
+                                  className="mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  value={true}
+                                >
+                                  <button
+                                    aria-checked={true}
+                                    className="toggle mr-3"
+                                    disabled={false}
+                                    onClick={[Function]}
+                                    role="switch"
+                                    type="button"
+                                    value={1}
+                                  >
+                                    <span
+                                      className="toggle__bar toggle__bar--on"
+                                    />
+                                    <span
+                                      className="toggle__knob toggle__knob--on"
+                                    />
+                                  </button>
+                                </Toggle>
+                              </div>
+                              <AnchorLink
+                                className="btn btn-link code-monitoring-node__edit-button"
+                                to="/code-monitoring/foo9"
+                              >
+                                <a
+                                  className="btn btn-link code-monitoring-node__edit-button"
+                                  href="/code-monitoring/foo9"
+                                >
+                                  Edit
+                                </a>
+                              </AnchorLink>
+                            </div>
+                          </div>
+                        </div>
                       </CodeMonitorNode>
                       <CodeMonitorNode
                         authenticatedUser={
@@ -4291,72 +4448,79 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         showCodeMonitoringTestEmailButton={false}
                         toggleCodeMonitorEnabled={[Function]}
                       >
-                        <AnchorLink
-                          className="code-monitoring-node card"
-                          to="/code-monitoring/foo10"
+                        <div
+                          className="code-monitoring-node"
                         >
-                          <a
-                            className="code-monitoring-node card"
-                            href="/code-monitoring/foo10"
+                          <div
+                            className="d-flex justify-content-between align-items-center"
                           >
                             <div
-                              className="d-flex justify-content-between align-items-center"
+                              className="d-flex flex-column"
                             >
                               <div
-                                className="d-flex flex-column"
+                                className="font-weight-bold"
                               >
-                                <div
-                                  className="font-weight-bold"
+                                <AnchorLink
+                                  to="/code-monitoring/foo10"
                                 >
-                                  Tenth test code monitor
-                                </div>
-                                <div
-                                  className="d-flex text-muted"
-                                >
-                                  New search result → Sends email notifications
-                                   
-                                </div>
+                                  <a
+                                    href="/code-monitoring/foo10"
+                                  >
+                                    Tenth test code monitor
+                                  </a>
+                                </AnchorLink>
                               </div>
                               <div
-                                className="d-flex"
+                                className="d-flex text-muted"
                               >
-                                <div
-                                  className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
-                                >
-                                  <Toggle
-                                    className="mr-3"
-                                    disabled={false}
-                                    onClick={[Function]}
-                                    value={true}
-                                  >
-                                    <button
-                                      aria-checked={true}
-                                      className="toggle mr-3"
-                                      disabled={false}
-                                      onClick={[Function]}
-                                      role="switch"
-                                      type="button"
-                                      value={1}
-                                    >
-                                      <span
-                                        className="toggle__bar toggle__bar--on"
-                                      />
-                                      <span
-                                        className="toggle__knob toggle__knob--on"
-                                      />
-                                    </button>
-                                  </Toggle>
-                                </div>
-                                <button
-                                  className="btn btn-link code-monitoring-node__edit-button"
-                                  type="button"
-                                >
-                                  Edit
-                                </button>
+                                New search result → Sends email notifications
+                                 
                               </div>
                             </div>
-                          </a>
-                        </AnchorLink>
+                            <div
+                              className="d-flex"
+                            >
+                              <div
+                                className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                              >
+                                <Toggle
+                                  className="mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  value={true}
+                                >
+                                  <button
+                                    aria-checked={true}
+                                    className="toggle mr-3"
+                                    disabled={false}
+                                    onClick={[Function]}
+                                    role="switch"
+                                    type="button"
+                                    value={1}
+                                  >
+                                    <span
+                                      className="toggle__bar toggle__bar--on"
+                                    />
+                                    <span
+                                      className="toggle__knob toggle__knob--on"
+                                    />
+                                  </button>
+                                </Toggle>
+                              </div>
+                              <AnchorLink
+                                className="btn btn-link code-monitoring-node__edit-button"
+                                to="/code-monitoring/foo10"
+                              >
+                                <a
+                                  className="btn btn-link code-monitoring-node__edit-button"
+                                  href="/code-monitoring/foo10"
+                                >
+                                  Edit
+                                </a>
+                              </AnchorLink>
+                            </div>
+                          </div>
+                        </div>
                       </CodeMonitorNode>
                       <CodeMonitorNode
                         authenticatedUser={
@@ -4399,72 +4563,79 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         showCodeMonitoringTestEmailButton={false}
                         toggleCodeMonitorEnabled={[Function]}
                       >
-                        <AnchorLink
-                          className="code-monitoring-node card"
-                          to="/code-monitoring/foo11"
+                        <div
+                          className="code-monitoring-node"
                         >
-                          <a
-                            className="code-monitoring-node card"
-                            href="/code-monitoring/foo11"
+                          <div
+                            className="d-flex justify-content-between align-items-center"
                           >
                             <div
-                              className="d-flex justify-content-between align-items-center"
+                              className="d-flex flex-column"
                             >
                               <div
-                                className="d-flex flex-column"
+                                className="font-weight-bold"
                               >
-                                <div
-                                  className="font-weight-bold"
+                                <AnchorLink
+                                  to="/code-monitoring/foo11"
                                 >
-                                  Eleventh test code monitor
-                                </div>
-                                <div
-                                  className="d-flex text-muted"
-                                >
-                                  New search result → Sends email notifications
-                                   
-                                </div>
+                                  <a
+                                    href="/code-monitoring/foo11"
+                                  >
+                                    Eleventh test code monitor
+                                  </a>
+                                </AnchorLink>
                               </div>
                               <div
-                                className="d-flex"
+                                className="d-flex text-muted"
                               >
-                                <div
-                                  className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
-                                >
-                                  <Toggle
-                                    className="mr-3"
-                                    disabled={false}
-                                    onClick={[Function]}
-                                    value={true}
-                                  >
-                                    <button
-                                      aria-checked={true}
-                                      className="toggle mr-3"
-                                      disabled={false}
-                                      onClick={[Function]}
-                                      role="switch"
-                                      type="button"
-                                      value={1}
-                                    >
-                                      <span
-                                        className="toggle__bar toggle__bar--on"
-                                      />
-                                      <span
-                                        className="toggle__knob toggle__knob--on"
-                                      />
-                                    </button>
-                                  </Toggle>
-                                </div>
-                                <button
-                                  className="btn btn-link code-monitoring-node__edit-button"
-                                  type="button"
-                                >
-                                  Edit
-                                </button>
+                                New search result → Sends email notifications
+                                 
                               </div>
                             </div>
-                          </a>
-                        </AnchorLink>
+                            <div
+                              className="d-flex"
+                            >
+                              <div
+                                className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                              >
+                                <Toggle
+                                  className="mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  value={true}
+                                >
+                                  <button
+                                    aria-checked={true}
+                                    className="toggle mr-3"
+                                    disabled={false}
+                                    onClick={[Function]}
+                                    role="switch"
+                                    type="button"
+                                    value={1}
+                                  >
+                                    <span
+                                      className="toggle__bar toggle__bar--on"
+                                    />
+                                    <span
+                                      className="toggle__knob toggle__knob--on"
+                                    />
+                                  </button>
+                                </Toggle>
+                              </div>
+                              <AnchorLink
+                                className="btn btn-link code-monitoring-node__edit-button"
+                                to="/code-monitoring/foo11"
+                              >
+                                <a
+                                  className="btn btn-link code-monitoring-node__edit-button"
+                                  href="/code-monitoring/foo11"
+                                >
+                                  Edit
+                                </a>
+                              </AnchorLink>
+                            </div>
+                          </div>
+                        </div>
                       </CodeMonitorNode>
                       <CodeMonitorNode
                         authenticatedUser={
@@ -4507,72 +4678,79 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                         showCodeMonitoringTestEmailButton={false}
                         toggleCodeMonitorEnabled={[Function]}
                       >
-                        <AnchorLink
-                          className="code-monitoring-node card"
-                          to="/code-monitoring/foo12"
+                        <div
+                          className="code-monitoring-node"
                         >
-                          <a
-                            className="code-monitoring-node card"
-                            href="/code-monitoring/foo12"
+                          <div
+                            className="d-flex justify-content-between align-items-center"
                           >
                             <div
-                              className="d-flex justify-content-between align-items-center"
+                              className="d-flex flex-column"
                             >
                               <div
-                                className="d-flex flex-column"
+                                className="font-weight-bold"
                               >
-                                <div
-                                  className="font-weight-bold"
+                                <AnchorLink
+                                  to="/code-monitoring/foo12"
                                 >
-                                  Twelfth test code monitor
-                                </div>
-                                <div
-                                  className="d-flex text-muted"
-                                >
-                                  New search result → Sends email notifications
-                                   
-                                </div>
+                                  <a
+                                    href="/code-monitoring/foo12"
+                                  >
+                                    Twelfth test code monitor
+                                  </a>
+                                </AnchorLink>
                               </div>
                               <div
-                                className="d-flex"
+                                className="d-flex text-muted"
                               >
-                                <div
-                                  className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
-                                >
-                                  <Toggle
-                                    className="mr-3"
-                                    disabled={false}
-                                    onClick={[Function]}
-                                    value={true}
-                                  >
-                                    <button
-                                      aria-checked={true}
-                                      className="toggle mr-3"
-                                      disabled={false}
-                                      onClick={[Function]}
-                                      role="switch"
-                                      type="button"
-                                      value={1}
-                                    >
-                                      <span
-                                        className="toggle__bar toggle__bar--on"
-                                      />
-                                      <span
-                                        className="toggle__knob toggle__knob--on"
-                                      />
-                                    </button>
-                                  </Toggle>
-                                </div>
-                                <button
-                                  className="btn btn-link code-monitoring-node__edit-button"
-                                  type="button"
-                                >
-                                  Edit
-                                </button>
+                                New search result → Sends email notifications
+                                 
                               </div>
                             </div>
-                          </a>
-                        </AnchorLink>
+                            <div
+                              className="d-flex"
+                            >
+                              <div
+                                className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                              >
+                                <Toggle
+                                  className="mr-3"
+                                  disabled={false}
+                                  onClick={[Function]}
+                                  value={true}
+                                >
+                                  <button
+                                    aria-checked={true}
+                                    className="toggle mr-3"
+                                    disabled={false}
+                                    onClick={[Function]}
+                                    role="switch"
+                                    type="button"
+                                    value={1}
+                                  >
+                                    <span
+                                      className="toggle__bar toggle__bar--on"
+                                    />
+                                    <span
+                                      className="toggle__knob toggle__knob--on"
+                                    />
+                                  </button>
+                                </Toggle>
+                              </div>
+                              <AnchorLink
+                                className="btn btn-link code-monitoring-node__edit-button"
+                                to="/code-monitoring/foo12"
+                              >
+                                <a
+                                  className="btn btn-link code-monitoring-node__edit-button"
+                                  href="/code-monitoring/foo12"
+                                >
+                                  Edit
+                                </a>
+                              </AnchorLink>
+                            </div>
+                          </div>
+                        </div>
                       </CodeMonitorNode>
                     </ul>
                     <div
