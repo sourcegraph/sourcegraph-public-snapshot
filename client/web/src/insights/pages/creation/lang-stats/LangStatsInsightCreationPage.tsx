@@ -26,8 +26,8 @@ const DEFAULT_FINAL_SETTINGS = {}
 
 export interface LangStatsInsightCreationPageProps
     extends PlatformContextProps<'updateSettings'>,
-        SettingsCascadeProps,
-        TelemetryProps {
+    SettingsCascadeProps,
+    TelemetryProps {
     /**
      * Authenticated user info, Used to decide where code insight will appears
      * in personal dashboard (private) or in organization dashboard (public)
@@ -55,7 +55,7 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
                 values.visibility === 'personal'
                     ? userID
                     : // If this is not a 'personal' value than we are dealing with org id
-                      values.visibility
+                    values.visibility
 
             try {
                 const settings = await getSubjectSettings(subjectID).toPromise()
@@ -94,7 +94,7 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
             <PageTitle title="Create new code insight" />
 
             <div className="mb-5">
-                <h2>Set up new language usage insight</h2>
+                <h2>Create new language usage insight</h2>
 
                 <p className="text-muted">
                     Shows language usage in your repository based on number of lines of code.{' '}

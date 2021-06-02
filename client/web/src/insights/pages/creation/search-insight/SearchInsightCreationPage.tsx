@@ -24,8 +24,8 @@ import { getSanitizedSearchInsight } from './utils/insight-sanitizer'
 
 export interface SearchInsightCreationPageProps
     extends PlatformContextProps<'updateSettings'>,
-        SettingsCascadeProps,
-        TelemetryProps {
+    SettingsCascadeProps,
+    TelemetryProps {
     /**
      * Authenticated user info, Used to decide where code insight will appears
      * in personal dashboard (private) or in organisation dashboard (public)
@@ -55,7 +55,7 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
                 values.visibility === 'personal'
                     ? userID
                     : // If this is not a 'personal' value than we are dealing with org id
-                      values.visibility
+                    values.visibility
 
             try {
                 const settings = await getSubjectSettings(subjectID).toPromise()
@@ -94,7 +94,7 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
             <PageTitle title="Create new code insight" />
 
             <div className="mb-5">
-                <h2>Create new code insight</h2>
+                <h2>Create new search-based insight</h2>
 
                 <p className="text-muted">
                     Search-based code insights analyze your code based on any search query.{' '}
