@@ -79,6 +79,12 @@ $default-icon-colors: $oc-grape-7, $oc-violet-7, $oc-cyan-9, $oc-indigo-7, $oc-p
 
         border-radius: 2px;
         background-color: var(--border-color);
+
+        .theme-redesign & {
+            position: static;
+            transform: none;
+            align-self: center;
+        }
     }
 
     &__list {
@@ -105,6 +111,7 @@ $default-icon-colors: $oc-grape-7, $oc-violet-7, $oc-cyan-9, $oc-indigo-7, $oc-p
         height: 2rem;
 
         .theme-redesign & {
+            width: 2rem;
             margin-left: 0.25rem;
             border-radius: 0.1875rem;
         }
