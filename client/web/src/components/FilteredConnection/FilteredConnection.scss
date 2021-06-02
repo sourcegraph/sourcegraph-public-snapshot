@@ -12,6 +12,7 @@ $compact-summary-min-height: 2.75rem;
     &__nodes {
         list-style-type: none;
         padding: 0;
+        margin-bottom: 0;
     }
 
     &--noncompact &__form {
@@ -132,7 +133,7 @@ $compact-summary-min-height: 2.75rem;
             .theme-redesign & {
                 flex-direction: column;
                 justify-content: center;
-                margin-top: 0.5rem;
+                margin-top: 1rem;
             }
         }
         &__summary {
@@ -144,10 +145,6 @@ $compact-summary-min-height: 2.75rem;
             .theme-redesign & {
                 margin-left: 0;
                 margin-top: 0.25rem;
-            }
-        }
-        &--noncompact &__show-more {
-            .theme-redesign & {
                 margin-bottom: 0;
             }
         }
