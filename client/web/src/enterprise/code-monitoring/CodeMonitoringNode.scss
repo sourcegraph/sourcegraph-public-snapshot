@@ -1,8 +1,5 @@
 .code-monitoring-node {
-    // stylelint-disable-next-line declaration-property-unit-whitelist
-    margin: -1px -1px calc(0.5rem - 1px) -1px;
-    color: var(--link-hover-color);
-    padding: 1rem;
+    // padding: 1rem;
 
     &__toggle-wrapper {
         // stylelint-disable-next-line declaration-property-unit-whitelist
@@ -12,43 +9,15 @@
     &__edit-button {
         padding: 0;
     }
-
-    &:hover {
-        text-decoration: none;
-        border: 2px solid #329af0;
-        // stylelint-disable-next-line declaration-property-unit-whitelist
-        margin: -2px -2px calc(0.5rem - 2px) -2px;
+    &:not(:last-of-type) {
+        margin-bottom: 1rem;
     }
-
-    // We override the margins of the last .code-monitoring-node
-    // to prevent .filtered-connection__summary below from shifting
-    &:last-child {
-        // stylelint-disable-next-line declaration-property-unit-whitelist
-        margin-bottom: -1px;
-    }
-
-    &:last-child:hover {
-        // stylelint-disable-next-line declaration-property-unit-whitelist
-        margin-bottom: -2px;
+    + .code-monitoring-node {
+        padding-top: 1rem;
+        border-top: 1px solid var(--border-color);
     }
 
     .theme-redesign & {
-        border: none;
-        padding: 0;
-
-        color: var(--body-color);
-
-        &:last-child:hover {
-            margin-bottom: -1px;
-        }
-
-        &:focus-visible {
-            border-color: transparent;
-        }
-
-        &:hover {
-            border: none;
-            margin: -1px -1px calc(0.5rem - 1px) -1px;
-        }
+        // padding: 0;
     }
 }

@@ -134,7 +134,7 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                         <div className="row no-gutters code-monitoring-page__start-points-panel-container mb-3">
                             <div className="col-6">
                                 <div className="card">
-                                    <div className="card-body">
+                                    <div className="card-body p-3">
                                         <h3>Watch for AWS secrets in commits</h3>
                                         <p className="text-muted">
                                             Use a search query to watch for new search results, and choose how to
@@ -151,7 +151,7 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                             </div>
                             <div className="col-6">
                                 <div className="card">
-                                    <div className="card-body">
+                                    <div className="card-body p-3">
                                         <h3>Watch for new consumers of deprecated methods</h3>
                                         <p className="text-muted">
                                             Keep an eye on commits with new consumers of deprecated methods to keep your
@@ -280,6 +280,7 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                                         pluralNoun="code monitors"
                                         noSummaryIfAllNodesVisible={true}
                                         cursorPaging={true}
+                                        className="filtered-connection__centered-summary"
                                     />
                                 </Container>
                             </div>
