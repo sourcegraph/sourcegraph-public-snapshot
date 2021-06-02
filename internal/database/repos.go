@@ -148,21 +148,7 @@ func (s *RepoStore) GetByName(ctx context.Context, nameOrURI api.RepoName) (_ *t
 		Names:       []string{string(nameOrURI)},
 		LimitOffset: &LimitOffset{Limit: 1},
 	})
-	if err != nil {
-		return nil, err
-	}
 
-	if len(repos) == 1 {
-		return repos[0], nil
-	}
-
-	// We don't fetch in the same SQL query since uri is not unique and could
-	// conflict with a name. We prefer returning the matching name if it
-	// exists.
-	repos, err = s.listRepos(ctx, tr, ReposListOptions{
-		URIs:        []string{string(nameOrURI)},
-		LimitOffset: &LimitOffset{Limit: 1},
-	})
 	if err != nil {
 		return nil, err
 	}
