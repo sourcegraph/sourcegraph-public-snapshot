@@ -27,6 +27,10 @@ var (
 	}
 
 	defaultDatabaseName = databaseNames[0]
+
+	dataTables = map[string][]string{
+		"frontend": []string{"out_of_band_migrations"},
+	}
 )
 
 func isValidDatabaseName(name string) bool {
@@ -92,7 +96,7 @@ func generateSquashedMigrations(databaseName string, migrationIndex int) (up, do
 		return "", "", err
 	}
 
-	upMigration, err := generateSquashedUpMigration(postgresDSN)
+	upMigration, err := generateSquashedUpMigration(databaseName, postgresDSN)
 	if err != nil {
 		return "", "", err
 	}
@@ -384,7 +388,7 @@ func makePostgresDSN(databaseName string) string {
 
 // generateSquashedUpMigration returns the contents of an up migration file containing the
 // current contents of the given database.
-func generateSquashedUpMigration(postgresDSN string) (_ string, err error) {
+func generateSquashedUpMigration(databaseName, postgresDSN string) (_ string, err error) {
 	pending := out.Pending(output.Line("", output.StylePending, "Dumping current database..."))
 	defer func() {
 		if err == nil {
@@ -394,17 +398,24 @@ func generateSquashedUpMigration(postgresDSN string) (_ string, err error) {
 		}
 	}()
 
-	cmd := exec.Command(
-		"pg_dump",
-		postgresDSN,
-		"--no-owner",
-		"--schema-only",
-		"--exclude-table", "*schema_migrations",
-	)
-	cmd.Env = []string{}
-	pgDumpOutput, err := runCommandInRoot(cmd)
+	pgDump := func(args ...string) (string, error) {
+		cmd := exec.Command("pg_dump", append([]string{postgresDSN}, args...)...)
+		cmd.Env = []string{}
+		return runCommandInRoot(cmd)
+	}
+
+	pgDumpOutput, err := pgDump("--schema-only", "--no-owner", "--exclude-table", "*schema_migrations")
 	if err != nil {
 		return "", err
+	}
+
+	for _, table := range dataTables[databaseName] {
+		dataOutput, err := pgDump("--data-only", "--inserts", "--table", table)
+		if err != nil {
+			return "", err
+		}
+
+		pgDumpOutput += dataOutput
 	}
 
 	return sanitizePgDumpOutput(pgDumpOutput), nil
