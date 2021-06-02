@@ -457,6 +457,8 @@ func migrationSquashExec(ctx context.Context, args []string) (err error) {
 
 	// Get the last migration that existed in the version _before_ `minimumMigrationSquashDistance` releases ago
 	commit := fmt.Sprintf("v%d.%d.0", currentVersion.Major(), currentVersion.Minor()-minimumMigrationSquashDistance-1)
+	out.Writef("Squashing migration files defined up through %s", commit)
+
 	lastMigrationIndex, ok, err := lastMigrationIndexAtCommit(databaseName, commit)
 	if err != nil {
 		return err

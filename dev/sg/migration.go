@@ -434,7 +434,7 @@ CREATE TABLE IF NOT EXISTS %s (
 // generateSquashedDownMigration returns the contents of a down migration file containing the
 // canned down migration for this database.
 func generateSquashedDownMigration(databaseName string) (string, error) {
-	return fmt.Sprintf(squashedDownMigrationTemplate, migrationsTableForDatabase(databaseName)), nil
+	return strings.TrimSpace(fmt.Sprintf(squashedDownMigrationTemplate, migrationsTableForDatabase(databaseName))) + "\n", nil
 }
 
 var (
