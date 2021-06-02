@@ -3,10 +3,12 @@ package main
 import (
 	"bytes"
 	"context"
+	"crypto/md5"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -159,6 +161,20 @@ func printCmdError(out *output.Output, cmdName string, err error) {
 func runWatch(ctx context.Context, cmd Command, root string, reload <-chan struct{}) error {
 	startedOnce := false
 
+	var (
+		md5hash    string
+		md5changed bool
+	)
+
+	var wg sync.WaitGroup
+	var cancelFuncs []context.CancelFunc
+
+	errs := make(chan error, 1)
+	defer func() {
+		wg.Wait()
+		close(errs)
+	}()
+
 	for {
 		// Build it
 		if cmd.Install != "" {
@@ -189,83 +205,133 @@ func runWatch(ctx context.Context, cmd Command, root string, reload <-chan struc
 			}
 
 			out.WriteLine(output.Linef("", output.StyleSuccess, "%sSuccessfully installed %s%s", output.StyleBold, cmd.Name, output.StyleReset))
-		}
 
-		// Run it
-		out.WriteLine(output.Linef("", output.StylePending, "Running %s...", cmd.Name))
-
-		commandCtx, cancel := context.WithCancel(ctx)
-		defer cancel()
-
-		c := exec.CommandContext(commandCtx, "bash", "-c", cmd.Cmd)
-		c.Dir = root
-		c.Env = makeEnv(conf.Env, cmd.Env)
-
-		var (
-			stdoutBuf = &prefixSuffixSaver{N: 32 << 10}
-			stderrBuf = &prefixSuffixSaver{N: 32 << 10}
-		)
-
-		logger := newCmdLogger(cmd.Name, out)
-		if cmd.IgnoreStdout {
-			out.WriteLine(output.Linef("", output.StyleSuggestion, "Ignoring stdout of %s", cmd.Name))
-		} else {
-			c.Stdout = io.MultiWriter(logger, stdoutBuf)
-		}
-		if cmd.IgnoreStderr {
-			out.WriteLine(output.Linef("", output.StyleSuggestion, "Ignoring stderr of %s", cmd.Name))
-		} else {
-			c.Stderr = io.MultiWriter(logger, stderrBuf)
-		}
-
-		if err := c.Start(); err != nil {
-			return err
-		}
-
-		errs := make(chan error, 1)
-		go func() {
-			defer close(errs)
-
-			errs <- (func() error {
-				if err := c.Wait(); err != nil {
-					if exitErr, ok := err.(*exec.ExitError); ok {
-						return runErr{
-							cmdName:  cmd.Name,
-							exitCode: exitErr.ExitCode(),
-							stderr:   string(stderrBuf.Bytes()),
-							stdout:   string(stdoutBuf.Bytes()),
-						}
-					}
-
-					return err
+			if cmd.CheckBinary != "" {
+				newHash, err := md5HashFile(filepath.Join(root, cmd.CheckBinary))
+				if err != nil {
+					return installErr{cmdName: cmd.Name, output: string(cmdOut)}
 				}
 
-				return nil
-			})()
-		}()
-
-		// TODO: We should probably only set this after N seconds (or when
-		// we're sure that the command has booted up -- maybe healthchecks?)
-		startedOnce = true
-	outer:
-		for {
-			select {
-			case <-reload:
-				out.WriteLine(output.Linef("", output.StylePending, "Change detected. Reloading %s...", cmd.Name))
-
-				cancel()    // Stop command
-				<-errs      // Wait for exit
-				break outer // Reinstall
-
-			case err := <-errs:
-				// Exited on its own or errored
-				if err == nil {
-					out.WriteLine(output.Linef("", output.StyleSuccess, "%s%s exited without error%s", output.StyleBold, cmd.Name, output.StyleReset))
-				}
-				return err
+				md5changed = md5hash != newHash
+				md5hash = newHash
 			}
 		}
+
+		if cmd.CheckBinary == "" || md5changed {
+			for _, cancel := range cancelFuncs {
+				cancel() // Stop command
+				<-errs   // Wait for exit
+			}
+			cancelFuncs = nil
+
+			// Run it
+			out.WriteLine(output.Linef("", output.StylePending, "Running %s...", cmd.Name))
+
+			sc, err := startCmd(ctx, root, cmd)
+			defer sc.cancel()
+
+			if err != nil {
+				return err
+			}
+
+			cancelFuncs = append(cancelFuncs, sc.cancel)
+
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+
+				err := sc.Wait()
+
+				if exitErr, ok := err.(*exec.ExitError); ok {
+					err = runErr{
+						cmdName:  cmd.Name,
+						exitCode: exitErr.ExitCode(),
+						stderr:   sc.CapturedStderr(),
+						stdout:   sc.CapturedStdout(),
+					}
+				}
+
+				errs <- err
+			}()
+
+			// TODO: We should probably only set this after N seconds (or when
+			// we're sure that the command has booted up -- maybe healthchecks?)
+			startedOnce = true
+		} else {
+			out.WriteLine(output.Linef("", output.StylePending, "Binary did not change. Not restarting."))
+		}
+
+		select {
+		case <-reload:
+			out.WriteLine(output.Linef("", output.StylePending, "Change detected. Reloading %s...", cmd.Name))
+
+			continue // Reinstall
+
+		case err := <-errs:
+			// Exited on its own or errored
+			if err == nil {
+				out.WriteLine(output.Linef("", output.StyleSuccess, "%s%s exited without error%s", output.StyleBold, cmd.Name, output.StyleReset))
+			}
+			return err
+		}
 	}
+}
+
+type startedCmd struct {
+	*exec.Cmd
+
+	cancel func()
+
+	stdoutBuf *prefixSuffixSaver
+	stderrBuf *prefixSuffixSaver
+}
+
+func (sc *startedCmd) CapturedStdout() string {
+	if sc.stdoutBuf == nil {
+		return ""
+	}
+
+	return string(sc.stdoutBuf.Bytes())
+}
+
+func (sc *startedCmd) CapturedStderr() string {
+	if sc.stderrBuf == nil {
+		return ""
+	}
+
+	return string(sc.stderrBuf.Bytes())
+}
+
+func startCmd(ctx context.Context, dir string, cmd Command) (*startedCmd, error) {
+	sc := &startedCmd{
+		stdoutBuf: &prefixSuffixSaver{N: 32 << 10},
+		stderrBuf: &prefixSuffixSaver{N: 32 << 10},
+	}
+
+	commandCtx, cancel := context.WithCancel(ctx)
+	sc.cancel = cancel
+
+	sc.Cmd = exec.CommandContext(commandCtx, "bash", "-c", cmd.Cmd)
+	sc.Cmd.Dir = dir
+	sc.Cmd.Env = makeEnv(conf.Env, cmd.Env)
+
+	logger := newCmdLogger(cmd.Name, out)
+	if cmd.IgnoreStdout {
+		out.WriteLine(output.Linef("", output.StyleSuggestion, "Ignoring stdout of %s", cmd.Name))
+	} else {
+		sc.Cmd.Stdout = io.MultiWriter(logger, sc.stdoutBuf)
+	}
+	if cmd.IgnoreStderr {
+		out.WriteLine(output.Linef("", output.StyleSuggestion, "Ignoring stderr of %s", cmd.Name))
+	} else {
+		sc.Cmd.Stderr = io.MultiWriter(logger, sc.stderrBuf)
+	}
+
+	if err := sc.Start(); err != nil {
+		return sc, err
+	}
+
+	return sc, nil
 }
 
 func makeEnv(envs ...map[string]string) []string {
@@ -297,6 +363,21 @@ func makeEnv(envs ...map[string]string) []string {
 	}
 
 	return combined
+}
+
+func md5HashFile(filename string) (string, error) {
+	f, err := os.Open(filename)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+
+	h := md5.New()
+	if _, err := io.Copy(h, f); err != nil {
+		return "", err
+	}
+
+	return string(h.Sum(nil)), nil
 }
 
 //
