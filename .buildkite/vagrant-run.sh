@@ -10,7 +10,7 @@ pushd "dev/ci/test"
 
 cleanup() {
   echo "--- vagrant status"
-  vagrant status "$box"
+  vagrant status --debug-timestamp "$box"
 
   echo "--- vagrant destroy"
   vagrant destroy -f "$box"
