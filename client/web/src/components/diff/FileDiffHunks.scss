@@ -100,24 +100,24 @@ $color-deletion: $red;
             &--addition {
                 background-color: rgba($color-addition, 0.17);
                 .theme-redesign & {
-                    background-color: var(--code-line-addition-color);
+                    background-color: var(--diff-add-bg);
                 }
                 &-num {
                     background-color: rgba($color-addition, 0.25);
                     .theme-redesign & {
-                        background-color: var(--code-line-addition-color);
+                        background-color: var(--diff-add-bg);
                     }
                 }
             }
             &--deletion {
                 background-color: rgba($color-deletion, 0.17);
                 .theme-redesign & {
-                    background-color: var(--code-line-deletion-color);
+                    background-color: var(--diff-remove-bg);
                 }
                 &-num {
                     background-color: rgba($color-deletion, 0.25);
                     .theme-redesign & {
-                        background-color: var(--code-line-deletion-color);
+                        background-color: var(--diff-remove-bg);
                     }
                 }
             }
@@ -139,25 +139,25 @@ $color-deletion: $red;
     &__line--addition &__num {
         background-color: rgba($color-addition, 0.25);
         .theme-redesign & {
-            background-color: var(--code-line-addition-color);
+            background-color: var(--diff-add-bg);
         }
     }
     &__line--addition &__content {
         background-color: rgba($color-addition, 0.17);
         .theme-redesign & {
-            background-color: var(--code-line-addition-color);
+            background-color: var(--diff-add-bg);
         }
     }
     &__line--deletion &__num {
         background-color: rgba($color-deletion, 0.25);
         .theme-redesign & {
-            background-color: var(--code-line-deletion-color);
+            background-color: var(--diff-remove-bg);
         }
     }
     &__line--deletion &__content {
         background-color: rgba($color-deletion, 0.17);
         .theme-redesign & {
-            background-color: var(--code-line-deletion-color);
+            background-color: var(--diff-remove-bg);
         }
     }
     &__line--both &__num,
