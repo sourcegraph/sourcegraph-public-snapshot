@@ -91,7 +91,7 @@ const lockQuery = `
 SELECT pg_advisory_lock(%s, %s)
 `
 
-// tryLock attempts to tak ean advisory lock on the given key. Returns true on
+// tryLock attempts to take an advisory lock on the given key. Returns true on
 // success and false on failure.
 func (l *Locker) tryLock(ctx context.Context, key int) (bool, error) {
 	ok, _, err := basestore.ScanFirstBool(l.Store.Query(ctx, sqlf.Sprintf(tryLockQuery, l.namespace, key)))
