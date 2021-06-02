@@ -63,6 +63,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     onUserExternalServicesOrRepositoriesUpdate,
 }) => {
     const [statusOrError, setStatusOrError] = useState<Status>()
+    const [updateAuthRequired, setUpdateAuthRequired] = useState(false)
 
     const fetchExternalServices = useCallback(async () => {
         setStatusOrError('loading')
@@ -81,9 +82,16 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 
         setStatusOrError(services)
 
+        // If we have a GitHub service, check whether we need to prompt the user to
+        // update their scope
+        const gitHubService = services.GITHUB
+        if (gitHubService) {
+            setUpdateAuthRequired(githubRepoScopeRequired(user.tags, gitHubService.grantedScopes))
+        }
+
         const repoCount = fetchedServices.reduce((sum, codeHost) => sum + codeHost.repoCount, 0)
         onUserExternalServicesOrRepositoriesUpdate(fetchedServices.length, repoCount)
-    }, [user.id, onUserExternalServicesOrRepositoriesUpdate])
+    }, [user.id, user.tags, onUserExternalServicesOrRepositoriesUpdate, setUpdateAuthRequired])
 
     useEffect(() => {
         eventLogger.logViewEvent('UserSettingsCodeHostConnections')
@@ -115,7 +123,6 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     const getErrorAndSuccessBanners = (status: Status): (JSX.Element | null)[] => {
         const servicesWithProblems = []
         const notYetSyncedServiceNames = []
-        let updateAuthRequired = false
 
         // check if services are fetched
         if (isServicesByKind(status)) {
@@ -143,12 +150,6 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                     if (lastSyncTime < epochTime) {
                         notYetSyncedServiceNames.push(serviceName)
                     }
-                }
-
-                // If we have a GitHub service, check whether we need to prompt the user to
-                // update their scope
-                if (service.kind === 'GITHUB') {
-                    updateAuthRequired = githubRepoScopeRequired(user.tags, service.grantedScopes)
                 }
             }
         }
@@ -237,9 +238,11 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                                 <li key={id} className="list-group-item">
                                     <CodeHostItem
                                         service={isServicesByKind(statusOrError) ? statusOrError[kind] : undefined}
-                                        user={user}
                                         kind={kind}
                                         name={defaultDisplayName}
+                                        updateAuthRequired={
+                                            id && kind === ExternalServiceKind.GITHUB ? updateAuthRequired : false
+                                        }
                                         navigateToAuthProvider={navigateToAuthProvider}
                                         icon={icon}
                                         onDidAdd={addNewService}

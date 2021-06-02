@@ -2,23 +2,21 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import React, { useState, useCallback } from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { CircleDashedIcon } from '../../../components/CircleDashedIcon'
-import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
-import { githubRepoScopeRequired } from '../cloud-ga'
+import { LoaderButton } from '../../../components/LoaderButton'
+import { ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
 
 import { RemoveCodeHostConnectionModal } from './RemoveCodeHostConnectionModal'
 import { ifNotNavigated } from './UserAddCodeHostsPage'
 
 interface CodeHostItemProps {
-    user: { id: Scalars['ID']; tags: string[] }
     kind: ExternalServiceKind
     name: string
     icon: React.ComponentType<{ className?: string }>
     navigateToAuthProvider: (kind: ExternalServiceKind) => void
-
+    updateAuthRequired?: boolean
     // optional service object fields when the code host connection is active
     service?: ListExternalServiceFields
 
@@ -28,10 +26,10 @@ interface CodeHostItemProps {
 }
 
 export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
-    user,
     service,
     kind,
     name,
+    updateAuthRequired,
     icon: Icon,
     navigateToAuthProvider,
     onDidRemove,
@@ -52,8 +50,6 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
         })
         navigateToAuthProvider(kind)
     }, [kind, navigateToAuthProvider])
-
-    const updateAuthRequired = service?.kind === 'GITHUB' && githubRepoScopeRequired(user.tags, service.grantedScopes)
 
     return (
         <div className="p-2 d-flex align-items-start">
@@ -91,23 +87,33 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                         Remove
                     </button>
                 ) : oauthInFlight ? (
-                    <button type="button" className="btn btn-primary disabled" onClick={toAuthProvider}>
-                        <LoadingSpinner className="icon-inline ml-2 theme-dark" />
-                    </button>
+                    <LoaderButton
+                        type="button"
+                        className="btn btn-primary theme-dark"
+                        loading={true}
+                        disabled={true}
+                        label="Connect"
+                        alwaysShowLabel={true}
+                    />
                 ) : (
                     <button type="button" className="btn btn-primary" onClick={toAuthProvider}>
                         Connect
                     </button>
                 )}
                 {updateAuthRequired && !oauthInFlight && (
-                    <button type="button" className="btn btn-secondary" onClick={toAuthProvider}>
+                    <button type="button" className="btn user-code-hosts-page__btn--update" onClick={toAuthProvider}>
                         Update
                     </button>
                 )}
                 {updateAuthRequired && oauthInFlight && (
-                    <button type="button" className="btn btn-secondary disabled" onClick={toAuthProvider}>
-                        <LoadingSpinner className="icon-inline ml-2 theme-dark" />
-                    </button>
+                    <LoaderButton
+                        type="button"
+                        className="btn user-code-hosts-page__btn--update theme-dark"
+                        loading={true}
+                        disabled={true}
+                        label="Update"
+                        alwaysShowLabel={true}
+                    />
                 )}
             </div>
         </div>
