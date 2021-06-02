@@ -16,6 +16,8 @@ import {
 import { CreateInsightFormFields, EditableDataSeries } from '../../types'
 import { FormSeries } from '../form-series/FormSeries'
 
+import { RepositoriesField } from '../repositories-field/RepositoriesField';
+
 import styles from './SearchInsightCreationForm.module.scss'
 
 interface CreationSearchInsightFormProps {
@@ -101,6 +103,8 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
             onReset={onFormReset}
             className={classnames(className, 'd-flex flex-column')}
         >
+            <RepositoriesField/>
+
             <FormGroup
                 name="insight repositories"
                 title="Repositories"
