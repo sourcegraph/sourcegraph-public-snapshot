@@ -105,13 +105,19 @@ $default-icon-colors: $oc-grape-7, $oc-violet-7, $oc-cyan-9, $oc-indigo-7, $oc-p
         height: 2rem;
 
         .theme-redesign & {
-            width: 2rem;
             margin-left: 0.25rem;
             border-radius: 0.1875rem;
         }
 
         &:hover {
             background-color: var(--link-hover-bg-color);
+        }
+
+        &--toggle {
+            .theme-redesign & {
+                height: auto;
+                padding: 0.25rem;
+            }
         }
 
         &--pressed {
