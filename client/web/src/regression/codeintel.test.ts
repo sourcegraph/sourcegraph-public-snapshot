@@ -168,7 +168,7 @@ describe('Code intelligence regression test suite', () => {
             )
         })
 
-        test('Definitions, references, and hovers', () =>
+        test.skip('Definitions, references, and hovers', () =>
             testCodeNavigation(driver, config, {
                 page: `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go`,
                 line: 225,
