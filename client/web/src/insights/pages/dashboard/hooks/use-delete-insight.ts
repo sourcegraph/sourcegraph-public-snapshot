@@ -59,23 +59,22 @@ export function useDeleteInsight(props: UseDeleteInsightProps): UseDeleteInsight
                         editedSettings,
                         // According to our naming convention <type>.insight.<name>
                         ['codeStatsInsights.query'],
-                        undefined,
+                        undefined
                     )
 
                     editedSettings = modify(
                         editedSettings,
                         // According to our naming convention <type>.insight.<name>
                         ['codeStatsInsights.otherThreshold'],
-                        undefined,
+                        undefined
                     )
-
                 } else {
                     // Remove insight settings from subject (user/org settings)
                     editedSettings = modify(
                         editedSettings,
                         // According to our naming convention <type>.insight.<name>
                         [insightID],
-                        undefined,
+                        undefined
                     )
                 }
 
