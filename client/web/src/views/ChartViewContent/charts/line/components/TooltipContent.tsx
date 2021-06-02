@@ -3,7 +3,7 @@ import classNames from 'classnames'
 import React, { ReactElement } from 'react'
 import { LineChartContent } from 'sourcegraph'
 
-import { DEFAULT_LINE_STROKE } from '../colors'
+import { DEFAULT_LINE_STROKE } from '../constants'
 import { Accessors } from '../types'
 
 export interface TooltipContentProps<Datum extends object> extends RenderTooltipParams<Datum> {

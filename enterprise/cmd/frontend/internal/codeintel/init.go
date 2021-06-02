@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
 func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services) error {
@@ -127,9 +128,11 @@ func newCommitGraphRoutines(observationContext *observation.Context) []goroutine
 }
 
 func newIndexingRoutines(observationContext *observation.Context) []goroutine.BackgroundRoutine {
+	dbStore := &indexing.DBStoreShim{Store: services.dbStore}
+
 	return []goroutine.BackgroundRoutine{
 		indexing.NewIndexScheduler(
-			services.dbStore,
+			dbStore,
 			services.indexEnqueuer,
 			config.IndexBatchSize,
 			config.MinimumTimeSinceLastEnqueue,
@@ -140,7 +143,7 @@ func newIndexingRoutines(observationContext *observation.Context) []goroutine.Ba
 			observationContext,
 		),
 		indexing.NewIndexabilityUpdater(
-			services.dbStore,
+			dbStore,
 			services.gitserverClient,
 			config.MinimumSearchCount,
 			float64(config.MinimumSearchRatio)/100,
@@ -149,11 +152,19 @@ func newIndexingRoutines(observationContext *observation.Context) []goroutine.Ba
 			config.AutoIndexingTaskInterval,
 			observationContext,
 		),
+		indexing.NewDependencyIndexingScheduler(
+			dbStore,
+			dbstore.WorkerutilDependencyIndexingJobStore(services.dbStore, observationContext),
+			services.indexEnqueuer,
+			config.DependencyIndexerSchedulerPollInterval,
+			config.DependencyIndexerSchedulerConcurrency,
+			workerutil.NewMetrics(observationContext, "codeintel_dependency_indexing_processor", nil),
+		),
 	}
 }
 
 func newJanitorRoutines(observationContext *observation.Context) []goroutine.BackgroundRoutine {
-	dbStore := &janitor.DBStoreShim{services.dbStore}
+	dbStore := &janitor.DBStoreShim{Store: services.dbStore}
 	uploadWorkerStore := dbstore.WorkerutilUploadStore(services.dbStore, observationContext)
 	indexWorkerStore := dbstore.WorkerutilIndexStore(services.dbStore, observationContext)
 	lsifStore := services.lsifStore

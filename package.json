@@ -315,6 +315,7 @@
     "@visx/grid": "^1.7.0",
     "@visx/group": "^1.7.0",
     "@visx/mock-data": "^1.7.0",
+    "@visx/pattern": "^1.7.0",
     "@visx/scale": "^1.7.0",
     "@visx/xychart": "^1.7.3",
     "bloomfilter": "^0.0.18",

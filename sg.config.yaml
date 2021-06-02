@@ -83,6 +83,7 @@ commands:
   frontend:
     cmd: ulimit -n 10000 && .bin/frontend
     install: go build -o .bin/frontend github.com/sourcegraph/sourcegraph/cmd/frontend
+    checkBinary: .bin/frontend
     env:
       CONFIGURATION_MODE: server
       USE_ENHANCED_LANGUAGE_DETECTION: false
@@ -100,6 +101,7 @@ commands:
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
       .bin/enterprise-frontend
     install: go build -o .bin/enterprise-frontend github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend
+    checkBinary: .bin/enterprise-frontend
     env:
       CONFIGURATION_MODE: server
       USE_ENHANCED_LANGUAGE_DETECTION: false
@@ -118,6 +120,7 @@ commands:
   gitserver:
     cmd: .bin/gitserver
     install: go build -o .bin/gitserver github.com/sourcegraph/sourcegraph/cmd/gitserver
+    checkBinary: .bin/gitserver
     env:
       HOSTNAME: 127.0.0.1:3178
     watch:
@@ -128,6 +131,7 @@ commands:
   github-proxy:
     cmd: .bin/github-proxy
     install: go build -o .bin/github-proxy github.com/sourcegraph/sourcegraph/cmd/github-proxy
+    checkBinary: .bin/github-proxy
     env:
       HOSTNAME: 127.0.0.1:3178
     watch:
@@ -138,14 +142,16 @@ commands:
   repo-updater:
     cmd: .bin/repo-updater
     install: go build -o .bin/repo-updater github.com/sourcegraph/sourcegraph/cmd/repo-updater
+    checkBinary: .bin/repo-updater
     watch:
       - lib
       - internal
       - cmd/repo-updater
 
   enterprise-repo-updater:
-    cmd: .bin/repo-updater
-    install: go build -o .bin/repo-updater github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater
+    cmd: .bin/enterprise-repo-updater
+    install: go build -o .bin/enterprise-repo-updater github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater
+    checkBinary: .bin/enterprise-repo-updater
     env:
       HOSTNAME: $SRC_GIT_SERVER_1
       ENTERPRISE: 1
@@ -159,6 +165,7 @@ commands:
   query-runner:
     cmd: .bin/query-runner
     install: go build -o .bin/query-runner github.com/sourcegraph/sourcegraph/cmd/query-runner
+    checkBinary: .bin/query-runner
     watch:
       - lib
       - internal
@@ -170,6 +177,7 @@ commands:
       ./dev/libsqlite3-pcre/build.sh &&
       ./cmd/symbols/build-ctags.sh &&
       go build -o .bin/symbols github.com/sourcegraph/sourcegraph/cmd/symbols
+    checkBinary: .bin/symbols
     env:
       LIBSQLITE3_PCRE: ./dev/libsqlite3-pcre/build.sh libpath
       CTAGS_COMMAND: cmd/symbols/universal-ctags-dev
@@ -182,6 +190,7 @@ commands:
   searcher:
     cmd: .bin/searcher
     install: go build -o .bin/searcher github.com/sourcegraph/sourcegraph/cmd/searcher
+    checkBinary: .bin/searcher
     watch:
       - lib
       - internal
@@ -292,6 +301,7 @@ commands:
       go install github.com/google/zoekt/cmd/zoekt-archive-index
       go install github.com/google/zoekt/cmd/zoekt-git-index
       go install github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver
+    checkBinary: .bin/zoekt-sourcegraph-indexserver
     env: &zoektenv
       GOGC: 50
       CTAGS_COMMAND: cmd/symbols/universal-ctags-dev
@@ -317,6 +327,7 @@ commands:
     install: |
       mkdir -p .bin
       env GOBIN="${PWD}/.bin" GO111MODULE=on go install github.com/google/zoekt/cmd/zoekt-webserver
+    checkBinary: .bin/zoekt-webserver
     env:
       JAEGER_DISABLED: false
       GOGC: 50
@@ -334,6 +345,7 @@ commands:
     cmd: .bin/precise-code-intel-worker
     install: |
       go build -o .bin/precise-code-intel-worker github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker
+    checkBinary: .bin/precise-code-intel-worker
     watch:
       - lib
       - internal
@@ -345,6 +357,7 @@ commands:
     cmd: .bin/executor-queue
     install: |
       go build -o .bin/executor-queue github.com/sourcegraph/sourcegraph/enterprise/cmd/executor-queue
+    checkBinary: .bin/executor-queue
     watch:
       - lib
       - internal
@@ -355,6 +368,7 @@ commands:
     cmd: .bin/executor
     install: |
       go build -o .bin/executor github.com/sourcegraph/sourcegraph/enterprise/cmd/executor
+    checkBinary: .bin/executor
     env:
       EXECUTOR_QUEUE_NAME: codeintel
       TMPDIR: $HOME/.sourcegraph/indexer-temp
