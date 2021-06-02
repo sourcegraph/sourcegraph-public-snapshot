@@ -36,7 +36,6 @@ var gqlSearchQuery = graphqlbackend.ValidatedQueryWithVariables(`
 				results {
 					__typename
 					... on FileMatch {
-						resource
 						limitHit
 						lineMatches {
 							preview
@@ -104,7 +103,9 @@ var gqlSearchQuery = graphqlbackend.ValidatedQueryWithVariables(`
 				}
 			}
 		}
-	}`, map[string]interface{}{"query": "test"})
+	}`,
+	map[string]interface{}{"query": "test"},
+)
 
 type gqlSearchVars struct {
 	Query string `json:"query"`
