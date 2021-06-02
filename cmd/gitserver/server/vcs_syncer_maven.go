@@ -8,7 +8,6 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -27,11 +26,11 @@ func (s MavenArtifactSyncer) Type() string {
 	return "maven"
 }
 
-// IsCloneable checks to see if the VCS remote URL is cloneable. Any non-nil
-// error indicates there is a problem.
+// IsCloneable checks to see if the given URL points to a Java Maven package
+// that has available sources. Any non-nil error indicates the sources do not
+// exist for this package.
 func (s MavenArtifactSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL) error {
 	dependency := reposource.DecomposeMavenPath(remoteURL.Path)
-	log15.Info("Maven.IsCloneable", "dependency", dependency, "url", remoteURL.Path)
 	sources, err := coursier.FetchSources(ctx, s.Config, dependency)
 	if err != nil {
 		return err
@@ -42,13 +41,18 @@ func (s MavenArtifactSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL
 	return nil
 }
 
-// CloneCommand returns the command to be executed for cloning from remote.
-func (s MavenArtifactSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL, bareGitDirectory string) (*exec.Cmd, error) {
-	workingDirectory, err := ioutil.TempDir("", "maven")
+// CloneCommand returns a dummy command that has no side-effect. The actual cloning happens
+// inside this method because there is no separate command-line tool that performs all the steps
+// to proxy the sources of a Maven package.
+func (s MavenArtifactSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL, bareGitDir string) (*exec.Cmd, error) {
+	// Create a temporary directory where we initialize a non-bare git repo,
+	// unzip all the sources and create a git commit. This directory gets
+	// removed after we have pushed the contents to the bare git directory.
+	tmpDir, err := ioutil.TempDir("", "maven")
 	if err != nil {
 		return nil, err
 	}
-	log15.Info("CloneCommand", "workingDirectory", workingDirectory)
+	defer os.RemoveAll(tmpDir)
 
 	dependency := reposource.DecomposeMavenPath(remoteURL.Path)
 
@@ -64,36 +68,35 @@ func (s MavenArtifactSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.UR
 	path := paths[0]
 
 	initCmd := exec.CommandContext(ctx, "git", "init", "--initial-branch=main")
-	initCmd.Dir = workingDirectory
-	log15.Info("CloneCommand", "tmpPath", workingDirectory, "cwd", initCmd.Dir)
+	initCmd.Dir = tmpDir
 	if output, err := runWith(ctx, initCmd, false, nil); err != nil {
 		return nil, errors.Wrapf(err, "command %s failed with output %q", initCmd.Args, string(output))
 	}
 
-	err = s.commitJar(ctx, workingDirectory, dependency, path)
+	err = s.commitJar(ctx, tmpDir, dependency, path)
 	if err != nil {
 		return nil, err
 	}
 
-	err = os.MkdirAll(bareGitDirectory, 0755)
+	err = os.MkdirAll(bareGitDir, 0755)
 	if err != nil {
 		return nil, err
 	}
 
 	initBareCmd := exec.CommandContext(ctx, "git", "--bare", "init")
-	initBareCmd.Dir = bareGitDirectory
+	initBareCmd.Dir = bareGitDir
 	if output, err := runWith(ctx, initBareCmd, false, nil); err != nil {
 		return nil, errors.Wrapf(err, "command %s failed with output %q", initBareCmd.Args, string(output))
 	}
 
-	remoteAddCmd := exec.CommandContext(ctx, "git", "remote", "add", "origin", bareGitDirectory)
-	remoteAddCmd.Dir = workingDirectory
+	remoteAddCmd := exec.CommandContext(ctx, "git", "remote", "add", "origin", bareGitDir)
+	remoteAddCmd.Dir = tmpDir
 	if output, err := runWith(ctx, remoteAddCmd, false, nil); err != nil {
 		return nil, errors.Wrapf(err, "command %s failed with output %q", remoteAddCmd.Args, string(output))
 	}
 
 	gitPushCmd := exec.CommandContext(ctx, "git", "push", "origin", "main")
-	gitPushCmd.Dir = workingDirectory
+	gitPushCmd.Dir = tmpDir
 	if output, err := runWith(ctx, gitPushCmd, false, nil); err != nil {
 		return nil, errors.Wrapf(err, "command %s failed with output %q", gitPushCmd.Args, string(output))
 	}
