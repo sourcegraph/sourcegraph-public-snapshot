@@ -423,6 +423,68 @@ func TestRegistryExtensions_ListCount(t *testing.T) {
 	})
 }
 
+func TestFeaturedExtensions(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	db := dbtesting.GetDB(t)
+	ctx := context.Background()
+
+	user, err := database.Users(db).Create(ctx, database.NewUser{Username: "u"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	createAndGet := func(t *testing.T, name, manifest string) *dbExtension {
+		t.Helper()
+		xID, err := dbExtensions{}.Create(ctx, user.ID, 0, name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if manifest != "" {
+			_, err = dbReleases{}.Create(ctx, &dbRelease{
+				RegistryExtensionID: xID,
+				CreatorUserID:       user.ID,
+				ReleaseTag:          "release",
+				Manifest:            manifest,
+				Bundle:              strptr(""),
+				SourceMap:           strptr(""),
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+		x, err := dbExtensions{}.GetByID(ctx, xID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return x
+	}
+
+	mockFeaturedExtensionIDs := []string{"u/one", "u/two", "u/three"}
+
+	one := createAndGet(t, "one", `{"name": "one", "publisher": "u"}`)
+	two := createAndGet(t, "two", `{"name": "two", "publisher": "u"}`)
+	three := createAndGet(t, "three", `{"name": "three", "publisher": "u"}`)
+	// Non-featured extension shouldn't be returned.
+	createAndGet(t, "four", `{"name": "four", "publisher": "u"}`)
+
+	want := []*dbExtension{
+		one,
+		two,
+		three,
+	}
+
+	featuredExtensions, err := dbExtensions{}.getFeaturedExtensions(ctx, mockFeaturedExtensionIDs)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !reflect.DeepEqual(featuredExtensions, want) {
+		t.Errorf("got %s, want %s", asJSON(t, featuredExtensions), asJSON(t, want))
+	}
+}
+
 func asJSON(t *testing.T, v interface{}) string {
 	b, err := json.MarshalIndent(v, "", "  ")
 	if err != nil {
