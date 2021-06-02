@@ -175,6 +175,16 @@ func (c Config) isDocsOnly() bool {
 	return true
 }
 
+// isSgOnly returns whether the changedFiles are only in the ./dev/sg folder.
+func (c Config) isSgOnly() bool {
+	for _, p := range c.changedFiles {
+		if !strings.HasPrefix(p, "dev/sg/") {
+			return false
+		}
+	}
+	return true
+}
+
 func (c Config) isGoOnly() bool {
 	for _, p := range c.changedFiles {
 		if !strings.HasSuffix(p, ".go") && p != "go.sum" && p != "go.mod" {
