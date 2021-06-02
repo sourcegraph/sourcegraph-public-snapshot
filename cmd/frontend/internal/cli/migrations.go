@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"log"
+	"os"
 	"time"
 
 	"github.com/Masterminds/semver"
@@ -33,6 +34,11 @@ func newOutOfBandMigrationRunner(ctx context.Context, db *sql.DB) *oobmigration.
 }
 
 func validateOutOfBandMigrationRunner(ctx context.Context, outOfBandMigrationRunner *oobmigration.Runner) {
+	if os.Getenv("SRC_DISABLE_OOBMIGRATION_VALIDATION") != "" {
+		log15.Warn("Skipping out-of-band migrations check")
+		return
+	}
+
 	if version.IsDev(version.Version()) {
 		log15.Warn("Skipping out-of-band migrations check (dev mode)", "version", version.Version())
 		return
