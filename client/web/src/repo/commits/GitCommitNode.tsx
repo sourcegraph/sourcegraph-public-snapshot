@@ -171,6 +171,14 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
         </div>
     )
 
+    const diffModeSelector = (): JSX.Element | null => {
+        if (diffMode && handleDiffMode) {
+            return <DiffModeSelector handleDiffMode={handleDiffMode} diffMode={diffMode} size="small" />
+        }
+
+        return null
+    }
+
     const viewFilesCommitElement = node.tree && (
         <div className="d-flex justify-content-between">
             <Link
@@ -184,14 +192,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                 <FileDocumentIcon className={classNames('icon-inline', !isRedesignEnabled ? 'small' : 'mr-1')} />
                 {isRedesignEnabled && 'View files in commit'}
             </Link>
-            {isRedesignEnabled && (
-                <DiffModeSelector
-                    // eslint-disable-next-line @typescript-eslint/unbound-method
-                    handleDiffMode={handleDiffMode}
-                    diffMode={diffMode}
-                    size="small"
-                />
-            )}
+            {isRedesignEnabled && diffModeSelector()}
         </div>
     )
 
