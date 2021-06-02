@@ -449,8 +449,8 @@ ObservablePanelOption declares an option for customizing a graph panel\. \`Obser
 You can make any customization you want to a graph panel by using \`ObservablePanel\.With\`:
 
 ```
-Panel: monitoring.Panel().With(func(o monitoring.Observable, g *sdk.GraphPanel) {
-  // modify 'g' with desired changes
+Panel: monitoring.Panel().With(func(o monitoring.Observable, p *sdk.Panel) {
+  // modify 'p.GraphPanel' with desired changes
 }),
 ```
 
@@ -471,7 +471,7 @@ Panel: monitoring.Panel().With(monitoring.PanelOptions.MyCustomization),
 Using a shared prefix helps with discoverability of available options\.
 
 ```go
-type ObservablePanelOption func(Observable, *sdk.GraphPanel)
+type ObservablePanelOption func(Observable, *sdk.Panel)
 ```
 
 ## type [Row](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L386>)

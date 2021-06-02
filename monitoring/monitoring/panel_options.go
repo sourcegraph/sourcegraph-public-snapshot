@@ -9,8 +9,8 @@ import (
 //
 // You can make any customization you want to a graph panel by using `ObservablePanel.With`:
 //
-//   Panel: monitoring.Panel().With(func(o monitoring.Observable, g *sdk.GraphPanel) {
-//     // modify 'g' with desired changes
+//   Panel: monitoring.Panel().With(func(o monitoring.Observable, p *sdk.Panel) {
+//     // modify 'p.GraphPanel' with desired changes
 //   }),
 //
 // When writing a custom `ObservablePanelOption`, keep in mind that:
@@ -31,7 +31,7 @@ import (
 //   Panel: monitoring.Panel().With(monitoring.PanelOptions.MyCustomization),
 //
 // Using a shared prefix helps with discoverability of available options.
-type ObservablePanelOption func(Observable, *sdk.GraphPanel)
+type ObservablePanelOption func(Observable, *sdk.Panel)
 
 // PanelOptions exports available shared `ObservablePanelOption` implementations.
 //
@@ -50,7 +50,8 @@ type panelOptionsLibrary struct{}
 //
 // All ObservablePanelOptions start with this option.
 func (panelOptionsLibrary) basicPanel() ObservablePanelOption {
-	return func(o Observable, g *sdk.GraphPanel) {
+	return func(o Observable, p *sdk.Panel) {
+		g := p.GraphPanel
 		g.Legend.Show = true
 		g.Fill = 1
 		g.Lines = true
@@ -82,7 +83,7 @@ func (panelOptionsLibrary) basicPanel() ObservablePanelOption {
 //
 // It is applied in the default PanelOptions().
 func (panelOptionsLibrary) OpinionatedDefaults() ObservablePanelOption {
-	return func(o Observable, g *sdk.GraphPanel) {
+	return func(o Observable, p *sdk.Panel) {
 		// We use "value" as the default legend format and not, say, "{{instance}}" or
 		// an empty string (Grafana defaults to all labels in that case) because:
 		//
@@ -91,6 +92,7 @@ func (panelOptionsLibrary) OpinionatedDefaults() ObservablePanelOption {
 		// 3. If "{{instance}}" or similar was the default, it would be easy for people to say "I guess that's intentional"
 		//    instead of seeing multiple "value" labels on their dashboard (which immediately makes them think
 		//    "how can I fix that?".)
+		g := p.GraphPanel
 		g.Targets[0].LegendFormat = "value"
 		// Most metrics will have a minimum value of 0.
 		g.Yaxes[0].Min = sdk.NewFloatString(0.0)
@@ -106,7 +108,8 @@ func (panelOptionsLibrary) OpinionatedDefaults() ObservablePanelOption {
 //
 // It is applied in the default PanelOptions().
 func (panelOptionsLibrary) AlertThresholds() ObservablePanelOption {
-	return func(o Observable, g *sdk.GraphPanel) {
+	return func(o Observable, p *sdk.Panel) {
+		g := p.GraphPanel
 		if o.Warning != nil && o.Warning.greaterThan {
 			// Warning threshold
 			g.Thresholds = append(g.Thresholds, sdk.Threshold{
@@ -153,8 +156,8 @@ func (panelOptionsLibrary) AlertThresholds() ObservablePanelOption {
 // ColorOverride takes a seriesName (which can be a regex pattern) and a color in hex format (#ABABAB).
 // Series that match the seriesName will be colored accordingly.
 func (panelOptionsLibrary) ColorOverride(seriesName string, color string) ObservablePanelOption {
-	return func(_ Observable, panel *sdk.GraphPanel) {
-		panel.SeriesOverrides = append(panel.SeriesOverrides, sdk.SeriesOverride{
+	return func(_ Observable, panel *sdk.Panel) {
+		panel.GraphPanel.SeriesOverrides = append(panel.GraphPanel.SeriesOverrides, sdk.SeriesOverride{
 			Alias: seriesName,
 			Color: &color,
 		})
@@ -163,29 +166,29 @@ func (panelOptionsLibrary) ColorOverride(seriesName string, color string) Observ
 
 // LegendOnRight moves the legend to the right side of the panel
 func (panelOptionsLibrary) LegendOnRight() ObservablePanelOption {
-	return func(_ Observable, panel *sdk.GraphPanel) {
-		panel.Legend.RightSide = true
+	return func(_ Observable, panel *sdk.Panel) {
+		panel.GraphPanel.Legend.RightSide = true
 	}
 }
 
 // HoverShowAll makes hover tooltips show all series rather than just the one being hovered over
 func (panelOptionsLibrary) HoverShowAll() ObservablePanelOption {
-	return func(_ Observable, panel *sdk.GraphPanel) {
-		panel.Tooltip.Shared = true
+	return func(_ Observable, panel *sdk.Panel) {
+		panel.GraphPanel.Tooltip.Shared = true
 	}
 }
 
 // HoverSort sorts the series either "ascending", "descending", or "none".
 // Default is "none".
 func (panelOptionsLibrary) HoverSort(order string) ObservablePanelOption {
-	return func(_ Observable, panel *sdk.GraphPanel) {
+	return func(_ Observable, panel *sdk.Panel) {
 		switch order {
 		case "ascending":
-			panel.Tooltip.Sort = 1
+			panel.GraphPanel.Tooltip.Sort = 1
 		case "descending":
-			panel.Tooltip.Sort = 2
+			panel.GraphPanel.Tooltip.Sort = 2
 		default:
-			panel.Tooltip.Sort = 0
+			panel.GraphPanel.Tooltip.Sort = 0
 		}
 	}
 }
@@ -193,14 +196,14 @@ func (panelOptionsLibrary) HoverSort(order string) ObservablePanelOption {
 // Fill sets the fill opacity for all series on the panel.
 // Set to 0 to disable fill.
 func (panelOptionsLibrary) Fill(fill int) ObservablePanelOption {
-	return func(_ Observable, panel *sdk.GraphPanel) {
-		panel.Fill = fill
+	return func(_ Observable, panel *sdk.Panel) {
+		panel.GraphPanel.Fill = fill
 	}
 }
 
 // NoLegend disables the legend on the panel
 func (panelOptionsLibrary) NoLegend() ObservablePanelOption {
-	return func(_ Observable, panel *sdk.GraphPanel) {
-		panel.Legend.Show = false
+	return func(_ Observable, panel *sdk.Panel) {
+		panel.GraphPanel.Legend.Show = false
 	}
 }
