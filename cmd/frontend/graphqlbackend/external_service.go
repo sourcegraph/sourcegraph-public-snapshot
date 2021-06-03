@@ -172,5 +172,5 @@ func (r *externalServiceResolver) NextSyncAt() *DateTime {
 var scopeCache = rcache.New("extsvc_token_scope")
 
 func (r *externalServiceResolver) GrantedScopes(ctx context.Context) ([]string, error) {
-	return repos.GrantedScopes(ctx, scopeCache, r.externalService.Kind, r.externalService.Config)
+	return repos.GrantedScopes(ctx, scopeCache, r.externalService)
 }
