@@ -10,7 +10,7 @@ type Job struct {
 
 	// RepositoryName is the name of the repository to be cloned into the
 	// workspace prior to job execution.
-	RepositoryName string `json:"repositoryName"`
+	RepositoryName string `json:"repositoryName,omitempty"`
 
 	// Workspace replaces RepositoryName, and defines a repository and optional
 	// path that describes a workspace.

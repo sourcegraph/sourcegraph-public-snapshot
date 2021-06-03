@@ -17,8 +17,15 @@ import (
 	"github.com/sourcegraph/batch-change-utils/overridable"
 	"github.com/sourcegraph/batch-change-utils/yaml"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -41,9 +48,138 @@ func (h *pendingBatchSpecHandler) HandlerFunc() dbworker.HandlerFunc {
 		}
 
 		// We need to resolve the repositories into workspaces, then create
-		// BatchExecutionJob instances.
+		// BatchExecutionJob instances. We also need to do this as the user, so
+		// we'll create a new nested context.
+		db := tx.Handle().DB()
+		userCtx := actor.WithActor(ctx, &actor.Actor{UID: pbs.CreatorUserID})
+		rs := newRepositorySet()
+		for _, on := range spec.On {
+			if err := resolveRepositoriesOn(userCtx, db, rs, &on); err != nil {
+				return errors.Wrapf(err, "resolving on: %+v", on)
+			}
+			// TODO: handle branch, unsupported repo types, ignored.
+		}
+
+		// Now we need to fill in the default branch and commit for each repo.
+		for name, head := range rs {
+			repo, err := database.Repos(db).GetByName(userCtx, name)
+			if err != nil {
+				return errors.Wrapf(err, "retrieving repo: %q", name)
+			}
+
+			if head.Branch == "" {
+				resolver := graphqlbackend.NewRepositoryResolver(db, repo)
+				branch, err := resolver.DefaultBranch(userCtx)
+				if err != nil {
+					return errors.Wrapf(err, "getting default branch for %q", name)
+				}
+				head.Branch = branch.Name()
+			}
+
+			if head.Rev == "" {
+				rev, err := git.ResolveRevision(userCtx, name, head.Branch, git.ResolveRevisionOptions{})
+				if err != nil {
+					return errors.Wrapf(err, "resolving branch %q on repo %q", head.Branch, name)
+				}
+				head.Rev = string(rev)
+			}
+		}
+
+		// TODO: implement workspace discovery.
+
+		// Convert spec steps into executor steps.
+		steps := make([]executor.DockerStep, len(spec.Steps)+1)
+		for i, step := range spec.Steps {
+			steps[i] = executor.DockerStep{
+				Image:    step.Container,
+				Commands: []string{step.Run},
+				Env:      []string{},
+			}
+
+			// TODO: support outer environments somehow?
+			env, err := step.Env.Resolve([]string{})
+			if err != nil {
+				return errors.Wrapf(err, "resolving environment for step %d", i)
+			}
+			for k, v := range env {
+				steps[i].Env = append(steps[i].Env, k+"="+v)
+			}
+		}
+
+		// Add a step to dump out the diff.
+		//
+		// TODO: replace this with a step that can actually create the changeset
+		// spec.
+		steps[len(spec.Steps)] = executor.DockerStep{
+			Image:    "sourcegraph/src-batch-change-volume-workspace",
+			Commands: []string{"git", "diff", "--cached", "--no-prefix", "--binary"},
+		}
+
+		// TODO: get the encryption key.
+		bstore := store.New(db, nil)
+
+		// Build simple job definitions.
+		for repo, head := range rs {
+			bej, err := bstore.CreateBatchExecutorJob(ctx, executor.Job{
+				Workspace: executor.Workspace{
+					RepositoryName: string(repo),
+				},
+				Commit:      head.Rev,
+				DockerSteps: steps,
+			})
+			if err != nil {
+				return errors.Wrapf(err, "creating batch executor job for %q", repo)
+			}
+
+			log15.Info("created job", "repo", repo, "head", *head, "bej", *bej)
+		}
 
 		return nil
+	}
+}
+
+func resolveRepositoriesOn(ctx context.Context, db dbutil.DB, rs repositorySet, on *OnQueryOrRepository) error {
+	if query := on.RepositoriesMatchingQuery; query != "" {
+		return resolveRepositorySearch(ctx, db, rs, query)
+	}
+
+	rs.Add(api.RepoName(on.Repository), on.Branch)
+	return nil
+}
+
+func resolveRepositorySearch(ctx context.Context, db dbutil.DB, rs repositorySet, query string) error {
+	impl, err := graphqlbackend.NewSearchImplementer(ctx, db, &graphqlbackend.SearchArgs{
+		Version: "V2",
+		Query:   query,
+	})
+	if err != nil {
+		return errors.Wrapf(err, "creating search for repository matching query: %q", query)
+	}
+
+	resolver, err := impl.Results(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "creating search result resolver for repository matching query: %q", query)
+	}
+
+	for _, match := range resolver.SearchResults {
+		rs.Add(match.Key().Repo, "")
+	}
+
+	return nil
+}
+
+type repositorySet map[api.RepoName]*repositoryHead
+
+type repositoryHead struct {
+	Branch string
+	Rev    string
+}
+
+func newRepositorySet() repositorySet { return repositorySet{} }
+
+func (rs repositorySet) Add(name api.RepoName, branch string) {
+	rs[name] = &repositoryHead{
+		Branch: branch,
 	}
 }
 
