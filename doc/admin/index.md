@@ -64,3 +64,5 @@ Site administrators are the admins responsible for deploying, managing, and conf
 - [How to enable or disable an experimental feature](how-to/enable-experimental-feature.md)
 - [How to diagnose an `Unknown Error` during login to your Sourcegraph instance](how-to/unknown-error-login.md)
 - [How to convert version contexts to search contexts](how-to/converting-version-contexts-to-search-contexts.md)
+- [How to troubleshoot pod evictions](how-to/troubleshoot-pod-eviction.md)
+- [How to monitor your Sourcegraph instance](how-to/monitoring-guide.md)
