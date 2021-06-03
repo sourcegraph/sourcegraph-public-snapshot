@@ -217,6 +217,26 @@ func (r *Repo) UnmarshalJSON(data []byte) error {
 		r.URIs = append(r.URIs, &uri)
 	}
 
+	// HACK: The existing code assumes we are unmarshalling from something in the
+	// shape of `apiRepo` but we haven't written a custom marshalling method which
+	// means that when we store the repo back in our database it's in the shape of
+	// the Repo struct. This means that round-trip marshalling won't work.
+	//
+	// We need to ensure that we at least have URI's because we need them in order
+	// to generate a clone URL.
+	if len(r.URIs) == 0 {
+		// We might be unmarshalling from the DB
+		var dest struct {
+			URIs []*URI
+		}
+
+		// Ignore errors here as this is a fallback anyway
+		_ = json.Unmarshal(data, &dest)
+		if len(dest.URIs) > 0 {
+			r.URIs = dest.URIs
+		}
+	}
+
 	return nil
 }
 
