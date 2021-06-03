@@ -88,6 +88,7 @@ func TestGitLabSource_GetRepo(t *testing.T) {
 					Name:        "gitlab.com/gitlab-org/gitaly",
 					Description: "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
 					URI:         "gitlab.com/gitlab-org/gitaly",
+					Stars:       168,
 					ExternalRepo: api.ExternalRepoSpec{
 						ID:          "2009901",
 						ServiceType: "gitlab",
@@ -110,6 +111,8 @@ func TestGitLabSource_GetRepo(t *testing.T) {
 						},
 						Visibility: "",
 						Archived:   false,
+						StarCount:  168,
+						ForksCount: 76,
 					},
 				}
 
