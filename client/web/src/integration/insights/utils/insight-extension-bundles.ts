@@ -5,7 +5,7 @@ import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { InsightTypePrefix } from '../../../insights/core/types'
 
 /**
- * Generates simplify version of search insight extension for testing purpose.
+ * Generates a simplified version of search insight extension for testing purpose.
  * Full version of search insight extension you can find be link below
  * https://github.com/sourcegraph/sourcegraph-search-insights/blob/master/src/search-insights.ts
  * */
