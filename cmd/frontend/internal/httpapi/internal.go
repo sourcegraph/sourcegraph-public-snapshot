@@ -197,6 +197,7 @@ func serveSearchConfiguration(w http.ResponseWriter, r *http.Request) error {
 
 		return &searchbackend.RepoIndexOptions{
 			RepoID:      int32(repo.ID),
+			Public:      !repo.Private,
 			GetVersion:  getVersion,
 			GetPriority: getPriority,
 		}, nil
