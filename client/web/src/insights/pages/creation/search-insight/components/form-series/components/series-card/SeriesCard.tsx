@@ -26,16 +26,16 @@ export function SeriesCard(props: SeriesCardProps): ReactElement {
 
     return (
         <li
-            data-test-id="series-card"
+            data-testid="series-card"
             aria-label={`${name} data series`}
             className={classnames(styles.card, className, 'card d-flex flex-row p-3')}
         >
             <div className={styles.cardInfo}>
                 <div className={classnames('mb-1 ', styles.cardTitle)}>
                     {/* eslint-disable-next-line react/forbid-dom-props */}
-                    <div data-test-id="series-color-mark" style={{ color }} className={styles.cardColorMark} />
+                    <div data-testid="series-color-mark" style={{ color }} className={styles.cardColorMark} />
                     <span
-                        data-test-id="series-name"
+                        data-testid="series-name"
                         title={name}
                         className={classnames(styles.cardName, 'ml-1 font-weight-bold')}
                     >
@@ -43,14 +43,14 @@ export function SeriesCard(props: SeriesCardProps): ReactElement {
                     </span>
                 </div>
 
-                <span data-test-id="series-query" className="mb-0 text-muted">
+                <span data-testid="series-query" className="mb-0 text-muted">
                     {query}
                 </span>
             </div>
 
             <div className="d-flex align-items-center">
                 <button
-                    data-test-id="series-edit-button"
+                    data-testid="series-edit-button"
                     type="button"
                     onClick={onEdit}
                     className="border-0 btn btn-outline-primary"
@@ -59,7 +59,7 @@ export function SeriesCard(props: SeriesCardProps): ReactElement {
                 </button>
 
                 <button
-                    data-test-id="series-delete-button"
+                    data-testid="series-delete-button"
                     type="button"
                     onClick={onRemove}
                     className="border-0 btn btn-outline-danger ml-1"

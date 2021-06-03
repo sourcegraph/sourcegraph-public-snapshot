@@ -1,3 +1,4 @@
+import delay from 'delay'
 import { View } from 'sourcegraph'
 
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
@@ -19,7 +20,7 @@ describe('[VISUAL] Code insights page', () => {
     let testContext: WebIntegrationTestContext
 
     before(async () => {
-        driver = await createDriverForTest({ sourcegraphBaseUrl: 'https://sourcegraph.test:3443', devtools: true })
+        driver = await createDriverForTest()
     })
 
     after(() => driver?.close())
@@ -35,6 +36,14 @@ describe('[VISUAL] Code insights page', () => {
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
 
+    async function takeChartSnapshot(name: string): Promise<void> {
+        await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
+        // Due to autosize of chart we have to wait 1s that window-resize be able
+        // render chart with container size.
+        await delay(1000)
+        await percySnapshotWithVariants(driver.page, name)
+    }
+
     it('is styled correctly with back-end insights', async () => {
         overrideGraphQLExtensions({
             testContext,
@@ -47,9 +56,8 @@ describe('[VISUAL] Code insights page', () => {
         })
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights')
-        await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
 
-        await percySnapshotWithVariants(driver.page, 'Code insights page with back-end insights only')
+        await takeChartSnapshot('Code insights page with back-end insights only')
     })
 
     it('is styled correctly with search-based insights ', async () => {
@@ -78,9 +86,8 @@ describe('[VISUAL] Code insights page', () => {
         })
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights')
-        await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
 
-        await percySnapshotWithVariants(driver.page, 'Code insights page with search-based insights only')
+        await takeChartSnapshot('Code insights page with search-based insights only')
     })
 
     it('is styled correctly with errored insight', async () => {
@@ -109,9 +116,8 @@ describe('[VISUAL] Code insights page', () => {
         })
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights')
-        await driver.page.waitForSelector('[data-testid="searchInsights.insight.teamSize.insightsPage insight error"]')
 
-        await percySnapshotWithVariants(driver.page, 'Code insights page with search-based errored insight')
+        await takeChartSnapshot('Code insights page with search-based errored insight')
     })
 
     it('is styled correctly with all types of insight', async () => {
@@ -142,8 +148,7 @@ describe('[VISUAL] Code insights page', () => {
         })
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights')
-        await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
 
-        await percySnapshotWithVariants(driver.page, 'Code insights page with all types of insight')
+        await takeChartSnapshot('Code insights page with all types of insight')
     })
 })

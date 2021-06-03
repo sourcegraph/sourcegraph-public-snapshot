@@ -33,7 +33,7 @@ $compact-summary-min-height: 2.75rem;
         padding: var(--popover-item-padding-v) var(--popover-item-padding-h);
         flex: 0 0;
 
-        .theme-redesign & {
+        :where(.theme-redesign) & {
             // Consistent with the summary to avoid layout shifting
             border-top: $compact-summary-divider;
             padding: $compact-summary-padding;
@@ -64,7 +64,7 @@ $compact-summary-min-height: 2.75rem;
         }
     }
     &--compact &__summary-container {
-        .theme-redesign & {
+        :where(.theme-redesign) & {
             padding: $compact-summary-padding;
             border-top: $compact-summary-divider;
             min-height: $compact-summary-min-height;

@@ -9,6 +9,10 @@ exit_code=0
 pushd "dev/ci/test"
 
 cleanup() {
+  echo "--- vagrant status"
+  vagrant status --debug-timestamp "$box"
+
+  echo "--- vagrant destroy"
   vagrant destroy -f "$box"
 }
 

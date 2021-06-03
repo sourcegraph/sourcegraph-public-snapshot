@@ -1,9 +1,14 @@
+import classNames from 'classnames'
 import React from 'react'
+
+import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { Timestamp } from '../../components/time/Timestamp'
 import { SignatureFields } from '../../graphql-operations'
 import { formatPersonName, PersonLink } from '../../person/PersonLink'
 import { UserAvatar } from '../../user/UserAvatar'
+
+import styles from './GitCommitNodeByLine.module.scss'
 
 interface Props {
     author: SignatureFields
@@ -16,6 +21,11 @@ interface Props {
  * Displays a Git commit's author and committer (with avatars if available) and the dates.
  */
 export const GitCommitNodeByline: React.FunctionComponent<Props> = ({ author, committer, className = '', compact }) => {
+    const [isRedesignEnabled] = useRedesignToggle()
+
+    const avatarMarginClass = isRedesignEnabled && compact ? 'mr-2' : 'mr-1'
+    const avatarClassName = classNames('icon-inline mr-1', compact && styles.avatarCompact)
+
     // Omit GitHub as committer to reduce noise. (Edits and squash commits made in the GitHub UI
     // include GitHub as a committer.)
     if (committer && committer.person.name === 'GitHub' && committer.person.email === 'noreply@github.com') {
@@ -29,41 +39,45 @@ export const GitCommitNodeByline: React.FunctionComponent<Props> = ({ author, co
     ) {
         // The author and committer both exist and are different people.
         return (
-            <small className={`git-commit-node-byline git-commit-node-byline--has-committer ${className}`}>
+            <small data-testid="git-commit-node-byline" className={className}>
                 <UserAvatar
-                    className="icon-inline"
+                    className={avatarClassName}
                     user={author.person}
                     data-tooltip={`${formatPersonName(author.person)} (author)`}
-                />{' '}
+                />
                 <UserAvatar
-                    className="icon-inline mr-1"
+                    className={classNames(avatarClassName, avatarMarginClass)}
                     user={committer.person}
                     data-tooltip={`${formatPersonName(committer.person)} (committer)`}
-                />{' '}
-                <PersonLink person={author.person} className="font-weight-bold" /> {!compact && 'authored'} and{' '}
-                <PersonLink person={committer.person} className="font-weight-bold" />{' '}
-                {!compact && (
-                    <>
-                        committed <Timestamp date={committer.date} />
-                    </>
-                )}
+                />
+                <span className={classNames(compact && styles.personCompact)}>
+                    <PersonLink person={author.person} className="font-weight-bold" /> {!compact && 'authored'} and{' '}
+                    <PersonLink person={committer.person} className="font-weight-bold" />{' '}
+                    {!compact && (
+                        <>
+                            committed <Timestamp date={committer.date} />
+                        </>
+                    )}
+                </span>
             </small>
         )
     }
 
     return (
-        <small className={`git-commit-node-byline git-commit-node-byline--no-committer ${className}`}>
+        <small data-testid="git-commit-node-byline" className={className}>
             <UserAvatar
-                className="icon-inline mr-1"
+                className={classNames(avatarClassName, avatarMarginClass)}
                 user={author.person}
                 data-tooltip={formatPersonName(author.person)}
             />{' '}
-            <PersonLink person={author.person} className="font-weight-bold" />{' '}
-            {!compact && (
-                <>
-                    committed <Timestamp date={author.date} />
-                </>
-            )}
+            <span className={classNames(compact && styles.personCompact)}>
+                <PersonLink person={author.person} className="font-weight-bold" />{' '}
+                {!compact && (
+                    <>
+                        committed <Timestamp date={author.date} />
+                    </>
+                )}
+            </span>
         </small>
     )
 }

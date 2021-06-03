@@ -30,7 +30,7 @@ export const InsightCardMenu: React.FunctionComponent<InsightCardMenuProps> = pr
                 <DotsVerticalIcon size={16} />
             </MenuButton>
             <MenuList
-                data-test-id={`context-menu.${normalizedInsightID}`}
+                data-testid={`context-menu.${normalizedInsightID}`}
                 className={classnames(styles.menuPanel, 'dropdown-menu dropdown-menu-sw')}
             >
                 <MenuItem

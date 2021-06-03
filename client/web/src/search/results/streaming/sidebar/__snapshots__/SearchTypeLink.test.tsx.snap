@@ -38,40 +38,6 @@ Array [
   </SearchTypeLink>,
   <SearchTypeLink
     caseSensitive={false}
-    key="repo"
-    patternType="literal"
-    query="test type:repo"
-    selectedSearchContextSpec="global"
-    type="repo"
-  >
-    <AnchorLink
-      className="sidebarSectionListItem"
-      to={
-        Object {
-          "pathname": "/search",
-          "search": "q=context:global+test+type:repo&patternType=literal",
-        }
-      }
-    >
-      <a
-        className="sidebarSectionListItem"
-        href="/search?q=context:global+test+type:repo&patternType=literal"
-      >
-        <span
-          className="text-monospace search-query-link"
-        >
-          <span
-            className="search-filter-keyword"
-          >
-            type:
-          </span>
-          repo
-        </span>
-      </a>
-    </AnchorLink>
-  </SearchTypeLink>,
-  <SearchTypeLink
-    caseSensitive={false}
     key="path"
     patternType="literal"
     query="test type:repo"
@@ -134,6 +100,40 @@ Array [
             type:
           </span>
           symbol
+        </span>
+      </a>
+    </AnchorLink>
+  </SearchTypeLink>,
+  <SearchTypeLink
+    caseSensitive={false}
+    key="repo"
+    patternType="literal"
+    query="test type:repo"
+    selectedSearchContextSpec="global"
+    type="repo"
+  >
+    <AnchorLink
+      className="sidebarSectionListItem"
+      to={
+        Object {
+          "pathname": "/search",
+          "search": "q=context:global+test+type:repo&patternType=literal",
+        }
+      }
+    >
+      <a
+        className="sidebarSectionListItem"
+        href="/search?q=context:global+test+type:repo&patternType=literal"
+      >
+        <span
+          className="text-monospace search-query-link"
+        >
+          <span
+            className="search-filter-keyword"
+          >
+            type:
+          </span>
+          repo
         </span>
       </a>
     </AnchorLink>
@@ -247,40 +247,6 @@ Array [
   </SearchTypeLink>,
   <SearchTypeLink
     caseSensitive={false}
-    key="repo"
-    patternType="literal"
-    query="test"
-    selectedSearchContextSpec="global"
-    type="repo"
-  >
-    <AnchorLink
-      className="sidebarSectionListItem"
-      to={
-        Object {
-          "pathname": "/search",
-          "search": "q=context:global+test+type:repo&patternType=literal",
-        }
-      }
-    >
-      <a
-        className="sidebarSectionListItem"
-        href="/search?q=context:global+test+type:repo&patternType=literal"
-      >
-        <span
-          className="text-monospace search-query-link"
-        >
-          <span
-            className="search-filter-keyword"
-          >
-            type:
-          </span>
-          repo
-        </span>
-      </a>
-    </AnchorLink>
-  </SearchTypeLink>,
-  <SearchTypeLink
-    caseSensitive={false}
     key="path"
     patternType="literal"
     query="test"
@@ -343,6 +309,40 @@ Array [
             type:
           </span>
           symbol
+        </span>
+      </a>
+    </AnchorLink>
+  </SearchTypeLink>,
+  <SearchTypeLink
+    caseSensitive={false}
+    key="repo"
+    patternType="literal"
+    query="test"
+    selectedSearchContextSpec="global"
+    type="repo"
+  >
+    <AnchorLink
+      className="sidebarSectionListItem"
+      to={
+        Object {
+          "pathname": "/search",
+          "search": "q=context:global+test+type:repo&patternType=literal",
+        }
+      }
+    >
+      <a
+        className="sidebarSectionListItem"
+        href="/search?q=context:global+test+type:repo&patternType=literal"
+      >
+        <span
+          className="text-monospace search-query-link"
+        >
+          <span
+            className="search-filter-keyword"
+          >
+            type:
+          </span>
+          repo
         </span>
       </a>
     </AnchorLink>

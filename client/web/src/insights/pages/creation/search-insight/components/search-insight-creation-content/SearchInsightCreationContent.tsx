@@ -101,7 +101,7 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
         stepValue.meta.validState === 'VALID'
 
     return (
-        <div data-test-id={dataTestId} className={classnames(styles.content, className)}>
+        <div data-testid={dataTestId} className={classnames(styles.content, className)}>
             <SearchInsightCreationForm
                 mode={mode}
                 className={styles.contentForm}

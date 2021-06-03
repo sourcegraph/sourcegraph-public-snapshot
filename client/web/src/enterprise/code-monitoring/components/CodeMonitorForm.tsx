@@ -9,6 +9,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Container } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { CodeMonitorFields } from '../../../graphql-operations'
@@ -145,10 +146,11 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
     return (
         <>
             <Form className="my-4 pb-5 test-monitor-form" onSubmit={requestOnSubmit}>
-                <div className="d-flex flex-column mb-4">
-                    Name
-                    <div>
+                <Container className="mb-3">
+                    <div className="form-group">
+                        <label htmlFor="code-monitor-form-name">Name</label>
                         <input
+                            id="code-monitor-form-name"
                             type="text"
                             className="form-control my-2 test-name-input"
                             required={true}
@@ -159,78 +161,84 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                             autoFocus={true}
                             spellCheck={false}
                         />
+                        <small className="text-muted">
+                            Give it a short, descriptive name to reference events on Sourcegraph and in notifications.
+                            Do not include{' '}
+                            <a
+                                href="https://docs.sourcegraph.com/code_monitoring/explanations/best_practices#do-not-include-confidential-information-in-monitor-names"
+                                target="_blank"
+                                rel="noopener"
+                            >
+                                confidential information
+                            </a>
+                            .
+                        </small>
                     </div>
-                    <small className="text-muted">
-                        Give it a short, descriptive name to reference events on Sourcegraph and in notifications. Do
-                        not include{' '}
-                        <a
-                            href="https://docs.sourcegraph.com/code_monitoring/explanations/best_practices#do-not-include-confidential-information-in-monitor-names"
-                            target="_blank"
-                            rel="noopener"
+                    <div className="form-group">
+                        <label htmlFor="code-monitor-form-owner">Owner</label>
+                        <select
+                            id="code-monitor-form-owner"
+                            className="form-control my-2 code-monitor-form__owner-dropdown w-auto"
+                            disabled={true}
                         >
-                            confidential information
-                        </a>
-                        .
-                    </small>
-                </div>
-                <div className="flex">
-                    Owner
-                    <select className="form-control my-2 code-monitor-form__owner-dropdown w-auto" disabled={true}>
-                        <option value={authenticatedUser.displayName || authenticatedUser.username}>
-                            {authenticatedUser.username}
-                        </option>
-                    </select>
-                    <small className="text-muted">
-                        Event history and configuration will not be shared. Code monitoring currently only supports
-                        individual owners.
-                    </small>
-                </div>
-                <hr className="code-monitor-form__horizontal-rule" />
-                <div className="code-monitor-form__triggers mb-4">
-                    <FormTriggerArea
-                        query={currentCodeMonitorState.trigger.query}
-                        onQueryChange={onQueryChange}
-                        triggerCompleted={formCompletion.triggerCompleted}
-                        setTriggerCompleted={setTriggerCompleted}
-                        startExpanded={!!triggerQuery}
-                    />
-                </div>
-                <div
-                    className={classnames({
-                        'code-monitor-form__actions--disabled': !formCompletion.triggerCompleted,
-                    })}
-                >
-                    <FormActionArea
-                        actions={currentCodeMonitorState.actions}
-                        setActionsCompleted={setActionsCompleted}
-                        actionsCompleted={formCompletion.actionCompleted}
-                        authenticatedUser={authenticatedUser}
-                        disabled={!formCompletion.triggerCompleted}
-                        onActionsChange={onActionsChange}
-                        description={currentCodeMonitorState.description}
-                    />
-                </div>
-                <hr className="code-monitor-form__horizontal-rule" />
-                <div>
-                    <div className="d-flex my-4">
-                        <div>
-                            <Toggle
-                                title="Active"
-                                value={currentCodeMonitorState.enabled}
-                                onToggle={onEnabledChange}
-                                className="mr-2"
-                                aria-describedby="code-monitor-form__toggle-description"
-                            />{' '}
-                        </div>
-                        <div className="flex-column" id="code-monitor-form__toggle-description">
-                            <div>{currentCodeMonitorState.enabled ? 'Active' : 'Inactive'}</div>
-                            <div className="text-muted">
-                                {currentCodeMonitorState.enabled
-                                    ? 'Code monitor will watch for the trigger and run actions in response'
-                                    : 'Code monitor will not respond to trigger events'}
+                            <option value={authenticatedUser.displayName || authenticatedUser.username}>
+                                {authenticatedUser.username}
+                            </option>
+                        </select>
+                        <small className="text-muted">
+                            Event history and configuration will not be shared. Code monitoring currently only supports
+                            individual owners.
+                        </small>
+                    </div>
+                    <hr className="code-monitor-form__horizontal-rule my-3" />
+                    <div className="code-monitor-form__triggers mb-4">
+                        <FormTriggerArea
+                            query={currentCodeMonitorState.trigger.query}
+                            onQueryChange={onQueryChange}
+                            triggerCompleted={formCompletion.triggerCompleted}
+                            setTriggerCompleted={setTriggerCompleted}
+                            startExpanded={!!triggerQuery}
+                        />
+                    </div>
+                    <div
+                        className={classnames({
+                            'code-monitor-form__actions--disabled': !formCompletion.triggerCompleted,
+                        })}
+                    >
+                        <FormActionArea
+                            actions={currentCodeMonitorState.actions}
+                            setActionsCompleted={setActionsCompleted}
+                            actionsCompleted={formCompletion.actionCompleted}
+                            authenticatedUser={authenticatedUser}
+                            disabled={!formCompletion.triggerCompleted}
+                            onActionsChange={onActionsChange}
+                            description={currentCodeMonitorState.description}
+                        />
+                    </div>
+                    <hr className="code-monitor-form__horizontal-rule my-3" />
+                    <div>
+                        <div className="d-flex">
+                            <div>
+                                <Toggle
+                                    title="Active"
+                                    value={currentCodeMonitorState.enabled}
+                                    onToggle={onEnabledChange}
+                                    className="mr-2"
+                                    aria-describedby="code-monitor-form__toggle-description"
+                                />{' '}
+                            </div>
+                            <div className="flex-column" id="code-monitor-form__toggle-description">
+                                <div>{currentCodeMonitorState.enabled ? 'Active' : 'Inactive'}</div>
+                                <div className="text-muted">
+                                    {currentCodeMonitorState.enabled
+                                        ? 'Code monitor will watch for the trigger and run actions in response'
+                                        : 'Code monitor will not respond to trigger events'}
+                                </div>
                             </div>
                         </div>
                     </div>
+                </Container>
+                <div>
                     <div className="d-flex justify-content-between my-4">
                         <div>
                             <button
@@ -245,11 +253,7 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                             >
                                 {submitButtonLabel}
                             </button>
-                            <button
-                                type="button"
-                                className="btn btn-outline-secondary test-cancel-monitor"
-                                onClick={onCancel}
-                            >
+                            <button type="button" className="btn btn-secondary test-cancel-monitor" onClick={onCancel}>
                                 Cancel
                             </button>
                         </div>
@@ -257,7 +261,7 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                             <div>
                                 <button
                                     type="button"
-                                    className="btn btn-outline-secondary text-danger test-delete-monitor"
+                                    className="btn btn-outline-danger test-delete-monitor"
                                     onClick={toggleDeleteModal}
                                 >
                                     Delete
