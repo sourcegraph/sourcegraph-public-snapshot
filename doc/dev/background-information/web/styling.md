@@ -56,6 +56,7 @@ They can however utilize environment-agnostic components by passing our Bootstra
 - Prefer classes over descendent/child selectors. It decouples styles from the DOM structure of the component, ensures encapsulation and avoids CSS specificity issues.
 - Create utility classes for styles that should be shared horizontally between components.
 - Avoid hardcoding colors, use CSS variables if they are available / the color makes sense to share.
+- If possible, prefer CSS variables to SCSS variables.
 - Try to _minimize_ the usage of advanced SCSS features. They can lead to bugs and complicate styles.
   - Encouraged features are nesting and imports (which is the intersection of Less', SCSS' and PostCSS' feature set).
 - Think about mobile at least so much that no feature breaks when the browser window is resized.
@@ -101,7 +102,7 @@ This file should not contain any real CSS rules so that it can be included in mu
 @import 'branded/src/global-styles/breakpoints';
 ```
 
-If possible, prefer CSS variables to SCSS variables.
+Do not use BEM convention in CSS modules. Use short descriptive classes specific only for the corresponding component because CSS modules provide scoping out of the box. It outputs shorter classes that are more readable in the component markup.
 
 #### BEM convention
 
