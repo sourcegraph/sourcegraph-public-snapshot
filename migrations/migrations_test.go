@@ -48,10 +48,10 @@ func TestIDConstraints(t *testing.T) {
 			}
 			sort.Ints(ids)
 
-			for i, id := range ids[1:] {
-				if ids[i]+1 != id {
+			for i, id := range ids {
+				if i != 0 && ids[i-1]+1 != id {
 					// Check if we are using sequential migrations.
-					t.Errorf("gap in migrations between %s and %s", byID[ids[i]][0], byID[id][0])
+					t.Errorf("gap in migrations between %s and %s", byID[ids[i-1]][0], byID[id][0])
 				}
 			}
 		})
