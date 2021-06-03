@@ -15,16 +15,16 @@
         line-height: (20/14);
     }
 
-    $gitlab: #6e49cb;
+    $update: #7048e8;
 
-    &__btn--gitlab {
+    &__btn--update {
         @include button-variant(
-            $gitlab,
-            darken($gitlab, 7.5%),
-            darken($gitlab, 10%),
-            lighten($gitlab, 5%),
-            lighten($gitlab, 10%),
-            darken($gitlab, 30%)
+            $update,
+            darken($update, 7.5%),
+            darken($update, 10%),
+            lighten($update, 5%),
+            lighten($update, 10%),
+            darken($update, 30%)
         );
         color: $white;
     }
