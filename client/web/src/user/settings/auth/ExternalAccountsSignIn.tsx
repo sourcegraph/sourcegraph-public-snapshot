@@ -3,7 +3,6 @@ import React from 'react'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
 import { SourcegraphContext } from '../../../jscontext'
