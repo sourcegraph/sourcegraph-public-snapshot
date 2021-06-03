@@ -77,12 +77,7 @@ func generateSquashedMigrations(database Database, migrationIndex int) (up, down
 		return "", "", err
 	}
 
-	downMigration, err := generateSquashedDownMigration(database)
-	if err != nil {
-		return "", "", err
-	}
-
-	return upMigration, downMigration, nil
+	return upMigration, "-- Nothing\n", nil
 }
 
 // removeMigrationFilesUpToIndex removes migration files for the given database falling on
@@ -386,22 +381,6 @@ func generateSquashedUpMigration(database Database, postgresDSN string) (_ strin
 	}
 
 	return sanitizePgDumpOutput(pgDumpOutput), nil
-}
-
-const squashedDownMigrationTemplate = `
-DROP SCHEMA IF EXISTS public CASCADE;
-CREATE SCHEMA public;
-
-CREATE TABLE IF NOT EXISTS %s (
-	version bigint NOT NULL PRIMARY KEY,
-	dirty boolean NOT NULL
-);
-`
-
-// generateSquashedDownMigration returns the contents of a down migration file containing the
-// canned down migration for this database.
-func generateSquashedDownMigration(databaseName string) (string, error) {
-	return strings.TrimSpace(fmt.Sprintf(squashedDownMigrationTemplate, migrationsTableForDatabase(databaseName))) + "\n", nil
 }
 
 var (
