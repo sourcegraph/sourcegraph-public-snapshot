@@ -14,7 +14,7 @@ export function getSearchInsightExtensionBundle(data?: Record<string, View | und
 }
 
 /**
- * Generates simplify version of code stats insight extension for testing purpose.
+ * Generates a simplified version of code stats insight extension for testing purposes.
  * Full version of code stats insight extension you find by link below
  * https://github.com/sourcegraph/sourcegraph-code-stats-insights/blob/master/src/code-stats-insights.ts
  * */
