@@ -1,3 +1,4 @@
+import delay from 'delay'
 import { View } from 'sourcegraph'
 
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
@@ -35,15 +36,11 @@ describe('[VISUAL] Code insights page', () => {
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
 
-    function sleep(delay: number): Promise<void> {
-        return new Promise(resolve => setTimeout(resolve, delay))
-    }
-
     async function takeChartSnapshot(name: string): Promise<void> {
         await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
         // Due to autosize of chart we have to wait 1s that window-resize be able
         // render chart with container size.
-        await sleep(1000)
+        await delay(1000)
         await percySnapshotWithVariants(driver.page, name)
     }
 
