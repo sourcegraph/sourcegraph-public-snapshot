@@ -46,6 +46,7 @@ type ExtensionRegistryResolver interface {
 	PublishExtension(context.Context, *ExtensionRegistryPublishExtensionArgs) (ExtensionRegistryMutationResult, error)
 	DeleteExtension(context.Context, *ExtensionRegistryDeleteExtensionArgs) (*EmptyResponse, error)
 	LocalExtensionIDPrefix() *string
+	FeaturedExtensions(context.Context) ([]RegistryExtension, error)
 
 	ImplementsLocalExtensionRegistry() bool // not exposed via GraphQL
 	// FilterRemoteExtensions enforces `allowRemoteExtensions` by returning a

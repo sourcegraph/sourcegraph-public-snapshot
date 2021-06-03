@@ -5819,6 +5819,10 @@ type ExtensionRegistry {
     Examples: "sourcegraph.example.com/", "sourcegraph.example.com:1234/"
     """
     localExtensionIDPrefix: String
+    """
+    A list of featured extensions in the registry.
+    """
+    featuredExtensions: [RegistryExtension!]!
 }
 
 """
