@@ -80,25 +80,6 @@ Their purpose is to reexport symbols from a number of other files to make import
 - Try to do one component per file. This makes it easy to encapsulate corresponding styles.
 - Don't pass arrow functions as React bindings unless unavoidable
 
-## Styles
-
-- Styles are written in SCSS
-- Every component .tsx file should have a corresponding stylesheet named like the .tsx file
-  - The stylesheet must contain a top-level selector to scope it to a class that is the kebab-case version of the component name.
-    The component must apply that class to its top-level element.
-- Use [BEM](http://getbem.com/). "Block" here is the component name, element a non-component child of the component.
-- Only use descendent/child selectors where unavoidable. Prefer BEM-style class names that are nested in SCSS through the `&` operator
-- Create utility classes for styles that should be shared horizontally between components
-- Always use `rem` units (when converting designs, `1rem` = `16px`). This allows us to scale the whole UI by modifying the root font size.
-- Avoid hardcoding colors, use SCSS variables if they are available / the color makes sense to share.
-- Try to _minimize_ the usage of advanced SCSS features. They can lead to bugs and complicate styles.
-  - Encouraged features are nesting and imports (which is the intersection of Less', SCSS' and PostCSS' feature set)
-- Think about mobile at least so much that no feature breaks when the browser window is resized
-- Don't couple the styles to the DOM structure. It should be possible to change the structure without changing the styles and vice versa.
-- Prefer flexbox over absolute positioning
-- Avoid styling the children of your components. This couples your component to the implementation of the child
-- Order your rules so that layout rules (that describe how the component is laid out to its parents) come first, then rules that describe the layout of its children, and finally visual details.
-
 ## Code splitting
 
 [Code splitting](https://reactjs.org/docs/code-splitting.html) refers to the practice of bundling the frontend code into multiple JavaScript files, each with a subset of the frontend code, so that the client only needs to download and parse/run the code necessary for the page they are viewing. We use the [react-router code splitting technique](https://reactjs.org/docs/code-splitting.html#route-based-code-splitting) to accomplish this.
@@ -114,13 +95,6 @@ const MyComponent = React.lazy(async () => ({
 If you don't do this (and just use a normal `import`), it will still work, but it will increase the initial bundle size for all users.
 
 (It is necessary to return the component as the `default` property of an object because `React.lazy` is hard-coded to look there for it. We could avoid this extra work by using default exports, but we chose not to use default exports ([reasons](https://blog.neufund.org/why-we-have-banned-default-exports-and-you-should-do-the-same-d51fdc2cf2ad)).)
-
-### Theming
-
-Theming is done through toggling top-level CSS classes `theme-light` and `theme-dark`.
-Any style can be made different on either theme by scoping it to one of those two classes.
-Where possible, we use CSS variables, but unfortunately they don't work with compile-time color manipulation (`darken()` etc)
-and runtime color manipulation is not yet implemented in CSS (coming in CSS Color Level 4).
 
 ## Formatting
 
