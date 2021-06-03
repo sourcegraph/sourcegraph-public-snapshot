@@ -108,7 +108,7 @@ type UserCredentialsStore struct {
 	key encryption.Key
 }
 
-// NewUserStoreWithDB instantiates and returns a new UserCredentialsStore with prepared statements.
+// UserCredentials instantiates and returns a new UserCredentialsStore with prepared statements.
 func UserCredentials(db dbutil.DB, key encryption.Key) *UserCredentialsStore {
 	return &UserCredentialsStore{
 		Store: basestore.NewWithDB(db, sql.TxOptions{}),
@@ -116,7 +116,7 @@ func UserCredentials(db dbutil.DB, key encryption.Key) *UserCredentialsStore {
 	}
 }
 
-// NewUserStoreWith instantiates and returns a new UserCredentialsStore using the other store handle.
+// UserCredentialsWith instantiates and returns a new UserCredentialsStore using the other store handle.
 func UserCredentialsWith(other basestore.ShareableStore, key encryption.Key) *UserCredentialsStore {
 	return &UserCredentialsStore{
 		Store: basestore.NewWithHandle(other.Handle()),
