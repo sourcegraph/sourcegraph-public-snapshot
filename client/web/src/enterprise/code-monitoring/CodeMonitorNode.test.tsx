@@ -24,7 +24,7 @@ describe('CreateCodeMonitorPage', () => {
                 toggleCodeMonitorEnabled={sinon.spy()}
                 location={history.location}
                 node={mockCodeMonitor.node}
-                authentictedUser={mockUser}
+                authenticatedUser={mockUser}
                 showCodeMonitoringTestEmailButton={false}
             />
         )
@@ -37,7 +37,7 @@ describe('CreateCodeMonitorPage', () => {
                 toggleCodeMonitorEnabled={sinon.spy()}
                 location={history.location}
                 node={mockCodeMonitor.node}
-                authentictedUser={mockUser}
+                authenticatedUser={mockUser}
                 showCodeMonitoringTestEmailButton={true}
             />
         )
@@ -50,7 +50,7 @@ describe('CreateCodeMonitorPage', () => {
                 toggleCodeMonitorEnabled={sinon.spy()}
                 location={history.location}
                 node={{ ...mockCodeMonitor.node, enabled: false }}
-                authentictedUser={mockUser}
+                authenticatedUser={mockUser}
                 showCodeMonitoringTestEmailButton={true}
             />
         )
@@ -63,7 +63,7 @@ describe('CreateCodeMonitorPage', () => {
                 toggleCodeMonitorEnabled={sinon.spy()}
                 location={history.location}
                 node={mockCodeMonitor.node}
-                authentictedUser={{ ...mockUser, siteAdmin: false }}
+                authenticatedUser={{ ...mockUser, siteAdmin: false }}
                 showCodeMonitoringTestEmailButton={true}
             />
         )
