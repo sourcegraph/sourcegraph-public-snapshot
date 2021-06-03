@@ -1,4 +1,4 @@
-package dbstore
+package locker
 
 import (
 	"context"
@@ -9,22 +9,26 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
 
+func init() {
+	dbtesting.DBNameSuffix = "locker"
+}
+
 func TestLock(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	db := dbtesting.GetDB(t)
-	store := testStore(db)
+	locker := NewWithDB(db, "test")
 
 	key := rand.Intn(1000)
 
 	// Start txn before acquiring locks outside of txn
-	tx, err := store.Transact(context.Background())
+	tx, err := locker.Transact(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error starting transaction: %s", err)
 	}
 
-	acquired, unlock, err := store.Lock(context.Background(), key, true)
+	acquired, unlock, err := locker.Lock(context.Background(), key, true)
 	if err != nil {
 		t.Fatalf("unexpected error attempting to acquire lock: %s", err)
 	}
@@ -56,18 +60,18 @@ func TestLockBlockingAcquire(t *testing.T) {
 		t.Skip()
 	}
 	db := dbtesting.GetDB(t)
-	store := testStore(db)
+	locker := NewWithDB(db, "test")
 
 	key := rand.Intn(1000)
 
 	// Start txn before acquiring locks outside of txn
-	tx, err := store.Transact(context.Background())
+	tx, err := locker.Transact(context.Background())
 	if err != nil {
 		t.Errorf("unexpected error starting transaction: %s", err)
 		return
 	}
 
-	acquired, unlock, err := store.Lock(context.Background(), key, true)
+	acquired, unlock, err := locker.Lock(context.Background(), key, true)
 	if err != nil {
 		t.Fatalf("unexpected error attempting to acquire lock: %s", err)
 	}

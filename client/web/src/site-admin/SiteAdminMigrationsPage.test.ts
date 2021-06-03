@@ -1,3 +1,5 @@
+import { parse } from 'semver'
+
 import { OutOfBandMigrationFields } from '../graphql-operations'
 
 import { isComplete, isInvalidForVersion } from './SiteAdminMigrationsPage'
@@ -29,23 +31,18 @@ describe('isInvalidForVersion', () => {
         expect(
             isInvalidForVersion(
                 { ...zeroFields, introduced: '3.9', deprecated: '3.10', progress: 0.5 },
-                { major: 3, minor: 10 }
+                parse('3.10.0')
             )
         ).toBeTruthy()
     })
 
     it('should not mark incomplete migrations as invalid without deprecation', () => {
-        expect(
-            isInvalidForVersion({ ...zeroFields, introduced: '3.9', progress: 0.5 }, { major: 3, minor: 10 })
-        ).toBeFalsy()
+        expect(isInvalidForVersion({ ...zeroFields, introduced: '3.9', progress: 0.5 }, parse('3.10.0'))).toBeFalsy()
     })
 
     it('should mark incomplete migrations as invalid after downgrade', () => {
         expect(
-            isInvalidForVersion(
-                { ...zeroFields, introduced: '3.9', deprecated: '3.10', progress: 0.5 },
-                { major: 3, minor: 8 }
-            )
+            isInvalidForVersion({ ...zeroFields, introduced: '3.9', deprecated: '3.10', progress: 0.5 }, parse('3.8.0'))
         ).toBeTruthy()
     })
 
@@ -53,7 +50,7 @@ describe('isInvalidForVersion', () => {
         expect(
             isInvalidForVersion(
                 { ...zeroFields, introduced: '3.9', deprecated: '3.10', progress: 0.5, nonDestructive: true },
-                { major: 3, minor: 8 }
+                parse('3.8.0')
             )
         ).toBeFalsy()
     })

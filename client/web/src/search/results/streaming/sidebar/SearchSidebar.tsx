@@ -47,7 +47,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
 
     return (
         <div className={classNames(styles.searchSidebar, props.className)}>
-            <StickyBox offsetTop={8} offsetBottom={8} className={styles.searchSidebarStickyBox}>
+            <StickyBox className={styles.searchSidebarStickyBox}>
                 <SearchSidebarSection className={styles.searchSidebarItem} header="Search types">
                     {getSearchTypeLinks(props)}
                 </SearchSidebarSection>

@@ -4,8 +4,12 @@ This document describes the exact changes needed to update a single-node Sourceg
 
 A new version of Sourcegraph is released every month (with patch releases in between, released as needed). Check the [Sourcegraph blog](https://about.sourcegraph.com/blog) or the site admin updates page to learn about updates. We actively maintain the two most recent monthly releases of Sourcegraph.
 
-> :warning: **Regardless of your deployment type:** upgrade one version at a time, e.g. v3.26 --> v3.27 --> v3.28.
-> <br>(Note that patches, e.g. vX.X.4 vs. vX.X.5 do not have to be adopted when moving between vX.X versions)
+> ⚠️ **Regardless of your deployment type:** ⚠️
+> <br>Upgrade one version at a time, e.g. v3.26 --> v3.27 --> v3.28.
+> <br>Patches, e.g. vX.X.4 vs. vX.X.5, do not have to be adopted when moving between vX.X versions.
+
+> ⚠️ **Regardless of your deployment type:** ⚠️
+> <br>Check your <a href="../migrations">out of band migration status</a> prior to upgrade to avoid a necessary rollback while the migration finishes.
 
 **Always refer to this page before upgrading Sourcegraph,** as it comprehensively describes the steps needed to upgrade, and any manual migration steps you must perform.
 
@@ -26,7 +30,6 @@ You can always find the version number of the latest release at [docs.sourcegrap
 - As a precaution, before updating, we recommend backing up the contents of the Docker volumes used by Sourcegraph.
 - If you need a HA deployment, use the [Kubernetes cluster deployment option](https://github.com/sourcegraph/deploy-sourcegraph).
 - There is currently no automated way to downgrade to an older version after you have updated. [Contact support](https://about.sourcegraph.com/contact) for help.
-
 
 > NOTE: ⚠️ From **3.27** onwards we will only support PostgreSQL versions **starting from 12**.
 

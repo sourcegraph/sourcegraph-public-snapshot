@@ -52,5 +52,13 @@
         [data-reach-tab]:first-child {
             margin-left: 0;
         }
+
+        [data-reach-tab-panels] {
+            padding: 0.25rem 1rem;
+        }
+
+        &__empty {
+            padding-top: 0.5rem;
+        }
     }
 }

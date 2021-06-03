@@ -41,7 +41,6 @@ type operations struct {
 	insertIndex                            *observation.Operation
 	insertUpload                           *observation.Operation
 	isQueued                               *observation.Operation
-	lock                                   *observation.Operation
 	markComplete                           *observation.Operation
 	markErrored                            *observation.Operation
 	markFailed                             *observation.Operation
@@ -131,7 +130,6 @@ func newOperations(observationContext *observation.Context) *operations {
 		insertIndex:                            op("InsertIndex"),
 		insertUpload:                           op("InsertUpload"),
 		isQueued:                               op("IsQueued"),
-		lock:                                   op("Lock"),
 		markComplete:                           op("MarkComplete"),
 		markErrored:                            op("MarkErrored"),
 		markFailed:                             op("MarkFailed"),

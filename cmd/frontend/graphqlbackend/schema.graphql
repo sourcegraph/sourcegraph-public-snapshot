@@ -1308,7 +1308,9 @@ type OutOfBandMigration implements Node {
     description: String!
 
     """
-    The Sourcegraph version in which this migration was introduced.
+    The Sourcegraph version in which this migration was introduced. The format of this version
+    includes only major and minor parts separated by a dot. The patch version can always be assumed
+    to be zero as we'll never introduce or deprecate an out-of-band migration within a patch release.
 
     It is necessary to completely this migration in reverse (if destructive) before downgrading
     to or past this version. Otherwise, the previous instance version will not be aware of the
@@ -1317,7 +1319,8 @@ type OutOfBandMigration implements Node {
     introduced: String!
 
     """
-    The Sourcegraph version in which this migration is assumed to have completed.
+    The Sourcegraph version by which this migration is assumed to have completed. The format of
+    this version mirrors introduced and includes only major and minor parts separated by a dot.
 
     It is necessary to have completed this migration before upgrading to or past this version.
     Otherwsie, the next instance version will no longer be aware of the old data format.

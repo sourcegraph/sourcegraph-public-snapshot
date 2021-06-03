@@ -31,6 +31,15 @@ interface Props extends TelemetryProps {
     autoFocusForm?: boolean
 }
 
+function isValidURL(url: string): boolean {
+    try {
+        new URL(url)
+        return true
+    } catch {
+        return false
+    }
+}
+
 export const ExternalServicePage: React.FunctionComponent<Props> = ({
     externalServiceID,
     history,
@@ -111,7 +120,8 @@ export const ExternalServicePage: React.FunctionComponent<Props> = ({
             typeof parsedConfig === 'object' &&
             parsedConfig !== null &&
             hasProperty('url')(parsedConfig) &&
-            typeof parsedConfig.url === 'string'
+            typeof parsedConfig.url === 'string' &&
+            isValidURL(parsedConfig.url)
                 ? new URL(parsedConfig.url)
                 : undefined
         // We have no way of finding out whether a externalservice of kind GITHUB is GitHub.com or GitHub enterprise, so we need to guess based on the URL.

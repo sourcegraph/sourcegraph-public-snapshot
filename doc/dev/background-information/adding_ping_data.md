@@ -28,7 +28,7 @@ Treat adding new data to pings as having a very high bar. Would you be willing t
       - Pings documentation: https://docs.sourcegraph.com/admin/pings
       - The Site-admin > Pings page, e.g.: https://sourcegraph.com/site-admin/pings
 1. Determine if any transformations/ETL jobs are required, and if so, add them to the [script](https://github.com/sourcegraph/analytics/blob/master/BigQuery%20Schemas/transform.js). The script is primarily for edge cases. Primarily,  as long as zeroes or nulls are being sent back instead of `""` in the case where the data point is empty.
-1. Open a PR to change [the schema](https://github.com/sourcegraph/analytics/tree/master/BigQuery%20Schemas) with BizOps (EricBM and Dan) as approvers. Keep in mind:
+1. Open a PR to change [the schema](https://github.com/sourcegraph/analytics/blob/master/BigQuery%20Schemas/sourcegraph_analytics.update_checks_schema.json) with BizOps (EricBM and Dan) as approvers. Keep in mind:
 	- Check the data types sent in the JSON match up with the BigQuery schema (e.g. a JSON '1' will not match up with a BigQuery integer).
 	- Every field in the BigQuery schema should not be non-nullable (i.e. `"mode": "NULLABLE"` and `"mode": "REPEATED"` are acceptable). There will be instances on the older Sourcegraph versions that will not be sending new data fields, and this will cause pings to fail.
 1. Once the schema change PR is merged, test the new schema. Contact @EricBM for this part.

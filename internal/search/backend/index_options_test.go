@@ -51,6 +51,18 @@ func TestGetIndexOptions(t *testing.T) {
 			},
 		},
 	}, {
+		name: "public",
+		conf: schema.SiteConfiguration{},
+		repo: "public",
+		want: zoektIndexOptions{
+			RepoID:  5,
+			Public:  true,
+			Symbols: true,
+			Branches: []zoekt.RepositoryBranch{
+				{Name: "HEAD", Version: "!HEAD"},
+			},
+		},
+	}, {
 		name: "nosymbols",
 		conf: schema.SiteConfiguration{
 			SearchIndexSymbolsEnabled: boolPtr(false)},
@@ -209,7 +221,7 @@ func TestGetIndexOptions(t *testing.T) {
 
 	getRepoIndexOptions := func(repo string) (*RepoIndexOptions, error) {
 		repoID := int32(1)
-		for _, r := range []string{"repo", "foo", "not_in_version_context", "priority"} {
+		for _, r := range []string{"repo", "foo", "not_in_version_context", "priority", "public"} {
 			if r == repo {
 				break
 			}
@@ -221,6 +233,7 @@ func TestGetIndexOptions(t *testing.T) {
 		}
 		return &RepoIndexOptions{
 			RepoID: repoID,
+			Public: repo == "public",
 			GetVersion: func(branch string) (string, error) {
 				return "!" + branch, nil
 			},

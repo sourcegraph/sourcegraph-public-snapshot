@@ -11,6 +11,9 @@
 
     .theme-redesign & {
         border: none;
+        align-items: center;
+        margin-top: 0.5rem;
+        margin-bottom: 0.5rem;
     }
 
     &--alert {
@@ -44,6 +47,11 @@
     &__action {
         margin: 0.5rem 0.625rem 0.5rem 0;
         padding: 0.25rem;
+
+        .theme-redesign & {
+            margin-top: 0;
+            margin-bottom: 0;
+        }
     }
 
     .navbar-nav {

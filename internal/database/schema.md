@@ -1164,26 +1164,27 @@ Referenced by:
 
 # Table "public.out_of_band_migrations"
 ```
-     Column      |           Type           | Collation | Nullable |                      Default                       
------------------+--------------------------+-----------+----------+----------------------------------------------------
- id              | integer                  |           | not null | nextval('out_of_band_migrations_id_seq'::regclass)
- team            | text                     |           | not null | 
- component       | text                     |           | not null | 
- description     | text                     |           | not null | 
- introduced      | text                     |           | not null | 
- deprecated      | text                     |           |          | 
- progress        | double precision         |           | not null | 0
- created         | timestamp with time zone |           | not null | now()
- last_updated    | timestamp with time zone |           |          | 
- non_destructive | boolean                  |           | not null | 
- apply_reverse   | boolean                  |           | not null | false
+          Column          |           Type           | Collation | Nullable |                      Default                       
+--------------------------+--------------------------+-----------+----------+----------------------------------------------------
+ id                       | integer                  |           | not null | nextval('out_of_band_migrations_id_seq'::regclass)
+ team                     | text                     |           | not null | 
+ component                | text                     |           | not null | 
+ description              | text                     |           | not null | 
+ progress                 | double precision         |           | not null | 0
+ created                  | timestamp with time zone |           | not null | now()
+ last_updated             | timestamp with time zone |           |          | 
+ non_destructive          | boolean                  |           | not null | 
+ apply_reverse            | boolean                  |           | not null | false
+ is_enterprise            | boolean                  |           | not null | false
+ introduced_version_major | integer                  |           | not null | 
+ introduced_version_minor | integer                  |           | not null | 
+ deprecated_version_major | integer                  |           |          | 
+ deprecated_version_minor | integer                  |           |          | 
 Indexes:
     "out_of_band_migrations_pkey" PRIMARY KEY, btree (id)
 Check constraints:
     "out_of_band_migrations_component_nonempty" CHECK (component <> ''::text)
-    "out_of_band_migrations_deprecated_valid_version" CHECK (deprecated ~ '^(\d+)\.(\d+)\.(\d+)$'::text)
     "out_of_band_migrations_description_nonempty" CHECK (description <> ''::text)
-    "out_of_band_migrations_introduced_valid_version" CHECK (introduced ~ '^(\d+)\.(\d+)\.(\d+)$'::text)
     "out_of_band_migrations_progress_range" CHECK (progress >= 0::double precision AND progress <= 1::double precision)
     "out_of_band_migrations_team_nonempty" CHECK (team <> ''::text)
 Referenced by:
@@ -1199,13 +1200,19 @@ Stores metadata and progress about an out-of-band migration routine.
 
 **created**: The date and time the migration was inserted into the database (via an upgrade).
 
-**deprecated**: The lowest Sourcegraph version that assumes the migration has completed.
+**deprecated_version_major**: The lowest Sourcegraph version (major component) that assumes the migration has completed.
+
+**deprecated_version_minor**: The lowest Sourcegraph version (minor component) that assumes the migration has completed.
 
 **description**: A brief description about the migration.
 
 **id**: A globally unique primary key for this migration. The same key is used consistently across all Sourcegraph instances for the same migration.
 
-**introduced**: The Sourcegraph version in which this migration was first introduced.
+**introduced_version_major**: The Sourcegraph version (major component) in which this migration was first introduced.
+
+**introduced_version_minor**: The Sourcegraph version (minor component) in which this migration was first introduced.
+
+**is_enterprise**: When true, these migrations are invisible to OSS mode.
 
 **last_updated**: The date and time the migration was last updated.
 
@@ -1762,11 +1769,12 @@ Triggers:
 
 # Table "public.versions"
 ```
-   Column   |           Type           | Collation | Nullable | Default 
-------------+--------------------------+-----------+----------+---------
- service    | text                     |           | not null | 
- version    | text                     |           | not null | 
- updated_at | timestamp with time zone |           | not null | now()
+    Column     |           Type           | Collation | Nullable | Default 
+---------------+--------------------------+-----------+----------+---------
+ service       | text                     |           | not null | 
+ version       | text                     |           | not null | 
+ updated_at    | timestamp with time zone |           | not null | now()
+ first_version | text                     |           | not null | 
 Indexes:
     "versions_pkey" PRIMARY KEY, btree (service)
 

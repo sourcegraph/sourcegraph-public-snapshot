@@ -341,7 +341,11 @@ export const ActionItemsToggle: React.FunctionComponent<ActionItemsToggleProps> 
                     )}
                 >
                     <ButtonLink
-                        className={classNames(actionItemClassName, 'action-items__aux-icon')}
+                        className={classNames(
+                            actionItemClassName,
+                            'action-items__aux-icon',
+                            'action-items__action--toggle'
+                        )}
                         onSelect={toggle}
                         buttonLinkRef={toggleReference}
                     >

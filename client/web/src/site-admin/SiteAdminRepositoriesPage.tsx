@@ -148,7 +148,10 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<Props> = ({ hist
             <h2>Repositories</h2>
             <p>
                 Repositories are synced from connected{' '}
-                <Link to="/site-admin/external-services">code host connections</Link>.
+                <Link to="/site-admin/external-services" data-testid="test-repositories-code-host-connections-link">
+                    code host connections
+                </Link>
+                .
             </p>
             <FilteredConnection<SiteAdminRepositoryFields, Omit<RepositoryNodeProps, 'node'>>
                 className="list-group list-group-flush mt-3"
