@@ -246,7 +246,9 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                             <NavLink to="/code-monitoring">Monitoring</NavLink>
                         </NavItem>
                         <NavItem icon={BatchChangesIconNav}>
-                            <NavLink to="/batch-changes">Batch Changes</NavLink>
+                            <NavLink to="https://about.sourcegraph.com/batch-changes/" external={true}>
+                                Batch Changes
+                            </NavLink>
                         </NavItem>
                         <NavItem icon={BarChartIcon}>
                             <NavLink to="/insights">Insights</NavLink>
