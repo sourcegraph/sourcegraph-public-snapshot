@@ -13,14 +13,14 @@ type FeatureFlagResolver struct {
 	inner *featureflag.FeatureFlag
 }
 
-func (f *FeatureFlagResolver) ToFeatureFlagBooleanResolver() (*FeatureFlagBooleanResolver, bool) {
+func (f *FeatureFlagResolver) ToFeatureFlagBoolean() (*FeatureFlagBooleanResolver, bool) {
 	if f.inner.Bool != nil {
 		return &FeatureFlagBooleanResolver{f.db, f.inner}, true
 	}
 	return nil, false
 }
 
-func (f *FeatureFlagResolver) ToFeatureFlagRolloutResolver() (*FeatureFlagRolloutResolver, bool) {
+func (f *FeatureFlagResolver) ToFeatureFlagRollout() (*FeatureFlagRolloutResolver, bool) {
 	if f.inner.Rollout != nil {
 		return &FeatureFlagRolloutResolver{f.db, f.inner}, true
 	}
@@ -49,8 +49,8 @@ type FeatureFlagRolloutResolver struct {
 	inner *featureflag.FeatureFlag
 }
 
-func (f *FeatureFlagRolloutResolver) Name() string { return f.inner.Name }
-func (f *FeatureFlagRolloutResolver) Rollout() int { return f.inner.Rollout.Rollout }
+func (f *FeatureFlagRolloutResolver) Name() string   { return f.inner.Name }
+func (f *FeatureFlagRolloutResolver) Rollout() int32 { return int32(f.inner.Rollout.Rollout) }
 func (f *FeatureFlagRolloutResolver) Overrides(ctx context.Context) ([]*FeatureFlagOverrideResolver, error) {
 	overrides, err := database.FeatureFlags(f.db).GetOverridesForFlag(ctx, f.inner.Name)
 	if err != nil {
@@ -71,10 +71,10 @@ type FeatureFlagOverrideResolver struct {
 	inner *featureflag.Override
 }
 
-func (f *FeatureFlagOverrideResolver) Name() string   { return f.inner.FlagName }
-func (f *FeatureFlagOverrideResolver) Value() bool    { return f.inner.Value }
-func (f *FeatureFlagOverrideResolver) UserID() *int32 { return f.inner.UserID }
-func (f *FeatureFlagOverrideResolver) OrgID() *int32  { return f.inner.OrgID }
+func (f *FeatureFlagOverrideResolver) FlagName() string { return f.inner.FlagName }
+func (f *FeatureFlagOverrideResolver) Value() bool      { return f.inner.Value }
+func (f *FeatureFlagOverrideResolver) UserID() *int32   { return f.inner.UserID }
+func (f *FeatureFlagOverrideResolver) OrgID() *int32    { return f.inner.OrgID }
 
 type EvaluatedFeatureFlagResolver struct {
 	name  string
@@ -102,7 +102,7 @@ func evaluatedFlagsToResolvers(input map[string]bool) []*EvaluatedFeatureFlagRes
 	return res
 }
 
-func (r *schemaResolver) FeatureFlags(ctx context.Context) ([]FeatureFlagResolver, error) {
+func (r *schemaResolver) FeatureFlags(ctx context.Context) ([]*FeatureFlagResolver, error) {
 	flags, err := database.FeatureFlags(r.db).GetFeatureFlags(ctx)
 	if err != nil {
 		return nil, err
@@ -110,10 +110,10 @@ func (r *schemaResolver) FeatureFlags(ctx context.Context) ([]FeatureFlagResolve
 	return flagsToResolvers(r.db, flags), nil
 }
 
-func flagsToResolvers(db dbutil.DB, flags []*featureflag.FeatureFlag) []FeatureFlagResolver {
-	res := make([]FeatureFlagResolver, 0, len(flags))
+func flagsToResolvers(db dbutil.DB, flags []*featureflag.FeatureFlag) []*FeatureFlagResolver {
+	res := make([]*FeatureFlagResolver, 0, len(flags))
 	for _, flag := range flags {
-		res = append(res, FeatureFlagResolver{db, flag})
+		res = append(res, &FeatureFlagResolver{db, flag})
 	}
 	return res
 }
