@@ -856,7 +856,7 @@ describe('e2e test suite', () => {
                 await retry(async () =>
                     expect(
                         await driver.page.evaluate(() =>
-                            document.querySelectorAll('.git-commit-node-byline')[3].textContent!.trim()
+                            document.querySelectorAll('[data-testid="git-commit-node-byline"]')[3].textContent!.trim()
                         )
                     ).toContain('Dmitri Shuralyov')
                 )

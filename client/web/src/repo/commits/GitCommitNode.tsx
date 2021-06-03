@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import copy from 'copy-to-clipboard'
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 import DotsHorizontalIcon from 'mdi-react/DotsHorizontalIcon'
@@ -7,6 +8,7 @@ import React, { useState, useCallback } from 'react'
 import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
+import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { Timestamp } from '../../components/time/Timestamp'
 import { GitCommitFields } from '../../graphql-operations'
@@ -48,6 +50,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
 }) => {
     const [showCommitMessageBody, setShowCommitMessageBody] = useState<boolean>(false)
     const [flashCopiedToClipboardMessage, setFlashCopiedToClipboardMessage] = useState<boolean>(false)
+    const [isRedesignEnabled] = useRedesignToggle()
 
     const toggleShowCommitMessageBody = useCallback((): void => {
         eventLogger.log('CommitBodyToggled')
@@ -73,10 +76,12 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
             compact={Boolean(compact)}
         />
     )
+
+    const MessageWrapper = isRedesignEnabled && compact ? 'small' : React.Fragment
     const messageElement = (
         <div className="git-commit-node__message flex-grow-1">
             <Link to={node.canonicalURL} className="git-commit-node__message-subject" title={node.message}>
-                {node.subject}
+                <MessageWrapper>{node.subject}</MessageWrapper>
             </Link>
             {node.body && !hideExpandCommitMessageBody && !expandCommitMessageBody && (
                 <button
@@ -96,11 +101,13 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
     )
     const oidElement = <code className="git-commit-node__oid">{node.abbreviatedOID}</code>
     return (
-        <div
-            key={node.id}
-            className={`git-commit-node ${compact ? 'git-commit-node--compact' : ''} ${className || ''}`}
-        >
-            <div className="w-100 d-flex justify-content-between align-items-start flex-wrap-reverse">
+        <div key={node.id} className={classNames('git-commit-node', compact && 'git-commit-node--compact', className)}>
+            <div
+                className={classNames(
+                    'w-100 d-flex justify-content-between flex-wrap-reverse',
+                    isRedesignEnabled ? 'align-items-center' : 'align-items-start '
+                )}
+            >
                 {!compact ? (
                     <>
                         <div className="git-commit-node__signature">

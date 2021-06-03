@@ -94,11 +94,20 @@
         overflow: hidden;
         white-space: nowrap;
         text-overflow: ellipsis;
+
+        .theme-redesign & {
+            display: flex;
+            align-items: center;
+        }
     }
     &--compact &__message {
         flex: 1;
         min-width: 0;
         padding-right: 1rem;
+
+        .theme-redesign & {
+            line-height: 1;
+        }
     }
     &--compact &__message-subject {
         font-weight: normal;
