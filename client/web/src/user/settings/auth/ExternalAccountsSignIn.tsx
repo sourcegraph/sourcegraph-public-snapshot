@@ -107,37 +107,34 @@ export const ExternalAccountsSignIn: React.FunctionComponent<Props> = ({
     authProviders,
     onDidRemove,
     onDidError,
-}) => {
-    const [isRedesignEnabled] = useRedesignToggle()
-    return (
-        <>
-            {accounts && (
-                <ul className={classNames('list-group', !isRedesignEnabled && 'mt-3 pb-2')}>
-                    {supported.map(kind => {
-                        const type = kind.toLocaleLowerCase() as ServiceType
-                        const authProvider = authProviders[type]
+}) => (
+    <>
+        {accounts && (
+            <ul className="list-group">
+                {supported.map(kind => {
+                    const type = kind.toLocaleLowerCase() as ServiceType
+                    const authProvider = authProviders[type]
 
-                        // if auth provider for this account doesn't exist -
-                        // don't display the account as an option
-                        if (authProvider) {
-                            const account = getNormalizedAccount(accounts, kind)
+                    // if auth provider for this account doesn't exist -
+                    // don't display the account as an option
+                    if (authProvider) {
+                        const account = getNormalizedAccount(accounts, kind)
 
-                            return (
-                                <li key={kind} className={classNames('list-group-item', styles.externalAccount)}>
-                                    <ExternalAccount
-                                        account={account}
-                                        authProvider={authProvider}
-                                        onDidRemove={onDidRemove}
-                                        onDidError={onDidError}
-                                    />
-                                </li>
-                            )
-                        }
+                        return (
+                            <li key={kind} className={classNames('list-group-item', styles.externalAccount)}>
+                                <ExternalAccount
+                                    account={account}
+                                    authProvider={authProvider}
+                                    onDidRemove={onDidRemove}
+                                    onDidError={onDidError}
+                                />
+                            </li>
+                        )
+                    }
 
-                        return null
-                    })}
-                </ul>
-            )}
-        </>
-    )
-}
+                    return null
+                })}
+            </ul>
+        )}
+    </>
+)
