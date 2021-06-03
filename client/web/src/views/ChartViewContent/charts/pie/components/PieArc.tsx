@@ -72,7 +72,7 @@ export function PieArc<Datum>(props: PieArcProps<Datum>): ReactElement {
     return (
         <Group aria-hidden={true} className={classes} onPointerMove={onPointerMove} onPointerOut={onPointerOut}>
             <path
-                data-test-id="PieChartArcElement"
+                data-testid="pie-chart-arc-element"
                 className="pie-chart__arc-path"
                 d={pathValue}
                 fill={getColor(arc)}
