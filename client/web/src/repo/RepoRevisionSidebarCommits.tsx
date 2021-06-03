@@ -30,16 +30,16 @@ interface CommitNodeProps {
 }
 
 const CommitNode: React.FunctionComponent<CommitNodeProps> = ({ node, location }) => (
-    <li className={classNames(styles.repoRevisionSidebarCommitsCommitContainer, 'list-group-item p-0')}>
+    <li className={classNames(styles.commitContainer, 'list-group-item p-0')}>
         <GitCommitNode
-            className={styles.repoRevisionSidebarCommitsCommitNode}
+            className={styles.commitNode}
             compact={true}
             node={node}
             hideExpandCommitMessageBody={true}
             afterElement={
                 <Link
                     to={replaceRevisionInURL(location.pathname + location.search + location.hash, node.oid)}
-                    className={classNames(styles.repoRevisionSidebarCommitsFileIcon, 'ml-2')}
+                    className={classNames(styles.fileIcon, 'ml-2')}
                     title="View current file at this commit"
                 >
                     <FileIcon className="icon-inline" />
@@ -60,9 +60,9 @@ export class RepoRevisionSidebarCommits extends React.PureComponent<Props> {
         return (
             <FilteredConnection<GitCommitFields, Pick<CommitNodeProps, 'location'>, CommitAncestorsConnectionFields>
                 className="list-group list-group-flush"
-                listClassName={styles.repoRevisionSidebarCommitsList}
-                summaryClassName={styles.repoRevisionSidebarCommitsSummary}
-                loaderClassName={styles.repoRevisionSidebarCommitsLoader}
+                listClassName={styles.list}
+                summaryClassName={styles.summary}
+                loaderClassName={styles.loader}
                 compact={true}
                 noun="commit"
                 pluralNoun="commits"

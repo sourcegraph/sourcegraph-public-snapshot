@@ -24,7 +24,7 @@ export const GitCommitNodeByline: React.FunctionComponent<Props> = ({ author, co
     const [isRedesignEnabled] = useRedesignToggle()
 
     const avatarMarginClass = isRedesignEnabled && compact ? 'mr-2' : 'mr-1'
-    const avatarClassName = classNames('icon-inline mr-1', compact && styles.gitCommitNodeBylineAvatarCompact)
+    const avatarClassName = classNames('icon-inline mr-1', compact && styles.avatarCompact)
 
     // Omit GitHub as committer to reduce noise. (Edits and squash commits made in the GitHub UI
     // include GitHub as a committer.)
@@ -50,7 +50,7 @@ export const GitCommitNodeByline: React.FunctionComponent<Props> = ({ author, co
                     user={committer.person}
                     data-tooltip={`${formatPersonName(committer.person)} (committer)`}
                 />
-                <span className={classNames(compact && styles.gitCommitNodeBylinePersonCompact)}>
+                <span className={classNames(compact && styles.personCompact)}>
                     <PersonLink person={author.person} className="font-weight-bold" /> {!compact && 'authored'} and{' '}
                     <PersonLink person={committer.person} className="font-weight-bold" />{' '}
                     {!compact && (
@@ -70,7 +70,7 @@ export const GitCommitNodeByline: React.FunctionComponent<Props> = ({ author, co
                 user={author.person}
                 data-tooltip={formatPersonName(author.person)}
             />{' '}
-            <span className={classNames(compact && styles.gitCommitNodeBylinePersonCompact)}>
+            <span className={classNames(compact && styles.personCompact)}>
                 <PersonLink person={author.person} className="font-weight-bold" />{' '}
                 {!compact && (
                     <>
