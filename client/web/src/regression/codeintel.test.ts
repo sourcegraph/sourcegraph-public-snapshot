@@ -174,9 +174,7 @@ describe('Code intelligence regression test suite', () => {
                 line: 225,
                 token: 'SamplePair',
                 expectedHoverContains: 'SamplePair pairs a SampleValue with a Timestamp.',
-                expectedDefinition: [
-                    // `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go#L78:6`,
-                ],
+                // expectedDefinition: `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go#L78:6`,
             }))
     })
 })
@@ -208,7 +206,7 @@ interface CodeNavigationTestCase {
     /**
      * A locations (if unambiguous), or a subset of locations that must occur within the definitions panel.
      */
-    expectedDefinition: string | string[]
+    expectedDefinition?: string | string[]
 
     /**
      * A subset of locations that must occur within the references panel.
@@ -231,20 +229,15 @@ async function testCodeNavigation(
     await driver.page.goto(config.sourcegraphBaseUrl + page)
     await driver.page.waitForSelector('.test-blob')
     const tokenElement = await findTokenElement(driver, line, token)
-    console.log('Loaded blob, URL is:', driver.page.url())
 
     // Check hover
     await tokenElement.hover()
     await waitForHover(driver, expectedHoverContains)
 
-    console.log('Hovered token, URL is:', driver.page.url())
-
     // Check click
     await clickOnEmptyPartOfCodeView(driver)
     await tokenElement.click()
     await waitForHover(driver, expectedHoverContains)
-
-    console.log('Clicked token, URL is:', driver.page.url())
 
     // Find-references
     if (expectedReferences && expectedReferences.length > 0) {
@@ -252,19 +245,15 @@ async function testCodeNavigation(
         await tokenElement.hover()
         await waitForHover(driver, expectedHoverContains)
 
-        const findReferencesButton = await driver.findElementWithText('Find references')
-        console.log('About to click references, URL is:', driver.page.url())
-        await findReferencesButton.click()
+        await (await driver.findElementWithText('Find references')).click()
 
         await driver.page.waitForSelector('.test-search-result')
-        console.log('Clicked find references, URL is:', driver.page.url())
 
         const referenceLinks = await collectLinks(driver)
         for (const expectedReference of expectedReferences) {
             expect(referenceLinks).toContainEqual(expectedReference)
         }
         await clickOnEmptyPartOfCodeView(driver)
-        console.log('Clicked off references, URL is:', driver.page.url())
     }
 
     // Go-to-definition
@@ -272,12 +261,7 @@ async function testCodeNavigation(
     await tokenElement.click()
     await waitForHover(driver, expectedHoverContains)
 
-    const goToDefinitionButton = await driver.findElementWithText('Go to definition')
-    console.log('About to click go to definition, URL is:', driver.page.url())
-    await goToDefinitionButton.click()
-    await new Promise(resolve => setTimeout(resolve, 2000))
-
-    console.log('Clicked go to definition, URL is:', driver.page.url())
+    await (await driver.findElementWithText('Go to definition')).click()
 
     if (Array.isArray(expectedDefinition)) {
         await driver.page.waitForSelector('.hierarchical-locations-view')
@@ -285,18 +269,12 @@ async function testCodeNavigation(
         for (const definition of expectedDefinition) {
             expect(defLinks).toContainEqual(definition)
         }
-    } else {
-        console.log('Checking for updated go to definition href, URL is:', driver.page.url())
-        console.log('--------- Expected href ends with', expectedDefinition)
-        try {
-            await driver.page.waitForFunction(
-                defURL => document.location.href.endsWith(defURL),
-                { timeout: 10000 },
-                expectedDefinition
-            )
-        } catch {
-            console.log('Did not find expected url, current URL is', driver.page.url())
-        }
+    } else if (expectedDefinition) {
+        await driver.page.waitForFunction(
+            defURL => document.location.href.endsWith(defURL),
+            { timeout: 10000 },
+            expectedDefinition
+        )
 
         await driver.page.goBack()
     }
