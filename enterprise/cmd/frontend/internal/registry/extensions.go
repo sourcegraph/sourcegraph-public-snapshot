@@ -3,6 +3,7 @@ package registry
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -20,6 +21,20 @@ func init() {
 			return nil, err
 		}
 		return &extensionDBResolver{db: db, v: x}, nil
+	}
+
+	if envvar.SourcegraphDotComMode() {
+		registry.GetLocalFeaturedExtensions = func(ctx context.Context, db dbutil.DB) ([]graphqlbackend.RegistryExtension, error) {
+			dbExtensions, err := dbExtensions{}.GetFeaturedExtensions(ctx)
+			if err != nil {
+				return nil, err
+			}
+			registryExtensions := make([]graphqlbackend.RegistryExtension, len(dbExtensions))
+			for i, x := range dbExtensions {
+				registryExtensions[i] = &extensionDBResolver{db: db, v: x}
+			}
+			return registryExtensions, nil
+		}
 	}
 }
 
