@@ -40,9 +40,8 @@ function getUniversalInsightExtensionBundle(
         const sourcegraph = require('sourcegraph') as typeof import('sourcegraph')
 
         function activate(): void {
-            const insightViewStore: Record<string, ProviderResult<View>> = {
-                /* $VIEWS */
-            }
+            // prettier-ignore
+            const views: Record<string, ProviderResult<View>> = {/* $VIEWS */}
             let subscriptions: Unsubscribable[] = []
 
             function handleInsights(config: Record<string, unknown>): void {
@@ -52,7 +51,7 @@ function getUniversalInsightExtensionBundle(
                     const [id] = insight
 
                     // eslint-disable-next-line unicorn/consistent-function-scoping,@typescript-eslint/explicit-function-return-type
-                    const provideView = () => insightViewStore[id]
+                    const provideView = () => views[id]
 
                     subscriptions.push(
                         sourcegraph.app.registerViewProvider(id + '.insightsPage', {
