@@ -1,6 +1,59 @@
 # Developing the Sourcegraph web app
 
-Guide to contribute to the Sourcegraph webapp. Please also see our general [TypeScript documentation](https://about.sourcegraph.com/handbook/engineering/languages/typescript).
+Guide to contribute to the Sourcegraph web app. Please also see our general [TypeScript documentation](https://about.sourcegraph.com/handbook/engineering/languages/typescript).
+
+## Local development
+
+Common commands for local development are located [here](../../getting-started/quickstart_6_start_server.md).
+Commands specifically useful for the web team can be found in the root [package.json](https://github.com/sourcegraph/sourcegraph/blob/main/package.json).
+Also, check out the web app [README](https://github.com/sourcegraph/sourcegraph/blob/main/client/web/README.md).
+
+### Prerequisites
+
+The `sg` CLI tool is required for key local development commands. Check out the `sg` [README](https://github.com/sourcegraph/sourcegraph/blob/main/dev/sg/README.md).
+To install it, use the following command.
+
+```sh
+./dev/sg/install.sh
+```
+
+### Commands
+
+1. Start the web server and point it to any deployed API instance. See more info in the web app [README](https://github.com/sourcegraph/sourcegraph/blob/main/client/web/README.md).
+
+    ```sh
+    sg run web-standalone
+    ```
+
+    For the enterprise version:
+
+    ```sh
+    sg run enterprise-web-standalone
+    ```
+
+2. Start all backend services with the frontend server.
+
+    ```sh
+    ./dev/start.sh
+    ```
+
+    For the enterprise version:
+
+    ```sh
+    ./enterprise/dev/start.sh
+    ```
+
+3. Regenerate GraphQL schema, Typescript types for GraphQL operations and CSS Modules.
+
+    ```sh
+    yarn generate
+    ```
+
+    To regenerate on file change:
+
+    ```sh
+    yarn watch-generate
+    ```
 
 ## Naming files
 
@@ -89,39 +142,3 @@ You can run unit tests via `yarn test` (to run all) or `yarn test --watch` (to r
 ### E2E tests
 
 See [testing.md](../../how-to/testing.md).
-
-### Local development
-
-Basic commands for local development can be found [here](../../getting-started/quickstart_6_start_server.md).
-Commands specifically useful for the web team can be found in the root [package.json](https://github.com/sourcegraph/sourcegraph/blob/main/package.json).
-Also, check out the web app [README](https://github.com/sourcegraph/sourcegraph/blob/main/client/web/README.md).
-
-1. Regenerate GraphQL schema, Typescript types for GraphQL operations, and start a development server for the web app.
-
-   ```sh
-   yarn dev-web
-   ```
-
-2. Same as the previous one, but skip initial code generation task.
-
-   ```sh
-   yarn unsafeDev-web
-   ```
-
-3. Start all backend services and the frontend server with enterprise functionality.
-
-   ```sh
-   ./enterprise/dev/start.sh
-   ```
-
-4. Start the web server only and point it to any deployed API instance. See more info in the web app [README](https://github.com/sourcegraph/sourcegraph/blob/main/client/web/README.md).
-
-  ```sh
-  sg run web-standalone
-  ```
-
-  For enterprise version:
-
-  ```sh
-  sg run enterprise-web-standalone
-  ```
