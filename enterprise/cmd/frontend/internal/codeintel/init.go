@@ -120,6 +120,7 @@ func newCommitGraphRoutines(observationContext *observation.Context) []goroutine
 	return []goroutine.BackgroundRoutine{
 		commitgraph.NewUpdater(
 			services.dbStore,
+			services.locker,
 			services.gitserverClient,
 			config.CommitGraphUpdateTaskInterval,
 			observationContext,

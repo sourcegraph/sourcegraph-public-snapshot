@@ -8,7 +8,7 @@ import (
 	"time"
 
 	gitserver "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
-	dbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	locker "github.com/sourcegraph/sourcegraph/internal/database/locker"
 )
 
 // MockDBStore is a mock implementation of the DBStore interface (from the
@@ -25,9 +25,6 @@ type MockDBStore struct {
 	// GetOldestCommitDateFunc is an instance of a mock function object
 	// controlling the behavior of the method GetOldestCommitDate.
 	GetOldestCommitDateFunc *DBStoreGetOldestCommitDateFunc
-	// LockFunc is an instance of a mock function object controlling the
-	// behavior of the method Lock.
-	LockFunc *DBStoreLockFunc
 }
 
 // NewMockDBStore creates a new mock of the DBStore interface. All methods
@@ -49,11 +46,6 @@ func NewMockDBStore() *MockDBStore {
 				return time.Time{}, false, nil
 			},
 		},
-		LockFunc: &DBStoreLockFunc{
-			defaultHook: func(context.Context, int, bool) (bool, dbstore.UnlockFunc, error) {
-				return false, nil, nil
-			},
-		},
 	}
 }
 
@@ -69,9 +61,6 @@ func NewMockDBStoreFrom(i DBStore) *MockDBStore {
 		},
 		GetOldestCommitDateFunc: &DBStoreGetOldestCommitDateFunc{
 			defaultHook: i.GetOldestCommitDate,
-		},
-		LockFunc: &DBStoreLockFunc{
-			defaultHook: i.Lock,
 		},
 	}
 }
@@ -414,120 +403,6 @@ func (c DBStoreGetOldestCommitDateFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
-// DBStoreLockFunc describes the behavior when the Lock method of the parent
-// MockDBStore instance is invoked.
-type DBStoreLockFunc struct {
-	defaultHook func(context.Context, int, bool) (bool, dbstore.UnlockFunc, error)
-	hooks       []func(context.Context, int, bool) (bool, dbstore.UnlockFunc, error)
-	history     []DBStoreLockFuncCall
-	mutex       sync.Mutex
-}
-
-// Lock delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockDBStore) Lock(v0 context.Context, v1 int, v2 bool) (bool, dbstore.UnlockFunc, error) {
-	r0, r1, r2 := m.LockFunc.nextHook()(v0, v1, v2)
-	m.LockFunc.appendCall(DBStoreLockFuncCall{v0, v1, v2, r0, r1, r2})
-	return r0, r1, r2
-}
-
-// SetDefaultHook sets function that is called when the Lock method of the
-// parent MockDBStore instance is invoked and the hook queue is empty.
-func (f *DBStoreLockFunc) SetDefaultHook(hook func(context.Context, int, bool) (bool, dbstore.UnlockFunc, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Lock method of the parent MockDBStore instance invokes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *DBStoreLockFunc) PushHook(hook func(context.Context, int, bool) (bool, dbstore.UnlockFunc, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
-func (f *DBStoreLockFunc) SetDefaultReturn(r0 bool, r1 dbstore.UnlockFunc, r2 error) {
-	f.SetDefaultHook(func(context.Context, int, bool) (bool, dbstore.UnlockFunc, error) {
-		return r0, r1, r2
-	})
-}
-
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
-func (f *DBStoreLockFunc) PushReturn(r0 bool, r1 dbstore.UnlockFunc, r2 error) {
-	f.PushHook(func(context.Context, int, bool) (bool, dbstore.UnlockFunc, error) {
-		return r0, r1, r2
-	})
-}
-
-func (f *DBStoreLockFunc) nextHook() func(context.Context, int, bool) (bool, dbstore.UnlockFunc, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *DBStoreLockFunc) appendCall(r0 DBStoreLockFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of DBStoreLockFuncCall objects describing the
-// invocations of this function.
-func (f *DBStoreLockFunc) History() []DBStoreLockFuncCall {
-	f.mutex.Lock()
-	history := make([]DBStoreLockFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// DBStoreLockFuncCall is an object that describes an invocation of method
-// Lock on an instance of MockDBStore.
-type DBStoreLockFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 bool
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 bool
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 dbstore.UnlockFunc
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c DBStoreLockFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c DBStoreLockFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2}
-}
-
 // MockGitserverClient is a mock implementation of the GitserverClient
 // interface (from the package
 // github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/background/commitgraph)
@@ -792,4 +667,150 @@ func (c GitserverClientHeadFuncCall) Args() []interface{} {
 // invocation.
 func (c GitserverClientHeadFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// MockLocker is a mock implementation of the Locker interface (from the
+// package
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/background/commitgraph)
+// used for unit testing.
+type MockLocker struct {
+	// LockFunc is an instance of a mock function object controlling the
+	// behavior of the method Lock.
+	LockFunc *LockerLockFunc
+}
+
+// NewMockLocker creates a new mock of the Locker interface. All methods
+// return zero values for all results, unless overwritten.
+func NewMockLocker() *MockLocker {
+	return &MockLocker{
+		LockFunc: &LockerLockFunc{
+			defaultHook: func(context.Context, int, bool) (bool, locker.UnlockFunc, error) {
+				return false, nil, nil
+			},
+		},
+	}
+}
+
+// NewMockLockerFrom creates a new mock of the MockLocker interface. All
+// methods delegate to the given implementation, unless overwritten.
+func NewMockLockerFrom(i Locker) *MockLocker {
+	return &MockLocker{
+		LockFunc: &LockerLockFunc{
+			defaultHook: i.Lock,
+		},
+	}
+}
+
+// LockerLockFunc describes the behavior when the Lock method of the parent
+// MockLocker instance is invoked.
+type LockerLockFunc struct {
+	defaultHook func(context.Context, int, bool) (bool, locker.UnlockFunc, error)
+	hooks       []func(context.Context, int, bool) (bool, locker.UnlockFunc, error)
+	history     []LockerLockFuncCall
+	mutex       sync.Mutex
+}
+
+// Lock delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockLocker) Lock(v0 context.Context, v1 int, v2 bool) (bool, locker.UnlockFunc, error) {
+	r0, r1, r2 := m.LockFunc.nextHook()(v0, v1, v2)
+	m.LockFunc.appendCall(LockerLockFuncCall{v0, v1, v2, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the Lock method of the
+// parent MockLocker instance is invoked and the hook queue is empty.
+func (f *LockerLockFunc) SetDefaultHook(hook func(context.Context, int, bool) (bool, locker.UnlockFunc, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Lock method of the parent MockLocker instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *LockerLockFunc) PushHook(hook func(context.Context, int, bool) (bool, locker.UnlockFunc, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *LockerLockFunc) SetDefaultReturn(r0 bool, r1 locker.UnlockFunc, r2 error) {
+	f.SetDefaultHook(func(context.Context, int, bool) (bool, locker.UnlockFunc, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *LockerLockFunc) PushReturn(r0 bool, r1 locker.UnlockFunc, r2 error) {
+	f.PushHook(func(context.Context, int, bool) (bool, locker.UnlockFunc, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *LockerLockFunc) nextHook() func(context.Context, int, bool) (bool, locker.UnlockFunc, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *LockerLockFunc) appendCall(r0 LockerLockFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of LockerLockFuncCall objects describing the
+// invocations of this function.
+func (f *LockerLockFunc) History() []LockerLockFuncCall {
+	f.mutex.Lock()
+	history := make([]LockerLockFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// LockerLockFuncCall is an object that describes an invocation of method
+// Lock on an instance of MockLocker.
+type LockerLockFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 bool
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 bool
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 locker.UnlockFunc
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c LockerLockFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c LockerLockFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
