@@ -1280,6 +1280,88 @@ type Query {
     Retrieve all registered out-of-band migrations.
     """
     outOfBandMigrations: [OutOfBandMigration!]!
+
+    """
+    Retrieve the list of defined feature flags
+    """
+	featureFlags: [FeatureFlag!]!
+}
+
+"""
+A defined feature flag
+"""
+union FeatureFlag = FeatureFlagBoolean | FeatureFlagRollout
+
+"""
+A feature flag that has a statically configured value
+"""
+type FeatureFlagBoolean {
+    """
+    The name of the feature flag
+    """
+    name: String!
+
+    """
+    The static value of the feature flag
+    """
+    value: Boolean!
+
+    """
+    Overrides that apply to the feature flag
+    """
+	overrides: [FeatureFlagOverride!]!
+}
+
+"""
+A feature flag that is randomly evaluated to a boolean based on the rollout parameter
+"""
+type FeatureFlagRollout {
+    """
+    The name of the feature flag
+    """
+    name: String!
+
+    """
+    The proportion of users who will be randomly assigned a value of true for this
+    feature flag. It is interpreted as increments of 0.01%
+    """
+    rollout: Int!
+
+    """
+    Overrides that apply to the feature flag
+    """
+	overrides: [FeatureFlagOverride!]!
+}
+
+"""
+A feature flag override is an override of a feature flag's value for a specific org or user
+"""
+type FeatureFlagOverride {
+    """
+    The name of the feature flag being overridden
+    """
+    flagName: String!
+
+    """
+    The overriden value of hte feature flag
+    """
+    value: Boolean!
+}
+
+"""
+An evaluated feature flag is any feature flag (static or random) that has been evaluated to
+a concrete value for a given viewer.
+"""
+type EvaluatedFeatureFlag {
+    """
+    The name of the feature flag
+    """
+    name: String!
+
+    """
+    The concrete evaluated value of the feature flag
+    """
+    value: Boolean!
 }
 
 """

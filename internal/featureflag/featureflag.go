@@ -78,7 +78,7 @@ type FeatureFlagRollout struct {
 	Rollout int
 }
 
-type FeatureFlagOverride struct {
+type Override struct {
 	UserID   *int32
 	OrgID    *int32
 	FlagName string

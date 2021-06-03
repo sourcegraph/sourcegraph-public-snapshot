@@ -179,7 +179,7 @@ func (f *FeatureFlagStore) GetFeatureFlags(ctx context.Context) ([]*ff.FeatureFl
 	return res, nil
 }
 
-func (f *FeatureFlagStore) CreateOverride(ctx context.Context, override *ff.FeatureFlagOverride) (*ff.FeatureFlagOverride, error) {
+func (f *FeatureFlagStore) CreateOverride(ctx context.Context, override *ff.Override) (*ff.Override, error) {
 	const newFeatureFlagOverrideFmtStr = `
 		INSERT INTO feature_flag_overrides (
 			namespace_org_id,
@@ -206,10 +206,30 @@ func (f *FeatureFlagStore) CreateOverride(ctx context.Context, override *ff.Feat
 	return scanFeatureFlagOverride(row)
 }
 
+func (f *FeatureFlagStore) GetOverridesForFlag(ctx context.Context, flagName string) ([]*ff.Override, error) {
+	const listFlagOverridesFmtString = `
+		SELECT
+			namespace_org_id,
+			namespace_user_id,
+			flag_name,
+			flag_value
+		FROM feature_flag_overrides
+		WHERE flag_name = %s
+			AND deleted_at IS NULL;
+	`
+	rows, err := f.Query(ctx, sqlf.Sprintf(listFlagOverridesFmtString, flagName))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	return scanFeatureFlagOverrides(rows)
+}
+
 // GetUserOverrides lists the overrides that have been specifically set for the given userID.
 // NOTE: this does not return any overrides for the user orgs. Those are returned separately
 // by ListOrgOverridesForUser so they can be mered in proper priority order.
-func (f *FeatureFlagStore) GetUserOverrides(ctx context.Context, userID int32) ([]*ff.FeatureFlagOverride, error) {
+func (f *FeatureFlagStore) GetUserOverrides(ctx context.Context, userID int32) ([]*ff.Override, error) {
 	const listUserOverridesFmtString = `
 		SELECT
 			namespace_org_id,
@@ -230,7 +250,7 @@ func (f *FeatureFlagStore) GetUserOverrides(ctx context.Context, userID int32) (
 }
 
 // GetOrgOverridesForUser lists the feature flag overrides for all orgs the given user belongs to.
-func (f *FeatureFlagStore) GetOrgOverridesForUser(ctx context.Context, userID int32) ([]*ff.FeatureFlagOverride, error) {
+func (f *FeatureFlagStore) GetOrgOverridesForUser(ctx context.Context, userID int32) ([]*ff.Override, error) {
 	const listUserOverridesFmtString = `
 		SELECT
 			namespace_org_id,
@@ -254,8 +274,8 @@ func (f *FeatureFlagStore) GetOrgOverridesForUser(ctx context.Context, userID in
 	return scanFeatureFlagOverrides(rows)
 }
 
-func scanFeatureFlagOverrides(rows *sql.Rows) ([]*ff.FeatureFlagOverride, error) {
-	var res []*ff.FeatureFlagOverride
+func scanFeatureFlagOverrides(rows *sql.Rows) ([]*ff.Override, error) {
+	var res []*ff.Override
 	for rows.Next() {
 		override, err := scanFeatureFlagOverride(rows)
 		if err != nil {
@@ -266,8 +286,8 @@ func scanFeatureFlagOverrides(rows *sql.Rows) ([]*ff.FeatureFlagOverride, error)
 	return res, nil
 }
 
-func scanFeatureFlagOverride(scanner rowScanner) (*ff.FeatureFlagOverride, error) {
-	var res ff.FeatureFlagOverride
+func scanFeatureFlagOverride(scanner rowScanner) (*ff.Override, error) {
+	var res ff.Override
 	err := scanner.Scan(
 		&res.OrgID,
 		&res.UserID,
@@ -290,14 +310,14 @@ func (f *FeatureFlagStore) GetUserFlags(ctx context.Context, userID int32) (map[
 		return err
 	})
 
-	var orgOverrides []*ff.FeatureFlagOverride
+	var orgOverrides []*ff.Override
 	g.Go(func() error {
 		res, err := f.GetOrgOverridesForUser(ctx, userID)
 		orgOverrides = res
 		return err
 	})
 
-	var userOverrides []*ff.FeatureFlagOverride
+	var userOverrides []*ff.Override
 	g.Go(func() error {
 		res, err := f.GetUserOverrides(ctx, userID)
 		userOverrides = res
