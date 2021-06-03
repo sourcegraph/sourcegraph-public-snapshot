@@ -52,31 +52,11 @@ export function useDeleteInsight(props: UseDeleteInsightProps): UseDeleteInsight
                 // Fetch the settings of particular subject which the insight belongs to
                 const settings = await getSubjectSettings(subjectID).toPromise()
 
-                let editedSettings = settings.contents
-
-                if (isOldCodeStatsInsight) {
-                    editedSettings = modify(
-                        editedSettings,
-                        // According to our naming convention <type>.insight.<name>
-                        ['codeStatsInsights.query'],
-                        undefined
-                    )
-
-                    editedSettings = modify(
-                        editedSettings,
-                        // According to our naming convention <type>.insight.<name>
-                        ['codeStatsInsights.otherThreshold'],
-                        undefined
-                    )
-                } else {
-                    // Remove insight settings from subject (user/org settings)
-                    editedSettings = modify(
-                        editedSettings,
-                        // According to our naming convention <type>.insight.<name>
-                        [insightID],
-                        undefined
-                    )
-                }
+                const editedSettings = getEditedSettings({
+                    originSettings: settings.contents,
+                    insightID,
+                    isOldCodeStatsInsight,
+                })
 
                 // Update local settings of application with new settings without insight
                 await updateSubjectSettings(platformContext, subjectID, editedSettings).toPromise()
@@ -89,4 +69,41 @@ export function useDeleteInsight(props: UseDeleteInsightProps): UseDeleteInsight
     )
 
     return { handleDelete }
+}
+
+interface GetEditedSettingsProps {
+    originSettings: string
+    isOldCodeStatsInsight: boolean
+    insightID: string
+}
+
+/**
+ * Return edited settings without deleted insight settings section
+ */
+function getEditedSettings(props: GetEditedSettingsProps): string {
+    const { originSettings, isOldCodeStatsInsight, insightID } = props
+
+    if (isOldCodeStatsInsight) {
+        const editedSettings = modify(
+            originSettings,
+            // According to our naming convention <type>.insight.<name>
+            ['codeStatsInsights.query'],
+            undefined
+        )
+
+        return modify(
+            editedSettings,
+            // According to our naming convention <type>.insight.<name>
+            ['codeStatsInsights.otherThreshold'],
+            undefined
+        )
+    }
+
+    // Remove insight settings from subject (user/org settings)
+    return modify(
+        originSettings,
+        // According to our naming convention <type>.insight.<name>
+        [insightID],
+        undefined
+    )
 }
