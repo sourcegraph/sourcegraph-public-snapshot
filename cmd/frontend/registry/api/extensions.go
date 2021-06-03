@@ -228,10 +228,15 @@ func GetFeaturedExtensions(ctx context.Context, db dbutil.DB) ([]graphqlbackend.
 	if err != nil {
 		return nil, err
 	}
+	remote = FilterRemoteExtensions(remote)
+	for _, x := range remote {
+		x.RegistryURL = registryURL.String()
+	}
 	registryExtensions := make([]graphqlbackend.RegistryExtension, len(remote))
 	for i, x := range remote {
 		registryExtensions[i] = &registryExtensionRemoteResolver{v: x}
 	}
+
 	return registryExtensions, nil
 }
 
