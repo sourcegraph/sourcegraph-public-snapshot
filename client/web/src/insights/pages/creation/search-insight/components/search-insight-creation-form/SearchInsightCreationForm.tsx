@@ -15,7 +15,6 @@ import {
 } from '../../../../../components/visibility-picker/VisibilityPicker'
 import { CreateInsightFormFields, EditableDataSeries } from '../../types'
 import { FormSeries } from '../form-series/FormSeries'
-
 import { RepositoriesField } from '../repositories-field/RepositoriesField';
 
 import styles from './SearchInsightCreationForm.module.scss'
@@ -97,25 +96,27 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
             onSubmit={handleSubmit}
             className={classnames(className, 'd-flex flex-column')}
         >
-            <RepositoriesField/>
+            <RepositoriesField
+                {...repositories.input}
+            />
 
-            <FormGroup
-                name="insight repositories"
-                title="Repositories"
-                subtitle="Create a list of repositories to run your search over"
-            >
-                <FormInput
-                    autoFocus={true}
-                    required={true}
-                    description="Separate repositories with commas"
-                    placeholder="Example: github.com/sourcegraph/sourcegraph"
-                    loading={repositories.meta.validState === 'CHECKING'}
-                    valid={repositories.meta.touched && repositories.meta.validState === 'VALID'}
-                    error={repositories.meta.touched && repositories.meta.error}
-                    {...repositories.input}
-                    className="mb-0 d-flex flex-column"
-                />
-            </FormGroup>
+            {/* <FormGroup*/}
+            {/*    name="insight repositories"*/}
+            {/*    title="Repositories"*/}
+            {/*    subtitle="Create a list of repositories to run your search over"*/}
+            {/* >*/}
+            {/*    <FormInput*/}
+            {/*        autoFocus={true}*/}
+            {/*        required={true}*/}
+            {/*        description="Separate repositories with commas"*/}
+            {/*        placeholder="Example: github.com/sourcegraph/sourcegraph"*/}
+            {/*        loading={repositories.meta.validState === 'CHECKING'}*/}
+            {/*        valid={repositories.meta.touched && repositories.meta.validState === 'VALID'}*/}
+            {/*        error={repositories.meta.touched && repositories.meta.error}*/}
+            {/*        {...repositories.input}*/}
+            {/*        className="mb-0 d-flex flex-column"*/}
+            {/*    />*/}
+            {/* </FormGroup>*/}
 
             <hr className={styles.creationInsightFormSeparator} />
 

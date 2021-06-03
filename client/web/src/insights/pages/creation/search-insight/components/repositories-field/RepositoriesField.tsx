@@ -2,91 +2,134 @@ import {
     Combobox,
     ComboboxInput,
     ComboboxPopover,
-    ComboboxList,
-    ComboboxOption,
-} from '@reach/combobox';
-import classnames from 'classnames';
-import React, { ChangeEvent, ReactElement, useEffect, useState } from 'react';
+} from '@reach/combobox'
+import classnames from 'classnames'
+import React, {
+    MouseEvent,
+    ChangeEvent,
+    FocusEvent,
+    useRef,
+    useState,
+    forwardRef,
+    useImperativeHandle, Ref
+} from 'react'
 
-import { useDebounce } from '@sourcegraph/wildcard/src';
-
-import { fetchRepositorySuggestions } from '../../../../../core/backend/requests/fetch-repository-suggestions';
-
-import './RepositoriesField.module.scss'
+import { FlexTextarea } from './components/flex-textarea/FlexTextArea'
+import { SuggestionsPanel } from './components/suggestion-panel/SuggestionPanel';
+import { useRepoSuggestions } from './hooks/use-repo-suggestions';
+import { getSuggestionsSearchTerm } from './utils/get-suggestions-search-term';
 
 interface RepositoriesFieldProps {
-
+    value: string
+    onChange: (value: string) => void
+    onBlur: (event: FocusEvent<HTMLInputElement>) => void
 }
 
-interface RepositorySuggestion {
-    name: string
-}
+/**
+ * Renders repository input with suggestion panel.
+ */
+export const RepositoriesField = forwardRef((props: RepositoriesFieldProps, reference:  Ref<HTMLInputElement | null>) => {
+    const { value, onChange, onBlur } = props
 
-export function RepositoriesField(props: RepositoriesFieldProps): ReactElement | null {
-    const {} = props
-    const [value, setValue] = useState<string>('')
-    const [suggestions, setSuggestions] = useState<RepositorySuggestion[]>([])
+    const inputReference = useRef<HTMLInputElement>(null)
 
-    const debouncedValue = useDebounce(value, 500);
+    const [caretPosition, setCaretPosition] = useState<number|null>(null)
+    const [panel, setPanel] = useState(false)
 
-    useEffect(() => {
-        if (debouncedValue.trim() !== '') {
+    const { value: search } = getSuggestionsSearchTerm({ value, caretPosition })
+    const { suggestions } = useRepoSuggestions({ search, disable: !panel })
 
-            let isOutdatedRequest = false;
-
-            fetchRepositorySuggestions(debouncedValue).toPromise()
-                .then(suggestions => !isOutdatedRequest && setSuggestions(suggestions))
-                .catch(error => {
-                    console.error(error)
-                })
-
-            return () => {
-                isOutdatedRequest = true
-            }
-        }
-
-        return
-    }, [debouncedValue])
+    // Support top level reference prop
+    useImperativeHandle(reference, () => inputReference.current)
 
     const handleInputChange = (event: ChangeEvent<HTMLInputElement>): void => {
-        console.log('INPUT change', event.target.value)
-
-        setValue(event.target.value)
+        onChange(event.target.value)
+        setCaretPosition(event.target.selectionStart)
+        setPanel(true)
     }
 
     const handleSelect = (selectValue: string): void => {
-        console.log('Select', selectValue)
+        const separatorString = ', '
+        const { repositories, index } = getSuggestionsSearchTerm({ value, caretPosition })
 
-        setValue(selectValue)
+        if (index !== null) {
+            const newRepositoriesSerializedValue = [
+                ...repositories.slice(0, index),
+                selectValue,
+                ...repositories.slice(index+1),
+            ].join(separatorString)
+
+            onChange(newRepositoriesSerializedValue)
+            setPanel(false)
+
+            /**
+             * Setting value (setValue above) triggers reset selection of input
+             * if user select value from suggestion panel for some sub-string of
+             * input value we need preserve selection at the end of sub-string and
+             * avoid reset and putting selection at the end of input string.
+             */
+            setTimeout(() => {
+                if (!inputReference.current) {
+                    return
+                }
+
+                const endOfSelectedItem = [...repositories.slice(0, index), selectValue]
+                    .join(separatorString)
+                    .length
+
+                inputReference.current.setSelectionRange(endOfSelectedItem,endOfSelectedItem)
+            }, 0)
+        }
+    }
+
+    const trackInputCursorChange = (event: MouseEvent | KeyboardEvent | FocusEvent): void => {
+        const target = event.target as HTMLInputElement
+
+        if (caretPosition !== target.selectionStart) {
+            /**
+             * After the moment when user selected value from suggestion panel we closed
+             * this panel by setPanel(false) but if user is changing cursor position we
+             * need to re-open panel for new suggestions.
+             * */
+            setPanel(true)
+            setCaretPosition(target.selectionStart)
+        }
+    }
+
+    const handleInputFocus = (event: FocusEvent): void => {
+        setPanel(true)
+        trackInputCursorChange(event)
+    }
+
+    const handleInputBlur = (event: FocusEvent<HTMLInputElement>): void => {
+        // setPanel(false)
+        onBlur(event)
     }
 
     return (
-        <Combobox onSelect={handleSelect} aria-label="choose a fruit">
+        <Combobox
+            openOnFocus={true}
+            onSelect={handleSelect}
+            aria-label="choose a fruit">
+
             <ComboboxInput
-                as="input"
+                as={FlexTextarea}
+                ref={inputReference}
                 autocomplete={false}
                 value={value}
                 onChange={handleInputChange}
+                onFocus={handleInputFocus}
+                onBlur={handleInputBlur}
+                onClick={trackInputCursorChange}
                 className={classnames('form-control')}
             />
-            <ComboboxPopover>
-                {
-                    suggestions.length > 0
-                        ? <ComboboxList>
-                            {
-                                suggestions.map(suggestion =>
-                                    <ComboboxOption key={suggestion.name} value={suggestion.name} />
-                                )
-                            }
-                        </ComboboxList>
-                        : (
-                            // eslint-disable-next-line react/forbid-dom-props
-                            <span style={{ display: 'block', margin: 8 }}>
-                                No results found
-                            </span>
-                        )
-                }
-            </ComboboxPopover>
+
+            {
+                panel &&
+                <ComboboxPopover>
+                    <SuggestionsPanel suggestions={suggestions}/>
+                </ComboboxPopover>
+            }
         </Combobox>
     )
-}
+})

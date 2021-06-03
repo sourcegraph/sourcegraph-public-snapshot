@@ -37,6 +37,7 @@ export function fetchRepositorySuggestions(possibleRepository: string): Observab
         `, { query: possibleRepository }
     ).pipe(
         map(dataOrThrowErrors),
-        map(data => data?.search?.suggestions ?? [])
+        map(data => data?.search?.suggestions ?? []),
+        map(suggestions => suggestions.filter(suggestion => !!suggestion.name))
     )
 }
