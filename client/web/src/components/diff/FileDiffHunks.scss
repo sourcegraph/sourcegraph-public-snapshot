@@ -4,6 +4,7 @@ $color-deletion: $red;
 .diff-boundary {
     &__num {
         background-color: var(--code-bg);
+        // In the split mode version this selector adds the divider effect between table data cells.
         &:nth-child(3) {
             .theme-redesign & {
                 border-left: 1px solid var(--border-color);
@@ -125,12 +126,14 @@ $color-deletion: $red;
     }
 
     &__line--active &__num {
+        // important suffix is needed in order to overlap any active line with the addition/deletion colors
         background-color: rgba($oc-yellow-5, 0.35) !important;
         .theme-redesign & {
             background-color: var(--code-line-highlight-color) !important;
         }
     }
     &__line--active &__content {
+        // important suffix is needed in order to overlap any active line with the addition/deletion colors
         background-color: rgba($oc-yellow-5, 0.25) !important;
         .theme-redesign & {
             background-color: var(--code-line-highlight-color) !important;

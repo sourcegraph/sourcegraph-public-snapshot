@@ -5,7 +5,7 @@ import { DiffMode } from './RepositoryCommitPage'
 
 interface DiffModeSelectorProps {
     className?: string
-    size?: 'small'
+    small?: boolean
     handleDiffMode: (mode: DiffMode) => void
     diffMode: DiffMode
 }
@@ -14,7 +14,7 @@ export const DiffModeSelector: React.FunctionComponent<DiffModeSelectorProps> = 
     className,
     diffMode,
     handleDiffMode,
-    size,
+    small,
 }) => (
     <div className={className}>
         <div role="group" className="btn-group">
@@ -24,7 +24,7 @@ export const DiffModeSelector: React.FunctionComponent<DiffModeSelectorProps> = 
                 className={classNames(
                     'btn',
                     diffMode === 'unified' ? 'btn-secondary' : 'btn-outline-secondary',
-                    size === 'small' && 'btn-sm'
+                    small && 'btn-sm'
                 )}
             >
                 Unified
@@ -35,7 +35,7 @@ export const DiffModeSelector: React.FunctionComponent<DiffModeSelectorProps> = 
                 className={classNames(
                     'btn',
                     diffMode === 'split' ? 'btn-secondary' : 'btn-outline-secondary',
-                    size === 'small' && 'btn-sm'
+                    small && 'btn-sm'
                 )}
             >
                 Split
