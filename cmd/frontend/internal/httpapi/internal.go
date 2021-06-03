@@ -187,19 +187,17 @@ func serveSearchConfiguration(w http.ResponseWriter, r *http.Request) error {
 			return string(commitID), err
 		}
 
-		getPriority := func() float64 {
-			switch m := repo.Metadata.(type) {
-			case *github.Repository:
-				return float64(m.StargazerCount)
-			}
-			return 0.0
+		priority := float64(0)
+		switch m := repo.Metadata.(type) {
+		case *github.Repository:
+			priority = float64(m.StargazerCount)
 		}
 
 		return &searchbackend.RepoIndexOptions{
-			RepoID:      int32(repo.ID),
-			Public:      !repo.Private,
-			GetVersion:  getVersion,
-			GetPriority: getPriority,
+			RepoID:     int32(repo.ID),
+			Public:     !repo.Private,
+			Priority:   priority,
+			GetVersion: getVersion,
 		}, nil
 	}
 
