@@ -207,7 +207,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                     <>
                         <div
                             className={classNames(
-                                'w-100 d-flex justify-content-between align-items-start',
+                                'w-100 d-flex justify-content-between align-items-center',
                                 !isRedesignEnabled && 'flex-wrap-reverse'
                             )}
                         >
@@ -250,7 +250,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                         </div>
                     </>
                 ) : (
-                    <div className="w-100 d-flex justify-content-between align-items-start flex-wrap-reverse">
+                    <div className="w-100 d-flex justify-content-between align-items-center flex-wrap-reverse">
                         {bylineElement}
                         {messageElement}
                         <Link to={node.canonicalURL}>{oidElement}</Link>

@@ -99,7 +99,12 @@ export const GitCommitNodeByline: React.FunctionComponent<Props> = ({
     }
 
     return (
-        <div className={classNames('d-flex git-commit-node-byline git-commit-node-byline--no-committer', className)}>
+        <div
+            className={classNames(
+                'd-flex align-items-center git-commit-node-byline git-commit-node-byline--no-committer',
+                className
+            )}
+        >
             <div>
                 <UserAvatar
                     className={classNames('icon-inline mr-1', isRedesignEnabled && 'mr-2')}
