@@ -14,6 +14,14 @@
         font-size: 0.75rem;
         line-height: (20/14);
     }
+    &__code-host-item {
+        border: 0;
+        border-bottom: 1px solid var(--border-color);
+
+        &:last-of-type {
+            border-bottom: 0;
+        }
+    }
 
     $gitlab: #6e49cb;
 

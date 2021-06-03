@@ -11,6 +11,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { ErrorAlert } from '../../../components/alerts'
@@ -339,25 +340,27 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     )
 
     const RepoFilteredConnection = (
-        <FilteredConnection<SiteAdminRepositoryFields, Omit<UserRepositoriesResult, 'node'>>
-            className="table mt-3"
-            defaultFirst={15}
-            compact={false}
-            noun="repository"
-            pluralNoun="repositories"
-            queryConnection={queryRepositories}
-            updateOnChange={String(updateReposList)}
-            nodeComponent={Row}
-            listComponent="table"
-            listClassName="w-100"
-            onUpdate={onRepoQueryUpdate}
-            filters={repoFilters}
-            history={history}
-            location={location}
-            emptyElement={NoMatchedRepos}
-            totalCountSummaryComponent={TotalCountSummary}
-            inputClassName="user-settings-repos__filter-input"
-        />
+        <Container>
+            <FilteredConnection<SiteAdminRepositoryFields, Omit<UserRepositoriesResult, 'node'>>
+                className="table mb-0"
+                defaultFirst={15}
+                compact={false}
+                noun="repository"
+                pluralNoun="repositories"
+                queryConnection={queryRepositories}
+                updateOnChange={String(updateReposList)}
+                nodeComponent={Row}
+                listComponent="table"
+                listClassName="w-100"
+                onUpdate={onRepoQueryUpdate}
+                filters={repoFilters}
+                history={history}
+                location={location}
+                emptyElement={NoMatchedRepos}
+                totalCountSummaryComponent={TotalCountSummary}
+                inputClassName="user-settings-repos__filter-input"
+            />
+        </Container>
     )
 
     const logManageRepositoriesClick = useCallback(() => {
@@ -392,26 +395,32 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
             )}
             {isErrorLike(status) && <ErrorAlert error={status} icon={true} />}
             <PageTitle title="Repositories" />
-            <div className="d-flex justify-content-between align-items-center">
-                <h2 className="mb-2">Repositories</h2>
-                <Link
-                    className="btn btn-primary"
-                    to={`${routingPrefix}/repositories/manage`}
-                    onClick={logManageRepositoriesClick}
-                >
-                    {(hasRepos && <>Manage Repositories</>) || (
-                        <>
-                            <AddIcon className="icon-inline" /> Add repositories
-                        </>
-                    )}
-                </Link>
-            </div>
-            <p className="text-muted pb-2">
-                All repositories synced with Sourcegraph from{' '}
-                <Link className="text-primary" to={`${routingPrefix}/code-hosts`}>
-                    connected code hosts
-                </Link>
-            </p>
+            <PageHeader
+                headingElement="h2"
+                path={[{ text: 'Repositories' }]}
+                description={
+                    <>
+                        All repositories synced with Sourcegraph from{' '}
+                        <Link className="text-primary" to={`${routingPrefix}/code-hosts`}>
+                            connected code hosts
+                        </Link>
+                    </>
+                }
+                actions={
+                    <Link
+                        className="btn btn-primary"
+                        to={`${routingPrefix}/repositories/manage`}
+                        onClick={logManageRepositoriesClick}
+                    >
+                        {(hasRepos && <>Manage Repositories</>) || (
+                            <>
+                                <AddIcon className="icon-inline" /> Add repositories
+                            </>
+                        )}
+                    </Link>
+                }
+                className="mb-3"
+            />
             {isErrorLike(status) ? (
                 <h3 className="text-muted">Sorry, we couldn’t fetch your repositories. Try again?</h3>
             ) : !externalServices ? (
