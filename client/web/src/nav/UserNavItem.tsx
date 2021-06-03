@@ -133,7 +133,11 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                             'user-nav-item__avatar-background': isExtensionAlertAnimating,
                         })}
                     >
-                        <UserAvatar user={props.authenticatedUser} targetID={targetID} className="icon-inline" />
+                        <UserAvatar
+                            user={props.authenticatedUser}
+                            targetID={targetID}
+                            className="icon-inline user-nav-item__avatar"
+                        />
                         <MenuDropdownIcon />
                     </div>
                 </div>
