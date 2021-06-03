@@ -1,4 +1,3 @@
-import * as jsonc from '@sqs/jsonc-parser'
 import { useCallback, useContext } from 'react'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -6,7 +5,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { InsightsApiContext } from '../../../core/backend/api-provider'
-import { defaultFormattingOptions } from '../../../core/jsonc-operation'
+import { modify } from '../../../core/jsonc-operation'
 import { InsightTypePrefix } from '../../../core/types'
 
 export interface UseDeleteInsightProps extends SettingsCascadeProps, PlatformContextProps<'updateSettings'> {}
@@ -53,40 +52,11 @@ export function useDeleteInsight(props: UseDeleteInsightProps): UseDeleteInsight
                 // Fetch the settings of particular subject which the insight belongs to
                 const settings = await getSubjectSettings(subjectID).toPromise()
 
-                const edits = []
-
-                if (isOldCodeStatsInsight) {
-                    const queryDeleteEdits = jsonc.modify(
-                        settings.contents,
-                        // According to our naming convention <type>.insight.<name>
-                        ['codeStatsInsights.query'],
-                        undefined,
-                        { formattingOptions: defaultFormattingOptions }
-                    )
-
-                    const otherThresholdDeleteEdits = jsonc.modify(
-                        settings.contents,
-                        // According to our naming convention <type>.insight.<name>
-                        ['codeStatsInsights.otherThreshold'],
-                        undefined,
-                        { formattingOptions: defaultFormattingOptions }
-                    )
-
-                    edits.push(...queryDeleteEdits, ...otherThresholdDeleteEdits)
-                } else {
-                    // Remove insight settings from subject (user/org settings)
-                    const insightDeleteEdits = jsonc.modify(
-                        settings.contents,
-                        // According to our naming convention <type>.insight.<name>
-                        [insightID],
-                        undefined,
-                        { formattingOptions: defaultFormattingOptions }
-                    )
-
-                    edits.push(...insightDeleteEdits)
-                }
-
-                const editedSettings = jsonc.applyEdits(settings.contents, edits)
+                const editedSettings = getEditedSettings({
+                    originSettings: settings.contents,
+                    insightID,
+                    isOldCodeStatsInsight,
+                })
 
                 // Update local settings of application with new settings without insight
                 await updateSubjectSettings(platformContext, subjectID, editedSettings).toPromise()
@@ -99,4 +69,41 @@ export function useDeleteInsight(props: UseDeleteInsightProps): UseDeleteInsight
     )
 
     return { handleDelete }
+}
+
+interface GetEditedSettingsProps {
+    originSettings: string
+    isOldCodeStatsInsight: boolean
+    insightID: string
+}
+
+/**
+ * Return edited settings without deleted insight settings section
+ */
+function getEditedSettings(props: GetEditedSettingsProps): string {
+    const { originSettings, isOldCodeStatsInsight, insightID } = props
+
+    if (isOldCodeStatsInsight) {
+        const editedSettings = modify(
+            originSettings,
+            // According to our naming convention <type>.insight.<name>
+            ['codeStatsInsights.query'],
+            undefined
+        )
+
+        return modify(
+            editedSettings,
+            // According to our naming convention <type>.insight.<name>
+            ['codeStatsInsights.otherThreshold'],
+            undefined
+        )
+    }
+
+    // Remove insight settings from subject (user/org settings)
+    return modify(
+        originSettings,
+        // According to our naming convention <type>.insight.<name>
+        [insightID],
+        undefined
+    )
 }
