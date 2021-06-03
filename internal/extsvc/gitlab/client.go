@@ -60,8 +60,8 @@ func trace(msg string, ctx ...interface{}) {
 type TokenType string
 
 const (
-	TokenTypePAT   TokenType = "pat"
-	TokenTypeOAuth TokenType = "oauth"
+	TokenTypePAT   TokenType = "pat"   // "pat" represents personal access token.
+	TokenTypeOAuth TokenType = "oauth" // "oauth" represents OAuth token.
 )
 
 // ClientProvider creates GitLab API clients. Each client has separate authentication creds and a

@@ -153,8 +153,9 @@ func TestOAuthProvider_FetchRepoPerms(t *testing.T) {
 	t.Run("token type PAT", func(t *testing.T) {
 		p := newOAuthProvider(
 			OAuthProviderOp{
-				BaseURL: mustURL(t, "https://gitlab.com"),
-				Token:   "admin_token",
+				BaseURL:   mustURL(t, "https://gitlab.com"),
+				Token:     "admin_token",
+				TokenType: gitlab.TokenTypePAT,
 			},
 			&mockDoer{
 				do: func(r *http.Request) (*http.Response, error) {
