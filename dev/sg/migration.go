@@ -19,35 +19,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-var (
-	databaseNames = []string{
-		"frontend",
-		"codeintel",
-		"codeinsights",
-	}
-
-	defaultDatabaseName = databaseNames[0]
-
-	dataTables = map[string][]string{
-		"frontend": {"out_of_band_migrations"},
-	}
-)
-
-func isValidDatabaseName(name string) bool {
-	for _, candidate := range databaseNames {
-		if candidate == name {
-			return true
-		}
-	}
-
-	return false
-}
-
 // createNewMigration creates a new up/down migration file pair for the given database and
 // returns the names of the new files. If there was an error, the filesystem should remain
 // unmodified.
-func createNewMigration(databaseName, migrationName string) (up, down string, _ error) {
-	baseDir, err := migrationDirectoryForDatabase(databaseName)
+func createNewMigration(database Database, migrationName string) (up, down string, _ error) {
+	baseDir, err := migrationDirectoryForDatabase(database)
 	if err != nil {
 		return "", "", err
 	}
@@ -62,7 +38,7 @@ func createNewMigration(databaseName, migrationName string) (up, down string, _ 
 		return "", "", errors.New("no previous migrations exist")
 	}
 
-	upPath, downPath, err := makeMigrationFilenames(databaseName, lastMigrationIndex+1, migrationName)
+	upPath, downPath, err := makeMigrationFilenames(database, lastMigrationIndex+1, migrationName)
 	if err != nil {
 		return "", "", err
 	}
@@ -77,14 +53,14 @@ func createNewMigration(databaseName, migrationName string) (up, down string, _ 
 // generateSquashedMigrations generates the content of a migration file pair that contains the contents
 // of a database up to a given migration index. This function will launch a daemon Postgres container,
 // migrate a fresh database up to the given migration index, then dump and sanitize the contents.
-func generateSquashedMigrations(databaseName string, migrationIndex int) (up, down string, err error) {
+func generateSquashedMigrations(database Database, migrationIndex int) (up, down string, err error) {
 	postgresDSN := fmt.Sprintf(
 		"postgres://postgres@127.0.0.1:%d/%s?sslmode=disable",
 		squasherContainerExposedPort,
-		databaseName,
+		database.Name,
 	)
 
-	teardown, err := runPostgresContainer(databaseName)
+	teardown, err := runPostgresContainer(database.Name)
 	if err != nil {
 		return "", "", err
 	}
@@ -92,11 +68,11 @@ func generateSquashedMigrations(databaseName string, migrationIndex int) (up, do
 		err = teardown(err)
 	}()
 
-	if err := runMigrationsGoto(databaseName, migrationIndex, postgresDSN); err != nil {
+	if err := runMigrationsGoto(database, migrationIndex, postgresDSN); err != nil {
 		return "", "", err
 	}
 
-	upMigration, err := generateSquashedUpMigration(databaseName, postgresDSN)
+	upMigration, err := generateSquashedUpMigration(database, postgresDSN)
 	if err != nil {
 		return "", "", err
 	}
@@ -107,8 +83,8 @@ func generateSquashedMigrations(databaseName string, migrationIndex int) (up, do
 // removeMigrationFilesUpToIndex removes migration files for the given database falling on
 // or before the given migration index. This method returns the names of the files that were
 // removed.
-func removeMigrationFilesUpToIndex(databaseName string, targetIndex int) ([]string, error) {
-	baseDir, err := migrationDirectoryForDatabase(databaseName)
+func removeMigrationFilesUpToIndex(database Database, targetIndex int) ([]string, error) {
+	baseDir, err := migrationDirectoryForDatabase(database)
 	if err != nil {
 		return nil, err
 	}
@@ -140,10 +116,10 @@ func removeMigrationFilesUpToIndex(databaseName string, targetIndex int) ([]stri
 }
 
 // lastMigrationIndexAtCommit returns the index of the last migration for the given database
-// name available at the given commit. This function returns a false-valued flag if no migrations
+// available at the given commit. This function returns a false-valued flag if no migrations
 // exist at the given commit.
-func lastMigrationIndexAtCommit(databaseName, commit string) (int, bool, error) {
-	migrationsDir := filepath.Join("migrations", databaseName)
+func lastMigrationIndexAtCommit(database Database, commit string) (int, bool, error) {
+	migrationsDir := filepath.Join("migrations", database.Name)
 
 	output, err := runGitCmd("ls-tree", "-r", "--name-only", commit, migrationsDir)
 	if err != nil {
@@ -154,30 +130,21 @@ func lastMigrationIndexAtCommit(databaseName, commit string) (int, bool, error) 
 	return lastMigrationIndex, ok, nil
 }
 
-// migrationsTableForDatabase returns the name of the migration table for the given database.
-func migrationsTableForDatabase(databaseName string) string {
-	if databaseName == defaultDatabaseName {
-		return "schema_migrations"
-	}
-
-	return fmt.Sprintf("%s_schema_migrations", databaseName)
-}
-
 // migrationDirectoryForDatabase returns the directory where migration files are stored for the
 // given database.
-func migrationDirectoryForDatabase(databaseName string) (string, error) {
+func migrationDirectoryForDatabase(database Database) (string, error) {
 	repoRoot, err := root.RepositoryRoot()
 	if err != nil {
 		return "", err
 	}
 
-	return filepath.Join(repoRoot, "migrations", databaseName), nil
+	return filepath.Join(repoRoot, "migrations", database.Name), nil
 }
 
 // makeMigrationFilenames makes a pair of (absolute) paths to migration files with the
-// given  migration index and name.
-func makeMigrationFilenames(databaseName string, migrationIndex int, migrationName string) (up string, down string, _ error) {
-	baseDir, err := migrationDirectoryForDatabase(databaseName)
+// given migration index and name.
+func makeMigrationFilenames(database Database, migrationIndex int, migrationName string) (up string, down string, _ error) {
+	baseDir, err := migrationDirectoryForDatabase(database)
 	if err != nil {
 		return "", "", err
 	}
@@ -313,7 +280,7 @@ func runPostgresContainer(databaseName string) (_ func(err error) error, err err
 
 // runMigrationsGoto runs the `migrate` utility to migrate up or down to the given
 // migration index.
-func runMigrationsGoto(databaseName string, migrationIndex int, postgresDSN string) (err error) {
+func runMigrationsGoto(database Database, migrationIndex int, postgresDSN string) (err error) {
 	pending := out.Pending(output.Line("", output.StylePending, "Migrating PostgreSQL schema..."))
 	defer func() {
 		if err == nil {
@@ -324,8 +291,8 @@ func runMigrationsGoto(databaseName string, migrationIndex int, postgresDSN stri
 	}()
 
 	_, err = runMigrate(
-		databaseName,
-		postgresDSN+fmt.Sprintf("&x-migrations-table=%s", migrationsTableForDatabase(databaseName)),
+		database,
+		postgresDSN+fmt.Sprintf("&x-migrations-table=%s", database.MigrationTable),
 		"goto", strconv.FormatInt(int64(migrationIndex), 10),
 	)
 	return err
@@ -333,24 +300,24 @@ func runMigrationsGoto(databaseName string, migrationIndex int, postgresDSN stri
 
 // runMigrationsUp runs the `migrate` utility to migrate up the given number of steps.
 // If n is nil then all migrations are ran.
-func runMigrationsUp(databaseName string, n *int) (string, error) {
+func runMigrationsUp(database Database, n *int) (string, error) {
 	args := []string{"up"}
 	if n != nil {
 		args = append(args, strconv.Itoa(*n))
 	}
 
-	return runMigrate(databaseName, makePostgresDSN(databaseName), args...)
+	return runMigrate(database, makePostgresDSN(database), args...)
 }
 
 // runMigrationsDown runs the `migrate` utility to migrate up the given number of steps.
-func runMigrationsDown(databaseName string, n int) (string, error) {
-	return runMigrate(databaseName, makePostgresDSN(databaseName), "down", strconv.Itoa(n))
+func runMigrationsDown(database Database, n int) (string, error) {
+	return runMigrate(database, makePostgresDSN(database), "down", strconv.Itoa(n))
 }
 
 // runMigrate runs the migrate utility with the given arguments.
 // TODO - replace with our db utilities
-func runMigrate(databaseName, postgresDSN string, args ...string) (string, error) {
-	baseDir, err := migrationDirectoryForDatabase(databaseName)
+func runMigrate(database Database, postgresDSN string, args ...string) (string, error) {
+	baseDir, err := migrationDirectoryForDatabase(database)
 	if err != nil {
 		return "", err
 	}
@@ -361,10 +328,10 @@ func runMigrate(databaseName, postgresDSN string, args ...string) (string, error
 // makePostgresDSN returns a PostresDSN for the given database. For all databases except
 // the default, the PG* environment variables are prefixed with the database name. The
 // resulting address depends on the environment.
-func makePostgresDSN(databaseName string) string {
+func makePostgresDSN(database Database) string {
 	var prefix string
-	if databaseName != defaultDatabaseName {
-		prefix = strings.ToUpper(databaseName) + "_"
+	if database.Name != defaultDatabase.Name {
+		prefix = strings.ToUpper(database.Name) + "_"
 	}
 
 	var port string
@@ -377,13 +344,13 @@ func makePostgresDSN(databaseName string) string {
 		os.Getenv(fmt.Sprintf("%sPGHOST", prefix)),
 		port,
 		os.Getenv(fmt.Sprintf("%sPGDATABASE", prefix)),
-		migrationsTableForDatabase(databaseName),
+		database.MigrationTable,
 	)
 }
 
 // generateSquashedUpMigration returns the contents of an up migration file containing the
 // current contents of the given database.
-func generateSquashedUpMigration(databaseName, postgresDSN string) (_ string, err error) {
+func generateSquashedUpMigration(database Database, postgresDSN string) (_ string, err error) {
 	pending := out.Pending(output.Line("", output.StylePending, "Dumping current database..."))
 	defer func() {
 		if err == nil {
@@ -404,7 +371,7 @@ func generateSquashedUpMigration(databaseName, postgresDSN string) (_ string, er
 		return "", err
 	}
 
-	for _, table := range dataTables[databaseName] {
+	for _, table := range database.DataTables {
 		dataOutput, err := pgDump("--data-only", "--inserts", "--table", table)
 		if err != nil {
 			return "", err
