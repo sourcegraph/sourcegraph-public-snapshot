@@ -39,6 +39,8 @@
             font-size: $code-font-size;
             .theme-redesign & {
                 color: var(--link-color);
+                font-family: inherit;
+                font-size: 0.875rem;
             }
         }
         &-stat {
