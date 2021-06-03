@@ -1,8 +1,5 @@
 import pRetry from 'p-retry'
-import { Page } from 'puppeteer'
 import { OperationOptions } from 'retry'
-
-import { REDESIGN_TOGGLE_KEY, REDESIGN_CLASS_NAME } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 /**
  * Retry function with more sensible defaults for e2e and integration test assertions
