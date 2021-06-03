@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -18,7 +19,11 @@ func (s *Store) CreateBatchExecutorJob(ctx context.Context, job executor.Job) (*
 		Job:       job,
 	}
 
-	q := createBatchExecutorJobQuery(bej)
+	q, err := createBatchExecutorJobQuery(bej)
+	if err != nil {
+		return nil, err
+	}
+
 	if err := s.query(ctx, q, func(sc scanner) error {
 		return scanBatchExecutorJob(bej, sc)
 	}); err != nil {
@@ -40,18 +45,25 @@ RETURNING
 	%s
 `
 
-func createBatchExecutorJobQuery(bej *btypes.BatchExecutorJob) *sqlf.Query {
+func createBatchExecutorJobQuery(bej *btypes.BatchExecutorJob) (*sqlf.Query, error) {
+	job, err := json.Marshal(bej.Job)
+	if err != nil {
+		return nil, err
+	}
+
 	return sqlf.Sprintf(
-		createPendingBatchSpecQueryFmtstr,
+		createBatchExecutorJobQueryFmtstr,
 		bej.CreatedAt,
 		bej.UpdatedAt,
-		bej.Job,
+		job,
 		sqlf.Join(BatchExecutorJobColumns, ","),
-	)
+	), nil
 }
 
 func scanBatchExecutorJob(bej *btypes.BatchExecutorJob, sc scanner) error {
-	return sc.Scan(
+	var job []byte
+
+	if err := sc.Scan(
 		&bej.ID,
 		&bej.State,
 		&dbutil.NullString{S: &bej.FailureMessage},
@@ -63,8 +75,12 @@ func scanBatchExecutorJob(bej *btypes.BatchExecutorJob, sc scanner) error {
 		pq.Array(&bej.ExecutionLogs),
 		&bej.CreatedAt,
 		&bej.UpdatedAt,
-		&bej.Job,
-	)
+		&job,
+	); err != nil {
+		return err
+	}
+
+	return json.Unmarshal(job, &bej.Job)
 }
 
 var BatchExecutorJobColumns = []*sqlf.Query{
