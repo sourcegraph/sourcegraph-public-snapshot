@@ -214,7 +214,12 @@ func TestRepoRankFromConfig(t *testing.T) {
 		{"gh.test/sg/ex", map[string]float64{"gh.test": 100, "gh.test/sg": 50, "gh.test/sg/sg": -20}, 150},
 	}
 	for _, tc := range cases {
-		got := repoRankFromConfig(schema.SiteConfiguration{RepoRankScores: tc.rankScores}, tc.name)
+		config := schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{
+			Ranking: &schema.Ranking{
+				RepoScores: tc.rankScores,
+			},
+		}}
+		got := repoRankFromConfig(config, tc.name)
 		if got != tc.want {
 			t.Errorf("got score %v, want %v, repo %q config %v", got, tc.want, tc.name, tc.rankScores)
 		}

@@ -535,6 +535,8 @@ type ExperimentalFeatures struct {
 	EventLogging string `json:"eventLogging,omitempty"`
 	// Perforce description: Allow adding Perforce code host connections
 	Perforce string `json:"perforce,omitempty"`
+	// Ranking description: Experimental search result ranking options.
+	Ranking *Ranking `json:"ranking,omitempty"`
 	// RateLimitAnonymous description: Configures the hourly rate limits for anonymous calls to the GraphQL API. Setting limit to 0 disables the limiter. This is only relevant if unauthenticated calls to the API are permitted.
 	RateLimitAnonymous int `json:"rateLimitAnonymous,omitempty"`
 	// SearchIndexBranches description: A map from repository name to a list of extra revs (branch, ref, tag, commit sha, etc) to index for a repository. We always index the default branch ("HEAD") and revisions in version contexts. This allows specifying additional revisions. Sourcegraph can index up to 64 branches per repository.
@@ -1136,6 +1138,12 @@ type QuickLink struct {
 	// Url description: The URL of this quick link (absolute or relative)
 	Url string `json:"url"`
 }
+
+// Ranking description: Experimental search result ranking options.
+type Ranking struct {
+	// RepoScores description: a map of URI directories to numeric scores for specifying search result importance, like {"github.com": 500, "github.com/sourcegraph": 300, "github.com/sourcegraph/sourcegraph": 100}. Would rank "github.com/sourcegraph/sourcegraph" as 500+300+100=900, and "github.com/other/foo" as 500.
+	RepoScores map[string]float64 `json:"repoScores,omitempty"`
+}
 type Repos struct {
 	// Callsign description: The unique Phabricator identifier for the repository, like 'MUX'.
 	Callsign string `json:"callsign"`
@@ -1484,8 +1492,6 @@ type SiteConfiguration struct {
 	RepoConcurrentExternalServiceSyncers int `json:"repoConcurrentExternalServiceSyncers,omitempty"`
 	// RepoListUpdateInterval description: Interval (in minutes) for checking code hosts (such as GitHub, Gitolite, etc.) for new repositories.
 	RepoListUpdateInterval int `json:"repoListUpdateInterval,omitempty"`
-	// RepoRankScores description: a map of URI directories to numeric scores for specifying search result importance, like {"github.com": 500, "github.com/sourcegraph": 300, "github.com/sourcegraph/sourcegraph": 100}. Would rank "github.com/sourcegraph/sourcegraph" as 500+300+100=900, and "github.com/other/foo" as 500.
-	RepoRankScores map[string]float64 `json:"repoRankScores,omitempty"`
 	// SearchIndexEnabled description: Whether indexed search is enabled. If unset Sourcegraph detects the environment to decide if indexed search is enabled. Indexed search is RAM heavy, and is disabled by default in the single docker image. All other environments will have it enabled by default. The size of all your repository working copies is the amount of additional RAM required.
 	SearchIndexEnabled *bool `json:"search.index.enabled,omitempty"`
 	// SearchIndexSymbolsEnabled description: Whether indexed symbol search is enabled. This is contingent on the indexed search configuration, and is true by default for instances with indexed search enabled. Enabling this will cause every repository to re-index, which is a time consuming (several hours) operation. Additionally, it requires more storage and ram to accommodate the added symbols information in the search index.

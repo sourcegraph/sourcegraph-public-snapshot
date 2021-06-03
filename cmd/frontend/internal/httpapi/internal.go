@@ -161,7 +161,11 @@ func serveConfiguration(w http.ResponseWriter, r *http.Request) error {
 
 func repoRankFromConfig(siteConfig schema.SiteConfiguration, repoName string) float64 {
 	val := 0.0
-	if len(siteConfig.RepoRankScores) == 0 {
+	if siteConfig.ExperimentalFeatures == nil || siteConfig.ExperimentalFeatures.Ranking == nil {
+		return val
+	}
+	scores := siteConfig.ExperimentalFeatures.Ranking.RepoScores
+	if len(scores) == 0 {
 		return val
 	}
 	// try every "directory" in the repo name to assign it a value, so a repoName like
@@ -169,10 +173,10 @@ func repoRankFromConfig(siteConfig schema.SiteConfiguration, repoName string) fl
 	// and "github.com/sourcegraph/zoekt" tested.
 	for i := 0; i < len(repoName); i++ {
 		if repoName[i] == '/' {
-			val += siteConfig.RepoRankScores[repoName[:i]]
+			val += scores[repoName[:i]]
 		}
 	}
-	val += siteConfig.RepoRankScores[repoName]
+	val += scores[repoName]
 	return val
 }
 
