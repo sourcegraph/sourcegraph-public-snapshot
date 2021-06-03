@@ -90,6 +90,11 @@ export function useField<FormValues, FieldValueKey extends keyof FormAPI<FormVal
     const setFieldStateReference = useRef<FormAPI<FormValues>['setFieldState']>(setFieldState)
     setFieldStateReference.current = setFieldState
 
+    // Since validation logic wants to use sync state update we use `useLayoutEffect` instead of
+    // `useEffect` in order to synchronously re-render after value setState updates, but before
+    // the browser has painted DOM updates. This prevents users from seeing inconsistent states
+    // where changes handled by React have been painted, but DOM manipulation handled by these
+    // effects are painted on the next tick.
     useLayoutEffect(() => {
         const inputElement = inputReference.current
 
