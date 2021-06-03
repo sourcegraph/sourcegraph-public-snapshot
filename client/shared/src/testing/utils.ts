@@ -1,5 +1,8 @@
 import pRetry from 'p-retry'
+import { Page } from 'puppeteer'
 import { OperationOptions } from 'retry'
+
+import { REDESIGN_TOGGLE_KEY, REDESIGN_CLASS_NAME } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 /**
  * Retry function with more sensible defaults for e2e and integration test assertions
@@ -51,4 +54,17 @@ export function readEnvironmentString({ variable, defaultValue }: { variable: st
         return defaultValue
     }
     return value
+}
+
+export const toggleRedesign = async (page: Page, enabled: boolean): Promise<void> => {
+    await page.evaluate(
+        (className: string, storageKey: string, enabled: boolean) => {
+            document.documentElement.classList.toggle(className, enabled)
+            localStorage.setItem(storageKey, String(enabled))
+            window.dispatchEvent(new StorageEvent('storage', { key: storageKey, newValue: String(enabled) }))
+        },
+        REDESIGN_CLASS_NAME,
+        REDESIGN_TOGGLE_KEY,
+        enabled
+    )
 }
