@@ -50,23 +50,23 @@ const codeStatsInsightExtensionBundleURL = 'https://sourcegraph.com/-/static/ext
 /**
  * Fake manifest of code stats insight extension.
  * */
-const codeStatsInsightRawManifest = JSON.stringify({
-    url: codeStatsInsightExtensionBundleURL,
-    activationEvents: ['*'],
-    browserslist: [],
-    contributes: {},
-    description: 'Code stats insight extension',
-    devDependencies: {},
-    extensionID: 'code-stats-insight',
-    license: 'MIT',
-    main: 'dist/code-stats-insight.js',
-    name: 'code-stats-insight',
-    publisher: 'mock-author',
-    readme: '# Code stats insight (Sourcegraph extension))\n',
-    scripts: {},
-    title: 'Code stats insight',
-    version: '0.0.0-DEVELOPMENT',
-})
+// const codeStatsInsightRawManifest = JSON.stringify({
+//     url: codeStatsInsightExtensionBundleURL,
+//     activationEvents: ['*'],
+//     browserslist: [],
+//     contributes: {},
+//     description: 'Code stats insight extension',
+//     devDependencies: {},
+//     extensionID: 'code-stats-insight',
+//     license: 'MIT',
+//     main: 'dist/code-stats-insight.js',
+//     name: 'code-stats-insight',
+//     publisher: 'mock-author',
+//     readme: '# Code stats insight (Sourcegraph extension))\n',
+//     scripts: {},
+//     title: 'Code stats insight',
+//     version: '0.0.0-DEVELOPMENT',
+// })
 
 const extensionNodes: ExtensionsResult['extensionRegistry']['extensions']['nodes'] = [
     {
@@ -76,13 +76,13 @@ const extensionNodes: ExtensionsResult['extensionRegistry']['extensions']['nodes
         url: '/extensions/search-based-insight',
         viewerCanAdminister: false,
     },
-    {
-        extensionID: 'code-stats-insight',
-        id: 'test-code-stats-extension',
-        manifest: { raw: codeStatsInsightRawManifest },
-        url: '/extensions/code-stats-insight',
-        viewerCanAdminister: false,
-    },
+    // {
+    //     extensionID: 'code-stats-insight',
+    //     id: 'test-code-stats-extension',
+    //     manifest: { raw: codeStatsInsightRawManifest },
+    //     url: '/extensions/code-stats-insight',
+    //     viewerCanAdminister: false,
+    // },
 ]
 
 /**
