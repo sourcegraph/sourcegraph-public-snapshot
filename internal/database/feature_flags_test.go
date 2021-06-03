@@ -375,8 +375,8 @@ func testUserFlags(t *testing.T) {
 		return res
 	}
 
-	mkFFBoolVar := func(name string, rollout int) *ff.FeatureFlag {
-		res, err := flagStore.CreateBoolVar(ctx, name, rollout)
+	mkFFBoolVar := func(name string, rollout int32) *ff.FeatureFlag {
+		res, err := flagStore.CreateRollout(ctx, name, rollout)
 		require.NoError(t, err)
 		return res
 	}
@@ -505,8 +505,8 @@ func testAnonymousUserFlags(t *testing.T) {
 		return res
 	}
 
-	mkFFBoolVar := func(name string, rollout int) *ff.FeatureFlag {
-		res, err := flagStore.CreateBoolVar(ctx, name, rollout)
+	mkFFBoolVar := func(name string, rollout int32) *ff.FeatureFlag {
+		res, err := flagStore.CreateRollout(ctx, name, rollout)
 		require.NoError(t, err)
 		return res
 	}
@@ -549,8 +549,8 @@ func testUserlessFeatureFlags(t *testing.T) {
 		return res
 	}
 
-	mkFFBoolVar := func(name string, rollout int) *ff.FeatureFlag {
-		res, err := flagStore.CreateBoolVar(ctx, name, rollout)
+	mkFFBoolVar := func(name string, rollout int32) *ff.FeatureFlag {
+		res, err := flagStore.CreateRollout(ctx, name, rollout)
 		require.NoError(t, err)
 		return res
 	}

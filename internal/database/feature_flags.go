@@ -59,7 +59,7 @@ func (f *FeatureFlagStore) CreateFeatureFlag(ctx context.Context, flag *ff.Featu
 	var (
 		flagType string
 		boolVal  *bool
-		rollout  *int
+		rollout  *int32
 	)
 	switch {
 	case flag.Bool != nil:
@@ -81,7 +81,63 @@ func (f *FeatureFlagStore) CreateFeatureFlag(ctx context.Context, flag *ff.Featu
 	return scanFeatureFlag(row)
 }
 
-func (f *FeatureFlagStore) CreateBoolVar(ctx context.Context, name string, rollout int) (*ff.FeatureFlag, error) {
+func (f *FeatureFlagStore) UpdateFeatureFlag(ctx context.Context, flag *ff.FeatureFlag) (*ff.FeatureFlag, error) {
+	const updateFeatureFlagFmtStr = `
+		UPDATE feature_flags 
+		SET 
+			flag_type = %s,
+			bool_value = %s,
+			rollout = %s
+		WHERE flag_name = %s
+		RETURNING 
+			flag_name,
+			flag_type,
+			bool_value,
+			rollout,
+			created_at,
+			updated_at,
+			deleted_at
+		;
+	`
+	var (
+		flagType string
+		boolVal  *bool
+		rollout  *int32
+	)
+	switch {
+	case flag.Bool != nil:
+		flagType = "bool"
+		boolVal = &flag.Bool.Value
+	case flag.Rollout != nil:
+		flagType = "rollout"
+		rollout = &flag.Rollout.Rollout
+	default:
+		return nil, errors.New("feature flag must have exactly one type")
+	}
+
+	row := f.QueryRow(ctx, sqlf.Sprintf(
+		updateFeatureFlagFmtStr,
+		flagType,
+		boolVal,
+		rollout,
+		flag.Name,
+	))
+	return scanFeatureFlag(row)
+}
+
+func (f *FeatureFlagStore) DeleteFeatureFlag(ctx context.Context, name string) error {
+	const deleteFeatureFlagFmtStr = `
+		UPDATE feature_flags
+		SET 
+			flag_name = flag_name || '-DELETED-' || TRUNC(EXTRACT(epoch FROM now()))::varchar(255),
+			deleted_at = now()
+		WHERE flag_name = %s;
+	`
+
+	return f.Exec(ctx, sqlf.Sprintf(deleteFeatureFlagFmtStr, name))
+}
+
+func (f *FeatureFlagStore) CreateRollout(ctx context.Context, name string, rollout int32) (*ff.FeatureFlag, error) {
 	return f.CreateFeatureFlag(ctx, &ff.FeatureFlag{
 		Name: name,
 		Rollout: &ff.FeatureFlagRollout{
@@ -111,7 +167,7 @@ func scanFeatureFlag(scanner rowScanner) (*ff.FeatureFlag, error) {
 		res      ff.FeatureFlag
 		flagType string
 		boolVal  *bool
-		rollout  *int
+		rollout  *int32
 	)
 	err := scanner.Scan(
 		&res.Name,

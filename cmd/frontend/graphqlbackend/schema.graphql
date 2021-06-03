@@ -613,6 +613,62 @@ type Mutation {
         """
         repositories: [SearchContextRepositoryRevisionsInput!]!
     ): SearchContext!
+
+	"""
+	(experimental) Create a new feature flag
+	"""
+	createFeatureFlag(
+			"""
+			The name of the feature flag
+			"""
+			name: String!
+			
+			"""
+			The value of the feature flag. Only set if the new feature flag
+			will be a concrete boolean flag. Mutually exclusive with rollout.
+			"""
+			value: Boolean
+
+			"""
+			The proportion of users the feature flag will be applied to in increments
+			of 0.01%. Only set if the new feature flag will be a rollout flag. 
+			Mutually exclusive with value.
+			"""
+			rollout: Int
+	): FeatureFlag!
+	   
+	"""
+	(experimental) Delete a feature flag
+	"""
+	deleteFeatureFlag(
+			"""
+			The name of the feature flag
+			"""
+			name: String!
+	): EmptyResponse!
+
+	"""
+	(experimental) Update a feature flag
+	"""
+	updateFeatureFlag(
+			"""
+			The name of the feature flag
+			"""
+			name: String!
+			
+			"""
+			The value of the feature flag. Only set if the new feature flag
+			will be a concrete boolean flag. Mutually exclusive with rollout.
+			"""
+			value: Boolean
+
+			"""
+			The proportion of users the feature flag will be applied to in increments
+			of 0.01%. Only set if the new feature flag will be a rollout flag. 
+			Mutually exclusive with value.
+			"""
+			rollout: Int
+	): FeatureFlag!
 }
 
 """

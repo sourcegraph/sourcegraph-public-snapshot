@@ -117,3 +117,43 @@ func flagsToResolvers(db dbutil.DB, flags []*featureflag.FeatureFlag) []*Feature
 	}
 	return res
 }
+
+func (r *schemaResolver) CreateFeatureFlag(ctx context.Context, args struct {
+	Name    string
+	Value   *bool
+	Rollout *int32
+}) (*FeatureFlagResolver, error) {
+	ff := database.FeatureFlags(r.db)
+
+	var res *featureflag.FeatureFlag
+	var err error
+	if args.Value != nil {
+		res, err = ff.CreateBool(ctx, args.Name, *args.Value)
+	} else if args.Rollout != nil {
+		res, err = ff.CreateRollout(ctx, args.Name, *args.Rollout)
+	}
+
+	return &FeatureFlagResolver{r.db, res}, err
+}
+
+func (r *schemaResolver) DeleteFeatureFlag(ctx context.Context, args struct {
+	Name string
+}) (*EmptyResponse, error) {
+	return &EmptyResponse{}, database.FeatureFlags(r.db).DeleteFeatureFlag(ctx, args.Name)
+}
+
+func (r *schemaResolver) UpdateFeatureFlag(ctx context.Context, args struct {
+	Name    string
+	Value   *bool
+	Rollout *int32
+}) (*FeatureFlagResolver, error) {
+	ff := &featureflag.FeatureFlag{Name: args.Name}
+	if args.Value != nil {
+		ff.Bool = &featureflag.FeatureFlagBool{Value: *args.Value}
+	} else if args.Rollout != nil {
+		ff.Rollout = &featureflag.FeatureFlagRollout{Rollout: *args.Rollout}
+	}
+
+	res, err := database.FeatureFlags(r.db).UpdateFeatureFlag(ctx, ff)
+	return &FeatureFlagResolver{r.db, res}, err
+}
