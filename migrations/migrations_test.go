@@ -2,6 +2,7 @@ package migrations
 
 import (
 	"io/fs"
+	"sort"
 	"strconv"
 	"strings"
 	"testing"
@@ -9,22 +10,13 @@ import (
 
 func TestIDConstraints(t *testing.T) {
 	cases := []struct {
-		Name  string
-		FS    fs.FS
-		First int
-	}{{
-		Name:  "codeinsights",
-		FS:    CodeInsights,
-		First: 1000000000,
-	}, {
-		Name:  "codeintel",
-		FS:    CodeIntel,
-		First: 1000000000,
-	}, {
-		Name:  "frontend",
-		FS:    Frontend,
-		First: 1528395733,
-	}}
+		Name string
+		FS   fs.FS
+	}{
+		{Name: "frontend", FS: Frontend},
+		{Name: "codeintel", FS: CodeIntel},
+		{Name: "codeinsights", FS: CodeInsights},
+	}
 
 	for _, c := range cases {
 		t.Run(c.Name, func(t *testing.T) {
@@ -46,13 +38,20 @@ func TestIDConstraints(t *testing.T) {
 				byID[id] = append(byID[id], name)
 			}
 
+			var ids []int
 			for id, names := range byID {
-				// Check if we are using sequential migrations from a certain point.
-				if _, hasPrev := byID[id-1]; id > c.First && !hasPrev {
-					t.Errorf("migration with ID %d exists, but previous one (%d) does not", id, id-1)
-				}
 				if len(names) > 1 {
 					t.Errorf("multiple migrations with ID %d: %s", id, strings.Join(names, " "))
+				}
+
+				ids = append(ids, id)
+			}
+			sort.Ints(ids)
+
+			for i, id := range ids {
+				if i != 0 && ids[i-1]+1 != id {
+					// Check if we are using sequential migrations.
+					t.Errorf("gap in migrations between %s and %s", byID[ids[i-1]][0], byID[id][0])
 				}
 			}
 		})

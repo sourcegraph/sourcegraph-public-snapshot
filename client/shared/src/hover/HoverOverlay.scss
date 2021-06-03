@@ -164,8 +164,7 @@
     .theme-redesign & {
         --hover-overlay-vertical-padding: 0.25rem;
         --hover-overlay-horizontal-padding: 1rem;
-        // Required to avoid close button and text content overlap on scroll.
-        --hover-overlay-contents-right-padding: 2rem;
+        --hover-overlay-contents-right-padding: 1rem;
         --hover-overlay-content-margin-top: 0.5rem;
         --hover-overlay-separator-color: var(--border-color);
 
@@ -220,6 +219,11 @@
             padding-bottom: 0;
             padding-right: var(--hover-overlay-contents-right-padding);
             border-bottom: none;
+
+            &--with-close-button {
+                // Required to avoid close button and text content overlap on scroll.
+                --hover-overlay-contents-right-padding: 2rem;
+            }
 
             // To center loader-icon relative to whole overlay block make horizontal paddings equal.
             &--loading {
@@ -305,7 +309,7 @@
         }
 
         &__actions {
-            padding-top: 0.5rem;
+            padding-top: 0.75rem;
             padding-bottom: 0.5rem;
             border-top: 1px solid var(--hover-overlay-separator-color);
         }

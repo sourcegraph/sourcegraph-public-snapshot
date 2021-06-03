@@ -39,7 +39,7 @@ export interface GitCommitNodeProps {
     /** Fragment to show at the end to the right of the SHA. */
     afterElement?: React.ReactFragment
 
-    /** Determine the igt diff visualization UI */
+    /** Determine the git diff visualization UI */
     diffMode?: DiffMode
 
     /** Handler for change the diff mode */
@@ -115,6 +115,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
             className="text-muted git-commit-node__byline"
             author={node.author}
             committer={node.committer}
+            // TODO compact needs to be always a boolean
             compact={Boolean(compact)}
             messageElement={messageElement}
             commitMessageBody={commitMessageBody}
@@ -184,7 +185,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
 
     const diffModeSelector = (): JSX.Element | null => {
         if (diffMode && handleDiffMode) {
-            return <DiffModeSelector handleDiffMode={handleDiffMode} diffMode={diffMode} size="small" />
+            return <DiffModeSelector handleDiffMode={handleDiffMode} diffMode={diffMode} small={true} />
         }
 
         return null

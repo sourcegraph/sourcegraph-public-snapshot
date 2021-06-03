@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"golang.org/x/time/rate"
+
 	"github.com/hexops/autogold"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
@@ -41,13 +43,6 @@ func testHistoricalEnqueuer(t *testing.T, p *testParams) *testResults {
 			panic(err)
 		}
 		return baseNow
-	}
-	sleep := func(d time.Duration) {
-		r.sleeps++
-		r.totalSleepTimeMS += int(d / time.Millisecond)
-		if p.recordSleepOperations {
-			r.operations = append(r.operations, "sleep()")
-		}
 	}
 
 	settingStore := discovery.NewMockSettingStore()
@@ -110,9 +105,10 @@ func testHistoricalEnqueuer(t *testing.T, p *testParams) *testResults {
 		return &git.Commit{Author: git.Signature{Date: nearby}}, nil
 	}
 
+	limiter := rate.NewLimiter(10, 1)
+
 	historicalEnqueuer := &historicalEnqueuer{
 		now:                   clock,
-		sleep:                 sleep,
 		settingStore:          settingStore,
 		insightsStore:         insightsStore,
 		repoStore:             repoStore,
@@ -120,6 +116,7 @@ func testHistoricalEnqueuer(t *testing.T, p *testParams) *testResults {
 		allReposIterator:      allReposIterator,
 		gitFirstEverCommit:    gitFirstEverCommit,
 		gitFindNearestCommit:  gitFindNearestCommit,
+		limiter:               limiter,
 
 		framesToBackfill: func() int { return p.frames },
 		frameLength:      func() time.Duration { return 7 * 24 * time.Hour },
@@ -151,31 +148,9 @@ func Test_historicalEnqueuer(t *testing.T) {
 	// no work is performed.
 	t.Run("no_work", func(t *testing.T) {
 		want := autogold.Want("no_work", &testResults{
-			allReposIteratorCalls: 2, sleeps: 20,
+			allReposIteratorCalls: 2, sleeps: 0,
 			reposGetByName:   4,
-			totalSleepTimeMS: 2000,
-			operations: []string{
-				"sleep()",
-				"sleep()",
-				"sleep()",
-				"sleep()",
-				"sleep()",
-				"sleep()",
-				"sleep()",
-				"sleep()",
-				"sleep()",
-				"sleep()",
-				"sleep()",
-				"sleep()",
-				"sleep()",
-				"sleep()",
-				"sleep()",
-				"sleep()",
-				"sleep()",
-				"sleep()",
-				"sleep()",
-				"sleep()",
-			},
+			totalSleepTimeMS: 0,
 		})
 		want.Equal(t, testHistoricalEnqueuer(t, &testParams{
 			settings:              testRealGlobalSettings,
@@ -187,7 +162,6 @@ func Test_historicalEnqueuer(t *testing.T) {
 	})
 	// Test that when insights AND repos exist:
 	//
-	// * We sleep() between enqueueing jobs
 	// * We enqueue a job for every timeframe*repo*series
 	// * repo/1 is only enqueued once, because its oldest commit is 3 days ago.
 	// * repo/1 has zero data points directly recorded for points in time before its oldest commit.
@@ -195,45 +169,24 @@ func Test_historicalEnqueuer(t *testing.T) {
 	//
 	t.Run("no_data", func(t *testing.T) {
 		want := autogold.Want("no_data", &testResults{
-			allReposIteratorCalls: 2, sleeps: 20,
-			reposGetByName:   4,
-			totalSleepTimeMS: 2000,
+			allReposIteratorCalls: 2,
+			reposGetByName:        4,
 			operations: []string{
-				"sleep()",
-				"sleep()",
 				`enqueueQueryRunnerJob("2020-12-28T12:00:01Z", "errorf count:9999999 repo:^repo/0$@")`,
-				"sleep()",
 				`enqueueQueryRunnerJob("2020-12-28T12:00:01Z", "fmt.Printf count:9999999 repo:^repo/0$@")`,
-				"sleep()",
 				`enqueueQueryRunnerJob("2020-12-28T12:00:01Z", "gitserver.Exec count:9999999 repo:^repo/0$@")`,
-				"sleep()",
 				`enqueueQueryRunnerJob("2020-12-28T12:00:01Z", "gitserver.Close count:9999999 repo:^repo/0$@")`,
-				"sleep()",
-				"sleep()",
 				`enqueueQueryRunnerJob("2020-12-28T12:00:01Z", "errorf count:9999999 repo:^repo/1$@")`,
-				"sleep()",
 				`enqueueQueryRunnerJob("2020-12-28T12:00:01Z", "fmt.Printf count:9999999 repo:^repo/1$@")`,
-				"sleep()",
 				`enqueueQueryRunnerJob("2020-12-28T12:00:01Z", "gitserver.Exec count:9999999 repo:^repo/1$@")`,
-				"sleep()",
 				`enqueueQueryRunnerJob("2020-12-28T12:00:01Z", "gitserver.Close count:9999999 repo:^repo/1$@")`,
-				"sleep()",
-				"sleep()",
 				`enqueueQueryRunnerJob("2020-12-21T12:00:01Z", "errorf count:9999999 repo:^repo/0$@")`,
-				"sleep()",
 				`enqueueQueryRunnerJob("2020-12-21T12:00:01Z", "fmt.Printf count:9999999 repo:^repo/0$@")`,
-				"sleep()",
 				`enqueueQueryRunnerJob("2020-12-21T12:00:01Z", "gitserver.Exec count:9999999 repo:^repo/0$@")`,
-				"sleep()",
 				`enqueueQueryRunnerJob("2020-12-21T12:00:01Z", "gitserver.Close count:9999999 repo:^repo/0$@")`,
-				"sleep()",
-				"sleep()",
 				`recordSeriesPoint(point=SeriesPoint{Time: "2020-12-21 12:00:01 +0000 UTC", Value: 0, Metadata: }, repoName=repo/1)`,
-				"sleep()",
 				`recordSeriesPoint(point=SeriesPoint{Time: "2020-12-21 12:00:01 +0000 UTC", Value: 0, Metadata: }, repoName=repo/1)`,
-				"sleep()",
 				`recordSeriesPoint(point=SeriesPoint{Time: "2020-12-21 12:00:01 +0000 UTC", Value: 0, Metadata: }, repoName=repo/1)`,
-				"sleep()",
 				`recordSeriesPoint(point=SeriesPoint{Time: "2020-12-21 12:00:01 +0000 UTC", Value: 0, Metadata: }, repoName=repo/1)`,
 			},
 		})

@@ -224,17 +224,20 @@ export const Panel = React.memo<Props>(props => {
     }, [items, hash, currentTabID])
 
     const [isRedesignEnabled] = useRedesignToggle()
-    const EmptyPanelWrapper = isRedesignEnabled ? React.Fragment : 'div'
 
     if (!areExtensionsReady) {
-        return (
-            <EmptyPanelWrapper {...(!isRedesignEnabled && { className: 'panel' })}>
-                <ExtensionsLoadingPanelView />
-            </EmptyPanelWrapper>
-        )
+        return <ExtensionsLoadingPanelView />
     }
 
     if (!items) {
+        if (isRedesignEnabled) {
+            return (
+                <div className="panel">
+                    <EmptyPanelView />
+                </div>
+            )
+        }
+
         return <EmptyPanelView />
     }
 

@@ -1,6 +1,6 @@
 # Sourcegraph GraphQL API examples
 
-This page demonstrates a few example GraphQL queries for the [Sourcegraph GraphQL API](index.md).
+This page demonstrates a few example GraphQL queries for the [Sourcegraph GraphQL API](index.md). For help with the API, you can use `Ctrl + space` to trigger tooltips. 
 
 <table class="table" style="table-layout: fixed">
 	<tr>
@@ -73,26 +73,17 @@ This page demonstrates a few example GraphQL queries for the [Sourcegraph GraphQ
 			List all of the languages in each repository of your organization (when combined with the "List the first 1000 repositories" example above) to determine how many repos use each language across your entire organization.
 		</td>
 	</tr>
+  	<tr>
+		<td>
+			<a href="https://sourcegraph.com/api/console#%7B%22query%22%3A%22%23%20Type%20queries%20here%2C%20with%20completion%2C%20validation%2C%20and%20hovers.%5Cn%23%5Cn%23%20Here's%20an%20example%20query%20to%20get%20you%20started%3A%5Cn%5Cnquery%20%7B%5Cn%20%20users(activePeriod%3A%20THIS_MONTH)%20%7B%5Cn%20%20%20%20totalCount%5Cn%20%20%20%20nodes%20%7B%5Cn%20%20%20%20%20%20username%2C%5Cn%20%20%20%20%20%20usageStatistics%20%7B%5Cn%20%20%20%20%20%20%20%20lastActiveTime%5Cn%20%20%20%20%20%20%7D%5Cn%20%20%20%20%5Ct%7D%5Cn%20%20%7D%5Cn%7D%22%7D">
+				Current month's active users
+			</a>
+		</td>
+		<td>
+			Returns the current month's active users (total count and usernames) and their last active time.
+		</td>
+		<td>
+		</td>
+	</tr>
+
 </table>
-
-## GraphQL console examples
-
-Admins can use the [API console](https://sourcegraph.com/api/console) to run queries. For help with the API, you can use `Ctrl + space` to trigger tooltips. 
-
-### Common queries
-
-Retrieve the number of active users this month, who they are and their last active time:
-
-```
-query {
-  users(activePeriod: THIS_MONTH) {
-    totalCount
-    nodes {
-      username,
-      usageStatistics {
-        lastActiveTime
-      }
-    }
-  }
-}
-```

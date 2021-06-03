@@ -21,6 +21,7 @@ import (
 // will always be the one we want.
 type Updater struct {
 	dbStore         DBStore
+	locker          Locker
 	gitserverClient GitserverClient
 	operations      *operations
 }
@@ -31,12 +32,14 @@ var _ goroutine.Handler = &Updater{}
 // and visible uploads for each repository marked as dirty.
 func NewUpdater(
 	dbStore DBStore,
+	locker Locker,
 	gitserverClient GitserverClient,
 	interval time.Duration,
 	observationContext *observation.Context,
 ) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, &Updater{
 		dbStore:         dbStore,
+		locker:          locker,
 		gitserverClient: gitserverClient,
 		operations:      newOperations(dbStore, observationContext),
 	})
@@ -71,9 +74,9 @@ func (u *Updater) HandleError(err error) {
 // update procedure for this repository. If the lock is already held, this method will simply
 // do nothing.
 func (u *Updater) tryUpdate(ctx context.Context, repositoryID, dirtyToken int) (err error) {
-	ok, unlock, err := u.dbStore.Lock(ctx, repositoryID, false)
+	ok, unlock, err := u.locker.Lock(ctx, repositoryID, false)
 	if err != nil || !ok {
-		return errors.Wrap(err, "dbstore.Lock")
+		return errors.Wrap(err, "locker.Lock")
 	}
 	defer func() {
 		err = unlock(err)

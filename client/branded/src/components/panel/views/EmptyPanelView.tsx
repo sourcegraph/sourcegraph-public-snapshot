@@ -16,7 +16,7 @@ export const EmptyPanelView: React.FunctionComponent<EmptyPanelViewProps> = prop
     return (
         <EmptyPanelWrapper {...(!isRedesignEnabled && { className: 'panel' })}>
             <div className={classNames('panel__empty', className)}>
-                <CancelIcon className="icon-inline" /> Nothing to show here
+                <CancelIcon className="icon-inline mr-2" /> Nothing to show here
             </div>
         </EmptyPanelWrapper>
     )

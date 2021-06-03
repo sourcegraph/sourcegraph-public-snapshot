@@ -86,13 +86,16 @@ drwxr-sr-x    1 sourcegr sourcegr      4096 May 12 19:43 ..
 -rw-------    1 sourcegr sourcegr        98 May 12 18:52 id_ed25519.pub
 -rw-------    1 sourcegr sourcegr       799 May 12 19:54 known_hosts
 ```
-Solution:
+
+##### Solution:
+
 - Inside the `.ssh` directory on the Host Machine:
   - Permission on all files must be set to `600`, and `700` for the directory itself.
   - Files must be owned by a user who has access to the docker container. This can be done via `sudo chown -v -R $USER:$GROUP` (the user may need to set these values).
-- (OPTIONAL: Please read note below) Inside the `/home/sourcegraph/` directory on Docker Compose:
+- (**OR**) Inside the `/home/sourcegraph/` directory on Docker Compose:
   - Permission on all files must be set to `600`, and `700` for the directory itself.
   - Files must be owned by the root user, which is `sourcegraph` by default. This can be done via `sudo chown -v -R $USER:$GROUP` (the user may need to set these values).
+
 
 >NOTE: Once the volume for the configuration files has been mounted, both the `/ssh` directory on the host machine and docker will be synced and changes within one directory will be reflected by the other one. Consquently, you will only need to make the changes within one directory.
 

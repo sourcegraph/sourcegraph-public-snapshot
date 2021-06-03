@@ -5,18 +5,14 @@ import (
 	"encoding/hex"
 	"fmt"
 	"hash/fnv"
-	"net/url"
 	"strings"
 
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // pick deterministically chooses between a and b a repo to keep and
@@ -118,20 +114,21 @@ type ScopeCache interface {
 //
 // Currently only GitHub is supported, other code hosts will simply return an
 // empty slice
-func GrantedScopes(ctx context.Context, cache ScopeCache, kind string, rawConfig string) ([]string, error) {
-	if kind != extsvc.KindGitHub {
-		return nil, nil
+func GrantedScopes(ctx context.Context, cache ScopeCache, svc *types.ExternalService) ([]string, error) {
+	if svc.Kind != extsvc.KindGitHub {
+		return []string{}, nil
 	}
-	config, err := extsvc.ParseConfig(kind, rawConfig)
+	src, err := NewSource(svc, nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "parsing config")
+		return nil, errors.Wrap(err, "creating source")
 	}
-	switch v := config.(type) {
-	case *schema.GitHubConnection:
-		if v.Token == "" {
+	switch v := src.(type) {
+	case *GithubSource:
+		token := v.config.Token
+		if token == "" {
 			return nil, errors.New("missing token")
 		}
-		key, err := hashToken(v.Token)
+		key, err := hashToken(token)
 		if err != nil {
 			return nil, err
 		}
@@ -140,12 +137,11 @@ func GrantedScopes(ctx context.Context, cache ScopeCache, kind string, rawConfig
 		}
 
 		// Slow path
-		u, err := url.Parse(v.Url)
+		src, err := NewGithubSource(svc, nil)
 		if err != nil {
-			return nil, errors.Wrap(err, "parsing URL")
+			return nil, errors.Wrap(err, "creating source")
 		}
-		client := github.NewV3Client(u, &auth.OAuthBearerToken{Token: v.Token}, nil)
-		scopes, err := client.GetAuthenticatedUserOAuthScopes(ctx)
+		scopes, err := src.v3Client.GetAuthenticatedUserOAuthScopes(ctx)
 		if err != nil {
 			return nil, errors.Wrap(err, "getting scopes")
 		}

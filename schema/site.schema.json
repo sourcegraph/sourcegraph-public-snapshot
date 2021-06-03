@@ -869,6 +869,22 @@
       "default": 1,
       "examples": [10]
     },
+    "insights.query.worker.rateLimit": {
+      "description": "Maximum number of Code Insights queries initiated per second on a worker node.",
+      "type": "number",
+      "group": "CodeInsights",
+      "default": 2,
+      "examples": [10.0, 0.5],
+      "!go": { "pointer": true }
+    },
+    "insights.historical.worker.rateLimit": {
+      "description": "Maximum number of historical Code Insights data frames that may be analyzed per second.",
+      "type": "number",
+      "group": "CodeInsights",
+      "default": 10,
+      "examples": [50.0, 0.5],
+      "!go": { "pointer": true }
+    },
     "htmlHeadTop": {
       "description": "HTML to inject at the top of the `<head>` element on each page, for analytics scripts",
       "type": "string",

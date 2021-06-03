@@ -1,5 +1,3 @@
-// TODO: split this component in two for refresh design and original design
-
 import classNames from 'classnames'
 import React from 'react'
 

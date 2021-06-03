@@ -56,6 +56,14 @@ func trace(msg string, ctx ...interface{}) {
 	}
 }
 
+// TokenType is the type of an access token.
+type TokenType string
+
+const (
+	TokenTypePAT   TokenType = "pat"   // "pat" represents personal access token.
+	TokenTypeOAuth TokenType = "oauth" // "oauth" represents OAuth token.
+)
+
 // ClientProvider creates GitLab API clients. Each client has separate authentication creds and a
 // separate cache, but they share an underlying HTTP client and rate limiter. Callers who want a simple
 // unauthenticated API client should use `NewClientProvider(baseURL, transport).GetClient()`.
