@@ -190,6 +190,7 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
                             query = `${query} category:"${category}"`
                         }
 
+                        // Only fetch + show featured extensions when there's no query or category selected.
                         const shouldGetFeaturedExtensions = category === 'All' && query.trim() === ''
 
                         const resultOrError = platformContext.requestGraphQL<
@@ -200,7 +201,7 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
                             variables: {
                                 query,
                                 prioritizeExtensionIDs: viewerConfiguredExtensions,
-                                getFeatured: shouldGetFeaturedExtensions, // and query is empty string? (trim ytspace)
+                                getFeatured: shouldGetFeaturedExtensions,
                             },
                             mightContainPrivateInfo: true,
                         })
