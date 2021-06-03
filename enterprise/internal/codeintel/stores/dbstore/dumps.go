@@ -381,10 +381,26 @@ func (s *Store) DeleteOverlappingDumps(ctx context.Context, repositoryID int, co
 
 const deleteOverlappingDumpsQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/dumps.go:DeleteOverlappingDumps
-WITH updated AS (
-	UPDATE lsif_uploads
-	SET state = 'deleted'
-	WHERE repository_id = %s AND commit = %s AND root = %s AND indexer = %s AND state = 'completed'
+WITH overlapping_dumps AS (
+	SELECT id
+	FROM lsif_uploads
+	WHERE
+		state = 'completed' AND
+		repository_id = %s AND
+		commit = %s AND
+		root = %s AND
+		indexer = %s
+
+	-- Lock these rows in a deterministic order before the update
+	-- below. If we don't do this then we run into a pretty high
+	-- deadlock rate during upload processing as multiple workers
+	-- issue commands for the same set of records, but upload locks
+	-- records indeterministically.
+	ORDER BY id FOR UPDATE
+),
+updated AS (
+	UPDATE lsif_uploads SET state = 'deleted'
+	WHERE id IN (SELECT id FROM overlapping_dumps)
 	RETURNING 1
 )
 SELECT COUNT(*) FROM updated

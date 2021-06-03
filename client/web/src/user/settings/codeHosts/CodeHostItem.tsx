@@ -1,16 +1,14 @@
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import React, { useState, useCallback } from 'react'
-import { ButtonDropdown, DropdownToggle, DropdownMenu, DropdownItem } from 'reactstrap'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { CircleDashedIcon } from '../../../components/CircleDashedIcon'
 import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
+import { githubRepoScopeRequired } from '../cloud-ga'
 
-import { AddCodeHostConnectionModal } from './AddCodeHostConnectionModal'
-import { hints } from './modalHints'
 import { RemoveCodeHostConnectionModal } from './RemoveCodeHostConnectionModal'
 import { ifNotNavigated } from './UserAddCodeHostsPage'
 
@@ -36,23 +34,14 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
     name,
     icon: Icon,
     navigateToAuthProvider,
-    onDidAdd,
     onDidRemove,
     onDidError,
 }) => {
-    const [isAddConnectionModalOpen, setIsAddConnectionModalOpen] = useState(false)
-    const toggleAddConnectionModal = useCallback(() => setIsAddConnectionModalOpen(!isAddConnectionModalOpen), [
-        isAddConnectionModalOpen,
-    ])
-
     const [isRemoveConnectionModalOpen, setIsRemoveConnectionModalOpen] = useState(false)
     const toggleRemoveConnectionModal = useCallback(
         () => setIsRemoveConnectionModalOpen(!isRemoveConnectionModalOpen),
         [isRemoveConnectionModalOpen]
     )
-
-    const [dropdownOpen, setOpen] = useState(false)
-    const toggleDropdown = useCallback((): void => setOpen(!dropdownOpen), [dropdownOpen])
 
     const [oauthInFlight, setOauthInFlight] = useState(false)
 
@@ -64,19 +53,10 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
         navigateToAuthProvider(kind)
     }, [kind, navigateToAuthProvider])
 
+    const updateAuthRequired = service?.kind === 'GITHUB' && githubRepoScopeRequired(user.tags, service.grantedScopes)
+
     return (
         <div className="p-2 d-flex align-items-start">
-            {isAddConnectionModalOpen && (
-                <AddCodeHostConnectionModal
-                    userID={user.id}
-                    kind={kind}
-                    name={name}
-                    hintFragment={hints[kind]}
-                    onDidAdd={onDidAdd}
-                    onDidCancel={toggleAddConnectionModal}
-                    onDidError={onDidError}
-                />
-            )}
             {service && isRemoveConnectionModalOpen && (
                 <RemoveCodeHostConnectionModal
                     id={service.id}
@@ -105,24 +85,29 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                 {service?.id ? (
                     <button
                         type="button"
-                        className="btn btn-link btn-sm text-danger px-0 shadow-none"
+                        className="btn btn-link btn-sm text-danger shadow-none"
                         onClick={toggleRemoveConnectionModal}
                     >
                         Remove
                     </button>
+                ) : oauthInFlight ? (
+                    <button type="button" className="btn btn-primary disabled" onClick={toAuthProvider}>
+                        <LoadingSpinner className="icon-inline ml-2 theme-dark" />
+                    </button>
                 ) : (
-                    <ButtonDropdown isOpen={dropdownOpen} toggle={toggleDropdown} direction="down">
-                        <DropdownToggle className="btn-sm" color="outline-secondary" caret={true}>
-                            Connect
-                        </DropdownToggle>
-                        <DropdownMenu right={true}>
-                            <DropdownItem toggle={false} onClick={toAuthProvider}>
-                                Connect with {name}
-                                {oauthInFlight && <LoadingSpinner className="icon-inline ml-2" />}
-                            </DropdownItem>
-                            <DropdownItem onClick={toggleAddConnectionModal}>Connect with access token</DropdownItem>
-                        </DropdownMenu>
-                    </ButtonDropdown>
+                    <button type="button" className="btn btn-primary" onClick={toAuthProvider}>
+                        Connect
+                    </button>
+                )}
+                {updateAuthRequired && !oauthInFlight && (
+                    <button type="button" className="btn btn-secondary" onClick={toAuthProvider}>
+                        Update
+                    </button>
+                )}
+                {updateAuthRequired && oauthInFlight && (
+                    <button type="button" className="btn btn-secondary disabled" onClick={toAuthProvider}>
+                        <LoadingSpinner className="icon-inline ml-2 theme-dark" />
+                    </button>
                 )}
             </div>
         </div>

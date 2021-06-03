@@ -26,7 +26,7 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
         allowSignup: true,
         batchChangesEnabled: true,
         codeIntelAutoIndexingEnabled: false,
-        externalServicesUserModeEnabled: true,
+        externalServicesUserMode: 'public',
         productResearchPageEnabled: true,
         csrfToken: 'qwerty',
         assetsRoot: '/.assets',

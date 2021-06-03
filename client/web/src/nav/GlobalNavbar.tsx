@@ -42,7 +42,6 @@ import { VersionContext } from '../schema/site.schema'
 import {
     PatternTypeProps,
     CaseSensitivityProps,
-    CopyQueryButtonProps,
     OnboardingTourProps,
     ParsedSearchQueryProps,
     isSearchContextSpecAvailable,
@@ -52,6 +51,7 @@ import {
 import { QueryState } from '../search/helpers'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { ThemePreferenceProps } from '../theme'
+import { userExternalServicesEnabledFromTags } from '../user/settings/cloud-ga'
 import { UserSettingsSidebarItems } from '../user/settings/UserSettingsSidebar'
 import { showDotComMarketing } from '../util/features'
 
@@ -71,7 +71,6 @@ interface Props
         Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
         PatternTypeProps,
         CaseSensitivityProps,
-        CopyQueryButtonProps,
         VersionContextProps,
         SearchContextInputProps,
         CodeMonitoringProps,
@@ -142,7 +141,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     // Design Refresh will include repositories section as part of the user navigation bar
     // This filter makes sure repositories feature flag is active.
     const showRepositorySection = useMemo(
-        () => !!props.userSettingsSideBarItems?.account.find(item => item.label === 'Repositories'),
+        () => !!props.userSettingsSideBarItems?.find(item => item.label === 'Repositories'),
         [props.userSettingsSideBarItems]
     )
 
@@ -303,13 +302,8 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                             />
                         </NavAction>
                         {props.authenticatedUser &&
-                            (window.context?.externalServicesUserModeEnabled ||
-                                props.authenticatedUser?.siteAdmin ||
-                                props.authenticatedUser?.tags?.some(
-                                    tag =>
-                                        tag === 'AllowUserExternalServicePublic' ||
-                                        tag === 'AllowUserExternalServicePrivate'
-                                )) && (
+                            (props.authenticatedUser.siteAdmin ||
+                                userExternalServicesEnabledFromTags(props.authenticatedUser.tags)) && (
                                 <NavAction>
                                     <StatusMessagesNavItem
                                         isSiteAdmin={props.authenticatedUser?.siteAdmin || false}
@@ -361,7 +355,11 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                         )}
                     </NavActions>
                 </NavBar>
-                {showSearchBox && <div className="d-flex w-100 flex-row px-3 py-2 border-bottom">{searchNavBar}</div>}
+                {showSearchBox && (
+                    <div className="w-100 px-3 pt-2">
+                        <div className="pb-2 border-bottom">{searchNavBar}</div>
+                    </div>
+                )}
             </>
         )
     }

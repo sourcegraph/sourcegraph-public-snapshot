@@ -5,6 +5,7 @@ import { useObservable } from './useObservable'
 
 export const REDESIGN_TOGGLE_KEY = 'isRedesignEnabled'
 export const REDESIGN_CLASS_NAME = 'theme-redesign'
+export const NOT_REDESIGN_CLASS_NAME = 'theme-classic'
 
 export const getIsRedesignEnabled = (): boolean => localStorage.getItem(REDESIGN_TOGGLE_KEY) === 'true'
 

@@ -190,6 +190,7 @@ export function listUserRepositories(
                             nodes {
                                 ...SiteAdminRepositoryFields
                             }
+                            totalCount(precise: true)
                             pageInfo {
                                 hasNextPage
                             }
@@ -251,6 +252,7 @@ function fetchAllRepositories(args: Partial<RepositoriesVariables>): Observable<
                 $notCloned: Boolean
                 $indexed: Boolean
                 $notIndexed: Boolean
+                $failedFetch: Boolean
             ) {
                 repositories(
                     first: $first
@@ -259,6 +261,7 @@ function fetchAllRepositories(args: Partial<RepositoriesVariables>): Observable<
                     notCloned: $notCloned
                     indexed: $indexed
                     notIndexed: $notIndexed
+                    failedFetch: $failedFetch
                 ) {
                     nodes {
                         ...SiteAdminRepositoryFields
@@ -277,6 +280,7 @@ function fetchAllRepositories(args: Partial<RepositoriesVariables>): Observable<
             notCloned: args.notCloned ?? true,
             indexed: args.indexed ?? true,
             notIndexed: args.notIndexed ?? true,
+            failedFetch: args.failedFetch ?? false,
             first: args.first ?? null,
             query: args.query ?? null,
         }

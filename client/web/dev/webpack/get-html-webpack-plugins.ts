@@ -13,8 +13,10 @@ export const getHTMLWebpackPlugins = (): Plugin[] => {
 
     // TODO: use `cmd/frontend/internal/app/ui/app.html` template to be consistent with the default production setup.
     const templateContent = ({ htmlWebpackPlugin }: TemplateParameter): string => `
-        <html>
+        <!DOCTYPE html>
+        <html lang="en">
             <head>
+                <meta charset="UTF-8">
                 <title>Sourcegraph Development build</title>
                 ${htmlWebpackPlugin.tags.headTags.toString()}
             </head>

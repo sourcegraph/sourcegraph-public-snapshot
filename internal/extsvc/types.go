@@ -249,16 +249,6 @@ type RepoID string
 // RepoIDType indicates the type of the RepoID.
 type RepoIDType string
 
-const (
-	// RepoIDExact indicates the RepoID is an exact match, e.g.
-	// "github.com/alice/repo" can only identify itself.
-	RepoIDExact RepoIDType = "exact"
-	// RepoIDPrefix indicates the RepoID is a prefix match, e.g. "//Sourcegraph/"
-	// can identify "//Sourcegraph/CoreApp", "//Sourcegraph/Backend" and everything
-	// starts with it.
-	RepoIDPrefix RepoIDType = "prefix"
-)
-
 // ParseConfig attempts to unmarshal the given JSON config into a configuration struct defined in the schema package.
 func ParseConfig(kind, config string) (cfg interface{}, _ error) {
 	switch strings.ToUpper(kind) {
@@ -424,4 +414,10 @@ func DecodeURN(urn string) (kind string, id int64) {
 		return "", 0
 	}
 	return fields[1], id
+}
+
+type OtherRepoMetadata struct {
+	// RelativePath is relative to ServiceID which is usually the host URL.
+	// Joining them gives you the clone url.
+	RelativePath string
 }

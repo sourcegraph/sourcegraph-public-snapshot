@@ -7,8 +7,9 @@ A new version of Sourcegraph is released every month on the **20th** (with patch
 needed). Check the [Sourcegraph blog](https://about.sourcegraph.com/blog) or the site admin updates page to learn about
 updates. We actively maintain the two most recent monthly releases of Sourcegraph.
 
-> :warning: **Regardless of your deployment type:** upgrade one version at a time, e.g. v3.26 --> v3.27 --> v3.28.
+> Warning: ⚠️ **Regardless of your deployment type:** upgrade one version at a time, e.g. v3.26 --> v3.27 --> v3.28.
 > <br>(Note that patches, e.g. vX.X.4 vs. vX.X.5 do not have to be adopted when moving between vX.X versions)
+
 
 **Always refer to this page before upgrading Sourcegraph,** as it comprehensively describes the steps needed to upgrade,
 and any manual migration steps you must perform.

@@ -14,7 +14,10 @@ import { SearchContextProps } from '../search'
 import { SearchContextsListTab } from './SearchContextsListTab'
 
 export interface SearchContextsListPageProps
-    extends Pick<SearchContextProps, 'fetchSearchContexts' | 'fetchAutoDefinedSearchContexts'> {
+    extends Pick<
+        SearchContextProps,
+        'fetchSearchContexts' | 'fetchAutoDefinedSearchContexts' | 'getUserSearchContextNamespaces'
+    > {
     location: H.Location
     history: H.History
     isSourcegraphDotCom: boolean

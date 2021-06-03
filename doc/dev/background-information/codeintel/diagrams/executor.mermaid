@@ -1,21 +1,21 @@
 sequenceDiagram
-  Executor        ->>+ Executor Proxy: Dequeue()
-  Executor Proxy  ->>+ Executor Queue: Dequeue()
-  Executor Queue  ->>+ Database: BeginTx()
-  Executor Queue -->>- Executor Proxy: job
-  Executor Proxy -->>- Executor: job
+  Executor          ->>+ Frontend (proxy): Dequeue()
+  Frontend (proxy)  ->>+ Executor queue: Dequeue()
+  Executor queue    ->>+ DB store: BeginTx()
+  Executor queue   -->>- Frontend (proxy): job
+  Frontend (proxy) -->>- Executor: job
 
   loop
-    Executor        ->>+ Executor Proxy: Heartbeat(self.id, [job.id])
-    Executor Proxy  ->>+ Executor Queue: Heartbeat(self.id, [job.id])
-    Executor Queue -->>- Executor Proxy: Ok
-    Executor Proxy -->>- Executor: Ok
+    Executor          ->>+ Frontend (proxy): Heartbeat(self.id, [job.id])
+    Frontend (proxy)  ->>+ Executor queue: Heartbeat(self.id, [job.id])
+    Executor queue   -->>- Frontend (proxy): Ok
+    Frontend (proxy) -->>- Executor: Ok
   end
 
-  Executor        ->>+ Executor Proxy: GitClone(job.repo, job.commit)
-  Executor Proxy  ->>+ Gitserver: GitClone(job.repo, job.commit)
-  Gitserver      -->>- Executor Proxy: ...
-  Executor Proxy -->>- Executor: ...
+  Executor          ->>+ Frontend (proxy): GitClone(job.repo, job.commit)
+  Frontend (proxy)  ->>+ Gitserver: GitClone(job.repo, job.commit)
+  Gitserver        -->>- Frontend (proxy): ...
+  Frontend (proxy) -->>- Executor: ...
 
   Executor        ->>+ Firecracker: setupFirecracker()
   Firecracker    -->>- Executor: vm
@@ -25,17 +25,24 @@ sequenceDiagram
     Firecracker  -->>- Executor: exit code, output
   end
 
+  loop dockerStep in job.srcCliSteps
+    Executor      ->>+ Firecracker: exec(vm.id, srcCliStep.command)
+    Firecracker  -->>- Executor: exit code, output
+  end
+
   Executor        ->>+ Firecracker: teardownFirecracker(vm.id)
   Firecracker    -->>- Executor: Ok
 
-  Executor        ->>+ Executor Proxy: SetLogContents(job.id, combined exec output)
-  Executor Proxy  ->>+ Executor Queue: SetLogContents(job.id, combined exec output)
-  Executor Queue -->>- Executor Proxy: Ok
-  Executor Proxy -->>- Executor: Ok
+  loop
+    Executor          ->>+ Frontend (proxy): AddExecutionLogEntry(job.id, combined exec output)
+    Frontend (proxy)  ->>+ Executor queue: AddExecutionLogEntry(job.id, combined exec output)
+    Executor queue   -->>- Frontend (proxy): Ok
+    Frontend (proxy) -->>- Executor: Ok
+  end
 
-  Executor        ->>+ Executor Proxy: MarkComplete(job.id)
-  Executor Proxy  ->>+ Executor Queue: MarkComplete(job.id)
-  Executor Queue  ->> Database: Commit()
-  Database       -->>- Executor Queue: Ok
-  Executor Queue -->>- Executor Proxy: Ok
-  Executor Proxy -->>- Executor: Ok
+  Executor          ->>+ Frontend (proxy): MarkComplete(job.id)
+  Frontend (proxy)  ->>+ Executor queue: MarkComplete(job.id)
+  Executor queue    ->>  DB store: Commit()
+  DB store         -->>- Executor queue: Ok
+  Executor queue   -->>- Frontend (proxy): Ok
+  Frontend (proxy) -->>- Executor: Ok

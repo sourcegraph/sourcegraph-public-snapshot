@@ -4,8 +4,9 @@
 
 import React from 'react'
 
-import { CaseSensitiveFuzzySearch } from '../../fuzzyFinder/CaseSensitiveFuzzySearch'
-import { FuzzySearch, FuzzySearchResult, SearchIndexing } from '../../fuzzyFinder/FuzzySearch'
+import { CaseInsensitiveFuzzySearch } from '../../fuzzyFinder/CaseInsensitiveFuzzySearch'
+import { FuzzySearch, FuzzySearchResult, SearchIndexing, SearchValue } from '../../fuzzyFinder/FuzzySearch'
+import { WordSensitiveFuzzySearch } from '../../fuzzyFinder/WordSensitiveFuzzySearch'
 
 import { FuzzyFinderProps, Indexing, FuzzyFSM } from './FuzzyFinder'
 import styles from './FuzzyModal.module.scss'
@@ -14,6 +15,11 @@ import { HighlightedLink } from './HighlightedLink'
 // Enable this URL query parameter to see debugging information like latency
 // numbers and the false-positive ratio for the bloom filter.
 const IS_DEBUG = window.location.href.toString().includes('fuzzyFinder=debug')
+
+// The default value of 80k filenames is picked from the following observations:
+// - case-insensitive search is slow but works in the torvalds/linux repo (72k files)
+// - case-insensitive search is almost unusable in the chromium/chromium repo (360k files)
+const DEFAULT_CASE_INSENSITIVE_FILE_COUNT_THRESHOLD = 80000
 
 // Cache for the last fuzzy query. This value is only used to avoid redoing the
 // full fuzzy search on every re-render when the user presses the down/up arrow
@@ -192,15 +198,12 @@ function renderFuzzyResult(props: FuzzyModalProps): RenderedFuzzyResult {
         }
     }
 
-    const usuallyFast =
-        "This step is usually fast unless it's a very large repository. The result is cached so you only have to wait for it once :)"
-
     switch (props.fsm.key) {
         case 'empty':
             handleEmpty(props).then(() => {}, onError('onEmpty'))
             return empty(<></>)
         case 'downloading':
-            return empty(<p>Downloading... {usuallyFast}</p>)
+            return empty(<p>Downloading...</p>)
         case 'failed':
             return empty(<p>Error: {props.fsm.errorMessage}</p>)
         case 'indexing': {
@@ -272,14 +275,6 @@ function renderFiles(props: FuzzyModalProps, search: FuzzySearch, indexing?: Sea
     }
 }
 
-function filesCacheKey(props: FuzzyModalProps): string {
-    return `/fuzzy-modal.files.${props.repoName}.${props.commitID}`
-}
-
-function openCaches(): Promise<Cache> {
-    return caches.open('fuzzy-modal')
-}
-
 async function later(): Promise<void> {
     return new Promise(resolve => setTimeout(() => resolve(), 0))
 }
@@ -295,57 +290,29 @@ async function continueIndexing(indexing: SearchIndexing): Promise<FuzzyFSM> {
     }
 }
 
-async function loadCachedIndex(props: FuzzyModalProps): Promise<FuzzyFSM | undefined> {
-    const cacheAvailable = 'caches' in self
-    if (!cacheAvailable) {
-        return Promise.resolve(undefined)
-    }
-    const cacheKey = filesCacheKey(props)
-    const cache = await openCaches()
-    const cacheRequest = new Request(cacheKey)
-    const fromCache = await cache.match(cacheRequest)
-    if (!fromCache) {
-        return undefined
-    }
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const filenames = JSON.parse(await fromCache.text())
-    return handleFilenames(filenames)
-}
-
-async function cacheFilenames(props: FuzzyModalProps, filenames: string[]): Promise<void> {
-    const cacheAvailable = 'caches' in self
-    if (!cacheAvailable) {
-        return Promise.resolve()
-    }
-    const cacheKey = filesCacheKey(props)
-    const cache = await openCaches()
-    await cache.put(cacheKey, new Response(JSON.stringify(filenames)))
-}
-
 async function handleEmpty(props: FuzzyModalProps): Promise<void> {
-    const fromCache = await loadCachedIndex(props)
-    if (fromCache) {
-        props.setFsm(fromCache)
-    } else {
-        props.setFsm({ key: 'downloading' })
-        try {
-            const filenames = await props.downloadFilenames()
-            props.setFsm(handleFilenames(filenames))
-            cacheFilenames(props, filenames).then(
-                () => {},
-                () => {}
-            )
-        } catch (error) {
-            props.setFsm({
-                key: 'failed',
-                errorMessage: JSON.stringify(error),
-            })
-        }
+    props.setFsm({ key: 'downloading' })
+    try {
+        const filenames = await props.downloadFilenames()
+        props.setFsm(handleFilenames(filenames))
+    } catch (error) {
+        props.setFsm({
+            key: 'failed',
+            errorMessage: JSON.stringify(error),
+        })
     }
+    cleanLegacyCacheStorage()
 }
 
 function handleFilenames(filenames: string[]): FuzzyFSM {
-    const indexing = CaseSensitiveFuzzySearch.fromSearchValuesAsync(filenames.map(file => ({ text: file })))
+    const values: SearchValue[] = filenames.map(file => ({ text: file }))
+    if (filenames.length < DEFAULT_CASE_INSENSITIVE_FILE_COUNT_THRESHOLD) {
+        return {
+            key: 'ready',
+            fuzzy: new CaseInsensitiveFuzzySearch(values),
+        }
+    }
+    const indexing = WordSensitiveFuzzySearch.fromSearchValuesAsync(values)
     if (indexing.key === 'ready') {
         return {
             key: 'ready',
@@ -356,4 +323,23 @@ function handleFilenames(filenames: string[]): FuzzyFSM {
         key: 'indexing',
         indexing,
     }
+}
+
+/**
+ * Removes unused cache storage from the initial implementation of the fuzzy finder.
+ *
+ * This method can be removed in the future. The cache storage was no longer
+ * needed after we landed an optimization in the backend that made it faster to
+ * download filenames.
+ */
+function cleanLegacyCacheStorage(): void {
+    const cacheAvailable = 'caches' in self
+    if (!cacheAvailable) {
+        return
+    }
+
+    caches.delete('fuzzy-modal').then(
+        () => {},
+        () => {}
+    )
 }

@@ -50,7 +50,13 @@ export const CodeHostSshPublicKey: React.FunctionComponent<CodeHostSshPublicKeyP
                     </button>
                 )}
             </div>
-            <textarea className="form-control text-monospace mb-3" rows={5} value={sshPublicKey} onChange={noop} />
+            <textarea
+                className="form-control text-monospace mb-3"
+                rows={5}
+                spellCheck="false"
+                value={sshPublicKey}
+                onChange={noop}
+            />
             {showInstructionsLink && (
                 <p>
                     <a href={configInstructionLinks[externalServiceKind]} target="_blank" rel="noopener">

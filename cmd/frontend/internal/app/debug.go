@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/debugproxies"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	srcprometheus "github.com/sourcegraph/sourcegraph/internal/src-prometheus"
@@ -155,7 +156,7 @@ func addJaeger(r *mux.Router) {
 // adminOnly is a HTTP middleware which only allows requests by admins.
 func adminOnly(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if err := backend.CheckCurrentUserIsSiteAdmin(r.Context()); err != nil {
+		if err := backend.CheckCurrentUserIsSiteAdmin(r.Context(), dbconn.Global); err != nil {
 			http.Error(w, err.Error(), http.StatusUnauthorized)
 			return
 		}

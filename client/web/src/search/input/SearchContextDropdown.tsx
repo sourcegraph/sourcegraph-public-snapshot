@@ -7,11 +7,14 @@ import Shepherd from 'shepherd.js'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
 import { CaseSensitivityProps, PatternTypeProps, SearchContextInputProps } from '..'
+import { AuthenticatedUser } from '../../auth'
 import { SubmitSearchParameters } from '../helpers'
 
+import { SearchContextCtaPrompt } from './SearchContextCtaPrompt'
 import { SearchContextMenu } from './SearchContextMenu'
 import { defaultTourOptions } from './tour-options'
 
@@ -19,12 +22,16 @@ export interface SearchContextDropdownProps
     extends Omit<SearchContextInputProps, 'showSearchContext'>,
         Pick<PatternTypeProps, 'patternType'>,
         Pick<CaseSensitivityProps, 'caseSensitive'>,
-        VersionContextProps {
+        VersionContextProps,
+        TelemetryProps {
+    isSourcegraphDotCom: boolean
+    authenticatedUser: AuthenticatedUser | null
     submitSearch: (args: SubmitSearchParameters) => void
     submitSearchOnSearchContextChange?: boolean
     query: string
     history: H.History
     isSearchOnboardingTourVisible: boolean
+    className?: string
 }
 
 const tourOptions: Shepherd.Tour.TourOptions = {
@@ -129,6 +136,10 @@ const useSearchContextHighlightTour = (
 
 export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdownProps> = props => {
     const {
+        isSourcegraphDotCom,
+        authenticatedUser,
+        hasUserAddedRepositories,
+        hasUserAddedExternalServices,
         history,
         patternType,
         caseSensitive,
@@ -142,6 +153,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         showSearchContextHighlightTourStep = false,
         submitSearchOnSearchContextChange = true,
         isSearchOnboardingTourVisible,
+        className,
     } = props
 
     const tour = useSearchContextHighlightTour(showSearchContextHighlightTourStep, isSearchOnboardingTourVisible)
@@ -189,38 +201,45 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
     )
 
     return (
-        <>
-            <Dropdown
-                isOpen={isOpen}
-                toggle={toggleOpen}
-                a11y={false} /* Override default keyboard events in reactstrap */
+        <Dropdown
+            isOpen={isOpen}
+            toggle={toggleOpen}
+            a11y={false} /* Override default keyboard events in reactstrap */
+            className={classNames('search-context-dropdown ', className)}
+        >
+            <DropdownToggle
+                className={classNames(
+                    'search-context-dropdown__button',
+                    'dropdown-toggle',
+                    'test-search-context-dropdown',
+                    {
+                        'search-context-dropdown__button--open': isOpen,
+                    }
+                )}
+                color="link"
+                disabled={isDisabled}
+                data-tooltip={disabledTooltipText}
             >
-                <DropdownToggle
-                    className={classNames(
-                        'search-context-dropdown__button',
-                        'dropdown-toggle',
-                        'test-search-context-dropdown',
-                        {
-                            'search-context-dropdown__button--open': isOpen,
-                        }
+                <code className="search-context-dropdown__button-content test-selected-search-context-spec">
+                    <span className="search-filter-keyword">context:</span>
+                    {selectedSearchContextSpec?.startsWith('@') ? (
+                        <>
+                            <span className="search-keyword">@</span>
+                            {selectedSearchContextSpec?.slice(1)}
+                        </>
+                    ) : (
+                        selectedSearchContextSpec
                     )}
-                    color="link"
-                    disabled={isDisabled}
-                    data-tooltip={disabledTooltipText}
-                >
-                    <code className="search-context-dropdown__button-content test-selected-search-context-spec">
-                        <span className="search-filter-keyword">context:</span>
-                        {selectedSearchContextSpec?.startsWith('@') ? (
-                            <>
-                                <span className="search-keyword">@</span>
-                                {selectedSearchContextSpec?.slice(1)}
-                            </>
-                        ) : (
-                            selectedSearchContextSpec
-                        )}
-                    </code>
-                </DropdownToggle>
-                <DropdownMenu>
+                </code>
+            </DropdownToggle>
+            <DropdownMenu positionFixed={true} className="search-context-dropdown__menu">
+                {isSourcegraphDotCom && !hasUserAddedRepositories ? (
+                    <SearchContextCtaPrompt
+                        telemetryService={props.telemetryService}
+                        authenticatedUser={authenticatedUser}
+                        hasUserAddedExternalServices={hasUserAddedExternalServices}
+                    />
+                ) : (
                     <SearchContextMenu
                         {...props}
                         selectSearchContextSpec={selectSearchContextSpec}
@@ -228,9 +247,8 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
                         fetchSearchContexts={fetchSearchContexts}
                         closeMenu={toggleOpen}
                     />
-                </DropdownMenu>
-            </Dropdown>
-            <div className="search-context-dropdown__separator" />
-        </>
+                )}
+            </DropdownMenu>
+        </Dropdown>
     )
 }

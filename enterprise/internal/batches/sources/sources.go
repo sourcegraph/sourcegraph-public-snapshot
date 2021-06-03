@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -387,7 +388,7 @@ func extractCloneURL(ctx context.Context, s *database.ExternalServiceStore, repo
 	for _, svc := range svcs {
 		// build the clone url using the external service config instead of using
 		// the source CloneURL field
-		cloneURL, err := types.RepoCloneURL(svc.Kind, svc.Config, repo)
+		cloneURL, err := repos.CloneURL(svc.Kind, svc.Config, repo)
 		if err != nil {
 			return "", err
 		}

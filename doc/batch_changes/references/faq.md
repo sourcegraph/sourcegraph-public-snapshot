@@ -1,3 +1,4 @@
+# FAQ
 
 This is a compilation of some common questions about Batch Changes.
 
@@ -27,20 +28,28 @@ Note: If you run memory-intensive jobs, you might need to reduce the number of p
 
 ### My batch change does not open changesets on all the repositories it should. Why?
 - Do you have enough permissions? Batch Changes will error on the repositories you don’t have access to. See [Repository permissions for Batch Changes](../explanations/permissions_in_batch_changes.md).
-- Does your `repositoriesMatchingQuery` contain all the necessary flags? If you copied the query from the sourcegraph UI, note that some flags are represented as buttons (case sensitivity, regex, structural search), and do not appear in the query unless the experimental [`copyQueryButton`](https://github.com/sourcegraph/sourcegraph/pull/18317) feature toggle is enabled.
+- Does your `repositoriesMatchingQuery` contain all the necessary flags? If you copied the query from the sourcegraph UI, note that some flags are represented as buttons (case sensitivity, regex, structural search), and do not appear in the query unless you use the copy query button.
 
 ### Can I create tickets or issues along with Batch Changes?
 Batch Changes does not support a declarative syntax for issues or tickets.
 However, [steps](../references/batch_spec_yaml_reference.md#steps-run) can be used to run any container. Some users have built scripts to create tickets at each apply:
 
-- [Jira tickets](https://github.com/sourcegraph/campaign-examples/tree/master/jira-tickets)
+- [Jira tickets](https://github.com/sourcegraph/batch-change-examples/tree/main/jira-tickets)
 - [GitHub issues](https://github.com/sourcegraph/batch-change-examples/tree/main/github-issues)
 
 ### What happens to the preview page if the batch spec is not applied?
 Unapplied batch specs are removed from the database after 7 days.
 
 ### Can I pull containers from private container registries in a batch change?
-When [executing a batch spec](../explanations/how_src_executes_a_batch_spec.md), `src` will attempt to pull missing docker images. If you are logged into the private container registry, it will pull from it.
+Yes. When [executing a batch spec](../explanations/how_src_executes_a_batch_spec.md), `src` will attempt to pull missing docker images. If you are logged into the private container registry, it will pull from it. Also see [`steps.container`](batch_spec_yaml_reference.md#steps-container). Within the spec, if `docker pull` points to your private registry from the command line, it will work as expected. 
+
+However, outside of the spec, `src` pulls an image from Docker Hub when running in volume workspace mode. This is the default on macOS, so you will need to use one of the following three workarounds:
+
+1. Run `src` with the `-workspace bind` flag. This will be slower, but will prevent `src` from pulling the iamge.
+2. If you have a way of replicating trusted images onto your private registry, you can replicate [our image](https://hub.docker.com/r/sourcegraph/src-batch-change-volume-workspace) to your private registry. Ensure that the replicated image has the same tags, or this will fail.
+3. If you have the ability to ad hoc pull images from public Docker Hub, you can run `docker pull -a sourcegraph/src-batch-change-volume-workspace` to pull the image and its tags.
+
+> NOTE: If you choose to replicate or pull the Docker image, you should ensure that it is frequently synchronized, as a new tag is pushed each time `src` is released.
 
 ### What tool can I use for changing/refactoring `<programming-language>`?
 

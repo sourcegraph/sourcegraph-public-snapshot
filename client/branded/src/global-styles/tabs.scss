@@ -39,7 +39,7 @@
         letter-spacing: normal;
         font-size: 0.75rem;
         margin: 0 0.375rem;
-        padding: 0;
+        padding: 0 0.125rem;
         color: var(--body-color);
         text-transform: none;
         display: inline-flex;
@@ -69,6 +69,10 @@
             font-weight: 700;
         }
 
+        &:first-of-type {
+            margin-left: 0;
+        }
+
         &:focus-visible {
             outline: none;
             box-shadow: none;
@@ -84,7 +88,7 @@
 
     .tablist-wrapper {
         min-height: 2rem;
-        border-bottom: 1px solid var(--border-color);
+        border-bottom: 1px solid var(--border-color-2);
         padding-bottom: 0;
         display: flex;
         align-items: stretch;

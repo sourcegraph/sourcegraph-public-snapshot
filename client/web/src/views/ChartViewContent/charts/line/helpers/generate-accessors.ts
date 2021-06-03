@@ -1,5 +1,6 @@
 import { ChartAxis } from 'sourcegraph'
 
+import { EMPTY_DATA_POINT_VALUE } from '../constants'
 import { Accessors } from '../types'
 
 /**
@@ -26,7 +27,9 @@ export function generateAccessors<Datum extends object>(
             // fix that when we will have a value type for LineChartContent<D> generic
             const key = (dataKey as unknown) as keyof Datum
 
-            accessors[key] = data => +data[dataKey]
+            // If we get EMPTY_DATA_POINT_VALUE we should omit the '+' number casting
+            accessors[key] = data =>
+                data[dataKey] === EMPTY_DATA_POINT_VALUE ? EMPTY_DATA_POINT_VALUE : +data[dataKey]
 
             return accessors
         }, {} as Record<keyof Datum, (data: Datum) => any>),

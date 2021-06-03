@@ -1,12 +1,18 @@
 .sidebar-section {
+    isolation: isolate; // Prevent the z-index below from leaking out of this container
+
     &__collapse-button {
         display: flex;
         align-items: center;
         text-align: left;
-        width: 100%;
+        width: calc(100% + 0.5rem); // Take full width + account for negative margin
         border: none;
         padding: 0.25rem;
         margin: 0 -0.25rem;
+
+        // Force the button's box-shadow to always show over the sibling element's border
+        position: relative;
+        z-index: 1;
     }
 
     &__list {
@@ -20,7 +26,7 @@
 
     &__search-box {
         display: block;
-        margin: 0.5rem 0;
+        margin: 0.25rem 0;
     }
 
     &__list-item {

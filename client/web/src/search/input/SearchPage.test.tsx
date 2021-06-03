@@ -7,7 +7,11 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
 
 import { SearchPatternType } from '../../graphql-operations'
-import { mockFetchAutoDefinedSearchContexts, mockFetchSearchContexts } from '../../searchContexts/testHelpers'
+import {
+    mockFetchAutoDefinedSearchContexts,
+    mockFetchSearchContexts,
+    mockGetUserSearchContextNamespaces,
+} from '../../searchContexts/testHelpers'
 import { ThemePreference } from '../../theme'
 import { authUser } from '../panels/utils'
 
@@ -48,7 +52,6 @@ describe('SearchPage', () => {
         setCaseSensitivity: () => undefined,
         platformContext: {} as any,
         keyboardShortcuts: [],
-        copyQueryButton: false,
         versionContext: undefined,
         showSearchContext: false,
         showSearchContextManagement: false,
@@ -65,6 +68,9 @@ describe('SearchPage', () => {
         fetchRecentFileViews: () => of({ nodes: [], totalCount: 0, pageInfo: { hasNextPage: false, endCursor: null } }),
         fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
         fetchSearchContexts: mockFetchSearchContexts,
+        hasUserAddedRepositories: false,
+        hasUserAddedExternalServices: false,
+        getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
     }
 
     it('should not show home panels if on Sourcegraph.com and showEnterpriseHomePanels disabled', () => {

@@ -25,6 +25,7 @@ import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import {
+    NOT_REDESIGN_CLASS_NAME,
     REDESIGN_CLASS_NAME,
     getIsRedesignEnabled,
     REDESIGN_TOGGLE_KEY,
@@ -32,6 +33,7 @@ import {
 
 import { authenticatedUser, AuthenticatedUser } from './auth'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { queryExternalServices } from './components/externalServices/backend'
 import { FeedbackText } from './components/FeedbackText'
 import { HeroPage } from './components/HeroPage'
 import { RouterLinkOrAnchor } from './components/RouterLinkOrAnchor'
@@ -61,7 +63,6 @@ import {
     isSearchContextSpecAvailable,
 } from './search'
 import {
-    search,
     fetchSavedSearches,
     fetchRecentSearches,
     fetchRecentFileViews,
@@ -72,6 +73,7 @@ import {
     createSearchContext,
     updateSearchContext,
     deleteSearchContext,
+    getUserSearchContextNamespaces,
 } from './search/backend'
 import { QueryState } from './search/helpers'
 import { aggregateStreamingSearch } from './search/stream'
@@ -155,11 +157,6 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      */
     searchCaseSensitivity: boolean
 
-    /**
-     * Whether to display the copy query button.
-     */
-    copyQueryButton: boolean
-
     /*
      * The version context the instance is in. If undefined, it means no version context is selected.
      */
@@ -185,8 +182,8 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     showSearchContextManagement: boolean
     selectedSearchContextSpec?: string
     defaultSearchContextSpec: string
-    hasUserDefinedContexts: boolean
     hasUserAddedRepositories: boolean
+    hasUserAddedExternalServices: boolean
 
     /**
      * Whether globbing is enabled for filters.
@@ -295,7 +292,6 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             parsedSearchQuery: parsedSearchURL.query || '',
             searchPatternType: urlPatternType,
             searchCaseSensitivity: urlCase,
-            copyQueryButton: false,
             versionContext: resolvedVersionContext,
             availableVersionContexts,
             previousVersionContext,
@@ -305,7 +301,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             showSearchContextManagement: false,
             defaultSearchContextSpec: 'global', // global is default for now, user will be able to change this at some point
             hasUserAddedRepositories: false,
-            hasUserDefinedContexts: false,
+            hasUserAddedExternalServices: false,
             showEnterpriseHomePanels: false,
             globbing: false,
             showMultilineSearchConsole: false,
@@ -374,24 +370,22 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             combineLatest([this.userRepositoriesUpdates, authenticatedUser])
                 .pipe(
                     switchMap(([, authenticatedUser]) =>
-                        authenticatedUser ? listUserRepositories({ id: authenticatedUser.id, first: 1 }) : of(null)
+                        authenticatedUser
+                            ? combineLatest([
+                                  listUserRepositories({ id: authenticatedUser.id, first: 1 }),
+                                  queryExternalServices({ namespace: authenticatedUser.id, first: 1, after: null }),
+                              ])
+                            : of(null)
                     ),
                     catchError(error => [asError(error)])
                 )
                 .subscribe(result => {
-                    if (!isErrorLike(result)) {
-                        const hasUserAddedRepositories = result !== null && result.nodes.length > 0
-                        this.setState({ hasUserAddedRepositories })
-                    }
-                })
-        )
-
-        this.subscriptions.add(
-            fetchSearchContexts({ first: 1 })
-                .pipe(catchError(error => [asError(error)]))
-                .subscribe(result => {
-                    if (!isErrorLike(result)) {
-                        this.setState({ hasUserDefinedContexts: result.totalCount > 0 })
+                    if (!isErrorLike(result) && result !== null) {
+                        const [userRepositoriesResult, externalServicesResult] = result
+                        this.setState({
+                            hasUserAddedRepositories: userRepositoriesResult.nodes.length > 0,
+                            hasUserAddedExternalServices: externalServicesResult.nodes.length > 0,
+                        })
                     }
                 })
         )
@@ -457,6 +451,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         }
 
         document.documentElement.classList.toggle(REDESIGN_CLASS_NAME, getIsRedesignEnabled())
+        document.documentElement.classList.toggle(NOT_REDESIGN_CLASS_NAME, !getIsRedesignEnabled())
     }
 
     public render(): React.ReactFragment | null {
@@ -513,7 +508,6 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     navbarSearchQueryState={this.state.navbarSearchQueryState}
                                     onNavbarQueryChange={this.onNavbarQueryChange}
                                     fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
-                                    searchRequest={search}
                                     parsedSearchQuery={this.state.parsedSearchQuery}
                                     setParsedSearchQuery={this.setParsedSearchQuery}
                                     patternType={this.state.searchPatternType}
@@ -524,7 +518,6 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     setVersionContext={this.setVersionContext}
                                     availableVersionContexts={this.state.availableVersionContexts}
                                     previousVersionContext={this.state.previousVersionContext}
-                                    copyQueryButton={this.state.copyQueryButton}
                                     // Extensions
                                     platformContext={this.platformContext}
                                     extensionsController={this.extensionsController}
@@ -532,10 +525,13 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     isSourcegraphDotCom={window.context.sourcegraphDotComMode}
                                     showRepogroupHomepage={this.state.showRepogroupHomepage}
                                     showOnboardingTour={this.state.showOnboardingTour}
-                                    showSearchContext={this.canShowSearchContext()}
+                                    showSearchContext={this.state.showSearchContext}
+                                    hasUserAddedRepositories={this.state.hasUserAddedRepositories}
+                                    hasUserAddedExternalServices={this.state.hasUserAddedExternalServices}
                                     showSearchContextManagement={this.state.showSearchContextManagement}
                                     selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
                                     setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}
+                                    getUserSearchContextNamespaces={getUserSearchContextNamespaces}
                                     fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
                                     fetchSearchContexts={fetchSearchContexts}
                                     fetchSearchContext={fetchSearchContext}
@@ -555,7 +551,9 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     fetchRecentSearches={fetchRecentSearches}
                                     fetchRecentFileViews={fetchRecentFileViews}
                                     streamSearch={aggregateStreamingSearch}
-                                    onUserRepositoriesUpdate={this.onUserRepositoriesUpdate}
+                                    onUserExternalServicesOrRepositoriesUpdate={
+                                        this.onUserExternalServicesOrRepositoriesUpdate
+                                    }
                                 />
                             )}
                         />
@@ -612,15 +610,18 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         await extensionHostAPI.setVersionContext(resolvedVersionContext)
     }
 
-    private onUserRepositoriesUpdate = (userRepoCount: number): void => {
-        this.setState({ hasUserAddedRepositories: userRepoCount > 0 })
+    private onUserExternalServicesOrRepositoriesUpdate = (
+        externalServicesCount: number,
+        userRepoCount: number
+    ): void => {
+        this.setState({
+            hasUserAddedExternalServices: externalServicesCount > 0,
+            hasUserAddedRepositories: userRepoCount > 0,
+        })
     }
 
-    private canShowSearchContext = (): boolean =>
-        this.state.showSearchContext && (this.state.hasUserAddedRepositories || this.state.hasUserDefinedContexts)
-
     private getSelectedSearchContextSpec = (): string | undefined =>
-        this.canShowSearchContext() ? this.state.selectedSearchContextSpec : undefined
+        this.state.showSearchContext ? this.state.selectedSearchContextSpec : undefined
 
     private setSelectedSearchContextSpec = (spec: string): void => {
         const { defaultSearchContextSpec } = this.state

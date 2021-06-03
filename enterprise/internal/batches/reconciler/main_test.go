@@ -4,14 +4,9 @@ import (
 	"time"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
-
-func init() {
-	dbtesting.DBNameSuffix = "batchchangesreconcilerdb"
-}
 
 func buildGithubPR(now time.Time, externalState btypes.ChangesetExternalState) *github.PullRequest {
 	state := string(externalState)

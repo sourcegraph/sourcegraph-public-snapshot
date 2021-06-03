@@ -44,13 +44,7 @@ import { ActionItemsBarProps, useWebActionItems } from '../extensions/components
 import { ExternalLinkFields, RepositoryFields } from '../graphql-operations'
 import { IS_CHROME } from '../marketing/util'
 import { Settings } from '../schema/settings.schema'
-import {
-    CaseSensitivityProps,
-    CopyQueryButtonProps,
-    PatternTypeProps,
-    SearchContextProps,
-    searchQueryForRepoRevision,
-} from '../search'
+import { CaseSensitivityProps, PatternTypeProps, SearchContextProps, searchQueryForRepoRevision } from '../search'
 import { QueryState } from '../search/helpers'
 import { browserExtensionInstalled } from '../tracking/analyticsUtils'
 import { RouteDescriptor } from '../util/contributions'
@@ -83,7 +77,6 @@ export interface RepoContainerContext
         ActivationProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        CopyQueryButtonProps,
         VersionContextProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         BreadcrumbSetters,
@@ -119,7 +112,6 @@ interface RepoContainerProps
         ExtensionAlertProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        CopyQueryButtonProps,
         VersionContextProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         BreadcrumbSetters,
@@ -399,12 +391,19 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
     }
 
     return (
-        <div className="repo-container test-repo-container w-100 d-flex flex-column">
+        <div className="repo-container test-repo-container w-100 d-flex flex-column action-items">
             {!isErrorLike(props.settingsCascade.final) &&
                 props.settingsCascade.final?.experimentalFeatures?.fuzzyFinder &&
                 resolvedRevisionOrError &&
                 !isErrorLike(resolvedRevisionOrError) && (
-                    <FuzzyFinder repoName={repoName} commitID={resolvedRevisionOrError.commitID} />
+                    <FuzzyFinder
+                        repoName={repoName}
+                        commitID={resolvedRevisionOrError.commitID}
+                        caseInsensitiveFileCountThreshold={
+                            props.settingsCascade.final?.experimentalFeatures
+                                ?.fuzzyFinderCaseInsensitiveFileCountThreshold
+                        }
+                    />
                 )}
             {showExtensionAlert && (
                 <InstallBrowserExtensionAlert

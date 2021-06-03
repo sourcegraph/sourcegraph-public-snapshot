@@ -171,7 +171,7 @@ func (r *changesetResolver) BatchChanges(ctx context.Context, args *graphqlbacke
 		opts.Cursor = cursor
 	}
 
-	authErr := backend.CheckCurrentUserIsSiteAdmin(ctx)
+	authErr := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB())
 	if authErr != nil && authErr != backend.ErrMustBeSiteAdmin {
 		return nil, err
 	}

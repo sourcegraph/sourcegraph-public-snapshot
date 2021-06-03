@@ -34,7 +34,6 @@ const gqlSearchQuery = `query Search(
 			results {
 				__typename
 				... on FileMatch {
-					resource
 					limitHit
 					lineMatches {
 						preview

@@ -2,22 +2,25 @@ import { storiesOf } from '@storybook/react'
 import { createMemoryHistory } from 'history'
 import React from 'react'
 
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+
 import { WebStory } from '../../components/WebStory'
 import { SearchPatternType } from '../../graphql-operations'
-import { mockFetchAutoDefinedSearchContexts, mockFetchSearchContexts } from '../../searchContexts/testHelpers'
+import {
+    mockFetchAutoDefinedSearchContexts,
+    mockFetchSearchContexts,
+    mockGetUserSearchContextNamespaces,
+} from '../../searchContexts/testHelpers'
 
 import { SearchBox, SearchBoxProps } from './SearchBox'
 
 const { add } = storiesOf('web/search/input/SearchBox', module)
-    .addParameters({ chromatic: { viewports: [700] } })
-    .addDecorator(story => (
-        <div className="p-3" style={{ height: 'calc(34px + 1rem + 1rem)', display: 'flex' }}>
-            {story()}
-        </div>
-    ))
+    .addParameters({ chromatic: { viewports: [575, 700] } })
+    .addDecorator(story => <div className="w-100 d-flex">{story()}</div>)
 
 const history = createMemoryHistory()
 const defaultProps: SearchBoxProps = {
+    telemetryService: NOOP_TELEMETRY_SERVICE,
     location: history.location,
     history,
     settingsCascade: {
@@ -41,12 +44,15 @@ const defaultProps: SearchBoxProps = {
     selectedSearchContextSpec: 'global',
     setSelectedSearchContextSpec: () => {},
     defaultSearchContextSpec: 'global',
-    copyQueryButton: false,
     onChange: () => {},
     onSubmit: () => {},
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
     isSearchOnboardingTourVisible: false,
+    hasUserAddedRepositories: false,
+    authenticatedUser: null,
+    hasUserAddedExternalServices: false,
+    getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
 }
 
 add(
@@ -88,16 +94,6 @@ add(
     () => (
         <WebStory>
             {props => <SearchBox {...defaultProps} caseSensitive={true} isLightTheme={props.isLightTheme} />}
-        </WebStory>
-    ),
-    {}
-)
-
-add(
-    'with copy query button',
-    () => (
-        <WebStory>
-            {props => <SearchBox {...defaultProps} copyQueryButton={true} isLightTheme={props.isLightTheme} />}
         </WebStory>
     ),
     {}
@@ -148,6 +144,63 @@ add(
                     isLightTheme={props.isLightTheme}
                     queryState={{ query: 'hello context:global' }}
                     selectedSearchContextSpec="@username"
+                />
+            )}
+        </WebStory>
+    ),
+    {}
+)
+
+add(
+    'with version contexts, none selected',
+    () => (
+        <WebStory>
+            {props => (
+                <SearchBox
+                    {...defaultProps}
+                    showSearchContext={true}
+                    isLightTheme={props.isLightTheme}
+                    queryState={{ query: 'hello' }}
+                    availableVersionContexts={[{ name: 'test version context', revisions: [] }]}
+                />
+            )}
+        </WebStory>
+    ),
+    {}
+)
+
+add(
+    'with version contexts, one selected',
+    () => (
+        <WebStory>
+            {props => (
+                <SearchBox
+                    {...defaultProps}
+                    showSearchContext={true}
+                    isLightTheme={props.isLightTheme}
+                    queryState={{ query: 'hello' }}
+                    versionContext="test version context"
+                    availableVersionContexts={[{ name: 'test version context', revisions: [] }]}
+                />
+            )}
+        </WebStory>
+    ),
+    {}
+)
+
+add(
+    'with very long context names',
+    () => (
+        <WebStory>
+            {props => (
+                <SearchBox
+                    {...defaultProps}
+                    showSearchContext={true}
+                    isLightTheme={props.isLightTheme}
+                    queryState={{ query: 'hello' }}
+                    selectedSearchContextSpec="@username/verylongcontextname"
+                    versionContext="test version context very long"
+                    availableVersionContexts={[{ name: 'test version context very long', revisions: [] }]}
                 />
             )}
         </WebStory>

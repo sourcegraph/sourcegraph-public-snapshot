@@ -1,7 +1,10 @@
 package dbtest
 
 import (
+	crand "crypto/rand"
 	"database/sql"
+	"encoding/binary"
+	"errors"
 	"hash/fnv"
 	"math/rand"
 	"net/url"
@@ -9,8 +12,8 @@ import (
 	"strconv"
 	"sync"
 	"testing"
-	"time"
 
+	"github.com/jackc/pgconn"
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
@@ -40,6 +43,19 @@ func NewTx(t testing.TB, db *sql.DB) *sql.Tx {
 	return tx
 }
 
+// Use a shared, locked RNG to avoid issues with multiple concurrent tests getting
+// the same random database number (unlikely, but has been observed).
+// Use crypto/rand.Read() to use an OS source of entropy, since, against all odds,
+// using nanotime was causing conflicts.
+var rng = rand.New(rand.NewSource(func() int64 {
+	b := [8]byte{}
+	if _, err := crand.Read(b[:]); err != nil {
+		panic(err)
+	}
+	return int64(binary.LittleEndian.Uint64(b[:]))
+}()))
+var rngLock sync.Mutex
+
 // NewDB returns a connection to a clean, new temporary testing database
 // with the same schema as Sourcegraph's production Postgres database.
 func NewDB(t testing.TB, dsn string) *sql.DB {
@@ -60,14 +76,16 @@ func NewDB(t testing.TB, dsn string) *sql.DB {
 
 	initTemplateDB(t, config)
 
-	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
+	rngLock.Lock()
 	dbname := "sourcegraph-test-" + strconv.FormatUint(rng.Uint64(), 10)
+	rngLock.Unlock()
 
 	db := dbConn(t, config)
 	dbExec(t, db, `CREATE DATABASE `+pq.QuoteIdentifier(dbname)+` TEMPLATE `+pq.QuoteIdentifier(templateDBName()))
 
 	config.Path = "/" + dbname
 	testDB := dbConn(t, config)
+	testDB.SetMaxOpenConns(3)
 
 	t.Cleanup(func() {
 		defer db.Close()
@@ -96,8 +114,18 @@ func initTemplateDB(t testing.TB, config *url.URL) {
 	templateOnce.Do(func() {
 		templateName := templateDBName()
 		db := dbConn(t, config)
-		dbExec(t, db, `DROP DATABASE IF EXISTS `+pq.QuoteIdentifier(templateName))
-		dbExec(t, db, `CREATE DATABASE `+pq.QuoteIdentifier(templateName))
+		_, err := db.Exec(`CREATE DATABASE ` + pq.QuoteIdentifier(templateName))
+		if err != nil {
+			pgErr := &pgconn.PgError{}
+			if errors.As(err, &pgErr) && pgErr.Code == "42P04" {
+				// Ignore database already exists errors.
+				// Postgres doesn't support CREATE DATABASE IF NOT EXISTS,
+				// so we just try to create it, and ignore the error if it's
+				// because the database already exists.
+			} else {
+				t.Fatalf("Failed to create database: %s", err)
+			}
+		}
 		defer db.Close()
 
 		cfgCopy := *config
@@ -113,11 +141,11 @@ func initTemplateDB(t testing.TB, config *url.URL) {
 			if err != nil {
 				t.Fatalf("failed to construct migrations: %s", err)
 			}
+			defer m.Close()
 			if err = dbconn.DoMigrate(m); err != nil {
 				t.Fatalf("failed to apply migrations: %s", err)
 			}
 		}
-		dbExec(t, db, killClientConnsQuery, templateName)
 	})
 }
 

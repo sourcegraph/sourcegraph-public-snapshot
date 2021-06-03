@@ -350,7 +350,7 @@ func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 	case extsvc.TypePerforce:
 		r.Metadata = new(perforce.Depot)
 	case extsvc.TypeOther:
-		r.Metadata = new(types.OtherRepoMetadata)
+		r.Metadata = new(extsvc.OtherRepoMetadata)
 	default:
 		return nil
 	}

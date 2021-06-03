@@ -7,11 +7,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -261,4 +265,38 @@ type MockExternalServicesLister struct {
 
 func (m MockExternalServicesLister) List(ctx context.Context, args database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 	return m.list(ctx, args)
+}
+
+func TestGrantedScopes(t *testing.T) {
+	rcache.SetupForTest(t)
+	cache := rcache.New("TestGrantedScopes")
+	ctx := context.Background()
+
+	want := []string{"repo"}
+	github.MockGetAuthenticatedUserOAuthScopes = func(ctx context.Context) ([]string, error) {
+		return want, nil
+	}
+
+	// Run twice to use cache
+	for i := 0; i < 2; i++ {
+		have, err := GrantedScopes(ctx, cache, extsvc.KindGitHub, `{"token": "abc"}`)
+		if err != nil {
+			t.Fatal(i, err)
+		}
+		if diff := cmp.Diff(want, have); diff != "" {
+			t.Fatal(i, diff)
+		}
+	}
+}
+
+func TestHashToken(t *testing.T) {
+	// Sanity check output of hash function
+	h, err := hashToken("token")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "47a1037c"
+	if want != h {
+		t.Fatalf("Want %q, got %q", want, h)
+	}
 }

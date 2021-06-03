@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/dghubble/gologin/github"
 	"github.com/inconshreveable/log15"
@@ -18,11 +19,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	esauth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	githubsvc "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -123,8 +124,33 @@ func (s *sessionIssuerHelper) CreateCodeHostConnection(ctx context.Context, toke
 		return "Could not read GitHub user from callback request.", err
 	}
 
-	err = database.GlobalExternalServices.Create(ctx, conf.Get,
-		&types.ExternalService{
+	// We have a special flow enabled when a user added code host has been created
+	// without 'repo` scope and we then enable private code on the instance. In this
+	// case we allow the user to request the additional scope. This means that at
+	// this point we may already have a code host and we just need to update the
+	// token with the new one.
+
+	tx, err := database.GlobalExternalServices.Transact(ctx)
+	if err != nil {
+		return
+	}
+	defer func() {
+		err = tx.Done(err)
+		safeErrMsg = "Error committing transaction"
+	}()
+
+	services, err := tx.List(ctx, database.ExternalServicesListOptions{
+		NamespaceUserID: actor.UID,
+		Kinds:           []string{extsvc.KindGitHub},
+	})
+	if err != nil {
+		return "Error checking for existing external service", err
+	}
+	var svc *types.ExternalService
+	now := time.Now()
+	if len(services) == 0 {
+		// Nothing found, create new one
+		svc = &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: fmt.Sprintf("GitHub (%s)", deref(ghUser.Login)),
 			Config: fmt.Sprintf(`
@@ -135,8 +161,23 @@ func (s *sessionIssuerHelper) CreateCodeHostConnection(ctx context.Context, toke
 }
 `, p.ServiceID, token.AccessToken),
 			NamespaceUserID: actor.UID,
-		},
-	)
+			CreatedAt:       now,
+			UpdatedAt:       now,
+		}
+	} else if len(services) > 1 {
+		return "Multiple services of same kind found for user", errors.New("multiple services of same kind found for user")
+	} else {
+		// We have an existing service, update it
+		svc = services[0]
+		newConfig, err := jsonc.Edit(svc.Config, token.AccessToken, "token")
+		if err != nil {
+			return "Error updating OAuth token", err
+		}
+		svc.Config = newConfig
+		svc.UpdatedAt = now
+	}
+
+	err = tx.Upsert(ctx, svc)
 	if err != nil {
 		return "Could not create code host connection.", err
 	}
