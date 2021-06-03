@@ -55,27 +55,39 @@ const BatchChangesChangelogAlert: React.FunctionComponent = () => (
                 <ul className="text-muted mb-0 pl-3">
                     <li>
                         Commenting on changesets{' '}
-                        <Link to="https://docs.sourcegraph.com/batch_changes/how-tos/bulk_operations_on_changesets">
+                        <a
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            href="https://docs.sourcegraph.com/batch_changes/how-tos/bulk_operations_on_changesets"
+                        >
                             is now supported
-                        </Link>
+                        </a>
                         .
                     </li>
                 </ul>
                 <ul className="text-muted mb-0 pl-3">
                     <li>
                         Steps in batch specs can be run conditionally using{' '}
-                        <Link to="https://docs.sourcegraph.com/batch_changes/references/batch_spec_yaml_reference#steps-if">
+                        <a
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            href="https://docs.sourcegraph.com/batch_changes/references/batch_spec_yaml_reference#steps-if"
+                        >
                             the `if:` property
-                        </Link>
+                        </a>
                         .
                     </li>
                 </ul>
                 <ul className="text-muted mb-0 pl-3">
                     <li>
                         User and site credentials can be encrypted in the database by adding a key to{' '}
-                        <Link to="https://docs.sourcegraph.com/admin/config/encryption">
+                        <a
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            href="https://docs.sourcegraph.com/admin/config/encryption"
+                        >
                             the `batchChangesCredentialKey` property
-                        </Link>{' '}
+                        </a>{' '}
                         of `encryption.keys` in the site configuration.
                     </li>
                 </ul>
