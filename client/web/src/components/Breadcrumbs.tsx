@@ -7,6 +7,7 @@ import { Unsubscribable } from 'sourcegraph'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { isDefined } from '@sourcegraph/shared/src/util/types'
+import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import styles from './Breadcrumbs.module.scss'
 
@@ -153,38 +154,49 @@ export const useBreadcrumbs = (): BreadcrumbsProps & BreadcrumbSetters => {
 export const Breadcrumbs: React.FunctionComponent<{ breadcrumbs: BreadcrumbAtDepth[]; location: H.Location }> = ({
     breadcrumbs,
     location,
-}) => (
-    <nav className="d-flex p-2 container-fluid flex-nowrap flex-shrink-past-contents" aria-label="Breadcrumbs">
-        {sortBy(breadcrumbs, 'depth')
-            .map(({ breadcrumb }) => breadcrumb)
-            .filter(isDefined)
-            .map((breadcrumb, index, validBreadcrumbs) => {
-                const divider = breadcrumb.divider ?? (
-                    <ChevronRightIcon className={classNames('icon-inline', styles.divider)} />
-                )
-                // When the last breadcrumbs is a link and the hash is empty (to allow user to reset hash),
-                // render link breadcrumbs as plain text
-                return (
-                    <span
-                        key={breadcrumb.key}
-                        className={classNames(
-                            'text-muted d-flex align-items-center test-breadcrumb',
-                            breadcrumb.className
-                        )}
-                    >
-                        {index !== 0 && <span className="font-weight-medium">{divider}</span>}
-                        {isElementBreadcrumb(breadcrumb) ? (
-                            breadcrumb.element
-                        ) : index === validBreadcrumbs.length - 1 && !location.hash ? (
-                            breadcrumb.link.label
-                        ) : (
-                            <Link to={breadcrumb.link.to}>{breadcrumb.link.label}</Link>
-                        )}
-                    </span>
-                )
-            })}
-    </nav>
-)
+}) => {
+    const [isRedesignEnabled] = useRedesignToggle()
+
+    return (
+        <nav
+            className={classNames(
+                'd-flex container-fluid flex-nowrap flex-shrink-past-contents',
+                !isRedesignEnabled && 'p-2',
+                isRedesignEnabled && 'pl-3 pr-2'
+            )}
+            aria-label="Breadcrumbs"
+        >
+            {sortBy(breadcrumbs, 'depth')
+                .map(({ breadcrumb }) => breadcrumb)
+                .filter(isDefined)
+                .map((breadcrumb, index, validBreadcrumbs) => {
+                    const divider = breadcrumb.divider ?? (
+                        <ChevronRightIcon className={classNames('icon-inline', styles.divider)} />
+                    )
+                    // When the last breadcrumbs is a link and the hash is empty (to allow user to reset hash),
+                    // render link breadcrumbs as plain text
+                    return (
+                        <span
+                            key={breadcrumb.key}
+                            className={classNames(
+                                'text-muted d-flex align-items-center test-breadcrumb',
+                                breadcrumb.className
+                            )}
+                        >
+                            {index !== 0 && <span className="font-weight-medium">{divider}</span>}
+                            {isElementBreadcrumb(breadcrumb) ? (
+                                breadcrumb.element
+                            ) : index === validBreadcrumbs.length - 1 && !location.hash ? (
+                                breadcrumb.link.label
+                            ) : (
+                                <Link to={breadcrumb.link.to}>{breadcrumb.link.label}</Link>
+                            )}
+                        </span>
+                    )
+                })}
+        </nav>
+    )
+}
 
 /**
  * To be used in unit tests, it minimally fulfills the BreadcrumbSetters interface.
