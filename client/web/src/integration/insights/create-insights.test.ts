@@ -1,4 +1,3 @@
-
 import assert from 'assert'
 
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
@@ -9,7 +8,8 @@ import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../c
 
 import {
     INSIGHT_TYPES_MIGRATION_BULK_SEARCH,
-    INSIGHT_TYPES_MIGRATION_COMMITS, LangStatsInsightContent,
+    INSIGHT_TYPES_MIGRATION_COMMITS,
+    LangStatsInsightContent,
 } from './utils/insight-mock-data'
 import { overrideGraphQLExtensions } from './utils/override-graphql-with-extensions'
 
@@ -18,7 +18,7 @@ describe('Code insight create insight page', () => {
     let testContext: WebIntegrationTestContext
 
     before(async () => {
-        driver = await createDriverForTest({ sourcegraphBaseUrl: 'https://sourcegraph.test:3443', devtools: true })
+        driver = await createDriverForTest()
     })
 
     after(() => driver?.close())
@@ -35,7 +35,6 @@ describe('Code insight create insight page', () => {
     afterEach(() => testContext?.dispose())
 
     it('should update user/org setting if code stats insight has been created', async () => {
-
         overrideGraphQLExtensions({
             testContext,
             overrides: {
@@ -60,32 +59,30 @@ describe('Code insight create insight page', () => {
                  * Mock for async repositories field validation.
                  */
                 BulkRepositoriesSearch: () => ({
-                    repoSearch0: { name: 'github.com/sourcegraph/sourcegraph' }
+                    repoSearch0: { name: 'github.com/sourcegraph/sourcegraph' },
                 }),
 
                 LangStatsInsightContent: () => LangStatsInsightContent,
             },
         })
 
-        await driver.page.goto(
-            driver.sourcegraphBaseUrl + '/insights/create-lang-stats-insight'
-        )
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/create-lang-stats-insight')
 
         // Waiting for all important part of creation form will be rendered.
-        await driver.page.waitForSelector('[data-test-id="CodeStatsInsightCreationPageContent"]')
+        await driver.page.waitForSelector('[data-testid="code-stats-insight-creation-page-content"]')
 
         // Add new repo to repositories field
         await driver.page.type('input[name="repository"]', 'github.com/sourcegraph/sourcegraph')
 
         // With repository filled input we have to have code stats insight live preview
         // charts - pie chart
-        await driver.page.waitForSelector('[data-test-id="PieChartArcElement"]')
+        await driver.page.waitForSelector('[data-testid="pie-chart-arc-element"]')
 
         // Change insight title
         await driver.page.type('input[name="title"]', 'Test insight title')
 
         const addToUserConfigRequest = await testContext.waitForGraphQLRequest(async () => {
-            await driver.page.click('[data-test-id="insight-save-button"]')
+            await driver.page.click('[data-testid="insight-save-button"]')
         }, 'OverwriteSettings')
 
         // Check that new org settings config has edited insight
@@ -93,16 +90,15 @@ describe('Code insight create insight page', () => {
             'codeStatsInsights.insight.testInsightTitle': {
                 title: 'Test insight title',
                 repository: 'github.com/sourcegraph/sourcegraph',
-                otherThreshold: 0.03
+                otherThreshold: 0.03,
             },
             extensions: {
                 'sourcegraph/code-stats-insights': true,
-            }
+            },
         })
     })
 
     it('should update user/org settings if search based insight has been created', async () => {
-
         // Mock `Date.now` to stabilize timestamps
         await driver.page.evaluateOnNewDocument(() => {
             // Number of ms between Unix epoch and June 31, 2021
@@ -134,7 +130,7 @@ describe('Code insight create insight page', () => {
                  * Mock for async repositories field validation.
                  * */
                 BulkRepositoriesSearch: () => ({
-                    repoSearch0: { name: 'github.com/sourcegraph/sourcegraph' }
+                    repoSearch0: { name: 'github.com/sourcegraph/sourcegraph' },
                 }),
 
                 /**
@@ -145,12 +141,10 @@ describe('Code insight create insight page', () => {
             },
         })
 
-        await driver.page.goto(
-            driver.sourcegraphBaseUrl + '/insights/create-search-insight'
-        )
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/create-search-insight')
 
         // Waiting for all important part of creation form will be rendered.
-        await driver.page.waitForSelector('[data-test-id="SearchInsightCreatePageContent"]')
+        await driver.page.waitForSelector('[data-testid="search-insight-create-page-content"]')
 
         // Add new repo to repositories field
         await driver.page.type('input[name="repositories"]', 'github.com/sourcegraph/sourcegraph')
@@ -162,31 +156,31 @@ describe('Code insight create insight page', () => {
 
         // Add first series name
         await driver.page.type(
-            '[data-test-id="series-form"]:nth-child(1) input[name="seriesName"]',
+            '[data-testid="series-form"]:nth-child(1) input[name="seriesName"]',
             'test series #1 title'
         )
 
         // Add first series query
         await driver.page.type(
-            '[data-test-id="series-form"]:nth-child(1) input[name="seriesQuery"]',
+            '[data-testid="series-form"]:nth-child(1) input[name="seriesQuery"]',
             'test series #1 query'
         )
 
         // Pick first series color
-        await driver.page.click('[data-test-id="series-form"]:nth-child(1) label[title="Cyan"]')
+        await driver.page.click('[data-testid="series-form"]:nth-child(1) label[title="Cyan"]')
 
         // Add second series
-        await driver.page.click('[data-test-id="form-series"] [data-test-id="add-series-button"]')
+        await driver.page.click('[data-testid="form-series"] [data-testid="add-series-button"]')
 
         // Add second series name
         await driver.page.type(
-            '[data-test-id="series-form"]:nth-child(2) input[name="seriesName"]',
+            '[data-testid="series-form"]:nth-child(2) input[name="seriesName"]',
             'test series #2 title'
         )
 
         // Add second series query
         await driver.page.type(
-            '[data-test-id="series-form"]:nth-child(2) input[name="seriesQuery"]',
+            '[data-testid="series-form"]:nth-child(2) input[name="seriesQuery"]',
             'test series #2 query'
         )
 
@@ -194,7 +188,7 @@ describe('Code insight create insight page', () => {
         await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
 
         const addToUserConfigRequest = await testContext.waitForGraphQLRequest(async () => {
-            await driver.page.click('[data-test-id="insight-save-button"]')
+            await driver.page.click('[data-testid="insight-save-button"]')
         }, 'OverwriteSettings')
 
         // Check that new org settings config has edited insight

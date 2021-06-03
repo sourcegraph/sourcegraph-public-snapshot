@@ -14,7 +14,7 @@ describe('Code insights page', () => {
     let testContext: WebIntegrationTestContext
 
     before(async () => {
-        driver = await createDriverForTest({ sourcegraphBaseUrl: 'https://sourcegraph.test:3443', devtools: true })
+        driver = await createDriverForTest()
     })
 
     after(() => driver?.close())
@@ -81,9 +81,9 @@ describe('Code insights page', () => {
 
         const variables = await testContext.waitForGraphQLRequest(async () => {
             await driver.page.click(
-                '[data-testid="InsightCard.searchInsights.insight.graphQLTypesMigration.insightsPage"] [data-testid="InsightContextMenuButton"]'
+                '[data-testid="insight-card.searchInsights.insight.graphQLTypesMigration.insightsPage"] [data-testid="InsightContextMenuButton"]'
             )
-            await driver.page.click('[data-testid="InsightContextMenuDeleteButton"]')
+            await driver.page.click('[data-testid="insight-context-menu-delete-button"]')
         }, 'OverwriteSettings')
 
         assert.deepStrictEqual(JSON.parse(variables.contents), {

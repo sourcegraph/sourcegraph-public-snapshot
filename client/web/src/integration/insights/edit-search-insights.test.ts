@@ -34,11 +34,11 @@ function getInsightFormValues(): InsightValues {
     const granularityType = document.querySelector<HTMLInputElement>('input[name="step"]:checked')?.value ?? ''
     const granularityValue = document.querySelector<HTMLInputElement>('input[name="stepValue"]')?.value
 
-    const series = [...document.querySelectorAll('[data-test-id="form-series"] [data-test-id="series-card"]')].map(
+    const series = [...document.querySelectorAll('[data-testid="form-series"] [data-testid="series-card"]')].map(
         card => ({
-            name: card.querySelector('[data-test-id="series-name"]')?.textContent,
-            query: card.querySelector('[data-test-id="series-query"]')?.textContent,
-            stroke: card.querySelector<HTMLElement>('[data-test-id="series-color-mark"]')?.style.color,
+            name: card.querySelector('[data-testid="series-name"]')?.textContent,
+            query: card.querySelector('[data-testid="series-query"]')?.textContent,
+            stroke: card.querySelector<HTMLElement>('[data-testid="series-color-mark"]')?.style.color,
         })
     )
 
@@ -56,7 +56,7 @@ describe('Code insight edit insight page', () => {
     let testContext: WebIntegrationTestContext
 
     before(async () => {
-        driver = await createDriverForTest({ sourcegraphBaseUrl: 'https://sourcegraph.test:3443', devtools: true })
+        driver = await createDriverForTest()
     })
 
     after(() => driver?.close())
@@ -205,35 +205,35 @@ describe('Code insight edit insight page', () => {
 
         // Edit first insight series
         await driver.page.click(
-            '[data-test-id="form-series"] [data-test-id="series-card"]:nth-child(1) [data-test-id="series-edit-button"]'
+            '[data-testid="form-series"] [data-testid="series-card"]:nth-child(1) [data-testid="series-edit-button"]'
         )
         await clearAndType(
             driver,
-            '[data-test-id="series-form"]:nth-child(1) input[name="seriesName"]',
+            '[data-testid="series-form"]:nth-child(1) input[name="seriesName"]',
             'test edited series title'
         )
         await clearAndType(
             driver,
-            '[data-test-id="series-form"]:nth-child(1) input[name="seriesQuery"]',
+            '[data-testid="series-form"]:nth-child(1) input[name="seriesQuery"]',
             'test edited series query'
         )
-        await driver.page.click('[data-test-id="series-form"]:nth-child(1) label[title="Cyan"]')
+        await driver.page.click('[data-testid="series-form"]:nth-child(1) label[title="Cyan"]')
 
         // Remove second insight series
         await driver.page.click(
-            '[data-test-id="form-series"] [data-test-id="series-card"] [data-test-id="series-delete-button"]'
+            '[data-testid="form-series"] [data-testid="series-card"] [data-testid="series-delete-button"]'
         )
 
         // Add new series
-        await driver.page.click('[data-test-id="form-series"] [data-test-id="add-series-button"]')
+        await driver.page.click('[data-testid="form-series"] [data-testid="add-series-button"]')
         await clearAndType(
             driver,
-            '[data-test-id="series-form"]:nth-child(2) input[name="seriesName"]',
+            '[data-testid="series-form"]:nth-child(2) input[name="seriesName"]',
             'new test series title'
         )
         await clearAndType(
             driver,
-            '[data-test-id="series-form"]:nth-child(2) input[name="seriesQuery"]',
+            '[data-testid="series-form"]:nth-child(2) input[name="seriesQuery"]',
             'new test series query'
         )
 
@@ -245,7 +245,7 @@ describe('Code insight edit insight page', () => {
         await driver.page.click('input[name="step"][value="days"]')
 
         const deleteFromUserConfigRequest = await testContext.waitForGraphQLRequest(async () => {
-            await driver.page.click('[data-test-id="insight-save-button"]')
+            await driver.page.click('[data-testid="insight-save-button"]')
         }, 'OverwriteSettings')
 
         const addToOrgConfigRequest = await testContext.waitForGraphQLRequest(() => {}, 'OverwriteSettings')
@@ -347,10 +347,10 @@ describe('Code insight edit insight page', () => {
 
         // Click on edit button of insight context menu (three dots-menu)
         await driver.page.click(
-            '[data-testid="InsightCard.searchInsights.insight.graphQLTypesMigration.insightsPage"] [data-testid="InsightContextMenuButton"]'
+            '[data-testid="insight-card.searchInsights.insight.graphQLTypesMigration.insightsPage"] [data-testid="InsightContextMenuButton"]'
         )
         await driver.page.click(
-            '[data-test-id="context-menu.searchInsights.insight.graphQLTypesMigration"] [data-testid="InsightContextMenuEditLink"]'
+            '[data-testid="context-menu.searchInsights.insight.graphQLTypesMigration"] [data-testid="InsightContextMenuEditLink"]'
         )
 
         // Check redirect URL for edit insight page
@@ -360,7 +360,7 @@ describe('Code insight edit insight page', () => {
         )
 
         // Waiting for all important part of creation form will be rendered.
-        await driver.page.waitForSelector('[data-test-id="SearchInsightEditPageContent"]')
+        await driver.page.waitForSelector('[data-testid="search-insight-edit-page-content"]')
         await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
 
         await percySnapshotWithVariants(driver.page, 'Code insights edit page with search-based insight creation UI')
