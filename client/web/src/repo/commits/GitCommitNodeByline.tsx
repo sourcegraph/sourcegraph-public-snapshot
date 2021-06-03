@@ -101,7 +101,8 @@ export const GitCommitNodeByline: React.FunctionComponent<Props> = ({
     return (
         <div
             className={classNames(
-                'd-flex align-items-center git-commit-node-byline git-commit-node-byline--no-committer',
+                'd-flex git-commit-node-byline git-commit-node-byline--no-committer',
+                compact && 'align-items-center',
                 className
             )}
         >
