@@ -289,7 +289,7 @@ exports[`GlobalNavbar default 1`] = `
     </ul>
   </nav>
   <div
-    class="w-100 px-3 py-2"
+    class="w-100 px-3 pt-2"
   >
     <div
       class="pb-2 border-bottom"
@@ -606,7 +606,7 @@ exports[`GlobalNavbar low-profile 1`] = `
     </ul>
   </nav>
   <div
-    class="w-100 px-3 py-2"
+    class="w-100 px-3 pt-2"
   >
     <div
       class="pb-2 border-bottom"
@@ -923,7 +923,7 @@ exports[`GlobalNavbar no-search-input 1`] = `
     </ul>
   </nav>
   <div
-    class="w-100 px-3 py-2"
+    class="w-100 px-3 pt-2"
   >
     <div
       class="pb-2 border-bottom"
