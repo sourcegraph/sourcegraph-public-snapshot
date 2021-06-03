@@ -148,7 +148,7 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<Props> = ({ hist
             <h2>Repositories</h2>
             <p>
                 Repositories are synced from connected{' '}
-                <Link className="test-repositories-code-host-connections-link" to="/site-admin/external-services">
+                <Link to="/site-admin/external-services" data-testid="test-repositories-code-host-connections-link">
                     code host connections
                 </Link>
                 .

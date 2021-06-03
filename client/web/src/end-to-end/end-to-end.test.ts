@@ -12,7 +12,7 @@ import { getConfig } from '@sourcegraph/shared/src/testing/config'
 import { afterEachRecordCoverage } from '@sourcegraph/shared/src/testing/coverage'
 import { createDriverForTest, Driver, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
-import { retry } from '@sourcegraph/shared/src/testing/utils'
+import { retry, toggleRedesign } from '@sourcegraph/shared/src/testing/utils'
 
 import { Settings } from '../schema/settings.schema'
 
@@ -51,7 +51,7 @@ describe('e2e test suite', () => {
         ]
         const alwaysCloningRepoSlugs = ['sourcegraphtest/AlwaysCloningTest']
         await driver.ensureLoggedIn({ username: 'test', password: config.testUserPassword, email: 'test@test.com' })
-        await driver.page.evaluate(() => localStorage.setItem('isRedesignEnabled', 'true'))
+        await toggleRedesign(driver.page, true)
         await driver.resetUserSettings()
         await driver.ensureHasExternalService({
             kind: ExternalServiceKind.GITHUB,
@@ -242,10 +242,10 @@ describe('e2e test suite', () => {
             await driver.page.waitForSelector('.test-update-external-service-button:not([disabled])', { visible: true })
             await driver.page.click('.test-update-external-service-button')
 
-            await driver.page.waitForSelector('.test-repositories-code-host-connections-link', {
+            await driver.page.waitForSelector('[data-testid="test-repositories-code-host-connections-link"]', {
                 visible: true,
             })
-            await driver.page.click('.test-repositories-code-host-connections-link')
+            await driver.page.click('[data-testid="test-repositories-code-host-connections-link"]')
 
             await Promise.all([
                 driver.acceptNextDialog(),

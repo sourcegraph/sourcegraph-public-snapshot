@@ -2,8 +2,7 @@ import { Page } from 'puppeteer'
 
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { percySnapshot } from '@sourcegraph/shared/src/testing/driver'
-import { readEnvironmentBoolean } from '@sourcegraph/shared/src/testing/utils'
-import { REDESIGN_TOGGLE_KEY, REDESIGN_CLASS_NAME } from '@sourcegraph/shared/src/util/useRedesignToggle'
+import { readEnvironmentBoolean, toggleRedesign } from '@sourcegraph/shared/src/testing/utils'
 
 import { WebGraphQlOperations } from '../graphql-operations'
 
@@ -76,19 +75,6 @@ export const setColorScheme = async (
     )
     // Wait a tiny bit for Monaco syntax highlighting to be applied
     await page.waitForTimeout(500)
-}
-
-const toggleRedesign = async (page: Page, enabled: boolean): Promise<void> => {
-    await page.evaluate(
-        (className: string, storageKey: string, enabled: boolean) => {
-            document.documentElement.classList.toggle(className, enabled)
-            localStorage.setItem(storageKey, String(enabled))
-            window.dispatchEvent(new StorageEvent('storage', { key: storageKey, newValue: String(enabled) }))
-        },
-        REDESIGN_CLASS_NAME,
-        REDESIGN_TOGGLE_KEY,
-        enabled
-    )
 }
 
 export interface PercySnapshotConfig {
