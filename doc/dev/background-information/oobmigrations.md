@@ -34,9 +34,9 @@ For every registered migrator, the migration runner will periodically check for 
 
 #### Upgrades
 
-Site admins will be prevented from upgrading beyond the version where an incomplete migration has been deprecated. i.e., site-admin must wait for these migrations to finish before an upgrade. Otherwise, the instance will have data in a format that is no longer readable by the new version.
+Site admins will be prevented from upgrading beyond the version where an incomplete migration has been deprecated. i.e., site-admin must wait for these migrations to finish before an upgrade. Otherwise, the instance will have data in a format that is no longer readable by the new version. In these cases, the instance will shut down with an error message similar to what happens when an in-band migration fails to apply.
 
-Today, this is not actually enforced - [in the future](https://github.com/sourcegraph/sourcegraph/issues/18240), we'll ensure that the instance gives plenty of warnings prior to an upgrade and ensure the instance does not start in such an invalid state.
+The `Site Admin > Maintenance > Migrations` page shows the current progress of each out-of-band migration, as well as disclaimers warning when an immediate upgrade would fail due to an incomplete migration.
 
 #### Downgrades
 

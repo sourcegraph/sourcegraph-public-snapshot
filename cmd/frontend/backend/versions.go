@@ -30,8 +30,22 @@ func (e UpgradeError) Error() string {
 		e.Latest,
 		"https://docs.sourcegraph.com/#upgrading-sourcegraph",
 	)
-
 }
+
+// GetFirstServiceVersion returns the first version registered for the given Sourcegraph service.
+// This method will return an error if UpdateServiceVersion has never been called for the given
+// service.
+func GetFirstServiceVersion(ctx context.Context, service string) (version string, err error) {
+	q := sqlf.Sprintf(getFirstVersionQuery, service)
+	row := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err = row.Scan(&version); err != nil {
+		return "", err
+	}
+
+	return version, nil
+}
+
+const getFirstVersionQuery = `SELECT first_version FROM versions WHERE service = %s`
 
 // UpdateServiceVersion updates the latest version for the given Sourcegraph
 // service. It enforces our documented upgrade policy.
@@ -57,6 +71,7 @@ func UpdateServiceVersion(ctx context.Context, service, version string) error {
 			upsertVersionQuery,
 			service,
 			version,
+			version,
 			time.Now().UTC(),
 			prev,
 		)
@@ -69,8 +84,8 @@ func UpdateServiceVersion(ctx context.Context, service, version string) error {
 const getVersionQuery = `SELECT version FROM versions WHERE service = %s`
 
 const upsertVersionQuery = `
-INSERT INTO versions (service, version, updated_at)
-VALUES (%s, %s, %s) ON CONFLICT (service) DO
+INSERT INTO versions (service, version, first_version, updated_at)
+VALUES (%s, %s, %s, %s) ON CONFLICT (service) DO
 UPDATE SET (version, updated_at) =
 	(excluded.version, excluded.updated_at)
 WHERE versions.version = %s`
