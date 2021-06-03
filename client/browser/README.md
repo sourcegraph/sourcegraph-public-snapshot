@@ -69,7 +69,7 @@ It works as follows:
 
 ## Development
 
-test
+testtest
 To build all the browser extensions for all browsers at once:
 
 ```bash
