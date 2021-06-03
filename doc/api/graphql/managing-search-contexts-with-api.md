@@ -1,10 +1,10 @@
 # Managing search contexts with the API
 
-Learn how to manage [search contexts](#) on private Sourcegraph instances with the API. If you haven't used the API before, learn more about [the GraphQL API and how to use it](index.md).
+Learn how to manage [search contexts](../../code_search/how-to/search_contexts.md) on private Sourcegraph instances with the API. If you haven't used the API before, learn more about [the GraphQL API and how to use it](index.md).
 
 ## Prerequisites
 
-* Search contexts and search context management are [enabled in global settings](../../code_search/explanations/features#search-contexts).
+* Search contexts and search context management are [enabled in global settings](../../code_search/explanations/features.md#search-contexts).
 
 ### Permissions and visibility overview
 
@@ -27,6 +27,7 @@ To read and write search contexts through the API you will need appropriate perm
 ## Create a context
 
 Below is a GraphQL query that creates a new search context. To populate the `searchContext.namespace` property, you will have to query the API beforehand to retrieve the user or organization ID.
+
 If `searchContext.namespace` is not specified or `null` then the context is created in the global (instance-level) namespace.
 To specify search context repositories you will need their ids. Similar to the `namespace` property you will need to retrieve them from the API before creating the context.
 
