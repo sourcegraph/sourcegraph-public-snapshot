@@ -55,16 +55,3 @@ export function readEnvironmentString({ variable, defaultValue }: { variable: st
     }
     return value
 }
-
-export const toggleRedesign = async (page: Page, enabled: boolean): Promise<void> => {
-    await page.evaluate(
-        (className: string, storageKey: string, enabled: boolean) => {
-            document.documentElement.classList.toggle(className, enabled)
-            localStorage.setItem(storageKey, String(enabled))
-            window.dispatchEvent(new StorageEvent('storage', { key: storageKey, newValue: String(enabled) }))
-        },
-        REDESIGN_CLASS_NAME,
-        REDESIGN_TOGGLE_KEY,
-        enabled
-    )
-}
