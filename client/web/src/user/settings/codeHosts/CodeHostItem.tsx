@@ -56,7 +56,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
     const updateAuthRequired = service?.kind === 'GITHUB' && githubRepoScopeRequired(user.tags, service.grantedScopes)
 
     return (
-        <div className="p-2 d-flex align-items-start">
+        <div className="py-2 d-flex align-items-start">
             {service && isRemoveConnectionModalOpen && (
                 <RemoveCodeHostConnectionModal
                     id={service.id}

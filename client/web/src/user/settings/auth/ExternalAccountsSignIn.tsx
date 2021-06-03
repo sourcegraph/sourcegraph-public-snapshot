@@ -3,6 +3,7 @@ import React from 'react'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
 import { SourcegraphContext } from '../../../jscontext'
@@ -106,34 +107,37 @@ export const ExternalAccountsSignIn: React.FunctionComponent<Props> = ({
     authProviders,
     onDidRemove,
     onDidError,
-}) => (
-    <>
-        {accounts && (
-            <ul className="list-group">
-                {supported.map(kind => {
-                    const type = kind.toLocaleLowerCase() as ServiceType
-                    const authProvider = authProviders[type]
+}) => {
+    const [isRedesignEnabled] = useRedesignToggle()
+    return (
+        <>
+            {accounts && (
+                <ul className={classNames('list-group', !isRedesignEnabled && 'mt-3 pb-2')}>
+                    {supported.map(kind => {
+                        const type = kind.toLocaleLowerCase() as ServiceType
+                        const authProvider = authProviders[type]
 
-                    // if auth provider for this account doesn't exist -
-                    // don't display the account as an option
-                    if (authProvider) {
-                        const account = getNormalizedAccount(accounts, kind)
+                        // if auth provider for this account doesn't exist -
+                        // don't display the account as an option
+                        if (authProvider) {
+                            const account = getNormalizedAccount(accounts, kind)
 
-                        return (
-                            <li key={kind} className={classNames('list-group-item', styles.externalAccount)}>
-                                <ExternalAccount
-                                    account={account}
-                                    authProvider={authProvider}
-                                    onDidRemove={onDidRemove}
-                                    onDidError={onDidError}
-                                />
-                            </li>
-                        )
-                    }
+                            return (
+                                <li key={kind} className={classNames('list-group-item', styles.externalAccount)}>
+                                    <ExternalAccount
+                                        account={account}
+                                        authProvider={authProvider}
+                                        onDidRemove={onDidRemove}
+                                        onDidError={onDidError}
+                                    />
+                                </li>
+                            )
+                        }
 
-                    return null
-                })}
-            </ul>
-        )}
-    </>
-)
+                        return null
+                    })}
+                </ul>
+            )}
+        </>
+    )
+}

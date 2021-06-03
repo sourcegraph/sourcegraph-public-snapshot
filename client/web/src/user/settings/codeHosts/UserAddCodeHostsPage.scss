@@ -14,12 +14,32 @@
         font-size: 0.75rem;
         line-height: (20/14);
     }
-    &__code-host-item {
-        border: 0;
-        border-bottom: 1px solid var(--border-color);
 
-        &:last-of-type {
-            border-bottom: 0;
+    :global(.theme-redesign) & {
+        &__container {
+            border: 0;
+            padding: 0;
+            &:not(:last-child) {
+                margin-bottom: 0.5rem;
+            }
+            + .code-host-connection-node__container {
+                border-top: 1px solid var(--border-color);
+                padding-top: 0.5rem;
+            }
+        }
+    }
+
+    &__code-host-item {
+        .theme-redesign & {
+            border: 0;
+            padding: 0;
+            &:not(:last-child) {
+                margin-bottom: 0.5rem;
+            }
+            + .user-code-hosts-page__code-host-item {
+                border-top: 1px solid var(--border-color);
+                padding-top: 0.5rem;
+            }
         }
     }
 

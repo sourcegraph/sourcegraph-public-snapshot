@@ -31,7 +31,7 @@ export const ExternalAccount: React.FunctionComponent<Props> = ({ account, authP
     const { icon: AccountIcon } = account
 
     return (
-        <div className="p-2 d-flex align-items-start ">
+        <div className="py-2 d-flex align-items-start ">
             {isRemoveAccountModalOpen && account.external && (
                 <RemoveExternalAccountModal
                     id={account.external.id}

@@ -1,8 +1,13 @@
 .external-account {
-    border: 0;
-    border-bottom: 1px solid var(--border-color);
-
-    &:last-of-type {
-        border-bottom: 0;
+    :global(.theme-redesign) & {
+        border: 0;
+        padding: 0;
+        &:not(:last-child) {
+            margin-bottom: 0.5rem;
+        }
+        + .external-account {
+            border-top: 1px solid var(--border-color);
+            padding-top: 0.5rem;
+        }
     }
 }

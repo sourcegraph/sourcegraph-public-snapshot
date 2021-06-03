@@ -240,7 +240,7 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                 {this.state.accounts.fetched?.length === 0 && (
                     <>
                         <hr className="my-4" />
-                        <h3>Password</h3>
+                        <h3 className="mb-3">Password</h3>
                         <Container>
                             <Form onSubmit={this.handleSubmit}>
                                 {/* Include a username field as a hint for password managers to update the saved password. */}
