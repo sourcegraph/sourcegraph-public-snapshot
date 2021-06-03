@@ -261,26 +261,30 @@ const (
 )
 
 const templatePingQueryStr = `
-select name, count(*) as total_count, count(distinct anonymous_user_id) as unique_count
-from event_logs
-where name = any($2)
-  AND timestamp > DATE_TRUNC('%v', $1::timestamp)
-group by name;
+-- source:internal/usagestats/code_insights.go:Sample
+SELECT name, COUNT(*) AS total_count, COUNT(DISTINCT anonymous_user_id) AS unique_count
+FROM event_logs
+WHERE name = ANY($2)
+AND timestamp > DATE_TRUNC('%v', $1::TIMESTAMP)
+GROUP BY name;
 `
 
 const insightTimeIntervalQueryStr = `
-select JSON_ARRAY_ELEMENTS(argument::json)::text as interval_days, count(*) from event_logs
-join (select max(id) as id from event_logs where name = 'InsightsGroupedStepSizes') as most_recent_event
-on most_recent_event.id = event_logs.id
-where name = 'InsightsGroupedStepSizes'
-and timestamp > DATE_TRUNC('week', $1::timestamp)
-group by name, interval_days;
+-- source:internal/usagestats/code_insights.go:GetInsightTimeIntervals
+SELECT JSON_ARRAY_ELEMENTS(argument::JSON)::TEXT AS interval_days, COUNT(*)
+FROM event_logs
+JOIN (SELECT MAX(id) AS id FROM event_logs WHERE name = 'InsightsGroupedStepSizes') AS most_recent_event
+ON most_recent_event.id = event_logs.id
+WHERE name = 'InsightsGroupedStepSizes'
+AND timestamp > DATE_TRUNC('week', $1::TIMESTAMP)
+GROUP BY name, interval_days;
 `
 
 const insightOrgVisiblePingQueryStr = `
-select flattened.key as type, flattened.value as total_count from event_logs
-join json_each_text(event_logs.argument::json) as flattened on true
-join (select max(id) as id from event_logs where name = 'InsightsGroupedCount') as most_recent_event
-     on most_recent_event.id = event_logs.id
-where event_logs.name = 'InsightsGroupedCount'
-and timestamp > DATE_TRUNC('week', $1::timestamp);`
+-- source:internal/usagestats/code_insights.go:GetInsightCountsByOrg
+SELECT flattened.key AS type, flattened.value AS total_count FROM event_logs
+JOIN JSON_EACH_TEXT(event_logs.argument::JSON) AS flattened ON true
+JOIN (SELECT MAX(id) AS id FROM event_logs WHERE name = 'InsightsGroupedCount') AS most_recent_event
+     ON most_recent_event.id = event_logs.id
+WHERE event_logs.name = 'InsightsGroupedCount'
+AND timestamp > DATE_TRUNC('week', $1::TIMESTAMP);`
