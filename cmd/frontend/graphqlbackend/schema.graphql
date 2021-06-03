@@ -669,6 +669,25 @@ type Mutation {
 			"""
 			rollout: Int
 	): FeatureFlag!
+
+	createFeatureFlagOverride(
+		userID: ID
+		orgID: ID
+		flagName: String!
+		value: Boolean!
+	): FeatureFlagOverride!
+
+	deleteFeatureFlagOverride(
+		id: ID!
+	): EmptyResponse!
+
+	updateFeatureFlagOverride(
+		id: ID!
+		userID: ID
+		orgID: ID
+		flagName: String!
+		value: Boolean!
+	): FeatureFlagOverride!
 }
 
 """
@@ -1393,10 +1412,13 @@ type FeatureFlagRollout {
 A feature flag override is an override of a feature flag's value for a specific org or user
 """
 type FeatureFlagOverride {
+	id: ID!
+	user: User
+	org: Org
     """
     The name of the feature flag being overridden
     """
-    flagName: String!
+    targetFlag: FeatureFlag!
 
     """
     The overriden value of hte feature flag

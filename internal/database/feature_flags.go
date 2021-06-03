@@ -204,6 +204,25 @@ func scanFeatureFlag(scanner rowScanner) (*ff.FeatureFlag, error) {
 	return &res, nil
 }
 
+func (f *FeatureFlagStore) GetFeatureFlag(ctx context.Context, flagName string) (*ff.FeatureFlag, error) {
+	const getFeatureFlagsQuery = `
+		SELECT 
+			flag_name,
+			flag_type,
+			bool_value,
+			rollout,
+			created_at,
+			updated_at,
+			deleted_at
+		FROM feature_flags
+		WHERE deleted_at IS NULL
+			AND flag_name = %s;
+	`
+
+	row := f.QueryRow(ctx, sqlf.Sprintf(getFeatureFlagsQuery, flagName))
+	return scanFeatureFlag(row)
+}
+
 func (f *FeatureFlagStore) GetFeatureFlags(ctx context.Context) ([]*ff.FeatureFlag, error) {
 	const listFeatureFlagsQuery = `
 		SELECT 
@@ -259,6 +278,59 @@ func (f *FeatureFlagStore) CreateOverride(ctx context.Context, override *ff.Over
 		&override.UserID,
 		&override.FlagName,
 		&override.Value))
+	return scanFeatureFlagOverride(row)
+}
+
+func (f *FeatureFlagStore) DeleteOverride(ctx context.Context, orgID, userID *int32, flagName string) error {
+	const newFeatureFlagOverrideFmtStr = `
+		DELETE FROM feature_flag_overrides 
+		WHERE 
+			%s AND flag_name = %s;
+	`
+
+	var cond *sqlf.Query
+	switch {
+	case orgID != nil:
+		cond = sqlf.Sprintf("namespace_org_id = %s", *orgID)
+	case userID != nil:
+		cond = sqlf.Sprintf("namespace_user_id = %s", *userID)
+	default:
+		return errors.New("must set either orgID or userID")
+	}
+
+	return f.Exec(ctx, sqlf.Sprintf(
+		newFeatureFlagOverrideFmtStr,
+		cond,
+		flagName,
+	))
+}
+
+func (f *FeatureFlagStore) UpdateOverride(ctx context.Context, userID, orgID *int32, flagName string, newOverride *ff.Override) (*ff.Override, error) {
+	const newFeatureFlagOverrideFmtStr = `
+		DELETE FROM feature_flag_overrides 
+		WHERE %s AND flag_name = %s
+		RETURNING
+			namespace_org_id,
+			namespace_user_id,
+			flag_name,
+			flag_value;
+	`
+
+	var cond *sqlf.Query
+	switch {
+	case orgID != nil:
+		cond = sqlf.Sprintf("namespace_org_id = %s", *orgID)
+	case userID != nil:
+		cond = sqlf.Sprintf("namespace_user_id = %s", *userID)
+	default:
+		return nil, errors.New("must set either orgID or userID")
+	}
+
+	row := f.QueryRow(ctx, sqlf.Sprintf(
+		newFeatureFlagOverrideFmtStr,
+		cond,
+		flagName,
+	))
 	return scanFeatureFlagOverride(row)
 }
 

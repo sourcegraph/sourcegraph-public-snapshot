@@ -3,6 +3,9 @@ package graphqlbackend
 import (
 	"context"
 
+	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
@@ -40,7 +43,7 @@ func (f *FeatureFlagBooleanResolver) Overrides(ctx context.Context) ([]*FeatureF
 	if err != nil {
 		return nil, err
 	}
-	return overridesToResolvers(overrides), nil
+	return overridesToResolvers(f.db, overrides), nil
 }
 
 type FeatureFlagRolloutResolver struct {
@@ -56,25 +59,60 @@ func (f *FeatureFlagRolloutResolver) Overrides(ctx context.Context) ([]*FeatureF
 	if err != nil {
 		return nil, err
 	}
-	return overridesToResolvers(overrides), nil
+	return overridesToResolvers(f.db, overrides), nil
 }
 
-func overridesToResolvers(input []*featureflag.Override) []*FeatureFlagOverrideResolver {
+func overridesToResolvers(db dbutil.DB, input []*featureflag.Override) []*FeatureFlagOverrideResolver {
 	res := make([]*FeatureFlagOverrideResolver, 0, len(input))
 	for _, flag := range input {
-		res = append(res, &FeatureFlagOverrideResolver{flag})
+		res = append(res, &FeatureFlagOverrideResolver{db, flag})
 	}
 	return res
 }
 
 type FeatureFlagOverrideResolver struct {
+	db    dbutil.DB
 	inner *featureflag.Override
 }
 
-func (f *FeatureFlagOverrideResolver) FlagName() string { return f.inner.FlagName }
-func (f *FeatureFlagOverrideResolver) Value() bool      { return f.inner.Value }
-func (f *FeatureFlagOverrideResolver) UserID() *int32   { return f.inner.UserID }
-func (f *FeatureFlagOverrideResolver) OrgID() *int32    { return f.inner.OrgID }
+func (f *FeatureFlagOverrideResolver) TargetFlag(ctx context.Context) (*FeatureFlagResolver, error) {
+	res, err := database.FeatureFlags(f.db).GetFeatureFlag(ctx, f.inner.FlagName)
+	return &FeatureFlagResolver{f.db, res}, err
+}
+func (f *FeatureFlagOverrideResolver) Value() bool { return f.inner.Value }
+func (f *FeatureFlagOverrideResolver) User(ctx context.Context) (*UserResolver, error) {
+	if f.inner.UserID != nil {
+		return UserByIDInt32(ctx, f.db, *f.inner.UserID)
+	}
+	return nil, nil
+}
+func (f *FeatureFlagOverrideResolver) Org(ctx context.Context) (*OrgResolver, error) {
+	if f.inner.OrgID != nil {
+		return OrgByIDInt32(ctx, f.db, *f.inner.OrgID)
+	}
+	return nil, nil
+}
+func (f *FeatureFlagOverrideResolver) ID() graphql.ID {
+	return marshalOverrideID(overrideSpec{
+		UserID:   f.inner.UserID,
+		OrgID:    f.inner.OrgID,
+		FlagName: f.inner.FlagName,
+	})
+}
+
+type overrideSpec struct {
+	UserID, OrgID *int32
+	FlagName      string
+}
+
+func marshalOverrideID(spec overrideSpec) graphql.ID {
+	return relay.MarshalID("FeatureFlagOverride", spec)
+}
+
+func unmarshalOverrideID(id graphql.ID) (spec overrideSpec, err error) {
+	err = relay.UnmarshalSpec(id, &spec)
+	return
+}
 
 type EvaluatedFeatureFlagResolver struct {
 	name  string
@@ -156,4 +194,82 @@ func (r *schemaResolver) UpdateFeatureFlag(ctx context.Context, args struct {
 
 	res, err := database.FeatureFlags(r.db).UpdateFeatureFlag(ctx, ff)
 	return &FeatureFlagResolver{r.db, res}, err
+}
+
+func (r *schemaResolver) CreateFeatureFlagOverride(ctx context.Context, args struct {
+	UserID   *graphql.ID
+	OrgID    *graphql.ID
+	FlagName string
+	Value    bool
+}) (*FeatureFlagOverrideResolver, error) {
+	var uid, oid *int32
+	if args.UserID != nil {
+		u, err := UnmarshalUserID(*args.UserID)
+		if err != nil {
+			return nil, err
+		}
+		uid = &u
+	} else if args.OrgID != nil {
+		o, err := UnmarshalOrgID(*args.OrgID)
+		if err != nil {
+			return nil, err
+		}
+		oid = &o
+	}
+
+	fo := &featureflag.Override{
+		UserID:   uid,
+		OrgID:    oid,
+		FlagName: args.FlagName,
+		Value:    args.Value,
+	}
+	res, err := database.FeatureFlags(r.db).CreateOverride(ctx, fo)
+	return &FeatureFlagOverrideResolver{r.db, res}, err
+}
+
+func (r *schemaResolver) DeleteFeatureFlagOverride(ctx context.Context, args struct {
+	ID graphql.ID
+}) (*EmptyResponse, error) {
+	spec, err := unmarshalOverrideID(args.ID)
+	if err != nil {
+		return &EmptyResponse{}, err
+	}
+	return &EmptyResponse{}, database.FeatureFlags(r.db).DeleteOverride(ctx, spec.OrgID, spec.UserID, spec.FlagName)
+}
+
+func (r *schemaResolver) UpdateFeatureFlagOverride(ctx context.Context, args struct {
+	ID       graphql.ID
+	UserID   *graphql.ID
+	OrgID    *graphql.ID
+	FlagName string
+	Value    bool
+}) (*FeatureFlagOverrideResolver, error) {
+	spec, err := unmarshalOverrideID(args.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	var uid, oid *int32
+	if args.UserID != nil {
+		u, err := UnmarshalUserID(*args.UserID)
+		if err != nil {
+			return nil, err
+		}
+		uid = &u
+	} else if args.OrgID != nil {
+		o, err := UnmarshalOrgID(*args.OrgID)
+		if err != nil {
+			return nil, err
+		}
+		oid = &o
+	}
+
+	fo := &featureflag.Override{
+		UserID:   uid,
+		OrgID:    oid,
+		FlagName: args.FlagName,
+		Value:    args.Value,
+	}
+	res, err := database.FeatureFlags(r.db).UpdateOverride(ctx, spec.OrgID, spec.UserID, spec.FlagName, fo)
+	return &FeatureFlagOverrideResolver{r.db, res}, err
 }
