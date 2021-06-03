@@ -79,7 +79,7 @@ export const LangStatsInsightCreationContent: React.FunctionComponent<LangStatsI
         (repository.meta.validState === 'CHECKING' && threshold.meta.validState === 'VALID')
 
     return (
-        <div className={classnames(styles.content, className)}>
+        <div data-testid="CodeStatsInsightCreationPageContent" className={classnames(styles.content, className)}>
             <LangStatsInsightCreationForm
                 mode={mode}
                 innerRef={ref}

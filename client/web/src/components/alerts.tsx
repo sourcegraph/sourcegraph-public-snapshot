@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import { upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import React from 'react'
+import React, { HTMLAttributes } from 'react'
 
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { asError } from '@sourcegraph/shared/src/util/errors'
@@ -24,27 +24,29 @@ export const ErrorMessage: React.FunctionComponent<{ error: unknown }> = ({ erro
  * bullet points, respect line breaks, code and bolded elements.
  * Made to work with Go `multierror`.
  */
-export const ErrorAlert: React.FunctionComponent<{
-    /**
-     * An Error-like object or a string.
-     */
-    error: unknown
+export const ErrorAlert: React.FunctionComponent<
+    {
+        /**
+         * An Error-like object or a string.
+         */
+        error: unknown
 
-    /**
-     * Whether to show an icon.
-     *
-     * @default true
-     */
-    icon?: boolean
+        /**
+         * Whether to show an icon.
+         *
+         * @default true
+         */
+        icon?: boolean
 
-    /**
-     * Optional prefix for the message
-     */
-    prefix?: string
+        /**
+         * Optional prefix for the message
+         */
+        prefix?: string
 
-    className?: string
-    style?: React.CSSProperties
-}> = ({ error, className, icon = true, prefix, ...rest }) => {
+        className?: string
+        style?: React.CSSProperties
+    } & HTMLAttributes<HTMLDivElement>
+> = ({ error, className, icon = true, prefix, ...rest }) => {
     prefix = prefix?.trim().replace(/:+$/, '')
     return (
         <div className={classNames('alert', 'alert-danger', className)} {...rest}>
