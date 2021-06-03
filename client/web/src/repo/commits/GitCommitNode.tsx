@@ -125,7 +125,12 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
         <div className="w-100 git-commit-node__sha-and-parents">
             <div className={classNames('d-flex', isRedesignEnabled && 'mb-1')}>
                 {isRedesignEnabled && <span className="git-commit-node__sha-and-parents-label">Commit:</span>}
-                <code className="git-ref-tag-2 git-commit-node__sha-and-parents-sha">
+                <code
+                    className={classNames(
+                        'git-commit-node__sha-and-parents-sha',
+                        !isRedesignEnabled && 'git-ref-tag-2'
+                    )}
+                >
                     {node.oid}{' '}
                     <button
                         type="button"
@@ -148,7 +153,13 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                         </span>{' '}
                         {node.parents.map((parent, index) => (
                             <div className="d-flex" key={index}>
-                                <Link className="git-ref-tag-2 git-commit-node__sha-and-parents-parent" to={parent.url}>
+                                <Link
+                                    className={classNames(
+                                        'git-commit-node__sha-and-parents-parent',
+                                        !isRedesignEnabled && 'git-ref-tag-2'
+                                    )}
+                                    to={parent.url}
+                                >
                                     <code>{parent.oid}</code>
                                 </Link>
                                 {isRedesignEnabled && (
@@ -217,44 +228,60 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                             </div>
                             <div className="git-commit-node__actions">
                                 {!showSHAAndParentsRow && (
-                                    <div className="btn-group btn-group-sm mr-2" role="group">
-                                        <Link
-                                            className="btn btn-secondary"
-                                            to={node.canonicalURL}
-                                            data-tooltip="View this commit"
-                                        >
-                                            <strong>{oidElement}</strong>
-                                        </Link>
-                                        <button
-                                            type="button"
-                                            className="btn btn-secondary"
-                                            onClick={() => copyToClipboard(node.oid)}
-                                            data-tooltip={flashCopiedToClipboardMessage ? 'Copied!' : 'Copy full SHA'}
-                                        >
-                                            <ContentCopyIcon className="icon-inline small" />
-                                        </button>
+                                    <div>
+                                        <div className="btn-group btn-group-sm mr-2" role="group">
+                                            <Link
+                                                className="btn btn-secondary"
+                                                to={node.canonicalURL}
+                                                data-tooltip="View this commit"
+                                            >
+                                                <strong>{oidElement}</strong>
+                                            </Link>
+                                            <button
+                                                type="button"
+                                                className="btn btn-secondary"
+                                                onClick={() => copyToClipboard(node.oid)}
+                                                data-tooltip={
+                                                    flashCopiedToClipboardMessage ? 'Copied!' : 'Copy full SHA'
+                                                }
+                                            >
+                                                <ContentCopyIcon className="icon-inline small" />
+                                            </button>
+                                        </div>
+                                        {node.tree && (
+                                            <Link
+                                                className="btn btn-sm btn-secondary"
+                                                to={node.tree.canonicalURL}
+                                                data-tooltip="View files at this commit"
+                                            >
+                                                <FileDocumentIcon className="icon-inline mr-1" />
+                                            </Link>
+                                        )}
                                     </div>
                                 )}
-                                {!isRedesignEnabled ? viewFilesCommitElement : shaDataElement}
+                                {!isRedesignEnabled && showSHAAndParentsRow ? viewFilesCommitElement : shaDataElement}
                             </div>
                         </div>
                         <div>
-                            {isRedesignEnabled ? (
+                            {isRedesignEnabled && showSHAAndParentsRow ? (
                                 viewFilesCommitElement
                             ) : (
                                 <>
-                                    {commitMessageBody}
+                                    {!isRedesignEnabled && commitMessageBody}
                                     {shaDataElement}
                                 </>
                             )}
                         </div>
                     </>
                 ) : (
-                    <div className="w-100 d-flex justify-content-between align-items-center flex-wrap-reverse">
-                        {bylineElement}
-                        {messageElement}
-                        <Link to={node.canonicalURL}>{oidElement}</Link>
-                        {afterElement}
+                    <div>
+                        <div className="w-100 d-flex justify-content-between align-items-center flex-wrap-reverse">
+                            {bylineElement}
+                            {messageElement}
+                            <Link to={node.canonicalURL}>{oidElement}</Link>
+                            {afterElement}
+                        </div>
+                        {commitMessageBody}
                     </div>
                 )}
             </>

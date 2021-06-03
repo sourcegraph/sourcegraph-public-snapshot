@@ -70,7 +70,7 @@ export const GitCommitNodeByline: React.FunctionComponent<Props> = ({
         }
 
         return (
-            <div className="d-flex">
+            <div className="d-flex git-commit-node-byline git-commit-node-byline--no-committer text-muted git-commit-node__byline">
                 <div>
                     <UserAvatar
                         className="icon-inline"
@@ -84,15 +84,20 @@ export const GitCommitNodeByline: React.FunctionComponent<Props> = ({
                     />
                 </div>
                 <div>
-                    {messageElement}
-                    <PersonLink person={author.person} className="font-weight-bold" /> {!compact && 'authored'} and{' '}
-                    <PersonLink person={committer.person} className="font-weight-bold" />{' '}
-                    {!compact && (
+                    {!compact ? (
                         <>
-                            committed <Timestamp date={committer.date} />
+                            {messageElement}
+                            <PersonLink person={author.person} className="font-weight-bold" /> authored and{' '}
+                            <PersonLink person={committer.person} className="font-weight-bold" /> commited{' '}
+                            <Timestamp date={author.date} />
+                            {commitMessageBody}
+                        </>
+                    ) : (
+                        <>
+                            <PersonLink person={author.person} className="font-weight-bold" /> and{' '}
+                            <PersonLink person={committer.person} className="font-weight-bold" />{' '}
                         </>
                     )}
-                    {commitMessageBody}
                 </div>
             </div>
         )

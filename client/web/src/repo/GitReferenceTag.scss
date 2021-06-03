@@ -28,10 +28,8 @@
     .theme-redesign & {
         // Extend new default badge styles in redesign
         @extend .badge;
-        background-color: transparent;
-        color: var(--body-color);
         // TODO: Update when we have specific badge font-sizes. Issue: https://github.com/sourcegraph/sourcegraph/issues/20675
-        font-size: 0.875rem;
+        font-size: 0.75rem;
         display: inline-flex;
     }
 }

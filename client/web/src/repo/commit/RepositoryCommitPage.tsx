@@ -277,7 +277,7 @@ class RepositoryCommitPageDetails extends React.Component<Props & { isRedesignEn
                         </div>
                         {!this.props.isRedesignEnabled && (
                             <DiffModeSelector
-                                className="py-2 text-right border-bottom"
+                                className="py-2 text-right"
                                 // eslint-disable-next-line @typescript-eslint/unbound-method
                                 handleDiffMode={this.handleDiffMode}
                                 diffMode={this.state.diffMode}
