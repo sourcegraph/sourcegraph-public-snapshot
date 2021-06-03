@@ -1,9 +1,11 @@
+import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import React, { useState, useCallback } from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { CircleDashedIcon } from '../../../components/CircleDashedIcon'
 import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
@@ -37,6 +39,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
     onDidRemove,
     onDidError,
 }) => {
+    const [isRedesignEnabled] = useRedesignToggle()
     const [isRemoveConnectionModalOpen, setIsRemoveConnectionModalOpen] = useState(false)
     const toggleRemoveConnectionModal = useCallback(
         () => setIsRemoveConnectionModalOpen(!isRemoveConnectionModalOpen),
@@ -56,7 +59,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
     const updateAuthRequired = service?.kind === 'GITHUB' && githubRepoScopeRequired(user.tags, service.grantedScopes)
 
     return (
-        <div className="py-2 d-flex align-items-start">
+        <div className={classNames('d-flex align-items-start', !isRedesignEnabled && 'p-2')}>
             {service && isRemoveConnectionModalOpen && (
                 <RemoveCodeHostConnectionModal
                     id={service.id}

@@ -15,20 +15,6 @@
         line-height: (20/14);
     }
 
-    :global(.theme-redesign) & {
-        &__container {
-            border: 0;
-            padding: 0;
-            &:not(:last-child) {
-                margin-bottom: 0.5rem;
-            }
-            + .code-host-connection-node__container {
-                border-top: 1px solid var(--border-color);
-                padding-top: 0.5rem;
-            }
-        }
-    }
-
     &__code-host-item {
         .theme-redesign & {
             border: 0;

@@ -1,4 +1,3 @@
-import classNames from 'classnames'
 import CheckboxBlankCircleOutlineIcon from 'mdi-react/CheckboxBlankCircleOutlineIcon'
 import CheckCircleOutlineIcon from 'mdi-react/CheckCircleOutlineIcon'
 import InfoCircleIcon from 'mdi-react/InfoCircleIcon'
@@ -9,7 +8,6 @@ import { defaultExternalServices } from '../../../components/externalServices/ex
 import { BatchChangesCodeHostFields, Scalars } from '../../../graphql-operations'
 
 import { AddCredentialModal } from './AddCredentialModal'
-import styles from './CodeHostConnectionNode.module.scss'
 import { RemoveCredentialModal } from './RemoveCredentialModal'
 import { ViewCredentialModal } from './ViewCredentialModal'
 
@@ -52,12 +50,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
 
     return (
         <>
-            <li
-                className={classNames(
-                    'list-group-item p-3 test-code-host-connection-node',
-                    styles.codeHostConnectionNodeContainer
-                )}
-            >
+            <li className="list-group-item p-3 test-code-host-connection-node">
                 <div className="d-flex justify-content-between align-items-center mb-0">
                     <h3 className="text-nowrap mb-0">
                         {isEnabled && (
