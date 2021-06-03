@@ -68,7 +68,6 @@ func MigrateDB(db *sql.DB, database *Database) error {
 // NewMigrate returns a new configured migration object for the given database. The migration can
 // be subsequently run by invoking `dbconn.DoMigrate`.
 func NewMigrate(db *sql.DB, database *Database) (*migrate.Migrate, error) {
-
 	driver, err := postgres.WithInstance(db, &postgres.Config{
 		MigrationsTable: database.MigrationsTable,
 	})

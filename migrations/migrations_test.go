@@ -1,11 +1,19 @@
-package migrations
+package migrations_test
 
 import (
+	"database/sql"
 	"io/fs"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/golang-migrate/migrate/v4"
+
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/migrations"
 )
 
 func TestIDConstraints(t *testing.T) {
@@ -13,9 +21,9 @@ func TestIDConstraints(t *testing.T) {
 		Name string
 		FS   fs.FS
 	}{
-		{Name: "frontend", FS: Frontend},
-		{Name: "codeintel", FS: CodeIntel},
-		{Name: "codeinsights", FS: CodeInsights},
+		{Name: "frontend", FS: migrations.Frontend},
+		{Name: "codeintel", FS: migrations.CodeIntel},
+		{Name: "codeinsights", FS: migrations.CodeInsights},
 	}
 
 	for _, c := range cases {
@@ -55,5 +63,58 @@ func TestIDConstraints(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestFrontendMigrations(t *testing.T) {
+	if os.Getenv("SKIP_MIGRATION_TEST") != "" {
+		t.Skip()
+	}
+
+	// Setup a global test database
+	db := dbtesting.GetDB(t)
+	testMigrations(t, db, dbconn.Frontend)
+}
+
+func TestCodeIntelMigrations(t *testing.T) {
+	if os.Getenv("SKIP_MIGRATION_TEST") != "" {
+		t.Skip()
+	}
+
+	// Setup a global test database
+	db := dbtesting.GetDB(t)
+	testMigrations(t, db, dbconn.CodeIntel)
+}
+
+// testMigrations runs all migrations up, then the migrations for the given database
+// all the way back down, then back up to check for syntax errors and reversibility.
+func testMigrations(t *testing.T, db *sql.DB, database *dbconn.Database) {
+	m, err := dbconn.NewMigrate(db, database)
+	if err != nil {
+		t.Errorf("error constructing migrations: %s", err)
+	}
+
+	for _, database := range []*dbconn.Database{
+		dbconn.Frontend,
+		dbconn.CodeIntel,
+	} {
+		if err := dbconn.MigrateDB(dbconn.Global, database); err != nil {
+			t.Errorf("unexpected error running initial migrations: %s", err)
+		}
+	}
+
+	if err := m.Down(); err != nil && err != migrate.ErrNoChange {
+		t.Errorf("unexpected error running down migrations: %s", err)
+	}
+	if _, err := db.Exec("DROP SCHEMA public CASCADE; CREATE SCHEMA public;"); err != nil {
+		t.Fatalf("failed to recreate schema")
+	}
+
+	m, err = dbconn.NewMigrate(db, database)
+	if err != nil {
+		t.Errorf("unexpected error constructing migrations: %s", err)
+	}
+	if err := m.Up(); err != nil {
+		t.Errorf("unexpected error re-running up migrations: %s", err)
 	}
 }
