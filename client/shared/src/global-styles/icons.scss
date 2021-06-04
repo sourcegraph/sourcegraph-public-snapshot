@@ -20,7 +20,9 @@
 $icon-inline-size: (20em / 14);
 $icon-inline-redesign-size: (16em / 14);
 
-.icon-inline,
+svg.icon-inline,
+div.icon-inline,
+img.icon-inline,
 .icon-inline svg {
     width: $icon-inline-size;
     height: $icon-inline-size;
