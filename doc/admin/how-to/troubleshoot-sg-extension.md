@@ -20,18 +20,28 @@ This guide gives specific instructions for troubleshooting [extensions](https://
 2. Look for error messages in your browser's `Developer Console`
 3. Look for error messages in your browser's  `Network panel`
 
+
 #### sonarqube: Error fetching Sonarqube data: Error: Forbidden
 1. Look for error messages in your browser's  `Network panel`
 2. If there is an error message indicates that the cors-anywhere request was being denied and you are using `"sonarqube.corsAnywhereUrl": "https://cors-anywhere.herokuapp.com"` in your configuration, please visit [https://cors-anywhere.herokuapp.com/corsdemo](https://cors-anywhere.herokuapp.com/corsdemo) to opt-in for temporary access by clicking on the `Request temporary access to the demo server` button
 3. Alternatively you may remove this configuration option to use the default Sourcegraph's CORS proxy
 
-#### Definition from the Code-Intel language extensions are slow to load 
 
 #### Why is the extension icon on my sidebar is shown as inactive / greyed out?
+This happens if the extension is disabled or if you're visiting a page where an extension can't have any actions. For example, Open-in-Editor extensions do not work on top level folders [(example)](https://sourcegraph.com/github.com/sourcegraph/sourcegraph) because you cannot open a repo.
 
-#### Git blame is not working
+
+#### Git blame is not working even though it is displayed as enabled
+The extension is running if you can locate the Author in the bottom status bar. The plugin has 3 modes which can be activated by clicking on the extension icon on the extension sidebar on the right:
+
+1. All but status bar are hidden
+2. Author will be shown on the selected line
+3. Author will show up on all lines (where changes are made)
+
 
 #### Git blame is slow to load
+The extension is expected to work slow when there are issues with the gitserver (eg. running out of resources) because the extension is dependent on the gitserver.
+
 
 #### Can I export search results?
 1. You can export search results by enabling the [Sourcegraph search results CSV export extension](https://sourcegraph.com/extensions/sourcegraph/search-export)
