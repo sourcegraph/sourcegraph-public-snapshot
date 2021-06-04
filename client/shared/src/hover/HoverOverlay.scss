@@ -130,7 +130,6 @@
     &__alert-dismiss {
         float: right;
         margin-left: 0.75rem;
-        line-height: 1;
     }
 
     &__actions {
@@ -294,6 +293,10 @@
             border-top: 1px solid var(--hover-overlay-separator-color);
             padding-top: 0.75rem;
             padding-bottom: 0.75rem;
+        }
+
+        &__alert-dismiss {
+            line-height: 1;
         }
 
         &__alert-redesign {
