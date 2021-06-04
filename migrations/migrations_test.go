@@ -16,6 +16,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/migrations"
 )
 
+func init() {
+	dbtesting.DBNameSuffix = "migrations"
+}
+
 func TestIDConstraints(t *testing.T) {
 	cases := []struct {
 		Name string
