@@ -28,9 +28,15 @@ type MockResolver struct {
 	// GetIndexByIDFunc is an instance of a mock function object controlling
 	// the behavior of the method GetIndexByID.
 	GetIndexByIDFunc *ResolverGetIndexByIDFunc
+	// GetIndexesByIDsFunc is an instance of a mock function object
+	// controlling the behavior of the method GetIndexesByIDs.
+	GetIndexesByIDsFunc *ResolverGetIndexesByIDsFunc
 	// GetUploadByIDFunc is an instance of a mock function object
 	// controlling the behavior of the method GetUploadByID.
 	GetUploadByIDFunc *ResolverGetUploadByIDFunc
+	// GetUploadsByIDsFunc is an instance of a mock function object
+	// controlling the behavior of the method GetUploadsByIDs.
+	GetUploadsByIDsFunc *ResolverGetUploadsByIDsFunc
 	// IndexConfigurationFunc is an instance of a mock function object
 	// controlling the behavior of the method IndexConfiguration.
 	IndexConfigurationFunc *ResolverIndexConfigurationFunc
@@ -76,9 +82,19 @@ func NewMockResolver() *MockResolver {
 				return dbstore.Index{}, false, nil
 			},
 		},
+		GetIndexesByIDsFunc: &ResolverGetIndexesByIDsFunc{
+			defaultHook: func(context.Context, ...int) ([]dbstore.Index, error) {
+				return nil, nil
+			},
+		},
 		GetUploadByIDFunc: &ResolverGetUploadByIDFunc{
 			defaultHook: func(context.Context, int) (dbstore.Upload, bool, error) {
 				return dbstore.Upload{}, false, nil
+			},
+		},
+		GetUploadsByIDsFunc: &ResolverGetUploadsByIDsFunc{
+			defaultHook: func(context.Context, ...int) ([]dbstore.Upload, error) {
+				return nil, nil
 			},
 		},
 		IndexConfigurationFunc: &ResolverIndexConfigurationFunc{
@@ -130,8 +146,14 @@ func NewMockResolverFrom(i resolvers.Resolver) *MockResolver {
 		GetIndexByIDFunc: &ResolverGetIndexByIDFunc{
 			defaultHook: i.GetIndexByID,
 		},
+		GetIndexesByIDsFunc: &ResolverGetIndexesByIDsFunc{
+			defaultHook: i.GetIndexesByIDs,
+		},
 		GetUploadByIDFunc: &ResolverGetUploadByIDFunc{
 			defaultHook: i.GetUploadByID,
+		},
+		GetUploadsByIDsFunc: &ResolverGetUploadsByIDsFunc{
+			defaultHook: i.GetUploadsByIDs,
 		},
 		IndexConfigurationFunc: &ResolverIndexConfigurationFunc{
 			defaultHook: i.IndexConfiguration,
@@ -587,6 +609,122 @@ func (c ResolverGetIndexByIDFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
+// ResolverGetIndexesByIDsFunc describes the behavior when the
+// GetIndexesByIDs method of the parent MockResolver instance is invoked.
+type ResolverGetIndexesByIDsFunc struct {
+	defaultHook func(context.Context, ...int) ([]dbstore.Index, error)
+	hooks       []func(context.Context, ...int) ([]dbstore.Index, error)
+	history     []ResolverGetIndexesByIDsFuncCall
+	mutex       sync.Mutex
+}
+
+// GetIndexesByIDs delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockResolver) GetIndexesByIDs(v0 context.Context, v1 ...int) ([]dbstore.Index, error) {
+	r0, r1 := m.GetIndexesByIDsFunc.nextHook()(v0, v1...)
+	m.GetIndexesByIDsFunc.appendCall(ResolverGetIndexesByIDsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetIndexesByIDs
+// method of the parent MockResolver instance is invoked and the hook queue
+// is empty.
+func (f *ResolverGetIndexesByIDsFunc) SetDefaultHook(hook func(context.Context, ...int) ([]dbstore.Index, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetIndexesByIDs method of the parent MockResolver instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *ResolverGetIndexesByIDsFunc) PushHook(hook func(context.Context, ...int) ([]dbstore.Index, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *ResolverGetIndexesByIDsFunc) SetDefaultReturn(r0 []dbstore.Index, r1 error) {
+	f.SetDefaultHook(func(context.Context, ...int) ([]dbstore.Index, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *ResolverGetIndexesByIDsFunc) PushReturn(r0 []dbstore.Index, r1 error) {
+	f.PushHook(func(context.Context, ...int) ([]dbstore.Index, error) {
+		return r0, r1
+	})
+}
+
+func (f *ResolverGetIndexesByIDsFunc) nextHook() func(context.Context, ...int) ([]dbstore.Index, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ResolverGetIndexesByIDsFunc) appendCall(r0 ResolverGetIndexesByIDsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ResolverGetIndexesByIDsFuncCall objects
+// describing the invocations of this function.
+func (f *ResolverGetIndexesByIDsFunc) History() []ResolverGetIndexesByIDsFuncCall {
+	f.mutex.Lock()
+	history := make([]ResolverGetIndexesByIDsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ResolverGetIndexesByIDsFuncCall is an object that describes an invocation
+// of method GetIndexesByIDs on an instance of MockResolver.
+type ResolverGetIndexesByIDsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg1 []int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []dbstore.Index
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
+func (c ResolverGetIndexesByIDsFuncCall) Args() []interface{} {
+	trailing := []interface{}{}
+	for _, val := range c.Arg1 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0}, trailing...)
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ResolverGetIndexesByIDsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // ResolverGetUploadByIDFunc describes the behavior when the GetUploadByID
 // method of the parent MockResolver instance is invoked.
 type ResolverGetUploadByIDFunc struct {
@@ -697,6 +835,122 @@ func (c ResolverGetUploadByIDFuncCall) Args() []interface{} {
 // invocation.
 func (c ResolverGetUploadByIDFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// ResolverGetUploadsByIDsFunc describes the behavior when the
+// GetUploadsByIDs method of the parent MockResolver instance is invoked.
+type ResolverGetUploadsByIDsFunc struct {
+	defaultHook func(context.Context, ...int) ([]dbstore.Upload, error)
+	hooks       []func(context.Context, ...int) ([]dbstore.Upload, error)
+	history     []ResolverGetUploadsByIDsFuncCall
+	mutex       sync.Mutex
+}
+
+// GetUploadsByIDs delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockResolver) GetUploadsByIDs(v0 context.Context, v1 ...int) ([]dbstore.Upload, error) {
+	r0, r1 := m.GetUploadsByIDsFunc.nextHook()(v0, v1...)
+	m.GetUploadsByIDsFunc.appendCall(ResolverGetUploadsByIDsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetUploadsByIDs
+// method of the parent MockResolver instance is invoked and the hook queue
+// is empty.
+func (f *ResolverGetUploadsByIDsFunc) SetDefaultHook(hook func(context.Context, ...int) ([]dbstore.Upload, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetUploadsByIDs method of the parent MockResolver instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *ResolverGetUploadsByIDsFunc) PushHook(hook func(context.Context, ...int) ([]dbstore.Upload, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *ResolverGetUploadsByIDsFunc) SetDefaultReturn(r0 []dbstore.Upload, r1 error) {
+	f.SetDefaultHook(func(context.Context, ...int) ([]dbstore.Upload, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *ResolverGetUploadsByIDsFunc) PushReturn(r0 []dbstore.Upload, r1 error) {
+	f.PushHook(func(context.Context, ...int) ([]dbstore.Upload, error) {
+		return r0, r1
+	})
+}
+
+func (f *ResolverGetUploadsByIDsFunc) nextHook() func(context.Context, ...int) ([]dbstore.Upload, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ResolverGetUploadsByIDsFunc) appendCall(r0 ResolverGetUploadsByIDsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ResolverGetUploadsByIDsFuncCall objects
+// describing the invocations of this function.
+func (f *ResolverGetUploadsByIDsFunc) History() []ResolverGetUploadsByIDsFuncCall {
+	f.mutex.Lock()
+	history := make([]ResolverGetUploadsByIDsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ResolverGetUploadsByIDsFuncCall is an object that describes an invocation
+// of method GetUploadsByIDs on an instance of MockResolver.
+type ResolverGetUploadsByIDsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg1 []int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []dbstore.Upload
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
+func (c ResolverGetUploadsByIDsFuncCall) Args() []interface{} {
+	trailing := []interface{}{}
+	for _, val := range c.Arg1 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0}, trailing...)
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ResolverGetUploadsByIDsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // ResolverIndexConfigurationFunc describes the behavior when the
