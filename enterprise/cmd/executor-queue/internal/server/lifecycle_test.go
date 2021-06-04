@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/derision-test/glock"
+	"github.com/google/go-cmp/cmp"
 
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
