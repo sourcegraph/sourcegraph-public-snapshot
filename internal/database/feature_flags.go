@@ -305,10 +305,12 @@ func (f *FeatureFlagStore) DeleteOverride(ctx context.Context, orgID, userID *in
 	))
 }
 
-func (f *FeatureFlagStore) UpdateOverride(ctx context.Context, userID, orgID *int32, flagName string, newOverride *ff.Override) (*ff.Override, error) {
+func (f *FeatureFlagStore) UpdateOverride(ctx context.Context, orgID, userID *int32, flagName string, newValue bool) (*ff.Override, error) {
 	const newFeatureFlagOverrideFmtStr = `
-		DELETE FROM feature_flag_overrides 
-		WHERE %s AND flag_name = %s
+		UPDATE feature_flag_overrides 
+		SET flag_value = %s
+		WHERE %s -- namespace condition
+			AND flag_name = %s
 		RETURNING
 			namespace_org_id,
 			namespace_user_id,
@@ -328,6 +330,7 @@ func (f *FeatureFlagStore) UpdateOverride(ctx context.Context, userID, orgID *in
 
 	row := f.QueryRow(ctx, sqlf.Sprintf(
 		newFeatureFlagOverrideFmtStr,
+		newValue,
 		cond,
 		flagName,
 	))

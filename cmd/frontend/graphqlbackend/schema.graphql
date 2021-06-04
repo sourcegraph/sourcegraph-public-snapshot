@@ -683,9 +683,6 @@ type Mutation {
 
 	updateFeatureFlagOverride(
 		id: ID!
-		userID: ID
-		orgID: ID
-		flagName: String!
 		value: Boolean!
 	): FeatureFlagOverride!
 }

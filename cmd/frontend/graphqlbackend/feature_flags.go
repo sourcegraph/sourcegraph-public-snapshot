@@ -238,38 +238,14 @@ func (r *schemaResolver) DeleteFeatureFlagOverride(ctx context.Context, args str
 }
 
 func (r *schemaResolver) UpdateFeatureFlagOverride(ctx context.Context, args struct {
-	ID       graphql.ID
-	UserID   *graphql.ID
-	OrgID    *graphql.ID
-	FlagName string
-	Value    bool
+	ID    graphql.ID
+	Value bool
 }) (*FeatureFlagOverrideResolver, error) {
 	spec, err := unmarshalOverrideID(args.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	var uid, oid *int32
-	if args.UserID != nil {
-		u, err := UnmarshalUserID(*args.UserID)
-		if err != nil {
-			return nil, err
-		}
-		uid = &u
-	} else if args.OrgID != nil {
-		o, err := UnmarshalOrgID(*args.OrgID)
-		if err != nil {
-			return nil, err
-		}
-		oid = &o
-	}
-
-	fo := &featureflag.Override{
-		UserID:   uid,
-		OrgID:    oid,
-		FlagName: args.FlagName,
-		Value:    args.Value,
-	}
-	res, err := database.FeatureFlags(r.db).UpdateOverride(ctx, spec.OrgID, spec.UserID, spec.FlagName, fo)
+	res, err := database.FeatureFlags(r.db).UpdateOverride(ctx, spec.OrgID, spec.UserID, spec.FlagName, args.Value)
 	return &FeatureFlagOverrideResolver{r.db, res}, err
 }
