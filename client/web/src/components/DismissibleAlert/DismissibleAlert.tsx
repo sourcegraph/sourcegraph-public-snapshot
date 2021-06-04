@@ -1,5 +1,8 @@
+import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
+
+import styles from './DismissibleAlert.module.scss'
 
 interface Props {
     /** used to build the key that represents the alert in local storage */
@@ -25,9 +28,9 @@ export const DismissibleAlert: React.FunctionComponent<Props> = ({ partialStorag
         return null
     }
     return (
-        <div className={`alert dismissible-alert ${className}`}>
-            <div className="dismissible-alert__content">{children}</div>
-            <button type="button" className="btn btn-icon" onClick={onDismiss}>
+        <div className={classNames('alert', styles.container, className)}>
+            <div className={styles.content}>{children}</div>
+            <button type="button" className={classNames('btn btn-icon', styles.closeButton)} onClick={onDismiss}>
                 <CloseIcon className="icon-inline" />
             </button>
         </div>

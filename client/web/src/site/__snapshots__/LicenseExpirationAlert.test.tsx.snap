@@ -2,10 +2,10 @@
 
 exports[`LicenseExpirationAlert.test.tsx expired 1`] = `
 <div
-  className="alert dismissible-alert alert alert-warning align-items-center "
+  className="alert container alert-warning align-items-center"
 >
   <div
-    className="dismissible-alert__content"
+    className="content"
   >
     <svg
       className="mdi-icon redesign-d-none icon-inline mr-2 flex-shrink-0"
@@ -45,7 +45,7 @@ exports[`LicenseExpirationAlert.test.tsx expired 1`] = `
     </a>
   </div>
   <button
-    className="btn btn-icon"
+    className="btn btn-icon closeButton"
     onClick={[Function]}
     type="button"
   >
@@ -66,10 +66,10 @@ exports[`LicenseExpirationAlert.test.tsx expired 1`] = `
 
 exports[`LicenseExpirationAlert.test.tsx expiring soon 1`] = `
 <div
-  className="alert dismissible-alert alert alert-warning align-items-center "
+  className="alert container alert-warning align-items-center"
 >
   <div
-    className="dismissible-alert__content"
+    className="content"
   >
     <svg
       className="mdi-icon redesign-d-none icon-inline mr-2 flex-shrink-0"
@@ -109,7 +109,7 @@ exports[`LicenseExpirationAlert.test.tsx expiring soon 1`] = `
     </a>
   </div>
   <button
-    className="btn btn-icon"
+    className="btn btn-icon closeButton"
     onClick={[Function]}
     type="button"
   >

@@ -40,7 +40,7 @@ export const ChangesetsArchivedNotice: React.FunctionComponent<ChangesetsArchive
     }
 
     return (
-        <DismissibleAlert className="alert alert-info" partialStorageKey={`changesets-archived-by-${archivedBy}`}>
+        <DismissibleAlert className="alert-info" partialStorageKey={`changesets-archived-by-${archivedBy}`}>
             <div className="d-flex align-items-center">
                 <div className="d-none d-md-block">
                     <ArchiveIcon className="icon icon-inline mr-2" />

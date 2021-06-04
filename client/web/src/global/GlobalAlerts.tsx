@@ -86,7 +86,7 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                         <DismissibleAlert
                             key={motd}
                             partialStorageKey={`motd.${motd}`}
-                            className="alert alert-info global-alerts__alert"
+                            className="alert-info global-alerts__alert"
                         >
                             <Markdown dangerousInnerHTML={renderMarkdown(motd)} />
                         </DismissibleAlert>
@@ -95,7 +95,7 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                     <DismissibleAlert
                         key="dev-web-server-alert"
                         partialStorageKey="dev-web-server-alert"
-                        className="alert alert-danger global-alerts__alert"
+                        className="alert-danger global-alerts__alert"
                     >
                         <div>
                             <strong>Warning!</strong> This build uses data from the proxied API:{' '}

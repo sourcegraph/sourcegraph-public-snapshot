@@ -1,0 +1,15 @@
+.container {
+    display: flex;
+    align-items: flex-start;
+    padding-right: 0.5rem;
+}
+
+.content {
+    display: flex;
+    flex: 1 1 auto;
+    line-height: (20/14);
+}
+
+.close-button {
+    height: 1.25rem;
+}
