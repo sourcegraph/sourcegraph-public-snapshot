@@ -58,3 +58,13 @@ Common language agnostic starting points:
 
 - `sed`, [`yq`](https://github.com/mikefarah/yq), `awk` are common utilities for changing text
 - [comby](https://comby.dev/docs/overview) is a language-aware structural code search and replace tool. It can match expressions and function blocks, and is great for more complex changes.
+
+### How can I use [GitHub expression syntax](https://docs.github.com/en/actions/reference/context-and-expression-syntax-for-github-actions) (`${{ }}` literally) in my batch spec?
+
+To tell Sourcegraph not to evaluate `${{ }}` like a normal [template delimiter](batch_spec_templating.md), you can quote it and wrap it in a second set of `${{ }}` like so:
+
+```
+${{ "${{ leave me alone! }}" }}
+```
+
+Keep in mind the context in which the inner `${{ }}` will be evaluated and be sure to escape characters as is appropriate. Check out the cheatsheet for an [example](batch_spec_cheat_sheet.md#write-a-github-actions-workflow-that-includes-github-expression-syntax) within a shell script.

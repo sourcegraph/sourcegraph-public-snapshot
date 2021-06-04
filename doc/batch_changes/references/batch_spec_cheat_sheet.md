@@ -183,3 +183,34 @@ steps:
     container: golang
     if: ${{ outputs.goModExists }}
 ```
+
+### Write a GitHub Actions workflow that includes [GitHub expression syntax](https://docs.github.com/en/actions/reference/context-and-expression-syntax-for-github-actions)
+
+```yaml
+steps:
+  - container: alpine:3
+    run: |
+      #!/usr/bin/env bash
+
+      mkdir -p .github/workflows
+
+      cat <<EOF >.github/workflows/lsif.yml
+      name: LSIF
+      on:
+        - push
+      jobs:
+        lsif-go:
+          runs-on: ubuntu-latest
+          container: sourcegraph/lsif-go
+          steps:
+            - uses: actions/checkout@v1
+            - name: Generate LSIF data
+              run: lsif-go
+            - name: Upload LSIF data
+              run: src lsif upload -github-token=${{ "\\${{secrets.GITHUB_TOKEN}}" }}
+      EOF
+```
+
+Since GitHub expression syntax conflicts with Sourcegraph's own template expression syntax, the quotes indicate to Sourcegraph to ignore the sequence contained within them when evaluating the template. However, to avoid the shell also interpreting the GitHub expression as a variable when executing the script, we need to escape the quoted `$` twice: once for the shell script itself, and once to escape `\` for initially parsing the spec in Go.
+
+To use the literal sequence `${{ }}` in another field of the batch spec that [supports templating](batch_spec_templating.md#fields-with-template-support), quotes are normally sufficient: `${{ "${{ leave me alone! }}" }}`
