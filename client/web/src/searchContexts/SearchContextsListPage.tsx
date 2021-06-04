@@ -102,7 +102,7 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
                                 onClick={onSelectSearchContextsList}
                                 className={classNames('nav-link', selectedTab === 'list' && 'active')}
                             >
-                                <span className="text-content" data-test-tab="Your search contexts">
+                                <span className="text-content" data-tab-content="Your search contexts">
                                     Your search contexts
                                 </span>
                             </a>

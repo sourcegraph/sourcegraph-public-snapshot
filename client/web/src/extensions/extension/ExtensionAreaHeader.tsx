@@ -203,7 +203,7 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                                                     exact={exact}
                                                 >
                                                     {Icon && <Icon className="icon-inline" />}{' '}
-                                                    <span className="text-content" data-test-tab={label}>
+                                                    <span className="text-content" data-tab-content={label}>
                                                         {label}
                                                     </span>
                                                 </NavLink>

@@ -80,7 +80,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
             <BatchChangeTab index={0} name={TabName.Changesets}>
                 <span>
                     <SourceBranchIcon className="icon-inline text-muted mr-1" />
-                    <span className="text-content" data-test-tab="Changesets">
+                    <span className="text-content" data-tab-content="Changesets">
                         Changesets
                     </span>{' '}
                     <span className="badge badge-pill badge-secondary ml-1">
@@ -91,7 +91,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
             <BatchChangeTab index={1} name={TabName.Chart}>
                 <span>
                     <ChartLineVariantIcon className="icon-inline text-muted mr-1" />{' '}
-                    <span className="text-content" data-test-tab="Burndown chart">
+                    <span className="text-content" data-tab-content="Burndown chart">
                         Burndown chart
                     </span>
                 </span>
@@ -99,7 +99,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
             <BatchChangeTab index={2} name={TabName.Spec}>
                 <span>
                     <FileDocumentIcon className="icon-inline text-muted mr-1" />{' '}
-                    <span className="text-content" data-test-tab="Spec">
+                    <span className="text-content" data-tab-content="Spec">
                         Spec
                     </span>
                 </span>
@@ -107,7 +107,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
             <BatchChangeTab index={3} name={TabName.Archived}>
                 <span>
                     <ArchiveIcon className="icon-inline text-muted mr-1" />{' '}
-                    <span className="text-content" data-test-tab="Archived">
+                    <span className="text-content" data-tab-content="Archived">
                         Archived
                     </span>{' '}
                     <span className="badge badge-pill badge-secondary ml-1">
@@ -118,7 +118,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
             <BatchChangeTab index={4} name={TabName.BulkOperations}>
                 <span>
                     <MonitorStarIcon className="icon-inline text-muted mr-1" />{' '}
-                    <span className="text-content" data-test-tab="Bulk operations">
+                    <span className="text-content" data-tab-content="Bulk operations">
                         Bulk operations
                     </span>{' '}
                     <span className="badge badge-pill badge-secondary ml-1">

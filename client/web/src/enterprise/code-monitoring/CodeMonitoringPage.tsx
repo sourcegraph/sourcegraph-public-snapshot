@@ -225,7 +225,7 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                             <div className="nav nav-tabs">
                                 <div className="nav-item">
                                     <div className="nav-link active">
-                                        <span className="text-content" data-test-tab="Code monitors">
+                                        <span className="text-content" data-tab-content="Code monitors">
                                             Code monitors
                                         </span>
                                     </div>

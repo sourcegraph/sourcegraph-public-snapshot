@@ -252,7 +252,7 @@ const ExpandedSection: React.FunctionComponent<
                                 selectedTab === 'diff' && 'active'
                             )}
                         >
-                            <span className="text-content" data-test-tab="Changed files">
+                            <span className="text-content" data-tab-content="Changed files">
                                 Changed files
                             </span>
                             {node.delta.diffChanged && (
@@ -279,7 +279,7 @@ const ExpandedSection: React.FunctionComponent<
                                 selectedTab === 'description' && 'active'
                             )}
                         >
-                            <span className="text-content" data-test-tab="Description">
+                            <span className="text-content" data-tab-content="Description">
                                 Description
                             </span>
                             {(node.delta.titleChanged || node.delta.bodyChanged) && (
@@ -306,7 +306,7 @@ const ExpandedSection: React.FunctionComponent<
                                 selectedTab === 'commits' && 'active'
                             )}
                         >
-                            <span className="text-content" data-test-tab="Commits">
+                            <span className="text-content" data-tab-content="Commits">
                                 Commits
                             </span>
                             {(node.delta.authorEmailChanged ||

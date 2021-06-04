@@ -39,7 +39,7 @@ $nav-tabs-link-active-border-color: var(--border-color) var(--border-color) tran
             flex-direction: column;
             justify-content: center;
             &::after {
-                content: attr(data-test-tab);
+                content: attr(data-tab-content);
                 height: 0;
                 text-transform: capitalize;
                 visibility: hidden; // a11y: avoid detection for voice over

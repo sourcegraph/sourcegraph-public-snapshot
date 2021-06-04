@@ -54,7 +54,7 @@ export const UserAreaHeader: React.FunctionComponent<Props> = ({ url, navItems, 
                                     <NavLink to={url + to} className="nav-link" activeClassName="active" exact={exact}>
                                         <span>
                                             {Icon && <Icon className="icon-inline" />}{' '}
-                                            <span className="text-content" data-test-tab={label}>
+                                            <span className="text-content" data-tab-content={label}>
                                                 {label}
                                             </span>
                                         </span>

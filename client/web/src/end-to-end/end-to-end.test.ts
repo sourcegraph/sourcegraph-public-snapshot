@@ -729,7 +729,7 @@ describe('e2e test suite', () => {
                 test(symbolTest.name, async () => {
                     await driver.page.goto(sourcegraphBaseUrl + symbolTest.filePath)
 
-                    await (await driver.page.waitForSelector('[data-test-tab="symbols"]')).click()
+                    await (await driver.page.waitForSelector('[data-tab-content="symbols"]')).click()
 
                     await driver.page.waitForSelector('.test-symbol-name', { visible: true })
 
@@ -785,7 +785,7 @@ describe('e2e test suite', () => {
 
                     await driver.page.goto(repoBaseURL + navigationTest.filePath)
 
-                    await (await driver.page.waitForSelector('[data-test-tab="symbols"]')).click()
+                    await (await driver.page.waitForSelector('[data-tab-content="symbols"]')).click()
 
                     await driver.page.waitForSelector('.test-symbol-name', { visible: true })
 
@@ -818,8 +818,8 @@ describe('e2e test suite', () => {
             for (const { name, filePath, index, line } of highlightSymbolTests) {
                 test(name, async () => {
                     await driver.page.goto(sourcegraphBaseUrl + filePath)
-                    await driver.page.waitForSelector('[data-test-tab="symbols"]')
-                    await driver.page.click('[data-test-tab="symbols"]')
+                    await driver.page.waitForSelector('[data-tab-content="symbols"]')
+                    await driver.page.click('[data-tab-content="symbols"]')
                     await driver.page.waitForSelector('.test-symbol-name', { visible: true })
                     await driver.page.click(`.filtered-connection__nodes li:nth-child(${index + 1}) a`)
 
@@ -933,7 +933,7 @@ describe('e2e test suite', () => {
                 await driver.page.waitForSelector('#repo-revision-popover', { visible: true })
                 await driver.page.click('#repo-revision-popover')
                 // Click "Tags" tab
-                const popoverSelector = '.revisions-popover [data-test-tab="tags"]'
+                const popoverSelector = '.revisions-popover [data-tab-content="tags"]'
                 await driver.page.waitForSelector(popoverSelector, { visible: true })
                 await clickAnchorElement(popoverSelector)
                 const gitReferenceNodeSelector = 'a.git-ref-node[href*="0.5.0"]'
