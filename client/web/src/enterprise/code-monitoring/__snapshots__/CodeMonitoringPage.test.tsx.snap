@@ -155,7 +155,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
             >
               <span
                 className="text-content"
-                data-test-tab="Code monitors"
+                data-tab-content="Code monitors"
               >
                 Code monitors
               </span>
@@ -2142,7 +2142,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
             >
               <span
                 className="text-content"
-                data-test-tab="Code monitors"
+                data-tab-content="Code monitors"
               >
                 Code monitors
               </span>
@@ -2960,7 +2960,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
             >
               <span
                 className="text-content"
-                data-test-tab="Code monitors"
+                data-tab-content="Code monitors"
               >
                 Code monitors
               </span>
