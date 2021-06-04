@@ -67,12 +67,14 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 	logger := command.NewLogger(union(h.options.RedactedValues, job.RedactedValues))
 
 	defer func() {
+		log15.Info("Writing log entries", "jobID", job.ID, "repositoryName", job.RepositoryName, "commit", job.Commit)
+
 		for _, entry := range logger.Entries() {
 			// Perform this outside of the task execution context. If there is a timeout or
 			// cancellation error we don't want to skip uploading these logs as users will
 			// often want to see how far something progressed prior to a timeout.
 			if err := s.AddExecutionLogEntry(context.Background(), record.RecordID(), entry); err != nil {
-				log15.Warn("Failed to upload executor log entry for job", "id", record.RecordID(), "err", err)
+				log15.Warn("Failed to upload executor log entry for job", "id", record.RecordID(), "repositoryName", job.RepositoryName, "commit", job.Commit, "error", err)
 			}
 		}
 	}()
@@ -80,6 +82,8 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 	// Create a working directory for this job which will be removed once the job completes.
 	// If a repository is supplied as part of the job configuration, it will be cloned into
 	// the working directory.
+
+	log15.Info("Creating workspace", "jobID", job.ID, "repositoryName", job.RepositoryName, "commit", job.Commit)
 
 	hostRunner := h.runnerFactory("", logger, command.Options{}, h.operations)
 	workingDirectory, err := h.prepareWorkspace(ctx, hostRunner, job.RepositoryName, job.Commit)
@@ -142,6 +146,8 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 		scriptNames = append(scriptNames, scriptName)
 	}
 
+	log15.Info("Setting up VM", "jobID", job.ID, "repositoryName", job.RepositoryName, "commit", job.Commit)
+
 	// Setup Firecracker VM (if enabled)
 	if err := runner.Setup(ctx, imageNames, nil); err != nil {
 		return wrapError(err, "failed to setup virtual machine")
@@ -166,6 +172,8 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 			Operation:  h.operations.Exec,
 		}
 
+		log15.Info(fmt.Sprintf("Running docker step #%d", i), "jobID", job.ID, "repositoryName", job.RepositoryName, "commit", job.Commit)
+
 		if err := runner.Run(ctx, dockerStepCommand); err != nil {
 			return wrapError(err, "failed to perform docker step")
 		}
@@ -173,6 +181,8 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 
 	// Invoke each src-cli step sequentially
 	for i, cliStep := range job.CliSteps {
+		log15.Info(fmt.Sprintf("Running src-cli step #%d", i), "jobID", job.ID, "repositoryName", job.RepositoryName, "commit", job.Commit)
+
 		cliStepCommand := command.CommandSpec{
 			Key:       fmt.Sprintf("step.src.%d", i),
 			Command:   append([]string{"src"}, cliStep.Commands...),
