@@ -34,6 +34,8 @@ import { listUserRepositories } from '../../../site-admin/backend'
 import { eventLogger } from '../../../tracking/eventLogger'
 
 import { RepositoryNode } from './RepositoryNode'
+import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
+import classNames from 'classnames'
 
 interface Props extends RouteComponentProps, TelemetryProps {
     userID: string
@@ -105,6 +107,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     routingPrefix,
     telemetryService,
 }) => {
+    const [isRedesignEnabled] = useRedesignToggle()
     const [hasRepos, setHasRepos] = useState(false)
     const [externalServices, setExternalServices] = useState<ExternalServicesResult['externalServices']['nodes']>()
     const [repoFilters, setRepoFilters] = useState<FilteredConnectionFilter[]>([])
@@ -112,8 +115,10 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     const [updateReposList, setUpdateReposList] = useState(false)
 
     const NoAddedReposBanner = (
-        <div className="border rounded p-3">
-            <h3>You have not added any repositories to Sourcegraph</h3>
+        <Container
+            className={classNames(isRedesignEnabled && 'text-center', !isRedesignEnabled && 'border rounded p-3')}
+        >
+            <h4>You have not added any repositories to Sourcegraph.</h4>
 
             {externalServices?.length === 0 ? (
                 <small>
@@ -134,7 +139,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                     to start searching your code with Sourcegraph.
                 </small>
             )}
-        </div>
+        </Container>
     )
 
     const fetchUserReposCount = useCallback(
