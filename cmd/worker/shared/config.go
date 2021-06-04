@@ -63,14 +63,14 @@ func (c *Config) Validate() error {
 
 // shouldRunTask returns true if the given task should be run.
 func shouldRunTask(name string) bool {
-	for _, rc := range config.TaskBlocklist {
-		if name == rc {
+	for _, candidate := range config.TaskBlocklist {
+		if name == candidate {
 			return false
 		}
 	}
 
-	for _, rc := range config.TaskAllowlist {
-		if rc == "all" || name == rc {
+	for _, candidate := range config.TaskAllowlist {
+		if candidate == "all" || name == candidate {
 			return true
 		}
 	}

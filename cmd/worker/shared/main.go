@@ -24,17 +24,17 @@ import (
 const addr = ":3189"
 
 // Start runs the worker. This method does not return.
-func Start(enterpriseTasks map[string]Task) {
-	allTasks := map[string]Task{}
-	for name, task := range tasks {
-		allTasks[name] = task
+func Start(additionalTasks map[string]Task) {
+	tasks := map[string]Task{}
+	for name, task := range bultins {
+		tasks[name] = task
 	}
-	for name, task := range enterpriseTasks {
-		allTasks[name] = task
+	for name, task := range additionalTasks {
+		tasks[name] = task
 	}
 
 	// Setup environment variables
-	loadConfigs(allTasks)
+	loadConfigs(tasks)
 
 	env.Lock()
 	env.HandleHelpFlag()
@@ -46,14 +46,13 @@ func Start(enterpriseTasks map[string]Task) {
 	ready := make(chan struct{})
 	go debugserver.NewServerRoutine(ready).Start()
 
-	// Validate environment variables. A validation error at this point will
-	// cause a fatal log message to be emitted.
-	validateConfigs(allTasks)
+	// Validate environment variables
+	mustValidateConfigs(tasks)
 
 	// Create the background routines that the worker will monitor for its
 	// lifetime. There may be a non-trivial startup time on this step as we
 	// connect to external databases, wait for migrations, etc.
-	allRoutines := createBackgroundRoutines(allTasks)
+	allRoutines := mustCreateBackgroundRoutines(tasks)
 
 	// Initialize health server
 	server := httpserver.NewFromAddr(addr, &http.Server{
@@ -79,33 +78,33 @@ func loadConfigs(tasks map[string]Task) {
 	config.Load()
 
 	// Load all other registered configs
-	for _, task := range tasks {
-		for _, config := range task.Config() {
-			config.Load()
+	for _, t := range tasks {
+		for _, c := range t.Config() {
+			c.Load()
 		}
 	}
 }
 
-// validateConfigs calls Validate on the configs of each of the tasks that will be run
-// by this instance of the worker. If any config has a validation error, a fatal log
-// message will be emitted.
-func validateConfigs(tasks map[string]Task) {
+// mustValidateConfigs calls Validate on the configs of each of the tasks that will be run
+// by this instance of the worker. If any config has a validation error, a fatal log message
+// will be emitted.
+func mustValidateConfigs(tasks map[string]Task) {
 	validationErrors := map[string][]error{}
 	if err := config.Validate(); err != nil {
 		log.Fatalf("Failed to load configuration: %s", err)
 	}
+
 	if len(validationErrors) == 0 {
-		// If the worker config is valid, validate the children configs.
-		// We guard this in the case of worker config errors because we
-		// don't want to spew validation errors for things that should
-		// be disabled.
-		for _, name := range taskNames(tasks) {
+		// If the worker config is valid, validate the children configs. We guard this
+		// in the case of worker config errors because we don't want to spew validation
+		// errors for things that should be disabled.
+		for name, task := range tasks {
 			if !shouldRunTask(name) {
 				continue
 			}
 
-			for _, config := range tasks[name].Config() {
-				if err := config.Validate(); err != nil {
+			for _, c := range task.Config() {
+				if err := c.Validate(); err != nil {
 					validationErrors[name] = append(validationErrors[name], err)
 				}
 			}
@@ -125,10 +124,10 @@ func validateConfigs(tasks map[string]Task) {
 	}
 }
 
-// createBackgroundRoutines runs the Routines function of each of the given tasks concurrently.
+// mustCreateBackgroundRoutines runs the Routines function of each of the given tasks concurrently.
 // If an error occurs from any of them, a fatal log message will be emitted. Otherwise, the set
 // of background routines from each task will be returned.
-func createBackgroundRoutines(tasks map[string]Task) []goroutine.BackgroundRoutine {
+func mustCreateBackgroundRoutines(tasks map[string]Task) []goroutine.BackgroundRoutine {
 	var (
 		allRoutines  []goroutine.BackgroundRoutine
 		descriptions []string
@@ -168,20 +167,25 @@ func runRoutinesConcurrently(tasks map[string]Task) chan routinesResult {
 	defer cancel()
 
 	for _, name := range taskNames(tasks) {
+		taskLoggr := log15.New("name", name)
+
 		if !shouldRunTask(name) {
-			log15.Info("Skipping task", "name", name)
+			taskLoggr.Info("Skipping task")
 			continue
 		}
 
-		log15.Info("Running task", "name", name)
 		wg.Add(1)
+		taskLoggr.Info("Running task")
 
 		go func(name string) {
 			defer wg.Done()
 
 			routines, err := tasks[name].Routines(ctx)
 			results <- routinesResult{name, routines, err}
-			if err != nil {
+
+			if err == nil {
+				taskLoggr.Info("Finished initializing task")
+			} else {
 				cancel()
 			}
 		}(name)

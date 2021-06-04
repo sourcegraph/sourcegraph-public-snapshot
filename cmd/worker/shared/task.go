@@ -26,6 +26,6 @@ type Task interface {
 	Routines(ctx context.Context) ([]goroutine.BackgroundRoutine, error)
 }
 
-var tasks = map[string]Task{
+var bultins = map[string]Task{
 	// Empty for now
 }
