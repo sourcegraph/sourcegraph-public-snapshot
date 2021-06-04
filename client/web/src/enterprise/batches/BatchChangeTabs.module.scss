@@ -2,7 +2,9 @@
 .batch-change-tabs {
     .nav-link {
         :global(.theme-classic) & {
-            color: var(--link-color);
+            &:not(:global(.active)) {
+                color: var(--link-color);
+            }
         }
     }
 
