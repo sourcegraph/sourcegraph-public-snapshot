@@ -29,14 +29,15 @@
     }
 
     .alert-secondary {
-        --alert-border-color: var(--gray-06);
         --alert-icon-background-color: var(--secondary-4);
 
         @include theme-light-rules {
+            --alert-border-color: var(--secondary-3);
             --alert-icon-color: var(--gray-06);
         }
 
         @include theme-dark-rules {
+            --alert-border-color: var(--secondary);
             --alert-icon-color: var(--gray-05);
         }
     }

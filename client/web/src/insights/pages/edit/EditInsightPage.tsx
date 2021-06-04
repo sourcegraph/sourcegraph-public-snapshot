@@ -104,19 +104,14 @@ export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = pr
             // subject settings (user or org) and create new insight to new setting file.
             if (insight.visibility !== newInsight.visibility) {
                 const settings = await getSubjectSettings(originSubjectID).toPromise()
-
                 const editedSettings = removeInsightFromSetting(settings.contents, insight.id)
 
                 await updateSubjectSettings(platformContext, originSubjectID, editedSettings).toPromise()
             }
 
-            const {
-                id: userID,
-                organizations: { nodes: orgs },
-            } = authenticatedUser
+            const { id: userID } = authenticatedUser
 
-            // TODO [VK] Add org picker in creation UI and not just pick first organization
-            const subjectID = newInsight.visibility === 'personal' ? userID : orgs[0].id
+            const subjectID = newInsight.visibility === 'personal' ? userID : newInsight.visibility
 
             const settings = await getSubjectSettings(subjectID).toPromise()
             let settingsContent = settings.contents

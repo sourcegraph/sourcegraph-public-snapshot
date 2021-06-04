@@ -2775,6 +2775,56 @@ This panel indicates percentage pods available.
 
 <p class="subtitle">Indexes repositories and populates the search index.</p>
 
+#### zoekt-indexserver: repos_assigned
+
+This panel indicates total number of repos.
+
+Sudden changes should be caused by indexing configuration changes.
+
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+
+<br />
+
+#### zoekt-indexserver: repos_priorities
+
+This panel indicates total number of repos with priorities for ranking.
+
+Sudden changes should be caused by indexing configuration changes.
+
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+
+<br />
+
+#### zoekt-indexserver: repo_index_state
+
+This panel indicates indexing results over 5m (noop=no changes, empty=no branches to index).
+
+A persistent failing state indicates some repositories cannot be indexed, perhaps due to size and timeouts.
+
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+
+<br />
+
+#### zoekt-indexserver: repo_index_success_speed
+
+This panel indicates successful indexing durations.
+
+Latency increases can indicate bottlenecks in the indexserver.
+
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+
+<br />
+
+#### zoekt-indexserver: repo_index_fail_speed
+
+This panel indicates failed indexing durations.
+
+Failures happening after a long time indicates timeouts.
+
+<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+
+<br />
+
 #### zoekt-indexserver: average_resolve_revision_duration
 
 This panel indicates average resolve revision duration over 5m.
