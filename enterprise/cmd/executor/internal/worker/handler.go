@@ -31,6 +31,9 @@ type handler struct {
 
 var _ workerutil.Handler = &handler{}
 
+// ErrJobAlreadyExists occurs when a duplicate job identifier is dequeued.
+var ErrJobAlreadyExists = errors.New("job already exists")
+
 // Handle clones the target code into a temporary directory, invokes the target indexer in a
 // fresh docker container, and uploads the results to the external frontend API.
 func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workerutil.Record) (err error) {
@@ -55,7 +58,9 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 		}
 	}()
 
-	h.idSet.Add(job.ID)
+	if !h.idSet.Add(job.ID, cancel) {
+		return ErrJobAlreadyExists
+	}
 	defer h.idSet.Remove(job.ID)
 
 	// 🚨 SECURITY: The job logger must be supplied with all sensitive values that may appear

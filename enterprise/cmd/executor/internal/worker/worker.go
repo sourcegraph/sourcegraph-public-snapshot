@@ -76,7 +76,16 @@ func NewWorker(options Options, observationContext *observation.Context) gorouti
 
 	indexer := workerutil.NewWorker(context.Background(), store, handler, options.WorkerOptions)
 	heartbeat := goroutine.NewHandlerWithErrorMessage("heartbeat", func(ctx context.Context) error {
-		return queueStore.Heartbeat(ctx, idSet.Slice())
+		unknownIDs, err := queueStore.Heartbeat(ctx, idSet.Slice())
+		if err != nil {
+			return err
+		}
+
+		for _, id := range unknownIDs {
+			idSet.Remove(id)
+		}
+
+		return nil
 	})
 
 	return goroutine.CombinedRoutine{
