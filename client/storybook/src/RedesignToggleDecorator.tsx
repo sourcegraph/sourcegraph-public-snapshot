@@ -2,10 +2,15 @@ import { DecoratorFunction } from '@storybook/addons'
 import isChromatic from 'chromatic/isChromatic'
 import { ReactElement, useEffect } from 'react'
 
-import { useRedesignToggle, REDESIGN_CLASS_NAME } from '@sourcegraph/shared/src/util/useRedesignToggle'
+import {
+    useRedesignToggle,
+    NOT_REDESIGN_CLASS_NAME,
+    REDESIGN_CLASS_NAME,
+} from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 const toggleRedesignClass = (element: HTMLElement, isRedesignEnabled: boolean): void => {
     element.classList.toggle(REDESIGN_CLASS_NAME, isRedesignEnabled)
+    element.classList.toggle(NOT_REDESIGN_CLASS_NAME, !isRedesignEnabled)
 }
 
 const updatePreview = (isRedesignEnabled: boolean): void => {
