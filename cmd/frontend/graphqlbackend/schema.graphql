@@ -670,11 +670,57 @@ type Mutation {
         rollout: Int
     ): FeatureFlag!
 
-    createFeatureFlagOverride(orgID: ID, userID: ID, flagName: String!, value: Boolean!): FeatureFlagOverride!
+    """
+    (experimental) Create a new feature flag override for the given org or user
+    """
+    createFeatureFlagOverride(
+        """
+        The orgID for the org this override will apply to.
+        Mutually exclusive with userID.
+        """
+        orgID: ID
 
-    deleteFeatureFlagOverride(id: ID!): EmptyResponse!
+        """
+        The userID for the user this override will apply to.
+        Mutually exclusive with orgID.
+        """
+        userID: ID
 
-    updateFeatureFlagOverride(id: ID!, value: Boolean!): FeatureFlagOverride!
+        """
+        The name of the feature flag this override applies to
+        """
+        flagName: String!
+
+        """
+        The overridden value
+        """
+        value: Boolean!
+    ): FeatureFlagOverride!
+
+    """
+    Delete a feature flag override
+    """
+    deleteFeatureFlagOverride(
+        """
+        The ID of the feature flag override to delete
+        """
+        id: ID!
+    ): EmptyResponse!
+
+    """
+    Update a feature flag override
+    """
+    updateFeatureFlagOverride(
+        """
+        The ID of the feature flag override to update
+        """
+        id: ID!
+
+        """
+        The updated value of the feature flag override
+        """
+        value: Boolean!
+    ): FeatureFlagOverride!
 }
 
 """
@@ -1399,9 +1445,23 @@ type FeatureFlagRollout {
 A feature flag override is an override of a feature flag's value for a specific org or user
 """
 type FeatureFlagOverride {
+    """
+    A unique ID for this feature flag override
+    """
     id: ID!
+
+    """
+       The user this feature flag override applies to, if set.
+    Mutually exclusive with Org
+    """
     user: User
+
+    """
+       The org this feature flag override applies to, if set.
+    Mutually exclusive with User
+    """
     org: Org
+
     """
     The name of the feature flag being overridden
     """
