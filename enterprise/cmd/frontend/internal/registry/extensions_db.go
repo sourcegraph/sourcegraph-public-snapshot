@@ -182,7 +182,7 @@ func (s dbExtensions) GetByExtensionID(ctx context.Context, extensionID string) 
 
 // Temporary: we manually set these. Featured extensions live on sourcegraph.com, all other instances ask
 // dotcom for these extensions and filter based on site configuration.
-var featuredExtensionIDs = []string{"sourcegraph/codecov", "sourcegraph/git-extras", "sourcegraph/open-in-editor"}
+var featuredExtensionIDs = []string{"sourcegraph/codecov", "sourcegraph/sentry", "sourcegraph/vscode-extras"}
 
 // GetFeaturedExtensions retrieves the set of currently featured extensions.
 // This should only be called on dotcom; all other instances should retrieve these
@@ -208,14 +208,11 @@ func (s dbExtensions) getFeaturedExtensions(ctx context.Context, featuredExtensi
 		}
 		publisherName := parts[0]
 		extensionName := parts[1]
-		conds = append(conds, sqlf.Join([]*sqlf.Query{
-			sqlf.Sprintf("x.name=%s", extensionName),
-			sqlf.Sprintf("(users.username=%s OR orgs.name=%s)", publisherName, publisherName),
-		}, ") AND ("))
+		conds = append(conds, sqlf.Sprintf("(x.name=%s AND (users.username=%s OR orgs.name=%s))", extensionName, publisherName, publisherName))
 	}
 
 	conds = []*sqlf.Query{
-		sqlf.Join(conds, ") OR ("),
+		sqlf.Join(conds, " OR "),
 	}
 
 	results, err := s.list(ctx, conds, nil, nil)
