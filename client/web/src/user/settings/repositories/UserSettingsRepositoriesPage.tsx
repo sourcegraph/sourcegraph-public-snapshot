@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import AddIcon from 'mdi-react/AddIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -11,6 +12,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
@@ -35,8 +37,6 @@ import { listUserRepositories } from '../../../site-admin/backend'
 import { eventLogger } from '../../../tracking/eventLogger'
 
 import { RepositoryNode } from './RepositoryNode'
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
-import classNames from 'classnames'
 
 interface Props extends RouteComponentProps, TelemetryProps {
     userID: string
