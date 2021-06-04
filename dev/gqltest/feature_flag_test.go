@@ -232,6 +232,7 @@ func TestFeatureFlags(t *testing.T) {
 			// Create a feature flag first
 			boolTrue := true
 			_, err := createFeatureFlag("test_concrete", &boolTrue, nil)
+			require.NoError(t, err)
 			t.Cleanup(func() {
 				err := deleteFeatureFlag("test_concrete")
 				require.NoError(t, err)

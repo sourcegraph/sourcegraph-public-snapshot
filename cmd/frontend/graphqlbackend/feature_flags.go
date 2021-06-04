@@ -53,7 +53,7 @@ type FeatureFlagRolloutResolver struct {
 }
 
 func (f *FeatureFlagRolloutResolver) Name() string   { return f.inner.Name }
-func (f *FeatureFlagRolloutResolver) Rollout() int32 { return int32(f.inner.Rollout.Rollout) }
+func (f *FeatureFlagRolloutResolver) Rollout() int32 { return f.inner.Rollout.Rollout }
 func (f *FeatureFlagRolloutResolver) Overrides(ctx context.Context) ([]*FeatureFlagOverrideResolver, error) {
 	overrides, err := database.FeatureFlags(f.db).GetOverridesForFlag(ctx, f.inner.Name)
 	if err != nil {
