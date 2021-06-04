@@ -53,7 +53,7 @@ They can however utilize environment-agnostic components by passing our Bootstra
 ### General guidelines
 
 - Colocate styles with the corresponding component. Stylesheet file should be named like the `.tsx` component file.
-- Prefer classes over descendent/child selectors. It decouples styles from the DOM structure of the component, ensures encapsulation and avoids CSS specificity issues.
+- Prefer classes over descendant/child selectors. It decouples styles from the DOM structure of the component, ensures encapsulation and avoids CSS specificity issues.
 - Create utility classes for styles that should be shared horizontally between components.
 - Avoid hardcoding colors, use CSS variables if they are available / the color makes sense to share.
 - If possible, prefer CSS variables to SCSS variables.
