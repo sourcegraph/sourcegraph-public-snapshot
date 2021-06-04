@@ -9,7 +9,10 @@ import (
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 )
 
-// Prefetcher is a
+// Prefetcher is a batch query utility and cache used to reduce the amount of database
+// queries made by a tree of upload and index resolvers. A single prefetcher instance
+// is shared by all sibling resolvers resulting from an upload or index connection, as
+// well as index records resulting from an upload resolver (and vice versa).
 type Prefetcher struct {
 	sync.RWMutex
 	resolver    resolvers.Resolver
