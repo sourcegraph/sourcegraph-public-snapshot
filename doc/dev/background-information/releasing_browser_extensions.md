@@ -6,13 +6,9 @@ This page contains information about releasing browser extensions for different 
 Deployment to the Chrome web store happen automatically in CI when the `bext/release` branch is updated.
 
 ## Firefox
-The release process for Firefox is currently not automated.
+The release process for Firefox is currently semi-automated.
 
-### Self-hosted Extension
-When the `bext/release` branch is updated, our build pipeline will trigger a build for the Firefox extension. The build will trigger [this](https://github.com/sourcegraph/sourcegraph/blob/main/client/browser/scripts/release-ff.sh) script which will create a bundle, sign it and upload it to the Google Cloud Storage. Once the bundle is created, we upload it to the Mozilla Add-on page and wait for approval.
-
-### Add-on Store
-We're currently working on switching to the add-on store.
+When the `bext/release` branch is updated, our build pipeline will trigger a build for the Firefox extension (take a note of the commit sha, we'll need it later). The build will trigger [this](https://github.com/sourcegraph/sourcegraph/blob/main/client/browser/scripts/release-ff.sh) script which will create a bundle, sign it and upload it to the [Google Cloud Storage](https://console.cloud.google.com/storage/browser/sourcegraph-for-firefox). Once the bundle is created, we upload it to the Mozilla Add-on page. Once the bundle is uploaded, we need to upload the source code as well. On your local copy, navigate to `sourcegraph/client/browser/scripts/create-source-zip.js` and modify the `commitId` variable (use the sha from earlier). Once the variable is modified, run this script. It will generate a `sourcegraph.zip` in the folder. Upload this zip to the Mozilla Add-on page and wait for approval.
 
 ## Safari
 The release process for Safari is currently not automated.
@@ -35,13 +31,13 @@ Steps:
    1. Increment the `Version` & `Build` numbers. You can find the current numbers on the [App Store Connect page](https://appstoreconnect.apple.com/apps/1543262193/appstore/macos/version/deliverable).
 1. Select the target `Sourcegraph for Safari Extension`.
    1. Increment the `Version` & `Build` numbers. You can find the current numbers on the [App Store Connect page](https://appstoreconnect.apple.com/apps/1543262193/appstore/macos/version/deliverable).
-1. Open `Assets.xcassets` from the file viewer and select `AppIcon`. We need to upload the 512x512px & 1024x1024px version icons for the Mac Store. Drag & drop the files from `TODO: file path` to the corresponding slots.
+1. Open `Assets.xcassets` from the file viewer and select `AppIcon`. We need to upload the 512x512px & 1024x1024px version icons for the Mac Store. Drag & drop the files from [Drive](https://drive.google.com/drive/folders/1JCUuzIrpNrZP_uNqpel2wq0lwdRBkVgZ) to the corresponding slots.
 1. On the menu bar, navigate to `Product > Achive`. Once successful, the Archives modal will appear. If you ever want to re-open this modal, you can do so by navigating to the `Window > Organizier` on the menu bar.
 1. With the latest build selected, click on the `validate` button.
 1. Choose `SOURCEGRAPH INC` from the dropdown and click `next`.
 1. Make sure uploading the symbols is checked and click `next`.
 1. Make sure automatically managing the signing is checked and click `next`.
-   1. If this is your first time signing the package, `TODO: make sure to import signatures from 1pwd (https://help.apple.com/xcode/mac/current/#/dev154b28f09)`
+   1. If this is your first time signing the package, you need to create your own local distribution key.
 1. Once the validation is complete, click on the `Distribute App`.
 1. Make sure `App Store Connect` is selected and click `next`.
 1. Make sure upload is selected and click `next`.
@@ -70,7 +66,6 @@ Steps:
 - Ask a team member to add you to our Apple Developer group. They can send you an invitation from (App Store Connect)[https://appstoreconnect.apple.com/] portal.
 
 ## Chrome
-`TODO: figure out the $5 registration fee`
 - Be part of google group. Google group has access to Chrome Web Store Developer
 Group for Chrome publishing permissions: sg-chrome-ext-devs@googlegroups.com
 - Go to https://chrome.google.com/webstore/devconsole/register?hl=en
