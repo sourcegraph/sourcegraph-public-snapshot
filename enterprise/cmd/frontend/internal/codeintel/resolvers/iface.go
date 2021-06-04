@@ -22,6 +22,7 @@ type DBStore interface {
 	gitserver.DBStore
 
 	GetUploadByID(ctx context.Context, id int) (dbstore.Upload, bool, error)
+	GetUploadsByIDs(ctx context.Context, ids ...int) ([]dbstore.Upload, error)
 	GetUploads(ctx context.Context, opts dbstore.GetUploadsOptions) ([]dbstore.Upload, int, error)
 	DeleteUploadByID(ctx context.Context, id int) (bool, error)
 	GetDumpsByIDs(ctx context.Context, ids []int) ([]dbstore.Dump, error)
@@ -34,6 +35,7 @@ type DBStore interface {
 	MarkRepositoryAsDirty(ctx context.Context, repositoryID int) error
 	CommitGraphMetadata(ctx context.Context, repositoryID int) (stale bool, updatedAt *time.Time, _ error)
 	GetIndexByID(ctx context.Context, id int) (dbstore.Index, bool, error)
+	GetIndexesByIDs(ctx context.Context, ids ...int) ([]dbstore.Index, error)
 	GetIndexes(ctx context.Context, opts dbstore.GetIndexesOptions) ([]dbstore.Index, int, error)
 	DeleteIndexByID(ctx context.Context, id int) (bool, error)
 	GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (store.IndexConfiguration, bool, error)

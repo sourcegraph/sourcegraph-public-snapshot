@@ -56,12 +56,18 @@ type MockDBStore struct {
 	// GetIndexesFunc is an instance of a mock function object controlling
 	// the behavior of the method GetIndexes.
 	GetIndexesFunc *DBStoreGetIndexesFunc
+	// GetIndexesByIDsFunc is an instance of a mock function object
+	// controlling the behavior of the method GetIndexesByIDs.
+	GetIndexesByIDsFunc *DBStoreGetIndexesByIDsFunc
 	// GetUploadByIDFunc is an instance of a mock function object
 	// controlling the behavior of the method GetUploadByID.
 	GetUploadByIDFunc *DBStoreGetUploadByIDFunc
 	// GetUploadsFunc is an instance of a mock function object controlling
 	// the behavior of the method GetUploads.
 	GetUploadsFunc *DBStoreGetUploadsFunc
+	// GetUploadsByIDsFunc is an instance of a mock function object
+	// controlling the behavior of the method GetUploadsByIDs.
+	GetUploadsByIDsFunc *DBStoreGetUploadsByIDsFunc
 	// HasCommitFunc is an instance of a mock function object controlling
 	// the behavior of the method HasCommit.
 	HasCommitFunc *DBStoreHasCommitFunc
@@ -137,6 +143,11 @@ func NewMockDBStore() *MockDBStore {
 				return nil, 0, nil
 			},
 		},
+		GetIndexesByIDsFunc: &DBStoreGetIndexesByIDsFunc{
+			defaultHook: func(context.Context, ...int) ([]dbstore.Index, error) {
+				return nil, nil
+			},
+		},
 		GetUploadByIDFunc: &DBStoreGetUploadByIDFunc{
 			defaultHook: func(context.Context, int) (dbstore.Upload, bool, error) {
 				return dbstore.Upload{}, false, nil
@@ -145,6 +156,11 @@ func NewMockDBStore() *MockDBStore {
 		GetUploadsFunc: &DBStoreGetUploadsFunc{
 			defaultHook: func(context.Context, dbstore.GetUploadsOptions) ([]dbstore.Upload, int, error) {
 				return nil, 0, nil
+			},
+		},
+		GetUploadsByIDsFunc: &DBStoreGetUploadsByIDsFunc{
+			defaultHook: func(context.Context, ...int) ([]dbstore.Upload, error) {
+				return nil, nil
 			},
 		},
 		HasCommitFunc: &DBStoreHasCommitFunc{
@@ -214,11 +230,17 @@ func NewMockDBStoreFrom(i DBStore) *MockDBStore {
 		GetIndexesFunc: &DBStoreGetIndexesFunc{
 			defaultHook: i.GetIndexes,
 		},
+		GetIndexesByIDsFunc: &DBStoreGetIndexesByIDsFunc{
+			defaultHook: i.GetIndexesByIDs,
+		},
 		GetUploadByIDFunc: &DBStoreGetUploadByIDFunc{
 			defaultHook: i.GetUploadByID,
 		},
 		GetUploadsFunc: &DBStoreGetUploadsFunc{
 			defaultHook: i.GetUploads,
+		},
+		GetUploadsByIDsFunc: &DBStoreGetUploadsByIDsFunc{
+			defaultHook: i.GetUploadsByIDs,
 		},
 		HasCommitFunc: &DBStoreHasCommitFunc{
 			defaultHook: i.HasCommit,
@@ -1378,6 +1400,122 @@ func (c DBStoreGetIndexesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
+// DBStoreGetIndexesByIDsFunc describes the behavior when the
+// GetIndexesByIDs method of the parent MockDBStore instance is invoked.
+type DBStoreGetIndexesByIDsFunc struct {
+	defaultHook func(context.Context, ...int) ([]dbstore.Index, error)
+	hooks       []func(context.Context, ...int) ([]dbstore.Index, error)
+	history     []DBStoreGetIndexesByIDsFuncCall
+	mutex       sync.Mutex
+}
+
+// GetIndexesByIDs delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockDBStore) GetIndexesByIDs(v0 context.Context, v1 ...int) ([]dbstore.Index, error) {
+	r0, r1 := m.GetIndexesByIDsFunc.nextHook()(v0, v1...)
+	m.GetIndexesByIDsFunc.appendCall(DBStoreGetIndexesByIDsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetIndexesByIDs
+// method of the parent MockDBStore instance is invoked and the hook queue
+// is empty.
+func (f *DBStoreGetIndexesByIDsFunc) SetDefaultHook(hook func(context.Context, ...int) ([]dbstore.Index, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetIndexesByIDs method of the parent MockDBStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *DBStoreGetIndexesByIDsFunc) PushHook(hook func(context.Context, ...int) ([]dbstore.Index, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBStoreGetIndexesByIDsFunc) SetDefaultReturn(r0 []dbstore.Index, r1 error) {
+	f.SetDefaultHook(func(context.Context, ...int) ([]dbstore.Index, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBStoreGetIndexesByIDsFunc) PushReturn(r0 []dbstore.Index, r1 error) {
+	f.PushHook(func(context.Context, ...int) ([]dbstore.Index, error) {
+		return r0, r1
+	})
+}
+
+func (f *DBStoreGetIndexesByIDsFunc) nextHook() func(context.Context, ...int) ([]dbstore.Index, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBStoreGetIndexesByIDsFunc) appendCall(r0 DBStoreGetIndexesByIDsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBStoreGetIndexesByIDsFuncCall objects
+// describing the invocations of this function.
+func (f *DBStoreGetIndexesByIDsFunc) History() []DBStoreGetIndexesByIDsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBStoreGetIndexesByIDsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBStoreGetIndexesByIDsFuncCall is an object that describes an invocation
+// of method GetIndexesByIDs on an instance of MockDBStore.
+type DBStoreGetIndexesByIDsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg1 []int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []dbstore.Index
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
+func (c DBStoreGetIndexesByIDsFuncCall) Args() []interface{} {
+	trailing := []interface{}{}
+	for _, val := range c.Arg1 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0}, trailing...)
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBStoreGetIndexesByIDsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // DBStoreGetUploadByIDFunc describes the behavior when the GetUploadByID
 // method of the parent MockDBStore instance is invoked.
 type DBStoreGetUploadByIDFunc struct {
@@ -1599,6 +1737,122 @@ func (c DBStoreGetUploadsFuncCall) Args() []interface{} {
 // invocation.
 func (c DBStoreGetUploadsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// DBStoreGetUploadsByIDsFunc describes the behavior when the
+// GetUploadsByIDs method of the parent MockDBStore instance is invoked.
+type DBStoreGetUploadsByIDsFunc struct {
+	defaultHook func(context.Context, ...int) ([]dbstore.Upload, error)
+	hooks       []func(context.Context, ...int) ([]dbstore.Upload, error)
+	history     []DBStoreGetUploadsByIDsFuncCall
+	mutex       sync.Mutex
+}
+
+// GetUploadsByIDs delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockDBStore) GetUploadsByIDs(v0 context.Context, v1 ...int) ([]dbstore.Upload, error) {
+	r0, r1 := m.GetUploadsByIDsFunc.nextHook()(v0, v1...)
+	m.GetUploadsByIDsFunc.appendCall(DBStoreGetUploadsByIDsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetUploadsByIDs
+// method of the parent MockDBStore instance is invoked and the hook queue
+// is empty.
+func (f *DBStoreGetUploadsByIDsFunc) SetDefaultHook(hook func(context.Context, ...int) ([]dbstore.Upload, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetUploadsByIDs method of the parent MockDBStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *DBStoreGetUploadsByIDsFunc) PushHook(hook func(context.Context, ...int) ([]dbstore.Upload, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBStoreGetUploadsByIDsFunc) SetDefaultReturn(r0 []dbstore.Upload, r1 error) {
+	f.SetDefaultHook(func(context.Context, ...int) ([]dbstore.Upload, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBStoreGetUploadsByIDsFunc) PushReturn(r0 []dbstore.Upload, r1 error) {
+	f.PushHook(func(context.Context, ...int) ([]dbstore.Upload, error) {
+		return r0, r1
+	})
+}
+
+func (f *DBStoreGetUploadsByIDsFunc) nextHook() func(context.Context, ...int) ([]dbstore.Upload, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBStoreGetUploadsByIDsFunc) appendCall(r0 DBStoreGetUploadsByIDsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBStoreGetUploadsByIDsFuncCall objects
+// describing the invocations of this function.
+func (f *DBStoreGetUploadsByIDsFunc) History() []DBStoreGetUploadsByIDsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBStoreGetUploadsByIDsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBStoreGetUploadsByIDsFuncCall is an object that describes an invocation
+// of method GetUploadsByIDs on an instance of MockDBStore.
+type DBStoreGetUploadsByIDsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg1 []int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []dbstore.Upload
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
+func (c DBStoreGetUploadsByIDsFuncCall) Args() []interface{} {
+	trailing := []interface{}{}
+	for _, val := range c.Arg1 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0}, trailing...)
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBStoreGetUploadsByIDsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // DBStoreHasCommitFunc describes the behavior when the HasCommit method of
