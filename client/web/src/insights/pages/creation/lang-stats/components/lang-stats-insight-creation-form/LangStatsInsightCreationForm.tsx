@@ -22,6 +22,7 @@ export interface LangStatsInsightCreationFormProps {
     submitErrors: SubmissionErrors
     submitting: boolean
     className?: string
+    isFormClearActive?: boolean
 
     title: useFieldAPI<LangStatsCreationFormFields['title']>
     repository: useFieldAPI<LangStatsCreationFormFields['repository']>
@@ -30,6 +31,7 @@ export interface LangStatsInsightCreationFormProps {
     organizations: Organization[]
 
     onCancel: () => void
+    onFormReset: () => void
 }
 
 export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsightCreationFormProps> = props => {
@@ -46,6 +48,8 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
         visibility,
         organizations,
         onCancel,
+        onFormReset,
+        isFormClearActive,
     } = props
 
     const isEditMode = mode === 'edit'
@@ -105,7 +109,7 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
 
             <hr className={styles.formSeparator} />
 
-            <div>
+            <div className="d-flex">
                 {submitErrors?.[FORM_ERROR] && <ErrorAlert error={submitErrors[FORM_ERROR]} />}
 
                 <LoaderButton
@@ -120,6 +124,15 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
 
                 <button type="button" className="btn btn-outline-secondary" onClick={onCancel}>
                     Cancel
+                </button>
+
+                <button
+                    type="reset"
+                    disabled={!isFormClearActive}
+                    className="btn ml-auto btn-outline-secondary border-0"
+                    onClick={onFormReset}
+                >
+                    Clear all fields
                 </button>
             </div>
         </form>

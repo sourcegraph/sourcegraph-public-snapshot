@@ -99,8 +99,9 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
 
     const handleCancel = useCallback(() => {
         telemetryService.log('CodeInsightsSearchBasedCreationPageCancelClick')
+        setInitialFormValues(undefined)
         history.push('/insights')
-    }, [history, telemetryService])
+    }, [history, setInitialFormValues, telemetryService])
 
     // TODO [VK] Move this logic to high order component to simplify logic here
     if (authenticatedUser === null) {
