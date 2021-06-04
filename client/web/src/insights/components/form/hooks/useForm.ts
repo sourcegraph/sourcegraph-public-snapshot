@@ -10,7 +10,7 @@ export const FORM_ERROR = 'useForm/submissionErrors'
 export type SubmissionErrors = Record<string, any> | undefined
 export type ValidationResult = string | undefined | void
 
-interface FormChangeEvent<FormValues> {
+export interface FormChangeEvent<FormValues> {
     values: FormValues
     valid: boolean
 }
@@ -47,6 +47,10 @@ interface UseFormProps<FormValues extends object> {
  *
  * */
 export interface Form<FormValues> {
+    /**
+     * Values of all inputs in the form.
+     * */
+    values: Partial<FormValues>
     /**
      * State and methods of form, used in consumers to create filed by useField(formAPI)
      * */
@@ -193,6 +197,8 @@ export function useForm<FormValues extends object>(props: UseFormProps<FormValue
         setFields(fields => ({ ...fields, [name]: state }))
     }
 
+    const values = useMemo(() => getFormValues(fields), [fields])
+
     const changeEvent = useDistinctValue(
         useMemo(
             () => ({
@@ -226,6 +232,7 @@ export function useForm<FormValues extends object>(props: UseFormProps<FormValue
     onSubmitReference.current = onSubmit
 
     return {
+        values,
         formAPI: {
             submitted,
             touched,
@@ -249,7 +256,7 @@ export function useForm<FormValues extends object>(props: UseFormProps<FormValue
             if (!hasInvalidField) {
                 setSubmitting(true)
 
-                const submitResult = await onSubmitReference.current?.(getFormValues(fields))
+                const submitResult = await onSubmitReference.current?.(values)
 
                 // Check isUnmounted state to prevent calling setState on
                 // unmounted components.
@@ -272,7 +279,7 @@ export function useForm<FormValues extends object>(props: UseFormProps<FormValue
  * Creates form values object and omits all other internal states of a form field.
  * Used to form values for onSubmit and onChange handlers.
  * */
-function getFormValues<FormValues>(fields: Record<string, Pick<FieldState<FormValues>, 'value'>>): FormValues {
+export function getFormValues<FormValues>(fields: Record<string, Pick<FieldState<FormValues>, 'value'>>): FormValues {
     return Object.keys(fields).reduce(
         (values, fieldName) => ({ ...values, [fieldName]: fields[fieldName].value }),
         {} as FormValues

@@ -28,6 +28,7 @@ interface CreationSearchInsightFormProps {
     submitting: boolean
     submitted: boolean
     className?: string
+    isFormClearActive?: boolean
 
     title: useFieldAPI<CreateInsightFormFields['title']>
     repositories: useFieldAPI<CreateInsightFormFields['repositories']>
@@ -55,6 +56,8 @@ interface CreationSearchInsightFormProps {
     onEditSeriesCommit: (seriesIndex: number, editedSeries: EditableDataSeries) => void
     onEditSeriesCancel: (closedCardIndex: number) => void
     onSeriesRemove: (removedSeriesIndex: number) => void
+
+    onFormReset: () => void
 }
 
 /**
@@ -77,12 +80,14 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
         stepValue,
         step,
         className,
+        isFormClearActive,
         onCancel,
         onSeriesLiveChange,
         onEditSeriesRequest,
         onEditSeriesCommit,
         onEditSeriesCancel,
         onSeriesRemove,
+        onFormReset,
     } = props
 
     const isEditMode = mode === 'edit'
@@ -219,7 +224,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
 
             <hr className={styles.creationInsightFormSeparator} />
 
-            <div>
+            <div className="d-flex">
                 {submitErrors?.[FORM_ERROR] && <ErrorAlert error={submitErrors[FORM_ERROR]} />}
 
                 <LoaderButton
@@ -234,6 +239,15 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
 
                 <button type="button" className="btn btn-outline-secondary" onClick={onCancel}>
                     Cancel
+                </button>
+
+                <button
+                    type="reset"
+                    disabled={!isFormClearActive}
+                    className="btn ml-auto btn-outline-secondary border-0"
+                    onClick={onFormReset}
+                >
+                    Clear all fields
                 </button>
             </div>
         </form>
