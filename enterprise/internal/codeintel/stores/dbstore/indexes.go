@@ -162,6 +162,61 @@ JOIN repo ON repo.id = u.repository_id
 WHERE u.id = %s AND %s
 `
 
+// GetIndexesByIDs returns an index for each of the given identifiers. Not all given ids will necessarily
+// have a corresponding element in the returned list.
+func (s *Store) GetIndexesByIDs(ctx context.Context, ids ...int) (_ []Index, err error) {
+	ctx, endObservation := s.operations.getIndexesByIDs.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("ids", intsToString(ids)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	if len(ids) == 0 {
+		return nil, nil
+	}
+
+	authzConds, err := database.AuthzQueryConds(ctx, s.Store.Handle().DB())
+	if err != nil {
+		return nil, err
+	}
+
+	queries := make([]*sqlf.Query, 0, len(ids))
+	for _, id := range ids {
+		queries = append(queries, sqlf.Sprintf("%d", id))
+	}
+
+	return scanIndexes(s.Store.Query(ctx, sqlf.Sprintf(getIndexesByIDsQuery, sqlf.Join(queries, ", "), authzConds)))
+}
+
+const getIndexesByIDsQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/indexes.go:GetIndexesByIDs
+SELECT
+	u.id,
+	u.commit,
+	u.queued_at,
+	u.state,
+	u.failure_message,
+	u.started_at,
+	u.finished_at,
+	u.process_after,
+	u.num_resets,
+	u.num_failures,
+	u.repository_id,
+	u.repository_name,
+	u.docker_steps,
+	u.root,
+	u.indexer,
+	u.indexer_args,
+	u.outfile,
+	u.execution_logs,
+	s.rank,
+	u.local_steps
+FROM lsif_indexes_with_repository_name u
+LEFT JOIN (` + indexRankQueryFragment + `) s
+ON u.id = s.id
+JOIN repo ON repo.id = u.repository_id
+WHERE u.id IN (%s) AND %s
+`
+
 type GetIndexesOptions struct {
 	RepositoryID int
 	State        string
