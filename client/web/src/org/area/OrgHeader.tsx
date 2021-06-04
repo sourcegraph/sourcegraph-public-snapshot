@@ -1,4 +1,5 @@
-import * as React from 'react'
+import classNames from 'classnames'
+import React from 'react'
 import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
 
 import { PageHeader } from '@sourcegraph/wildcard'
@@ -7,7 +8,6 @@ import { NavItemWithIconDescriptor } from '../../util/contributions'
 import { OrgAvatar } from '../OrgAvatar'
 
 import { OrgAreaPageProps } from './OrgArea'
-import classNames from 'classnames'
 
 interface Props extends OrgAreaPageProps, RouteComponentProps<{}> {
     isSourcegraphDotCom: boolean
