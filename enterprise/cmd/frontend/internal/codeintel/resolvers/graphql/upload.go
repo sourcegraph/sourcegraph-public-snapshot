@@ -13,12 +13,22 @@ import (
 
 type UploadResolver struct {
 	upload           store.Upload
+	prefetcher       *Prefetcher
 	locationResolver *CachedLocationResolver
 }
 
-func NewUploadResolver(upload store.Upload, locationResolver *CachedLocationResolver) gql.LSIFUploadResolver {
+func NewUploadResolver(upload store.Upload, prefetcher *Prefetcher, locationResolver *CachedLocationResolver) gql.LSIFUploadResolver {
+	if upload.AssociatedIndexID != nil {
+		// Request the next batch of index fetches to contain the record's associated
+		// index id, if one exists it exists. This allows the prefetcher.GetIndexByID
+		// invocation in the AssociatedIndex method to batch its work with sibling
+		// resolvers, which share the same prefetcher instance.
+		prefetcher.MarkIndex(*upload.AssociatedIndexID)
+	}
+
 	return &UploadResolver{
 		upload:           upload,
+		prefetcher:       prefetcher,
 		locationResolver: locationResolver,
 	}
 }
@@ -41,6 +51,20 @@ func (r *UploadResolver) State() string {
 	}
 
 	return state
+}
+
+func (r *UploadResolver) AssociatedIndex(ctx context.Context) (gql.LSIFIndexResolver, error) {
+	// TODO - why are a bunch of them zero?
+	if r.upload.AssociatedIndexID == nil || *r.upload.AssociatedIndexID == 0 {
+		return nil, nil
+	}
+
+	index, exists, err := r.prefetcher.GetIndexByID(ctx, *r.upload.AssociatedIndexID)
+	if err != nil || !exists {
+		return nil, err
+	}
+
+	return NewIndexResolver(index, r.prefetcher, r.locationResolver), nil
 }
 
 func (r *UploadResolver) ProjectRoot(ctx context.Context) (*gql.GitTreeEntryResolver, error) {

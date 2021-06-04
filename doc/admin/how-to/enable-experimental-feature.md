@@ -14,7 +14,7 @@ This document will take you through how to add, enable, or disable an experiment
 1. Navigate to Site Admin > Global settings in the UI, or follow this link format for your `externalUrl/site-admin/global-settings`
 2. Scroll down to find where `experimentalFeatures` is located. Example:
 
-```
+```json
 "experimentalFeatures": {
     "searchStreaming": true,
     "showSearchContext": false,

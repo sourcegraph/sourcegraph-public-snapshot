@@ -1,10 +1,19 @@
 .status-bar {
     background-color: var(--color-bg-2);
     height: 1.5rem;
+    .theme-redesign & {
+        background-color: var(--code-bg);
+        height: 2rem;
+    }
 
     &__items {
         overflow-x: auto;
         white-space: nowrap;
+        margin: 0 0.5rem;
+
+        .theme-redesign & {
+            margin: 0;
+        }
 
         scrollbar-width: none;
         &::-webkit-scrollbar {

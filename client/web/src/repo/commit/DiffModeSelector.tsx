@@ -1,31 +1,42 @@
+import classNames from 'classnames'
 import React from 'react'
 
 import { DiffMode } from './RepositoryCommitPage'
 
 interface DiffModeSelectorProps {
     className?: string
-    handleDiffMode: (mode: DiffMode) => void
+    small?: boolean
+    onHandleDiffMode: (mode: DiffMode) => void
     diffMode: DiffMode
 }
 
 export const DiffModeSelector: React.FunctionComponent<DiffModeSelectorProps> = ({
     className,
     diffMode,
-    handleDiffMode,
+    onHandleDiffMode,
+    small,
 }) => (
     <div className={className}>
         <div role="group" className="btn-group">
             <button
-                onClick={() => handleDiffMode('unified')}
+                onClick={() => onHandleDiffMode('unified')}
                 type="button"
-                className={`btn ${diffMode === 'unified' ? 'btn-secondary' : 'btn-outline-secondary'}`}
+                className={classNames(
+                    'btn',
+                    diffMode === 'unified' ? 'btn-secondary' : 'btn-outline-secondary',
+                    small && 'btn-sm'
+                )}
             >
                 Unified
             </button>
             <button
-                onClick={() => handleDiffMode('split')}
+                onClick={() => onHandleDiffMode('split')}
                 type="button"
-                className={`btn ${diffMode === 'split' ? 'btn-secondary' : 'btn-outline-secondary'}`}
+                className={classNames(
+                    'btn',
+                    diffMode === 'split' ? 'btn-secondary' : 'btn-outline-secondary',
+                    small && 'btn-sm'
+                )}
             >
                 Split
             </button>

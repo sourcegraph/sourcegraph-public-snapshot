@@ -93,7 +93,7 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, tx dbwo
 		return nil
 	}
 	if len(errs) == 1 {
-		return errs[1]
+		return errs[0]
 	}
 
 	return multierror.Append(nil, errs...)

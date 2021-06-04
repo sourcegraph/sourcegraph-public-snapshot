@@ -124,7 +124,8 @@ $theme-colors-redesign: (
     --intel-bg: var(--white);
     --subtle-bg: var(--gray-02);
     --search-input-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-    --diff-add-bg: #e6ffe3;
+    --code-line-highlight-color: var(--color-bg-2);
+    --diff-add-bg: #eeffec;
     --diff-remove-bg: #ffecec;
 
     // TODO: Remove from use, replace with the variables referenced here.
@@ -176,6 +177,7 @@ $theme-colors-redesign: (
     --intel-bg: var(--gray-12);
     --subtle-bg: var(--gray-09);
     --search-input-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+    --code-line-highlight-color: var(--body-bg);
     --diff-add-bg: #224035;
     --diff-remove-bg: #3e1d1d;
 

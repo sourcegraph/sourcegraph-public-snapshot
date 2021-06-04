@@ -37,6 +37,7 @@ var SourcegraphDockerImages = []string{
 	"gitserver",
 	"query-runner",
 	"repo-updater",
+	"worker",
 	"searcher",
 	"symbols",
 	"precise-code-intel-worker",
