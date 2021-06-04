@@ -3,6 +3,7 @@ package dbstore
 import (
 	"context"
 	"fmt"
+	"sort"
 	"testing"
 	"time"
 
@@ -138,6 +139,62 @@ func TestGetQueuedIndexRank(t *testing.T) {
 	if upload, _, _ := store.GetIndexByID(context.Background(), 7); upload.Rank == nil || *upload.Rank != 5 {
 		t.Errorf("unexpected rank. want=%d have=%s", 4, printableRank{upload.Rank})
 	}
+}
+
+func TestGetIndexesByIDs(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
+	ctx := context.Background()
+
+	insertIndexes(t, db,
+		Index{ID: 1},
+		Index{ID: 2},
+		Index{ID: 3},
+		Index{ID: 4},
+		Index{ID: 5},
+		Index{ID: 6},
+		Index{ID: 7},
+		Index{ID: 8},
+		Index{ID: 9},
+		Index{ID: 10},
+	)
+
+	t.Run("fetch", func(t *testing.T) {
+		indexes, err := store.GetIndexesByIDs(ctx, 2, 4, 6, 8, 12)
+		if err != nil {
+			t.Fatalf("unexpected error getting indexes for repo: %s", err)
+		}
+
+		var ids []int
+		for _, index := range indexes {
+			ids = append(ids, index.ID)
+		}
+		sort.Ints(ids)
+
+		if diff := cmp.Diff([]int{2, 4, 6, 8}, ids); diff != "" {
+			t.Errorf("unexpected index ids (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("enforce repository permissions", func(t *testing.T) {
+		// Enable permissions user mapping forces checking repository permissions
+		// against permissions tables in the database, which should effectively block
+		// all access because permissions tables are empty.
+		before := globals.PermissionsUserMapping()
+		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
+		defer globals.SetPermissionsUserMapping(before)
+
+		indexes, err := store.GetIndexesByIDs(ctx, 1, 2, 3, 4)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(indexes) > 0 {
+			t.Fatalf("Want no index but got %d indexes", len(indexes))
+		}
+	})
 }
 
 func TestGetIndexes(t *testing.T) {
