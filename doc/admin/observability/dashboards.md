@@ -1847,6 +1847,140 @@ This panel indicates percentage pods available.
 
 <br />
 
+## Worker
+
+<p class="subtitle">Manages background processes.</p>
+
+### Worker: Internal service requests
+
+#### worker: frontend_internal_api_error_responses
+
+This panel indicates frontend-internal API error responses every 5m by route.
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#worker-frontend-internal-api-error-responses).
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+### Worker: Container monitoring (not available on server)
+
+#### worker: container_cpu_usage
+
+This panel indicates container cpu usage total (1m average) across all cores by instance.
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#worker-container-cpu-usage).
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### worker: container_memory_usage
+
+This panel indicates container memory usage by instance.
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#worker-container-memory-usage).
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### worker: container_missing
+
+This panel indicates container missing.
+
+This value is the number of times a container has not been seen for more than one minute. If you observe this
+value change independent of deployment events (such as an upgrade), it could indicate pods are being OOM killed or terminated for some other reasons.
+
+- **Kubernetes:**
+	- Determine if the pod was OOM killed using `kubectl describe pod worker` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p worker`.
+- **Docker Compose:**
+	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' worker` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the worker container in `docker-compose.yml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs worker` (note this will include logs from the previous and currently running container).
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+### Worker: Provisioning indicators (not available on server)
+
+#### worker: provisioning_container_cpu_usage_long_term
+
+This panel indicates container cpu usage total (90th percentile over 1d) across all cores by instance.
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#worker-provisioning-container-cpu-usage-long-term).
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### worker: provisioning_container_memory_usage_long_term
+
+This panel indicates container memory usage (1d maximum) by instance.
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#worker-provisioning-container-memory-usage-long-term).
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### worker: provisioning_container_cpu_usage_short_term
+
+This panel indicates container cpu usage total (5m maximum) across all cores by instance.
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#worker-provisioning-container-cpu-usage-short-term).
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### worker: provisioning_container_memory_usage_short_term
+
+This panel indicates container memory usage (5m maximum) by instance.
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#worker-provisioning-container-memory-usage-short-term).
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+### Worker: Golang runtime monitoring
+
+#### worker: go_goroutines
+
+This panel indicates maximum active goroutines.
+
+A high value here indicates a possible goroutine leak.
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#worker-go-goroutines).
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### worker: go_gc_duration_seconds
+
+This panel indicates maximum go garbage collection duration.
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#worker-go-gc-duration-seconds).
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+### Worker: Kubernetes monitoring (only available on Kubernetes)
+
+#### worker: pods_available_percentage
+
+This panel indicates percentage pods available.
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#worker-pods-available-percentage).
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
 ## Repo Updater
 
 <p class="subtitle">Manages interaction with code hosts, instructs Gitserver to update repositories.</p>
