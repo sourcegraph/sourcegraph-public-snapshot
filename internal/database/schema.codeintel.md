@@ -9,12 +9,6 @@ Indexes:
 
 ```
 
-Holds a single column storing the status of the most recent migration attempt.
-
-**dirty**: Whether or not the most recent migration attempt failed.
-
-**version**: The schema version that was the target of the most recent migration attempt.
-
 # Table "public.lsif_data_definitions"
 ```
      Column     |  Type   | Collation | Nullable | Default 

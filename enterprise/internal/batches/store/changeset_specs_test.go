@@ -374,6 +374,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 	t.Run("DeleteExpiredChangesetSpecs", func(t *testing.T) {
 		underTTL := clock.Now().Add(-btypes.ChangesetSpecTTL + 24*time.Hour)
 		overTTL := clock.Now().Add(-btypes.ChangesetSpecTTL - 24*time.Hour)
+		overBatchSpecTTL := clock.Now().Add(-btypes.BatchSpecTTL - 24*time.Hour)
 
 		type testCase struct {
 			createdAt time.Time
@@ -389,7 +390,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 
 		printTestCase := func(tc testCase) string {
 			var tooOld bool
-			if tc.createdAt.Equal(overTTL) {
+			if tc.createdAt.Equal(overTTL) || tc.createdAt.Equal(overBatchSpecTTL) {
 				tooOld = true
 			}
 
@@ -417,7 +418,8 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 			// anymore, and the ChangesetSpec is neither the current, nor the
 			// previous spec.
 			{hasBatchSpec: true, createdAt: underTTL, wantDeleted: false},
-			{hasBatchSpec: true, createdAt: overTTL, wantDeleted: true},
+			{hasBatchSpec: true, createdAt: overTTL, wantDeleted: false},
+			{hasBatchSpec: true, createdAt: overBatchSpecTTL, wantDeleted: true},
 		}
 
 		for _, tc := range tests {

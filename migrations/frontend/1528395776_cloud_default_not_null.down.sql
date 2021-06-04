@@ -1,5 +1,0 @@
-BEGIN;
-
-ALTER TABLE IF EXISTS external_services ALTER COLUMN cloud_default DROP NOT NULL;
-
-COMMIT;

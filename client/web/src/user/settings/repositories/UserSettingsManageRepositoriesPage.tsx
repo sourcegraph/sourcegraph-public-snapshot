@@ -9,7 +9,8 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { PageSelector } from '@sourcegraph/wildcard'
+import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
+import { Container, PageSelector } from '@sourcegraph/wildcard'
 
 import { ALLOW_NAVIGATION, AwayPrompt } from '../../../components/AwayPrompt'
 import {
@@ -157,6 +158,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     const ALLOW_SYNC_ALL = authenticatedUser.tags.includes('AllowUserExternalServiceSyncAll')
 
     // set up state hooks
+    const [isRedesignEnabled] = useRedesignToggle()
     const [repoState, setRepoState] = useState(initialRepoState)
     const [publicRepoState, setPublicRepoState] = useState(initialPublicRepoState)
     const [codeHosts, setCodeHosts] = useState(initialCodeHostState)
@@ -727,98 +729,100 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             <p className="text-muted">
                 Choose repositories to sync with Sourcegraph to search code you care about all in one place
             </p>
-            <ul className="list-group">
-                <li className="list-group-item p-0 user-settings-repos__container" key="from-code-hosts">
-                    <div className="p-4">
-                        <h3>Your repositories</h3>
-                        <p className="text-muted">
-                            Repositories you own or collaborate on from your{' '}
-                            <Link className="text-primary" to={`${routingPrefix}/code-hosts`}>
-                                connected code hosts
-                            </Link>
-                        </p>
-                        {!ALLOW_PRIVATE_CODE && hasCodeHosts && (
-                            <div className="alert alert-primary">
-                                Coming soon: search private repositories with Sourcegraph Cloud.{' '}
-                                <Link
-                                    to="https://share.hsforms.com/1copeCYh-R8uVYGCpq3s4nw1n7ku"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                >
-                                    Get updated when this feature launches
+            <Container>
+                <ul className="list-group">
+                    <li className="list-group-item user-settings-repos__container" key="from-code-hosts">
+                        <div className={classNames(!isRedesignEnabled && 'p-4')}>
+                            <h3>Your repositories</h3>
+                            <p className="text-muted">
+                                Repositories you own or collaborate on from your{' '}
+                                <Link className="text-primary" to={`${routingPrefix}/code-hosts`}>
+                                    connected code hosts
                                 </Link>
-                            </div>
-                        )}
-                        {codeHosts.loaded && codeHosts.hosts.length === 0 && (
-                            <div className="alert alert-warning mb-2">
-                                <Link to={`${routingPrefix}/code-hosts`}>Connect with a code host</Link> to add your own
-                                repositories to Sourcegraph.
-                            </div>
-                        )}
-                        {displayAffiliateRepoProblems(affiliateRepoProblems, ExternalServiceProblemHint)}
-
-                        {/* display radio buttons shimmer only when user has code hosts */}
-                        {hasCodeHostsNoErrors && !selectionState.loaded && modeSelectShimmer}
-
-                        {/* display type of repo sync radio buttons */}
-                        {hasCodeHostsNoErrors && selectionState.loaded && modeSelect}
-
-                        {
-                            // if we're in 'selected' mode, show a list of all the repos on the code hosts to select from
-                            hasCodeHostsNoErrors && selectionState.radio === 'selected' && (
-                                <div className="ml-4">
-                                    {filterControls}
-                                    <table role="grid" className="table">
-                                        {
-                                            // if the repos are loaded display the rows of repos
-                                            repoState.loaded && rows
-                                        }
-                                    </table>
-                                    {filteredRepos.length > 0 && (
-                                        <PageSelector
-                                            currentPage={currentPage}
-                                            onPageChange={setPage}
-                                            totalPages={Math.ceil(filteredRepos.length / PER_PAGE)}
-                                            className="pt-4"
-                                        />
-                                    )}
-                                </div>
-                            )
-                        }
-                    </div>
-                </li>
-                {window.context.sourcegraphDotComMode && (
-                    <li className="list-group-item p-0 user-settings-repos__container" key="add-textarea">
-                        <div className="p-4">
-                            <h3>Other public repositories</h3>
-                            <p className="text-muted">Public repositories on GitHub and GitLab</p>
-                            <input
-                                id="add-public-repos"
-                                className="mr-2 mt-2"
-                                type="checkbox"
-                                onChange={toggleTextArea}
-                                checked={publicRepoState.enabled}
-                            />
-                            <label htmlFor="add-public-repos">Sync specific public repositories by URL</label>
-
-                            {publicRepoState.enabled && (
-                                <div className="form-group ml-4 mt-3">
-                                    <p className="mb-2">Repositories to sync</p>
-                                    <textarea
-                                        className="form-control"
-                                        rows={5}
-                                        value={publicRepoState.repos}
-                                        onChange={handlePublicReposChanged}
-                                    />
-                                    <p className="text-muted mt-2">
-                                        Specify with complete URLs. One repository per line.
-                                    </p>
+                            </p>
+                            {!ALLOW_PRIVATE_CODE && hasCodeHosts && (
+                                <div className="alert alert-primary">
+                                    Coming soon: search private repositories with Sourcegraph Cloud.{' '}
+                                    <Link
+                                        to="https://share.hsforms.com/1copeCYh-R8uVYGCpq3s4nw1n7ku"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        Get updated when this feature launches
+                                    </Link>
                                 </div>
                             )}
+                            {codeHosts.loaded && codeHosts.hosts.length === 0 && (
+                                <div className="alert alert-warning mb-2">
+                                    <Link to={`${routingPrefix}/code-hosts`}>Connect with a code host</Link> to add your
+                                    own repositories to Sourcegraph.
+                                </div>
+                            )}
+                            {displayAffiliateRepoProblems(affiliateRepoProblems, ExternalServiceProblemHint)}
+
+                            {/* display radio buttons shimmer only when user has code hosts */}
+                            {hasCodeHostsNoErrors && !selectionState.loaded && modeSelectShimmer}
+
+                            {/* display type of repo sync radio buttons */}
+                            {hasCodeHostsNoErrors && selectionState.loaded && modeSelect}
+
+                            {
+                                // if we're in 'selected' mode, show a list of all the repos on the code hosts to select from
+                                hasCodeHostsNoErrors && selectionState.radio === 'selected' && (
+                                    <div className="ml-4">
+                                        {filterControls}
+                                        <table role="grid" className="table">
+                                            {
+                                                // if the repos are loaded display the rows of repos
+                                                repoState.loaded && rows
+                                            }
+                                        </table>
+                                        {filteredRepos.length > 0 && (
+                                            <PageSelector
+                                                currentPage={currentPage}
+                                                onPageChange={setPage}
+                                                totalPages={Math.ceil(filteredRepos.length / PER_PAGE)}
+                                                className="pt-4"
+                                            />
+                                        )}
+                                    </div>
+                                )
+                            }
                         </div>
                     </li>
-                )}
-            </ul>
+                    {window.context.sourcegraphDotComMode && (
+                        <li className="list-group-item user-settings-repos__container" key="add-textarea">
+                            <div className={classNames(!isRedesignEnabled && 'p-4')}>
+                                <h3>Other public repositories</h3>
+                                <p className="text-muted">Public repositories on GitHub and GitLab</p>
+                                <input
+                                    id="add-public-repos"
+                                    className="mr-2 mt-2"
+                                    type="checkbox"
+                                    onChange={toggleTextArea}
+                                    checked={publicRepoState.enabled}
+                                />
+                                <label htmlFor="add-public-repos">Sync specific public repositories by URL</label>
+
+                                {publicRepoState.enabled && (
+                                    <div className="form-group ml-4 mt-3">
+                                        <p className="mb-2">Repositories to sync</p>
+                                        <textarea
+                                            className="form-control"
+                                            rows={5}
+                                            value={publicRepoState.repos}
+                                            onChange={handlePublicReposChanged}
+                                        />
+                                        <p className="text-muted mt-2">
+                                            Specify with complete URLs. One repository per line.
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        </li>
+                    )}
+                </ul>
+            </Container>
             {isErrorLike(otherPublicRepoError) && displayError(otherPublicRepoError)}
             <AwayPrompt
                 header="Discard unsaved changes?"

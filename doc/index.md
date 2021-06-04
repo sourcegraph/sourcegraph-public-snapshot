@@ -43,7 +43,7 @@ For next steps and further configuration options, visit the [site administration
 
 > To fix this, run:
 
-> `mkdir -p ~/.sourcegraph/config ~/.sourcegraph/data && chcon -R -t svirt_sandbox_file_t ~/.sourcegraph/config ~/.sourcegraph/data`
+> `mkdir -p ~/.sourcegraph/config ~/.sourcegraph/data && chown -R -t svirt_sandbox_file_t ~/.sourcegraph/config ~/.sourcegraph/data`
 
 ## Upgrading Sourcegraph
 

@@ -21,10 +21,10 @@ exports[`Notices shows notices for location 1`] = `
     />
   </div>
   <div
-    className="alert dismissible-alert bg-transparent border "
+    className="alert container bg-transparent border "
   >
     <div
-      className="dismissible-alert__content"
+      className="content"
     >
       <div
         className="markdown"
@@ -38,7 +38,7 @@ exports[`Notices shows notices for location 1`] = `
       />
     </div>
     <button
-      className="btn btn-icon"
+      className="btn btn-icon closeButton"
       onClick={[Function]}
       type="button"
     >
