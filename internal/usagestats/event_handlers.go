@@ -60,31 +60,14 @@ func LogEvent(ctx context.Context, db dbutil.DB, args Event) error {
 }
 
 type bigQueryEvent struct {
-	EventName       string                `json:"name"`
-	AnonymousUserID string                `json:"anonymous_user_id"`
-	FirstSourceURL  string                `json:"first_source_url"`
-	UserID          int                   `json:"user_id"`
-	Source          string                `json:"source"`
-	Timestamp       string                `json:"timestamp"`
-	Version         string                `json:"version"`
-	FeatureFlags    []bigQueryFeatureFlag `json:"feature_flags"`
-}
-
-type bigQueryFeatureFlag struct {
-	FlagName  string `json:"flag_name"`
-	BoolValue *bool  `json:"bool_value"`
-}
-
-func flagSetToBigQueryFeatureFlags(s featureflag.FlagSet) []bigQueryFeatureFlag {
-	res := make([]bigQueryFeatureFlag, 0, len(s))
-	for k, v := range s {
-		v := v // capture the iteration variable
-		res = append(res, bigQueryFeatureFlag{
-			FlagName:  k,
-			BoolValue: &v,
-		})
-	}
-	return res
+	EventName       string `json:"name"`
+	AnonymousUserID string `json:"anonymous_user_id"`
+	FirstSourceURL  string `json:"first_source_url"`
+	UserID          int    `json:"user_id"`
+	Source          string `json:"source"`
+	Timestamp       string `json:"timestamp"`
+	Version         string `json:"version"`
+	FeatureFlags    string `json:"feature_flags"`
 }
 
 // publishSourcegraphDotComEvent publishes Sourcegraph.com events to BigQuery.
@@ -99,6 +82,10 @@ func publishSourcegraphDotComEvent(args Event) error {
 	if args.FirstSourceURL != nil {
 		firstSourceURL = *args.FirstSourceURL
 	}
+	featureFlagJSON, err := json.Marshal(args.FeatureFlags)
+	if err != nil {
+		return err
+	}
 	event, err := json.Marshal(bigQueryEvent{
 		EventName:       args.EventName,
 		UserID:          int(args.UserID),
@@ -107,7 +94,7 @@ func publishSourcegraphDotComEvent(args Event) error {
 		Source:          args.Source,
 		Timestamp:       time.Now().UTC().Format(time.RFC3339),
 		Version:         version.Version(),
-		FeatureFlags:    flagSetToBigQueryFeatureFlags(args.FeatureFlags),
+		FeatureFlags:    string(featureFlagJSON),
 	})
 	if err != nil {
 		return err
