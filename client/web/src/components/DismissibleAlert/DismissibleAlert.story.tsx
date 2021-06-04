@@ -10,7 +10,7 @@ const { add } = storiesOf('web/DismissibleAlert', module).addDecorator(story => 
 add('One-line alert', () => (
     <DismissibleAlert className="alert-info" partialStorageKey="dismissible-alert-one-line">
         <span>
-            1 bulk operation has recently failed running. Click the <a href="#">bulk operations tab</a> to view.
+            1 bulk operation has recently failed running. Click the <a href="?">bulk operations tab</a> to view.
         </span>
     </DismissibleAlert>
 ))

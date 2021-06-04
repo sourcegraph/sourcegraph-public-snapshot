@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 
@@ -5,7 +6,6 @@ import { CircleChevronRightIcon } from '@sourcegraph/shared/src/components/icons
 
 import { DismissibleAlert } from '../components/DismissibleAlert'
 import { eventLogger } from '../tracking/eventLogger'
-import classNames from 'classnames'
 
 const onClickCTA = (): void => {
     eventLogger.log('AlertNeedsRepoConfigCTAClicked')
