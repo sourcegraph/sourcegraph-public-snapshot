@@ -5822,7 +5822,7 @@ type ExtensionRegistry {
     """
     A list of featured extensions in the registry.
     """
-    featuredExtensions: FeaturedExtensions!
+    featuredExtensions: FeaturedExtensions
 }
 
 """
