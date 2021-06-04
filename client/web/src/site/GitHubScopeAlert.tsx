@@ -2,7 +2,7 @@ import InfoIcon from 'mdi-react/InfoCircleIcon'
 import React, { FunctionComponent, useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 
-import { DismissibleAlert, isAlertDismissed } from '../components/DismissibleAlert'
+import { DismissibleAlert, isAlertDismissed, dismissAlert } from '../components/DismissibleAlert'
 import { queryExternalServicesScope } from '../components/externalServices/backend'
 import { ExternalServiceKind } from '../graphql-operations'
 import { githubRepoScopeRequired } from '../user/settings/cloud-ga'
@@ -11,7 +11,7 @@ interface Props {
     authenticatedUser: { id: string; tags: string[] } | null
 }
 
-const GITHUB_SCOPE_ALERT_KEY = 'GitHubPrivateScopeAlert'
+export const GITHUB_SCOPE_ALERT_KEY = 'GitHubPrivateScopeAlert'
 
 /**
  * A global alert telling authenticated users if they need re-add GitHub code
@@ -33,7 +33,13 @@ export const GitHubScopeAlert: FunctionComponent<Props> = ({ authenticatedUser }
             // check whether we need to prompt the user to update their scope
             if (gitHubService) {
                 const hasMissingScope = githubRepoScopeRequired(authenticatedUser.tags, gitHubService.grantedScopes)
-                setShouldDisplayAlert(hasMissingScope)
+                if (hasMissingScope) {
+                    setShouldDisplayAlert(true)
+                } else {
+                    // if the user has required GitHub scopes - never check for
+                    // external service scopes and don't show the alert
+                    dismissAlert(GITHUB_SCOPE_ALERT_KEY)
+                }
             }
         }
     }, [authenticatedUser])

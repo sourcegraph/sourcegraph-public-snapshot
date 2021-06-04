@@ -5,8 +5,10 @@ import React, { useState, useCallback } from 'react'
 import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { CircleDashedIcon } from '../../../components/CircleDashedIcon'
+import { dismissAlert } from '../../../components/DismissibleAlert'
 import { LoaderButton } from '../../../components/LoaderButton'
 import { ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
+import { GITHUB_SCOPE_ALERT_KEY } from '../../../site/GitHubScopeAlert'
 
 import { RemoveCodeHostConnectionModal } from './RemoveCodeHostConnectionModal'
 import { ifNotNavigated } from './UserAddCodeHostsPage'
@@ -50,6 +52,12 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
         })
         navigateToAuthProvider(kind)
     }, [kind, navigateToAuthProvider])
+
+    const dismissAlertAndToAuthProvider = useCallback((): void => {
+        // hide global alert
+        dismissAlert(GITHUB_SCOPE_ALERT_KEY)
+        toAuthProvider()
+    }, [toAuthProvider])
 
     return (
         <div className="p-2 d-flex align-items-start">
@@ -101,7 +109,11 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                     </button>
                 )}
                 {updateAuthRequired && !oauthInFlight && (
-                    <button type="button" className="btn user-code-hosts-page__btn--update" onClick={toAuthProvider}>
+                    <button
+                        type="button"
+                        className="btn user-code-hosts-page__btn--update"
+                        onClick={dismissAlertAndToAuthProvider}
+                    >
                         Update
                     </button>
                 )}
