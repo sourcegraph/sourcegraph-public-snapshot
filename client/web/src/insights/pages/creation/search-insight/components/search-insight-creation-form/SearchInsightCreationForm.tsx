@@ -15,7 +15,7 @@ import {
 } from '../../../../../components/visibility-picker/VisibilityPicker'
 import { CreateInsightFormFields, EditableDataSeries } from '../../types'
 import { FormSeries } from '../form-series/FormSeries'
-import { RepositoriesField } from '../repositories-field/RepositoriesField';
+import { RepositoriesField } from '../repositories-field/RepositoriesField'
 
 import styles from './SearchInsightCreationForm.module.scss'
 
@@ -96,11 +96,11 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
             onSubmit={handleSubmit}
             className={classnames(className, 'd-flex flex-column')}
         >
-             <FormGroup
+            <FormGroup
                 name="insight repositories"
                 title="Repositories"
                 subtitle="Create a list of repositories to run your search over"
-             >
+            >
                 <FormInput
                     as={RepositoriesField}
                     autoFocus={true}
@@ -113,7 +113,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                     {...repositories.input}
                     className="mb-0 d-flex flex-column"
                 />
-             </FormGroup>
+            </FormGroup>
 
             <hr className={styles.creationInsightFormSeparator} />
 

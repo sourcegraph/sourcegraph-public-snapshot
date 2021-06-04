@@ -1,14 +1,14 @@
-import { getSanitizedRepositories } from '../../../utils/insight-sanitizer';
+import { getSanitizedRepositories } from '../../../utils/insight-sanitizer'
 
 interface SuggestionsSearchTermInput {
-    value: string,
+    value: string
     caretPosition: number | null
 }
 
 interface SuggestionsSearchTermResult {
     repositories: string[]
-    value: string | null,
-    index: number | null,
+    value: string | null
+    index: number | null
 }
 
 /**
@@ -22,33 +22,33 @@ interface SuggestionsSearchTermResult {
 export function getSuggestionsSearchTerm(props: SuggestionsSearchTermInput): SuggestionsSearchTermResult {
     const { value, caretPosition } = props
 
-    let startPosition = 0;
+    let startPosition = 0
     // Get repositories array
-    const repositories = getSanitizedRepositories(value);
+    const repositories = getSanitizedRepositories(value)
 
     if (caretPosition === null) {
         return {
             repositories,
             value: null,
-            index: null
+            index: null,
         }
     }
 
     for (const [index, repo] of repositories.entries()) {
-        if (startPosition <= caretPosition && (startPosition + repo.length) >= caretPosition) {
+        if (startPosition <= caretPosition && startPosition + repo.length >= caretPosition) {
             return {
                 repositories,
                 index,
-                value: repo
-            };
+                value: repo,
+            }
         }
 
-        startPosition += repo.length;
+        startPosition += repo.length
     }
 
     return {
         repositories,
         value: repositories[repositories.length - 1],
-        index: repositories.length - 1
+        index: repositories.length - 1,
     }
 }
