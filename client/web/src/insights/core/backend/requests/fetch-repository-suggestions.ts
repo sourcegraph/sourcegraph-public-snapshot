@@ -1,13 +1,10 @@
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Observable } from 'rxjs'
+import { map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 
-import { requestGraphQL } from '../../../../backend/graphql';
-import {
-    RepositorySearchSuggestionsResult,
-    RepositorySearchSuggestionsVariables
-} from '../../../../graphql-operations';
+import { requestGraphQL } from '../../../../backend/graphql'
+import { RepositorySearchSuggestionsResult, RepositorySearchSuggestionsVariables } from '../../../../graphql-operations'
 
 interface RepositorySuggestion {
     /**
@@ -32,15 +29,16 @@ export function fetchRepositorySuggestions(possibleRepository: string): Observab
             query RepositorySearchSuggestions($query: String!) {
                 repositories(first: 5, query: $query) {
                     nodes {
-                        id,
+                        id
                         name
                     }
                 }
             }
-        `, { query: possibleRepository }
+        `,
+        { query: possibleRepository }
     ).pipe(
         map(dataOrThrowErrors),
-        map(data => data.repositories.nodes ),
+        map(data => data.repositories.nodes),
         map(suggestions => suggestions.filter(suggestion => !!suggestion.name))
     )
 }

@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { useDebounce } from '@sourcegraph/wildcard/src';
+import { useDebounce } from '@sourcegraph/wildcard/src'
 
-import { fetchRepositorySuggestions } from '../../../../../../core/backend/requests/fetch-repository-suggestions';
+import { fetchRepositorySuggestions } from '../../../../../../core/backend/requests/fetch-repository-suggestions'
 
 interface RepositorySuggestion {
     name: string
@@ -23,10 +23,11 @@ function useFetchSuggestions(): (search: string) => Promise<RepositorySuggestion
 
     return useCallback(search => {
         if (cache?.current?.[search]) {
-            return Promise.resolve(cache.current?.[search]);
+            return Promise.resolve(cache.current?.[search])
         }
 
-        return fetchRepositorySuggestions(search).toPromise()
+        return fetchRepositorySuggestions(search)
+            .toPromise()
             .then(suggestions => {
                 cache.current[search] = suggestions
 

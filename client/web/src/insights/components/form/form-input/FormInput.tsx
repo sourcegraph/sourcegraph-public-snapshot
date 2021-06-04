@@ -4,7 +4,7 @@ import React, { forwardRef, InputHTMLAttributes, ReactNode } from 'react'
 import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 
 import styles from './FormInput.module.scss'
-import { ForwardReferenceComponent } from './types';
+import { ForwardReferenceComponent } from './types'
 
 interface FormInputProps extends InputHTMLAttributes<HTMLInputElement> {
     /** Title of input. */

@@ -1,12 +1,12 @@
-import { ComboboxList, ComboboxOption } from '@reach/combobox';
-import React, { ReactElement } from 'react';
+import { ComboboxList, ComboboxOption } from '@reach/combobox'
+import React, { ReactElement } from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner';
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors';
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
-import { ErrorMessage } from '../../../../../../../../components/alerts';
+import { ErrorMessage } from '../../../../../../../../components/alerts'
 
-import styles from './SuggestionPanel.module.scss';
+import styles from './SuggestionPanel.module.scss'
 
 interface SuggestionsPanelProps {
     suggestions?: Error | RepositorySuggestion[]
@@ -31,26 +31,19 @@ export function SuggestionsPanel(props: SuggestionsPanelProps): ReactElement {
     }
 
     if (isErrorLike(suggestions)) {
-        return (
-            <ErrorMessage error={suggestions} />
-        )
+        return <ErrorMessage error={suggestions} />
     }
 
     return (
         <ComboboxList>
-            {suggestions.map(suggestion =>
-                <ComboboxOption
-                    key={suggestion.name}
-                    value={suggestion.name} />
-            )}
+            {suggestions.map(suggestion => (
+                <ComboboxOption key={suggestion.name} value={suggestion.name} />
+            ))}
 
-            {
-                !suggestions.length &&
+            {!suggestions.length && (
                 // eslint-disable-next-line react/forbid-dom-props
-                <span style={{ display: 'block', margin: 8 }}>
-                        No results found
-                    </span>
-            }
+                <span style={{ display: 'block', margin: 8 }}>No results found</span>
+            )}
         </ComboboxList>
     )
 }

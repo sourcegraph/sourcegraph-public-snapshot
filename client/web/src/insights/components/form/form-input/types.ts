@@ -1,15 +1,12 @@
-import React from 'react';
+import React from 'react'
 
-type Merge<P1 = {}, P2 = {}> = Omit<P1, keyof P2> & P2;
+type Merge<P1 = {}, P2 = {}> = Omit<P1, keyof P2> & P2
 
-type NarrowIntrinsic<E> = E extends keyof JSX.IntrinsicElements ? E : never;
+type NarrowIntrinsic<E> = E extends keyof JSX.IntrinsicElements ? E : never
 
 type ForwardReferenceExoticComponent<E, OwnProps> = React.ForwardRefExoticComponent<
-    Merge<
-        E extends React.ElementType ? React.ComponentPropsWithRef<E> : never,
-        OwnProps & { as?: E }
-        >
-    >;
+    Merge<E extends React.ElementType ? React.ComponentPropsWithRef<E> : never, OwnProps & { as?: E }>
+>
 
 /**
  * Extends original type to ensure built in React types play nice with
@@ -22,7 +19,7 @@ export interface ForwardReferenceComponent<
      * Extends original type to ensure built in React types play nice with
      * polymorphic components still e.g. `React.ElementRef` etc.
      */
-    > extends ForwardReferenceExoticComponent<IntrinsicElementString, OwnProps> {
+> extends ForwardReferenceExoticComponent<IntrinsicElementString, OwnProps> {
     /*
      * When `as` prop is passed, use this overload. Merges original own props
      * (without DOM props) and the inferred props from `as` element with the own
@@ -33,15 +30,13 @@ export interface ForwardReferenceComponent<
      */
     <
         As extends
-                | keyof JSX.IntrinsicElements
-            | React.JSXElementConstructor<any> = NarrowIntrinsic<
-            IntrinsicElementString
-            >
-        >(
+            | keyof JSX.IntrinsicElements
+            | React.JSXElementConstructor<any> = NarrowIntrinsic<IntrinsicElementString>
+    >(
         props: As extends keyof JSX.IntrinsicElements
             ? Merge<JSX.IntrinsicElements[As], OwnProps & { as: As }>
             : As extends React.JSXElementConstructor<infer P>
-                ? Merge<P, OwnProps & { as: As }>
-                : never
-    ): React.ReactElement | null;
+            ? Merge<P, OwnProps & { as: As }>
+            : never
+    ): React.ReactElement | null
 }
