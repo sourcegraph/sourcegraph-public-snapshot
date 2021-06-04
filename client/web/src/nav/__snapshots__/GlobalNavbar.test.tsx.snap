@@ -121,7 +121,9 @@ exports[`GlobalNavbar default 1`] = `
         >
           <a
             class="link"
-            href="/batch-changes"
+            href="https://about.sourcegraph.com/batch-changes/"
+            rel="noreferrer noopener"
+            target="_blank"
           >
             <span
               class="linkContent"
@@ -438,7 +440,9 @@ exports[`GlobalNavbar low-profile 1`] = `
         >
           <a
             class="link"
-            href="/batch-changes"
+            href="https://about.sourcegraph.com/batch-changes/"
+            rel="noreferrer noopener"
+            target="_blank"
           >
             <span
               class="linkContent"
@@ -755,7 +759,9 @@ exports[`GlobalNavbar no-search-input 1`] = `
         >
           <a
             class="link"
-            href="/batch-changes"
+            href="https://about.sourcegraph.com/batch-changes/"
+            rel="noreferrer noopener"
+            target="_blank"
           >
             <span
               class="linkContent"
