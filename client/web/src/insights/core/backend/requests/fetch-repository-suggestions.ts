@@ -11,6 +11,10 @@ import {
 
 interface RepositorySuggestion {
     /**
+     * Repository id.
+     */
+    id: string
+    /**
      * Repository name.
      */
     name: string
@@ -26,18 +30,17 @@ export function fetchRepositorySuggestions(possibleRepository: string): Observab
     return requestGraphQL<RepositorySearchSuggestionsResult, RepositorySearchSuggestionsVariables>(
         gql`
             query RepositorySearchSuggestions($query: String!) {
-                search(query: $query) {
-                    suggestions(first: 5) {
-                        ... on Repository {
-                            name
-                        }
+                repositories(first: 5, query: $query) {
+                    nodes {
+                        id,
+                        name
                     }
                 }
             }
         `, { query: possibleRepository }
     ).pipe(
         map(dataOrThrowErrors),
-        map(data => data?.search?.suggestions ?? []),
+        map(data => data.repositories.nodes ),
         map(suggestions => suggestions.filter(suggestion => !!suggestion.name))
     )
 }

@@ -3,7 +3,6 @@ import {
     ComboboxInput,
     ComboboxPopover,
 } from '@reach/combobox'
-import classnames from 'classnames'
 import React, {
     MouseEvent,
     ChangeEvent,
@@ -11,25 +10,25 @@ import React, {
     useRef,
     useState,
     forwardRef,
-    useImperativeHandle, Ref
+    useImperativeHandle, Ref, InputHTMLAttributes
 } from 'react'
 
 import { FlexTextarea } from './components/flex-textarea/FlexTextArea'
 import { SuggestionsPanel } from './components/suggestion-panel/SuggestionPanel';
 import { useRepoSuggestions } from './hooks/use-repo-suggestions';
+import styles from './RepositoriesField.module.scss'
 import { getSuggestionsSearchTerm } from './utils/get-suggestions-search-term';
 
-interface RepositoriesFieldProps {
+interface RepositoriesFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange'> {
     value: string
     onChange: (value: string) => void
-    onBlur: (event: FocusEvent<HTMLInputElement>) => void
 }
 
 /**
  * Renders repository input with suggestion panel.
  */
 export const RepositoriesField = forwardRef((props: RepositoriesFieldProps, reference:  Ref<HTMLInputElement | null>) => {
-    const { value, onChange, onBlur } = props
+    const { value, onChange, onBlur, ...otherProps } = props
 
     const inputReference = useRef<HTMLInputElement>(null)
 
@@ -103,16 +102,18 @@ export const RepositoriesField = forwardRef((props: RepositoriesFieldProps, refe
 
     const handleInputBlur = (event: FocusEvent<HTMLInputElement>): void => {
         // setPanel(false)
-        onBlur(event)
+        onBlur?.(event)
     }
 
     return (
         <Combobox
             openOnFocus={true}
             onSelect={handleSelect}
-            aria-label="choose a fruit">
+            aria-label="choose a fruit"
+            className={styles.combobox}>
 
             <ComboboxInput
+                {...otherProps}
                 as={FlexTextarea}
                 ref={inputReference}
                 autocomplete={false}
@@ -121,7 +122,6 @@ export const RepositoriesField = forwardRef((props: RepositoriesFieldProps, refe
                 onFocus={handleInputFocus}
                 onBlur={handleInputBlur}
                 onClick={trackInputCursorChange}
-                className={classnames('form-control')}
             />
 
             {
