@@ -187,7 +187,7 @@ func serveSearchConfiguration(w http.ResponseWriter, r *http.Request) error {
 			return string(commitID), err
 		}
 
-		priority := float64(0)
+		var priority float64
 		switch m := repo.Metadata.(type) {
 		case *github.Repository:
 			priority = float64(m.StargazerCount)
