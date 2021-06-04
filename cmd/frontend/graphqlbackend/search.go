@@ -299,17 +299,23 @@ func decodedViewerFinalSettings(ctx context.Context, db dbutil.DB) (_ *schema.Se
 	return &settings, nil
 }
 
+type resolveRepositoriesOpts struct {
+	effectiveRepoFieldValues []string
+
+	limit int // Maximum repositories to return
+}
+
 // resolveRepositories calls ResolveRepositories, caching the result for the common case
-// where effectiveRepoFieldValues == nil.
-func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoFieldValues []string) (searchrepos.Resolved, error) {
+// where opts.effectiveRepoFieldValues == nil.
+func (r *searchResolver) resolveRepositories(ctx context.Context, opts resolveRepositoriesOpts) (searchrepos.Resolved, error) {
 	var err error
 	var repoRevs, missingRepoRevs []*search.RepositoryRevisions
 	var overLimit bool
 	if mockResolveRepositories != nil {
-		return mockResolveRepositories(effectiveRepoFieldValues)
+		return mockResolveRepositories(opts.effectiveRepoFieldValues)
 	}
 
-	tr, ctx := trace.New(ctx, "graphql.resolveRepositories", fmt.Sprintf("effectiveRepoFieldValues: %v", effectiveRepoFieldValues))
+	tr, ctx := trace.New(ctx, "graphql.resolveRepositories", fmt.Sprintf("effectiveRepoFieldValues: %v", opts.effectiveRepoFieldValues))
 	defer func() {
 		if err != nil {
 			tr.SetError(err)
@@ -318,7 +324,7 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		}
 		tr.Finish()
 	}()
-	if effectiveRepoFieldValues == nil {
+	if opts.effectiveRepoFieldValues == nil {
 		r.reposMu.Lock()
 		defer r.reposMu.Unlock()
 		if r.resolved.RepoRevs != nil || r.resolved.MissingRepoRevs != nil || r.repoErr != nil {
@@ -328,8 +334,9 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 	}
 
 	repoFilters, minusRepoFilters := r.Query.Repositories()
-	if effectiveRepoFieldValues != nil {
-		repoFilters = effectiveRepoFieldValues
+	if opts.effectiveRepoFieldValues != nil {
+		repoFilters = opts.effectiveRepoFieldValues
+
 	}
 	repoGroupFilters, _ := r.Query.StringValues(query.FieldRepoGroup)
 
@@ -390,6 +397,8 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		OnlyPublic:         visibility == query.Public,
 		CommitAfter:        commitAfter,
 		Query:              r.Query,
+		Ranked:             true,
+		Limit:              opts.limit,
 	}
 	repositoryResolver := &searchrepos.Resolver{
 		DB:               r.db,
@@ -398,7 +407,7 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 	}
 	resolved, err := repositoryResolver.Resolve(ctx, options)
 	tr.LazyPrintf("resolveRepositories - done")
-	if effectiveRepoFieldValues == nil {
+	if opts.effectiveRepoFieldValues == nil {
 		r.resolved = &resolved
 		r.repoErr = err
 	}
@@ -406,7 +415,7 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 }
 
 func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]SearchSuggestionResolver, error) {
-	resolved, err := r.resolveRepositories(ctx, nil)
+	resolved, err := r.resolveRepositories(ctx, resolveRepositoriesOpts{})
 	if err != nil {
 		return nil, err
 	}
