@@ -13,7 +13,10 @@ type Config interface {
 	// read the values from the environment and store errors to be reported later.
 	Load()
 
-	// Validate returns errors about the environment that occurred during Load.
+	// Validate performs non-trivial validation and returns any resulting errors.
+	// This method should also return errors that occurred while reading values from
+	// the environment in Load. This method is called after the environment has been
+	// locked, so all environment variable reads must happen in Load.
 	Validate() error
 }
 
