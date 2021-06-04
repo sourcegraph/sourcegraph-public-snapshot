@@ -144,7 +144,10 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
         )
     }, [buttonClass, props.authenticatedUser, props.onSaveQueryClick, props.showSavedQueryButton])
 
-    const extraContext = useMemo(() => ({ searchQuery: props.query || null }), [props.query])
+    const extraContext = useMemo(() => ({ searchQuery: props.query || null, patternType: props.patternType }), [
+        props.query,
+        props.patternType,
+    ])
 
     const [showFilters, setShowFilters] = useState(false)
     const onShowFiltersClicked = (): void => {
