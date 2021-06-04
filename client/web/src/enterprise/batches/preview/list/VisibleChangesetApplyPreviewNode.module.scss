@@ -43,7 +43,6 @@ $changeset-backdrop: #f3faff;
     &__tab-link {
         &--active {
             background-color: $changeset-backdrop !important;
-            border-bottom: 1px solid $changeset-backdrop !important;
         }
     }
     &__change-indicator {
@@ -67,7 +66,6 @@ $changeset-backdrop: #f3faff;
         &__tab-link {
             &--active {
                 background-color: var(--oc-gray-7) !important;
-                border-bottom: 1px solid var(--oc-gray-7) !important;
             }
         }
     }

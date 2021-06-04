@@ -252,7 +252,9 @@ const ExpandedSection: React.FunctionComponent<
                                 selectedTab === 'diff' && 'active'
                             )}
                         >
-                            Changed files
+                            <span className="text-content" data-test-tab="Changed files">
+                                Changed files
+                            </span>
                             {node.delta.diffChanged && (
                                 <small className="text-warning ml-2" data-tooltip="Changes in this tab">
                                     <CheckboxBlankCircleIcon
@@ -277,7 +279,9 @@ const ExpandedSection: React.FunctionComponent<
                                 selectedTab === 'description' && 'active'
                             )}
                         >
-                            Description
+                            <span className="text-content" data-test-tab="Description">
+                                Description
+                            </span>
                             {(node.delta.titleChanged || node.delta.bodyChanged) && (
                                 <small className="text-warning ml-2" data-tooltip="Changes in this tab">
                                     <CheckboxBlankCircleIcon
@@ -302,7 +306,9 @@ const ExpandedSection: React.FunctionComponent<
                                 selectedTab === 'commits' && 'active'
                             )}
                         >
-                            Commits
+                            <span className="text-content" data-test-tab="Commits">
+                                Commits
+                            </span>
                             {(node.delta.authorEmailChanged ||
                                 node.delta.authorNameChanged ||
                                 node.delta.commitMessageChanged) && (
