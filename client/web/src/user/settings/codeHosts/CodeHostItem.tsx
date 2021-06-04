@@ -75,7 +75,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                 ) : (
                     <CircleDashedIcon className="icon-inline mb-0 mr-2 user-code-hosts-page__icon--dashed" />
                 )}
-                <Icon className="icon-inline mb-0 mr-1" />
+                <Icon className="mb-0 mr-1" />
             </div>
             <div className="flex-1 align-self-center">
                 <h3 className="m-0">{name}</h3>
@@ -84,7 +84,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                 {service?.id ? (
                     <button
                         type="button"
-                        className="btn btn-link btn-sm text-danger shadow-none"
+                        className="btn btn-link text-danger shadow-none"
                         onClick={toggleRemoveConnectionModal}
                     >
                         Remove
@@ -92,26 +92,38 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                 ) : oauthInFlight ? (
                     <LoaderButton
                         type="button"
-                        className="btn btn-primary theme-dark"
+                        className={classNames(
+                            'btn',
+                            !isRedesignEnabled && 'btn-primary',
+                            isRedesignEnabled && 'btn-success'
+                        )}
                         loading={true}
                         disabled={true}
                         label="Connect"
                         alwaysShowLabel={true}
                     />
                 ) : (
-                    <button type="button" className="btn btn-primary" onClick={toAuthProvider}>
+                    <button
+                        type="button"
+                        className={classNames(
+                            'btn',
+                            !isRedesignEnabled && 'btn-primary',
+                            isRedesignEnabled && 'btn-success'
+                        )}
+                        onClick={toAuthProvider}
+                    >
                         Connect
                     </button>
                 )}
                 {updateAuthRequired && !oauthInFlight && (
-                    <button type="button" className="btn user-code-hosts-page__btn--update" onClick={toAuthProvider}>
+                    <button type="button" className="btn btn-merged" onClick={toAuthProvider}>
                         Update
                     </button>
                 )}
-                {updateAuthRequired && oauthInFlight && (
+                {!updateAuthRequired && oauthInFlight && (
                     <LoaderButton
                         type="button"
-                        className="btn user-code-hosts-page__btn--update theme-dark"
+                        className="btn btn-merged"
                         loading={true}
                         disabled={true}
                         label="Update"
