@@ -40,9 +40,3 @@ func Main() {
 	close(ready)
 	goroutine.MonitorBackgroundRoutines(context.Background(), allRoutines...)
 }
-
-type routinesResult struct {
-	name     string
-	routines []goroutine.BackgroundRoutine
-	err      error
-}
