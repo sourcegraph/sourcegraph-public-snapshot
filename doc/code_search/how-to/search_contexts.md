@@ -67,6 +67,10 @@ For example:
 
 You will be returned to the list of search contexts. Your new search context will appear in the search contexts selector in the search input, and can be [used immediately](#using-search-contexts).
 
+## Managing search contexts with the API
+
+Learn how to [manage search contexts with the GraphQL API](../../api/graphql/managing-search-contexts-with-api.md).
+
 ## Search contexts on Sourcegraph Cloud
 
-Please see [searching across repositories you've added to Sourcegraph Cloud with search contexts](./searching_with_search_contexts.md).
+Learn how to [search across repositories you've added to Sourcegraph Cloud with search contexts](./searching_with_search_contexts.md).
