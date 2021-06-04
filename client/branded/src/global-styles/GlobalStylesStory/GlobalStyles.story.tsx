@@ -391,7 +391,7 @@ add(
                             <span>
                                 <span className="text-content" data-test-tab="Comments">
                                     Comments
-                                </span>
+                                </span>{' '}
                                 <span className="badge badge-pill badge-secondary">14</span>
                             </span>
                         </a>
@@ -401,7 +401,7 @@ add(
                             <span>
                                 <span className="text-content" data-test-tab="Changed files">
                                     Changed files
-                                </span>
+                                </span>{' '}
                                 <span className="badge badge-pill badge-secondary">6</span>
                             </span>
                         </a>
