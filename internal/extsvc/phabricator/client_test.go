@@ -251,6 +251,7 @@ func newClient(t testing.TB, name string) (*phabricator.Client, func()) {
 		t.Fatal(err)
 	}
 
+	// See 1Password under PHABRICATOR_TOKEN for the required token
 	ctx := context.Background()
 	cli, err := phabricator.NewClient(
 		ctx,

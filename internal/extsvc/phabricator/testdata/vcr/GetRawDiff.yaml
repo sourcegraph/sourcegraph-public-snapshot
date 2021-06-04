@@ -7,6 +7,8 @@ interactions:
     headers:
       Content-Type:
       - application/x-www-form-urlencoded
+      User-Agent:
+      - sourcegraph/phabricator-client
     url: https://secure.phabricator.com/api/conduit.getcapabilities
     method: POST
   response:
@@ -24,7 +26,7 @@ interactions:
       Content-Type:
       - application/json
       Date:
-      - Tue, 23 Apr 2019 14:46:58 GMT
+      - Fri, 04 Jun 2021 09:48:57 GMT
       Expires:
       - Sat, 01 Jan 2000 00:00:00 GMT
       Referrer-Policy:
@@ -35,6 +37,8 @@ interactions:
       - max-age=31536000; includeSubdomains; preload
       Vary:
       - Accept-Encoding
+      X-Conduit-Capabilities:
+      - gzip
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
@@ -48,6 +52,8 @@ interactions:
     headers:
       Content-Type:
       - application/x-www-form-urlencoded
+      User-Agent:
+      - sourcegraph/phabricator-client
     url: https://secure.phabricator.com/api/differential.getrawdiff
     method: POST
   response:
@@ -65,7 +71,7 @@ interactions:
       Content-Type:
       - application/json
       Date:
-      - Tue, 23 Apr 2019 14:46:58 GMT
+      - Fri, 04 Jun 2021 09:48:57 GMT
       Expires:
       - Sat, 01 Jan 2000 00:00:00 GMT
       Referrer-Policy:
@@ -76,6 +82,8 @@ interactions:
       - max-age=31536000; includeSubdomains; preload
       Vary:
       - Accept-Encoding
+      X-Conduit-Capabilities:
+      - gzip
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
@@ -89,6 +97,8 @@ interactions:
     headers:
       Content-Type:
       - application/x-www-form-urlencoded
+      User-Agent:
+      - sourcegraph/phabricator-client
     url: https://secure.phabricator.com/api/differential.getrawdiff
     method: POST
   response:
@@ -127,7 +137,7 @@ interactions:
       Content-Type:
       - application/json
       Date:
-      - Tue, 23 Apr 2019 14:46:59 GMT
+      - Fri, 04 Jun 2021 09:48:58 GMT
       Expires:
       - Sat, 01 Jan 2000 00:00:00 GMT
       Referrer-Policy:
@@ -138,6 +148,8 @@ interactions:
       - max-age=31536000; includeSubdomains; preload
       Vary:
       - Accept-Encoding
+      X-Conduit-Capabilities:
+      - gzip
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
