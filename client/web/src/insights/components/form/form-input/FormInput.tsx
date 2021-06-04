@@ -3,6 +3,9 @@ import React, { forwardRef, InputHTMLAttributes, ReactNode } from 'react'
 
 import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 
+import styles from './FormInput.module.scss'
+import { ForwardReferenceComponent } from './types';
+
 interface FormInputProps extends InputHTMLAttributes<HTMLInputElement> {
     /** Title of input. */
     title?: string
@@ -15,6 +18,7 @@ interface FormInputProps extends InputHTMLAttributes<HTMLInputElement> {
     errorInputState?: boolean
     /** Valid sign to show valid state on input. */
     valid?: boolean
+    /** Turn on loading state (visually this is input with loader) */
     loading?: boolean
     /** Turn on or turn off autofocus for input. */
     autofocus?: boolean
@@ -24,9 +28,12 @@ interface FormInputProps extends InputHTMLAttributes<HTMLInputElement> {
     inputSymbol?: ReactNode
 }
 
-/** Displays input with description, error message, visual invalid and valid states. */
-export const FormInput = forwardRef<HTMLInputElement, FormInputProps>((props, reference) => {
+/**
+ * Displays input with description, error message, visual invalid and valid states.
+ */
+export const FormInput = forwardRef((props, reference) => {
     const {
+        as: Comp = 'input',
         type = 'text',
         title,
         description,
@@ -45,9 +52,9 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>((props, re
             {title && <div className="mb-2">{title}</div>}
 
             <LoaderInput className="d-flex" loading={loading}>
-                <input
+                <Comp
                     type={type}
-                    className={classnames(inputClassName, 'form-control', {
+                    className={classnames(styles.input, inputClassName, 'form-control', 'with-invalid-icon', {
                         'is-valid': valid,
                         'is-invalid': !!error || errorInputState,
                     })}
@@ -70,4 +77,4 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>((props, re
             )}
         </label>
     )
-})
+}) as ForwardReferenceComponent<'input', FormInputProps>

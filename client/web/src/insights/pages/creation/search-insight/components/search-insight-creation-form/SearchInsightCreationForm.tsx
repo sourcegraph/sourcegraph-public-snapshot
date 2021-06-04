@@ -96,27 +96,24 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
             onSubmit={handleSubmit}
             className={classnames(className, 'd-flex flex-column')}
         >
-            <RepositoriesField
-                {...repositories.input}
-            />
-
-            {/* <FormGroup*/}
-            {/*    name="insight repositories"*/}
-            {/*    title="Repositories"*/}
-            {/*    subtitle="Create a list of repositories to run your search over"*/}
-            {/* >*/}
-            {/*    <FormInput*/}
-            {/*        autoFocus={true}*/}
-            {/*        required={true}*/}
-            {/*        description="Separate repositories with commas"*/}
-            {/*        placeholder="Example: github.com/sourcegraph/sourcegraph"*/}
-            {/*        loading={repositories.meta.validState === 'CHECKING'}*/}
-            {/*        valid={repositories.meta.touched && repositories.meta.validState === 'VALID'}*/}
-            {/*        error={repositories.meta.touched && repositories.meta.error}*/}
-            {/*        {...repositories.input}*/}
-            {/*        className="mb-0 d-flex flex-column"*/}
-            {/*    />*/}
-            {/* </FormGroup>*/}
+             <FormGroup
+                name="insight repositories"
+                title="Repositories"
+                subtitle="Create a list of repositories to run your search over"
+             >
+                <FormInput
+                    as={RepositoriesField}
+                    autoFocus={true}
+                    required={true}
+                    description="Separate repositories with commas"
+                    placeholder="Example: github.com/sourcegraph/sourcegraph"
+                    loading={repositories.meta.validState === 'CHECKING'}
+                    valid={repositories.meta.touched && repositories.meta.validState === 'VALID'}
+                    error={repositories.meta.touched && repositories.meta.error}
+                    {...repositories.input}
+                    className="mb-0 d-flex flex-column"
+                />
+             </FormGroup>
 
             <hr className={styles.creationInsightFormSeparator} />
 

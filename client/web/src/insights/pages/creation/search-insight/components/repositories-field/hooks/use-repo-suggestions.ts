@@ -39,7 +39,6 @@ export function useRepoSuggestions(props: UseRepoSuggestionsProps): UseRepoSugge
     const { search, disable = false } = props
 
     const [suggestions, setSuggestions] = useState<RepositorySuggestion[] | Error | undefined>([])
-
     const debouncedSearchTerm = useDebounce(search, 1000)
     const fetchSuggestions = useFetchSuggestions()
 
