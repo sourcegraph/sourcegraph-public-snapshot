@@ -129,7 +129,7 @@ func (s *Store) GetIndexByID(ctx context.Context, id int) (_ Index, _ bool, err 
 const indexAssociatedUploadIDQueryFragment = `
 (
 	SELECT MAX(id) FROM lsif_uploads WHERE associated_index_id = u.id
-) as associated_upload_id
+) AS associated_upload_id
 `
 
 const indexRankQueryFragment = `
