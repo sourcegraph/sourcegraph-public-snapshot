@@ -45,7 +45,7 @@ export const GitCommitNodeByline: React.FunctionComponent<Props> = ({
         if (!isRedesignEnabled) {
             // The author and committer both exist and are different people.
             return (
-                <small className={`git-commit-node-byline git-commit-node-byline--has-committer ${className}`}>
+                <small data-testid="git-commit-node-byline" className={className}>
                     <UserAvatar
                         className="icon-inline-md"
                         user={author.person}
@@ -68,7 +68,7 @@ export const GitCommitNodeByline: React.FunctionComponent<Props> = ({
         }
 
         return (
-            <div className="d-flex git-commit-node-byline git-commit-node-byline--no-committer text-muted git-commit-node__byline">
+            <div data-testid="git-commit-node-byline" className={className}>
                 <div>
                     <UserAvatar
                         className="icon-inline"
@@ -102,13 +102,7 @@ export const GitCommitNodeByline: React.FunctionComponent<Props> = ({
     }
 
     return (
-        <div
-            className={classNames(
-                'd-flex git-commit-node-byline git-commit-node-byline--no-committer',
-                compact && 'align-items-center',
-                className
-            )}
-        >
+        <div data-testid="git-commit-node-byline" className={className}>
             <div>
                 <UserAvatar
                     className={classNames('icon-inline mr-1', isRedesignEnabled && 'mr-2')}

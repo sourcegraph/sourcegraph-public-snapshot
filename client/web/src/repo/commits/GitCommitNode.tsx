@@ -43,7 +43,7 @@ export interface GitCommitNodeProps {
     diffMode?: DiffMode
 
     /** Handler for change the diff mode */
-    handleDiffMode?: (mode: DiffMode) => void
+    onHandleDiffMode?: (mode: DiffMode) => void
 }
 
 /** Displays a Git commit. */
@@ -56,7 +56,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
     hideExpandCommitMessageBody,
     showSHAAndParentsRow,
     diffMode,
-    handleDiffMode,
+    onHandleDiffMode,
 }) => {
     const [showCommitMessageBody, setShowCommitMessageBody] = useState<boolean>(false)
     const [flashCopiedToClipboardMessage, setFlashCopiedToClipboardMessage] = useState<boolean>(false)
@@ -112,7 +112,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
 
     const bylineElement = (
         <GitCommitNodeByline
-            className="text-muted git-commit-node__byline"
+            className="d-flex text-muted git-commit-node__byline"
             author={node.author}
             committer={node.committer}
             // TODO compact needs to be always a boolean
@@ -184,8 +184,8 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
     )
 
     const diffModeSelector = (): JSX.Element | null => {
-        if (diffMode && handleDiffMode) {
-            return <DiffModeSelector handleDiffMode={handleDiffMode} diffMode={diffMode} small={true} />
+        if (diffMode && onHandleDiffMode) {
+            return <DiffModeSelector onHandleDiffMode={onHandleDiffMode} diffMode={diffMode} small={true} />
         }
 
         return null

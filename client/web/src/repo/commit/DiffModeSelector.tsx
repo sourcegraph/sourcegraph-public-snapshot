@@ -6,20 +6,20 @@ import { DiffMode } from './RepositoryCommitPage'
 interface DiffModeSelectorProps {
     className?: string
     small?: boolean
-    handleDiffMode: (mode: DiffMode) => void
+    onHandleDiffMode: (mode: DiffMode) => void
     diffMode: DiffMode
 }
 
 export const DiffModeSelector: React.FunctionComponent<DiffModeSelectorProps> = ({
     className,
     diffMode,
-    handleDiffMode,
+    onHandleDiffMode,
     small,
 }) => (
     <div className={className}>
         <div role="group" className="btn-group">
             <button
-                onClick={() => handleDiffMode('unified')}
+                onClick={() => onHandleDiffMode('unified')}
                 type="button"
                 className={classNames(
                     'btn',
@@ -30,7 +30,7 @@ export const DiffModeSelector: React.FunctionComponent<DiffModeSelectorProps> = 
                 Unified
             </button>
             <button
-                onClick={() => handleDiffMode('split')}
+                onClick={() => onHandleDiffMode('split')}
                 type="button"
                 className={classNames(
                     'btn',

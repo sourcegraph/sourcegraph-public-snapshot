@@ -2,7 +2,8 @@
 
 exports[`GitCommitNodeByline author (compact) 1`] = `
 <div
-  className="d-flex git-commit-node-byline git-commit-node-byline--no-committer"
+  className=""
+  data-testid="git-commit-node-byline"
 >
   <div>
     <img
@@ -34,7 +35,8 @@ exports[`GitCommitNodeByline author (compact) 1`] = `
 
 exports[`GitCommitNodeByline author 1`] = `
 <div
-  className="d-flex git-commit-node-byline git-commit-node-byline--no-committer"
+  className=""
+  data-testid="git-commit-node-byline"
 >
   <div>
     <img
@@ -66,7 +68,8 @@ exports[`GitCommitNodeByline author 1`] = `
 
 exports[`GitCommitNodeByline different author and committer (compact) 1`] = `
 <small
-  className="git-commit-node-byline git-commit-node-byline--has-committer "
+  className=""
+  data-testid="git-commit-node-byline"
 >
   <img
     alt=""
@@ -114,7 +117,8 @@ exports[`GitCommitNodeByline different author and committer (compact) 1`] = `
 
 exports[`GitCommitNodeByline different author and committer 1`] = `
 <small
-  className="git-commit-node-byline git-commit-node-byline--has-committer "
+  className=""
+  data-testid="git-commit-node-byline"
 >
   <img
     alt=""
@@ -162,7 +166,8 @@ exports[`GitCommitNodeByline different author and committer 1`] = `
 
 exports[`GitCommitNodeByline omit GitHub committer 1`] = `
 <div
-  className="d-flex git-commit-node-byline git-commit-node-byline--no-committer"
+  className=""
+  data-testid="git-commit-node-byline"
 >
   <div>
     <img
@@ -194,7 +199,8 @@ exports[`GitCommitNodeByline omit GitHub committer 1`] = `
 
 exports[`GitCommitNodeByline same author and committer 1`] = `
 <div
-  className="d-flex git-commit-node-byline git-commit-node-byline--no-committer"
+  className=""
+  data-testid="git-commit-node-byline"
 >
   <div>
     <img

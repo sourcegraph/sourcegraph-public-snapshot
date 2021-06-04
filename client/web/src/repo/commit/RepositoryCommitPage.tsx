@@ -164,7 +164,7 @@ class RepositoryCommitPageDetails extends React.Component<Props & { isRedesignEn
             pinningEnabled: true,
         })
         this.subscriptions.add(this.hoverifier)
-        this.handleDiffMode = this.handleDiffMode.bind(this)
+        this.onHandleDiffMode = this.onHandleDiffMode.bind(this)
         this.state = {
             ...this.hoverifier.hoverState,
             diffMode: (localStorage.getItem(DIFF_MODE_VISUALIZER) as DiffMode | null) || 'unified',
@@ -190,7 +190,7 @@ class RepositoryCommitPageDetails extends React.Component<Props & { isRedesignEn
         }
     }
 
-    private handleDiffMode(mode: DiffMode): void {
+    private onHandleDiffMode = (mode: DiffMode): void => {
         localStorage.setItem(DIFF_MODE_VISUALIZER, mode)
         this.setState({ diffMode: mode })
     }
@@ -270,16 +270,14 @@ class RepositoryCommitPageDetails extends React.Component<Props & { isRedesignEn
                                     expandCommitMessageBody={true}
                                     showSHAAndParentsRow={true}
                                     diffMode={this.state.diffMode}
-                                    // eslint-disable-next-line @typescript-eslint/unbound-method
-                                    handleDiffMode={this.handleDiffMode}
+                                    onHandleDiffMode={this.onHandleDiffMode}
                                 />
                             </div>
                         </div>
                         {!this.props.isRedesignEnabled && (
                             <DiffModeSelector
                                 className="py-2 text-right"
-                                // eslint-disable-next-line @typescript-eslint/unbound-method
-                                handleDiffMode={this.handleDiffMode}
+                                onHandleDiffMode={this.onHandleDiffMode}
                                 diffMode={this.state.diffMode}
                             />
                         )}
