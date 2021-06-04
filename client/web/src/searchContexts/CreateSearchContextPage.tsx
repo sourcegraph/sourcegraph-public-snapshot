@@ -52,7 +52,7 @@ export const AuthenticatedCreateSearchContextPage: React.FunctionComponent<Creat
                         A search context represents a group of repositories at specified branches or revisions that will
                         be targeted by search queries.{' '}
                         <a
-                            href="https://docs.sourcegraph.com/code_search/explanations/features#search-contexts-experimental"
+                            href="https://docs.sourcegraph.com/code_search/explanations/features#search-contexts"
                             target="_blank"
                             rel="noopener noreferrer"
                         >

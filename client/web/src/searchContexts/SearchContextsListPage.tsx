@@ -84,7 +84,7 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
                     <p className="text-muted">
                         Search code you care about with search contexts.{' '}
                         <a
-                            href="https://docs.sourcegraph.com/code_search/explanations/features#search-contexts-experimental"
+                            href="https://docs.sourcegraph.com/code_search/explanations/features#search-contexts"
                             target="_blank"
                             rel="noopener noreferrer"
                         >
