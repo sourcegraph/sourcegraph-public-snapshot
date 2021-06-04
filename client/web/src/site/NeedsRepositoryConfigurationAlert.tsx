@@ -5,6 +5,7 @@ import { CircleChevronRightIcon } from '@sourcegraph/shared/src/components/icons
 
 import { DismissibleAlert } from '../components/DismissibleAlert'
 import { eventLogger } from '../tracking/eventLogger'
+import classNames from 'classnames'
 
 const onClickCTA = (): void => {
     eventLogger.log('AlertNeedsRepoConfigCTAClicked')
@@ -19,7 +20,7 @@ export const NeedsRepositoryConfigurationAlert: React.FunctionComponent<{ classN
 }) => (
     <DismissibleAlert
         partialStorageKey="needsRepositoryConfiguration"
-        className={`alert alert-success d-flex align-items-center ${className}`}
+        className={classNames('alert-success d-flex align-items-center', className)}
     >
         <Link className="site-alert__link" to="/site-admin/external-services" onClick={onClickCTA}>
             <CircleChevronRightIcon className="redesign-d-none icon-inline site-alert__link-icon" />{' '}

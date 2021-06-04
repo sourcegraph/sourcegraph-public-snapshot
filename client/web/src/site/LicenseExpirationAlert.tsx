@@ -6,6 +6,7 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 
 import { DismissibleAlert } from '../components/DismissibleAlert'
 import { isProductLicenseExpired, formatRelativeExpirationDate } from '../productSubscription/helpers'
+import classNames from 'classnames'
 
 /**
  * A global alert that appears telling the site admin that their license key is about to expire. Even after being dismissed,
@@ -18,7 +19,7 @@ export const LicenseExpirationAlert: React.FunctionComponent<{
 }> = ({ expiresAt, daysLeft, className = '' }) => (
     <DismissibleAlert
         partialStorageKey={`licenseExpiring.${daysLeft}`}
-        className={`alert alert-warning align-items-center ${className}`}
+        className={classNames('alert-warning align-items-center', className)}
     >
         <WarningIcon className="redesign-d-none icon-inline mr-2 flex-shrink-0" />
         Your Sourcegraph license{' '}
