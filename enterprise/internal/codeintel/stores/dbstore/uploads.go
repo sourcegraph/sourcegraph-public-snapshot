@@ -158,7 +158,7 @@ SELECT
 	u.id,
 	u.commit,
 	u.root,
-	EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip where repository_id = u.repository_id and upload_id = u.id) AS visible_at_tip,
+	EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip WHERE repository_id = u.repository_id AND upload_id = u.id) AS visible_at_tip,
 	u.uploaded_at,
 	u.state,
 	u.failure_message,
