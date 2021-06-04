@@ -1,7 +1,9 @@
+import classNames from 'classnames'
 import React, { useState, useCallback } from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { LoaderButton } from '../../../components/LoaderButton'
 
@@ -17,6 +19,7 @@ interface Props {
 }
 
 export const ExternalAccount: React.FunctionComponent<Props> = ({ account, authProvider, onDidRemove, onDidError }) => {
+    const [isRedesignEnabled] = useRedesignToggle()
     const [isLoading, setIsLoading] = useState(false)
     const [isRemoveAccountModalOpen, setIsRemoveAccountModalOpen] = useState(false)
     const toggleRemoveAccountModal = useCallback(() => setIsRemoveAccountModalOpen(!isRemoveAccountModalOpen), [
@@ -31,7 +34,7 @@ export const ExternalAccount: React.FunctionComponent<Props> = ({ account, authP
     const { icon: AccountIcon } = account
 
     return (
-        <div className="p-2 d-flex align-items-start ">
+        <div className={classNames('d-flex align-items-start', !isRedesignEnabled && 'p-2')}>
             {isRemoveAccountModalOpen && account.external && (
                 <RemoveExternalAccountModal
                     id={account.external.id}

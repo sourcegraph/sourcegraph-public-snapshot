@@ -4,6 +4,7 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { isDefined, keyExistsIn } from '@sourcegraph/shared/src/util/types'
+import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../components/alerts'
 import { queryExternalServices } from '../../../components/externalServices/backend'
@@ -209,18 +210,20 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     return (
         <div className="user-code-hosts-page">
             <PageTitle title="Code host connections" />
-            <div className="mb-4">
-                <div className="d-flex justify-content-between align-items-center mb-3">
-                    <h2 className="mb-0">Code host connections</h2>
-                </div>
-                <p className="text-muted">
-                    Connect with your code hosts. Then,{' '}
-                    <Link className="text-primary" to={`${routingPrefix}/repositories/manage`}>
-                        add repositories
-                    </Link>{' '}
-                    to search with Sourcegraph.
-                </p>
-            </div>
+            <PageHeader
+                headingElement="h2"
+                path={[{ text: 'Code host connections' }]}
+                description={
+                    <>
+                        Connect with your code hosts. Then,{' '}
+                        <Link className="text-primary" to={`${routingPrefix}/repositories/manage`}>
+                            add repositories
+                        </Link>{' '}
+                        to search with Sourcegraph.
+                    </>
+                }
+                className="mb-3"
+            />
 
             {/* display external service errors and success banners */}
             {getErrorAndSuccessBanners(statusOrError)}
@@ -231,11 +234,11 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
             )}
 
             {codeHostExternalServices && isServicesByKind(statusOrError) ? (
-                <>
+                <Container>
                     <ul className="list-group">
                         {Object.entries(codeHostExternalServices).map(([id, { kind, defaultDisplayName, icon }]) =>
                             authProvidersByKind[kind] ? (
-                                <li key={id} className="list-group-item">
+                                <li key={id} className="list-group-item user-code-hosts-page__code-host-item">
                                     <CodeHostItem
                                         service={isServicesByKind(statusOrError) ? statusOrError[kind] : undefined}
                                         kind={kind}
@@ -253,7 +256,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                             ) : null
                         )}
                     </ul>
-                </>
+                </Container>
             ) : (
                 <div className="d-flex justify-content-center">
                     <LoadingSpinner className="icon-inline" />

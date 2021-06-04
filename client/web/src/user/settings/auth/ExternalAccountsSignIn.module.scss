@@ -1,0 +1,13 @@
+.external-account {
+    :global(.theme-redesign) & {
+        border: 0;
+        padding: 0;
+        &:not(:last-child) {
+            margin-bottom: 0.5rem;
+        }
+        + .external-account {
+            border-top: 1px solid var(--border-color);
+            padding-top: 0.5rem;
+        }
+    }
+}
