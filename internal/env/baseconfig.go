@@ -13,7 +13,7 @@ type Config interface {
 	// read the values from the environment and store errors to be reported later.
 	Load()
 
-	// Validate returns errors about the environment that occurred durign Load.
+	// Validate returns errors about the environment that occurred during Load.
 	Validate() error
 }
 
