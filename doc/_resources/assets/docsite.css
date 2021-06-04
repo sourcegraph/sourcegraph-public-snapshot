@@ -360,7 +360,7 @@ body > #sidebar .external a, body > #page > footer .external a {
         /* Note: all ancestors up to <html> (the scrolling element) must be overflow: visible (default) for this to work. */
 		position: sticky;
 		top: calc(2*var(--spacing));
-		max-height: 100vh;
+		max-height: calc(100vh - 2*var(--spacing));
 		padding: var(--spacing);
         border: solid 1px var(--border-color);
 	}
