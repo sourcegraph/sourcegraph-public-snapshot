@@ -106,14 +106,6 @@ func (*extensionRegistryResolver) LocalExtensionIDPrefix() *string {
 	return GetLocalRegistryExtensionIDPrefix()
 }
 
-func (r *extensionRegistryResolver) FeaturedExtensions(ctx context.Context) ([]graphqlbackend.RegistryExtension, error) {
-	x, err := GetFeaturedExtensions(ctx, r.db)
-	if err != nil {
-		return nil, err
-	}
-	return x, nil
-}
-
 // ImplementsLocalExtensionRegistry reports whether there is an implementation of a local extension
 // registry (which is a Sourcegraph Enterprise feature).
 func (r *extensionRegistryResolver) ImplementsLocalExtensionRegistry() bool {

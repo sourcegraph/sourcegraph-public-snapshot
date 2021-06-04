@@ -70,7 +70,10 @@ const extensionRegistryQuery = gql`
                 error
             }
             featuredExtensions @include(if: $getFeatured) {
-                ...RegistryExtensionFieldsForList
+                nodes {
+                    ...RegistryExtensionFieldsForList
+                }
+                error
             }
         }
     }
@@ -224,9 +227,9 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
 
                         const { error, nodes } = data.extensionRegistry.extensions
 
-                        const featuredExtensions = data.extensionRegistry.featuredExtensions
+                        const featuredExtensions = data.extensionRegistry.featuredExtensions.nodes
                             ? configureFeaturedExtensions(
-                                  data.extensionRegistry.featuredExtensions,
+                                  data.extensionRegistry.featuredExtensions.nodes,
                                   configuredExtensionCache
                               )
                             : undefined
