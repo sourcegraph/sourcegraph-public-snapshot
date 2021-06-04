@@ -41,6 +41,33 @@ func TestList(t *testing.T) {
 	}
 }
 
+func TestListEnterprise(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	db := dbtesting.GetDB(t)
+	store := testStore(t, db)
+
+	ReturnEnterpriseMigrations = true
+	defer func() { ReturnEnterpriseMigrations = false }()
+
+	migrations, err := store.List(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error getting migrations: %s", err)
+	}
+
+	expectedMigrations := make([]Migration, len(testMigrations))
+	copy(expectedMigrations, testMigrations)
+	expectedMigrations = append(expectedMigrations, testEnterpriseMigrations...)
+	sort.Slice(expectedMigrations, func(i, j int) bool {
+		return expectedMigrations[i].ID > expectedMigrations[j].ID
+	})
+
+	if diff := cmp.Diff(expectedMigrations, migrations); diff != "" {
+		t.Errorf("unexpected migrations (-want +got):\n%s", diff)
+	}
+}
+
 func TestUpdateDirection(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -187,7 +214,7 @@ var testMigrations = []Migration{
 		Team:           "search",
 		Component:      "zoekt-index",
 		Description:    "rot13 all the indexes for security",
-		Introduced:     "3.25.0",
+		Introduced:     NewVersion(3, 25),
 		Deprecated:     nil,
 		Progress:       0,
 		Created:        testTime,
@@ -201,8 +228,8 @@ var testMigrations = []Migration{
 		Team:           "codeintel",
 		Component:      "lsif_data_documents",
 		Description:    "denormalize counts",
-		Introduced:     "3.26.0",
-		Deprecated:     strPtr("3.28.0"),
+		Introduced:     NewVersion(3, 26),
+		Deprecated:     newVersionPtr(3, 28),
 		Progress:       0.5,
 		Created:        testTime.Add(time.Hour * 1),
 		LastUpdated:    timePtr(testTime.Add(time.Hour * 2)),
@@ -218,7 +245,7 @@ var testMigrations = []Migration{
 		Team:           "platform",
 		Component:      "lsif_data_documents",
 		Description:    "gzip payloads",
-		Introduced:     "3.24.0",
+		Introduced:     NewVersion(3, 24),
 		Deprecated:     nil,
 		Progress:       0.4,
 		Created:        testTime.Add(time.Hour * 3),
@@ -232,48 +259,101 @@ var testMigrations = []Migration{
 	},
 }
 
-func strPtr(s string) *string        { return &s }
+var testEnterpriseMigrations = []Migration{
+	{
+		ID:             4,
+		Team:           "search",
+		Component:      "zoekt-index",
+		Description:    "rot13 all the indexes for security (but with more enterprise)",
+		Introduced:     NewVersion(3, 25),
+		Deprecated:     nil,
+		Progress:       0,
+		Created:        testTime,
+		LastUpdated:    nil,
+		NonDestructive: false,
+		ApplyReverse:   false,
+		Errors:         []MigrationError{},
+	},
+	{
+		ID:             5,
+		Team:           "codeintel",
+		Component:      "lsif_data_documents",
+		Description:    "denormalize counts (but with more enterprise)",
+		Introduced:     NewVersion(3, 26),
+		Deprecated:     newVersionPtr(3, 28),
+		Progress:       0.5,
+		Created:        testTime.Add(time.Hour * 1),
+		LastUpdated:    timePtr(testTime.Add(time.Hour * 2)),
+		NonDestructive: true,
+		ApplyReverse:   false,
+		Errors:         []MigrationError{},
+	},
+}
+
 func timePtr(t time.Time) *time.Time { return &t }
+
+func newVersionPtr(major, minor int) *Version {
+	v := NewVersion(major, minor)
+	return &v
+}
 
 func testStore(t *testing.T, db dbutil.DB) *Store {
 	store := NewStoreWithDB(db)
 
 	for i := range testMigrations {
-		if err := insertMigration(store, testMigrations[i]); err != nil {
+		if err := insertMigration(store, testMigrations[i], false); err != nil {
 			t.Fatalf("unexpected error inserting migration: %s", err)
+		}
+	}
+
+	for i := range testEnterpriseMigrations {
+		if err := insertMigration(store, testEnterpriseMigrations[i], true); err != nil {
+			t.Fatalf("unexpected error inserting enterprise migration: %s", err)
 		}
 	}
 
 	return store
 }
 
-func insertMigration(store *Store, migration Migration) error {
+func insertMigration(store *Store, migration Migration, enterpriseOnly bool) error {
+	var deprecatedMajor, deprecatedMinor *int
+	if migration.Deprecated != nil {
+		deprecatedMajor = &migration.Deprecated.Major
+		deprecatedMinor = &migration.Deprecated.Minor
+	}
+
 	query := sqlf.Sprintf(`
 		INSERT INTO out_of_band_migrations (
 			id,
 			team,
 			component,
 			description,
-			introduced,
-			deprecated,
+			introduced_version_major,
+			introduced_version_minor,
+			deprecated_version_major,
+			deprecated_version_minor,
 			progress,
 			created,
 			last_updated,
 			non_destructive,
-			apply_reverse
-		) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+			apply_reverse,
+			is_enterprise
+		) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 	`,
 		migration.ID,
 		migration.Team,
 		migration.Component,
 		migration.Description,
-		migration.Introduced,
-		dbutil.NullString{S: migration.Deprecated},
+		migration.Introduced.Major,
+		migration.Introduced.Minor,
+		deprecatedMajor,
+		deprecatedMinor,
 		migration.Progress,
 		migration.Created,
 		migration.LastUpdated,
 		migration.NonDestructive,
 		migration.ApplyReverse,
+		enterpriseOnly,
 	)
 
 	if err := store.Store.Exec(context.Background(), query); err != nil {

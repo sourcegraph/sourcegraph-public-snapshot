@@ -175,7 +175,9 @@ async function determineCommitsToSearch(dates: Date[], repo: string): Promise<Se
 const NUMBER_OF_CHART_POINTS = 7
 
 function getDaysToQuery(step: Duration): Date[] {
-    const now = startOfDay(new Date())
+    // Date.now used here for testing purpose we can mock now
+    // method in test and avoid flaky test by that.
+    const now = startOfDay(new Date(Date.now()))
     const dates: Date[] = []
 
     for (let index = 0, date = now; index < NUMBER_OF_CHART_POINTS; index++) {

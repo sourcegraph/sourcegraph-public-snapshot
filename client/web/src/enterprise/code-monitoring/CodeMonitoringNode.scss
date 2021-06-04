@@ -1,7 +1,11 @@
 .code-monitoring-node {
-    // stylelint-disable-next-line declaration-property-unit-whitelist
-    margin: -1px -1px calc(0.5rem - 1px) -1px;
-    color: var(--link-hover-color);
+    .theme-classic & {
+        // stylelint-disable-next-line declaration-property-unit-whitelist
+        margin: -1px -1px calc(0.5rem - 1px) -1px;
+        color: var(--link-hover-color);
+        padding: 1rem;
+        @extend .card;
+    }
 
     &__toggle-wrapper {
         // stylelint-disable-next-line declaration-property-unit-whitelist
@@ -13,33 +17,37 @@
     }
 
     &:hover {
-        text-decoration: none;
-        border: 2px solid #329af0;
-        // stylelint-disable-next-line declaration-property-unit-whitelist
-        margin: -2px -2px calc(0.5rem - 2px) -2px;
+        .theme-classic & {
+            text-decoration: none;
+            border: 2px solid #329af0;
+            // stylelint-disable-next-line declaration-property-unit-whitelist
+            margin: -2px -2px calc(0.5rem - 2px) -2px;
+        }
     }
 
     // We override the margins of the last .code-monitoring-node
     // to prevent .filtered-connection__summary below from shifting
     &:last-child {
-        // stylelint-disable-next-line declaration-property-unit-whitelist
-        margin-bottom: -1px;
+        .theme-classic & {
+            // stylelint-disable-next-line declaration-property-unit-whitelist
+            margin-bottom: -1px;
+        }
     }
 
     &:last-child:hover {
-        // stylelint-disable-next-line declaration-property-unit-whitelist
-        margin-bottom: -2px;
+        .theme-classic & {
+            // stylelint-disable-next-line declaration-property-unit-whitelist
+            margin-bottom: -2px;
+        }
     }
 
     .theme-redesign & {
-        color: var(--body-color);
-
-        &:focus-visible {
-            border-color: transparent;
+        &:not(:last-of-type) {
+            margin-bottom: 1rem;
         }
-
-        &:hover {
-            border-color: var(--border-active-color);
+        + .code-monitoring-node {
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
         }
     }
 }

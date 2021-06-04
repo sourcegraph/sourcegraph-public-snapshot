@@ -17,7 +17,7 @@ import { sendTestEmail, toggleCodeMonitorEnabled as _toggleCodeMonitorEnabled } 
 export interface CodeMonitorNodeProps {
     node: CodeMonitorFields
     location: H.Location
-    authentictedUser: AuthenticatedUser
+    authenticatedUser: AuthenticatedUser
     showCodeMonitoringTestEmailButton: boolean
 
     toggleCodeMonitorEnabled?: typeof _toggleCodeMonitorEnabled
@@ -28,7 +28,7 @@ const LOADING = 'LOADING' as const
 export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
     location,
     node,
-    authentictedUser,
+    authenticatedUser,
     showCodeMonitoringTestEmailButton,
     toggleCodeMonitorEnabled = _toggleCodeMonitorEnabled,
 }: CodeMonitorNodeProps) => {
@@ -38,7 +38,6 @@ export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
         useCallback(
             (click: Observable<React.MouseEvent>) =>
                 click.pipe(
-                    tap(click => click.preventDefault()),
                     switchMap(() => {
                         const toggleMonitor = toggleCodeMonitorEnabled(node.id, !enabled).pipe(
                             tap(
@@ -69,7 +68,6 @@ export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
         useCallback(
             (click: Observable<React.MouseEvent<HTMLButtonElement>>) =>
                 click.pipe(
-                    tap(click => click.stopPropagation()),
                     mergeMap(() =>
                         sendTestEmail(node.trigger.id).pipe(
                             startWith(LOADING),
@@ -84,16 +82,18 @@ export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
     const hasEnabledAction = useMemo(() => node.actions.nodes.filter(node => node.enabled).length > 0, [node.actions])
 
     return (
-        <Link to={`${location.pathname}/${node.id}`} className="code-monitoring-node card p-3">
+        <div className="code-monitoring-node">
             <div className="d-flex justify-content-between align-items-center">
                 <div className="d-flex flex-column">
-                    <div className="font-weight-bold">{node.description}</div>
+                    <div className="font-weight-bold">
+                        <Link to={`${location.pathname}/${node.id}`}>{node.description}</Link>
+                    </div>
                     {/** TODO: Generate this text based on the type of action when new actions are added. */}
                     {node.actions.nodes.length > 0 && (
                         <div className="d-flex text-muted">
                             New search result → Sends email notifications{' '}
                             {showCodeMonitoringTestEmailButton &&
-                                authentictedUser.siteAdmin &&
+                                authenticatedUser.siteAdmin &&
                                 hasEnabledAction &&
                                 node.enabled && (
                                     <button
@@ -117,14 +117,17 @@ export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
                             disabled={toggleMonitorOrError === LOADING}
                         />
                     </div>
-                    <button type="button" className="btn btn-link code-monitoring-node__edit-button">
+                    <Link
+                        to={`${location.pathname}/${node.id}`}
+                        className="btn btn-link code-monitoring-node__edit-button"
+                    >
                         Edit
-                    </button>
+                    </Link>
                 </div>
             </div>
             {isErrorLike(toggleMonitorOrError) && (
                 <div className="alert alert-danger">Failed to toggle monitor: {toggleMonitorOrError.message}</div>
             )}
-        </Link>
+        </div>
     )
 }

@@ -228,6 +228,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                     label={submitting ? 'Submitting' : isEditMode ? 'Edit insight' : 'Create code insight'}
                     type="submit"
                     disabled={submitting}
+                    data-testid="insight-save-button"
                     className="btn btn-primary mr-2"
                 />
 

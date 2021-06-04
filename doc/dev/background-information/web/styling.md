@@ -50,6 +50,20 @@ They can however utilize environment-agnostic components by passing our Bootstra
 
 ## Our approach to styling
 
+### General guidelines
+
+- Colocate styles with the corresponding component. Stylesheet file should be named like the `.tsx` component file.
+- Prefer classes over descendant/child selectors. It decouples styles from the DOM structure of the component, ensures encapsulation and avoids CSS specificity issues.
+- Create utility classes for styles that should be shared horizontally between components.
+- Avoid hardcoding colors, use CSS variables if they are available / the color makes sense to share.
+- If possible, prefer CSS variables to SCSS variables.
+- Try to _minimize_ the usage of advanced SCSS features. They can lead to bugs and complicate styles.
+  - Encouraged features are nesting and imports (which is the intersection of Less', SCSS' and PostCSS' feature set).
+- Think about mobile at least so much that no feature breaks when the browser window is resized.
+- Prefer flexbox over absolute positioning.
+- Avoid styling the children of your components. This couples your component to the implementation of the child.
+- Order your rules so that layout rules (that describe how the component is laid out to its parents) come first, then rules that describe the layout of its children, and finally visual details.
+
 ### Structuring style sheets
 
 A component may need styles that are common to all environments, like internal layout.
@@ -88,7 +102,7 @@ This file should not contain any real CSS rules so that it can be included in mu
 @import 'branded/src/global-styles/breakpoints';
 ```
 
-If possible, prefer CSS variables to SCSS variables.
+Do not use BEM convention in CSS modules. Use short descriptive classes specific only for the corresponding component because CSS modules provide scoping out of the box. It outputs shorter classes that are more readable in the component markup.
 
 #### BEM convention
 
@@ -118,30 +132,30 @@ Example:
 
 Please note that there is no hierarchy in _elements_, as that would couple the styling to the DOM structure. Element names should be unambiguous within their component/_block_, or be split into a separate component/_block_.
 
-We colocate stylesheets next to the component using the same file name.
-This approach ensures styles are easy to find and makes it easy to tell which styles apply to which elements (by putting them side-by-side in an editor, or through a simple text search).
-
-Using classes, as opposed to child and descendant selectors, decouples styles from the DOM structure of the component, ensures encapsulation and avoids CSS specificity issues.
-Descendant selectors can still be useful in rare cases though, like styling in the browser extension, or styling markdown content.
-
 ### Typography
 
 Avoid ever overriding font family, text sizes or text colors.
 These are set globally by the host environment for semantic HTML elements, e.g. `<h1>`, `<a>`, `<code>` or `<small>`.
 
-### Colors and theming
+### Theming
+
+Theming is done through toggling top-level CSS classes `theme-light` and `theme-dark`.
+Any style can be made different on either theme by scoping it to one of those two classes.
+Where possible, we use CSS variables, but unfortunately they don't work with compile-time color manipulation (`darken()` etc)
+and runtime color manipulation is not yet implemented in CSS (coming in CSS Color Level 4).
+
+### Colors
 
 The brand color palette is [OpenColor](https://yeun.github.io/open-color/).
 In addition to these, we define a blueish grayscale palette for backgrounds, text and borders.
-These colors are all available as SCSS and CSS variables.
+These colors are all available as CSS and SCSS variables.
+
 However, directly referencing these may not work well in both light and dark themes, and may not match code host themes (if the component is shared).
 The best approach is to not reference colors at all and use building blocks that have borders, text colors etc defined.
 This saves code and makes it easy to maintain design consistency even if we want to change colors in the future.
 When that is not possible (for example UI contributed by extensions), prefer to reference CSS variables with semantic colors like `var(--danger)`, `var(--success)`, `var(--border-color)`, `var(--body-bg)` etc.
 The values of these variables are changed globally when the theme changes.
 Be aware that this means our stylesheets for each host environment need to define these variables too.
-
-Defining different styles in the webapp depending on the `theme-dark` and `theme-light` classes predates CSS variables and is discouraged.
 
 ### Spacing
 

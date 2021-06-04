@@ -45,6 +45,8 @@ export interface SearchInsightCreationContentProps {
     initialValue?: CreateInsightFormFields
     /** Custom class name for root form element. */
     className?: string
+    /** Test id for the root content element (form element). */
+    dataTestId?: string
     /** Submit handler for form element. */
     onSubmit: (values: CreateInsightFormFields) => SubmissionErrors | Promise<SubmissionErrors> | void
     /** Cancel handler. */
@@ -57,9 +59,10 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
         organizations = [],
         settings,
         initialValue = INITIAL_VALUES,
+        className,
+        dataTestId,
         onSubmit,
         onCancel = noop,
-        className,
     } = props
 
     const isEditMode = mode === 'edit'
@@ -98,7 +101,7 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
         stepValue.meta.validState === 'VALID'
 
     return (
-        <div className={classnames(styles.content, className)}>
+        <div data-testid={dataTestId} className={classnames(styles.content, className)}>
             <SearchInsightCreationForm
                 mode={mode}
                 className={styles.contentForm}

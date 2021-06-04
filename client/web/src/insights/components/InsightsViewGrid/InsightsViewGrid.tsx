@@ -118,7 +118,11 @@ export const InsightsViewGrid: React.FunctionComponent<InsightsViewGridProps> = 
                 {props.views.map(view => (
                     // Since ResponsiveGridLayout relies on fact that children components must be
                     // native elements we can't use custom react component here explicitly.
-                    <section key={view.id} className="card insights-view-grid__item">
+                    <section
+                        key={view.id}
+                        data-testid={`InsightCard.${view.id}`}
+                        className="card insights-view-grid__item"
+                    >
                         <InsightContentCard
                             {...props}
                             hasContextMenu={hasContextMenu}
