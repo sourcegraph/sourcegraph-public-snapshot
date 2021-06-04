@@ -75,7 +75,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                 ) : (
                     <CircleDashedIcon className="icon-inline mb-0 mr-2 user-code-hosts-page__icon--dashed" />
                 )}
-                <Icon className="icon-inline mb-0 mr-1" />
+                <Icon className="mb-0 mr-1" />
             </div>
             <div className="flex-1 align-self-center">
                 <h3 className="m-0">{name}</h3>
@@ -84,7 +84,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                 {service?.id ? (
                     <button
                         type="button"
-                        className="btn btn-link btn-sm text-danger shadow-none"
+                        className="btn btn-link text-danger shadow-none"
                         onClick={toggleRemoveConnectionModal}
                     >
                         Remove
