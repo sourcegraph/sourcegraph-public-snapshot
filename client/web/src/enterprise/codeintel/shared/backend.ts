@@ -27,6 +27,14 @@ export const lsifUploadFieldsFragment = gql`
         startedAt
         finishedAt
         placeInQueue
+        associatedIndex {
+            id
+            state
+            queuedAt
+            startedAt
+            finishedAt
+            placeInQueue
+        }
     }
 `
 
@@ -59,6 +67,14 @@ export const lsifIndexFieldsFragment = gql`
         startedAt
         finishedAt
         placeInQueue
+        associatedUpload {
+            id
+            state
+            uploadedAt
+            startedAt
+            finishedAt
+            placeInQueue
+        }
     }
     fragment LsifIndexStepsFields on IndexSteps {
         setup {
