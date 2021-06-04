@@ -36,7 +36,7 @@ func (c *Config) Load() {
 	), ",")
 }
 
-// Validate returns an error indicating a valid environment read during Load.
+// Validate returns an error indicating if there was an invalid environment read during Load.
 // THe environment is invalid when a supplied task name is not recognized by
 // the set of names registered to the worker (at compile time).
 //
