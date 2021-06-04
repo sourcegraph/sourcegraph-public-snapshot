@@ -100,7 +100,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                         className="btn btn-primary theme-dark"
                         loading={true}
                         disabled={true}
-                        label="Connect"
+                        label="Connecting..."
                         alwaysShowLabel={true}
                     />
                 ) : (
@@ -123,7 +123,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                         className="btn user-code-hosts-page__btn--update theme-dark"
                         loading={true}
                         disabled={true}
-                        label="Update"
+                        label="Updating..."
                         alwaysShowLabel={true}
                     />
                 )}
