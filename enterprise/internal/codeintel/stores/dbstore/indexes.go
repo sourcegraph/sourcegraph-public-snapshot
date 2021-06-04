@@ -443,7 +443,7 @@ var indexColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf(`u.execution_logs`),
 	sqlf.Sprintf("NULL"),
 	sqlf.Sprintf(`u.local_steps`),
-	sqlf.Sprintf(`` + indexAssociatedUploadIDQueryFragment + ``),
+	sqlf.Sprintf(indexAssociatedUploadIDQueryFragment),
 }
 
 var IndexColumnsWithNullRank = indexColumnsWithNullRank
