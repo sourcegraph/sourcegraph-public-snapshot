@@ -671,8 +671,8 @@ type Mutation {
 	): FeatureFlag!
 
 	createFeatureFlagOverride(
-		userID: ID
 		orgID: ID
+		userID: ID
 		flagName: String!
 		value: Boolean!
 	): FeatureFlagOverride!

@@ -137,6 +137,9 @@ func TestFeatureFlags(t *testing.T) {
 		return res.Data.FeatureFlags, err
 	}
 
+	// NOTE: these tests are intended to run in order, and not in parallel.
+	// The orders matter for create, update, delete, list.
+
 	t.Run("Create", func(t *testing.T) {
 		t.Run("Concrete", func(t *testing.T) {
 			boolTrue := true
@@ -162,6 +165,13 @@ func TestFeatureFlags(t *testing.T) {
 				Overrides: []featureFlagOverrideResult{},
 			}
 			require.Equal(t, expected, res)
+		})
+
+		t.Run("BadArgsError", func(t *testing.T) {
+			int343 := 343
+			boolTrue := true
+			_, err := createFeatureFlag("test_rollout", &boolTrue, &int343)
+			require.Error(t, err)
 		})
 	})
 
@@ -191,6 +201,12 @@ func TestFeatureFlags(t *testing.T) {
 			}
 			require.Equal(t, expected, res)
 		})
+
+		t.Run("NonextantError", func(t *testing.T) {
+			int344 := 344
+			_, err := updateFeatureFlag("test_nonextant", nil, &int344)
+			require.Error(t, err)
+		})
 	})
 
 	t.Run("Delete", func(t *testing.T) {
@@ -216,7 +232,10 @@ func TestFeatureFlags(t *testing.T) {
 			// Create a feature flag first
 			boolTrue := true
 			_, err := createFeatureFlag("test_concrete", &boolTrue, nil)
-			require.NoError(t, err)
+			t.Cleanup(func() {
+				err := deleteFeatureFlag("test_concrete")
+				require.NoError(t, err)
+			})
 
 			// Then see if it shows up when we list it
 			res, err := listFeatureFlags()
@@ -231,7 +250,150 @@ func TestFeatureFlags(t *testing.T) {
 		})
 	})
 
-	t.Run("Overrides", func(t *testing.T) {
+	createOverride := func(orgID *string, userID *string, flagName string, value bool) (featureFlagOverrideResult, error) {
+		m := featureFlagOverrideFragment + `
+		mutation CreateFeatureFlagOverride($orgID: ID, $userID: ID, $flagName: String!, $value: Boolean!) {
+			createFeatureFlagOverride(
+				orgID: $orgID,
+				userID: $userID,
+				flagName: $flagName,
+				value: $value,
+			) {
+				...FeatureFlagOverrideData
+			}
+		}`
 
+		var res struct {
+			Data struct {
+				CreateFeatureFlagOverride featureFlagOverrideResult
+			}
+		}
+		params := map[string]interface{}{"orgID": orgID, "userID": userID, "flagName": flagName, "value": value}
+		err := client.GraphQL("", m, params, &res)
+		return res.Data.CreateFeatureFlagOverride, err
+	}
+
+	updateOverride := func(id string, value bool) (featureFlagOverrideResult, error) {
+		m := featureFlagOverrideFragment + `
+		mutation UpdateFeatureFlagOverride($id: ID!, $value: Boolean!) {
+			updateFeatureFlagOverride(
+				id: $id,
+				value: $value,
+			) {
+				...FeatureFlagOverrideData
+			}
+		}`
+
+		var res struct {
+			Data struct {
+				UpdateFeatureFlagOverride featureFlagOverrideResult
+			}
+		}
+		params := map[string]interface{}{"id": id, "value": value}
+		err := client.GraphQL("", m, params, &res)
+		return res.Data.UpdateFeatureFlagOverride, err
+	}
+
+	deleteOverride := func(id string) error {
+		m := `
+		mutation DeleteFeatureFlagOverride($id: ID!) {
+			deleteFeatureFlagOverride(
+				id: $id,
+			) {
+				alwaysNil
+			}
+		}`
+
+		params := map[string]interface{}{"id": id}
+		return client.GraphQL("", m, params, nil)
+	}
+
+	t.Run("Overrides", func(t *testing.T) {
+		orgID, err := client.CreateOrganization("testoverrides", "test")
+		require.NoError(t, err)
+		t.Cleanup(func() {
+			client.DeleteOrganization(orgID)
+		})
+
+		userID, err := client.CreateUser("testuseroverrides", "test@override.com")
+		require.NoError(t, err)
+		t.Cleanup(func() {
+			client.DeleteUser(userID, true)
+		})
+
+		boolTrue := true
+		flag, err := createFeatureFlag("test_override", &boolTrue, nil)
+		require.NoError(t, err)
+		t.Cleanup(func() {
+			deleteFeatureFlag("test_override")
+		})
+
+		overrideT := t
+		t.Run("Create", func(t *testing.T) {
+			t.Run("OrgOverride", func(t *testing.T) {
+				res, err := createOverride(&orgID, nil, flag.Name, false)
+				require.NoError(t, err)
+				overrideT.Cleanup(func() {
+					deleteOverride(res.ID)
+				})
+
+				require.Equal(t, res.Org.ID, orgID)
+				require.Equal(t, res.TargetFlag.Name, flag.Name)
+				require.Equal(t, res.Value, false)
+
+				t.Run("Update", func(t *testing.T) {
+					updated, err := updateOverride(res.ID, true)
+					require.NoError(t, err)
+					require.Equal(t, updated.Value, true)
+				})
+
+			})
+
+			t.Run("UserOverride", func(t *testing.T) {
+				res, err := createOverride(nil, &userID, flag.Name, false)
+				require.NoError(t, err)
+				overrideT.Cleanup(func() {
+					deleteOverride(res.ID)
+				})
+
+				require.Equal(t, res.User.Username, "testuseroverrides")
+				require.Equal(t, res.TargetFlag.Name, flag.Name)
+				require.Equal(t, res.Value, false)
+			})
+
+			t.Run("NonextantFlag", func(t *testing.T) {
+				_, err = createOverride(&orgID, nil, "test_nonextant", true)
+				require.Error(t, err)
+			})
+
+			t.Run("NonextantUser", func(t *testing.T) {
+				userString := "nonextant"
+				_, err := createOverride(nil, &userString, "test_nonextant", true)
+				require.Error(t, err)
+			})
+
+			t.Run("NonextantOrg", func(t *testing.T) {
+				orgID := "nonextant"
+				_, err := createOverride(&orgID, nil, "test_nonextant", true)
+				require.Error(t, err)
+			})
+		})
+
+		t.Run("ListFlagsIncludesOverride", func(t *testing.T) {
+			res, err := listFeatureFlags()
+			require.NoError(t, err)
+
+			require.Len(t, res, 1)
+			require.Len(t, res[0].Overrides, 2)
+
+			o1 := res[0].Overrides[0]
+			o2 := res[0].Overrides[1]
+			require.Equal(t, o1.Org.ID, orgID)
+			require.Equal(t, o2.User.Username, "testuseroverrides")
+			require.Equal(t, o1.TargetFlag.Name, "test_override")
+			require.Equal(t, o2.TargetFlag.Name, "test_override")
+			require.Equal(t, o1.Value, true)
+			require.Equal(t, o2.Value, false)
+		})
 	})
 }

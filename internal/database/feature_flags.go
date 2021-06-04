@@ -129,7 +129,7 @@ func (f *FeatureFlagStore) DeleteFeatureFlag(ctx context.Context, name string) e
 	const deleteFeatureFlagFmtStr = `
 		UPDATE feature_flags
 		SET 
-			flag_name = flag_name || '-DELETED-' || TRUNC(EXTRACT(epoch FROM now()))::varchar(255),
+			flag_name = flag_name || '-DELETED-' || TRUNC(random() * 1000000)::varchar(255),
 			deleted_at = now()
 		WHERE flag_name = %s;
 	`
