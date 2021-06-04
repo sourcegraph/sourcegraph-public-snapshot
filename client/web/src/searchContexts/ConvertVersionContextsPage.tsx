@@ -129,7 +129,7 @@ export const ConvertVersionContextsPage: React.FunctionComponent<ConvertVersionC
                         <div className="text-muted">
                             Convert existing version contexts defined in site config into search contexts.{' '}
                             <a
-                                href="https://docs.sourcegraph.com/code_search/explanations/features#search-contexts-experimental"
+                                href="https://docs.sourcegraph.com/code_search/explanations/features#search-contexts"
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >

@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import React from 'react'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
@@ -7,6 +8,7 @@ import { defaultExternalServices } from '../../../components/externalServices/ex
 import { SourcegraphContext } from '../../../jscontext'
 
 import { ExternalAccount } from './ExternalAccount'
+import styles from './ExternalAccountsSignIn.module.scss'
 import { ExternalAccountsByType, AuthProvidersByType } from './UserSettingsSecurityPage'
 
 type AuthProvider = SourcegraphContext['authProviders'][0]
@@ -107,7 +109,7 @@ export const ExternalAccountsSignIn: React.FunctionComponent<Props> = ({
 }) => (
     <>
         {accounts && (
-            <ul className="list-group user-settings-security__sign-ins-container mt-3 pb-2">
+            <ul className="list-group">
                 {supported.map(kind => {
                     const type = kind.toLocaleLowerCase() as ServiceType
                     const authProvider = authProviders[type]
@@ -118,7 +120,7 @@ export const ExternalAccountsSignIn: React.FunctionComponent<Props> = ({
                         const account = getNormalizedAccount(accounts, kind)
 
                         return (
-                            <li key={kind} className="list-group-item">
+                            <li key={kind} className={classNames('list-group-item', styles.externalAccount)}>
                                 <ExternalAccount
                                     account={account}
                                     authProvider={authProvider}

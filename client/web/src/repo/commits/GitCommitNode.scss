@@ -8,11 +8,24 @@
         flex: 1 1;
         min-width: 24rem;
         margin-right: 1.5rem;
+        .user-avatar {
+            .theme-redesign & {
+                width: 2.75rem;
+                height: 2.75rem;
+                font-size: 1.5rem;
+            }
+        }
     }
     &__message {
         display: flex;
         align-items: center;
+        .theme-redesign & {
+            font-size: 1rem;
+        }
         &-subject {
+            .theme-redesign & {
+                font-weight: 600;
+            }
             flex: 0 1 auto;
             font-weight: bold;
             padding-right: 0.5rem;
@@ -20,6 +33,11 @@
             white-space: nowrap;
             text-overflow: ellipsis;
             color: var(--body-color);
+        }
+        &-small {
+            .theme-redesign & {
+                font-size: 0.875rem;
+            }
         }
         &-toggle {
             flex: none;
@@ -33,6 +51,10 @@
             margin-bottom: -0.125rem;
         }
         &-body {
+            .theme-redesign & {
+                margin-top: 0.5rem;
+                margin-bottom: 1.5rem;
+            }
             margin-top: 0.25rem;
             margin-bottom: 0.75rem;
             font-size: 0.75rem;
@@ -48,6 +70,9 @@
         display: flex;
         align-items: center;
         margin-bottom: 0.5rem;
+        .theme-redesign & {
+            margin-bottom: 0;
+        }
     }
 
     &__oid {
@@ -61,11 +86,22 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
+        .theme-redesign & {
+            flex-direction: column;
+            align-items: flex-end;
+            justify-content: unset;
+        }
         &-sha {
             display: flex;
             align-items: center;
             padding-left: 0.5rem;
             margin-right: 2rem;
+            .theme-redesign & {
+                font-size: 0.875rem;
+                margin: 0;
+                margin-left: 0.25rem;
+                padding: 0;
+            }
         }
         &-copy {
             font-size: 0.6875rem;
@@ -77,10 +113,17 @@
 
         &-label {
             opacity: 0.7;
+            .theme-redesign {
+                margin-left: 0.25rem;
+            }
         }
         &-parent {
             margin-left: 0.25rem;
             font-weight: normal;
+            .theme-redesign & {
+                font-size: 1rem;
+                color: var(--link-color);
+            }
         }
     }
 

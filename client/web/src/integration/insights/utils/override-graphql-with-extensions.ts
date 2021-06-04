@@ -18,12 +18,12 @@ import { getCodeStatsInsightExtensionBundle, getSearchInsightExtensionBundle } f
 
 /**
  * Search based fake bundle URL.
- * */
+ */
 const searchBasedInsightExtensionBundleURL = 'https://sourcegraph.com/-/static/extension/search-based-insight.js'
 
 /**
  * Fake manifest of search based insight extension.
- * */
+ */
 const searchBasedInsightRawManifest = JSON.stringify({
     url: searchBasedInsightExtensionBundleURL,
     activationEvents: ['*'],
@@ -44,12 +44,12 @@ const searchBasedInsightRawManifest = JSON.stringify({
 
 /**
  * Code stats insight fake extension bundle URL.
- * */
+ */
 const codeStatsInsightExtensionBundleURL = 'https://sourcegraph.com/-/static/extension/code-stats-insight.js'
 
 /**
  * Fake manifest of code stats insight extension.
- * */
+ */
 const codeStatsInsightRawManifest = JSON.stringify({
     url: codeStatsInsightExtensionBundleURL,
     activationEvents: ['*'],

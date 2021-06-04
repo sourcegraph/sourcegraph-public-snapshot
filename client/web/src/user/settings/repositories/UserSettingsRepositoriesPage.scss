@@ -39,6 +39,17 @@
 
     &__container {
         border-color: var(--border-color-2) !important;
+        .theme-redesign & {
+            border: 0;
+            padding: 0;
+            &:not(:last-child) {
+                margin-bottom: 1.5rem;
+            }
+            + .user-settings-repos__container {
+                border-top: 1px solid var(--border-color);
+                padding-top: 1.5rem;
+            }
+        }
     }
 
     &__link:hover {

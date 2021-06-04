@@ -34,7 +34,7 @@ export const InsightCardMenu: React.FunctionComponent<InsightCardMenuProps> = pr
                 className={classnames(styles.menuPanel, 'dropdown-menu dropdown-menu-sw')}
             >
                 <MenuItem
-                    data-testid="InsightContextMenuDeleteButton"
+                    data-testid="insight-context-menu-delete-button"
                     onSelect={() => onDelete(insightID)}
                     className={classnames('btn btn-outline-secondary', styles.menuItemButton)}
                 >

@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import React, { useCallback, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
@@ -6,6 +7,7 @@ import { map } from 'rxjs/operators'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { FilteredConnection } from '../../../components/FilteredConnection'
@@ -19,6 +21,8 @@ import {
 } from '../../../graphql-operations'
 import { UserSettingsAreaRouteContext } from '../../../user/settings/UserSettingsArea'
 
+import styles from './UserEventLogsPage.module.scss'
+
 interface UserEventNodeProps {
     /**
      * The user to display in this list item.
@@ -27,7 +31,7 @@ interface UserEventNodeProps {
 }
 
 export const UserEventNode: React.FunctionComponent<UserEventNodeProps> = ({ node }: UserEventNodeProps) => (
-    <li className="list-group-item py-2">
+    <li className={classNames('list-group-item', styles.eventLog)}>
         <div className="d-flex align-items-center justify-content-between">
             <code>{node.name}</code>
             <div>
@@ -116,18 +120,21 @@ export const UserEventLogsPage: React.FunctionComponent<UserEventLogsPageProps> 
     return (
         <>
             <PageTitle title="User event log" />
-            <FilteredConnection<UserEventLogFields, {}>
-                key="chronological"
-                defaultFirst={50}
-                className="list-group list-group-flush"
-                hideSearch={true}
-                noun="user event"
-                pluralNoun="user events"
-                queryConnection={queryUserEventLogs}
-                nodeComponent={UserEventNode}
-                history={history}
-                location={location}
-            />
+            <PageHeader path={[{ text: 'Event log' }]} headingElement="h2" className="mb-3" />
+            <Container className="mb-3">
+                <FilteredConnection<UserEventLogFields, {}>
+                    key="chronological"
+                    defaultFirst={50}
+                    className="list-group list-group-flush"
+                    hideSearch={true}
+                    noun="user event"
+                    pluralNoun="user events"
+                    queryConnection={queryUserEventLogs}
+                    nodeComponent={UserEventNode}
+                    history={history}
+                    location={location}
+                />
+            </Container>
         </>
     )
 }

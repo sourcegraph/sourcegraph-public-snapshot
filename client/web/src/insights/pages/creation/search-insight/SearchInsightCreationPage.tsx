@@ -106,7 +106,7 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
 
             <SearchInsightCreationContent
                 className="pb-5"
-                dataTestId="SearchInsightCreatePageContent"
+                dataTestId="search-insight-create-page-content"
                 settings={settingsCascade.final}
                 organizations={orgs}
                 onSubmit={handleSubmit}

@@ -129,6 +129,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     location,
     history,
     minimalNavLinks,
+    isSourcegraphDotCom,
     ...props
 }) => {
     // Workaround: can't put this in optional parameter value because of https://github.com/babel/babel/issues/11166
@@ -208,6 +209,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
             location={location}
             history={history}
             isLightTheme={isLightTheme}
+            isSourcegraphDotCom={isSourcegraphDotCom}
             {...props}
         />
     )
@@ -222,6 +224,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
             isLightTheme={isLightTheme}
             patternType={patternType}
             caseSensitive={caseSensitive}
+            isSourcegraphDotCom={isSourcegraphDotCom}
         />
     )
 
@@ -246,9 +249,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                             <NavLink to="/code-monitoring">Monitoring</NavLink>
                         </NavItem>
                         <NavItem icon={BatchChangesIconNav}>
-                            <NavLink to="https://about.sourcegraph.com/batch-changes/" external={true}>
-                                Batch Changes
-                            </NavLink>
+                            <BatchChangesNavLink isSourcegraphDotCom={isSourcegraphDotCom} />
                         </NavItem>
                         <NavItem icon={BarChartIcon}>
                             <NavLink to="/insights">Insights</NavLink>
@@ -405,4 +406,17 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
             )}
         </div>
     )
+}
+
+const BatchChangesNavLink: React.FunctionComponent<{ isSourcegraphDotCom: boolean }> = ({
+    isSourcegraphDotCom: sourcegraphDotCom,
+}) => {
+    if (sourcegraphDotCom) {
+        return (
+            <NavLink to="https://about.sourcegraph.com/batch-changes/" external={true}>
+                Batch Changes
+            </NavLink>
+        )
+    }
+    return <NavLink to="/batch-changes">Batch Changes</NavLink>
 }

@@ -3,6 +3,7 @@ package dbstore
 import (
 	"context"
 	"fmt"
+	"sort"
 	"testing"
 	"time"
 
@@ -30,6 +31,7 @@ func TestGetIndexByID(t *testing.T) {
 		t.Fatal("unexpected record")
 	}
 
+	uploadID := 5
 	queuedAt := time.Unix(1587396557, 0).UTC()
 	startedAt := queuedAt.Add(time.Minute)
 	expected := Index{
@@ -57,10 +59,12 @@ func TestGetIndexByID(t *testing.T) {
 			{Command: []string{"op", "1"}, Out: "Indexing\nUploading\nDone with 1.\n"},
 			{Command: []string{"op", "2"}, Out: "Indexing\nUploading\nDone with 2.\n"},
 		},
-		Rank: nil,
+		Rank:               nil,
+		AssociatedUploadID: &uploadID,
 	}
 
 	insertIndexes(t, db, expected)
+	insertUploads(t, db, Upload{ID: uploadID, AssociatedIndexID: &expected.ID})
 
 	if index, exists, err := store.GetIndexByID(ctx, 1); err != nil {
 		t.Fatalf("unexpected error getting index: %s", err)
@@ -140,6 +144,71 @@ func TestGetQueuedIndexRank(t *testing.T) {
 	}
 }
 
+func TestGetIndexesByIDs(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
+	ctx := context.Background()
+
+	indexID1, indexID2, indexID3, indexID4 := 1, 3, 5, 5 // note the duplication
+	uploadID1, uploadID2, uploadID3, uploadID4 := 10, 11, 12, 13
+
+	insertIndexes(t, db,
+		Index{ID: 1, AssociatedUploadID: &uploadID1},
+		Index{ID: 2},
+		Index{ID: 3, AssociatedUploadID: &uploadID1},
+		Index{ID: 4},
+		Index{ID: 5, AssociatedUploadID: &uploadID1},
+		Index{ID: 6},
+		Index{ID: 7},
+		Index{ID: 8},
+		Index{ID: 9},
+		Index{ID: 10},
+	)
+	insertUploads(t, db,
+		Upload{ID: uploadID1, AssociatedIndexID: &indexID1},
+		Upload{ID: uploadID2, AssociatedIndexID: &indexID2},
+		Upload{ID: uploadID3, AssociatedIndexID: &indexID3},
+		Upload{ID: uploadID4, AssociatedIndexID: &indexID4},
+	)
+
+	t.Run("fetch", func(t *testing.T) {
+		indexes, err := store.GetIndexesByIDs(ctx, 2, 4, 6, 8, 12)
+		if err != nil {
+			t.Fatalf("unexpected error getting indexes for repo: %s", err)
+		}
+
+		var ids []int
+		for _, index := range indexes {
+			ids = append(ids, index.ID)
+		}
+		sort.Ints(ids)
+
+		if diff := cmp.Diff([]int{2, 4, 6, 8}, ids); diff != "" {
+			t.Errorf("unexpected index ids (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("enforce repository permissions", func(t *testing.T) {
+		// Enable permissions user mapping forces checking repository permissions
+		// against permissions tables in the database, which should effectively block
+		// all access because permissions tables are empty.
+		before := globals.PermissionsUserMapping()
+		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
+		defer globals.SetPermissionsUserMapping(before)
+
+		indexes, err := store.GetIndexesByIDs(ctx, 1, 2, 3, 4)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(indexes) > 0 {
+			t.Fatalf("Want no index but got %d indexes", len(indexes))
+		}
+	})
+}
+
 func TestGetIndexes(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -160,17 +229,26 @@ func TestGetIndexes(t *testing.T) {
 	t10 := t1.Add(-time.Minute * 9)
 	failureMessage := "unlucky 333"
 
+	indexID1, indexID2, indexID3, indexID4 := 1, 3, 5, 5 // note the duplication
+	uploadID1, uploadID2, uploadID3, uploadID4 := 10, 11, 12, 13
+
 	insertIndexes(t, db,
-		Index{ID: 1, Commit: makeCommit(3331), QueuedAt: t1, State: "queued"},
+		Index{ID: 1, Commit: makeCommit(3331), QueuedAt: t1, State: "queued", AssociatedUploadID: &uploadID1},
 		Index{ID: 2, QueuedAt: t2, State: "errored", FailureMessage: &failureMessage},
-		Index{ID: 3, Commit: makeCommit(3333), QueuedAt: t3, State: "queued"},
+		Index{ID: 3, Commit: makeCommit(3333), QueuedAt: t3, State: "queued", AssociatedUploadID: &uploadID1},
 		Index{ID: 4, QueuedAt: t4, State: "queued", RepositoryID: 51, RepositoryName: "foo bar x"},
-		Index{ID: 5, Commit: makeCommit(3333), QueuedAt: t5, State: "processing"},
+		Index{ID: 5, Commit: makeCommit(3333), QueuedAt: t5, State: "processing", AssociatedUploadID: &uploadID1},
 		Index{ID: 6, QueuedAt: t6, State: "processing", RepositoryID: 52, RepositoryName: "foo bar y"},
 		Index{ID: 7, QueuedAt: t7},
 		Index{ID: 8, QueuedAt: t8},
 		Index{ID: 9, QueuedAt: t9, State: "queued"},
 		Index{ID: 10, QueuedAt: t10},
+	)
+	insertUploads(t, db,
+		Upload{ID: uploadID1, AssociatedIndexID: &indexID1},
+		Upload{ID: uploadID2, AssociatedIndexID: &indexID2},
+		Upload{ID: uploadID3, AssociatedIndexID: &indexID3},
+		Upload{ID: uploadID4, AssociatedIndexID: &indexID4},
 	)
 
 	testCases := []struct {
