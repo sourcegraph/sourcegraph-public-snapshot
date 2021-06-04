@@ -55,12 +55,21 @@ export const BatchChangePreviewTabs: React.FunctionComponent<BatchChangePreviewT
     <BatchChangeTabs history={history} location={location}>
         <BatchChangeTabList>
             <BatchChangeTab index={0} name="previewchangesets">
-                <SourceBranchIcon className="icon-inline text-muted mr-1" />
-                Preview changesets{' '}
-                <span className="badge badge-pill badge-secondary ml-1">{spec.applyPreview.totalCount}</span>
+                <span>
+                    <SourceBranchIcon className="icon-inline text-muted mr-1" />
+                    <span className="text-content" data-tab-content="Preview changesets">
+                        Preview changesets
+                    </span>{' '}
+                    <span className="badge badge-pill badge-secondary ml-1">{spec.applyPreview.totalCount}</span>
+                </span>
             </BatchChangeTab>
             <BatchChangeTab index={1} name="spec">
-                <FileDocumentIcon className="icon-inline text-muted mr-1" /> Spec
+                <span>
+                    <FileDocumentIcon className="icon-inline text-muted mr-1" />{' '}
+                    <span className="text-content" data-tab-content="Spec">
+                        Spec
+                    </span>
+                </span>
             </BatchChangeTab>
         </BatchChangeTabList>
         <BatchChangeTabPanels>

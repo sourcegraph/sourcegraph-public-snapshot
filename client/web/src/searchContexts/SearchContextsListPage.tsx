@@ -65,54 +65,58 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
 
     return (
         <div className="w-100">
-            <Page>
-                <div className="search-contexts-list-page">
-                    <PageHeader
-                        path={[
-                            {
-                                text: 'Search contexts',
-                            },
-                        ]}
-                        actions={
-                            <Link to="/contexts/new" className="btn btn-secondary">
-                                <PlusIcon className="icon-inline" />
-                                Create search context
-                            </Link>
-                        }
-                        className="mb-2"
-                    />
-                    <p className="text-muted">
-                        Search code you care about with search contexts.{' '}
-                        <a
-                            href="https://docs.sourcegraph.com/code_search/explanations/features#search-contexts"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
-                            Learn more
-                        </a>
-                    </p>
-                    <div className="border-bottom my-4">
-                        <div className="nav nav-tabs border-bottom-0">
-                            <div className="nav-item">
-                                {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-                                <a
-                                    href=""
-                                    role="button"
-                                    onClick={onSelectSearchContextsList}
-                                    className={classNames('nav-link', selectedTab === 'list' && 'active')}
-                                >
+            <Page className="search-contexts-list-page">
+                <PageHeader
+                    path={[
+                        {
+                            text: 'Search contexts',
+                        },
+                    ]}
+                    actions={
+                        <Link to="/contexts/new" className="btn btn-secondary">
+                            <PlusIcon className="icon-inline" />
+                            Create search context
+                        </Link>
+                    }
+                    description={
+                        <span className="text-muted">
+                            Search code you care about with search contexts.{' '}
+                            <a
+                                href="https://docs.sourcegraph.com/code_search/explanations/features#search-contexts"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                Learn more
+                            </a>
+                        </span>
+                    }
+                    className="mb-3"
+                />
+                <div className="mb-4">
+                    <div className="nav nav-tabs">
+                        <div className="nav-item">
+                            {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
+                            <a
+                                href=""
+                                role="button"
+                                onClick={onSelectSearchContextsList}
+                                className={classNames('nav-link', selectedTab === 'list' && 'active')}
+                            >
+                                <span className="text-content" data-tab-content="Your search contexts">
                                     Your search contexts
-                                </a>
-                            </div>
-                            {props.authenticatedUser?.siteAdmin && (
-                                <div className="nav-item d-flex align-items-center ml-auto">
-                                    <Link to="/contexts/convert-version-contexts">Convert version contexts</Link>
-                                </div>
-                            )}
+                                </span>
+                            </a>
                         </div>
+                        {props.authenticatedUser?.siteAdmin && (
+                            <div className="nav-item d-flex align-items-center ml-auto">
+                                <Link className="nav-link" to="/contexts/convert-version-contexts">
+                                    Convert version contexts
+                                </Link>
+                            </div>
+                        )}
                     </div>
-                    {selectedTab === 'list' && <SearchContextsListTab {...props} />}
                 </div>
+                {selectedTab === 'list' && <SearchContextsListTab {...props} />}
             </Page>
         </div>
     )

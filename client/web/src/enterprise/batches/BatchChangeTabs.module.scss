@@ -1,19 +1,58 @@
 // unsets the defaults; can probably go away with the redesign
 .batch-change-tabs {
     .nav-link {
-        color: var(--link-color);
+        :global(.theme-classic) & {
+            &:not(:global(.active)) {
+                color: var(--link-color);
+            }
+        }
+    }
+
+    :global(.theme-redesign) & {
+        [data-reach-tab] {
+            margin: 0;
+            color: var(--text-muted);
+        }
+        [data-reach-tab][data-selected] {
+            color: var(--body-color);
+            font-weight: 700;
+        }
     }
 
     [data-reach-tab],
     [data-reach-tab]:hover,
     [data-reach-tab][data-selected] {
-        // stylelint-disable-next-line declaration-property-unit-whitelist
-        margin-bottom: -1px;
-        border-bottom: 0;
         padding: 0.5rem 1rem;
         font-size: 0.875rem;
-        font-weight: normal;
-        text-transform: none;
-        letter-spacing: normal;
+        :global(.theme-classic) & {
+            // stylelint-disable-next-line declaration-property-unit-whitelist
+            margin-bottom: -1px;
+            border-bottom: 0;
+            font-weight: normal;
+            text-transform: none;
+            letter-spacing: normal;
+        }
+        :global(.theme-redesign) & {
+            border-top: none;
+            border-left: none;
+            border-right: none;
+            :global(.text-content) {
+                display: inline-flex;
+                align-items: center;
+                flex-direction: column;
+                justify-content: center;
+                // ::after used here for avoids the CLS when the font-weight change (see: https://css-tricks.com/bold-on-hover-without-the-layout-shift/)
+                &::after {
+                    content: attr(data-tab-content);
+                    height: 0;
+                    text-transform: capitalize;
+                    visibility: hidden; // a11y: avoid detection for voice over
+                    overflow: hidden;
+                    user-select: none;
+                    pointer-events: none;
+                    font-weight: 700;
+                }
+            }
+        }
     }
 }
