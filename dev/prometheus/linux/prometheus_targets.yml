@@ -47,6 +47,10 @@
     # precise-code-intel-worker
     - 127.0.0.1:6088
 - labels:
+    job: worker
+  targets:
+    # worker
+    - 127.0.0.1:6089
 - labels:
     job: executor-queue
   targets:
