@@ -139,6 +139,7 @@ commands:
     cmd: ulimit -n 10000 && .bin/worker
     install: go build -o .bin/worker github.com/sourcegraph/sourcegraph/cmd/worker
     watch:
+      - lib
       - internal
       - cmd/worker
 
@@ -146,6 +147,7 @@ commands:
     cmd: ulimit -n 10000 && .bin/worker
     install: go build -o .bin/worker github.com/sourcegraph/sourcegraph/enterprise/cmd/worker
     watch:
+      - lib
       - internal
       - enterprise/internal
       - cmd/worker
