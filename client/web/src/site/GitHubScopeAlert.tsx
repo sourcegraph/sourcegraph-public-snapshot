@@ -3,7 +3,7 @@ import React, { FunctionComponent, useState, useEffect, useCallback } from 'reac
 import { Link } from 'react-router-dom'
 
 import { DismissibleAlert, isAlertDismissed } from '../components/DismissibleAlert'
-import { queryExternalServices } from '../components/externalServices/backend'
+import { queryExternalServicesScope } from '../components/externalServices/backend'
 import { ExternalServiceKind } from '../graphql-operations'
 import { githubRepoScopeRequired } from '../user/settings/cloud-ga'
 
@@ -23,10 +23,8 @@ export const GitHubScopeAlert: FunctionComponent<Props> = ({ authenticatedUser }
     const checkGitHubServiceScope = useCallback(async (): Promise<void> => {
         if (authenticatedUser && !isAlertDismissed(GITHUB_SCOPE_ALERT_KEY)) {
             // fetch all code hosts for given user
-            const { nodes: fetchedServices } = await queryExternalServices({
+            const { nodes: fetchedServices } = await queryExternalServicesScope({
                 namespace: authenticatedUser.id,
-                first: null,
-                after: null,
             }).toPromise()
 
             // check if user has a GitHub code host
