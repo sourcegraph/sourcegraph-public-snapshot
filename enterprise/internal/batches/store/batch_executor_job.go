@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 
 	"github.com/keegancsmith/sqlf"
@@ -58,6 +59,31 @@ func createBatchExecutorJobQuery(bej *btypes.BatchExecutorJob) (*sqlf.Query, err
 		job,
 		sqlf.Join(BatchExecutorJobColumns, ","),
 	), nil
+}
+
+func ScanFirstBatchExecutorJob(rows *sql.Rows, err error) (*btypes.BatchExecutorJob, bool, error) {
+	if err != nil {
+		return nil, false, err
+	}
+
+	bejes, err := scanBatchExecutorJobs(rows)
+	if err != nil || len(bejes) == 0 {
+		return &btypes.BatchExecutorJob{}, false, err
+	}
+	return bejes[0], true, nil
+}
+
+func scanBatchExecutorJobs(rows *sql.Rows) ([]*btypes.BatchExecutorJob, error) {
+	var bejes []*btypes.BatchExecutorJob
+
+	return bejes, scanAll(rows, func(sc scanner) error {
+		var bej btypes.BatchExecutorJob
+		if err := scanBatchExecutorJob(&bej, sc); err != nil {
+			return err
+		}
+		bejes = append(bejes, &bej)
+		return nil
+	})
 }
 
 func scanBatchExecutorJob(bej *btypes.BatchExecutorJob, sc scanner) error {

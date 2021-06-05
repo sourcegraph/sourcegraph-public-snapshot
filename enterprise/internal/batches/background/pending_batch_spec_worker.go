@@ -112,7 +112,7 @@ func (h *pendingBatchSpecHandler) HandlerFunc() dbworker.HandlerFunc {
 		// spec.
 		steps[len(spec.Steps)] = executor.DockerStep{
 			Image:    "sourcegraph/src-batch-change-volume-workspace",
-			Commands: []string{"git", "diff", "--cached", "--no-prefix", "--binary"},
+			Commands: []string{"git diff --cached --no-prefix --binary"},
 		}
 
 		// TODO: get the encryption key.
