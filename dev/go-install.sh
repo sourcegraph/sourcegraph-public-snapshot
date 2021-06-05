@@ -6,7 +6,7 @@
 # This will install binaries into the `.bin` directory under the repository root.
 #
 
-all_oss_commands=" gitserver query-runner github-proxy searcher frontend repo-updater symbols "
+all_oss_commands=" gitserver query-runner github-proxy searcher frontend repo-updater symbols worker "
 all_commands="${all_oss_commands}${ENTERPRISE_ONLY_COMMANDS}"
 
 # handle options
