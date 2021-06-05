@@ -209,10 +209,17 @@ func (c *client) continuouslyUpdate(optOnlySetByTests *continuousUpdateOptions) 
 	}
 
 	isFrontendUnreachableError := func(err error) bool {
-		if urlErr, ok := errors.Cause(err).(*url.Error); ok {
-			if netErr, ok := urlErr.Err.(*net.OpError); ok && netErr.Op == "dial" {
-				return true
+		// Unwrap error one layer at a time to determine if any part of the chain is a
+		// dialing error until it reaches the root cause.
+		var lastErr error
+		for !errors.Is(err, lastErr) {
+			if urlErr, ok := err.(*url.Error); ok {
+				if netErr, ok := urlErr.Err.(*net.OpError); ok && netErr.Op == "dial" {
+					return true
+				}
 			}
+			lastErr = err
+			err = errors.Unwrap(err)
 		}
 		return false
 	}
