@@ -14,7 +14,7 @@ import { SiteFlags } from '../site'
 import { siteFlags } from '../site/backend'
 import { DockerForMacAlert } from '../site/DockerForMacAlert'
 import { FreeUsersExceededAlert } from '../site/FreeUsersExceededAlert'
-import { GitHubScopeAlert } from '../site/GitHubScopeAlert'
+import { GitHubScopeAlert } from '../site/GitHubCodeHostScopeAlert/GitHubScopeAlert'
 import { LicenseExpirationAlert } from '../site/LicenseExpirationAlert'
 import { NeedsRepositoryConfigurationAlert } from '../site/NeedsRepositoryConfigurationAlert'
 

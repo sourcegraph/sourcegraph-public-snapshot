@@ -1,11 +1,11 @@
 import InfoIcon from 'mdi-react/InfoCircleIcon'
-import React, { FunctionComponent, useState, useEffect, useCallback } from 'react'
+import React, { FunctionComponent, useState, useEffect, useCallback, useContext } from 'react'
 import { Link } from 'react-router-dom'
 
-import { DismissibleAlert, isAlertDismissed, dismissAlert } from '../components/DismissibleAlert'
-import { queryExternalServicesScope } from '../components/externalServices/backend'
-import { ExternalServiceKind } from '../graphql-operations'
-import { githubRepoScopeRequired } from '../user/settings/cloud-ga'
+import { DismissibleAlert, isAlertDismissed, dismissAlert } from '../../components/DismissibleAlert'
+import { githubRepoScopeRequired } from '../../user/settings/cloud-ga'
+
+import { GitHubScopeContext } from './GithubScopeContext'
 
 interface Props {
     authenticatedUser: { id: string; tags: string[] } | null
@@ -19,20 +19,13 @@ export const GITHUB_SCOPE_ALERT_KEY = 'GitHubPrivateScopeAlert'
  */
 export const GitHubScopeAlert: FunctionComponent<Props> = ({ authenticatedUser }) => {
     const [shouldDisplayAlert, setShouldDisplayAlert] = useState(false)
+    const scopes = useContext(GitHubScopeContext)
 
-    const checkGitHubServiceScope = useCallback(async (): Promise<void> => {
+    const checkGitHubServiceScope = useCallback(() => {
         if (authenticatedUser && !isAlertDismissed(GITHUB_SCOPE_ALERT_KEY)) {
-            // fetch all code hosts for given user
-            const { nodes: fetchedServices } = await queryExternalServicesScope({
-                namespace: authenticatedUser.id,
-            }).toPromise()
-
-            // check if user has a GitHub code host
-            const gitHubService = fetchedServices.find(({ kind }) => kind === ExternalServiceKind.GITHUB)
-
             // check whether we need to prompt the user to update their scope
-            if (gitHubService) {
-                const hasMissingScope = githubRepoScopeRequired(authenticatedUser.tags, gitHubService.grantedScopes)
+            if (scopes) {
+                const hasMissingScope = githubRepoScopeRequired(authenticatedUser.tags, scopes)
                 if (hasMissingScope) {
                     setShouldDisplayAlert(true)
                 } else {
@@ -42,10 +35,10 @@ export const GitHubScopeAlert: FunctionComponent<Props> = ({ authenticatedUser }
                 }
             }
         }
-    }, [authenticatedUser])
+    }, [authenticatedUser, scopes])
 
     useEffect(() => {
-        checkGitHubServiceScope().catch(error => console.log(error))
+        checkGitHubServiceScope()
     }, [checkGitHubServiceScope, authenticatedUser])
 
     return shouldDisplayAlert ? (

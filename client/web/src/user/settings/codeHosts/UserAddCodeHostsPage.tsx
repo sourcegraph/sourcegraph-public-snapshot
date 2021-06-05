@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useEffect } from 'react'
+import React, { useCallback, useState, useEffect, useContext } from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Link } from '@sourcegraph/shared/src/components/Link'
@@ -11,6 +11,7 @@ import { AddExternalServiceOptions } from '../../../components/externalServices/
 import { PageTitle } from '../../../components/PageTitle'
 import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
 import { SourcegraphContext } from '../../../jscontext'
+import { GitHubScopeContext } from '../../../site/GitHubCodeHostScopeAlert/GithubScopeContext'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
 import { githubRepoScopeRequired } from '../cloud-ga'
@@ -64,6 +65,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 }) => {
     const [statusOrError, setStatusOrError] = useState<Status>()
     const [updateAuthRequired, setUpdateAuthRequired] = useState(false)
+    const gitHubScope = useContext(GitHubScopeContext)
 
     const fetchExternalServices = useCallback(async () => {
         setStatusOrError('loading')
@@ -84,14 +86,13 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 
         // If we have a GitHub service, check whether we need to prompt the user to
         // update their scope
-        const gitHubService = services.GITHUB
-        if (gitHubService) {
-            setUpdateAuthRequired(githubRepoScopeRequired(user.tags, gitHubService.grantedScopes))
+        if (gitHubScope) {
+            setUpdateAuthRequired(githubRepoScopeRequired(user.tags, gitHubScope))
         }
 
         const repoCount = fetchedServices.reduce((sum, codeHost) => sum + codeHost.repoCount, 0)
         onUserExternalServicesOrRepositoriesUpdate(fetchedServices.length, repoCount)
-    }, [user.id, user.tags, onUserExternalServicesOrRepositoriesUpdate, setUpdateAuthRequired])
+    }, [user.id, user.tags, onUserExternalServicesOrRepositoriesUpdate, setUpdateAuthRequired, gitHubScope])
 
     useEffect(() => {
         eventLogger.logViewEvent('UserSettingsCodeHostConnections')

@@ -8,7 +8,7 @@ import { CircleDashedIcon } from '../../../components/CircleDashedIcon'
 import { dismissAlert } from '../../../components/DismissibleAlert'
 import { LoaderButton } from '../../../components/LoaderButton'
 import { ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
-import { GITHUB_SCOPE_ALERT_KEY } from '../../../site/GitHubScopeAlert'
+import { GITHUB_SCOPE_ALERT_KEY } from '../../../site/GitHubCodeHostScopeAlert/GitHubScopeAlert'
 
 import { RemoveCodeHostConnectionModal } from './RemoveCodeHostConnectionModal'
 import { ifNotNavigated } from './UserAddCodeHostsPage'
