@@ -14,5 +14,5 @@ func main() {
 		log.Println("enterprise edition")
 	}
 
-	shared.Main()
+	shared.Start(nil)
 }
