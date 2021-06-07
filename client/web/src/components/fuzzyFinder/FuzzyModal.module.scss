@@ -13,12 +13,13 @@
 
 .content {
     width: 80vw;
-    background-color: var(--color-bg-2);
+    padding: auto;
+    background-color: var(--color-bg-1);
 }
 
 .header,
 .footer {
-    padding: 1rem;
+    padding: 0.5rem;
 }
 
 .body {
@@ -42,10 +43,25 @@
 }
 
 .focused {
-    background-color: var(--color-bg-3);
+    background-color: var(--color-bg-2);
 }
 
 .footer {
     display: flex;
     justify-content: space-between;
+}
+
+.close-button {
+    float: right;
+    padding: 0.3rem;
+    top: 1rem;
+    right: 1rem;
+    border: none;
+    background: transparent;
+}
+
+.close-icon {
+    height: 1.125rem;
+    width: 1.125rem;
+    color: var(--icon-color);
 }

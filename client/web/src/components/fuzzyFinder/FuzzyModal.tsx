@@ -2,6 +2,9 @@
 // NOTE: the eslint-disable above can't be a eslint-disable-next-line because
 // JSX syntax doesn't support comments on the line where it's needed.
 
+import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
+import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
+import CloseIcon from 'mdi-react/CloseIcon'
 import React from 'react'
 
 import { CaseInsensitiveFuzzySearch } from '../../fuzzyFinder/CaseInsensitiveFuzzySearch'
@@ -114,11 +117,19 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
         // Use 'onMouseDown' instead of 'onClick' to allow selecting the text and mouse up outside the modal
         <div role="navigation" className={styles.modal} onMouseDown={() => props.onClose()}>
             <div role="navigation" className={styles.content} onMouseDown={event => event.stopPropagation()}>
+                <button type="button" className={styles.closeButton} onClick={() => props.onClose()}>
+                    <CloseIcon className={styles.closeIcon} />
+                </button>
                 <div className={styles.header}>
+                    <h3>Find file</h3>
+                </div>
+                <hr />
+                <div>
                     <input
                         autoComplete="off"
                         id="fuzzy-modal-input"
                         className={styles.input}
+                        placeholder="Enter a partial file path or name"
                         value={props.query}
                         onChange={event => {
                             props.setQuery(event.target.value)
@@ -128,13 +139,10 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
                         onKeyDown={onInputKeyDown}
                     />
                 </div>
-                <div className={styles.body}>{fuzzyResult.element}</div>
                 <div className={styles.footer}>
-                    <button type="button" className="btn btn-secondary" onClick={() => props.onClose()}>
-                        Close
-                    </button>
-                    {fuzzyFooter(props.fsm, fuzzyResult)}
+                    <FuzzyResultsSummary fsm={props.fsm} files={fuzzyResult} />
                 </div>
+                <div className={styles.body}>{fuzzyResult.element}</div>
             </div>
         </div>
     )
@@ -143,23 +151,28 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
 function plural(what: string, count: number, isComplete: boolean): string {
     return count.toLocaleString() + (isComplete ? '' : '+') + ' ' + what + (count === 1 ? '' : 's')
 }
+interface FuzzyResultsSummaryProps {
+    fsm: FuzzyFSM
+    files: RenderedFuzzyResult
+}
 
-function fuzzyFooter(fsm: FuzzyFSM, files: RenderedFuzzyResult): JSX.Element {
-    return IS_DEBUG ? (
+const FuzzyResultsSummary: React.FunctionComponent<FuzzyResultsSummaryProps> = ({ fsm, files }) =>
+    IS_DEBUG ? (
         <>
             <span>{files.falsePositiveRatio && Math.round(files.falsePositiveRatio * 100)}fp</span>
             <span>{files.elapsedMilliseconds && Math.round(files.elapsedMilliseconds).toLocaleString()}ms</span>
         </>
     ) : (
         <>
-            <span>{plural('result', files.resultsCount, files.isComplete)}</span>
             <span>
-                {fsm.key === 'indexing' && indexingProgressBar(fsm)}
-                {plural('total file', files.totalFileCount, true)}
+                {plural('result', files.resultsCount, files.isComplete)} -{' '}
+                {fsm.key === 'indexing' && indexingProgressBar(fsm)} {plural('total file', files.totalFileCount, true)}
+            </span>
+            <span>
+                <ChevronUpIcon /> and <ChevronDownIcon /> arrow keys browse. Enter selects.
             </span>
         </>
     )
-}
 
 function indexingProgressBar(indexing: Indexing): JSX.Element {
     const indexedFiles = indexing.indexing.indexedFileCount
