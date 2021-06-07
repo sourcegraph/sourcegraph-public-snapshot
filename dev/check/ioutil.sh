@@ -2,7 +2,7 @@
 
 echo "--- deprecated ioutil check"
 
-cd "$(dirname "${BASH_SOURCE[0]}")/../.."
+cd "$(dirname "${BASH_SOURCE[0]}")/../.." || exit
 
 # Check for ioutil in any .go file, excluding one special case we
 # already know about
