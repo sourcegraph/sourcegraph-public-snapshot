@@ -34,7 +34,7 @@ describe('Code insight create insight page', () => {
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
 
-    it('should update user/org setting if code stats insight has been created', async () => {
+    it.only('should update user/org setting if code stats insight has been created', async () => {
         overrideGraphQLExtensions({
             testContext,
             overrides: {
@@ -63,6 +63,11 @@ describe('Code insight create insight page', () => {
                 }),
 
                 LangStatsInsightContent: () => LangStatsInsightContent,
+
+                /** Mock for repository suggest component. */
+                RepositorySearchSuggestions: () => ({
+                    repositories: { nodes: [] },
+                }),
             },
         })
 
@@ -72,7 +77,7 @@ describe('Code insight create insight page', () => {
         await driver.page.waitForSelector('[data-testid="code-stats-insight-creation-page-content"]')
 
         // Add new repo to repositories field
-        await driver.page.type('input[name="repository"]', 'github.com/sourcegraph/sourcegraph')
+        await driver.page.type('[name="repository"]', 'github.com/sourcegraph/sourcegraph')
 
         // With repository filled input we have to have code stats insight live preview
         // charts - pie chart
