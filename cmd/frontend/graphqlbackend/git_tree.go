@@ -2,7 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
-	"os"
+	"io/fs"
 	"path"
 	"sort"
 	"strings"
@@ -30,14 +30,14 @@ func (r *GitTreeEntryResolver) Entries(ctx context.Context, args *gitTreeEntryCo
 }
 
 func (r *GitTreeEntryResolver) Directories(ctx context.Context, args *gitTreeEntryConnectionArgs) ([]*GitTreeEntryResolver, error) {
-	return r.entries(ctx, args, func(fi os.FileInfo) bool { return fi.Mode().IsDir() })
+	return r.entries(ctx, args, func(fi fs.FileInfo) bool { return fi.Mode().IsDir() })
 }
 
 func (r *GitTreeEntryResolver) Files(ctx context.Context, args *gitTreeEntryConnectionArgs) ([]*GitTreeEntryResolver, error) {
-	return r.entries(ctx, args, func(fi os.FileInfo) bool { return !fi.Mode().IsDir() })
+	return r.entries(ctx, args, func(fi fs.FileInfo) bool { return !fi.Mode().IsDir() })
 }
 
-func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryConnectionArgs, filter func(fi os.FileInfo) bool) ([]*GitTreeEntryResolver, error) {
+func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryConnectionArgs, filter func(fi fs.FileInfo) bool) ([]*GitTreeEntryResolver, error) {
 	entries, err := git.ReadDir(
 		ctx,
 		r.commit.repoResolver.RepoName(),
@@ -83,7 +83,7 @@ func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryCo
 	return l, nil
 }
 
-type byDirectory []os.FileInfo
+type byDirectory []fs.FileInfo
 
 func (s byDirectory) Len() int {
 	return len(s)

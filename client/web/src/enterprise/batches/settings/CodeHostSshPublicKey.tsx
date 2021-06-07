@@ -42,7 +42,7 @@ export const CodeHostSshPublicKey: React.FunctionComponent<CodeHostSshPublicKeyP
     return (
         <>
             <div className="d-flex justify-content-between align-items-end mb-2">
-                <h4 className="mb-1">{label}</h4>
+                <label htmlFor={LABEL_ID}>{label}</label>
                 {showCopyButton && (
                     <button type="button" className="btn btn-secondary" onClick={onCopy}>
                         <ContentCopyIcon className="icon-inline" />
@@ -51,6 +51,7 @@ export const CodeHostSshPublicKey: React.FunctionComponent<CodeHostSshPublicKeyP
                 )}
             </div>
             <textarea
+                id={LABEL_ID}
                 className="form-control text-monospace mb-3"
                 rows={5}
                 spellCheck="false"
@@ -67,3 +68,5 @@ export const CodeHostSshPublicKey: React.FunctionComponent<CodeHostSshPublicKeyP
         </>
     )
 }
+
+const LABEL_ID = 'code-host-ssh-public-key-textarea'

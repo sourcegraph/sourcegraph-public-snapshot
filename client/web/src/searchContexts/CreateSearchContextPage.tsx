@@ -10,6 +10,7 @@ import {
 import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { withAuthenticatedUser } from '../auth/withAuthenticatedUser'
@@ -47,18 +48,23 @@ export const AuthenticatedCreateSearchContextPage: React.FunctionComponent<Creat
             <Page>
                 <div className="container col-8">
                     <PageTitle title="Create a new search context" />
-                    <h1 className="mb-1">Create a new search context</h1>
-                    <div className="text-muted mb-4">
-                        A search context represents a group of repositories at specified branches or revisions that will
-                        be targeted by search queries.{' '}
-                        <a
-                            href="https://docs.sourcegraph.com/code_search/explanations/features#search-contexts"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
-                            Learn more
-                        </a>
-                    </div>
+                    <PageHeader
+                        path={[{ text: 'Create a new search context' }]}
+                        description={
+                            <span className="text-muted">
+                                A search context represents a group of repositories at specified branches or revisions
+                                that will be targeted by search queries.{' '}
+                                <a
+                                    href="https://docs.sourcegraph.com/code_search/explanations/features#search-contexts"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    Learn more
+                                </a>
+                            </span>
+                        }
+                        className="mb-3"
+                    />
                     <SearchContextForm {...props} onSubmit={onSubmit} />
                 </div>
             </Page>

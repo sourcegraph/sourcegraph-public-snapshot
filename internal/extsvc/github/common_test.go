@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -47,7 +47,7 @@ func (s *mockHTTPResponseBody) Do(req *http.Request) (*http.Response, error) {
 	return &http.Response{
 		Request:    req,
 		StatusCode: status,
-		Body:       ioutil.NopCloser(strings.NewReader(s.responseBody)),
+		Body:       io.NopCloser(strings.NewReader(s.responseBody)),
 	}, nil
 }
 
@@ -59,7 +59,7 @@ func (s mockHTTPEmptyResponse) Do(req *http.Request) (*http.Response, error) {
 	return &http.Response{
 		Request:    req,
 		StatusCode: s.statusCode,
-		Body:       ioutil.NopCloser(bytes.NewReader(nil)),
+		Body:       io.NopCloser(bytes.NewReader(nil)),
 	}, nil
 }
 

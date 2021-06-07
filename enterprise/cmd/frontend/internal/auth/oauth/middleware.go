@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -149,7 +148,7 @@ func previewAndDuplicateReader(reader io.ReadCloser) (preview string, freshReade
 		return "", reader, nil
 	}
 	defer reader.Close()
-	b, err := ioutil.ReadAll(reader)
+	b, err := io.ReadAll(reader)
 	if err != nil {
 		return "", nil, err
 	}
@@ -157,7 +156,7 @@ func previewAndDuplicateReader(reader io.ReadCloser) (preview string, freshReade
 	if len(preview) > 1000 {
 		preview = preview[:1000]
 	}
-	return preview, ioutil.NopCloser(bytes.NewReader(b)), nil
+	return preview, io.NopCloser(bytes.NewReader(b)), nil
 }
 
 func (l *loggingRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {

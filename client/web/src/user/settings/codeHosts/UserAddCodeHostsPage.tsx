@@ -87,7 +87,8 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         // update their scope
         const gitHubService = services.GITHUB
         if (gitHubService) {
-            setUpdateAuthRequired(githubRepoScopeRequired(user.tags, gitHubService.grantedScopes))
+            const scopes = gitHubService.grantedScopes || []
+            setUpdateAuthRequired(githubRepoScopeRequired(user.tags, scopes))
         }
 
         const repoCount = fetchedServices.reduce((sum, codeHost) => sum + codeHost.repoCount, 0)
@@ -216,10 +217,8 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                 description={
                     <>
                         Connect with your code hosts. Then,{' '}
-                        <Link className="text-primary" to={`${routingPrefix}/repositories/manage`}>
-                            add repositories
-                        </Link>{' '}
-                        to search with Sourcegraph.
+                        <Link to={`${routingPrefix}/repositories/manage`}>add repositories</Link> to search with
+                        Sourcegraph.
                     </>
                 }
                 className="mb-3"

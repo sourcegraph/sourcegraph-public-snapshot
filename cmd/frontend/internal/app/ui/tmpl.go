@@ -6,7 +6,7 @@ import (
 	_ "embed"
 	"fmt"
 	"html/template"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"sync"
@@ -51,7 +51,7 @@ var funcMap = template.FuncMap{
 			return "", err
 		}
 		defer f.Close()
-		data, err := ioutil.ReadAll(f)
+		data, err := io.ReadAll(f)
 		if err != nil {
 			return "", err
 		}

@@ -126,7 +126,7 @@ export const BatchChangeTab: React.FunctionComponent<BatchChangeTabProps> = ({ c
         dispatch({ tabName: name, tabIndex: index })
     }, [index, name, dispatch])
 
-    return <Tab className={classNames('nav-link', styles.navLink, { active: selectedIndex === index })}>{children}</Tab>
+    return <Tab className={classNames('nav-link', { active: selectedIndex === index })}>{children}</Tab>
 }
 
 /** Wrapper of ReachUI's `TabPanel`, but that only renders its children if the tab is active */

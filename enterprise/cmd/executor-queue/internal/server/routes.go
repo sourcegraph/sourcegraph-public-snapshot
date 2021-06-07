@@ -106,8 +106,8 @@ func (h *handler) handleHeartbeat(w http.ResponseWriter, r *http.Request) {
 	var payload apiclient.HeartbeatRequest
 
 	h.wrapHandler(w, r, &payload, func() (int, interface{}, error) {
-		err := h.heartbeat(r.Context(), payload.ExecutorName, payload.JobIDs)
-		return http.StatusNoContent, nil, err
+		unknownIDs, err := h.heartbeat(r.Context(), payload.ExecutorName, payload.JobIDs)
+		return http.StatusOK, unknownIDs, err
 	})
 }
 

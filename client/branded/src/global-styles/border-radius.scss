@@ -1,15 +1,4 @@
 :root {
-    --border-radius: 2px;
-    --border-radius-sm: 1px;
-    --border-radius-lg: 4px;
-    --popover-border-radius: 4px;
-}
-
-.theme-redesign {
     --border-radius: 3px;
     --popover-border-radius: 5px;
-
-    // TODO: Remove usage of these, replace with --border-radius: https://github.com/sourcegraph/sourcegraph/issues/21106
-    --border-radius-sm: 3px;
-    --border-radius-lg: 3px;
 }

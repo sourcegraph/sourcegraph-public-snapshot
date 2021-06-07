@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/url"
 	"os"
@@ -65,7 +64,7 @@ func overrideSiteConfig(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-		site, err := ioutil.ReadFile(path)
+		site, err := os.ReadFile(path)
 		if err != nil {
 			return errors.Wrap(err, "reading SITE_CONFIG_FILE")
 		}
@@ -93,7 +92,7 @@ func overrideGlobalSettings(ctx context.Context, db dbutil.DB) error {
 	}
 	settings := database.Settings(db)
 	var update = func(ctx context.Context) error {
-		globalSettingsBytes, err := ioutil.ReadFile(path)
+		globalSettingsBytes, err := os.ReadFile(path)
 		if err != nil {
 			return errors.Wrap(err, "reading GLOBAL_SETTINGS_FILE")
 		}
@@ -143,7 +142,7 @@ func overrideExtSvcConfig(ctx context.Context, db dbutil.DB) error {
 		}
 		confGet := func() *conf.Unified { return parsed }
 
-		extsvcConfig, err := ioutil.ReadFile(path)
+		extsvcConfig, err := os.ReadFile(path)
 		if err != nil {
 			return errors.Wrap(err, "reading EXTSVC_CONFIG_FILE")
 		}

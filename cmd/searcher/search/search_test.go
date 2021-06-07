@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -446,7 +445,7 @@ func doSearch(u string, p *protocol.Request) ([]protocol.FileMatch, error) {
 		return nil, err
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -489,13 +488,13 @@ func newStore(files map[string]string) (*store.Store, func(), error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	d, err := ioutil.TempDir("", "search_test")
+	d, err := os.MkdirTemp("", "search_test")
 	if err != nil {
 		return nil, nil, err
 	}
 	return &store.Store{
 		FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
-			return ioutil.NopCloser(bytes.NewReader(buf.Bytes())), nil
+			return io.NopCloser(bytes.NewReader(buf.Bytes())), nil
 		},
 		Path: d,
 	}, func() { os.RemoveAll(d) }, nil

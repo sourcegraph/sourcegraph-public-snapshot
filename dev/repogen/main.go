@@ -9,7 +9,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -30,7 +29,7 @@ func main() {
 
 // repogen creates a repo with nf files, each of the given size.
 func repogen(nf, size int) error {
-	d, err := ioutil.TempDir("/tmp", "repogen")
+	d, err := os.MkdirTemp("/tmp", "repogen")
 	if err != nil {
 		return errors.Wrap(err, "creating temp dir")
 	}

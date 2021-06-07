@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -210,7 +209,7 @@ func writeMigrationFiles(paths ...string) (err error) {
 	}()
 
 	for _, path := range paths {
-		if err := ioutil.WriteFile(path, []byte(migrationFileTemplate), os.ModePerm); err != nil {
+		if err := os.WriteFile(path, []byte(migrationFileTemplate), os.ModePerm); err != nil {
 			return err
 		}
 	}
