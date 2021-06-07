@@ -61,6 +61,7 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
             noValidate={true}
             className={classnames(className, 'd-flex flex-column')}
             onSubmit={handleSubmit}
+            onReset={onFormReset}
         >
             <FormInput
                 required={true}
@@ -130,7 +131,6 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
                     type="reset"
                     disabled={!isFormClearActive}
                     className="btn ml-auto btn-outline-secondary border-0"
-                    onClick={onFormReset}
                 >
                     Clear all fields
                 </button>

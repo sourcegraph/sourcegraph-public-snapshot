@@ -98,6 +98,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
             noValidate={true}
             ref={innerRef}
             onSubmit={handleSubmit}
+            onReset={onFormReset}
             className={classnames(className, 'd-flex flex-column')}
         >
             <FormGroup
@@ -245,7 +246,6 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                     type="reset"
                     disabled={!isFormClearActive}
                     className="btn ml-auto btn-outline-secondary border-0"
-                    onClick={onFormReset}
                 >
                     Clear all fields
                 </button>
