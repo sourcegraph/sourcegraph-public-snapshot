@@ -330,19 +330,21 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
                                 </div>
                             </>
                         )}
-                        <hr />
                         {window.context.sourcegraphDotComMode && (
-                            <div className="row my-4">
-                                <span className="col-lg-10">
-                                    The Sourcegraph.com extension registry may only be used by official Sourcegraph
-                                    products. Third-party and OSS products may not. Learn more about the Sourcegraph.com
-                                    extension registry and administration options in our{' '}
-                                    <a target="_blank" rel="noopener" href="https://docs.sourcegraph.com/admin/extensions">
-                                        extensions documentation
-                                    </a>
-                                    .
-                                </span>
-                            </div>
+                            <>
+                                <hr />
+                                <div className="row my-4">
+                                    <span className="col-lg-10">
+                                        The Sourcegraph.com extension registry may only be used by official Sourcegraph
+                                        products. Third-party and OSS products may not. Learn more about the Sourcegraph.com
+                                        extension registry and administration options in our{' '}
+                                        <a target="_blank" rel="noopener" href="https://docs.sourcegraph.com/admin/extensions">
+                                            extensions documentation
+                                        </a>
+                                        .
+                                    </span>
+                                </div>
+                            </>
                         )}
                     </div>
                 </div>
