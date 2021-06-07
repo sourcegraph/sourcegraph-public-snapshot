@@ -1,5 +1,5 @@
 # Worker
 
-The worker service is a collection of the background tasks performed by a Sourcegraph instance. Tasks registered to the worker will run periodically or in response to some event read from the database.
+The worker service is a collection of the background jobs performed by a Sourcegraph instance. Jobs registered to the worker will run periodically or in response to some event read from the database.
 
-Currently, no tasks are registered to the worker.
+Currently, no jobs are registered to the worker.

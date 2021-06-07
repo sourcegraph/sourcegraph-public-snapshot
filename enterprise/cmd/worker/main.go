@@ -22,7 +22,7 @@ func main() {
 
 	go setAuthProviders()
 
-	shared.Start(map[string]shared.Task{
+	shared.Start(map[string]shared.Job{
 		// Empty for now
 	})
 }
@@ -30,7 +30,7 @@ func main() {
 // setAuthProviders waits for the database to be initialized, then periodically refreshes the
 // global authz providers. This changes the repositories that are visible for reads based on the
 // current actor stored in an operation's context, which is likely an internal actor for many of
-// the tasks configured in this service. This also enables repository update operations to fetch
+// the jobs configured in this service. This also enables repository update operations to fetch
 // permissions from code hosts.
 func setAuthProviders() {
 	_, err := shared.InitDatabase()

@@ -25,17 +25,17 @@ import (
 const addr = ":3189"
 
 // Start runs the worker. This method does not return.
-func Start(additionalTasks map[string]Task) {
-	tasks := map[string]Task{}
-	for name, task := range builtins {
-		tasks[name] = task
+func Start(additionalJobs map[string]Job) {
+	jobs := map[string]Job{}
+	for name, job := range builtins {
+		jobs[name] = job
 	}
-	for name, task := range additionalTasks {
-		tasks[name] = task
+	for name, job := range additionalJobs {
+		jobs[name] = job
 	}
 
 	// Setup environment variables
-	loadConfigs(tasks)
+	loadConfigs(jobs)
 
 	// Set up Google Cloud Profiler when running in Cloud
 	if err := profiler.Init(); err != nil {
@@ -53,12 +53,12 @@ func Start(additionalTasks map[string]Task) {
 	go debugserver.NewServerRoutine(ready).Start()
 
 	// Validate environment variables
-	mustValidateConfigs(tasks)
+	mustValidateConfigs(jobs)
 
 	// Create the background routines that the worker will monitor for its
 	// lifetime. There may be a non-trivial startup time on this step as we
 	// connect to external databases, wait for migrations, etc.
-	allRoutines := mustCreateBackgroundRoutines(tasks)
+	allRoutines := mustCreateBackgroundRoutines(jobs)
 
 	// Initialize health server
 	server := httpserver.NewFromAddr(addr, &http.Server{
@@ -75,26 +75,26 @@ func Start(additionalTasks map[string]Task) {
 	goroutine.MonitorBackgroundRoutines(context.Background(), allRoutines...)
 }
 
-// loadConfigs calls Load on the configs of each of the tasks registered in this binary.
+// loadConfigs calls Load on the configs of each of the jobs registered in this binary.
 // All configs will be loaded regardless if they would later be validated - this is the
 // best place we have to manipulate the environment before the call to env.Lock.
-func loadConfigs(tasks map[string]Task) {
+func loadConfigs(jobs map[string]Job) {
 	// Load the worker config
-	config.names = taskNames(tasks)
+	config.names = jobNames(jobs)
 	config.Load()
 
 	// Load all other registered configs
-	for _, t := range tasks {
-		for _, c := range t.Config() {
+	for _, j := range jobs {
+		for _, c := range j.Config() {
 			c.Load()
 		}
 	}
 }
 
-// mustValidateConfigs calls Validate on the configs of each of the tasks that will be run
+// mustValidateConfigs calls Validate on the configs of each of the jobs that will be run
 // by this instance of the worker. If any config has a validation error, a fatal log message
 // will be emitted.
-func mustValidateConfigs(tasks map[string]Task) {
+func mustValidateConfigs(jobs map[string]Job) {
 	validationErrors := map[string][]error{}
 	if err := config.Validate(); err != nil {
 		log.Fatalf("Failed to load configuration: %s", err)
@@ -104,12 +104,12 @@ func mustValidateConfigs(tasks map[string]Task) {
 		// If the worker config is valid, validate the children configs. We guard this
 		// in the case of worker config errors because we don't want to spew validation
 		// errors for things that should be disabled.
-		for name, task := range tasks {
-			if !shouldRunTask(name) {
+		for name, job := range jobs {
+			if !shouldRunJob(name) {
 				continue
 			}
 
-			for _, c := range task.Config() {
+			for _, c := range job.Config() {
 				if err := c.Validate(); err != nil {
 					validationErrors[name] = append(validationErrors[name], err)
 				}
@@ -130,16 +130,16 @@ func mustValidateConfigs(tasks map[string]Task) {
 	}
 }
 
-// mustCreateBackgroundRoutines runs the Routines function of each of the given tasks concurrently.
+// mustCreateBackgroundRoutines runs the Routines function of each of the given jobs concurrently.
 // If an error occurs from any of them, a fatal log message will be emitted. Otherwise, the set
-// of background routines from each task will be returned.
-func mustCreateBackgroundRoutines(tasks map[string]Task) []goroutine.BackgroundRoutine {
+// of background routines from each job will be returned.
+func mustCreateBackgroundRoutines(jobs map[string]Job) []goroutine.BackgroundRoutine {
 	var (
 		allRoutines  []goroutine.BackgroundRoutine
 		descriptions []string
 	)
 
-	for result := range runRoutinesConcurrently(tasks) {
+	for result := range runRoutinesConcurrently(jobs) {
 		if result.err == nil {
 			allRoutines = append(allRoutines, result.routines...)
 		} else {
@@ -162,35 +162,35 @@ type routinesResult struct {
 }
 
 // runRoutinesConcurrently returns a channel that will be populated with the return value of
-// the Routines function from each given task. Each function is called concurrently. If an
+// the Routines function from each given job. Each function is called concurrently. If an
 // error occurs in one function, the context passed to all its siblings will be canceled.
-func runRoutinesConcurrently(tasks map[string]Task) chan routinesResult {
-	results := make(chan routinesResult, len(tasks))
+func runRoutinesConcurrently(jobs map[string]Job) chan routinesResult {
+	results := make(chan routinesResult, len(jobs))
 	defer close(results)
 
 	var wg sync.WaitGroup
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	for _, name := range taskNames(tasks) {
-		taskLoggr := log15.New("name", name)
+	for _, name := range jobNames(jobs) {
+		jobLogger := log15.New("name", name)
 
-		if !shouldRunTask(name) {
-			taskLoggr.Info("Skipping task")
+		if !shouldRunJob(name) {
+			jobLogger.Info("Skipping job")
 			continue
 		}
 
 		wg.Add(1)
-		taskLoggr.Info("Running task")
+		jobLogger.Info("Running job")
 
 		go func(name string) {
 			defer wg.Done()
 
-			routines, err := tasks[name].Routines(ctx)
+			routines, err := jobs[name].Routines(ctx)
 			results <- routinesResult{name, routines, err}
 
 			if err == nil {
-				taskLoggr.Info("Finished initializing task")
+				jobLogger.Info("Finished initializing job")
 			} else {
 				cancel()
 			}
@@ -201,10 +201,10 @@ func runRoutinesConcurrently(tasks map[string]Task) chan routinesResult {
 	return results
 }
 
-// taskNames returns an ordered slice of keys from the given map.
-func taskNames(tasks map[string]Task) []string {
-	names := make([]string, 0, len(tasks))
-	for name := range tasks {
+// jobNames returns an ordered slice of keys from the given map.
+func jobNames(jobs map[string]Job) []string {
+	names := make([]string, 0, len(jobs))
+	for name := range jobs {
 		names = append(names, name)
 	}
 	sort.Strings(names)
