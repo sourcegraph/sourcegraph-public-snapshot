@@ -251,13 +251,18 @@ func TestHeartbeat(t *testing.T) {
 		expectedUsername: "test",
 		expectedPassword: "hunter2",
 		expectedPayload:  `{"executorName": "deadbeef", "jobIds": [1, 2, 3]}`,
-		responseStatus:   http.StatusNoContent,
-		responsePayload:  ``,
+		responseStatus:   http.StatusOK,
+		responsePayload:  `[1]`,
 	}
 
 	testRoute(t, spec, func(client *Client) {
-		if err := client.Heartbeat(context.Background(), []int{1, 2, 3}); err != nil {
+		unknownIDs, err := client.Heartbeat(context.Background(), []int{1, 2, 3})
+		if err != nil {
 			t.Fatalf("unexpected error performing heartbeat: %s", err)
+		}
+
+		if diff := cmp.Diff([]int{1}, unknownIDs); diff != "" {
+			t.Errorf("unexpected unknown ids (-want +got):\n%s", diff)
 		}
 	})
 }
@@ -274,7 +279,7 @@ func TestHeartbeatBadResponse(t *testing.T) {
 	}
 
 	testRoute(t, spec, func(client *Client) {
-		if err := client.Heartbeat(context.Background(), []int{1, 2, 3}); err == nil {
+		if _, err := client.Heartbeat(context.Background(), []int{1, 2, 3}); err == nil {
 			t.Fatalf("expected an error")
 		}
 	})
