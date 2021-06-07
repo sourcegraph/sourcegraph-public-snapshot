@@ -33,6 +33,7 @@ export interface UserSettingsAreaProps
     authenticatedUser: AuthenticatedUser
     sideBarItems: UserSettingsSidebarItems
     routes: readonly UserSettingsAreaRoute[]
+    isUserMissingGitHubPrivateScope: boolean
 }
 
 export interface UserSettingsAreaRouteContext extends UserSettingsAreaProps {

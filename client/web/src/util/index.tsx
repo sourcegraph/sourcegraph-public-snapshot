@@ -42,7 +42,7 @@ export function scrollIntoView(listElement?: HTMLElement, selectedElement?: HTML
 export const isMacPlatform = window.navigator.platform.includes('Mac')
 
 export interface UserExternalServicesOrRepositoriesUpdateProps {
-    // Callback triggered when a user successfuly updates their
+    // Callback triggered when a user successfully updates their
     // synced  external services or repositories
     onUserExternalServicesOrRepositoriesUpdate: (externalServicesCount: number, userRepoCount: number) => void
 }

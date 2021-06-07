@@ -17,7 +17,7 @@ import {
     Controller as ExtensionsController,
     createController as createExtensionsController,
 } from '@sourcegraph/shared/src/extensions/controller'
-import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { SearchPatternType, ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { Notifications } from '@sourcegraph/shared/src/notifications/Notifications'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
@@ -85,6 +85,7 @@ import { eventLogger } from './tracking/eventLogger'
 import { withActivation } from './tracking/withActivation'
 import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
+import { githubRepoScopeRequired } from './user/settings/cloud-ga'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
 import { globbingEnabledFromSettings } from './util/globbing'
@@ -211,6 +212,12 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     enableCodeMonitoring: boolean
 
     /**
+     * Whether the user is missing a private scope for GitHub external service
+     * and needs to re-add the external service.
+     */
+    isUserMissingGitHubPrivateScope: boolean
+
+    /**
      * Whether the API docs feature flag is enabled.
      */
     enableAPIDocs: boolean
@@ -308,6 +315,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             showQueryBuilder: false,
             enableSmartQuery: false,
             enableCodeMonitoring: false,
+            isUserMissingGitHubPrivateScope: false,
             // Disabling linter here as otherwise the application fails to compile. Bad lint?
             // See 7a137b201330eb2118c746f8cc5acddf63c1f039
             // eslint-disable-next-line react/no-unused-state
@@ -381,11 +389,20 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                 )
                 .subscribe(result => {
                     if (!isErrorLike(result) && result !== null) {
-                        const [userRepositoriesResult, externalServicesResult] = result
-                        this.setState({
+                        const [userRepositoriesResult, { nodes: externalServices }] = result
+
+                        const gitHubService = externalServices.find(({ kind }) => kind === ExternalServiceKind.GITHUB)
+
+                        this.setState(state => ({
                             hasUserAddedRepositories: userRepositoriesResult.nodes.length > 0,
-                            hasUserAddedExternalServices: externalServicesResult.nodes.length > 0,
-                        })
+                            hasUserAddedExternalServices: externalServices.length > 0,
+                            isUserMissingGitHubPrivateScope: gitHubService
+                                ? githubRepoScopeRequired(
+                                      state.authenticatedUser?.tags || [],
+                                      gitHubService.grantedScopes
+                                  )
+                                : false,
+                        }))
                     }
                 })
         )
@@ -554,6 +571,8 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     onUserExternalServicesOrRepositoriesUpdate={
                                         this.onUserExternalServicesOrRepositoriesUpdate
                                     }
+                                    // Cloud
+                                    isUserMissingGitHubPrivateScope={this.state.isUserMissingGitHubPrivateScope}
                                 />
                             )}
                         />

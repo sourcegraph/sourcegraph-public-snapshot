@@ -24,6 +24,7 @@ export interface UserAddCodeHostsPageProps extends UserExternalServicesOrReposit
     user: { id: Scalars['ID']; tags: string[] }
     codeHostExternalServices: Record<string, AddExternalServiceOptions>
     routingPrefix: string
+    isUserMissingGitHubPrivateScope: boolean
     context: Pick<SourcegraphContext, 'authProviders'>
 }
 
@@ -61,6 +62,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     routingPrefix,
     context,
     onUserExternalServicesOrRepositoriesUpdate,
+    isUserMissingGitHubPrivateScope,
 }) => {
     const [statusOrError, setStatusOrError] = useState<Status>()
     const [updateAuthRequired, setUpdateAuthRequired] = useState(false)

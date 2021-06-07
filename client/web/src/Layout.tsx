@@ -131,6 +131,7 @@ export interface LayoutProps
     showBatchChanges: boolean
     fetchSavedSearches: () => Observable<GQL.ISavedSearch[]>
     children?: never
+    isUserMissingGitHubPrivateScope: boolean
 }
 
 export const Layout: React.FunctionComponent<LayoutProps> = props => {

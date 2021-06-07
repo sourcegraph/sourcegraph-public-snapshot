@@ -178,7 +178,7 @@ func (r *externalServiceResolver) GrantedScopes(ctx context.Context) ([]string, 
 		// It's possible that we fail to fetch scope from the code host, in this case we
 		// don't want the entire resolver to fail.
 		log15.Error("Getting service scope", "id", r.externalService.ID, "error", err)
-		return []string{}, nil
+		return nil, nil
 	}
 	return scope, nil
 }

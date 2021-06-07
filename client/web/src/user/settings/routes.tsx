@@ -121,6 +121,7 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
                 context={window.context}
                 routingPrefix={props.user.url + '/settings'}
                 onUserExternalServicesOrRepositoriesUpdate={props.onUserExternalServicesOrRepositoriesUpdate}
+                isUserMissingGitHubPrivateScope={props.isUserMissingGitHubPrivateScope}
             />
         ),
         exact: true,
