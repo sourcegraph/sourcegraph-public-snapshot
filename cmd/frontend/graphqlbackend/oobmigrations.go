@@ -13,7 +13,7 @@ import (
 // OutOfBandMigrationByID resolves a single out-of-band migration by its identifier.
 func (r *schemaResolver) OutOfBandMigrationByID(ctx context.Context, id graphql.ID) (*outOfBandMigrationResolver, error) {
 	// 🚨 SECURITY: Only site admins may view out-of-band migrations
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -33,7 +33,7 @@ func (r *schemaResolver) OutOfBandMigrationByID(ctx context.Context, id graphql.
 // OutOfBandMigrations resolves all registered single out-of-band migrations.
 func (r *schemaResolver) OutOfBandMigrations(ctx context.Context) ([]*outOfBandMigrationResolver, error) {
 	// 🚨 SECURITY: Only site admins may view out-of-band migrations
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -56,7 +56,7 @@ func (r *schemaResolver) SetMigrationDirection(ctx context.Context, args *struct
 	ApplyReverse bool
 }) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only site admins may modify out-of-band migrations
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -92,11 +92,18 @@ func (r *outOfBandMigrationResolver) ID() graphql.ID {
 	return MarshalOutOfBandMigrationID(int32(r.m.ID))
 }
 
-func (r *outOfBandMigrationResolver) Team() string           { return r.m.Team }
-func (r *outOfBandMigrationResolver) Component() string      { return r.m.Component }
-func (r *outOfBandMigrationResolver) Description() string    { return r.m.Description }
-func (r *outOfBandMigrationResolver) Introduced() string     { return r.m.Introduced }
-func (r *outOfBandMigrationResolver) Deprecated() *string    { return r.m.Deprecated }
+func (r *outOfBandMigrationResolver) Team() string        { return r.m.Team }
+func (r *outOfBandMigrationResolver) Component() string   { return r.m.Component }
+func (r *outOfBandMigrationResolver) Description() string { return r.m.Description }
+func (r *outOfBandMigrationResolver) Introduced() string  { return r.m.Introduced.String() }
+func (r *outOfBandMigrationResolver) Deprecated() *string {
+	if r.m.Deprecated == nil {
+		return nil
+	}
+
+	return strptr(r.m.Deprecated.String())
+}
+
 func (r *outOfBandMigrationResolver) Progress() float64      { return r.m.Progress }
 func (r *outOfBandMigrationResolver) Created() DateTime      { return DateTime{r.m.Created} }
 func (r *outOfBandMigrationResolver) LastUpdated() *DateTime { return DateTimeOrNil(r.m.LastUpdated) }

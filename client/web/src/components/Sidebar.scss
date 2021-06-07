@@ -1,8 +1,22 @@
 .sidebar {
     isolation: isolate;
     width: 12rem;
+    .theme-redesign & {
+        display: flex;
+        flex-direction: column;
+    }
 
     &__chevron {
         color: var(--color-bg-6);
+    }
+
+    &__link {
+        &--inactive {
+            .theme-redesign & {
+                &:hover {
+                    background-color: var(--color-bg-2);
+                }
+            }
+        }
     }
 }

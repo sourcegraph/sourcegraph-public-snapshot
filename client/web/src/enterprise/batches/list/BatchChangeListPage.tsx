@@ -144,8 +144,8 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
                     noun="batch change"
                     pluralNoun="batch changes"
                     listComponent="div"
-                    listClassName={classNames(styles.batchChangeListPageGrid, 'mb-3')}
-                    className="mb-3"
+                    listClassName={styles.batchChangeListPageGrid}
+                    className="filtered-connection__centered-summary"
                     cursorPaging={true}
                     noSummaryIfAllNodesVisible={true}
                     emptyElement={<BatchChangeListEmptyElement location={location} />}
@@ -229,7 +229,9 @@ const BatchChangeListTabHeader: React.FunctionComponent<{
                         className={classNames('nav-link', selectedTab === 'batchChanges' && 'active')}
                         role="button"
                     >
-                        All batch changes
+                        <span className="text-content" data-tab-content="All batch changes">
+                            All batch changes
+                        </span>
                     </a>
                 </li>
                 <li className="nav-item">
@@ -240,7 +242,9 @@ const BatchChangeListTabHeader: React.FunctionComponent<{
                         className={classNames('nav-link', selectedTab === 'gettingStarted' && 'active')}
                         role="button"
                     >
-                        Getting started
+                        <span className="text-content" data-tab-content="Getting started">
+                            Getting started
+                        </span>
                     </a>
                 </li>
             </ul>

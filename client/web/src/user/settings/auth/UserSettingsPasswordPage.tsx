@@ -6,6 +6,7 @@ import { catchError, filter, mergeMap, tap } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { PasswordInput } from '../../../auth/SignInSignUpCommon'
@@ -14,6 +15,8 @@ import { PageTitle } from '../../../components/PageTitle'
 import { UserAreaUserFields } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { updatePassword } from '../backend'
+
+import styles from './UserSettingsPasswordPage.module.scss'
 
 interface Props extends RouteComponentProps<{}> {
     user: UserAreaUserFields
@@ -91,7 +94,7 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
         return (
             <div className="user-settings-password-page">
                 <PageTitle title="Change password" />
-                <h2>Change password</h2>
+                <PageHeader headingElement="h2" path={[{ text: 'Change password' }]} className="mb-3" />
                 {this.props.authenticatedUser.id !== this.props.user.id ? (
                     <div className="alert alert-danger">
                         Only the user may change their password. Site admins may{' '}
@@ -105,57 +108,63 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
                         {this.state.error && <ErrorAlert className="mb-3" error={this.state.error} />}
                         {this.state.saved && <div className="alert alert-success mb-3">Password changed!</div>}
                         <Form onSubmit={this.handleSubmit}>
-                            {/* Include a username field as a hint for password managers to update the saved password. */}
-                            <input
-                                type="text"
-                                value={this.props.user.username}
-                                name="username"
-                                autoComplete="username"
-                                readOnly={true}
-                                hidden={true}
-                            />
-                            <div className="form-group">
-                                <label htmlFor="oldPassword">Old password</label>
-                                <PasswordInput
-                                    value={this.state.oldPassword}
-                                    onChange={this.onOldPasswordFieldChange}
-                                    disabled={this.state.loading}
-                                    id="oldPassword"
-                                    name="oldPassword"
-                                    aria-label="old password"
-                                    placeholder=" "
-                                    autoComplete="current-password"
+                            <Container className="mb-3">
+                                {/* Include a username field as a hint for password managers to update the saved password. */}
+                                <input
+                                    type="text"
+                                    value={this.props.user.username}
+                                    name="username"
+                                    autoComplete="username"
+                                    readOnly={true}
+                                    hidden={true}
                                 />
-                            </div>
+                                <div className="form-group">
+                                    <label htmlFor="oldPassword">Old password</label>
+                                    <PasswordInput
+                                        value={this.state.oldPassword}
+                                        onChange={this.onOldPasswordFieldChange}
+                                        disabled={this.state.loading}
+                                        id="oldPassword"
+                                        name="oldPassword"
+                                        aria-label="old password"
+                                        placeholder=" "
+                                        autoComplete="current-password"
+                                        className={styles.userSettingsPasswordPageInput}
+                                    />
+                                </div>
 
-                            <div className="form-group">
-                                <label htmlFor="newPassword">New password</label>
-                                <PasswordInput
-                                    value={this.state.newPassword}
-                                    onChange={this.onNewPasswordFieldChange}
-                                    disabled={this.state.loading}
-                                    id="newPassword"
-                                    name="newPassword"
-                                    aria-label="new password"
-                                    placeholder=" "
-                                    autoComplete="new-password"
-                                />
-                                <small className="form-help text-muted">At least 12 characters</small>
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="newPasswordConfirmation">Confirm new password</label>
-                                <PasswordInput
-                                    value={this.state.newPasswordConfirmation}
-                                    onChange={this.onNewPasswordConfirmationFieldChange}
-                                    disabled={this.state.loading}
-                                    id="newPasswordConfirmation"
-                                    name="newPasswordConfirmation"
-                                    aria-label="new password confirmation"
-                                    placeholder=" "
-                                    inputRef={this.setNewPasswordConfirmationField}
-                                    autoComplete="new-password"
-                                />
-                            </div>
+                                <div className="form-group">
+                                    <label htmlFor="newPassword">New password</label>
+                                    <PasswordInput
+                                        value={this.state.newPassword}
+                                        onChange={this.onNewPasswordFieldChange}
+                                        disabled={this.state.loading}
+                                        id="newPassword"
+                                        name="newPassword"
+                                        aria-label="new password"
+                                        placeholder=" "
+                                        autoComplete="new-password"
+                                        minLength={12}
+                                        className={styles.userSettingsPasswordPageInput}
+                                    />
+                                    <small className="form-help text-muted">At least 12 characters</small>
+                                </div>
+                                <div className="form-group mb-0">
+                                    <label htmlFor="newPasswordConfirmation">Confirm new password</label>
+                                    <PasswordInput
+                                        value={this.state.newPasswordConfirmation}
+                                        onChange={this.onNewPasswordConfirmationFieldChange}
+                                        disabled={this.state.loading}
+                                        id="newPasswordConfirmation"
+                                        name="newPasswordConfirmation"
+                                        aria-label="new password confirmation"
+                                        placeholder=" "
+                                        inputRef={this.setNewPasswordConfirmationField}
+                                        autoComplete="new-password"
+                                        className={styles.userSettingsPasswordPageInput}
+                                    />
+                                </div>
+                            </Container>
                             <button
                                 className="btn btn-primary user-settings-password-page__button"
                                 type="submit"

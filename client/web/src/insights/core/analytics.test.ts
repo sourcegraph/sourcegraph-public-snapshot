@@ -1,5 +1,5 @@
-import { Settings, SettingsCascade } from '@sourcegraph/shared/out/src/settings/settings'
 import { IOrg } from '@sourcegraph/shared/src/graphql/schema'
+import { Settings, SettingsCascade } from '@sourcegraph/shared/src/settings/settings'
 import { authUser } from '@sourcegraph/web/src/search/panels/utils'
 
 import { AuthenticatedUser } from '../../auth'

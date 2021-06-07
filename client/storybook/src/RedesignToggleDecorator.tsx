@@ -1,11 +1,16 @@
 import { DecoratorFunction } from '@storybook/addons'
 import isChromatic from 'chromatic/isChromatic'
-import React, { ReactElement, useEffect } from 'react'
+import { ReactElement, useEffect } from 'react'
 
-import { useRedesignToggle, REDESIGN_CLASS_NAME } from '@sourcegraph/shared/src/util/useRedesignToggle'
+import {
+    useRedesignToggle,
+    NOT_REDESIGN_CLASS_NAME,
+    REDESIGN_CLASS_NAME,
+} from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 const toggleRedesignClass = (element: HTMLElement, isRedesignEnabled: boolean): void => {
     element.classList.toggle(REDESIGN_CLASS_NAME, isRedesignEnabled)
+    element.classList.toggle(NOT_REDESIGN_CLASS_NAME, !isRedesignEnabled)
 }
 
 const updatePreview = (isRedesignEnabled: boolean): void => {
@@ -44,5 +49,7 @@ export const RedesignToggleDecorator: DecoratorFunction<ReactElement> = (Story, 
         updateManager(isRedesignEnabled)
     }, [isRedesignEnabled])
 
-    return <Story {...context} />
+    // Required instead of the <Story {...context} /> until the issue below is resolved
+    // https://github.com/storybookjs/storybook/issues/12255#issuecomment-697956943
+    return Story(context)
 }

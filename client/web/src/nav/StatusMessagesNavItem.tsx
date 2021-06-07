@@ -380,7 +380,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         const { CloudAlertIcon, CloudSyncIcon, CloudCheckIcon } = iconsToShow(this.props.isRedesignEnabled)
 
         if (isErrorLike(this.state.messagesOrError)) {
-            return <CloudAlertIcon className="icon-inline" />
+            return <CloudAlertIcon className="icon-inline-md" />
         }
 
         if (isNoActivityReason(this.state.messagesOrError)) {
@@ -395,7 +395,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         if (this.state.messagesOrError.some(({ type }) => type === 'ExternalServiceSyncError')) {
             return (
                 <CloudAlertIcon
-                    className="icon-inline"
+                    className="icon-inline-md"
                     data-tooltip={this.state.isOpen ? undefined : 'Syncing repositories failed!'}
                 />
             )
@@ -403,14 +403,14 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         if (this.state.messagesOrError.some(({ type }) => type === 'CloningProgress')) {
             return (
                 <CloudSyncIcon
-                    className="icon-inline"
+                    className="icon-inline-md"
                     data-tooltip={this.state.isOpen ? undefined : 'Cloning repositories...'}
                 />
             )
         }
         return (
             <CloudCheckIcon
-                className="icon-inline"
+                className="icon-inline-md"
                 data-tooltip={this.state.isOpen ? undefined : 'Repositories up to date'}
             />
         )

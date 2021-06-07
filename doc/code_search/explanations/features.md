@@ -118,7 +118,7 @@ Indexing multiple branches will add additional resource requirements to Sourcegr
 
 > NOTE: All revisions specified in version contexts are also indexed.
 
-## Search contexts <span class="badge badge-primary">experimental</span>
+## Search contexts
 
 Search contexts help you search the code you care about on Sourcegraph. A search context represents a set of repositories at specific revisions on a Sourcegraph instance that will be targeted by search queries by default.
 
@@ -139,7 +139,7 @@ If no search context is specified, `context:global` is used.
 
 This feature is currently under active development for self-hosted Sourcegraph instances and is disabled by default.
 
-Your site admin can enable search contexts on your private instance in global settings using the following:
+Your site admin can enable search contexts on your private instance in **global settings** using the following:
 
 ```json
 "experimentalFeatures": {  
@@ -147,6 +147,10 @@ Your site admin can enable search contexts on your private instance in global se
   "showSearchContextManagement": true
 }
 ```
+
+**Note**: While version contexts are located in the site configuration, search contexts are enabled through the global settings.
+
+Reload the page after saving changes to see search contexts enabled.
 
 If you currently use [version contexts](#version-contexts), you can automatically [convert your existing version contexts to search contexts](../../admin/how-to/converting-version-contexts-to-search-contexts.md). We recommend migrating to search contexts for a more intuitive, powerful search experience and the latest improvements and updates.
 

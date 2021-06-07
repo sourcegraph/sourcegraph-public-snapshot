@@ -1,26 +1,24 @@
+import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import React, { useState, useCallback } from 'react'
-import { ButtonDropdown, DropdownToggle, DropdownMenu, DropdownItem } from 'reactstrap'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { CircleDashedIcon } from '../../../components/CircleDashedIcon'
-import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
+import { LoaderButton } from '../../../components/LoaderButton'
+import { ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
 
-import { AddCodeHostConnectionModal } from './AddCodeHostConnectionModal'
-import { hints } from './modalHints'
 import { RemoveCodeHostConnectionModal } from './RemoveCodeHostConnectionModal'
 import { ifNotNavigated } from './UserAddCodeHostsPage'
 
 interface CodeHostItemProps {
-    user: { id: Scalars['ID']; tags: string[] }
     kind: ExternalServiceKind
     name: string
     icon: React.ComponentType<{ className?: string }>
     navigateToAuthProvider: (kind: ExternalServiceKind) => void
-
+    updateAuthRequired?: boolean
     // optional service object fields when the code host connection is active
     service?: ListExternalServiceFields
 
@@ -30,29 +28,21 @@ interface CodeHostItemProps {
 }
 
 export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
-    user,
     service,
     kind,
     name,
+    updateAuthRequired,
     icon: Icon,
     navigateToAuthProvider,
-    onDidAdd,
     onDidRemove,
     onDidError,
 }) => {
-    const [isAddConnectionModalOpen, setIsAddConnectionModalOpen] = useState(false)
-    const toggleAddConnectionModal = useCallback(() => setIsAddConnectionModalOpen(!isAddConnectionModalOpen), [
-        isAddConnectionModalOpen,
-    ])
-
+    const [isRedesignEnabled] = useRedesignToggle()
     const [isRemoveConnectionModalOpen, setIsRemoveConnectionModalOpen] = useState(false)
     const toggleRemoveConnectionModal = useCallback(
         () => setIsRemoveConnectionModalOpen(!isRemoveConnectionModalOpen),
         [isRemoveConnectionModalOpen]
     )
-
-    const [dropdownOpen, setOpen] = useState(false)
-    const toggleDropdown = useCallback((): void => setOpen(!dropdownOpen), [dropdownOpen])
 
     const [oauthInFlight, setOauthInFlight] = useState(false)
 
@@ -65,18 +55,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
     }, [kind, navigateToAuthProvider])
 
     return (
-        <div className="p-2 d-flex align-items-start">
-            {isAddConnectionModalOpen && (
-                <AddCodeHostConnectionModal
-                    userID={user.id}
-                    kind={kind}
-                    name={name}
-                    hintFragment={hints[kind]}
-                    onDidAdd={onDidAdd}
-                    onDidCancel={toggleAddConnectionModal}
-                    onDidError={onDidError}
-                />
-            )}
+        <div className={classNames('d-flex align-items-start', !isRedesignEnabled && 'p-2')}>
             {service && isRemoveConnectionModalOpen && (
                 <RemoveCodeHostConnectionModal
                     id={service.id}
@@ -96,7 +75,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                 ) : (
                     <CircleDashedIcon className="icon-inline mb-0 mr-2 user-code-hosts-page__icon--dashed" />
                 )}
-                <Icon className="icon-inline mb-0 mr-1" />
+                <Icon className="mb-0 mr-1" />
             </div>
             <div className="flex-1 align-self-center">
                 <h3 className="m-0">{name}</h3>
@@ -105,24 +84,51 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                 {service?.id ? (
                     <button
                         type="button"
-                        className="btn btn-link btn-sm text-danger px-0 shadow-none"
+                        className="btn btn-link text-danger shadow-none"
                         onClick={toggleRemoveConnectionModal}
                     >
                         Remove
                     </button>
+                ) : oauthInFlight ? (
+                    <LoaderButton
+                        type="button"
+                        className={classNames(
+                            'btn',
+                            !isRedesignEnabled && 'btn-primary',
+                            isRedesignEnabled && 'btn-success'
+                        )}
+                        loading={true}
+                        disabled={true}
+                        label="Connect"
+                        alwaysShowLabel={true}
+                    />
                 ) : (
-                    <ButtonDropdown isOpen={dropdownOpen} toggle={toggleDropdown} direction="down">
-                        <DropdownToggle className="btn-sm" color="outline-secondary" caret={true}>
-                            Connect
-                        </DropdownToggle>
-                        <DropdownMenu right={true}>
-                            <DropdownItem toggle={false} onClick={toAuthProvider}>
-                                Connect with {name}
-                                {oauthInFlight && <LoadingSpinner className="icon-inline ml-2" />}
-                            </DropdownItem>
-                            <DropdownItem onClick={toggleAddConnectionModal}>Connect with access token</DropdownItem>
-                        </DropdownMenu>
-                    </ButtonDropdown>
+                    <button
+                        type="button"
+                        className={classNames(
+                            'btn',
+                            !isRedesignEnabled && 'btn-primary',
+                            isRedesignEnabled && 'btn-success'
+                        )}
+                        onClick={toAuthProvider}
+                    >
+                        Connect
+                    </button>
+                )}
+                {updateAuthRequired && !oauthInFlight && (
+                    <button type="button" className="btn btn-merged" onClick={toAuthProvider}>
+                        Update
+                    </button>
+                )}
+                {!updateAuthRequired && oauthInFlight && (
+                    <LoaderButton
+                        type="button"
+                        className="btn btn-merged"
+                        loading={true}
+                        disabled={true}
+                        label="Update"
+                        alwaysShowLabel={true}
+                    />
                 )}
             </div>
         </div>

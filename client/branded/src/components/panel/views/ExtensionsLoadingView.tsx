@@ -3,9 +3,9 @@ import React from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 
-export const ExtensionsLoadingPanelView: React.FunctionComponent<{ className?: string }> = ({ className = '' }) => (
+export const ExtensionsLoadingPanelView: React.FunctionComponent = () => (
     <div className="panel">
-        <div className={`panel__empty ${className}`}>
+        <div className="panel__empty">
             <LoadingSpinner />
             <span className="mx-2">Loading Sourcegraph extensions</span>
             <PuzzleIcon className="icon-inline" />

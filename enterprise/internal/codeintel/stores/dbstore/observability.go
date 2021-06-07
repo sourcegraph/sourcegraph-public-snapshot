@@ -28,19 +28,21 @@ type operations struct {
 	getIndexByID                           *observation.Operation
 	getIndexConfigurationByRepositoryID    *observation.Operation
 	getIndexes                             *observation.Operation
+	getIndexesByIDs                        *observation.Operation
 	getOldestCommitDate                    *observation.Operation
 	getRepositoriesWithIndexConfiguration  *observation.Operation
 	getUploadByID                          *observation.Operation
 	getUploads                             *observation.Operation
+	getUploadsByIDs                        *observation.Operation
 	hardDeleteUploadByID                   *observation.Operation
 	hasCommit                              *observation.Operation
 	hasRepository                          *observation.Operation
 	indexableRepositories                  *observation.Operation
 	indexQueueSize                         *observation.Operation
+	insertDependencyIndexingJob            *observation.Operation
 	insertIndex                            *observation.Operation
 	insertUpload                           *observation.Operation
 	isQueued                               *observation.Operation
-	lock                                   *observation.Operation
 	markComplete                           *observation.Operation
 	markErrored                            *observation.Operation
 	markFailed                             *observation.Operation
@@ -50,6 +52,7 @@ type operations struct {
 	markRepositoryAsDirty                  *observation.Operation
 	queueSize                              *observation.Operation
 	referenceIDsAndFilters                 *observation.Operation
+	referencesForUpload                    *observation.Operation
 	refreshCommitResolvability             *observation.Operation
 	repoName                               *observation.Operation
 	repoUsageStatistics                    *observation.Operation
@@ -116,19 +119,21 @@ func newOperations(observationContext *observation.Context) *operations {
 		getIndexByID:                           op("GetIndexByID"),
 		getIndexConfigurationByRepositoryID:    op("GetIndexConfigurationByRepositoryID"),
 		getIndexes:                             op("GetIndexes"),
+		getIndexesByIDs:                        op("GetIndexesByIDs"),
 		getOldestCommitDate:                    op("GetOldestCommitDate"),
 		getRepositoriesWithIndexConfiguration:  op("GetRepositoriesWithIndexConfiguration"),
 		getUploadByID:                          op("GetUploadByID"),
 		getUploads:                             op("GetUploads"),
+		getUploadsByIDs:                        op("GetUploadsByIDs"),
 		hardDeleteUploadByID:                   op("HardDeleteUploadByID"),
 		hasCommit:                              op("HasCommit"),
 		hasRepository:                          op("HasRepository"),
 		indexableRepositories:                  op("IndexableRepositories"),
 		indexQueueSize:                         op("IndexQueueSize"),
+		insertDependencyIndexingJob:            op("InsertDependencyIndexingJob"),
 		insertIndex:                            op("InsertIndex"),
 		insertUpload:                           op("InsertUpload"),
 		isQueued:                               op("IsQueued"),
-		lock:                                   op("Lock"),
 		markComplete:                           op("MarkComplete"),
 		markErrored:                            op("MarkErrored"),
 		markFailed:                             op("MarkFailed"),
@@ -138,6 +143,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		markRepositoryAsDirty:                  op("MarkRepositoryAsDirty"),
 		queueSize:                              op("QueueSize"),
 		referenceIDsAndFilters:                 op("ReferenceIDsAndFilters"),
+		referencesForUpload:                    op("ReferencesForUpload"),
 		refreshCommitResolvability:             op("RefreshCommitResolvability"),
 		repoName:                               op("RepoName"),
 		repoUsageStatistics:                    op("RepoUsageStatistics"),

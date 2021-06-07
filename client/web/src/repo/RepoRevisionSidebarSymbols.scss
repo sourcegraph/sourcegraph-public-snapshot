@@ -1,23 +1,33 @@
-.theme-redesign {
-    .repo-revision-sidebar-symbols {
-        &-node {
-            &:first-of-type {
-                padding-top: 0.75rem;
+.repo-revision-sidebar-symbols {
+    .theme-redesign & {
+        padding-top: 0.5rem;
+        > .filtered-connection {
+            &__form {
+                padding-bottom: 0.75rem;
+                > .form-control {
+                    height: 1.75rem;
+                    font-size: 0.75rem;
+                    padding: 0.5rem;
+                }
             }
-            &__link {
-                padding: 0 0 0.25rem 0;
+
+            &__summary-container {
+                border-top: none !important;
+                border-bottom: 1px solid var(--border-color) !important;
+                padding: 0 0.25rem 0.5rem 0.25rem !important;
+                min-height: 0 !important;
             }
         }
     }
-}
-
-.repo-revision-sidebar-symbols {
     flex: 1 1 auto;
     display: flex;
     flex-direction: column;
     min-height: 0;
 
     &-node {
+        .theme-redesign & {
+            font-size: 0.875rem;
+        }
         &__link {
             display: block;
             padding: 0.125rem 0.5rem;
@@ -25,9 +35,17 @@
             overflow: hidden;
             text-overflow: ellipsis;
             color: $secondary;
+            .theme-redesign & {
+                padding: 0.25rem;
+            }
             &--active,
             &:hover {
                 background-color: var(--color-bg-3);
+                .theme-redesign & {
+                    text-decoration: none;
+                    color: var(--body-color);
+                    border-radius: var(--border-radius);
+                }
             }
         }
 

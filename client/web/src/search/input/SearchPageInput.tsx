@@ -13,7 +13,6 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
     PatternTypeProps,
     CaseSensitivityProps,
-    CopyQueryButtonProps,
     OnboardingTourProps,
     ParsedSearchQueryProps,
     SearchContextInputProps,
@@ -41,7 +40,6 @@ interface Props
         TelemetryProps,
         Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
-        CopyQueryButtonProps,
         Pick<SubmitSearchParameters, 'source'>,
         VersionContextProps,
         SearchContextInputProps,

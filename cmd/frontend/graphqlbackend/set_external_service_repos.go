@@ -31,7 +31,7 @@ func (r *schemaResolver) SetExternalServiceRepos(ctx context.Context, args struc
 	}
 
 	// 🚨 SECURITY: make sure the user is either site admin or the same user being requested
-	if err := backend.CheckSiteAdminOrSameUser(ctx, es.NamespaceUserID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, es.NamespaceUserID); err != nil {
 		return nil, err
 	}
 

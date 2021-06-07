@@ -28,6 +28,7 @@ import { LayoutRouteProps } from '../routes'
 import { Settings } from '../schema/settings.schema'
 import { SearchContextProps } from '../search'
 import { ThemePreferenceProps } from '../theme'
+import { userExternalServicesEnabledFromTags } from '../user/settings/cloud-ga'
 import { getReactElements } from '../util/getReactElements'
 
 import { FeedbackPrompt } from './Feedback/FeedbackPrompt'
@@ -159,17 +160,18 @@ export const NavLinks: React.FunctionComponent<Props> = props => {
                         {link}
                     </li>
                 ))}
-            {/* show status messages if authenticated user opted-in with a user tag  */}
-            {authenticatedUser?.tags?.includes('AllowUserExternalServicePublic') && (
-                <li className="nav-item">
-                    <StatusMessagesNavItem
+            {/* show status messages if user is logged in and either: user added code is enabled, user is admin or opted-in with a user tag  */}
+            {authenticatedUser &&
+                (authenticatedUser.siteAdmin || userExternalServicesEnabledFromTags(authenticatedUser.tags)) && (
+                    <li className="nav-item">
+                        <StatusMessagesNavItem
                         isSiteAdmin={authenticatedUser.siteAdmin}
                         history={history}
                         userCreatedAt={authenticatedUser.createdAt}
                         userID={authenticatedUser.id}
                     />
-                </li>
-            )}
+                    </li>
+                )}
             {!minimalNavLinks && (
                 <li className="nav-item">
                     <WebCommandListPopoverButton
@@ -190,10 +192,6 @@ export const NavLinks: React.FunctionComponent<Props> = props => {
                             (!isErrorLike(settingsCascade.final) &&
                                 settingsCascade.final?.['alerts.codeHostIntegrationMessaging']) ||
                             'browser-extension'
-                        }
-                        showRedesignToggle={
-                            !isErrorLike(props.settingsCascade.final) &&
-                            Boolean(props.settingsCascade.final?.experimentalFeatures?.designRefreshToggleEnabled)
                         }
                         keyboardShortcutForSwitchTheme={KEYBOARD_SHORTCUT_SWITCH_THEME}
                     />

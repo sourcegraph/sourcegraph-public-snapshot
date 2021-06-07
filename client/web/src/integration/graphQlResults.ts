@@ -197,4 +197,11 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
             },
         },
     }),
+    ExternalServices: () => ({
+        externalServices: {
+            totalCount: 0,
+            nodes: [],
+            pageInfo: { hasNextPage: false, endCursor: null },
+        },
+    }),
 }

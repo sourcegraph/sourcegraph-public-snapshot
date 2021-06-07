@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -20,11 +21,12 @@ import (
 )
 
 func (r *RepositoryResolver) MirrorInfo() *repositoryMirrorInfoResolver {
-	return &repositoryMirrorInfoResolver{repository: r}
+	return &repositoryMirrorInfoResolver{repository: r, db: r.db}
 }
 
 type repositoryMirrorInfoResolver struct {
 	repository *RepositoryResolver
+	db         dbutil.DB
 
 	// memoize the repo-updater RepoUpdateSchedulerInfo call
 	repoUpdateSchedulerInfoOnce   sync.Once
@@ -63,7 +65,7 @@ var nonSCPURLRegex = lazyregexp.New(`^(git\+)?(https?|ssh|rsync|file|git|perforc
 func (r *repositoryMirrorInfoResolver) RemoteURL(ctx context.Context) (string, error) {
 	// 🚨 SECURITY: The remote URL might contain secret credentials in the URL userinfo, so
 	// only allow site admins to see it.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return "", err
 	}
 
@@ -206,7 +208,7 @@ func (r *schemaResolver) CheckMirrorRepositoryConnection(ctx context.Context, ar
 }) (*checkMirrorRepositoryConnectionResult, error) {
 	// 🚨 SECURITY: This is an expensive operation and the errors may contain secrets,
 	// so only site admins may run it.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -252,7 +254,7 @@ func (r *schemaResolver) UpdateMirrorRepository(ctx context.Context, args *struc
 	Repository graphql.ID
 }) (*EmptyResponse, error) {
 	// 🚨 SECURITY: There is no reason why non-site-admins would need to run this operation.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 

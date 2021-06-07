@@ -7,12 +7,15 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -40,7 +43,7 @@ func externalServiceByID(ctx context.Context, db dbutil.DB, gqlID graphql.ID) (*
 		return nil, err
 	}
 
-	if err := checkExternalServiceAccess(ctx, es.NamespaceUserID); err != nil {
+	if err := checkExternalServiceAccess(ctx, db, es.NamespaceUserID); err != nil {
 		return nil, err
 	}
 	return &externalServiceResolver{db: db, externalService: es}, nil
@@ -167,6 +170,15 @@ func (r *externalServiceResolver) NextSyncAt() *DateTime {
 	return &DateTime{Time: r.externalService.NextSyncAt}
 }
 
+var scopeCache = rcache.New("extsvc_token_scope")
+
 func (r *externalServiceResolver) GrantedScopes(ctx context.Context) ([]string, error) {
-	return types.GrantedScopes(ctx, r.externalService.Kind, r.externalService.Config)
+	scope, err := repos.GrantedScopes(ctx, scopeCache, r.externalService)
+	if err != nil {
+		// It's possible that we fail to fetch scope from the code host, in this case we
+		// don't want the entire resolver to fail.
+		log15.Error("Getting service scope", "id", r.externalService.ID, "error", err)
+		return []string{}, nil
+	}
+	return scope, nil
 }

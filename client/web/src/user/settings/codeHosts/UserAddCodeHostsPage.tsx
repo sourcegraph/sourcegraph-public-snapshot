@@ -4,6 +4,7 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { isDefined, keyExistsIn } from '@sourcegraph/shared/src/util/types'
+import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../components/alerts'
 import { queryExternalServices } from '../../../components/externalServices/backend'
@@ -12,14 +13,15 @@ import { PageTitle } from '../../../components/PageTitle'
 import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
 import { SourcegraphContext } from '../../../jscontext'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { UserRepositoriesUpdateProps } from '../../../util'
+import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
+import { githubRepoScopeRequired } from '../cloud-ga'
 
 import { CodeHostItem } from './CodeHostItem'
 
 type AuthProvider = SourcegraphContext['authProviders'][0]
 type AuthProvidersByKind = Partial<Record<ExternalServiceKind, AuthProvider>>
 
-export interface UserAddCodeHostsPageProps extends UserRepositoriesUpdateProps {
+export interface UserAddCodeHostsPageProps extends UserExternalServicesOrRepositoriesUpdateProps {
     user: { id: Scalars['ID']; tags: string[] }
     codeHostExternalServices: Record<string, AddExternalServiceOptions>
     routingPrefix: string
@@ -59,10 +61,10 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     codeHostExternalServices,
     routingPrefix,
     context,
-    onUserRepositoriesUpdate,
+    onUserExternalServicesOrRepositoriesUpdate,
 }) => {
     const [statusOrError, setStatusOrError] = useState<Status>()
-    const [oauthRequestFor, setOauthRequestFor] = useState<ExternalServiceKind>()
+    const [updateAuthRequired, setUpdateAuthRequired] = useState(false)
 
     const fetchExternalServices = useCallback(async () => {
         setStatusOrError('loading')
@@ -81,9 +83,16 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 
         setStatusOrError(services)
 
+        // If we have a GitHub service, check whether we need to prompt the user to
+        // update their scope
+        const gitHubService = services.GITHUB
+        if (gitHubService) {
+            setUpdateAuthRequired(githubRepoScopeRequired(user.tags, gitHubService.grantedScopes))
+        }
+
         const repoCount = fetchedServices.reduce((sum, codeHost) => sum + codeHost.repoCount, 0)
-        onUserRepositoriesUpdate(repoCount)
-    }, [user.id, onUserRepositoriesUpdate])
+        onUserExternalServicesOrRepositoriesUpdate(fetchedServices.length, repoCount)
+    }, [user.id, user.tags, onUserExternalServicesOrRepositoriesUpdate, setUpdateAuthRequired])
 
     useEffect(() => {
         eventLogger.logViewEvent('UserSettingsCodeHostConnections')
@@ -94,6 +103,13 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
             setStatusOrError(asError(error))
         })
     }, [fetchExternalServices])
+
+    const getGitHubUpdateAuthBanner = (needsUpdate: boolean): JSX.Element | null =>
+        needsUpdate ? (
+            <div className="alert alert-info mb-4" role="alert" key="add-repos">
+                Update your GitHub code host connection to search private code with Sourcegraph.
+            </div>
+        ) : null
 
     const getAddReposBanner = (services: string[]): JSX.Element | null =>
         services.length > 0 ? (
@@ -139,7 +155,11 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
             }
         }
 
-        return [...servicesWithProblems.map(getServiceWarningFragment), getAddReposBanner(notYetSyncedServiceNames)]
+        return [
+            ...servicesWithProblems.map(getServiceWarningFragment),
+            getAddReposBanner(notYetSyncedServiceNames),
+            getGitHubUpdateAuthBanner(updateAuthRequired),
+        ]
     }
 
     const addNewService = useCallback(
@@ -176,6 +196,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
             const authProvider = authProvidersByKind[kind]
 
             if (authProvider) {
+                eventLogger.log('UserAttemptConnectCodeHost', { kind })
                 window.location.assign(
                     `${authProvider.authenticationURL as string}&redirect=${
                         window.location.href
@@ -186,54 +207,23 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         [authProvidersByKind]
     )
 
-    const codeHostOAuthButtons = isServicesByKind(statusOrError)
-        ? Object.values(codeHostExternalServices).reduce(
-              (accumulator: JSX.Element[], { kind, defaultDisplayName, icon: Icon }) => {
-                  if (!statusOrError[kind] && authProvidersByKind[kind]) {
-                      accumulator.push(
-                          <button
-                              key={kind}
-                              type="button"
-                              onClick={() => {
-                                  eventLogger.log('UserAttemptConnectCodeHost', { kind })
-                                  setOauthRequestFor(kind)
-                                  ifNotNavigated(() => {
-                                      setOauthRequestFor(undefined)
-                                  })
-                                  navigateToAuthProvider(kind)
-                              }}
-                              className={`btn mr-2 ${
-                                  kind === 'GITLAB' ? 'user-code-hosts-page__btn--gitlab' : 'btn-dark'
-                              }`}
-                          >
-                              {/* will use dark theme for the spinner because buttons are dark */}
-                              {oauthRequestFor === kind && <LoadingSpinner className="icon-inline mr-2 theme-dark" />}
-                              <Icon className="icon-inline " /> {defaultDisplayName}
-                          </button>
-                      )
-                  }
-
-                  return accumulator
-              },
-              []
-          )
-        : []
-
     return (
         <div className="user-code-hosts-page">
             <PageTitle title="Code host connections" />
-            <div className="mb-4">
-                <div className="d-flex justify-content-between align-items-center mb-3">
-                    <h2 className="mb-0">Code host connections</h2>
-                </div>
-                <p className="text-muted">
-                    Connect with your code hosts. Then,{' '}
-                    <Link className="text-primary" to={`${routingPrefix}/repositories/manage`}>
-                        add repositories
-                    </Link>{' '}
-                    to search with Sourcegraph.
-                </p>
-            </div>
+            <PageHeader
+                headingElement="h2"
+                path={[{ text: 'Code host connections' }]}
+                description={
+                    <>
+                        Connect with your code hosts. Then,{' '}
+                        <Link className="text-primary" to={`${routingPrefix}/repositories/manage`}>
+                            add repositories
+                        </Link>{' '}
+                        to search with Sourcegraph.
+                    </>
+                }
+                className="mb-3"
+            />
 
             {/* display external service errors and success banners */}
             {getErrorAndSuccessBanners(statusOrError)}
@@ -244,32 +234,18 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
             )}
 
             {codeHostExternalServices && isServicesByKind(statusOrError) ? (
-                <>
-                    {codeHostOAuthButtons.length > 0 && (
-                        <div className="border rounded p-4 mb-4">
-                            <b>Connect with code host</b>
-                            <div className="container">
-                                <div className="row pt-3">{codeHostOAuthButtons}</div>
-                                <div className="row d-none">
-                                    <span className="text-muted">
-                                        Learn more about{' '}
-                                        <Link className="text-primary" to="/will-be-added-soon">
-                                            code host connections
-                                        </Link>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    )}
+                <Container>
                     <ul className="list-group">
                         {Object.entries(codeHostExternalServices).map(([id, { kind, defaultDisplayName, icon }]) =>
                             authProvidersByKind[kind] ? (
-                                <li key={id} className="list-group-item">
+                                <li key={id} className="list-group-item user-code-hosts-page__code-host-item">
                                     <CodeHostItem
                                         service={isServicesByKind(statusOrError) ? statusOrError[kind] : undefined}
-                                        user={user}
                                         kind={kind}
                                         name={defaultDisplayName}
+                                        updateAuthRequired={
+                                            id && kind === ExternalServiceKind.GITHUB ? updateAuthRequired : false
+                                        }
                                         navigateToAuthProvider={navigateToAuthProvider}
                                         icon={icon}
                                         onDidAdd={addNewService}
@@ -280,7 +256,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                             ) : null
                         )}
                     </ul>
-                </>
+                </Container>
             ) : (
                 <div className="d-flex justify-content-center">
                     <LoadingSpinner className="icon-inline" />

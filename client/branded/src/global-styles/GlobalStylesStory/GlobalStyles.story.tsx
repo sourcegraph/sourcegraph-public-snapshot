@@ -375,7 +375,10 @@ add(
             </table>
 
             <h2>Reference</h2>
-            <BadgeVariants variants={SEMANTIC_COLORS} />
+            <BadgeVariants variants={[...SEMANTIC_COLORS, 'outline-secondary']} />
+            <h3>Size</h3>
+            <p>We can also make our badges smaller.</p>
+            <BadgeVariants small={true} variants={['primary', 'secondary']} />
             <h2>Pill badges</h2>
             <p>Pill badges are commonly used to display counts.</p>
             <div className="mb-4">
@@ -385,12 +388,22 @@ add(
                 <ul className="nav nav-tabs mb-2">
                     <li className="nav-item">
                         <a className="nav-link active" href="/" onClick={preventDefault}>
-                            Comments <span className="badge badge-pill badge-secondary">14</span>
+                            <span>
+                                <span className="text-content" data-test-tab="Comments">
+                                    Comments
+                                </span>{' '}
+                                <span className="badge badge-pill badge-secondary">14</span>
+                            </span>
                         </a>
                     </li>
                     <li className="nav-item">
                         <a className="nav-link" href="/" onClick={preventDefault}>
-                            Changed files <span className="badge badge-pill badge-secondary">6</span>
+                            <span>
+                                <span className="text-content" data-test-tab="Changed files">
+                                    Changed files
+                                </span>{' '}
+                                <span className="badge badge-pill badge-secondary">6</span>
+                            </span>
                         </a>
                     </li>
                 </ul>

@@ -6,7 +6,7 @@ import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
 import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '../../..'
 import { toggleSearchType } from '../../../helpers'
-import { SearchType } from '../../SearchResults'
+import { SearchType } from '../StreamingSearchResults'
 
 import styles from './SearchSidebarSection.module.scss'
 
@@ -50,6 +50,6 @@ const SearchTypeLink: React.FunctionComponent<SearchTypeLinkProps> = ({
 }
 
 export const getSearchTypeLinks = (props: SearchTypeLinksProps): ReactElement[] => {
-    const types: Exclude<SearchType, null>[] = ['file', 'repo', 'path', 'symbol', 'diff', 'commit']
+    const types: Exclude<SearchType, null>[] = ['file', 'path', 'symbol', 'repo', 'diff', 'commit']
     return types.map(type => <SearchTypeLink {...props} type={type} key={type} />)
 }

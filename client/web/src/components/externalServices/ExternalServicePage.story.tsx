@@ -19,26 +19,30 @@ const { add } = storiesOf('web/External services/ExternalServicePage', module)
         },
     })
 
-const fetchExternalService: typeof _fetchExternalService = () =>
-    of({
-        id: 'service123',
-        kind: ExternalServiceKind.GITHUB,
-        warning: null,
-        config: '{"githubconfig": true}',
-        displayName: 'GitHub.com',
-        webhookURL: null,
-        lastSyncError: null,
-        repoCount: 0,
-        lastSyncAt: null,
-        nextSyncAt: null,
-        updatedAt: '2021-03-15T19:39:11Z',
-        createdAt: '2021-03-15T19:39:11Z',
-        namespace: {
-            id: 'userid',
-            namespaceName: 'johndoe',
-            url: '/users/johndoe',
-        },
-    })
+const externalService = {
+    id: 'service123',
+    kind: ExternalServiceKind.GITHUB,
+    warning: null,
+    config: '{"githubconfig": true}',
+    displayName: 'GitHub.com',
+    webhookURL: null,
+    lastSyncError: null,
+    repoCount: 0,
+    lastSyncAt: null,
+    nextSyncAt: null,
+    updatedAt: '2021-03-15T19:39:11Z',
+    createdAt: '2021-03-15T19:39:11Z',
+    namespace: {
+        id: 'userid',
+        namespaceName: 'johndoe',
+        url: '/users/johndoe',
+    },
+}
+
+const fetchExternalService: typeof _fetchExternalService = () => of(externalService)
+
+const fetchExternalServiceWithInvalidConfigURL: typeof _fetchExternalService = () =>
+    of({ ...externalService, config: '{"url": "invalid-url"}' })
 
 add('View external service config', () => (
     <WebStory>
@@ -49,6 +53,21 @@ add('View external service config', () => (
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 externalServiceID="service123"
                 fetchExternalService={fetchExternalService}
+                autoFocusForm={false}
+            />
+        )}
+    </WebStory>
+))
+
+add('External service config with invalid url', () => (
+    <WebStory>
+        {webProps => (
+            <ExternalServicePage
+                {...webProps}
+                afterUpdateRoute="/site-admin/after"
+                telemetryService={NOOP_TELEMETRY_SERVICE}
+                externalServiceID="service123"
+                fetchExternalService={fetchExternalServiceWithInvalidConfigURL}
                 autoFocusForm={false}
             />
         )}

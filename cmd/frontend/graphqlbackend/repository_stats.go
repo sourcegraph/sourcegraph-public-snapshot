@@ -22,7 +22,7 @@ func (r *repositoryStatsResolver) IndexedLinesCount() BigInt {
 
 func (r *schemaResolver) RepositoryStats(ctx context.Context) (*repositoryStatsResolver, error) {
 	// 🚨 SECURITY: Only site admins may query repository statistics for the site.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 

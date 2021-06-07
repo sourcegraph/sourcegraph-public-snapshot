@@ -63,14 +63,14 @@ func (r *siteResolver) SiteID() string { return siteid.Get() }
 func (r *siteResolver) Configuration(ctx context.Context) (*siteConfigurationResolver, error) {
 	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
 	// so only admins may view it.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
-	return &siteConfigurationResolver{}, nil
+	return &siteConfigurationResolver{db: r.db}, nil
 }
 
 func (r *siteResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err == backend.ErrMustBeSiteAdmin || err == backend.ErrNotAuthenticated {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err == backend.ErrMustBeSiteAdmin || err == backend.ErrNotAuthenticated {
 		return false, nil
 	} else if err != nil {
 		return false, err
@@ -102,7 +102,7 @@ func (r *siteResolver) ConfigurationCascade() *settingsCascade { return r.Settin
 func (r *siteResolver) SettingsURL() *string { return strptr("/site-admin/global-settings") }
 
 func (r *siteResolver) CanReloadSite(ctx context.Context) bool {
-	err := backend.CheckCurrentUserIsSiteAdmin(ctx)
+	err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db)
 	return canReloadSite && err == nil
 }
 
@@ -119,12 +119,14 @@ func (r *siteResolver) ProductSubscription() *productSubscriptionStatus {
 	return &productSubscriptionStatus{}
 }
 
-type siteConfigurationResolver struct{}
+type siteConfigurationResolver struct {
+	db dbutil.DB
+}
 
 func (r *siteConfigurationResolver) ID(ctx context.Context) (int32, error) {
 	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
 	// so only admins may view it.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return 0, err
 	}
 	return 0, nil // TODO(slimsag): future: return the real ID here to prevent races
@@ -133,7 +135,7 @@ func (r *siteConfigurationResolver) ID(ctx context.Context) (int32, error) {
 func (r *siteConfigurationResolver) EffectiveContents(ctx context.Context) (JSONCString, error) {
 	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
 	// so only admins may view it.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return "", err
 	}
 	siteConfig := globals.ConfigurationServerFrontendOnly.Raw().Site
@@ -156,7 +158,7 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 }) (bool, error) {
 	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
 	// so only admins may view it.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return false, err
 	}
 	if os.Getenv("SITE_CONFIG_FILE") != "" && !siteConfigAllowEdits {

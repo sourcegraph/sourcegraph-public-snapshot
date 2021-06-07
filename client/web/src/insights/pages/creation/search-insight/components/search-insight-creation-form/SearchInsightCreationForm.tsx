@@ -103,7 +103,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                 <FormInput
                     autoFocus={true}
                     required={true}
-                    description="Separate repositories with comas"
+                    description="Separate repositories with commas"
                     placeholder="Example: github.com/sourcegraph/sourcegraph"
                     loading={repositories.meta.validState === 'CHECKING'}
                     valid={repositories.meta.touched && repositories.meta.validState === 'VALID'}
@@ -228,6 +228,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                     label={submitting ? 'Submitting' : isEditMode ? 'Edit insight' : 'Create code insight'}
                     type="submit"
                     disabled={submitting}
+                    data-testid="insight-save-button"
                     className="btn btn-primary mr-2"
                 />
 

@@ -5,6 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
@@ -28,7 +29,7 @@ func (r *executionLogEntryResolver) DurationMilliseconds() int32 {
 
 func (r *executionLogEntryResolver) Out(ctx context.Context) (string, error) {
 	// 🚨 SECURITY: Only site admins can view executor log contents.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, dbconn.Global); err != nil {
 		if err != backend.ErrMustBeSiteAdmin {
 			return "", err
 		}

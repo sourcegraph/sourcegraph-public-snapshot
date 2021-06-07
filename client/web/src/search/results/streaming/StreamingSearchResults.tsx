@@ -31,7 +31,6 @@ import { PageTitle } from '../../../components/PageTitle'
 import { SavedSearchModal } from '../../../savedSearches/SavedSearchModal'
 import { QueryState, submitSearch } from '../../helpers'
 import { SearchAlert } from '../SearchAlert'
-import { LATEST_VERSION } from '../SearchResults'
 import { SearchResultsInfoBar } from '../SearchResultsInfoBar'
 import { SearchResultTypeTabs } from '../SearchResultTypeTabs'
 import { VersionContextWarning } from '../VersionContextWarning'
@@ -61,6 +60,14 @@ export interface StreamingSearchResultsProps
 
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
+
+/** All values that are valid for the `type:` filter. `null` represents default code search. */
+export type SearchType = 'file' | 'repo' | 'path' | 'symbol' | 'diff' | 'commit' | null
+
+// The latest supported version of our search syntax. Users should never be able to determine the search version.
+// The version is set based on the release tag of the instance. Anything before 3.9.0 will not pass a version parameter,
+// and will therefore default to V1.
+export const LATEST_VERSION = 'V2'
 
 export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResultsProps> = props => {
     const {

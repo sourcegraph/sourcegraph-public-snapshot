@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
@@ -29,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func serveReposGetByName(w http.ResponseWriter, r *http.Request) error {
@@ -157,6 +159,27 @@ func serveConfiguration(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
+func repoRankFromConfig(siteConfig schema.SiteConfiguration, repoName string) float64 {
+	val := 0.0
+	if siteConfig.ExperimentalFeatures == nil || siteConfig.ExperimentalFeatures.Ranking == nil {
+		return val
+	}
+	scores := siteConfig.ExperimentalFeatures.Ranking.RepoScores
+	if len(scores) == 0 {
+		return val
+	}
+	// try every "directory" in the repo name to assign it a value, so a repoName like
+	// "github.com/sourcegraph/zoekt" will have "github.com", "github.com/sourcegraph",
+	// and "github.com/sourcegraph/zoekt" tested.
+	for i := 0; i < len(repoName); i++ {
+		if repoName[i] == '/' {
+			val += scores[repoName[:i]]
+		}
+	}
+	val += scores[repoName]
+	return val
+}
+
 // serveSearchConfiguration is _only_ used by the zoekt index server. Zoekt does
 // not depend on frontend and therefore does not have access to `conf.Watch`.
 // Additionally, it only cares about certain search specific settings so this
@@ -186,8 +209,16 @@ func serveSearchConfiguration(w http.ResponseWriter, r *http.Request) error {
 			return string(commitID), err
 		}
 
+		priority := repoRankFromConfig(siteConfig, repoName)
+		switch m := repo.Metadata.(type) {
+		case *github.Repository:
+			priority += float64(m.StargazerCount)
+		}
+
 		return &searchbackend.RepoIndexOptions{
 			RepoID:     int32(repo.ID),
+			Public:     !repo.Private,
+			Priority:   priority,
 			GetVersion: getVersion,
 		}, nil
 	}

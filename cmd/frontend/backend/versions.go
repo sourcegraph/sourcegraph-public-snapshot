@@ -30,8 +30,22 @@ func (e UpgradeError) Error() string {
 		e.Latest,
 		"https://docs.sourcegraph.com/#upgrading-sourcegraph",
 	)
-
 }
+
+// GetFirstServiceVersion returns the first version registered for the given Sourcegraph service.
+// This method will return an error if UpdateServiceVersion has never been called for the given
+// service.
+func GetFirstServiceVersion(ctx context.Context, service string) (version string, err error) {
+	q := sqlf.Sprintf(getFirstVersionQuery, service)
+	row := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err = row.Scan(&version); err != nil {
+		return "", err
+	}
+
+	return version, nil
+}
+
+const getFirstVersionQuery = `SELECT first_version FROM versions WHERE service = %s`
 
 // UpdateServiceVersion updates the latest version for the given Sourcegraph
 // service. It enforces our documented upgrade policy.

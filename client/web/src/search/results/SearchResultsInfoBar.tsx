@@ -144,7 +144,10 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
         )
     }, [buttonClass, props.authenticatedUser, props.onSaveQueryClick, props.showSavedQueryButton])
 
-    const extraContext = useMemo(() => ({ searchQuery: props.query || null }), [props.query])
+    const extraContext = useMemo(() => ({ searchQuery: props.query || null, patternType: props.patternType }), [
+        props.query,
+        props.patternType,
+    ])
 
     const [showFilters, setShowFilters] = useState(false)
     const onShowFiltersClicked = (): void => {
@@ -208,14 +211,14 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                                 >
                                     {props.allExpanded ? (
                                         isRedesignEnabled ? (
-                                            <ArrowCollapseUpIcon className="icon-inline" />
+                                            <ArrowCollapseUpIcon className="icon-inline mr-0" />
                                         ) : (
-                                            <ArrowCollapseVerticalIcon className="icon-inline" />
+                                            <ArrowCollapseVerticalIcon className="icon-inline mr-0" />
                                         )
                                     ) : isRedesignEnabled ? (
-                                        <ArrowExpandDownIcon className="icon-inline" />
+                                        <ArrowExpandDownIcon className="icon-inline mr-0" />
                                     ) : (
-                                        <ArrowExpandVerticalIcon className="icon-inline" />
+                                        <ArrowExpandVerticalIcon className="icon-inline mr-0" />
                                     )}
                                 </button>
                             </li>

@@ -4,6 +4,13 @@
 .file-diff-node {
     margin-bottom: 1rem;
 
+    &__body {
+        .theme-redesign & {
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+        }
+    }
+
     &__header {
         display: flex;
         align-items: center;
@@ -13,6 +20,9 @@
         // decrease from .card-header
         padding-top: 0.25rem;
         padding-bottom: 0.25rem;
+        .theme-redesign & {
+            padding: 0.25rem 0.5rem;
+        }
 
         &-path-stat {
             display: flex;
@@ -27,6 +37,11 @@
             font-family: $code-font-family;
             color: var(--body-color);
             font-size: $code-font-size;
+            .theme-redesign & {
+                color: var(--link-color);
+                font-family: inherit;
+                font-size: 0.875rem;
+            }
         }
         &-stat {
             margin-right: 0.5rem;

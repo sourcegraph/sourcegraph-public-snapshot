@@ -4,10 +4,14 @@ import React from 'react'
 import { Observable, of } from 'rxjs'
 
 import { WebStory } from '../components/WebStory'
-import { ListSearchContextsResult, Scalars, SearchContextsNamespaceFilterType } from '../graphql-operations'
+import { ListSearchContextsResult } from '../graphql-operations'
 
 import { SearchContextsListTab, SearchContextsListTabProps } from './SearchContextsListTab'
-import { mockFetchAutoDefinedSearchContexts, mockFetchSearchContexts } from './testHelpers'
+import {
+    mockFetchAutoDefinedSearchContexts,
+    mockFetchSearchContexts,
+    mockGetUserSearchContextNamespaces,
+} from './testHelpers'
 
 const { add } = storiesOf('web/searchContexts/SearchContextsListTab', module)
     .addParameters({
@@ -24,6 +28,7 @@ const defaultProps: SearchContextsListTabProps = {
     isSourcegraphDotCom: true,
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
+    getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
 }
 
 const propsWithContexts: SearchContextsListTabProps = {
@@ -31,15 +36,11 @@ const propsWithContexts: SearchContextsListTabProps = {
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(1),
     fetchSearchContexts: ({
         first,
-        namespaceFilterType,
-        namespace,
         query,
         after,
     }: {
         first: number
         query?: string
-        namespace?: Scalars['ID']
-        namespaceFilterType?: SearchContextsNamespaceFilterType
         after?: string
     }): Observable<ListSearchContextsResult['searchContexts']> =>
         of({

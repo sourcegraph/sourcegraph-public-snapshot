@@ -1,7 +1,7 @@
 @import 'wildcard/src/global-styles/breakpoints';
 
 .search-sidebar {
-    padding: 0.5rem 1rem;
+    padding: 0 1rem;
     width: 17.5rem;
     flex-shrink: 0;
 
@@ -27,12 +27,11 @@
             display: flex;
             flex-direction: row;
             flex-wrap: wrap;
-            gap: 1.5rem;
+            column-gap: 1.5rem;
         }
 
         @media (--xs-breakpoint-down) {
-            flex-direction: column;
-            flex-wrap: nowrap;
+            display: block;
         }
     }
 }

@@ -9,8 +9,8 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
-import { PageSelector } from '@sourcegraph/wildcard'
+import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
+import { Container, PageSelector } from '@sourcegraph/wildcard'
 
 import { ALLOW_NAVIGATION, AwayPrompt } from '../../../components/AwayPrompt'
 import {
@@ -25,10 +25,17 @@ import {
     ExternalServicesResult,
     Maybe,
     AffiliatedRepositoriesResult,
+    UserRepositoriesResult,
+    SiteAdminRepositoryFields,
 } from '../../../graphql-operations'
-import { queryUserPublicRepositories, setUserPublicRepositories } from '../../../site-admin/backend'
+import {
+    listUserRepositories,
+    queryUserPublicRepositories,
+    setUserPublicRepositories,
+} from '../../../site-admin/backend'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { UserRepositoriesUpdateProps } from '../../../util'
+import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
+import { externalServiceUserModeFromTags } from '../cloud-ga'
 
 import { CheckboxRepositoryNode } from './RepositoryNode'
 
@@ -38,7 +45,7 @@ interface authenticatedUser {
     tags: string[]
 }
 
-interface Props extends RouteComponentProps, TelemetryProps, UserRepositoriesUpdateProps {
+interface Props extends RouteComponentProps, TelemetryProps, UserExternalServicesOrRepositoriesUpdateProps {
     authenticatedUser: authenticatedUser
     routingPrefix: string
 }
@@ -47,23 +54,28 @@ interface Repo {
     name: string
     codeHost: Maybe<{ kind: ExternalServiceKind; id: string; displayName: string }>
     private: boolean
+    mirrorInfo?: SiteAdminRepositoryFields['mirrorInfo']
 }
 
 interface GitHubConfig {
-    repos: string[]
+    repos?: string[]
+    repositoryQuery?: string[]
     token: 'REDACTED'
     url: string
 }
+
 interface GitLabConfig {
-    projectQuery: string[]
-    projects: { name: string }[]
+    projectQuery?: string[]
+    projects?: { name: string }[]
     token: 'REDACTED'
     url: string
 }
 
 const PER_PAGE = 25
-const SIX_SECONDS = 6000
-const EIGHT_SECONDS = 8000
+
+// project queries that are used when user syncs all repos from a code host
+const GITLAB_SYNC_ALL_PROJECT_QUERY = 'projects?membership=true&archived=no'
+const GITHUB_SYNC_ALL_PROJECT_QUERY = 'affiliated'
 
 // initial state constants
 const emptyRepos: Repo[] = []
@@ -90,16 +102,8 @@ const initialSelectionState = {
     radio: '',
 }
 
-type initialFetchingReposState = undefined | 'loading' | 'slow' | 'slower'
+type initialFetchingReposState = undefined | 'loading'
 type affiliateRepoProblemType = undefined | string | ErrorLike | ErrorLike[]
-
-const isLoading = (status: initialFetchingReposState): boolean => {
-    if (!status) {
-        return false
-    }
-
-    return ['loading', 'slow', 'slower'].includes(status)
-}
 
 const displayWarning = (warning: string, hint?: JSX.Element): JSX.Element => (
     <div key={warning} className="alert alert-warning mt-3 mb-0" role="alert">
@@ -142,18 +146,19 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     authenticatedUser,
     routingPrefix,
     telemetryService,
-    onUserRepositoriesUpdate,
 }) => {
     useEffect(() => {
         telemetryService.logViewEvent('UserSettingsRepositories')
     }, [telemetryService])
 
     // if we should tweak UI messaging and copy
-    const ALLOW_PRIVATE_CODE = authenticatedUser.tags.includes('AllowUserExternalServicePrivate')
+    const ALLOW_PRIVATE_CODE = externalServiceUserModeFromTags(authenticatedUser.tags) === 'all'
+
     // if 'sync all' radio button is enabled and users can sync all repos from code hosts
     const ALLOW_SYNC_ALL = authenticatedUser.tags.includes('AllowUserExternalServiceSyncAll')
 
     // set up state hooks
+    const [isRedesignEnabled] = useRedesignToggle()
     const [repoState, setRepoState] = useState(initialRepoState)
     const [publicRepoState, setPublicRepoState] = useState(initialPublicRepoState)
     const [codeHosts, setCodeHosts] = useState(initialCodeHostState)
@@ -208,6 +213,16 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         [authenticatedUser.id]
     )
 
+    const fetchSelectedRepositories = useCallback(
+        async (): Promise<NonNullable<UserRepositoriesResult['node']>['repositories']['nodes']> =>
+            listUserRepositories({ id: authenticatedUser.id, first: 2000 })
+                .toPromise()
+                .then(({ nodes }) => nodes),
+        [authenticatedUser.id]
+    )
+
+    const getRepoServiceAndName = (repo: Repo): string => `${repo.codeHost?.kind || 'unknown'}/${repo.name}`
+
     const fetchServicesAndAffiliatedRepos = useCallback(async (): Promise<void> => {
         const externalServices = await fetchExternalServices()
 
@@ -227,11 +242,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             hosts: externalServices,
         })
 
-        // list of the repos user selected
-        const selectedAffiliatedRepos: {
-            name: string
-            kind: ExternalServiceKind
-        }[] = []
+        const codeHostsHaveSyncAllQuery = []
 
         // if external services may return code hosts with errors or warnings -
         // we can't safely continue
@@ -259,23 +270,23 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             switch (host.kind) {
                 case ExternalServiceKind.GITLAB: {
                     const gitLabCfg = cfg as GitLabConfig
-                    if (gitLabCfg.projects !== undefined) {
-                        gitLabCfg.projects.map(project => {
-                            selectedAffiliatedRepos.push({ name: project.name, kind: ExternalServiceKind.GITLAB })
-                        })
+
+                    if (Array.isArray(gitLabCfg.projectQuery)) {
+                        codeHostsHaveSyncAllQuery.push(gitLabCfg.projectQuery.includes(GITLAB_SYNC_ALL_PROJECT_QUERY))
                     }
+
                     break
                 }
 
                 case ExternalServiceKind.GITHUB: {
                     const gitHubCfg = cfg as GitHubConfig
-                    if (gitHubCfg.repos !== undefined) {
-                        const selected = gitHubCfg.repos.map(repoName => ({
-                            name: repoName,
-                            kind: ExternalServiceKind.GITHUB,
-                        }))
-                        selectedAffiliatedRepos.push(...selected)
+
+                    if (Array.isArray(gitHubCfg.repositoryQuery)) {
+                        codeHostsHaveSyncAllQuery.push(
+                            gitHubCfg.repositoryQuery.includes(GITHUB_SYNC_ALL_PROJECT_QUERY)
+                        )
                     }
+
                     break
                 }
             }
@@ -285,22 +296,41 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             setAffiliateRepoProblems(codeHostProblems)
         }
 
-        const affiliatedRepos = await fetchAffiliatedRepos()
+        const [affiliatedRepos, selectedRepos] = await Promise.all([
+            fetchAffiliatedRepos(),
+            fetchSelectedRepositories(),
+        ])
 
-        const selectedRepos = new Map<string, Repo>()
+        const selectedAffiliatedRepos = new Map<string, Repo>()
 
-        // create a map of user selected affiliated repos
-        for (const { name, kind } of selectedAffiliatedRepos) {
-            const affiliatedRepo = affiliatedRepos.find(repo => repo.name === name && repo.codeHost?.kind === kind)
-            if (affiliatedRepo) {
-                selectedRepos.set(`${kind}/${name}`, affiliatedRepo)
+        const affiliatedReposWithMirrorInfo = affiliatedRepos.map(affiliatedRepo => {
+            const foundInSelected = selectedRepos.find(
+                ({ name, externalRepository: { serviceType: selectedRepoServiceType } }) => {
+                    // selected repo names formatted: code-host/owner/repository
+                    const selectedRepoName = name.slice(name.indexOf('/') + 1)
+
+                    return (
+                        selectedRepoName === affiliatedRepo.name &&
+                        selectedRepoServiceType === affiliatedRepo.codeHost?.kind.toLocaleLowerCase()
+                    )
+                }
+            )
+
+            if (foundInSelected) {
+                // save off only selected repos
+                selectedAffiliatedRepos.set(getRepoServiceAndName(affiliatedRepo), affiliatedRepo)
+
+                // add mirror info object where it exists - will be used for filters
+                return { ...affiliatedRepo, mirrorInfo: foundInSelected.mirrorInfo }
             }
-        }
+
+            return affiliatedRepo
+        })
 
         // sort affiliated repos with already selected repos at the top
-        affiliatedRepos.sort((repoA, repoB): number => {
-            const isRepoASelected = selectedRepos.has(repoA.name)
-            const isRepoBSelected = selectedRepos.has(repoB.name)
+        affiliatedReposWithMirrorInfo.sort((repoA, repoB): number => {
+            const isRepoASelected = selectedAffiliatedRepos.has(getRepoServiceAndName(repoA))
+            const isRepoBSelected = selectedAffiliatedRepos.has(getRepoServiceAndName(repoB))
 
             if (!isRepoASelected && isRepoBSelected) {
                 return 1
@@ -314,36 +344,39 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         })
 
         // safe off initial selection state
-        setOnloadSelectedRepos(previousValue => [...previousValue, ...selectedRepos.keys()])
+        setOnloadSelectedRepos(previousValue => [...previousValue, ...selectedAffiliatedRepos.keys()])
 
         /**
-         * 1. if the number of all affiliated repos is equal to the number
-         * of the repos in all of the code hosts - set radio to 'all'
-         * 2. if some repos were selected - set radio to 'selected'
-         * 3. no repos selected - empty state
+         * 1. if every code host has a project query to sync all repos or the
+         * number of affiliated repos equals to the number of selected repos -
+         * set radio to 'all'
+         * 2. if only some repos were selected - set radio to 'selected'
+         * 3. if no repos selected - empty state
          */
+
         const radioSelectOption =
             ALLOW_SYNC_ALL &&
-            selectedAffiliatedRepos.length !== 0 &&
-            selectedAffiliatedRepos.length === affiliatedRepos.length
+            ((externalServices.length === codeHostsHaveSyncAllQuery.length &&
+                codeHostsHaveSyncAllQuery.every(Boolean)) ||
+                affiliatedReposWithMirrorInfo.length === selectedAffiliatedRepos.size)
                 ? 'all'
-                : selectedAffiliatedRepos.length > 0
+                : selectedAffiliatedRepos.size > 0
                 ? 'selected'
                 : ''
 
         // set sorted repos and mark as loaded
         setRepoState(previousRepoState => ({
             ...previousRepoState,
-            repos: affiliatedRepos,
+            repos: affiliatedReposWithMirrorInfo,
             loaded: true,
         }))
 
         setSelectionState({
-            repos: selectedRepos,
+            repos: selectedAffiliatedRepos,
             radio: radioSelectOption,
             loaded: true,
         })
-    }, [fetchExternalServices, fetchAffiliatedRepos, ALLOW_SYNC_ALL])
+    }, [fetchExternalServices, fetchAffiliatedRepos, fetchSelectedRepositories, ALLOW_SYNC_ALL])
 
     useEffect(() => {
         fetchServicesAndAffiliatedRepos().catch(error => {
@@ -438,12 +471,10 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 return history.push(routingPrefix + '/repositories', ALLOW_NAVIGATION)
             }
 
-            const syncTimes = new Map<string, string | null>()
             const codeHostRepoPromises = []
 
             for (const host of codeHosts.hosts) {
                 const repos: string[] = []
-                syncTimes.set(host.id, host.lastSyncAt)
                 for (const repo of selectionState.repos.values()) {
                     if (repo.codeHost?.id !== host.id) {
                         continue
@@ -468,59 +499,8 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 return
             }
 
-            const started = Date.now()
-            externalServiceSubscription.current = queryExternalServices({
-                first: null,
-                after: null,
-                namespace: authenticatedUser.id,
-            })
-                .pipe(
-                    repeatUntil(
-                        result => {
-                            // if the background job takes too long we should update the button
-                            // text to indicate we're still working on it.
-
-                            const now = Date.now()
-                            const timeDiff = now - started
-
-                            // setting the same state multiple times won't cause
-                            // re-renders in Function components
-                            if (timeDiff >= SIX_SECONDS + EIGHT_SECONDS) {
-                                setFetchingRepos('slower')
-                            } else if (timeDiff >= SIX_SECONDS) {
-                                setFetchingRepos('slow')
-                            }
-
-                            // if the lastSyncAt has changed for all hosts then we're done
-                            if (
-                                result.nodes.every(
-                                    codeHost =>
-                                        codeHost.lastSyncAt && codeHost.lastSyncAt !== syncTimes.get(codeHost.id)
-                                )
-                            ) {
-                                const repoCount = result.nodes.reduce((sum, codeHost) => sum + codeHost.repoCount, 0)
-                                onUserRepositoriesUpdate(repoCount)
-
-                                // push the user back to the repo list page
-                                // location state is used here to prevent AwayPrompt from blocking
-                                history.push(routingPrefix + '/repositories', ALLOW_NAVIGATION)
-
-                                // cancel the repeatUntil
-                                return true
-                            }
-                            // keep repeating
-                            return false
-                        },
-                        { delay: 2000 }
-                    )
-                )
-                .subscribe(
-                    () => {},
-                    error => setAffiliateRepoProblems(asError(error)),
-                    () => {
-                        externalServiceSubscription.current?.unsubscribe()
-                    }
-                )
+            // location state is used here to prevent AwayPrompt from blocking
+            return history.push(routingPrefix + '/repositories', ALLOW_NAVIGATION)
         },
         [
             publicRepoState.repos,
@@ -529,7 +509,6 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             codeHosts.hosts,
             selectionState.radio,
             selectionState.repos,
-            onUserRepositoriesUpdate,
             history,
             routingPrefix,
         ]
@@ -643,7 +622,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
     const onRepoClicked = useCallback(
         (repo: Repo) => (): void => {
-            const clickedRepo = `${repo.codeHost?.kind || 'unknown'}/${repo.name}`
+            const clickedRepo = getRepoServiceAndName(repo)
             const newMap = new Map(selectionState.repos)
             if (newMap.has(clickedRepo)) {
                 newMap.delete(clickedRepo)
@@ -665,7 +644,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
         if (selectionState.repos.size !== filteredRepos.length) {
             for (const repo of filteredRepos) {
-                newMap.set(`${repo.codeHost?.kind || 'unknown'}/${repo.name}`, repo)
+                newMap.set(getRepoServiceAndName(repo), repo)
             }
         }
         setSelectionState({
@@ -707,8 +686,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     return
                 }
 
-                const serviceType = `${repo.codeHost?.kind || 'unknown'}`
-                const serviceAndRepoName = `${serviceType}/${repo.name}`
+                const serviceAndRepoName = getRepoServiceAndName(repo)
 
                 return (
                     <CheckboxRepositoryNode
@@ -716,7 +694,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                         key={serviceAndRepoName}
                         onClick={onRepoClicked(repo)}
                         checked={selectionState.repos.has(serviceAndRepoName)}
-                        serviceType={serviceType}
+                        serviceType={repo.codeHost?.kind || 'unknown'}
                         isPrivate={repo.private}
                     />
                 )
@@ -751,98 +729,100 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             <p className="text-muted">
                 Choose repositories to sync with Sourcegraph to search code you care about all in one place
             </p>
-            <ul className="list-group">
-                <li className="list-group-item p-0 user-settings-repos__container" key="from-code-hosts">
-                    <div className="p-4">
-                        <h3>Your repositories</h3>
-                        <p className="text-muted">
-                            Repositories you own or collaborate on from your{' '}
-                            <Link className="text-primary" to={`${routingPrefix}/code-hosts`}>
-                                connected code hosts
-                            </Link>
-                        </p>
-                        {!ALLOW_PRIVATE_CODE && hasCodeHosts && (
-                            <div className="alert alert-primary">
-                                Coming soon: search private repositories with Sourcegraph Cloud.{' '}
-                                <Link
-                                    to="https://share.hsforms.com/1copeCYh-R8uVYGCpq3s4nw1n7ku"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                >
-                                    Get updated when this feature launches
+            <Container>
+                <ul className="list-group">
+                    <li className="list-group-item user-settings-repos__container" key="from-code-hosts">
+                        <div className={classNames(!isRedesignEnabled && 'p-4')}>
+                            <h3>Your repositories</h3>
+                            <p className="text-muted">
+                                Repositories you own or collaborate on from your{' '}
+                                <Link className="text-primary" to={`${routingPrefix}/code-hosts`}>
+                                    connected code hosts
                                 </Link>
-                            </div>
-                        )}
-                        {codeHosts.loaded && codeHosts.hosts.length === 0 && (
-                            <div className="alert alert-warning mb-2">
-                                <Link to={`${routingPrefix}/code-hosts`}>Connect with a code host</Link> to add your own
-                                repositories to Sourcegraph.
-                            </div>
-                        )}
-                        {displayAffiliateRepoProblems(affiliateRepoProblems, ExternalServiceProblemHint)}
-
-                        {/* display radio buttons shimmer only when user has code hosts */}
-                        {hasCodeHostsNoErrors && !selectionState.loaded && modeSelectShimmer}
-
-                        {/* display type of repo sync radio buttons */}
-                        {hasCodeHostsNoErrors && selectionState.loaded && modeSelect}
-
-                        {
-                            // if we're in 'selected' mode, show a list of all the repos on the code hosts to select from
-                            hasCodeHostsNoErrors && selectionState.radio === 'selected' && (
-                                <div className="ml-4">
-                                    {filterControls}
-                                    <table role="grid" className="table">
-                                        {
-                                            // if the repos are loaded display the rows of repos
-                                            repoState.loaded && rows
-                                        }
-                                    </table>
-                                    {filteredRepos.length > 0 && (
-                                        <PageSelector
-                                            currentPage={currentPage}
-                                            onPageChange={setPage}
-                                            totalPages={Math.ceil(filteredRepos.length / PER_PAGE)}
-                                            className="pt-4"
-                                        />
-                                    )}
-                                </div>
-                            )
-                        }
-                    </div>
-                </li>
-                {window.context.sourcegraphDotComMode && (
-                    <li className="list-group-item p-0 user-settings-repos__container" key="add-textarea">
-                        <div className="p-4">
-                            <h3>Other public repositories</h3>
-                            <p className="text-muted">Public repositories on GitHub and GitLab</p>
-                            <input
-                                id="add-public-repos"
-                                className="mr-2 mt-2"
-                                type="checkbox"
-                                onChange={toggleTextArea}
-                                checked={publicRepoState.enabled}
-                            />
-                            <label htmlFor="add-public-repos">Sync specific public repositories by URL</label>
-
-                            {publicRepoState.enabled && (
-                                <div className="form-group ml-4 mt-3">
-                                    <p className="mb-2">Repositories to sync</p>
-                                    <textarea
-                                        className="form-control"
-                                        rows={5}
-                                        value={publicRepoState.repos}
-                                        onChange={handlePublicReposChanged}
-                                    />
-                                    <p className="text-muted mt-2">
-                                        Specify with complete URLs. One repository per line.
-                                    </p>
+                            </p>
+                            {!ALLOW_PRIVATE_CODE && hasCodeHosts && (
+                                <div className="alert alert-primary">
+                                    Coming soon: search private repositories with Sourcegraph Cloud.{' '}
+                                    <Link
+                                        to="https://share.hsforms.com/1copeCYh-R8uVYGCpq3s4nw1n7ku"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        Get updated when this feature launches
+                                    </Link>
                                 </div>
                             )}
+                            {codeHosts.loaded && codeHosts.hosts.length === 0 && (
+                                <div className="alert alert-warning mb-2">
+                                    <Link to={`${routingPrefix}/code-hosts`}>Connect with a code host</Link> to add your
+                                    own repositories to Sourcegraph.
+                                </div>
+                            )}
+                            {displayAffiliateRepoProblems(affiliateRepoProblems, ExternalServiceProblemHint)}
+
+                            {/* display radio buttons shimmer only when user has code hosts */}
+                            {hasCodeHostsNoErrors && !selectionState.loaded && modeSelectShimmer}
+
+                            {/* display type of repo sync radio buttons */}
+                            {hasCodeHostsNoErrors && selectionState.loaded && modeSelect}
+
+                            {
+                                // if we're in 'selected' mode, show a list of all the repos on the code hosts to select from
+                                hasCodeHostsNoErrors && selectionState.radio === 'selected' && (
+                                    <div className="ml-4">
+                                        {filterControls}
+                                        <table role="grid" className="table">
+                                            {
+                                                // if the repos are loaded display the rows of repos
+                                                repoState.loaded && rows
+                                            }
+                                        </table>
+                                        {filteredRepos.length > 0 && (
+                                            <PageSelector
+                                                currentPage={currentPage}
+                                                onPageChange={setPage}
+                                                totalPages={Math.ceil(filteredRepos.length / PER_PAGE)}
+                                                className="pt-4"
+                                            />
+                                        )}
+                                    </div>
+                                )
+                            }
                         </div>
                     </li>
-                )}
-            </ul>
+                    {window.context.sourcegraphDotComMode && (
+                        <li className="list-group-item user-settings-repos__container" key="add-textarea">
+                            <div className={classNames(!isRedesignEnabled && 'p-4')}>
+                                <h3>Other public repositories</h3>
+                                <p className="text-muted">Public repositories on GitHub and GitLab</p>
+                                <input
+                                    id="add-public-repos"
+                                    className="mr-2 mt-2"
+                                    type="checkbox"
+                                    onChange={toggleTextArea}
+                                    checked={publicRepoState.enabled}
+                                />
+                                <label htmlFor="add-public-repos">Sync specific public repositories by URL</label>
+
+                                {publicRepoState.enabled && (
+                                    <div className="form-group ml-4 mt-3">
+                                        <p className="mb-2">Repositories to sync</p>
+                                        <textarea
+                                            className="form-control"
+                                            rows={5}
+                                            value={publicRepoState.repos}
+                                            onChange={handlePublicReposChanged}
+                                        />
+                                        <p className="text-muted mt-2">
+                                            Specify with complete URLs. One repository per line.
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        </li>
+                    )}
+                </ul>
+            </Container>
             {isErrorLike(otherPublicRepoError) && displayError(otherPublicRepoError)}
             <AwayPrompt
                 header="Discard unsaved changes?"
@@ -852,17 +832,12 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             />
             <Form className="mt-4 d-flex" onSubmit={submit}>
                 <LoaderButton
-                    loading={isLoading(fetchingRepos)}
+                    loading={fetchingRepos === 'loading'}
                     className="btn btn-primary test-goto-add-external-service-page mr-2"
                     alwaysShowLabel={true}
                     type="submit"
-                    label={
-                        (!fetchingRepos && 'Save') ||
-                        (fetchingRepos === 'loading' && 'Saving...') ||
-                        (fetchingRepos === 'slow' && 'Still saving...') ||
-                        'Any time now...'
-                    }
-                    disabled={isLoading(fetchingRepos)}
+                    label={fetchingRepos ? 'Saving...' : 'Save'}
+                    disabled={fetchingRepos === 'loading'}
                 />
 
                 <Link

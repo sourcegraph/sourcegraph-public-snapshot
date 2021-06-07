@@ -131,7 +131,7 @@ func (s BitbucketCloudSource) makeRepo(r *bitbucketcloud.Repo) *types.Repo {
 // remoteURL returns the repository's Git remote URL
 //
 // note: this used to contain credentials but that is no longer the case
-// if you need to get an authenticated clone url use types.RepoCloneURL
+// if you need to get an authenticated clone url use repos.CloneURL
 func (s *BitbucketCloudSource) remoteURL(repo *bitbucketcloud.Repo) string {
 	if s.config.GitURLType == "ssh" {
 		return fmt.Sprintf("git@%s:%s.git", s.config.Url, repo.FullName)

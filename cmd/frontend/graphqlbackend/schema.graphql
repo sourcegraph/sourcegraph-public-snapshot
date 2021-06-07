@@ -997,6 +997,10 @@ type Query {
         """
         notIndexed: Boolean = true
         """
+        Include repositories that have encountered errors when cloning or fetching
+        """
+        failedFetch: Boolean = false
+        """
         Sort field.
         """
         orderBy: RepositoryOrderBy = REPOSITORY_NAME
@@ -1186,15 +1190,13 @@ type Query {
         """
         query: String
         """
-        Specifies the filter type used to narrow down the search contexts using their namespaces. If not set,
-        search contexts are not filtered by namespace.
+        Include search contexts matching the provided namespaces. A union of all matching search contexts is returned.
+        ID can either be a user ID, org ID, or nil to match instance-level contexts. Empty namespaces list
+        defaults to returning all available search contexts.
+        Example: `namespaces: [user1, org1, org2, nil]` will return search contexts created by user1 + contexts
+        created by org1 + contexts created by org2 + all instance-level contexts.
         """
-        namespaceFilterType: SearchContextsNamespaceFilterType
-        """
-        Limit search contexts to a specific namespace (user or org). Namespace parameter has to be set if namespaceFilterType is set to NAMESPACE.
-        If namespaceFilterType is INSTANCE or not set, namespace should not be set.
-        """
-        namespace: ID
+        namespaces: [ID] = []
         """
         Sort field.
         """
@@ -1306,7 +1308,9 @@ type OutOfBandMigration implements Node {
     description: String!
 
     """
-    The Sourcegraph version in which this migration was introduced.
+    The Sourcegraph version in which this migration was introduced. The format of this version
+    includes only major and minor parts separated by a dot. The patch version can always be assumed
+    to be zero as we'll never introduce or deprecate an out-of-band migration within a patch release.
 
     It is necessary to completely this migration in reverse (if destructive) before downgrading
     to or past this version. Otherwise, the previous instance version will not be aware of the
@@ -1315,7 +1319,8 @@ type OutOfBandMigration implements Node {
     introduced: String!
 
     """
-    The Sourcegraph version in which this migration is assumed to have completed.
+    The Sourcegraph version by which this migration is assumed to have completed. The format of
+    this version mirrors introduced and includes only major and minor parts separated by a dot.
 
     It is necessary to have completed this migration before upgrading to or past this version.
     Otherwsie, the next instance version will no longer be aware of the old data format.
@@ -1671,7 +1676,7 @@ type Language {
 """
 A search suggestion.
 """
-union SearchSuggestion = Repository | File | Symbol | Language
+union SearchSuggestion = Repository | File | Symbol | Language | SearchContext
 
 """
 A search-related alert message.
@@ -2377,20 +2382,6 @@ type VersionContext {
     The description of the version context.
     """
     description: String!
-}
-
-"""
-(experimental) Search context namespace filter types available to narrow down contexts when querying.
-"""
-enum SearchContextsNamespaceFilterType {
-    """
-    Limits available search contexts to instance-level contexts (without a namespace).
-    """
-    INSTANCE
-    """
-    Limits available search contexts to a specific namespace (user or org).
-    """
-    NAMESPACE
 }
 
 """
@@ -3508,6 +3499,10 @@ type GitCommit implements Node {
         """
         recursive: Boolean = false
     ): GitTree
+    """
+    A list of file names in this repository.
+    """
+    fileNames: [String!]!
     """
     The Git blob in this commit at the given path.
     """

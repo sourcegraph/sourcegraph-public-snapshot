@@ -15,7 +15,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -153,7 +153,8 @@ func TestUserCredential_SetAuthenticator(t *testing.T) {
 }
 
 func TestUserCredentials_CreateUpdate(t *testing.T) {
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx, key, user := setUpUserCredentialTest(t, db)
 
 	// Versions of Go before 1.14.x (where 3 < x < 11) cannot diff *big.Int
@@ -240,7 +241,8 @@ func TestUserCredentials_CreateUpdate(t *testing.T) {
 }
 
 func TestUserCredentials_Delete(t *testing.T) {
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx, key, user := setUpUserCredentialTest(t, db)
 
 	t.Run("nonextant", func(t *testing.T) {
@@ -284,7 +286,8 @@ func TestUserCredentials_Delete(t *testing.T) {
 }
 
 func TestUserCredentials_GetByID(t *testing.T) {
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx, key, user := setUpUserCredentialTest(t, db)
 
 	t.Run("nonextant", func(t *testing.T) {
@@ -330,7 +333,8 @@ func TestUserCredentials_GetByID(t *testing.T) {
 }
 
 func TestUserCredentials_GetByScope(t *testing.T) {
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx, key, user := setUpUserCredentialTest(t, db)
 
 	scope := UserCredentialScope{
@@ -376,7 +380,8 @@ func TestUserCredentials_GetByScope(t *testing.T) {
 }
 
 func TestUserCredentials_List(t *testing.T) {
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx, key, user := setUpUserCredentialTest(t, db)
 
 	githubScope := UserCredentialScope{
@@ -513,7 +518,8 @@ func TestUserCredentials_List(t *testing.T) {
 }
 
 func TestUserCredentials_Invalid(t *testing.T) {
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
 	ctx, key, user := setUpUserCredentialTest(t, db)
 
 	t.Run("marshal", func(t *testing.T) {

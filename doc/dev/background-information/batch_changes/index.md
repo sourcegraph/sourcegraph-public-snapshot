@@ -4,7 +4,7 @@
 
 Welcome, new batch change developer! This section will give you a rough overview of what Batch Changes is and how it works.
 
-> NOTE: Never hesitate to ask in [`#batch-changes-team`](https://sourcegraph.slack.com/archives/C01LJ9DK8ES) for help!
+> NOTE: Never hesitate to ask in [`#batch-changes-internal`](https://sourcegraph.slack.com/archives/C01LJ9DK8ES) for help!
 
 ### What are batch changes?
 

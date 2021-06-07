@@ -19,8 +19,8 @@ type Migration struct {
 	Team           string
 	Component      string
 	Description    string
-	Introduced     string
-	Deprecated     *string
+	Introduced     Version
+	Deprecated     *Version
 	Progress       float64
 	Created        time.Time
 	LastUpdated    *time.Time
@@ -60,6 +60,7 @@ func scanMigrations(rows *sql.Rows, queryErr error) (_ []Migration, err error) {
 	for rows.Next() {
 		var message string
 		var created *time.Time
+		var deprecatedMajor, deprecatedMinor *int
 		value := Migration{Errors: []MigrationError{}}
 
 		if err := rows.Scan(
@@ -67,8 +68,10 @@ func scanMigrations(rows *sql.Rows, queryErr error) (_ []Migration, err error) {
 			&value.Team,
 			&value.Component,
 			&value.Description,
-			&value.Introduced,
-			&value.Deprecated,
+			&value.Introduced.Major,
+			&value.Introduced.Minor,
+			&deprecatedMajor,
+			&deprecatedMinor,
 			&value.Progress,
 			&value.Created,
 			&value.LastUpdated,
@@ -85,6 +88,13 @@ func scanMigrations(rows *sql.Rows, queryErr error) (_ []Migration, err error) {
 				Message: message,
 				Created: *created,
 			})
+		}
+
+		if deprecatedMajor != nil && deprecatedMinor != nil {
+			value.Deprecated = &Version{
+				Major: *deprecatedMajor,
+				Minor: *deprecatedMinor,
+			}
 		}
 
 		if n := len(values); n > 0 && values[n-1].ID == value.ID {
@@ -150,8 +160,10 @@ SELECT
 	m.team,
 	m.component,
 	m.description,
-	m.introduced,
-	m.deprecated,
+	m.introduced_version_major,
+	m.introduced_version_minor,
+	m.deprecated_version_major,
+	m.deprecated_version_minor,
 	m.progress,
 	m.created,
 	m.last_updated,
@@ -165,9 +177,22 @@ WHERE m.id = %s
 ORDER BY e.created desc
 `
 
+// ReturnEnterpriseMigrations is set by the enterprise application to enable the
+// inclusion of enterprise-only migration records in the output of oobmigration.List.
+var ReturnEnterpriseMigrations = false
+
 // List returns the complete list of out-of-band migrations.
 func (s *Store) List(ctx context.Context) (_ []Migration, err error) {
-	return scanMigrations(s.Store.Query(ctx, sqlf.Sprintf(listQuery)))
+	var conds []*sqlf.Query
+	if !ReturnEnterpriseMigrations {
+		conds = append(conds, sqlf.Sprintf("NOT m.is_enterprise"))
+	}
+
+	if len(conds) == 0 {
+		conds = append(conds, sqlf.Sprintf("TRUE"))
+	}
+
+	return scanMigrations(s.Store.Query(ctx, sqlf.Sprintf(listQuery, sqlf.Join(conds, "AND"))))
 }
 
 const listQuery = `
@@ -177,8 +202,10 @@ SELECT
 	m.team,
 	m.component,
 	m.description,
-	m.introduced,
-	m.deprecated,
+	m.introduced_version_major,
+	m.introduced_version_minor,
+	m.deprecated_version_major,
+	m.deprecated_version_minor,
 	m.progress,
 	m.created,
 	m.last_updated,
@@ -188,6 +215,7 @@ SELECT
 	e.created
 FROM out_of_band_migrations m
 LEFT JOIN out_of_band_migrations_errors e ON e.migration_id = m.id
+WHERE %s
 ORDER BY m.id desc, e.created desc
 `
 

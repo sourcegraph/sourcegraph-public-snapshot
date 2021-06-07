@@ -7,13 +7,15 @@ import { Progress } from '../../../stream'
 
 import { StreamingProgress } from './StreamingProgress'
 
-const { add } = storiesOf('web/search/results/streaming/progress/StreamingProgress', module).addParameters({
-    design: {
-        type: 'figma',
-        url: 'https://www.figma.com/file/IyiXZIbPHK447NCXov0AvK/13928-Streaming-search?node-id=280%3A17768',
-    },
-    chromatic: { viewports: [1200] },
-})
+const { add } = storiesOf('web/search/results/streaming/progress/StreamingProgress', module)
+    .addParameters({
+        design: {
+            type: 'figma',
+            url: 'https://www.figma.com/file/IyiXZIbPHK447NCXov0AvK/13928-Streaming-search?node-id=280%3A17768',
+        },
+        chromatic: { viewports: [1200] },
+    })
+    .addDecorator(story => <div className="d-flex align-items-center">{story()}</div>)
 
 const onSearchAgain = sinon.spy()
 

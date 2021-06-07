@@ -17,21 +17,6 @@ if (isChromatic()) {
         addStory({
             storeItem,
             isDarkModeEnabled: true,
-            isRedesignEnabled: false,
-        })
-
-        // Redesign theme + Light mode.
-        addStory({
-            storeItem,
-            isDarkModeEnabled: false,
-            isRedesignEnabled: true,
-        })
-
-        // Redesign theme + Dark mode.
-        addStory({
-            storeItem,
-            isDarkModeEnabled: true,
-            isRedesignEnabled: true,
         })
     }
 }

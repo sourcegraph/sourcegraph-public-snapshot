@@ -53,6 +53,7 @@ type LSIFUploadResolver interface {
 	FinishedAt() *DateTime
 	InputIndexer() string
 	PlaceInQueue() *int32
+	AssociatedIndex(ctx context.Context) (LSIFIndexResolver, error)
 	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
 }
 
@@ -86,6 +87,7 @@ type LSIFIndexResolver interface {
 	FinishedAt() *DateTime
 	Steps() IndexStepsResolver
 	PlaceInQueue() *int32
+	AssociatedUpload(ctx context.Context) (LSIFUploadResolver, error)
 	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
 }
 

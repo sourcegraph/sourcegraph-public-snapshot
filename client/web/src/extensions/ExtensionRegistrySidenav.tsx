@@ -4,6 +4,8 @@ import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reac
 
 import { EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
 
+import { SidebarGroup, SidebarGroupHeader, SidebarGroupItems } from '../components/Sidebar'
+
 import { ExtensionCategoryOrAll, ExtensionsEnablement } from './ExtensionRegistry'
 import styles from './ExtensionRegistrySidenav.module.scss'
 import { extensionBannerIconURL } from './icons'
@@ -49,24 +51,25 @@ export const ExtensionRegistrySidenav: React.FunctionComponent<
 
     return (
         <div className={classnames(styles.column, 'mr-4 flex-grow-0 flex-shrink-0')}>
-            <div className="d-flex flex-column">
-                <h3 className={classnames(styles.header, 'mb-3')}>Categories</h3>
-
-                {['All' as const, ...EXTENSION_CATEGORIES].map(category => (
-                    <button
-                        type="button"
-                        className={classnames(
-                            'btn text-left',
-                            selectedCategory === category ? 'btn-primary' : styles.inactiveCategory
-                        )}
-                        data-test-extension-category={category}
-                        key={category}
-                        onClick={() => onSelectCategory(category)}
-                    >
-                        {category}
-                    </button>
-                ))}
-            </div>
+            <SidebarGroup>
+                <SidebarGroupHeader label="Categories" />
+                <SidebarGroupItems>
+                    {['All' as const, ...EXTENSION_CATEGORIES].map(category => (
+                        <button
+                            type="button"
+                            className={classnames(
+                                'btn text-left sidebar__link--inactive d-flex sidebar-nav-link w-100',
+                                selectedCategory === category && 'btn-primary'
+                            )}
+                            data-test-extension-category={category}
+                            key={category}
+                            onClick={() => onSelectCategory(category)}
+                        >
+                            {category}
+                        </button>
+                    ))}
+                </SidebarGroupItems>
+            </SidebarGroup>
 
             <hr className={classnames('my-3', styles.divider)} />
 

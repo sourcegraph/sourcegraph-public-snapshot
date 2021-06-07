@@ -6,6 +6,7 @@ import React, { useCallback, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Observable, of, timer } from 'rxjs'
 import { catchError, concatMap, delay, map, repeatWhen, takeWhile } from 'rxjs/operators'
+import { parse as _parseVersion, SemVer } from 'semver'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -165,22 +166,20 @@ const MigrationBanners: React.FunctionComponent<MigrationBannersProps> = ({
     fetchSiteUpdateCheck = defaultFetchSiteUpdateCheck,
 }) => {
     const productVersion = useObservable(
-        useMemo(() => fetchSiteUpdateCheck().pipe(map(site => extract(site.productVersion))), [fetchSiteUpdateCheck])
+        useMemo(() => fetchSiteUpdateCheck().pipe(map(site => parseVersion(site.productVersion))), [
+            fetchSiteUpdateCheck,
+        ])
     )
-
     if (!productVersion) {
         return <></>
     }
 
+    const nextVersion = parseVersion(`${productVersion.major}.${productVersion.minor + UPGRADE_RANGE}.0`)
+    const previousVersion = parseVersion(`${productVersion.major}.${productVersion.minor - DOWNGRADE_RANGE}.0`)
+
     const invalidMigrations = migrationsInvalidForVersion(migrations, productVersion)
-    const invalidMigrationsAfterUpgrade = migrationsInvalidForVersion(
-        migrations,
-        bumpMinor(productVersion, UPGRADE_RANGE)
-    )
-    const invalidMigrationsAfterDowngrade = migrationsInvalidForVersion(
-        migrations,
-        bumpMinor(productVersion, -DOWNGRADE_RANGE)
-    )
+    const invalidMigrationsAfterUpgrade = migrationsInvalidForVersion(migrations, nextVersion)
+    const invalidMigrationsAfterDowngrade = migrationsInvalidForVersion(migrations, previousVersion)
 
     if (invalidMigrations.length > 0) {
         return <MigrationInvalidBanner migrations={invalidMigrations} />
@@ -274,7 +273,7 @@ interface MigrationNodeProps {
 }
 
 const MigrationNode: React.FunctionComponent<MigrationNodeProps> = ({ node, now }) => (
-    <>
+    <React.Fragment key={node.id}>
         <span className="site-admin-migration-node__separator" />
 
         <div className="d-flex flex-column site-admin-migration-node__information">
@@ -351,56 +350,51 @@ const MigrationNode: React.FunctionComponent<MigrationNodeProps> = ({ node, now 
                 defaultExpanded={false}
             >
                 <div className="pt-2 site-admin-migration-node-errors__grid">
-                    {node.errors.map(error => (
-                        <>
-                            <div className="py-1 pr-2">
-                                <Timestamp date={error.created} now={now} />
-                            </div>
+                    {node.errors
+                        .map((error, index) => ({ ...error, index }))
+                        .map(error => (
+                            <React.Fragment key={error.index}>
+                                <div className="py-1 pr-2">
+                                    <Timestamp date={error.created} now={now} />
+                                </div>
 
-                            <span className="py-1 pl-2 site-admin-migration-node-errors__grid-code">
-                                <code>{error.message}</code>
-                            </span>
-                        </>
-                    ))}
+                                <span className="py-1 pl-2 site-admin-migration-node-errors__grid-code">
+                                    <code>{error.message}</code>
+                                </span>
+                            </React.Fragment>
+                        ))}
                 </div>
             </Collapsible>
         )}
-    </>
+    </React.Fragment>
 )
 
-/** A major.minor representation of a Sourcegraph version. */
-interface Version {
-    major: number
-    minor: number
-}
+type PartialVersion = SemVer | null
 
-/**
- * Extract the major and minor semver numbers from the given version string.
- *
- * We do not use the semver package here because we want to parse only the major.minor
- * prefix, and semver does not allow us to parse invalid (patch-less) version strings.
- */
-const extract = (version: string): Version | undefined => {
-    const match = version.match(/^(\d+)\.(\d+)/)
-    if (!match) {
-        return undefined
+/** Parse the given version safely. */
+const parseVersion = (version: string): PartialVersion => {
+    try {
+        return _parseVersion(version)
+    } catch {
+        return null
     }
-
-    return { major: parseInt(match[1], 10), minor: parseInt(match[2], 10) }
 }
-
-/** Return a copy of the given version with the minor value bumped by delta. */
-const bumpMinor = (version: Version, delta: number): Version => ({ major: version.major, minor: version.minor + delta })
 
 /** Returns true if the given migration state is invalid for the given version. */
-export const isInvalidForVersion = (migration: OutOfBandMigrationFields, version: Version): boolean => {
-    const introduced = extract(migration.introduced)
+export const isInvalidForVersion = (migration: OutOfBandMigrationFields, version: PartialVersion): boolean => {
+    if (!version) {
+        return false
+    }
+
+    // Migrations only store major/minor version components
+    const introduced = parseVersion(`${migration.introduced}.0`)
     if (introduced && version.major === introduced.major && version.minor < introduced.minor) {
         return migration.progress !== 0 && !migration.nonDestructive
     }
 
     if (migration.deprecated) {
-        const deprecated = extract(migration.deprecated)
+        // Migrations only store major/minor version components
+        const deprecated = parseVersion(`${migration.deprecated}.0`)
         if (deprecated && version.major === deprecated.major && version.minor >= deprecated.minor) {
             return migration.progress !== 1
         }
@@ -412,7 +406,7 @@ export const isInvalidForVersion = (migration: OutOfBandMigrationFields, version
 /** Returns the set of migrations that are invalid for the given version. */
 const migrationsInvalidForVersion = (
     migrations: OutOfBandMigrationFields[],
-    version: Version
+    version: PartialVersion
 ): OutOfBandMigrationFields[] => migrations.filter(migration => isInvalidForVersion(migration, version))
 
 /** Returns true if the given migration is has completed (100% if forward, 0% if reverse). */

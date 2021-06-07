@@ -8,6 +8,10 @@
     .theme-redesign & {
         border: none;
         margin-right: 1rem;
+
+        &:not(:last-of-type) {
+            margin-bottom: 0.5rem;
+        }
     }
 
     &__header {
@@ -46,6 +50,10 @@
         .theme-redesign & {
             background-color: transparent;
             padding: 0.5rem 0;
+
+            &-description {
+                line-height: (14/11);
+            }
 
             &:not(:only-of-type) {
                 border-bottom: none;

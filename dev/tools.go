@@ -10,7 +10,7 @@ import (
 	_ "github.com/google/zoekt/cmd/zoekt-webserver"
 
 	// go-mockgen is used to codegen mockable interfaces, used in precise code intel tests
-	_ "github.com/efritz/go-mockgen"
+	_ "github.com/derision-test/go-mockgen/cmd/go-mockgen"
 
 	// used in schema pkg
 	_ "github.com/sourcegraph/go-jsonschema/cmd/go-jsonschema-compiler"

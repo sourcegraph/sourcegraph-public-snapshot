@@ -30,7 +30,7 @@ import { BreadcrumbSetters } from '../components/Breadcrumbs'
 import { HeroPage } from '../components/HeroPage'
 import { ActionItemsBarProps } from '../extensions/components/ActionItemsBar'
 import { RepositoryFields } from '../graphql-operations'
-import { PatternTypeProps, CaseSensitivityProps, CopyQueryButtonProps, SearchContextProps } from '../search'
+import { PatternTypeProps, CaseSensitivityProps, SearchContextProps } from '../search'
 import { RouteDescriptor } from '../util/contributions'
 
 import { CopyLinkAction } from './actions/CopyLinkAction'
@@ -57,7 +57,6 @@ export interface RepoRevisionContainerContext
         Omit<RepoContainerContext, 'onDidUpdateExternalLinks'>,
         PatternTypeProps,
         CaseSensitivityProps,
-        CopyQueryButtonProps,
         VersionContextProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         RevisionSpec,
@@ -87,7 +86,6 @@ interface RepoRevisionContainerProps
         ActivationProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        CopyQueryButtonProps,
         VersionContextProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         RevisionSpec,
@@ -134,7 +132,6 @@ const RepoRevisionContainerBreadcrumb: React.FunctionComponent<RepoRevisionBread
                 id="repo-revision-popover"
                 aria-label="Change revision"
             >
-                @{' '}
                 {(revision && revision === resolvedRevisionOrError.commitID
                     ? resolvedRevisionOrError.commitID.slice(0, 7)
                     : revision) ||
@@ -223,7 +220,6 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
     useBreadcrumb,
     ...props
 }) => {
-    const [isRedesignEnabled] = useRedesignToggle()
     const breadcrumbSetters = useBreadcrumb(
         useMemo(() => {
             if (!props.resolvedRevisionOrError || isErrorLike(props.resolvedRevisionOrError)) {
@@ -232,7 +228,7 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
 
             return {
                 key: 'revision',
-                divider: isRedesignEnabled ? null : <span className="mr-1">@</span>,
+                divider: <span className="repo-revision-container__divider">@</span>,
                 element: (
                     <RepoRevisionContainerBreadcrumb
                         resolvedRevisionOrError={props.resolvedRevisionOrError}
@@ -243,14 +239,7 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
                     />
                 ),
             }
-        }, [
-            props.resolvedRevisionOrError,
-            props.revision,
-            props.repo,
-            props.history,
-            props.location,
-            isRedesignEnabled,
-        ])
+        }, [props.resolvedRevisionOrError, props.revision, props.repo, props.history, props.location])
     )
 
     if (!props.resolvedRevisionOrError) {

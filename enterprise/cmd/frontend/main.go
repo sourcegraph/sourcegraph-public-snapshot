@@ -32,6 +32,10 @@ func main() {
 	shared.Main(enterpriseSetupHook)
 }
 
+func init() {
+	oobmigration.ReturnEnterpriseMigrations = true
+}
+
 var initFunctions = map[string]func(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services) error{
 	"authz":        authz.Init,
 	"licensing":    licensing.Init,

@@ -137,7 +137,7 @@ func (r *schemaResolver) SendSavedSearchTestNotification(ctx context.Context, ar
 	ID graphql.ID
 }) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only site admins should be able to send test notifications.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 	id, err := unmarshalSavedSearchID(args.ID)
@@ -169,7 +169,7 @@ func (r *schemaResolver) CreateSavedSearch(ctx context.Context, args *struct {
 			return nil, err
 		}
 		userID = &u
-		if err := backend.CheckSiteAdminOrSameUser(ctx, u); err != nil {
+		if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, u); err != nil {
 			return nil, err
 		}
 	} else if args.OrgID != nil {
@@ -221,7 +221,7 @@ func (r *schemaResolver) UpdateSavedSearch(ctx context.Context, args *struct {
 			return nil, err
 		}
 		userID = &u
-		if err := backend.CheckSiteAdminOrSameUser(ctx, u); err != nil {
+		if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, u); err != nil {
 			return nil, err
 		}
 	} else if args.OrgID != nil {
@@ -275,7 +275,7 @@ func (r *schemaResolver) DeleteSavedSearch(ctx context.Context, args *struct {
 	}
 	// 🚨 SECURITY: Make sure the current user has permission to delete a saved search for the specified user or org.
 	if ss.Config.UserID != nil {
-		if err := backend.CheckSiteAdminOrSameUser(ctx, *ss.Config.UserID); err != nil {
+		if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, *ss.Config.UserID); err != nil {
 			return nil, err
 		}
 	} else if ss.Config.OrgID != nil {

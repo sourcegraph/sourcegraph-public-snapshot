@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"sync"
 	"sync/atomic"
@@ -21,6 +22,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -64,7 +67,7 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 		}()
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := (&Resolver{}).SetRepositoryPermissionsForUsers(ctx, &graphqlbackend.RepoPermsArgs{})
+		result, err := (&Resolver{store: &edb.PermsStore{Store: basestore.NewWithDB(nil, sql.TxOptions{})}}).SetRepositoryPermissionsForUsers(ctx, &graphqlbackend.RepoPermsArgs{})
 		if want := backend.ErrMustBeSiteAdmin; err != want {
 			t.Errorf("err: want %q but got %v", want, err)
 		}
@@ -212,6 +215,8 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 }
 
 func TestResolver_ScheduleRepositoryPermissionsSync(t *testing.T) {
+	db := dbtest.NewDB(t, "")
+
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
 			return &types.User{}, nil
@@ -221,7 +226,7 @@ func TestResolver_ScheduleRepositoryPermissionsSync(t *testing.T) {
 		})
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := (&Resolver{}).ScheduleRepositoryPermissionsSync(ctx, &graphqlbackend.RepositoryIDArgs{})
+		result, err := (&Resolver{store: edb.Perms(db, timeutil.Now)}).ScheduleRepositoryPermissionsSync(ctx, &graphqlbackend.RepositoryIDArgs{})
 		if want := backend.ErrMustBeSiteAdmin; err != want {
 			t.Errorf("err: want %q but got %v", want, err)
 		}
@@ -238,6 +243,7 @@ func TestResolver_ScheduleRepositoryPermissionsSync(t *testing.T) {
 	})
 
 	r := &Resolver{
+		store: edb.Perms(db, timeutil.Now),
 		repoupdaterClient: &fakeRepoupdaterClient{
 			mockSchedulePermsSync: func(ctx context.Context, args protocol.PermsSyncRequest) error {
 				if len(args.RepoIDs) != 1 {
@@ -256,6 +262,8 @@ func TestResolver_ScheduleRepositoryPermissionsSync(t *testing.T) {
 }
 
 func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
+	db := dbtest.NewDB(t, "")
+
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
 			return &types.User{}, nil
@@ -265,7 +273,7 @@ func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
 		})
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := (&Resolver{}).ScheduleUserPermissionsSync(ctx, &graphqlbackend.UserIDArgs{})
+		result, err := (&Resolver{store: edb.Perms(db, timeutil.Now)}).ScheduleUserPermissionsSync(ctx, &graphqlbackend.UserIDArgs{})
 		if want := backend.ErrMustBeSiteAdmin; err != want {
 			t.Errorf("err: want %q but got %v", want, err)
 		}
@@ -282,6 +290,7 @@ func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
 	})
 
 	r := &Resolver{
+		store: edb.Perms(db, timeutil.Now),
 		repoupdaterClient: &fakeRepoupdaterClient{
 			mockSchedulePermsSync: func(ctx context.Context, args protocol.PermsSyncRequest) error {
 				if len(args.UserIDs) != 1 {
@@ -308,6 +317,8 @@ func (c *fakeRepoupdaterClient) SchedulePermsSync(ctx context.Context, args prot
 }
 
 func TestResolver_AuthorizedUserRepositories(t *testing.T) {
+	db := dbtest.NewDB(t, "")
+
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
 			return &types.User{}, nil
@@ -317,7 +328,7 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 		}()
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := (&Resolver{}).AuthorizedUserRepositories(ctx, &graphqlbackend.AuthorizedRepoArgs{})
+		result, err := (&Resolver{store: edb.Perms(db, timeutil.Now)}).AuthorizedUserRepositories(ctx, &graphqlbackend.AuthorizedRepoArgs{})
 		if want := backend.ErrMustBeSiteAdmin; err != want {
 			t.Errorf("err: want %q but got %v", want, err)
 		}
@@ -488,6 +499,8 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 }
 
 func TestResolver_UsersWithPendingPermissions(t *testing.T) {
+	db := dbtest.NewDB(t, "")
+
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
 			return &types.User{}, nil
@@ -497,7 +510,7 @@ func TestResolver_UsersWithPendingPermissions(t *testing.T) {
 		}()
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := (&Resolver{}).UsersWithPendingPermissions(ctx)
+		result, err := (&Resolver{store: edb.Perms(db, timeutil.Now)}).UsersWithPendingPermissions(ctx)
 		if want := backend.ErrMustBeSiteAdmin; err != want {
 			t.Errorf("err: want %q but got %v", want, err)
 		}
@@ -551,6 +564,8 @@ func TestResolver_UsersWithPendingPermissions(t *testing.T) {
 }
 
 func TestResolver_AuthorizedUsers(t *testing.T) {
+	db := dbtest.NewDB(t, "")
+
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
 			return &types.User{}, nil
@@ -560,7 +575,7 @@ func TestResolver_AuthorizedUsers(t *testing.T) {
 		}()
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := (&Resolver{}).AuthorizedUsers(ctx, &graphqlbackend.RepoAuthorizedUserArgs{})
+		result, err := (&Resolver{store: edb.Perms(db, timeutil.Now)}).AuthorizedUsers(ctx, &graphqlbackend.RepoAuthorizedUserArgs{})
 		if want := backend.ErrMustBeSiteAdmin; err != want {
 			t.Errorf("err: want %q but got %v", want, err)
 		}
@@ -639,6 +654,8 @@ func TestResolver_AuthorizedUsers(t *testing.T) {
 }
 
 func TestResolver_RepositoryPermissionsInfo(t *testing.T) {
+	db := dbtest.NewDB(t, "")
+
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
 			return &types.User{}, nil
@@ -648,7 +665,7 @@ func TestResolver_RepositoryPermissionsInfo(t *testing.T) {
 		})
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := (&Resolver{}).RepositoryPermissionsInfo(ctx, graphqlbackend.MarshalRepositoryID(1))
+		result, err := (&Resolver{store: edb.Perms(db, timeutil.Now)}).RepositoryPermissionsInfo(ctx, graphqlbackend.MarshalRepositoryID(1))
 		if want := backend.ErrMustBeSiteAdmin; err != want {
 			t.Errorf("err: want %q but got %v", want, err)
 		}
@@ -719,6 +736,8 @@ func TestResolver_RepositoryPermissionsInfo(t *testing.T) {
 }
 
 func TestResolver_UserPermissionsInfo(t *testing.T) {
+	db := dbtest.NewDB(t, "")
+
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
 			return &types.User{}, nil
@@ -728,7 +747,7 @@ func TestResolver_UserPermissionsInfo(t *testing.T) {
 		})
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := (&Resolver{}).UserPermissionsInfo(ctx, graphqlbackend.MarshalRepositoryID(1))
+		result, err := (&Resolver{store: edb.Perms(db, timeutil.Now)}).UserPermissionsInfo(ctx, graphqlbackend.MarshalRepositoryID(1))
 		if want := backend.ErrMustBeSiteAdmin; err != want {
 			t.Errorf("err: want %q but got %v", want, err)
 		}

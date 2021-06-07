@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -349,8 +350,10 @@ func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 		r.Metadata = new(gitolite.Repo)
 	case extsvc.TypePerforce:
 		r.Metadata = new(perforce.Depot)
+	case extsvc.TypePhabricator:
+		r.Metadata = new(phabricator.Repo)
 	case extsvc.TypeOther:
-		r.Metadata = new(types.OtherRepoMetadata)
+		r.Metadata = new(extsvc.OtherRepoMetadata)
 	default:
 		return nil
 	}

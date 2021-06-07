@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/bloomfilter"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/datastructures"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion/datastructures"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
 )
 
