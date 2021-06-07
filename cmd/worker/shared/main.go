@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
+	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 )
@@ -35,6 +36,11 @@ func Start(additionalTasks map[string]Task) {
 
 	// Setup environment variables
 	loadConfigs(tasks)
+
+	// Set up Google Cloud Profiler when running in Cloud
+	if err := profiler.Init(); err != nil {
+		log.Fatalf("Failed to start profiler: %v", err)
+	}
 
 	env.Lock()
 	env.HandleHelpFlag()
