@@ -8,6 +8,7 @@ import { FormInput } from '../../../../../components/form/form-input/FormInput'
 import { FormRadioInput } from '../../../../../components/form/form-radio-input/FormRadioInput'
 import { useFieldAPI } from '../../../../../components/form/hooks/useField'
 import { FORM_ERROR, SubmissionErrors } from '../../../../../components/form/hooks/useForm'
+import { RepositoriesField } from '../../../../../components/form/repositories-field/RepositoriesField'
 import {
     getVisibilityValue,
     Organization,
@@ -15,7 +16,6 @@ import {
 } from '../../../../../components/visibility-picker/VisibilityPicker'
 import { CreateInsightFormFields, EditableDataSeries } from '../../types'
 import { FormSeries } from '../form-series/FormSeries'
-import { RepositoriesField } from '../../../../../components/form/repositories-field/RepositoriesField'
 
 import styles from './SearchInsightCreationForm.module.scss'
 
