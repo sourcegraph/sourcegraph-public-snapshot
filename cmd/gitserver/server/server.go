@@ -1905,8 +1905,8 @@ func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, rev stri
 	if rev == "" || rev == "HEAD" {
 		return false
 	}
-	// rev-parse on an OID does not check if the commit actually exists, so it
-	// is always works. So we append ^0 to force the check
+	// rev-parse on an OID does not check if the commit actually exists, so it always
+	// works. So we append ^0 to force the check
 	if isAbsoluteRevision(rev) {
 		rev = rev + "^0"
 	}
