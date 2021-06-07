@@ -4,7 +4,7 @@ This document will walk you through how to configure submodules in Sourcegraph. 
 
 ## Prerequisites
 
-This document assumes that you are a [site administrator](https://docs.sourcegraph.com/admin).
+This document assumes that you have access and permission to create/edit the `.gitmodules` file for the repository.
 
 ## Steps
 1. Make sure you have a `.gitmodules` file created in folder level
