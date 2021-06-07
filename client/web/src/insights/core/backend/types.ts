@@ -7,7 +7,7 @@ import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
-import { RepositorySuggestion } from './requests/fetch-repository-suggestions';
+import { RepositorySuggestion } from './requests/fetch-repository-suggestions'
 
 export enum ViewInsightProviderSourceType {
     Backend = 'Backend',

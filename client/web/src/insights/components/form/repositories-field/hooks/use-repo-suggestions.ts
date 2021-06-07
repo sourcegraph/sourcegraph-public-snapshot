@@ -2,7 +2,7 @@ import { useCallback, useContext, useEffect, useRef, useState } from 'react'
 
 import { useDebounce } from '@sourcegraph/wildcard/src'
 
-import { InsightsApiContext } from '../../../../core/backend/api-provider';
+import { InsightsApiContext } from '../../../../core/backend/api-provider'
 
 interface RepositorySuggestion {
     name: string
@@ -26,18 +26,20 @@ function useFetchSuggestions(): (search: string) => Promise<RepositorySuggestion
     const cache = useRef<Record<string, RepositorySuggestion[]>>({})
     const { getRepositorySuggestions } = useContext(InsightsApiContext)
 
-    return useCallback(search => {
-        if (cache?.current?.[search]) {
-            return Promise.resolve(cache.current?.[search])
-        }
+    return useCallback(
+        search => {
+            if (cache?.current?.[search]) {
+                return Promise.resolve(cache.current?.[search])
+            }
 
-        return getRepositorySuggestions(search)
-            .then(suggestions => {
+            return getRepositorySuggestions(search).then(suggestions => {
                 cache.current[search] = suggestions
 
                 return suggestions
             })
-    }, [getRepositorySuggestions])
+        },
+        [getRepositorySuggestions]
+    )
 }
 
 /**

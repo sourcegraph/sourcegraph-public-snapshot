@@ -1,4 +1,4 @@
-import { fetchRepositorySuggestions, RepositorySuggestion } from '../requests/fetch-repository-suggestions';
+import { fetchRepositorySuggestions, RepositorySuggestion } from '../requests/fetch-repository-suggestions'
 
 /**
  * Returns array of repository suggestions.
