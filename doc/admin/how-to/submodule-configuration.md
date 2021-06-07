@@ -12,10 +12,12 @@ This document assumes that you are a [site administrator](https://docs.sourcegra
 
 ## Example
 
-URL should be used instead of local/relative path when setting up the `.gitmodules` file for GitLab repos:
+URL should be used instead of relative path when setting up the `.gitmodules` file for GitLab repos:
 
 ```
 [submodule "test-repo-2"]
         path = test-repo-2
         url = https://github.com/test-repos/test-repo-2
 ```
+
+> WARNING: We currently do not support relative path setups for submodules in Sourcegraph.
