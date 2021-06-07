@@ -19,7 +19,7 @@ import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/val
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
-import { PatternTypeProps } from '..'
+import { PatternTypeProps, CaseSensitivityProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { CodeMonitoringProps } from '../../code-monitoring'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
@@ -31,6 +31,7 @@ export interface SearchResultsInfoBarProps
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         TelemetryProps,
         Pick<PatternTypeProps, 'patternType'>,
+        Pick<CaseSensitivityProps, 'caseSensitive'>,
         CodeMonitoringProps {
     history: H.History
     /** The currently authenticated user or null */
@@ -144,10 +145,14 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
         )
     }, [buttonClass, props.authenticatedUser, props.onSaveQueryClick, props.showSavedQueryButton])
 
-    const extraContext = useMemo(() => ({ searchQuery: props.query || null, patternType: props.patternType }), [
-        props.query,
-        props.patternType,
-    ])
+    const extraContext = useMemo(
+        () => ({
+            searchQuery: props.query || null,
+            patternType: props.patternType,
+            caseSensitive: props.caseSensitive,
+        }),
+        [props.query, props.patternType, props.caseSensitive]
+    )
 
     const [showFilters, setShowFilters] = useState(false)
     const onShowFiltersClicked = (): void => {
