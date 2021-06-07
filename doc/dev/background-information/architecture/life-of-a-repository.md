@@ -18,11 +18,11 @@ Our guiding principle is to ensure all repositories configured by a site adminis
 
 ## Services
 
-`repo-updater` is responsible for communicating with code host APIs and co-ordinating the state we synchronise from them. It is a singleton service. It is responsible for maintaining the `repo` table which other services read. It is also responsible for scheduling clones/fetches on `gitserver`. It is also responsible for anything which communicates with a code host API. So our batch changes and background permissions syncers also live in `repo-updater`.
+`repo-updater` is responsible for communicating with code host APIs and co-ordinating the state we synchronize from them. It is a singleton service. It is responsible for maintaining the `repo` table which other services read. It is also responsible for scheduling clones/fetches on `gitserver`. It is also responsible for anything which communicates with a code host API. So our batch changes and background permissions syncers also live in `repo-updater`.
 
 `gitserver` is a scaleable stateful service which clones git repositories and can run git commands against them. All data maintained on this service is from cloning an upstream repository. We shard the set of repositories across the gitserver replicas. The main RPC gitserver supports is `exec` which returns the output of the specified git command.
 
->NOTE: The name `repo-updater` does not accurately capture what the service does. This is a historical artifact. We have not updated it due to the unneccessary operational burden it would put on our customers.
+>NOTE: The name `repo-updater` does not accurately capture what the service does. This is a historical artifact. We have not updated it due to the unnecessary operational burden it would put on our customers.
 
 ## Discovery
 
@@ -54,7 +54,7 @@ type Source interface {
 
 ## Syncing
 
-We keep a list of all repositories on Sourcegraph in the [`repo` table](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.14.0/-/blob/cmd/frontend/db/schema.md#table-public-repo). This is to provide a code host independent list of repositories on Sourcegraph that we can quickly query. `repo-updater` will periodically sync each code host connection in the background. It compares the list of repos configured with those in our `repo` table and ensures that thet are consistent. See [`Syncer.SyncExternalServices`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.25.0/-/blob/internal/repos/syncer.go#L166) for details.
+We keep a list of all repositories on Sourcegraph in the [`repo` table](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.14.0/-/blob/cmd/frontend/db/schema.md#table-public-repo). This is to provide a code host independent list of repositories on Sourcegraph that we can quickly query. `repo-updater` will periodically sync each code host connection in the background. It compares the list of repos configured with those in our `repo` table and ensures that they are consistent. See [`Syncer.SyncExternalServices`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.25.0/-/blob/internal/repos/syncer.go#L166) for details.
 
 ## Git Update Scheduler
 
