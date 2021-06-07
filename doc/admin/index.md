@@ -67,3 +67,4 @@ Site administrators are the admins responsible for deploying, managing, and conf
 - [How to convert version contexts to search contexts](how-to/converting-version-contexts-to-search-contexts.md)
 - [How to troubleshoot pod evictions](how-to/troubleshoot-pod-eviction.md)
 - [How to monitor your Sourcegraph instance](how-to/monitoring-guide.md)
+- [How to troubleshoot a Sourcegraph extension](how-to/troubleshoot-sg-extension.md)
