@@ -176,11 +176,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     const [affiliateRepoProblems, setAffiliateRepoProblems] = useState<affiliateRepoProblemType>()
     const [otherPublicRepoError, setOtherPublicRepoError] = useState<undefined | ErrorLike>()
 
-    const ExternalServiceProblemHint = (
-        <Link className="text-primary" to={`${routingPrefix}/code-hosts`}>
-            Check code host connections
-        </Link>
-    )
+    const ExternalServiceProblemHint = <Link to={`${routingPrefix}/code-hosts`}>Check code host connections</Link>
 
     const toggleTextArea = useCallback(
         () => setPublicRepoState({ ...publicRepoState, enabled: !publicRepoState.enabled }),
@@ -736,9 +732,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                             <h3>Your repositories</h3>
                             <p className="text-muted">
                                 Repositories you own or collaborate on from your{' '}
-                                <Link className="text-primary" to={`${routingPrefix}/code-hosts`}>
-                                    connected code hosts
-                                </Link>
+                                <Link to={`${routingPrefix}/code-hosts`}>connected code hosts</Link>
                             </p>
                             {!ALLOW_PRIVATE_CODE && hasCodeHosts && (
                                 <div className="alert alert-primary">

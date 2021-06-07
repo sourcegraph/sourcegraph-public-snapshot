@@ -216,10 +216,8 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                 description={
                     <>
                         Connect with your code hosts. Then,{' '}
-                        <Link className="text-primary" to={`${routingPrefix}/repositories/manage`}>
-                            add repositories
-                        </Link>{' '}
-                        to search with Sourcegraph.
+                        <Link to={`${routingPrefix}/repositories/manage`}>add repositories</Link> to search with
+                        Sourcegraph.
                     </>
                 }
                 className="mb-3"

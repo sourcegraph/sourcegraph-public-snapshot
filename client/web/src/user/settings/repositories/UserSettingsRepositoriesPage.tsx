@@ -123,21 +123,14 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
 
             {externalServices?.length === 0 ? (
                 <small>
-                    <Link className="text-primary" to={`${routingPrefix}/code-hosts`}>
-                        Connect code hosts
-                    </Link>{' '}
-                    to start searching your own repositories, or{' '}
-                    <Link className="text-primary" to={`${routingPrefix}/repositories/manage`}>
-                        add public repositories
-                    </Link>{' '}
+                    <Link to={`${routingPrefix}/code-hosts`}>Connect code hosts</Link> to start searching your own
+                    repositories, or <Link to={`${routingPrefix}/repositories/manage`}>add public repositories</Link>{' '}
                     from GitHub or GitLab.
                 </small>
             ) : (
                 <small>
-                    <Link className="text-primary" to={`${routingPrefix}/repositories/manage`}>
-                        Add repositories
-                    </Link>{' '}
-                    to start searching your code with Sourcegraph.
+                    <Link to={`${routingPrefix}/repositories/manage`}>Add repositories</Link> to start searching your
+                    code with Sourcegraph.
                 </small>
             )}
         </Container>
@@ -406,9 +399,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                 description={
                     <>
                         All repositories synced with Sourcegraph from{' '}
-                        <Link className="text-primary" to={`${routingPrefix}/code-hosts`}>
-                            connected code hosts
-                        </Link>
+                        <Link to={`${routingPrefix}/code-hosts`}>connected code hosts</Link>
                     </>
                 }
                 actions={
