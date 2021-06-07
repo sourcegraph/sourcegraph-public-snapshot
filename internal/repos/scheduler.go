@@ -121,7 +121,7 @@ type configuredRepo struct {
 // non-blocking sends.
 const notifyChanBuffer = 1
 
-// newUpdateScheduler returns a new scheduler.
+// NewUpdateScheduler returns a new scheduler.
 func NewUpdateScheduler() *updateScheduler {
 	return &updateScheduler{
 		updateQueue: &updateQueue{

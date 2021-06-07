@@ -5,6 +5,7 @@ import React from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Container } from '@sourcegraph/wildcard'
 
 import { BatchSpecFields } from '../../../graphql-operations'
 import {
@@ -89,7 +90,9 @@ export const BatchChangePreviewTabs: React.FunctionComponent<BatchChangePreviewT
                 <div className="d-flex mb-2 justify-content-end">
                     <BatchSpecDownloadLink name={spec.description.name} originalInput={spec.originalInput} />
                 </div>
-                <BatchSpec originalInput={spec.originalInput} />
+                <Container>
+                    <BatchSpec originalInput={spec.originalInput} />
+                </Container>
             </BatchChangeTabPanel>
         </BatchChangeTabPanels>
     </BatchChangeTabs>
