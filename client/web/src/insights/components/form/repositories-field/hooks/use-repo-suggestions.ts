@@ -3,10 +3,7 @@ import { useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { useDebounce } from '@sourcegraph/wildcard/src'
 
 import { InsightsApiContext } from '../../../../core/backend/api-provider'
-
-interface RepositorySuggestion {
-    name: string
-}
+import { RepositorySuggestion } from '../../../../core/backend/requests/fetch-repository-suggestions';
 
 interface UseRepoSuggestionsProps {
     search: string | null
