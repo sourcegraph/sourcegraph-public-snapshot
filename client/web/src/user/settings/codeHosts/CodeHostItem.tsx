@@ -81,7 +81,8 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                 <h3 className="m-0">{name}</h3>
             </div>
             <div className="align-self-center">
-                {service?.id ? (
+                {/* always show remove button when the service exists */}
+                {service?.id && (
                     <button
                         type="button"
                         className="btn btn-link text-danger shadow-none"
@@ -89,46 +90,52 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                     >
                         Remove
                     </button>
-                ) : oauthInFlight ? (
-                    <LoaderButton
-                        type="button"
-                        className={classNames(
-                            'btn',
-                            !isRedesignEnabled && 'btn-primary',
-                            isRedesignEnabled && 'btn-success'
-                        )}
-                        loading={true}
-                        disabled={true}
-                        label="Connect"
-                        alwaysShowLabel={true}
-                    />
+                )}
+
+                {/* Show one of: update, updating, connect, connecting buttons */}
+                {!service?.id ? (
+                    oauthInFlight ? (
+                        <LoaderButton
+                            type="button"
+                            className={classNames(
+                                'btn',
+                                !isRedesignEnabled && 'btn-primary',
+                                isRedesignEnabled && 'btn-success'
+                            )}
+                            loading={true}
+                            disabled={true}
+                            label="Connecting..."
+                            alwaysShowLabel={true}
+                        />
+                    ) : (
+                        <button
+                            type="button"
+                            className={classNames(
+                                'btn',
+                                !isRedesignEnabled && 'btn-primary',
+                                isRedesignEnabled && 'btn-success'
+                            )}
+                            onClick={toAuthProvider}
+                        >
+                            Connect
+                        </button>
+                    )
                 ) : (
-                    <button
-                        type="button"
-                        className={classNames(
-                            'btn',
-                            !isRedesignEnabled && 'btn-primary',
-                            isRedesignEnabled && 'btn-success'
-                        )}
-                        onClick={toAuthProvider}
-                    >
-                        Connect
-                    </button>
-                )}
-                {updateAuthRequired && !oauthInFlight && (
-                    <button type="button" className="btn btn-merged" onClick={toAuthProvider}>
-                        Update
-                    </button>
-                )}
-                {!updateAuthRequired && oauthInFlight && (
-                    <LoaderButton
-                        type="button"
-                        className="btn btn-merged"
-                        loading={true}
-                        disabled={true}
-                        label="Update"
-                        alwaysShowLabel={true}
-                    />
+                    updateAuthRequired &&
+                    (oauthInFlight ? (
+                        <LoaderButton
+                            type="button"
+                            className="btn btn-merged"
+                            loading={true}
+                            disabled={true}
+                            label="Updating..."
+                            alwaysShowLabel={true}
+                        />
+                    ) : (
+                        <button type="button" className="btn btn-merged" onClick={toAuthProvider}>
+                            Update
+                        </button>
+                    ))
                 )}
             </div>
         </div>
