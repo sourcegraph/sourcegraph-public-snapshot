@@ -107,7 +107,6 @@ export const RepositoriesField = forwardRef(
         }
 
         const handleInputBlur = (event: FocusEvent<HTMLInputElement>): void => {
-            // setPanel(false)
             onBlur?.(event)
         }
 
@@ -115,7 +114,6 @@ export const RepositoriesField = forwardRef(
             <Combobox
                 openOnFocus={true}
                 onSelect={handleSelect}
-                aria-label="choose a fruit"
                 className={styles.combobox}
             >
                 <ComboboxInput
