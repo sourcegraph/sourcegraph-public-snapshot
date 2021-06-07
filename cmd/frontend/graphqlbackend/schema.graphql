@@ -631,7 +631,7 @@ type Mutation {
 
         """
         The ratio of users the feature flag will apply to, expressed in basis points (0.01%).
-		Only set if the new feature flag will be a rollout flag.
+        Only set if the new feature flag will be a rollout flag.
         Mutually exclusive with value.
         """
         rolloutBasisPoints: Int
@@ -663,7 +663,7 @@ type Mutation {
         value: Boolean
 
         """
-		The ratio of users the feasture flag will apply to, expressed in basis points (0.01%).
+        The ratio of users the feature flag will apply to, expressed in basis points (0.01%).
         Mutually exclusive with value.
         """
         rolloutBasisPoints: Int
@@ -1429,8 +1429,8 @@ type FeatureFlagRollout {
     name: String!
 
     """
-    The ratio of users that will be assigned this this feature flag, expressed in 
-	basis points (0.01%).
+    The ratio of users that will be assigned this this feature flag, expressed in
+    basis points (0.01%).
     """
     rolloutBasisPoints: Int!
 
@@ -1467,7 +1467,7 @@ type FeatureFlagOverride {
     targetFlag: FeatureFlag!
 
     """
-    The overriden value of hte feature flag
+    The overridden value of hte feature flag
     """
     value: Boolean!
 }
