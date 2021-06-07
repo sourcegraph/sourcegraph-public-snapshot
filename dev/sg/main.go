@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -499,10 +498,10 @@ func migrationSquashExec(ctx context.Context, args []string) (err error) {
 	if err != nil {
 		return err
 	}
-	if err := ioutil.WriteFile(upPath, []byte(squashedUpMigration), os.ModePerm); err != nil {
+	if err := os.WriteFile(upPath, []byte(squashedUpMigration), os.ModePerm); err != nil {
 		return err
 	}
-	if err := ioutil.WriteFile(downPath, []byte(squashedDownMigration), os.ModePerm); err != nil {
+	if err := os.WriteFile(downPath, []byte(squashedDownMigration), os.ModePerm); err != nil {
 		return err
 	}
 
