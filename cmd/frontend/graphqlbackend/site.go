@@ -119,6 +119,12 @@ func (r *siteResolver) ProductSubscription() *productSubscriptionStatus {
 	return &productSubscriptionStatus{}
 }
 
+var allowSiteSettingsEdits = os.Getenv("SITE_CONFIG_FILE") == "" || siteConfigAllowEdits
+
+func (r *siteResolver) AllowSiteSettingsEdits() bool {
+	return allowSiteSettingsEdits
+}
+
 type siteConfigurationResolver struct {
 	db dbutil.DB
 }
