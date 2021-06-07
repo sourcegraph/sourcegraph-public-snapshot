@@ -6,6 +6,8 @@ In this tutorial, we will create a new code monitor that monitors new appearance
 
 ## Creating a code monitor
 
+Prerequisite: Ensure [email notifications](https://docs.sourcegraph.com/admin/observability/alerting#email) are configured in site configuration.  
+
 1. On your Sourcegraph instance, click the **Code monitoring** menu item at the top right of your page. Alternatively, go to https://sourcegraph.example.com/code-monitoring (where sourcegraph.example.com represents your unique Sourcegraph url).
 1. Click the **Create new code monitor** button at the top right of the page.
 1. Fill out the **Name** input with: "TODOs".
