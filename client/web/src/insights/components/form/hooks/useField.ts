@@ -130,11 +130,12 @@ export function useField<FormValues, FieldValueKey extends keyof FormAPI<FormVal
         }
 
         if (async) {
-            // Due we call start async validation in useLayoutEffect
-            // we have to schedule async validation in the next tick
-            // to be able run observable pipeline validation.
-            // useAsyncValidation hook use useObservable hook internally
-            // which calls .subscribe in useEffect.
+            // Due the call of start async validation in useLayoutEffect we have to
+            // schedule the async validation event in the next tick to be able run
+            // observable pipeline validation since useAsyncValidation hook use
+            // useObservable hook internally which calls '.subscribe' in useEffect.
+            // In order to catch start async validation event we need until next
+            // tick.
             requestAnimationFrame(() => {
                 startAsyncValidation({ value: state.value, validity })
             })
