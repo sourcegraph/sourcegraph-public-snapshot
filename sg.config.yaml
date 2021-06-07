@@ -139,6 +139,24 @@ commands:
       - internal
       - cmd/github-proxy
 
+  worker:
+    cmd: ulimit -n 10000 && .bin/worker
+    install: go build -o .bin/worker github.com/sourcegraph/sourcegraph/cmd/worker
+    watch:
+      - lib
+      - internal
+      - cmd/worker
+
+  enterprise-worker:
+    cmd: ulimit -n 10000 && .bin/worker
+    install: go build -o .bin/worker github.com/sourcegraph/sourcegraph/enterprise/cmd/worker
+    watch:
+      - lib
+      - internal
+      - enterprise/internal
+      - cmd/worker
+      - enterprise/cmd/worker
+
   repo-updater:
     cmd: .bin/repo-updater
     install: go build -o .bin/repo-updater github.com/sourcegraph/sourcegraph/cmd/repo-updater
@@ -442,6 +460,7 @@ commandsets:
 
   default:
     - frontend
+    - worker
     - repo-updater
     - gitserver
     - searcher
@@ -459,6 +478,7 @@ commandsets:
 
   enterprise:
     - enterprise-frontend
+    - enterprise-worker
     - enterprise-repo-updater
     - enterprise-web
     - gitserver
@@ -476,6 +496,7 @@ commandsets:
 
   enterprise-codeintel:
     - enterprise-frontend
+    - enterprise-worker
     - enterprise-repo-updater
     - enterprise-web
     - gitserver
@@ -504,6 +525,7 @@ commandsets:
     #     DISABLE_CODE_INSIGHTS: false
     #
     - enterprise-frontend
+    - enterprise-worker
     - enterprise-repo-updater
     - enterprise-web
     - gitserver
@@ -522,6 +544,7 @@ commandsets:
 
   api-only:
     - enterprise-frontend
+    - enterprise-worker
     - enterprise-repo-updater
     - gitserver
     - searcher

@@ -13,6 +13,8 @@ import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggl
 import { Timestamp } from '../../components/time/Timestamp'
 import { GitCommitFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
+import { DiffModeSelector } from '../commit/DiffModeSelector'
+import { DiffMode } from '../commit/RepositoryCommitPage'
 
 import { GitCommitNodeByline } from './GitCommitNodeByline'
 
@@ -36,6 +38,12 @@ export interface GitCommitNodeProps {
 
     /** Fragment to show at the end to the right of the SHA. */
     afterElement?: React.ReactFragment
+
+    /** Determine the git diff visualization UI */
+    diffMode?: DiffMode
+
+    /** Handler for change the diff mode */
+    onHandleDiffMode?: (mode: DiffMode) => void
 }
 
 /** Displays a Git commit. */
@@ -47,41 +55,36 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
     expandCommitMessageBody,
     hideExpandCommitMessageBody,
     showSHAAndParentsRow,
+    diffMode,
+    onHandleDiffMode,
 }) => {
     const [showCommitMessageBody, setShowCommitMessageBody] = useState<boolean>(false)
     const [flashCopiedToClipboardMessage, setFlashCopiedToClipboardMessage] = useState<boolean>(false)
-    const [isRedesignEnabled] = useRedesignToggle()
 
     const toggleShowCommitMessageBody = useCallback((): void => {
         eventLogger.log('CommitBodyToggled')
         setShowCommitMessageBody(!showCommitMessageBody)
     }, [showCommitMessageBody])
 
-    const copyToClipboard = useCallback((): void => {
+    const copyToClipboard = useCallback((oid): void => {
         eventLogger.log('CommitSHACopiedToClipboard')
-        copy(node.oid)
+        copy(oid)
         setFlashCopiedToClipboardMessage(true)
         Tooltip.forceUpdate()
         setTimeout(() => {
             setFlashCopiedToClipboardMessage(false)
             Tooltip.forceUpdate()
         }, 1500)
-    }, [node.oid])
+    }, [])
 
-    const bylineElement = (
-        <GitCommitNodeByline
-            className="text-muted git-commit-node__byline"
-            author={node.author}
-            committer={node.committer}
-            compact={Boolean(compact)}
-        />
-    )
+    const [isRedesignEnabled] = useRedesignToggle()
 
-    const MessageWrapper = isRedesignEnabled && compact ? 'small' : React.Fragment
     const messageElement = (
-        <div className="git-commit-node__message flex-grow-1">
+        <div
+            className={classNames('git-commit-node__message flex-grow-1', compact && 'git-commit-node__message-small')}
+        >
             <Link to={node.canonicalURL} className="git-commit-node__message-subject" title={node.message}>
-                <MessageWrapper>{node.subject}</MessageWrapper>
+                {node.subject}
             </Link>
             {node.body && !hideExpandCommitMessageBody && !expandCommitMessageBody && (
                 <button
@@ -99,104 +102,190 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
             )}
         </div>
     )
-    const oidElement = <code className="git-commit-node__oid">{node.abbreviatedOID}</code>
-    return (
-        <div key={node.id} className={classNames('git-commit-node', compact && 'git-commit-node--compact', className)}>
-            <div
-                className={classNames(
-                    'w-100 d-flex justify-content-between flex-wrap-reverse',
-                    isRedesignEnabled ? 'align-items-center' : 'align-items-start '
-                )}
-            >
-                {!compact ? (
+
+    const commitMessageBody =
+        expandCommitMessageBody || showCommitMessageBody ? (
+            <div className="w-100">
+                <pre className="git-commit-node__message-body">{node.body}</pre>
+            </div>
+        ) : undefined
+
+    const bylineElement = (
+        <GitCommitNodeByline
+            className="d-flex text-muted git-commit-node__byline"
+            author={node.author}
+            committer={node.committer}
+            // TODO compact needs to be always a boolean
+            compact={Boolean(compact)}
+            messageElement={messageElement}
+            commitMessageBody={commitMessageBody}
+        />
+    )
+
+    const shaDataElement = showSHAAndParentsRow && (
+        <div className="w-100 git-commit-node__sha-and-parents">
+            <div className={classNames('d-flex', isRedesignEnabled && 'mb-1')}>
+                {isRedesignEnabled && <span className="git-commit-node__sha-and-parents-label">Commit:</span>}
+                <code
+                    className={classNames(
+                        'git-commit-node__sha-and-parents-sha',
+                        !isRedesignEnabled && 'git-ref-tag-2'
+                    )}
+                >
+                    {node.oid}{' '}
+                    <button
+                        type="button"
+                        className="btn btn-icon git-commit-node__sha-and-parents-copy"
+                        onClick={() => copyToClipboard(node.oid)}
+                        data-tooltip={flashCopiedToClipboardMessage ? 'Copied!' : 'Copy full SHA'}
+                    >
+                        <ContentCopyIcon className="icon-inline" />
+                    </button>
+                </code>
+            </div>
+            <div className="align-items-center d-flex">
+                {node.parents.length > 0 ? (
                     <>
-                        <div className="git-commit-node__signature">
-                            {messageElement}
-                            {bylineElement}
-                        </div>
-                        <div className="git-commit-node__actions">
-                            {!showSHAAndParentsRow && (
-                                <div className="btn-group btn-group-sm mr-2" role="group">
-                                    <Link
-                                        className="btn btn-secondary"
-                                        to={node.canonicalURL}
-                                        data-tooltip="View this commit"
-                                    >
-                                        <strong>{oidElement}</strong>
-                                    </Link>
+                        <span className="git-commit-node__sha-and-parents-label">
+                            {node.parents.length === 1
+                                ? 'Parent'
+                                : `${node.parents.length} ${pluralize('parent', node.parents.length)}`}
+                            :
+                        </span>{' '}
+                        {node.parents.map((parent, index) => (
+                            <div className="d-flex" key={index}>
+                                <Link
+                                    className={classNames(
+                                        'git-commit-node__sha-and-parents-parent',
+                                        !isRedesignEnabled && 'git-ref-tag-2'
+                                    )}
+                                    to={parent.url}
+                                >
+                                    <code>{parent.oid}</code>
+                                </Link>
+                                {isRedesignEnabled && (
                                     <button
                                         type="button"
-                                        className="btn btn-secondary"
-                                        onClick={copyToClipboard}
+                                        className="btn btn-icon git-commit-node__sha-and-parents-copy"
+                                        onClick={() => copyToClipboard(parent.oid)}
                                         data-tooltip={flashCopiedToClipboardMessage ? 'Copied!' : 'Copy full SHA'}
                                     >
-                                        <ContentCopyIcon className="icon-inline small" />
+                                        <ContentCopyIcon className="icon-inline" />
                                     </button>
-                                </div>
+                                )}
+                            </div>
+                        ))}
+                    </>
+                ) : (
+                    '(root commit)'
+                )}
+            </div>
+        </div>
+    )
+
+    const diffModeSelector = (): JSX.Element | null => {
+        if (diffMode && onHandleDiffMode) {
+            return <DiffModeSelector onHandleDiffMode={onHandleDiffMode} diffMode={diffMode} small={true} />
+        }
+
+        return null
+    }
+
+    const viewFilesCommitElement = node.tree && (
+        <div className="d-flex justify-content-between">
+            <Link
+                className={classNames(
+                    'btn btn-sm',
+                    isRedesignEnabled ? 'align-center btn-outline-secondary d-inline-flex' : 'btn-secondary'
+                )}
+                to={node.tree.canonicalURL}
+                data-tooltip="View files at this commit"
+            >
+                <FileDocumentIcon className={classNames('icon-inline', !isRedesignEnabled ? 'small' : 'mr-1')} />
+                {isRedesignEnabled && 'View files in commit'}
+            </Link>
+            {isRedesignEnabled && diffModeSelector()}
+        </div>
+    )
+
+    const oidElement = <code className="git-commit-node__oid">{node.abbreviatedOID}</code>
+    return (
+        <div
+            key={node.id}
+            className={`git-commit-node ${compact ? 'git-commit-node--compact' : ''} ${className || ''}`}
+        >
+            <>
+                {!compact ? (
+                    <>
+                        <div
+                            className={classNames(
+                                'w-100 d-flex justify-content-between align-items-start',
+                                !isRedesignEnabled && 'flex-wrap-reverse'
                             )}
-                            {node.tree && (
-                                <Link
-                                    className="btn btn-secondary btn-sm"
-                                    to={node.tree.canonicalURL}
-                                    data-tooltip="View files at this commit"
-                                >
-                                    <FileDocumentIcon className="icon-inline small" />
-                                </Link>
+                        >
+                            <div className="git-commit-node__signature">
+                                {!isRedesignEnabled && messageElement}
+                                {bylineElement}
+                            </div>
+                            <div className="git-commit-node__actions">
+                                {!showSHAAndParentsRow && (
+                                    <div>
+                                        <div className="btn-group btn-group-sm mr-2" role="group">
+                                            <Link
+                                                className="btn btn-secondary"
+                                                to={node.canonicalURL}
+                                                data-tooltip="View this commit"
+                                            >
+                                                <strong>{oidElement}</strong>
+                                            </Link>
+                                            <button
+                                                type="button"
+                                                className="btn btn-secondary"
+                                                onClick={() => copyToClipboard(node.oid)}
+                                                data-tooltip={
+                                                    flashCopiedToClipboardMessage ? 'Copied!' : 'Copy full SHA'
+                                                }
+                                            >
+                                                <ContentCopyIcon className="icon-inline small" />
+                                            </button>
+                                        </div>
+                                        {node.tree && (
+                                            <Link
+                                                className="btn btn-sm btn-secondary"
+                                                to={node.tree.canonicalURL}
+                                                data-tooltip="View files at this commit"
+                                            >
+                                                <FileDocumentIcon className="icon-inline mr-1" />
+                                            </Link>
+                                        )}
+                                    </div>
+                                )}
+                                {!isRedesignEnabled && showSHAAndParentsRow ? viewFilesCommitElement : shaDataElement}
+                            </div>
+                        </div>
+                        <div>
+                            {isRedesignEnabled && showSHAAndParentsRow ? (
+                                viewFilesCommitElement
+                            ) : (
+                                <>
+                                    {!isRedesignEnabled && commitMessageBody}
+                                    {shaDataElement}
+                                </>
                             )}
                         </div>
                     </>
                 ) : (
-                    <>
-                        {bylineElement}
-                        {messageElement}
-                        <Link to={node.canonicalURL}>{oidElement}</Link>
-                    </>
-                )}
-                {afterElement}
-            </div>
-            {(expandCommitMessageBody || showCommitMessageBody) && (
-                <div className="w-100">
-                    <pre className="git-commit-node__message-body">{node.body}</pre>
-                </div>
-            )}
-            {showSHAAndParentsRow && (
-                <div className="w-100 git-commit-node__sha-and-parents">
-                    <code className="git-ref-tag-2 git-commit-node__sha-and-parents-sha">
-                        {node.oid}{' '}
-                        <button
-                            type="button"
-                            className="btn btn-icon git-commit-node__sha-and-parents-copy"
-                            onClick={copyToClipboard}
-                            data-tooltip={flashCopiedToClipboardMessage ? 'Copied!' : 'Copy full SHA'}
-                        >
-                            <ContentCopyIcon className="icon-inline" />
-                        </button>
-                    </code>
-                    <div className="d-flex">
-                        {node.parents.length > 0 ? (
-                            <>
-                                <span className="git-commit-node__sha-and-parents-label">
-                                    {node.parents.length === 1
-                                        ? 'Parent'
-                                        : `${node.parents.length} ${pluralize('parent', node.parents.length)}`}
-                                    :
-                                </span>{' '}
-                                {node.parents.map((parent, index) => (
-                                    <Link
-                                        key={index}
-                                        className="git-ref-tag-2 git-commit-node__sha-and-parents-parent"
-                                        to={parent.url}
-                                    >
-                                        <code>{parent.abbreviatedOID}</code>
-                                    </Link>
-                                ))}
-                            </>
-                        ) : (
-                            '(root commit)'
-                        )}
+                    <div>
+                        <div className="w-100 d-flex justify-content-between align-items-center flex-wrap-reverse">
+                            {bylineElement}
+                            {messageElement}
+                            <Link to={node.canonicalURL}>{oidElement}</Link>
+                            {afterElement}
+                        </div>
+                        {commitMessageBody}
                     </div>
-                </div>
-            )}
+                )}
+            </>
         </div>
     )
 }

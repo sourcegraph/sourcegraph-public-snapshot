@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as React from 'react'
 import { NavLink } from 'react-router-dom'
 
@@ -23,50 +24,46 @@ export interface UserAreaHeaderNavItem extends NavItemWithIconDescriptor<UserAre
  * Header for the user area.
  */
 export const UserAreaHeader: React.FunctionComponent<Props> = ({ url, navItems, className = '', ...props }) => (
-    <div className={`user-area-header ${className}`}>
+    <div className={classNames('user-area-header', className)}>
         <div className="container">
-            {props.user && (
-                <>
-                    <PageHeader
-                        path={[
-                            {
-                                text: (
-                                    <span className="align-middle">
-                                        {props.user.displayName ? (
-                                            <>
-                                                {props.user.displayName} ({props.user.username})
-                                            </>
-                                        ) : (
-                                            props.user.username
-                                        )}
-                                    </span>
-                                ),
-                                icon: () => <UserAvatar className="user-area-header__avatar" user={props.user} />,
-                            },
-                        ]}
-                        className="mb-3"
-                    />
-                    <div className="d-flex align-items-end justify-content-between">
-                        <ul className="nav nav-tabs border-bottom-0">
-                            {navItems.map(
-                                ({ to, label, exact, icon: Icon, condition = () => true }) =>
-                                    condition(props) && (
-                                        <li key={label} className="nav-item">
-                                            <NavLink
-                                                to={url + to}
-                                                className="nav-link"
-                                                activeClassName="active"
-                                                exact={exact}
-                                            >
-                                                {Icon && <Icon className="icon-inline" />} {label}
-                                            </NavLink>
-                                        </li>
-                                    )
-                            )}
-                        </ul>
-                    </div>
-                </>
-            )}
+            <PageHeader
+                path={[
+                    {
+                        text: (
+                            <span className="align-middle">
+                                {props.user.displayName ? (
+                                    <>
+                                        {props.user.displayName} ({props.user.username})
+                                    </>
+                                ) : (
+                                    props.user.username
+                                )}
+                            </span>
+                        ),
+                        icon: () => <UserAvatar className="user-area-header__avatar" user={props.user} />,
+                    },
+                ]}
+                className="mb-3"
+            />
+            <div className="d-flex align-items-end justify-content-between">
+                <ul className="nav nav-tabs w-100">
+                    {navItems.map(
+                        ({ to, label, exact, icon: Icon, condition = () => true }) =>
+                            condition(props) && (
+                                <li key={label} className="nav-item">
+                                    <NavLink to={url + to} className="nav-link" activeClassName="active" exact={exact}>
+                                        <span>
+                                            {Icon && <Icon className="icon-inline" />}{' '}
+                                            <span className="text-content" data-tab-content={label}>
+                                                {label}
+                                            </span>
+                                        </span>
+                                    </NavLink>
+                                </li>
+                            )
+                    )}
+                </ul>
+            </div>
         </div>
     </div>
 )

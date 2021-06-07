@@ -388,12 +388,22 @@ add(
                 <ul className="nav nav-tabs mb-2">
                     <li className="nav-item">
                         <a className="nav-link active" href="/" onClick={preventDefault}>
-                            Comments <span className="badge badge-pill badge-secondary">14</span>
+                            <span>
+                                <span className="text-content" data-test-tab="Comments">
+                                    Comments
+                                </span>{' '}
+                                <span className="badge badge-pill badge-secondary">14</span>
+                            </span>
                         </a>
                     </li>
                     <li className="nav-item">
                         <a className="nav-link" href="/" onClick={preventDefault}>
-                            Changed files <span className="badge badge-pill badge-secondary">6</span>
+                            <span>
+                                <span className="text-content" data-test-tab="Changed files">
+                                    Changed files
+                                </span>{' '}
+                                <span className="badge badge-pill badge-secondary">6</span>
+                            </span>
                         </a>
                     </li>
                 </ul>

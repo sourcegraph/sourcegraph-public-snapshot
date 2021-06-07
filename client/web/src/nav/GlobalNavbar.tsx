@@ -192,6 +192,10 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
 
     const [isRedesignEnabled] = useRedesignToggle()
 
+    const settings = !isErrorLike(props.settingsCascade.final) ? props.settingsCascade.final : null
+    const codeInsights =
+        settings?.experimentalFeatures?.codeInsights && settings?.['insights.displayLocation.insightsPage'] !== false
+
     const logo = (
         <LinkOrSpan to={authRequired ? undefined : '/search'} className="global-navbar__logo-link">
             <BrandLogo
@@ -245,15 +249,21 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                         <NavItem icon={MagnifyIcon}>
                             <NavLink to="/search">Code Search</NavLink>
                         </NavItem>
-                        <NavItem icon={CodeMonitoringLogo}>
-                            <NavLink to="/code-monitoring">Monitoring</NavLink>
-                        </NavItem>
-                        <NavItem icon={BatchChangesIconNav}>
-                            <BatchChangesNavLink isSourcegraphDotCom={isSourcegraphDotCom} />
-                        </NavItem>
-                        <NavItem icon={BarChartIcon}>
-                            <NavLink to="/insights">Insights</NavLink>
-                        </NavItem>
+                        {props.enableCodeMonitoring && (
+                            <NavItem icon={CodeMonitoringLogo}>
+                                <NavLink to="/code-monitoring">Monitoring</NavLink>
+                            </NavItem>
+                        )}
+                        {props.showBatchChanges && (
+                            <NavItem icon={BatchChangesIconNav}>
+                                <BatchChangesNavLink isSourcegraphDotCom={isSourcegraphDotCom} />
+                            </NavItem>
+                        )}
+                        {codeInsights && (
+                            <NavItem icon={BarChartIcon}>
+                                <NavLink to="/insights">Insights</NavLink>
+                            </NavItem>
+                        )}
                         <NavItem icon={PuzzleOutlineIcon}>
                             <NavLink to="/extensions">Extensions</NavLink>
                         </NavItem>

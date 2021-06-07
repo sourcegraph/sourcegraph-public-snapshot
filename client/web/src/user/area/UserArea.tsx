@@ -208,7 +208,7 @@ export const UserArea: React.FunctionComponent<UserAreaProps> = ({
 
     return (
         <Page className="user-area">
-            <UserAreaHeader {...props} {...context} navItems={props.userAreaHeaderNavItems} className="border-bottom" />
+            <UserAreaHeader {...props} {...context} navItems={props.userAreaHeaderNavItems} />
             <div className="container mt-3">
                 <ErrorBoundary location={props.location}>
                     <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>

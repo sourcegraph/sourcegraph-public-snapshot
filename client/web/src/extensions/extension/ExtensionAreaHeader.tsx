@@ -17,7 +17,7 @@ import { ExtensionStatusBadge } from './ExtensionStatusBadge'
 
 interface ExtensionAreaHeaderProps extends ExtensionAreaRouteContext, RouteComponentProps<{}> {
     navItems: readonly ExtensionAreaHeaderNavItem[]
-    className: string
+    className?: string
 }
 
 export type ExtensionAreaHeaderContext = Pick<ExtensionAreaHeaderProps, 'extension'>
@@ -191,7 +191,7 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                             }
                         />
                         <div className="mt-4">
-                            <ul className="nav nav-tabs border-bottom-0">
+                            <ul className="nav nav-tabs">
                                 {props.navItems.map(
                                     ({ to, label, exact, icon: Icon, condition = () => true }) =>
                                         condition(props) && (
@@ -202,7 +202,10 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                                                     activeClassName="active"
                                                     exact={exact}
                                                 >
-                                                    {Icon && <Icon className="icon-inline" />} {label}
+                                                    {Icon && <Icon className="icon-inline" />}{' '}
+                                                    <span className="text-content" data-tab-content={label}>
+                                                        {label}
+                                                    </span>
                                                 </NavLink>
                                             </li>
                                         )

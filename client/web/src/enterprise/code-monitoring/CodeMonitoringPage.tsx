@@ -221,10 +221,14 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
             {userHasCodeMonitors && userHasCodeMonitors !== 'loading' && !isErrorLike(userHasCodeMonitors) && (
                 <>
                     <div className="d-flex flex-column">
-                        <div className="code-monitoring-page-tabs border-bottom mb-4">
-                            <div className="nav nav-tabs border-bottom-0">
+                        <div className="code-monitoring-page-tabs mb-4">
+                            <div className="nav nav-tabs">
                                 <div className="nav-item">
-                                    <div className="nav-link active">Code monitors</div>
+                                    <div className="nav-link active">
+                                        <span className="text-content" data-tab-content="Code monitors">
+                                            Code monitors
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                         </div>

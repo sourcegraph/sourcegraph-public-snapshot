@@ -10,12 +10,14 @@ import (
 
 type IndexConnectionResolver struct {
 	resolver         *resolvers.IndexesResolver
+	prefetcher       *Prefetcher
 	locationResolver *CachedLocationResolver
 }
 
-func NewIndexConnectionResolver(resolver *resolvers.IndexesResolver, locationResolver *CachedLocationResolver) gql.LSIFIndexConnectionResolver {
+func NewIndexConnectionResolver(resolver *resolvers.IndexesResolver, prefetcher *Prefetcher, locationResolver *CachedLocationResolver) gql.LSIFIndexConnectionResolver {
 	return &IndexConnectionResolver{
 		resolver:         resolver,
+		prefetcher:       prefetcher,
 		locationResolver: locationResolver,
 	}
 }
@@ -27,7 +29,7 @@ func (r *IndexConnectionResolver) Nodes(ctx context.Context) ([]gql.LSIFIndexRes
 
 	resolvers := make([]gql.LSIFIndexResolver, 0, len(r.resolver.Indexes))
 	for i := range r.resolver.Indexes {
-		resolvers = append(resolvers, NewIndexResolver(r.resolver.Indexes[i], r.locationResolver))
+		resolvers = append(resolvers, NewIndexResolver(r.resolver.Indexes[i], r.prefetcher, r.locationResolver))
 	}
 	return resolvers, nil
 }

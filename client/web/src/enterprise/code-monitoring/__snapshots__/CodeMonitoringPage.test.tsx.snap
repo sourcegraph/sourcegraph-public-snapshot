@@ -142,10 +142,10 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
       className="d-flex flex-column"
     >
       <div
-        className="code-monitoring-page-tabs border-bottom mb-4"
+        className="code-monitoring-page-tabs mb-4"
       >
         <div
-          className="nav nav-tabs border-bottom-0"
+          className="nav nav-tabs"
         >
           <div
             className="nav-item"
@@ -153,7 +153,12 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
             <div
               className="nav-link active"
             >
-              Code monitors
+              <span
+                className="text-content"
+                data-tab-content="Code monitors"
+              >
+                Code monitors
+              </span>
             </div>
           </div>
         </div>
@@ -2124,10 +2129,10 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
       className="d-flex flex-column"
     >
       <div
-        className="code-monitoring-page-tabs border-bottom mb-4"
+        className="code-monitoring-page-tabs mb-4"
       >
         <div
-          className="nav nav-tabs border-bottom-0"
+          className="nav nav-tabs"
         >
           <div
             className="nav-item"
@@ -2135,7 +2140,12 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
             <div
               className="nav-link active"
             >
-              Code monitors
+              <span
+                className="text-content"
+                data-tab-content="Code monitors"
+              >
+                Code monitors
+              </span>
             </div>
           </div>
         </div>
@@ -2937,10 +2947,10 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
       className="d-flex flex-column"
     >
       <div
-        className="code-monitoring-page-tabs border-bottom mb-4"
+        className="code-monitoring-page-tabs mb-4"
       >
         <div
-          className="nav nav-tabs border-bottom-0"
+          className="nav nav-tabs"
         >
           <div
             className="nav-item"
@@ -2948,7 +2958,12 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
             <div
               className="nav-link active"
             >
-              Code monitors
+              <span
+                className="text-content"
+                data-tab-content="Code monitors"
+              >
+                Code monitors
+              </span>
             </div>
           </div>
         </div>

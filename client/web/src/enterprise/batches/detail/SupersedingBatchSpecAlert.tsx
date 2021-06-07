@@ -20,7 +20,7 @@ export const SupersedingBatchSpecAlert: React.FunctionComponent<SupersedingBatch
     const { applyURL, createdAt } = spec
     return (
         <DismissibleAlert
-            className="alert alert-info"
+            className="alert-info"
             partialStorageKey={`superseding-spec-${parseISO(spec.createdAt).getTime()}`}
         >
             <div className="d-flex align-items-center">
