@@ -31,8 +31,10 @@ export const FilterLink: React.FunctionComponent<FilterLinkProps> = ({
 }) => (
     <button
         type="button"
-        className={classNames('test-sidebar-filter-link btn btn-link', styles.sidebarSectionListItem)}
+        className={classNames('btn btn-link', styles.sidebarSectionListItem)}
         onClick={() => onFilterChosen(value)}
+        data-testid="filter-link"
+        value={value}
     >
         <span className="flex-grow-1">{labelConverter(label)}</span>
         {count && (

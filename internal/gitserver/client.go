@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -363,7 +362,7 @@ func (c *Cmd) DividedOutput(ctx context.Context) ([]byte, []byte, error) {
 		return nil, nil, err
 	}
 
-	stdout, err := ioutil.ReadAll(rc)
+	stdout, err := io.ReadAll(rc)
 	rc.Close()
 	if err != nil {
 		return nil, nil, err
@@ -611,7 +610,7 @@ func (c *Client) RequestRepoUpdate(ctx context.Context, repo api.RepoName, since
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		body, _ := ioutil.ReadAll(io.LimitReader(resp.Body, 200))
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
 		return nil, &url.Error{URL: resp.Request.URL.String(), Op: "RepoInfo", Err: fmt.Errorf("RepoInfo: http status %d: %s", resp.StatusCode, body)}
 	}
 
@@ -637,7 +636,7 @@ func (c *Client) IsRepoCloneable(ctx context.Context, repo api.RepoName) error {
 		return err
 	}
 	defer r.Body.Close()
-	body, err := ioutil.ReadAll(r.Body)
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		return err
 	}
@@ -897,7 +896,7 @@ func (c *Client) Remove(ctx context.Context, repo api.RepoName) error {
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		// best-effort inclusion of body in error message
-		body, _ := ioutil.ReadAll(io.LimitReader(resp.Body, 200))
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
 		return &url.Error{URL: resp.Request.URL.String(), Op: "RepoRemove", Err: fmt.Errorf("RepoRemove: http status %d: %s", resp.StatusCode, string(body))}
 	}
 	return nil
@@ -974,7 +973,7 @@ func (c *Client) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 	}
 	defer resp.Body.Close()
 
-	data, err := ioutil.ReadAll(resp.Body)
+	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log15.Warn("reading gitserver create-commit-from-patch response", "err", err.Error())
 		return "", &url.Error{URL: resp.Request.URL.String(), Op: "CreateCommitFromPatch", Err: fmt.Errorf("CreateCommitFromPatch: http status %d %s", resp.StatusCode, err.Error())}

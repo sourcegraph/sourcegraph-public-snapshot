@@ -10,6 +10,7 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Container } from '@sourcegraph/wildcard'
 
 import { BatchChangeFields } from '../../../graphql-operations'
 import {
@@ -162,7 +163,9 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                         originalInput={batchChange.currentSpec.originalInput}
                     />
                 </div>
-                <BatchSpec originalInput={batchChange.currentSpec.originalInput} />
+                <Container>
+                    <BatchSpec originalInput={batchChange.currentSpec.originalInput} />
+                </Container>
             </BatchChangeTabPanel>
             <BatchChangeTabPanel index={3}>
                 <BatchChangeChangesets

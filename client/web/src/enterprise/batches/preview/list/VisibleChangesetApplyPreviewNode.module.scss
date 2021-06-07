@@ -14,6 +14,9 @@ $changeset-backdrop: #f3faff;
     }
     &__bg-expanded {
         background-color: $changeset-backdrop;
+        :global(.theme-redesign) & {
+            background-color: var(--body-bg);
+        }
         @media (--sm-breakpoint-up) {
             border-top: 1px solid var(--border-color-2);
             padding: 1.5rem;
@@ -22,7 +25,10 @@ $changeset-backdrop: #f3faff;
     &__status-cell {
         color: var(--muted);
         @media (--sm-breakpoint-up) {
-            background-color: var(--oc-blue-0);
+            background-color: $changeset-backdrop;
+            :global(.theme-redesign) & {
+                background-color: var(--body-bg);
+            }
         }
     }
     &__list-cell {
@@ -48,7 +54,7 @@ $changeset-backdrop: #f3faff;
     &__change-indicator {
         width: 0.5rem !important;
         height: 0.5rem !important;
-        vertical-align: middle;
+        vertical-align: baseline !important;
     }
 }
 
@@ -57,11 +63,15 @@ $changeset-backdrop: #f3faff;
         &__status-cell {
             color: var(--body-color);
             @media (--sm-breakpoint-up) {
-                background-color: var(--oc-gray-7);
+                :global(.theme-classic) & {
+                    background-color: var(--oc-gray-7);
+                }
             }
         }
         &__bg-expanded {
-            background-color: var(--oc-gray-7);
+            :global(.theme-classic) & {
+                background-color: var(--oc-gray-7);
+            }
         }
         &__tab-link {
             &--active {

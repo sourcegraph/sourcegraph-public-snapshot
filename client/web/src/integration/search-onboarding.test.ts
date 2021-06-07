@@ -89,6 +89,7 @@ describe('Search onboarding', () => {
             tourCard = await driver.page.evaluate(() => document.querySelector('.tour-card'))
             expect(tourCard).toBeTruthy()
         })
+
         it('displays all steps in the language onboarding flow', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
             await resetOnboardingTour()

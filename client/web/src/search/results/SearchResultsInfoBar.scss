@@ -9,6 +9,7 @@
     .theme-redesign & {
         padding-top: 0;
         padding-left: 0;
+        color: revert;
     }
 
     .alert {
@@ -39,6 +40,10 @@
         display: flex;
         align-items: center;
         margin-right: 1rem;
+
+        .theme-redesign & {
+            padding: 0.375rem 0;
+        }
     }
 
     &__divider {

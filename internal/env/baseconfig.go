@@ -8,6 +8,18 @@ import (
 	"github.com/hashicorp/go-multierror"
 )
 
+type Config interface {
+	// Load is called prior to env.Lock an application startup. This method should
+	// read the values from the environment and store errors to be reported later.
+	Load()
+
+	// Validate performs non-trivial validation and returns any resulting errors.
+	// This method should also return errors that occurred while reading values from
+	// the environment in Load. This method is called after the environment has been
+	// locked, so all environment variable reads must happen in Load.
+	Validate() error
+}
+
 // BaseConfig is a base struct for configuration objects. The following is a minimal
 // example of declaring, loading, and validating configuration from the environment.
 //

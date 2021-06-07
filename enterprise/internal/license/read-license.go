@@ -12,7 +12,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 
@@ -32,7 +32,7 @@ func (noopPublicKey) Verify(data []byte, sig *ssh.Signature) error { return erro
 func main() {
 	log.SetFlags(0)
 
-	data, err := ioutil.ReadAll(os.Stdin)
+	data, err := io.ReadAll(os.Stdin)
 	if err != nil {
 		log.Fatal(err)
 	}

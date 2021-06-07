@@ -93,7 +93,7 @@ export const BatchChangeCloseAlert: React.FunctionComponent<BatchChangeCloseAler
                     <div className="d-flex justify-content-end">
                         <button
                             type="button"
-                            className="btn btn-secondary mr-3 test-batches-close-abort-btn"
+                            className="btn btn-secondary mr-2 test-batches-close-abort-btn"
                             onClick={onCancel}
                             disabled={isClosing === true || !viewerCanAdminister}
                         >

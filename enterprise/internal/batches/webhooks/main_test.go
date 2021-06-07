@@ -7,7 +7,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"flag"
-	"io/ioutil"
+	"os"
 	"testing"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -51,7 +51,7 @@ type webhookTestCase struct {
 func loadWebhookTestCase(t testing.TB, path string) webhookTestCase {
 	t.Helper()
 
-	bs, err := ioutil.ReadFile(path)
+	bs, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)
 	}

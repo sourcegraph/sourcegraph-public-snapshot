@@ -45,7 +45,7 @@ To learn more about the generator\, see the top\-level program: https://github.c
 - [type UnitType](<#type-unittype>)
 
 
-## func [Generate](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/generator.go#L40>)
+## func [Generate](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/generator.go#L39>)
 
 ```go
 func Generate(logger log15.Logger, opts GenerateOptions, containers ...*Container) error
@@ -105,7 +105,7 @@ type Container struct {
 }
 ```
 
-## type [GenerateOptions](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/generator.go#L25-L37>)
+## type [GenerateOptions](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/generator.go#L24-L36>)
 
 GenerateOptions declares options for the monitoring generator\.
 

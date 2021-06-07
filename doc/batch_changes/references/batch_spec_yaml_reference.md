@@ -5,7 +5,7 @@
 
 /* The sidebar on this page contains a lot of long identifiers without
 whitespace. In order to make them more readable we increase the width of the
-sidebar. /*
+sidebar. */
 @media (min-width: 1200px) {
   body > #page > main > #index {
     width: 35%;

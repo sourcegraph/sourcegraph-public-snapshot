@@ -130,13 +130,14 @@ exports[`UserNavItem simple 1`] = `
                               }
                             }
                           >
-                            <Memo(AccountCircleIcon)
+                            <div
                               className="user-avatar icon-inline user-nav-item__avatar"
-                              id="target-user-avatar"
-                            />
+                            >
+                              ad
+                            </div>
                           </UserAvatar>
                           <MenuDropdownIcon>
-                            <Memo(MenuDownIcon)
+                            <Memo(ChevronDownIcon)
                               className="icon-inline"
                             />
                           </MenuDropdownIcon>

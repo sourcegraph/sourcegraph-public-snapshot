@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"strings"
 	"sync"
 	"time"
@@ -130,7 +129,7 @@ func (s *s3Store) Get(ctx context.Context, key string) (_ io.ReadCloser, err err
 		}
 	})
 
-	return ioutil.NopCloser(reader), nil
+	return io.NopCloser(reader), nil
 }
 
 // ioCopyHook is a pointer to io.Copy. This function is replaced in unit tests so that we can

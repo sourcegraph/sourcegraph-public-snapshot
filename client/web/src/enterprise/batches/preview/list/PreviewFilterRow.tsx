@@ -80,7 +80,7 @@ export const PreviewFilterRow: React.FunctionComponent<PreviewFilterRowProps> = 
     return (
         <div className="row no-gutters">
             <div className="m-0 col">
-                <Form className="form-inline d-flex my-2" onSubmit={onSubmit}>
+                <Form className="form-inline d-flex mb-2" onSubmit={onSubmit}>
                     <input
                         className="form-control flex-grow-1"
                         type="search"
@@ -93,7 +93,7 @@ export const PreviewFilterRow: React.FunctionComponent<PreviewFilterRowProps> = 
             <div className="w-100 d-block d-md-none" />
             <div className="m-0 col col-md-auto">
                 <div className="row no-gutters">
-                    <div className="col my-2 ml-0 ml-md-2">
+                    <div className="col mb-2 ml-0 ml-md-2">
                         <ChangesetFilter<ChangesetState>
                             values={Object.values(ChangesetState)}
                             label="Current state"
@@ -102,7 +102,7 @@ export const PreviewFilterRow: React.FunctionComponent<PreviewFilterRowProps> = 
                             className="w-100"
                         />
                     </div>
-                    <div className="col my-2 ml-0 ml-md-2">
+                    <div className="col mb-2 ml-2">
                         <ChangesetFilter<ChangesetSpecOperation>
                             values={Object.values(ChangesetSpecOperation)}
                             label="Actions"

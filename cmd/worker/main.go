@@ -3,5 +3,5 @@ package main
 import "github.com/sourcegraph/sourcegraph/cmd/worker/shared"
 
 func main() {
-	shared.Main()
+	shared.Start(nil)
 }
