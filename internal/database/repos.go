@@ -274,6 +274,7 @@ var repoColumns = []string{
 	"repo.description",
 	"repo.fork",
 	"repo.archived",
+	"repo.stars",
 	"repo.created_at",
 	"repo.updated_at",
 	"repo.deleted_at",
@@ -300,6 +301,7 @@ func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 		&dbutil.NullString{S: &r.Description},
 		&r.Fork,
 		&r.Archived,
+		&dbutil.NullInt{N: &r.Stars},
 		&r.CreatedAt,
 		&dbutil.NullTime{Time: &r.UpdatedAt},
 		&dbutil.NullTime{Time: &r.DeletedAt},
@@ -961,6 +963,7 @@ type repoRecord struct {
 	ExternalID          *string         `json:"external_id,omitempty"`
 	Archived            bool            `json:"archived"`
 	Fork                bool            `json:"fork"`
+	Stars               int             `json:"stars"`
 	Private             bool            `json:"private"`
 	Metadata            json.RawMessage `json:"metadata"`
 	Sources             json.RawMessage `json:"sources,omitempty"`
@@ -990,6 +993,7 @@ func newRepoRecord(r *types.Repo) (*repoRecord, error) {
 		ExternalID:          nullStringColumn(r.ExternalRepo.ID),
 		Archived:            r.Archived,
 		Fork:                r.Fork,
+		Stars:               r.Stars,
 		Private:             r.Private,
 		Metadata:            metadata,
 		Sources:             sources,
@@ -1068,6 +1072,7 @@ WITH repos_list AS (
 		external_id           text,
 		archived              boolean,
 		fork                  boolean,
+		stars                 integer,
 		private               boolean,
 		metadata              jsonb,
 		sources               jsonb
@@ -1088,6 +1093,7 @@ inserted_repos AS (
 	external_id,
 	archived,
 	fork,
+	stars,
 	private,
 	metadata
   )
@@ -1103,6 +1109,7 @@ inserted_repos AS (
 	external_id,
 	archived,
 	fork,
+	stars,
 	private,
 	metadata
   FROM repos_list
