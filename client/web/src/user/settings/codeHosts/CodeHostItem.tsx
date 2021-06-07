@@ -92,7 +92,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                     </button>
                 )}
 
-                {/* Show update, updating, connect and connecting buttons */}
+                {/* Show one of: update, updating, connect, connecting buttons */}
                 {!service?.id ? (
                     oauthInFlight ? (
                         <LoaderButton
