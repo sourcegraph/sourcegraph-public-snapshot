@@ -4,7 +4,6 @@
 
     &__alert {
         width: 100%;
-        padding: 0.5rem;
         margin-bottom: 0;
 
         border-radius: 0;
@@ -15,6 +14,22 @@
         ul:last-child,
         ol:last-child {
             margin-bottom: 0;
+        }
+
+        .theme-redesign & {
+            color: var(--body-color);
+            background: var(--alert-icon-background-color);
+            padding-left: var(--alert-content-padding);
+            border-color: var(--border-color-2);
+
+            &::before,
+            &::after {
+                display: none;
+            }
+
+            &:last-child {
+                border-bottom-width: 0;
+            }
         }
     }
 }
