@@ -15,6 +15,7 @@ interface SuggestionsPanelProps {
 }
 
 interface RepositorySuggestion {
+    id: string
     name: string
 }
 
@@ -42,7 +43,7 @@ export function SuggestionsPanel(props: SuggestionsPanelProps): ReactElement {
     return (
         <ComboboxList className={styles.suggestionsList}>
             {suggestions.map(suggestion => (
-                <ComboboxOption className={styles.suggestionsListItem} key={suggestion.name} value={suggestion.name}>
+                <ComboboxOption className={styles.suggestionsListItem} key={suggestion.id} value={suggestion.name}>
                     <SourceBranchIcon className="mr-1" size="1rem" />
                     <ComboboxOptionText />
                 </ComboboxOption>
