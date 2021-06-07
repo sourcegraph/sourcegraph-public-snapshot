@@ -18,7 +18,7 @@ interface FormInputProps extends InputHTMLAttributes<HTMLInputElement> {
     errorInputState?: boolean
     /** Valid sign to show valid state on input. */
     valid?: boolean
-    /** Turn on loading state (visually this is input with loader) */
+    /** Turn on loading state (visually this is an input with loader) */
     loading?: boolean
     /** Turn on or turn off autofocus for input. */
     autofocus?: boolean
@@ -29,7 +29,7 @@ interface FormInputProps extends InputHTMLAttributes<HTMLInputElement> {
 }
 
 /**
- * Displays input with description, error message, visual invalid and valid states.
+ * Displays the input with description, error message, visual invalid and valid states.
  */
 export const FormInput = forwardRef((props, reference) => {
     const {
