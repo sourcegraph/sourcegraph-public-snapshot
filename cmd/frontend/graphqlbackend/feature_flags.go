@@ -53,8 +53,8 @@ type FeatureFlagRolloutResolver struct {
 	inner *featureflag.FeatureFlag
 }
 
-func (f *FeatureFlagRolloutResolver) Name() string   { return f.inner.Name }
-func (f *FeatureFlagRolloutResolver) Rollout() int32 { return f.inner.Rollout.Rollout }
+func (f *FeatureFlagRolloutResolver) Name() string              { return f.inner.Name }
+func (f *FeatureFlagRolloutResolver) RolloutBasisPoints() int32 { return f.inner.Rollout.Rollout }
 func (f *FeatureFlagRolloutResolver) Overrides(ctx context.Context) ([]*FeatureFlagOverrideResolver, error) {
 	overrides, err := database.FeatureFlags(f.db).GetOverridesForFlag(ctx, f.inner.Name)
 	if err != nil {
@@ -161,9 +161,9 @@ func flagsToResolvers(db dbutil.DB, flags []*featureflag.FeatureFlag) []*Feature
 }
 
 func (r *schemaResolver) CreateFeatureFlag(ctx context.Context, args struct {
-	Name    string
-	Value   *bool
-	Rollout *int32
+	Name               string
+	Value              *bool
+	RolloutBasisPoints *int32
 }) (*FeatureFlagResolver, error) {
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
@@ -175,8 +175,8 @@ func (r *schemaResolver) CreateFeatureFlag(ctx context.Context, args struct {
 	var err error
 	if args.Value != nil {
 		res, err = ff.CreateBool(ctx, args.Name, *args.Value)
-	} else if args.Rollout != nil {
-		res, err = ff.CreateRollout(ctx, args.Name, *args.Rollout)
+	} else if args.RolloutBasisPoints != nil {
+		res, err = ff.CreateRollout(ctx, args.Name, *args.RolloutBasisPoints)
 	}
 
 	return &FeatureFlagResolver{r.db, res}, err
@@ -192,9 +192,9 @@ func (r *schemaResolver) DeleteFeatureFlag(ctx context.Context, args struct {
 }
 
 func (r *schemaResolver) UpdateFeatureFlag(ctx context.Context, args struct {
-	Name    string
-	Value   *bool
-	Rollout *int32
+	Name               string
+	Value              *bool
+	RolloutBasisPoints *int32
 }) (*FeatureFlagResolver, error) {
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
@@ -202,8 +202,8 @@ func (r *schemaResolver) UpdateFeatureFlag(ctx context.Context, args struct {
 	ff := &featureflag.FeatureFlag{Name: args.Name}
 	if args.Value != nil {
 		ff.Bool = &featureflag.FeatureFlagBool{Value: *args.Value}
-	} else if args.Rollout != nil {
-		ff.Rollout = &featureflag.FeatureFlagRollout{Rollout: *args.Rollout}
+	} else if args.RolloutBasisPoints != nil {
+		ff.Rollout = &featureflag.FeatureFlagRollout{Rollout: *args.RolloutBasisPoints}
 	}
 
 	res, err := database.FeatureFlags(r.db).UpdateFeatureFlag(ctx, ff)

@@ -50,7 +50,7 @@ func TestFeatureFlags(t *testing.T) {
 		}
 		...on FeatureFlagRollout {
 		  name
-		  rollout
+		  rolloutBasisPoints
 		  overrides {
 			...FeatureFlagOverrideData
 		  }
@@ -58,19 +58,19 @@ func TestFeatureFlags(t *testing.T) {
 	}`
 
 	type featureFlagResult struct {
-		Name      string
-		Value     *bool
-		Rollout   *int
-		Overrides []featureFlagOverrideResult
+		Name               string
+		Value              *bool
+		RolloutBasisPoints *int
+		Overrides          []featureFlagOverrideResult
 	}
 
-	createFeatureFlag := func(name string, value *bool, rollout *int) (featureFlagResult, error) {
+	createFeatureFlag := func(name string, value *bool, rolloutBasisPoints *int) (featureFlagResult, error) {
 		m := featureFlagFragment + featureFlagOverrideFragment + `
 		mutation CreateFeatureFlag($name: String!, $value: Boolean, $rollout: Int) {
 			createFeatureFlag(
 				name: $name,
 				value: $value,
-				rollout: $rollout,
+				rolloutBasisPoints: $rollout,
 			) {
 				...FeatureFlagData
 			}
@@ -81,18 +81,18 @@ func TestFeatureFlags(t *testing.T) {
 				CreateFeatureFlag featureFlagResult
 			}
 		}
-		params := map[string]interface{}{"name": name, "value": value, "rollout": rollout}
+		params := map[string]interface{}{"name": name, "value": value, "rollout": rolloutBasisPoints}
 		err := client.GraphQL("", m, params, &res)
 		return res.Data.CreateFeatureFlag, err
 	}
 
-	updateFeatureFlag := func(name string, value *bool, rollout *int) (featureFlagResult, error) {
+	updateFeatureFlag := func(name string, value *bool, rolloutBasisPoints *int) (featureFlagResult, error) {
 		m := featureFlagFragment + featureFlagOverrideFragment + `
 		mutation UpdateFeatureFlag($name: String!, $value: Boolean, $rollout: Int) {
 			updateFeatureFlag(
 				name: $name,
 				value: $value,
-				rollout: $rollout
+				rolloutBasisPoints: $rollout
 			) {
 				...FeatureFlagData
 			}
@@ -103,7 +103,7 @@ func TestFeatureFlags(t *testing.T) {
 				UpdateFeatureFlag featureFlagResult
 			}
 		}
-		params := map[string]interface{}{"name": name, "value": value, "rollout": rollout}
+		params := map[string]interface{}{"name": name, "value": value, "rollout": rolloutBasisPoints}
 		err := client.GraphQL("", m, params, &res)
 		return res.Data.UpdateFeatureFlag, err
 	}
@@ -160,9 +160,9 @@ func TestFeatureFlags(t *testing.T) {
 			require.NoError(t, err)
 
 			expected := featureFlagResult{
-				Name:      "test_rollout",
-				Rollout:   &int343,
-				Overrides: []featureFlagOverrideResult{},
+				Name:               "test_rollout",
+				RolloutBasisPoints: &int343,
+				Overrides:          []featureFlagOverrideResult{},
 			}
 			require.Equal(t, expected, res)
 		})
@@ -195,9 +195,9 @@ func TestFeatureFlags(t *testing.T) {
 			require.NoError(t, err)
 
 			expected := featureFlagResult{
-				Name:      "test_rollout",
-				Rollout:   &int344,
-				Overrides: []featureFlagOverrideResult{},
+				Name:               "test_rollout",
+				RolloutBasisPoints: &int344,
+				Overrides:          []featureFlagOverrideResult{},
 			}
 			require.Equal(t, expected, res)
 		})
