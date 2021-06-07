@@ -177,7 +177,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     const [otherPublicRepoError, setOtherPublicRepoError] = useState<undefined | ErrorLike>()
 
     const ExternalServiceProblemHint = (
-        <Link className="text-primary" to={`${routingPrefix}/code-hosts`}>
+        <Link className={classNames(!isRedesignEnabled && 'text-primary')} to={`${routingPrefix}/code-hosts`}>
             Check code host connections
         </Link>
     )
@@ -736,7 +736,10 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                             <h3>Your repositories</h3>
                             <p className="text-muted">
                                 Repositories you own or collaborate on from your{' '}
-                                <Link className="text-primary" to={`${routingPrefix}/code-hosts`}>
+                                <Link
+                                    className={classNames(!isRedesignEnabled && 'text-primary')}
+                                    to={`${routingPrefix}/code-hosts`}
+                                >
                                     connected code hosts
                                 </Link>
                             </p>
