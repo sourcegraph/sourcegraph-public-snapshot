@@ -12,9 +12,11 @@ Array [
     value="lang:go"
   >
     <button
-      className="test-sidebar-filter-link btn btn-link sidebarSectionListItem"
+      className="btn btn-link sidebarSectionListItem"
+      data-testid="filter-link"
       onClick={[Function]}
       type="button"
+      value="lang:go"
     >
       <span
         className="flex-grow-1"
@@ -54,9 +56,11 @@ Array [
     value="lang:typescript"
   >
     <button
-      className="test-sidebar-filter-link btn btn-link sidebarSectionListItem"
+      className="btn btn-link sidebarSectionListItem"
+      data-testid="filter-link"
       onClick={[Function]}
       type="button"
+      value="lang:typescript"
     >
       <span
         className="flex-grow-1"
@@ -95,9 +99,11 @@ Array [
     value="-file:_test\\\\.go$"
   >
     <button
-      className="test-sidebar-filter-link btn btn-link sidebarSectionListItem"
+      className="btn btn-link sidebarSectionListItem"
+      data-testid="filter-link"
       onClick={[Function]}
       type="button"
+      value="-file:_test\\\\.go$"
     >
       <span
         className="flex-grow-1"
@@ -142,9 +148,11 @@ Array [
     value="repo:^gitlab\\\\.com/sourcegraph/sourcgreaph$"
   >
     <button
-      className="test-sidebar-filter-link btn btn-link sidebarSectionListItem"
+      className="btn btn-link sidebarSectionListItem"
+      data-testid="filter-link"
       onClick={[Function]}
       type="button"
+      value="repo:^gitlab\\\\.com/sourcegraph/sourcgreaph$"
     >
       <span
         className="flex-grow-1"
@@ -187,9 +195,11 @@ Array [
     value="repo:^github\\\\.com/microsoft/vscode$"
   >
     <button
-      className="test-sidebar-filter-link btn btn-link sidebarSectionListItem"
+      className="btn btn-link sidebarSectionListItem"
+      data-testid="filter-link"
       onClick={[Function]}
       type="button"
+      value="repo:^github\\\\.com/microsoft/vscode$"
     >
       <span
         className="flex-grow-1"
@@ -234,9 +244,11 @@ Array [
     value="repo:sourcegraph"
   >
     <button
-      className="test-sidebar-filter-link btn btn-link sidebarSectionListItem"
+      className="btn btn-link sidebarSectionListItem"
+      data-testid="filter-link"
       onClick={[Function]}
       type="button"
+      value="repo:sourcegraph"
     >
       <span
         className="flex-grow-1"
@@ -252,9 +264,11 @@ Array [
     value="count:all"
   >
     <button
-      className="test-sidebar-filter-link btn btn-link sidebarSectionListItem"
+      className="btn btn-link sidebarSectionListItem"
+      data-testid="filter-link"
       onClick={[Function]}
       type="button"
+      value="count:all"
     >
       <span
         className="flex-grow-1"
@@ -279,9 +293,11 @@ Array [
     value="repo:^gitlab\\\\.com/sourcegraph/sourcgreaph$"
   >
     <button
-      className="test-sidebar-filter-link btn btn-link sidebarSectionListItem"
+      className="btn btn-link sidebarSectionListItem"
+      data-testid="filter-link"
       onClick={[Function]}
       type="button"
+      value="repo:^gitlab\\\\.com/sourcegraph/sourcgreaph$"
     >
       <span
         className="flex-grow-1"
@@ -324,9 +340,11 @@ Array [
     value="repo:^github\\\\.com/microsoft/vscode$"
   >
     <button
-      className="test-sidebar-filter-link btn btn-link sidebarSectionListItem"
+      className="btn btn-link sidebarSectionListItem"
+      data-testid="filter-link"
       onClick={[Function]}
       type="button"
+      value="repo:^github\\\\.com/microsoft/vscode$"
     >
       <span
         className="flex-grow-1"

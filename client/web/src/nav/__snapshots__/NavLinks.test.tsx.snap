@@ -216,21 +216,10 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
         aria-expanded="false"
         aria-haspopup="true"
         aria-label="Feedback"
-        class="btn btn-sm text-decoration-none feedback-prompt__toggle btn-link"
+        class="btn btn-sm text-decoration-none feedback-prompt__toggle btn-outline-secondary"
       >
-        <svg
-          class="mdi-icon d-lg-none icon-inline"
-          fill="currentColor"
-          height="24"
-          viewBox="0 0 24 24"
-          width="24"
-        >
-          <path
-            d="M18,14H10.5L12.5,12H18M6,14V11.5L12.88,4.64C13.07,4.45 13.39,4.45 13.59,4.64L15.35,6.41C15.55,6.61 15.55,6.92 15.35,7.12L8.47,14M20,2H4A2,2 0 0,0 2,4V22L6,18H20A2,2 0 0,0 22,16V4C22,2.89 21.1,2 20,2Z"
-          />
-        </svg>
         <span
-          class="d-none d-lg-block"
+          class=""
         >
           Feedback
         </span>
@@ -560,7 +549,7 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
         width="24"
       >
         <path
-          d="M7,10L12,15L17,10H7Z"
+          d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
         />
       </svg>
     </span>
@@ -584,18 +573,11 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
           <div
             class="align-items-center d-flex"
           >
-            <svg
-              class="mdi-icon user-avatar icon-inline user-nav-item__avatar"
-              fill="currentColor"
-              height="24"
-              id="target-user-avatar"
-              viewBox="0 0 24 24"
-              width="24"
+            <div
+              class="user-avatar icon-inline user-nav-item__avatar"
             >
-              <path
-                d="M12,19.2C9.5,19.2 7.29,17.92 6,16C6.03,14 10,12.9 12,12.9C14,12.9 17.97,14 18,16C16.71,17.92 14.5,19.2 12,19.2M12,5A3,3 0 0,1 15,8A3,3 0 0,1 12,11A3,3 0 0,1 9,8A3,3 0 0,1 12,5M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12C22,6.47 17.5,2 12,2Z"
-              />
-            </svg>
+              a
+            </div>
             <svg
               class="mdi-icon icon-inline"
               fill="currentColor"
@@ -604,7 +586,7 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
               width="24"
             >
               <path
-                d="M7,10L12,15L17,10H7Z"
+                d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
               />
             </svg>
           </div>
@@ -1006,21 +988,10 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
         aria-expanded="false"
         aria-haspopup="true"
         aria-label="Feedback"
-        class="btn btn-sm text-decoration-none feedback-prompt__toggle btn-link"
+        class="btn btn-sm text-decoration-none feedback-prompt__toggle btn-outline-secondary"
       >
-        <svg
-          class="mdi-icon d-lg-none icon-inline"
-          fill="currentColor"
-          height="24"
-          viewBox="0 0 24 24"
-          width="24"
-        >
-          <path
-            d="M18,14H10.5L12.5,12H18M6,14V11.5L12.88,4.64C13.07,4.45 13.39,4.45 13.59,4.64L15.35,6.41C15.55,6.61 15.55,6.92 15.35,7.12L8.47,14M20,2H4A2,2 0 0,0 2,4V22L6,18H20A2,2 0 0,0 22,16V4C22,2.89 21.1,2 20,2Z"
-          />
-        </svg>
         <span
-          class="d-none d-lg-block"
+          class=""
         >
           Feedback
         </span>
@@ -1350,7 +1321,7 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
         width="24"
       >
         <path
-          d="M7,10L12,15L17,10H7Z"
+          d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
         />
       </svg>
     </span>
@@ -1374,18 +1345,11 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
           <div
             class="align-items-center d-flex"
           >
-            <svg
-              class="mdi-icon user-avatar icon-inline user-nav-item__avatar"
-              fill="currentColor"
-              height="24"
-              id="target-user-avatar"
-              viewBox="0 0 24 24"
-              width="24"
+            <div
+              class="user-avatar icon-inline user-nav-item__avatar"
             >
-              <path
-                d="M12,19.2C9.5,19.2 7.29,17.92 6,16C6.03,14 10,12.9 12,12.9C14,12.9 17.97,14 18,16C16.71,17.92 14.5,19.2 12,19.2M12,5A3,3 0 0,1 15,8A3,3 0 0,1 12,11A3,3 0 0,1 9,8A3,3 0 0,1 12,5M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12C22,6.47 17.5,2 12,2Z"
-              />
-            </svg>
+              a
+            </div>
             <svg
               class="mdi-icon icon-inline"
               fill="currentColor"
@@ -1394,7 +1358,7 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
               width="24"
             >
               <path
-                d="M7,10L12,15L17,10H7Z"
+                d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
               />
             </svg>
           </div>
@@ -1806,21 +1770,10 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
         aria-expanded="false"
         aria-haspopup="true"
         aria-label="Feedback"
-        class="btn btn-sm text-decoration-none feedback-prompt__toggle btn-link"
+        class="btn btn-sm text-decoration-none feedback-prompt__toggle btn-outline-secondary"
       >
-        <svg
-          class="mdi-icon d-lg-none icon-inline"
-          fill="currentColor"
-          height="24"
-          viewBox="0 0 24 24"
-          width="24"
-        >
-          <path
-            d="M18,14H10.5L12.5,12H18M6,14V11.5L12.88,4.64C13.07,4.45 13.39,4.45 13.59,4.64L15.35,6.41C15.55,6.61 15.55,6.92 15.35,7.12L8.47,14M20,2H4A2,2 0 0,0 2,4V22L6,18H20A2,2 0 0,0 22,16V4C22,2.89 21.1,2 20,2Z"
-          />
-        </svg>
         <span
-          class="d-none d-lg-block"
+          class=""
         >
           Feedback
         </span>
@@ -2150,7 +2103,7 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
         width="24"
       >
         <path
-          d="M7,10L12,15L17,10H7Z"
+          d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
         />
       </svg>
     </span>
@@ -2174,18 +2127,11 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
           <div
             class="align-items-center d-flex"
           >
-            <svg
-              class="mdi-icon user-avatar icon-inline user-nav-item__avatar"
-              fill="currentColor"
-              height="24"
-              id="target-user-avatar"
-              viewBox="0 0 24 24"
-              width="24"
+            <div
+              class="user-avatar icon-inline user-nav-item__avatar"
             >
-              <path
-                d="M12,19.2C9.5,19.2 7.29,17.92 6,16C6.03,14 10,12.9 12,12.9C14,12.9 17.97,14 18,16C16.71,17.92 14.5,19.2 12,19.2M12,5A3,3 0 0,1 15,8A3,3 0 0,1 12,11A3,3 0 0,1 9,8A3,3 0 0,1 12,5M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12C22,6.47 17.5,2 12,2Z"
-              />
-            </svg>
+              a
+            </div>
             <svg
               class="mdi-icon icon-inline"
               fill="currentColor"
@@ -2194,7 +2140,7 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
               width="24"
             >
               <path
-                d="M7,10L12,15L17,10H7Z"
+                d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
               />
             </svg>
           </div>
@@ -2577,21 +2523,10 @@ exports[`NavLinks authed self-hosted /search 1`] = `
         aria-expanded="false"
         aria-haspopup="true"
         aria-label="Feedback"
-        class="btn btn-sm text-decoration-none feedback-prompt__toggle btn-link"
+        class="btn btn-sm text-decoration-none feedback-prompt__toggle btn-outline-secondary"
       >
-        <svg
-          class="mdi-icon d-lg-none icon-inline"
-          fill="currentColor"
-          height="24"
-          viewBox="0 0 24 24"
-          width="24"
-        >
-          <path
-            d="M18,14H10.5L12.5,12H18M6,14V11.5L12.88,4.64C13.07,4.45 13.39,4.45 13.59,4.64L15.35,6.41C15.55,6.61 15.55,6.92 15.35,7.12L8.47,14M20,2H4A2,2 0 0,0 2,4V22L6,18H20A2,2 0 0,0 22,16V4C22,2.89 21.1,2 20,2Z"
-          />
-        </svg>
         <span
-          class="d-none d-lg-block"
+          class=""
         >
           Feedback
         </span>
@@ -2921,7 +2856,7 @@ exports[`NavLinks authed self-hosted /search 1`] = `
         width="24"
       >
         <path
-          d="M7,10L12,15L17,10H7Z"
+          d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
         />
       </svg>
     </span>
@@ -2945,18 +2880,11 @@ exports[`NavLinks authed self-hosted /search 1`] = `
           <div
             class="align-items-center d-flex"
           >
-            <svg
-              class="mdi-icon user-avatar icon-inline user-nav-item__avatar"
-              fill="currentColor"
-              height="24"
-              id="target-user-avatar"
-              viewBox="0 0 24 24"
-              width="24"
+            <div
+              class="user-avatar icon-inline user-nav-item__avatar"
             >
-              <path
-                d="M12,19.2C9.5,19.2 7.29,17.92 6,16C6.03,14 10,12.9 12,12.9C14,12.9 17.97,14 18,16C16.71,17.92 14.5,19.2 12,19.2M12,5A3,3 0 0,1 15,8A3,3 0 0,1 12,11A3,3 0 0,1 9,8A3,3 0 0,1 12,5M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12C22,6.47 17.5,2 12,2Z"
-              />
-            </svg>
+              a
+            </div>
             <svg
               class="mdi-icon icon-inline"
               fill="currentColor"
@@ -2965,7 +2893,7 @@ exports[`NavLinks authed self-hosted /search 1`] = `
               width="24"
             >
               <path
-                d="M7,10L12,15L17,10H7Z"
+                d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
               />
             </svg>
           </div>
@@ -3461,7 +3389,7 @@ exports[`NavLinks unauthed Sourcegraph.com /foo 1`] = `
         width="24"
       >
         <path
-          d="M7,10L12,15L17,10H7Z"
+          d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
         />
       </svg>
     </span>
@@ -3798,7 +3726,7 @@ exports[`NavLinks unauthed Sourcegraph.com /search 1`] = `
         width="24"
       >
         <path
-          d="M7,10L12,15L17,10H7Z"
+          d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
         />
       </svg>
     </span>
@@ -4102,7 +4030,7 @@ exports[`NavLinks unauthed self-hosted /foo 1`] = `
         width="24"
       >
         <path
-          d="M7,10L12,15L17,10H7Z"
+          d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
         />
       </svg>
     </span>
@@ -4396,7 +4324,7 @@ exports[`NavLinks unauthed self-hosted /search 1`] = `
         width="24"
       >
         <path
-          d="M7,10L12,15L17,10H7Z"
+          d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
         />
       </svg>
     </span>

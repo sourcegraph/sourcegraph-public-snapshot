@@ -8,20 +8,20 @@ exports[`GitCommitNodeByline author (compact) 1`] = `
   <div>
     <img
       alt=""
-      className="user-avatar icon-inline mr-1"
+      className="user-avatar icon-inline mr-1 mr-2"
       data-tooltip="Alice Zhao"
       role="presentation"
       src="http://example.com/alice.png"
     />
   </div>
   <div>
+    committed by 
     <span
       className="font-weight-bold "
       data-tooltip="alice@example.com"
     >
       Alice Zhao
     </span>
-     committed
      
     <span
       className="timestamp"
@@ -41,20 +41,20 @@ exports[`GitCommitNodeByline author 1`] = `
   <div>
     <img
       alt=""
-      className="user-avatar icon-inline mr-1"
+      className="user-avatar icon-inline mr-1 mr-2"
       data-tooltip="Alice Zhao"
       role="presentation"
       src="http://example.com/alice.png"
     />
   </div>
   <div>
+    committed by 
     <span
       className="font-weight-bold "
       data-tooltip="alice@example.com"
     >
       Alice Zhao
     </span>
-     committed
      
     <span
       className="timestamp"
@@ -67,101 +67,103 @@ exports[`GitCommitNodeByline author 1`] = `
 `;
 
 exports[`GitCommitNodeByline different author and committer (compact) 1`] = `
-<small
+<div
   className=""
   data-testid="git-commit-node-byline"
 >
-  <img
-    alt=""
-    className="user-avatar icon-inline-md"
-    data-tooltip="Alice Zhao (author)"
-    role="presentation"
-    src="http://example.com/alice.png"
-  />
-   
-  <img
-    alt=""
-    className="user-avatar icon-inline mr-1"
-    data-tooltip="bYang (committer)"
-    role="presentation"
-    src="http://example.com/bob.png"
-  />
-   
-  <span
-    className="font-weight-bold "
-    data-tooltip="alice@example.com"
-  >
-    Alice Zhao
-  </span>
-   
-  authored
-   and
-   
-  <a
-    className="font-weight-bold "
-    data-tooltip="Bob Yang <bob@example.com>"
-    href="https://example.com/bobyang"
-  >
-    bYang
-  </a>
-   
-  committed 
-  <span
-    className="timestamp"
-    data-tooltip="1991-01-01"
-  >
-    about 15 years ago
-  </span>
-</small>
+  <div>
+    <img
+      alt=""
+      className="user-avatar icon-inline"
+      data-tooltip="Alice Zhao (author)"
+      role="presentation"
+      src="http://example.com/alice.png"
+    />
+     
+    <img
+      alt=""
+      className="user-avatar icon-inline mr-2"
+      data-tooltip="bYang (committer)"
+      role="presentation"
+      src="http://example.com/bob.png"
+    />
+  </div>
+  <div>
+    <span
+      className="font-weight-bold "
+      data-tooltip="alice@example.com"
+    >
+      Alice Zhao
+    </span>
+     authored and
+     
+    <a
+      className="font-weight-bold "
+      data-tooltip="Bob Yang <bob@example.com>"
+      href="https://example.com/bobyang"
+    >
+      bYang
+    </a>
+     commited
+     
+    <span
+      className="timestamp"
+      data-tooltip="1990-01-01"
+    >
+      about 16 years ago
+    </span>
+  </div>
+</div>
 `;
 
 exports[`GitCommitNodeByline different author and committer 1`] = `
-<small
+<div
   className=""
   data-testid="git-commit-node-byline"
 >
-  <img
-    alt=""
-    className="user-avatar icon-inline-md"
-    data-tooltip="Alice Zhao (author)"
-    role="presentation"
-    src="http://example.com/alice.png"
-  />
-   
-  <img
-    alt=""
-    className="user-avatar icon-inline mr-1"
-    data-tooltip="bYang (committer)"
-    role="presentation"
-    src="http://example.com/bob.png"
-  />
-   
-  <span
-    className="font-weight-bold "
-    data-tooltip="alice@example.com"
-  >
-    Alice Zhao
-  </span>
-   
-  authored
-   and
-   
-  <a
-    className="font-weight-bold "
-    data-tooltip="Bob Yang <bob@example.com>"
-    href="https://example.com/bobyang"
-  >
-    bYang
-  </a>
-   
-  committed 
-  <span
-    className="timestamp"
-    data-tooltip="1991-01-01"
-  >
-    about 15 years ago
-  </span>
-</small>
+  <div>
+    <img
+      alt=""
+      className="user-avatar icon-inline"
+      data-tooltip="Alice Zhao (author)"
+      role="presentation"
+      src="http://example.com/alice.png"
+    />
+     
+    <img
+      alt=""
+      className="user-avatar icon-inline mr-2"
+      data-tooltip="bYang (committer)"
+      role="presentation"
+      src="http://example.com/bob.png"
+    />
+  </div>
+  <div>
+    <span
+      className="font-weight-bold "
+      data-tooltip="alice@example.com"
+    >
+      Alice Zhao
+    </span>
+     authored and
+     
+    <a
+      className="font-weight-bold "
+      data-tooltip="Bob Yang <bob@example.com>"
+      href="https://example.com/bobyang"
+    >
+      bYang
+    </a>
+     commited
+     
+    <span
+      className="timestamp"
+      data-tooltip="1990-01-01"
+    >
+      about 16 years ago
+    </span>
+  </div>
+</div>
 `;
 
 exports[`GitCommitNodeByline omit GitHub committer 1`] = `
@@ -172,20 +174,20 @@ exports[`GitCommitNodeByline omit GitHub committer 1`] = `
   <div>
     <img
       alt=""
-      className="user-avatar icon-inline mr-1"
+      className="user-avatar icon-inline mr-1 mr-2"
       data-tooltip="Alice Zhao"
       role="presentation"
       src="http://example.com/alice.png"
     />
   </div>
   <div>
+    committed by 
     <span
       className="font-weight-bold "
       data-tooltip="alice@example.com"
     >
       Alice Zhao
     </span>
-     committed
      
     <span
       className="timestamp"
@@ -205,20 +207,20 @@ exports[`GitCommitNodeByline same author and committer 1`] = `
   <div>
     <img
       alt=""
-      className="user-avatar icon-inline mr-1"
+      className="user-avatar icon-inline mr-1 mr-2"
       data-tooltip="Alice Zhao"
       role="presentation"
       src="http://example.com/alice.png"
     />
   </div>
   <div>
+    committed by 
     <span
       className="font-weight-bold "
       data-tooltip="alice@example.com"
     >
       Alice Zhao
     </span>
-     committed
      
     <span
       className="timestamp"
