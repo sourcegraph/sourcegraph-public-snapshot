@@ -45,7 +45,7 @@ export const BatchChangeStatsCard: React.FunctionComponent<BatchChangeStatsCardP
                 <h2 className="m-0">
                     <BatchChangeStateBadge isClosed={!!closedAt} className={styles.batchChangeStatsCardStateBadge} />
                 </h2>
-                <div className={classNames(styles.batchChangeStatsCardDivider, 'mx-4')} />
+                <div className={classNames(styles.batchChangeStatsCardDivider, 'mx-3')} />
                 <div className="d-flex align-items-center">
                     <h1 className="d-inline mb-0">
                         <BatchChangeStatusIcon
@@ -60,7 +60,7 @@ export const BatchChangeStatsCard: React.FunctionComponent<BatchChangeStatsCardP
                         {percentComplete}% complete
                     </span>
                 </div>
-                <div className={classNames(styles.batchChangeStatsCardDivider, 'd-none d-md-block mx-4')} />
+                <div className={classNames(styles.batchChangeStatsCardDivider, 'd-none d-md-block mx-3')} />
                 <DiffStat
                     {...diff}
                     expandedCounts={true}
@@ -70,27 +70,27 @@ export const BatchChangeStatsCard: React.FunctionComponent<BatchChangeStatsCardP
                 <div className="d-flex flex-wrap justify-content-end flex-grow-1">
                     <BatchChangeStatsTotalAction count={stats.total} />
                     <ChangesetStatusUnpublished
-                        label={<span className="text-muted">{stats.unpublished} unpublished</span>}
+                        label={<span className="text-muted">{stats.unpublished} Unpublished</span>}
                         className={classNames(styles.batchChangeStatsCardStat, 'd-flex flex-grow-0 px-2 text-truncate')}
                     />
                     <ChangesetStatusDraft
-                        label={<span className="text-muted">{stats.draft} draft</span>}
+                        label={<span className="text-muted">{stats.draft} Draft</span>}
                         className={classNames(styles.batchChangeStatsCardStat, 'd-flex flex-grow-0 px-2 text-truncate')}
                     />
                     <ChangesetStatusOpen
-                        label={<span className="text-muted">{stats.open} open</span>}
+                        label={<span className="text-muted">{stats.open} Open</span>}
                         className={classNames(styles.batchChangeStatsCardStat, 'd-flex flex-grow-0 px-2 text-truncate')}
                     />
                     <ChangesetStatusClosed
-                        label={<span className="text-muted">{stats.closed} closed</span>}
+                        label={<span className="text-muted">{stats.closed} Closed</span>}
                         className={classNames(styles.batchChangeStatsCardStat, 'd-flex flex-grow-0 px-2 text-truncate')}
                     />
                     <ChangesetStatusMerged
-                        label={<span className="text-muted">{stats.merged} merged</span>}
+                        label={<span className="text-muted">{stats.merged} Merged</span>}
                         className={classNames(styles.batchChangeStatsCardStat, 'd-flex flex-grow-0 pl-2 text-truncate')}
                     />
                     <ChangesetStatusArchived
-                        label={<span className="text-muted">{stats.archived} archived</span>}
+                        label={<span className="text-muted">{stats.archived} Archived</span>}
                         className={classNames(styles.batchChangeStatsCardStat, 'd-flex flex-grow-0 pl-2 text-truncate')}
                     />
                 </div>
@@ -109,6 +109,6 @@ export const BatchChangeStatsTotalAction: React.FunctionComponent<{ count: numbe
         <span className={styles.batchChangeStatsCardChangesetsPill}>
             <span className="badge badge-pill badge-secondary">{count}</span>
         </span>
-        <span className="text-muted">{pluralize('changeset', count, 'changesets')}</span>
+        <span className="text-muted">{pluralize('Changeset', count)}</span>
     </div>
 )

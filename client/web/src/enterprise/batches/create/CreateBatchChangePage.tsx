@@ -2,10 +2,11 @@ import classNames from 'classnames'
 import React, { useCallback, useState } from 'react'
 
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
-import { PageHeader } from '@sourcegraph/wildcard'
+import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
 import { PageTitle } from '../../../components/PageTitle'
+import { SidebarGroup, SidebarGroupHeader, SidebarGroupItems } from '../../../components/Sidebar'
 
 import combySample from './samples/comby.batch.yaml'
 import helloWorldSample from './samples/empty.batch.yaml'
@@ -27,12 +28,16 @@ const SampleTabHeader: React.FunctionComponent<SampleTabHeaderProps> = ({ sample
         [setSelectedSample, sample]
     )
     return (
-        <li className="nav-item">
-            {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-            <a href="" onClick={onClick} className={classNames('nav-link', active && 'active')} role="button">
-                {sample.name}
-            </a>
-        </li>
+        <button
+            type="button"
+            onClick={onClick}
+            className={classNames(
+                'btn text-left sidebar__link--inactive d-flex sidebar-nav-link w-100',
+                active && 'btn-primary'
+            )}
+        >
+            {sample.name}
+        </button>
     )
 }
 
@@ -42,25 +47,37 @@ interface Sample {
 }
 
 const samples: Sample[] = [
-    { name: 'hello-world.batch.yaml', file: helloWorldSample },
-    { name: 'modify-with-comby.batch.yaml', file: combySample },
-    { name: 'update-go-imports.batch.yaml', file: goImportsSample },
-    { name: 'minimal.batch.yaml', file: minimalSample },
+    { name: 'Hello world', file: helloWorldSample },
+    { name: 'Modify with comby', file: combySample },
+    { name: 'Update go imports', file: goImportsSample },
+    { name: 'Minimal', file: minimalSample },
 ]
 
 export interface CreateBatchChangePageProps {
-    // Nothing for now.
+    headingElement: 'h1' | 'h2'
 }
 
-export const CreateBatchChangePage: React.FunctionComponent<CreateBatchChangePageProps> = () => {
+export const CreateBatchChangePage: React.FunctionComponent<CreateBatchChangePageProps> = ({ headingElement }) => {
     const [selectedSample, setSelectedSample] = useState<Sample>(samples[0])
     return (
         <>
             <PageTitle title="Create batch change" />
-            <PageHeader path={[{ icon: BatchChangesIcon, text: 'Create batch change' }]} />
-            <div className="pt-3">
-                <h2>1. Write a batch spec YAML file</h2>
-                <p>
+            <PageHeader
+                path={[{ icon: BatchChangesIcon, text: 'Create batch change' }]}
+                headingElement={headingElement}
+                description={
+                    <>
+                        Follow these steps to create a Batch Change. Need help? View the{' '}
+                        <a href="/help/batch_changes" rel="noopener noreferrer" target="_blank">
+                            documentation.
+                        </a>
+                    </>
+                }
+                className="mb-3"
+            />
+            <h2>1. Write a batch spec YAML file</h2>
+            <Container className="mb-3">
+                <p className="mb-0">
                     The batch spec (
                     <a
                         href="https://docs.sourcegraph.com/batch_changes/references/batch_spec_yaml_reference"
@@ -72,19 +89,29 @@ export const CreateBatchChangePage: React.FunctionComponent<CreateBatchChangePag
                     ) describes what the batch change does. You'll provide it when previewing, creating, and updating
                     batch changes. We recommend committing it to source control.
                 </p>
-                <h4>Examples:</h4>
-                <ul className="nav nav-pills mb-2">
-                    {samples.map(sample => (
-                        <SampleTabHeader
-                            key={sample.name}
-                            sample={sample}
-                            active={selectedSample.name === sample.name}
-                            setSelectedSample={setSelectedSample}
-                        />
-                    ))}
-                </ul>
-                <CodeSnippet code={selectedSample.file} language="yaml" className="mb-4" />
-                <h2>2. Preview the batch change with Sourcegraph CLI</h2>
+            </Container>
+            <div className="d-flex mb-3">
+                <div className="flex-shrink-0">
+                    <SidebarGroup>
+                        <SidebarGroupItems>
+                            <SidebarGroupHeader label="Examples" />
+                            {samples.map(sample => (
+                                <SampleTabHeader
+                                    key={sample.name}
+                                    sample={sample}
+                                    active={selectedSample.name === sample.name}
+                                    setSelectedSample={setSelectedSample}
+                                />
+                            ))}
+                        </SidebarGroupItems>
+                    </SidebarGroup>
+                </div>
+                <Container className="ml-3 flex-grow-1">
+                    <CodeSnippet code={selectedSample.file} language="yaml" className="mb-0" />
+                </Container>
+            </div>
+            <h2>2. Preview the batch change with Sourcegraph CLI</h2>
+            <Container>
                 <p>
                     Use the{' '}
                     <a href="https://github.com/sourcegraph/src-cli" rel="noopener noreferrer" target="_blank">
@@ -93,19 +120,11 @@ export const CreateBatchChangePage: React.FunctionComponent<CreateBatchChangePag
                     to preview the commits and changesets that your batch change will make:
                 </p>
                 <CodeSnippet code={`src batch preview -f ${selectedSample.name}`} language="bash" className="mb-3" />
-                <p>
+                <p className="mb-0">
                     Follow the URL printed in your terminal to see the preview and (when you're ready) create the batch
                     change.
                 </p>
-                <hr className="mt-4" />
-                <p className="text-muted">
-                    Want more help? See{' '}
-                    <a href="/help/batch_changes" rel="noopener noreferrer" target="_blank">
-                        Batch Changes documentation
-                    </a>
-                    .
-                </p>
-            </div>
+            </Container>
         </>
     )
 }

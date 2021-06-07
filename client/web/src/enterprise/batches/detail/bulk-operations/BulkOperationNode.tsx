@@ -41,7 +41,7 @@ export const BulkOperationNode: React.FunctionComponent<BulkOperationNodeProps> 
                 'd-flex justify-content-between align-items-center'
             )}
         >
-            <div className="text-center p-3">
+            <div className={classNames(styles.bulkOperationNodeChangesetCounts, 'text-center')}>
                 <p className="badge badge-secondary mb-2">{node.changesetCount}</p>
                 <p className="mb-0">{pluralize('changeset', node.changesetCount)}</p>
             </div>
@@ -68,7 +68,7 @@ export const BulkOperationNode: React.FunctionComponent<BulkOperationNodeProps> 
         {node.errors.length > 0 && (
             <div className={classNames(styles.bulkOperationNodeErrors, 'px-4')}>
                 <Collapsible
-                    titleClassName="flex-grow-1"
+                    titleClassName="flex-grow-1 p-3"
                     title={<h4 className="mb-0">The following errors occured while running this task:</h4>}
                 >
                     {node.errors.map((error, index) => (

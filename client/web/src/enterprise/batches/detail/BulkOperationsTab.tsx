@@ -4,7 +4,7 @@ import React, { useCallback } from 'react'
 import { delay, repeatWhen, tap } from 'rxjs/operators'
 
 import { BulkOperationState } from '@sourcegraph/shared/src/graphql-operations'
-import { pluralize } from '@sourcegraph/shared/src/util/strings'
+import { Container } from '@sourcegraph/wildcard'
 
 import { dismissAlert } from '../../../components/DismissibleAlert'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../components/FilteredConnection'
@@ -45,38 +45,29 @@ export const BulkOperationsTab: React.FunctionComponent<BulkOperationsTabProps> 
         [batchChangeID, queryBulkOperations]
     )
     return (
-        <FilteredConnection<BulkOperationFields, Omit<BulkOperationNodeProps, 'node'>>
-            className="mt-2"
-            nodeComponent={BulkOperationNode}
-            nodeComponentProps={{ showErrors: true }}
-            queryConnection={query}
-            hideSearch={true}
-            defaultFirst={15}
-            noun="bulk operation"
-            pluralNoun="bulk operations"
-            history={history}
-            location={location}
-            useURLQuery={true}
-            listComponent="div"
-            listClassName="mb-3"
-            emptyElement={<EmptyBulkOperationsListElement />}
-            noSummaryIfAllNodesVisible={true}
-            headComponent={BulkOperationsListHeadComponent}
-        />
+        <Container>
+            <FilteredConnection<BulkOperationFields, Omit<BulkOperationNodeProps, 'node'>>
+                nodeComponent={BulkOperationNode}
+                queryConnection={query}
+                hideSearch={true}
+                defaultFirst={15}
+                noun="bulk operation"
+                pluralNoun="bulk operations"
+                history={history}
+                location={location}
+                useURLQuery={true}
+                listComponent="div"
+                emptyElement={<EmptyBulkOperationsListElement />}
+                noSummaryIfAllNodesVisible={true}
+                className="filtered-connection__centered-summary"
+            />
+        </Container>
     )
 }
 
 export const EmptyBulkOperationsListElement: React.FunctionComponent<{}> = () => (
-    <div className="text-muted my-4 pt-4 text-center">
+    <div className="text-muted text-center mb-3 w-100">
         <MapSearchIcon className="icon" />
         <div className="pt-2">No bulk operations have been run on this batch change.</div>
     </div>
-)
-
-export const BulkOperationsListHeadComponent: React.FunctionComponent<{ totalCount?: number | null }> = ({
-    totalCount,
-}) => (
-    <h3 className="mt-4">
-        {totalCount} changeset {pluralize('update', totalCount ?? 0)}
-    </h3>
 )

@@ -2,10 +2,13 @@
 
 .batch-change-preview-stats-bar {
     &__stat {
-        color: var(--icon-color);
+        :global(.theme-classic) & {
+            color: var(--icon-color);
+        }
+        color: var(--text-muted);
     }
     &__divider {
-        border: 1px solid var(--border-color-2);
+        border-left: 1px solid var(--border-color-2);
         height: 2rem;
     }
     &__horizontal-divider {
