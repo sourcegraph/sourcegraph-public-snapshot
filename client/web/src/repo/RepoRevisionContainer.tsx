@@ -127,7 +127,7 @@ const RepoRevisionContainerBreadcrumb: React.FunctionComponent<RepoRevisionBread
         return (
             <button
                 type="button"
-                className="btn btn-sm btn-outline-secondary d-flex align-items-center text-nowrap"
+                className="btn btn-sm btn-outline-secondary d-flex align-items-center text-nowrap "
                 key="repo-revision"
                 id="repo-revision-popover"
                 aria-label="Change revision"
@@ -137,7 +137,7 @@ const RepoRevisionContainerBreadcrumb: React.FunctionComponent<RepoRevisionBread
                     : revision) ||
                     resolvedRevisionOrError.defaultBranch ||
                     'HEAD'}
-                <ChevronDownIcon className="icon-inline" />
+                <ChevronDownIcon className="icon-inline repo-revision-container__breadcrumb-icon" />
                 <RepoRevisionContainerPopover
                     repo={repo}
                     resolvedRevisionOrError={resolvedRevisionOrError}
