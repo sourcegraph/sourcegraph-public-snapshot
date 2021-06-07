@@ -1,10 +1,11 @@
-import { ComboboxList, ComboboxOption } from '@reach/combobox'
+import { ComboboxList, ComboboxOption, ComboboxOptionText } from '@reach/combobox'
+import SourceBranchIcon from 'mdi-react/SourceBranchIcon';
 import React, { ReactElement } from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
-import { ErrorMessage } from '../../../../../../../../components/alerts'
+import { ErrorAlert } from '../../../../../../../../components/alerts'
 
 import styles from './SuggestionPanel.module.scss'
 
@@ -31,13 +32,16 @@ export function SuggestionsPanel(props: SuggestionsPanelProps): ReactElement {
     }
 
     if (isErrorLike(suggestions)) {
-        return <ErrorMessage error={suggestions} />
+        return <ErrorAlert className="m-1" error={suggestions} data-testid='repository-suggestions-error'/>
     }
 
     return (
-        <ComboboxList>
+        <ComboboxList className={styles.suggestionsList}>
             {suggestions.map(suggestion => (
-                <ComboboxOption key={suggestion.name} value={suggestion.name} />
+                <ComboboxOption className={styles.suggestionsListItem} key={suggestion.name} value={suggestion.name}>
+                    <SourceBranchIcon className="mr-1" size='1rem'/>
+                    <ComboboxOptionText />
+                </ComboboxOption>
             ))}
 
             {!suggestions.length && (

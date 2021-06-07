@@ -6,3 +6,23 @@
     align-items: center;
     justify-content: center;
 }
+
+.suggestions-list {
+
+    &__item {
+        padding: 0.5rem;
+
+        &:hover {
+            background-color: var(--body-bg);
+        }
+    }
+
+    [data-suggested-value] {
+        font-weight: normal;
+    }
+
+    [data-user-value] {
+        font-weight: bold;
+    }
+}
+
