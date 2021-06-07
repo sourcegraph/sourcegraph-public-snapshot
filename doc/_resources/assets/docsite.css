@@ -360,7 +360,7 @@ body > #sidebar .external a, body > #page > footer .external a {
         /* Note: all ancestors up to <html> (the scrolling element) must be overflow: visible (default) for this to work. */
 		position: sticky;
 		top: calc(2*var(--spacing));
-		max-height: 100vh;
+		max-height: calc(100vh - 4*var(--spacing));
 		padding: var(--spacing);
         border: solid 1px var(--border-color);
 	}
@@ -519,11 +519,15 @@ body > #page > main > #content {
   opacity: 1;
 }
 .markdown-body .anchor {
+  height: 100%;
   position: relative;
   opacity: 0;
 }
 .markdown-body .anchor::before {
   content: "#";
+  height: 100%;
+  display: flex;
+  align-items: center;
   position: absolute;
   padding-left: 10px;
   padding-right: 5px;

@@ -831,7 +831,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     alwaysShowLabel={true}
                     type="submit"
                     label={fetchingRepos ? 'Saving...' : 'Save'}
-                    disabled={fetchingRepos === 'loading'}
+                    disabled={fetchingRepos === 'loading' || !didRepoSelectionChange()}
                 />
 
                 <Link

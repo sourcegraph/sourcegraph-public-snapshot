@@ -15,6 +15,8 @@ func TestClient_GetProject(t *testing.T) {
 	"id": 1,
 	"path_with_namespace": "n1/n2/r",
 	"description": "d",
+	"forks_count": 1,
+	"star_count": 100,
 	"web_url": "https://gitlab.example.com/n1/n2/r",
 	"http_url_to_repo": "https://gitlab.example.com/n1/n2/r.git",
 	"ssh_url_to_repo": "git@gitlab.example.com:n1/n2/r.git"
@@ -25,6 +27,8 @@ func TestClient_GetProject(t *testing.T) {
 	c.httpClient = &mock
 
 	want := Project{
+		ForksCount: 1,
+		StarCount:  100,
 		ProjectCommon: ProjectCommon{
 			ID:                1,
 			PathWithNamespace: "n1/n2/r",
