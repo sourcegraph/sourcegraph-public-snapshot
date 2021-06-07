@@ -154,6 +154,7 @@ describe('Extension Registry', () => {
                             },
                             settingsURL: '/site-admin/global-settings',
                             viewerCanAdminister: true,
+                            allowSiteSettingsEdits: true,
                         },
                         {
                             __typename: 'User',
