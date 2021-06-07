@@ -26,7 +26,7 @@ const addr = ":3189"
 // Start runs the worker. This method does not return.
 func Start(additionalTasks map[string]Task) {
 	tasks := map[string]Task{}
-	for name, task := range bultins {
+	for name, task := range builtins {
 		tasks[name] = task
 	}
 	for name, task := range additionalTasks {
