@@ -2,7 +2,7 @@ import { useCallback, useContext, useEffect, useRef, useState } from 'react'
 
 import { useDebounce } from '@sourcegraph/wildcard/src'
 
-import { InsightsApiContext } from '../../../../../../core/backend/api-provider';
+import { InsightsApiContext } from '../../../../core/backend/api-provider';
 
 interface RepositorySuggestion {
     name: string
@@ -14,6 +14,7 @@ interface UseRepoSuggestionsProps {
 }
 
 interface UseRepoSuggestionsResult {
+    searchValue: string | null
     suggestions: RepositorySuggestion[] | Error | undefined
 }
 
@@ -77,5 +78,5 @@ export function useRepoSuggestions(props: UseRepoSuggestionsProps): UseRepoSugge
         }
     }, [fetchSuggestions, disable, debouncedSearchTerm])
 
-    return { suggestions }
+    return { searchValue: debouncedSearchTerm, suggestions }
 }

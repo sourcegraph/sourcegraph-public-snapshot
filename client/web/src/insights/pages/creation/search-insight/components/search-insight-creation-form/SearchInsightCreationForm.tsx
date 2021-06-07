@@ -15,7 +15,7 @@ import {
 } from '../../../../../components/visibility-picker/VisibilityPicker'
 import { CreateInsightFormFields, EditableDataSeries } from '../../types'
 import { FormSeries } from '../form-series/FormSeries'
-import { RepositoriesField } from '../repositories-field/RepositoriesField'
+import { RepositoriesField } from '../../../../../components/form/repositories-field/RepositoriesField'
 
 import styles from './SearchInsightCreationForm.module.scss'
 

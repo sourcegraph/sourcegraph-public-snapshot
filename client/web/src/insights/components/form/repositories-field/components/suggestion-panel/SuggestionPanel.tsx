@@ -5,11 +5,12 @@ import React, { ReactElement } from 'react'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
-import { ErrorAlert } from '../../../../../../../../components/alerts'
+import { ErrorAlert } from '../../../../../../components/alerts'
 
 import styles from './SuggestionPanel.module.scss'
 
 interface SuggestionsPanelProps {
+    value: string | null,
     suggestions?: Error | RepositorySuggestion[]
 }
 
@@ -21,7 +22,7 @@ interface RepositorySuggestion {
  * Renders suggestion panel for repositories combobox component.
  */
 export function SuggestionsPanel(props: SuggestionsPanelProps): ReactElement {
-    const { suggestions } = props
+    const { value, suggestions } = props
 
     if (suggestions === undefined) {
         return (
@@ -35,6 +36,9 @@ export function SuggestionsPanel(props: SuggestionsPanelProps): ReactElement {
         return <ErrorAlert className="m-1" error={suggestions} data-testid='repository-suggestions-error'/>
     }
 
+    const searchValue = value ?? ''
+    const isValueEmpty = searchValue.trim() === ''
+
     return (
         <ComboboxList className={styles.suggestionsList}>
             {suggestions.map(suggestion => (
@@ -44,9 +48,12 @@ export function SuggestionsPanel(props: SuggestionsPanelProps): ReactElement {
                 </ComboboxOption>
             ))}
 
-            {!suggestions.length && (
-                // eslint-disable-next-line react/forbid-dom-props
-                <span style={{ display: 'block', margin: 8 }}>No results found</span>
+            { isValueEmpty &&
+                <span className={styles.suggestionsListItem}>Start entering the value</span>
+            }
+
+            { !isValueEmpty && !suggestions.length && (
+                <span className={styles.suggestionsListItem}>No results found</span>
             )}
         </ComboboxList>
     )
