@@ -102,6 +102,7 @@ const settingsCascadeFragment = gql`
             ... on Site {
                 id
                 siteID
+                allowSiteSettingsEdits
             }
             latestSettings {
                 id
