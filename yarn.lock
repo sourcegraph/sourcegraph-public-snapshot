@@ -2682,15 +2682,10 @@
     prop-types "^15.7.2"
     tslib "^1.11.2"
 
-"@reach/observe-rect@1.2.0":
+"@reach/observe-rect@1.2.0", "@reach/observe-rect@^1.1.0":
   version "1.2.0"
   resolved "https://registry.npmjs.org/@reach/observe-rect/-/observe-rect-1.2.0.tgz#d7a6013b8aafcc64c778a0ccb83355a11204d3b2"
   integrity sha512-Ba7HmkFgfQxZqqaeIWWkNK0rEhpxVQHIoVyW1YDSkGsGIXzcaW4deC8B0pZrNSSyLTdIk7y+5olKt5+g0GmFIQ==
-
-"@reach/observe-rect@^1.1.0":
-  version "1.1.0"
-  resolved "https://registry.npmjs.org/@reach/observe-rect/-/observe-rect-1.1.0.tgz#4e967a93852b6004c3895d9ed8d4e5b41895afde"
-  integrity sha512-kE+jvoj/OyJV24C03VvLt5zclb9ArJi04wWXMMFwQvdZjdHoBlN4g0ZQFjyy/ejPF1Z/dpUD5dhRdBiUmIGZTA==
 
 "@reach/popover@0.15.0":
   version "0.15.0"
