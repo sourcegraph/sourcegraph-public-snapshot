@@ -1,11 +1,9 @@
-import classNames from 'classnames'
 import React, { useCallback, useState, useEffect } from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { isDefined, keyExistsIn } from '@sourcegraph/shared/src/util/types'
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../components/alerts'
@@ -67,7 +65,6 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 }) => {
     const [statusOrError, setStatusOrError] = useState<Status>()
     const [updateAuthRequired, setUpdateAuthRequired] = useState(false)
-    const [isRedesignEnabled] = useRedesignToggle()
 
     const fetchExternalServices = useCallback(async () => {
         setStatusOrError('loading')
@@ -219,13 +216,8 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                 description={
                     <>
                         Connect with your code hosts. Then,{' '}
-                        <Link
-                            className={classNames(!isRedesignEnabled && 'text-primary')}
-                            to={`${routingPrefix}/repositories/manage`}
-                        >
-                            add repositories
-                        </Link>{' '}
-                        to search with Sourcegraph.
+                        <Link to={`${routingPrefix}/repositories/manage`}>add repositories</Link> to search with
+                        Sourcegraph.
                     </>
                 }
                 className="mb-3"

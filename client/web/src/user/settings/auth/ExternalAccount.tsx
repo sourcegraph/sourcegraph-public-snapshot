@@ -54,9 +54,7 @@ export const ExternalAccount: React.FunctionComponent<Props> = ({ account, authP
                         <>
                             {account.external.userName} (
                             <Link to={account.external.userUrl} target="_blank" rel="noopener noreferrer">
-                                <span className={classNames(!isRedesignEnabled && 'text-primary')}>
-                                    @{account.external.userLogin}
-                                </span>
+                                @{account.external.userLogin}
                             </Link>
                             )
                         </>

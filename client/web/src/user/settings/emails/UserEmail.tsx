@@ -1,9 +1,7 @@
-import classNames from 'classnames'
 import React, { useState, FunctionComponent } from 'react'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { asError, ErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import {
@@ -36,7 +34,6 @@ export const UserEmail: FunctionComponent<Props> = ({
     onEmailResendVerification,
 }) => {
     const [isLoading, setIsLoading] = useState(false)
-    const [isRedesignEnabled] = useRedesignToggle()
 
     const handleError = (error: ErrorLike): void => {
         onError(asError(error))
@@ -130,8 +127,6 @@ export const UserEmail: FunctionComponent<Props> = ({
         }
     }
 
-    const buttonLinkClassName = classNames('btn btn-link p-0', !isRedesignEnabled && 'text-primary ')
-
     return (
         <>
             <div className="d-flex align-items-center justify-content-between">
@@ -147,7 +142,7 @@ export const UserEmail: FunctionComponent<Props> = ({
                             <span className="user-settings-emails-page__dot">&bull;&nbsp;</span>
                             <button
                                 type="button"
-                                className={buttonLinkClassName}
+                                className="btn btn-link p-0"
                                 onClick={() => resendEmailVerification(email)}
                                 disabled={isLoading}
                             >
@@ -160,7 +155,7 @@ export const UserEmail: FunctionComponent<Props> = ({
                     {viewerCanManuallyVerify && (
                         <button
                             type="button"
-                            className={buttonLinkClassName}
+                            className="btn btn-link p-0"
                             onClick={() => updateEmailVerification(!verified)}
                             disabled={isLoading}
                         >
