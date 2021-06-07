@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-set -e
-
 echo "--- deprecated ioutil check"
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
