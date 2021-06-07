@@ -1450,13 +1450,13 @@ type FeatureFlagOverride {
     id: ID!
 
     """
-       The user this feature flag override applies to, if set.
+    The user this feature flag override applies to, if set.
     Mutually exclusive with Org
     """
     user: User
 
     """
-       The org this feature flag override applies to, if set.
+    The org this feature flag override applies to, if set.
     Mutually exclusive with User
     """
     org: Org
