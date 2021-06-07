@@ -111,11 +111,7 @@ export const RepositoriesField = forwardRef(
         }
 
         return (
-            <Combobox
-                openOnFocus={true}
-                onSelect={handleSelect}
-                className={styles.combobox}
-            >
+            <Combobox openOnFocus={true} onSelect={handleSelect} className={styles.combobox}>
                 <ComboboxInput
                     {...otherProps}
                     as={FlexTextarea}

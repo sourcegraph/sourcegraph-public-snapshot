@@ -5,12 +5,20 @@ import sinon from 'sinon'
 import { asError } from '@sourcegraph/shared/src/util/errors'
 
 import { FORM_ERROR } from '../../../../../components/form/hooks/useForm'
+import { InsightsApiContext } from '../../../../../core/backend/api-provider'
+import { createMockInsightAPI } from '../../../../../core/backend/insights-api'
 
 import { SearchInsightCreationContent, SearchInsightCreationContentProps } from './SearchInsightCreationContent'
 
 describe('CreateInsightContent', () => {
+    const mockAPI = createMockInsightAPI({})
+
     const renderWithProps = (props: SearchInsightCreationContentProps): RenderResult =>
-        render(<SearchInsightCreationContent {...props} />)
+        render(
+            <InsightsApiContext.Provider value={mockAPI}>
+                <SearchInsightCreationContent {...props} />
+            </InsightsApiContext.Provider>
+        )
     const onSubmitMock = sinon.spy()
 
     beforeEach(() => onSubmitMock.resetHistory())
