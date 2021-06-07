@@ -18,7 +18,15 @@ import styles from './RepositoriesField.module.scss'
 import { getSuggestionsSearchTerm } from './utils/get-suggestions-search-term'
 
 interface RepositoriesFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange'> {
+    /**
+     * String value for the input - repo, repo, ....
+     */
     value: string
+
+    /**
+     * Change handler runs when user changed input value or picked element
+     * from the suggestion panel.
+     */
     onChange: (value: string) => void
 }
 
@@ -87,7 +95,7 @@ export const RepositoriesField = forwardRef(
                  * After the moment when user selected value from suggestion panel we closed
                  * this panel by setPanel(false) but if user is changing cursor position we
                  * need to re-open panel for new suggestions.
-                 * */
+                 */
                 setPanel(true)
                 setCaretPosition(target.selectionStart)
             }
@@ -123,7 +131,7 @@ export const RepositoriesField = forwardRef(
                 />
 
                 {panel && (
-                    <ComboboxPopover>
+                    <ComboboxPopover className={styles.comboboxPopover}>
                         <SuggestionsPanel suggestions={suggestions} />
                     </ComboboxPopover>
                 )}
