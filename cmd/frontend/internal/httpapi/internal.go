@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"path"
@@ -607,7 +607,7 @@ func serveGitExec(w http.ResponseWriter, r *http.Request) error {
 		req.URL.Scheme = "http"
 		req.URL.Host = addr
 		req.URL.Path = "/exec"
-		req.Body = ioutil.NopCloser(bytes.NewReader(buf.Bytes()))
+		req.Body = io.NopCloser(bytes.NewReader(buf.Bytes()))
 		req.ContentLength = int64(buf.Len())
 	}
 

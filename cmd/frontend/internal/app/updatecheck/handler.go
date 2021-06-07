@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -240,7 +239,7 @@ func readPingRequestFromQuery(q url.Values) (*pingRequest, error) {
 
 func readPingRequestFromBody(body io.ReadCloser) (*pingRequest, error) {
 	defer body.Close()
-	contents, err := ioutil.ReadAll(body)
+	contents, err := io.ReadAll(body)
 	if err != nil {
 		return nil, err
 	}

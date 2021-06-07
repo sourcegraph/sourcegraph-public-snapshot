@@ -3,7 +3,7 @@ package apiclient
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -323,7 +323,7 @@ func testServer(t *testing.T, spec routeSpec) *httptest.Server {
 			t.Errorf("unexpected password. want=%s have=%s", spec.expectedPassword, password)
 		}
 
-		content, err := ioutil.ReadAll(r.Body)
+		content, err := io.ReadAll(r.Body)
 		if err != nil {
 			t.Fatalf("unexpected error reading payload: %s", err)
 		}

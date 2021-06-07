@@ -1,7 +1,7 @@
 package lsifstore
 
 import (
-	"io/ioutil"
+	"os"
 	"strings"
 	"testing"
 
@@ -12,7 +12,7 @@ import (
 const testBundleID = 39162
 
 func populateTestStore(t testing.TB) *Store {
-	contents, err := ioutil.ReadFile("./testdata/lsif-go@ad3507cb.sql")
+	contents, err := os.ReadFile("./testdata/lsif-go@ad3507cb.sql")
 	if err != nil {
 		t.Fatalf("unexpected error reading testdata: %s", err)
 	}

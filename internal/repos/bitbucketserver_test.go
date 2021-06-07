@@ -2,7 +2,6 @@ package repos
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -16,7 +15,7 @@ import (
 )
 
 func TestBitbucketServerSource_MakeRepo(t *testing.T) {
-	b, err := ioutil.ReadFile(filepath.Join("testdata", "bitbucketserver-repos.json"))
+	b, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver-repos.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -70,7 +69,7 @@ func TestBitbucketServerSource_MakeRepo(t *testing.T) {
 }
 
 func TestBitbucketServerSource_Exclude(t *testing.T) {
-	b, err := ioutil.ReadFile(filepath.Join("testdata", "bitbucketserver-repos.json"))
+	b, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver-repos.json"))
 	if err != nil {
 		t.Fatal(err)
 	}

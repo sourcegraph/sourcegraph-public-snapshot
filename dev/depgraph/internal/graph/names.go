@@ -2,7 +2,6 @@ package graph
 
 import (
 	"bytes"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -52,7 +51,7 @@ var packagePattern = regexp.MustCompile(`^package (\w+)`)
 
 // extractPackageName returns the package name declared by this file.
 func extractPackageName(path string) (string, error) {
-	contents, err := ioutil.ReadFile(path)
+	contents, err := os.ReadFile(path)
 	if err != nil {
 		return "", err
 	}

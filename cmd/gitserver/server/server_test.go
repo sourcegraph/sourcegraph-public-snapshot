@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
@@ -162,7 +162,7 @@ func TestRequest(t *testing.T) {
 				t.Errorf("wrong status: expected %d, got %d", test.ExpectedCode, w.Code)
 			}
 
-			body, err := ioutil.ReadAll(res.Body)
+			body, err := io.ReadAll(res.Body)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -238,7 +238,7 @@ func TestServer_handleP4Exec(t *testing.T) {
 				t.Errorf("wrong status: expected %d, got %d", test.ExpectedCode, w.Code)
 			}
 
-			body, err := ioutil.ReadAll(res.Body)
+			body, err := io.ReadAll(res.Body)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -256,7 +256,7 @@ func TestServer_handleP4Exec(t *testing.T) {
 }
 
 func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_packed_refs(b *testing.B) {
-	tmp, err := ioutil.TempDir("", "gitserver_test")
+	tmp, err := os.MkdirTemp("", "gitserver_test")
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -272,7 +272,7 @@ func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_packed_refs(b *testing.B) {
 	// This simulates the most amount of work quickRevParseHead has to do, and
 	// is also the most common in prod. That is where the final rev is in
 	// packed-refs.
-	err = ioutil.WriteFile(filepath.Join(dir, "HEAD"), []byte(fmt.Sprintf("ref: %s\n", masterRef)), 0600)
+	err = os.WriteFile(filepath.Join(dir, "HEAD"), []byte(fmt.Sprintf("ref: %s\n", masterRef)), 0600)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -334,7 +334,7 @@ func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_packed_refs(b *testing.B) {
 }
 
 func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_unpacked_refs(b *testing.B) {
-	tmp, err := ioutil.TempDir("", "gitserver_test")
+	tmp, err := os.MkdirTemp("", "gitserver_test")
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -360,7 +360,7 @@ func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_unpacked_refs(b *testing.B) 
 		if err != nil {
 			b.Fatal(err)
 		}
-		err = ioutil.WriteFile(path, []byte(content), 0600)
+		err = os.WriteFile(path, []byte(content), 0600)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -691,7 +691,7 @@ func TestRemoveBadRefs(t *testing.T) {
 		}
 
 		// Ref
-		if err := ioutil.WriteFile(filepath.Join(dir, ".git", "refs", "heads", name), []byte(wantCommit), 0600); err != nil {
+		if err := os.WriteFile(filepath.Join(dir, ".git", "refs", "heads", name), []byte(wantCommit), 0600); err != nil {
 			t.Fatal(err)
 		}
 
@@ -777,7 +777,7 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 			time.Sleep(10 * time.Millisecond)
 		}
 
-		head, err := ioutil.ReadFile(fmt.Sprintf("%s/HEAD", dst))
+		head, err := os.ReadFile(fmt.Sprintf("%s/HEAD", dst))
 		if os.IsNotExist(err) {
 			t.Fatal("expected a reconstituted HEAD, but no file exists")
 		}
@@ -815,7 +815,7 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 			time.Sleep(10 * time.Millisecond)
 		}
 
-		head, err := ioutil.ReadFile(fmt.Sprintf("%s/HEAD", dst))
+		head, err := os.ReadFile(fmt.Sprintf("%s/HEAD", dst))
 		if os.IsNotExist(err) {
 			t.Fatal("expected a reconstituted HEAD, but no file exists")
 		}

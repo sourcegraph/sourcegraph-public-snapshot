@@ -3,7 +3,7 @@ package debugproxies
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -50,7 +50,7 @@ func TestReverseProxyRequestPaths(t *testing.T) {
 	rtr.ServeHTTP(w, req)
 
 	resp := w.Result()
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, _ := io.ReadAll(resp.Body)
 
 	if string(body) != "/metrics" {
 		t.Errorf("expected /metrics to be passed to reverse proxy, got %s", body)
@@ -90,7 +90,7 @@ func TestIndexLinks(t *testing.T) {
 	rtr.ServeHTTP(w, req)
 
 	resp := w.Result()
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, _ := io.ReadAll(resp.Body)
 
 	expectedContent := fmt.Sprintf("<a href=\"proxies/%s/\">%s</a><br>", displayName, displayName)
 

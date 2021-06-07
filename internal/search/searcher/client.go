@@ -6,7 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -183,7 +183,7 @@ func textSearchURL(ctx context.Context, url string) ([]*protocol.FileMatch, bool
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return nil, false, err
 		}

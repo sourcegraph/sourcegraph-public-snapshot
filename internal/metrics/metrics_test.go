@@ -3,7 +3,6 @@ package metrics
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -88,7 +87,7 @@ func TestMustRegisterDiskMonitor(t *testing.T) {
 
 	want := []string{}
 	for i := 0; i <= 2; i++ {
-		path, err := ioutil.TempDir("", "")
+		path, err := os.MkdirTemp("", "")
 		if err != nil {
 			t.Fatal(err)
 		}

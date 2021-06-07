@@ -5,7 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"io"
-	"io/ioutil"
+	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
@@ -226,11 +226,11 @@ type EvictStats struct {
 // Evict will remove files from Store.Dir until it is smaller than
 // maxCacheSizeBytes. It evicts files with the oldest modification time first.
 func (s *Store) Evict(maxCacheSizeBytes int64) (stats EvictStats, err error) {
-	isZip := func(fi os.FileInfo) bool {
+	isZip := func(fi fs.FileInfo) bool {
 		return strings.HasSuffix(fi.Name(), ".zip")
 	}
 
-	list, err := ioutil.ReadDir(s.Dir)
+	entries, err := os.ReadDir(s.Dir)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return EvictStats{
@@ -239,6 +239,14 @@ func (s *Store) Evict(maxCacheSizeBytes int64) (stats EvictStats, err error) {
 			}, nil
 		}
 		return stats, errors.Wrapf(err, "failed to ReadDir %s", s.Dir)
+	}
+
+	list := make([]fs.FileInfo, len(entries))
+	for i := range entries {
+		list[i], err = entries[i].Info()
+		if err != nil {
+			return stats, err
+		}
 	}
 
 	// Sum up the total size of all zips

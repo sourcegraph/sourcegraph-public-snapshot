@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"os"
+	"io/fs"
 	"strconv"
 
 	"github.com/inconshreveable/log15"
@@ -31,7 +31,7 @@ func InventoryContext(repo api.RepoName, commitID api.CommitID, forceEnhancedLan
 		return inventory.Context{}, errors.Errorf("refusing to compute inventory for non-absolute commit ID %q", commitID)
 	}
 
-	cacheKey := func(e os.FileInfo) string {
+	cacheKey := func(e fs.FileInfo) string {
 		info, ok := e.Sys().(git.ObjectInfo)
 		if !ok {
 			return "" // not cacheable
@@ -39,7 +39,7 @@ func InventoryContext(repo api.RepoName, commitID api.CommitID, forceEnhancedLan
 		return info.OID().String()
 	}
 	invCtx := inventory.Context{
-		ReadTree: func(ctx context.Context, path string) ([]os.FileInfo, error) {
+		ReadTree: func(ctx context.Context, path string) ([]fs.FileInfo, error) {
 			// TODO: As a perf optimization, we could read multiple levels of the Git tree at once
 			// to avoid sequential tree traversal calls.
 			return git.ReadDir(ctx, repo, commitID, path, false)
@@ -47,7 +47,7 @@ func InventoryContext(repo api.RepoName, commitID api.CommitID, forceEnhancedLan
 		NewFileReader: func(ctx context.Context, path string) (io.ReadCloser, error) {
 			return git.NewFileReader(ctx, repo, commitID, path)
 		},
-		CacheGet: func(e os.FileInfo) (inventory.Inventory, bool) {
+		CacheGet: func(e fs.FileInfo) (inventory.Inventory, bool) {
 			cacheKey := cacheKey(e)
 			if cacheKey == "" {
 				return inventory.Inventory{}, false // not cacheable
@@ -62,7 +62,7 @@ func InventoryContext(repo api.RepoName, commitID api.CommitID, forceEnhancedLan
 			}
 			return inventory.Inventory{}, false
 		},
-		CacheSet: func(e os.FileInfo, inv inventory.Inventory) {
+		CacheSet: func(e fs.FileInfo, inv inventory.Inventory) {
 			cacheKey := cacheKey(e)
 			if cacheKey == "" {
 				return // not cacheable

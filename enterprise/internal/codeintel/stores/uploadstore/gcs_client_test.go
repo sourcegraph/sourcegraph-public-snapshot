@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"io/ioutil"
 	"testing"
 	"time"
 
@@ -92,7 +91,7 @@ func TestGCSGet(t *testing.T) {
 	objectHandle := NewMockGcsObjectHandle()
 	gcsClient.BucketFunc.SetDefaultReturn(bucketHandle)
 	bucketHandle.ObjectFunc.SetDefaultReturn(objectHandle)
-	objectHandle.NewRangeReaderFunc.SetDefaultReturn(ioutil.NopCloser(bytes.NewReader([]byte("TEST PAYLOAD"))), nil)
+	objectHandle.NewRangeReaderFunc.SetDefaultReturn(io.NopCloser(bytes.NewReader([]byte("TEST PAYLOAD"))), nil)
 
 	client := testGCSClient(gcsClient, false)
 	rc, err := client.Get(context.Background(), "test-key")
@@ -101,7 +100,7 @@ func TestGCSGet(t *testing.T) {
 	}
 
 	defer rc.Close()
-	contents, err := ioutil.ReadAll(rc)
+	contents, err := io.ReadAll(rc)
 	if err != nil {
 		t.Fatalf("unexpected error reading object: %s", err)
 	}
@@ -232,7 +231,7 @@ func TestGCSDelete(t *testing.T) {
 	objectHandle := NewMockGcsObjectHandle()
 	gcsClient.BucketFunc.SetDefaultReturn(bucketHandle)
 	bucketHandle.ObjectFunc.SetDefaultReturn(objectHandle)
-	objectHandle.NewRangeReaderFunc.SetDefaultReturn(ioutil.NopCloser(bytes.NewReader([]byte("TEST PAYLOAD"))), nil)
+	objectHandle.NewRangeReaderFunc.SetDefaultReturn(io.NopCloser(bytes.NewReader([]byte("TEST PAYLOAD"))), nil)
 
 	client := testGCSClient(gcsClient, false)
 	if err := client.Delete(context.Background(), "test-key"); err != nil {

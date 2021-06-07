@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"path"
@@ -251,7 +251,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
 		// We swallow the error here, because we don't want to fail. Parsing the body
 		// is just optional to provide some more context.
-		body, _ := ioutil.ReadAll(resp.Body)
+		body, _ := io.ReadAll(resp.Body)
 		err := NewHTTPError(resp.StatusCode, body)
 		return nil, resp.StatusCode, errors.Wrap(err, fmt.Sprintf("unexpected response from GitLab API (%s)", req.URL))
 	}
