@@ -1,4 +1,3 @@
-import classNames from 'classnames'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import CloudOutlineIcon from 'mdi-react/CloudOutlineIcon'
@@ -10,7 +9,6 @@ import React, { useCallback } from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { ExternalServiceKind } from '../../../graphql-operations'
 
@@ -104,8 +102,6 @@ export const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({
     isPrivate,
     prefixComponent,
 }) => {
-    const [isRedesignEnabled] = useRedesignToggle()
-
     const handleOnClick = useCallback(
         (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>): void => {
             if (onClick !== undefined) {
