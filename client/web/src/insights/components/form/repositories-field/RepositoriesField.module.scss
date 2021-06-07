@@ -1,0 +1,18 @@
+@import '@reach/combobox/styles.css';
+
+.combobox {
+    width: 100%;
+
+    &-popover {
+        border: solid 1px var(--border-color);
+        box-shadow: var(--box-shadow);
+        background-color: var(--input-bg);
+
+        /**
+            By default reach-ui/combobox set font-size to 85% for content
+            in popover block. In order to reset font-size we set inherit value
+            explicitly.
+         */
+        font-size: inherit;
+    }
+}

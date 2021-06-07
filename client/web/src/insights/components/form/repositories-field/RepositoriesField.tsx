@@ -43,7 +43,7 @@ export const RepositoriesField = forwardRef(
         const [panel, setPanel] = useState(false)
 
         const { value: search } = getSuggestionsSearchTerm({ value, caretPosition })
-        const { suggestions } = useRepoSuggestions({ search, disable: !panel })
+        const { searchValue, suggestions } = useRepoSuggestions({ search, disable: !panel })
 
         // Support top level reference prop
         useImperativeHandle(reference, () => inputReference.current)
@@ -132,7 +132,7 @@ export const RepositoriesField = forwardRef(
 
                 {panel && (
                     <ComboboxPopover className={styles.comboboxPopover}>
-                        <SuggestionsPanel suggestions={suggestions} />
+                        <SuggestionsPanel value={searchValue} suggestions={suggestions} />
                     </ComboboxPopover>
                 )}
             </Combobox>
