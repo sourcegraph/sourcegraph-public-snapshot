@@ -19,6 +19,7 @@ CHECKS=(
   ./go-dbconn-import.sh
   ./go-generate.sh
   ./go-lint.sh
+  ./ioutil.sh
   ./go-mod-tidy.sh
   ./no-alpine-guard.sh
   ./no-localhost-guard.sh

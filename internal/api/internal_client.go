@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strconv"
 	"time"
@@ -48,7 +48,7 @@ func (c *internalClient) WaitForFrontend(ctx context.Context) error {
 		if resp.StatusCode != http.StatusOK {
 			return fmt.Errorf("ping: bad HTTP response status %d", resp.StatusCode)
 		}
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return err
 		}

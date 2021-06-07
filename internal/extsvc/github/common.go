@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -1452,7 +1451,7 @@ func doRequest(ctx context.Context, apiURL *url.URL, auth auth.Authenticator, ra
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
 		var err APIError
-		if body, readErr := ioutil.ReadAll(io.LimitReader(resp.Body, 1<<13)); readErr != nil { // 8kb
+		if body, readErr := io.ReadAll(io.LimitReader(resp.Body, 1<<13)); readErr != nil { // 8kb
 			err.Message = fmt.Sprintf("failed to read error response from GitHub API: %v: %q", readErr, string(body))
 		} else if decErr := json.Unmarshal(body, &err); decErr != nil {
 			err.Message = fmt.Sprintf("failed to decode error response from GitHub API: %v: %q", decErr, string(body))

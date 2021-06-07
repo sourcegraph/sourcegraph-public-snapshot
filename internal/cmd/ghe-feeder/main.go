@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"math"
 	"net/http"
@@ -84,7 +83,7 @@ func main() {
 	}
 
 	if len(*scratchDir) == 0 {
-		d, err := ioutil.TempDir("", "ghe-feeder")
+		d, err := os.MkdirTemp("", "ghe-feeder")
 		if err != nil {
 			log15.Error("failed to create scratch dir", "error", err)
 			os.Exit(1)

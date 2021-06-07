@@ -3,7 +3,6 @@ package worker
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -101,7 +100,7 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 			return fmt.Errorf("refusing to write outside of working directory")
 		}
 
-		if err := ioutil.WriteFile(path, []byte(content), os.ModePerm); err != nil {
+		if err := os.WriteFile(path, []byte(content), os.ModePerm); err != nil {
 			return err
 		}
 	}
@@ -135,7 +134,7 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 		scriptName := scriptNameFromJobStep(job, i)
 		scriptPath := filepath.Join(workingDirectory, command.ScriptsPath, scriptName)
 
-		if err := ioutil.WriteFile(scriptPath, buildScript(dockerStep), os.ModePerm); err != nil {
+		if err := os.WriteFile(scriptPath, buildScript(dockerStep), os.ModePerm); err != nil {
 			return err
 		}
 

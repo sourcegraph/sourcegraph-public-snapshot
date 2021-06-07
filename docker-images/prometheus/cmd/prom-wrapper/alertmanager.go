@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"time"
@@ -61,7 +61,7 @@ func reloadAlertmanager(ctx context.Context) error {
 	}
 	if resp.StatusCode >= 300 {
 		defer resp.Body.Close()
-		data, err := ioutil.ReadAll(resp.Body)
+		data, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return fmt.Errorf("reload failed with status %d", resp.StatusCode)
 		}
@@ -88,7 +88,7 @@ func applyConfiguration(ctx context.Context, cfg *amconfig.Config) error {
 	if err != nil {
 		return fmt.Errorf("failed to generate Alertmanager configuration: %w", err)
 	}
-	if err := ioutil.WriteFile(alertmanagerConfigPath, amConfigData, os.ModePerm); err != nil {
+	if err := os.WriteFile(alertmanagerConfigPath, amConfigData, os.ModePerm); err != nil {
 		return fmt.Errorf("failed to write Alertmanager configuration: %w", err)
 	}
 	if err := reloadAlertmanager(ctx); err != nil {

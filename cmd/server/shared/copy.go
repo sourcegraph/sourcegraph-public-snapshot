@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -25,14 +24,14 @@ func copyConfigs() error {
 		src = filepath.Join(os.Getenv("CONFIG_DIR"), src)
 		dst = os.ExpandEnv(dst)
 
-		data, err := ioutil.ReadFile(src)
+		data, err := os.ReadFile(src)
 		if os.IsNotExist(err) {
 			continue
 		} else if err != nil {
 			return errors.Wrapf(err, "failed to copy %s -> %s", src, dst)
 		}
 
-		if err := ioutil.WriteFile(dst, data, 0600); err != nil {
+		if err := os.WriteFile(dst, data, 0600); err != nil {
 			return errors.Wrapf(err, "failed to copy %s -> %s", src, dst)
 		}
 	}

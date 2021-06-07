@@ -3,7 +3,7 @@ package webhooks
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strconv"
 
@@ -57,7 +57,7 @@ func (h *GitLabWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		respond(w, http.StatusBadRequest, "missing request body")
 		return
 	}
-	payload, err := ioutil.ReadAll(r.Body)
+	payload, err := io.ReadAll(r.Body)
 	if err != nil {
 		respond(w, http.StatusInternalServerError, errors.Wrap(err, "reading payload"))
 		return

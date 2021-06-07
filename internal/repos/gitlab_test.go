@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
@@ -162,7 +162,7 @@ func TestGitLabSource_GetRepo(t *testing.T) {
 }
 
 func TestGitLabSource_makeRepo(t *testing.T) {
-	b, err := ioutil.ReadFile(filepath.Join("testdata", "gitlab-repos.json"))
+	b, err := os.ReadFile(filepath.Join("testdata", "gitlab-repos.json"))
 	if err != nil {
 		t.Fatal(err)
 	}

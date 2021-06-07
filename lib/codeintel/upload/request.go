@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -85,7 +84,7 @@ func performRequest(req *http.Request, logger RequestLogger) (*http.Response, []
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if logger != nil {
 		logger.LogResponse(req, resp, body, time.Since(started))
 	}

@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -135,7 +134,7 @@ func TestGithubSource_GetRepo(t *testing.T) {
 }
 
 func TestGithubSource_makeRepo(t *testing.T) {
-	b, err := ioutil.ReadFile(filepath.Join("testdata", "github-repos.json"))
+	b, err := os.ReadFile(filepath.Join("testdata", "github-repos.json"))
 	if err != nil {
 		t.Fatal(err)
 	}

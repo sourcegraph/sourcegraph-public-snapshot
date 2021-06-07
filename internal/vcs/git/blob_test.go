@@ -2,7 +2,7 @@ package git
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	"os"
 	"testing"
 )
@@ -61,7 +61,7 @@ func TestRead(t *testing.T) {
 				t.Fatal(err)
 			}
 			defer rc.Close()
-			data, err := ioutil.ReadAll(rc)
+			data, err := io.ReadAll(rc)
 			test.checkFn(t, err, data)
 		})
 	}

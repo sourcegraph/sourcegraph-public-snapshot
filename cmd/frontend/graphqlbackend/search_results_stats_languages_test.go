@@ -4,8 +4,7 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"io/ioutil"
-	"os"
+	"io/fs"
 	"reflect"
 	"strings"
 	"testing"
@@ -35,7 +34,7 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 		default:
 			panic("unhandled mock NewFileReader " + name)
 		}
-		return ioutil.NopCloser(bytes.NewReader(data)), nil
+		return io.NopCloser(bytes.NewReader(data)), nil
 	}
 	const wantDefaultBranchRef = "refs/heads/foo"
 	git.Mocks.ExecSafe = func(params []string) (stdout, stderr []byte, exitCode int, err error) {
@@ -66,7 +65,7 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 
 	tests := map[string]struct {
 		results  []result.Match
-		getFiles []os.FileInfo
+		getFiles []fs.FileInfo
 		want     []inventory.Lang // TotalBytes values are incorrect (known issue doc'd in GraphQL schema)
 	}{
 		"empty": {
@@ -96,7 +95,7 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 			results: []result.Match{
 				&result.RepoMatch{Name: "r"},
 			},
-			getFiles: []os.FileInfo{
+			getFiles: []fs.FileInfo{
 				fileInfo{path: "two.go"},
 				fileInfo{path: "three.go"},
 			},
@@ -105,7 +104,7 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 	}
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			git.Mocks.ReadDir = func(commit api.CommitID, name string, recurse bool) ([]os.FileInfo, error) {
+			git.Mocks.ReadDir = func(commit api.CommitID, name string, recurse bool) ([]fs.FileInfo, error) {
 				return test.getFiles, nil
 			}
 

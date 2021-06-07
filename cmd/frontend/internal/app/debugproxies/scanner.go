@@ -3,7 +3,7 @@ package debugproxies
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -184,7 +184,7 @@ func (cs *clusterScanner) scanCluster() {
 // when the client was created, the official k8s client does not
 func namespace() string {
 	const filename = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
-	data, err := ioutil.ReadFile(filename)
+	data, err := os.ReadFile(filename)
 	if err != nil {
 		log15.Warn("scanner: falling back to kubernetes default namespace", "filename", filename, "error", err)
 		return "default"

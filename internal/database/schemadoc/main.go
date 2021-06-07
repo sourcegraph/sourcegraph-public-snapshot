@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"database/sql"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -108,7 +107,7 @@ func generateAndWrite(database *dbconn.Database, dataSource string, commandPrefi
 		return err
 	}
 
-	return ioutil.WriteFile(destinationFile, []byte(out), os.ModePerm)
+	return os.WriteFile(destinationFile, []byte(out), os.ModePerm)
 }
 
 func startDocker() (commandPrefix []string, shutdown func(), _ error) {
