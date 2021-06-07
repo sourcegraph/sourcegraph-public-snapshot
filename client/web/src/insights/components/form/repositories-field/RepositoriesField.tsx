@@ -69,10 +69,10 @@ export const RepositoriesField = forwardRef(
                 setPanel(false)
 
                 /**
-                 * Setting value (setValue above) triggers reset selection of input
-                 * if user select value from suggestion panel for some sub-string of
-                 * input value we need preserve selection at the end of sub-string and
-                 * avoid reset and putting selection at the end of input string.
+                 * Setting the value ('setValue' above) triggers the reset selection of the input
+                 * if the user selects a value from suggestion panel for some sub-string of
+                 * the input value we need to preserve the selection at the end of the sub-string
+                 * and avoid resetting and putting the selection at the end of input string.
                  */
                 setTimeout(() => {
                     if (!inputReference.current) {
@@ -92,9 +92,9 @@ export const RepositoriesField = forwardRef(
 
             if (caretPosition !== target.selectionStart) {
                 /**
-                 * After the moment when user selected value from suggestion panel we closed
-                 * this panel by setPanel(false) but if user is changing cursor position we
-                 * need to re-open panel for new suggestions.
+                 * After the moment when user selected the value from the suggestion panel we closed
+                 * this panel by setPanel(false) but if the user is changing the cursor position we
+                 * need to re-open suggestion panel for the new suggestions.
                  */
                 setPanel(true)
                 setCaretPosition(target.selectionStart)

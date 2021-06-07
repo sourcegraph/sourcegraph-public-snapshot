@@ -46,8 +46,12 @@ export const FlexTextarea = forwardRef((props: IProps, reference: Ref<HTMLInputE
     const classes = classNames(styles.textarea, className)
 
     return (
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        <textarea {...otherProps} value={value} ref={innerReference} rows={rows} className={classes} />
+        <textarea
+            {...(otherProps as InputHTMLAttributes<HTMLTextAreaElement>)}
+            value={value}
+            ref={innerReference}
+            rows={rows}
+            className={classes}
+        />
     )
 })

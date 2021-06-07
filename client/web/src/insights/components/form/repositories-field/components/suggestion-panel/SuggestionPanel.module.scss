@@ -16,9 +16,9 @@
     }
 
     /**
-        Reach ui by default highlight suggested value and skip user value.
+        Reach ui by default highlights suggested value and skips the user value.
         This is a bit weird and inconsistent with our highlight visual logic
-        in search bar. In order to support the same logic we override font-weight
+        in search bar. In order to support consistent logic we override font-weight
         for suggested and user parts of value.
      */
     [data-suggested-value] {
