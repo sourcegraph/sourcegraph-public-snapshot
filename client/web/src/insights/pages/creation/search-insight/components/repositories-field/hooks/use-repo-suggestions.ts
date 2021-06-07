@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useContext, useEffect, useRef, useState } from 'react'
 
 import { useDebounce } from '@sourcegraph/wildcard/src'
 
-import { fetchRepositorySuggestions } from '../../../../../../core/backend/requests/fetch-repository-suggestions'
+import { InsightsApiContext } from '../../../../../../core/backend/api-provider';
 
 interface RepositorySuggestion {
     name: string
@@ -17,25 +17,31 @@ interface UseRepoSuggestionsResult {
     suggestions: RepositorySuggestion[] | Error | undefined
 }
 
+/**
+ * Returns fetch method for repository suggestions with local cache
+ */
 function useFetchSuggestions(): (search: string) => Promise<RepositorySuggestion[]> {
     /** Local suggestions cache */
     const cache = useRef<Record<string, RepositorySuggestion[]>>({})
+    const { getRepositorySuggestions } = useContext(InsightsApiContext)
 
     return useCallback(search => {
         if (cache?.current?.[search]) {
             return Promise.resolve(cache.current?.[search])
         }
 
-        return fetchRepositorySuggestions(search)
-            .toPromise()
+        return getRepositorySuggestions(search)
             .then(suggestions => {
                 cache.current[search] = suggestions
 
                 return suggestions
             })
-    }, [])
+    }, [getRepositorySuggestions])
 }
 
+/**
+ * Provides list of repository suggestions.
+ */
 export function useRepoSuggestions(props: UseRepoSuggestionsProps): UseRepoSuggestionsResult {
     const { search, disable = false } = props
 

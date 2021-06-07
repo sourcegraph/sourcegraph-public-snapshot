@@ -6,7 +6,7 @@ import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { requestGraphQL } from '../../../../backend/graphql'
 import { RepositorySearchSuggestionsResult, RepositorySearchSuggestionsVariables } from '../../../../graphql-operations'
 
-interface RepositorySuggestion {
+export interface RepositorySuggestion {
     /**
      * Repository id.
      */
