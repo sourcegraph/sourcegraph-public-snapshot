@@ -27,7 +27,7 @@ import { StatusMessagesNavItem } from '@sourcegraph/web/src/nav/StatusMessagesNa
 import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '@sourcegraph/wildcard/src/components/NavBar'
 
 import { AuthenticatedUser } from '../auth'
-import { BatchChangesIconNav } from '../batches/icons'
+import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import { CodeMonitoringProps } from '../code-monitoring'
 import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { BrandLogo } from '../components/branding/BrandLogo'
@@ -254,11 +254,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                                 <NavLink to="/code-monitoring">Monitoring</NavLink>
                             </NavItem>
                         )}
-                        {props.showBatchChanges && (
-                            <NavItem icon={BatchChangesIconNav}>
-                                <BatchChangesNavLink isSourcegraphDotCom={isSourcegraphDotCom} />
-                            </NavItem>
-                        )}
+                        {props.showBatchChanges && <BatchChangesNavItem isSourcegraphDotCom={isSourcegraphDotCom} />}
                         {codeInsights && (
                             <NavItem icon={BarChartIcon}>
                                 <NavLink to="/insights">Insights</NavLink>
@@ -409,17 +405,4 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
             )}
         </div>
     )
-}
-
-const BatchChangesNavLink: React.FunctionComponent<{ isSourcegraphDotCom: boolean }> = ({
-    isSourcegraphDotCom: sourcegraphDotCom,
-}) => {
-    if (sourcegraphDotCom) {
-        return (
-            <NavLink to="https://about.sourcegraph.com/batch-changes/" external={true}>
-                Batch Changes
-            </NavLink>
-        )
-    }
-    return <NavLink to="/batch-changes">Batch Changes</NavLink>
 }
