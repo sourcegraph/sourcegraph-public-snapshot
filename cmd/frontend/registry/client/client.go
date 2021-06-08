@@ -74,7 +74,7 @@ func getBy(ctx context.Context, registry *url.URL, op, field, value string) (*Ex
 
 func GetFeaturedExtensions(ctx context.Context, registry *url.URL) ([]*Extension, error) {
 	var x []*Extension
-	if err := httpGet(ctx, "registry.GetFeaturedExtensions", toURL(registry, path.Join("extensions", "featured"), nil), &x); err != nil {
+	if err := httpGet(ctx, "registry.GetFeaturedExtensions", toURL(registry, "extensions/featured", nil), &x); err != nil {
 		return nil, err
 	}
 	return x, nil
