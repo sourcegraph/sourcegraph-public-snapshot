@@ -44,7 +44,6 @@ const config = {
         'storybook-dark-mode',
         '@storybook/addon-a11y',
         '@storybook/addon-toolbars',
-        './redesign-toggle-toolbar/register.ts',
     ],
 
     features: {
