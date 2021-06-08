@@ -47,6 +47,14 @@
             margin-right: 0.5rem;
             color: var(--border-color);
 
+            .theme-light & {
+                color: var(--gray-05);
+            }
+
+            .theme-dark & {
+                color: var(--gray-07);
+            }
+
             &--unchecked {
                 // Make unchecked icon smaller so it doesn't look like a radio button.
                 // Scale instead of setting font size so that both checked and
