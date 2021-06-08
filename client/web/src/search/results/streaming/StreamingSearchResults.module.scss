@@ -32,6 +32,7 @@
         grid-column: 2;
         grid-row: 1;
         padding-right: 1rem;
+        padding-bottom: 0.25rem;
 
         @media (--md-breakpoint-down) {
             grid-column: 1;

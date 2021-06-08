@@ -79,7 +79,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
         className="nav-item"
       >
         <button
-          className="btn btn-sm btn-outline-secondary mr-2 nav-link text-decoration-none"
+          className="btn btn-sm btn-outline-secondary nav-link text-decoration-none"
           data-tooltip="Hide more matches on all results"
           onClick={[Function]}
           type="button"
@@ -208,7 +208,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
         className="nav-item"
       >
         <button
-          className="btn btn-sm btn-outline-secondary mr-2 nav-link text-decoration-none"
+          className="btn btn-sm btn-outline-secondary nav-link text-decoration-none"
           data-tooltip="Hide more matches on all results"
           onClick={[Function]}
           type="button"
@@ -284,7 +284,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
         className="nav-item"
       >
         <button
-          className="btn btn-sm btn-outline-secondary mr-2 nav-link text-decoration-none"
+          className="btn btn-sm btn-outline-secondary nav-link text-decoration-none"
           data-tooltip="Hide more matches on all results"
           onClick={[Function]}
           type="button"
@@ -416,7 +416,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
         className="nav-item"
       >
         <button
-          className="btn btn-sm btn-outline-secondary mr-2 nav-link text-decoration-none"
+          className="btn btn-sm btn-outline-secondary nav-link text-decoration-none"
           data-tooltip="Hide more matches on all results"
           onClick={[Function]}
           type="button"
