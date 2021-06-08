@@ -119,10 +119,8 @@ func (r *siteResolver) ProductSubscription() *productSubscriptionStatus {
 	return &productSubscriptionStatus{}
 }
 
-var allowSiteSettingsEdits = os.Getenv("SITE_CONFIG_FILE") == "" || siteConfigAllowEdits
-
 func (r *siteResolver) AllowSiteSettingsEdits() bool {
-	return allowSiteSettingsEdits
+	return canUpdateSiteConfiguration()
 }
 
 type siteConfigurationResolver struct {
@@ -156,8 +154,6 @@ func (r *siteConfigurationResolver) ValidationMessages(ctx context.Context) ([]s
 	return conf.ValidateSite(string(contents))
 }
 
-var siteConfigAllowEdits, _ = strconv.ParseBool(env.Get("SITE_CONFIG_ALLOW_EDITS", "false", "When SITE_CONFIG_FILE is in use, allow edits in the application to be made which will be overwritten on next process restart"))
-
 func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *struct {
 	LastID int32
 	Input  string
@@ -167,7 +163,7 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return false, err
 	}
-	if os.Getenv("SITE_CONFIG_FILE") != "" && !siteConfigAllowEdits {
+	if !canUpdateSiteConfiguration() {
 		return false, errors.New("updating site configuration not allowed when using SITE_CONFIG_FILE")
 	}
 	if strings.TrimSpace(args.Input) == "" {
@@ -187,4 +183,10 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 		return false, err
 	}
 	return globals.ConfigurationServerFrontendOnly.NeedServerRestart(), nil
+}
+
+var siteConfigAllowEdits, _ = strconv.ParseBool(env.Get("SITE_CONFIG_ALLOW_EDITS", "false", "When SITE_CONFIG_FILE is in use, allow edits in the application to be made which will be overwritten on next process restart"))
+
+func canUpdateSiteConfiguration() bool {
+	return os.Getenv("SITE_CONFIG_FILE") == "" || siteConfigAllowEdits
 }
