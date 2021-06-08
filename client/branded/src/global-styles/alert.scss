@@ -1,28 +1,199 @@
-@import 'bootstrap/scss/alert';
-
-.theme-light {
-    @each $color, $value in map-merge($theme-colors, $theme-colors-light) {
-        .alert-#{$color} {
-            @include alert-variant(
-                theme-color-level($color, $alert-bg-level-light),
-                theme-color-level($color, $alert-border-level-light),
-                theme-color-level($color, $alert-color-level-light)
-            );
-        }
-    }
+.alert {
+    position: relative;
+    margin-bottom: 1rem;
+    border-radius: var(--border-radius);
+    border: 1px solid transparent;
 }
 
 .alert-heading {
-    color: inherit !important;
-}
-
-.alert-link {
-    text-decoration: underline;
     color: inherit;
 }
 
-.alert a:not(.btn) {
-    @extend .alert-link;
+.alert a:not(.btn),
+.alert-link {
+    font-weight: 500;
+
+    &:hover {
+        text-decoration: underline;
+    }
 }
 
-@import './alert-redesign';
+.alert-primary,
+.alert-secondary,
+.alert-success,
+.alert-danger,
+.alert-warning,
+.alert-info,
+.alert-merged {
+    --alert-icon-block-width: 2.5rem;
+    --alert-content-padding: 0.5rem;
+
+    color: var(--body-color);
+    overflow: hidden;
+    border-color: var(--alert-border-color);
+    // Apply `background-color` and `padding` only to `.alert-#{$name}` because we also use `.alert` elements without variants.
+    background-color: var(--color-bg-1);
+    padding: var(--alert-content-padding) var(--alert-content-padding) var(--alert-content-padding)
+        calc(var(--alert-icon-block-width) + var(--alert-content-padding));
+
+    &::before,
+    &::after {
+        display: block;
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: var(--alert-icon-block-width);
+        height: 100%;
+    }
+
+    // Alert icon background.
+    &::before {
+        border: 2px solid var(--color-bg-1);
+        border-top-left-radius: var(--border-radius);
+        border-bottom-left-radius: var(--border-radius);
+        background-color: var(--alert-icon-background-color);
+    }
+
+    &::after {
+        mask-repeat: no-repeat;
+        mask-size: 1rem;
+        mask-position: 50% 50%;
+        // Applied as a fill color for SVG icon because of the mask-image.
+        background-color: var(--alert-icon-color);
+    }
+}
+
+.alert-info {
+    --alert-border-color: var(--info);
+
+    .theme-light & {
+        --alert-icon-color: var(--info-3);
+        --alert-icon-background-color: var(--info-4);
+    }
+
+    .theme-dark & {
+        --alert-icon-color: var(--info);
+        --alert-icon-background-color: var(--info-3);
+    }
+}
+
+.alert-primary {
+    --alert-border-color: var(--primary);
+    --alert-icon-background-color: var(--primary-4);
+
+    .theme-light & {
+        --alert-icon-color: var(--primary-3);
+    }
+
+    .theme-dark & {
+        --alert-icon-color: var(--primary);
+    }
+}
+
+.alert-secondary {
+    --alert-icon-background-color: var(--secondary-4);
+
+    .theme-light & {
+        --alert-border-color: var(--secondary-3);
+        --alert-icon-color: var(--gray-06);
+    }
+
+    .theme-dark & {
+        --alert-border-color: var(--secondary);
+        --alert-icon-color: var(--gray-05);
+    }
+}
+
+.alert-info,
+.alert-primary,
+.alert-secondary {
+    &::after {
+        // We cannot render SVG in HTML because then we will need to add it to every `.alert` element manually.
+        // We can use it as a `mask-image` to apply CSS variables as a fill color.
+        // Icon: mdi-react/Information
+        mask-image: url(escape-svg(
+            "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M13 9h-2V7h2m0 10h-2v-6h2m-1-9A10 10 0 002 12a10 10 0 0010 10 10 10 0 0010-10A10 10 0 0012 2z'/></svg>"
+        ));
+    }
+}
+
+.alert-warning {
+    --alert-border-color: var(--warning);
+    --alert-icon-background-color: var(--warning-4);
+
+    .theme-light & {
+        --alert-icon-color: var(--warning-3);
+    }
+
+    .theme-dark & {
+        --alert-icon-color: var(--warning);
+    }
+
+    &::after {
+        // Icon: mdi-react/Alert
+        mask-image: url(escape-svg(
+            "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M13 14h-2V9h2m0 9h-2v-2h2M1 21h22L12 2 1 21z'/></svg>"
+        ));
+    }
+}
+
+.alert-danger {
+    --alert-border-color: var(--danger);
+    --alert-icon-background-color: var(--danger-4);
+
+    .theme-light & {
+        --alert-icon-color: var(--danger-3);
+    }
+
+    .theme-dark & {
+        --alert-icon-color: var(--danger);
+    }
+
+    &::after {
+        // Icon: mdi-react/AlertCircle
+        mask-image: url(escape-svg(
+            "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M13 13h-2V7h2m0 10h-2v-2h2M12 2A10 10 0 002 12a10 10 0 0010 10 10 10 0 0010-10A10 10 0 0012 2z'/></svg>"
+        ));
+    }
+}
+
+.alert-success {
+    --alert-border-color: var(--success);
+    --alert-icon-background-color: var(--success-4);
+
+    .theme-light & {
+        --alert-icon-color: var(--success-3);
+    }
+
+    .theme-dark & {
+        --alert-icon-color: var(--success);
+    }
+
+    &::after {
+        // Icon: mdi-react/CheckCircle
+        mask-image: url(escape-svg(
+            "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2m-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z'/></svg>"
+        ));
+    }
+}
+
+.alert-merged {
+    --alert-border-color: var(--merged);
+    --alert-icon-background-color: var(--merged-4);
+
+    .theme-light & {
+        --alert-icon-color: var(--merged-3);
+    }
+
+    .theme-dark & {
+        --alert-icon-color: var(--merged);
+    }
+
+    &::after {
+        // Icon: mdi-react/SourceMerge
+        mask-image: url(escape-svg(
+            "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M7 3a3 3 0 013 3c0 1.29-.81 2.39-1.96 2.81.54 5 5.04 5.96 7.15 6.15A2.985 2.985 0 0118 13a3 3 0 013 3 3 3 0 01-3 3c-1.31 0-2.43-.84-2.84-2-4.25-.2-5.72-1.81-7.16-3.61v1.78c1.17.41 2 1.52 2 2.83a3 3 0 01-3 3 3 3 0 01-3-3c0-1.31.83-2.42 2-2.83V8.83A2.99 2.99 0 014 6a3 3 0 013-3m0 2a1 1 0 00-1 1 1 1 0 001 1 1 1 0 001-1 1 1 0 00-1-1m0 12a1 1 0 00-1 1 1 1 0 001 1 1 1 0 001-1 1 1 0 00-1-1m11-2a1 1 0 00-1 1 1 1 0 001 1 1 1 0 001-1 1 1 0 00-1-1z'/></svg>"
+        ));
+    }
+}
