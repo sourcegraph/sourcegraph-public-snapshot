@@ -117,7 +117,7 @@ $default-icon-colors: $oc-grape-7, $oc-violet-7, $oc-cyan-9, $oc-indigo-7, $oc-p
         }
 
         &:hover {
-            background-color: var(--link-hover-bg-color);
+            background-color: var(--color-bg-2);
         }
 
         &--toggle {
@@ -129,10 +129,11 @@ $default-icon-colors: $oc-grape-7, $oc-violet-7, $oc-cyan-9, $oc-indigo-7, $oc-p
 
         &--pressed {
             color: var(--body-color);
-            background-color: var(--link-hover-bg-color-2);
+            background-color: var(--color-bg-3);
 
+            // Override existing hover styles
             &:hover {
-                background-color: var(--link-hover-bg-color-2);
+                background-color: var(--color-bg-3);
             }
         }
 
@@ -159,8 +160,8 @@ $default-icon-colors: $oc-grape-7, $oc-violet-7, $oc-cyan-9, $oc-indigo-7, $oc-p
 
             &-inactive {
                 &::after {
-                    background-color: var(--disabled-action-bg-color) !important;
-                    color: var(--disabled-action-text-color) !important;
+                    background-color: var(--color-bg-3) !important;
+                    color: var(--text-muted) !important;
                 }
             }
         }
@@ -191,7 +192,7 @@ $default-icon-colors: $oc-grape-7, $oc-violet-7, $oc-cyan-9, $oc-indigo-7, $oc-p
         width: var(--action-item-width);
 
         &:hover {
-            background-color: var(--link-hover-bg-color);
+            background-color: var(--color-bg-2);
         }
     }
 }
