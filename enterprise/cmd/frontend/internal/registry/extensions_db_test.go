@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/jackc/pgconn"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -480,8 +481,8 @@ func TestFeaturedExtensions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if !reflect.DeepEqual(featuredExtensions, want) {
-		t.Errorf("got %s, want %s", asJSON(t, featuredExtensions), asJSON(t, want))
+	if diff := cmp.Diff(want, featuredExtensions); diff != "" {
+		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}
 }
 
