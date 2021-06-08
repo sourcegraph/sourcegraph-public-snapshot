@@ -337,7 +337,7 @@ repo8: repository(owner: "sourcegraph", name: "contains.dot") { ... on Repositor
 	mock := mockHTTPResponseBody{responseBody: ""}
 	apiURL := &url.URL{Scheme: "https", Host: "example.com", Path: "/"}
 	c := NewV4Client(apiURL, nil, &mock)
-	query, err := c.buildGetReposBatchQuery(repos)
+	query, err := c.buildGetReposBatchQuery(context.Background(), repos)
 	if err != nil {
 		t.Fatal(err)
 	}

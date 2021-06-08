@@ -116,7 +116,7 @@ type ScopeCache interface {
 // empty slice
 func GrantedScopes(ctx context.Context, cache ScopeCache, svc *types.ExternalService) ([]string, error) {
 	if svc.Kind != extsvc.KindGitHub {
-		return []string{}, nil
+		return nil, nil
 	}
 	src, err := NewSource(svc, nil)
 	if err != nil {

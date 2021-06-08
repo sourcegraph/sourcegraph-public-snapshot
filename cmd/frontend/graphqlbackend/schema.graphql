@@ -1951,7 +1951,7 @@ type ExternalService implements Node {
     NOTE: Currently only GitHub is supported and the request consumes rate limit tokens
     so it should be used sparingly.
     """
-    grantedScopes: [String!]!
+    grantedScopes: [String!]
 }
 
 """

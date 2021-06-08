@@ -1,11 +1,7 @@
 import React, { useCallback } from 'react'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
-import {
-    useRedesignToggle,
-    NOT_REDESIGN_CLASS_NAME,
-    REDESIGN_CLASS_NAME,
-} from '@sourcegraph/shared/src/util/useRedesignToggle'
+import { useRedesignToggle, REDESIGN_CLASS_NAME } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { Badge } from '../../components/Badge'
 
@@ -15,7 +11,6 @@ export const RedesignToggle: React.FunctionComponent = () => {
     const handleRedesignToggle = useCallback((): void => {
         setIsRedesignEnabled(!isRedesignEnabled)
         document.documentElement.classList.toggle(REDESIGN_CLASS_NAME, !isRedesignEnabled)
-        document.documentElement.classList.toggle(NOT_REDESIGN_CLASS_NAME, isRedesignEnabled)
     }, [isRedesignEnabled, setIsRedesignEnabled])
 
     return (

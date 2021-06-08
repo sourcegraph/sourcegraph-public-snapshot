@@ -1,12 +1,4 @@
 .code-monitoring-node {
-    .theme-classic & {
-        // stylelint-disable-next-line declaration-property-unit-whitelist
-        margin: -1px -1px calc(0.5rem - 1px) -1px;
-        color: var(--link-hover-color);
-        padding: 1rem;
-        @extend .card;
-    }
-
     &__toggle-wrapper {
         // stylelint-disable-next-line declaration-property-unit-whitelist
         margin-top: 1px; // For visual alignment with the edit button
@@ -14,31 +6,6 @@
 
     &__edit-button {
         padding: 0;
-    }
-
-    &:hover {
-        .theme-classic & {
-            text-decoration: none;
-            border: 2px solid #329af0;
-            // stylelint-disable-next-line declaration-property-unit-whitelist
-            margin: -2px -2px calc(0.5rem - 2px) -2px;
-        }
-    }
-
-    // We override the margins of the last .code-monitoring-node
-    // to prevent .filtered-connection__summary below from shifting
-    &:last-child {
-        .theme-classic & {
-            // stylelint-disable-next-line declaration-property-unit-whitelist
-            margin-bottom: -1px;
-        }
-    }
-
-    &:last-child:hover {
-        .theme-classic & {
-            // stylelint-disable-next-line declaration-property-unit-whitelist
-            margin-bottom: -2px;
-        }
     }
 
     .theme-redesign & {
