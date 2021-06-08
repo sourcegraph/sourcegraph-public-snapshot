@@ -43,8 +43,8 @@ func (r *featuredExtensionsResolver) Error(ctx context.Context) *string {
 	// See the GraphQL API schema documentation for this field for an explanation of why we return
 	// errors in this way.
 	_, err := r.compute(ctx)
-	if err == nil {
-		return nil
+	if err != nil {
+		return strptr(err.Error())
 	}
-	return strptr(err.Error())
+	return nil
 }
