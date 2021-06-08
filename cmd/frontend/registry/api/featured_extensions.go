@@ -26,6 +26,7 @@ func (r *featuredExtensionsResolver) compute(ctx context.Context) ([]graphqlback
 		xs, err := GetFeaturedExtensions(ctx, r.db)
 		if err != nil {
 			r.err = err
+			return
 		}
 		r.featuredExtensions = xs
 	})
