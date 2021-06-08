@@ -80,12 +80,10 @@ export const UserSettingsProfilePage: React.FunctionComponent<Props> = ({
                 }
                 className="user-settings-profile-page__heading"
             />
-            {props.activation?.completed && percentageDone(props.activation.completed) < 100 && (
+            {props.activation?.completed && (
                 <Container className="mb-3">
-                    <div>
-                        <h3>Almost there!</h3>
-                        <p>Complete the steps below to finish onboarding to Sourcegraph.</p>
-                    </div>
+                    <h3>Almost there!</h3>
+                    <p>Complete the steps below to finish onboarding to Sourcegraph.</p>
                     <ActivationChecklist
                         history={props.history}
                         steps={props.activation.steps}
