@@ -1,8 +1,6 @@
 import AccountCircleIcon from 'mdi-react/AccountCircleIcon'
 import AddIcon from 'mdi-react/AddIcon'
-import ConsoleIcon from 'mdi-react/ConsoleIcon'
 import DomainIcon from 'mdi-react/DomainIcon'
-import ServerIcon from 'mdi-react/ServerIcon'
 import * as React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
 

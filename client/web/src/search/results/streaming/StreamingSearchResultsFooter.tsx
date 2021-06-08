@@ -1,4 +1,3 @@
-import SearchIcon from 'mdi-react/SearchIcon'
 import React from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
