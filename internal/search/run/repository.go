@@ -5,7 +5,6 @@ import (
 	"math"
 	"regexp"
 	"runtime"
-	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -151,10 +150,6 @@ func matchRepos(pattern *regexp.Regexp, resolved []*search.RepositoryRevisions, 
 	last := make(chan struct{})
 	close(last)
 
-	var wg sync.WaitGroup
-	wg.Add(workers)
-	defer wg.Wait()
-
 	for i := 0; i < workers; i++ {
 		page := resolved[i*limit : i*limit+limit]
 		if i == workers-1 {
@@ -167,7 +162,6 @@ func matchRepos(pattern *regexp.Regexp, resolved []*search.RepositoryRevisions, 
 
 		go func() {
 			defer close(done)
-			defer wg.Done()
 
 			var matched []*search.RepositoryRevisions
 			for _, r := range page {
@@ -182,6 +176,8 @@ func matchRepos(pattern *regexp.Regexp, resolved []*search.RepositoryRevisions, 
 			results <- matched
 		}()
 	}
+
+	<-last
 }
 
 // reposToAdd determines which repositories should be included in the result set based on whether they fit in the subset
