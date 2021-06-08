@@ -208,7 +208,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
     const [showSidebar, setShowSidebar] = useState(false)
 
     return (
-        <div className={classNames('test-search-results search-results', styles.streamingSearchResults)}>
+        <div className={styles.streamingSearchResults}>
             <PageTitle key="page-title" title={query} />
 
             <SearchSidebar
@@ -240,7 +240,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                 }
             />
 
-            <div className={classNames('search-results-list', styles.streamingSearchResultsContainer)}>
+            <div className={styles.streamingSearchResultsContainer}>
                 {showVersionContextWarning && (
                     <VersionContextWarning
                         versionContext={versionContext}
