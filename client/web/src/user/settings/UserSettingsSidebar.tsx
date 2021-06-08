@@ -97,16 +97,8 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
             <SidebarGroup>
                 <SidebarGroupHeader label="Other actions" />
                 <SidebarGroupItems>
-                    {!siteAdminViewingOtherUser && (
-                        <SidebarNavItem to="/api/console" icon={ConsoleIcon}>
-                            API console
-                        </SidebarNavItem>
-                    )}
-                    {props.authenticatedUser.siteAdmin && (
-                        <SidebarNavItem to="/site-admin" icon={ServerIcon}>
-                            Site admin
-                        </SidebarNavItem>
-                    )}
+                    {!siteAdminViewingOtherUser && <SidebarNavItem to="/api/console">API console</SidebarNavItem>}
+                    {props.authenticatedUser.siteAdmin && <SidebarNavItem to="/site-admin">Site admin</SidebarNavItem>}
                     {props.showOnboardingTour && (
                         <button
                             type="button"
