@@ -6,8 +6,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/cockroachdb/errors"
-	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
