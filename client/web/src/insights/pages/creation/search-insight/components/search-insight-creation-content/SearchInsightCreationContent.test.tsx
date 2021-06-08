@@ -11,7 +11,9 @@ import { createMockInsightAPI } from '../../../../../core/backend/insights-api'
 import { SearchInsightCreationContent, SearchInsightCreationContentProps } from './SearchInsightCreationContent'
 
 describe('CreateInsightContent', () => {
-    const mockAPI = createMockInsightAPI({})
+    const mockAPI = createMockInsightAPI({
+        getRepositorySuggestions: () => Promise.resolve([])
+    })
 
     const renderWithProps = (props: SearchInsightCreationContentProps): RenderResult =>
         render(
