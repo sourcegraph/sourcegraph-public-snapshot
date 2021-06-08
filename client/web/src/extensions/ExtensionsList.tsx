@@ -68,7 +68,7 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
         }
         for (const subject of settingsCascade.subjects) {
             if (subject.subject.__typename === 'Site') {
-                // Even if the user has permission to admister Site settings, changes cannot be made
+                // Even if the user has permission to administer Site settings, changes cannot be made
                 // through the API if global settings are configured through the GLOBAL_SETTINGS_FILE envvar.
                 if (subject.subject.allowSiteSettingsEdits) {
                     return subject
