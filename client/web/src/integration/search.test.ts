@@ -403,6 +403,13 @@ describe('Search', () => {
     })
 
     describe('Search results snapshots', () => {
+        // To avoid covering the Percy snapshots
+        const hideCreateCodeMonitorHighlightTour = () =>
+            driver.page.evaluate(() => {
+                localStorage.setItem('has-seen-create-code-monitor-highlight-tour-step', 'true')
+                location.reload()
+            })
+
         test('diff search syntax highlighting', async () => {
             testContext.overrideGraphQL({
                 ...commonSearchGraphQLResults,
@@ -410,7 +417,10 @@ describe('Search', () => {
             })
             testContext.overrideSearchStreamEvents(diffSearchStreamEvents)
 
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test%20type:diff&patternType=regexp')
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test%20type:diff&patternType=regexp', {
+                waitUntil: 'networkidle0',
+            })
+            await hideCreateCodeMonitorHighlightTour()
             await driver.page.waitForSelector('.search-result-match__code-excerpt .selection-highlight', {
                 visible: true,
             })
@@ -428,7 +438,10 @@ describe('Search', () => {
             })
             testContext.overrideSearchStreamEvents(commitSearchStreamEvents)
 
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=graph%20type:commit&patternType=regexp')
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=graph%20type:commit&patternType=regexp', {
+                waitUntil: 'networkidle0',
+            })
+            await hideCreateCodeMonitorHighlightTour()
             await driver.page.waitForSelector('.search-result-match__code-excerpt .selection-highlight', {
                 visible: true,
             })
@@ -480,6 +493,12 @@ describe('Search', () => {
     })
 
     describe('Highlight tour', () => {
+        const resetCreateCodeMonitorHighlightTour = () =>
+            driver.page.evaluate(() => {
+                localStorage.setItem('has-seen-create-code-monitor-highlight-tour-step', 'false')
+                location.reload()
+            })
+
         const isCreateCodeMonitorHighlightTourVisible = () =>
             driver.page.evaluate(
                 () =>
@@ -490,14 +509,20 @@ describe('Search', () => {
 
         test('Do not show create code monitor button highlight tour with missing search type', async () => {
             testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test')
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test', {
+                waitUntil: 'networkidle0',
+            })
+            await resetCreateCodeMonitorHighlightTour()
             await driver.page.waitForSelector('#monaco-query-input', { visible: true })
             expect(await isCreateCodeMonitorHighlightTourVisible()).toBeFalsy()
         })
 
         test('Show create code monitor button highlight tour with valid search type', async () => {
             testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test+type:diff')
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test+type:diff', {
+                waitUntil: 'networkidle0',
+            })
+            await resetCreateCodeMonitorHighlightTour()
             await driver.page.waitForSelector('#monaco-query-input', { visible: true })
             expect(await isCreateCodeMonitorHighlightTourVisible()).toBeTruthy()
         })
