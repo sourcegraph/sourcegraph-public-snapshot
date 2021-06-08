@@ -11,12 +11,17 @@ export type IProps = {
 
 /**
  * Flexible and auto-growable textarea element.
+ *
+ * This component is using textarea as the input component, but in order to support a passing this
+ * component to the combobox input component that can take only HTMLInputElement we have to
+ * cast all public props of this component from textarea to input element props.
  */
 export const FlexTextArea = forwardRef((props: IProps, reference: Ref<HTMLInputElement | null>) => {
     const { initialRow = 1, minRows = 1, maxRows = Infinity, className, value, ...otherProps } = props
     const [rows, setRows] = useState(initialRow)
     const innerReference = useRef<HTMLTextAreaElement>(null)
 
+    // Casting ref from textarea to input element for top level (consumer) ref support
     useImperativeHandle(reference, () => (innerReference.current as unknown) as HTMLInputElement)
 
     useEffect(() => {
