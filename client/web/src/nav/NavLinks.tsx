@@ -169,6 +169,7 @@ export const NavLinks: React.FunctionComponent<Props> = props => {
                         history={history}
                         userCreatedAt={authenticatedUser.createdAt}
                         userID={authenticatedUser.id}
+                        username={authenticatedUser.username}
                     />
                     </li>
                 )}

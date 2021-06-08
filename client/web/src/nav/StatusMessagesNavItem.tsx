@@ -94,17 +94,19 @@ interface IconsToShow {
     CloudAlertIcon: Icon
     CloudSyncIcon: Icon
     CloudCheckIcon: Icon
+    SyncIcon: Icon
 }
 
 function iconsToShow(isRedesignEnabled = false): IconsToShow {
     const CloudAlertIcon = isRedesignEnabled ? CloudAlertIconRefresh : CloudAlertIconCurrent
     const CloudSyncIcon = isRedesignEnabled ? CloudSyncIconRefresh : CloudSyncIconCurrent
     const CloudCheckIcon = isRedesignEnabled ? CloudCheckIconRefresh : CloudCheckIconCurrent
-    return { CloudAlertIcon, CloudSyncIcon, CloudCheckIcon }
+    const SyncIconMdi = isRedesignEnabled ? CloudSyncIconRefresh : SyncIcon
+    return { CloudAlertIcon, CloudSyncIcon, CloudCheckIcon,  SyncIcon: SyncIconMdi }
 }
 
 function entryIcon(entryType: EntryType, isRedesignEnabled?: boolean): JSX.Element {
-    const { CloudAlertIcon, CloudSyncIcon, CloudCheckIcon } = iconsToShow(isRedesignEnabled)
+    const { CloudAlertIcon, SyncIcon, CloudCheckIcon } = iconsToShow(isRedesignEnabled)
     switch (entryType) {
         case 'error': {
             return <InformationCircleIcon size={14} className="text-danger status-messages-nav-item__entry-icon" />
@@ -114,7 +116,7 @@ function entryIcon(entryType: EntryType, isRedesignEnabled?: boolean): JSX.Eleme
         case 'success':
             return <CloudCheckIcon size={14} className="text-success status-messages-nav-item__entry-icon" />
         case 'progress':
-            return <CloudSyncIcon size={14} className="text-primary status-messages-nav-item__entry-icon" />
+            return <SyncIcon size={14} className="text-primary status-messages-nav-item__entry-icon" />
         case 'not-active':
             return (
                 <CircleDashedIcon
@@ -183,6 +185,7 @@ interface Props {
     history: H.History
     userCreatedAt: string
     userID: string
+    username: string
 }
 
 enum ExternalServiceNoActivityReasons {
@@ -268,9 +271,8 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         message: Message,
         user: { isSiteAdmin: boolean; createdAt: string }
     ): JSX.Element | JSX.Element[] {
-        const getExternalServicesLink = (id?: string): string =>
-            user.isSiteAdmin ? `/site-admin/external-services/${id || ''}` : '/code-hosts'
-        const repositoriesLink = '/repositories'
+        const codeHostsLink = `/users/${this.props.username}/settings/code-hosts`
+        const repositoriesLink = `/users/${this.props.username}/settings/repositories/manage`
 
         // no status messages
         if (Array.isArray(message) && message.length === 0) {
@@ -278,7 +280,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                 <StatusMessagesNavItemEntry
                     key="up-to-date"
                     message="Repositories available for search"
-                    linkTo={getExternalServicesLink()}
+                    linkTo={repositoriesLink}
                     linkText="Manage repositories"
                     linkOnClick={this.toggleIsOpen}
                     entryType="success"
@@ -310,7 +312,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                             ? 'Connect with a code host to start adding your code to Sourcegraph.'
                             : 'You can now add and search your own repositories on Sourcegraph! Connect with a code host to get started.'
                     }`}
-                    linkTo={getExternalServicesLink()}
+                    linkTo={codeHostsLink}
                     linkText="Connect with code host"
                     linkOnClick={this.toggleIsOpen}
                     entryType="not-active"
@@ -319,40 +321,83 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
             )
         }
 
-        return message.map(message => {
-            switch (message.type) {
+        const cloningProgress = message.find(message_ => message_.type === 'CloningProgress');
+
+        // const indexing = message.find(message_ => message_.type === 'IndexingProgress');
+
+        // if (cloningProgress && indexing) {
+        //     message = message.filter(message_ => message_.type !== 'IndexingProgress')
+        // }
+
+        message = [
+            {
+                type: 'CloningProgress',
+                message: '42 repositories cloning...',
+            },
+            {
+                type: 'IndexingProgress',
+                message: 'Indexing 3 repositories...',
+            },
+            {
+                type: 'IndexingProgress',
+                message: '',
+            },
+            {
+                type: 'SyncError',
+                message: '2 repositories could not be synced',
+            },
+            {
+                type: 'ExternalServiceSyncError',
+                externalService: {
+                    id: '123',
+                    displayName: 'Github',
+                },
+                message: 'Some message',
+            },
+            {
+                type: 'IndexingError',
+                message: 'Could not complete indexing.'
+            },
+        ]
+
+        const indexing = message.find(message_ => message_.type === 'IndexingProgress');
+
+        return message.map(message_ => {
+            switch (message_.type) {
                 case 'CloningProgress':
                     return (
                         <StatusMessagesNavItemEntry
-                            key={message.message}
-                            message={message.message}
-                            messageHint="Your repositories may not be up to date.  "
+                            key={message_.message}
+                            message={message_.message}
+                            messageHint="Your repositories may not be up to date."
                             linkTo={repositoriesLink}
                             linkText="View status"
                             linkOnClick={this.toggleIsOpen}
                             entryType="progress"
+                            progressHint={indexing ? indexing.message : ''}
                             isRedesignEnabled={this.props.isRedesignEnabled}
                         />
                     )
                 case 'IndexingProgress':
                     return (
                         <StatusMessagesNavItemEntry
-                            key={message.message}
+                            key={message_.message}
                             message="Repositories available for search"
                             linkTo={repositoriesLink}
-                            linkText="View status"
+                            linkText="Manage repositories"
                             linkOnClick={this.toggleIsOpen}
                             entryType="success"
+                            progressHint={message_.message}
                             isRedesignEnabled={this.props.isRedesignEnabled}
                         />
                     )
                 case 'ExternalServiceSyncError':
                     return (
                         <StatusMessagesNavItemEntry
-                            key={message.externalService.id}
-                            message={`Can't connect to ${message.externalService.displayName}`}
+                            key={message_.externalService.id}
+                            message={`Can't connect to ${message_.externalService.displayName}`}
                             messageHint="Verify the code host configuration."
-                            linkTo={getExternalServicesLink(message.externalService.id)}
+                            linkTo={codeHostsLink}
                             linkText="Manage code hosts"
                             linkOnClick={this.toggleIsOpen}
                             entryType="error"
@@ -362,22 +407,35 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                 case 'SyncError':
                     return (
                         <StatusMessagesNavItemEntry
-                            key={message.message}
-                            message={message.message}
+                            key={message_.message}
+                            message={message_.message}
                             messageHint="Your repositories may not be up to date."
-                            linkTo={getExternalServicesLink()}
+                            linkTo={codeHostsLink}
                             linkText="Manage repositories"
                             linkOnClick={this.toggleIsOpen}
                             entryType="error"
                             isRedesignEnabled={this.props.isRedesignEnabled}
                         />
                     )
+                    case 'IndexingError':
+                        return (
+                            <StatusMessagesNavItemEntry
+                                key={message_.message}
+                                message={message_.message}
+                                messageHint="Your repositories are up to date, but search speed may be slower than usual."
+                                linkTo={codeHostsLink}
+                                linkText="Troubleshoot"
+                                linkOnClick={this.toggleIsOpen}
+                                entryType="warning"
+                                isRedesignEnabled={this.props.isRedesignEnabled}
+                            />
+                        )
             }
         })
     }
 
     private renderIcon(): JSX.Element | null {
-        const { CloudAlertIcon, CloudSyncIcon, CloudCheckIcon } = iconsToShow(this.props.isRedesignEnabled)
+        const { CloudAlertIcon, SyncIcon, CloudCheckIcon } = iconsToShow(true)
 
         if (isErrorLike(this.state.messagesOrError)) {
             return <CloudAlertIcon className="icon-inline-md" />
@@ -402,7 +460,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         }
         if (this.state.messagesOrError.some(({ type }) => type === 'CloningProgress')) {
             return (
-                <CloudSyncIcon
+                <SyncIcon
                     className="icon-inline-md"
                     data-tooltip={this.state.isOpen ? undefined : 'Cloning repositories...'}
                 />

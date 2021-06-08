@@ -104,6 +104,11 @@ func TestStatusMessages(t *testing.T) {
 						Message: "Could not save to database",
 					},
 				},
+				{
+					IndexingError: &repos.IndexingError{
+						Message: "Could not complete indexing.",
+					},
+				},
 			}
 			return res, nil
 		}

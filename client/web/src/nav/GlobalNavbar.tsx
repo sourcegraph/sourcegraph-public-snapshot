@@ -317,6 +317,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                                     <StatusMessagesNavItem
                                         isSiteAdmin={props.authenticatedUser?.siteAdmin || false}
                                         userID={props.authenticatedUser.id}
+                                        username={props.authenticatedUser.username}
                                         userCreatedAt={props.authenticatedUser.createdAt}
                                         history={history}
                                         isRedesignEnabled={isRedesignEnabled}

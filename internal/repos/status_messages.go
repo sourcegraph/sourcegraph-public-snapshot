@@ -68,7 +68,7 @@ func FetchStatusMessages(ctx context.Context, db dbutil.DB, u *types.User, cloud
 	if notCloned > 0 {
 		messages = append(messages, StatusMessage{
 			Cloning: &CloningProgress{
-				Message: fmt.Sprintf("%d %s not yet cloned", notCloned, getRepoNoun(notCloned)),
+				Message: fmt.Sprintf("%d %s cloning...", notCloned, getRepoNoun(notCloned)),
 			},
 		})
 	}
@@ -117,9 +117,14 @@ type SyncError struct {
 	Message string
 }
 
+type IndexingError struct {
+	Message string
+}
+
 type StatusMessage struct {
 	Cloning                  *CloningProgress          `json:"cloning"`
 	Indexing                 *IndexingProgress         `json:"indexing"`
 	ExternalServiceSyncError *ExternalServiceSyncError `json:"external_service_sync_error"`
 	SyncError                *SyncError                `json:"sync_error"`
+	IndexingError            *IndexingError            `json:"indexing_error"`
 }
