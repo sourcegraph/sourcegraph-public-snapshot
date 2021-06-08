@@ -49,7 +49,7 @@ export function SuggestionsPanel(props: SuggestionsPanelProps): ReactElement {
                 </ComboboxOption>
             ))}
 
-            {isValueEmpty && <span className={styles.suggestionsListItem}>Start entering the value</span>}
+            {isValueEmpty && <span className={styles.suggestionsListItem}><i>Start typing</i></span>}
 
             {!isValueEmpty && !suggestions.length && (
                 <span className={styles.suggestionsListItem}>No results found</span>
