@@ -415,7 +415,7 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, opts resolveRe
 }
 
 func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]SearchSuggestionResolver, error) {
-	resolved, err := r.resolveRepositories(ctx, resolveRepositoriesOpts{})
+	resolved, err := r.resolveRepositories(ctx, resolveRepositoriesOpts{limit: limit})
 	if err != nil {
 		return nil, err
 	}

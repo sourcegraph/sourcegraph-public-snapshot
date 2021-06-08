@@ -27,7 +27,7 @@ import (
 func TestSearchSuggestions(t *testing.T) {
 	db := new(dbtesting.MockDB)
 
-	limitOffset := &database.LimitOffset{Limit: searchrepos.SearchLimits().MaxRepos + 1}
+	limitOffset := &database.LimitOffset{Limit: maxSearchSuggestions + 1}
 
 	getSuggestions := func(t *testing.T, query, version string) []string {
 		t.Helper()

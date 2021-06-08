@@ -378,7 +378,9 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			return mockShowSymbolMatches()
 		}
 
-		resolved, err := r.resolveRepositories(ctx, resolveRepositoriesOpts{})
+		resolved, err := r.resolveRepositories(ctx, resolveRepositoriesOpts{
+			limit: maxSearchSuggestions,
+		})
 		if err != nil {
 			return nil, err
 		}
