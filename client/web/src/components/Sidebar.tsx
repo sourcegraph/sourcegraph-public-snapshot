@@ -38,7 +38,6 @@ export const SidebarNavItem: React.FunctionComponent<{
             className={classNames(buttonClassNames, className)}
             activeClassName={isRedesign ? 'btn-primary' : undefined}
         >
-            {Icon && <Icon className="redesign-d-none icon-inline mr-2" />}
             {children}
         </NavLink>
     )

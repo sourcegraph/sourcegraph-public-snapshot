@@ -28,9 +28,7 @@ export const StreamingSearchResultFooter: React.FunctionComponent<{ results?: Ag
 
         {results?.state === 'complete' && !results.alert && results?.results.length === 0 && (
             <div className="alert alert-info d-flex m-3">
-                <p className="m-0">
-                    <SearchIcon className="redesign-d-none icon-inline" /> No results
-                </p>
+                <p className="m-0">No results</p>
             </div>
         )}
 

@@ -1,4 +1,3 @@
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
@@ -27,9 +26,7 @@ export const SearchAlert: React.FunctionComponent<SearchAlertProps> = ({
     children,
 }) => (
     <div className="alert alert-info m-2" data-testid="alert-container">
-        <h3>
-            <AlertCircleIcon className="redesign-d-none icon-inline" /> {alert.title}
-        </h3>
+        <h3>{alert.title}</h3>
 
         {alert.description && (
             <p>

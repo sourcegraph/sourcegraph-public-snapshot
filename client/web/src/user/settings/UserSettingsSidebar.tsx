@@ -2,7 +2,6 @@ import AccountCircleIcon from 'mdi-react/AccountCircleIcon'
 import AddIcon from 'mdi-react/AddIcon'
 import ConsoleIcon from 'mdi-react/ConsoleIcon'
 import DomainIcon from 'mdi-react/DomainIcon'
-import MapSearchOutlineIcon from 'mdi-react/MapSearchOutlineIcon'
 import ServerIcon from 'mdi-react/ServerIcon'
 import * as React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
@@ -114,7 +113,6 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
                             className="btn text-left sidebar__link--inactive d-flex sidebar-nav-link w-100"
                             onClick={reEnableSearchTour}
                         >
-                            <MapSearchOutlineIcon className="icon-inline list-group-item-action-icon redesign-d-none" />{' '}
                             Show search tour
                         </button>
                     )}
