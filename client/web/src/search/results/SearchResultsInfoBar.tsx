@@ -150,10 +150,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
             <div className="search-results-info-bar__row">
                 <button
                     type="button"
-                    className={classNames(
-                        'btn btn-sm btn-outline-secondary d-flex d-lg-none ml-3',
-                        showFilters && 'active'
-                    )}
+                    className={classNames('btn btn-sm btn-outline-secondary d-flex d-lg-none', showFilters && 'active')}
                     aria-pressed={showFilters}
                     onClick={onShowFiltersClicked}
                 >
