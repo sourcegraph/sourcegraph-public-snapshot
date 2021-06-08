@@ -315,7 +315,7 @@ func (err HTTPError) Error() string {
 }
 
 func (err HTTPError) Unauthorized() bool {
-	return err.code == http.StatusUnauthorized
+	return err.code == http.StatusUnauthorized || err.code == http.StatusForbidden
 }
 
 // HTTPErrorCode returns err's HTTP status code, if it is an HTTP error from
