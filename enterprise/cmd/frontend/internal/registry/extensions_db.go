@@ -198,7 +198,7 @@ func (s dbExtensions) getFeaturedExtensions(ctx context.Context, featuredExtensi
 		return mocks.extensions.GetFeaturedExtensions()
 	}
 
-	conds := []*sqlf.Query{}
+	conds := make([]*sqlf.Query, 0, len(featuredExtensionIDs))
 
 	for i := 0; i < len(featuredExtensionIDs); i++ {
 		extensionID := featuredExtensionIDs[i]
