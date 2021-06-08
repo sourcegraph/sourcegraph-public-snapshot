@@ -12,7 +12,7 @@ export type IProps = {
 /**
  * Flexible and auto-growable textarea element.
  */
-export const FlexTextarea = forwardRef((props: IProps, reference: Ref<HTMLInputElement | null>) => {
+export const FlexTextArea = forwardRef((props: IProps, reference: Ref<HTMLInputElement | null>) => {
     const { initialRow = 1, minRows = 1, maxRows = Infinity, className, value, ...otherProps } = props
     const [rows, setRows] = useState(initialRow)
     const innerReference = useRef<HTMLTextAreaElement>(null)
@@ -30,7 +30,7 @@ export const FlexTextarea = forwardRef((props: IProps, reference: Ref<HTMLInputE
         const previousRows = target.rows
         target.rows = minRows // reset number of rows in textarea
 
-        const currentRows = ~~(target.scrollHeight / textareaLineHeight)
+        const currentRows = Math.floor(target.scrollHeight / textareaLineHeight)
 
         if (currentRows === previousRows) {
             target.rows = currentRows

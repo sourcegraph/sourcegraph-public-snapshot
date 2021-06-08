@@ -11,7 +11,7 @@ import React, {
     InputHTMLAttributes,
 } from 'react'
 
-import { FlexTextarea } from './components/flex-textarea/FlexTextArea'
+import { FlexTextArea } from './components/flex-textarea/FlexTextArea'
 import { SuggestionsPanel } from './components/suggestion-panel/SuggestionPanel'
 import { useRepoSuggestions } from './hooks/use-repo-suggestions'
 import styles from './RepositoriesField.module.scss'
@@ -114,7 +114,7 @@ export const RepositoriesField = forwardRef(
             <Combobox openOnFocus={true} onSelect={handleSelect} className={styles.combobox}>
                 <ComboboxInput
                     {...otherProps}
-                    as={FlexTextarea}
+                    as={FlexTextArea}
                     ref={inputReference}
                     autocomplete={false}
                     value={value}
