@@ -42,8 +42,8 @@ export const RepositoriesField = forwardRef(
         const [caretPosition, setCaretPosition] = useState<number | null>(null)
         const [panel, setPanel] = useState(false)
 
-        const { value: search } = getSuggestionsSearchTerm({ value, caretPosition })
-        const { searchValue, suggestions } = useRepoSuggestions({ search, disable: !panel })
+        const { repositories, value: search } = getSuggestionsSearchTerm({ value, caretPosition })
+        const { searchValue, suggestions } = useRepoSuggestions({ excludedItems: repositories, search, disable: !panel })
 
         // Support top level reference prop
         useImperativeHandle(reference, () => inputReference.current)
