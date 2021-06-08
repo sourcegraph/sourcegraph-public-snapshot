@@ -34,7 +34,7 @@ describe('Code insight create insight page', () => {
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
 
-    it.only('should update user/org setting if code stats insight has been created', async () => {
+    it('should update user/org setting if code stats insight has been created', async () => {
         overrideGraphQLExtensions({
             testContext,
             overrides: {
