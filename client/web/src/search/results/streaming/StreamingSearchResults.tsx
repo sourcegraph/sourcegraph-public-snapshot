@@ -15,7 +15,6 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { asError } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import {
     CaseSensitivityProps,
@@ -32,13 +31,11 @@ import { SavedSearchModal } from '../../../savedSearches/SavedSearchModal'
 import { QueryState, submitSearch } from '../../helpers'
 import { SearchAlert } from '../SearchAlert'
 import { SearchResultsInfoBar } from '../SearchResultsInfoBar'
-import { SearchResultTypeTabs } from '../SearchResultTypeTabs'
 import { VersionContextWarning } from '../VersionContextWarning'
 
 import { StreamingProgress } from './progress/StreamingProgress'
 import { SearchSidebar } from './sidebar/SearchSidebar'
 import styles from './StreamingSearchResults.module.scss'
-import { StreamingSearchResultsFilterBars } from './StreamingSearchResultsFilterBars'
 import { StreamingSearchResultsList } from './StreamingSearchResultsList'
 
 export interface StreamingSearchResultsProps
@@ -208,69 +205,42 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
         },
         [query, telemetryService, props]
     )
-
-    const [isRedesignEnabled] = useRedesignToggle()
     const [showSidebar, setShowSidebar] = useState(false)
 
-    const infobar = (
-        <SearchResultsInfoBar
-            {...props}
-            query={query}
-            resultsFound={results ? results.results.length > 0 : false}
-            className={classNames(
-                'flex-grow-1',
-                { 'border-bottom': !isRedesignEnabled },
-                styles.streamingSearchResultsInfobar
-            )}
-            allExpanded={allExpanded}
-            onExpandAllResultsToggle={onExpandAllResultsToggle}
-            onSaveQueryClick={onSaveQueryClick}
-            onShowFiltersChanged={show => setShowSidebar(show)}
-            stats={
-                <StreamingProgress
-                    progress={results?.progress || { durationMs: 0, matchCount: 0, skipped: [] }}
-                    state={results?.state || 'loading'}
-                    onSearchAgain={onSearchAgain}
-                    showTrace={!!trace}
-                />
-            }
-        />
-    )
-
     return (
-        <div className={classNames('test-search-results search-results', styles.streamingSearchResults)}>
+        <div className={styles.streamingSearchResults}>
             <PageTitle key="page-title" title={query} />
 
-            {isRedesignEnabled ? (
-                <>
-                    <SearchSidebar
-                        {...props}
-                        className={classNames(
-                            styles.streamingSearchResultsSidebar,
-                            showSidebar && styles.streamingSearchResultsSidebarShow
-                        )}
-                        query={props.navbarSearchQueryState.query}
-                        filters={results?.filters}
-                    />
-                    {infobar}
-                </>
-            ) : (
-                <StreamingSearchResultsFilterBars {...props} results={results} />
-            )}
-            <div className={classNames('search-results-list', styles.streamingSearchResultsContainer)}>
-                <div className="d-lg-flex mb-2 align-items-end flex-wrap">
-                    {!isRedesignEnabled && (
-                        <>
-                            <SearchResultTypeTabs
-                                {...props}
-                                query={props.navbarSearchQueryState.query}
-                                className="search-results-list__tabs"
-                            />
-                            {infobar}
-                        </>
-                    )}
-                </div>
+            <SearchSidebar
+                {...props}
+                className={classNames(
+                    styles.streamingSearchResultsSidebar,
+                    showSidebar && styles.streamingSearchResultsSidebarShow
+                )}
+                query={props.navbarSearchQueryState.query}
+                filters={results?.filters}
+            />
 
+            <SearchResultsInfoBar
+                {...props}
+                query={query}
+                resultsFound={results ? results.results.length > 0 : false}
+                className={classNames('flex-grow-1', styles.streamingSearchResultsInfobar)}
+                allExpanded={allExpanded}
+                onExpandAllResultsToggle={onExpandAllResultsToggle}
+                onSaveQueryClick={onSaveQueryClick}
+                onShowFiltersChanged={show => setShowSidebar(show)}
+                stats={
+                    <StreamingProgress
+                        progress={results?.progress || { durationMs: 0, matchCount: 0, skipped: [] }}
+                        state={results?.state || 'loading'}
+                        onSearchAgain={onSearchAgain}
+                        showTrace={!!trace}
+                    />
+                }
+            />
+
+            <div className={styles.streamingSearchResultsContainer}>
                 {showVersionContextWarning && (
                     <VersionContextWarning
                         versionContext={versionContext}

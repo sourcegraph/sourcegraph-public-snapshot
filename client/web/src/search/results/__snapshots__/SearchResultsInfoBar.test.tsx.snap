@@ -53,7 +53,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
         className="nav-item"
       >
         <button
-          className="btn btn-sm nav-link text-decoration-none test-save-search-link btn-outline-secondary mr-2"
+          className="btn btn-sm btn-outline-secondary mr-2 nav-link text-decoration-none test-save-search-link"
           onClick={[Function]}
           type="button"
         >
@@ -79,7 +79,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
         className="nav-item"
       >
         <button
-          className="btn btn-sm nav-link text-decoration-none btn-outline-secondary mr-2"
+          className="btn btn-sm btn-outline-secondary nav-link text-decoration-none"
           data-tooltip="Hide more matches on all results"
           onClick={[Function]}
           type="button"
@@ -155,7 +155,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
         className="nav-item"
       >
         <a
-          className="btn btn-sm nav-link text-decoration-none btn-outline-secondary mr-2"
+          className="btn btn-sm btn-outline-secondary mr-2 nav-link text-decoration-none"
           href="/code-monitoring/new?trigger-query=foo+type%3Adiff+patterntype%3Aliteral"
           onClick={[Function]}
           onKeyPress={[Function]}
@@ -182,7 +182,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
         className="nav-item"
       >
         <button
-          className="btn btn-sm nav-link text-decoration-none test-save-search-link btn-outline-secondary mr-2"
+          className="btn btn-sm btn-outline-secondary mr-2 nav-link text-decoration-none test-save-search-link"
           onClick={[Function]}
           type="button"
         >
@@ -208,7 +208,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
         className="nav-item"
       >
         <button
-          className="btn btn-sm nav-link text-decoration-none btn-outline-secondary mr-2"
+          className="btn btn-sm btn-outline-secondary nav-link text-decoration-none"
           data-tooltip="Hide more matches on all results"
           onClick={[Function]}
           type="button"
@@ -284,7 +284,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
         className="nav-item"
       >
         <button
-          className="btn btn-sm nav-link text-decoration-none btn-outline-secondary mr-2"
+          className="btn btn-sm btn-outline-secondary nav-link text-decoration-none"
           data-tooltip="Hide more matches on all results"
           onClick={[Function]}
           type="button"
@@ -361,7 +361,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
         data-tooltip="Code monitors only support type:diff or type:commit searches."
       >
         <a
-          className="btn btn-sm nav-link text-decoration-none btn-outline-secondary mr-2 disabled"
+          className="btn btn-sm btn-outline-secondary mr-2 nav-link text-decoration-none disabled"
           href=""
           onAuxClick={[Function]}
           onClick={[Function]}
@@ -390,7 +390,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
         className="nav-item"
       >
         <button
-          className="btn btn-sm nav-link text-decoration-none test-save-search-link btn-outline-secondary mr-2"
+          className="btn btn-sm btn-outline-secondary mr-2 nav-link text-decoration-none test-save-search-link"
           onClick={[Function]}
           type="button"
         >
@@ -416,7 +416,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
         className="nav-item"
       >
         <button
-          className="btn btn-sm nav-link text-decoration-none btn-outline-secondary mr-2"
+          className="btn btn-sm btn-outline-secondary nav-link text-decoration-none"
           data-tooltip="Hide more matches on all results"
           onClick={[Function]}
           type="button"
