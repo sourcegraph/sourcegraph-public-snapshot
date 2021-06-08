@@ -4,14 +4,16 @@ package indexing
 
 import (
 	"context"
+	dbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	api "github.com/sourcegraph/sourcegraph/internal/api"
+	database "github.com/sourcegraph/sourcegraph/internal/database"
+	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	types "github.com/sourcegraph/sourcegraph/internal/types"
+	semantic "github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	schema "github.com/sourcegraph/sourcegraph/schema"
 	"regexp"
 	"sync"
 	"time"
-
-	dbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
-	api "github.com/sourcegraph/sourcegraph/internal/api"
-	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	semantic "github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
 )
 
 // MockDBStore is a mock implementation of the DBStore interface (from the
@@ -2027,4 +2029,296 @@ func (c IndexEnqueuerQueueIndexesForRepositoryFuncCall) Args() []interface{} {
 // invocation.
 func (c IndexEnqueuerQueueIndexesForRepositoryFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// MockIndexingRepoStore is a mock implementation of the IndexingRepoStore
+// interface (from the package
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/background/indexing)
+// used for unit testing.
+type MockIndexingRepoStore struct {
+	// ListRepoNamesFunc is an instance of a mock function object
+	// controlling the behavior of the method ListRepoNames.
+	ListRepoNamesFunc *IndexingRepoStoreListRepoNamesFunc
+}
+
+// NewMockIndexingRepoStore creates a new mock of the IndexingRepoStore
+// interface. All methods return zero values for all results, unless
+// overwritten.
+func NewMockIndexingRepoStore() *MockIndexingRepoStore {
+	return &MockIndexingRepoStore{
+		ListRepoNamesFunc: &IndexingRepoStoreListRepoNamesFunc{
+			defaultHook: func(context.Context, database.ReposListOptions) ([]types.RepoName, error) {
+				return nil, nil
+			},
+		},
+	}
+}
+
+// NewMockIndexingRepoStoreFrom creates a new mock of the
+// MockIndexingRepoStore interface. All methods delegate to the given
+// implementation, unless overwritten.
+func NewMockIndexingRepoStoreFrom(i IndexingRepoStore) *MockIndexingRepoStore {
+	return &MockIndexingRepoStore{
+		ListRepoNamesFunc: &IndexingRepoStoreListRepoNamesFunc{
+			defaultHook: i.ListRepoNames,
+		},
+	}
+}
+
+// IndexingRepoStoreListRepoNamesFunc describes the behavior when the
+// ListRepoNames method of the parent MockIndexingRepoStore instance is
+// invoked.
+type IndexingRepoStoreListRepoNamesFunc struct {
+	defaultHook func(context.Context, database.ReposListOptions) ([]types.RepoName, error)
+	hooks       []func(context.Context, database.ReposListOptions) ([]types.RepoName, error)
+	history     []IndexingRepoStoreListRepoNamesFuncCall
+	mutex       sync.Mutex
+}
+
+// ListRepoNames delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockIndexingRepoStore) ListRepoNames(v0 context.Context, v1 database.ReposListOptions) ([]types.RepoName, error) {
+	r0, r1 := m.ListRepoNamesFunc.nextHook()(v0, v1)
+	m.ListRepoNamesFunc.appendCall(IndexingRepoStoreListRepoNamesFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ListRepoNames method
+// of the parent MockIndexingRepoStore instance is invoked and the hook
+// queue is empty.
+func (f *IndexingRepoStoreListRepoNamesFunc) SetDefaultHook(hook func(context.Context, database.ReposListOptions) ([]types.RepoName, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListRepoNames method of the parent MockIndexingRepoStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *IndexingRepoStoreListRepoNamesFunc) PushHook(hook func(context.Context, database.ReposListOptions) ([]types.RepoName, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *IndexingRepoStoreListRepoNamesFunc) SetDefaultReturn(r0 []types.RepoName, r1 error) {
+	f.SetDefaultHook(func(context.Context, database.ReposListOptions) ([]types.RepoName, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *IndexingRepoStoreListRepoNamesFunc) PushReturn(r0 []types.RepoName, r1 error) {
+	f.PushHook(func(context.Context, database.ReposListOptions) ([]types.RepoName, error) {
+		return r0, r1
+	})
+}
+
+func (f *IndexingRepoStoreListRepoNamesFunc) nextHook() func(context.Context, database.ReposListOptions) ([]types.RepoName, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *IndexingRepoStoreListRepoNamesFunc) appendCall(r0 IndexingRepoStoreListRepoNamesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of IndexingRepoStoreListRepoNamesFuncCall
+// objects describing the invocations of this function.
+func (f *IndexingRepoStoreListRepoNamesFunc) History() []IndexingRepoStoreListRepoNamesFuncCall {
+	f.mutex.Lock()
+	history := make([]IndexingRepoStoreListRepoNamesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// IndexingRepoStoreListRepoNamesFuncCall is an object that describes an
+// invocation of method ListRepoNames on an instance of
+// MockIndexingRepoStore.
+type IndexingRepoStoreListRepoNamesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 database.ReposListOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []types.RepoName
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c IndexingRepoStoreListRepoNamesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c IndexingRepoStoreListRepoNamesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// MockIndexingSettingStore is a mock implementation of the
+// IndexingSettingStore interface (from the package
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/background/indexing)
+// used for unit testing.
+type MockIndexingSettingStore struct {
+	// GetLastestSchemaSettingsFunc is an instance of a mock function object
+	// controlling the behavior of the method GetLastestSchemaSettings.
+	GetLastestSchemaSettingsFunc *IndexingSettingStoreGetLastestSchemaSettingsFunc
+}
+
+// NewMockIndexingSettingStore creates a new mock of the
+// IndexingSettingStore interface. All methods return zero values for all
+// results, unless overwritten.
+func NewMockIndexingSettingStore() *MockIndexingSettingStore {
+	return &MockIndexingSettingStore{
+		GetLastestSchemaSettingsFunc: &IndexingSettingStoreGetLastestSchemaSettingsFunc{
+			defaultHook: func(context.Context, api.SettingsSubject) (*schema.Settings, error) {
+				return nil, nil
+			},
+		},
+	}
+}
+
+// NewMockIndexingSettingStoreFrom creates a new mock of the
+// MockIndexingSettingStore interface. All methods delegate to the given
+// implementation, unless overwritten.
+func NewMockIndexingSettingStoreFrom(i IndexingSettingStore) *MockIndexingSettingStore {
+	return &MockIndexingSettingStore{
+		GetLastestSchemaSettingsFunc: &IndexingSettingStoreGetLastestSchemaSettingsFunc{
+			defaultHook: i.GetLastestSchemaSettings,
+		},
+	}
+}
+
+// IndexingSettingStoreGetLastestSchemaSettingsFunc describes the behavior
+// when the GetLastestSchemaSettings method of the parent
+// MockIndexingSettingStore instance is invoked.
+type IndexingSettingStoreGetLastestSchemaSettingsFunc struct {
+	defaultHook func(context.Context, api.SettingsSubject) (*schema.Settings, error)
+	hooks       []func(context.Context, api.SettingsSubject) (*schema.Settings, error)
+	history     []IndexingSettingStoreGetLastestSchemaSettingsFuncCall
+	mutex       sync.Mutex
+}
+
+// GetLastestSchemaSettings delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockIndexingSettingStore) GetLastestSchemaSettings(v0 context.Context, v1 api.SettingsSubject) (*schema.Settings, error) {
+	r0, r1 := m.GetLastestSchemaSettingsFunc.nextHook()(v0, v1)
+	m.GetLastestSchemaSettingsFunc.appendCall(IndexingSettingStoreGetLastestSchemaSettingsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// GetLastestSchemaSettings method of the parent MockIndexingSettingStore
+// instance is invoked and the hook queue is empty.
+func (f *IndexingSettingStoreGetLastestSchemaSettingsFunc) SetDefaultHook(hook func(context.Context, api.SettingsSubject) (*schema.Settings, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetLastestSchemaSettings method of the parent MockIndexingSettingStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *IndexingSettingStoreGetLastestSchemaSettingsFunc) PushHook(hook func(context.Context, api.SettingsSubject) (*schema.Settings, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *IndexingSettingStoreGetLastestSchemaSettingsFunc) SetDefaultReturn(r0 *schema.Settings, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.SettingsSubject) (*schema.Settings, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *IndexingSettingStoreGetLastestSchemaSettingsFunc) PushReturn(r0 *schema.Settings, r1 error) {
+	f.PushHook(func(context.Context, api.SettingsSubject) (*schema.Settings, error) {
+		return r0, r1
+	})
+}
+
+func (f *IndexingSettingStoreGetLastestSchemaSettingsFunc) nextHook() func(context.Context, api.SettingsSubject) (*schema.Settings, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *IndexingSettingStoreGetLastestSchemaSettingsFunc) appendCall(r0 IndexingSettingStoreGetLastestSchemaSettingsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// IndexingSettingStoreGetLastestSchemaSettingsFuncCall objects describing
+// the invocations of this function.
+func (f *IndexingSettingStoreGetLastestSchemaSettingsFunc) History() []IndexingSettingStoreGetLastestSchemaSettingsFuncCall {
+	f.mutex.Lock()
+	history := make([]IndexingSettingStoreGetLastestSchemaSettingsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// IndexingSettingStoreGetLastestSchemaSettingsFuncCall is an object that
+// describes an invocation of method GetLastestSchemaSettings on an instance
+// of MockIndexingSettingStore.
+type IndexingSettingStoreGetLastestSchemaSettingsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.SettingsSubject
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *schema.Settings
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c IndexingSettingStoreGetLastestSchemaSettingsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c IndexingSettingStoreGetLastestSchemaSettingsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }

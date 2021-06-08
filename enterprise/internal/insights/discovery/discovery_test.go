@@ -89,6 +89,7 @@ func TestDiscover(t *testing.T) {
 	}).Equal(t, insights)
 }
 
+// TODO: Can I just remove this then?
 func Test_parseUserSettings(t *testing.T) {
 	tests := []struct {
 		name  string

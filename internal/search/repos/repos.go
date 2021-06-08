@@ -80,9 +80,11 @@ func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 		if err != nil {
 			return Resolved{}, err
 		}
-		patterns := repoGroupValuesToRegexp(groupNames, groups)
+
+		patterns, unionedPatterns := RepoGroupsToIncludePatterns(groupNames, groups)
+		includePatterns = append(includePatterns, unionedPatterns)
+
 		tr.LazyPrintf("repogroups: adding %d repos to include pattern", len(patterns))
-		includePatterns = append(includePatterns, UnionRegExps(patterns))
 
 		// Ensure we don't omit any repos explicitly included via a repo group. (Each explicitly
 		// listed repo generates at least one pattern.)

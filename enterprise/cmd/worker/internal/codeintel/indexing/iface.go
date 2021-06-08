@@ -7,8 +7,11 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type DBStore interface {
@@ -25,6 +28,20 @@ type DBStore interface {
 
 type DBStoreShim struct {
 	*dbstore.Store
+}
+
+// TODO: I don't like this name very much
+type IndexingSettingStore interface {
+	GetLastestSchemaSettings(context.Context, api.SettingsSubject) (*schema.Settings, error)
+}
+
+// settingStore <- variable and the type
+// setting_store = SettingStore()
+
+// TODO: I also don't like this name very much :)
+// Can probably just re-use the names and get used to that.
+type IndexingRepoStore interface {
+	ListRepoNames(ctx context.Context, opt database.ReposListOptions) (results []types.RepoName, err error)
 }
 
 func (s *DBStoreShim) With(other basestore.ShareableStore) DBStore {

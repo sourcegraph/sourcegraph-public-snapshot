@@ -1,3 +1,5 @@
+// TODO Delete this whole file.
+
 package indexing
 
 import (
@@ -14,6 +16,7 @@ import (
 
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/inference"
@@ -23,6 +26,7 @@ const MaxGitserverRequestsPerSecond = 20
 
 type IndexabilityUpdater struct {
 	dbStore             DBStore
+	settingStore        database.SettingStore
 	gitserverClient     GitserverClient
 	operations          *operations
 	minimumSearchCount  int
@@ -37,6 +41,7 @@ var _ goroutine.Handler = &IndexabilityUpdater{}
 
 func NewIndexabilityUpdater(
 	dbStore DBStore,
+	settingStore database.SettingStore,
 	gitserverClient GitserverClient,
 	minimumSearchCount int,
 	minimumSearchRatio float64,
@@ -47,6 +52,7 @@ func NewIndexabilityUpdater(
 ) goroutine.BackgroundRoutine {
 	updater := &IndexabilityUpdater{
 		dbStore:             dbStore,
+		settingStore:        settingStore,
 		gitserverClient:     gitserverClient,
 		operations:          newOperations(observationContext),
 		minimumSearchCount:  minimumSearchCount,
@@ -80,10 +86,31 @@ func (u *IndexabilityUpdater) Handle(ctx context.Context) error {
 		return errors.Wrap(err, "dbstore.RepoUsageStatistics")
 	}
 
+	// TODO(autoindex): This is where we would want to read from the ACTUAL repo groups here.
+
+	// If we just wanted the names of the repogroups available, we could stop with the above.
+
+	// And then we can get the patterns if we want... otherwise we could do something else.
+	// like just resolving the literal string ones and then asking the DB to resolve the pattern ones
+	// patterns := repoGroupValuesToRegexp(groupNames, groups)
+
+	// Get all the repos :)
+	// TODO(autoindex): Add repostore for this use case here...
+	//                  Seems a bit annoying to do this just for this updater? but I'll ask eric if anything else makes sense.
+	// options := database.ReposListOptions{...}
+	// repos, err = database.Repos(r.DB).ListRepoNames(ctx, options)
+
+	// we'll have the list of repogroups.
 	if u.enableIndexingCNCF {
 		stats = append(stats, u.cncfStats()...)
 	}
 
+	// TODO: I'd like to change to some other function besides queueRepository here
+	// so that we can not have to make fake stats to call this.
+	//
+	// Instead we would just say we're GOING to do these, and then do any other ones
+	// that make sense as well (this would be the queueRepository stuff that's there
+	// currently)
 	var queueErr error
 	for _, stat := range stats {
 		if err := u.queueRepository(ctx, stat); err != nil {
@@ -116,6 +143,8 @@ func (u *IndexabilityUpdater) HandleError(err error) {
 	log15.Error("Failed to update index queue", "err", err)
 }
 
+// TODO(autoindex): Why don't we pass something a little smaller than repoUsageStatistics? It's a bit confusing.
+//  Instead, we could do something like just passing in the ID and the metrics we think about updating, if they exist.
 func (u *IndexabilityUpdater) queueRepository(ctx context.Context, repoUsageStatistics store.RepoUsageStatistics) (err error) {
 	ctx, traceLog, endObservation := u.operations.QueueRepository.WithAndLogger(ctx, &err, observation.Args{
 		LogFields: []log.Field{
@@ -137,6 +166,8 @@ func (u *IndexabilityUpdater) queueRepository(ctx context.Context, repoUsageStat
 		return errors.Wrap(err, "dbstore.GetUploads")
 	}
 
+	// TODO: add a flag to enable / disable auto indexing, rather than ONLY for manual upload
+	// Also has race condition of existing auto index and then manual upload.
 	if count > 0 && uploads[0].AssociatedIndexID == nil {
 		traceLog(log.Event("recent manual upload, not queueing for autoindexer"))
 		return nil

@@ -2,13 +2,18 @@ package indexing
 
 import (
 	"context"
+	"fmt"
 	"sort"
+	"sync"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func init() {
@@ -16,6 +21,27 @@ func init() {
 }
 
 func TestIndexSchedulerUpdate(t *testing.T) {
+	// TODO: Switch to store method. Right now using global hax
+	var mu sync.Mutex
+	searchrepos.MockResolveRepoGroups = func() (map[string][]searchrepos.RepoGroupValue, error) {
+		mu.Lock()
+		defer mu.Unlock()
+		return map[string][]searchrepos.RepoGroupValue{
+			"cncf": {
+				searchrepos.RepoPath("foo-repo1"),
+				searchrepos.RepoPath("repo3"),
+			},
+		}, nil
+	}
+	defer func() { searchrepos.MockResolveRepoGroups = nil }()
+
+	database.Mocks.Repos.ListRepoNames = func(ctx context.Context, opt database.ReposListOptions) ([]types.RepoName, error) {
+		return []types.RepoName{}, nil
+	}
+	defer func() { database.Mocks.Repos.ListRepoNames = nil }()
+
+	// END HACKS
+
 	mockDBStore := NewMockDBStore()
 	mockDBStore.GetRepositoriesWithIndexConfigurationFunc.SetDefaultReturn([]int{43, 44, 45, 46}, nil)
 	mockDBStore.IndexableRepositoriesFunc.SetDefaultReturn([]store.IndexableRepository{
@@ -25,10 +51,44 @@ func TestIndexSchedulerUpdate(t *testing.T) {
 		{RepositoryID: 44},
 	}, nil)
 
+	mockSettingStore := NewMockIndexingSettingStore()
 	indexEnqueuer := NewMockIndexEnqueuer()
+
+	mockRepoStore := NewMockIndexingRepoStore()
+	mockRepoStore.ListRepoNamesFunc.SetDefaultReturn([]types.RepoName{{
+		ID:   0,
+		Name: "test repo",
+	}}, nil)
+
+	options := database.ReposListOptions{
+		Select:          []string{},
+		Query:           "",
+		IncludePatterns: []string{},
+		ExcludePattern:  "",
+		Names:           []string{},
+		URIs:            []string{},
+		// IDs:             []api.RepoID{},
+		UserID:          0,
+		SearchContextID: 0,
+		ServiceTypes:    []string{},
+		// ExternalServiceIDs:          []int64{},
+		// ExternalRepos:               []api.ExternalRepoSpec{},
+		// ExternalRepoIncludePrefixes: []api.ExternalRepoSpec{},
+		// ExternalRepoExcludePrefixes: []api.ExternalRepoSpec{},
+		PatternQuery: nil,
+		NoForks:      true,
+		NoArchived:   true,
+		NoCloned:     true,
+		NoPrivate:    true,
+		LimitOffset:  &database.LimitOffset{},
+	}
+
+	fmt.Println(mockRepoStore.ListRepoNames(context.Background(), options))
 
 	scheduler := &IndexScheduler{
 		dbStore:       mockDBStore,
+		settingStore:  mockSettingStore,
+		repoStore:     mockRepoStore,
 		operations:    newOperations(&observation.TestContext),
 		indexEnqueuer: indexEnqueuer,
 	}

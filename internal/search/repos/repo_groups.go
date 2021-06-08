@@ -35,31 +35,18 @@ func (r RepoRegexpPattern) String() string {
 
 var MockResolveRepoGroups func() (map[string][]RepoGroupValue, error)
 
+// Convert the repo groups from settings
+func RepoGroupsToIncludePatterns(groupNames []string, groups map[string][]RepoGroupValue) ([]string, string) {
+	patterns := repoGroupValuesToRegexp(groupNames, groups)
+	return patterns, UnionRegExps(patterns)
+}
+
 func ResolveRepoGroups(ctx context.Context, settings *schema.Settings) (groups map[string][]RepoGroupValue, err error) {
 	if MockResolveRepoGroups != nil {
 		return MockResolveRepoGroups()
 	}
-	groups = map[string][]RepoGroupValue{}
 
-	for name, values := range settings.SearchRepositoryGroups {
-		repos := make([]RepoGroupValue, 0, len(values))
-
-		for _, value := range values {
-			switch path := value.(type) {
-			case string:
-				repos = append(repos, RepoPath(path))
-			case map[string]interface{}:
-				if stringRegex, ok := path["regex"].(string); ok {
-					repos = append(repos, RepoRegexpPattern(stringRegex))
-				} else {
-					log15.Warn("ignoring repo group value because regex not specified", "regex-string", path["regex"])
-				}
-			default:
-				log15.Warn("ignoring repo group value of unrecognized type", "value", value, "type", fmt.Sprintf("%T", value))
-			}
-		}
-		groups[name] = repos
-	}
+	groups = ResolveRepoGroupsFromSettings(settings)
 
 	if mode, err := database.GlobalUsers.CurrentUserAllowedExternalServices(ctx); err != nil {
 		return groups, err
@@ -85,6 +72,32 @@ func ResolveRepoGroups(ctx context.Context, settings *schema.Settings) (groups m
 	groups["my"] = values
 
 	return groups, nil
+}
+
+func ResolveRepoGroupsFromSettings(settings *schema.Settings) map[string][]RepoGroupValue {
+	groups := map[string][]RepoGroupValue{}
+
+	for name, values := range settings.SearchRepositoryGroups {
+		repos := make([]RepoGroupValue, 0, len(values))
+
+		for _, value := range values {
+			switch path := value.(type) {
+			case string:
+				repos = append(repos, RepoPath(path))
+			case map[string]interface{}:
+				if stringRegex, ok := path["regex"].(string); ok {
+					repos = append(repos, RepoRegexpPattern(stringRegex))
+				} else {
+					log15.Warn("ignoring repo group value because regex not specified", "regex-string", path["regex"])
+				}
+			default:
+				log15.Warn("ignoring repo group value of unrecognized type", "value", value, "type", fmt.Sprintf("%T", value))
+			}
+		}
+		groups[name] = repos
+	}
+
+	return groups
 }
 
 // repoGroupValuesToRegexp does a lookup of all repo groups by name and converts

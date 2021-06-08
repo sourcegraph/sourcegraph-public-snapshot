@@ -11,6 +11,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
 
+// TODO: Check that false flag makes it so we don't return stuff here.
+
 func TestGetRepositoriesWithIndexConfiguration(t *testing.T) {
 	if testing.Short() {
 		t.Skip()

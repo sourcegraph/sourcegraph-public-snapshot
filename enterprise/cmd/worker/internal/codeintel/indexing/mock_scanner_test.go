@@ -3,10 +3,9 @@
 package indexing
 
 import (
-	"sync"
-
 	dbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	lsifstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+	"sync"
 )
 
 // MockPackageReferenceScanner is a mock implementation of the

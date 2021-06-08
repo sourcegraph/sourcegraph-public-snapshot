@@ -2,21 +2,27 @@ package indexing
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 
-	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
 type IndexScheduler struct {
+	// TODO: groupnames
 	dbStore                     DBStore
+	settingStore                IndexingSettingStore
+	repoStore                   IndexingRepoStore
 	indexEnqueuer               IndexEnqueuer
 	operations                  *operations
 	batchSize                   int
@@ -30,6 +36,8 @@ var _ goroutine.Handler = &IndexScheduler{}
 
 func NewIndexScheduler(
 	dbStore DBStore,
+	settingStore IndexingSettingStore,
+	repoStore IndexingRepoStore,
 	indexEnqueuer IndexEnqueuer,
 	batchSize int,
 	minimumTimeSinceLastEnqueue time.Duration,
@@ -41,6 +49,8 @@ func NewIndexScheduler(
 ) goroutine.BackgroundRoutine {
 	scheduler := &IndexScheduler{
 		dbStore:                     dbStore,
+		settingStore:                settingStore,
+		repoStore:                   repoStore,
 		indexEnqueuer:               indexEnqueuer,
 		batchSize:                   batchSize,
 		minimumTimeSinceLastEnqueue: minimumTimeSinceLastEnqueue,
@@ -66,25 +76,67 @@ func (s *IndexScheduler) Handle(ctx context.Context) error {
 		return nil
 	}
 
+	// TODO: Check for the new flag in the DB for this.
 	configuredRepositoryIDs, err := s.dbStore.GetRepositoriesWithIndexConfiguration(ctx)
 	if err != nil {
 		return errors.Wrap(err, "dbstore.GetRepositoriesWithIndexConfiguration")
 	}
 
-	indexableRepositories, err := s.dbStore.IndexableRepositories(ctx, store.IndexableRepositoryQueryOptions{
-		Limit:                       s.batchSize,
-		MinimumTimeSinceLastEnqueue: s.minimumTimeSinceLastEnqueue,
-		MinimumSearchCount:          s.minimumSearchCount,
-		MinimumPreciseCount:         s.minimumPreciseCount,
-		MinimumSearchRatio:          s.minimumSearchRatio,
-	})
-	if err != nil {
-		return errors.Wrap(err, "dbstore.IndexableRepositories")
+	// TODO(autoindex): We should create a way to gather _all_ repogroups (including all user repogroups)
+	settings, _ := s.settingStore.GetLastestSchemaSettings(ctx, api.SettingsSubject{})
+
+	// TODO(autoindex): Later we can remove using cncf explicitly and do all of them
+	groupsByName := searchrepos.ResolveRepoGroupsFromSettings(settings)
+	_, includePatterns := searchrepos.RepoGroupsToIncludePatterns([]string{"cncf"}, groupsByName)
+
+	options := database.ReposListOptions{
+		// Good
+		UserID:          0,
+		IncludePatterns: []string{includePatterns},
+
+		// Not sure
+		// Select:          []string{},
+		// Query:           "",
+		// ExcludePattern:  "",
+		// Names:           []string{},
+		// URIs:            []string{},
+		// IDs:             []api.RepoID{},
+		// SearchContextID: 0,
+		// ServiceTypes:    []string{},
+		// ExternalServiceIDs:          []int64{},
+		// ExternalRepos:               []api.ExternalRepoSpec{},
+		// ExternalRepoIncludePrefixes: []api.ExternalRepoSpec{},
+		// ExternalRepoExcludePrefixes: []api.ExternalRepoSpec{},
+		PatternQuery: nil,
+		NoForks:      true,
+		NoArchived:   true,
+		NoCloned:     true,
+		NoPrivate:    true,
+		LimitOffset:  &database.LimitOffset{},
 	}
 
+	validRepositories, err := s.repoStore.ListRepoNames(ctx, options)
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		fmt.Println(validRepositories)
+	}
+
+	// todo: replace w/ repogroup and not disabled
+	// validRepositories, err := s.dbStore.IndexableRepositories(ctx, store.IndexableRepositoryQueryOptions{
+	// 	Limit:                       s.batchSize,
+	// 	MinimumTimeSinceLastEnqueue: s.minimumTimeSinceLastEnqueue,
+	// 	MinimumSearchCount:          s.minimumSearchCount,
+	// 	MinimumPreciseCount:         s.minimumPreciseCount,
+	// 	MinimumSearchRatio:          s.minimumSearchRatio,
+	// })
+	// if err != nil {
+	// 	return errors.Wrap(err, "dbstore.IndexableRepositories")
+	// }
+
 	var indexableRepositoryIDs []int
-	for _, indexableRepository := range indexableRepositories {
-		indexableRepositoryIDs = append(indexableRepositoryIDs, indexableRepository.RepositoryID)
+	for _, indexableRepository := range validRepositories {
+		indexableRepositoryIDs = append(indexableRepositoryIDs, int(indexableRepository.ID))
 	}
 
 	var queueErr error
