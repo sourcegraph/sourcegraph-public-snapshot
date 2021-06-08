@@ -188,7 +188,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                                 <button
                                     type="button"
                                     onClick={props.onExpandAllResultsToggle}
-                                    className="btn btn-sm btn-outline-secondary mr-2 nav-link text-decoration-none"
+                                    className="btn btn-sm btn-outline-secondary nav-link text-decoration-none"
                                     data-tooltip={`${props.allExpanded ? 'Hide' : 'Show'} more matches on all results`}
                                 >
                                     {props.allExpanded ? (

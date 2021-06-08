@@ -31,6 +31,7 @@
     &__infobar {
         grid-column: 2;
         grid-row: 1;
+        padding-right: 1rem;
 
         @media (--md-breakpoint-down) {
             grid-column: 1;
