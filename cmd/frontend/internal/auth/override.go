@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
@@ -36,7 +37,7 @@ func OverrideAuthMiddleware(next http.Handler) http.Handler {
 				username = defaultUsername
 			}
 
-			userID, safeErrMsg, err := auth.GetAndSaveUser(r.Context(), auth.GetAndSaveUserOp{
+			userID, safeErrMsg, err := auth.GetAndSaveUser(r.Context(), dbconn.Global, auth.GetAndSaveUserOp{
 				UserProps: database.NewUser{
 					Username:        username,
 					Email:           username + "+override@example.com",

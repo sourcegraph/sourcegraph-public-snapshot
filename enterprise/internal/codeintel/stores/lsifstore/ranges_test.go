@@ -15,7 +15,7 @@ func TestDatabaseRanges(t *testing.T) {
 		t.Skip()
 	}
 	db := dbtesting.GetDB(t)
-	populateTestStore(t)
+	populateTestStore(t, db)
 	store := NewStore(db, &observation.TestContext)
 
 	//   20: // NewWriter creates a new Writer.

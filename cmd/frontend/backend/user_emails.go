@@ -28,9 +28,9 @@ type userEmails struct{}
 
 // checkEmailAbuse performs abuse prevention checks to prevent email abuse, i.e. users using emails
 // of other people whom they want to annoy.
-func checkEmailAbuse(ctx context.Context, userID int32) (abused bool, reason string, err error) {
+func checkEmailAbuse(ctx context.Context, db dbutil.DB, userID int32) (abused bool, reason string, err error) {
 	if conf.EmailVerificationRequired() {
-		emails, err := database.GlobalUserEmails.ListByUser(ctx, database.UserEmailsListOptions{
+		emails, err := database.UserEmails(db).ListByUser(ctx, database.UserEmailsListOptions{
 			UserID: userID,
 		})
 		if err != nil {
@@ -94,7 +94,7 @@ func (userEmails) Add(ctx context.Context, db dbutil.DB, userID int32, email str
 	// Prevent abuse (users adding emails of other people whom they want to annoy) with the
 	// following abuse prevention checks.
 	if isSiteAdmin := CheckCurrentUserIsSiteAdmin(ctx, db) == nil; !isSiteAdmin {
-		abused, reason, err := checkEmailAbuse(ctx, userID)
+		abused, reason, err := checkEmailAbuse(ctx, db, userID)
 		if err != nil {
 			return err
 		} else if abused {

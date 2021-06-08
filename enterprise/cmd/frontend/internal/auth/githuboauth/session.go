@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	esauth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	githubsvc "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -71,7 +72,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		firstErr        error
 	)
 	for i, verifiedEmail := range verifiedEmails {
-		userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, auth.GetAndSaveUserOp{
+		userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, dbconn.Global, auth.GetAndSaveUserOp{
 			UserProps: database.NewUser{
 				Username:        login,
 				Email:           verifiedEmail,

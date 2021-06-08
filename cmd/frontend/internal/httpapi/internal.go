@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -188,48 +187,50 @@ func repoRankFromConfig(siteConfig schema.SiteConfiguration, repoName string) fl
 // This endpoint also supports batch requests to avoid managing concurrency in
 // zoekt. On vertically scaled instances we have observed zoekt requesting
 // this endpoint concurrently leading to socket starvation.
-func serveSearchConfiguration(w http.ResponseWriter, r *http.Request) error {
-	ctx := r.Context()
-	siteConfig := conf.Get().SiteConfiguration
-	getRepoIndexOptions := func(repoName string) (*searchbackend.RepoIndexOptions, error) {
-		repo, err := database.GlobalRepos.GetByName(ctx, api.RepoName(repoName))
-		if err != nil {
-			return nil, err
-		}
-
-		getVersion := func(branch string) (string, error) {
-			// Do not to trigger a repo-updater lookup since this is a batch job.
-			commitID, err := git.ResolveRevision(ctx, repo.Name, branch, git.ResolveRevisionOptions{})
-			if err != nil && errcode.HTTP(err) == http.StatusNotFound {
-				// GetIndexOptions wants an empty rev for a missing rev or empty
-				// repo.
-				return "", nil
+func serveSearchConfiguration(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		ctx := r.Context()
+		siteConfig := conf.Get().SiteConfiguration
+		getRepoIndexOptions := func(repoName string) (*searchbackend.RepoIndexOptions, error) {
+			repo, err := database.Repos(db).GetByName(ctx, api.RepoName(repoName))
+			if err != nil {
+				return nil, err
 			}
-			return string(commitID), err
+
+			getVersion := func(branch string) (string, error) {
+				// Do not to trigger a repo-updater lookup since this is a batch job.
+				commitID, err := git.ResolveRevision(ctx, repo.Name, branch, git.ResolveRevisionOptions{})
+				if err != nil && errcode.HTTP(err) == http.StatusNotFound {
+					// GetIndexOptions wants an empty rev for a missing rev or empty
+					// repo.
+					return "", nil
+				}
+				return string(commitID), err
+			}
+
+			priority := float64(repo.Stars) + repoRankFromConfig(siteConfig, repoName)
+
+			return &searchbackend.RepoIndexOptions{
+				RepoID:     int32(repo.ID),
+				Public:     !repo.Private,
+				Priority:   priority,
+				GetVersion: getVersion,
+			}, nil
 		}
 
-		priority := float64(repo.Stars) + repoRankFromConfig(siteConfig, repoName)
+		sc := database.SearchContexts(db)
+		getSearchContextRevisions := func(repoID int32) ([]string, error) {
+			return sc.GetAllRevisionsForRepo(ctx, repoID)
+		}
 
-		return &searchbackend.RepoIndexOptions{
-			RepoID:     int32(repo.ID),
-			Public:     !repo.Private,
-			Priority:   priority,
-			GetVersion: getVersion,
-		}, nil
+		if err := r.ParseForm(); err != nil {
+			return err
+		}
+
+		b := searchbackend.GetIndexOptions(&siteConfig, getRepoIndexOptions, getSearchContextRevisions, r.Form["repo"]...)
+		_, _ = w.Write(b)
+		return nil
 	}
-
-	sc := database.SearchContexts(dbconn.Global)
-	getSearchContextRevisions := func(repoID int32) ([]string, error) {
-		return sc.GetAllRevisionsForRepo(ctx, repoID)
-	}
-
-	if err := r.ParseForm(); err != nil {
-		return err
-	}
-
-	b := searchbackend.GetIndexOptions(&siteConfig, getRepoIndexOptions, getSearchContextRevisions, r.Form["repo"]...)
-	_, _ = w.Write(b)
-	return nil
 }
 
 type reposListServer struct {
@@ -317,12 +318,14 @@ func (h *reposListServer) serveIndex(w http.ResponseWriter, r *http.Request) err
 	return json.NewEncoder(w).Encode(&data)
 }
 
-func serveReposListEnabled(w http.ResponseWriter, r *http.Request) error {
-	names, err := database.GlobalRepos.ListEnabledNames(r.Context())
-	if err != nil {
-		return err
+func serveReposListEnabled(db dbutil.DB) func(http.ResponseWriter, *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		names, err := database.Repos(db).ListEnabledNames(r.Context())
+		if err != nil {
+			return err
+		}
+		return json.NewEncoder(w).Encode(names)
 	}
-	return json.NewEncoder(w).Encode(names)
 }
 
 func serveSavedQueriesListAll(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) error {
@@ -568,46 +571,48 @@ func serveGitTar(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func serveGitExec(w http.ResponseWriter, r *http.Request) error {
-	defer r.Body.Close()
-	req := protocol.ExecRequest{}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		return errors.Wrap(err, "Decode")
-	}
+func serveGitExec(db dbutil.DB) func(http.ResponseWriter, *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		defer r.Body.Close()
+		req := protocol.ExecRequest{}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			return errors.Wrap(err, "Decode")
+		}
 
-	vars := mux.Vars(r)
-	repoID, err := strconv.ParseInt(vars["RepoID"], 10, 64)
-	if err != nil {
-		http.Error(w, "illegal repository id: "+err.Error(), http.StatusBadRequest)
+		vars := mux.Vars(r)
+		repoID, err := strconv.ParseInt(vars["RepoID"], 10, 64)
+		if err != nil {
+			http.Error(w, "illegal repository id: "+err.Error(), http.StatusBadRequest)
+			return nil
+		}
+
+		repo, err := database.Repos(db).Get(r.Context(), api.RepoID(repoID))
+		if err != nil {
+			return err
+		}
+
+		// Set repo name in gitserver request payload
+		req.Repo = repo.Name
+
+		var buf bytes.Buffer
+		if err := json.NewEncoder(&buf).Encode(req); err != nil {
+			return errors.Wrap(err, "Encode")
+		}
+
+		// Find the correct shard to query
+		addr := gitserver.DefaultClient.AddrForRepo(repo.Name)
+
+		director := func(req *http.Request) {
+			req.URL.Scheme = "http"
+			req.URL.Host = addr
+			req.URL.Path = "/exec"
+			req.Body = io.NopCloser(bytes.NewReader(buf.Bytes()))
+			req.ContentLength = int64(buf.Len())
+		}
+
+		gitserver.DefaultReverseProxy.ServeHTTP(repo.Name, "POST", "exec", director, w, r)
 		return nil
 	}
-
-	repo, err := database.GlobalRepos.Get(r.Context(), api.RepoID(repoID))
-	if err != nil {
-		return err
-	}
-
-	// Set repo name in gitserver request payload
-	req.Repo = repo.Name
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(req); err != nil {
-		return errors.Wrap(err, "Encode")
-	}
-
-	// Find the correct shard to query
-	addr := gitserver.DefaultClient.AddrForRepo(repo.Name)
-
-	director := func(req *http.Request) {
-		req.URL.Scheme = "http"
-		req.URL.Host = addr
-		req.URL.Path = "/exec"
-		req.Body = io.NopCloser(bytes.NewReader(buf.Bytes()))
-		req.ContentLength = int64(buf.Len())
-	}
-
-	gitserver.DefaultReverseProxy.ServeHTTP(repo.Name, "POST", "exec", director, w, r)
-	return nil
 }
 
 // gitServiceHandler are handlers which redirect git clone requests to the

@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
@@ -94,7 +95,7 @@ func getOrCreateUser(ctx context.Context, allowSignup bool, info *authnResponseI
 		return nil, fmt.Sprintf("Error normalizing the username %q. See https://docs.sourcegraph.com/admin/auth/#username-normalization.", info.unnormalizedUsername), err
 	}
 
-	userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, auth.GetAndSaveUserOp{
+	userID, safeErrMsg, err := auth.GetAndSaveUser(ctx,dbconn.Global, auth.GetAndSaveUserOp{
 		UserProps: database.NewUser{
 			Username:        username,
 			Email:           info.email,

@@ -15,7 +15,7 @@ func TestDatabaseHover(t *testing.T) {
 		t.Skip()
 	}
 	db := dbtesting.GetDB(t)
-	populateTestStore(t)
+	populateTestStore(t, db)
 	store := NewStore(db, &observation.TestContext)
 
 	// `\tcontents, err := findContents(pkgs, p, f, obj)`

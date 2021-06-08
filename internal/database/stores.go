@@ -7,6 +7,5 @@ var (
 	GlobalRepos                       = &RepoStore{}
 	GlobalUsers                       = &UserStore{}
 	GlobalUserEmails                  = &UserEmailsStore{}
-	GlobalExternalAccounts            = &UserExternalAccountsStore{}
 	GlobalAuthz            AuthzStore = &authzStore{}
 )

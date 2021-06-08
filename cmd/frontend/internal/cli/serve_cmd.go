@@ -99,22 +99,23 @@ func InitDB() (*sql.DB, error) {
 
 	ctx := context.Background()
 	migrate := true
+	db := dbconn.Global
 
 	for {
 		// We need this loop so that we handle the missing versions table,
 		// which would be added by running the migrations. Once we detect that
 		// it's missing, we run the migrations and try to update the version again.
 
-		err := backend.UpdateServiceVersion(ctx, "frontend", version.Version())
+		err := backend.UpdateServiceVersion(ctx, db, "frontend", version.Version())
 		if err != nil && !dbutil.IsPostgresError(err, "42P01") {
 			return nil, err
 		}
 
 		if !migrate {
-			return dbconn.Global, nil
+			return db, nil
 		}
 
-		if err := dbconn.MigrateDB(dbconn.Global, dbconn.Frontend); err != nil {
+		if err := dbconn.MigrateDB(db, dbconn.Frontend); err != nil {
 			return nil, err
 		}
 
@@ -144,10 +145,10 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 	ui.InitRouter(db)
 
 	// override site config first
-	if err := overrideSiteConfig(ctx); err != nil {
+	if err := overrideSiteConfig(ctx, db); err != nil {
 		log.Fatalf("failed to apply site config overrides: %v", err)
 	}
-	globals.ConfigurationServerFrontendOnly = conf.InitConfigurationServerFrontendOnly(&configurationSource{})
+	globals.ConfigurationServerFrontendOnly = conf.InitConfigurationServerFrontendOnly(&configurationSource{db: db})
 	conf.MustValidateDefaults()
 
 	// now we can init the keyring, as it depends on site config
@@ -239,7 +240,7 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 		return err
 	}
 
-	siteid.Init()
+	siteid.Init(db)
 
 	globals.WatchExternalURL(defaultExternalURL(nginxAddr, httpAddr))
 	globals.WatchPermissionsUserMapping()

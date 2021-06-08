@@ -179,7 +179,7 @@ func TestUsers_Create_SiteAdmin(t *testing.T) {
 	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
-	if _, err := globalstatedb.Get(ctx); err != nil {
+	if _, err := globalstatedb.Get(ctx, db); err != nil {
 		t.Fatal(err)
 	}
 

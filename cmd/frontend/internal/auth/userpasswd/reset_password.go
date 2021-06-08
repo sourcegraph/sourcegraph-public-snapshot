@@ -13,72 +13,75 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 )
 
 // HandleResetPasswordInit initiates the builtin-auth password reset flow by sending a password-reset email.
-func HandleResetPasswordInit(w http.ResponseWriter, r *http.Request) {
-	if handleEnabledCheck(w) {
-		return
-	}
-	if handleNotAuthenticatedCheck(w, r) {
-		return
-	}
-	if !conf.CanSendEmail() {
-		httpLogAndError(w, "Unable to reset password because email sending is not configured on this site", http.StatusNotFound)
-		return
-	}
-
-	ctx := r.Context()
-	var formData struct {
-		Email string `json:"email"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&formData); err != nil {
-		httpLogAndError(w, "Could not decode password reset request body", http.StatusBadRequest, "err", err)
-		return
-	}
-
-	if formData.Email == "" {
-		httpLogAndError(w, "No email specified in password reset request", http.StatusBadRequest)
-		return
-	}
-
-	usr, err := database.GlobalUsers.GetByVerifiedEmail(ctx, formData.Email)
-	if err != nil {
-		// 🚨 SECURITY: We don't show an error message when the user is not found
-		// as to not leak the existence of a given e-mail address in the database.
-		if !errcode.IsNotFound(err) {
-			httpLogAndError(w, "Failed to lookup user", http.StatusInternalServerError)
+func HandleResetPasswordInit(db dbutil.DB) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if handleEnabledCheck(w) {
+			return
 		}
-		return
-	}
+		if handleNotAuthenticatedCheck(w, r) {
+			return
+		}
+		if !conf.CanSendEmail() {
+			httpLogAndError(w, "Unable to reset password because email sending is not configured on this site", http.StatusNotFound)
+			return
+		}
 
-	resetURL, err := backend.MakePasswordResetURL(ctx, usr.ID)
-	if err == database.ErrPasswordResetRateLimit {
-		httpLogAndError(w, "Too many password reset requests. Try again in a few minutes.", http.StatusTooManyRequests, "err", err)
-		return
-	} else if err != nil {
-		httpLogAndError(w, "Could not reset password", http.StatusBadRequest, "err", err)
-		return
-	}
+		ctx := r.Context()
+		var formData struct {
+			Email string `json:"email"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&formData); err != nil {
+			httpLogAndError(w, "Could not decode password reset request body", http.StatusBadRequest, "err", err)
+			return
+		}
 
-	if err := txemail.Send(r.Context(), txemail.Message{
-		To:       []string{formData.Email},
-		Template: resetPasswordEmailTemplates,
-		Data: struct {
-			Username string
-			URL      string
-			Host     string
-		}{
-			Username: usr.Username,
-			URL:      globals.ExternalURL().ResolveReference(resetURL).String(),
-			Host:     globals.ExternalURL().Host,
-		},
-	}); err != nil {
-		httpLogAndError(w, "Could not send reset password email", http.StatusInternalServerError, "err", err)
-		return
+		if formData.Email == "" {
+			httpLogAndError(w, "No email specified in password reset request", http.StatusBadRequest)
+			return
+		}
+
+		usr, err := database.GlobalUsers.GetByVerifiedEmail(ctx, formData.Email)
+		if err != nil {
+			// 🚨 SECURITY: We don't show an error message when the user is not found
+			// as to not leak the existence of a given e-mail address in the database.
+			if !errcode.IsNotFound(err) {
+				httpLogAndError(w, "Failed to lookup user", http.StatusInternalServerError)
+			}
+			return
+		}
+
+		resetURL, err := backend.MakePasswordResetURL(ctx, db, usr.ID)
+		if err == database.ErrPasswordResetRateLimit {
+			httpLogAndError(w, "Too many password reset requests. Try again in a few minutes.", http.StatusTooManyRequests, "err", err)
+			return
+		} else if err != nil {
+			httpLogAndError(w, "Could not reset password", http.StatusBadRequest, "err", err)
+			return
+		}
+
+		if err := txemail.Send(r.Context(), txemail.Message{
+			To:       []string{formData.Email},
+			Template: resetPasswordEmailTemplates,
+			Data: struct {
+				Username string
+				URL      string
+				Host     string
+			}{
+				Username: usr.Username,
+				URL:      globals.ExternalURL().ResolveReference(resetURL).String(),
+				Host:     globals.ExternalURL().Host,
+			},
+		}); err != nil {
+			httpLogAndError(w, "Could not send reset password email", http.StatusInternalServerError, "err", err)
+			return
+		}
 	}
 }
 
@@ -102,7 +105,7 @@ To reset the password for {{.Username}} on Sourcegraph, follow this link:
 })
 
 // HandleSetPasswordEmail sends the password reset email directly to the user for users created by site admins.
-func HandleSetPasswordEmail(ctx context.Context, id int32) (string, error) {
+func HandleSetPasswordEmail(ctx context.Context, db dbutil.DB, id int32) (string, error) {
 	e, _, err := database.GlobalUserEmails.GetPrimaryEmail(ctx, id)
 	if err != nil {
 		return "", errors.Wrap(err, "get user primary email")
@@ -113,7 +116,7 @@ func HandleSetPasswordEmail(ctx context.Context, id int32) (string, error) {
 		return "", errors.Wrap(err, "get user by ID")
 	}
 
-	ru, err := backend.MakePasswordResetURL(ctx, id)
+	ru, err := backend.MakePasswordResetURL(ctx, db, id)
 	if err == database.ErrPasswordResetRateLimit {
 		return "", err
 	} else if err != nil {

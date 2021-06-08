@@ -52,14 +52,14 @@ var (
 	connectErr  error
 )
 
-// SetupGlobalTestDB creates a temporary test DB handle, sets
+// setupGlobalTestDB creates a temporary test DB handle, sets
 // `dbconn.Global` to it and setups other test configuration.
 //
 // Callers (other than github.com/sourcegraph/sourcegraph/internal/database) must
 // set a name in this package's DBNameSuffix var that is unique among all other
-// test packages that call SetupGlobalTestDB, so that each package's
+// test packages that call setupGlobalTestDB, so that each package's
 // tests run in separate DBs and do not conflict.
-func SetupGlobalTestDB(t testing.TB) {
+func setupGlobalTestDB(t testing.TB) {
 	useFastPasswordMocks()
 
 	if testing.Short() {
@@ -90,7 +90,7 @@ func SetupGlobalTestDB(t testing.TB) {
 // New callers and callers actually wishing to migrate fully away from a global DB connection
 // should use the new ../dbtest package instead of this one.
 func GetDB(t testing.TB) *sql.DB {
-	SetupGlobalTestDB(t)
+	setupGlobalTestDB(t)
 	return dbconn.Global
 }
 

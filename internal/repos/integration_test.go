@@ -27,8 +27,6 @@ func TestIntegration(t *testing.T) {
 		t.Skip()
 	}
 
-	t.Parallel()
-
 	db := dbtest.NewDB(t, *dsn)
 
 	store := repos.NewStore(db, sql.TxOptions{
@@ -45,9 +43,9 @@ func TestIntegration(t *testing.T) {
 	userID := insertTestUser(t, db)
 
 	dbconn.Global = db
-	defer func() {
+	t.Cleanup(func() {
 		dbconn.Global = nil
-	}()
+	})
 
 	for _, tc := range []struct {
 		name string

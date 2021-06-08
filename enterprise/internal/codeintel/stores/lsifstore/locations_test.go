@@ -16,7 +16,7 @@ func TestDatabaseDefinitions(t *testing.T) {
 		t.Skip()
 	}
 	db := dbtesting.GetDB(t)
-	populateTestStore(t)
+	populateTestStore(t, db)
 	store := NewStore(db, &observation.TestContext)
 
 	// `\ts, err := indexer.Index()` -> `\t Index() (*Stats, error)`
@@ -40,7 +40,7 @@ func TestDatabaseReferences(t *testing.T) {
 		t.Skip()
 	}
 	db := dbtesting.GetDB(t)
-	populateTestStore(t)
+	populateTestStore(t, db)
 	store := NewStore(db, &observation.TestContext)
 
 	// `func (w *Writer) EmitRange(start, end Pos) (string, error) {`

@@ -16,7 +16,7 @@ func TestDatabasePackageInformation(t *testing.T) {
 		t.Skip()
 	}
 	db := dbtesting.GetDB(t)
-	populateTestStore(t)
+	populateTestStore(t, db)
 	store := NewStore(db, &observation.TestContext)
 
 	if actual, exists, err := store.PackageInformation(context.Background(), testBundleID, "protocol/protocol.go", "251"); err != nil {

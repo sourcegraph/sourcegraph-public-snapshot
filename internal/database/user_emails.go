@@ -91,7 +91,7 @@ func (s *UserEmailsStore) ensureStore() {
 //
 // If the site has not yet been initialized, returns an empty string.
 func (s *UserEmailsStore) GetInitialSiteAdminEmail(ctx context.Context) (email string, err error) {
-	if init, err := globalstatedb.SiteInitialized(ctx); err != nil || !init {
+	if init, err := globalstatedb.SiteInitialized(ctx, s.Handle().DB()); err != nil || !init {
 		return "", err
 	}
 	s.ensureStore()

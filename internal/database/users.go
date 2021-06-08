@@ -266,7 +266,7 @@ func (u *UserStore) create(ctx context.Context, info NewUser) (newUser *types.Us
 	// creation and site initialization operations occur atomically (to guarantee to the legitimate
 	// site admin that if they successfully initialize the server, then no attacker's account could
 	// have been created as a site admin).
-	alreadyInitialized, err := globalstatedb.EnsureInitialized(ctx, u)
+	alreadyInitialized, err := globalstatedb.EnsureInitialized(ctx, u.Handle().DB())
 	if err != nil {
 		return nil, err
 	}

@@ -17,7 +17,7 @@ func TestDatabaseMonikersByPosition(t *testing.T) {
 		t.Skip()
 	}
 	db := dbtesting.GetDB(t)
-	populateTestStore(t)
+	populateTestStore(t, db)
 	store := NewStore(db, &observation.TestContext)
 
 	// `func NewMetaData(id, root string, info ToolInfo) *MetaData {`
@@ -48,7 +48,7 @@ func TestDatabaseBulkMonikerResults(t *testing.T) {
 		t.Skip()
 	}
 	db := dbtesting.GetDB(t)
-	populateTestStore(t)
+	populateTestStore(t, db)
 	store := NewStore(db, &observation.TestContext)
 
 	edgeDefinitionLocations := []Location{
