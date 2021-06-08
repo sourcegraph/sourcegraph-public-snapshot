@@ -238,9 +238,7 @@ async function completeDefault(
         suggestions: [
             ...staticSuggestions,
             ...(await dynamicSuggestions.pipe(first()).toPromise())
-                .map(suggestion => {
-                  return suggestionToCompletionItem(suggestion, { isFilterValue: false, globbing })
-                })
+                .map(suggestion => suggestionToCompletionItem(suggestion, { isFilterValue: false, globbing }))
                 .filter(isDefined)
                 .map(completionItem => ({
                     ...completionItem,
