@@ -12,8 +12,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
-	"github.com/pkg/errors"
 	"go.uber.org/automaxprocs/maxprocs"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"

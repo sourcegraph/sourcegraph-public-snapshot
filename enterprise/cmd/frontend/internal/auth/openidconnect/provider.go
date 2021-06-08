@@ -9,8 +9,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/cockroachdb/errors"
 	"github.com/coreos/go-oidc"
-	"github.com/pkg/errors"
 	"golang.org/x/net/context/ctxhttp"
 	"golang.org/x/oauth2"
 

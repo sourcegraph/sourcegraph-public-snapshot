@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"sync"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 )
 
 var (

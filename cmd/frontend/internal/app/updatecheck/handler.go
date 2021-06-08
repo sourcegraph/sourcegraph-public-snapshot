@@ -12,9 +12,9 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	"github.com/cockroachdb/errors"
 	"github.com/coreos/go-semver/semver"
 	"github.com/inconshreveable/log15"
-	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"

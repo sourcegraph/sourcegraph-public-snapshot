@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 	saml2 "github.com/russellhaering/gosaml2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"

@@ -1,6 +1,6 @@
 package dbstore
 
-import "github.com/pkg/errors"
+import "github.com/cockroachdb/errors"
 
 // ErrNotTransactable occurs when Transact is called on a store whose underlying
 // store handle does not support beginning a transaction.

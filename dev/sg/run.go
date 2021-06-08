@@ -14,7 +14,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 	"github.com/rjeczalik/notify"
 
 	// TODO - deduplicate me

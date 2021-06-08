@@ -11,7 +11,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 )
 
 // Client is capable of posting a message to a Slack webhook
