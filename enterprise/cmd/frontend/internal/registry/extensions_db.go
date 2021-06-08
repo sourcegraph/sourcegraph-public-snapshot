@@ -11,6 +11,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
@@ -190,7 +191,11 @@ var featuredExtensionIDs = []string{"sourcegraph/codecov", "sourcegraph/sentry",
 //
 // 🚨 SECURITY: The caller must ensure that the actor is permitted to view these registry extensions.
 func (s dbExtensions) GetFeaturedExtensions(ctx context.Context) ([]*dbExtension, error) {
-	return s.getFeaturedExtensions(ctx, featuredExtensionIDs)
+	if envvar.SourcegraphDotComMode() {
+		return s.getFeaturedExtensions(ctx, featuredExtensionIDs)
+	}
+
+	return nil, errors.New("GetFeaturedExtensions should only be called on Sourcegraph.com")
 }
 
 func (s dbExtensions) getFeaturedExtensions(ctx context.Context, featuredExtensionIDs []string) ([]*dbExtension, error) {

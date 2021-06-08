@@ -213,7 +213,7 @@ var GetLocalFeaturedExtensions func(ctx context.Context, db dbutil.DB) ([]graphq
 // If this is sourcegraph.com, these are local extensions. Otherwise, these are remote extensions
 // retrieved from sourcegraph.com.
 func GetFeaturedExtensions(ctx context.Context, db dbutil.DB) ([]graphqlbackend.RegistryExtension, error) {
-	if GetLocalFeaturedExtensions != nil {
+	if envvar.SourcegraphDotComMode() && GetLocalFeaturedExtensions != nil {
 		x, err := GetLocalFeaturedExtensions(ctx, db)
 		return x, err
 	}
