@@ -70,12 +70,6 @@ Workflow:
 
 Using an Open Source repo, you can follow the steps above to navigate to the implementation of the [`getLocation`](https://sourcegraph.com/github.com/Microsoft/node-jsonc-parser@e31983089c88114c7cc17f8c729feb493295c69d/-/blob/src/impl/parser.ts#L26:17) function. From there, keep drilling down depth-first until you get to the [`createScanner`](https://sourcegraph.com/github.com/Microsoft/node-jsonc-parser@e31983089c88114c7cc17f8c729feb493295c69d/-/blob/src/impl/scanner.ts#L13:17) function. Explicitly, this involves: reading `getLocation` until you reach the first new function, `visit`; then finding the implementation of `visit` via "get references" and reading `visit` until you reach the first new function, `createScanner`. 
 
-1. Start by searching for [repo:Microsoft/node-jsonc-parser getLocation](https://sourcegraph.com/search?q=repo:Microsoft/node-jsonc-parser+getLocation).
-1. Navigate to the [getLocation definition](https://sourcegraph.com/github.com/microsoft/node-jsonc-parser/-/blob/src/impl/parser.ts#L41:17).
-1. When you reach the `visit` function, [view the hover tool tip](https://sourcegraph.com/github.com/microsoft/node-jsonc-parser/-/blob/src/impl/parser.ts#L63:3), and click `Go to definition`. 
-1. When reviewing the `visit` [function definition](https://sourcegraph.com/github.com/microsoft/node-jsonc-parser/-/blob/src/impl/parser.ts#L386:17), cilck on the [createScanner hover tool tip](https://sourcegraph.com/github.com/microsoft/node-jsonc-parser/-/blob/src/impl/parser.ts#L388:19).
-1. Click `Go to definition`, and arrive at the [`createScanner` function](https://sourcegraph.com/github.com/microsoft/node-jsonc-parser/-/blob/src/impl/scanner.ts#L13:17).
-
 ---
 
 ## Debug issues: see what changed related to a function call that's erroring in production
