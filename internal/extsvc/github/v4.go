@@ -380,7 +380,7 @@ func (c *V4Client) GetReposByNameWithOwner(ctx context.Context, namesWithOwners 
 		return nil, ErrBatchTooLarge
 	}
 
-	query, err := c.buildGetReposBatchQuery(namesWithOwners)
+	query, err := c.buildGetReposBatchQuery(ctx, namesWithOwners)
 	if err != nil {
 		return nil, err
 	}
@@ -410,9 +410,9 @@ func (c *V4Client) GetReposByNameWithOwner(ctx context.Context, namesWithOwners 
 	return repos, nil
 }
 
-func (c *V4Client) buildGetReposBatchQuery(namesWithOwners []string) (string, error) {
+func (c *V4Client) buildGetReposBatchQuery(ctx context.Context, namesWithOwners []string) (string, error) {
 	var b strings.Builder
-	b.WriteString(c.repositoryFieldsGraphQLFragment())
+	b.WriteString(c.repositoryFieldsGraphQLFragment(ctx))
 	b.WriteString("query {\n")
 
 	for i, pair := range namesWithOwners {
@@ -431,7 +431,7 @@ func (c *V4Client) buildGetReposBatchQuery(namesWithOwners []string) (string, er
 
 // repositoryFieldsGraphQLFragment returns a GraphQL fragment that contains the fields needed to populate the
 // Repository struct.
-func (c *V4Client) repositoryFieldsGraphQLFragment() string {
+func (c *V4Client) repositoryFieldsGraphQLFragment(ctx context.Context) string {
 	if c.githubDotCom {
 		return `
 fragment RepositoryFields on Repository {
@@ -451,10 +451,15 @@ fragment RepositoryFields on Repository {
 }
 	`
 	}
+	ghe300Fields := []string{}
+	version := c.determineGitHubVersion(ctx)
+	if ghe300PlusOrDotComSemver.Check(version) {
+		ghe300Fields = append(ghe300Fields, "stargazerCount")
+	}
 	// Some fields are not yet available on GitHub Enterprise yet
 	// or are available but too new to expect our customers to have updated:
 	// - viewerPermission
-	return `
+	return fmt.Sprintf(`
 fragment RepositoryFields on Repository {
 	id
 	databaseId
@@ -466,8 +471,8 @@ fragment RepositoryFields on Repository {
 	isArchived
 	isLocked
 	isDisabled
-	stargazerCount
 	forkCount
+	%s
 }
-	`
+	`, strings.Join(ghe300Fields, "\n	"))
 }
