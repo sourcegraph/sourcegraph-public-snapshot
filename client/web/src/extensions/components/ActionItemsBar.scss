@@ -117,7 +117,7 @@ $default-icon-colors: $oc-grape-7, $oc-violet-7, $oc-cyan-9, $oc-indigo-7, $oc-p
         }
 
         &:hover {
-            background-color: var(--link-hover-bg-color);
+            background-color: var(--color-bg-2);
         }
 
         &--toggle {
@@ -191,7 +191,7 @@ $default-icon-colors: $oc-grape-7, $oc-violet-7, $oc-cyan-9, $oc-indigo-7, $oc-p
         width: var(--action-item-width);
 
         &:hover {
-            background-color: var(--link-hover-bg-color);
+            background-color: var(--color-bg-2);
         }
     }
 }
