@@ -478,4 +478,28 @@ describe('Search', () => {
             })
         })
     })
+
+    describe('Highlight tour', () => {
+        const isCreateCodeMonitorHighlightTourVisible = () =>
+            driver.page.evaluate(
+                () =>
+                    document.querySelector<HTMLDivElement>(
+                        'div[data-shepherd-step-id="create-code-monitor-highlight-tour"]'
+                    ) !== null
+            )
+
+        test('Do not show create code monitor button highlight tour with missing search type', async () => {
+            testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test')
+            await driver.page.waitForSelector('#monaco-query-input', { visible: true })
+            expect(await isCreateCodeMonitorHighlightTourVisible()).toBeFalsy()
+        })
+
+        test('Show create code monitor button highlight tour with valid search type', async () => {
+            testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test+type:diff')
+            await driver.page.waitForSelector('#monaco-query-input', { visible: true })
+            expect(await isCreateCodeMonitorHighlightTourVisible()).toBeTruthy()
+        })
+    })
 })

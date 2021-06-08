@@ -9,7 +9,7 @@ import FormatQuoteOpenIcon from 'mdi-react/FormatQuoteOpenIcon'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import MenuIcon from 'mdi-react/MenuIcon'
 import MenuUpIcon from 'mdi-react/MenuUpIcon'
-import React, { useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 
 import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
 import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
@@ -25,6 +25,28 @@ import { CodeMonitoringProps } from '../../code-monitoring'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
 import { WebActionsNavItems as ActionsNavItems } from '../../components/shared'
 import { SearchPatternType } from '../../graphql-operations'
+import { getTourOptions, useHighlightTour } from '../HighlightTour'
+
+const HAS_SEEN_HIGHLIGHT_TOUR_STEP_KEY = 'has-seen-create-code-monitor-highlight-tour-step'
+
+function getHighlightTourStep(onClose: () => void): HTMLElement {
+    const container = document.createElement('div')
+    container.className = 'highlight-tour__step'
+    container.innerHTML = `
+        <div>
+            <strong>New</strong>: Create a code monitor to get notified about new search results for a query.
+            <a href="https://docs.sourcegraph.com/code_monitoring" target="_blank">Learn more.</a>
+        </div>
+        <div class="d-flex justify-content-end text-muted">
+            <button type="button" class="btn btn-sm">
+                Close
+            </button>
+        </div>
+    `
+    const button = container.querySelector('button')
+    button?.addEventListener('click', onClose)
+    return container
+}
 
 export interface SearchResultsInfoBarProps
     extends ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
@@ -85,15 +107,47 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
     const [isRedesignEnabled] = useRedesignToggle()
     const buttonClass = isRedesignEnabled ? 'btn-outline-secondary mr-2' : 'btn-link'
 
-    const createCodeMonitorButton = useMemo(() => {
-        if (!props.enableCodeMonitoring || !props.query || !props.authenticatedUser) {
-            return null
+    const canCreateMonitorFromQuery = useMemo(() => {
+        if (!props.query) {
+            return false
         }
         const globalTypeFilterInQuery = findFilter(props.query, 'type', FilterKind.Global)
         const globalTypeFilterValue = globalTypeFilterInQuery?.value ? globalTypeFilterInQuery.value.value : undefined
-        const canCreateMonitorFromQuery = globalTypeFilterValue === 'diff' || globalTypeFilterValue === 'commit'
+        return globalTypeFilterValue === 'diff' || globalTypeFilterValue === 'commit'
+    }, [props.query])
+
+    const showCreateCodeMonitoringButton = props.enableCodeMonitoring && props.query && props.authenticatedUser
+
+    const tour = useHighlightTour(
+        'create-code-monitor-highlight-tour',
+        !!showCreateCodeMonitoringButton && canCreateMonitorFromQuery,
+        getHighlightTourStep,
+        HAS_SEEN_HIGHLIGHT_TOUR_STEP_KEY,
+        getTourOptions({
+            attachTo: {
+                element: '.create-code-monitor-button',
+                on: 'bottom',
+            },
+            popperOptions: {
+                modifiers: [
+                    // Removes default behavior of autofocusing steps
+                    { name: 'focusAfterRender', enabled: false },
+                    { name: 'offset', options: { offset: [-100, 8] } },
+                ],
+            },
+        })
+    )
+
+    const onCreateCodeMonitorButtonSelect = useCallback(() => {
+        tour.cancel()
+    }, [tour])
+
+    const createCodeMonitorButton = useMemo(() => {
+        if (!showCreateCodeMonitoringButton) {
+            return null
+        }
         const searchParameters = new URLSearchParams(props.location.search)
-        searchParameters.set('trigger-query', `${props.query} patterntype:${props.patternType}`)
+        searchParameters.set('trigger-query', `${props.query ?? ''} patterntype:${props.patternType}`)
         const toURL = `/code-monitoring/new?${searchParameters.toString()}`
         return (
             <li
@@ -107,7 +161,11 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                 <ButtonLink
                     disabled={!canCreateMonitorFromQuery}
                     to={toURL}
-                    className={classNames('btn btn-sm nav-link text-decoration-none', buttonClass)}
+                    className={classNames(
+                        'btn btn-sm nav-link text-decoration-none create-code-monitor-button',
+                        buttonClass
+                    )}
+                    onSelect={onCreateCodeMonitorButtonSelect}
                 >
                     <CodeMonitoringLogo className="icon-inline mr-1" />
                     Monitor
@@ -115,12 +173,13 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
             </li>
         )
     }, [
-        buttonClass,
-        props.enableCodeMonitoring,
-        props.query,
-        props.authenticatedUser,
+        showCreateCodeMonitoringButton,
         props.location.search,
+        props.query,
         props.patternType,
+        canCreateMonitorFromQuery,
+        buttonClass,
+        onCreateCodeMonitorButtonSelect,
     ])
 
     const saveSearchButton = useMemo(() => {
