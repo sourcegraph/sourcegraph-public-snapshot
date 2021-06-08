@@ -843,54 +843,38 @@ func (s *RepoStore) ListDefaultRepos(ctx context.Context, opts ListDefaultReposO
 	}()
 	s.ensureStore()
 
-	var filters []*sqlf.Query
-	cloneClause := sqlf.Sprintf("TRUE")
+	var where, joins []*sqlf.Query
+
 	if opts.OnlyUncloned {
-		cloneClause = sqlf.Sprintf("gr.clone_status = %s", types.CloneStatusNotCloned)
+		joins = append(joins, sqlf.Sprintf(
+			"LEFT JOIN gitserver_repos gr ON gr.repo_id = repo.id",
+		))
+		where = append(where, sqlf.Sprintf(
+			"(clone_status IS NULL OR clone_status = %s)",
+			types.CloneStatusNotCloned,
+		))
 	}
-	filters = append(filters, cloneClause)
+
 	if !opts.IncludePrivate {
-		filters = append(filters, sqlf.Sprintf("NOT repo.private"))
+		where = append(where, sqlf.Sprintf("NOT private"))
 	}
-	filterClause := sqlf.Join(filters, "AND")
 
-	q := sqlf.Sprintf(`
--- source: internal/database/repos.go:RepoStore.ListDefaultRepos
-SELECT repo.id, repo.name
-FROM repo
-         JOIN default_repos dr ON repo.id = dr.repo_id
-         JOIN gitserver_repos gr ON repo.id = gr.repo_id
+	if len(where) == 0 {
+		where = append(where, sqlf.Sprintf("TRUE"))
+	}
 
-WHERE repo.deleted_at IS NULL
-  AND %s
-
-UNION
-
-SELECT repo.id, repo.name
-FROM repo
-         JOIN external_service_repos esr ON repo.id = esr.repo_id
-         JOIN external_services es ON esr.external_service_id = es.id
-         JOIN gitserver_repos gr ON repo.id = gr.repo_id
-WHERE NOT es.cloud_default
-  AND es.deleted_at IS NULL
-  AND repo.deleted_at IS NULL
-  AND %s
-
-UNION
-
-SELECT repo.id, repo.name
-FROM repo
-         JOIN gitserver_repos gr ON repo.id = gr.repo_id
-WHERE EXISTS(SELECT 1 FROM user_public_repos WHERE repo_id = repo.id)
-  AND repo.deleted_at IS NULL
-  AND %s
-`, cloneClause, filterClause, cloneClause)
+	q := sqlf.Sprintf(
+		listDefaultReposQuery,
+		sqlf.Join(joins, "\n"),
+		sqlf.Join(where, "\nAND "),
+	)
 
 	rows, err := s.Query(ctx, q)
 	if err != nil {
 		return nil, errors.Wrap(err, "querying for indexed repos")
 	}
 	defer rows.Close()
+
 	for rows.Next() {
 		var r types.RepoName
 		if err := rows.Scan(&r.ID, &r.Name); err != nil {
@@ -904,6 +888,32 @@ WHERE EXISTS(SELECT 1 FROM user_public_repos WHERE repo_id = repo.id)
 
 	return results, nil
 }
+
+const listDefaultReposQuery = `
+WITH s AS (
+	SELECT repo_id
+	FROM default_repos
+
+	UNION ALL
+
+	SELECT repo_id
+	FROM external_service_repos
+	WHERE user_id IS NOT NULL
+
+	UNION ALL
+
+	SELECT repo_id
+	FROM user_public_repos
+)
+
+SELECT DISTINCT ON (stars, id) id, name
+FROM repo
+JOIN s ON s.repo_id = repo.id
+%s
+WHERE deleted_at IS NULL
+AND %s
+ORDER BY stars DESC NULLS LAST
+`
 
 // Create inserts repos and their sources, respectively in the repo and external_service_repos table.
 // Associated external services must already exist.
