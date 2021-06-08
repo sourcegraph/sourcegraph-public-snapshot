@@ -62,16 +62,6 @@ $changeset-backdrop: #f3faff;
     .visible-changeset-apply-preview-node {
         &__status-cell {
             color: var(--body-color);
-            @media (--sm-breakpoint-up) {
-                :global(.theme-classic) & {
-                    background-color: var(--oc-gray-7);
-                }
-            }
-        }
-        &__bg-expanded {
-            :global(.theme-classic) & {
-                background-color: var(--oc-gray-7);
-            }
         }
         &__tab-link {
             &--active {

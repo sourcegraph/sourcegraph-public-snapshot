@@ -439,7 +439,7 @@ describe('e2e test suite', () => {
                     [...document.querySelector('.theme')!.classList].filter(className => className.startsWith('theme-'))
                 )
 
-            expect(await getActiveThemeClasses()).toHaveLength(2) // including theme-redesign or theme-classic
+            expect(await getActiveThemeClasses()).toHaveLength(2) // including theme-redesign
             await driver.page.waitForSelector('.test-user-nav-item-toggle')
             await driver.page.click('.test-user-nav-item-toggle')
 

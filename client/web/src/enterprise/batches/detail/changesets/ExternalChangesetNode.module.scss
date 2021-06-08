@@ -50,11 +50,3 @@
         }
     }
 }
-
-:global(.theme-dark) .external-changeset-node {
-    &__bg-expanded {
-        :global(.theme-classic) & {
-            background-color: var(--oc-gray-9);
-        }
-    }
-}

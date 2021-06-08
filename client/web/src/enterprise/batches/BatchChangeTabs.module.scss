@@ -1,13 +1,5 @@
 // unsets the defaults; can probably go away with the redesign
 .batch-change-tabs {
-    .nav-link {
-        :global(.theme-classic) & {
-            &:not(:global(.active)) {
-                color: var(--link-color);
-            }
-        }
-    }
-
     :global(.theme-redesign) & {
         [data-reach-tab] {
             margin: 0;
@@ -24,14 +16,6 @@
     [data-reach-tab][data-selected] {
         padding: 0.5rem 1rem;
         font-size: 0.875rem;
-        :global(.theme-classic) & {
-            // stylelint-disable-next-line declaration-property-unit-whitelist
-            margin-bottom: -1px;
-            border-bottom: 0;
-            font-weight: normal;
-            text-transform: none;
-            letter-spacing: normal;
-        }
         :global(.theme-redesign) & {
             border-top: none;
             border-left: none;
