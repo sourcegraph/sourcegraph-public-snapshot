@@ -23,12 +23,7 @@ func (r *extensionRegistryResolver) FeaturedExtensions(ctx context.Context) (gra
 
 func (r *featuredExtensionsResolver) compute(ctx context.Context) ([]graphqlbackend.RegistryExtension, error) {
 	r.once.Do(func() {
-		xs, err := GetFeaturedExtensions(ctx, r.db)
-		if err != nil {
-			r.err = err
-			return
-		}
-		r.featuredExtensions = xs
+		r.featuredExtensions, r.err = GetFeaturedExtensions(ctx, r.db)
 	})
 	return r.featuredExtensions, r.err
 }
