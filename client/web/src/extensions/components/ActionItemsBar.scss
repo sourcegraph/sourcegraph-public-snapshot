@@ -129,10 +129,10 @@ $default-icon-colors: $oc-grape-7, $oc-violet-7, $oc-cyan-9, $oc-indigo-7, $oc-p
 
         &--pressed {
             color: var(--body-color);
-            background-color: var(--link-hover-bg-color-2);
+            background-color: var(--color-bg-3);
 
             &:hover {
-                background-color: var(--link-hover-bg-color-2);
+                background-color: var(--color-bg-3);
             }
         }
 
