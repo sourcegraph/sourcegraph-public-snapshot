@@ -4,8 +4,8 @@ import { useDebounce } from '@sourcegraph/wildcard/src'
 
 import { InsightsApiContext } from '../../../../core/backend/api-provider'
 import { RepositorySuggestion } from '../../../../core/backend/requests/fetch-repository-suggestions'
+import { useDistinctValue } from '../../../../hooks/use-distinct-value'
 import { memoizeAsync } from '../utils/memoize-async'
-import { useDistinctValue } from '../../../../hooks/use-distinct-value';
 
 interface UseRepoSuggestionsProps {
     search: string | null
@@ -44,7 +44,7 @@ export function useRepoSuggestions(props: UseRepoSuggestionsProps): UseRepoSugge
     // To not trigger use effect with fetching each render call
     // we compare prev and next value for excludedItems and return
     // prev value if value wasn't changed
-    const distinctExcludedItems = useDistinctValue(excludedItems);
+    const distinctExcludedItems = useDistinctValue(excludedItems)
 
     useEffect(() => {
         if (disable || !debouncedSearchTerm) {

@@ -12,7 +12,7 @@ import { SearchInsightCreationContent, SearchInsightCreationContentProps } from 
 
 describe('CreateInsightContent', () => {
     const mockAPI = createMockInsightAPI({
-        getRepositorySuggestions: () => Promise.resolve([])
+        getRepositorySuggestions: () => Promise.resolve([]),
     })
 
     const renderWithProps = (props: SearchInsightCreationContentProps): RenderResult =>
