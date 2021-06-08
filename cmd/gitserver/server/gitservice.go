@@ -14,6 +14,7 @@ import (
 	"github.com/mxk/go-flowrate/flowrate"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 var uploadPackArgs = []string{
@@ -146,6 +147,14 @@ func flowrateWriter(w io.Writer) io.Writer {
 	const megabit = int64(1000 * 1000)
 	const limit = 1000 * megabit // 1 Gbps
 	return flowrate.NewWriter(w, limit)
+}
+
+func (s *Server) gitServiceHandler() *gitServiceHandler {
+	return &gitServiceHandler{
+		Dir: func(d string) string {
+			return string(s.dir(api.RepoName(d)))
+		},
+	}
 }
 
 var (
