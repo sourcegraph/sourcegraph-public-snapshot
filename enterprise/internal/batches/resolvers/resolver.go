@@ -1219,7 +1219,7 @@ func (r *Resolver) ReenqueueChangesets(ctx context.Context, args *graphqlbackend
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	if err := batchChangesEnabled(ctx); err != nil {
+	if err := batchChangesEnabled(ctx, r.store.DB()); err != nil {
 		return nil, err
 	}
 
