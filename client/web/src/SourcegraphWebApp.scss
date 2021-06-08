@@ -83,7 +83,8 @@ body,
 @import './repogroups/RepogroupPage';
 @import './search/queryBuilder/index';
 @import './searchContexts/index';
-@import './search/results/SearchResults';
+@import './search/results/SearchResultsInfoBar';
+@import './search/results/streaming/progress/StreamingProgress.scss';
 @import './settings/MonacoSettingsEditor';
 @import './settings/SettingsFile';
 @import './site-admin/init/SiteInitPage';

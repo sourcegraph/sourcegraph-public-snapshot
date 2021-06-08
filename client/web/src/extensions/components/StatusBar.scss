@@ -27,7 +27,7 @@
         padding: 0;
 
         &:hover {
-            background-color: var(--link-hover-bg-color);
+            background-color: var(--color-bg-2);
         }
 
         .theme-redesign & {
@@ -52,7 +52,7 @@
 
         &--interactive {
             &:hover {
-                background-color: var(--link-hover-bg-color);
+                background-color: var(--color-bg-2);
                 color: var(--link-hover-color);
             }
         }

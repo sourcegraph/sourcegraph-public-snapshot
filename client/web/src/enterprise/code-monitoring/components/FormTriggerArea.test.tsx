@@ -37,13 +37,64 @@ describe('FormTriggerArea', () => {
     })
 
     const testCases = [
-        { query: '', typeChecked: false, repoChecked: false, validChecked: false },
-        { query: 'test', typeChecked: false, repoChecked: false, validChecked: true },
-        { query: 'test type:repo', typeChecked: false, repoChecked: false, validChecked: true },
-        { query: 'test type:diff', typeChecked: true, repoChecked: false, validChecked: true },
-        { query: 'test type:commit', typeChecked: true, repoChecked: false, validChecked: true },
-        { query: 'test repo:test', typeChecked: false, repoChecked: true, validChecked: true },
-        { query: 'test repo:test type:diff', typeChecked: true, repoChecked: true, validChecked: true },
+        { query: '', patternTypeChecked: true, typeChecked: false, repoChecked: false, validChecked: false },
+        { query: 'test', patternTypeChecked: true, typeChecked: false, repoChecked: false, validChecked: true },
+        {
+            query: 'test patternType:literal',
+            patternTypeChecked: true,
+            typeChecked: false,
+            repoChecked: false,
+            validChecked: true,
+        },
+        {
+            query: 'test patternType:regexp',
+            patternTypeChecked: true,
+            typeChecked: false,
+            repoChecked: false,
+            validChecked: true,
+        },
+        {
+            query: 'test patternType:structural',
+            patternTypeChecked: false,
+            typeChecked: false,
+            repoChecked: false,
+            validChecked: true,
+        },
+        {
+            query: 'test type:repo',
+            patternTypeChecked: true,
+            typeChecked: false,
+            repoChecked: false,
+            validChecked: true,
+        },
+        {
+            query: 'test type:diff',
+            patternTypeChecked: true,
+            typeChecked: true,
+            repoChecked: false,
+            validChecked: true,
+        },
+        {
+            query: 'test type:commit',
+            patternTypeChecked: true,
+            typeChecked: true,
+            repoChecked: false,
+            validChecked: true,
+        },
+        {
+            query: 'test repo:test',
+            patternTypeChecked: true,
+            typeChecked: false,
+            repoChecked: true,
+            validChecked: true,
+        },
+        {
+            query: 'test repo:test type:diff',
+            patternTypeChecked: true,
+            typeChecked: true,
+            repoChecked: true,
+            validChecked: true,
+        },
     ]
 
     for (const testCase of testCases) {
@@ -63,6 +114,9 @@ describe('FormTriggerArea', () => {
                 clock.tick(600)
             })
             component = component.update()
+
+            const patternTypeCheckbox = component.find('.test-patterntype-checkbox input[type="checkbox"]')
+            expect(patternTypeCheckbox.get(0).props?.checked).toBe(testCase.patternTypeChecked)
 
             const typeCheckbox = component.find('.test-type-checkbox input[type="checkbox"]')
             expect(typeCheckbox.get(0).props?.checked).toBe(testCase.typeChecked)
@@ -101,7 +155,7 @@ describe('FormTriggerArea', () => {
         sinon.assert.calledOnceWithExactly(onQueryChange, 'test type:diff repo:test patternType:literal')
     })
 
-    test('Do not append patternType:literal if no patternType is present', () => {
+    test('Do not append patternType:literal if patternType is present', () => {
         const onQueryChange = sinon.spy()
         let component = mount(
             <FormTriggerArea

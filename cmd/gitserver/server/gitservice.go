@@ -2,6 +2,7 @@ package server
 
 import (
 	"compress/gzip"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -14,6 +15,7 @@ import (
 	"github.com/mxk/go-flowrate/flowrate"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 var uploadPackArgs = []string{
@@ -39,6 +41,19 @@ type gitServiceHandler struct {
 	// Dir is a funcion which takes a repository name and returns an absolute
 	// path to the GIT_DIR for it.
 	Dir func(string) string
+
+	// CommandHook if non-nil will run with the git upload command before we
+	// start the command.
+	//
+	// This allows the command to be modified before running. In practice
+	// sourcegraph.com will add a flowrated writer for Stdout to treat our
+	// internal networks more kindly.
+	CommandHook func(*exec.Cmd)
+
+	// Trace if non-nil is called at the start of serving a request. It will
+	// call the returned function when done executing. If the executation
+	// failed, it will pass in a non-nil error.
+	Trace func(svc, repo, protocol string) func(error)
 }
 
 func (s *gitServiceHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -82,15 +97,15 @@ func (s *gitServiceHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		body = gzipReader
 	}
 
-	start := time.Now()
-	metricServiceRunning.WithLabelValues(svc).Inc()
-	defer func() {
-		metricServiceRunning.WithLabelValues(svc).Dec()
-		metricServiceDuration.WithLabelValues(svc).Observe(time.Since(start).Seconds())
-		if traceLogs {
-			log15.Debug("TRACE gitserver git service", "svc", svc, "repo", repo, "protocol", r.Header.Get("Git-Protocol"), "duration", time.Since(start))
-		}
-	}()
+	// err is set if we fail to run command or have an unexpected svc. It is
+	// captured for tracing.
+	var err error
+	if s.Trace != nil {
+		done := s.Trace(svc, repo, r.Header.Get("Git-Protocol"))
+		defer func() {
+			done(err)
+		}()
+	}
 
 	args := append([]string{}, uploadPackArgs...)
 	switch svc {
@@ -102,7 +117,8 @@ func (s *gitServiceHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case "/git-upload-pack":
 		w.Header().Set("Content-Type", "application/x-git-upload-pack-result")
 	default:
-		http.Error(w, "unexpected subpath (want /info/refs or /git-upload-pack) ", http.StatusInternalServerError)
+		err = fmt.Errorf("unexpected subpath (want /info/refs or /git-upload-pack): %q", svc)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	args = append(args, dir)
@@ -114,10 +130,17 @@ func (s *gitServiceHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	cmd := exec.CommandContext(r.Context(), "git", args...)
 	cmd.Env = env
-	cmd.Stdout = flowrateWriter(w)
+	cmd.Stdout = w
 	cmd.Stdin = body
-	if err := cmd.Run(); err != nil {
-		log15.Error("gitservice.ServeHTTP", "svc", svc, "repo", repo, "protocol", r.Header.Get("Git-Protocol"), "duration", time.Since(start), "error", err.Error())
+
+	if s.CommandHook != nil {
+		s.CommandHook(cmd)
+	}
+
+	err = cmd.Run()
+	if err != nil {
+		err = fmt.Errorf("error running git service command args=%q: %w", args, err)
+		_, _ = w.Write([]byte("\n" + err.Error() + "\n"))
 	}
 }
 
@@ -146,6 +169,34 @@ func flowrateWriter(w io.Writer) io.Writer {
 	const megabit = int64(1000 * 1000)
 	const limit = 1000 * megabit // 1 Gbps
 	return flowrate.NewWriter(w, limit)
+}
+
+func (s *Server) gitServiceHandler() *gitServiceHandler {
+	return &gitServiceHandler{
+		Dir: func(d string) string {
+			return string(s.dir(api.RepoName(d)))
+		},
+
+		// Limit rate of stdout from git.
+		CommandHook: func(cmd *exec.Cmd) {
+			cmd.Stdout = flowrateWriter(cmd.Stdout)
+		},
+
+		Trace: func(svc, repo, protocol string) func(error) {
+			start := time.Now()
+			metricServiceRunning.WithLabelValues(svc).Inc()
+			return func(err error) {
+				metricServiceRunning.WithLabelValues(svc).Dec()
+				metricServiceDuration.WithLabelValues(svc).Observe(time.Since(start).Seconds())
+
+				if err != nil {
+					log15.Error("gitservice.ServeHTTP", "svc", svc, "repo", repo, "protocol", protocol, "duration", time.Since(start), "error", err.Error())
+				} else if traceLogs {
+					log15.Debug("TRACE gitserver git service", "svc", svc, "repo", repo, "protocol", protocol, "duration", time.Since(start))
+				}
+			}
+		},
+	}
 }
 
 var (

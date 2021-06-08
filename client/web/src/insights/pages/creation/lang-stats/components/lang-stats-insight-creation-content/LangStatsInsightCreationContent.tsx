@@ -5,7 +5,7 @@ import { noop } from 'rxjs'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 
 import { useField } from '../../../../../components/form/hooks/useField'
-import { SubmissionErrors, useForm } from '../../../../../components/form/hooks/useForm'
+import { FormChangeEvent, SubmissionErrors, useForm } from '../../../../../components/form/hooks/useForm'
 import { useTitleValidator } from '../../../../../components/form/hooks/useTitleValidator'
 import { Organization } from '../../../../../components/visibility-picker/VisibilityPicker'
 import { InsightTypePrefix } from '../../../../../core/types'
@@ -34,6 +34,7 @@ export interface LangStatsInsightCreationContentProps {
     settings?: Settings | null
 
     organizations?: Organization[]
+
     /** Initial value for all form fields. */
     initialValues?: LangStatsCreationFormFields
     /** Custom class name for root form element. */
@@ -42,6 +43,8 @@ export interface LangStatsInsightCreationContentProps {
     onSubmit: (values: LangStatsCreationFormFields) => SubmissionErrors | Promise<SubmissionErrors> | void
     /** Cancel handler. */
     onCancel?: () => void
+    /** Change handlers is called every time when user changed any field within the form. */
+    onChange?: (event: FormChangeEvent<LangStatsCreationFormFields>) => void
 }
 
 export const LangStatsInsightCreationContent: React.FunctionComponent<LangStatsInsightCreationContentProps> = props => {
@@ -53,11 +56,13 @@ export const LangStatsInsightCreationContent: React.FunctionComponent<LangStatsI
         className,
         onSubmit,
         onCancel = noop,
+        onChange = noop,
     } = props
 
-    const { handleSubmit, formAPI, ref } = useForm<LangStatsCreationFormFields>({
+    const { values, handleSubmit, formAPI, ref } = useForm<LangStatsCreationFormFields>({
         initialValues,
         onSubmit,
+        onChange,
         touched: mode === 'edit',
     })
 
@@ -78,6 +83,18 @@ export const LangStatsInsightCreationContent: React.FunctionComponent<LangStatsI
         repository.meta.validState === 'VALID' ||
         (repository.meta.validState === 'CHECKING' && threshold.meta.validState === 'VALID')
 
+    const handleFormReset = (): void => {
+        // TODO [VK] Change useForm API in order to implement form.reset method.
+        title.input.onChange('')
+        repository.input.onChange('')
+        // Focus first element of the form
+        repository.input.ref.current?.focus()
+        visibility.input.onChange('personal')
+        threshold.input.onChange(3)
+    }
+
+    const hasFilledValue = values.repository !== '' || values.title !== ''
+
     return (
         <div data-testid="code-stats-insight-creation-page-content" className={classnames(styles.content, className)}>
             <LangStatsInsightCreationForm
@@ -91,8 +108,10 @@ export const LangStatsInsightCreationContent: React.FunctionComponent<LangStatsI
                 threshold={threshold}
                 visibility={visibility}
                 organizations={organizations}
+                isFormClearActive={hasFilledValue}
                 onCancel={onCancel}
                 className={styles.contentForm}
+                onFormReset={handleFormReset}
             />
 
             <LangStatsInsightLivePreview

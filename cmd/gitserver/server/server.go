@@ -292,9 +292,7 @@ func (s *Server) Handler() http.Handler {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	mux.Handle("/git/", http.StripPrefix("/git", &gitServiceHandler{
-		Dir: func(d string) string { return string(s.dir(api.RepoName(d))) },
-	}))
+	mux.Handle("/git/", http.StripPrefix("/git", s.gitServiceHandler()))
 
 	return mux
 }

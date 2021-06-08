@@ -148,6 +148,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalSer
 		diff             Diff
 		unauthorized     bool
 		accountSuspended bool
+		forbidden        bool
 	)
 
 	if s.Logger != nil {
@@ -215,15 +216,16 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalSer
 	var sourced types.Repos
 	if sourced, err = s.sourced(ctx, svc, onSourced); err != nil {
 		unauthorized = errcode.IsUnauthorized(err)
+		forbidden = errcode.IsForbidden(err)
 		accountSuspended = errcode.IsAccountSuspended(err)
 
 		// As a special case, if we fail due to bad credentials or account suspension we
 		// should behave as if zero repos were found. This is so that revoked tokens
 		// cause repos to be removed correctly.
-		if !unauthorized && !accountSuspended {
+		if !unauthorized && !accountSuspended && !forbidden {
 			return errors.Wrap(err, "fetching from code host "+svc.DisplayName)
 		}
-		log15.Warn("Non fatal error during sync", "externalService", svc.ID, "unauthorized", unauthorized, "accountSuspended", accountSuspended)
+		log15.Warn("Non fatal error during sync", "externalService", svc.ID, "unauthorized", unauthorized, "accountSuspended", accountSuspended, "forbidden", forbidden)
 	}
 
 	// Unless our site config explicitly allows private code or the user has the
@@ -339,6 +341,9 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalSer
 	if unauthorized {
 		return &ErrUnauthorized{}
 	}
+	if forbidden {
+		return &ErrForbidden{}
+	}
 	if accountSuspended {
 		return &ErrAccountSuspended{}
 	}
@@ -353,6 +358,16 @@ func (e ErrUnauthorized) Error() string {
 }
 
 func (e ErrUnauthorized) Unauthorized() bool {
+	return true
+}
+
+type ErrForbidden struct{}
+
+func (e ErrForbidden) Error() string {
+	return "forbidden"
+}
+
+func (e ErrForbidden) Forbidden() bool {
 	return true
 }
 
