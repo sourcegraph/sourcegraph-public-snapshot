@@ -196,6 +196,7 @@ describe('Extension Registry', () => {
                         error: null,
                         nodes: registryExtensionNodes,
                     },
+                    featuredExtensions: null,
                 },
             }),
             Extensions: () => ({
