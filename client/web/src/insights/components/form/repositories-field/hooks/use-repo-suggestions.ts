@@ -1,9 +1,10 @@
-import { useCallback, useContext, useEffect, useRef, useState } from 'react'
+import { useContext, useEffect, useMemo, useState } from 'react'
 
 import { useDebounce } from '@sourcegraph/wildcard/src'
 
 import { InsightsApiContext } from '../../../../core/backend/api-provider'
-import { RepositorySuggestion } from '../../../../core/backend/requests/fetch-repository-suggestions';
+import { RepositorySuggestion } from '../../../../core/backend/requests/fetch-repository-suggestions'
+import { memoizeAsync } from '../utils/memoize-async'
 
 interface UseRepoSuggestionsProps {
     search: string | null
@@ -19,22 +20,11 @@ interface UseRepoSuggestionsResult {
  * Returns fetch method for repository suggestions with local cache
  */
 function useFetchSuggestions(): (search: string) => Promise<RepositorySuggestion[]> {
-    /** Local suggestions cache */
-    const cache = useRef<Record<string, RepositorySuggestion[]>>({})
     const { getRepositorySuggestions } = useContext(InsightsApiContext)
 
-    return useCallback(
-        search => {
-            if (cache?.current?.[search]) {
-                return Promise.resolve(cache.current?.[search])
-            }
-
-            return getRepositorySuggestions(search).then(suggestions => {
-                cache.current[search] = suggestions
-
-                return suggestions
-            })
-        },
+    return useMemo(
+        // memoizeAsync adds local result cache
+        () => memoizeAsync<string, RepositorySuggestion[]>(getRepositorySuggestions, query => query),
         [getRepositorySuggestions]
     )
 }
