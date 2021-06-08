@@ -159,8 +159,8 @@ $default-icon-colors: $oc-grape-7, $oc-violet-7, $oc-cyan-9, $oc-indigo-7, $oc-p
 
             &-inactive {
                 &::after {
-                    background-color: var(--disabled-action-bg-color) !important;
-                    color: var(--disabled-action-text-color) !important;
+                    background-color: var(--color-bg-3) !important;
+                    color: var(--text-muted) !important;
                 }
             }
         }
