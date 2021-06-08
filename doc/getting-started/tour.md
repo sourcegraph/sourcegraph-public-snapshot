@@ -68,7 +68,13 @@ Workflow:
 1.  Read through the code, clicking on a token and then **Go to definition** to navigate to its definition as needed.
 1.  If you have unanswered questions, use the blame information to determine who wrote the code, and send them a Sourcegraph link to the relevant code along with your specific questions.
 
-To try this on an open-source repository, start by searching for [repo:Microsoft/node-jsonc-parser getLocation](https://sourcegraph.com/search?q=repo:Microsoft/node-jsonc-parser+getLocation) and follow the steps above to navigate to the implementation of the [`getLocation`](https://sourcegraph.com/github.com/Microsoft/node-jsonc-parser@e31983089c88114c7cc17f8c729feb493295c69d/-/blob/src/impl/parser.ts#L26:17) function. From there, keep drilling down until you get to the [`createScanner`](https://sourcegraph.com/github.com/Microsoft/node-jsonc-parser@e31983089c88114c7cc17f8c729feb493295c69d/-/blob/src/impl/scanner.ts#L13:17) function.
+Using an Open Source repo, you can follow the steps above to navigate to the implementation of the [`getLocation`](https://sourcegraph.com/github.com/Microsoft/node-jsonc-parser@e31983089c88114c7cc17f8c729feb493295c69d/-/blob/src/impl/parser.ts#L26:17) function. From there, keep drilling down until you get to the [`createScanner`](https://sourcegraph.com/github.com/Microsoft/node-jsonc-parser@e31983089c88114c7cc17f8c729feb493295c69d/-/blob/src/impl/scanner.ts#L13:17) function. To arrive there step-by-step:
+
+1. Start by searching for [repo:Microsoft/node-jsonc-parser getLocation](https://sourcegraph.com/search?q=repo:Microsoft/node-jsonc-parser+getLocation).
+1. Navigate to the [getLocation definition](https://sourcegraph.com/github.com/microsoft/node-jsonc-parser/-/blob/src/impl/parser.ts#L41:17).
+1. When you reach the `visit` function, [view the hover tool tip](https://sourcegraph.com/github.com/microsoft/node-jsonc-parser/-/blob/src/impl/parser.ts#L63:3), and click `Go to definition`. 
+1. When reviewing the `visit` [function definition](https://sourcegraph.com/github.com/microsoft/node-jsonc-parser/-/blob/src/impl/parser.ts#L386:17), cilck on the [createScanner hover tool tip](https://sourcegraph.com/github.com/microsoft/node-jsonc-parser/-/blob/src/impl/parser.ts#L388:19).
+1. Click `Go to definition`, and arrive at the [`createScanner` function](https://sourcegraph.com/github.com/microsoft/node-jsonc-parser/-/blob/src/impl/scanner.ts#L13:17).
 
 ---
 
