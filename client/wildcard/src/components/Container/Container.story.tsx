@@ -82,12 +82,10 @@ add(
         </>
     ),
     {
-        design: [
-            {
-                type: 'figma',
-                name: 'Figma Redesign',
-                url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/?node-id=1478%3A3044',
-            },
-        ],
+        design: {
+            type: 'figma',
+            name: 'Figma',
+            url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/?node-id=1478%3A3044',
+        },
     }
 )

@@ -28,20 +28,12 @@ add(
         />
     ),
     {
-        design: [
-            {
-                type: 'figma',
-                name: 'Figma',
-                url:
-                    'https://www.figma.com/file/A4gGoseJDz8iPeHP515MfQ/%F0%9F%A5%96Breaders-breadcrumbs-headers-15431-Approved?node-id=690%3A13588',
-            },
-            {
-                type: 'figma',
-                name: 'Figma Redesign',
-                url:
-                    'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1485%3A0',
-            },
-        ],
+        design: {
+            type: 'figma',
+            name: 'Figma',
+            url:
+                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1485%3A0',
+        },
     }
 )
 
@@ -74,19 +66,11 @@ add(
         />
     ),
     {
-        design: [
-            {
-                type: 'figma',
-                name: 'Figma',
-                url:
-                    'https://www.figma.com/file/A4gGoseJDz8iPeHP515MfQ/%F0%9F%A5%96Breaders-breadcrumbs-headers-15431-Approved?node-id=690%3A13588',
-            },
-            {
-                type: 'figma',
-                name: 'Figma Redesign',
-                url:
-                    'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1485%3A0',
-            },
-        ],
+        design: {
+            type: 'figma',
+            name: 'Figma',
+            url:
+                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1485%3A0',
+        },
     }
 )
