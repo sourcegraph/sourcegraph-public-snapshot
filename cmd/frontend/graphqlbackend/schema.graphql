@@ -578,7 +578,7 @@ type Mutation {
     convertVersionContextToSearchContext(name: String!): SearchContext!
 
     """
-    (experimental) Create search context.
+    Create search context.
     """
     createSearchContext(
         """
@@ -592,12 +592,12 @@ type Mutation {
     ): SearchContext!
 
     """
-    (experimental) Delete search context.
+    Delete search context.
     """
     deleteSearchContext(id: ID!): EmptyResponse!
 
     """
-    (experimental) Update search context.
+    Update search context.
     """
     updateSearchContext(
         """
@@ -1170,11 +1170,11 @@ type Query {
     """
     versionContexts: [VersionContext!]!
     """
-    (experimental) Auto-defined search contexts available to the current user.
+    Auto-defined search contexts available to the current user.
     """
     autoDefinedSearchContexts: [SearchContext!]!
     """
-    (experimental) All available user-defined search contexts. Excludes auto-defined contexts.
+    All available user-defined search contexts. Excludes auto-defined contexts.
     """
     searchContexts(
         """
@@ -1207,7 +1207,7 @@ type Query {
         descending: Boolean = false
     ): SearchContextConnection!
     """
-    (experimental) Determines whether the search context is within the set of search contexts available to the current user.
+    Determines whether the search context is within the set of search contexts available to the current user.
     The set consists of contexts created by the user, contexts created by the users' organizations, and instance-level contexts.
     """
     isSearchContextAvailable(spec: String!): Boolean!
@@ -2385,7 +2385,7 @@ type VersionContext {
 }
 
 """
-(experimental) A search context. Specifies a set of repositories to be searched.
+A search context. Specifies a set of repositories to be searched.
 """
 type SearchContext implements Node {
     """
@@ -2438,7 +2438,7 @@ type SearchContext implements Node {
 }
 
 """
-(experimental) Specifies a set of revisions to be searched within a repository.
+Specifies a set of revisions to be searched within a repository.
 """
 type SearchContextRepositoryRevisions {
     """
