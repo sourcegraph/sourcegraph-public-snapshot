@@ -1,17 +1,14 @@
-import React from 'react';
+import React from 'react'
 import { Switch, Route, useRouteMatch } from 'react-router'
 
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context';
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings';
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService';
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { AuthenticatedUser } from '../../../auth';
-import { lazyComponent } from '../../../util/lazyComponent';
+import { AuthenticatedUser } from '../../../auth'
+import { lazyComponent } from '../../../util/lazyComponent'
 
-const IntroCreationLazyPage = lazyComponent(
-    () => import('./intro/IntroCreationPage'),
-    'IntroCreationPage'
-)
+const IntroCreationLazyPage = lazyComponent(() => import('./intro/IntroCreationPage'), 'IntroCreationPage')
 const SearchInsightCreationLazyPage = lazyComponent(
     () => import('./search-insight/SearchInsightCreationPage'),
     'SearchInsightCreationPage'
@@ -22,11 +19,7 @@ const LangStatsInsightCreationLazyPage = lazyComponent(
     'LangStatsInsightCreationPage'
 )
 
-interface CreationRoutesProps extends
-    TelemetryProps,
-    PlatformContextProps<'updateSettings'>,
-    SettingsCascadeProps {
-
+interface CreationRoutesProps extends TelemetryProps, PlatformContextProps<'updateSettings'>, SettingsCascadeProps {
     /**
      * Authenticated user info, Used to decide where code insight will appears
      * in personal dashboard (private) or in organisation dashboard (public)

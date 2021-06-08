@@ -6,7 +6,7 @@ import { AuthenticatedUser } from '../auth'
 import { HeroPage } from '../components/HeroPage'
 import { lazyComponent } from '../util/lazyComponent'
 
-import { CreationRoutes } from './pages/creation/CreationRoutes';
+import { CreationRoutes } from './pages/creation/CreationRoutes'
 import { SearchInsightCreationPageProps } from './pages/creation/search-insight/SearchInsightCreationPage'
 import { InsightsPageProps } from './pages/dashboard/InsightsPage'
 import { EditInsightPageProps } from './pages/edit/EditInsightPage'
@@ -45,11 +45,14 @@ export const InsightsRouter: React.FunctionComponent<InsightsRouterProps> = prop
 
             <Route
                 path={`${match.url}/create`}
-                render={() => <CreationRoutes
-                    platformContext={outerProps.platformContext}
-                    authenticatedUser={outerProps.authenticatedUser}
-                    settingsCascade={outerProps.settingsCascade}
-                    telemetryService={outerProps.telemetryService} />}
+                render={() => (
+                    <CreationRoutes
+                        platformContext={outerProps.platformContext}
+                        authenticatedUser={outerProps.authenticatedUser}
+                        settingsCascade={outerProps.settingsCascade}
+                        telemetryService={outerProps.telemetryService}
+                    />
+                )}
             />
 
             <Route
