@@ -19,7 +19,8 @@ CHECKS=(
   ./go-dbconn-import.sh
   ./go-generate.sh
   ./go-lint.sh
-  ./ioutil.sh
+  # Disabled until we can figure out why it's flaky
+  #./ioutil.sh
   ./go-mod-tidy.sh
   ./no-alpine-guard.sh
   ./no-localhost-guard.sh
