@@ -40,6 +40,14 @@ type gitServiceHandler struct {
 	// Dir is a funcion which takes a repository name and returns an absolute
 	// path to the GIT_DIR for it.
 	Dir func(string) string
+
+	// CommandHook if non-nil will run with the git upload command before we
+	// start the command.
+	//
+	// This allows the command to be modified before running. In practice
+	// sourcegraph.com will add a flowrated writer for Stdout to treat our
+	// internal networks more kindly.
+	CommandHook func(*exec.Cmd)
 }
 
 func (s *gitServiceHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -115,8 +123,13 @@ func (s *gitServiceHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	cmd := exec.CommandContext(r.Context(), "git", args...)
 	cmd.Env = env
-	cmd.Stdout = flowrateWriter(w)
+	cmd.Stdout = w
 	cmd.Stdin = body
+
+	if s.CommandHook != nil {
+		s.CommandHook(cmd)
+	}
+
 	if err := cmd.Run(); err != nil {
 		log15.Error("gitservice.ServeHTTP", "svc", svc, "repo", repo, "protocol", r.Header.Get("Git-Protocol"), "duration", time.Since(start), "error", err.Error())
 	}
@@ -153,6 +166,11 @@ func (s *Server) gitServiceHandler() *gitServiceHandler {
 	return &gitServiceHandler{
 		Dir: func(d string) string {
 			return string(s.dir(api.RepoName(d)))
+		},
+
+		// Limit rate of stdout from git.
+		CommandHook: func(cmd *exec.Cmd) {
+			cmd.Stdout = flowrateWriter(cmd.Stdout)
 		},
 	}
 }
