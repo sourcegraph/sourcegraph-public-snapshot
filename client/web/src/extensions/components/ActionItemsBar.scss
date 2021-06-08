@@ -138,7 +138,7 @@ $default-icon-colors: $oc-grape-7, $oc-violet-7, $oc-cyan-9, $oc-indigo-7, $oc-p
         }
 
         &--inactive {
-            cursor: not-allowed;
+            cursor: default;
             filter: saturate(0%);
             opacity: 0.7;
         }
