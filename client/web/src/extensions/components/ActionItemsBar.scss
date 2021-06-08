@@ -131,6 +131,7 @@ $default-icon-colors: $oc-grape-7, $oc-violet-7, $oc-cyan-9, $oc-indigo-7, $oc-p
             color: var(--body-color);
             background-color: var(--color-bg-3);
 
+            // Override existing hover styles
             &:hover {
                 background-color: var(--color-bg-3);
             }
