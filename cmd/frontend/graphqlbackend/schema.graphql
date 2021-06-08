@@ -5066,6 +5066,11 @@ type Site implements SettingsSubject {
         """
         days: Int
     ): MonitoringStatistics!
+    """
+    Whether changes can be made to site settings through the API. When global settings are configured through
+    the GLOBAL_SETTINGS_FILE environment variable, site settings edits cannot be made through the API.
+    """
+    allowSiteSettingsEdits: Boolean!
 }
 
 """
