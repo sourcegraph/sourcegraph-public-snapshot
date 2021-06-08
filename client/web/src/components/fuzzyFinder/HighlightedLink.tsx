@@ -54,15 +54,16 @@ export const HighlightedLink: React.FunctionComponent<HighlightedLinkProps> = pr
             pushSpan('', start, position.startOffset)
         }
         start = position.endOffset
-        const classNameSuffix = position.isExact ? styles.exact : styles.fuzzy
-        pushSpan(`${styles.highlighted} ${classNameSuffix}`, position.startOffset, position.endOffset)
+        pushSpan(styles.mark, position.startOffset, position.endOffset)
     }
     pushSpan('', start, props.text.length)
 
     return props.url ? (
-        <Link className={styles.link} to={props.url} onClick={() => props.onClick?.()}>
-            {spans}
-        </Link>
+        <code>
+            <Link className={styles.link} to={props.url} onClick={() => props.onClick?.()}>
+                {spans}
+            </Link>
+        </code>
     ) : (
         <>{spans}</>
     )

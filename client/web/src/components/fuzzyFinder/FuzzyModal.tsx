@@ -2,6 +2,7 @@
 // NOTE: the eslint-disable above can't be a eslint-disable-next-line because
 // JSX syntax doesn't support comments on the line where it's needed.
 
+import classnames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
@@ -14,10 +15,6 @@ import { WordSensitiveFuzzySearch } from '../../fuzzyFinder/WordSensitiveFuzzySe
 import { FuzzyFinderProps, Indexing, FuzzyFSM } from './FuzzyFinder'
 import styles from './FuzzyModal.module.scss'
 import { HighlightedLink } from './HighlightedLink'
-
-// Enable this URL query parameter to see debugging information like latency
-// numbers and the false-positive ratio for the bloom filter.
-const IS_DEBUG = window.location.href.toString().includes('fuzzyFinder=debug')
 
 // The default value of 80k filenames is picked from the following observations:
 // - case-insensitive search is slow but works in the torvalds/linux repo (72k files)
@@ -117,32 +114,38 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
         // Use 'onMouseDown' instead of 'onClick' to allow selecting the text and mouse up outside the modal
         <div role="navigation" className={styles.modal} onMouseDown={() => props.onClose()}>
             <div role="navigation" className={styles.content} onMouseDown={event => event.stopPropagation()}>
-                <button type="button" className={styles.closeButton} onClick={() => props.onClose()}>
-                    <CloseIcon className={styles.closeIcon} />
-                </button>
                 <div className={styles.header}>
-                    <h3>Find file</h3>
+                    <h3 className={styles.title}>Find file</h3>
+                    <button type="button" className="btn btn-icon" onClick={() => props.onClose()}>
+                        <CloseIcon className={`icon-inline ${styles.closeIcon}`} />
+                    </button>
                 </div>
-                <hr />
-                <div>
-                    <input
-                        autoComplete="off"
-                        id="fuzzy-modal-input"
-                        className={styles.input}
-                        placeholder="Enter a partial file path or name"
-                        value={props.query}
-                        onChange={event => {
-                            props.setQuery(event.target.value)
-                            props.setFocusIndex(0)
-                        }}
-                        type="text"
-                        onKeyDown={onInputKeyDown}
-                    />
-                </div>
-                <div className={styles.footer}>
+                <input
+                    autoComplete="off"
+                    id="fuzzy-modal-input"
+                    className={`form-control px-2 py-1 ${styles.input}`}
+                    placeholder="Enter a partial file path or name"
+                    value={props.query}
+                    onChange={event => {
+                        props.setQuery(event.target.value)
+                        props.setFocusIndex(0)
+                    }}
+                    type="text"
+                    onKeyDown={onInputKeyDown}
+                />
+                <div className={styles.summary}>
                     <FuzzyResultsSummary fsm={props.fsm} files={fuzzyResult} />
                 </div>
-                <div className={styles.body}>{fuzzyResult.element}</div>
+                {fuzzyResult.element}
+                {!fuzzyResult.isComplete && (
+                    <button
+                        className={classnames('btn btn-secondary', styles.showMore)}
+                        type="button"
+                        onClick={() => props.increaseMaxResults()}
+                    >
+                        Show more
+                    </button>
+                )}
             </div>
         </div>
     )
@@ -156,23 +159,17 @@ interface FuzzyResultsSummaryProps {
     files: RenderedFuzzyResult
 }
 
-const FuzzyResultsSummary: React.FunctionComponent<FuzzyResultsSummaryProps> = ({ fsm, files }) =>
-    IS_DEBUG ? (
-        <>
-            <span>{files.falsePositiveRatio && Math.round(files.falsePositiveRatio * 100)}fp</span>
-            <span>{files.elapsedMilliseconds && Math.round(files.elapsedMilliseconds).toLocaleString()}ms</span>
-        </>
-    ) : (
-        <>
-            <span>
-                {plural('result', files.resultsCount, files.isComplete)} -{' '}
-                {fsm.key === 'indexing' && indexingProgressBar(fsm)} {plural('total file', files.totalFileCount, true)}
-            </span>
-            <span>
-                <ChevronUpIcon /> and <ChevronDownIcon /> arrow keys browse. Enter selects.
-            </span>
-        </>
-    )
+const FuzzyResultsSummary: React.FunctionComponent<FuzzyResultsSummaryProps> = ({ fsm, files }) => (
+    <>
+        <span className={styles.resultCount}>
+            {plural('result', files.resultsCount, files.isComplete)} -{' '}
+            {fsm.key === 'indexing' && indexingProgressBar(fsm)} {plural('total file', files.totalFileCount, true)}
+        </span>
+        <span className={styles.shortcuts}>
+            <ChevronUpIcon /> and <ChevronDownIcon /> arrow keys browse. Enter selects.
+        </span>
+    </>
+)
 
 function indexingProgressBar(indexing: Indexing): JSX.Element {
     const indexedFiles = indexing.indexing.indexedFileCount
@@ -261,23 +258,16 @@ function renderFiles(props: FuzzyModalProps, search: FuzzySearch, indexing?: Sea
     const linksToRender = links.slice(0, props.maxResults)
     return {
         element: (
-            <ul className={`${styles.results} text-monospace`}>
+            <ul className={styles.results}>
                 {linksToRender.map((file, fileIndex) => (
                     <li
                         id={`fuzzy-modal-result-${fileIndex}`}
                         key={file.text}
-                        className={fileIndex === props.focusIndex ? styles.focused : ''}
+                        className={classnames(styles.resultItem, fileIndex === props.focusIndex && styles.focused)}
                     >
                         <HighlightedLink {...file} />
                     </li>
                 ))}
-                {!fuzzyResult.isComplete && (
-                    <li>
-                        <button className="btn btn-seconday" type="button" onClick={() => props.increaseMaxResults()}>
-                            (...truncated, click to show more results){' '}
-                        </button>
-                    </li>
-                )}
             </ul>
         ),
         resultsCount: linksToRender.length,

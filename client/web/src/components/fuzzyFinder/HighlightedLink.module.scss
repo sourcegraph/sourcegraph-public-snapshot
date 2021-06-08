@@ -1,12 +1,7 @@
-.highlighted {
-    color: var(--oc-black);
+.mark {
+    background-color: var(--mark-bg);
 }
-.fuzzy {
-    background-color: var(--oc-yellow-4);
-}
-.exact {
-    background-color: var(--oc-yellow-3);
-}
+
 .link {
     display: inline-block;
     width: 100%;
