@@ -247,7 +247,7 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 	goroutine.Go(func() { bg.CheckRedisCacheEvictionPolicy() })
 	goroutine.Go(func() { bg.DeleteOldCacheDataInRedis() })
 	goroutine.Go(func() { bg.DeleteOldEventLogsInPostgres(context.Background(), db) })
-	go updatecheck.Start(db)
+	goroutine.Go(func() { updatecheck.Start(db) })
 
 	// Parse GraphQL schema and set up resolvers that depend on dbconn.Global
 	// being initialized
@@ -260,11 +260,10 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 		return err
 	}
 
-	ratelimitStore, err := redigostore.New(redispool.Cache, "gql:rl:", 0)
+	rateLimitWatcher, err := makeRateLimitWatcher()
 	if err != nil {
 		return err
 	}
-	rateLimitWatcher := graphqlbackend.NewBasicLimitWatcher(ratelimitStore)
 
 	server, err := makeExternalAPI(db, schema, enterprise, rateLimitWatcher)
 	if err != nil {
@@ -351,4 +350,12 @@ func isAllowedOrigin(origin string, allowedOrigins []string) bool {
 		}
 	}
 	return false
+}
+
+func makeRateLimitWatcher() (*graphqlbackend.BasicLimitWatcher, error) {
+	ratelimitStore, err := redigostore.New(redispool.Cache, "gql:rl:", 0)
+	if err != nil {
+		return nil, err
+	}
+	return graphqlbackend.NewBasicLimitWatcher(ratelimitStore), nil
 }
