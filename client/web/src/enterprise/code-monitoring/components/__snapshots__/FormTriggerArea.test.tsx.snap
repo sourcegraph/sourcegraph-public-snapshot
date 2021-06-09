@@ -50,6 +50,126 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
           >
             <li>
               <ValidQueryChecklistItem
+                checked={true}
+                className="test-patterntype-checkbox"
+                hint="Code monitors support literal and regex search. Searches are literal by default."
+              >
+                <label
+                  className="d-flex align-items-center mb-1 text-muted test-patterntype-checkbox"
+                  onBlur={[Function]}
+                  onFocus={[Function]}
+                  onMouseOut={[Function]}
+                  onMouseOver={[Function]}
+                >
+                  <input
+                    checked={true}
+                    className="sr-only"
+                    disabled={true}
+                    type="checkbox"
+                  />
+                  <Memo(CheckIcon)
+                    aria-hidden={true}
+                    className="trigger-area__checklist-checkbox icon-inline text-success"
+                  />
+                  <small
+                    className="trigger-area__checklist-children--faded"
+                  >
+                    Is 
+                    <code>
+                      patternType:literal
+                    </code>
+                     or 
+                    <code>
+                      patternType:regexp
+                    </code>
+                  </small>
+                  <span
+                    className="sr-only"
+                  >
+                     
+                    Code monitors support literal and regex search. Searches are literal by default.
+                  </span>
+                  <span
+                    className="d-flex"
+                  >
+                    <Memo(HelpCircleIcon)
+                      aria-hidden={true}
+                      className="trigger-area__checklist-hint icon-inline trigger-area__checklist-hint--faded"
+                    />
+                  </span>
+                  <Tooltip
+                    autohide={true}
+                    innerClassName="trigger-area__checklist-tooltip"
+                    isOpen={false}
+                    placement="bottom"
+                    placementPrefix="bs-tooltip"
+                    target={
+                      Object {
+                        "current": <span
+                          class="d-flex"
+                        >
+                          <svg
+                            aria-hidden="true"
+                            class="mdi-icon trigger-area__checklist-hint icon-inline trigger-area__checklist-hint--faded"
+                            fill="currentColor"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            width="24"
+                          >
+                            <path
+                              d="M15.07,11.25L14.17,12.17C13.45,12.89 13,13.5 13,15H11V14.5C11,13.39 11.45,12.39 12.17,11.67L13.41,10.41C13.78,10.05 14,9.55 14,9C14,7.89 13.1,7 12,7A2,2 0 0,0 10,9H8A4,4 0 0,1 12,5A4,4 0 0,1 16,9C16,9.88 15.64,10.67 15.07,11.25M13,19H11V17H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12C22,6.47 17.5,2 12,2Z"
+                            />
+                          </svg>
+                        </span>,
+                      }
+                    }
+                    toggle={[Function]}
+                    trigger="hover focus"
+                  >
+                    <TooltipPopoverWrapper
+                      autohide={true}
+                      delay={
+                        Object {
+                          "hide": 50,
+                          "show": 0,
+                        }
+                      }
+                      fade={true}
+                      hideArrow={false}
+                      innerClassName="tooltip-inner trigger-area__checklist-tooltip"
+                      isOpen={false}
+                      placement="bottom"
+                      placementPrefix="bs-tooltip"
+                      popperClassName="tooltip show"
+                      target={
+                        Object {
+                          "current": <span
+                            class="d-flex"
+                          >
+                            <svg
+                              aria-hidden="true"
+                              class="mdi-icon trigger-area__checklist-hint icon-inline trigger-area__checklist-hint--faded"
+                              fill="currentColor"
+                              height="24"
+                              viewBox="0 0 24 24"
+                              width="24"
+                            >
+                              <path
+                                d="M15.07,11.25L14.17,12.17C13.45,12.89 13,13.5 13,15H11V14.5C11,13.39 11.45,12.39 12.17,11.67L13.41,10.41C13.78,10.05 14,9.55 14,9C14,7.89 13.1,7 12,7A2,2 0 0,0 10,9H8A4,4 0 0,1 12,5A4,4 0 0,1 16,9C16,9.88 15.64,10.67 15.07,11.25M13,19H11V17H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12C22,6.47 17.5,2 12,2Z"
+                              />
+                            </svg>
+                          </span>,
+                        }
+                      }
+                      toggle={[Function]}
+                      trigger="hover focus"
+                    />
+                  </Tooltip>
+                </label>
+              </ValidQueryChecklistItem>
+            </li>
+            <li>
+              <ValidQueryChecklistItem
                 checked={false}
                 className="test-type-checkbox"
                 hint="type:diff targets code present in new commits, while type:commit targets commit messages"
