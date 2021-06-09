@@ -1,5 +1,17 @@
 # Serving local repositories
 
+Sourcegraph is designed to abstract away all repository management operations from the user. However, we still often get the question: "how do I load local repositories?"
+
+The instructions below (using the Sourcegraph CLI to act as a pseudo-code host for Sourcegraph to interact with) do enable this, but they can be quite complex. The root of the challenge is that Sourcegraph assumes that code will change over time. It has been intentionally designed to save the user from the manual effort of keeping repositories up to date (i.e., re-cloning or fetching the latest changes every time you want to search) by [automatically keeping repositories updated](https://docs.sourcegraph.com/admin/repo/update_frequency), keeping the updated content indexed, and making the change history visible and explorable to users.
+
+And, practically, Sourcegraph was built with the assumption that certain tasks, such as getting a list of repositories and running git operations like clones, would be accessible over a network rather than on the same disk (i.e., that there would be HTTP API and git endpoints).
+
+In both the short-term and the long-term, it is far easier for users to [connect Sourcegraph to a code host](https://docs.sourcegraph.com/admin/external_service) than to try to load code from a local disk, and we strongly encourage users, where possible, to connect to their code host of choice instead of trying to follow the instructions below. 
+
+When Sourcegraph is connected to a code host, none of that code is ever sent off of your local Sourcegraph deployment, and nobody that you haven't given access to (whether at Sourcegraph or anywhere else) has access to your code. Sourcegraph only maintains a local clone, and does all code analysis and indexing operations locally. Read more specifics about our policies and what we do collect in [our security overview](https://about.sourcegraph.com/security/#Sourcegraph-on-premise).
+
+## Using the Sourcegraph CLI to serve local repositories
+
 The [Sourcegraph CLI (`src)`](https://github.com/sourcegraph/src-cli) provides the command `src serve-git` which will recursively serve up the git repositories it finds in the current directory. It exposes the repositories over HTTP as well as an API for Sourcegraph to query.
 
 >NOTE: If using Perforce, see the [Perforce repositories with Sourcegraph guide](../repo/perforce.md).

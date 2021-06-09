@@ -43,20 +43,12 @@ add(
         </>
     ),
     {
-        design: [
-            {
-                name: 'Figma',
-                type: 'figma',
-                url:
-                    'https://www.figma.com/file/HWLuLefEdev5KYtoEGHjFj/Sourcegraph-Components-Contractor?node-id=771%3A0',
-            },
-            {
-                name: 'Figma Redesign',
-                type: 'figma',
-                url:
-                    'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=998%3A1515',
-            },
-        ],
+        design: {
+            name: 'Figma',
+            type: 'figma',
+            url:
+                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=998%3A1515',
+        },
     }
 )
 
@@ -75,20 +67,12 @@ add(
         </div>
     ),
     {
-        design: [
-            {
-                name: 'Figma',
-                type: 'figma',
-                url:
-                    'https://www.figma.com/file/HWLuLefEdev5KYtoEGHjFj/Sourcegraph-Components-Contractor?node-id=742%3A532',
-            },
-            {
-                name: 'Figma Redesign',
-                type: 'figma',
-                url:
-                    'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=998%3A1515',
-            },
-        ],
+        design: {
+            name: 'Figma',
+            type: 'figma',
+            url:
+                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=998%3A1515',
+        },
     }
 )
 
@@ -171,18 +155,12 @@ add(
         </>
     ),
     {
-        design: [
-            {
-                type: 'figma',
-                url: 'https://www.figma.com/file/P2M4QrgIxeUsjE80MHP8TmY3/Sourcegraph-Colors?node-id=0%3A2',
-            },
-            {
-                type: 'figma',
-                name: 'Figma Redesign',
-                url:
-                    'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A7608',
-            },
-        ],
+        design: {
+            name: 'Figma',
+            type: 'figma',
+            url:
+                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A7608',
+        },
     }
 )
 
@@ -281,18 +259,13 @@ add('Alerts', AlertsStory, {
     design: [
         {
             type: 'figma',
-            name: 'Figma',
-            url: 'https://www.figma.com/file/BkY8Ak997QauG0Iu2EqArv/Sourcegraph-Components?node-id=127%3A4',
-        },
-        {
-            type: 'figma',
-            name: 'Figma Redesign Light',
+            name: 'Figma Light',
             url:
                 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1563%3A196',
         },
         {
             type: 'figma',
-            name: 'Figma Redesign Dark',
+            name: 'Figma Dark',
             url:
                 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1563%3A525',
         },
@@ -424,18 +397,13 @@ add(
         design: [
             {
                 type: 'figma',
-                name: 'Figma',
-                url: 'https://www.figma.com/file/BkY8Ak997QauG0Iu2EqArv/Sourcegraph-Components?node-id=486%3A0',
-            },
-            {
-                type: 'figma',
-                name: 'Figma Redesign - Light',
+                name: 'Figma - Light',
                 url:
                     'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A6149',
             },
             {
                 type: 'figma',
-                name: 'Figma Redesign - Dark',
+                name: 'Figma - Dark',
                 url:
                     'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A6448',
             },
@@ -482,18 +450,12 @@ add(
         </>
     ),
     {
-        design: [
-            {
-                type: 'figma',
-                url: 'https://www.figma.com/file/BkY8Ak997QauG0Iu2EqArv/Sourcegraph-Components?node-id=35%3A11',
-            },
-            {
-                type: 'figma',
-                name: 'Figma Redesign',
-                url:
-                    'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A2513',
-            },
-        ],
+        design: {
+            type: 'figma',
+            name: 'Figma',
+            url:
+                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A2513',
+        },
     }
 )
 
@@ -621,7 +583,9 @@ add(
     {
         design: {
             type: 'figma',
-            url: 'https://www.figma.com/file/BkY8Ak997QauG0Iu2EqArv/Sourcegraph-Components?node-id=35%3A11',
+            name: 'Figma',
+            url:
+                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A2514',
         },
     }
 )
@@ -810,19 +774,12 @@ add(
 )
 
 add('Cards', CardsStory, {
-    design: [
-        {
-            name: 'Figma',
-            type: 'figma',
-            url: 'https://www.figma.com/file/BkY8Ak997QauG0Iu2EqArv/Sourcegraph-Components?node-id=109%3A2',
-        },
-        {
-            name: 'Figma Redesign',
-            type: 'figma',
-            url:
-                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1172%3A285',
-        },
-    ],
+    design: {
+        name: 'Figma',
+        type: 'figma',
+        url:
+            'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1172%3A285',
+    },
 })
 
 add('List groups', () => (

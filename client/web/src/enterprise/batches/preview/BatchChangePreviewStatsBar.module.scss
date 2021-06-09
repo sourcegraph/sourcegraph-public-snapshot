@@ -2,9 +2,6 @@
 
 .batch-change-preview-stats-bar {
     &__stat {
-        :global(.theme-classic) & {
-            color: var(--icon-color);
-        }
         color: var(--text-muted);
     }
     &__divider {

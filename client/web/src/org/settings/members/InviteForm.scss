@@ -2,10 +2,6 @@
     &__container {
         margin-bottom: 1rem;
         width: fit-content;
-        .theme-classic & {
-            @extend .card;
-            padding: 0.5rem;
-        }
     }
 
     &__status {

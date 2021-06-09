@@ -127,13 +127,6 @@ $theme-colors-redesign: (
     --code-line-highlight-color: var(--color-bg-2);
     --diff-add-bg: #eeffec;
     --diff-remove-bg: #ffecec;
-
-    // TODO: Remove from use, replace with the variables referenced here.
-    // Issue: https://github.com/sourcegraph/sourcegraph/issues/19973
-    --link-hover-bg-color: var(--color-bg-2);
-    --link-hover-bg-color-2: var(--color-bg-3);
-    --disabled-action-bg-color: var(--color-bg-3);
-    --disabled-action-text-color: var(--text-muted);
 }
 
 .theme-dark.theme-redesign {

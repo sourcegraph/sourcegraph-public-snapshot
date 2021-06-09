@@ -1,9 +1,7 @@
 import classNames from 'classnames'
 import * as H from 'history'
 import ArrowCollapseUpIcon from 'mdi-react/ArrowCollapseUpIcon'
-import ArrowCollapseVerticalIcon from 'mdi-react/ArrowCollapseVerticalIcon'
 import ArrowExpandDownIcon from 'mdi-react/ArrowExpandDownIcon'
-import ArrowExpandVerticalIcon from 'mdi-react/ArrowExpandVerticalIcon'
 import DownloadIcon from 'mdi-react/DownloadIcon'
 import FormatQuoteOpenIcon from 'mdi-react/FormatQuoteOpenIcon'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
@@ -17,7 +15,6 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/validate'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { PatternTypeProps, CaseSensitivityProps } from '..'
 import { AuthenticatedUser } from '../../auth'
@@ -105,9 +102,6 @@ const QuotesInterpretedLiterallyNotice: React.FunctionComponent<SearchResultsInf
  * and a few actions like expand all and save query
  */
 export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarProps> = props => {
-    const [isRedesignEnabled] = useRedesignToggle()
-    const buttonClass = isRedesignEnabled ? 'btn-outline-secondary mr-2' : 'btn-link'
-
     const canCreateMonitorFromQuery = useMemo(() => {
         if (!props.query) {
             return false
@@ -162,10 +156,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                 <ButtonLink
                     disabled={!canCreateMonitorFromQuery}
                     to={toURL}
-                    className={classNames(
-                        'btn btn-sm nav-link text-decoration-none create-code-monitor-button',
-                        buttonClass
-                    )}
+                    className="btn btn-sm btn-outline-secondary mr-2 nav-link text-decoration-none create-code-monitor-button"
                     onSelect={onCreateCodeMonitorButtonSelect}
                 >
                     <CodeMonitoringLogo className="icon-inline mr-1" />
@@ -179,7 +170,6 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
         props.query,
         props.patternType,
         canCreateMonitorFromQuery,
-        buttonClass,
         onCreateCodeMonitorButtonSelect,
     ])
 
@@ -193,17 +183,14 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                 <button
                     type="button"
                     onClick={props.onSaveQueryClick}
-                    className={classNames(
-                        'btn btn-sm nav-link text-decoration-none test-save-search-link',
-                        buttonClass
-                    )}
+                    className="btn btn-sm btn-outline-secondary mr-2 nav-link text-decoration-none test-save-search-link"
                 >
                     <DownloadIcon className="icon-inline mr-1" />
                     Save search
                 </button>
             </li>
         )
-    }, [buttonClass, props.authenticatedUser, props.onSaveQueryClick, props.showSavedQueryButton])
+    }, [props.authenticatedUser, props.onSaveQueryClick, props.showSavedQueryButton])
 
     const extraContext = useMemo(
         () => ({
@@ -224,38 +211,31 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
     return (
         <div className={classNames(props.className, 'search-results-info-bar')} data-testid="results-info-bar">
             <div className="search-results-info-bar__row">
-                {isRedesignEnabled && (
-                    <button
-                        type="button"
-                        className={classNames(
-                            'btn btn-sm btn-outline-secondary d-flex d-lg-none',
-                            showFilters && 'active'
-                        )}
-                        aria-pressed={showFilters}
-                        onClick={onShowFiltersClicked}
-                    >
-                        <MenuIcon className="icon-inline mr-1" />
-                        Filters
-                        {showFilters ? (
-                            <MenuUpIcon className="icon-inline" />
-                        ) : (
-                            <MenuDownIcon className="icon-inline" />
-                        )}
-                    </button>
-                )}
+                <button
+                    type="button"
+                    className={classNames('btn btn-sm btn-outline-secondary d-flex d-lg-none', showFilters && 'active')}
+                    aria-pressed={showFilters}
+                    onClick={onShowFiltersClicked}
+                >
+                    <MenuIcon className="icon-inline mr-1" />
+                    Filters
+                    {showFilters ? <MenuUpIcon className="icon-inline" /> : <MenuDownIcon className="icon-inline" />}
+                </button>
+
                 {props.stats}
+
                 <QuotesInterpretedLiterallyNotice {...props} />
 
                 <div className="search-results-info-bar__expander" />
 
-                <ul className={classNames('nav align-items-center', !isRedesignEnabled && 'justify-content-end')}>
+                <ul className="nav align-items-center">
                     <ActionsNavItems
                         {...props}
                         extraContext={extraContext}
                         menu={ContributableMenu.SearchResultsToolbar}
                         wrapInList={false}
                         showLoadingSpinnerDuringExecution={true}
-                        actionItemClass={classNames('btn nav-link text-decoration-none btn-sm', buttonClass)}
+                        actionItemClass="btn nav-link btn-outline-secondary mr-2 text-decoration-none btn-sm"
                     />
 
                     {(createCodeMonitorButton || saveSearchButton) && (
@@ -271,19 +251,13 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                                 <button
                                     type="button"
                                     onClick={props.onExpandAllResultsToggle}
-                                    className={classNames('btn btn-sm nav-link text-decoration-none', buttonClass)}
+                                    className="btn btn-sm btn-outline-secondary nav-link text-decoration-none"
                                     data-tooltip={`${props.allExpanded ? 'Hide' : 'Show'} more matches on all results`}
                                 >
                                     {props.allExpanded ? (
-                                        isRedesignEnabled ? (
-                                            <ArrowCollapseUpIcon className="icon-inline mr-0" />
-                                        ) : (
-                                            <ArrowCollapseVerticalIcon className="icon-inline mr-0" />
-                                        )
-                                    ) : isRedesignEnabled ? (
-                                        <ArrowExpandDownIcon className="icon-inline mr-0" />
+                                        <ArrowCollapseUpIcon className="icon-inline mr-0" />
                                     ) : (
-                                        <ArrowExpandVerticalIcon className="icon-inline mr-0" />
+                                        <ArrowExpandDownIcon className="icon-inline mr-0" />
                                     )}
                                 </button>
                             </li>

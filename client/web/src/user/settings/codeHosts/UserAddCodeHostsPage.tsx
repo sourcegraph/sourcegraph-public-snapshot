@@ -87,7 +87,8 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         // update their scope
         const gitHubService = services.GITHUB
         if (gitHubService) {
-            setUpdateAuthRequired(githubRepoScopeRequired(user.tags, gitHubService.grantedScopes))
+            const scopes = gitHubService.grantedScopes || []
+            setUpdateAuthRequired(githubRepoScopeRequired(user.tags, scopes))
         }
 
         const repoCount = fetchedServices.reduce((sum, codeHost) => sum + codeHost.repoCount, 0)

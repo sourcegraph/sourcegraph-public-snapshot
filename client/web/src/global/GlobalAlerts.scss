@@ -5,31 +5,26 @@
     &__alert {
         width: 100%;
         margin-bottom: 0;
-
         border-radius: 0;
         border-width: 0 0 1px 0;
+        background: var(--alert-icon-background-color);
+        padding-left: var(--alert-content-padding);
+        border-color: var(--border-color-2);
+
+        &::before,
+        &::after {
+            display: none;
+        }
+
+        &:last-child {
+            border-bottom-width: 0;
+        }
 
         // The trailing after-paragraph/list margin looks unbalanced in MOTDs.
         p:last-child,
         ul:last-child,
         ol:last-child {
             margin-bottom: 0;
-        }
-
-        .theme-redesign & {
-            color: var(--body-color);
-            background: var(--alert-icon-background-color);
-            padding-left: var(--alert-content-padding);
-            border-color: var(--border-color-2);
-
-            &::before,
-            &::after {
-                display: none;
-            }
-
-            &:last-child {
-                border-bottom-width: 0;
-            }
         }
     }
 }
