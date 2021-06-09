@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
@@ -204,7 +203,7 @@ func mockRepoComparison(t *testing.T, baseRev, headRev, diff string) {
 		if have, want := args[len(args)-2], spec; have != want {
 			t.Fatalf("gitserver.ExecReader received wrong spec: %q, want %q", have, want)
 		}
-		return ioutil.NopCloser(strings.NewReader(diff)), nil
+		return io.NopCloser(strings.NewReader(diff)), nil
 	}
 	t.Cleanup(func() { git.Mocks.ExecReader = nil })
 

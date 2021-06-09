@@ -2,6 +2,8 @@ import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { Observable, of } from 'rxjs'
 
+import { LSIFIndexState } from '@sourcegraph/shared/src/graphql/schema'
+
 import { LsifUploadFields, LSIFUploadState } from '../../../graphql-operations'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
@@ -27,6 +29,7 @@ add('Uploading', () => (
                     finishedAt: null,
                     failure: null,
                     placeInQueue: null,
+                    associatedIndex: null,
                 })}
                 now={now}
             />
@@ -46,6 +49,7 @@ add('Queued', () => (
                     finishedAt: null,
                     placeInQueue: 3,
                     failure: null,
+                    associatedIndex: null,
                 })}
                 now={now}
             />
@@ -65,6 +69,7 @@ add('Processing', () => (
                     finishedAt: null,
                     failure: null,
                     placeInQueue: null,
+                    associatedIndex: null,
                 })}
                 now={now}
             />
@@ -84,6 +89,7 @@ add('Completed', () => (
                     finishedAt: '2020-06-15T12:30:30+00:00',
                     failure: null,
                     placeInQueue: null,
+                    associatedIndex: null,
                 })}
                 now={now}
             />
@@ -104,6 +110,7 @@ add('Errored', () => (
                     failure:
                         'Upload failed to complete: dial tcp: lookup gitserver-8.gitserver on 10.165.0.10:53: no such host',
                     placeInQueue: null,
+                    associatedIndex: null,
                 })}
                 now={now}
             />
@@ -123,6 +130,34 @@ add('Failed Upload', () => (
                     finishedAt: '2020-06-15T12:30:30+00:00',
                     failure: 'Upload failed to complete: object store error:\n * XMinioStorageFull etc etc',
                     placeInQueue: null,
+                    associatedIndex: null,
+                })}
+                now={now}
+            />
+        )}
+    </EnterpriseWebStory>
+))
+
+add('Associated Index', () => (
+    <EnterpriseWebStory>
+        {props => (
+            <CodeIntelUploadPage
+                {...props}
+                fetchLsifUpload={fetch({
+                    state: LSIFUploadState.PROCESSING,
+                    uploadedAt: '2020-06-15T12:20:30+00:00',
+                    startedAt: '2020-06-15T12:25:30+00:00',
+                    finishedAt: null,
+                    failure: null,
+                    placeInQueue: null,
+                    associatedIndex: {
+                        id: '6789',
+                        state: LSIFIndexState.COMPLETED,
+                        queuedAt: '2020-06-15T12:15:10+00:00',
+                        startedAt: '2020-06-15T12:20:20+00:00',
+                        finishedAt: '2020-06-15T12:25:30+00:00',
+                        placeInQueue: null,
+                    },
                 })}
                 now={now}
             />
@@ -131,7 +166,10 @@ add('Failed Upload', () => (
 ))
 
 const fetch = (
-    upload: Pick<LsifUploadFields, 'state' | 'uploadedAt' | 'startedAt' | 'finishedAt' | 'failure' | 'placeInQueue'>
+    upload: Pick<
+        LsifUploadFields,
+        'state' | 'uploadedAt' | 'startedAt' | 'finishedAt' | 'failure' | 'placeInQueue' | 'associatedIndex'
+    >
 ): (() => Observable<LsifUploadFields>) => () =>
     of({
         __typename: 'LSIFUpload',

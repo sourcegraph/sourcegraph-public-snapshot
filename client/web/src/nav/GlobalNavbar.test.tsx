@@ -1,6 +1,7 @@
+import { render } from '@testing-library/react'
 import { createLocation, createMemoryHistory } from 'history'
 import React from 'react'
-import renderer from 'react-test-renderer'
+import { MemoryRouter } from 'react-router'
 
 import { setLinkComponent } from '@sourcegraph/shared/src/components/Link'
 import { extensionsController, NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/util/searchTestHelpers'
@@ -69,11 +70,30 @@ describe('GlobalNavbar', () => {
     setLinkComponent(({ children, ...props }) => <a {...props}>{children}</a>)
     afterAll(() => setLinkComponent(() => null)) // reset global env for other tests
 
-    test('default', () => expect(renderer.create(<GlobalNavbar {...PROPS} />).toJSON()).toMatchSnapshot())
+    test('default', () => {
+        const { asFragment } = render(
+            <MemoryRouter>
+                <GlobalNavbar {...PROPS} />
+            </MemoryRouter>
+        )
+        expect(asFragment()).toMatchSnapshot()
+    })
 
-    test('low-profile', () =>
-        expect(renderer.create(<GlobalNavbar {...PROPS} variant="low-profile" />).toJSON()).toMatchSnapshot())
+    test('low-profile', () => {
+        const { asFragment } = render(
+            <MemoryRouter>
+                <GlobalNavbar {...PROPS} variant="low-profile" />
+            </MemoryRouter>
+        )
+        expect(asFragment()).toMatchSnapshot()
+    })
 
-    test('no-search-input', () =>
-        expect(renderer.create(<GlobalNavbar {...PROPS} variant="no-search-input" />).toJSON()).toMatchSnapshot())
+    test('no-search-input', () => {
+        const { asFragment } = render(
+            <MemoryRouter>
+                <GlobalNavbar {...PROPS} variant="no-search-input" />
+            </MemoryRouter>
+        )
+        expect(asFragment()).toMatchSnapshot()
+    })
 })

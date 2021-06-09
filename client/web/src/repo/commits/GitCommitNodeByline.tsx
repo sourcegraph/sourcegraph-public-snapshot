@@ -8,26 +8,31 @@ import { SignatureFields } from '../../graphql-operations'
 import { formatPersonName, PersonLink } from '../../person/PersonLink'
 import { UserAvatar } from '../../user/UserAvatar'
 
-import styles from './GitCommitNodeByLine.module.scss'
-
 interface Props {
     author: SignatureFields
     committer: SignatureFields | null
     className?: string
     compact?: boolean
+    messageElement?: JSX.Element
+    commitMessageBody?: JSX.Element
 }
 
 /**
  * Displays a Git commit's author and committer (with avatars if available) and the dates.
  */
-export const GitCommitNodeByline: React.FunctionComponent<Props> = ({ author, committer, className = '', compact }) => {
+export const GitCommitNodeByline: React.FunctionComponent<Props> = ({
+    author,
+    committer,
+    className = '',
+    compact,
+    messageElement,
+    commitMessageBody,
+}) => {
     const [isRedesignEnabled] = useRedesignToggle()
-
-    const avatarMarginClass = isRedesignEnabled && compact ? 'mr-2' : 'mr-1'
-    const avatarClassName = classNames('icon-inline mr-1', compact && styles.avatarCompact)
 
     // Omit GitHub as committer to reduce noise. (Edits and squash commits made in the GitHub UI
     // include GitHub as a committer.)
+
     if (committer && committer.person.name === 'GitHub' && committer.person.email === 'noreply@github.com') {
         committer = null
     }
@@ -37,20 +42,20 @@ export const GitCommitNodeByline: React.FunctionComponent<Props> = ({ author, co
         committer.person.email !== author.person.email &&
         ((!committer.person.name && !author.person.name) || committer.person.name !== author.person.name)
     ) {
-        // The author and committer both exist and are different people.
-        return (
-            <small data-testid="git-commit-node-byline" className={className}>
-                <UserAvatar
-                    className={avatarClassName}
-                    user={author.person}
-                    data-tooltip={`${formatPersonName(author.person)} (author)`}
-                />
-                <UserAvatar
-                    className={classNames(avatarClassName, avatarMarginClass)}
-                    user={committer.person}
-                    data-tooltip={`${formatPersonName(committer.person)} (committer)`}
-                />
-                <span className={classNames(compact && styles.personCompact)}>
+        if (!isRedesignEnabled) {
+            // The author and committer both exist and are different people.
+            return (
+                <small data-testid="git-commit-node-byline" className={className}>
+                    <UserAvatar
+                        className="icon-inline-md"
+                        user={author.person}
+                        data-tooltip={`${formatPersonName(author.person)} (author)`}
+                    />{' '}
+                    <UserAvatar
+                        className="icon-inline mr-1"
+                        user={committer.person}
+                        data-tooltip={`${formatPersonName(committer.person)} (committer)`}
+                    />{' '}
                     <PersonLink person={author.person} className="font-weight-bold" /> {!compact && 'authored'} and{' '}
                     <PersonLink person={committer.person} className="font-weight-bold" />{' '}
                     {!compact && (
@@ -58,26 +63,74 @@ export const GitCommitNodeByline: React.FunctionComponent<Props> = ({ author, co
                             committed <Timestamp date={committer.date} />
                         </>
                     )}
-                </span>
-            </small>
+                </small>
+            )
+        }
+
+        return (
+            <div data-testid="git-commit-node-byline" className={className}>
+                <div>
+                    <UserAvatar
+                        className="icon-inline"
+                        user={author.person}
+                        data-tooltip={`${formatPersonName(author.person)} (author)`}
+                    />{' '}
+                    <UserAvatar
+                        className="icon-inline mr-2"
+                        user={committer.person}
+                        data-tooltip={`${formatPersonName(committer.person)} (committer)`}
+                    />
+                </div>
+                <div>
+                    {!compact ? (
+                        <>
+                            {messageElement}
+                            <PersonLink person={author.person} className="font-weight-bold" /> authored and{' '}
+                            <PersonLink person={committer.person} className="font-weight-bold" /> commited{' '}
+                            <Timestamp date={author.date} />
+                            {commitMessageBody}
+                        </>
+                    ) : (
+                        <>
+                            <PersonLink person={author.person} className="font-weight-bold" /> and{' '}
+                            <PersonLink person={committer.person} className="font-weight-bold" />{' '}
+                        </>
+                    )}
+                </div>
+            </div>
         )
     }
 
     return (
-        <small data-testid="git-commit-node-byline" className={className}>
-            <UserAvatar
-                className={classNames(avatarClassName, avatarMarginClass)}
-                user={author.person}
-                data-tooltip={formatPersonName(author.person)}
-            />{' '}
-            <span className={classNames(compact && styles.personCompact)}>
-                <PersonLink person={author.person} className="font-weight-bold" />{' '}
-                {!compact && (
+        <div data-testid="git-commit-node-byline" className={className}>
+            <div>
+                <UserAvatar
+                    className={classNames('icon-inline mr-1', isRedesignEnabled && 'mr-2')}
+                    user={author.person}
+                    data-tooltip={formatPersonName(author.person)}
+                />
+            </div>
+            <div>
+                {!compact && !isRedesignEnabled && (
                     <>
-                        committed <Timestamp date={author.date} />
+                        <PersonLink person={author.person} className="font-weight-bold" /> committed{' '}
+                        <Timestamp date={author.date} />
                     </>
                 )}
-            </span>
-        </small>
+                {!compact && isRedesignEnabled && (
+                    <>
+                        {messageElement}
+                        committed by <PersonLink person={author.person} className="font-weight-bold" />{' '}
+                        <Timestamp date={author.date} />
+                        {commitMessageBody}
+                    </>
+                )}
+                {compact && (
+                    <>
+                        <PersonLink person={author.person} className="font-weight-bold" />{' '}
+                    </>
+                )}
+            </div>
+        </div>
     )
 }

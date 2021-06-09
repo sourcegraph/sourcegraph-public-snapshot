@@ -13,11 +13,13 @@ cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 allowed_prefix=(
   github.com/sourcegraph/sourcegraph/cmd/frontend
   github.com/sourcegraph/sourcegraph/cmd/gitserver
+  github.com/sourcegraph/sourcegraph/cmd/worker
   github.com/sourcegraph/sourcegraph/cmd/repo-updater
-  github.com/sourcegraph/sourcegraph/enterprise/cmd/executor-queue
   github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend
-  github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-
+  github.com/sourcegraph/sourcegraph/enterprise/cmd/worker
   github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater
+  github.com/sourcegraph/sourcegraph/enterprise/cmd/executor-queue
+  github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-
 )
 
 # Create regex ^(a|b|c)

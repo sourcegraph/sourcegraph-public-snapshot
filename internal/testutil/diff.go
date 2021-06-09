@@ -1,20 +1,19 @@
 package testutil
 
 import (
-	"io/ioutil"
 	"os"
 	"os/exec"
 )
 
 func Diff(b1, b2 string) (string, error) {
-	f1, err := ioutil.TempFile("", "diff_test")
+	f1, err := os.CreateTemp("", "diff_test")
 	if err != nil {
 		return "", err
 	}
 	defer os.Remove(f1.Name())
 	defer f1.Close()
 
-	f2, err := ioutil.TempFile("", "diff_test")
+	f2, err := os.CreateTemp("", "diff_test")
 	if err != nil {
 		return "", err
 	}

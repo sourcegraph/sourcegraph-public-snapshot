@@ -40,7 +40,7 @@ export const CodeIntelIndexNode: FunctionComponent<CodeIntelIndexNodeProps> = ({
         </div>
 
         <span className="d-none d-md-inline codeintel-index-node__state">
-            <CodeIntelState node={node} />
+            <CodeIntelState node={node} className="d-flex flex-column align-items-center" />
         </span>
         <span>
             <Link to={`./indexes/${node.id}`}>

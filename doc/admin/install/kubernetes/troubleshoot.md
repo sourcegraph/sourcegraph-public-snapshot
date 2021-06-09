@@ -99,7 +99,7 @@ If one does exist, run `kubectl get storageclass sourcegraph -o=yaml` and verify
 Add `namespace: default` to the [base/cadvisor/cadvisor.ClusterRoleBinding.yaml](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/base/cadvisor/cadvisor.ClusterRoleBinding.yaml) file under `subjects`.
 
 
-### Many pods are stuck in Pending status. 
+### Many pods are stuck in Pending status.
 
 One thing to check for is insufficient resources. To obtain a dump of the logs: `kubectl cluster-info dump > dump.txt`
 
@@ -124,7 +124,7 @@ This indicates the instance is getting rate-limited by Docker Hub([link](https:/
 
 ### Prometheus Pod is constantly down when using the namespace overlays.
 
-This is most likely due to cadvisor picking up other metrics from the cluster. 
+This is most likely due to cadvisor picking up other metrics from the cluster.
 You can confirm this theory by checking your [prometheus.ConfigMap.yaml](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph@3.27/-/blob/base/prometheus/prometheus.ConfigMap.yaml#L248-250) file, where the `source_labels: [container_label_io_kubernetes_pod_namespace]` fields under `metric_relabel_configs` should be commented out and the `regex` field must be updated with your namespace.
 
 
@@ -140,11 +140,25 @@ You can port-forward the instance with `kubectl port-forward pod prometheus-$$ 9
 
 ### You can't access Sourcegraph.
 
-See the [Troubleshooting ingress-nginx docs](https://kubernetes.github.io/ingress-nginx/troubleshooting/). 
+See the [Troubleshooting ingress-nginx docs](https://kubernetes.github.io/ingress-nginx/troubleshooting/).
 
 If you followed our instructions, the namespace of the ingress-controller is `ingress-nginx`.
 
+### Healthcheck failing with Strconv.Atoi: parsing "{$portName}": invalid syntax error
 
+This can occur when a port does not have a name but the that name is used within the Readiness or Liveness probe.
+Ensure that the port name is consistent with upstream.
+
+```
+ports:
+  - containerPort: 3188
+    name: minio
+...
+livenessProbe:
+  httpGet:
+    path: /minio/health/live
+    port: minio   #this port name MUST exist in the same spec
+```
 
 Any other issues? Contact us at [@sourcegraph](https://twitter.com/sourcegraph)
 or <mailto:support@sourcegraph.com>, or file issues on

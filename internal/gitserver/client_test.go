@@ -7,7 +7,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -35,11 +34,11 @@ func TestClient_ListCloned(t *testing.T) {
 			switch r.URL.String() {
 			case "http://gitserver-0/list?cloned":
 				return &http.Response{
-					Body: ioutil.NopCloser(bytes.NewBufferString(`["repo0-a", "repo0-b"]`)),
+					Body: io.NopCloser(bytes.NewBufferString(`["repo0-a", "repo0-b"]`)),
 				}, nil
 			case "http://gitserver-1/list?cloned":
 				return &http.Response{
-					Body: ioutil.NopCloser(bytes.NewBufferString(`["repo1-a", "repo1-b"]`)),
+					Body: io.NopCloser(bytes.NewBufferString(`["repo1-a", "repo1-b"]`)),
 				}, nil
 			default:
 				return nil, fmt.Errorf("unexpected url: %s", r.URL.String())
@@ -60,7 +59,7 @@ func TestClient_ListCloned(t *testing.T) {
 }
 
 func TestClient_Archive(t *testing.T) {
-	root, err := ioutil.TempDir("", t.Name())
+	root, err := os.MkdirTemp("", t.Name())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -128,7 +127,7 @@ func TestClient_Archive(t *testing.T) {
 			}
 
 			defer rc.Close()
-			data, err := ioutil.ReadAll(rc)
+			data, err := io.ReadAll(rc)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -144,7 +143,7 @@ func TestClient_Archive(t *testing.T) {
 					t.Errorf("failed to open %q because %s", f.Name, err)
 					continue
 				}
-				contents, err := ioutil.ReadAll(r)
+				contents, err := io.ReadAll(r)
 				_ = r.Close()
 				if err != nil {
 					t.Errorf("Read(%q): %s", f.Name, err)
@@ -215,7 +214,7 @@ filemode=true
 		if err := os.MkdirAll(filepath.Dir(name), 0700); err != nil {
 			t.Fatal(err)
 		}
-		if err := ioutil.WriteFile(name, []byte(data), 0600); err != nil {
+		if err := os.WriteFile(name, []byte(data), 0600); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -289,7 +288,7 @@ func TestAddrForRepo(t *testing.T) {
 }
 
 func TestClient_P4Exec(t *testing.T) {
-	root, err := ioutil.TempDir("", t.Name())
+	root, err := os.MkdirTemp("", t.Name())
 	if err != nil {
 		t.Fatal(err)
 	}

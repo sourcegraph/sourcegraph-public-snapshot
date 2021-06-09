@@ -3,13 +3,13 @@ package bloomfilter
 import (
 	"encoding/hex"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strings"
 	"testing"
 )
 
 func readTestFilter(t testing.TB, dirname, filename string) []byte {
-	content, err := ioutil.ReadFile(fmt.Sprintf("./testdata/filters/%s/%s", dirname, filename))
+	content, err := os.ReadFile(fmt.Sprintf("./testdata/filters/%s/%s", dirname, filename))
 	if err != nil {
 		t.Fatalf("unexpected error reading: %s", err)
 	}
@@ -23,7 +23,7 @@ func readTestFilter(t testing.TB, dirname, filename string) []byte {
 }
 
 func readTestWords(t testing.TB, filename string) []string {
-	content, err := ioutil.ReadFile(fmt.Sprintf("./testdata/words/%s", filename))
+	content, err := os.ReadFile(fmt.Sprintf("./testdata/words/%s", filename))
 	if err != nil {
 		t.Fatalf("unexpected error reading %s: %s", filename, err)
 	}

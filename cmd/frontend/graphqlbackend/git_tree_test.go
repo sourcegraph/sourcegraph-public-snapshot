@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"io/fs"
 	"os"
 	"testing"
 
@@ -29,7 +30,7 @@ func TestGitTree(t *testing.T) {
 	}
 	backend.Mocks.Repos.MockGetCommit_Return_NoCheck(t, &git.Commit{ID: exampleCommitSHA1})
 
-	git.Mocks.Stat = func(commit api.CommitID, path string) (os.FileInfo, error) {
+	git.Mocks.Stat = func(commit api.CommitID, path string) (fs.FileInfo, error) {
 		if string(commit) != exampleCommitSHA1 {
 			t.Errorf("got commit %q, want %q", commit, exampleCommitSHA1)
 		}
@@ -38,7 +39,7 @@ func TestGitTree(t *testing.T) {
 		}
 		return &util.FileInfo{Name_: path, Mode_: os.ModeDir}, nil
 	}
-	git.Mocks.ReadDir = func(commit api.CommitID, name string, recurse bool) ([]os.FileInfo, error) {
+	git.Mocks.ReadDir = func(commit api.CommitID, name string, recurse bool) ([]fs.FileInfo, error) {
 		if string(commit) != exampleCommitSHA1 {
 			t.Errorf("got commit %q, want %q", commit, exampleCommitSHA1)
 		}
@@ -48,7 +49,7 @@ func TestGitTree(t *testing.T) {
 		if recurse {
 			t.Error("got recurse == false, want true")
 		}
-		return []os.FileInfo{
+		return []fs.FileInfo{
 			&util.FileInfo{Name_: name + "/testDirectory", Mode_: os.ModeDir},
 			&util.FileInfo{Name_: name + "/Geoffrey's random queries.32r242442bf", Mode_: os.ModeDir},
 			&util.FileInfo{Name_: name + "/testFile", Mode_: 0},

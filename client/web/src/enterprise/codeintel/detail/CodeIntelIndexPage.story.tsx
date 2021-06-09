@@ -2,6 +2,8 @@ import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { Observable, of } from 'rxjs'
 
+import { LSIFUploadState } from '@sourcegraph/shared/src/graphql/schema'
+
 import {
     ExecutionLogEntryFields,
     LsifIndexFields,
@@ -32,6 +34,7 @@ add('Queued', () => (
                     finishedAt: null,
                     placeInQueue: 3,
                     failure: null,
+                    associatedUpload: null,
                     steps,
                 })}
                 now={now}
@@ -52,6 +55,7 @@ add('Processing', () => (
                     finishedAt: null,
                     failure: null,
                     placeInQueue: null,
+                    associatedUpload: null,
                     steps,
                 })}
                 now={now}
@@ -72,6 +76,7 @@ add('Completed', () => (
                     finishedAt: '2020-06-15T12:30:30+00:00',
                     failure: null,
                     placeInQueue: null,
+                    associatedUpload: null,
                     steps,
                 })}
                 now={now}
@@ -96,6 +101,7 @@ add('Errored', () => {
                         finishedAt: '2020-06-15T12:30:30+00:00',
                         failure: 'Whoops! The server encountered a boo-boo handling this input.',
                         placeInQueue: null,
+                        associatedUpload: null,
                         steps: { ...steps, index: { ...steps.index, logEntry } },
                     })}
                     now={now}
@@ -105,10 +111,38 @@ add('Errored', () => {
     )
 })
 
+add('Associated upload', () => (
+    <EnterpriseWebStory>
+        {props => (
+            <CodeIntelIndexPage
+                {...props}
+                fetchLsifIndex={fetch({
+                    state: LSIFIndexState.COMPLETED,
+                    queuedAt: '2020-06-15T12:20:30+00:00',
+                    startedAt: '2020-06-15T12:25:30+00:00',
+                    finishedAt: '2020-06-15T12:30:30+00:00',
+                    failure: null,
+                    placeInQueue: null,
+                    associatedUpload: {
+                        id: '6789',
+                        state: LSIFUploadState.QUEUED,
+                        uploadedAt: '2020-06-15T12:28:30+00:00',
+                        startedAt: null,
+                        finishedAt: null,
+                        placeInQueue: 5,
+                    },
+                    steps,
+                })}
+                now={now}
+            />
+        )}
+    </EnterpriseWebStory>
+))
+
 const fetch = (
     index: Pick<
         LsifIndexFields,
-        'state' | 'queuedAt' | 'startedAt' | 'finishedAt' | 'failure' | 'placeInQueue' | 'steps'
+        'state' | 'queuedAt' | 'startedAt' | 'finishedAt' | 'failure' | 'placeInQueue' | 'associatedUpload' | 'steps'
     >
 ): (() => Observable<LsifIndexFields>) => () =>
     of({

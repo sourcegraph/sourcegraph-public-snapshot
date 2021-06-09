@@ -137,7 +137,7 @@ const RepoRevisionContainerBreadcrumb: React.FunctionComponent<RepoRevisionBread
                     : revision) ||
                     resolvedRevisionOrError.defaultBranch ||
                     'HEAD'}
-                <ChevronDownIcon className="icon-inline" />
+                <ChevronDownIcon className="icon-inline repo-revision-container__breadcrumb-icon" />
                 <RepoRevisionContainerPopover
                     repo={repo}
                     resolvedRevisionOrError={resolvedRevisionOrError}

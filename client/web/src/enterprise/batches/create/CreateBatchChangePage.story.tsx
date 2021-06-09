@@ -9,4 +9,6 @@ const { add } = storiesOf('web/batches/CreateBatchChangePage', module).addDecora
     <div className="p-3 container web-content">{story()}</div>
 ))
 
-add('Page', () => <EnterpriseWebStory>{props => <CreateBatchChangePage {...props} />}</EnterpriseWebStory>)
+add('Page', () => (
+    <EnterpriseWebStory>{props => <CreateBatchChangePage headingElement="h1" {...props} />}</EnterpriseWebStory>
+))

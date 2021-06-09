@@ -40,7 +40,7 @@ export const BulkOperationsAlerts: React.FunctionComponent<BulkOperationsAlertsP
         const processingCount = bulkOperations.nodes.filter(node => node.state === BulkOperationState.PROCESSING).length
         return (
             <DismissibleAlert
-                className="alert alert-info"
+                className="alert-info"
                 partialStorageKey={`bulkOperation-processing-${latestProcessingNode.id}`}
             >
                 <span>
@@ -56,10 +56,7 @@ export const BulkOperationsAlerts: React.FunctionComponent<BulkOperationsAlertsP
     if (latestFailedNode && !isAlertDismissed(`bulkOperation-failed-${latestFailedNode.id}`)) {
         const failedCount = bulkOperations.nodes.filter(node => node.state === BulkOperationState.FAILED).length
         return (
-            <DismissibleAlert
-                className="alert alert-info"
-                partialStorageKey={`bulkOperation-failed-${latestFailedNode.id}`}
-            >
+            <DismissibleAlert className="alert-info" partialStorageKey={`bulkOperation-failed-${latestFailedNode.id}`}>
                 <span>
                     {failedCount} bulk {pluralize('operation', failedCount)} {pluralize('has', failedCount, 'have')}{' '}
                     recently failed running. Click the <Link to="?tab=bulkoperations">bulk operations tab</Link> to
@@ -73,7 +70,7 @@ export const BulkOperationsAlerts: React.FunctionComponent<BulkOperationsAlertsP
         const completeCount = bulkOperations.nodes.filter(node => node.state === BulkOperationState.COMPLETED).length
         return (
             <DismissibleAlert
-                className="alert alert-info"
+                className="alert-info"
                 partialStorageKey={`bulkOperation-completed-${latestCompleteNode.id}`}
             >
                 <span>

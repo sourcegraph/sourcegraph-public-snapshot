@@ -5,7 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
+	"io/fs"
 	"os"
 	"reflect"
 	"testing"
@@ -124,24 +124,24 @@ func TestReposGetInventory(t *testing.T) {
 		return &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{Name: wantRepo}}, nil
 	}
 	defer func() { repoupdater.MockRepoLookup = nil }()
-	git.Mocks.Stat = func(commit api.CommitID, path string) (os.FileInfo, error) {
+	git.Mocks.Stat = func(commit api.CommitID, path string) (fs.FileInfo, error) {
 		if commit != wantCommitID {
 			t.Errorf("got commit %q, want %q", commit, wantCommitID)
 		}
 		return &util.FileInfo{Name_: path, Mode_: os.ModeDir, Sys_: gitObjectInfo(wantRootOID)}, nil
 	}
-	git.Mocks.ReadDir = func(commit api.CommitID, name string, recurse bool) ([]os.FileInfo, error) {
+	git.Mocks.ReadDir = func(commit api.CommitID, name string, recurse bool) ([]fs.FileInfo, error) {
 		if commit != wantCommitID {
 			t.Errorf("got commit %q, want %q", commit, wantCommitID)
 		}
 		switch name {
 		case "":
-			return []os.FileInfo{
+			return []fs.FileInfo{
 				&util.FileInfo{Name_: "a", Mode_: os.ModeDir, Sys_: gitObjectInfo("oid-a")},
 				&util.FileInfo{Name_: "b.go", Size_: 12},
 			}, nil
 		case "a":
-			return []os.FileInfo{&util.FileInfo{Name_: "a/c.m", Size_: 24}}, nil
+			return []fs.FileInfo{&util.FileInfo{Name_: "a/c.m", Size_: 24}}, nil
 		default:
 			panic("unhandled mock ReadDir " + name)
 		}
@@ -159,7 +159,7 @@ func TestReposGetInventory(t *testing.T) {
 		default:
 			panic("unhandled mock ReadFile " + name)
 		}
-		return ioutil.NopCloser(bytes.NewReader(data)), nil
+		return io.NopCloser(bytes.NewReader(data)), nil
 	}
 	defer git.ResetMocks()
 

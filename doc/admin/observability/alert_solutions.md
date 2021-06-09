@@ -3128,6 +3128,247 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 <br />
 
+## worker: frontend_internal_api_error_responses
+
+<p class="subtitle">frontend-internal API error responses every 5m by route</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: 2%+ frontend-internal API error responses every 5m by route for 5m0s
+
+**Possible solutions**
+
+- **Single-container deployments:** Check `docker logs $CONTAINER_ID` for logs starting with `repo-updater` that indicate requests to the frontend service are failing.
+- **Kubernetes:**
+	- Confirm that `kubectl get pods` shows the `frontend` pods are healthy.
+	- Check `kubectl logs worker` for logs indicate request failures to `frontend` or `frontend-internal`.
+- **Docker Compose:**
+	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
+	- Check `docker logs worker` for logs indicating request failures to `frontend` or `frontend-internal`.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_frontend_internal_api_error_responses"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+## worker: container_cpu_usage
+
+<p class="subtitle">container cpu usage total (1m average) across all cores by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: 99%+ container cpu usage total (1m average) across all cores by instance
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `cpus:` of the worker container in `docker-compose.yml`.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_container_cpu_usage"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+## worker: container_memory_usage
+
+<p class="subtitle">container memory usage by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: 99%+ container memory usage by instance
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of worker container in `docker-compose.yml`.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_container_memory_usage"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+## worker: provisioning_container_cpu_usage_long_term
+
+<p class="subtitle">container cpu usage total (90th percentile over 1d) across all cores by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the worker service.
+- **Docker Compose:** Consider increasing `cpus:` of the worker container in `docker-compose.yml`.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_provisioning_container_cpu_usage_long_term"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+## worker: provisioning_container_memory_usage_long_term
+
+<p class="subtitle">container memory usage (1d maximum) by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: 80%+ container memory usage (1d maximum) by instance for 336h0m0s
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the worker service.
+- **Docker Compose:** Consider increasing `memory:` of the worker container in `docker-compose.yml`.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_provisioning_container_memory_usage_long_term"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+## worker: provisioning_container_cpu_usage_short_term
+
+<p class="subtitle">container cpu usage total (5m maximum) across all cores by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `cpus:` of the worker container in `docker-compose.yml`.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_provisioning_container_cpu_usage_short_term"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+## worker: provisioning_container_memory_usage_short_term
+
+<p class="subtitle">container memory usage (5m maximum) by instance</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: 90%+ container memory usage (5m maximum) by instance
+
+**Possible solutions**
+
+- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
+- **Docker Compose:** Consider increasing `memory:` of worker container in `docker-compose.yml`.
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_provisioning_container_memory_usage_short_term"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+## worker: go_goroutines
+
+<p class="subtitle">maximum active goroutines</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: 10000+ maximum active goroutines for 10m0s
+
+**Possible solutions**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_go_goroutines"
+]
+```
+
+> NOTE: More help interpreting this metric is available in the [dashboards reference](./dashboards.md#worker-go-goroutines).
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+## worker: go_gc_duration_seconds
+
+<p class="subtitle">maximum go garbage collection duration</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: 2s+ maximum go garbage collection duration
+
+**Possible solutions**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_go_gc_duration_seconds"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+## worker: pods_available_percentage
+
+<p class="subtitle">percentage pods available</p>
+
+**Descriptions**
+
+- <span class="badge badge-critical">critical</span> worker: less than 90% percentage pods available for 10m0s
+
+**Possible solutions**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_worker_pods_available_percentage"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
 ## repo-updater: frontend_internal_api_error_responses
 
 <p class="subtitle">frontend-internal API error responses every 5m by route</p>

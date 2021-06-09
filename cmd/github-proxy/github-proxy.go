@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -121,7 +120,7 @@ func main() {
 			_, _ = io.Copy(w, resp.Body)
 			return
 		}
-		b, err := ioutil.ReadAll(resp.Body)
+		b, err := io.ReadAll(resp.Body)
 		log15.Warn("proxy error", "status", resp.StatusCode, "body", string(b), "bodyErr", err)
 		_, _ = io.Copy(w, bytes.NewReader(b))
 	})

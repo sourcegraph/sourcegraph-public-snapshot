@@ -5,6 +5,8 @@
     flex-wrap: wrap;
 
     &__person {
+        display: flex;
+        align-items: center;
         min-width: 25%;
         flex: none;
         margin-right: 2rem;

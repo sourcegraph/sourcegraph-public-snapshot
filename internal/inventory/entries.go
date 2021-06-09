@@ -2,7 +2,7 @@ package inventory
 
 import (
 	"context"
-	"os"
+	"io/fs"
 	"sort"
 
 	"github.com/pkg/errors"
@@ -16,15 +16,15 @@ const fileReadBufferSize = 16 * 1024
 //
 // If a file is referenced more than once (e.g., because it is a descendent of a subtree and it is
 // passed directly), it will be double-counted in the result.
-func (c *Context) Entries(ctx context.Context, entries ...os.FileInfo) (inv Inventory, err error) {
+func (c *Context) Entries(ctx context.Context, entries ...fs.FileInfo) (inv Inventory, err error) {
 	buf := make([]byte, fileReadBufferSize)
 	return c.entries(ctx, entries, buf)
 }
 
-func (c *Context) entries(ctx context.Context, entries []os.FileInfo, buf []byte) (Inventory, error) {
+func (c *Context) entries(ctx context.Context, entries []fs.FileInfo, buf []byte) (Inventory, error) {
 	invs := make([]Inventory, len(entries))
 	for i, entry := range entries {
-		var f func(context.Context, os.FileInfo, []byte) (Inventory, error)
+		var f func(context.Context, fs.FileInfo, []byte) (Inventory, error)
 		switch {
 		case entry.Mode().IsRegular():
 			f = c.file
@@ -45,7 +45,7 @@ func (c *Context) entries(ctx context.Context, entries []os.FileInfo, buf []byte
 	return Sum(invs), nil
 }
 
-func (c *Context) tree(ctx context.Context, tree os.FileInfo, buf []byte) (inv Inventory, err error) {
+func (c *Context) tree(ctx context.Context, tree fs.FileInfo, buf []byte) (inv Inventory, err error) {
 	// Get and set from the cache.
 	if c.CacheGet != nil {
 		if inv, ok := c.CacheGet(tree); ok {
@@ -92,7 +92,7 @@ func (c *Context) tree(ctx context.Context, tree os.FileInfo, buf []byte) (inv I
 }
 
 // file computes the inventory of a single file. It caches the result.
-func (c *Context) file(ctx context.Context, file os.FileInfo, buf []byte) (inv Inventory, err error) {
+func (c *Context) file(ctx context.Context, file fs.FileInfo, buf []byte) (inv Inventory, err error) {
 	// Get and set from the cache.
 	if c.CacheGet != nil {
 		if inv, ok := c.CacheGet(file); ok {

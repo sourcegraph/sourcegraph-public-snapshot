@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"time"
@@ -49,7 +49,7 @@ func (s *client) search(ctx context.Context, query, queryName string) (*metrics,
 		return nil, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", s.url(), ioutil.NopCloser(&body))
+	req, err := http.NewRequestWithContext(ctx, "POST", s.url(), io.NopCloser(&body))
 	if err != nil {
 		return nil, err
 	}

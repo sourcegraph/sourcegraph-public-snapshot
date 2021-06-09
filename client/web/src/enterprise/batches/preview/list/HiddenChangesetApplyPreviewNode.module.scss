@@ -22,6 +22,9 @@
         color: var(--icon-color);
         @media (--sm-breakpoint-up) {
             background-color: var(--oc-blue-0);
+            :global(.theme-redesign) & {
+                background-color: var(--body-bg);
+            }
         }
     }
 }
@@ -32,6 +35,9 @@
             color: var(--body-color);
             @media (--sm-breakpoint-up) {
                 background-color: var(--oc-gray-7);
+                :global(.theme-redesign) & {
+                    background-color: var(--body-bg);
+                }
             }
         }
     }

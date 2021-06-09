@@ -295,6 +295,10 @@
             padding-bottom: 0.75rem;
         }
 
+        &__alert-dismiss {
+            line-height: 1;
+        }
+
         &__alert-redesign {
             // Use flex container to move dismiss button to the right and center it vertically.
             display: flex;

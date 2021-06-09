@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"strconv"
@@ -532,7 +531,7 @@ func check(db dbutil.DB) {
 		defer resp.Body.Close()
 		if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
 			var description string
-			if body, err := ioutil.ReadAll(io.LimitReader(resp.Body, 30)); err != nil {
+			if body, err := io.ReadAll(io.LimitReader(resp.Body, 30)); err != nil {
 				description = err.Error()
 			} else if len(body) == 0 {
 				description = "(no response body)"

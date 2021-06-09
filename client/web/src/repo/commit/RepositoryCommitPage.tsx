@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import { isEqual } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -28,6 +29,7 @@ import {
     RevisionSpec,
     UIPositionSpec,
 } from '@sourcegraph/shared/src/util/url'
+import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { getHover, getDocumentHighlights } from '../../backend/features'
 import { requestGraphQL } from '../../backend/graphql'
@@ -93,7 +95,6 @@ interface Props
         ExtensionsControllerProps,
         ThemeProps {
     repo: RepositoryFields
-
     onDidUpdateExternalLinks: (externalLinks: ExternalLinkFields[] | undefined) => void
 }
 
@@ -108,9 +109,15 @@ interface State extends HoverState<HoverContext, HoverMerged, ActionItemAction> 
 
 const DIFF_MODE_VISUALIZER = 'diff-mode-visualizer'
 
+export const RepositoryCommitPage: React.FC<Props> = ({ ...props }) => {
+    const [isRedesignEnabled] = useRedesignToggle()
+
+    return <RepositoryCommitPageDetails {...props} isRedesignEnabled={isRedesignEnabled} />
+}
+
 /** Displays a commit. */
-export class RepositoryCommitPage extends React.Component<Props, State> {
-    private componentUpdates = new Subject<Props>()
+class RepositoryCommitPageDetails extends React.Component<Props & { isRedesignEnabled: boolean }, State> {
+    private componentUpdates = new Subject<Props & { isRedesignEnabled: boolean }>()
 
     /** Emits whenever the ref callback for the hover element is called */
     private hoverOverlayElements = new Subject<HTMLElement | null>()
@@ -131,7 +138,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
         ActionItemAction
     >
 
-    constructor(props: Props) {
+    constructor(props: Props & { isRedesignEnabled: boolean }) {
         super(props)
         this.hoverifier = createHoverifier<
             RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec,
@@ -157,7 +164,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
             pinningEnabled: true,
         })
         this.subscriptions.add(this.hoverifier)
-        this.handleDiffMode = this.handleDiffMode.bind(this)
+        this.onHandleDiffMode = this.onHandleDiffMode.bind(this)
         this.state = {
             ...this.hoverifier.hoverState,
             diffMode: (localStorage.getItem(DIFF_MODE_VISUALIZER) as DiffMode | null) || 'unified',
@@ -183,7 +190,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
         }
     }
 
-    private handleDiffMode(mode: DiffMode): void {
+    private onHandleDiffMode = (mode: DiffMode): void => {
         localStorage.setItem(DIFF_MODE_VISUALIZER, mode)
         this.setState({ diffMode: mode })
     }
@@ -250,21 +257,30 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                     <ErrorAlert className="mt-2" error={this.state.commitOrError} />
                 ) : (
                     <>
-                        <div className="card repository-commit-page__card">
-                            <div className="card-body">
+                        <div
+                            className={classNames(
+                                this.props.isRedesignEnabled
+                                    ? 'border-bottom pb-2'
+                                    : 'card repository-commit-page__card'
+                            )}
+                        >
+                            <div className={classNames(!this.props.isRedesignEnabled && 'card-body')}>
                                 <GitCommitNode
                                     node={this.state.commitOrError}
                                     expandCommitMessageBody={true}
                                     showSHAAndParentsRow={true}
+                                    diffMode={this.state.diffMode}
+                                    onHandleDiffMode={this.onHandleDiffMode}
                                 />
                             </div>
                         </div>
-                        <DiffModeSelector
-                            className="py-2 text-right"
-                            // eslint-disable-next-line @typescript-eslint/unbound-method
-                            handleDiffMode={this.handleDiffMode}
-                            diffMode={this.state.diffMode}
-                        />
+                        {!this.props.isRedesignEnabled && (
+                            <DiffModeSelector
+                                className="py-2 text-right"
+                                onHandleDiffMode={this.onHandleDiffMode}
+                                diffMode={this.state.diffMode}
+                            />
+                        )}
                         <FileDiffConnection
                             listClassName="list-group list-group-flush"
                             noun="changed file"
