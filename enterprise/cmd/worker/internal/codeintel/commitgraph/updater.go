@@ -47,8 +47,6 @@ func NewUpdater(
 
 // Handle checks for dirty repositories and invokes the underlying updater on each one.
 func (u *Updater) Handle(ctx context.Context) error {
-	log15.Info("RUNNING COMMIT GRAPH UPDATER\n")
-
 	repositoryIDs, err := u.dbStore.DirtyRepositories(ctx)
 	if err != nil {
 		return errors.Wrap(err, "dbstore.DirtyRepositories")
