@@ -20,7 +20,7 @@ func main() {
 		log.Println("enterprise edition")
 	}
 
-	go setAuthProviders()
+	go setAuthzProviders()
 
 	shared.Start(map[string]shared.Job{
 		// Empty for now
@@ -32,7 +32,7 @@ func main() {
 // current actor stored in an operation's context, which is likely an internal actor for many of
 // the jobs configured in this service. This also enables repository update operations to fetch
 // permissions from code hosts.
-func setAuthProviders() {
+func setAuthzProviders() {
 	_, err := shared.InitDatabase()
 	if err != nil {
 		return
