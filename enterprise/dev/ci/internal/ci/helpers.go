@@ -31,16 +31,17 @@ type Config struct {
 	// merge-base with origin/master.
 	changedFiles []string
 
-	taggedRelease       bool
-	releaseBranch       bool
-	isBextReleaseBranch bool
-	isBextNightly       bool
-	isRenovateBranch    bool
-	patch               bool
-	patchNoTest         bool
-	isQuick             bool
-	isMainDryRun        bool
-	isBackendDryRun     bool
+	taggedRelease         bool
+	releaseBranch         bool
+	isBextReleaseBranch   bool
+	isBextNightly         bool
+	isRenovateBranch      bool
+	patch                 bool
+	patchNoTest           bool
+	buildCandidatesNoTest bool
+	isQuick               bool
+	isMainDryRun          bool
+	isBackendDryRun       bool
 
 	// profilingEnabled, if true, tells buildkite to print timing and resource utilization information
 	// for each command
@@ -72,6 +73,7 @@ func ComputeConfig() Config {
 	if patchNoTest || patch {
 		version = version + "_patch"
 	}
+	buildCandidatesNoTest := strings.HasPrefix(branch, "docker-images-candidates-notest-all/")
 
 	isBackendDryRun := strings.HasPrefix(branch, "backend-dry-run/")
 
@@ -105,17 +107,18 @@ func ComputeConfig() Config {
 		changedFiles:      changedFiles,
 		buildNumber:       buildNumber,
 
-		taggedRelease:       taggedRelease,
-		releaseBranch:       lazyregexp.New(`^[0-9]+\.[0-9]+$`).MatchString(branch),
-		isBextReleaseBranch: branch == "bext/release",
-		isRenovateBranch:    strings.HasPrefix(branch, "renovate/"),
-		patch:               patch,
-		patchNoTest:         patchNoTest,
-		isQuick:             isQuick,
-		isMainDryRun:        isMainDryRun,
-		isBackendDryRun:     isBackendDryRun,
-		profilingEnabled:    profilingEnabled,
-		isBextNightly:       os.Getenv("BEXT_NIGHTLY") == "true",
+		taggedRelease:         taggedRelease,
+		releaseBranch:         lazyregexp.New(`^[0-9]+\.[0-9]+$`).MatchString(branch),
+		isBextReleaseBranch:   branch == "bext/release",
+		isRenovateBranch:      strings.HasPrefix(branch, "renovate/"),
+		patch:                 patch,
+		patchNoTest:           patchNoTest,
+		buildCandidatesNoTest: buildCandidatesNoTest,
+		isQuick:               isQuick,
+		isMainDryRun:          isMainDryRun,
+		isBackendDryRun:       isBackendDryRun,
+		profilingEnabled:      profilingEnabled,
+		isBextNightly:         os.Getenv("BEXT_NIGHTLY") == "true",
 	}
 }
 
