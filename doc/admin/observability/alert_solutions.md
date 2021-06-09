@@ -3128,6 +3128,62 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 <br />
 
+## worker: worker_job_codeintel-janitor_count
+
+<p class="subtitle">number of worker instances running the codeintel-janitor job</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: less than 1 number of worker instances running the codeintel-janitor job for 1m0s
+- <span class="badge badge-critical">critical</span> worker: less than 1 number of worker instances running the codeintel-janitor job for 5m0s
+
+**Possible solutions**
+
+- Ensure your instance defines a worker container such that:
+	- `WORKER_JOB_ALLOWLIST` contains "codeintel-janitor" (or "all"), and
+	- `WORKER_JOB_BLOCKLIST` does not contain "codeintel-janitor"
+- Ensure that such a container is not failing to start or stay active
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_worker_job_codeintel-janitor_count",
+  "critical_worker_worker_job_codeintel-janitor_count"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+## worker: worker_job_codeintel-commitgraph_count
+
+<p class="subtitle">number of worker instances running the codeintel-commitgraph job</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: less than 1 number of worker instances running the codeintel-commitgraph job for 1m0s
+- <span class="badge badge-critical">critical</span> worker: less than 1 number of worker instances running the codeintel-commitgraph job for 5m0s
+
+**Possible solutions**
+
+- Ensure your instance defines a worker container such that:
+	- `WORKER_JOB_ALLOWLIST` contains "codeintel-commitgraph" (or "all"), and
+	- `WORKER_JOB_BLOCKLIST` does not contain "codeintel-commitgraph"
+- Ensure that such a container is not failing to start or stay active
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_worker_job_codeintel-commitgraph_count",
+  "critical_worker_worker_job_codeintel-commitgraph_count"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
 ## worker: frontend_internal_api_error_responses
 
 <p class="subtitle">frontend-internal API error responses every 5m by route</p>

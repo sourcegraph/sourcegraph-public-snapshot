@@ -1851,6 +1851,37 @@ This panel indicates percentage pods available.
 
 <p class="subtitle">Manages background processes.</p>
 
+### Worker: Active jobs
+
+#### worker: worker_job_count
+
+This panel indicates number of worker instances running each job.
+
+Number of worker instances running each job type
+
+
+<br />
+
+#### worker: worker_job_codeintel-janitor_count
+
+This panel indicates number of worker instances running the codeintel-janitor job.
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#worker-worker-job-codeintel-janitor-count).
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### worker: worker_job_codeintel-commitgraph_count
+
+This panel indicates number of worker instances running the codeintel-commitgraph job.
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#worker-worker-job-codeintel-commitgraph-count).
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
 ### Worker: Internal service requests
 
 #### worker: frontend_internal_api_error_responses
