@@ -1,6 +1,5 @@
-import { storiesOf } from '@storybook/react'
+import { forceReRender, storiesOf } from '@storybook/react'
 import React from 'react'
-import { MemoryRouter } from 'react-router'
 
 import { CaseInsensitiveFuzzySearch } from '../../fuzzyFinder/CaseInsensitiveFuzzySearch'
 import { SearchValue } from '../../fuzzyFinder/FuzzySearch'
@@ -10,6 +9,9 @@ import { Ready } from './FuzzyFinder'
 import { FuzzyModal } from './FuzzyModal'
 
 let query = 'client'
+let focusIndex = 0
+const INITIAL_MAX_RESULTS = 10
+let maxResults = INITIAL_MAX_RESULTS
 const filenames = [
     'babel.config.js',
     'client/README.md',
@@ -35,22 +37,22 @@ const defaultProps = {
     downloadFilenames: () => Promise.resolve(filenames),
     fsm,
     setFsm: () => {},
-    focusIndex: 0,
-    setFocusIndex: () => {},
-    maxResults: 10,
-    increaseMaxResults: () => {},
+    setFocusIndex: (newFocusIndex: number): void => {
+        focusIndex = newFocusIndex
+        forceReRender()
+    },
+    increaseMaxResults: () => {
+        maxResults += INITIAL_MAX_RESULTS
+        forceReRender()
+    },
     isVisible: true,
     onClose: () => {},
-    query,
     setQuery: (newQuery: string): void => {
         query = newQuery
+        forceReRender()
     },
     caseInsensitiveFileCountThreshold: 100,
 }
-const { add } = storiesOf('web/FuzzyFinder', module).addDecorator(story => (
-    <MemoryRouter initialEntries={[{ pathname: '/' }]}>
-        <WebStory>{() => story()}</WebStory>
-    </MemoryRouter>
-))
+const { add } = storiesOf('web/FuzzyFinder', module).addDecorator(story => <WebStory>{() => story()}</WebStory>)
 
-add('Ready', () => <FuzzyModal {...defaultProps} />)
+add('Ready', () => <FuzzyModal {...defaultProps} query={query} focusIndex={focusIndex} maxResults={maxResults} />)
