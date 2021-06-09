@@ -58,18 +58,9 @@ const BaseBatchChangesIcon: BaseIcon = React.memo(function BaseBatchChangesIcon(
 
 /**
  * The icon to use everywhere to represent a batch change. Square, and by default
- * 20x20. If the icon's left side needs to be flush with the left edge, use
- * {@link BatchChangesIconFlushLeft} instead.
+ * 20x20.
  */
 export const BatchChangesIcon: Icon = props => <BaseBatchChangesIcon {...props} />
-
-/**
- * The same icon as {@link BatchChangesIcon}, except the icon has no internal
- * padding on the left hand side. This is useful when the icon's left edge
- * should be flush with the left edges of other content displayed above and/or
- * below it.
- */
-export const BatchChangesIconFlushLeft: Icon = props => <BaseBatchChangesIcon {...props} viewBox="2 0 20 20" />
 
 /**
  * The base component for the navbar version of the batch changes

@@ -7,15 +7,14 @@ import { ReactElement } from 'react'
 import { withDesign } from 'storybook-addon-designs'
 
 import { setLinkComponent, AnchorLink } from '@sourcegraph/shared/src/components/Link'
-import { getIsRedesignEnabled, REDESIGN_CLASS_NAME } from '@sourcegraph/shared/src/util/useRedesignToggle'
+import { REDESIGN_CLASS_NAME } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
-import { RedesignToggleDecorator } from './RedesignToggleDecorator'
 import { themeDark, themeLight, THEME_DARK_CLASS, THEME_LIGHT_CLASS } from './themes'
 
 const withConsoleDecorator: DecoratorFunction<ReactElement> = (storyFn, context): ReactElement =>
     withConsole()(storyFn)(context)
 
-export const decorators = [withDesign, withConsoleDecorator, RedesignToggleDecorator]
+export const decorators = [withDesign, withConsoleDecorator]
 
 export const parameters = {
     darkMode: {
@@ -37,9 +36,7 @@ if (!document.body.classList.contains('theme-dark')) {
     document.body.classList.add('theme-light')
 }
 
-if (getIsRedesignEnabled()) {
-    document.body.classList.add(REDESIGN_CLASS_NAME)
-}
+document.body.classList.add(REDESIGN_CLASS_NAME)
 
 if (isChromatic()) {
     const style = document.createElement('style')

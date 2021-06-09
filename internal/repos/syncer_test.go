@@ -587,6 +587,7 @@ func testSyncRepo(t *testing.T, s *repos.Store) func(*testing.T) {
 		Description: "The description",
 		Archived:    false,
 		Fork:        false,
+		Stars:       100,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
 			ServiceType: extsvc.TypeGitHub,
@@ -599,11 +600,12 @@ func testSyncRepo(t *testing.T, s *repos.Store) func(*testing.T) {
 			},
 		},
 		Metadata: &github.Repository{
-			ID:            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-			URL:           "github.com/foo/bar",
-			DatabaseID:    1234,
-			Description:   "The description",
-			NameWithOwner: "foo/bar",
+			ID:             "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+			URL:            "github.com/foo/bar",
+			DatabaseID:     1234,
+			Description:    "The description",
+			NameWithOwner:  "foo/bar",
+			StargazerCount: 100,
 		},
 	}
 
@@ -619,7 +621,12 @@ func testSyncRepo(t *testing.T, s *repos.Store) func(*testing.T) {
 	}, {
 		name:    "update",
 		sourced: repo,
-		stored:  types.Repos{repo.With(types.Opt.RepoCreatedAt(clock.Time(2)))},
+		stored: types.Repos{
+			repo.With(
+				types.Opt.RepoCreatedAt(clock.Time(2)),
+				func(r *types.Repo) { r.Stars = 0 },
+			),
+		},
 		assert: types.Assert.ReposEqual(repo.With(
 			types.Opt.RepoModifiedAt(clock.Time(2)),
 			types.Opt.RepoCreatedAt(clock.Time(2)))),

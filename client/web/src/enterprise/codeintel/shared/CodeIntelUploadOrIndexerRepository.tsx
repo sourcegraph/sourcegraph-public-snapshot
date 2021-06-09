@@ -5,7 +5,7 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { LsifIndexFields, LsifUploadFields } from '../../../graphql-operations'
 
 export interface CodeIntelUploadOrIndexRepositoryProps {
-    node: LsifUploadFields | LsifIndexFields
+    node: Pick<LsifUploadFields | LsifIndexFields, 'projectRoot'>
 }
 
 export const CodeIntelUploadOrIndexRepository: FunctionComponent<CodeIntelUploadOrIndexRepositoryProps> = ({ node }) =>

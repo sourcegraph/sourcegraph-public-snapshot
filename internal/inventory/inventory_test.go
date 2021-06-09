@@ -6,7 +6,7 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -78,7 +78,7 @@ func TestGetLang_language(t *testing.T) {
 
 func makeFileReader(ctx context.Context, path, contents string) func(context.Context, string) (io.ReadCloser, error) {
 	return func(ctx context.Context, path string) (io.ReadCloser, error) {
-		return ioutil.NopCloser(strings.NewReader(contents)), nil
+		return io.NopCloser(strings.NewReader(contents)), nil
 	}
 }
 
@@ -113,7 +113,7 @@ func (f fi) Sys() interface{} {
 
 func TestGet_readFile(t *testing.T) {
 	tests := []struct {
-		file os.FileInfo
+		file fs.FileInfo
 		want string
 	}{
 		{file: fi{"a.java", "aaaaaaaaa"}, want: "Java"},
@@ -187,7 +187,7 @@ func BenchmarkIsVendor(b *testing.B) {
 	}
 }
 
-func newFileReader(files []os.FileInfo) func(_ context.Context, path string) (io.ReadCloser, error) {
+func newFileReader(files []fs.FileInfo) func(_ context.Context, path string) (io.ReadCloser, error) {
 	m := make(map[string]*nopReadCloser, len(files))
 	for _, f := range files {
 		data := []byte(f.(fi).Contents)
@@ -206,13 +206,13 @@ func newFileReader(files []os.FileInfo) func(_ context.Context, path string) (io
 	}
 }
 
-func readFileTree(name string) ([]os.FileInfo, error) {
+func readFileTree(name string) ([]fs.FileInfo, error) {
 	file, err := os.Open(name)
 	if err != nil {
 		return nil, err
 	}
 	defer file.Close()
-	var files []os.FileInfo
+	var files []fs.FileInfo
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		path := scanner.Text()

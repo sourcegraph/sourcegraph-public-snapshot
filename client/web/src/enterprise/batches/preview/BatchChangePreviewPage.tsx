@@ -76,6 +76,7 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
                     { text: spec.description.name },
                 ]}
                 byline={<BatchSpecInfoByline createdAt={spec.createdAt} creator={spec.creator} />}
+                headingElement="h2"
                 className="test-batch-change-apply-page mb-3"
             />
             <MissingCredentialsAlert

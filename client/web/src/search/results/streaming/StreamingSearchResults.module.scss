@@ -1,65 +1,56 @@
 @import 'wildcard/src/global-styles/breakpoints';
 
 .streaming-search-results {
-    display: flex;
-    flex-direction: column;
     width: 100%;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto 1fr;
+    height: min-content;
+    padding-top: 0.5rem;
 
-    :global(.theme-redesign) & {
-        display: grid;
-        grid-template-columns: auto 1fr;
-        grid-template-rows: auto 1fr;
-        height: min-content;
-        padding-top: 0.5rem;
-
-        @media (--md-breakpoint-down) {
-            grid-template-columns: auto;
-            grid-template-rows: auto auto 1fr;
-        }
+    @media (--md-breakpoint-down) {
+        grid-template-columns: auto;
+        grid-template-rows: auto auto 1fr;
     }
 
     &__sidebar {
-        :global(.theme-redesign) & {
+        grid-column: 1;
+        grid-row: 1 / span 2;
+
+        @media (--md-breakpoint-down) {
             grid-column: 1;
-            grid-row: 1 / span 2;
+            grid-row: 2;
+            display: none;
 
-            @media (--md-breakpoint-down) {
-                grid-column: 1;
-                grid-row: 2;
-                display: none;
-
-                &--show {
-                    display: block;
-                }
+            &--show {
+                display: block;
             }
         }
     }
 
     &__infobar {
-        :global(.theme-redesign) & {
-            grid-column: 2;
-            grid-row: 1;
+        grid-column: 2;
+        grid-row: 1;
+        padding-right: 1rem;
+        padding-bottom: 0.25rem;
 
-            @media (--md-breakpoint-down) {
-                grid-column: 1;
-                grid-row: 1;
-                padding-left: 1rem;
-            }
+        @media (--md-breakpoint-down) {
+            grid-column: 1;
+            grid-row: 1;
+            padding-left: 1rem;
         }
     }
 
     &__container {
-        :global(.theme-redesign) & {
-            overflow-y: visible;
-            overflow-x: hidden;
-            grid-column: 2;
-            grid-row: 2;
+        overflow-y: visible;
+        overflow-x: hidden;
+        grid-column: 2;
+        grid-row: 2;
 
-            @media (--md-breakpoint-down) {
-                grid-column: 1;
-                grid-row: 3;
-                padding-left: 1rem;
-            }
+        @media (--md-breakpoint-down) {
+            grid-column: 1;
+            grid-row: 3;
+            padding-left: 1rem;
         }
     }
 }

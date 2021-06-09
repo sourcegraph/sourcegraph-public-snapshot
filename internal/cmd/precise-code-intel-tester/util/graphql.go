@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/hashicorp/go-multierror"
@@ -47,7 +47,7 @@ func QueryGraphQL(ctx context.Context, endpoint, token, query string, variables 
 		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
-	contents, err := ioutil.ReadAll(resp.Body)
+	contents, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}

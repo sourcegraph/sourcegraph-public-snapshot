@@ -47,6 +47,11 @@
     # precise-code-intel-worker
     - host.docker.internal:6088
 - labels:
+    job: worker
+  targets:
+    # worker
+    - host.docker.internal:6089
+- labels:
     job: executor-queue
   targets:
     # executor-queue

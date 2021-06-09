@@ -1,4 +1,3 @@
-import classNames from 'classnames'
 import * as H from 'history'
 import React, { useState, useCallback, useMemo, useEffect } from 'react'
 import { Subject } from 'rxjs'
@@ -15,6 +14,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { property, isDefined } from '@sourcegraph/shared/src/util/types'
 import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Container } from '@sourcegraph/wildcard'
 
 import { getHover, getDocumentHighlights } from '../../../../backend/features'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
@@ -246,7 +246,7 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
     const showSelectRow = viewerCanAdminister && selectedChangesets.size > 0
 
     return (
-        <>
+        <Container>
             {!hideFilters && !showSelectRow && (
                 <ChangesetFilterRow
                     history={history}
@@ -268,7 +268,6 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
             )}
             <div className="list-group position-relative" ref={nextContainerElement}>
                 <FilteredConnection<ChangesetFields, Omit<ChangesetNodeProps, 'node'>, BatchChangeChangesetsHeaderProps>
-                    className="mt-2"
                     nodeComponent={ChangesetNode}
                     nodeComponentProps={{
                         isLightTheme,
@@ -290,7 +289,8 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
                     location={location}
                     useURLQuery={true}
                     listComponent="div"
-                    listClassName={classNames(styles.batchChangeChangesetsGrid, 'mb-3')}
+                    listClassName={styles.batchChangeChangesetsGrid}
+                    className="filtered-connection__centered-summary"
                     headComponent={BatchChangeChangesetsHeader}
                     headComponentProps={{
                         allSelected: allSelectedCheckboxChecked,
@@ -322,7 +322,7 @@ export const BatchChangeChangesets: React.FunctionComponent<Props> = ({
                     />
                 )}
             </div>
-        </>
+        </Container>
     )
 }
 

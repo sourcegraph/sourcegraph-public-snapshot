@@ -227,17 +227,17 @@ func TestGetIndexOptions(t *testing.T) {
 			}
 			repoID++
 		}
-		var getPriority func() float64 = nil
+		var priority float64
 		if repo == "priority" {
-			getPriority = func() float64 { return 10 }
+			priority = 10
 		}
 		return &RepoIndexOptions{
-			RepoID: repoID,
-			Public: repo == "public",
+			RepoID:   repoID,
+			Public:   repo == "public",
+			Priority: priority,
 			GetVersion: func(branch string) (string, error) {
 				return "!" + branch, nil
 			},
-			GetPriority: getPriority,
 		}, nil
 	}
 

@@ -2,6 +2,7 @@ package ui
 
 import (
 	"io"
+	"io/fs"
 	"mime"
 	"net/http"
 	"net/http/httptest"
@@ -232,7 +233,7 @@ func Test_serveRawWithContentTypePlain(t *testing.T) {
 		// httptest server will return a 200 OK, so gitserver.DefaultClient.RepoInfo will not return an error.
 		initHTTPTestGitServer(t, http.StatusOK, "{}")
 
-		git.Mocks.Stat = func(commit api.CommitID, name string) (os.FileInfo, error) {
+		git.Mocks.Stat = func(commit api.CommitID, name string) (fs.FileInfo, error) {
 			return &util.FileInfo{}, os.ErrNotExist
 		}
 		defer git.ResetMocks()
@@ -256,12 +257,12 @@ func Test_serveRawWithContentTypePlain(t *testing.T) {
 		// httptest server will return a 200 OK, so gitserver.DefaultClient.RepoInfo will not return an error.
 		initHTTPTestGitServer(t, http.StatusOK, "{}")
 
-		git.Mocks.Stat = func(commit api.CommitID, name string) (os.FileInfo, error) {
+		git.Mocks.Stat = func(commit api.CommitID, name string) (fs.FileInfo, error) {
 			return &util.FileInfo{Mode_: os.ModeDir}, nil
 		}
 
-		git.Mocks.ReadDir = func(commit api.CommitID, name string, recurse bool) ([]os.FileInfo, error) {
-			return []os.FileInfo{
+		git.Mocks.ReadDir = func(commit api.CommitID, name string, recurse bool) ([]fs.FileInfo, error) {
+			return []fs.FileInfo{
 				&util.FileInfo{Name_: "test/a", Mode_: os.ModeDir},
 				&util.FileInfo{Name_: "test/b", Mode_: os.ModeDir},
 				&util.FileInfo{Name_: "c.go", Mode_: 0},
@@ -297,7 +298,7 @@ c.go`
 		// httptest server will return a 200 OK, so gitserver.DefaultClient.RepoInfo will not return an error.
 		initHTTPTestGitServer(t, http.StatusOK, "{}")
 
-		git.Mocks.Stat = func(commit api.CommitID, name string) (os.FileInfo, error) {
+		git.Mocks.Stat = func(commit api.CommitID, name string) (fs.FileInfo, error) {
 			return &util.FileInfo{Mode_: 0}, nil
 		}
 
@@ -334,7 +335,7 @@ c.go`
 		// httptest server will return a 200 OK, so gitserver.DefaultClient.RepoInfo will not return an error.
 		initHTTPTestGitServer(t, http.StatusOK, "{}")
 
-		git.Mocks.Stat = func(commit api.CommitID, name string) (os.FileInfo, error) {
+		git.Mocks.Stat = func(commit api.CommitID, name string) (fs.FileInfo, error) {
 			return &util.FileInfo{Mode_: 0}, nil
 		}
 

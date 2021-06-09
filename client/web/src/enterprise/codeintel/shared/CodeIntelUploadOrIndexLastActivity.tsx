@@ -4,7 +4,10 @@ import { Timestamp } from '../../../components/time/Timestamp'
 import { LsifIndexFields, LsifUploadFields } from '../../../graphql-operations'
 
 export interface CodeIntelUploadOrIndexLastActivityProps {
-    node: (LsifUploadFields & { queuedAt: null }) | (LsifIndexFields & { uploadedAt: null })
+    node: Pick<
+        (LsifUploadFields & { queuedAt: null }) | (LsifIndexFields & { uploadedAt: null }),
+        'queuedAt' | 'uploadedAt' | 'startedAt' | 'finishedAt'
+    >
     now?: () => Date
 }
 

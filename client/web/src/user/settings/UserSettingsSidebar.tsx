@@ -85,10 +85,7 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
                     </SidebarGroupItems>
                     {!siteAdminViewingOtherUser && (
                         <div className="user-settings-sidebar__new-org-btn-wrapper">
-                            <Link
-                                to="/organizations/new"
-                                className="user-settings-sidebar__new-org-btn btn btn-outline-secondary btn-sm"
-                            >
+                            <Link to="/organizations/new" className="btn btn-outline-secondary btn-sm">
                                 <AddIcon className="icon-inline" /> New organization
                             </Link>
                         </div>

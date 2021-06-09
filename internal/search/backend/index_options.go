@@ -34,11 +34,11 @@ type zoektIndexOptions struct {
 	// Branches is a slice of branches to index.
 	Branches []zoekt.RepositoryBranch `json:",omitempty"`
 
-	// Error if non-empty indicates the request failed for the repo.
-	Error string `json:",omitempty"`
-
 	// Priority indicates ranking in results, higher first.
 	Priority float64 `json:",omitempty"`
+
+	// Error if non-empty indicates the request failed for the repo.
+	Error string `json:",omitempty"`
 }
 
 // RepoIndexOptions are the options used by GetIndexOptions for a specific
@@ -51,13 +51,13 @@ type RepoIndexOptions struct {
 	// filtering.
 	Public bool
 
+	// Priority indicates ranking in results, higher first.
+	Priority float64
+
 	// GetVersion is used to resolve revisions for a repo. If it fails, the
 	// error is encoded in the body. If the revision is missing, an empty
 	// string should be returned rather than an error.
 	GetVersion func(branch string) (string, error)
-
-	// GetPriority returns the suggested priority for the repo, or 0 if none exists.
-	GetPriority func() float64
 }
 
 // GetIndexOptions returns a json blob for consumption by
@@ -104,12 +104,9 @@ func getIndexOptions(
 	o := &zoektIndexOptions{
 		RepoID:     opts.RepoID,
 		Public:     opts.Public,
+		Priority:   opts.Priority,
 		LargeFiles: c.SearchLargeFiles,
 		Symbols:    getBoolPtr(c.SearchIndexSymbolsEnabled, true),
-	}
-
-	if opts.GetPriority != nil {
-		o.Priority = opts.GetPriority()
 	}
 
 	// Set of branch names. Always index HEAD

@@ -5,7 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
+	"io/fs"
 	"net/http"
 	"os"
 	"os/exec"
@@ -212,7 +212,7 @@ func configureRemoteGitCommand(cmd *exec.Cmd, tlsConf *tlsConfig) {
 // writeTempFile writes data to the TempFile with pattern. Returns the path of
 // the tempfile.
 func writeTempFile(pattern string, data []byte) (path string, err error) {
-	f, err := ioutil.TempFile("", pattern)
+	f, err := os.CreateTemp("", pattern)
 	if err != nil {
 		return "", err
 	}
@@ -543,7 +543,7 @@ func mapToLog15Ctx(m map[string]interface{}) []interface{} {
 // updateFileIfDifferent will atomically update the file if the contents are
 // different. If it does an update ok is true.
 func updateFileIfDifferent(path string, content []byte) (bool, error) {
-	current, err := ioutil.ReadFile(path)
+	current, err := os.ReadFile(path)
 	if err != nil && !os.IsNotExist(err) {
 		// If the file doesn't exist we write a new file.
 		return false, err
@@ -554,7 +554,7 @@ func updateFileIfDifferent(path string, content []byte) (bool, error) {
 	}
 
 	// We write to a tempfile first to do the atomic update (via rename)
-	f, err := ioutil.TempFile(filepath.Dir(path), filepath.Base(path))
+	f, err := os.CreateTemp(filepath.Dir(path), filepath.Base(path))
 	if err != nil {
 		return false, err
 	}
@@ -620,8 +620,8 @@ func fsync(path string) error {
 // filepath.Walk can return errors if we run into permission errors or a file
 // disappears between readdir and the stat of the file. In either case this
 // error can be ignored for best effort code.
-func bestEffortWalk(root string, walkFn func(path string, info os.FileInfo) error) error {
-	return filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+func bestEffortWalk(root string, walkFn func(path string, info fs.FileInfo) error) error {
+	return filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return nil
 		}

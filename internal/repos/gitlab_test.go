@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
@@ -88,6 +88,7 @@ func TestGitLabSource_GetRepo(t *testing.T) {
 					Name:        "gitlab.com/gitlab-org/gitaly",
 					Description: "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
 					URI:         "gitlab.com/gitlab-org/gitaly",
+					Stars:       168,
 					ExternalRepo: api.ExternalRepoSpec{
 						ID:          "2009901",
 						ServiceType: "gitlab",
@@ -110,6 +111,8 @@ func TestGitLabSource_GetRepo(t *testing.T) {
 						},
 						Visibility: "",
 						Archived:   false,
+						StarCount:  168,
+						ForksCount: 76,
 					},
 				}
 
@@ -162,7 +165,7 @@ func TestGitLabSource_GetRepo(t *testing.T) {
 }
 
 func TestGitLabSource_makeRepo(t *testing.T) {
-	b, err := ioutil.ReadFile(filepath.Join("testdata", "gitlab-repos.json"))
+	b, err := os.ReadFile(filepath.Join("testdata", "gitlab-repos.json"))
 	if err != nil {
 		t.Fatal(err)
 	}

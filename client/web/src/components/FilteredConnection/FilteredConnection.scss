@@ -132,7 +132,7 @@ $compact-summary-min-height: 2.75rem;
             .theme-redesign & {
                 flex-direction: column;
                 justify-content: center;
-                margin-top: 0.5rem;
+                margin-top: 1rem;
             }
         }
         &__summary {
@@ -144,10 +144,6 @@ $compact-summary-min-height: 2.75rem;
             .theme-redesign & {
                 margin-left: 0;
                 margin-top: 0.25rem;
-            }
-        }
-        &--noncompact &__show-more {
-            .theme-redesign & {
                 margin-bottom: 0;
             }
         }

@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"strings"
 	"sync"
@@ -95,7 +94,7 @@ func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (res
 
 	if resp.StatusCode != http.StatusOK {
 		// best-effort inclusion of body in error message
-		body, _ := ioutil.ReadAll(io.LimitReader(resp.Body, 200))
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
 		return nil, errors.Errorf("Symbol.Search http status %d for %+v: %s", resp.StatusCode, resp.StatusCode, string(body))
 	}
 

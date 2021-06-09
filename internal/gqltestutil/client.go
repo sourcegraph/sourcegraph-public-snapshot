@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"strings"
 
@@ -23,7 +22,7 @@ func NeedsSiteInit(baseURL string) (bool, error) {
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	p, err := ioutil.ReadAll(resp.Body)
+	p, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return false, errors.Wrap(err, "read body")
 	}
@@ -111,7 +110,7 @@ func newClient(baseURL string) (*Client, error) {
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	p, err := ioutil.ReadAll(resp.Body)
+	p, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "read GET body")
 	}
@@ -162,7 +161,7 @@ func (c *Client) authenticate(path string, body interface{}) error {
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
-		p, err := ioutil.ReadAll(resp.Body)
+		p, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return errors.Wrap(err, "read response body")
 		}
@@ -258,7 +257,7 @@ func (c *Client) GraphQL(token, query string, variables map[string]interface{}, 
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	body, err = ioutil.ReadAll(resp.Body)
+	body, err = io.ReadAll(resp.Body)
 	if err != nil {
 		return errors.Wrap(err, "read response body")
 	}

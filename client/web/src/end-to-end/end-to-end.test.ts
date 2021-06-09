@@ -12,7 +12,7 @@ import { getConfig } from '@sourcegraph/shared/src/testing/config'
 import { afterEachRecordCoverage } from '@sourcegraph/shared/src/testing/coverage'
 import { createDriverForTest, Driver, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
-import { retry, toggleRedesign } from '@sourcegraph/shared/src/testing/utils'
+import { retry } from '@sourcegraph/shared/src/testing/utils'
 
 import { Settings } from '../schema/settings.schema'
 
@@ -51,7 +51,6 @@ describe('e2e test suite', () => {
         ]
         const alwaysCloningRepoSlugs = ['sourcegraphtest/AlwaysCloningTest']
         await driver.ensureLoggedIn({ username: 'test', password: config.testUserPassword, email: 'test@test.com' })
-        await toggleRedesign(driver.page, true)
         await driver.resetUserSettings()
         await driver.ensureHasExternalService({
             kind: ExternalServiceKind.GITHUB,
@@ -440,7 +439,7 @@ describe('e2e test suite', () => {
                     [...document.querySelector('.theme')!.classList].filter(className => className.startsWith('theme-'))
                 )
 
-            expect(await getActiveThemeClasses()).toHaveLength(2) // including theme-redesign or theme-classic
+            expect(await getActiveThemeClasses()).toHaveLength(2) // including theme-redesign
             await driver.page.waitForSelector('.test-user-nav-item-toggle')
             await driver.page.click('.test-user-nav-item-toggle')
 
@@ -729,7 +728,7 @@ describe('e2e test suite', () => {
                 test(symbolTest.name, async () => {
                     await driver.page.goto(sourcegraphBaseUrl + symbolTest.filePath)
 
-                    await (await driver.page.waitForSelector('[data-test-tab="symbols"]')).click()
+                    await (await driver.page.waitForSelector('[data-tab-content="symbols"]')).click()
 
                     await driver.page.waitForSelector('.test-symbol-name', { visible: true })
 
@@ -785,7 +784,7 @@ describe('e2e test suite', () => {
 
                     await driver.page.goto(repoBaseURL + navigationTest.filePath)
 
-                    await (await driver.page.waitForSelector('[data-test-tab="symbols"]')).click()
+                    await (await driver.page.waitForSelector('[data-tab-content="symbols"]')).click()
 
                     await driver.page.waitForSelector('.test-symbol-name', { visible: true })
 
@@ -818,8 +817,8 @@ describe('e2e test suite', () => {
             for (const { name, filePath, index, line } of highlightSymbolTests) {
                 test(name, async () => {
                     await driver.page.goto(sourcegraphBaseUrl + filePath)
-                    await driver.page.waitForSelector('[data-test-tab="symbols"]')
-                    await driver.page.click('[data-test-tab="symbols"]')
+                    await driver.page.waitForSelector('[data-tab-content="symbols"]')
+                    await driver.page.click('[data-tab-content="symbols"]')
                     await driver.page.waitForSelector('.test-symbol-name', { visible: true })
                     await driver.page.click(`.filtered-connection__nodes li:nth-child(${index + 1}) a`)
 
@@ -933,7 +932,7 @@ describe('e2e test suite', () => {
                 await driver.page.waitForSelector('#repo-revision-popover', { visible: true })
                 await driver.page.click('#repo-revision-popover')
                 // Click "Tags" tab
-                const popoverSelector = '.revisions-popover [data-test-tab="tags"]'
+                const popoverSelector = '.revisions-popover [data-tab-content="tags"]'
                 await driver.page.waitForSelector(popoverSelector, { visible: true })
                 await clickAnchorElement(popoverSelector)
                 const gitReferenceNodeSelector = 'a.git-ref-node[href*="0.5.0"]'
@@ -1130,33 +1129,6 @@ describe('e2e test suite', () => {
             await driver.page.waitForSelector('.test-regexp-toggle')
             await driver.page.click('.test-regexp-toggle')
             await driver.page.goto(sourcegraphBaseUrl + '/search?q=test&patternType=literal')
-        })
-    })
-
-    // Not relevant with redesign enabled
-    describe.skip('Search result type tabs', () => {
-        test('Search results type tabs appear', async () => {
-            await driver.page.goto(
-                sourcegraphBaseUrl + '/search?q=repo:%5Egithub.com/gorilla/mux%24&patternType=regexp'
-            )
-            await driver.page.waitForSelector('.test-search-result-type-tabs', { visible: true })
-            await driver.page.waitForSelector('.test-search-result-tab--active', { visible: true })
-            const tabs = await driver.page.evaluate(() =>
-                [...document.querySelectorAll('.test-search-result-tab')].map(tab => tab.textContent)
-            )
-
-            expect(tabs.length).toEqual(6)
-            expect(tabs).toStrictEqual(['Code', 'Diffs', 'Commits', 'Symbols', 'Repositories', 'Filenames'])
-
-            const activeTab = await driver.page.evaluate(
-                () => document.querySelectorAll('.test-search-result-tab--active').length
-            )
-            expect(activeTab).toEqual(1)
-
-            const label = await driver.page.evaluate(
-                () => document.querySelector('.test-search-result-tab--active')!.textContent || ''
-            )
-            expect(label).toEqual('Code')
         })
     })
 

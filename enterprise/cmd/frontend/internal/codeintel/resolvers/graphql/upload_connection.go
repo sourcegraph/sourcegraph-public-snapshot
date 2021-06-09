@@ -10,12 +10,14 @@ import (
 
 type UploadConnectionResolver struct {
 	resolver         *resolvers.UploadsResolver
+	prefetcher       *Prefetcher
 	locationResolver *CachedLocationResolver
 }
 
-func NewUploadConnectionResolver(resolver *resolvers.UploadsResolver, locationResolver *CachedLocationResolver) gql.LSIFUploadConnectionResolver {
+func NewUploadConnectionResolver(resolver *resolvers.UploadsResolver, prefetcher *Prefetcher, locationResolver *CachedLocationResolver) gql.LSIFUploadConnectionResolver {
 	return &UploadConnectionResolver{
 		resolver:         resolver,
+		prefetcher:       prefetcher,
 		locationResolver: locationResolver,
 	}
 }
@@ -27,7 +29,7 @@ func (r *UploadConnectionResolver) Nodes(ctx context.Context) ([]gql.LSIFUploadR
 
 	resolvers := make([]gql.LSIFUploadResolver, 0, len(r.resolver.Uploads))
 	for i := range r.resolver.Uploads {
-		resolvers = append(resolvers, NewUploadResolver(r.resolver.Uploads[i], r.locationResolver))
+		resolvers = append(resolvers, NewUploadResolver(r.resolver.Uploads[i], r.prefetcher, r.locationResolver))
 	}
 	return resolvers, nil
 }

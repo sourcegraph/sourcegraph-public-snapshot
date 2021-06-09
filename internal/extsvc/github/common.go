@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -1024,6 +1023,7 @@ const timelineItemTypesFmtStr = `ASSIGNED_EVENT, CLOSED_EVENT, ISSUE_COMMENT, RE
 
 var ghe220Semver, _ = semver.NewConstraint("~2.20.0")
 var ghe221PlusOrDotComSemver, _ = semver.NewConstraint(">= 2.21.0")
+var ghe300PlusOrDotComSemver, _ = semver.NewConstraint(">= 3.0.0")
 
 func timelineItemTypes(version *semver.Version) (string, error) {
 	if ghe220Semver.Check(version) {
@@ -1452,7 +1452,7 @@ func doRequest(ctx context.Context, apiURL *url.URL, auth auth.Authenticator, ra
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
 		var err APIError
-		if body, readErr := ioutil.ReadAll(io.LimitReader(resp.Body, 1<<13)); readErr != nil { // 8kb
+		if body, readErr := io.ReadAll(io.LimitReader(resp.Body, 1<<13)); readErr != nil { // 8kb
 			err.Message = fmt.Sprintf("failed to read error response from GitHub API: %v: %q", readErr, string(body))
 		} else if decErr := json.Unmarshal(body, &err); decErr != nil {
 			err.Message = fmt.Sprintf("failed to decode error response from GitHub API: %v: %q", decErr, string(body))

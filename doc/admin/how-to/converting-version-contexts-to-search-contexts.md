@@ -1,6 +1,6 @@
 # How to convert version contexts to search contexts
 
-This guide will provide steps for migrating from [version contexts](../../code_search/explanations/features.md#version-contexts-sunsetting) to [search contexts](../../code_search/explanations/features.md#search-contexts-experimental) on your private Sourcegraph instance.
+This guide will provide steps for migrating from [version contexts](../../code_search/explanations/features.md#version-contexts-sunsetting) to [search contexts](../../code_search/explanations/features.md#search-contexts) on your private Sourcegraph instance.
 
 ## Prerequisites
 

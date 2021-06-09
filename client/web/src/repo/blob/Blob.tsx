@@ -566,31 +566,8 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                             throttleTime(100, undefined, { leading: true, trailing: true }),
                             map(() => {
                                 // Read
-                                const blobComputedStyle = window.getComputedStyle(blobElement)
-                                const borderRightWidth = parseInt(blobComputedStyle.borderRightWidth, 10)
-                                const borderLeftWidth = parseInt(blobComputedStyle.borderLeftWidth, 10)
-                                const borderTopWidth = parseInt(blobComputedStyle.borderTopWidth, 10)
-                                const borderBottomWidth = parseInt(blobComputedStyle.borderBottomWidth, 10)
-
-                                let blobRightScrollbarWidth =
-                                    blobElement.offsetWidth -
-                                    blobElement.clientWidth -
-                                    (!isNaN(borderRightWidth) ? borderRightWidth : 0) -
-                                    (!isNaN(borderLeftWidth) ? borderLeftWidth : 0)
-
-                                if (isNaN(blobRightScrollbarWidth)) {
-                                    blobRightScrollbarWidth = 0
-                                }
-
-                                let blobBottomScollbarHeight =
-                                    blobElement.offsetHeight -
-                                    blobElement.clientHeight -
-                                    (!isNaN(borderTopWidth) ? borderTopWidth : 0) -
-                                    (!isNaN(borderBottomWidth) ? borderBottomWidth : 0)
-
-                                if (isNaN(blobBottomScollbarHeight)) {
-                                    blobBottomScollbarHeight = 0
-                                }
+                                const blobRightScrollbarWidth = blobElement.offsetWidth - blobElement.clientWidth
+                                const blobBottomScollbarHeight = blobElement.offsetHeight - blobElement.clientHeight
 
                                 return { blobRightScrollbarWidth, blobBottomScollbarHeight }
                             }),

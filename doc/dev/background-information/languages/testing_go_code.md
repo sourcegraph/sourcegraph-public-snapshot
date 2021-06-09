@@ -117,7 +117,7 @@ func TestCoolPlanets(t *testing.T) {
 
 ## Mocks
 
-If your code depends on a value defined as an interface (which all dependencies **should** be), you can use [efritz/go-mockgen](https://github.com/efritz/go-mockgen) to create programmable stubs that conform to the target interface. This replaces an old pattern in the code base that declared mocks defined as [globally settable functions](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@b5b5fc8d885710eb559ff3d6122c9360b31fec78/-/blob/internal/vcs/git/mocks.go#L15).
+If your code depends on a value defined as an interface (which all dependencies **should** be), you can use [derision-test/go-mockgen](https://github.com/derision-test/go-mockgen) to create programmable stubs that conform to the target interface. This replaces an old pattern in the code base that declared mocks defined as [globally settable functions](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@b5b5fc8d885710eb559ff3d6122c9360b31fec78/-/blob/internal/vcs/git/mocks.go#L15).
 
 For an example usage of generated mocks, see the [TestDefinitions](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@0cb60598806d68e4c4edace9ed2a801e3f8495bf/-/blob/enterprise/internal/codeintel/resolvers/query_test.go#L16) test for the code intel resolvers. Each method defined on an interface has a default implementation that returns zero-values for all of its results and can be configured to:
 

@@ -120,7 +120,7 @@ export const InsightsViewGrid: React.FunctionComponent<InsightsViewGridProps> = 
                     // native elements we can't use custom react component here explicitly.
                     <section
                         key={view.id}
-                        data-testid={`InsightCard.${view.id}`}
+                        data-testid={`insight-card.${view.id}`}
                         className="card insights-view-grid__item"
                     >
                         <InsightContentCard

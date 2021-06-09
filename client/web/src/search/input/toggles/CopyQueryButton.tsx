@@ -48,7 +48,7 @@ export const CopyQueryButton: React.FunctionComponent<Props> = (props: Props) =>
         <>
             <button
                 type="button"
-                className={classNames('btn btn-icon icon-inline  btn-link-sm', props.className)}
+                className={classNames('btn btn-icon btn-link-sm', props.className)}
                 data-tooltip={copied ? 'Copied!' : copyFullQueryTooltip}
                 onClick={nextClick}
             >

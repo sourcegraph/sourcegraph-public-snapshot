@@ -71,7 +71,6 @@ func UpdateServiceVersion(ctx context.Context, service, version string) error {
 			upsertVersionQuery,
 			service,
 			version,
-			version,
 			time.Now().UTC(),
 			prev,
 		)
@@ -84,8 +83,8 @@ func UpdateServiceVersion(ctx context.Context, service, version string) error {
 const getVersionQuery = `SELECT version FROM versions WHERE service = %s`
 
 const upsertVersionQuery = `
-INSERT INTO versions (service, version, first_version, updated_at)
-VALUES (%s, %s, %s, %s) ON CONFLICT (service) DO
+INSERT INTO versions (service, version, updated_at)
+VALUES (%s, %s, %s) ON CONFLICT (service) DO
 UPDATE SET (version, updated_at) =
 	(excluded.version, excluded.updated_at)
 WHERE versions.version = %s`

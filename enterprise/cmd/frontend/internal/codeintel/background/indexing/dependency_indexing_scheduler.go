@@ -93,14 +93,17 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, tx dbwo
 		return nil
 	}
 	if len(errs) == 1 {
-		return errs[1]
+		return errs[0]
 	}
 
 	return multierror.Append(nil, errs...)
 }
 
 var dependencyIndexingRepositoryIDs = []int{
-	36809250, // sg/sg on cloud
+	35703861, // github.com/sourcegraph/jsonx on cloud
+	36146693, // github.com/sourcegraph/src-clion cloud
+	36809250, // github.com/sourcegraph/sourcegraph on cloud
+	38967070, // github.com/sourcegraph/lsif-go on cloud
 }
 
 // shouldIndexDependencies returns true if the given upload should undergo dependency

@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"flag"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -111,7 +112,7 @@ func (prdc *producer) pump(ctx context.Context) error {
 			return nil
 		}
 
-		err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+		err := filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
 			if err != nil {
 				return err
 			}
@@ -173,7 +174,7 @@ func numLinesTotal(skipNumLines int64) (int64, error) {
 	skippedLines := skipNumLines
 
 	for _, root := range flag.Args() {
-		err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+		err := filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
 			if err != nil {
 				return err
 			}

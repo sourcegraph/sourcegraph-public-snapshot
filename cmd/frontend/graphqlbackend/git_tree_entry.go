@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"io/fs"
 	"net/url"
 	neturl "net/url"
 	"os"
@@ -43,13 +44,13 @@ type GitTreeEntryResolver struct {
 
 	// stat is this tree entry's file info. Its Name method must return the full path relative to
 	// the root, not the basename.
-	stat os.FileInfo
+	stat fs.FileInfo
 
 	isRecursive   bool  // whether entries is populated recursively (otherwise just current level of hierarchy)
 	isSingleChild *bool // whether this is the single entry in its parent. Only set by the (&GitTreeEntryResolver) entries.
 }
 
-func NewGitTreeEntryResolver(commit *GitCommitResolver, db dbutil.DB, stat os.FileInfo) *GitTreeEntryResolver {
+func NewGitTreeEntryResolver(commit *GitCommitResolver, db dbutil.DB, stat fs.FileInfo) *GitTreeEntryResolver {
 	return &GitTreeEntryResolver{db: db, commit: commit, stat: stat}
 }
 
@@ -192,7 +193,7 @@ func cloneURLToRepoName(ctx context.Context, cloneURL string) (string, error) {
 	return string(repoName), nil
 }
 
-func CreateFileInfo(path string, isDir bool) os.FileInfo {
+func CreateFileInfo(path string, isDir bool) fs.FileInfo {
 	return fileInfo{path: path, isDir: isDir}
 }
 
