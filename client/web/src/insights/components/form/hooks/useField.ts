@@ -134,8 +134,6 @@ export function useField<FormValues, FieldValueKey extends keyof FormAPI<FormVal
             // schedule the async validation event in the next tick to be able run
             // observable pipeline validation since useAsyncValidation hook use
             // useObservable hook internally which calls '.subscribe' in useEffect.
-            // In order to catch start async validation event we need until next
-            // tick.
             requestAnimationFrame(() => {
                 startAsyncValidation({ value: state.value, validity })
             })
