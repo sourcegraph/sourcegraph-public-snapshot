@@ -8,9 +8,9 @@ import { DEFAULT_ACTIVE_COLOR } from '../../form-color-input/FormColorInput'
 import { remove, replace } from './helpers'
 
 export const createDefaultEditSeries = (series?: Partial<EditableDataSeries>): EditableDataSeries => ({
+    id: uuid.v4(),
     ...defaultEditSeries,
     ...series,
-    id: uuid.v4(),
 })
 
 const defaultEditSeries = {

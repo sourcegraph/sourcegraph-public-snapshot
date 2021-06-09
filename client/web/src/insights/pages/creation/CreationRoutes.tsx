@@ -46,7 +46,6 @@ export const CreationRoutes: React.FunctionComponent<CreationRoutesProps> = prop
 
             <Route
                 path={`${match.url}/search`}
-                exact={true}
                 render={() => (
                     <SearchInsightCreationLazyPage
                         telemetryService={telemetryService}

@@ -22,6 +22,7 @@ import { CodeMonitoringProps } from '../../code-monitoring'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
 import { WebActionsNavItems as ActionsNavItems } from '../../components/shared'
 import { SearchPatternType } from '../../graphql-operations'
+import { CodeInsightsIcon } from '../../insights/components'
 
 export interface SearchResultsInfoBarProps
     extends ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
@@ -79,6 +80,30 @@ const QuotesInterpretedLiterallyNotice: React.FunctionComponent<SearchResultsInf
  * and a few actions like expand all and save query
  */
 export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarProps> = props => {
+    const createSearchInsightButton = useMemo(() => {
+        // TODO [VK] Add enableCodeInsight check
+        if (!props.query || !props.authenticatedUser) {
+            return null
+        }
+
+        const searchParameters = new URLSearchParams(props.location.search)
+
+        searchParameters.set('insight-query', `${props.query} patterntype:${props.patternType}`)
+
+        const toURL = `/insights/create/search?${searchParameters.toString()}`
+
+        // console.log(parseSearchQuery(props.query ?? ''
+
+        return (
+            <li className="nav-item">
+                <ButtonLink to={toURL} className="btn btn-sm btn-outline-secondary mr-2 nav-link text-decoration-none">
+                    <CodeInsightsIcon className="icon-inline mr-1" />
+                    Insight
+                </ButtonLink>
+            </li>
+        )
+    }, [props.query, props.authenticatedUser, props.location.search, props.patternType])
+
     const createCodeMonitorButton = useMemo(() => {
         if (!props.enableCodeMonitoring || !props.query || !props.authenticatedUser) {
             return null
@@ -178,6 +203,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                     {(createCodeMonitorButton || saveSearchButton) && (
                         <li className="search-results-info-bar__divider" aria-hidden="true" />
                     )}
+                    {createSearchInsightButton}
                     {createCodeMonitorButton}
                     {saveSearchButton}
 
