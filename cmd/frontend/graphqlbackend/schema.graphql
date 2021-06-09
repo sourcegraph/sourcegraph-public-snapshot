@@ -613,6 +613,106 @@ type Mutation {
         """
         repositories: [SearchContextRepositoryRevisionsInput!]!
     ): SearchContext!
+
+    """
+    (experimental) Create a new feature flag
+    """
+    createFeatureFlag(
+        """
+        The name of the feature flag
+        """
+        name: String!
+
+        """
+        The value of the feature flag. Only set if the new feature flag
+        will be a concrete boolean flag. Mutually exclusive with rolloutBasisPoints.
+        """
+        value: Boolean
+
+        """
+        The ratio of users the feature flag will apply to, expressed in basis points (0.01%).
+        Only set if the new feature flag will be a rollout flag.
+        Mutually exclusive with value.
+        """
+        rolloutBasisPoints: Int
+    ): FeatureFlag!
+
+    """
+    (experimental) Delete a feature flag
+    """
+    deleteFeatureFlag(
+        """
+        The name of the feature flag
+        """
+        name: String!
+    ): EmptyResponse!
+
+    """
+    (experimental) Update a feature flag
+    """
+    updateFeatureFlag(
+        """
+        The name of the feature flag
+        """
+        name: String!
+
+        """
+        The value of the feature flag. Only set if the new feature flag
+        will be a concrete boolean flag. Mutually exclusive with rollout.
+        """
+        value: Boolean
+
+        """
+        The ratio of users the feature flag will apply to, expressed in basis points (0.01%).
+        Mutually exclusive with value.
+        """
+        rolloutBasisPoints: Int
+    ): FeatureFlag!
+
+    """
+    (experimental) Create a new feature flag override for the given org or user
+    """
+    createFeatureFlagOverride(
+        """
+        The namespace for this feature flag. Must be either a user ID or an org ID.
+        """
+        namespace: ID!
+
+        """
+        The name of the feature flag this override applies to
+        """
+        flagName: String!
+
+        """
+        The overridden value
+        """
+        value: Boolean!
+    ): FeatureFlagOverride!
+
+    """
+    Delete a feature flag override
+    """
+    deleteFeatureFlagOverride(
+        """
+        The ID of the feature flag override to delete
+        """
+        id: ID!
+    ): EmptyResponse!
+
+    """
+    Update a feature flag override
+    """
+    updateFeatureFlagOverride(
+        """
+        The ID of the feature flag override to update
+        """
+        id: ID!
+
+        """
+        The updated value of the feature flag override
+        """
+        value: Boolean!
+    ): FeatureFlagOverride!
 }
 
 """
@@ -1280,6 +1380,82 @@ type Query {
     Retrieve all registered out-of-band migrations.
     """
     outOfBandMigrations: [OutOfBandMigration!]!
+
+    """
+    Retrieve the list of defined feature flags
+    """
+    featureFlags: [FeatureFlag!]!
+}
+
+"""
+A defined feature flag
+"""
+union FeatureFlag = FeatureFlagBoolean | FeatureFlagRollout
+
+"""
+A feature flag that has a statically configured value
+"""
+type FeatureFlagBoolean {
+    """
+    The name of the feature flag
+    """
+    name: String!
+
+    """
+    The static value of the feature flag
+    """
+    value: Boolean!
+
+    """
+    Overrides that apply to the feature flag
+    """
+    overrides: [FeatureFlagOverride!]!
+}
+
+"""
+A feature flag that is randomly evaluated to a boolean based on the rollout parameter
+"""
+type FeatureFlagRollout {
+    """
+    The name of the feature flag
+    """
+    name: String!
+
+    """
+    The ratio of users that will be assigned this this feature flag, expressed in
+    basis points (0.01%).
+    """
+    rolloutBasisPoints: Int!
+
+    """
+    Overrides that apply to the feature flag
+    """
+    overrides: [FeatureFlagOverride!]!
+}
+
+"""
+A feature flag override is an override of a feature flag's value for a specific org or user
+"""
+type FeatureFlagOverride {
+    """
+    A unique ID for this feature flag override
+    """
+    id: ID!
+
+    """
+    The namespace for this override. Will always be a user or org.
+    """
+    namespace: Namespace!
+
+    """
+    The name of the feature flag being overridden
+    """
+    targetFlag: FeatureFlag!
+
+    """
+    The overridden value of hte feature flag
+    """
+    value: Boolean!
 }
 
 """
