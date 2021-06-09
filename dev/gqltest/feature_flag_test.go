@@ -251,12 +251,11 @@ func TestFeatureFlags(t *testing.T) {
 		})
 	})
 
-	createOverride := func(orgID *string, userID *string, flagName string, value bool) (featureFlagOverrideResult, error) {
+	createOverride := func(namespace string, flagName string, value bool) (featureFlagOverrideResult, error) {
 		m := featureFlagOverrideFragment + `
-		mutation CreateFeatureFlagOverride($orgID: ID, $userID: ID, $flagName: String!, $value: Boolean!) {
+		mutation CreateFeatureFlagOverride($namespace: ID!, $flagName: String!, $value: Boolean!) {
 			createFeatureFlagOverride(
-				orgID: $orgID,
-				userID: $userID,
+				namespace: $namespace,
 				flagName: $flagName,
 				value: $value,
 			) {
@@ -269,7 +268,7 @@ func TestFeatureFlags(t *testing.T) {
 				CreateFeatureFlagOverride featureFlagOverrideResult
 			}
 		}
-		params := map[string]interface{}{"orgID": orgID, "userID": userID, "flagName": flagName, "value": value}
+		params := map[string]interface{}{"namespace": namespace, "flagName": flagName, "value": value}
 		err := client.GraphQL("", m, params, &res)
 		return res.Data.CreateFeatureFlagOverride, err
 	}
@@ -332,7 +331,7 @@ func TestFeatureFlags(t *testing.T) {
 		overrideT := t
 		t.Run("Create", func(t *testing.T) {
 			t.Run("OrgOverride", func(t *testing.T) {
-				res, err := createOverride(&orgID, nil, flag.Name, false)
+				res, err := createOverride(orgID, flag.Name, false)
 				require.NoError(t, err)
 				overrideT.Cleanup(func() {
 					deleteOverride(res.ID)
@@ -351,7 +350,7 @@ func TestFeatureFlags(t *testing.T) {
 			})
 
 			t.Run("UserOverride", func(t *testing.T) {
-				res, err := createOverride(nil, &userID, flag.Name, false)
+				res, err := createOverride(userID, flag.Name, false)
 				require.NoError(t, err)
 				overrideT.Cleanup(func() {
 					deleteOverride(res.ID)
@@ -363,19 +362,19 @@ func TestFeatureFlags(t *testing.T) {
 			})
 
 			t.Run("NonextantFlag", func(t *testing.T) {
-				_, err = createOverride(&orgID, nil, "test_nonextant", true)
+				_, err = createOverride(orgID, "test_nonextant", true)
 				require.Error(t, err)
 			})
 
 			t.Run("NonextantUser", func(t *testing.T) {
 				userString := "nonextant"
-				_, err := createOverride(nil, &userString, "test_nonextant", true)
+				_, err := createOverride(userString, "test_nonextant", true)
 				require.Error(t, err)
 			})
 
 			t.Run("NonextantOrg", func(t *testing.T) {
 				orgID := "nonextant"
-				_, err := createOverride(&orgID, nil, "test_nonextant", true)
+				_, err := createOverride(orgID, "test_nonextant", true)
 				require.Error(t, err)
 			})
 		})

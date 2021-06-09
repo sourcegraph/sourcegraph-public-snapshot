@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -81,17 +82,15 @@ func (f *FeatureFlagOverrideResolver) TargetFlag(ctx context.Context) (*FeatureF
 	return &FeatureFlagResolver{f.db, res}, err
 }
 func (f *FeatureFlagOverrideResolver) Value() bool { return f.inner.Value }
-func (f *FeatureFlagOverrideResolver) User(ctx context.Context) (*UserResolver, error) {
+func (f *FeatureFlagOverrideResolver) Namespace(ctx context.Context) (*NamespaceResolver, error) {
 	if f.inner.UserID != nil {
-		return UserByIDInt32(ctx, f.db, *f.inner.UserID)
+		u, err := UserByIDInt32(ctx, f.db, *f.inner.UserID)
+		return &NamespaceResolver{u}, err
+	} else if f.inner.OrgID != nil {
+		o, err := OrgByIDInt32(ctx, f.db, *f.inner.OrgID)
+		return &NamespaceResolver{o}, err
 	}
-	return nil, nil
-}
-func (f *FeatureFlagOverrideResolver) Org(ctx context.Context) (*OrgResolver, error) {
-	if f.inner.OrgID != nil {
-		return OrgByIDInt32(ctx, f.db, *f.inner.OrgID)
-	}
-	return nil, nil
+	return nil, fmt.Errorf("one of userID or orgID must be set")
 }
 func (f *FeatureFlagOverrideResolver) ID() graphql.ID {
 	return marshalOverrideID(overrideSpec{
@@ -177,6 +176,8 @@ func (r *schemaResolver) CreateFeatureFlag(ctx context.Context, args struct {
 		res, err = ff.CreateBool(ctx, args.Name, *args.Value)
 	} else if args.RolloutBasisPoints != nil {
 		res, err = ff.CreateRollout(ctx, args.Name, *args.RolloutBasisPoints)
+	} else {
+		return nil, fmt.Errorf("either 'value' or 'rolloutBasisPoints' must be set")
 	}
 
 	return &FeatureFlagResolver{r.db, res}, err
@@ -204,6 +205,8 @@ func (r *schemaResolver) UpdateFeatureFlag(ctx context.Context, args struct {
 		ff.Bool = &featureflag.FeatureFlagBool{Value: *args.Value}
 	} else if args.RolloutBasisPoints != nil {
 		ff.Rollout = &featureflag.FeatureFlagRollout{Rollout: *args.RolloutBasisPoints}
+	} else {
+		return nil, fmt.Errorf("either 'value' or 'rolloutBasisPoints' must be set")
 	}
 
 	res, err := database.FeatureFlags(r.db).UpdateFeatureFlag(ctx, ff)
@@ -211,27 +214,16 @@ func (r *schemaResolver) UpdateFeatureFlag(ctx context.Context, args struct {
 }
 
 func (r *schemaResolver) CreateFeatureFlagOverride(ctx context.Context, args struct {
-	UserID   *graphql.ID
-	OrgID    *graphql.ID
-	FlagName string
-	Value    bool
+	Namespace graphql.ID
+	FlagName  string
+	Value     bool
 }) (*FeatureFlagOverrideResolver, error) {
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 	var uid, oid *int32
-	if args.UserID != nil {
-		u, err := UnmarshalUserID(*args.UserID)
-		if err != nil {
-			return nil, err
-		}
-		uid = &u
-	} else if args.OrgID != nil {
-		o, err := UnmarshalOrgID(*args.OrgID)
-		if err != nil {
-			return nil, err
-		}
-		oid = &o
+	if err := UnmarshalNamespaceID(args.Namespace, uid, oid); err != nil {
+		return nil, err
 	}
 
 	fo := &featureflag.Override{

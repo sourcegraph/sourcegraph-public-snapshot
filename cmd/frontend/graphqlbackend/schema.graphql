@@ -674,16 +674,9 @@ type Mutation {
     """
     createFeatureFlagOverride(
         """
-        The orgID for the org this override will apply to.
-        Mutually exclusive with userID.
+        The namespace for this feature flag. Must be either a user ID or an org ID.
         """
-        orgID: ID
-
-        """
-        The userID for the user this override will apply to.
-        Mutually exclusive with orgID.
-        """
-        userID: ID
+        namespace: ID!
 
         """
         The name of the feature flag this override applies to
@@ -1450,16 +1443,9 @@ type FeatureFlagOverride {
     id: ID!
 
     """
-    The user this feature flag override applies to, if set.
-    Mutually exclusive with Org
+    The namespace for this override. Will always be a user or org.
     """
-    user: User
-
-    """
-    The org this feature flag override applies to, if set.
-    Mutually exclusive with User
-    """
-    org: Org
+    namespace: Namespace!
 
     """
     The name of the feature flag being overridden
