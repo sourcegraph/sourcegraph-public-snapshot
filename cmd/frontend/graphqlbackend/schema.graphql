@@ -1385,10 +1385,15 @@ type Query {
     Retrieve the list of defined feature flags
     """
     featureFlags: [FeatureFlag!]!
+
+    """
+    Retrieve the values of all feature flags for the current user
+    """
+    viewerFeatureFlags: [EvaluatedFeatureFlag!]!
 }
 
 """
-A defined feature flag
+A feature flag is either a static boolean feature flag or a rollout feature flag
 """
 union FeatureFlag = FeatureFlagBoolean | FeatureFlagRollout
 
@@ -1453,7 +1458,23 @@ type FeatureFlagOverride {
     targetFlag: FeatureFlag!
 
     """
-    The overridden value of hte feature flag
+    The overriden value of the feature flag
+    """
+    value: Boolean!
+}
+
+"""
+An evaluated feature flag is any feature flag (static or random) that has been evaluated to
+a concrete value for a given viewer.
+"""
+type EvaluatedFeatureFlag {
+    """
+    The name of the feature flag
+    """
+    name: String!
+
+    """
+    The concrete evaluated value of the feature flag
     """
     value: Boolean!
 }
