@@ -45,15 +45,7 @@
         &-checkbox {
             font-size: 0.65rem;
             margin-right: 0.5rem;
-            color: var(--border-color);
-
-            .theme-light & {
-                color: var(--gray-05);
-            }
-
-            .theme-dark & {
-                color: var(--gray-07);
-            }
+            color: var(--triggerarea-checklist-checkbox-color);
 
             &--unchecked {
                 // Make unchecked icon smaller so it doesn't look like a radio button.
