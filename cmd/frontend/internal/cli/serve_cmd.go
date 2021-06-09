@@ -3,7 +3,6 @@ package cli
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -93,13 +92,13 @@ func defaultExternalURL(nginxAddr, httpAddr string) *url.URL {
 // InitDB initializes and returns the global database connection and sets the
 // version of the frontend in our versions table.
 func InitDB() (*sql.DB, error) {
-	if err := dbconn.SetupGlobalConnection(""); err != nil {
+	db, err := dbconn.New("", "_app")
+	if err != nil {
 		return nil, fmt.Errorf("failed to connect to frontend database: %s", err)
 	}
 
 	ctx := context.Background()
 	migrate := true
-	db := dbconn.Global
 
 	for {
 		// We need this loop so that we handle the missing versions table,
@@ -249,12 +248,6 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 	goroutine.Go(func() { bg.DeleteOldCacheDataInRedis() })
 	goroutine.Go(func() { bg.DeleteOldEventLogsInPostgres(context.Background(), db) })
 	goroutine.Go(func() { updatecheck.Start(db) })
-
-	// Parse GraphQL schema and set up resolvers that depend on dbconn.Global
-	// being initialized
-	if dbconn.Global == nil {
-		return errors.New("dbconn.Global is nil when trying to parse GraphQL schema")
-	}
 
 	schema, err := graphqlbackend.NewSchema(db, enterprise.BatchChangesResolver, enterprise.CodeIntelResolver, enterprise.InsightsResolver, enterprise.AuthzResolver, enterprise.CodeMonitorsResolver, enterprise.LicenseResolver, enterprise.DotcomResolver)
 	if err != nil {
