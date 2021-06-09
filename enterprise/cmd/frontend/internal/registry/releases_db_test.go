@@ -18,7 +18,7 @@ func TestRegistryExtensionReleases(t *testing.T) {
 	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
-	user, err := database.GlobalUsers.Create(ctx, database.NewUser{Username: "u"})
+	user, err := database.Users(db).Create(ctx, database.NewUser{Username: "u"})
 	if err != nil {
 		t.Fatal(err)
 	}

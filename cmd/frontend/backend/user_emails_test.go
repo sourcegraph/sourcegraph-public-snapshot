@@ -177,7 +177,7 @@ func TestSendUserEmailOnFieldUpdate(t *testing.T) {
 		database.Mocks.Users.GetByID = nil
 	}()
 
-	if err := UserEmails.SendUserEmailOnFieldUpdate(context.Background(), 123, "updated password"); err != nil {
+	if err := UserEmails.SendUserEmailOnFieldUpdate(context.Background(), &dbtesting.MockDB{}, 123, "updated password"); err != nil {
 		t.Fatal(err)
 	}
 	if sent == nil {

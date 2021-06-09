@@ -110,8 +110,8 @@ func NewInternalHandler(m *mux.Router, db dbutil.DB, schema *graphql.Schema, new
 		WriteErrBody: true,
 	})
 
-	m.Get(apirouter.ExternalServiceConfigs).Handler(trace.Route(handler(serveExternalServiceConfigs)))
-	m.Get(apirouter.ExternalServicesList).Handler(trace.Route(handler(serveExternalServicesList)))
+	m.Get(apirouter.ExternalServiceConfigs).Handler(trace.Route(handler(serveExternalServiceConfigs(db))))
+	m.Get(apirouter.ExternalServicesList).Handler(trace.Route(handler(serveExternalServicesList(db))))
 	m.Get(apirouter.PhabricatorRepoCreate).Handler(trace.Route(handler(servePhabricatorRepoCreate(db))))
 	reposList := &reposListServer{
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
@@ -128,8 +128,8 @@ func NewInternalHandler(m *mux.Router, db dbutil.DB, schema *graphql.Schema, new
 	m.Get(apirouter.SavedQueriesDeleteInfo).Handler(trace.Route(handler(serveSavedQueriesDeleteInfo(db))))
 	m.Get(apirouter.OrgsListUsers).Handler(trace.Route(handler(serveOrgsListUsers(db))))
 	m.Get(apirouter.OrgsGetByName).Handler(trace.Route(handler(serveOrgsGetByName(db))))
-	m.Get(apirouter.UsersGetByUsername).Handler(trace.Route(handler(serveUsersGetByUsername)))
-	m.Get(apirouter.UserEmailsGetEmail).Handler(trace.Route(handler(serveUserEmailsGetEmail)))
+	m.Get(apirouter.UsersGetByUsername).Handler(trace.Route(handler(serveUsersGetByUsername(db))))
+	m.Get(apirouter.UserEmailsGetEmail).Handler(trace.Route(handler(serveUserEmailsGetEmail(db))))
 	m.Get(apirouter.ExternalURL).Handler(trace.Route(handler(serveExternalURL)))
 	m.Get(apirouter.CanSendEmail).Handler(trace.Route(handler(serveCanSendEmail)))
 	m.Get(apirouter.SendEmail).Handler(trace.Route(handler(serveSendEmail)))

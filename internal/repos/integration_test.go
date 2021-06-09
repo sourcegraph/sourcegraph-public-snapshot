@@ -9,7 +9,6 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -27,6 +26,8 @@ func TestIntegration(t *testing.T) {
 		t.Skip()
 	}
 
+	t.Parallel()
+
 	db := dbtest.NewDB(t, *dsn)
 
 	store := repos.NewStore(db, sql.TxOptions{
@@ -41,11 +42,6 @@ func TestIntegration(t *testing.T) {
 	store.Tracer = trace.Tracer{Tracer: opentracing.GlobalTracer()}
 
 	userID := insertTestUser(t, db)
-
-	dbconn.Global = db
-	t.Cleanup(func() {
-		dbconn.Global = nil
-	})
 
 	for _, tc := range []struct {
 		name string

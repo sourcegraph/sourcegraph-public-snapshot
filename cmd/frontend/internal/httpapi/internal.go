@@ -69,80 +69,84 @@ func servePhabricatorRepoCreate(db dbutil.DB) func(w http.ResponseWriter, r *htt
 
 // serveExternalServiceConfigs serves a JSON response that is an array of all
 // external service configs that match the requested kind.
-func serveExternalServiceConfigs(w http.ResponseWriter, r *http.Request) error {
-	var req api.ExternalServiceConfigsRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		return err
-	}
-
-	options := database.ExternalServicesListOptions{
-		Kinds:   []string{req.Kind},
-		AfterID: int64(req.AfterID),
-	}
-	if req.Limit > 0 {
-		options.LimitOffset = &database.LimitOffset{
-			Limit: req.Limit,
+func serveExternalServiceConfigs(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		var req api.ExternalServiceConfigsRequest
+		err := json.NewDecoder(r.Body).Decode(&req)
+		if err != nil {
+			return err
 		}
-	}
 
-	services, err := database.GlobalExternalServices.List(r.Context(), options)
-	if err != nil {
-		return err
-	}
-
-	// Instead of returning an intermediate response type, we directly return
-	// the array of configs (which are themselves JSON objects).
-	// This makes it possible for the caller to directly unmarshal the response into
-	// a slice of connection configurations for this external service kind.
-	configs := make([]map[string]interface{}, 0, len(services))
-	for _, service := range services {
-		var config map[string]interface{}
-		// Raw configs may have comments in them so we have to use a json parser
-		// that supports comments in json.
-		if err := jsonc.Unmarshal(service.Config, &config); err != nil {
-			log15.Error(
-				"ignoring external service config that has invalid json",
-				"id", service.ID,
-				"displayName", service.DisplayName,
-				"config", service.Config,
-				"err", err,
-			)
-			continue
+		options := database.ExternalServicesListOptions{
+			Kinds:   []string{req.Kind},
+			AfterID: int64(req.AfterID),
 		}
-		configs = append(configs, config)
+		if req.Limit > 0 {
+			options.LimitOffset = &database.LimitOffset{
+				Limit: req.Limit,
+			}
+		}
+
+		services, err := database.ExternalServices(db).List(r.Context(), options)
+		if err != nil {
+			return err
+		}
+
+		// Instead of returning an intermediate response type, we directly return
+		// the array of configs (which are themselves JSON objects).
+		// This makes it possible for the caller to directly unmarshal the response into
+		// a slice of connection configurations for this external service kind.
+		configs := make([]map[string]interface{}, 0, len(services))
+		for _, service := range services {
+			var config map[string]interface{}
+			// Raw configs may have comments in them so we have to use a json parser
+			// that supports comments in json.
+			if err := jsonc.Unmarshal(service.Config, &config); err != nil {
+				log15.Error(
+					"ignoring external service config that has invalid json",
+					"id", service.ID,
+					"displayName", service.DisplayName,
+					"config", service.Config,
+					"err", err,
+				)
+				continue
+			}
+			configs = append(configs, config)
+		}
+		return json.NewEncoder(w).Encode(configs)
 	}
-	return json.NewEncoder(w).Encode(configs)
 }
 
 // serveExternalServicesList serves a JSON response that is an array of all external services
 // of the given kind
-func serveExternalServicesList(w http.ResponseWriter, r *http.Request) error {
-	var req api.ExternalServicesListRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		return err
-	}
-
-	if len(req.Kinds) == 0 {
-		req.Kinds = append(req.Kinds, req.Kind)
-	}
-
-	options := database.ExternalServicesListOptions{
-		Kinds:   []string{req.Kind},
-		AfterID: int64(req.AfterID),
-	}
-	if req.Limit > 0 {
-		options.LimitOffset = &database.LimitOffset{
-			Limit: req.Limit,
+func serveExternalServicesList(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		var req api.ExternalServicesListRequest
+		err := json.NewDecoder(r.Body).Decode(&req)
+		if err != nil {
+			return err
 		}
-	}
 
-	services, err := database.GlobalExternalServices.List(r.Context(), options)
-	if err != nil {
-		return err
+		if len(req.Kinds) == 0 {
+			req.Kinds = append(req.Kinds, req.Kind)
+		}
+
+		options := database.ExternalServicesListOptions{
+			Kinds:   []string{req.Kind},
+			AfterID: int64(req.AfterID),
+		}
+		if req.Limit > 0 {
+			options.LimitOffset = &database.LimitOffset{
+				Limit: req.Limit,
+			}
+		}
+
+		services, err := database.ExternalServices(db).List(r.Context(), options)
+		if err != nil {
+			return err
+		}
+		return json.NewEncoder(w).Encode(services)
 	}
-	return json.NewEncoder(w).Encode(services)
 }
 
 func serveConfiguration(w http.ResponseWriter, r *http.Request) error {
@@ -473,36 +477,40 @@ func serveOrgsGetByName(db dbutil.DB) func(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-func serveUsersGetByUsername(w http.ResponseWriter, r *http.Request) error {
-	var username string
-	err := json.NewDecoder(r.Body).Decode(&username)
-	if err != nil {
-		return errors.Wrap(err, "Decode")
+func serveUsersGetByUsername(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		var username string
+		err := json.NewDecoder(r.Body).Decode(&username)
+		if err != nil {
+			return errors.Wrap(err, "Decode")
+		}
+		user, err := database.Users(db).GetByUsername(r.Context(), username)
+		if err != nil {
+			return errors.Wrap(err, "Users.GetByUsername")
+		}
+		if err := json.NewEncoder(w).Encode(user.ID); err != nil {
+			return errors.Wrap(err, "Encode")
+		}
+		return nil
 	}
-	user, err := database.GlobalUsers.GetByUsername(r.Context(), username)
-	if err != nil {
-		return errors.Wrap(err, "Users.GetByUsername")
-	}
-	if err := json.NewEncoder(w).Encode(user.ID); err != nil {
-		return errors.Wrap(err, "Encode")
-	}
-	return nil
 }
 
-func serveUserEmailsGetEmail(w http.ResponseWriter, r *http.Request) error {
-	var userID int32
-	err := json.NewDecoder(r.Body).Decode(&userID)
-	if err != nil {
-		return errors.Wrap(err, "Decode")
+func serveUserEmailsGetEmail(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		var userID int32
+		err := json.NewDecoder(r.Body).Decode(&userID)
+		if err != nil {
+			return errors.Wrap(err, "Decode")
+		}
+		email, _, err := database.UserEmails(db).GetPrimaryEmail(r.Context(), userID)
+		if err != nil {
+			return errors.Wrap(err, "UserEmails.GetEmail")
+		}
+		if err := json.NewEncoder(w).Encode(email); err != nil {
+			return errors.Wrap(err, "Encode")
+		}
+		return nil
 	}
-	email, _, err := database.GlobalUserEmails.GetPrimaryEmail(r.Context(), userID)
-	if err != nil {
-		return errors.Wrap(err, "UserEmails.GetEmail")
-	}
-	if err := json.NewEncoder(w).Encode(email); err != nil {
-		return errors.Wrap(err, "Encode")
-	}
-	return nil
 }
 
 func serveExternalURL(w http.ResponseWriter, r *http.Request) error {

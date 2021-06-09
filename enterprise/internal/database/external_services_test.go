@@ -22,6 +22,8 @@ import (
 // super-set of the validation performed by the OSS version.
 func TestExternalServices_ValidateConfig(t *testing.T) {
 	d := dbtesting.GetDB(t)
+	s := database.ExternalServices(d)
+	InitExternalServicesStoreValidators()
 
 	// Assertion helpers
 	equals := func(want ...string) func(testing.TB, []string) {
@@ -1286,8 +1288,6 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			if tc.ps == nil {
 				tc.ps = conf.Get().AuthProviders
 			}
-
-			s := NewExternalServicesStore(d)
 			_, err := s.ValidateConfig(context.Background(), database.ValidateExternalServiceConfigOptions{
 				Kind:          tc.kind,
 				Config:        tc.config,

@@ -47,7 +47,7 @@ func HandleResetPasswordInit(db dbutil.DB) func(http.ResponseWriter, *http.Reque
 			return
 		}
 
-		usr, err := database.GlobalUsers.GetByVerifiedEmail(ctx, formData.Email)
+		usr, err := database.Users(db).GetByVerifiedEmail(ctx, formData.Email)
 		if err != nil {
 			// 🚨 SECURITY: We don't show an error message when the user is not found
 			// as to not leak the existence of a given e-mail address in the database.
@@ -106,12 +106,12 @@ To reset the password for {{.Username}} on Sourcegraph, follow this link:
 
 // HandleSetPasswordEmail sends the password reset email directly to the user for users created by site admins.
 func HandleSetPasswordEmail(ctx context.Context, db dbutil.DB, id int32) (string, error) {
-	e, _, err := database.GlobalUserEmails.GetPrimaryEmail(ctx, id)
+	e, _, err := database.UserEmails(db).GetPrimaryEmail(ctx, id)
 	if err != nil {
 		return "", errors.Wrap(err, "get user primary email")
 	}
 
-	usr, err := database.GlobalUsers.GetByID(ctx, id)
+	usr, err := database.Users(db).GetByID(ctx, id)
 	if err != nil {
 		return "", errors.Wrap(err, "get user by ID")
 	}
@@ -161,44 +161,46 @@ To set the password for {{.Username}} on Sourcegraph, follow this link:
 })
 
 // HandleResetPasswordCode resets the password if the correct code is provided.
-func HandleResetPasswordCode(w http.ResponseWriter, r *http.Request) {
-	if handleEnabledCheck(w) {
-		return
-	}
-	if handleNotAuthenticatedCheck(w, r) {
-		return
-	}
+func HandleResetPasswordCode(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if handleEnabledCheck(w) {
+			return
+		}
+		if handleNotAuthenticatedCheck(w, r) {
+			return
+		}
 
-	ctx := r.Context()
-	var params struct {
-		UserID   int32  `json:"userID"`
-		Code     string `json:"code"`
-		Password string `json:"password"` // new password
-	}
-	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
-		httpLogAndError(w, "Password reset with code: could not decode request body", http.StatusBadGateway, "err", err)
-		return
-	}
+		ctx := r.Context()
+		var params struct {
+			UserID   int32  `json:"userID"`
+			Code     string `json:"code"`
+			Password string `json:"password"` // new password
+		}
+		if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+			httpLogAndError(w, "Password reset with code: could not decode request body", http.StatusBadGateway, "err", err)
+			return
+		}
 
-	if err := database.CheckPasswordLength(params.Password); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+		if err := database.CheckPasswordLength(params.Password); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 
-	success, err := database.GlobalUsers.SetPassword(ctx, params.UserID, params.Code, params.Password)
-	if err != nil {
-		httpLogAndError(w, "Unexpected error", http.StatusInternalServerError, "err", err)
-		return
-	}
+		success, err := database.Users(db).SetPassword(ctx, params.UserID, params.Code, params.Password)
+		if err != nil {
+			httpLogAndError(w, "Unexpected error", http.StatusInternalServerError, "err", err)
+			return
+		}
 
-	if !success {
-		http.Error(w, "Password reset code was invalid or expired.", http.StatusUnauthorized)
-		return
-	}
+		if !success {
+			http.Error(w, "Password reset code was invalid or expired.", http.StatusUnauthorized)
+			return
+		}
 
-	if conf.CanSendEmail() {
-		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, params.UserID, "reset the password"); err != nil {
-			log15.Warn("Failed to send email to inform user of password reset", "error", err)
+		if conf.CanSendEmail() {
+			if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, db, params.UserID, "reset the password"); err != nil {
+				log15.Warn("Failed to send email to inform user of password reset", "error", err)
+			}
 		}
 	}
 }

@@ -183,7 +183,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	ctx, save := s.observe(ctx, "PermsSyncer.syncUserPerms", "")
 	defer save(requestTypeUser, userID, &err)
 
-	user, err := database.GlobalUsers.GetByID(ctx, userID)
+	user, err := database.Users(s.permsStore.Handle().DB()).GetByID(ctx, userID)
 	if err != nil {
 		return errors.Wrap(err, "get user")
 	}
@@ -198,7 +198,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		serviceToAccounts[acct.ServiceType+":"+acct.ServiceID] = acct
 	}
 
-	userEmails, err := database.GlobalUserEmails.ListByUser(ctx,
+	userEmails, err := database.UserEmails(s.permsStore.Handle().DB()).ListByUser(ctx,
 		database.UserEmailsListOptions{
 			UserID:       user.ID,
 			OnlyVerified: true,
