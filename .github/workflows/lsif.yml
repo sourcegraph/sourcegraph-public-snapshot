@@ -12,11 +12,10 @@ jobs:
         run: lsif-go
       - name: Upload LSIF data to .com
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
-      # TODO: Re-enable this (https://github.com/sourcegraph/sourcegraph/issues/21232)
-      # - name: Upload LSIF data to dogfood
-      #   run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
-      #   env:
-      #     SRC_ENDPOINT: https://k8s.sgdev.org/
+      - name: Upload LSIF data to dogfood
+        run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
+        env:
+          SRC_ENDPOINT: https://k8s.sgdev.org/
 
   lsif-go-lib:
     if: github.repository == 'sourcegraph/sourcegraph'
@@ -30,12 +29,11 @@ jobs:
       - name: Upload LSIF data to .com
         working-directory: lib/
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
-      # TODO: Re-enable this (https://github.com/sourcegraph/sourcegraph/issues/21232)
-      # - name: Upload LSIF data to dogfood
-      #   working-directory: lib/
-      #   run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
-      #   env:
-      #     SRC_ENDPOINT: https://k8s.sgdev.org/
+      - name: Upload LSIF data to dogfood
+        working-directory: lib/
+        run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
+        env:
+          SRC_ENDPOINT: https://k8s.sgdev.org/
 
   lsif-tsc-web:
     if: github.repository == 'sourcegraph/sourcegraph'
@@ -55,12 +53,11 @@ jobs:
       - name: Upload LSIF data to .com
         working-directory: client/web/
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
-      # TODO: Re-enable this (https://github.com/sourcegraph/sourcegraph/issues/21232)
-      # - name: Upload LSIF data to dogfood
-      #   working-directory: client/web/
-      #   run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
-      #   env:
-      #     SRC_ENDPOINT: https://k8s.sgdev.org/
+      - name: Upload LSIF data to dogfood
+        working-directory: client/web/
+        run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
+        env:
+          SRC_ENDPOINT: https://k8s.sgdev.org/
 
   lsif-tsc-shared:
     if: github.repository == 'sourcegraph/sourcegraph'
@@ -80,12 +77,11 @@ jobs:
       - name: Upload LSIF data to .com
         working-directory: client/shared/
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
-      # TODO: Re-enable this (https://github.com/sourcegraph/sourcegraph/issues/21232)
-      # - name: Upload LSIF data to dogfood
-      #   working-directory: client/shared/
-      #   run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
-      #   env:
-      #     SRC_ENDPOINT: https://k8s.sgdev.org/
+      - name: Upload LSIF data to dogfood
+        working-directory: client/shared/
+        run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
+        env:
+          SRC_ENDPOINT: https://k8s.sgdev.org/
 
   lsif-tsc-branded:
     if: github.repository == 'sourcegraph/sourcegraph'
@@ -105,12 +101,11 @@ jobs:
       - name: Upload LSIF data to .com
         working-directory: client/branded/
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
-      # TODO: Re-enable this (https://github.com/sourcegraph/sourcegraph/issues/21232)
-      # - name: Upload LSIF data to dogfood
-      #   working-directory: client/branded/
-      #   run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
-      #   env:
-      #     SRC_ENDPOINT: https://k8s.sgdev.org/
+      - name: Upload LSIF data to dogfood
+        working-directory: client/branded/
+        run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
+        env:
+          SRC_ENDPOINT: https://k8s.sgdev.org/
 
   lsif-tsc-browser:
     if: github.repository == 'sourcegraph/sourcegraph'
@@ -130,12 +125,11 @@ jobs:
       - name: Upload LSIF data to .com
         working-directory: client/browser/
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
-      # TODO: Re-enable this (https://github.com/sourcegraph/sourcegraph/issues/21232)
-      # - name: Upload LSIF data to dogfood
-      #   working-directory: client/browser/
-      #   run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
-      #   env:
-      #     SRC_ENDPOINT: https://k8s.sgdev.org/
+      - name: Upload LSIF data to dogfood
+        working-directory: client/browser/
+        run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
+        env:
+          SRC_ENDPOINT: https://k8s.sgdev.org/
 
   lsif-tsc-wildcard:
     if: github.repository == 'sourcegraph/sourcegraph'
@@ -155,12 +149,11 @@ jobs:
       - name: Upload LSIF data to .com
         working-directory: client/wildcard/
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
-      # TODO: Re-enable this (https://github.com/sourcegraph/sourcegraph/issues/21232)
-      # - name: Upload LSIF data to dogfood
-      #   working-directory: client/wildcard/
-      #   run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
-      #   env:
-      #     SRC_ENDPOINT: https://k8s.sgdev.org/
+      - name: Upload LSIF data to dogfood
+        working-directory: client/wildcard/
+        run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
+        env:
+          SRC_ENDPOINT: https://k8s.sgdev.org/
 
   lsif-eslint-web:
     if: github.repository == 'sourcegraph/sourcegraph'
@@ -182,12 +175,11 @@ jobs:
       - name: Upload LSIF data to .com
         working-directory: client/web/
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
-      # TODO: Re-enable this (https://github.com/sourcegraph/sourcegraph/issues/21232)
-      # - name: Upload LSIF data to dogfood
-      #   working-directory: client/web/
-      #   run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
-      #   env:
-      #     SRC_ENDPOINT: https://k8s.sgdev.org/
+      - name: Upload LSIF data to dogfood
+        working-directory: client/web/
+        run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
+        env:
+          SRC_ENDPOINT: https://k8s.sgdev.org/
 
   lsif-eslint-shared:
     if: github.repository == 'sourcegraph/sourcegraph'
@@ -209,12 +201,11 @@ jobs:
       - name: Upload LSIF data to .com
         working-directory: client/shared/
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
-      # TODO: Re-enable this (https://github.com/sourcegraph/sourcegraph/issues/21232)
-      # - name: Upload LSIF data to dogfood
-      #   working-directory: client/shared/
-      #   run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
-      #   env:
-      #     SRC_ENDPOINT: https://k8s.sgdev.org/
+      - name: Upload LSIF data to dogfood
+        working-directory: client/shared/
+        run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
+        env:
+          SRC_ENDPOINT: https://k8s.sgdev.org/
 
   lsif-eslint-browser:
     if: github.repository == 'sourcegraph/sourcegraph'
@@ -236,12 +227,11 @@ jobs:
       - name: Upload LSIF data to .com
         working-directory: client/browser/
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
-      # TODO: Re-enable this (https://github.com/sourcegraph/sourcegraph/issues/21232)
-      # - name: Upload LSIF data to dogfood
-      #   working-directory: client/browser/
-      #   run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
-      #   env:
-      #     SRC_ENDPOINT: https://k8s.sgdev.org/
+      - name: Upload LSIF data to dogfood
+        working-directory: client/browser/
+        run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
+        env:
+          SRC_ENDPOINT: https://k8s.sgdev.org/
 
   lsif-eslint-wildcard:
     if: github.repository == 'sourcegraph/sourcegraph'
@@ -263,9 +253,8 @@ jobs:
       - name: Upload LSIF data to .com
         working-directory: client/wildcard/
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
-      # TODO: Re-enable this (https://github.com/sourcegraph/sourcegraph/issues/21232)
-      # - name: Upload LSIF data to dogfood
-      #   working-directory: client/wildcard/
-      #   run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
-      #   env:
-      #     SRC_ENDPOINT: https://k8s.sgdev.org/
+      - name: Upload LSIF data to dogfood
+        working-directory: client/wildcard/
+        run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
+        env:
+          SRC_ENDPOINT: https://k8s.sgdev.org/
