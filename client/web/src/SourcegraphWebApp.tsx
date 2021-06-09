@@ -79,7 +79,7 @@ import { aggregateStreamingSearch } from './search/stream'
 import { listUserRepositories } from './site-admin/backend'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
-import { GithubCodeHostScopeProvider } from './site/GitHubCodeHostScopeAlert/GithubScopeProvider'
+import { GitHubServiceScopeProvider } from './site/GitHubCodeHostScopeAlert/GithubScopeProvider'
 import { ThemePreference } from './theme'
 import { eventLogger } from './tracking/eventLogger'
 import { withActivation } from './tracking/withActivation'
@@ -492,7 +492,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                         <Route
                             path="/"
                             render={routeComponentProps => (
-                                <GithubCodeHostScopeProvider authenticatedUser={authenticatedUser}>
+                                <GitHubServiceScopeProvider authenticatedUser={authenticatedUser}>
                                     <LayoutWithActivation
                                         {...props}
                                         {...routeComponentProps}
@@ -555,7 +555,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                             this.onUserExternalServicesOrRepositoriesUpdate
                                         }
                                     />
-                                </GithubCodeHostScopeProvider>
+                                </GitHubServiceScopeProvider>
                             )}
                         />
                     </BrowserRouter>

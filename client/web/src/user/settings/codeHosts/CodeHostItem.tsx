@@ -7,10 +7,8 @@ import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { CircleDashedIcon } from '../../../components/CircleDashedIcon'
-import { dismissAlert } from '../../../components/DismissibleAlert'
 import { LoaderButton } from '../../../components/LoaderButton'
 import { ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
-import { GITHUB_SCOPE_ALERT_KEY } from '../../../site/GitHubCodeHostScopeAlert/GitHubScopeAlert'
 
 import { RemoveCodeHostConnectionModal } from './RemoveCodeHostConnectionModal'
 import { ifNotNavigated } from './UserAddCodeHostsPage'
@@ -20,7 +18,7 @@ interface CodeHostItemProps {
     name: string
     icon: React.ComponentType<{ className?: string }>
     navigateToAuthProvider: (kind: ExternalServiceKind) => void
-    updateAuthRequired?: boolean
+    isTokenUpdateRequired: boolean
     // optional service object fields when the code host connection is active
     service?: ListExternalServiceFields
 
@@ -33,7 +31,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
     service,
     kind,
     name,
-    updateAuthRequired,
+    isTokenUpdateRequired,
     icon: Icon,
     navigateToAuthProvider,
     onDidRemove,
@@ -55,12 +53,6 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
         })
         navigateToAuthProvider(kind)
     }, [kind, navigateToAuthProvider])
-
-    const dismissAlertAndToAuthProvider = useCallback((): void => {
-        // hide global alert
-        dismissAlert(GITHUB_SCOPE_ALERT_KEY)
-        toAuthProvider()
-    }, [toAuthProvider])
 
     return (
         <div className={classNames('d-flex align-items-start', !isRedesignEnabled && 'p-2')}>
@@ -129,7 +121,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                         </button>
                     )
                 ) : (
-                    updateAuthRequired &&
+                    isTokenUpdateRequired &&
                     (oauthInFlight ? (
                         <LoaderButton
                             type="button"
