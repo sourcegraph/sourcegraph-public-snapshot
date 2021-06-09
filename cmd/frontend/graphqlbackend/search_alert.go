@@ -616,7 +616,11 @@ func pathParentsByFrequency(paths []string) []string {
 // year 1. As a workaround, wrap instantiates start with time.now().
 // TODO(rvantonder): #10801.
 func (a searchAlert) wrap(db dbutil.DB) *SearchResultsResolver {
-	return &SearchResultsResolver{db: db, alert: &a}
+	return &SearchResultsResolver{db: db, SearchResults: a.wrapResults()}
+}
+
+func (a searchAlert) wrapResults() *SearchResults {
+	return &SearchResults{Alert: &a}
 }
 
 func (a searchAlert) wrapSearchImplementer(db dbutil.DB) *alertSearchImplementer {

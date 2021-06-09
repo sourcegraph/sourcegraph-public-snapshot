@@ -114,7 +114,7 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 	resolved, err := r.determineRepos(ctx, tr, start)
 	if err != nil {
 		if alert, err := errorToAlert(err); alert != nil {
-			return &SearchResultsResolver{db: r.db, alert: alert}, err
+			return &SearchResultsResolver{db: r.db, SearchResults: alert.wrapResults()}, err
 		}
 		return nil, err
 	}
@@ -178,12 +178,12 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 	)
 
 	return &SearchResultsResolver{
-		db:    r.db,
-		alert: alert,
+		db: r.db,
 		SearchResults: &SearchResults{
 			Matches: results,
 			Stats:   common,
 			Cursor:  cursor,
+			Alert:   alert,
 		},
 	}, nil
 }

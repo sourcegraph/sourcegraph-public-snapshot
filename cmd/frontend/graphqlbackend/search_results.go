@@ -107,8 +107,6 @@ type SearchResultsResolver struct {
 	// limit is the maximum number of SearchResults to send back to the user.
 	limit int
 
-	alert *searchAlert
-
 	// The time it took to compute all results.
 	elapsed time.Duration
 
@@ -121,6 +119,7 @@ type SearchResults struct {
 	Matches []result.Match
 	Stats   streaming.Stats
 	Cursor  *run.SearchCursor
+	Alert   *searchAlert
 }
 
 // Results are the results found by the search. It respects the limits set. To
@@ -190,7 +189,7 @@ func (sr *SearchResultsResolver) ApproximateResultCount() string {
 	return strconv.Itoa(int(count))
 }
 
-func (sr *SearchResultsResolver) Alert() *searchAlert { return sr.alert }
+func (sr *SearchResultsResolver) Alert() *searchAlert { return sr.SearchResults.Alert }
 
 func (sr *SearchResultsResolver) ElapsedMilliseconds() int32 {
 	return int32(sr.elapsed.Milliseconds())
@@ -866,8 +865,8 @@ func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolve
 
 	var status, alertType string
 	status = DetermineStatusForLogs(srr, err)
-	if srr != nil && srr.alert != nil {
-		alertType = srr.alert.PrometheusType()
+	if srr != nil && srr.SearchResults.Alert != nil {
+		alertType = srr.SearchResults.Alert.PrometheusType()
 	}
 	requestSource := string(trace.RequestSource(ctx))
 	requestName := trace.GraphQLRequestName(ctx)
@@ -920,7 +919,7 @@ func DetermineStatusForLogs(srr *SearchResultsResolver, err error) string {
 		return "timeout"
 	case srr.Stats.Status.Any(search.RepoStatusTimedout):
 		return "partial_timeout"
-	case srr.alert != nil:
+	case srr.SearchResults.Alert != nil:
 		return "alert"
 	default:
 		return "success"
@@ -1462,7 +1461,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 	resolved, err := r.determineRepos(ctx, tr, start)
 	if err != nil {
 		if alert, err := errorToAlert(err); alert != nil {
-			return &SearchResultsResolver{db: r.db, alert: alert}, err
+			return &SearchResultsResolver{db: r.db, SearchResults: alert.wrapResults()}, err
 		}
 		return nil, err
 	}
@@ -1578,9 +1577,9 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 		SearchResults: &SearchResults{
 			Matches: matches,
 			Stats:   common,
+			Alert:   alert,
 		},
 		limit: limit,
-		alert: alert,
 	}
 	return &resultsResolver, err
 }

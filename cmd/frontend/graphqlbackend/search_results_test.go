@@ -671,8 +671,8 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 				SearchResults: &SearchResults{
 					Stats:   tt.fields.searchResultsCommon,
 					Matches: tt.fields.results,
+					Alert:   tt.fields.alert,
 				},
-				alert: tt.fields.alert,
 			}
 			if got := sr.ApproximateResultCount(); got != tt.want {
 				t.Errorf("searchResultsResolver.ApproximateResultCount() = %v, want %v", got, tt.want)
@@ -933,7 +933,7 @@ func TestEvaluateAnd(t *testing.T) {
 				t.Fatal("Results:", err)
 			}
 			if tt.wantAlert {
-				if results.alert == nil {
+				if results.SearchResults.Alert == nil {
 					t.Errorf("Expected results")
 				}
 			} else if int(results.MatchCount()) != len(zoektFileMatches) {
