@@ -29,18 +29,11 @@ func useFastPasswordMocks() {
 	}
 }
 
-// BeforeTest functions are called before each test is run (by SetupGlobalTestDB).
-var BeforeTest []func()
-
 func setupGlobalTestDB(t testing.TB) {
 	useFastPasswordMocks()
 
 	if testing.Short() {
 		t.Skip()
-	}
-
-	for _, f := range BeforeTest {
-		f()
 	}
 }
 
