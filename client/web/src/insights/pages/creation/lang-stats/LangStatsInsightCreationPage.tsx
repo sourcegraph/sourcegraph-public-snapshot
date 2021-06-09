@@ -98,7 +98,7 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
         setInitialFormValues(undefined)
         telemetryService.log('CodeInsightsCodeStatsCreationPageCancelClick')
         history.push('/insights')
-    }, [history, telemetryService])
+    }, [history, setInitialFormValues, telemetryService])
 
     const handleChange = (event: FormChangeEvent<LangStatsCreationFormFields>): void => {
         setInitialFormValues(event.values)
