@@ -88,7 +88,7 @@ func TestPrepareZip_fetchTarFail(t *testing.T) {
 		return nil, fetchErr
 	}
 	_, err := s.PrepareZip(context.Background(), "foo", "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef")
-	if errors.Cause(err) != fetchErr {
+	if !errors.Is(err, fetchErr) {
 		t.Fatalf("expected PrepareZip to fail with %v, failed with %v", fetchErr, err)
 	}
 }
