@@ -1,10 +1,4 @@
-/* eslint-disable jsx-a11y/no-noninteractive-element-interactions */
-// NOTE: the eslint-disable above can't be a eslint-disable-next-line because
-// JSX syntax doesn't support comments on the line where it's needed.
-
 import classnames from 'classnames'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useState } from 'react'
 
@@ -135,10 +129,12 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
 
     return (
         // Use 'onMouseDown' instead of 'onClick' to allow selecting the text and mouse up outside the modal
+        // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
         <div role="navigation" className={styles.modal} onMouseDown={() => props.onClose()}>
+            {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
             <div role="navigation" className={styles.content} onMouseDown={event => event.stopPropagation()}>
                 <div className={styles.header}>
-                    <h3 className={styles.headerTitle}>Find file</h3>
+                    <h3 className="mb-0">Find file</h3>
                     <button type="button" className="btn btn-icon" onClick={() => props.onClose()}>
                         <CloseIcon className={`icon-inline ${styles.closeIcon}`} />
                     </button>
@@ -190,7 +186,7 @@ const FuzzyResultsSummary: React.FunctionComponent<FuzzyResultsSummaryProps> = (
             {fsm.key === 'indexing' && indexingProgressBar(fsm)} {plural('total file', files.totalFileCount, true)}
         </span>
         <i className="text-muted">
-            <ChevronUpIcon /> and <ChevronDownIcon /> arrow keys browse. Enter selects.
+            <kbd>↑</kbd> and <kbd>↓</kbd> arrow keys browse. <kbd>⏎</kbd> selects.
         </i>
     </>
 )

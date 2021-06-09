@@ -13,6 +13,7 @@ const filenames = [
     'client/README.md',
     'client/branded/.eslintignore',
     'client/branded/.eslintrc.js',
+    // This line is intentionally long to test what happens during horizontal overflows
     'client/branded/.src/components/BrandedStory.tsx/client/branded/srcndedStory.tsx/client/branded/src/components/BrandedStory.tsx/client/branded/src/components/BrandedStory.tsx',
     'client/branded/.stylelintrc.json',
     'client/branded/README.md',
