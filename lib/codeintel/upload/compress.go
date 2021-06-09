@@ -2,7 +2,7 @@ package upload
 
 import (
 	"io"
-	"io/ioutil"
+	"os"
 
 	"github.com/hashicorp/go-multierror"
 	gzip "github.com/klauspost/pgzip"
@@ -14,7 +14,7 @@ import (
 // file and returns the file's path. If the given progress object is non-nil, then the progress's
 // first bar will be updated with the percentage of bytes read on each read.
 func compressReaderToDisk(r io.Reader, readerLen int64, progress output.Progress) (filename string, err error) {
-	compressedFile, err := ioutil.TempFile("", "")
+	compressedFile, err := os.CreateTemp("", "")
 	if err != nil {
 		return "", err
 	}

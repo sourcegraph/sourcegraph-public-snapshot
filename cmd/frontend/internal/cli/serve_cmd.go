@@ -17,8 +17,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/tmpfriend"
-	"github.com/opentracing/opentracing-go"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/throttled/throttled/v2/store/redigostore"
 	"golang.org/x/sync/errgroup"
 
@@ -43,7 +41,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
@@ -178,11 +175,7 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 	// Create an out-of-band migration runner onto which each enterprise init function
 	// can register migration routines to run in the background while they still have
 	// work remaining.
-	outOfBandMigrationRunner := oobmigration.NewRunnerWithDB(db, time.Second*30, &observation.Context{
-		Logger:     log15.Root(),
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
-		Registerer: prometheus.DefaultRegisterer,
-	})
+	outOfBandMigrationRunner := newOutOfBandMigrationRunner(ctx, db)
 
 	// Run a background job to handle encryption of external service configuration.
 	extsvcMigrator := database.NewExternalServiceConfigMigratorWithDB(db)

@@ -33,6 +33,7 @@
   - [`sg test` - Running test suites](#sg-test---running-test-suites)
   - [`sg doctor` - Check health of dev environment](#sg-doctor---check-health-of-dev-environment)
   - [`sg live` - See currently deployed version](#sg-live---see-currently-deployed-version)
+  - [`sg migration` - Run or manipulate database migrations](#sg-migration---run-or-manipulate-database-migrations)
 - [Configuration](#configuration)
 - [TODOs](#todos)
 - [Hacking](#hacking)
@@ -40,7 +41,6 @@
 - [Inspiration](#inspiration)
 - [Ideas](#ideas)
   - [Generators](#generators)
-  - [Database migrations](#database-migrations)
   - [Edit configuration files](#edit-configuration-files)
   - [Tail logs](#tail-logs)
 
@@ -144,6 +144,22 @@ sg live k8s
 
 # List environments:
 sg live -help
+```
+
+### `sg migration` - Run or manipulate database migrations
+
+```bash
+# Migrate local default database up
+sg migration up
+
+# Migrate specific database down one migration
+sg migration down -n --db codeintel -n 1
+
+# Add new migration for specific database
+sg migration add --db codeintel 'add missing index'
+
+# Squash migrations for default database
+sg migration squash
 ```
 
 ## Configuration
@@ -250,7 +266,6 @@ tests:
 - [ ] Add the remaining processes from `<root>/dev/Procfile` to `<root>/sg.config.yaml`
 - [ ] All of the [ideas](#ideas) below
   - [ ] Rebuild and restart a command (if it has `build` defined, see Configuration): `sg build gitserver`
-  - [ ] Implement the `sg migration` command
   - [ ] Implement the `sg generate` command
   - [ ] Implement `sg edit site-config` and `sg edit external-services`
   - [ ] Implement `sg tail-log`
@@ -298,19 +313,6 @@ sg generate
 
 # Generate only specific things
 sg generate mocks ./internal/enterprise/batches
-```
-
-#### Database migrations
-
-```bash
-# Create a new migration
-sg migration new --name=my-new-migration
-# Create a new migration for the codeintel database
-sg migration new --db=codeintel --name=my-new-migration
-
-# Run all migrations _up_
-sg migration up
-sg migration down
 ```
 
 #### Edit configuration files

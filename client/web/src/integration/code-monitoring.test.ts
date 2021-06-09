@@ -62,6 +62,7 @@ describe('Code monitoring', () => {
                             },
                             settingsURL: '/site-admin/global-settings',
                             viewerCanAdminister: true,
+                            allowSiteSettingsEdits: true,
                         },
                     ],
                     final: JSON.stringify({}),

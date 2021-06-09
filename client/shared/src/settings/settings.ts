@@ -41,7 +41,7 @@ export type SettingsSubject = Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdmini
         | Pick<IClient, '__typename' | 'displayName'>
         | Pick<GQL.IUser, '__typename' | 'username' | 'displayName'>
         | Pick<GQL.IOrg, '__typename' | 'name' | 'displayName'>
-        | Pick<GQL.ISite, '__typename'>
+        | Pick<GQL.ISite, '__typename' | 'allowSiteSettingsEdits'>
         | Pick<GQL.IDefaultSettings, '__typename'>
     )
 

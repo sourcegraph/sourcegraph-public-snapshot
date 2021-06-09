@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 
@@ -19,7 +20,7 @@ export const NeedsRepositoryConfigurationAlert: React.FunctionComponent<{ classN
 }) => (
     <DismissibleAlert
         partialStorageKey="needsRepositoryConfiguration"
-        className={`alert alert-success d-flex align-items-center ${className}`}
+        className={classNames('alert-success d-flex align-items-center', className)}
     >
         <Link className="site-alert__link" to="/site-admin/external-services" onClick={onClickCTA}>
             <CircleChevronRightIcon className="redesign-d-none icon-inline site-alert__link-icon" />{' '}

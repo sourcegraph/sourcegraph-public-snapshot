@@ -175,7 +175,7 @@ export class ApiConsole extends React.PureComponent<Props, State> {
                             <Link className="btn btn-link" to="/help/api/graphql">
                                 Docs
                             </Link>
-                            <div className="alert alert-warning py-1 px-3 mb-0 ml-2 text-nowrap">
+                            <div className="alert alert-warning py-1 mb-0 ml-2 text-nowrap">
                                 <small>
                                     The API console uses <strong>real production data.</strong>
                                 </small>

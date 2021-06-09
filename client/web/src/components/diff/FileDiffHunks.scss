@@ -3,7 +3,13 @@ $color-deletion: $red;
 
 .diff-boundary {
     &__num {
-        background-color: var(--color-bg-2);
+        background-color: var(--code-bg);
+        // In the split mode version this selector adds the divider effect between table data cells.
+        &:nth-child(3) {
+            .theme-redesign & {
+                border-left: 1px solid var(--border-color);
+            }
+        }
     }
     &__num,
     &__content {
@@ -17,7 +23,7 @@ $color-deletion: $red;
 
 .diff-hunk {
     &__num {
-        background-color: var(--color-bg-2);
+        background-color: var(--code-bg);
         min-width: 2.5rem;
         font-size: 0.75rem;
         line-height: (20/12);
@@ -34,6 +40,19 @@ $color-deletion: $red;
                 color: var(--body-color);
                 text-decoration: none;
             }
+            .theme-redesign & {
+                color: var(--line-number-color);
+            }
+        }
+        &--empty {
+            .theme-redesign & {
+                background-color: var(--body-bg);
+            }
+        }
+        .theme-redesign & {
+            &:nth-child(3) {
+                border-left: 1px solid var(--border-color);
+            }
         }
     }
     &__content {
@@ -42,12 +61,16 @@ $color-deletion: $red;
         font-family: $code-font-family;
         white-space: pre-wrap;
         font-size: 0.75rem;
+        background-color: var(--code-bg);
         &::before {
             padding-right: 0.5rem;
             content: attr(data-diff-marker);
         }
         &--empty {
             background-color: var(--color-bg-2);
+            .theme-redesign & {
+                background-color: var(--body-bg);
+            }
             // This cell is always empty opacity will not affect any content
             opacity: 0.5;
         }
@@ -65,46 +88,84 @@ $color-deletion: $red;
             }
             &--active {
                 background-color: rgba($oc-yellow-5, 0.17) !important;
+                .theme-redesign & {
+                    background-color: var(--code-line-highlight-color) !important;
+                }
                 &-num {
                     background-color: rgba($oc-yellow-5, 0.25);
+                    .theme-redesign & {
+                        background-color: var(--code-line-highlight-color);
+                    }
                 }
             }
             &--addition {
                 background-color: rgba($color-addition, 0.17);
+                .theme-redesign & {
+                    background-color: var(--diff-add-bg);
+                }
                 &-num {
                     background-color: rgba($color-addition, 0.25);
+                    .theme-redesign & {
+                        background-color: var(--diff-add-bg);
+                    }
                 }
             }
             &--deletion {
                 background-color: rgba($color-deletion, 0.17);
+                .theme-redesign & {
+                    background-color: var(--diff-remove-bg);
+                }
                 &-num {
                     background-color: rgba($color-deletion, 0.25);
+                    .theme-redesign & {
+                        background-color: var(--diff-remove-bg);
+                    }
                 }
             }
         }
     }
 
     &__line--active &__num {
+        // important suffix is needed in order to overlap any active line with the addition/deletion colors
         background-color: rgba($oc-yellow-5, 0.35) !important;
+        .theme-redesign & {
+            background-color: var(--code-line-highlight-color) !important;
+        }
     }
     &__line--active &__content {
+        // important suffix is needed in order to overlap any active line with the addition/deletion colors
         background-color: rgba($oc-yellow-5, 0.25) !important;
+        .theme-redesign & {
+            background-color: var(--code-line-highlight-color) !important;
+        }
     }
     &__line--addition &__num {
         background-color: rgba($color-addition, 0.25);
+        .theme-redesign & {
+            background-color: var(--diff-add-bg);
+        }
     }
     &__line--addition &__content {
         background-color: rgba($color-addition, 0.17);
+        .theme-redesign & {
+            background-color: var(--diff-add-bg);
+        }
     }
     &__line--deletion &__num {
         background-color: rgba($color-deletion, 0.25);
+        .theme-redesign & {
+            background-color: var(--diff-remove-bg);
+        }
     }
     &__line--deletion &__content {
         background-color: rgba($color-deletion, 0.17);
+        .theme-redesign & {
+            background-color: var(--diff-remove-bg);
+        }
     }
     &__line--both &__num,
     &__num--both {
-        background-color: var(--color-bg-2);
+        background-color: var(--code-bg);
     }
 }
 

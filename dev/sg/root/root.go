@@ -2,7 +2,6 @@ package root
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -29,7 +28,7 @@ func findRoot() (string, error) {
 	}
 
 	for {
-		contents, err := ioutil.ReadFile(filepath.Join(wd, "go.mod"))
+		contents, err := os.ReadFile(filepath.Join(wd, "go.mod"))
 		if err == nil {
 			for _, line := range strings.Split(string(contents), "\n") {
 				if line == "module github.com/sourcegraph/sourcegraph" {

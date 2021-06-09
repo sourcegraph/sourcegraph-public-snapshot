@@ -41,6 +41,9 @@ interface FilteredConnectionDisplayProps extends ConnectionNodesDisplayProps {
     /** CSS class name for the root element. */
     className?: string
 
+    /** CSS class name for the loader element. */
+    loaderClassName?: string
+
     /** Whether to display it more compactly. */
     compact?: boolean
 
@@ -572,6 +575,7 @@ export class FilteredConnection<
                         pluralNoun={this.props.pluralNoun}
                         listComponent={this.props.listComponent}
                         listClassName={this.props.listClassName}
+                        summaryClassName={this.props.summaryClassName}
                         headComponent={this.props.headComponent}
                         headComponentProps={this.props.headComponentProps}
                         footComponent={this.props.footComponent}
@@ -587,7 +591,12 @@ export class FilteredConnection<
                     />
                 )}
                 {this.state.loading && (
-                    <span className="filtered-connection__loader test-filtered-connection__loader">
+                    <span
+                        className={classNames(
+                            'filtered-connection__loader test-filtered-connection__loader',
+                            this.props.loaderClassName
+                        )}
+                    >
                         <LoadingSpinner className="icon-inline" />
                     </span>
                 )}
@@ -649,6 +658,7 @@ export class FilteredConnection<
 
 /**
  * Resets the `FilteredConnection` URL query string parameters to the defaults
+ *
  * @param parameters the current URL search parameters
  */
 export const resetFilteredConnectionURLQuery = (parameters: URLSearchParams): void => {

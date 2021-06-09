@@ -7,7 +7,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -108,7 +108,7 @@ func TestMain(m *testing.M) {
 	flag.Parse()
 	if !testing.Verbose() {
 		log15.Root().SetHandler(log15.LvlFilterHandler(log15.LvlError, log15.Root().GetHandler()))
-		log.SetOutput(ioutil.Discard)
+		log.SetOutput(io.Discard)
 	}
 	os.Exit(m.Run())
 }
@@ -188,7 +188,7 @@ func TestAffiliatedRepositories(t *testing.T) {
 				}
 			}
 			return &http.Response{
-				Body:       ioutil.NopCloser(buf),
+				Body:       io.NopCloser(buf),
 				StatusCode: http.StatusOK,
 			}, nil
 		},
@@ -206,7 +206,7 @@ func TestAffiliatedRepositories(t *testing.T) {
 				t.Fatal(err)
 			}
 			return &http.Response{
-				Body:       ioutil.NopCloser(buf),
+				Body:       io.NopCloser(buf),
 				StatusCode: http.StatusOK,
 			}, nil
 		},

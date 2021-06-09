@@ -3,7 +3,6 @@ package repos
 import (
 	"context"
 	"fmt"
-
 	"net/url"
 	"strconv"
 	"strings"
@@ -102,8 +101,8 @@ func newGitLabSource(svc *types.ExternalService, c *schema.GitLabConnection, cf 
 	provider := gitlab.NewClientProvider(baseURL, cli)
 
 	var client *gitlab.Client
-	switch c.TokenType {
-	case "oauth":
+	switch gitlab.TokenType(c.TokenType) {
+	case gitlab.TokenTypeOAuth:
 		client = provider.GetOAuthClient(c.Token)
 	default:
 		client = provider.GetPATClient(c.Token, "")
@@ -195,6 +194,7 @@ func (s GitLabSource) makeRepo(proj *gitlab.Project) *types.Repo {
 		Description:  proj.Description,
 		Fork:         proj.ForkedFromProject != nil,
 		Archived:     proj.Archived,
+		Stars:        proj.StarCount,
 		Private:      proj.Visibility == "private",
 		Sources: map[string]*types.SourceInfo{
 			urn: {

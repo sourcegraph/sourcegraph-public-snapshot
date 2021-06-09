@@ -4,6 +4,10 @@
     animation: 0.25s fade-in;
     pointer-events: none;
     line-height: 1rem;
+
+    > .arrow::before {
+        height: 0.8rem; // Fix bug in Firefox where the arrow won't inherit the parent's height
+    }
 }
 
 @keyframes fade-in {

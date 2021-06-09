@@ -14,6 +14,30 @@ func init() {
 	dbtesting.DBNameSuffix = "backendtestdb"
 }
 
+func TestGetFirstServiceVersion(t *testing.T) {
+	dbtesting.SetupGlobalTestDB(t)
+
+	ctx := context.Background()
+
+	if err := UpdateServiceVersion(ctx, "service", "1.2.3"); err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+	if err := UpdateServiceVersion(ctx, "service", "1.2.4"); err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+	if err := UpdateServiceVersion(ctx, "service", "1.3.0"); err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	firstVersion, err := GetFirstServiceVersion(ctx, "service")
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+	if firstVersion != "1.2.3" {
+		t.Errorf("unexpected first version. want=%s have=%s", "1.2.3", firstVersion)
+	}
+}
+
 func TestUpdateServiceVersion(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 

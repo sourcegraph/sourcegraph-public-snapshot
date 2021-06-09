@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -21,7 +22,7 @@ func NewAuthzProviders(
 ) (ps []authz.Provider, problems []string, warnings []string) {
 	// Authorization (i.e., permissions) providers
 	for _, c := range conns {
-		p, err := newAuthzProvider(c.URN, c.Authorization, c.Url, c.Token, cfg.AuthProviders)
+		p, err := newAuthzProvider(c.URN, c.Authorization, c.Url, c.Token, gitlab.TokenType(c.TokenType), cfg.AuthProviders)
 		if err != nil {
 			problems = append(problems, err.Error())
 		} else if p != nil {
@@ -37,7 +38,7 @@ func NewAuthzProviders(
 	return ps, problems, warnings
 }
 
-func newAuthzProvider(urn string, a *schema.GitLabAuthorization, instanceURL, token string, ps []schema.AuthProviders) (authz.Provider, error) {
+func newAuthzProvider(urn string, a *schema.GitLabAuthorization, instanceURL, token string, tokenType gitlab.TokenType, ps []schema.AuthProviders) (authz.Provider, error) {
 	if a == nil {
 		return nil, nil
 	}
@@ -74,9 +75,10 @@ func newAuthzProvider(urn string, a *schema.GitLabAuthorization, instanceURL, to
 		}
 
 		return NewOAuthProvider(OAuthProviderOp{
-			URN:     urn,
-			BaseURL: glURL,
-			Token:   token,
+			URN:       urn,
+			BaseURL:   glURL,
+			Token:     token,
+			TokenType: tokenType,
 		}), nil
 	case idp.Username != nil:
 		return NewSudoProvider(SudoProviderOp{
@@ -125,6 +127,6 @@ var NewSudoProvider = func(op SudoProviderOp) authz.Provider {
 // ValidateAuthz validates the authorization fields of the given GitLab external
 // service config.
 func ValidateAuthz(cfg *schema.GitLabConnection, ps []schema.AuthProviders) error {
-	_, err := newAuthzProvider("", cfg.Authorization, cfg.Url, cfg.Token, ps)
+	_, err := newAuthzProvider("", cfg.Authorization, cfg.Url, cfg.Token, gitlab.TokenType(cfg.TokenType), ps)
 	return err
 }

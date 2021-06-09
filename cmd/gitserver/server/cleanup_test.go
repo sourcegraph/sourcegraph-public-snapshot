@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-	"io/ioutil"
+	"io/fs"
 	"log"
 	"os"
 	"os/exec"
@@ -32,7 +32,7 @@ const (
 )
 
 func TestCleanup_computeStats(t *testing.T) {
-	root, err := ioutil.TempDir("", "gitserver-test-")
+	root, err := os.MkdirTemp("", "gitserver-test-")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -66,7 +66,7 @@ func TestCleanup_computeStats(t *testing.T) {
 	// we hardcode the name here so the tests break if someone changes the
 	// value of reposStatsName. We don't want it to change without good reason
 	// since it will temporarily break the repo-stats endpoint.
-	b, err := ioutil.ReadFile(filepath.Join(root, "repos-stats.json"))
+	b, err := os.ReadFile(filepath.Join(root, "repos-stats.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -90,7 +90,7 @@ func TestCleanup_computeStats(t *testing.T) {
 }
 
 func TestCleanupInactive(t *testing.T) {
-	root, err := ioutil.TempDir("", "gitserver-test-")
+	root, err := os.MkdirTemp("", "gitserver-test-")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -174,7 +174,7 @@ func TestGitGCAuto(t *testing.T) {
 }
 
 func TestCleanupExpired(t *testing.T) {
-	root, err := ioutil.TempDir("", "gitserver-test-")
+	root, err := os.MkdirTemp("", "gitserver-test-")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -434,7 +434,7 @@ func TestSetupAndClearTmp(t *testing.T) {
 	// Wait until async cleaning is done
 	for i := 0; i < 1000; i++ {
 		found := false
-		files, err := ioutil.ReadDir(s.ReposDir)
+		files, err := os.ReadDir(s.ReposDir)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -635,7 +635,7 @@ func (f *fakeDiskSizer) DiskSizeBytes(mountPoint string) (uint64, error) {
 
 func tmpDir(t *testing.T) string {
 	t.Helper()
-	dir, err := ioutil.TempDir("", filepath.Base(t.Name()))
+	dir, err := os.MkdirTemp("", filepath.Base(t.Name()))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -655,7 +655,7 @@ func mkFiles(t *testing.T, root string, paths ...string) {
 
 func writeFile(t *testing.T, path string, content []byte) {
 	t.Helper()
-	err := ioutil.WriteFile(path, content, 0666)
+	err := os.WriteFile(path, content, 0666)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -669,7 +669,7 @@ func assertPaths(t *testing.T, root string, want ...string) {
 		notfound[p] = struct{}{}
 	}
 	var unwanted []string
-	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+	err := filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -738,7 +738,7 @@ func TestFreeUpSpace(t *testing.T) {
 	})
 	t.Run("oldest repo gets removed to free up space", func(t *testing.T) {
 		// Set up.
-		rd, err := ioutil.TempDir("", "freeUpSpace")
+		rd, err := os.MkdirTemp("", "freeUpSpace")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -787,10 +787,10 @@ func makeFakeRepo(d string, sizeBytes int) error {
 	if err := os.MkdirAll(gd, 0700); err != nil {
 		return errors.Wrap(err, "creating .git dir and any parents")
 	}
-	if err := ioutil.WriteFile(filepath.Join(gd, "HEAD"), nil, 0666); err != nil {
+	if err := os.WriteFile(filepath.Join(gd, "HEAD"), nil, 0666); err != nil {
 		return errors.Wrap(err, "creating HEAD file")
 	}
-	if err := ioutil.WriteFile(filepath.Join(gd, "space_eater"), make([]byte, sizeBytes), 0666); err != nil {
+	if err := os.WriteFile(filepath.Join(gd, "space_eater"), make([]byte, sizeBytes), 0666); err != nil {
 		return errors.Wrapf(err, "writing to space_eater file")
 	}
 	return nil

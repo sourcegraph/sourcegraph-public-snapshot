@@ -3,7 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
-	"os"
+	"io/fs"
 	"path"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -16,7 +16,7 @@ import (
 // FileContentFunc is a closure that returns the contents of a file and is used by the VirtualFileResolver.
 type FileContentFunc func(ctx context.Context) (string, error)
 
-func NewVirtualFileResolver(stat os.FileInfo, fileContent FileContentFunc) *virtualFileResolver {
+func NewVirtualFileResolver(stat fs.FileInfo, fileContent FileContentFunc) *virtualFileResolver {
 	return &virtualFileResolver{
 		stat:        stat,
 		fileContent: fileContent,
@@ -27,7 +27,7 @@ type virtualFileResolver struct {
 	fileContent FileContentFunc
 	// stat is this tree entry's file info. Its Name method must return the full path relative to
 	// the root, not the basename.
-	stat os.FileInfo
+	stat fs.FileInfo
 }
 
 func (r *virtualFileResolver) Path() string      { return r.stat.Name() }

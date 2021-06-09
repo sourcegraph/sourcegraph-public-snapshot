@@ -3,7 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"errors"
-	"os"
+	"io/fs"
 	"sync"
 
 	"github.com/neelance/parallel"
@@ -51,7 +51,7 @@ func searchResultsStatsLanguages(ctx context.Context, matches []result.Match) ([
 
 	// Records the work necessary for a batch (repoCommit).
 	type fileStatsWork struct {
-		fullEntries  []os.FileInfo     // matched these full files
+		fullEntries  []fs.FileInfo     // matched these full files
 		partialFiles map[string]uint64 // file with line matches (path) -> count of lines matching
 	}
 

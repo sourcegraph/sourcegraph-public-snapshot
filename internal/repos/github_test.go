@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -64,6 +63,7 @@ func TestGithubSource_GetRepo(t *testing.T) {
 					Name:        "github.com/sourcegraph/sourcegraph",
 					Description: "Code search and navigation tool (self-hosted)",
 					URI:         "github.com/sourcegraph/sourcegraph",
+					Stars:       2220,
 					ExternalRepo: api.ExternalRepoSpec{
 						ID:          "MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==",
 						ServiceType: "github",
@@ -135,7 +135,7 @@ func TestGithubSource_GetRepo(t *testing.T) {
 }
 
 func TestGithubSource_makeRepo(t *testing.T) {
-	b, err := ioutil.ReadFile(filepath.Join("testdata", "github-repos.json"))
+	b, err := os.ReadFile(filepath.Join("testdata", "github-repos.json"))
 	if err != nil {
 		t.Fatal(err)
 	}

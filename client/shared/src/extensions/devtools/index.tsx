@@ -38,7 +38,7 @@ const ExtensionDevelopmentTools: React.FunctionComponent<ExtensionsDevelopmentTo
             <div className="tablist-wrapper w-100 align-items-center">
                 <TabList>
                     {TABS.map(({ label, id }) => (
-                        <Tab className="d-flex flex-1 justify-content-around" key={id} data-test-tab={id}>
+                        <Tab className="d-flex flex-1 justify-content-around" key={id} data-tab-content={id}>
                             {label}
                         </Tab>
                     ))}

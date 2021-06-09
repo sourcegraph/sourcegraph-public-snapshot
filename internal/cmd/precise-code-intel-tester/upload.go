@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
@@ -74,7 +74,7 @@ var indexFilenamePattern = regexp.MustCompile(`^(.+)\.\d+\.([0-9A-Fa-f]{40})\.du
 
 // readRevsByRepo returns a list of revisions by repository names for which there is an index file.
 func readRevsByRepo() (map[string][]string, error) {
-	infos, err := ioutil.ReadDir(indexDir)
+	infos, err := os.ReadDir(indexDir)
 	if err != nil {
 		return nil, err
 	}

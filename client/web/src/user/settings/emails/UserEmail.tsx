@@ -142,7 +142,7 @@ export const UserEmail: FunctionComponent<Props> = ({
                             <span className="user-settings-emails-page__dot">&bull;&nbsp;</span>
                             <button
                                 type="button"
-                                className="btn btn-link text-primary p-0"
+                                className="btn btn-link p-0"
                                 onClick={() => resendEmailVerification(email)}
                                 disabled={isLoading}
                             >
@@ -155,7 +155,7 @@ export const UserEmail: FunctionComponent<Props> = ({
                     {viewerCanManuallyVerify && (
                         <button
                             type="button"
-                            className="btn btn-link text-primary p-0"
+                            className="btn btn-link p-0"
                             onClick={() => updateEmailVerification(!verified)}
                             disabled={isLoading}
                         >

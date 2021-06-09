@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"net/http"
 	"os"
 	"os/exec"
@@ -222,7 +223,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	cmtHash := strings.TrimSpace(string(out))
 
 	// Move objects from tmpObjectsDir to repoObjectsDir.
-	err = filepath.Walk(tmpObjectsDir, func(path string, info os.FileInfo, err error) error {
+	err = filepath.Walk(tmpObjectsDir, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
