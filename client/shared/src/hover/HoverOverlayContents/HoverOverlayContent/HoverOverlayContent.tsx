@@ -38,7 +38,7 @@ export const HoverOverlayContent: React.FunctionComponent<HoverOverlayContentPro
 
     if (markdownOrError instanceof Error) {
         return (
-            <div className={classNames('hover-overlay__icon', errorAlertClassName)}>
+            <div className={classNames('hover-overlay__hover-error', errorAlertClassName)}>
                 {upperFirst(markdownOrError.message)}
             </div>
         )

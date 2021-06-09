@@ -23,6 +23,7 @@
     &__close-button {
         // The close button should stay in place when scrolling a large hover content.
         position: sticky;
+        float: right;
         top: var(--hover-overlay-content-margin-top);
         margin-right: -1.25rem;
         margin-left: 0;
@@ -34,22 +35,16 @@
         // not centered within the space left of the close button.
         &--loading {
             position: absolute;
-            top: 0.5rem;
-            right: 0.5rem;
+            top: calc(var(--hover-overlay-content-margin-top) + var(--hover-overlay-vertical-padding));
+            right: 0.75rem;
             // While loading close-button has an absolute position with the `right` coordinate,
             // so `margin-right` is redundant in this state.
             margin-right: 0;
         }
     }
 
-    &__close-button,
     &__badge {
-        // We want text to wrap around the close button and badges.
         float: right;
-        margin-left: 0.25rem;
-    }
-
-    &__badge {
         // Align badge vertically with the close button and first row of the text content.
         margin-top: var(--hover-overlay-content-margin-top);
         margin-left: 0.5rem;
@@ -64,11 +59,10 @@
         &-label {
             vertical-align: top;
         }
-    }
 
-    &__icon {
-        float: left;
-        margin-right: 0.25rem;
+        :first-of-type {
+            margin-right: 0;
+        }
     }
 
     &__contents {
@@ -132,17 +126,27 @@
             // Enlarge `<hr>` width on the right to span across extra left and right padding.
             margin-left: calc(var(--hover-overlay-horizontal-padding) * -1);
             margin-right: calc(var(--hover-overlay-contents-right-padding) * -1);
+            // stylelint-disable-next-line declaration-property-unit-whitelist
             height: 1px;
             overflow: visible;
             border: none;
             // The <hr> acts like a border, which should always be exactly 1px
-            // stylelint-disable-next-line declaration-property-unit-whitelist
             // @quinn keast
             // By using one colour for the border and another for the internal separators,
             // we create better distinction between the popover and its background content, without making it too strongly contrasted within.
             background-color: var(--hover-overlay-separator-color);
         }
+        // stylelint-enable selector-max-compound-selectors
+    }
 
+    &__content {
+        display: contents;
+        max-height: 15rem;
+        overflow-x: auto;
+        word-wrap: normal;
+
+        // Descendant selectors are needed here to style rendered markdown.
+        // stylelint-disable selector-max-compound-selectors
         pre,
         code {
             padding: 0;
@@ -153,13 +157,6 @@
             overflow: visible;
         }
         // stylelint-enable selector-max-compound-selectors
-    }
-
-    &__content {
-        display: contents;
-        max-height: 15rem;
-        overflow-x: auto;
-        word-wrap: normal;
     }
 
     // Every block inside of the overlay should have equal horizontal padding.
@@ -191,6 +188,10 @@
         align-items: center;
         margin-bottom: 0;
 
+        .hover-overlay__content {
+            display: inline;
+        }
+
         // Descendant selector is needed here to style rendered markdown.
         p:last-child {
             margin-bottom: 0;
@@ -202,7 +203,6 @@
     }
 
     &__alert-dismiss {
-        float: right;
         margin-left: 0.75rem;
         line-height: 1;
     }

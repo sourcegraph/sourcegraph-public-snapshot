@@ -6,10 +6,6 @@
     box-shadow: var(--dropdown-shadow);
     border-radius: var(--popover-border-radius);
 
-    &__badge {
-        color: var(--text-muted);
-    }
-
     &__close-button {
         width: 1rem;
         height: 1rem;
