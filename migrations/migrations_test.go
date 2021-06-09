@@ -98,7 +98,7 @@ func testMigrations(t *testing.T, db *sql.DB, database *dbconn.Database) {
 		dbconn.Frontend,
 		dbconn.CodeIntel,
 	} {
-		if err := dbconn.MigrateDB(dbconn.Global, database); err != nil {
+		if err := dbconn.MigrateDB(db, database); err != nil {
 			t.Errorf("unexpected error running initial migrations: %s", err)
 		}
 	}
