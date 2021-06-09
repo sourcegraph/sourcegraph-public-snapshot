@@ -22,7 +22,7 @@ Bulk operations allow a single action to be performed across many changesets in 
 
 - Commenting: Post a comment on all selected changesets. This can be particularly useful for pinging people, reminding them to take a look at the changeset, or posting your favorite emoji 🦡.
 - Detach: Only available in the archived tab. Detach a selection of changesets from the batch change to remove them from the archived tab.
-- Retry: Only available if filtering by state `failed`. Retries performing changes for all selected changesets that failed.
+- Re-enqueue: Only available if filtering by state `failed`. Re-enqueues the pending changes for all selected changesets that failed.
 
 _More types coming soon._
 
