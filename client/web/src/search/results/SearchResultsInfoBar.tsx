@@ -25,13 +25,14 @@ import { CodeMonitoringProps } from '../../code-monitoring'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
 import { WebActionsNavItems as ActionsNavItems } from '../../components/shared'
 import { SearchPatternType } from '../../graphql-operations'
-import { getTourOptions, useHighlightTour } from '../HighlightTour'
+import styles from '../FeatureTour.module.scss'
+import { getTourOptions, useFeatureTour } from '../useFeatureTour'
 
-const HAS_SEEN_HIGHLIGHT_TOUR_STEP_KEY = 'has-seen-create-code-monitor-highlight-tour-step'
+const HAS_SEEN_FEATURE_TOUR_STEP_KEY = 'has-seen-create-code-monitor-feature-tour-step'
 
-function getHighlightTourStep(onClose: () => void): HTMLElement {
+function getFeatureTourStep(onClose: () => void): HTMLElement {
     const container = document.createElement('div')
-    container.className = 'highlight-tour__step'
+    container.className = styles.featureTourStep
     container.innerHTML = `
         <div>
             <strong>New</strong>: Create a code monitor to get notified about new search results for a query.
@@ -118,11 +119,11 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
 
     const showCreateCodeMonitoringButton = props.enableCodeMonitoring && props.query && props.authenticatedUser
 
-    const tour = useHighlightTour(
-        'create-code-monitor-highlight-tour',
+    const tour = useFeatureTour(
+        'create-code-monitor-feature-tour',
         !!showCreateCodeMonitoringButton && canCreateMonitorFromQuery,
-        getHighlightTourStep,
-        HAS_SEEN_HIGHLIGHT_TOUR_STEP_KEY,
+        getFeatureTourStep,
+        HAS_SEEN_FEATURE_TOUR_STEP_KEY,
         getTourOptions({
             attachTo: {
                 element: '.create-code-monitor-button',

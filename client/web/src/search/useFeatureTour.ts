@@ -3,6 +3,7 @@ import Shepherd from 'shepherd.js'
 
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
+import styles from './FeatureTour.module.scss'
 import { defaultTourOptions } from './input/tour-options'
 
 export const getTourOptions = (stepOptions: Shepherd.Step.StepOptions): Shepherd.Tour.TourOptions => ({
@@ -10,40 +11,40 @@ export const getTourOptions = (stepOptions: Shepherd.Step.StepOptions): Shepherd
     defaultStepOptions: {
         ...defaultTourOptions.defaultStepOptions,
         arrow: true,
-        classes: 'web-content shadow-lg py-4 px-3 highlight-tour',
+        classes: `web-content shadow-lg py-4 px-3 ${styles.featureTour}`,
         ...stepOptions,
     },
 })
 
-export const useHighlightTour = (
-    highlightStepId: string,
-    showHighlightStep: boolean,
-    getHighlightStepElement: (onClose: () => void) => HTMLElement,
+export const useFeatureTour = (
+    featureStepId: string,
+    showFeatureTour: boolean,
+    getFeatureTourStepElement: (onClose: () => void) => HTMLElement,
     localStorageKey: string,
     tourOptions: Shepherd.Tour.TourOptions
 ): Shepherd.Tour => {
-    const [hasSeenHighlightTourStep, setHasSeenHighlightTourStep] = useLocalStorage(localStorageKey, false)
+    const [hasSeenFeatureTourStep, setHasSeenFeatureTourStep] = useLocalStorage(localStorageKey, false)
 
     const tour = useMemo(() => new Shepherd.Tour(tourOptions), [tourOptions])
     useEffect(() => {
-        tour.addSteps([{ id: highlightStepId, text: getHighlightStepElement(() => tour.cancel()) }])
-    }, [tour, highlightStepId, getHighlightStepElement])
+        tour.addSteps([{ id: featureStepId, text: getFeatureTourStepElement(() => tour.cancel()) }])
+    }, [tour, featureStepId, getFeatureTourStepElement])
 
     useEffect(() => {
-        if (!tour.isActive() && showHighlightStep && !hasSeenHighlightTourStep) {
+        if (!tour.isActive() && showFeatureTour && !hasSeenFeatureTourStep) {
             tour.start()
         }
-    }, [showHighlightStep, hasSeenHighlightTourStep, tour])
+    }, [showFeatureTour, hasSeenFeatureTourStep, tour])
 
     useEffect(() => {
         const onCanceled = (): void => {
-            setHasSeenHighlightTourStep(true)
+            setHasSeenFeatureTourStep(true)
         }
         tour.on('cancel', onCanceled)
         return () => {
             tour.off('cancel', onCanceled)
         }
-    }, [tour, setHasSeenHighlightTourStep])
+    }, [tour, setHasSeenFeatureTourStep])
 
     useEffect(() => () => tour.cancel(), [tour])
 

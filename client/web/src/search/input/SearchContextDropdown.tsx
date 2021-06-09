@@ -10,8 +10,9 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 
 import { CaseSensitivityProps, PatternTypeProps, SearchContextInputProps } from '..'
 import { AuthenticatedUser } from '../../auth'
+import styles from '../FeatureTour.module.scss'
 import { SubmitSearchParameters } from '../helpers'
-import { getTourOptions, useHighlightTour } from '../HighlightTour'
+import { getTourOptions, useFeatureTour } from '../useFeatureTour'
 
 import { SearchContextCtaPrompt } from './SearchContextCtaPrompt'
 import { SearchContextMenu } from './SearchContextMenu'
@@ -32,9 +33,9 @@ export interface SearchContextDropdownProps
     className?: string
 }
 
-function getHighlightTourStep(onClose: () => void): HTMLElement {
+function getFeatureTourStep(onClose: () => void): HTMLElement {
     const container = document.createElement('div')
-    container.className = 'highlight-tour__step'
+    container.className = styles.featureTourStep
     container.innerHTML = `
         <div>
             <strong>New: Search contexts</strong>
@@ -56,7 +57,7 @@ function getHighlightTourStep(onClose: () => void): HTMLElement {
     return container
 }
 
-const HAS_SEEN_HIGHLIGHT_TOUR_STEP_KEY = 'has-seen-search-contexts-dropdown-highlight-tour-step'
+const HAS_SEEN_FEATURE_TOUR_STEP_KEY = 'has-seen-search-contexts-dropdown-highlight-tour-step'
 
 export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdownProps> = props => {
     const {
@@ -74,17 +75,17 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         submitSearch,
         fetchAutoDefinedSearchContexts,
         fetchSearchContexts,
-        showSearchContextHighlightTourStep = false,
+        showSearchContextFeatureTourStep = false,
         submitSearchOnSearchContextChange = true,
         isSearchOnboardingTourVisible,
         className,
     } = props
 
-    const tour = useHighlightTour(
+    const tour = useFeatureTour(
         'search-contexts-start-tour',
-        showSearchContextHighlightTourStep && !isSearchOnboardingTourVisible,
-        getHighlightTourStep,
-        HAS_SEEN_HIGHLIGHT_TOUR_STEP_KEY,
+        showSearchContextFeatureTourStep && !isSearchOnboardingTourVisible,
+        getFeatureTourStep,
+        HAS_SEEN_FEATURE_TOUR_STEP_KEY,
         getTourOptions({
             attachTo: {
                 element: '.search-context-dropdown__button',

@@ -1,9 +1,9 @@
-.highlight-tour {
+.feature-tour {
     background: var(--tour-bg);
     border: none;
     border-radius: 10px;
 
-    .shepherd-arrow::after {
+    :global(.shepherd-arrow::after) {
         border-bottom-color: var(--tour-bg);
     }
 

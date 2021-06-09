@@ -404,9 +404,9 @@ describe('Search', () => {
 
     describe('Search results snapshots', () => {
         // To avoid covering the Percy snapshots
-        const hideCreateCodeMonitorHighlightTour = () =>
+        const hideCreateCodeMonitorFeatureTour = () =>
             driver.page.evaluate(() => {
-                localStorage.setItem('has-seen-create-code-monitor-highlight-tour-step', 'true')
+                localStorage.setItem('has-seen-create-code-monitor-feature-tour-step', 'true')
                 location.reload()
             })
 
@@ -420,7 +420,7 @@ describe('Search', () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test%20type:diff&patternType=regexp', {
                 waitUntil: 'networkidle0',
             })
-            await hideCreateCodeMonitorHighlightTour()
+            await hideCreateCodeMonitorFeatureTour()
             await driver.page.waitForSelector('.search-result-match__code-excerpt .selection-highlight', {
                 visible: true,
             })
@@ -441,7 +441,7 @@ describe('Search', () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=graph%20type:commit&patternType=regexp', {
                 waitUntil: 'networkidle0',
             })
-            await hideCreateCodeMonitorHighlightTour()
+            await hideCreateCodeMonitorFeatureTour()
             await driver.page.waitForSelector('.search-result-match__code-excerpt .selection-highlight', {
                 visible: true,
             })
@@ -492,39 +492,39 @@ describe('Search', () => {
         })
     })
 
-    describe('Highlight tour', () => {
-        const resetCreateCodeMonitorHighlightTour = () =>
+    describe('Feature tour', () => {
+        const resetCreateCodeMonitorFeatureTour = () =>
             driver.page.evaluate(() => {
-                localStorage.setItem('has-seen-create-code-monitor-highlight-tour-step', 'false')
+                localStorage.setItem('has-seen-create-code-monitor-feature-tour-step', 'false')
                 location.reload()
             })
 
-        const isCreateCodeMonitorHighlightTourVisible = () =>
+        const isCreateCodeMonitorFeatureTourVisible = () =>
             driver.page.evaluate(
                 () =>
                     document.querySelector<HTMLDivElement>(
-                        'div[data-shepherd-step-id="create-code-monitor-highlight-tour"]'
+                        'div[data-shepherd-step-id="create-code-monitor-feature-tour"]'
                     ) !== null
             )
 
-        test('Do not show create code monitor button highlight tour with missing search type', async () => {
+        test('Do not show create code monitor button feature tour with missing search type', async () => {
             testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test', {
                 waitUntil: 'networkidle0',
             })
-            await resetCreateCodeMonitorHighlightTour()
+            await resetCreateCodeMonitorFeatureTour()
             await driver.page.waitForSelector('#monaco-query-input', { visible: true })
-            expect(await isCreateCodeMonitorHighlightTourVisible()).toBeFalsy()
+            expect(await isCreateCodeMonitorFeatureTourVisible()).toBeFalsy()
         })
 
-        test('Show create code monitor button highlight tour with valid search type', async () => {
+        test('Show create code monitor button feature tour with valid search type', async () => {
             testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test+type:diff', {
                 waitUntil: 'networkidle0',
             })
-            await resetCreateCodeMonitorHighlightTour()
+            await resetCreateCodeMonitorFeatureTour()
             await driver.page.waitForSelector('#monaco-query-input', { visible: true })
-            expect(await isCreateCodeMonitorHighlightTourVisible()).toBeTruthy()
+            expect(await isCreateCodeMonitorFeatureTourVisible()).toBeTruthy()
         })
     })
 })
