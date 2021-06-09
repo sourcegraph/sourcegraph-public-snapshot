@@ -579,6 +579,13 @@ func (e errMissingCredentials) Error() string {
 
 func (e errMissingCredentials) NonRetryable() bool { return true }
 
+func (e errMissingCredentials) Is(target error) bool {
+	if t, ok := target.(errMissingCredentials); ok && t.repo == e.repo {
+		return true
+	}
+	return false
+}
+
 // errNoPushCredentials is returned if the authenticator cannot be used by git to
 // authenticate a `git push`.
 type errNoPushCredentials struct{ credentialsType string }

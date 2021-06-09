@@ -22,6 +22,7 @@ func TestBulkProcessor(t *testing.T) {
 	user := ct.CreateTestUser(t, db, true)
 	repos, _ := ct.CreateTestRepos(t, ctx, db, 1)
 	repo := repos[0]
+	ct.CreateTestSiteCredential(t, bstore, repo)
 	batchSpec := ct.CreateBatchSpec(t, ctx, bstore, "test-bulk", user.ID)
 	batchChange := ct.CreateBatchChange(t, ctx, bstore, "test-bulk", user.ID, batchSpec.ID)
 	changeset := ct.CreateChangeset(t, ctx, bstore, ct.TestChangesetOpts{Repo: repo.ID, BatchChanges: []types.BatchChangeAssoc{{BatchChangeID: batchChange.ID}}})
