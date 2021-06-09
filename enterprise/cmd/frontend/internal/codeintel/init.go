@@ -11,7 +11,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/background/commitgraph"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/background/indexing"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/background/janitor"
 	codeintelresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
@@ -110,22 +109,9 @@ func newUploadHandler(ctx context.Context, db dbutil.DB) (func(internal bool) ht
 }
 
 func newBackgroundRoutines(observationContext *observation.Context) (routines []goroutine.BackgroundRoutine) {
-	routines = append(routines, newCommitGraphRoutines(observationContext)...)
 	routines = append(routines, newIndexingRoutines(observationContext)...)
 	routines = append(routines, newJanitorRoutines(observationContext)...)
 	return routines
-}
-
-func newCommitGraphRoutines(observationContext *observation.Context) []goroutine.BackgroundRoutine {
-	return []goroutine.BackgroundRoutine{
-		commitgraph.NewUpdater(
-			services.dbStore,
-			services.locker,
-			services.gitserverClient,
-			config.CommitGraphUpdateTaskInterval,
-			observationContext,
-		),
-	}
 }
 
 func newIndexingRoutines(observationContext *observation.Context) []goroutine.BackgroundRoutine {
