@@ -7,11 +7,12 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { asError } from '@sourcegraph/shared/src/util/errors'
+import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
 import { AuthenticatedUser } from '../../../../auth'
 import { Page } from '../../../../components/Page'
 import { PageTitle } from '../../../../components/PageTitle'
-import { FORM_ERROR } from '../../../components/form/hooks/useForm'
+import { FORM_ERROR, FormChangeEvent } from '../../../components/form/hooks/useForm'
 import { InsightsApiContext } from '../../../core/backend/api-provider'
 import { addInsightToCascadeSetting } from '../../../core/jsonc-operation'
 
@@ -20,6 +21,7 @@ import {
     LangStatsInsightCreationContentProps,
 } from './components/lang-stats-insight-creation-content/LangStatsInsightCreationContent'
 import styles from './LangStatsInsightCreationPage.module.scss'
+import { LangStatsCreationFormFields } from './types'
 import { getSanitizedLangStatsInsight } from './utils/insight-sanitizer'
 
 const DEFAULT_FINAL_SETTINGS = {}
@@ -39,6 +41,11 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
     const { authenticatedUser, settingsCascade, platformContext, telemetryService } = props
     const { getSubjectSettings, updateSubjectSettings } = useContext(InsightsApiContext)
     const history = useHistory()
+
+    const [initialFormValues, setInitialFormValues] = useLocalStorage<LangStatsCreationFormFields | undefined>(
+        'insights.code-stats-creation',
+        undefined
+    )
 
     useEffect(() => {
         telemetryService.logViewEvent('CodeInsightsCodeStatsCreationPage')
@@ -65,6 +72,8 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
 
                 await updateSubjectSettings(platformContext, subjectID, editedSettings).toPromise()
 
+                // Clear initial values if user successfully created search insight
+                setInitialFormValues(undefined)
                 telemetryService.log('CodeInsightsCodeStatsCreationPageSubmitClick')
                 history.push('/insights')
             } catch (error) {
@@ -73,13 +82,27 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
 
             return
         },
-        [telemetryService, history, updateSubjectSettings, getSubjectSettings, platformContext, authenticatedUser]
+        [
+            authenticatedUser,
+            getSubjectSettings,
+            updateSubjectSettings,
+            platformContext,
+            setInitialFormValues,
+            telemetryService,
+            history,
+        ]
     )
 
     const handleCancel = useCallback(() => {
+        // Clear initial values if user successfully created search insight
+        setInitialFormValues(undefined)
         telemetryService.log('CodeInsightsCodeStatsCreationPageCancelClick')
         history.push('/insights')
-    }, [history, telemetryService])
+    }, [history, setInitialFormValues, telemetryService])
+
+    const handleChange = (event: FormChangeEvent<LangStatsCreationFormFields>): void => {
+        setInitialFormValues(event.values)
+    }
 
     if (authenticatedUser === null) {
         return <Redirect to="/" />
@@ -107,9 +130,11 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
             <LangStatsInsightCreationContent
                 className="pb-5"
                 settings={settingsCascade.final ?? DEFAULT_FINAL_SETTINGS}
+                initialValues={initialFormValues}
                 organizations={orgs}
                 onSubmit={handleSubmit}
                 onCancel={handleCancel}
+                onChange={handleChange}
             />
         </Page>
     )
