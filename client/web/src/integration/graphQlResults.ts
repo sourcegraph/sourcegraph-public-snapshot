@@ -205,4 +205,9 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
             pageInfo: { hasNextPage: false, endCursor: null },
         },
     }),
+    ExternalServicesScopes: () => ({
+        externalServices: {
+            nodes: [],
+        },
+    }),
 }
