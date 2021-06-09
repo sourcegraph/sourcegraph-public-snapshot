@@ -299,6 +299,14 @@ func (r *RepositoryResolver) Type(ctx context.Context) (*types.Repo, error) {
 	return r.repo(ctx)
 }
 
+func (r *RepositoryResolver) Stars(ctx context.Context) (int32, error) {
+	repo, err := r.repo(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return int32(repo.Stars), nil
+}
+
 func (r *RepositoryResolver) hydrate(ctx context.Context) error {
 	r.hydration.Do(func() {
 		// Repositories with an empty creation date were created using RepoName.ToRepo(),
