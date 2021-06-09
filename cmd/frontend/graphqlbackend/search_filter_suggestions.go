@@ -27,6 +27,13 @@ func (r *schemaResolver) SearchFilterSuggestions(ctx context.Context) (*searchFi
 
 	// List at most 10 repositories as default suggestions.
 	repos, err := backend.Repos.List(ctx, database.ReposListOptions{
+		OrderBy: database.RepoListOrderBy{
+			{
+				Field:      database.RepoListStars,
+				Descending: true,
+				Nulls:      "LAST",
+			},
+		},
 		LimitOffset: &database.LimitOffset{
 			Limit: 10,
 		},

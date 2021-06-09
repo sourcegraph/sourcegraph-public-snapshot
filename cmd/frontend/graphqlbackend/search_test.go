@@ -507,7 +507,7 @@ func TestVersionContext(t *testing.T) {
 			}
 			defer git.ResetMocks()
 
-			gotResult, err := resolver.resolveRepositories(context.Background(), nil)
+			gotResult, err := resolver.resolveRepositories(context.Background(), resolveRepositoriesOpts{})
 			if err != nil {
 				t.Fatal(err)
 			}

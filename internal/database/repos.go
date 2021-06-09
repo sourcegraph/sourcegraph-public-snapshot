@@ -505,13 +505,23 @@ func (r RepoListOrderBy) SQL() *sqlf.Query {
 type RepoListSort struct {
 	Field      RepoListColumn
 	Descending bool
+	Nulls      string
 }
 
 func (r RepoListSort) SQL() *sqlf.Query {
+	var sb strings.Builder
+
+	sb.WriteString(string(r.Field))
+
 	if r.Descending {
-		return sqlf.Sprintf(string(r.Field) + ` DESC`)
+		sb.WriteString(" DESC")
 	}
-	return sqlf.Sprintf(string(r.Field))
+
+	if r.Nulls == "FIRST" || r.Nulls == "LAST" {
+		sb.WriteString(" NULLS " + r.Nulls)
+	}
+
+	return sqlf.Sprintf(sb.String())
 }
 
 // RepoListColumn is a column by which repositories can be sorted. These correspond to columns in the database.
@@ -521,6 +531,7 @@ const (
 	RepoListCreatedAt RepoListColumn = "created_at"
 	RepoListName      RepoListColumn = "name"
 	RepoListID        RepoListColumn = "id"
+	RepoListStars     RepoListColumn = "stars"
 )
 
 // List lists repositories in the Sourcegraph repository
