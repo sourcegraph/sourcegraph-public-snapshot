@@ -36,27 +36,30 @@ export function offsetSum(props: HighlightedLinkProps): number {
 export const HighlightedLink: React.FunctionComponent<HighlightedLinkProps> = props => {
     const spans: JSX.Element[] = []
     let start = 0
-    function pushSpan(className: string, startOffset: number, endOffset: number): void {
+    function pushElement(kind: 'mark' | 'span', startOffset: number, endOffset: number): void {
         if (startOffset >= endOffset) {
             return
         }
         const text = props.text.slice(startOffset, endOffset)
         const key = `${startOffset}-${endOffset}`
-        const span = (
-            <span key={key} className={className}>
-                {text}
-            </span>
-        )
-        spans.push(span)
+        if (kind === 'mark') {
+            spans.push(
+                <mark key={key} className={styles.mark}>
+                    {text}
+                </mark>
+            )
+        } else {
+            spans.push(<span key={key}>{text}</span>)
+        }
     }
     for (const position of props.positions) {
         if (position.startOffset > start) {
-            pushSpan('', start, position.startOffset)
+            pushElement('span', start, position.startOffset)
         }
         start = position.endOffset
-        pushSpan(styles.mark, position.startOffset, position.endOffset)
+        pushElement('mark', position.startOffset, position.endOffset)
     }
-    pushSpan('', start, props.text.length)
+    pushElement('span', start, props.text.length)
 
     return props.url ? (
         <code>

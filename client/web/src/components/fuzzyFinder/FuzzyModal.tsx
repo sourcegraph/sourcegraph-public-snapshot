@@ -8,6 +8,8 @@ import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 import React from 'react'
 
+import { pluralize } from '@sourcegraph/shared/src/util/strings'
+
 import { CaseInsensitiveFuzzySearch } from '../../fuzzyFinder/CaseInsensitiveFuzzySearch'
 import { FuzzySearch, FuzzySearchResult, SearchIndexing, SearchValue } from '../../fuzzyFinder/FuzzySearch'
 import { WordSensitiveFuzzySearch } from '../../fuzzyFinder/WordSensitiveFuzzySearch'
@@ -91,7 +93,7 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
                 setRoundedFocusIndex(PAGE_DOWN_INCREMENT)
                 break
             case 'ArrowUp':
-                event.preventDefault() // Don't move the cursor to the start of the input.
+                event.preventDefault() // Don't move the cursor to the start of input.
                 setRoundedFocusIndex(-1)
                 break
             case 'PageUp':
@@ -115,15 +117,16 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
         <div role="navigation" className={styles.modal} onMouseDown={() => props.onClose()}>
             <div role="navigation" className={styles.content} onMouseDown={event => event.stopPropagation()}>
                 <div className={styles.header}>
-                    <h3 className={styles.title}>Find file</h3>
+                    <h3 className={styles.headerTitle}>Find file</h3>
                     <button type="button" className="btn btn-icon" onClick={() => props.onClose()}>
                         <CloseIcon className={`icon-inline ${styles.closeIcon}`} />
                     </button>
                 </div>
                 <input
                     autoComplete="off"
+                    spellCheck="false"
                     id="fuzzy-modal-input"
-                    className={`form-control px-2 py-1 ${styles.input}`}
+                    className={classnames('form-control', 'px-2', 'py-1', styles.input)}
                     placeholder="Enter a partial file path or name"
                     value={props.query}
                     onChange={event => {
@@ -152,7 +155,7 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
 }
 
 function plural(what: string, count: number, isComplete: boolean): string {
-    return count.toLocaleString() + (isComplete ? '' : '+') + ' ' + what + (count === 1 ? '' : 's')
+    return `${count.toLocaleString()}${isComplete ? '' : '+'} ${pluralize(what, count)}`
 }
 interface FuzzyResultsSummaryProps {
     fsm: FuzzyFSM
@@ -165,9 +168,9 @@ const FuzzyResultsSummary: React.FunctionComponent<FuzzyResultsSummaryProps> = (
             {plural('result', files.resultsCount, files.isComplete)} -{' '}
             {fsm.key === 'indexing' && indexingProgressBar(fsm)} {plural('total file', files.totalFileCount, true)}
         </span>
-        <span className={styles.shortcuts}>
+        <i className="text-muted">
             <ChevronUpIcon /> and <ChevronDownIcon /> arrow keys browse. Enter selects.
-        </span>
+        </i>
     </>
 )
 
@@ -263,7 +266,7 @@ function renderFiles(props: FuzzyModalProps, search: FuzzySearch, indexing?: Sea
                     <li
                         id={`fuzzy-modal-result-${fileIndex}`}
                         key={file.text}
-                        className={classnames(styles.resultItem, fileIndex === props.focusIndex && styles.focused)}
+                        className={classnames('p-1', fileIndex === props.focusIndex && styles.focused)}
                     >
                         <HighlightedLink {...file} />
                     </li>
