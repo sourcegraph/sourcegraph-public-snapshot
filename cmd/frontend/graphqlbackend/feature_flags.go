@@ -221,16 +221,21 @@ func (r *schemaResolver) CreateFeatureFlagOverride(ctx context.Context, args str
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
-	var uid, oid *int32
-	if err := UnmarshalNamespaceID(args.Namespace, uid, oid); err != nil {
+
+	fo := &featureflag.Override{
+		FlagName: args.FlagName,
+		Value:    args.Value,
+	}
+
+	var uid, oid int32
+	if err := UnmarshalNamespaceID(args.Namespace, &uid, &oid); err != nil {
 		return nil, err
 	}
 
-	fo := &featureflag.Override{
-		UserID:   uid,
-		OrgID:    oid,
-		FlagName: args.FlagName,
-		Value:    args.Value,
+	if uid != 0 {
+		fo.UserID = &uid
+	} else if oid != 0 {
+		fo.OrgID = &oid
 	}
 	res, err := database.FeatureFlags(r.db).CreateOverride(ctx, fo)
 	return &FeatureFlagOverrideResolver{r.db, res}, err

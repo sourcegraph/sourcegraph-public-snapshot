@@ -9,11 +9,8 @@ import (
 func TestFeatureFlags(t *testing.T) {
 	const featureFlagOverrideFragment = `fragment FeatureFlagOverrideData on FeatureFlagOverride {
 		id
-		user {
-			username 
-		}
-		org {
-			id
+		namespace {
+			id 
 		}
 		targetFlag {
 			...on FeatureFlagBoolean {
@@ -27,11 +24,8 @@ func TestFeatureFlags(t *testing.T) {
 	}`
 
 	type featureFlagOverrideResult struct {
-		ID   string
-		User struct {
-			Username string
-		}
-		Org struct {
+		ID        string
+		Namespace struct {
 			ID string
 		}
 		TargetFlag struct {
@@ -337,7 +331,7 @@ func TestFeatureFlags(t *testing.T) {
 					deleteOverride(res.ID)
 				})
 
-				require.Equal(t, res.Org.ID, orgID)
+				require.Equal(t, res.Namespace.ID, orgID)
 				require.Equal(t, res.TargetFlag.Name, flag.Name)
 				require.Equal(t, res.Value, false)
 
@@ -356,7 +350,7 @@ func TestFeatureFlags(t *testing.T) {
 					deleteOverride(res.ID)
 				})
 
-				require.Equal(t, res.User.Username, "testuseroverrides")
+				require.Equal(t, res.Namespace.ID, userID)
 				require.Equal(t, res.TargetFlag.Name, flag.Name)
 				require.Equal(t, res.Value, false)
 			})
@@ -388,8 +382,8 @@ func TestFeatureFlags(t *testing.T) {
 
 			o1 := res[0].Overrides[0]
 			o2 := res[0].Overrides[1]
-			require.Equal(t, o1.Org.ID, orgID)
-			require.Equal(t, o2.User.Username, "testuseroverrides")
+			require.Equal(t, o1.Namespace.ID, orgID)
+			require.Equal(t, o2.Namespace.ID, userID)
 			require.Equal(t, o1.TargetFlag.Name, "test_override")
 			require.Equal(t, o2.TargetFlag.Name, "test_override")
 			require.Equal(t, o1.Value, true)
