@@ -146,7 +146,7 @@ func samlSPHandler(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) {
 			}
 
 			allowSignup := p.config.AllowSignup == nil || *p.config.AllowSignup
-			actor, safeErrMsg, err := getOrCreateUser(r.Context(), allowSignup, info)
+			actor, safeErrMsg, err := getOrCreateUser(r.Context(), db, allowSignup, info)
 			if err != nil {
 				log15.Error("Error looking up SAML-authenticated user.", "err", err, "userErr", safeErrMsg)
 				http.Error(w, safeErrMsg, http.StatusInternalServerError)
