@@ -899,7 +899,9 @@ func TestService(t *testing.T) {
 				[]int64{changeset.ID},
 				btypes.ChangesetJobTypeComment,
 				btypes.ChangesetJobCommentPayload{Message: "test"},
-				store.ListChangesetsOpts{},
+				store.ListChangesetsOpts{
+					ReconcilerStates: []btypes.ReconcilerState{btypes.ReconcilerStateCompleted},
+				},
 			)
 			if err != ErrChangesetsForJobNotFound {
 				t.Fatalf("wrong error. want=%s, got=%s", ErrChangesetsForJobNotFound, err)

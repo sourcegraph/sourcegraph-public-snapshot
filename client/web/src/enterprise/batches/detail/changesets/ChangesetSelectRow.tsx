@@ -2,6 +2,7 @@ import classNames from 'classnames'
 import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 import React, { Fragment, useCallback, useMemo, useState } from 'react'
 
+import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
 import { AllChangesetIDsVariables, Scalars } from '../../../../graphql-operations'
@@ -11,6 +12,7 @@ import { queryAllChangesetIDs } from '../backend'
 import styles from './ChangesetSelectRow.module.scss'
 import { CreateCommentModal } from './CreateCommentModal'
 import { DetachChangesetsModal } from './DetachChangesetsModal'
+import { ReenqueueChangesetsModal } from './ReenqueueChangesetsModal'
 
 /**
  * Describes a possible action on the changeset list.
@@ -54,6 +56,22 @@ const AVAILABLE_ACTIONS: ChangesetListAction[] = [
                 afterCreate={onDone}
                 onCancel={onCancel}
                 telemetryService={eventLogger}
+            />
+        ),
+    },
+    {
+        type: 'retry',
+        buttonLabel: 'Retry changesets',
+        dropdownTitle: 'Retry changesets',
+        dropdownDescription: 'Re-enqueues the selected changesets for processing, if they failed.',
+        // Only show when filtering by state === FAILED:
+        isAvailable: ({ state }) => state === ChangesetState.FAILED,
+        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => (
+            <ReenqueueChangesetsModal
+                batchChangeID={batchChangeID}
+                changesetIDs={changesetIDs}
+                afterCreate={onDone}
+                onCancel={onCancel}
             />
         ),
     },
