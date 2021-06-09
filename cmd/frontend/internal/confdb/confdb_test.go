@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
 func TestSiteGetLatestDefault(t *testing.T) {
@@ -13,7 +13,7 @@ func TestSiteGetLatestDefault(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	latest, err := SiteGetLatest(ctx, db)
@@ -31,7 +31,7 @@ func TestSiteCreate_RejectInvalidJSON(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
 	ctx := context.Background()
 
 	malformedJSON := "[This is malformed.}"
@@ -157,7 +157,7 @@ func TestSiteCreateIfUpToDate(t *testing.T) {
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			db := dbtesting.GetDB(t)
+			db := dbtest.NewDB(t, "")
 			ctx := context.Background()
 			for _, p := range test.sequence {
 				output, err := SiteCreateIfUpToDate(ctx, db, &p.input.lastID, p.input.contents)

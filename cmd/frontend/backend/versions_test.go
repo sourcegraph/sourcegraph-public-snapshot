@@ -7,15 +7,11 @@ import (
 	"github.com/Masterminds/semver"
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
-func init() {
-	dbtesting.DBNameSuffix = "backendtestdb"
-}
-
 func TestGetFirstServiceVersion(t *testing.T) {
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
 
 	ctx := context.Background()
 
@@ -39,7 +35,7 @@ func TestGetFirstServiceVersion(t *testing.T) {
 }
 
 func TestUpdateServiceVersion(t *testing.T) {
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
 
 	ctx := context.Background()
 	for _, tc := range []struct {
