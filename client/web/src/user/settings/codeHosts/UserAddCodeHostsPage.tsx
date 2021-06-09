@@ -14,7 +14,6 @@ import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../.
 import { SourcegraphContext } from '../../../jscontext'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
-import { githubRepoScopeRequired } from '../cloud-ga'
 
 import { CodeHostItem } from './CodeHostItem'
 
@@ -25,7 +24,7 @@ export interface UserAddCodeHostsPageProps extends UserExternalServicesOrReposit
     user: { id: Scalars['ID']; tags: string[] }
     codeHostExternalServices: Record<string, AddExternalServiceOptions>
     routingPrefix: string
-    isUserMissingGitHubPrivateScope: boolean
+    isUserMissingGitHubPrivateScope: boolean | null
     context: Pick<SourcegraphContext, 'authProviders'>
 }
 
@@ -66,7 +65,6 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     isUserMissingGitHubPrivateScope,
 }) => {
     const [statusOrError, setStatusOrError] = useState<Status>()
-    const [updateAuthRequired, setUpdateAuthRequired] = useState(false)
 
     const fetchExternalServices = useCallback(async () => {
         setStatusOrError('loading')
@@ -85,17 +83,9 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 
         setStatusOrError(services)
 
-        // If we have a GitHub service, check whether we need to prompt the user to
-        // update their scope
-        const gitHubService = services.GITHUB
-        if (gitHubService) {
-            const scopes = gitHubService.grantedScopes || []
-            setUpdateAuthRequired(githubRepoScopeRequired(user.tags, scopes))
-        }
-
         const repoCount = fetchedServices.reduce((sum, codeHost) => sum + codeHost.repoCount, 0)
         onUserExternalServicesOrRepositoriesUpdate(fetchedServices.length, repoCount)
-    }, [user.id, user.tags, onUserExternalServicesOrRepositoriesUpdate, setUpdateAuthRequired])
+    }, [user.id, onUserExternalServicesOrRepositoriesUpdate])
 
     useEffect(() => {
         eventLogger.logViewEvent('UserSettingsCodeHostConnections')
@@ -107,7 +97,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         })
     }, [fetchExternalServices])
 
-    const getGitHubUpdateAuthBanner = (needsUpdate: boolean): JSX.Element | null =>
+    const getGitHubUpdateAuthBanner = (needsUpdate: boolean | null): JSX.Element | null =>
         needsUpdate ? (
             <div className="alert alert-info mb-4" role="alert" key="add-repos">
                 Update your GitHub code host connection to search private code with Sourcegraph.
@@ -161,7 +151,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         return [
             ...servicesWithProblems.map(getServiceWarningFragment),
             getAddReposBanner(notYetSyncedServiceNames),
-            getGitHubUpdateAuthBanner(updateAuthRequired),
+            getGitHubUpdateAuthBanner(isUserMissingGitHubPrivateScope),
         ]
     }
 
@@ -245,7 +235,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                                         kind={kind}
                                         name={defaultDisplayName}
                                         updateAuthRequired={
-                                            id && kind === ExternalServiceKind.GITHUB ? updateAuthRequired : false
+                                            kind === ExternalServiceKind.GITHUB && !!isUserMissingGitHubPrivateScope
                                         }
                                         navigateToAuthProvider={navigateToAuthProvider}
                                         icon={icon}

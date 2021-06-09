@@ -214,7 +214,7 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      * Whether the user is missing a private scope for GitHub external service
      * and needs to re-add the external service.
      */
-    isUserMissingGitHubPrivateScope: boolean
+    isUserMissingGitHubPrivateScope: boolean | null
 
     /**
      * Whether the API docs feature flag is enabled.
@@ -314,7 +314,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             showQueryBuilder: false,
             enableSmartQuery: false,
             enableCodeMonitoring: false,
-            isUserMissingGitHubPrivateScope: false,
+            isUserMissingGitHubPrivateScope: null,
             // Disabling linter here as otherwise the application fails to compile. Bad lint?
             // See 7a137b201330eb2118c746f8cc5acddf63c1f039
             // eslint-disable-next-line react/no-unused-state
@@ -395,12 +395,12 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                         this.setState(state => ({
                             hasUserAddedRepositories: userRepositoriesResult.nodes.length > 0,
                             hasUserAddedExternalServices: externalServices.length > 0,
-                            isUserMissingGitHubPrivateScope: gitHubService
+                            isUserMissingGitHubPrivateScope: gitHubService?.grantedScopes
                                 ? githubRepoScopeRequired(
                                       state.authenticatedUser?.tags || [],
                                       gitHubService.grantedScopes
                                   )
-                                : false,
+                                : null,
                         }))
                     }
                 })
@@ -569,7 +569,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     onUserExternalServicesOrRepositoriesUpdate={
                                         this.onUserExternalServicesOrRepositoriesUpdate
                                     }
-                                    // Cloud
+                                    // Cloud temp
                                     isUserMissingGitHubPrivateScope={this.state.isUserMissingGitHubPrivateScope}
                                 />
                             )}

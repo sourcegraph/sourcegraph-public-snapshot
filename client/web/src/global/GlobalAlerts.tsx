@@ -7,7 +7,6 @@ import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 
-import { AuthenticatedUser } from '../auth'
 import { DismissibleAlert } from '../components/DismissibleAlert'
 import { Settings } from '../schema/settings.schema'
 import { SiteFlags } from '../site'
@@ -22,7 +21,7 @@ import { GlobalAlert } from './GlobalAlert'
 import { Notices } from './Notices'
 
 interface Props extends SettingsCascadeProps {
-    authenticatedUser: AuthenticatedUser | null
+    isUserMissingGitHubPrivateScope: boolean | null
 }
 
 interface State {
@@ -64,7 +63,9 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                         {/* Only show if the user has already added repositories; if not yet, the user wouldn't experience any Docker for Mac perf issues anyway. */}
                         {window.context.likelyDockerOnMac && <DockerForMacAlert className="global-alerts__alert" />}
                         {window.context.sourcegraphDotComMode && (
-                            <GitHubScopeAlert authenticatedUser={this.props.authenticatedUser} />
+                            <GitHubScopeAlert
+                                isUserMissingGitHubPrivateScope={this.props.isUserMissingGitHubPrivateScope}
+                            />
                         )}
                         {this.state.siteFlags.alerts.map((alert, index) => (
                             <GlobalAlert key={index} alert={alert} className="global-alerts__alert" />

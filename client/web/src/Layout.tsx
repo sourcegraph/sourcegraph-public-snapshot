@@ -131,7 +131,7 @@ export interface LayoutProps
     showBatchChanges: boolean
     fetchSavedSearches: () => Observable<GQL.ISavedSearch[]>
     children?: never
-    isUserMissingGitHubPrivateScope: boolean
+    isUserMissingGitHubPrivateScope: boolean | null
 }
 
 export const Layout: React.FunctionComponent<LayoutProps> = props => {
@@ -273,7 +273,10 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_HELP}
                 keyboardShortcuts={props.keyboardShortcuts}
             />
-            <GlobalAlerts authenticatedUser={props.authenticatedUser} settingsCascade={props.settingsCascade} />
+            <GlobalAlerts
+                isUserMissingGitHubPrivateScope={props.isUserMissingGitHubPrivateScope}
+                settingsCascade={props.settingsCascade}
+            />
             {!isSiteInit && <SurveyToast authenticatedUser={props.authenticatedUser} />}
             {!isSiteInit && !isSignInOrUp && (
                 <GlobalNavbar
