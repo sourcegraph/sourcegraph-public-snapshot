@@ -98,7 +98,10 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     }, [user.id, onUserExternalServicesOrRepositoriesUpdate])
 
     const resetScopeAndFetchServices = useCallback((): void => {
+        // after the token is updated - we'll set GitHub's scopes to null and
+        // hide the global CTA banner
         setGitHubScopes(null)
+
         fetchExternalServices().catch(error => {
             setStatusOrError(asError(error))
         })
