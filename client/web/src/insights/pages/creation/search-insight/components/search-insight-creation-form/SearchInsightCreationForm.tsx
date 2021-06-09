@@ -225,7 +225,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
 
             <hr className={styles.creationInsightFormSeparator} />
 
-            <div className="d-flex">
+            <div className="d-flex flex-wrap align-items-baseline">
                 {submitErrors?.[FORM_ERROR] && <ErrorAlert error={submitErrors[FORM_ERROR]} />}
 
                 <LoaderButton
@@ -235,18 +235,14 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                     type="submit"
                     disabled={submitting}
                     data-testid="insight-save-button"
-                    className="btn btn-primary mr-2"
+                    className="btn btn-primary mr-2 mb-2"
                 />
 
-                <button type="button" className="btn btn-outline-secondary" onClick={onCancel}>
+                <button type="button" className="btn btn-outline-secondary mb-2 mr-auto" onClick={onCancel}>
                     Cancel
                 </button>
 
-                <button
-                    type="reset"
-                    disabled={!isFormClearActive}
-                    className="btn ml-auto btn-outline-secondary border-0"
-                >
+                <button type="reset" disabled={!isFormClearActive} className="btn btn-outline-secondary border-0">
                     Clear all fields
                 </button>
             </div>
