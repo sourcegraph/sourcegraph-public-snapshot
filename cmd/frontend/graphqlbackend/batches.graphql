@@ -1946,9 +1946,7 @@ extend type Mutation {
     Re-enqueue the changeset for processing by the reconciler. The changeset must be in FAILED state.
     """
     reenqueueChangeset(changeset: ID!): Changeset!
-}
 
-extend type Mutation {
     """
     Create a batch change from a batch spec and locally computed changeset specs. The newly created
     batch change is returned.
@@ -2084,6 +2082,13 @@ extend type Mutation {
     Experimental: This API is likely to change in the future.
     """
     createChangesetComments(batchChange: ID!, changesets: [ID!]!, body: String!): BulkOperation!
+
+    """
+    Reenqueue multiple changesets for processing.
+
+    Experimental: This API is likely to change in the future.
+    """
+    reenqueueChangesets(batchChange: ID!, changesets: [ID!]!): BulkOperation!
 }
 
 extend type Query {
@@ -2358,6 +2363,10 @@ enum BulkOperationType {
     Bulk detach changesets from a batch change.
     """
     DETACH
+    """
+    Bulk reenqueue failed changesets.
+    """
+    REENQUEUE
 }
 
 """

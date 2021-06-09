@@ -2,6 +2,7 @@ import classNames from 'classnames'
 import CommentOutlineIcon from 'mdi-react/CommentOutlineIcon'
 import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import LinkVariantRemoveIcon from 'mdi-react/LinkVariantRemoveIcon'
+import SyncIcon from 'mdi-react/SyncIcon'
 import React from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
@@ -25,6 +26,11 @@ const OPERATION_TITLES: Record<BulkOperationType, JSX.Element> = {
     DETACH: (
         <>
             <LinkVariantRemoveIcon className="icon-inline text-muted" /> Detach changesets
+        </>
+    ),
+    REENQUEUE: (
+        <>
+            <SyncIcon className="icon-inline text-muted" /> Retry changesets
         </>
     ),
 }
