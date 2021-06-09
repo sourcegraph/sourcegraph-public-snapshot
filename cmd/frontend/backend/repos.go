@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbcache"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -39,9 +40,14 @@ func (e ErrRepoSeeOther) Error() string {
 	return fmt.Sprintf("repo not found at this location, but might exist at %s", e.RedirectURL)
 }
 
-var Repos = &repos{
-	store: database.GlobalRepos,
-	cache: dbcache.NewDefaultRepoLister(database.GlobalRepos),
+var Repos *repos
+
+func InitRepos(db dbutil.DB) {
+	rstore := database.Repos(db)
+	Repos = &repos{
+		store: rstore,
+		cache: dbcache.NewDefaultRepoLister(rstore),
+	}
 }
 
 type repos struct {

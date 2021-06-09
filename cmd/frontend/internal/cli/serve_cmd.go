@@ -140,6 +140,7 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 	if err != nil {
 		log.Fatalf("ERROR: %v", err)
 	}
+	backend.InitRepos(db)
 
 	ui.InitRouter(db)
 
