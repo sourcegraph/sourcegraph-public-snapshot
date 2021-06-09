@@ -72,6 +72,8 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
 
                 await updateSubjectSettings(platformContext, subjectID, editedSettings).toPromise()
 
+                // Clear initial values if user successfully created search insight
+                setInitialFormValues(undefined)
                 telemetryService.log('CodeInsightsCodeStatsCreationPageSubmitClick')
                 history.push('/insights')
             } catch (error) {
@@ -80,10 +82,20 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
 
             return
         },
-        [telemetryService, history, updateSubjectSettings, getSubjectSettings, platformContext, authenticatedUser]
+        [
+            authenticatedUser,
+            getSubjectSettings,
+            updateSubjectSettings,
+            platformContext,
+            setInitialFormValues,
+            telemetryService,
+            history,
+        ]
     )
 
     const handleCancel = useCallback(() => {
+        // Clear initial values if user successfully created search insight
+        setInitialFormValues(undefined)
         telemetryService.log('CodeInsightsCodeStatsCreationPageCancelClick')
         history.push('/insights')
     }, [history, telemetryService])
