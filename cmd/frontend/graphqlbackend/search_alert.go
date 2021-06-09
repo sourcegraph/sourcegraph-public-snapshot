@@ -457,7 +457,7 @@ func (r *searchResolver) errorForOverRepoLimit(ctx context.Context) *errOverRepo
 		return buildErr(proposedQueries, description)
 	}
 
-	resolved, _ := r.resolveRepositories(ctx, nil)
+	resolved, _ := r.resolveRepositories(ctx, resolveRepositoriesOpts{})
 	if len(resolved.RepoRevs) > 0 {
 		paths := make([]string, len(resolved.RepoRevs))
 		for i, repo := range resolved.RepoRevs {
@@ -486,7 +486,9 @@ func (r *searchResolver) errorForOverRepoLimit(ctx context.Context) *errOverRepo
 			repoFieldValues = append(repoFieldValues, repoParentPattern)
 			ctx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
 			defer cancel()
-			resolved, err := r.resolveRepositories(ctx, repoFieldValues)
+			resolved, err := r.resolveRepositories(ctx, resolveRepositoriesOpts{
+				effectiveRepoFieldValues: repoFieldValues,
+			})
 			if ctx.Err() != nil {
 				continue
 			} else if err != nil {

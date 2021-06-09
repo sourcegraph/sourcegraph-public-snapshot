@@ -66,7 +66,7 @@ describe('Code insight create insight page', () => {
             },
         })
 
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/create-lang-stats-insight')
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/create/lang-stats')
 
         // Waiting for all important part of creation form will be rendered.
         await driver.page.waitForSelector('[data-testid="code-stats-insight-creation-page-content"]')
@@ -141,7 +141,7 @@ describe('Code insight create insight page', () => {
             },
         })
 
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/create-search-insight')
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/create/search')
 
         // Waiting for all important part of creation form will be rendered.
         await driver.page.waitForSelector('[data-testid="search-insight-create-page-content"]')

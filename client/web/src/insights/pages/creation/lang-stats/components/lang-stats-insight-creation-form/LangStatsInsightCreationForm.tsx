@@ -22,6 +22,7 @@ export interface LangStatsInsightCreationFormProps {
     submitErrors: SubmissionErrors
     submitting: boolean
     className?: string
+    isFormClearActive?: boolean
 
     title: useFieldAPI<LangStatsCreationFormFields['title']>
     repository: useFieldAPI<LangStatsCreationFormFields['repository']>
@@ -30,6 +31,7 @@ export interface LangStatsInsightCreationFormProps {
     organizations: Organization[]
 
     onCancel: () => void
+    onFormReset: () => void
 }
 
 export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsightCreationFormProps> = props => {
@@ -46,6 +48,8 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
         visibility,
         organizations,
         onCancel,
+        onFormReset,
+        isFormClearActive,
     } = props
 
     const isEditMode = mode === 'edit'
@@ -57,6 +61,7 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
             noValidate={true}
             className={classnames(className, 'd-flex flex-column')}
             onSubmit={handleSubmit}
+            onReset={onFormReset}
         >
             <FormInput
                 required={true}
@@ -105,7 +110,7 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
 
             <hr className={styles.formSeparator} />
 
-            <div>
+            <div className="d-flex flex-wrap align-items-baseline">
                 {submitErrors?.[FORM_ERROR] && <ErrorAlert error={submitErrors[FORM_ERROR]} />}
 
                 <LoaderButton
@@ -115,11 +120,15 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
                     label={submitting ? 'Submitting' : isEditMode ? 'Edit insight' : 'Create code insight'}
                     type="submit"
                     disabled={submitting}
-                    className="btn btn-primary mr-2"
+                    className="btn btn-primary mr-2 mb-2"
                 />
 
-                <button type="button" className="btn btn-outline-secondary" onClick={onCancel}>
+                <button type="button" className="btn btn-outline-secondary mb-2 mr-auto" onClick={onCancel}>
                     Cancel
+                </button>
+
+                <button type="reset" disabled={!isFormClearActive} className="btn btn-outline-secondary border-0">
+                    Clear all fields
                 </button>
             </div>
         </form>

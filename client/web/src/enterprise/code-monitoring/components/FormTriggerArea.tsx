@@ -23,6 +23,7 @@ interface TriggerAreaProps {
 }
 
 const isDiffOrCommit = (value: string): boolean => value === 'diff' || value === 'commit'
+const isLiteralOrRegexp = (value: string): boolean => value === 'literal' || value === 'regexp'
 
 const ValidQueryChecklistItem: React.FunctionComponent<{ checked: boolean; hint?: string; className?: string }> = ({
     checked,
@@ -102,6 +103,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
     const [hasTypeDiffOrCommitFilter, setHasTypeDiffOrCommitFilter] = useState(false)
     const [hasRepoFilter, setHasRepoFilter] = useState(false)
     const [hasPatternTypeFilter, setHasPatternTypeFilter] = useState(false)
+    const [hasValidPatternTypeFilter, setHasValidPatternTypeFilter] = useState(true)
 
     const [queryState, nextQueryFieldChange, queryInputReference, overrideState] = useInputValidation(
         useMemo(
@@ -117,6 +119,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                         let hasTypeDiffOrCommitFilter = false
                         let hasRepoFilter = false
                         let hasPatternTypeFilter = false
+                        let hasValidPatternTypeFilter = true
 
                         if (tokens.type === 'success') {
                             const filters = tokens.term.filter(token => token.type === 'filter')
@@ -142,11 +145,24 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                     filter.value &&
                                     validateFilter(filter.field.value, filter.value)
                             )
+
+                            // No explicit patternType filter means we default
+                            // to patternType:literal
+                            hasValidPatternTypeFilter =
+                                !hasPatternTypeFilter ||
+                                filters.some(
+                                    filter =>
+                                        filter.type === 'filter' &&
+                                        resolveFilter(filter.field.value)?.type === FilterType.patterntype &&
+                                        filter.value &&
+                                        isLiteralOrRegexp(filter.value.value)
+                                )
                         }
 
                         setHasTypeDiffOrCommitFilter(hasTypeDiffOrCommitFilter)
                         setHasRepoFilter(hasRepoFilter)
                         setHasPatternTypeFilter(hasPatternTypeFilter)
+                        setHasValidPatternTypeFilter(hasValidPatternTypeFilter)
 
                         if (!isValidQuery) {
                             return 'Failed to parse query'
@@ -215,6 +231,15 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                 />
 
                                 <ul className="trigger-area__checklist">
+                                    <li>
+                                        <ValidQueryChecklistItem
+                                            className="test-patterntype-checkbox"
+                                            checked={hasValidPatternTypeFilter}
+                                            hint="Code monitors support literal and regex search. Searches are literal by default."
+                                        >
+                                            Is <code>patternType:literal</code> or <code>patternType:regexp</code>
+                                        </ValidQueryChecklistItem>
+                                    </li>
                                     <li>
                                         <ValidQueryChecklistItem
                                             className="test-type-checkbox"
