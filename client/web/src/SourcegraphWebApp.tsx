@@ -40,6 +40,7 @@ import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
+import { fetchFeatureFlags, FlagSet } from './featureFlags/featureFlags'
 import { logInsightMetrics } from './insights'
 import { KeyboardShortcutsProps } from './keyboardShortcuts/keyboardShortcuts'
 import { Layout, LayoutProps } from './Layout'
@@ -55,7 +56,6 @@ import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import { LayoutRouteProps } from './routes'
 import { VersionContext } from './schema/site.schema'
-import { fetchFeatureFlags, FlagSet } from './featureFlags/featureFlags'
 import {
     resolveVersionContext,
     parseSearchURL,
@@ -318,6 +318,9 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             // eslint-disable-next-line react/no-unused-state
             enableAPIDocs: false,
             designRefreshToggleEnabled: false,
+            // Disabling linter here because this is not yet used anywhere.
+            // This can be re-enabled as soon as feature flags are leveraged.
+            // eslint-disable-next-line react/no-unused-state
             featureFlags: {},
         }
     }
@@ -418,6 +421,9 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
 
         this.subscriptions.add(
             fetchFeatureFlags().subscribe(event => {
+                // Disabling linter here because this is not yet used anywhere.
+                // This can be re-enabled as soon as feature flags are leveraged.
+                // eslint-disable-next-line react/no-unused-state
                 this.setState({ featureFlags: event })
             })
         )
