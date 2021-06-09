@@ -49,10 +49,10 @@ func unmarshalSearchCursor(cursor *string) (*run.SearchCursor, error) {
 }
 
 func (r *SearchResultsResolver) PageInfo() *graphqlutil.PageInfo {
-	if r.cursor == nil || r.cursor.Finished {
+	if r.Cursor == nil || r.Cursor.Finished {
 		return graphqlutil.HasNextPage(false)
 	}
-	return graphqlutil.NextPageCursor(marshalSearchCursor(r.cursor))
+	return graphqlutil.NextPageCursor(marshalSearchCursor(r.Cursor))
 }
 
 // paginatedResults handles serving paginated search queries. It's logic does
@@ -178,11 +178,13 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 	)
 
 	return &SearchResultsResolver{
-		db:            r.db,
-		Stats:         common,
-		SearchResults: results,
-		alert:         alert,
-		cursor:        cursor,
+		db:    r.db,
+		alert: alert,
+		SearchResults: &SearchResults{
+			Matches: results,
+			Stats:   common,
+			Cursor:  cursor,
+		},
 	}, nil
 }
 

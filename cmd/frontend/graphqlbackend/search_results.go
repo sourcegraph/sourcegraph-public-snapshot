@@ -47,11 +47,11 @@ import (
 )
 
 func (c *SearchResultsResolver) LimitHit() bool {
-	return c.IsLimitHit || (c.limit > 0 && len(c.SearchResults) > c.limit)
+	return c.Stats.IsLimitHit || (c.limit > 0 && len(c.Matches) > c.limit)
 }
 
 func (c *SearchResultsResolver) Repositories() []*RepositoryResolver {
-	repos := c.Repos
+	repos := c.Stats.Repos
 	resolvers := make([]*RepositoryResolver, 0, len(repos))
 	for _, r := range repos {
 		resolvers = append(resolvers, NewRepositoryResolver(c.db, r.ToRepo()))
@@ -63,13 +63,13 @@ func (c *SearchResultsResolver) Repositories() []*RepositoryResolver {
 }
 
 func (c *SearchResultsResolver) RepositoriesCount() int32 {
-	return int32(len(c.Repos))
+	return int32(len(c.Stats.Repos))
 }
 
 func (c *SearchResultsResolver) repositoryResolvers(mask search.RepoStatus) []*RepositoryResolver {
 	var resolvers []*RepositoryResolver
-	c.Status.Filter(mask, func(id api.RepoID) {
-		if r, ok := c.Repos[id]; ok {
+	c.Stats.Status.Filter(mask, func(id api.RepoID) {
+		if r, ok := c.Stats.Repos[id]; ok {
 			resolvers = append(resolvers, NewRepositoryResolver(c.db, r.ToRepo()))
 		}
 	})
@@ -92,20 +92,17 @@ func (c *SearchResultsResolver) Timedout() []*RepositoryResolver {
 }
 
 func (c *SearchResultsResolver) IndexUnavailable() bool {
-	return c.IsIndexUnavailable
+	return c.Stats.IsIndexUnavailable
 }
 
 func (c *SearchResultsResolver) allReposTimedout() bool {
-	return c.Status.All(search.RepoStatusTimedout) && c.Status.Len() == len(c.Repos)
+	return c.Stats.Status.All(search.RepoStatusTimedout) && c.Stats.Status.Len() == len(c.Stats.Repos)
 }
 
 // SearchResultsResolver is a resolver for the GraphQL type `SearchResults`
 type SearchResultsResolver struct {
 	db dbutil.DB
-	// SearchResults is the full list of results found. The method Results()
-	// will return the list respecting limits.
-	SearchResults []result.Match
-	streaming.Stats
+	*SearchResults
 
 	// limit is the maximum number of SearchResults to send back to the user.
 	limit int
@@ -115,21 +112,23 @@ type SearchResultsResolver struct {
 	// The time it took to compute all results.
 	elapsed time.Duration
 
-	// cursor to return for paginated search requests, or nil if the request
-	// wasn't paginated.
-	cursor *run.SearchCursor
-
 	// cache for user settings. Ideally this should be set just once in the code path
 	// by an upstream resolver
 	UserSettings *schema.Settings
 }
 
+type SearchResults struct {
+	Matches []result.Match
+	Stats   streaming.Stats
+	Cursor  *run.SearchCursor
+}
+
 // Results are the results found by the search. It respects the limits set. To
 // access all results directly access the SearchResults field.
 func (sr *SearchResultsResolver) Results() []SearchResultResolver {
-	limited := sr.SearchResults
-	if sr.limit > 0 && sr.limit < len(sr.SearchResults) {
-		limited = sr.SearchResults[:sr.limit]
+	limited := sr.Matches
+	if sr.limit > 0 && sr.limit < len(sr.Matches) {
+		limited = sr.Matches[:sr.limit]
 	}
 
 	return matchesToResolvers(sr.db, limited)
@@ -174,7 +173,7 @@ func matchesToResolvers(db dbutil.DB, matches []result.Match) []SearchResultReso
 
 func (sr *SearchResultsResolver) MatchCount() int32 {
 	var totalResults int
-	for _, result := range sr.SearchResults {
+	for _, result := range sr.Matches {
 		totalResults += result.ResultCount()
 	}
 	return int32(totalResults)
@@ -185,7 +184,7 @@ func (sr *SearchResultsResolver) ResultCount() int32 { return sr.MatchCount() }
 
 func (sr *SearchResultsResolver) ApproximateResultCount() string {
 	count := sr.MatchCount()
-	if sr.LimitHit() || sr.Status.Any(search.RepoStatusCloning|search.RepoStatusTimedout) {
+	if sr.LimitHit() || sr.Stats.Status.Any(search.RepoStatusCloning|search.RepoStatusTimedout) {
 		return fmt.Sprintf("%d+", count)
 	}
 	return strconv.Itoa(int(count))
@@ -223,7 +222,7 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 		Globbing: globbing,
 	}
 	filters.Update(streaming.SearchEvent{
-		Results: sr.SearchResults,
+		Results: sr.Matches,
 		Stats:   sr.Stats,
 	})
 
@@ -322,7 +321,7 @@ func (sr *SearchResultsResolver) Sparkline(ctx context.Context) (sparkline []int
 	// Consider all of our search results as a potential data point in our
 	// sparkline.
 loop:
-	for _, r := range sr.SearchResults {
+	for _, r := range sr.Matches {
 		r := r // shadow so it doesn't change in the goroutine
 		switch m := r.(type) {
 		case *result.RepoMatch:
@@ -497,18 +496,18 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (_ *SearchResultsReso
 			// Panic if paginatedResults does not ensure a non-nil search result.
 			panic("stable search: paginated search returned nil results")
 		}
-		if result.cursor == nil {
+		if result.Cursor == nil {
 			// Perhaps an alert was raised.
 			return result, err
 		}
-		if !result.cursor.Finished {
+		if !result.Cursor.Finished {
 			// For stable result queries limitHit = true implies
 			// there is a next cursor, and more results may exist.
 			result.Stats.IsLimitHit = true
 		}
 		if r.stream != nil {
 			r.stream.Send(streaming.SearchEvent{
-				Results: result.SearchResults,
+				Results: result.Matches,
 				Stats:   result.Stats,
 			})
 		}
@@ -530,14 +529,14 @@ func unionMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 	dedup := result.NewDeduper()
 
 	// Add results to maps for deduping
-	for _, leftResult := range left.SearchResults {
+	for _, leftResult := range left.Matches {
 		dedup.Add(leftResult)
 	}
-	for _, rightResult := range right.SearchResults {
+	for _, rightResult := range right.Matches {
 		dedup.Add(rightResult)
 	}
 
-	left.SearchResults = dedup.Results()
+	left.Matches = dedup.Results()
 	left.Stats.Update(&right.Stats)
 	return left
 }
@@ -551,9 +550,9 @@ func union(left, right *SearchResultsResolver) *SearchResultsResolver {
 		return right
 	}
 
-	if left.SearchResults != nil && right.SearchResults != nil {
+	if left.Matches != nil && right.Matches != nil {
 		return unionMerge(left, right)
-	} else if right.SearchResults != nil {
+	} else if right.Matches != nil {
 		return right
 	}
 	return left
@@ -563,14 +562,14 @@ func union(left, right *SearchResultsResolver) *SearchResultsResolver {
 // for files contained in both result sets, and updating counts.
 func intersectMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 	rightFileMatches := make(map[result.Key]*result.FileMatch)
-	for _, r := range right.SearchResults {
+	for _, r := range right.Matches {
 		if fileMatch, ok := r.(*result.FileMatch); ok {
 			rightFileMatches[fileMatch.Key()] = fileMatch
 		}
 	}
 
 	var merged []result.Match
-	for _, leftMatch := range left.SearchResults {
+	for _, leftMatch := range left.Matches {
 		leftFileMatch, ok := leftMatch.(*result.FileMatch)
 		if !ok {
 			continue
@@ -584,7 +583,7 @@ func intersectMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 		leftFileMatch.AppendMatches(rightFileMatch)
 		merged = append(merged, leftMatch)
 	}
-	left.SearchResults = merged
+	left.Matches = merged
 	left.Stats.Update(&right.Stats)
 	return left
 }
@@ -658,11 +657,11 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, q query.Basic) (*Searc
 		if result == nil {
 			return &SearchResultsResolver{}, nil
 		}
-		if len(result.SearchResults) == 0 {
+		if len(result.Matches) == 0 {
 			// result might contain an alert.
 			return result, nil
 		}
-		exhausted = !result.IsLimitHit
+		exhausted = !result.Stats.IsLimitHit
 		for _, term := range operands[1:] {
 			// check if we exceed the overall time limit before running the next query.
 			select {
@@ -680,17 +679,17 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, q query.Basic) (*Searc
 			if termResult == nil {
 				return &SearchResultsResolver{}, nil
 			}
-			if len(termResult.SearchResults) == 0 {
+			if len(termResult.Matches) == 0 {
 				// termResult might contain an alert.
 				return termResult, nil
 			}
-			exhausted = exhausted && !termResult.IsLimitHit
+			exhausted = exhausted && !termResult.Stats.IsLimitHit
 			result = intersect(result, termResult)
 		}
 		if exhausted {
 			break
 		}
-		if len(result.SearchResults) >= want {
+		if len(result.Matches) >= want {
 			break
 		}
 		// If the result size set is not big enough, and we haven't
@@ -701,7 +700,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, q query.Basic) (*Searc
 			return alertForCappedAndExpression().wrap(r.db), nil
 		}
 	}
-	result.IsLimitHit = !exhausted
+	result.Stats.IsLimitHit = !exhausted
 	return result, nil
 }
 
@@ -729,8 +728,8 @@ func (r *searchResolver) evaluateOr(ctx context.Context, q query.Basic) (*Search
 			result = union(result, new)
 			// Do not rely on result.Stats.resultCount because it may
 			// count non-content matches and there's no easy way to know.
-			if len(result.SearchResults) > wantCount {
-				result.SearchResults = result.SearchResults[:wantCount]
+			if len(result.Matches) > wantCount {
+				result.Matches = result.Matches[:wantCount]
 				return result, nil
 			}
 		}
@@ -828,7 +827,7 @@ func logPrometheusBatch(status, alertType, requestSource, requestName string, el
 func newHoneyEvent(ctx context.Context, status, alertType, requestSource, requestName, query string, elapsed time.Duration, srr *SearchResultsResolver) *libhoney.Event {
 	var n int
 	if srr != nil {
-		n = len(srr.SearchResults)
+		n = len(srr.Matches)
 	}
 	return honey.SearchEvent(ctx, honey.SearchEventArgs{
 		OriginalQuery: query,
@@ -893,7 +892,7 @@ func (r *searchResolver) resultsStreaming(ctx context.Context) (*SearchResultsRe
 		srr, err := r.resultsBatch(ctx)
 		if srr != nil {
 			endpoint.Send(streaming.SearchEvent{
-				Results: srr.SearchResults,
+				Results: srr.Matches,
 				Stats:   srr.Stats,
 			})
 		}
@@ -978,17 +977,17 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 		}
 
 		if newResult != nil {
-			newResult.SearchResults = selectResults(newResult.SearchResults, q)
+			newResult.Matches = selectResults(newResult.Matches, q)
 			srr = union(srr, newResult)
-			if len(srr.SearchResults) > wantCount {
-				srr.SearchResults = srr.SearchResults[:wantCount]
+			if len(srr.Matches) > wantCount {
+				srr.Matches = srr.Matches[:wantCount]
 				break
 			}
 		}
 	}
 
 	if srr != nil {
-		r.sortResults(srr.SearchResults)
+		r.sortResults(srr.Matches)
 	}
 	// copy userSettings from searchResolver to SearchResultsResolver
 	if srr != nil {
@@ -1077,7 +1076,7 @@ func substitutePredicates(q query.Basic, evaluate func(query.Predicate) (*Search
 		var nodes []query.Node
 		switch predicate.Field() {
 		case query.FieldRepo:
-			nodes, err = searchResultsToRepoNodes(srr.SearchResults)
+			nodes, err = searchResultsToRepoNodes(srr.Matches)
 			if err != nil {
 				topErr = err
 				return nil
@@ -1575,11 +1574,13 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 	r.sortResults(matches)
 
 	resultsResolver := SearchResultsResolver{
-		db:            r.db,
-		Stats:         common,
-		SearchResults: matches,
-		limit:         limit,
-		alert:         alert,
+		db: r.db,
+		SearchResults: &SearchResults{
+			Matches: matches,
+			Stats:   common,
+		},
+		limit: limit,
+		alert: alert,
 	}
 	return &resultsResolver, err
 }
