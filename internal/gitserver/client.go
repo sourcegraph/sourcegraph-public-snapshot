@@ -593,13 +593,20 @@ func (c *Client) doListOne(ctx context.Context, urlSuffix, addr string) ([]strin
 	return list, err
 }
 
-// RequestRepoUpdate is the new protocol endpoint for synchronous requests
-// with more detailed responses. Do not use this if you are not repo-updater.
+// MockRequestRepoUpdate mocks (*Client).RequestRepoUpdate for tests.
+var MockRequestRepoUpdate func(context.Context, api.RepoName, time.Duration) (*protocol.RepoUpdateResponse, error)
+
+// RequestRepoUpdate is the new protocol endpoint for synchronous requests with
+// more detailed responses. This should only be called from repo-updater or via
+// the `refresh` endpoint.
 //
-// Repo updates are not guaranteed to occur. If a repo has been updated
-// recently (within the Since duration specified in the request), the
-// update won't happen.
+// Repo updates are not guaranteed to occur. If a repo has been updated recently
+// (within the Since duration specified in the request), the update won't happen.
 func (c *Client) RequestRepoUpdate(ctx context.Context, repo api.RepoName, since time.Duration) (*protocol.RepoUpdateResponse, error) {
+	if MockRequestRepoUpdate != nil {
+		return MockRequestRepoUpdate(ctx, repo, since)
+	}
+
 	req := &protocol.RepoUpdateRequest{
 		Repo:  repo,
 		Since: since,

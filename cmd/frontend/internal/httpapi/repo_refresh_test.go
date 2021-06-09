@@ -3,11 +3,12 @@ package httpapi
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -15,10 +16,13 @@ func TestRepoRefresh(t *testing.T) {
 	c := newTest()
 
 	enqueueRepoUpdateCount := map[api.RepoName]int{}
-	repoupdater.MockEnqueueRepoUpdate = func(ctx context.Context, repo api.RepoName) (*protocol.RepoUpdateResponse, error) {
+	gitserver.MockRequestRepoUpdate = func(ctx context.Context, repo api.RepoName, duration time.Duration) (*protocol.RepoUpdateResponse, error) {
 		enqueueRepoUpdateCount[repo]++
 		return nil, nil
 	}
+	t.Cleanup(func() {
+		gitserver.MockRequestRepoUpdate = nil
+	})
 
 	backend.Mocks.Repos.GetByName = func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
 		switch name {
@@ -28,12 +32,9 @@ func TestRepoRefresh(t *testing.T) {
 			panic("wrong path")
 		}
 	}
-	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
-		if repo.ID != 2 || rev != "master" {
-			t.Error("wrong arguments to ResolveRev")
-		}
-		return "aed", nil
-	}
+	t.Cleanup(func() {
+		backend.Mocks.Repos.GetByName = nil
+	})
 
 	if _, err := c.PostOK("/repos/github.com/gorilla/mux/-/refresh", nil); err != nil {
 		t.Fatal(err)

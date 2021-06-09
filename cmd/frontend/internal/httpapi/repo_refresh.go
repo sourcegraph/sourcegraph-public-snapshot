@@ -2,11 +2,12 @@ package httpapi
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gorilla/mux"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
 func serveRepoRefresh(w http.ResponseWriter, r *http.Request) error {
@@ -17,6 +18,6 @@ func serveRepoRefresh(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	_, err = repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, repo.Name)
+	_, err = gitserver.DefaultClient.RequestRepoUpdate(ctx, repo.Name, 10*time.Second)
 	return err
 }
