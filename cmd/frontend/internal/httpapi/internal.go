@@ -208,7 +208,7 @@ func serveSearchConfiguration(w http.ResponseWriter, r *http.Request) error {
 			return string(commitID), err
 		}
 
-		priority := float64(m.Stars) + repoRankFromConfig(siteConfig, repoName)
+		priority := float64(repo.Stars) + repoRankFromConfig(siteConfig, repoName)
 
 		return &searchbackend.RepoIndexOptions{
 			RepoID:     int32(repo.ID),
