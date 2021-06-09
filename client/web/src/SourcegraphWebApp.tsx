@@ -212,7 +212,7 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
 
     /**
      * Whether the user is missing a private scope for GitHub external service
-     * and needs to re-add the external service.
+     * and needs to request a new token.
      */
     isUserMissingGitHubPrivateScope: boolean | null
 
