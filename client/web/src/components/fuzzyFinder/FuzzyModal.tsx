@@ -1,5 +1,5 @@
 import Dialog from '@reach/dialog'
-import classnames from 'classnames'
+import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useState } from 'react'
 
@@ -131,7 +131,11 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
     }
 
     return (
-        <Dialog className={styles.modal} onDismiss={() => props.onClose()} aria-labelledby={FUZZY_MODAL_TITLE}>
+        <Dialog
+            className={classNames(styles.modal, 'modal-body p-4 rounded border')}
+            onDismiss={() => props.onClose()}
+            aria-labelledby={FUZZY_MODAL_TITLE}
+        >
             <div className={styles.content}>
                 <div className={styles.header}>
                     <h3 className="mb-0" id={FUZZY_MODAL_TITLE}>
@@ -149,7 +153,7 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
                     aria-controls="fuzzy-modal-results"
                     aria-expanded={props.fsm.key !== 'downloading'}
                     id="fuzzy-modal-input"
-                    className={classnames('form-control', 'px-2', 'py-1', styles.input)}
+                    className={classNames('form-control py-1', styles.input)}
                     placeholder="Enter a partial file path or name"
                     value={state.query}
                     onChange={event => {
@@ -165,7 +169,7 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
                 {fuzzyResult.element}
                 {!fuzzyResult.isComplete && (
                     <button
-                        className={classnames('btn btn-secondary', styles.showMore)}
+                        className={classNames('btn btn-secondary', styles.showMore)}
                         type="button"
                         onClick={() => state.increaseMaxResults()}
                     >
@@ -294,7 +298,7 @@ function renderFiles(
                     <li
                         id={`fuzzy-modal-result-${fileIndex}`}
                         key={file.text}
-                        className={classnames('p-1', fileIndex === state.focusIndex && styles.focused)}
+                        className={classNames('p-1', fileIndex === state.focusIndex && styles.focused)}
                     >
                         <HighlightedLink {...file} />
                     </li>
