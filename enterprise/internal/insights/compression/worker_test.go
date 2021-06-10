@@ -171,11 +171,6 @@ func Test_getMetadata_NoInsertRequired(t *testing.T) {
 	})
 }
 
-// 1. repo ID cannot be resolved
-// 2. metadata is disabled
-// 4. no commits -> nothing index
-// 5. commits -> index them and check update stamp is called
-
 // mockIterator generates iterator methods given a list of repo names for test scenarios
 func mockIterator(repos []string) func(ctx context.Context, each func(repoName string) error) error {
 	return func(ctx context.Context, each func(repoName string) error) error {

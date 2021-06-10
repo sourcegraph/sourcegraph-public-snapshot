@@ -129,7 +129,7 @@ func (i *CommitIndexer) indexRepository(name string) error {
 
 	searchTime := max(i.maxHistoricalTime, metadata.LastIndexedAt)
 
-	logger.Info("fetching commits", "repo_id", repoId, "after", searchTime)
+	logger.Debug("fetching commits", "repo_id", repoId, "after", searchTime)
 	commits, err := i.getCommits(ctx, repoName, searchTime)
 	if err != nil {
 		logger.Error("error fetching commits", "repo_id", repoId, "error", err.Error())

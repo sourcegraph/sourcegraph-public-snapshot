@@ -45,7 +45,7 @@ func (c *DBCommitStore) Save(ctx context.Context, id api.RepoID, commit *git.Com
 	ref := commit.ID
 	err := c.Exec(ctx, sqlf.Sprintf(insertCommitIndexStr, id, ref, commit.Committer.Date))
 	if err != nil {
-		return fmt.Errorf("error saving commit for repo: %v ref %v: %w", id, ref, err)
+		return fmt.Errorf("error saving commit for repo_id: %v ref %v: %w", id, ref, err)
 	}
 
 	return nil
