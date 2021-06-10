@@ -15,6 +15,7 @@ interface FormInputProps extends InputHTMLAttributes<HTMLInputElement> {
     className?: string
     /** Error massage for input. */
     error?: string
+    /** Prop to control error input element state. */
     errorInputState?: boolean
     /** Valid sign to show valid state on input. */
     valid?: boolean

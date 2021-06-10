@@ -12,6 +12,7 @@ import {
     LangStatsInsightContent,
 } from './utils/insight-mock-data'
 import { overrideGraphQLExtensions } from './utils/override-graphql-with-extensions'
+import delay from 'delay'
 
 describe('Code insight create insight page', () => {
     let driver: Driver
@@ -73,6 +74,8 @@ describe('Code insight create insight page', () => {
 
         // Add new repo to repositories field
         await driver.page.type('input[name="repository"]', 'github.com/sourcegraph/sourcegraph')
+        // Wait until async validation on repository field will be finished
+        await delay(1000)
 
         // With repository filled input we have to have code stats insight live preview
         // charts - pie chart
