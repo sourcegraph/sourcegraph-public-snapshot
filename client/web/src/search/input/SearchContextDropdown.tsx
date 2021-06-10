@@ -57,7 +57,7 @@ function getFeatureTourElement(onClose: () => void): HTMLElement {
     return container
 }
 
-const HAS_SEEN_FEATURE_TOUR_STEP_KEY = 'has-seen-search-contexts-dropdown-highlight-tour-step'
+const HAS_SEEN_FEATURE_TOUR_KEY = 'has-seen-search-contexts-dropdown-highlight-tour-step'
 
 export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdownProps> = props => {
     const {
@@ -85,7 +85,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         'search-contexts-start-tour',
         showSearchContextFeatureTour && !isSearchOnboardingTourVisible,
         getFeatureTourElement,
-        HAS_SEEN_FEATURE_TOUR_STEP_KEY,
+        HAS_SEEN_FEATURE_TOUR_KEY,
         getTourOptions({
             attachTo: {
                 element: '.search-context-dropdown__button',
