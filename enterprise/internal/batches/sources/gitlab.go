@@ -423,3 +423,14 @@ func (s *GitLabSource) CreateComment(ctx context.Context, c *Changeset, text str
 
 	return s.client.CreateMergeRequestNote(ctx, project, mr, text)
 }
+
+// MergeChangeset merges a Changeset on the code host, if in a mergeable state.
+func (s *GitLabSource) MergeChangeset(ctx context.Context, c *Changeset, text string) error {
+	project := c.Repo.Metadata.(*gitlab.Project)
+	mr, ok := c.Changeset.Metadata.(*gitlab.MergeRequest)
+	if !ok {
+		return errors.New("Changeset is not a GitLab merge request")
+	}
+
+	return s.client.CreateMergeRequestNote(ctx, project, mr, text)
+}

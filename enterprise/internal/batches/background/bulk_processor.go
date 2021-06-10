@@ -10,9 +10,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/global"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -72,6 +74,8 @@ func (b *bulkProcessor) process(ctx context.Context, job *btypes.ChangesetJob) (
 		return b.detach(ctx, job)
 	case btypes.ChangesetJobTypeReenqueue:
 		return b.reenqueueChangeset(ctx, job)
+	case btypes.ChangesetJobTypeMerge:
+		return b.mergeChangeset(ctx, job)
 
 	default:
 		return &unknownJobTypeErr{jobType: string(job.JobType)}
@@ -117,4 +121,36 @@ func (b *bulkProcessor) reenqueueChangeset(ctx context.Context, job *btypes.Chan
 	ctx = actor.WithActor(ctx, actor.FromUser(job.UserID))
 	_, _, err := svc.ReenqueueChangeset(ctx, b.ch.ID)
 	return err
+}
+
+func (b *bulkProcessor) mergeChangeset(ctx context.Context, job *btypes.ChangesetJob) (err error) {
+	cs := &sources.Changeset{
+		Changeset: b.ch,
+		Repo:      b.repo,
+	}
+	if err := b.css.MergeChangeset(ctx, cs, ""); err != nil {
+		return err
+	}
+
+	tx, err := b.store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		err = tx.Done(err)
+	}()
+
+	events, err := cs.Changeset.Events()
+	if err != nil {
+		log15.Error("Events", "err", err)
+		return errcode.MakeNonRetryable(err)
+	}
+	state.SetDerivedState(ctx, tx.Repos(), cs.Changeset, events)
+
+	if err := tx.UpsertChangesetEvents(ctx, events...); err != nil {
+		log15.Error("UpsertChangesetEvents", "err", err)
+		return err
+	}
+
+	return tx.UpdateChangeset(ctx, cs.Changeset)
 }

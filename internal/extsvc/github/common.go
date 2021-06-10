@@ -951,6 +951,56 @@ func (c *V4Client) CreatePullRequestComment(ctx context.Context, pr *PullRequest
 	return c.requestGraphQL(ctx, createPullRequestCommentMutation, input, &result)
 }
 
+const mergePullRequestMutation = `
+mutation MergePullRequest($input: MergePullRequestInput!) {
+  mergePullRequest(input: $input) {
+	  pullRequest {
+		  ...pr
+	  }
+  }
+}
+`
+
+// MergePullRequest tries to merge the PullRequest on Github.
+func (c *V4Client) MergePullRequest(ctx context.Context, pr *PullRequest, mergeMethod, authorEmail string) error {
+	version := c.determineGitHubVersion(ctx)
+	prFragment, err := pullRequestFragments(version)
+	if err != nil {
+		return err
+	}
+
+	var result struct {
+		MergePullRequest struct {
+			PullRequest struct {
+				PullRequest
+				Participants  struct{ Nodes []Actor }
+				TimelineItems TimelineItemConnection
+			} `json:"pullRequest"`
+		} `json:"mergePullRequest"`
+	}
+
+	input := map[string]interface{}{"input": struct {
+		AuthorEmail   string `json:"authorEmail,omitempty"`
+		PullRequestID string `json:"pullRequestId"`
+		MergeMethod   string `json:"mergeMethod,omitempty"`
+	}{PullRequestID: pr.ID, AuthorEmail: authorEmail, MergeMethod: mergeMethod}}
+	if err := c.requestGraphQL(ctx, prFragment+"\n"+mergePullRequestMutation, input, &result); err != nil {
+		return err
+	}
+
+	ti := result.MergePullRequest.PullRequest.TimelineItems
+	*pr = result.MergePullRequest.PullRequest.PullRequest
+	pr.TimelineItems = ti.Nodes
+	pr.Participants = result.MergePullRequest.PullRequest.Participants.Nodes
+
+	items, err := c.loadRemainingTimelineItems(ctx, pr.ID, ti.PageInfo)
+	if err != nil {
+		return err
+	}
+	pr.TimelineItems = append(pr.TimelineItems, items...)
+	return nil
+}
+
 func (c *V4Client) loadRemainingTimelineItems(ctx context.Context, prID string, pageInfo PageInfo) (items []TimelineItem, err error) {
 	version := c.determineGitHubVersion(ctx)
 	timelineItemTypes, err := timelineItemTypes(version)
@@ -1580,6 +1630,10 @@ type Repository struct {
 	// Metadata retained for ranking
 	StargazerCount int `json:",omitempty"`
 	ForkCount      int `json:",omitempty"`
+
+	MergeCommitAllowed bool `json:"mergeCommitAllowed,omitempty"`
+	RebaseMergeAllowed bool `json:"rebaseMergeAllowed,omitempty"`
+	SquashMergeAllowed bool `json:"mergeMergeAllowed,omitempty"`
 }
 
 func ownerNameCacheKey(owner, name string) string       { return "0:" + owner + "/" + name }
@@ -1638,19 +1692,22 @@ type restRepositoryPermissions struct {
 }
 
 type restRepository struct {
-	ID          string `json:"node_id"` // GraphQL ID
-	DatabaseID  int64  `json:"id"`
-	FullName    string `json:"full_name"` // same as nameWithOwner
-	Description string
-	HTMLURL     string                    `json:"html_url"` // web URL
-	Private     bool                      `json:"private"`
-	Fork        bool                      `json:"fork"`
-	Archived    bool                      `json:"archived"`
-	Locked      bool                      `json:"locked"`
-	Disabled    bool                      `json:"disabled"`
-	Permissions restRepositoryPermissions `json:"permissions"`
-	Stars       int                       `json:"stargazers_count"`
-	Forks       int                       `json:"forks_count"`
+	ID               string `json:"node_id"` // GraphQL ID
+	DatabaseID       int64  `json:"id"`
+	FullName         string `json:"full_name"` // same as nameWithOwner
+	Description      string
+	HTMLURL          string                    `json:"html_url"` // web URL
+	Private          bool                      `json:"private"`
+	Fork             bool                      `json:"fork"`
+	Archived         bool                      `json:"archived"`
+	Locked           bool                      `json:"locked"`
+	Disabled         bool                      `json:"disabled"`
+	Permissions      restRepositoryPermissions `json:"permissions"`
+	Stars            int                       `json:"stargazers_count"`
+	Forks            int                       `json:"forks_count"`
+	AllowMergeCommit bool                      `json:"allow_merge_commit"`
+	AllowRebaseMerge bool                      `json:"allow_rebase_merge"`
+	AllowSquashMerge bool                      `json:"allow_squash_merge"`
 }
 
 // getRepositoryFromAPI attempts to fetch a repository from the GitHub API without use of the redis cache.
@@ -1673,19 +1730,22 @@ func (c *V3Client) getRepositoryFromAPI(ctx context.Context, owner, name string)
 // to a standard format.
 func convertRestRepo(restRepo restRepository) *Repository {
 	return &Repository{
-		ID:               restRepo.ID,
-		DatabaseID:       restRepo.DatabaseID,
-		NameWithOwner:    restRepo.FullName,
-		Description:      restRepo.Description,
-		URL:              restRepo.HTMLURL,
-		IsPrivate:        restRepo.Private,
-		IsFork:           restRepo.Fork,
-		IsArchived:       restRepo.Archived,
-		IsLocked:         restRepo.Locked,
-		IsDisabled:       restRepo.Disabled,
-		ViewerPermission: convertRestRepoPermissions(restRepo.Permissions),
-		StargazerCount:   restRepo.Stars,
-		ForkCount:        restRepo.Forks,
+		ID:                 restRepo.ID,
+		DatabaseID:         restRepo.DatabaseID,
+		NameWithOwner:      restRepo.FullName,
+		Description:        restRepo.Description,
+		URL:                restRepo.HTMLURL,
+		IsPrivate:          restRepo.Private,
+		IsFork:             restRepo.Fork,
+		IsArchived:         restRepo.Archived,
+		IsLocked:           restRepo.Locked,
+		IsDisabled:         restRepo.Disabled,
+		ViewerPermission:   convertRestRepoPermissions(restRepo.Permissions),
+		StargazerCount:     restRepo.Stars,
+		ForkCount:          restRepo.Forks,
+		MergeCommitAllowed: restRepo.AllowMergeCommit,
+		RebaseMergeAllowed: restRepo.AllowRebaseMerge,
+		SquashMergeAllowed: restRepo.AllowSquashMerge,
 	}
 }
 

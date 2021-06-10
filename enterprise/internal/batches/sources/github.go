@@ -251,3 +251,31 @@ func (s GithubSource) CreateComment(ctx context.Context, c *Changeset, text stri
 
 	return s.client.CreatePullRequestComment(ctx, pr, text)
 }
+
+// MergeChangeset merges a Changeset on the code host, if in a mergeable state.
+func (s GithubSource) MergeChangeset(ctx context.Context, c *Changeset, text string) error {
+	repo, ok := c.Repo.Metadata.(*github.Repository)
+	if !ok {
+		return errors.New("Repository is not a GitHub repository")
+	}
+	var mergeMethod string
+	if repo.MergeCommitAllowed {
+		mergeMethod = "MERGE"
+	} else if repo.RebaseMergeAllowed {
+		mergeMethod = "REBASE"
+	} else if repo.SquashMergeAllowed {
+		mergeMethod = "SQUASH"
+	} else {
+		return errors.New("no merge method allowed on repo")
+	}
+	pr, ok := c.Changeset.Metadata.(*github.PullRequest)
+	if !ok {
+		return errors.New("Changeset is not a GitHub pull request")
+	}
+
+	if err := s.client.MergePullRequest(ctx, pr, mergeMethod, ""); err != nil {
+		return err
+	}
+
+	return c.Changeset.SetMetadata(pr)
+}

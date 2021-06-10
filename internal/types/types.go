@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -142,6 +144,11 @@ func (r *Repo) Update(n *Repo) (modified bool) {
 			// items such as maps. However, we know that copying github.Repository is safe as it only contains values.
 			clone.Metadata = &cp
 		})
+	}
+
+	log15.Warn(string(r.Name))
+	if r.Name == "ghe.sgdev.org/sourcegraph/xtaci-kcp-go" {
+		log15.Error("syncing the repo", "repo", "ghe.sgdev.org/sourcegraph/xtaci-kcp-go", "metadata", n.Metadata)
 	}
 
 	if !reflect.DeepEqual(r.Metadata, n.Metadata) {

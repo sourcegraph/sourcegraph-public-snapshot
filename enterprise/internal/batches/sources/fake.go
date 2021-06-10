@@ -278,3 +278,8 @@ func (s *FakeChangesetSource) AuthenticatedUsername(ctx context.Context) (string
 	s.AuthenticatedUsernameCalled = true
 	return s.Username, nil
 }
+
+func (s *FakeChangesetSource) MergeChangeset(ctx context.Context, c *Changeset, body string) error {
+	// s.CreateCommentCalled = true
+	return s.Err
+}

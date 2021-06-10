@@ -12,6 +12,7 @@ import { queryAllChangesetIDs } from '../backend'
 import styles from './ChangesetSelectRow.module.scss'
 import { CreateCommentModal } from './CreateCommentModal'
 import { DetachChangesetsModal } from './DetachChangesetsModal'
+import { MergeChangesetsModal } from './MergeChangesetsModal'
 import { ReenqueueChangesetsModal } from './ReenqueueChangesetsModal'
 
 /**
@@ -84,6 +85,21 @@ const AVAILABLE_ACTIONS: ChangesetListAction[] = [
         isAvailable: () => true,
         onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => (
             <CreateCommentModal
+                batchChangeID={batchChangeID}
+                changesetIDs={changesetIDs}
+                afterCreate={onDone}
+                onCancel={onCancel}
+            />
+        ),
+    },
+    {
+        type: 'merge',
+        buttonLabel: 'Merge changesets',
+        dropdownTitle: 'Merge changesets',
+        dropdownDescription: 'Merge all selected changesets, if constraints are met.',
+        isAvailable: () => true,
+        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => (
+            <MergeChangesetsModal
                 batchChangeID={batchChangeID}
                 changesetIDs={changesetIDs}
                 afterCreate={onDone}

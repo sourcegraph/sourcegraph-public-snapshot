@@ -68,6 +68,8 @@ type ChangesetSource interface {
 	ReopenChangeset(context.Context, *Changeset) error
 	// CreateComment posts a comment on the Changeset.
 	CreateComment(context.Context, *Changeset, string) error
+	// MergeChangeset merges a Changeset on the code host, if in a mergeable state.
+	MergeChangeset(context.Context, *Changeset, string) error
 }
 
 // A Changeset of an existing Repo.
