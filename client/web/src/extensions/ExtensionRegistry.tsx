@@ -25,7 +25,12 @@ import { eventLogger } from '../tracking/eventLogger'
 
 import { ExtensionBanner } from './ExtensionBanner'
 import { ExtensionRegistrySidenav } from './ExtensionRegistrySidenav'
-import { configureExtensionRegistry, ConfiguredExtensionRegistry } from './extensions'
+import {
+    configureExtensionRegistry,
+    ConfiguredExtensionRegistry,
+    MinimalConfiguredRegistryExtension,
+    configureFeaturedExtensions,
+} from './extensions'
 import { ExtensionsAreaRouteContext } from './ExtensionsArea'
 import { ExtensionsList } from './ExtensionsList'
 
@@ -43,16 +48,28 @@ const URL_QUERY_PARAM = 'query'
 const URL_CATEGORY_PARAM = 'category'
 const SHOW_EXPERIMENTAL_EXTENSIONS_KEY = 'show-experimental-extensions'
 
-export type ExtensionListData = typeof LOADING | (ConfiguredExtensionRegistry & { error: string | null }) | ErrorLike
+export type ExtensionListData =
+    | typeof LOADING
+    | (ConfiguredExtensionRegistry & {
+          featuredExtensions?: MinimalConfiguredRegistryExtension[]
+          error: string | null
+      })
+    | ErrorLike
 
 export type ExtensionsEnablement = 'all' | 'enabled' | 'disabled'
 
 export type ExtensionCategoryOrAll = ExtensionCategory | 'All'
 
 const extensionRegistryQuery = gql`
-    query RegistryExtensions($query: String, $prioritizeExtensionIDs: [String!]!) {
+    query RegistryExtensions($query: String, $prioritizeExtensionIDs: [String!]!, $getFeatured: Boolean!) {
         extensionRegistry {
             extensions(query: $query, prioritizeExtensionIDs: $prioritizeExtensionIDs) {
+                nodes {
+                    ...RegistryExtensionFieldsForList
+                }
+                error
+            }
+            featuredExtensions @include(if: $getFeatured) {
                 nodes {
                     ...RegistryExtensionFieldsForList
                 }
@@ -95,10 +112,7 @@ const extensionRegistryQuery = gql`
     }
 `
 
-export type ConfiguredExtensionCache = Map<
-    string,
-    Pick<ConfiguredRegistryExtension<RegistryExtensionFieldsForList>, 'manifest' | 'id'>
->
+export type ConfiguredExtensionCache = Map<string, MinimalConfiguredRegistryExtension>
 
 /** A page that displays overview information about the available extensions. */
 export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
@@ -179,12 +193,19 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
                             query = `${query} category:"${category}"`
                         }
 
+                        // Only fetch + show featured extensions when there's no query or category selected.
+                        const shouldGetFeaturedExtensions = category === 'All' && query.trim() === ''
+
                         const resultOrError = platformContext.requestGraphQL<
                             RegistryExtensionsResult,
                             RegistryExtensionsVariables
                         >({
                             request: extensionRegistryQuery,
-                            variables: { query, prioritizeExtensionIDs: viewerConfiguredExtensions },
+                            variables: {
+                                query,
+                                prioritizeExtensionIDs: viewerConfiguredExtensions,
+                                getFeatured: shouldGetFeaturedExtensions,
+                            },
                             mightContainPrivateInfo: true,
                         })
 
@@ -206,8 +227,16 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
 
                         const { error, nodes } = data.extensionRegistry.extensions
 
+                        const featuredExtensions = data.extensionRegistry.featuredExtensions?.nodes
+                            ? configureFeaturedExtensions(
+                                  data.extensionRegistry.featuredExtensions.nodes,
+                                  configuredExtensionCache
+                              )
+                            : undefined
+
                         return {
                             error,
+                            featuredExtensions,
                             ...configureExtensionRegistry(nodes, configuredExtensionCache),
                         }
                     }),

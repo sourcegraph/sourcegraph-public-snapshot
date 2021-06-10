@@ -87,7 +87,39 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
         return <ErrorAlert error={data} />
     }
 
-    const { error, extensions, extensionIDsByCategory } = data
+    const { error, extensions, extensionIDsByCategory, featuredExtensions } = data
+
+    const featuredExtensionsSection = featuredExtensions && featuredExtensions.length > 0 && (
+        <div key="Featured" className="extensions-list__featured-section">
+            <h3
+                className="extensions-list__category mb-3 font-weight-normal"
+                data-test-extension-category-header="Featured"
+            >
+                Featured
+            </h3>
+            <div className="extensions-list__cards extensions-list__cards--featured mt-1">
+                {featuredExtensions.map(featuredExtension => (
+                    <ExtensionCard
+                        key={featuredExtension.id}
+                        subject={subject}
+                        viewerSubject={viewerSubject?.subject}
+                        siteSubject={siteSubject?.subject}
+                        node={featuredExtension}
+                        settingsCascade={settingsCascade}
+                        platformContext={platformContext}
+                        enabled={isExtensionEnabled(settingsCascade.final, featuredExtension.id)}
+                        enabledForAllUsers={
+                            siteSubject ? isExtensionEnabled(siteSubject.settings, featuredExtension.id) : false
+                        }
+                        isLightTheme={props.isLightTheme}
+                        settingsURL={authenticatedUser?.settingsURL}
+                        authenticatedUser={authenticatedUser}
+                        featured={true}
+                    />
+                ))}
+            </div>
+        </div>
+    )
 
     if (Object.keys(extensions).length === 0) {
         return (
@@ -213,6 +245,7 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
     return (
         <>
             {error && <ErrorAlert className="mb-2" error={error} />}
+            {featuredExtensionsSection}
             {categorySections.length > 0 ? (
                 categorySections
             ) : (

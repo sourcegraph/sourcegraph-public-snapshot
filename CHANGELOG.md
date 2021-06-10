@@ -21,6 +21,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Code Insights creation UI now has auto-save logic and clear all fields functionality [#21744](https://github.com/sourcegraph/sourcegraph/pull/21744)
 - A new bulk operation to retry many changesets at once has been added to Batch Changes. [#21173](https://github.com/sourcegraph/sourcegraph/pull/21173)
 - A `security_event_logs` database table has been added in support of upcoming security-related efforts. [#21949](https://github.com/sourcegraph/sourcegraph/pull/21949)
+- Added featured Sourcegraph extensions query to the GraphQL API, as well as a section in the extension registry to display featured extensions. [#21665](https://github.com/sourcegraph/sourcegraph/pull/21665)
 
 ### Changed
 
