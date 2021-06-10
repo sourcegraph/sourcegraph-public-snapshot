@@ -142,6 +142,10 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
                 <input
                     autoComplete="off"
                     spellCheck="false"
+                    role="combobox"
+                    aria-autocomplete="list"
+                    aria-controls="fuzzy-modal-results"
+                    aria-expanded={props.fsm.key !== 'downloading'}
                     id="fuzzy-modal-input"
                     className={classnames('form-control', 'px-2', 'py-1', styles.input)}
                     placeholder="Enter a partial file path or name"
@@ -283,7 +287,7 @@ function renderFiles(
     const linksToRender = links.slice(0, state.maxResults)
     return {
         element: (
-            <ul className={styles.results}>
+            <ul id="fuzzy-modal-results" className={styles.results}>
                 {linksToRender.map((file, fileIndex) => (
                     <li
                         id={`fuzzy-modal-result-${fileIndex}`}
