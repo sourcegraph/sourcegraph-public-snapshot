@@ -4,19 +4,18 @@ package indexing
 
 import (
 	"context"
-	"regexp"
-	"sync"
-	"time"
-
 	dbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	semantic "github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"regexp"
+	"sync"
+	"time"
 )
 
 // MockDBStore is a mock implementation of the DBStore interface (from the
 // package
-// github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/background/indexing)
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/indexing)
 // used for unit testing.
 type MockDBStore struct {
 	// GetRepositoriesWithIndexConfigurationFunc is an instance of a mock
@@ -1121,7 +1120,7 @@ func (c DBStoreWithFuncCall) Results() []interface{} {
 
 // MockGitserverClient is a mock implementation of the GitserverClient
 // interface (from the package
-// github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/background/indexing)
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/indexing)
 // used for unit testing.
 type MockGitserverClient struct {
 	// FileExistsFunc is an instance of a mock function object controlling
@@ -1767,7 +1766,7 @@ func (c GitserverClientResolveRevisionFuncCall) Results() []interface{} {
 
 // MockIndexEnqueuer is a mock implementation of the IndexEnqueuer interface
 // (from the package
-// github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/background/indexing)
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/indexing)
 // used for unit testing.
 type MockIndexEnqueuer struct {
 	// QueueIndexesForPackageFunc is an instance of a mock function object
