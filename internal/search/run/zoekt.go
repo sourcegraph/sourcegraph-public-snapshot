@@ -30,17 +30,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-type indexedRequestType string
+type IndexedRequestType string
 
 const (
-	textRequest   indexedRequestType = "text"
-	symbolRequest indexedRequestType = "symbol"
+	textRequest   IndexedRequestType = "text"
+	symbolRequest IndexedRequestType = "symbol"
 )
 
-// indexedSearchRequest is responsible for translating a Sourcegraph search
+// IndexedSearchRequest is responsible for translating a Sourcegraph search
 // query into a Zoekt query and mapping the results from zoekt back to
 // Sourcegraph result types.
-type indexedSearchRequest struct {
+type IndexedSearchRequest struct {
 	// Unindexed is a slice of repository revisions that can't be searched by
 	// Zoekt. The repository revisions should be searched by the searcher
 	// service.
@@ -59,7 +59,7 @@ type indexedSearchRequest struct {
 
 	// inputs
 	args *search.TextParameters
-	typ  indexedRequestType
+	typ  IndexedRequestType
 
 	// repos is the repository revisions that are indexed and will be
 	// searched.
@@ -69,7 +69,7 @@ type indexedSearchRequest struct {
 	since func(time.Time) time.Duration
 }
 
-func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, typ indexedRequestType, stream streaming.Sender) (_ *indexedSearchRequest, err error) {
+func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, typ IndexedRequestType, stream streaming.Sender) (_ *IndexedSearchRequest, err error) {
 	tr, ctx := trace.New(ctx, "newIndexedSearchRequest", string(typ))
 	tr.LogFields(trace.Stringer("global_search_mode", args.Mode))
 	defer func() {
@@ -87,7 +87,7 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 			return nil, fmt.Errorf("invalid index:%q (indexed search is not enabled)", args.PatternInfo.Index)
 		}
 
-		return &indexedSearchRequest{
+		return &IndexedSearchRequest{
 			Unindexed:        limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, stream),
 			IndexUnavailable: true,
 		}, nil
@@ -98,14 +98,14 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		if args.PatternInfo.Index == query.Only {
 			return nil, fmt.Errorf("invalid index:%q (revsions with glob pattern cannot be resolved for indexed searches)", args.PatternInfo.Index)
 		}
-		return &indexedSearchRequest{
+		return &IndexedSearchRequest{
 			Unindexed: limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, stream),
 		}, nil
 	}
 
 	// Fallback to Unindexed if index:no
 	if args.PatternInfo.Index == query.No {
-		return &indexedSearchRequest{
+		return &IndexedSearchRequest{
 			Unindexed: limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, stream),
 		}, nil
 	}
@@ -132,7 +132,7 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 			log15.Warn("zoektIndexedRepos failed", "error", err)
 		}
 
-		return &indexedSearchRequest{
+		return &IndexedSearchRequest{
 			Unindexed:        limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, stream),
 			IndexUnavailable: true,
 		}, ctx.Err()
@@ -153,7 +153,7 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		searcherRepos = limitUnindexedRepos(searcherRepos, 0, stream)
 	}
 
-	return &indexedSearchRequest{
+	return &IndexedSearchRequest{
 		args: args,
 		typ:  typ,
 
@@ -166,7 +166,7 @@ func newIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 
 // Repos is a map of repository revisions that are indexed and will be
 // searched by Zoekt. Do not mutate.
-func (s *indexedSearchRequest) Repos() map[string]*search.RepositoryRevisions {
+func (s *IndexedSearchRequest) Repos() map[string]*search.RepositoryRevisions {
 	if s.repos == nil {
 		return nil
 	}
@@ -174,7 +174,7 @@ func (s *indexedSearchRequest) Repos() map[string]*search.RepositoryRevisions {
 }
 
 // Search streams 0 or more events to c.
-func (s *indexedSearchRequest) Search(ctx context.Context, c streaming.Sender) error {
+func (s *IndexedSearchRequest) Search(ctx context.Context, c streaming.Sender) error {
 	if s.args == nil {
 		return nil
 	}
@@ -195,7 +195,7 @@ func (s *indexedSearchRequest) Search(ctx context.Context, c streaming.Sender) e
 // Timeouts are reported through the context, and as a special case errNoResultsInTimeout
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
-func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, typ indexedRequestType, since func(t time.Time) time.Duration, c streaming.Sender) error {
+func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, typ IndexedRequestType, since func(t time.Time) time.Duration, c streaming.Sender) error {
 	if args == nil {
 		return nil
 	}
@@ -567,7 +567,7 @@ func contextWithoutDeadline(cOld context.Context) (context.Context, context.Canc
 	return cNew, cancel
 }
 
-func queryToZoektQuery(query *search.TextPatternInfo, typ indexedRequestType) (zoektquery.Q, error) {
+func queryToZoektQuery(query *search.TextPatternInfo, typ IndexedRequestType) (zoektquery.Q, error) {
 	var and []zoektquery.Q
 
 	var q zoektquery.Q

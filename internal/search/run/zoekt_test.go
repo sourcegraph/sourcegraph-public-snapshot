@@ -269,7 +269,7 @@ func TestIndexedSearch(t *testing.T) {
 				},
 			}
 
-			indexed, err := newIndexedSearchRequest(context.Background(), args, textRequest, streaming.StreamFunc(func(streaming.SearchEvent) {}))
+			indexed, err := NewIndexedSearchRequest(context.Background(), args, textRequest, streaming.StreamFunc(func(streaming.SearchEvent) {}))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -466,7 +466,7 @@ func TestZoektResultCountFactor(t *testing.T) {
 func TestQueryToZoektQuery(t *testing.T) {
 	cases := []struct {
 		Name    string
-		Type    indexedRequestType
+		Type    IndexedRequestType
 		Pattern *search.TextPatternInfo
 		Query   string
 	}{

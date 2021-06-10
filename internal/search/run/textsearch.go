@@ -204,15 +204,15 @@ func SearchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 
 	// performance: for global searches, we avoid calling newIndexedSearchRequest
 	// because zoekt will anyway have to search all its shards.
-	var indexed *indexedSearchRequest
+	var indexed *IndexedSearchRequest
 	if args.Mode == search.ZoektGlobalSearch {
-		indexed = &indexedSearchRequest{
+		indexed = &IndexedSearchRequest{
 			args:  args,
 			typ:   textRequest,
 			repos: &indexedRepoRevs{},
 		}
 	} else {
-		indexed, err = newIndexedSearchRequest(ctx, args, textRequest, stream)
+		indexed, err = NewIndexedSearchRequest(ctx, args, textRequest, stream)
 		if err != nil {
 			return err
 		}
