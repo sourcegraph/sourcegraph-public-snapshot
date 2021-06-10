@@ -229,7 +229,7 @@ func authHandler(db dbutil.DB, w http.ResponseWriter, r *http.Request) {
 		if err := userInfo.Claims(&claims); err != nil {
 			log15.Warn("OpenID Connect auth: could not parse userInfo claims.", "error", err)
 		}
-		actr, safeErrMsg, err := getOrCreateUser(ctx, p, idToken, userInfo, &claims)
+		actr, safeErrMsg, err := getOrCreateUser(ctx, db, p, idToken, userInfo, &claims)
 		if err != nil {
 			log15.Error("OpenID Connect auth failed: error looking up OpenID-authenticated user.", "error", err, "userErr", safeErrMsg)
 			http.Error(w, safeErrMsg, http.StatusInternalServerError)
