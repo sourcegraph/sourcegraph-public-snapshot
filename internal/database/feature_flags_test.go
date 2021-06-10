@@ -153,22 +153,22 @@ func testNewOverrideRoundtrip(t *testing.T) {
 	invalidUserID := int32(38535)
 
 	cases := []struct {
-		override  *ff.FeatureFlagOverride
+		override  *ff.Override
 		assertErr require.ErrorAssertionFunc
 	}{
 		{
-			override: &ff.FeatureFlagOverride{UserID: &u1.ID, FlagName: ff1.Name, Value: false},
+			override: &ff.Override{UserID: &u1.ID, FlagName: ff1.Name, Value: false},
 		},
 		{
-			override:  &ff.FeatureFlagOverride{UserID: &invalidUserID, FlagName: ff1.Name, Value: false},
+			override:  &ff.Override{UserID: &invalidUserID, FlagName: ff1.Name, Value: false},
 			assertErr: errorContains(`violates foreign key constraint "feature_flag_overrides_namespace_user_id_fkey"`),
 		},
 		{
-			override:  &ff.FeatureFlagOverride{UserID: &u1.ID, FlagName: "invalid-flag-name", Value: false},
+			override:  &ff.Override{UserID: &u1.ID, FlagName: "invalid-flag-name", Value: false},
 			assertErr: errorContains(`violates foreign key constraint "feature_flag_overrides_flag_name_fkey"`),
 		},
 		{
-			override:  &ff.FeatureFlagOverride{FlagName: ff1.Name, Value: false},
+			override:  &ff.Override{FlagName: ff1.Name, Value: false},
 			assertErr: errorContains(`violates check constraint "feature_flag_overrides_has_org_or_user_id"`),
 		},
 	}
@@ -205,8 +205,8 @@ func testListUserOverrides(t *testing.T) {
 		return res
 	}
 
-	mkOverride := func(user int32, flag string, val bool) *ff.FeatureFlagOverride {
-		ffo, err := flagStore.CreateOverride(ctx, &ff.FeatureFlagOverride{UserID: &user, FlagName: flag, Value: val})
+	mkOverride := func(user int32, flag string, val bool) *ff.Override {
+		ffo, err := flagStore.CreateOverride(ctx, &ff.Override{UserID: &user, FlagName: flag, Value: val})
 		require.NoError(t, err)
 		return ffo
 	}
@@ -227,7 +227,7 @@ func testListUserOverrides(t *testing.T) {
 		o1 := mkOverride(u1.ID, f1.Name, false)
 		got, err := flagStore.GetUserOverrides(ctx, u1.ID)
 		require.NoError(t, err)
-		require.Equal(t, got, []*ff.FeatureFlagOverride{o1})
+		require.Equal(t, got, []*ff.Override{o1})
 	})
 
 	t.Run("overrides for other users", func(t *testing.T) {
@@ -239,7 +239,7 @@ func testListUserOverrides(t *testing.T) {
 		mkOverride(u2.ID, f1.Name, true)
 		got, err := flagStore.GetUserOverrides(ctx, u1.ID)
 		require.NoError(t, err)
-		require.Equal(t, got, []*ff.FeatureFlagOverride{o1})
+		require.Equal(t, got, []*ff.Override{o1})
 	})
 
 	t.Run("deleted override", func(t *testing.T) {
@@ -258,9 +258,9 @@ func testListUserOverrides(t *testing.T) {
 		t.Cleanup(cleanup(t, db))
 		u1 := mkUser("u1")
 		f1 := mkFFBool("f", true)
-		_, err := flagStore.CreateOverride(ctx, &ff.FeatureFlagOverride{UserID: &u1.ID, FlagName: f1.Name, Value: true})
+		_, err := flagStore.CreateOverride(ctx, &ff.Override{UserID: &u1.ID, FlagName: f1.Name, Value: true})
 		require.NoError(t, err)
-		_, err = flagStore.CreateOverride(ctx, &ff.FeatureFlagOverride{UserID: &u1.ID, FlagName: f1.Name, Value: true})
+		_, err = flagStore.CreateOverride(ctx, &ff.Override{UserID: &u1.ID, FlagName: f1.Name, Value: true})
 		require.Error(t, err)
 	})
 }
@@ -290,8 +290,8 @@ func testListOrgOverrides(t *testing.T) {
 		return res
 	}
 
-	mkOverride := func(org int32, flag string, val bool) *ff.FeatureFlagOverride {
-		ffo, err := flagStore.CreateOverride(ctx, &ff.FeatureFlagOverride{OrgID: &org, FlagName: flag, Value: val})
+	mkOverride := func(org int32, flag string, val bool) *ff.Override {
+		ffo, err := flagStore.CreateOverride(ctx, &ff.Override{OrgID: &org, FlagName: flag, Value: val})
 		require.NoError(t, err)
 		return ffo
 	}
@@ -321,7 +321,7 @@ func testListOrgOverrides(t *testing.T) {
 
 		got, err := flagStore.GetOrgOverridesForUser(ctx, u1.ID)
 		require.NoError(t, err)
-		require.Equal(t, got, []*ff.FeatureFlagOverride{o1})
+		require.Equal(t, got, []*ff.Override{o1})
 	})
 
 	t.Run("deleted overrides", func(t *testing.T) {
@@ -343,9 +343,9 @@ func testListOrgOverrides(t *testing.T) {
 		org1 := mkOrg("org1")
 		f1 := mkFFBool("f", true)
 
-		_, err := flagStore.CreateOverride(ctx, &ff.FeatureFlagOverride{OrgID: &org1.ID, FlagName: f1.Name, Value: true})
+		_, err := flagStore.CreateOverride(ctx, &ff.Override{OrgID: &org1.ID, FlagName: f1.Name, Value: true})
 		require.NoError(t, err)
-		_, err = flagStore.CreateOverride(ctx, &ff.FeatureFlagOverride{OrgID: &org1.ID, FlagName: f1.Name, Value: false})
+		_, err = flagStore.CreateOverride(ctx, &ff.Override{OrgID: &org1.ID, FlagName: f1.Name, Value: false})
 		require.Error(t, err)
 	})
 }
@@ -375,20 +375,20 @@ func testUserFlags(t *testing.T) {
 		return res
 	}
 
-	mkFFBoolVar := func(name string, rollout int) *ff.FeatureFlag {
-		res, err := flagStore.CreateBoolVar(ctx, name, rollout)
+	mkFFBoolVar := func(name string, rollout int32) *ff.FeatureFlag {
+		res, err := flagStore.CreateRollout(ctx, name, rollout)
 		require.NoError(t, err)
 		return res
 	}
 
-	mkUserOverride := func(user int32, flag string, val bool) *ff.FeatureFlagOverride {
-		ffo, err := flagStore.CreateOverride(ctx, &ff.FeatureFlagOverride{UserID: &user, FlagName: flag, Value: val})
+	mkUserOverride := func(user int32, flag string, val bool) *ff.Override {
+		ffo, err := flagStore.CreateOverride(ctx, &ff.Override{UserID: &user, FlagName: flag, Value: val})
 		require.NoError(t, err)
 		return ffo
 	}
 
-	mkOrgOverride := func(org int32, flag string, val bool) *ff.FeatureFlagOverride {
-		ffo, err := flagStore.CreateOverride(ctx, &ff.FeatureFlagOverride{OrgID: &org, FlagName: flag, Value: val})
+	mkOrgOverride := func(org int32, flag string, val bool) *ff.Override {
+		ffo, err := flagStore.CreateOverride(ctx, &ff.Override{OrgID: &org, FlagName: flag, Value: val})
 		require.NoError(t, err)
 		return ffo
 	}
@@ -505,8 +505,8 @@ func testAnonymousUserFlags(t *testing.T) {
 		return res
 	}
 
-	mkFFBoolVar := func(name string, rollout int) *ff.FeatureFlag {
-		res, err := flagStore.CreateBoolVar(ctx, name, rollout)
+	mkFFBoolVar := func(name string, rollout int32) *ff.FeatureFlag {
+		res, err := flagStore.CreateRollout(ctx, name, rollout)
 		require.NoError(t, err)
 		return res
 	}
@@ -549,8 +549,8 @@ func testUserlessFeatureFlags(t *testing.T) {
 		return res
 	}
 
-	mkFFBoolVar := func(name string, rollout int) *ff.FeatureFlag {
-		res, err := flagStore.CreateBoolVar(ctx, name, rollout)
+	mkFFBoolVar := func(name string, rollout int32) *ff.FeatureFlag {
+		res, err := flagStore.CreateRollout(ctx, name, rollout)
 		require.NoError(t, err)
 		return res
 	}

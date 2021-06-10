@@ -210,4 +210,7 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
             nodes: [],
         },
     }),
+    FetchFeatureFlags: () => ({
+        viewerFeatureFlags: [],
+    }),
 }

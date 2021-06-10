@@ -318,6 +318,10 @@ func (err HTTPError) Unauthorized() bool {
 	return err.code == http.StatusUnauthorized
 }
 
+func (err HTTPError) Forbidden() bool {
+	return err.code == http.StatusForbidden
+}
+
 // HTTPErrorCode returns err's HTTP status code, if it is an HTTP error from
 // this package. Otherwise it returns 0.
 func HTTPErrorCode(err error) int {

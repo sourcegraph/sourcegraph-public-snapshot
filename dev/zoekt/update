@@ -23,6 +23,7 @@ echo "git log --pretty=format:'- %h %s' $oldsha...$newsha"
 
 go mod edit "-replace=${upstream}=${module}"
 go mod download ${upstream}
+go mod tidy
 
 # Ensure we update go.sum by actually compiling some code which depends on
 # zoekt

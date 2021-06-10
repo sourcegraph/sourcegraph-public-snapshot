@@ -1304,7 +1304,7 @@ func (r *searchResolver) determineResultTypes(args search.TextParameters, forceT
 // error to see if an alert needs to be returned. Only one of the return
 // values will be non-nil.
 func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, start time.Time) (*searchrepos.Resolved, error) {
-	resolved, err := r.resolveRepositories(ctx, nil)
+	resolved, err := r.resolveRepositories(ctx, resolveRepositoriesOpts{})
 	if err != nil {
 		return nil, err
 	}

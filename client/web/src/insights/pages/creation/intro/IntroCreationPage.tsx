@@ -60,7 +60,7 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
                     </p>
 
                     <Link
-                        to="/insights/create-search-insight"
+                        to="/insights/create/search"
                         onClick={logCreateSearchBasedInsightClick}
                         className={classnames(styles.createIntroPageInsightButton, 'btn', 'btn-primary')}
                     >
@@ -83,7 +83,7 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
                     <p>Shows language usage in your repository by lines of code.</p>
 
                     <Link
-                        to="/insights/create-lang-stats-insight"
+                        to="/insights/create/lang-stats"
                         onClick={logCreateCodeStatsInsightClick}
                         className={classnames(styles.createIntroPageInsightButton, 'btn', 'btn-primary')}
                     >

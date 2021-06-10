@@ -113,6 +113,8 @@ func changesetJobTypeToBulkOperationType(t btypes.ChangesetJobType) (string, err
 		return "COMMENT", nil
 	case btypes.ChangesetJobTypeDetach:
 		return "DETACH", nil
+	case btypes.ChangesetJobTypeReenqueue:
+		return "REENQUEUE", nil
 	default:
 		return "", fmt.Errorf("invalid job type %q", t)
 	}

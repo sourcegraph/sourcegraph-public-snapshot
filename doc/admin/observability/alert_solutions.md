@@ -800,204 +800,6 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 <br />
 
-## frontend: codeintel_commit_graph_queue_size
-
-<p class="subtitle">commit graph queue size</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> frontend: 100+ commit graph queue size
-
-**Possible solutions**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_frontend_codeintel_commit_graph_queue_size"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-## frontend: codeintel_commit_graph_queue_growth_rate
-
-<p class="subtitle">commit graph queue growth rate over 30m</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> frontend: 5+ commit graph queue growth rate over 30m
-
-**Possible solutions**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_frontend_codeintel_commit_graph_queue_growth_rate"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-## frontend: codeintel_commit_graph_updater_99th_percentile_duration
-
-<p class="subtitle">99th percentile successful commit graph updater operation duration over 5m</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> frontend: 20s+ 99th percentile successful commit graph updater operation duration over 5m
-
-**Possible solutions**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_frontend_codeintel_commit_graph_updater_99th_percentile_duration"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-## frontend: codeintel_commit_graph_updater_errors
-
-<p class="subtitle">commit graph updater errors every 5m</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> frontend: 20+ commit graph updater errors every 5m
-
-**Possible solutions**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_frontend_codeintel_commit_graph_updater_errors"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-## frontend: codeintel_janitor_errors
-
-<p class="subtitle">janitor errors every 5m</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> frontend: 20+ janitor errors every 5m
-
-**Possible solutions**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_frontend_codeintel_janitor_errors"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-## frontend: codeintel_background_upload_resets
-
-<p class="subtitle">upload records re-queued (due to unresponsive worker) every 5m</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> frontend: 20+ upload records re-queued (due to unresponsive worker) every 5m
-
-**Possible solutions**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_frontend_codeintel_background_upload_resets"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-## frontend: codeintel_background_upload_reset_failures
-
-<p class="subtitle">upload records errored due to repeated reset every 5m</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> frontend: 20+ upload records errored due to repeated reset every 5m
-
-**Possible solutions**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_frontend_codeintel_background_upload_reset_failures"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-## frontend: codeintel_background_index_resets
-
-<p class="subtitle">index records re-queued (due to unresponsive indexer) every 5m</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> frontend: 20+ index records re-queued (due to unresponsive indexer) every 5m
-
-**Possible solutions**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_frontend_codeintel_background_index_resets"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-## frontend: codeintel_background_index_reset_failures
-
-<p class="subtitle">index records errored due to repeated reset every 5m</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> frontend: 20+ index records errored due to repeated reset every 5m
-
-**Possible solutions**
-
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_frontend_codeintel_background_index_reset_failures"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
 ## frontend: codeintel_indexing_errors
 
 <p class="subtitle">indexing errors every 5m</p>
@@ -3125,6 +2927,204 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ```
 
 <sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+
+<br />
+
+## worker: codeintel_commit_graph_queue_size
+
+<p class="subtitle">commit graph queue size</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: 100+ commit graph queue size
+
+**Possible solutions**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_codeintel_commit_graph_queue_size"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+## worker: codeintel_commit_graph_queue_growth_rate
+
+<p class="subtitle">commit graph queue growth rate over 30m</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: 5+ commit graph queue growth rate over 30m
+
+**Possible solutions**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_codeintel_commit_graph_queue_growth_rate"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+## worker: codeintel_commit_graph_updater_99th_percentile_duration
+
+<p class="subtitle">99th percentile successful commit graph updater operation duration over 5m</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: 20s+ 99th percentile successful commit graph updater operation duration over 5m
+
+**Possible solutions**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_codeintel_commit_graph_updater_99th_percentile_duration"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+## worker: codeintel_commit_graph_updater_errors
+
+<p class="subtitle">commit graph updater errors every 5m</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: 20+ commit graph updater errors every 5m
+
+**Possible solutions**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_codeintel_commit_graph_updater_errors"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+## worker: codeintel_janitor_errors
+
+<p class="subtitle">janitor errors every 5m</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: 20+ janitor errors every 5m
+
+**Possible solutions**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_codeintel_janitor_errors"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+## worker: codeintel_background_upload_resets
+
+<p class="subtitle">upload records re-queued (due to unresponsive worker) every 5m</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: 20+ upload records re-queued (due to unresponsive worker) every 5m
+
+**Possible solutions**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_codeintel_background_upload_resets"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+## worker: codeintel_background_upload_reset_failures
+
+<p class="subtitle">upload records errored due to repeated reset every 5m</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: 20+ upload records errored due to repeated reset every 5m
+
+**Possible solutions**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_codeintel_background_upload_reset_failures"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+## worker: codeintel_background_index_resets
+
+<p class="subtitle">index records re-queued (due to unresponsive indexer) every 5m</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: 20+ index records re-queued (due to unresponsive indexer) every 5m
+
+**Possible solutions**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_codeintel_background_index_resets"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+## worker: codeintel_background_index_reset_failures
+
+<p class="subtitle">index records errored due to repeated reset every 5m</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> worker: 20+ index records errored due to repeated reset every 5m
+
+**Possible solutions**
+
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_worker_codeintel_background_index_reset_failures"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
 <br />
 
