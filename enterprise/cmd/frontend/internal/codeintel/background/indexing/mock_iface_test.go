@@ -4,14 +4,13 @@ package indexing
 
 import (
 	"context"
-	"regexp"
-	"sync"
-	"time"
-
 	dbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	semantic "github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"regexp"
+	"sync"
+	"time"
 )
 
 // MockDBStore is a mock implementation of the DBStore interface (from the
