@@ -35,6 +35,11 @@ export interface SearchResultsInfoBarProps
     /** The currently authenticated user or null */
     authenticatedUser: Pick<AuthenticatedUser, 'id'> | null
 
+    /**
+     * Whether the code insights feature flag is enabled.
+     */
+    enableCodeInsights?: boolean
+
     /** The search query and if any results were found */
     query?: string
     resultsFound: boolean
@@ -81,18 +86,13 @@ const QuotesInterpretedLiterallyNotice: React.FunctionComponent<SearchResultsInf
  */
 export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarProps> = props => {
     const createSearchInsightButton = useMemo(() => {
-        // TODO [VK] Add enableCodeInsight check
-        if (!props.query || !props.authenticatedUser) {
+        if (!props.enableCodeInsights || !props.query || !props.authenticatedUser) {
             return null
         }
 
         const searchParameters = new URLSearchParams(props.location.search)
-
         searchParameters.set('insight-query', `${props.query} patterntype:${props.patternType}`)
-
         const toURL = `/insights/create/search?${searchParameters.toString()}`
-
-        // console.log(parseSearchQuery(props.query ?? ''
 
         return (
             <li className="nav-item">
@@ -102,7 +102,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                 </ButtonLink>
             </li>
         )
-    }, [props.query, props.authenticatedUser, props.location.search, props.patternType])
+    }, [props.enableCodeInsights, props.query, props.authenticatedUser, props.location.search, props.patternType])
 
     const createCodeMonitorButton = useMemo(() => {
         if (!props.enableCodeMonitoring || !props.query || !props.authenticatedUser) {
