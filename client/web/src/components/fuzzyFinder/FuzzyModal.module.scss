@@ -1,28 +1,17 @@
 .modal {
-    padding: 0;
-    border-radius: var(--border-radius);
-    border: 1px solid var(--border-color-2);
-    background-color: transparent;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    height: 80vh;
+    width: 80vw;
 }
 
 .content {
     display: flex;
     align-items: stretch;
     flex-direction: column;
-    height: 80vh;
-    width: 80vw;
-    padding: 1.5rem;
-    background-color: var(--color-bg-1);
-    border-radius: var(--border-radius);
-    border: 1px solid var(--border-color-2);
+    height: 100%;
 }
 
 .header {
     display: flex;
-    align-items: center;
     justify-content: space-between;
     padding-bottom: 0.25rem;
     margin-bottom: 0.5rem;
