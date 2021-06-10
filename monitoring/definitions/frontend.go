@@ -449,50 +449,6 @@ func Frontend() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Auto-indexing",
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						{
-							Name:           "codeintel_indexing_99th_percentile_duration",
-							Description:    "99th percentile successful indexing operation duration over 5m",
-							Query:          `histogram_quantile(0.99, sum by (le)(rate(src_codeintel_indexing_duration_seconds_bucket{job=~"(sourcegraph-)?frontend"}[5m])))`,
-							NoAlert:        true,
-							Panel:          monitoring.Panel().LegendFormat("operations").Unit(monitoring.Seconds),
-							Owner:          monitoring.ObservableOwnerCodeIntel,
-							Interpretation: "none",
-						},
-						{
-							Name:              "codeintel_indexing_errors",
-							Description:       "indexing errors every 5m",
-							Query:             `sum(increase(src_codeintel_indexing_errors_total{job=~"(sourcegraph-)?frontend"}[5m]))`,
-							Warning:           monitoring.Alert().GreaterOrEqual(20, nil),
-							Panel:             monitoring.Panel().LegendFormat("errors"),
-							Owner:             monitoring.ObservableOwnerCodeIntel,
-							PossibleSolutions: "none",
-						},
-						{
-							Name:           "codeintel_autoindex_enqueuer_99th_percentile_duration",
-							Description:    "99th percentile successful index enqueuer operation duration over 5m",
-							Query:          `histogram_quantile(0.99, sum by (le)(rate(src_codeintel_autoindex_enqueuer_duration_seconds_bucket{job=~"(sourcegraph-)?frontend"}[5m])))`,
-							NoAlert:        true,
-							Panel:          monitoring.Panel().LegendFormat("operations").Unit(monitoring.Seconds),
-							Owner:          monitoring.ObservableOwnerCodeIntel,
-							Interpretation: "none",
-						},
-						{
-							Name:              "codeintel_autoindex_enqueuer_errors",
-							Description:       "index enqueuer errors every 5m",
-							Query:             `sum(increase(src_codeintel_autoindex_enqueuer_errors_total{job=~"(sourcegraph-)?frontend"}[5m]))`,
-							Warning:           monitoring.Alert().GreaterOrEqual(20, nil),
-							Panel:             monitoring.Panel().LegendFormat("errors"),
-							Owner:             monitoring.ObservableOwnerCodeIntel,
-							PossibleSolutions: "none",
-						},
-					},
-				},
-			},
-			{
 				Title:  "Out of band migrations",
 				Hidden: true,
 				Rows: []monitoring.Row{
