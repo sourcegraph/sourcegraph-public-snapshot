@@ -360,44 +360,6 @@ This panel indicates gitserver client errors every 5m.
 
 <br />
 
-### Frontend: Auto-indexing
-
-#### frontend: codeintel_indexing_99th_percentile_duration
-
-This panel indicates 99th percentile successful indexing operation duration over 5m.
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-#### frontend: codeintel_indexing_errors
-
-This panel indicates indexing errors every 5m.
-
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-codeintel-indexing-errors).
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-#### frontend: codeintel_autoindex_enqueuer_99th_percentile_duration
-
-This panel indicates 99th percentile successful index enqueuer operation duration over 5m.
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-#### frontend: codeintel_autoindex_enqueuer_errors
-
-This panel indicates index enqueuer errors every 5m.
-
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-codeintel-autoindex-enqueuer-errors).
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
 ### Frontend: Out of band migrations
 
 #### frontend: out_of_band_migrations_up_99th_percentile_duration
@@ -1846,6 +1808,44 @@ This panel indicates index records re-queued (due to unresponsive indexer) every
 This panel indicates index records errored due to repeated reset every 5m.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#worker-codeintel-background-index-reset-failures).
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+### Worker: Auto-indexing
+
+#### worker: codeintel_indexing_99th_percentile_duration
+
+This panel indicates 99th percentile successful indexing operation duration over 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### worker: codeintel_indexing_errors
+
+This panel indicates indexing errors every 5m.
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#worker-codeintel-indexing-errors).
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### worker: codeintel_autoindex_enqueuer_99th_percentile_duration
+
+This panel indicates 99th percentile successful index enqueuer operation duration over 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### worker: codeintel_autoindex_enqueuer_errors
+
+This panel indicates index enqueuer errors every 5m.
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#worker-codeintel-autoindex-enqueuer-errors).
 
 <sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 
