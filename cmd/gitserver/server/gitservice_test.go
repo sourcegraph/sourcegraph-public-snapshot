@@ -16,7 +16,7 @@ import (
 const numTestCommits = 25
 
 func TestGitServiceHandler(t *testing.T) {
-	root := tmpDir(t)
+	root := t.TempDir()
 	repo := filepath.Join(root, "testrepo")
 
 	// Setup a repo with a commit so we can add bad refs
@@ -38,7 +38,7 @@ func TestGitServiceHandler(t *testing.T) {
 
 	t.Run("404", func(t *testing.T) {
 		c := exec.Command("git", "clone", ts.URL+"/doesnotexist")
-		c.Dir = tmpDir(t)
+		c.Dir = t.TempDir()
 		b, err := c.CombinedOutput()
 		if !bytes.Contains(b, []byte("repository not found")) {
 			t.Fatal("expected clone to fail with repository not found", string(b), err)
@@ -48,7 +48,7 @@ func TestGitServiceHandler(t *testing.T) {
 	cloneURL := ts.URL + "/testrepo"
 
 	t.Run("clonev1", func(t *testing.T) {
-		runCmd(t, tmpDir(t), "git", "-c", "protocol.version=1", "clone", cloneURL)
+		runCmd(t, t.TempDir(), "git", "-c", "protocol.version=1", "clone", cloneURL)
 	})
 
 	cloneV2 := []struct {
@@ -69,7 +69,7 @@ func TestGitServiceHandler(t *testing.T) {
 			args = append(args, cloneURL)
 
 			c := exec.Command("git", args...)
-			c.Dir = tmpDir(t)
+			c.Dir = t.TempDir()
 			c.Env = []string{
 				"GIT_TRACE_PACKET=1",
 			}
