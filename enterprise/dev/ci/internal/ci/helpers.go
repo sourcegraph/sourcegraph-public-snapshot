@@ -73,7 +73,7 @@ func ComputeConfig() Config {
 	if patchNoTest || patch {
 		version = version + "_patch"
 	}
-	buildCandidatesNoTest := strings.HasPrefix(branch, "docker-images-candidates-notest-all/")
+	buildCandidatesNoTest := branch == "docker-images-candidates-notest-all"
 
 	isBackendDryRun := strings.HasPrefix(branch, "backend-dry-run/")
 
