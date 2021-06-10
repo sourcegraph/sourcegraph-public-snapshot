@@ -14,6 +14,9 @@ A new version of Sourcegraph is released every month (with patch releases in bet
 
 **Always refer to this page before upgrading Sourcegraph,** as it comprehensively describes the steps needed to upgrade, and any manual migration steps you must perform.
 
+<!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
+## Unreleased (notes for future releases not currently released)
+
 ## 3.27 -> 3.28
 
 To upgrade, please perform the changes in the following diff:
