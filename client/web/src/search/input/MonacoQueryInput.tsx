@@ -323,17 +323,34 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
         if (!editor) {
             return
         }
-        const disposable = editor.addAction({
-            id: 'submitOnEnter',
-            label: 'submitOnEnter',
-            keybindings: [Monaco.KeyCode.Enter],
-            precondition: '!suggestWidgetVisible',
-            run: () => {
-                onSubmit()
-                editor.trigger('submitOnEnter', 'hideSuggestWidget', [])
-            },
-        })
-        return () => disposable.dispose()
+        const run = (): void => {
+            onSubmit()
+            editor.trigger('submitOnEnter', 'hideSuggestWidget', [])
+        }
+        const disposables = [
+            // Trigger the search with "Enter" on the condition that there are
+            // no visible completion suggestions.
+            editor.addAction({
+                id: 'submitOnEnter',
+                label: 'submitOnEnter',
+                keybindings: [Monaco.KeyCode.Enter],
+                precondition: '!suggestWidgetVisible',
+                run,
+            }),
+            // Unconditionally trigger the search with "Command/Ctrl + Enter",
+            // ignoring the visibility of completion suggestions.
+            editor.addAction({
+                id: 'submitOnCommandEnter',
+                label: 'submitOnCommandEnter',
+                keybindings: [Monaco.KeyCode.Enter | Monaco.KeyMod.CtrlCmd],
+                run,
+            }),
+        ]
+        return () => {
+            for (const disposable of disposables) {
+                disposable.dispose()
+            }
+        }
     }, [editor, onSubmit])
 
     const options: Monaco.editor.IStandaloneEditorConstructionOptions = {
