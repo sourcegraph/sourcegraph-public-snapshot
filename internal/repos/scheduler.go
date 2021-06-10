@@ -34,6 +34,12 @@ func RunScheduler(ctx context.Context, scheduler *updateScheduler) {
 		stop context.CancelFunc
 	)
 
+	// We want to run the update loop for the lifetime of the scheduler. By default,
+	// we'll dequeue any update in the queue. However, if disableAutoGitUpdates is
+	// set to true then we'll only dequeue high priority repos. This allows us to
+	// manually enqueue high priority repos from outside the scheduler.
+	go scheduler.runUpdateLoop(ctx)
+
 	conf.Watch(func() {
 		c := conf.Get()
 
@@ -58,7 +64,7 @@ func RunScheduler(ctx context.Context, scheduler *updateScheduler) {
 		var ctx2 context.Context
 		ctx2, stop = context.WithCancel(ctx)
 
-		go scheduler.runUpdateLoop(ctx2)
+		scheduler.setDisableAutoGitUpdates(c.DisableAutoGitUpdates)
 		if want.autoGitUpdatesEnabled {
 			go scheduler.runScheduleLoop(ctx2)
 		}
@@ -106,6 +112,14 @@ const (
 type updateScheduler struct {
 	updateQueue *updateQueue
 	schedule    *schedule
+
+	mu sync.Mutex
+
+	// disableAutoGitUpdates should be updated whenever the config value with the
+	// same name is updated. When disabled, we only dequeue high priority repos. We
+	// don't read directly from config to avoid global state and because
+	// configuration is not intended to be loaded on demand.
+	disableAutoGitUpdates bool
 }
 
 // A configuredRepo represents the configuration data for a given repo from
@@ -133,6 +147,18 @@ func NewUpdateScheduler() *updateScheduler {
 			wakeup: make(chan struct{}, notifyChanBuffer),
 		},
 	}
+}
+
+func (s *updateScheduler) getDisableAutoGitUpdates() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.disableAutoGitUpdates
+}
+
+func (s *updateScheduler) setDisableAutoGitUpdates(v bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.disableAutoGitUpdates = v
 }
 
 // runScheduleLoop starts the loop that schedules updates by enqueuing them into the updateQueue.
@@ -187,7 +213,7 @@ func (s *updateScheduler) runUpdateLoop(ctx context.Context) {
 				return
 			}
 
-			repo, ok := s.updateQueue.acquireNext()
+			repo, ok := s.updateQueue.acquireNext(s.getDisableAutoGitUpdates())
 			if !ok {
 				cancel()
 				break
@@ -470,7 +496,10 @@ type updateQueue struct {
 type priority int
 
 const (
+	// priorityLow are repos added to the queue by our scheduler.
 	priorityLow priority = iota
+	// priorityHigh are repos added from outside our scheduler and we expect them to
+	// update even if disableAutoGitUpdates is set.
 	priorityHigh
 )
 
@@ -565,9 +594,11 @@ func (q *updateQueue) remove(repo configuredRepo, updating bool) (removed bool) 
 }
 
 // acquireNext acquires the next repo for update.
-// The acquired repo must be removed from the queue
-// when the update finishes (independent of success or failure).
-func (q *updateQueue) acquireNext() (configuredRepo, bool) {
+//
+// The acquired repo must be removed from the queue when the update finishes
+// (independent of success or failure). If disableAutoGitUpdates is set, we'll
+// only dequeue high priority updates.
+func (q *updateQueue) acquireNext(disableAutoGitUpdates bool) (configuredRepo, bool) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 	if len(q.heap) == 0 {
@@ -576,6 +607,10 @@ func (q *updateQueue) acquireNext() (configuredRepo, bool) {
 	update := q.heap[0]
 	if update.Updating {
 		// Everything in the queue is already updating.
+		return configuredRepo{}, false
+	}
+	if disableAutoGitUpdates && update.Priority == priorityLow {
+		// When disableAutoGitUpdates is set we only want to handle high priority repos.
 		return configuredRepo{}, false
 	}
 	update.Updating = true
