@@ -95,10 +95,6 @@ func (c *SearchResultsResolver) IndexUnavailable() bool {
 	return c.Stats.IsIndexUnavailable
 }
 
-func (c *SearchResultsResolver) allReposTimedout() bool {
-	return c.Stats.Status.All(search.RepoStatusTimedout) && c.Stats.Status.Len() == len(c.Stats.Repos)
-}
-
 // SearchResultsResolver is a resolver for the GraphQL type `SearchResults`
 type SearchResultsResolver struct {
 	db dbutil.DB
@@ -927,7 +923,7 @@ func DetermineStatusForLogs(srr *SearchResultsResolver, err error) string {
 		return "timeout"
 	case err != nil:
 		return "error"
-	case srr.allReposTimedout():
+	case srr.Stats.AllReposTimedOut():
 		return "timeout"
 	case srr.Stats.Status.Any(search.RepoStatusTimedout):
 		return "partial_timeout"
