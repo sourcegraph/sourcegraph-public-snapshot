@@ -327,6 +327,7 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
             id: 'submitOnEnter',
             label: 'submitOnEnter',
             keybindings: [Monaco.KeyCode.Enter],
+            precondition: '!suggestWidgetVisible',
             run: () => {
                 onSubmit()
                 editor.trigger('submitOnEnter', 'hideSuggestWidget', [])
