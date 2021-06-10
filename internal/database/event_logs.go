@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -55,6 +56,7 @@ type Event struct {
 	Argument        json.RawMessage
 	Source          string
 	Timestamp       time.Time
+	FeatureFlags    featureflag.FlagSet
 }
 
 func (l *EventLogStore) Insert(ctx context.Context, e *Event) error {
@@ -63,9 +65,14 @@ func (l *EventLogStore) Insert(ctx context.Context, e *Event) error {
 		argument = json.RawMessage([]byte(`{}`))
 	}
 
-	_, err := l.Handle().DB().ExecContext(
+	featureFlags, err := json.Marshal(e.FeatureFlags)
+	if err != nil {
+		return err
+	}
+
+	_, err = l.Handle().DB().ExecContext(
 		ctx,
-		"INSERT INTO event_logs(name, url, user_id, anonymous_user_id, source, argument, version, timestamp) VALUES($1, $2, $3, $4, $5, $6, $7, $8)",
+		"INSERT INTO event_logs(name, url, user_id, anonymous_user_id, source, argument, version, timestamp, feature_flags) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)",
 		e.Name,
 		e.URL,
 		e.UserID,
@@ -74,6 +81,7 @@ func (l *EventLogStore) Insert(ctx context.Context, e *Event) error {
 		argument,
 		version.Version(),
 		e.Timestamp.UTC(),
+		featureFlags,
 	)
 	if err != nil {
 		return errors.Wrap(err, "INSERT")

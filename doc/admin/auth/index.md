@@ -145,6 +145,20 @@ to Sourcegraph](../external_service/gitlab.md#repository-syncing).
 
 Setting the env var `INSECURE_OAUTH2_LOG_TRACES=1` on the `sourcegraph/server` Docker container (or the `sourcegraph-frontend` deployment if you're using Kubernetes) causes all OAuth2 requests and responses to be logged.
 
+If you are unable to use OAuth to login, perhaps after an upgrade, and receive the following error:
+
+```
+An error has occurred
+The requested scope is invalid, unknown, or malformed.
+```
+This could be related to the scopes granted on your `clientID` and `clientSecret` on the `auth.providers` section in your site configuration.
+
+Please check the [GitLab scopes](https://gitlab.com/-/profile/applications) granted to ensure that you have the following configured:
+
+* `api`
+* `read_user`
+* `read_api`
+
 ## OpenID Connect
 
 The [`openidconnect` auth provider](../config/site_config.md#openid-connect-including-google-workspace) authenticates users via OpenID Connect, which is supported by many external services, including:

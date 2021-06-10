@@ -5819,6 +5819,10 @@ type ExtensionRegistry {
     Examples: "sourcegraph.example.com/", "sourcegraph.example.com:1234/"
     """
     localExtensionIDPrefix: String
+    """
+    A list of featured extensions in the registry.
+    """
+    featuredExtensions: FeaturedExtensionsConnection
 }
 
 """
@@ -6064,6 +6068,23 @@ type RegistryExtensionConnection {
     The URL to this list, or null if none exists.
     """
     url: String
+    """
+    Errors that occurred while communicating with remote registries to obtain the list of extensions.
+    In order to be able to return local extensions even when the remote registry is unreachable, errors are
+    recorded here instead of in the top-level GraphQL errors list.
+    """
+    error: String
+}
+
+"""
+A list of featured extensions in the registry.
+"""
+type FeaturedExtensionsConnection {
+    """
+    A list of featured registry extensions.
+    """
+    nodes: [RegistryExtension!]!
+
     """
     Errors that occurred while communicating with remote registries to obtain the list of extensions.
     In order to be able to return local extensions even when the remote registry is unreachable, errors are

@@ -196,6 +196,7 @@ describe('Extension Registry', () => {
                         error: null,
                         nodes: registryExtensionNodes,
                     },
+                    featuredExtensions: null,
                 },
             }),
             Extensions: () => ({
@@ -274,7 +275,11 @@ describe('Extension Registry', () => {
                 })
             }, 'RegistryExtensions')
 
-            assert.deepStrictEqual(request, { query: 'sqs', prioritizeExtensionIDs: ['sqs/word-count'] })
+            assert.deepStrictEqual(request, {
+                getFeatured: false,
+                query: 'sqs',
+                prioritizeExtensionIDs: ['sqs/word-count'],
+            })
         })
     })
 
