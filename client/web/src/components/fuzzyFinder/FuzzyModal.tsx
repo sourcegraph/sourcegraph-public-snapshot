@@ -135,7 +135,7 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
             <div role="navigation" className={styles.content} onMouseDown={event => event.stopPropagation()}>
                 <div className={styles.header}>
                     <h3 className="mb-0">Find file</h3>
-                    <button type="button" className="btn btn-icon" onClick={() => props.onClose()}>
+                    <button type="button" className="btn btn-icon" onClick={() => props.onClose()} aria-label="Close">
                         <CloseIcon className={`icon-inline ${styles.closeIcon}`} />
                     </button>
                 </div>
