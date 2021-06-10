@@ -1,4 +1,4 @@
-package server
+package gitservice_test
 
 import (
 	"bytes"
@@ -6,7 +6,10 @@ import (
 	"net/http/httptest"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
+
+	"github.com/sourcegraph/sourcegraph/lib/gitservice"
 )
 
 // numTestCommits determines the number of files/commits/tags to create for
@@ -15,7 +18,7 @@ import (
 // this same behavior.
 const numTestCommits = 25
 
-func TestGitServiceHandler(t *testing.T) {
+func TestHandler(t *testing.T) {
 	root := t.TempDir()
 	repo := filepath.Join(root, "testrepo")
 
@@ -29,7 +32,7 @@ func TestGitServiceHandler(t *testing.T) {
 		runCmd(t, repo, "git", "tag", fmt.Sprintf("v%d", i+1))
 	}
 
-	ts := httptest.NewServer(&gitServiceHandler{
+	ts := httptest.NewServer(&gitservice.Handler{
 		Dir: func(s string) string {
 			return filepath.Join(root, s, ".git")
 		},
@@ -85,4 +88,21 @@ func TestGitServiceHandler(t *testing.T) {
 			}
 		})
 	}
+}
+
+func runCmd(t *testing.T, dir string, cmd string, arg ...string) string {
+	t.Helper()
+	c := exec.Command(cmd, arg...)
+	c.Dir = dir
+	c.Env = []string{
+		"GIT_COMMITTER_NAME=a",
+		"GIT_COMMITTER_EMAIL=a@a.com",
+		"GIT_AUTHOR_NAME=a",
+		"GIT_AUTHOR_EMAIL=a@a.com",
+	}
+	b, err := c.CombinedOutput()
+	if err != nil {
+		t.Fatalf("%s %s failed: %s\nOutput: %s", cmd, strings.Join(arg, " "), err, b)
+	}
+	return string(b)
 }
