@@ -3,7 +3,7 @@ import { getSuggestionsSearchTerm } from './get-suggestions-search-term'
 describe('get-suggestions-search-term', () => {
     it('should return null term with null caret position', () => {
         expect(getSuggestionsSearchTerm({ value: '', caretPosition: null })).toStrictEqual({
-            repositories: [''],
+            repositories: [],
             value: null,
             index: null,
         })
@@ -52,9 +52,9 @@ describe('get-suggestions-search-term', () => {
             const stringValue = 'github.com/example/about, github.com/example/another-repo,'
 
             expect(getSuggestionsSearchTerm({ value: stringValue, caretPosition: stringValue.length })).toStrictEqual({
-                repositories: ['github.com/example/about', 'github.com/example/another-repo', ''],
-                value: '',
-                index: 2,
+                repositories: ['github.com/example/about', 'github.com/example/another-repo'],
+                value: 'github.com/example/another-repo',
+                index: 1,
             })
         })
     })
