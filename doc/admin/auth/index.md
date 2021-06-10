@@ -153,7 +153,7 @@ The requested scope is invalid, unknown, or malformed.
 ```
 This could be related to the scopes granted on your `clientID` and `clientSecret` on the `auth.providers` section in your site configuration.
 
-Please check on the [GitLab scopes](https://gitlab.com/-/profile/applications) granted to ensure that you have the following configured:
+Please check the [GitLab scopes](https://gitlab.com/-/profile/applications) granted to ensure that you have the following configured:
 
 * `api`
 * `read_user`
