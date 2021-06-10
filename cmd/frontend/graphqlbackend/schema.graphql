@@ -2406,6 +2406,11 @@ type Repository implements Node & GenericSearchResultInterface {
     for use by code intelligence features.
     """
     codeIntelligenceCommitGraph: CodeIntelligenceCommitGraph!
+
+    """
+    The star count the repository has in the code host.
+    """
+    stars: Int!
 }
 
 """
