@@ -188,10 +188,6 @@ export const NavLinks: React.FunctionComponent<Props> = props => {
                                 settingsCascade.final?.['alerts.codeHostIntegrationMessaging']) ||
                             'browser-extension'
                         }
-                        showRedesignToggle={
-                            !isErrorLike(props.settingsCascade.final) &&
-                            Boolean(props.settingsCascade.final?.experimentalFeatures?.designRefreshToggleEnabled)
-                        }
                         keyboardShortcutForSwitchTheme={KEYBOARD_SHORTCUT_SWITCH_THEME}
                     />
                 </li>

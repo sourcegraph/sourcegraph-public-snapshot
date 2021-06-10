@@ -148,8 +148,10 @@ func (d *documentation) renderAlertSolutionEntry(c *Container, o Observable) err
 		fmt.Fprintf(&d.alertSolutions, "> NOTE: More help interpreting this metric is available in the [dashboards reference](./%s#%s).\n\n",
 			dashboardsDocsFile, observableDocAnchor(c, o))
 	}
-	// add owner
-	fprintOwnedBy(&d.alertSolutions, o.Owner)
+	if o.Owner != "" {
+		// add owner
+		fprintOwnedBy(&d.alertSolutions, o.Owner)
+	}
 	// render break for readability
 	fmt.Fprint(&d.alertSolutions, "\n<br />\n\n")
 	return nil
@@ -168,8 +170,10 @@ func (d *documentation) renderDashboardPanelEntry(c *Container, o Observable) er
 		fmt.Fprintf(&d.dashboards, "> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./%s#%s).\n\n",
 			alertSolutionsFile, observableDocAnchor(c, o))
 	}
-	// add owner
-	fprintOwnedBy(&d.dashboards, o.Owner)
+	if o.Owner != "" {
+		// add owner
+		fprintOwnedBy(&d.dashboards, o.Owner)
+	}
 	// render break for readability
 	fmt.Fprint(&d.dashboards, "\n<br />\n\n")
 	return nil

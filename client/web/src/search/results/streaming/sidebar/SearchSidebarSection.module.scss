@@ -1,4 +1,6 @@
 .sidebar-section {
+    isolation: isolate; // Prevent the z-index below from leaking out of this container
+
     &__collapse-button {
         display: flex;
         align-items: center;
@@ -7,6 +9,10 @@
         border: none;
         padding: 0.25rem;
         margin: 0 -0.25rem;
+
+        // Force the button's box-shadow to always show over the sibling element's border
+        position: relative;
+        z-index: 1;
     }
 
     &__list {

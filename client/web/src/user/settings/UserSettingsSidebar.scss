@@ -1,3 +1,9 @@
 .user-settings-sidebar {
-    max-width: 12rem;
+    width: 12.5rem;
+
+    &__new-org-btn-wrapper {
+        .theme-redesign & {
+            margin-top: 0.25rem;
+        }
+    }
 }

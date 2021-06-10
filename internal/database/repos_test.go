@@ -405,6 +405,9 @@ func TestListDefaultReposUncloned(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if _, err := db.ExecContext(ctx, `INSERT INTO users(id, username) VALUES (1, 'bob')`); err != nil {
+		t.Fatal(err)
+	}
 	for _, r := range reposToAdd {
 		cloned := int(r.ID) > 1
 		if _, err := db.ExecContext(ctx, `INSERT INTO repo(id, name, cloned) VALUES ($1, $2, $3)`, r.ID, r.Name, cloned); err != nil {
@@ -413,7 +416,7 @@ func TestListDefaultReposUncloned(t *testing.T) {
 		if _, err := db.ExecContext(ctx, `INSERT INTO default_repos(repo_id) VALUES ($1)`, r.ID); err != nil {
 			t.Fatal(err)
 		}
-		if _, err := db.ExecContext(ctx, `INSERT INTO external_service_repos VALUES (1, $1, 'https://github.com/foo/bar13');`, r.ID); err != nil {
+		if _, err := db.ExecContext(ctx, `INSERT INTO external_service_repos VALUES (1, $1, 'https://github.com/foo/bar13', 1);`, r.ID); err != nil {
 			t.Fatal(err)
 		}
 		cloneStatus := types.CloneStatusCloned

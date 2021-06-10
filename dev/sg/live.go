@@ -4,11 +4,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os/exec"
 	"strings"
 
-	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -116,26 +113,4 @@ func printDeployedVersion(e environment) error {
 	}
 
 	return nil
-}
-
-func runGitCmd(args ...string) (string, error) {
-	repoRoot, err := root.RepositoryRoot()
-	if err != nil {
-		return "", err
-	}
-
-	cmd := exec.Command("git", args...)
-	cmd.Env = []string{
-		// Don't use the system wide git config.
-		"GIT_CONFIG_NOSYSTEM=1",
-		// And also not any other, because they can mess up output, change defaults, .. which can do unexpected things.
-		"GIT_CONFIG=/dev/null",
-	}
-	cmd.Dir = repoRoot
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return "", errors.Wrapf(err, "'git %s' failed: %s", strings.Join(args, " "), out)
-	}
-
-	return string(out), nil
 }

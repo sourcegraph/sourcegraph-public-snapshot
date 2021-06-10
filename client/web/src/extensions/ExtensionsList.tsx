@@ -62,10 +62,22 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
         () => settingsCascade.subjects?.find(settingsSubject => settingsSubject.subject.id === subject.id),
         [settingsCascade, subject.id]
     )
-    const siteSubject = useMemo(
-        () => settingsCascade.subjects?.find(settingsSubject => settingsSubject.subject.__typename === 'Site'),
-        [settingsCascade]
-    )
+    const siteSubject = useMemo(() => {
+        if (!settingsCascade.subjects) {
+            return undefined
+        }
+        for (const subject of settingsCascade.subjects) {
+            if (subject.subject.__typename === 'Site') {
+                // Even if the user has permission to administer Site settings, changes cannot be made
+                // through the API if global settings are configured through the GLOBAL_SETTINGS_FILE envvar.
+                if (subject.subject.allowSiteSettingsEdits) {
+                    return subject
+                }
+                break
+            }
+        }
+        return undefined
+    }, [settingsCascade])
 
     if (!data || data === LOADING) {
         return <LoadingSpinner className="icon-inline mt-2" />

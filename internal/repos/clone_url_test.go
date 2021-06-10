@@ -1,6 +1,7 @@
 package repos
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
@@ -11,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -232,5 +234,86 @@ func TestPerforceCloneURL(t *testing.T) {
 	want := "perforce://admin:pa$$word@ssl:111.222.333.444:1666//Sourcegraph/"
 	if got != want {
 		t.Fatalf("wrong cloneURL, got: %q, want: %q", got, want)
+	}
+}
+
+func TestPhabricatorCloneURL(t *testing.T) {
+	meta := `
+{
+    "ID": 8,
+    "VCS": "git",
+    "Name": "testing",
+    "PHID": "PHID-REPO-vl3v7n7jkzf5pjozoxuy",
+    "URIs": [
+        {
+            "ID": "78",
+            "PHID": "PHID-RURI-kmdhjr2u4ugjgaaatp4k",
+            "Display": "git@gitolite.sgdev.org:testing",
+            "Disabled": false,
+            "Effective": "git@gitolite.sgdev.org:testing",
+            "Normalized": "gitolite.sgdev.org/testing",
+            "DateCreated": "2019-05-03T11:16:27Z",
+            "DateModified": "0001-01-01T00:00:00Z",
+            "BuiltinProtocol": "",
+            "BuiltinIdentifier": ""
+        },
+        {
+            "ID": "71",
+            "PHID": "PHID-RURI-xu54xqjhvxwyxxzjoz63",
+            "Display": "ssh://git@phabricator.sgdev.org/diffusion/8/test.git",
+            "Disabled": false,
+            "Effective": "ssh://git@phabricator.sgdev.org/diffusion/8/test.git",
+            "Normalized": "phabricator.sgdev.org/diffusion/8",
+            "DateCreated": "2019-05-03T11:16:06Z",
+            "DateModified": "0001-01-01T00:00:00Z",
+            "BuiltinProtocol": "ssh",
+            "BuiltinIdentifier": "id"
+        },
+        {
+            "ID": "70",
+            "PHID": "PHID-RURI-3pstu43sbjncekq6rwqt",
+            "Display": "ssh://git@phabricator.sgdev.org/source/test.git",
+            "Disabled": false,
+            "Effective": "ssh://git@phabricator.sgdev.org/source/test.git",
+            "Normalized": "phabricator.sgdev.org/source/test",
+            "DateCreated": "2019-05-03T11:16:06Z",
+            "DateModified": "0001-01-01T00:00:00Z",
+            "BuiltinProtocol": "ssh",
+            "BuiltinIdentifier": "shortname"
+        },
+        {
+            "ID": "69",
+            "PHID": "PHID-RURI-5qh22baoby6u445k3nx5",
+            "Display": "ssh://git@phabricator.sgdev.org/diffusion/TESTING/test.git",
+            "Disabled": false,
+            "Effective": "ssh://git@phabricator.sgdev.org/diffusion/TESTING/test.git",
+            "Normalized": "phabricator.sgdev.org/diffusion/TESTING",
+            "DateCreated": "2019-05-03T11:16:06Z",
+            "DateModified": "0001-01-01T00:00:00Z",
+            "BuiltinProtocol": "ssh",
+            "BuiltinIdentifier": "callsign"
+        }
+    ],
+    "Status": "active",
+    "Callsign": "TESTING",
+    "Shortname": "test",
+    "EditPolicy": "admin",
+    "ViewPolicy": "users",
+    "DateCreated": "2019-05-03T11:16:06Z",
+    "DateModified": "2019-08-08T14:45:57Z"
+}
+`
+
+	repo := &phabricator.Repo{}
+	err := json.Unmarshal([]byte(meta), repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got := phabricatorCloneURL(repo, nil)
+	want := "ssh://git@phabricator.sgdev.org/diffusion/8/test.git"
+
+	if want != got {
+		t.Fatalf("Want %q, got %q", want, got)
 	}
 }

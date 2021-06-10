@@ -1,11 +1,9 @@
-import { Remote } from 'comlink'
 import React, { Suspense, useCallback, useEffect, useMemo } from 'react'
 import { Redirect, Route, RouteComponentProps, Switch, matchPath } from 'react-router'
 import { Observable } from 'rxjs'
 
 import { ResizablePanel } from '@sourcegraph/branded/src/components/panel/Panel'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -14,7 +12,6 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { parseHash } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
@@ -31,7 +28,6 @@ import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
-import { SearchPatternType } from './graphql-operations'
 import { KeyboardShortcutsProps, KEYBOARD_SHORTCUT_SHOW_HELP } from './keyboardShortcuts/keyboardShortcuts'
 import { KeyboardShortcutsHelp } from './keyboardShortcuts/KeyboardShortcutsHelp'
 import { SurveyToast } from './marketing/SurveyToast'
@@ -126,13 +122,6 @@ export interface LayoutProps
     navbarSearchQueryState: QueryState
     onNavbarQueryChange: (queryState: QueryState) => void
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
-    searchRequest: (
-        query: QueryState['query'],
-        version: string,
-        patternType: SearchPatternType,
-        versionContext: string | undefined,
-        extensionHostPromise: Promise<Remote<FlatExtensionHostAPI>>
-    ) => Observable<GQL.ISearchResults | ErrorLike>
 
     globbing: boolean
     showMultilineSearchConsole: boolean

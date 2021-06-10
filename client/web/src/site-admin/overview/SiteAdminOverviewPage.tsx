@@ -152,11 +152,11 @@ export const SiteAdminOverviewPage: React.FunctionComponent<Props> = ({
                 {activation?.completed && (
                     <Collapsible
                         title={
-                            <>
+                            <div className="p-2">
                                 {setupPercentage > 0 && setupPercentage < 100
                                     ? 'Almost there!'
                                     : 'Welcome to Sourcegraph'}
-                            </>
+                            </div>
                         }
                         detail={
                             setupPercentage < 100 ? 'Complete the steps below to finish onboarding to Sourcegraph' : ''

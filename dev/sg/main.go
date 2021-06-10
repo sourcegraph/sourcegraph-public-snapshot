@@ -9,7 +9,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/Masterminds/semver"
 	"github.com/peterbourgon/ff/v3/ffcli"
+
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -38,7 +40,7 @@ var (
 	startFlagSet = flag.NewFlagSet("sg start", flag.ExitOnError)
 	startCommand = &ffcli.Command{
 		Name:       "start",
-		ShortUsage: "sg start>",
+		ShortUsage: "sg start",
 		ShortHelp:  "Runs the commandset with the name 'start'.",
 		FlagSet:    startFlagSet,
 		Exec:       startExec,
@@ -73,6 +75,70 @@ var (
 		FlagSet:    liveFlagSet,
 		Exec:       liveExec,
 		UsageFunc:  printLiveUsage,
+	}
+
+	migrationAddFlagSet          = flag.NewFlagSet("sg migration add", flag.ExitOnError)
+	migrationAddDatabaseNameFlag = migrationAddFlagSet.String("db", defaultDatabase.Name, "The target database instance.")
+	migrationAddCommand          = &ffcli.Command{
+		Name:       "add",
+		ShortUsage: fmt.Sprintf("sg migration add [-db=%s] <name>", defaultDatabase.Name),
+		ShortHelp:  "Add a new migration file",
+		FlagSet:    migrationAddFlagSet,
+		Exec:       migrationAddExec,
+		UsageFunc:  printMigrationAddUsage,
+	}
+
+	migrationUpFlagSet          = flag.NewFlagSet("sg migration up", flag.ExitOnError)
+	migrationUpDatabaseNameFlag = migrationUpFlagSet.String("db", defaultDatabase.Name, "The target database instance.")
+	migrationUpNFlag            = migrationUpFlagSet.Int("n", 1, "How many migrations to apply.")
+	migrationUpCommand          = &ffcli.Command{
+		Name:       "up",
+		ShortUsage: fmt.Sprintf("sg migration up [-db=%s] [-n]", defaultDatabase.Name),
+		ShortHelp:  "Run up migration files",
+		FlagSet:    migrationUpFlagSet,
+		Exec:       migrationUpExec,
+		UsageFunc:  printMigrationUpUsage,
+	}
+
+	migrationDownFlagSet          = flag.NewFlagSet("sg migration down", flag.ExitOnError)
+	migrationDownDatabaseNameFlag = migrationDownFlagSet.String("db", defaultDatabase.Name, "The target database instance.")
+	migrationDownNFlag            = migrationDownFlagSet.Int("n", 1, "How many migrations to apply.")
+	migrationDownCommand          = &ffcli.Command{
+		Name:       "down",
+		ShortUsage: fmt.Sprintf("sg migration down [-db=%s] [-n=1]", defaultDatabase.Name),
+		ShortHelp:  "Run down migration files",
+		FlagSet:    migrationDownFlagSet,
+		Exec:       migrationDownExec,
+		UsageFunc:  printMigrationDownUsage,
+	}
+
+	migrationSquashFlagSet          = flag.NewFlagSet("sg migration squash", flag.ExitOnError)
+	migrationSquashDatabaseNameFlag = migrationSquashFlagSet.String("db", defaultDatabase.Name, "The target database instance")
+	migrationSquashCommand          = &ffcli.Command{
+		Name:       "squash",
+		ShortUsage: fmt.Sprintf("sg migration squash [-db=%s] <current-release>", defaultDatabase.Name),
+		ShortHelp:  "Collapse migration files from historic releases together",
+		FlagSet:    migrationSquashFlagSet,
+		Exec:       migrationSquashExec,
+		UsageFunc:  printMigrationSquashUsage,
+	}
+
+	migrationFlagSet = flag.NewFlagSet("sg migration", flag.ExitOnError)
+	migrationCommand = &ffcli.Command{
+		Name:       "migration",
+		ShortUsage: "sg migration <command>",
+		ShortHelp:  "Modifies and runs database migrations",
+		FlagSet:    migrationFlagSet,
+		Exec: func(ctx context.Context, args []string) error {
+			return flag.ErrHelp
+		},
+		UsageFunc: printMigrationUsage,
+		Subcommands: []*ffcli.Command{
+			migrationAddCommand,
+			migrationUpCommand,
+			migrationDownCommand,
+			migrationSquashCommand,
+		},
 	}
 )
 
@@ -117,6 +183,7 @@ var (
 			testCommand,
 			doctorCommand,
 			liveCommand,
+			migrationCommand,
 		},
 	}
 )
@@ -227,7 +294,7 @@ func testExec(ctx context.Context, args []string) error {
 
 func startExec(ctx context.Context, args []string) error {
 	if len(args) != 0 {
-		fmt.Printf("ERROR: this command doesn't take arguments\n\n")
+		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments\n"))
 		return flag.ErrHelp
 	}
 
@@ -276,6 +343,171 @@ func liveExec(ctx context.Context, args []string) error {
 	}
 
 	return printDeployedVersion(e)
+}
+
+func migrationAddExec(ctx context.Context, args []string) error {
+	if len(args) == 0 {
+		out.WriteLine(output.Linef("", output.StyleWarning, "No migration name specified\n"))
+		return flag.ErrHelp
+	}
+	if len(args) != 1 {
+		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments\n"))
+		return flag.ErrHelp
+	}
+
+	var (
+		databaseName  = *migrationAddDatabaseNameFlag
+		migrationName = args[0]
+		database, ok  = databaseByName(databaseName)
+	)
+	if !ok {
+		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: database %q not found :(\n", databaseName))
+		return flag.ErrHelp
+	}
+
+	upFile, downFile, err := createNewMigration(database, migrationName)
+	if err != nil {
+		return err
+	}
+
+	block := out.Block(output.Linef("", output.StyleBold, "Migration files created"))
+	block.Writef("Up migration: %s", upFile)
+	block.Writef("Down migration: %s", downFile)
+	block.Close()
+
+	return nil
+}
+
+func migrationUpExec(ctx context.Context, args []string) error {
+	if len(args) != 0 {
+		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments\n"))
+		return flag.ErrHelp
+	}
+
+	var (
+		databaseName = *migrationUpDatabaseNameFlag
+		database, ok = databaseByName(databaseName)
+	)
+	if !ok {
+		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: database %q not found :(\n", databaseName))
+		return flag.ErrHelp
+	}
+
+	var n *int
+	migrationUpFlagSet.Visit(func(f *flag.Flag) {
+		if f.Name == "n" {
+			n = migrationUpNFlag
+		}
+	})
+
+	// Only pass the value of n here if the user actually set it
+	// We have to do the dance above because the flags package
+	// requires you to define a default value for each flag.
+	out, err := runMigrationsUp(database, n)
+	fmt.Printf("%s\n", out)
+	return err
+}
+
+func migrationDownExec(ctx context.Context, args []string) error {
+	if len(args) != 0 {
+		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments\n"))
+		return flag.ErrHelp
+	}
+
+	var (
+		databaseName = *migrationDownDatabaseNameFlag
+		database, ok = databaseByName(databaseName)
+	)
+	if !ok {
+		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: database %q not found :(\n", databaseName))
+		return flag.ErrHelp
+	}
+
+	out, err := runMigrationsDown(database, *migrationDownNFlag)
+	fmt.Printf("%s\n", out)
+	return err
+}
+
+// minimumMigrationSquashDistance is the minimum number of releases a migration is guaranteed to exist
+// as a non-squashed file.
+//
+// A squash distance of 1 will allow one minor downgrade.
+// A squash distance of 2 will allow two minor downgrades.
+// etc
+const minimumMigrationSquashDistance = 2
+
+func migrationSquashExec(ctx context.Context, args []string) (err error) {
+	if len(args) == 0 {
+		out.WriteLine(output.Linef("", output.StyleWarning, "No current-version specified\n"))
+		return flag.ErrHelp
+	}
+	if len(args) != 1 {
+		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments\n"))
+		return flag.ErrHelp
+	}
+
+	var (
+		databaseName  = *migrationSquashDatabaseNameFlag
+		migrationName = args[0]
+		database, ok  = databaseByName(databaseName)
+	)
+	if !ok {
+		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: database %q not found :(\n", databaseName))
+		return flag.ErrHelp
+	}
+
+	currentVersion, err := semver.NewVersion(migrationName)
+	if err != nil {
+		return err
+	}
+
+	// Get the last migration that existed in the version _before_ `minimumMigrationSquashDistance` releases ago
+	commit := fmt.Sprintf("v%d.%d.0", currentVersion.Major(), currentVersion.Minor()-minimumMigrationSquashDistance-1)
+	out.Writef("Squashing migration files defined up through %s", commit)
+
+	lastMigrationIndex, ok, err := lastMigrationIndexAtCommit(database, commit)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return fmt.Errorf("no migrations exist at commit %s", commit)
+	}
+
+	// Run migrations up to last migration index and dump the database into a single migration file pair
+	squashedUpMigration, squashedDownMigration, err := generateSquashedMigrations(database, lastMigrationIndex)
+	if err != nil {
+		return err
+	}
+
+	// Remove the migration file pairs that were just squashed
+	filenames, err := removeMigrationFilesUpToIndex(database, lastMigrationIndex)
+	if err != nil {
+		return err
+	}
+
+	out.Write("")
+	block := out.Block(output.Linef("", output.StyleBold, "Updated filesystem"))
+	defer block.Close()
+
+	for _, filename := range filenames {
+		block.Writef("Deleted: %s", filename)
+	}
+
+	// Write the replacement migration pair
+	upPath, downPath, err := makeMigrationFilenames(database, lastMigrationIndex, "squashed_migrations")
+	if err != nil {
+		return err
+	}
+	if err := os.WriteFile(upPath, []byte(squashedUpMigration), os.ModePerm); err != nil {
+		return err
+	}
+	if err := os.WriteFile(downPath, []byte(squashedDownMigration), os.ModePerm); err != nil {
+		return err
+	}
+
+	block.Writef("Created: %s", upPath)
+	block.Writef("Created: %s", downPath)
+	return nil
 }
 
 func printRunUsage(c *ffcli.Command) string {
@@ -370,6 +602,85 @@ func printLiveUsage(c *ffcli.Command) string {
 	fmt.Fprintf(&out, "AVAILABLE ENVIRONMENTS\n")
 
 	for _, name := range environmentNames() {
+		fmt.Fprintf(&out, "  %s\n", name)
+	}
+
+	return out.String()
+}
+
+func printMigrationUsage(c *ffcli.Command) string {
+	var out strings.Builder
+
+	printLogo(&out)
+
+	fmt.Fprintf(&out, "USAGE\n")
+	fmt.Fprintf(&out, "  sg migration <subcommand>\n")
+
+	fmt.Fprintf(&out, "\n")
+	fmt.Fprintf(&out, "AVAILABLE COMMANDS\n")
+	for _, sub := range c.Subcommands {
+		fmt.Fprintf(&out, "  %s\n", sub.Name)
+	}
+
+	fmt.Fprintf(&out, "\nRun 'sg migration <subcommand> -help' to get help output for each subcommand\n")
+
+	return out.String()
+}
+
+func printMigrationAddUsage(c *ffcli.Command) string {
+	var out strings.Builder
+
+	fmt.Fprintf(&out, "USAGE\n")
+	fmt.Fprintf(&out, "  sg migration add [-db=%s] <name>\n", defaultDatabase.Name)
+	fmt.Fprintf(&out, "\n")
+	fmt.Fprintf(&out, "AVAILABLE DATABASES\n")
+
+	for _, name := range databaseNames() {
+		fmt.Fprintf(&out, "  %s\n", name)
+	}
+
+	return out.String()
+}
+
+func printMigrationUpUsage(c *ffcli.Command) string {
+	var out strings.Builder
+
+	fmt.Fprintf(&out, "USAGE\n")
+	fmt.Fprintf(&out, "  sg migration up [-db=%s] [-n]\n", defaultDatabase.Name)
+	fmt.Fprintf(&out, "\n")
+	fmt.Fprintf(&out, "AVAILABLE DATABASES\n")
+
+	for _, name := range databaseNames() {
+		fmt.Fprintf(&out, "  %s\n", name)
+	}
+
+	return out.String()
+}
+
+func printMigrationDownUsage(c *ffcli.Command) string {
+	var out strings.Builder
+
+	fmt.Fprintf(&out, "USAGE\n")
+	fmt.Fprintf(&out, "  sg migration down [-db=%s] [-n=1]\n", defaultDatabase.Name)
+	fmt.Fprintf(&out, "\n")
+	fmt.Fprintf(&out, "AVAILABLE DATABASES\n")
+
+	for _, name := range databaseNames() {
+		fmt.Fprintf(&out, "  %s\n", name)
+	}
+
+	return out.String()
+}
+
+func printMigrationSquashUsage(c *ffcli.Command) string {
+	var out strings.Builder
+
+	fmt.Fprintf(&out, "USAGE\n")
+	fmt.Fprintf(&out, "  sg migration squash [-db=%s] <current-release>\n", defaultDatabase.Name)
+	fmt.Fprintf(&out, "\n")
+	fmt.Fprintf(&out, "AVAILABLE DATABASES\n")
+
+	for _, name := range databaseNames() {
 		fmt.Fprintf(&out, "  %s\n", name)
 	}
 

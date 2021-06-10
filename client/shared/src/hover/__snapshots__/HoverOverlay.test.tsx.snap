@@ -15,11 +15,11 @@ exports[`HoverOverlay actions and hover empty 1`] = `
   <div
     className="hover-overlay__contents"
   >
-    <i
+    <small
       className="hover-overlay__hover-empty"
     >
       No hover information available.
-    </i>
+    </small>
   </div>
 </div>
 `;
@@ -40,7 +40,7 @@ exports[`HoverOverlay actions and hover error 1`] = `
     className="hover-overlay__contents"
   >
     <div
-      className="hover-overlay__hover-error"
+      className="hover-overlay__hover-error-redesign"
     >
       M2
     </div>
@@ -385,7 +385,7 @@ exports[`HoverOverlay actions, hover and alert present 1`] = `
     className="hover-overlay__alerts"
   >
     <div
-      className="hover-overlay__alert"
+      className="hover-overlay__alert-redesign"
     >
       <span
         className="hover-overlay__content"
@@ -479,7 +479,7 @@ exports[`HoverOverlay hover error 1`] = `
     className="hover-overlay__contents"
   >
     <div
-      className="hover-overlay__hover-error"
+      className="hover-overlay__hover-error-redesign"
     >
       M
     </div>
@@ -503,7 +503,7 @@ exports[`HoverOverlay hover error, actions present 1`] = `
     className="hover-overlay__contents"
   >
     <div
-      className="hover-overlay__hover-error"
+      className="hover-overlay__hover-error-redesign"
     >
       M
     </div>

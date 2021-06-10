@@ -58,4 +58,18 @@
             border-top-right-radius: 0.1875rem;
         }
     }
+
+    &__breadcrumb-icon {
+        margin-left: 0.125rem;
+        margin-right: -0.25rem;
+    }
+
+    &__divider {
+        margin-right: 0.25rem;
+
+        .theme-redesign & {
+            margin-left: 0.375rem;
+            margin-right: 0.375rem;
+        }
+    }
 }

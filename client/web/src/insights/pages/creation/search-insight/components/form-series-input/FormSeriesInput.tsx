@@ -90,7 +90,7 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
     const colorField = useField('seriesColor', formAPI)
 
     return (
-        <div ref={ref} className={classnames('d-flex flex-column', className)}>
+        <div data-testid="series-form" ref={ref} className={classnames('d-flex flex-column', className)}>
             <FormInput
                 title="Name"
                 required={true}

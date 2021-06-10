@@ -1,7 +1,7 @@
 package main
 
 import (
-	"io/ioutil"
+	"io"
 	"os"
 
 	"github.com/pkg/errors"
@@ -15,7 +15,7 @@ func ParseConfigFile(name string) (*Config, error) {
 	}
 	defer file.Close()
 
-	data, err := ioutil.ReadAll(file)
+	data, err := io.ReadAll(file)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading configuration file")
 	}
@@ -47,6 +47,7 @@ type Command struct {
 	Name             string
 	Cmd              string            `yaml:"cmd"`
 	Install          string            `yaml:"install"`
+	CheckBinary      string            `yaml:"checkBinary"`
 	Env              map[string]string `yaml:"env"`
 	Watch            []string          `yaml:"watch"`
 	InstallDocDarwin string            `yaml:"installDoc.darwin"`

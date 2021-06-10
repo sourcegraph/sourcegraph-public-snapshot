@@ -578,7 +578,7 @@ type Mutation {
     convertVersionContextToSearchContext(name: String!): SearchContext!
 
     """
-    (experimental) Create search context.
+    Create search context.
     """
     createSearchContext(
         """
@@ -592,12 +592,12 @@ type Mutation {
     ): SearchContext!
 
     """
-    (experimental) Delete search context.
+    Delete search context.
     """
     deleteSearchContext(id: ID!): EmptyResponse!
 
     """
-    (experimental) Update search context.
+    Update search context.
     """
     updateSearchContext(
         """
@@ -613,6 +613,106 @@ type Mutation {
         """
         repositories: [SearchContextRepositoryRevisionsInput!]!
     ): SearchContext!
+
+    """
+    (experimental) Create a new feature flag
+    """
+    createFeatureFlag(
+        """
+        The name of the feature flag
+        """
+        name: String!
+
+        """
+        The value of the feature flag. Only set if the new feature flag
+        will be a concrete boolean flag. Mutually exclusive with rolloutBasisPoints.
+        """
+        value: Boolean
+
+        """
+        The ratio of users the feature flag will apply to, expressed in basis points (0.01%).
+        Only set if the new feature flag will be a rollout flag.
+        Mutually exclusive with value.
+        """
+        rolloutBasisPoints: Int
+    ): FeatureFlag!
+
+    """
+    (experimental) Delete a feature flag
+    """
+    deleteFeatureFlag(
+        """
+        The name of the feature flag
+        """
+        name: String!
+    ): EmptyResponse!
+
+    """
+    (experimental) Update a feature flag
+    """
+    updateFeatureFlag(
+        """
+        The name of the feature flag
+        """
+        name: String!
+
+        """
+        The value of the feature flag. Only set if the new feature flag
+        will be a concrete boolean flag. Mutually exclusive with rollout.
+        """
+        value: Boolean
+
+        """
+        The ratio of users the feature flag will apply to, expressed in basis points (0.01%).
+        Mutually exclusive with value.
+        """
+        rolloutBasisPoints: Int
+    ): FeatureFlag!
+
+    """
+    (experimental) Create a new feature flag override for the given org or user
+    """
+    createFeatureFlagOverride(
+        """
+        The namespace for this feature flag. Must be either a user ID or an org ID.
+        """
+        namespace: ID!
+
+        """
+        The name of the feature flag this override applies to
+        """
+        flagName: String!
+
+        """
+        The overridden value
+        """
+        value: Boolean!
+    ): FeatureFlagOverride!
+
+    """
+    Delete a feature flag override
+    """
+    deleteFeatureFlagOverride(
+        """
+        The ID of the feature flag override to delete
+        """
+        id: ID!
+    ): EmptyResponse!
+
+    """
+    Update a feature flag override
+    """
+    updateFeatureFlagOverride(
+        """
+        The ID of the feature flag override to update
+        """
+        id: ID!
+
+        """
+        The updated value of the feature flag override
+        """
+        value: Boolean!
+    ): FeatureFlagOverride!
 }
 
 """
@@ -997,6 +1097,10 @@ type Query {
         """
         notIndexed: Boolean = true
         """
+        Include repositories that have encountered errors when cloning or fetching
+        """
+        failedFetch: Boolean = false
+        """
         Sort field.
         """
         orderBy: RepositoryOrderBy = REPOSITORY_NAME
@@ -1166,11 +1270,11 @@ type Query {
     """
     versionContexts: [VersionContext!]!
     """
-    (experimental) Auto-defined search contexts available to the current user.
+    Auto-defined search contexts available to the current user.
     """
     autoDefinedSearchContexts: [SearchContext!]!
     """
-    (experimental) All available user-defined search contexts. Excludes auto-defined contexts.
+    All available user-defined search contexts. Excludes auto-defined contexts.
     """
     searchContexts(
         """
@@ -1203,7 +1307,7 @@ type Query {
         descending: Boolean = false
     ): SearchContextConnection!
     """
-    (experimental) Determines whether the search context is within the set of search contexts available to the current user.
+    Determines whether the search context is within the set of search contexts available to the current user.
     The set consists of contexts created by the user, contexts created by the users' organizations, and instance-level contexts.
     """
     isSearchContextAvailable(spec: String!): Boolean!
@@ -1276,6 +1380,103 @@ type Query {
     Retrieve all registered out-of-band migrations.
     """
     outOfBandMigrations: [OutOfBandMigration!]!
+
+    """
+    Retrieve the list of defined feature flags
+    """
+    featureFlags: [FeatureFlag!]!
+
+    """
+    Retrieve the values of all feature flags for the current user
+    """
+    viewerFeatureFlags: [EvaluatedFeatureFlag!]!
+}
+
+"""
+A feature flag is either a static boolean feature flag or a rollout feature flag
+"""
+union FeatureFlag = FeatureFlagBoolean | FeatureFlagRollout
+
+"""
+A feature flag that has a statically configured value
+"""
+type FeatureFlagBoolean {
+    """
+    The name of the feature flag
+    """
+    name: String!
+
+    """
+    The static value of the feature flag
+    """
+    value: Boolean!
+
+    """
+    Overrides that apply to the feature flag
+    """
+    overrides: [FeatureFlagOverride!]!
+}
+
+"""
+A feature flag that is randomly evaluated to a boolean based on the rollout parameter
+"""
+type FeatureFlagRollout {
+    """
+    The name of the feature flag
+    """
+    name: String!
+
+    """
+    The ratio of users that will be assigned this this feature flag, expressed in
+    basis points (0.01%).
+    """
+    rolloutBasisPoints: Int!
+
+    """
+    Overrides that apply to the feature flag
+    """
+    overrides: [FeatureFlagOverride!]!
+}
+
+"""
+A feature flag override is an override of a feature flag's value for a specific org or user
+"""
+type FeatureFlagOverride {
+    """
+    A unique ID for this feature flag override
+    """
+    id: ID!
+
+    """
+    The namespace for this override. Will always be a user or org.
+    """
+    namespace: Namespace!
+
+    """
+    The name of the feature flag being overridden
+    """
+    targetFlag: FeatureFlag!
+
+    """
+    The overriden value of the feature flag
+    """
+    value: Boolean!
+}
+
+"""
+An evaluated feature flag is any feature flag (static or random) that has been evaluated to
+a concrete value for a given viewer.
+"""
+type EvaluatedFeatureFlag {
+    """
+    The name of the feature flag
+    """
+    name: String!
+
+    """
+    The concrete evaluated value of the feature flag
+    """
+    value: Boolean!
 }
 
 """
@@ -1304,7 +1505,9 @@ type OutOfBandMigration implements Node {
     description: String!
 
     """
-    The Sourcegraph version in which this migration was introduced.
+    The Sourcegraph version in which this migration was introduced. The format of this version
+    includes only major and minor parts separated by a dot. The patch version can always be assumed
+    to be zero as we'll never introduce or deprecate an out-of-band migration within a patch release.
 
     It is necessary to completely this migration in reverse (if destructive) before downgrading
     to or past this version. Otherwise, the previous instance version will not be aware of the
@@ -1313,7 +1516,8 @@ type OutOfBandMigration implements Node {
     introduced: String!
 
     """
-    The Sourcegraph version in which this migration is assumed to have completed.
+    The Sourcegraph version by which this migration is assumed to have completed. The format of
+    this version mirrors introduced and includes only major and minor parts separated by a dot.
 
     It is necessary to have completed this migration before upgrading to or past this version.
     Otherwsie, the next instance version will no longer be aware of the old data format.
@@ -1944,7 +2148,7 @@ type ExternalService implements Node {
     NOTE: Currently only GitHub is supported and the request consumes rate limit tokens
     so it should be used sparingly.
     """
-    grantedScopes: [String!]!
+    grantedScopes: [String!]
 }
 
 """
@@ -2378,7 +2582,7 @@ type VersionContext {
 }
 
 """
-(experimental) A search context. Specifies a set of repositories to be searched.
+A search context. Specifies a set of repositories to be searched.
 """
 type SearchContext implements Node {
     """
@@ -2431,7 +2635,7 @@ type SearchContext implements Node {
 }
 
 """
-(experimental) Specifies a set of revisions to be searched within a repository.
+Specifies a set of revisions to be searched within a repository.
 """
 type SearchContextRepositoryRevisions {
     """
@@ -5059,6 +5263,11 @@ type Site implements SettingsSubject {
         """
         days: Int
     ): MonitoringStatistics!
+    """
+    Whether changes can be made to site settings through the API. When global settings are configured through
+    the GLOBAL_SETTINGS_FILE environment variable, site settings edits cannot be made through the API.
+    """
+    allowSiteSettingsEdits: Boolean!
 }
 
 """

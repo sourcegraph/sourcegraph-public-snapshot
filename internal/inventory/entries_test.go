@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"io/ioutil"
+	"io/fs"
 	"os"
 	"reflect"
 	"testing"
@@ -22,16 +22,16 @@ func TestContext_Entries(t *testing.T) {
 		cacheSetCalls      = map[string]Inventory{}
 	)
 	c := Context{
-		ReadTree: func(ctx context.Context, path string) ([]os.FileInfo, error) {
+		ReadTree: func(ctx context.Context, path string) ([]fs.FileInfo, error) {
 			readTreeCalls = append(readTreeCalls, path)
 			switch path {
 			case "d":
-				return []os.FileInfo{
+				return []fs.FileInfo{
 					&util.FileInfo{Name_: "d/a", Mode_: os.ModeDir},
 					&util.FileInfo{Name_: "d/b.go", Size_: 12},
 				}, nil
 			case "d/a":
-				return []os.FileInfo{&util.FileInfo{Name_: "d/a/c.m", Size_: 24}}, nil
+				return []fs.FileInfo{&util.FileInfo{Name_: "d/a/c.m", Size_: 24}}, nil
 			default:
 				panic("unhandled mock ReadTree " + path)
 			}
@@ -49,13 +49,13 @@ func TestContext_Entries(t *testing.T) {
 			default:
 				panic("unhandled mock ReadFile " + path)
 			}
-			return ioutil.NopCloser(bytes.NewReader(data)), nil
+			return io.NopCloser(bytes.NewReader(data)), nil
 		},
-		CacheGet: func(e os.FileInfo) (Inventory, bool) {
+		CacheGet: func(e fs.FileInfo) (Inventory, bool) {
 			cacheGetCalls = append(cacheGetCalls, e.Name())
 			return Inventory{}, false
 		},
-		CacheSet: func(e os.FileInfo, inv Inventory) {
+		CacheSet: func(e fs.FileInfo, inv Inventory) {
 			if _, ok := cacheSetCalls[e.Name()]; ok {
 				t.Fatalf("already stored %q in cache", e.Name())
 			}

@@ -8,7 +8,7 @@ exports[`ActivationChecklist render 0/1 complete 1`] = `
     data-reach-accordion=""
   >
     <div
-      className="activation-checklist__container list-group-item "
+      className="activation-checklist__container list-group-item"
       data-reach-accordion-item=""
       data-state="open"
     >
@@ -105,7 +105,7 @@ exports[`ActivationChecklist render 0/1 complete 2`] = `
     data-reach-accordion=""
   >
     <div
-      className="activation-checklist__container list-group-item "
+      className="activation-checklist__container list-group-item"
       data-reach-accordion-item=""
       data-state="open"
     >
@@ -202,7 +202,7 @@ exports[`ActivationChecklist render 1/1 complete 1`] = `
     data-reach-accordion=""
   >
     <div
-      className="activation-checklist__container list-group-item "
+      className="activation-checklist__container list-group-item"
       data-reach-accordion-item=""
       data-state="open"
     >

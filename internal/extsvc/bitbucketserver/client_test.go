@@ -10,7 +10,6 @@ import (
 	"encoding/pem"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"reflect"
@@ -974,12 +973,12 @@ func checkGolden(t *testing.T, name string, got interface{}) {
 
 	path := "testdata/golden/" + name
 	if *update {
-		if err = ioutil.WriteFile(path, data, 0640); err != nil {
+		if err = os.WriteFile(path, data, 0640); err != nil {
 			t.Fatalf("failed to update golden file %q: %s", path, err)
 		}
 	}
 
-	golden, err := ioutil.ReadFile(path)
+	golden, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("failed to read golden file %q: %s", path, err)
 	}

@@ -739,6 +739,32 @@ Indexes:
 
 See [enterprise/internal/insights/background/queryrunner/worker.go:Job](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/internal/insights/background/queryrunner/worker.go+type+Job&patternType=literal)
 
+# Table "public.lsif_dependency_indexing_jobs"
+```
+     Column      |           Type           | Collation | Nullable |                          Default                          
+-----------------+--------------------------+-----------+----------+-----------------------------------------------------------
+ id              | integer                  |           | not null | nextval('lsif_dependency_indexing_jobs_id_seq'::regclass)
+ state           | text                     |           | not null | 'queued'::text
+ failure_message | text                     |           |          | 
+ queued_at       | timestamp with time zone |           | not null | now()
+ started_at      | timestamp with time zone |           |          | 
+ finished_at     | timestamp with time zone |           |          | 
+ process_after   | timestamp with time zone |           |          | 
+ num_resets      | integer                  |           | not null | 0
+ num_failures    | integer                  |           | not null | 0
+ execution_logs  | json[]                   |           |          | 
+ upload_id       | integer                  |           |          | 
+Indexes:
+    "lsif_dependency_indexing_jobs_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "lsif_dependency_indexing_jobs_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
+
+```
+
+Tracks jobs that scan imports of indexes to schedule auto-index jobs.
+
+**upload_id**: The identifier of the triggering upload record.
+
 # Table "public.lsif_dirty_repositories"
 ```
     Column     |           Type           | Collation | Nullable | Default 
@@ -982,6 +1008,7 @@ Associates an upload with the set of packages they require within a given packag
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::text
+    "lsif_uploads_associated_index_id" btree (associated_index_id)
     "lsif_uploads_commit_last_checked_at" btree (commit_last_checked_at) WHERE state <> 'deleted'::text
     "lsif_uploads_committed_at" btree (committed_at) WHERE state = 'completed'::text
     "lsif_uploads_state" btree (state)
@@ -989,6 +1016,7 @@ Indexes:
 Check constraints:
     "lsif_uploads_commit_valid_chars" CHECK (commit ~ '^[a-z0-9]{40}$'::text)
 Referenced by:
+    TABLE "lsif_dependency_indexing_jobs" CONSTRAINT "lsif_dependency_indexing_jobs_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
     TABLE "lsif_packages" CONSTRAINT "lsif_packages_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
     TABLE "lsif_references" CONSTRAINT "lsif_references_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
 
@@ -1137,26 +1165,27 @@ Referenced by:
 
 # Table "public.out_of_band_migrations"
 ```
-     Column      |           Type           | Collation | Nullable |                      Default                       
------------------+--------------------------+-----------+----------+----------------------------------------------------
- id              | integer                  |           | not null | nextval('out_of_band_migrations_id_seq'::regclass)
- team            | text                     |           | not null | 
- component       | text                     |           | not null | 
- description     | text                     |           | not null | 
- introduced      | text                     |           | not null | 
- deprecated      | text                     |           |          | 
- progress        | double precision         |           | not null | 0
- created         | timestamp with time zone |           | not null | now()
- last_updated    | timestamp with time zone |           |          | 
- non_destructive | boolean                  |           | not null | 
- apply_reverse   | boolean                  |           | not null | false
+          Column          |           Type           | Collation | Nullable |                      Default                       
+--------------------------+--------------------------+-----------+----------+----------------------------------------------------
+ id                       | integer                  |           | not null | nextval('out_of_band_migrations_id_seq'::regclass)
+ team                     | text                     |           | not null | 
+ component                | text                     |           | not null | 
+ description              | text                     |           | not null | 
+ progress                 | double precision         |           | not null | 0
+ created                  | timestamp with time zone |           | not null | now()
+ last_updated             | timestamp with time zone |           |          | 
+ non_destructive          | boolean                  |           | not null | 
+ apply_reverse            | boolean                  |           | not null | false
+ is_enterprise            | boolean                  |           | not null | false
+ introduced_version_major | integer                  |           | not null | 
+ introduced_version_minor | integer                  |           | not null | 
+ deprecated_version_major | integer                  |           |          | 
+ deprecated_version_minor | integer                  |           |          | 
 Indexes:
     "out_of_band_migrations_pkey" PRIMARY KEY, btree (id)
 Check constraints:
     "out_of_band_migrations_component_nonempty" CHECK (component <> ''::text)
-    "out_of_band_migrations_deprecated_valid_version" CHECK (deprecated ~ '^(\d+)\.(\d+)\.(\d+)$'::text)
     "out_of_band_migrations_description_nonempty" CHECK (description <> ''::text)
-    "out_of_band_migrations_introduced_valid_version" CHECK (introduced ~ '^(\d+)\.(\d+)\.(\d+)$'::text)
     "out_of_band_migrations_progress_range" CHECK (progress >= 0::double precision AND progress <= 1::double precision)
     "out_of_band_migrations_team_nonempty" CHECK (team <> ''::text)
 Referenced by:
@@ -1172,13 +1201,19 @@ Stores metadata and progress about an out-of-band migration routine.
 
 **created**: The date and time the migration was inserted into the database (via an upgrade).
 
-**deprecated**: The lowest Sourcegraph version that assumes the migration has completed.
+**deprecated_version_major**: The lowest Sourcegraph version (major component) that assumes the migration has completed.
+
+**deprecated_version_minor**: The lowest Sourcegraph version (minor component) that assumes the migration has completed.
 
 **description**: A brief description about the migration.
 
 **id**: A globally unique primary key for this migration. The same key is used consistently across all Sourcegraph instances for the same migration.
 
-**introduced**: The Sourcegraph version in which this migration was first introduced.
+**introduced_version_major**: The Sourcegraph version (major component) in which this migration was first introduced.
+
+**introduced_version_minor**: The Sourcegraph version (minor component) in which this migration was first introduced.
+
+**is_enterprise**: When true, these migrations are invisible to OSS mode.
 
 **last_updated**: The date and time the migration was last updated.
 
@@ -1349,6 +1384,7 @@ Referenced by:
  metadata              | jsonb                    |           | not null | '{}'::jsonb
  private               | boolean                  |           | not null | false
  cloned                | boolean                  |           | not null | false
+ stars                 | integer                  |           |          | 
 Indexes:
     "repo_pkey" PRIMARY KEY, btree (id)
     "repo_external_unique_idx" UNIQUE, btree (external_service_type, external_service_id, external_id)
@@ -1361,6 +1397,7 @@ Indexes:
     "repo_name_idx" btree (lower(name::text) COLLATE "C")
     "repo_name_trgm" gin (lower(name::text) gin_trgm_ops)
     "repo_private" btree (private)
+    "repo_stars_idx" btree (stars DESC NULLS LAST)
     "repo_uri_idx" btree (uri)
 Check constraints:
     "check_name_nonempty" CHECK (name <> ''::citext)
@@ -1735,13 +1772,16 @@ Triggers:
 
 # Table "public.versions"
 ```
-   Column   |           Type           | Collation | Nullable | Default 
-------------+--------------------------+-----------+----------+---------
- service    | text                     |           | not null | 
- version    | text                     |           | not null | 
- updated_at | timestamp with time zone |           | not null | now()
+    Column     |           Type           | Collation | Nullable | Default 
+---------------+--------------------------+-----------+----------+---------
+ service       | text                     |           | not null | 
+ version       | text                     |           | not null | 
+ updated_at    | timestamp with time zone |           | not null | now()
+ first_version | text                     |           | not null | 
 Indexes:
     "versions_pkey" PRIMARY KEY, btree (service)
+Triggers:
+    versions_insert BEFORE INSERT ON versions FOR EACH ROW EXECUTE FUNCTION versions_insert_row_trigger()
 
 ```
 

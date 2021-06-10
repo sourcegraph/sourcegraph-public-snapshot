@@ -32,10 +32,8 @@ $default-icon-colors: $oc-grape-7, $oc-violet-7, $oc-cyan-9, $oc-indigo-7, $oc-p
 
         .theme-redesign & {
             background-color: var(--body-bg);
-
-            svg {
-                color: var(--icon-color);
-            }
+            padding-top: 0;
+            padding-bottom: 0;
         }
 
         &--open {
@@ -81,6 +79,12 @@ $default-icon-colors: $oc-grape-7, $oc-violet-7, $oc-cyan-9, $oc-indigo-7, $oc-p
 
         border-radius: 2px;
         background-color: var(--border-color);
+
+        .theme-redesign & {
+            position: static;
+            transform: none;
+            align-self: center;
+        }
     }
 
     &__list {
@@ -113,20 +117,28 @@ $default-icon-colors: $oc-grape-7, $oc-violet-7, $oc-cyan-9, $oc-indigo-7, $oc-p
         }
 
         &:hover {
-            background-color: var(--link-hover-bg-color);
+            background-color: var(--color-bg-2);
+        }
+
+        &--toggle {
+            .theme-redesign & {
+                height: auto;
+                padding: 0.25rem;
+            }
         }
 
         &--pressed {
             color: var(--body-color);
-            background-color: var(--link-hover-bg-color-2);
+            background-color: var(--color-bg-3);
 
+            // Override existing hover styles
             &:hover {
-                background-color: var(--link-hover-bg-color-2);
+                background-color: var(--color-bg-3);
             }
         }
 
         &--inactive {
-            cursor: not-allowed;
+            cursor: default;
             filter: saturate(0%);
             opacity: 0.7;
         }
@@ -148,8 +160,8 @@ $default-icon-colors: $oc-grape-7, $oc-violet-7, $oc-cyan-9, $oc-indigo-7, $oc-p
 
             &-inactive {
                 &::after {
-                    background-color: var(--disabled-action-bg-color) !important;
-                    color: var(--disabled-action-text-color) !important;
+                    background-color: var(--color-bg-3) !important;
+                    color: var(--text-muted) !important;
                 }
             }
         }
@@ -169,11 +181,18 @@ $default-icon-colors: $oc-grape-7, $oc-violet-7, $oc-cyan-9, $oc-indigo-7, $oc-p
         }
     }
 
+    // e.g. "close extensions panel", "add extensions"
+    &__aux-icon {
+        .theme-redesign & {
+            color: var(--icon-color);
+        }
+    }
+
     &__scroll {
         width: var(--action-item-width);
 
         &:hover {
-            background-color: var(--link-hover-bg-color);
+            background-color: var(--color-bg-2);
         }
     }
 }

@@ -3,8 +3,8 @@
 
 // Bootstrap configuration before Bootstrap is imported
 $border-radius: var(--border-radius);
-$border-radius-sm: var(--border-radius-sm);
-$border-radius-lg: var(--border-radius-lg);
+$border-radius-sm: var(--border-radius);
+$border-radius-lg: var(--border-radius);
 $popover-border-radius: var(--popover-border-radius);
 
 $font-size-base: 0.875rem;
@@ -26,19 +26,6 @@ $border-color: var(--border-color);
 $link-color: var(--link-color);
 $link-hover-color: var(--link-hover-color);
 
-// Alerts
-
-$alert-bg-level: 5;
-$alert-border-level: -1;
-$alert-color-level: -10;
-
-$alert-bg-level-light: -10;
-$alert-border-level-light: -9;
-$alert-color-level-light: 6;
-
-$alert-padding-y: 0.75rem;
-$alert-padding-x: 0.75rem;
-
 // Badges
 
 $badge-font-size: var(--badge-font-size);
@@ -50,6 +37,8 @@ $badge-border-radius: var(--badge-border-radius);
 // Tooltips
 
 $tooltip-bg: var(--tooltip-bg);
+$tooltip-opacity: 1;
+$tooltip-font-size: 0.75rem;
 
 // Forms
 
@@ -150,6 +139,7 @@ $badge-transition: none; // Avoids setting transitions on badges that aren't lin
 @import './highlight';
 @import './web-content';
 @import './tabs';
+@import './tooltips';
 @import '~@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css';
 
 * {

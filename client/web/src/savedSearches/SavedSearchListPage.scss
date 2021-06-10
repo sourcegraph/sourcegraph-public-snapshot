@@ -1,10 +1,7 @@
 .saved-search-list-page {
     padding: 0 0.75rem;
-
-    &__title {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 1rem;
+    .theme-redesign & {
+        padding: 0;
     }
 
     &__row {
@@ -13,6 +10,16 @@
         justify-content: space-between;
         padding: 0.75rem;
         font-weight: bold;
+
+        .theme-redesign & {
+            padding: 0;
+            &:not(:last-child) {
+                padding-bottom: 1rem;
+            }
+            + .saved-search-list-page__row {
+                padding-top: 1rem;
+            }
+        }
 
         &--icon {
             margin-right: 0.5rem;

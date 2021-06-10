@@ -6,7 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"reflect"
 	"testing"
 	"time"
@@ -85,7 +85,7 @@ func TestGetArchive(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		have, err := ioutil.ReadAll(rc)
+		have, err := io.ReadAll(rc)
 		if err != nil {
 			t.Fatal(err)
 		}

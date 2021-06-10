@@ -127,6 +127,7 @@ They are evaluated after the execution of all entries in `steps`.
 - `${{ replace "a/b/c/d" "/" "-" }}` - replaces occurrences of second argument in the first one with the last one.
 - `${{ split repository.name "/" }}` - splits the first argument into a list of strings at each occurrence of the last argument.
 - `${{ matches repository.name "github.com/my-org/terra*" }}` - matches the first argument against the glob pattern in the second argument, returning true/false.
+- `${{ "${{ repository.name }}" }}` - outputs the inner expression as a literal string, for example, to [ignore the inner set of `${{ }}`](faq.md#how-can-i-use-github-expression-syntax-literally-in-my-batch-spec)
 
 The features of Go's [`text/template`](https://golang.org/pkg/text/template/) package are also available, including conditionals and loops, since it is the underlying templating engine.
 

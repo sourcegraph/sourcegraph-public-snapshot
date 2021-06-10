@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"path"
@@ -55,6 +55,14 @@ func trace(msg string, ctx ...interface{}) {
 		log15.Info(fmt.Sprintf("TRACE %s", msg), ctx...)
 	}
 }
+
+// TokenType is the type of an access token.
+type TokenType string
+
+const (
+	TokenTypePAT   TokenType = "pat"   // "pat" represents personal access token.
+	TokenTypeOAuth TokenType = "oauth" // "oauth" represents OAuth token.
+)
 
 // ClientProvider creates GitLab API clients. Each client has separate authentication creds and a
 // separate cache, but they share an underlying HTTP client and rate limiter. Callers who want a simple
@@ -243,7 +251,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
 		// We swallow the error here, because we don't want to fail. Parsing the body
 		// is just optional to provide some more context.
-		body, _ := ioutil.ReadAll(resp.Body)
+		body, _ := io.ReadAll(resp.Body)
 		err := NewHTTPError(resp.StatusCode, body)
 		return nil, resp.StatusCode, errors.Wrap(err, fmt.Sprintf("unexpected response from GitLab API (%s)", req.URL))
 	}
@@ -308,6 +316,10 @@ func (err HTTPError) Error() string {
 
 func (err HTTPError) Unauthorized() bool {
 	return err.code == http.StatusUnauthorized
+}
+
+func (err HTTPError) Forbidden() bool {
+	return err.code == http.StatusForbidden
 }
 
 // HTTPErrorCode returns err's HTTP status code, if it is an HTTP error from

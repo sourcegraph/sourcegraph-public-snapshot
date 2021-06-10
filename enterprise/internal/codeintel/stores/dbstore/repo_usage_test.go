@@ -2,6 +2,7 @@ package dbstore
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -18,11 +19,12 @@ func TestRepoUsageStatistics(t *testing.T) {
 	db := dbtesting.GetDB(t)
 	store := testStore(db)
 
-	insertEvent := func(url, name string, count int) {
+	insertEvent := func(name string, count, repoID int) {
+		json := fmt.Sprintf(`{"repositoryId": %d}`, repoID)
 		query := sqlf.Sprintf(`
 			INSERT INTO event_logs (user_id, anonymous_user_id, source, argument, version, timestamp, name, url)
-			VALUES (1, '', 'test', '{}', 'dev', NOW(), %s, %s)
-		`, name, url)
+			VALUES (1, '', 'test', %s, 'dev', NOW(), %s, '')
+		`, json, name)
 
 		for i := 0; i < count; i++ {
 			if _, err := db.Exec(query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
@@ -32,20 +34,20 @@ func TestRepoUsageStatistics(t *testing.T) {
 	}
 
 	for _, data := range []struct {
-		URL              string
+		RepoID           int
 		NumSearchEvents  int
 		NumPreciseEvents int
 	}{
-		{"http://localhost:3080/github.com/foo/baz/-/remainder_of_path", 10, 10},
-		{"https://sourcegraph.com/github.com/foo/bar/-/remainder_of_path", 25, 20},
-		{"http://localhost:3080/gitlab.com/bar/baz/-/remainder_of_path", 15, 30},
-		{"https://sourcegraph.com/github.com/bar/bonk/-/remainder_of_path", 5, 40},
-		{"http://srcgraph.org/github.com/bonk/quux/-/remainder_of_path", 4, 50},
-		{"https://sourcegraph.com/github.com/baz/honk/-/remainder_of_path", 10, 60},  // deleted repo
-		{"https://sourcegraph.com/github.com/bonk/honk/-/remainder_of_path", 10, 60}, // no such repo
+		{1, 10, 10},
+		{2, 25, 20},
+		{3, 15, 30},
+		{4, 5, 40},
+		{5, 4, 50},
+		{6, 10, 60}, // deleted repo
+		{7, 10, 60}, // no such repo
 	} {
-		insertEvent(data.URL, "codeintel.searchHover", data.NumSearchEvents)
-		insertEvent(data.URL, "codeintel.lsifHover", data.NumPreciseEvents)
+		insertEvent("codeintel.searchHover", data.NumSearchEvents, data.RepoID)
+		insertEvent("codeintel.lsifHover", data.NumPreciseEvents, data.RepoID)
 	}
 
 	repos := []string{

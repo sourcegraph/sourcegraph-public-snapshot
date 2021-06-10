@@ -19,7 +19,8 @@ var _ authz.Provider = (*OAuthProvider)(nil)
 type OAuthProvider struct {
 	// The token is the access token used for syncing repositories from the code host,
 	// but it may or may not be a sudo-scoped.
-	token string
+	token     string
+	tokenType gitlab.TokenType
 
 	urn            string
 	clientProvider *gitlab.ClientProvider
@@ -38,11 +39,15 @@ type OAuthProviderOp struct {
 	//
 	// 🚨 SECURITY: This value contains secret information that must not be shown to non-site-admins.
 	Token string
+
+	// TokenType is the type of the access token. Default is gitlab.TokenTypePAT.
+	TokenType gitlab.TokenType
 }
 
 func newOAuthProvider(op OAuthProviderOp, cli httpcli.Doer) *OAuthProvider {
 	return &OAuthProvider{
-		token: op.Token,
+		token:     op.Token,
+		tokenType: op.TokenType,
 
 		urn:            op.URN,
 		clientProvider: gitlab.NewClientProvider(op.BaseURL, cli),
@@ -115,6 +120,13 @@ func (p *OAuthProvider) FetchRepoPerms(ctx context.Context, repo *extsvc.Reposit
 			repo.ServiceID, p.codeHost.ServiceID)
 	}
 
-	client := p.clientProvider.GetPATClient(p.token, "")
+	var client *gitlab.Client
+	switch p.tokenType {
+	case gitlab.TokenTypeOAuth:
+		client = p.clientProvider.GetOAuthClient(p.token)
+	default:
+		client = p.clientProvider.GetPATClient(p.token, "")
+	}
+
 	return listMembers(ctx, client, repo.ID)
 }

@@ -78,10 +78,14 @@ interface AuthenticatedProps extends Props {
 export const AuthenticatedBatchChangesArea = withAuthenticatedUser<AuthenticatedProps>(({ match, ...outerProps }) => (
     <Page>
         <Switch>
-            <Route render={props => <BatchChangeListPage {...outerProps} {...props} />} path={match.url} exact={true} />
+            <Route
+                render={props => <BatchChangeListPage headingElement="h1" {...outerProps} {...props} />}
+                path={match.url}
+                exact={true}
+            />
             <Route
                 path={`${match.url}/create`}
-                render={props => <CreateBatchChangePage {...outerProps} {...props} />}
+                render={props => <CreateBatchChangePage headingElement="h1" {...outerProps} {...props} />}
                 exact={true}
             />
             <Route component={NotFoundPage} key="hardcoded-key" />
@@ -96,7 +100,7 @@ export interface NamespaceBatchChangesAreaProps extends Props {
 export const NamespaceBatchChangesArea = withAuthenticatedUser<
     NamespaceBatchChangesAreaProps & { authenticatedUser: AuthenticatedUser }
 >(({ match, namespaceID, ...outerProps }) => (
-    <Page>
+    <div className="pb-3">
         <Switch>
             <Route
                 path={`${match.url}/apply/:specID`}
@@ -106,7 +110,7 @@ export const NamespaceBatchChangesArea = withAuthenticatedUser<
             />
             <Route
                 path={`${match.url}/create`}
-                render={props => <CreateBatchChangePage {...outerProps} {...props} />}
+                render={props => <CreateBatchChangePage headingElement="h2" {...outerProps} {...props} />}
             />
             <Route
                 path={`${match.url}/:batchChangeName/close`}
@@ -132,9 +136,16 @@ export const NamespaceBatchChangesArea = withAuthenticatedUser<
             />
             <Route
                 path={match.url}
-                render={props => <NamespaceBatchChangeListPage {...props} {...outerProps} namespaceID={namespaceID} />}
+                render={props => (
+                    <NamespaceBatchChangeListPage
+                        headingElement="h2"
+                        {...props}
+                        {...outerProps}
+                        namespaceID={namespaceID}
+                    />
+                )}
                 exact={true}
             />
         </Switch>
-    </Page>
+    </div>
 ))

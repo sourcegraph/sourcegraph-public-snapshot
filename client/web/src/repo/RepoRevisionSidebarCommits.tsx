@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import FileIcon from 'mdi-react/FileIcon'
 import * as React from 'react'
@@ -21,6 +22,7 @@ import { replaceRevisionInURL } from '../util/url'
 
 import { GitCommitNode } from './commits/GitCommitNode'
 import { gitCommitFragment } from './commits/RepositoryCommitsPage'
+import styles from './RepoRevisionSidebarCommits.module.scss'
 
 interface CommitNodeProps {
     node: GitCommitFields
@@ -28,15 +30,16 @@ interface CommitNodeProps {
 }
 
 const CommitNode: React.FunctionComponent<CommitNodeProps> = ({ node, location }) => (
-    <li className="list-group-item p-0">
+    <li className={classNames(styles.commitContainer, 'list-group-item p-0')}>
         <GitCommitNode
+            className={styles.commitNode}
             compact={true}
             node={node}
             hideExpandCommitMessageBody={true}
             afterElement={
                 <Link
                     to={replaceRevisionInURL(location.pathname + location.search + location.hash, node.oid)}
-                    className="ml-2"
+                    className={classNames(styles.fileIcon, 'ml-2')}
                     title="View current file at this commit"
                 >
                     <FileIcon className="icon-inline" />
@@ -57,6 +60,9 @@ export class RepoRevisionSidebarCommits extends React.PureComponent<Props> {
         return (
             <FilteredConnection<GitCommitFields, Pick<CommitNodeProps, 'location'>, CommitAncestorsConnectionFields>
                 className="list-group list-group-flush"
+                listClassName={styles.list}
+                summaryClassName={styles.summary}
+                loaderClassName={styles.loader}
                 compact={true}
                 noun="commit"
                 pluralNoun="commits"

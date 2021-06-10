@@ -179,6 +179,9 @@ func (r *RepositoryResolver) DefaultBranch(ctx context.Context) (*GitRefResolver
 		if err != nil {
 			return nil, err
 		}
+		if refName == "" {
+			return nil, nil
+		}
 		return &GitRefResolver{repo: r, name: refName}, nil
 	}
 	r.defaultBranchOnce.Do(func() {

@@ -13,7 +13,6 @@ import (
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/background/commitgraph"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/background/indexing"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/background/janitor"
 	codeintelresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	codeintelgqlresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
@@ -22,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
 func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services) error {
@@ -111,7 +111,6 @@ func newUploadHandler(ctx context.Context, db dbutil.DB) (func(internal bool) ht
 func newBackgroundRoutines(observationContext *observation.Context) (routines []goroutine.BackgroundRoutine) {
 	routines = append(routines, newCommitGraphRoutines(observationContext)...)
 	routines = append(routines, newIndexingRoutines(observationContext)...)
-	routines = append(routines, newJanitorRoutines(observationContext)...)
 	return routines
 }
 
@@ -119,6 +118,7 @@ func newCommitGraphRoutines(observationContext *observation.Context) []goroutine
 	return []goroutine.BackgroundRoutine{
 		commitgraph.NewUpdater(
 			services.dbStore,
+			services.locker,
 			services.gitserverClient,
 			config.CommitGraphUpdateTaskInterval,
 			observationContext,
@@ -127,9 +127,11 @@ func newCommitGraphRoutines(observationContext *observation.Context) []goroutine
 }
 
 func newIndexingRoutines(observationContext *observation.Context) []goroutine.BackgroundRoutine {
+	dbStore := &indexing.DBStoreShim{Store: services.dbStore}
+
 	return []goroutine.BackgroundRoutine{
 		indexing.NewIndexScheduler(
-			services.dbStore,
+			dbStore,
 			services.indexEnqueuer,
 			config.IndexBatchSize,
 			config.MinimumTimeSinceLastEnqueue,
@@ -140,7 +142,7 @@ func newIndexingRoutines(observationContext *observation.Context) []goroutine.Ba
 			observationContext,
 		),
 		indexing.NewIndexabilityUpdater(
-			services.dbStore,
+			dbStore,
 			services.gitserverClient,
 			config.MinimumSearchCount,
 			float64(config.MinimumSearchRatio)/100,
@@ -149,23 +151,13 @@ func newIndexingRoutines(observationContext *observation.Context) []goroutine.Ba
 			config.AutoIndexingTaskInterval,
 			observationContext,
 		),
-	}
-}
-
-func newJanitorRoutines(observationContext *observation.Context) []goroutine.BackgroundRoutine {
-	dbStore := &janitor.DBStoreShim{services.dbStore}
-	uploadWorkerStore := dbstore.WorkerutilUploadStore(services.dbStore, observationContext)
-	indexWorkerStore := dbstore.WorkerutilIndexStore(services.dbStore, observationContext)
-	lsifStore := services.lsifStore
-	metrics := janitor.NewMetrics(observationContext)
-
-	return []goroutine.BackgroundRoutine{
-		janitor.NewAbandonedUploadJanitor(dbStore, config.UploadTimeout, config.CleanupTaskInterval, metrics),
-		janitor.NewDeletedRepositoryJanitor(dbStore, config.CleanupTaskInterval, metrics),
-		janitor.NewHardDeleter(dbStore, lsifStore, config.CleanupTaskInterval, metrics),
-		janitor.NewRecordExpirer(dbStore, config.DataTTL, config.CleanupTaskInterval, metrics),
-		janitor.NewUploadResetter(uploadWorkerStore, config.CleanupTaskInterval, metrics, observationContext),
-		janitor.NewIndexResetter(indexWorkerStore, config.CleanupTaskInterval, metrics, observationContext),
-		janitor.NewUnknownCommitJanitor(dbStore, config.CommitResolverMinimumTimeSinceLastCheck, config.CommitResolverBatchSize, config.CommitResolverTaskInterval, metrics),
+		indexing.NewDependencyIndexingScheduler(
+			dbStore,
+			dbstore.WorkerutilDependencyIndexingJobStore(services.dbStore, observationContext),
+			services.indexEnqueuer,
+			config.DependencyIndexerSchedulerPollInterval,
+			config.DependencyIndexerSchedulerConcurrency,
+			workerutil.NewMetrics(observationContext, "codeintel_dependency_indexing_processor", nil),
+		),
 	}
 }

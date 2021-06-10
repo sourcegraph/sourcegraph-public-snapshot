@@ -95,8 +95,8 @@ describe('Search', () => {
                 await driver.page.goto(
                     `${driver.sourcegraphBaseUrl}/search?q=${encodeURIComponent(origQuery)}&patternType=literal`
                 )
-                await driver.page.waitForSelector(`[data-testid="filter-chip"][value=${JSON.stringify(filter)}]`)
-                await driver.page.click(`[data-testid="filter-chip"][value=${JSON.stringify(filter)}]`)
+                await driver.page.waitForSelector(`[data-testid="filter-link"][value=${JSON.stringify(filter)}]`)
+                await driver.page.click(`[data-testid="filter-link"][value=${JSON.stringify(filter)}]`)
                 await driver.page.waitForFunction(
                     expectedQuery => {
                         const url = new URL(document.location.href)
@@ -222,6 +222,7 @@ describe('Search', () => {
         test('Is set from the URL query parameter when loading a search-related page', async () => {
             testContext.overrideGraphQL({
                 ...commonSearchGraphQLResults,
+                RegistryExtensions: () => ({ extensionRegistry: { extensions: { error: null, nodes: [] } } }),
             })
             testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
 
@@ -229,9 +230,10 @@ describe('Search', () => {
             await driver.page.waitForSelector('#monaco-query-input')
             expect(await getSearchFieldValue(driver)).toStrictEqual('foo')
             // Field value is cleared when navigating to a non search-related page
-            await driver.page.waitForSelector('[data-testid="batch-changes"]')
-            await driver.page.click('[data-testid="batch-changes"]')
-            expect(await getSearchFieldValue(driver)).toStrictEqual('')
+            await driver.page.waitForSelector('a[href="/extensions"]')
+            await driver.page.click('a[href="/extensions"]')
+            // Search box is gone when in a non-search page
+            expect(await getSearchFieldValue(driver)).toStrictEqual(undefined)
             // Field value is restored when the back button is pressed
             await driver.page.goBack()
             expect(await getSearchFieldValue(driver)).toStrictEqual('foo')

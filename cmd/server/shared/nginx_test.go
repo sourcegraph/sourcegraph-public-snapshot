@@ -2,7 +2,7 @@ package shared
 
 import (
 	"bytes"
-	"io/ioutil"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -11,14 +11,14 @@ import (
 
 func TestNginx(t *testing.T) {
 	read := func(path string) []byte {
-		b, err := ioutil.ReadFile(path)
+		b, err := os.ReadFile(path)
 		if err != nil {
 			t.Fatal(err)
 		}
 		return b
 	}
 
-	dir, err := ioutil.TempDir("", "nginx_test")
+	dir, err := os.MkdirTemp("", "nginx_test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -33,7 +33,7 @@ func TestNginx(t *testing.T) {
 	}
 
 	count := 0
-	err = filepath.Walk("assets", func(path string, info os.FileInfo, err error) error {
+	err = filepath.Walk("assets", func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}

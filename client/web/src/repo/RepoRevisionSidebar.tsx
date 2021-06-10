@@ -68,10 +68,10 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
                     >
                         <div className={classnames('tablist-wrapper d-flex flex-1', isRedesignEnabled && 'mx-3')}>
                             <TabList>
-                                <Tab data-test-tab="files">
+                                <Tab data-tab-content="files">
                                     <span className="tablist-wrapper--tab-label">Files</span>
                                 </Tab>
-                                <Tab data-test-tab="symbols">
+                                <Tab data-tab-content="symbols">
                                     <span className="tablist-wrapper--tab-label">Symbols</span>
                                 </Tab>
                             </TabList>

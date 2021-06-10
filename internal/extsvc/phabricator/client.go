@@ -3,7 +3,6 @@ package phabricator
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"strconv"
 	"strings"
@@ -111,26 +110,26 @@ type URI struct {
 //
 
 type apiRepo struct {
-	ID          *uint64            `json:"id"`
-	PHID        *string            `json:"phid"`
+	ID          uint64             `json:"id"`
+	PHID        string             `json:"phid"`
 	Fields      apiRepoFields      `json:"fields"`
 	Attachments apiRepoAttachments `json:"attachments"`
 }
 
 type apiRepoFields struct {
-	Name         *string       `json:"name"`
-	VCS          *string       `json:"vcs"`
-	Callsign     *string       `json:"callsign"`
-	Shortname    *string       `json:"shortname"`
-	Status       *string       `json:"status"`
+	Name         string        `json:"name"`
+	VCS          string        `json:"vcs"`
+	Callsign     string        `json:"callsign"`
+	Shortname    string        `json:"shortname"`
+	Status       string        `json:"status"`
 	Policy       apiRepoPolicy `json:"policy"`
 	DateCreated  unixTime      `json:"dateCreated"`
 	DateModified unixTime      `json:"dateModified"`
 }
 
 type apiRepoPolicy struct {
-	View *string `json:"view"`
-	Edit *string `json:"edit"`
+	View string `json:"view"`
+	Edit string `json:"edit"`
 }
 
 type apiRepoAttachments struct {
@@ -138,7 +137,7 @@ type apiRepoAttachments struct {
 }
 
 type apiURIsContainer struct {
-	URIs *[]apiURI `json:"uris"`
+	URIs []apiURI `json:"uris"`
 }
 
 type apiURI struct {
@@ -166,35 +165,27 @@ type apiURIBultin struct {
 	Identifier string `json:"identifier"`
 }
 
-// UnmarshalJSON implements the json.Unmarshaler interface.
-func (r *Repo) UnmarshalJSON(data []byte) error {
-	var uris []apiURI
-	err := json.Unmarshal(data, &apiRepo{
-		ID:   &r.ID,
-		PHID: &r.PHID,
-		Fields: apiRepoFields{
-			Name:      &r.Name,
-			VCS:       &r.VCS,
-			Callsign:  &r.Callsign,
-			Shortname: &r.Shortname,
-			Status:    &r.Status,
-			Policy: apiRepoPolicy{
-				View: &r.ViewPolicy,
-				Edit: &r.EditPolicy,
-			},
-			DateCreated:  unixTime{t: &r.DateCreated},
-			DateModified: unixTime{t: &r.DateModified},
-		},
-		Attachments: apiRepoAttachments{
-			URIs: apiURIsContainer{URIs: &uris},
-		},
-	})
-	if err != nil {
-		return err
+func (a *apiRepo) ToRepo() *Repo {
+	r := &Repo{}
+
+	r.ID = a.ID
+	r.PHID = a.PHID
+	r.Name = a.Fields.Name
+	r.VCS = a.Fields.VCS
+	r.Callsign = a.Fields.Callsign
+	r.Shortname = a.Fields.Shortname
+	r.Status = a.Fields.Status
+	r.ViewPolicy = a.Fields.Policy.View
+	r.EditPolicy = a.Fields.Policy.Edit
+	if created := a.Fields.DateCreated.t; created != nil {
+		r.DateCreated = *created
+	}
+	if modified := a.Fields.DateModified.t; modified != nil {
+		r.DateModified = *modified
 	}
 
-	r.URIs = make([]*URI, 0, len(uris))
-	for _, u := range uris {
+	r.URIs = make([]*URI, 0, len(a.Attachments.URIs.URIs))
+	for _, u := range a.Attachments.URIs.URIs {
 		uri := URI{
 			ID:                u.ID,
 			PHID:              u.PHID,
@@ -217,7 +208,7 @@ func (r *Repo) UnmarshalJSON(data []byte) error {
 		r.URIs = append(r.URIs, &uri)
 	}
 
-	return nil
+	return r
 }
 
 // Cursor represents the pagination cursor on many responses.
@@ -260,8 +251,8 @@ func (c *Client) ListRepos(ctx context.Context, args ListReposArgs) ([]*Repo, *C
 	}
 
 	var res struct {
-		Data   []*Repo `json:"data"`
-		Cursor Cursor  `json:"cursor"`
+		Data   []*apiRepo `json:"data"`
+		Cursor Cursor     `json:"cursor"`
 	}
 
 	err := c.conn.CallContext(ctx, "diffusion.repository.search", &req, &res)
@@ -269,7 +260,12 @@ func (c *Client) ListRepos(ctx context.Context, args ListReposArgs) ([]*Repo, *C
 		return nil, nil, err
 	}
 
-	return res.Data, &res.Cursor, nil
+	repos := make([]*Repo, len(res.Data))
+	for i := range res.Data {
+		repos[i] = res.Data[i].ToRepo()
+	}
+
+	return repos, &res.Cursor, nil
 }
 
 // GetRawDiff retrieves the raw diff of the diff with the given id.

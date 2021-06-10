@@ -34,14 +34,22 @@ Note: If you run memory-intensive jobs, you might need to reduce the number of p
 Batch Changes does not support a declarative syntax for issues or tickets.
 However, [steps](../references/batch_spec_yaml_reference.md#steps-run) can be used to run any container. Some users have built scripts to create tickets at each apply:
 
-- [Jira tickets](https://github.com/sourcegraph/campaign-examples/tree/master/jira-tickets)
+- [Jira tickets](https://github.com/sourcegraph/batch-change-examples/tree/main/jira-tickets)
 - [GitHub issues](https://github.com/sourcegraph/batch-change-examples/tree/main/github-issues)
 
 ### What happens to the preview page if the batch spec is not applied?
 Unapplied batch specs are removed from the database after 7 days.
 
 ### Can I pull containers from private container registries in a batch change?
-When [executing a batch spec](../explanations/how_src_executes_a_batch_spec.md), `src` will attempt to pull missing docker images. If you are logged into the private container registry, it will pull from it. Also see [`steps.container`](batch_spec_yaml_reference.md#steps-container).
+Yes. When [executing a batch spec](../explanations/how_src_executes_a_batch_spec.md), `src` will attempt to pull missing docker images. If you are logged into the private container registry, it will pull from it. Also see [`steps.container`](batch_spec_yaml_reference.md#steps-container). Within the spec, if `docker pull` points to your private registry from the command line, it will work as expected. 
+
+However, outside of the spec, `src` pulls an image from Docker Hub when running in volume workspace mode. This is the default on macOS, so you will need to use one of the following three workarounds:
+
+1. Run `src` with the `-workspace bind` flag. This will be slower, but will prevent `src` from pulling the iamge.
+2. If you have a way of replicating trusted images onto your private registry, you can replicate [our image](https://hub.docker.com/r/sourcegraph/src-batch-change-volume-workspace) to your private registry. Ensure that the replicated image has the same tags, or this will fail.
+3. If you have the ability to ad hoc pull images from public Docker Hub, you can run `docker pull -a sourcegraph/src-batch-change-volume-workspace` to pull the image and its tags.
+
+> NOTE: If you choose to replicate or pull the Docker image, you should ensure that it is frequently synchronized, as a new tag is pushed each time `src` is released.
 
 ### What tool can I use for changing/refactoring `<programming-language>`?
 
@@ -50,3 +58,13 @@ Common language agnostic starting points:
 
 - `sed`, [`yq`](https://github.com/mikefarah/yq), `awk` are common utilities for changing text
 - [comby](https://comby.dev/docs/overview) is a language-aware structural code search and replace tool. It can match expressions and function blocks, and is great for more complex changes.
+
+### How can I use [GitHub expression syntax](https://docs.github.com/en/actions/reference/context-and-expression-syntax-for-github-actions) (`${{ }}` literally) in my batch spec?
+
+To tell Sourcegraph not to evaluate `${{ }}` like a normal [template delimiter](batch_spec_templating.md), you can quote it and wrap it in a second set of `${{ }}` like so:
+
+```
+${{ "${{ leave me alone! }}" }}
+```
+
+Keep in mind the context in which the inner `${{ }}` will be evaluated and be sure to escape characters as is appropriate. Check out the cheatsheet for an [example](batch_spec_cheat_sheet.md#write-a-github-actions-workflow-that-includes-github-expression-syntax) within a shell script.

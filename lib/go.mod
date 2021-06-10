@@ -5,7 +5,7 @@ go 1.16
 require (
 	github.com/alecthomas/kingpin v2.2.6+incompatible
 	github.com/alecthomas/units v0.0.0-20210208195552-ff826a37aa15 // indirect
-	github.com/efritz/go-mockgen v0.0.0-20200916004441-cfcabc111002
+	github.com/derision-test/go-mockgen v0.0.0-20210315170118-149556bc84f1 // indirect
 	github.com/efritz/pentimento v0.0.0-20190429011147-ade47d831101
 	github.com/fatih/color v1.11.0
 	github.com/go-stack/stack v1.8.0 // indirect

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
@@ -17,6 +16,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/validation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
@@ -94,7 +94,7 @@ func main() {
 }
 
 func testDirectory(ctx context.Context, indexer []string, directory string) error {
-	files, err := ioutil.ReadDir(directory)
+	files, err := os.ReadDir(directory)
 	if err != nil {
 		return err
 	}
@@ -277,7 +277,7 @@ func validateTestCases(directory string, bundle *semantic.GroupedBundleDataMaps)
 }
 
 func runOneTestFile(file string, bundle *semantic.GroupedBundleDataMaps) (testFileResult, error) {
-	doc, err := ioutil.ReadFile(file)
+	doc, err := os.ReadFile(file)
 	if err != nil {
 		return testFileResult{}, errors.Wrap(err, "Failed to read file")
 	}

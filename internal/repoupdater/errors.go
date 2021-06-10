@@ -12,7 +12,7 @@ type ErrNotFound struct {
 	IsNotFound bool
 }
 
-// ErrNotFound returns true if the repo does Not exist.
+// NotFound returns true if the repo does Not exist.
 func (e *ErrNotFound) NotFound() bool {
 	return e.IsNotFound
 }
@@ -43,7 +43,7 @@ type ErrTemporary struct {
 	IsTemporary bool
 }
 
-// ErrTemporary is when the repository was reported as being temporarily
+// Temporary is when the repository was reported as being temporarily
 // unavailable.
 func (e *ErrTemporary) Temporary() bool {
 	return e.IsTemporary

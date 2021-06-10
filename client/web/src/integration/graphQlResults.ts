@@ -50,6 +50,7 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
                     },
                     settingsURL: '/site-admin/global-settings',
                     viewerCanAdminister: true,
+                    allowSiteSettingsEdits: true,
                 },
             ],
             final: JSON.stringify({}),
@@ -203,5 +204,8 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
             nodes: [],
             pageInfo: { hasNextPage: false, endCursor: null },
         },
+    }),
+    FetchFeatureFlags: () => ({
+        viewerFeatureFlags: [],
     }),
 }

@@ -5,7 +5,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -206,7 +205,7 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 					if err != nil {
 						t.Fatal(err)
 					}
-					err = ioutil.WriteFile(fixtureFile, data, 0666)
+					err = os.WriteFile(fixtureFile, data, 0666)
 					if err != nil {
 						t.Fatal(err)
 					}

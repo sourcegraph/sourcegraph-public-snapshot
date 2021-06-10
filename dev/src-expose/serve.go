@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"html/template"
-	"io/ioutil"
+	"io/fs"
 	"log"
 	"net"
 	"net/http"
@@ -169,7 +169,7 @@ func (d httpDir) Open(name string) (http.File, error) {
 func (s *Serve) configureRepos() []string {
 	var gitDirs []string
 
-	err := filepath.Walk(s.Root, func(path string, fi os.FileInfo, fileErr error) error {
+	err := filepath.Walk(s.Root, func(path string, fi fs.FileInfo, fileErr error) error {
 		if fileErr != nil {
 			s.Info.Printf("WARN: ignoring error searching %s: %v", path, fileErr)
 			return nil
@@ -257,7 +257,7 @@ var postUpdateHook = []byte("#!/bin/sh\nexec git update-server-info\n")
 // for background.
 func configurePostUpdateHook(logger *log.Logger, gitDir string) error {
 	postUpdatePath := filepath.Join(gitDir, "hooks", "post-update")
-	if b, _ := ioutil.ReadFile(postUpdatePath); bytes.Equal(b, postUpdateHook) {
+	if b, _ := os.ReadFile(postUpdatePath); bytes.Equal(b, postUpdateHook) {
 		return nil
 	}
 
@@ -270,7 +270,7 @@ func configurePostUpdateHook(logger *log.Logger, gitDir string) error {
 	if err := os.MkdirAll(filepath.Dir(postUpdatePath), 0755); err != nil {
 		return errors.Wrap(err, "create git hooks dir")
 	}
-	if err := ioutil.WriteFile(postUpdatePath, postUpdateHook, 0755); err != nil {
+	if err := os.WriteFile(postUpdatePath, postUpdateHook, 0755); err != nil {
 		return errors.Wrap(err, "setting post-update hook")
 	}
 

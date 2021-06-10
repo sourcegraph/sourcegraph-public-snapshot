@@ -180,11 +180,13 @@ const StatusBarItem: React.FunctionComponent<
 
     const noop = !command
 
+    const interactive = Boolean(command || statusBarItem.tooltip)
+
     return (
         <ButtonLink
             className={classNames(
                 `${className}__item h-100 d-flex align-items-center px-1 text-decoration-none`,
-                statusBarItem.tooltip && `${className}__item--tooltipped`,
+                interactive && `${className}__item--interactive`,
                 noop && `${className}__item--noop`
             )}
             data-tooltip={statusBarItem.tooltip}

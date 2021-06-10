@@ -204,8 +204,8 @@ func testSyncerSync(t *testing.T, s *repos.Store) func(*testing.T) {
 				err:  "<nil>",
 			},
 			testCase{
-				// If the source is unauthorized we should treat this as if zero repos were returned as it indicates
-				// that the source no longer has access to its repos
+				// If the source is unauthorized we should treat this as if zero repos were
+				// returned as it indicates that the source no longer has access to its repos
 				name:    string(tc.repo.Name) + "/unauthorized",
 				sourcer: repos.NewFakeSourcer(&repos.ErrUnauthorized{}),
 				store:   s,
@@ -218,6 +218,22 @@ func testSyncerSync(t *testing.T, s *repos.Store) func(*testing.T) {
 				)}},
 				svcs: []*types.ExternalService{tc.svc},
 				err:  "bad credentials",
+			},
+			testCase{
+				// If the source is forbidden we should treat this as if zero repos were returned
+				// as it indicates that the source no longer has access to its repos
+				name:    string(tc.repo.Name) + "/forbidden",
+				sourcer: repos.NewFakeSourcer(&repos.ErrForbidden{}),
+				store:   s,
+				stored: types.Repos{tc.repo.With(
+					types.Opt.RepoSources(tc.svc.URN()),
+				)},
+				now: clock.Now,
+				diff: repos.Diff{Deleted: types.Repos{tc.repo.With(
+					types.Opt.RepoSources(tc.svc.URN(), svcdup.URN()),
+				)}},
+				svcs: []*types.ExternalService{tc.svc},
+				err:  "forbidden",
 			},
 			testCase{
 				// If the source account has been suspended we should treat this as if zero repos were returned as it indicates
@@ -587,6 +603,7 @@ func testSyncRepo(t *testing.T, s *repos.Store) func(*testing.T) {
 		Description: "The description",
 		Archived:    false,
 		Fork:        false,
+		Stars:       100,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
 			ServiceType: extsvc.TypeGitHub,
@@ -599,11 +616,12 @@ func testSyncRepo(t *testing.T, s *repos.Store) func(*testing.T) {
 			},
 		},
 		Metadata: &github.Repository{
-			ID:            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-			URL:           "github.com/foo/bar",
-			DatabaseID:    1234,
-			Description:   "The description",
-			NameWithOwner: "foo/bar",
+			ID:             "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+			URL:            "github.com/foo/bar",
+			DatabaseID:     1234,
+			Description:    "The description",
+			NameWithOwner:  "foo/bar",
+			StargazerCount: 100,
 		},
 	}
 
@@ -619,7 +637,12 @@ func testSyncRepo(t *testing.T, s *repos.Store) func(*testing.T) {
 	}, {
 		name:    "update",
 		sourced: repo,
-		stored:  types.Repos{repo.With(types.Opt.RepoCreatedAt(clock.Time(2)))},
+		stored: types.Repos{
+			repo.With(
+				types.Opt.RepoCreatedAt(clock.Time(2)),
+				func(r *types.Repo) { r.Stars = 0 },
+			),
+		},
 		assert: types.Assert.ReposEqual(repo.With(
 			types.Opt.RepoModifiedAt(clock.Time(2)),
 			types.Opt.RepoCreatedAt(clock.Time(2)))),

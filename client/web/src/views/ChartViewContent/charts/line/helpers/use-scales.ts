@@ -43,7 +43,7 @@ interface UseScalesOutput {
 }
 
 /**
- * Hook to generate d3 scales according chart configuration.
+ * Hook to generate d3 scales according to chart configuration.
  */
 export function useScales<Datum>(props: UseScalesProps<Datum>): UseScalesOutput {
     const { config, accessors, width, height, data } = props

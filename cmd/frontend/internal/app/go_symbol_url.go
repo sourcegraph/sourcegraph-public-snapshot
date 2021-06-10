@@ -9,30 +9,27 @@ import (
 	"go/doc"
 	"go/token"
 	"io"
+	"io/fs"
 	"log"
 	"net/http"
 	"net/url"
-	"os"
 	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
 
-	"github.com/sourcegraph/ctxvfs"
-	"golang.org/x/tools/go/buildutil"
-
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/vfsutil"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-
-	"github.com/sourcegraph/go-lsp"
-
 	"github.com/hashicorp/go-multierror"
+	"github.com/sourcegraph/ctxvfs"
+	"github.com/sourcegraph/go-lsp"
+	"golang.org/x/tools/go/buildutil"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/gosrc"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/vfsutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
 // serveGoSymbolURL handles Go symbol URLs (e.g.,
@@ -278,18 +275,18 @@ func parseFiles(fset *token.FileSet, bctx *build.Context, importPath, srcDir str
 	return pkg, errs
 }
 
-func PrepareContext(bctx *build.Context, ctx context.Context, fs ctxvfs.FileSystem) {
+func PrepareContext(bctx *build.Context, ctx context.Context, vfs ctxvfs.FileSystem) {
 	// HACK: in the all Context's methods below we are trying to convert path to virtual one (/foo/bar/..)
 	// because some code may pass OS-specific arguments.
 	// See golang.org/x/tools/go/buildutil/allpackages.go which uses `filepath` for example
 
 	bctx.OpenFile = func(path string) (io.ReadCloser, error) {
 		path = filepath.ToSlash(path)
-		return fs.Open(ctx, path)
+		return vfs.Open(ctx, path)
 	}
 	bctx.IsDir = func(path string) bool {
 		path = filepath.ToSlash(path)
-		fi, err := fs.Stat(ctx, path)
+		fi, err := vfs.Stat(ctx, path)
 		return err == nil && fi.Mode().IsDir()
 	}
 	bctx.HasSubdir = func(root, dir string) (rel string, ok bool) {
@@ -301,9 +298,9 @@ func PrepareContext(bctx *build.Context, ctx context.Context, fs ctxvfs.FileSyst
 		}
 		return PathTrimPrefix(dir, root), true
 	}
-	bctx.ReadDir = func(path string) ([]os.FileInfo, error) {
+	bctx.ReadDir = func(path string) ([]fs.FileInfo, error) {
 		path = filepath.ToSlash(path)
-		return fs.ReadDir(ctx, path)
+		return vfs.ReadDir(ctx, path)
 	}
 	bctx.IsAbsPath = func(path string) bool {
 		path = filepath.ToSlash(path)

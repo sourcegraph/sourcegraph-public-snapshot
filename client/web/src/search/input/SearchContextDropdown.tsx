@@ -61,7 +61,7 @@ function getHighlightTourStep(onClose: () => void): HTMLElement {
         </div>
         <div class="mt-2 mb-2">Search just the code you care about with search contexts.</div>
         <div>
-            <a href="https://docs.sourcegraph.com/code_search/explanations/features#search-contexts-experimental" target="_blank">
+            <a href="https://docs.sourcegraph.com/code_search/explanations/features#search-contexts" target="_blank">
                 Learn more
             </a>
         </div>
@@ -233,7 +233,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
                 </code>
             </DropdownToggle>
             <DropdownMenu positionFixed={true} className="search-context-dropdown__menu">
-                {isSourcegraphDotCom && (!hasUserAddedExternalServices || !hasUserAddedRepositories) ? (
+                {isSourcegraphDotCom && !hasUserAddedRepositories ? (
                     <SearchContextCtaPrompt
                         telemetryService={props.telemetryService}
                         authenticatedUser={authenticatedUser}
