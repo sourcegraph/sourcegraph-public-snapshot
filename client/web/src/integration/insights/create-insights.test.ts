@@ -1,5 +1,7 @@
 import assert from 'assert'
 
+import delay from 'delay'
+
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { emptyResponse } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
@@ -12,7 +14,6 @@ import {
     LangStatsInsightContent,
 } from './utils/insight-mock-data'
 import { overrideGraphQLExtensions } from './utils/override-graphql-with-extensions'
-import delay from 'delay'
 
 describe('Code insight create insight page', () => {
     let driver: Driver
