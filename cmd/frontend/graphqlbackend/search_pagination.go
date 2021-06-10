@@ -66,7 +66,7 @@ func (r *SearchResultsResolver) PageInfo() *graphqlutil.PageInfo {
 //    a timeout, searcing result types in parallel) is fundamentally incompatible
 //    with the absolute ordering we do here for pagination.
 //
-func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchResultsResolver, err error) {
+func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchResults, err error) {
 	start := time.Now()
 	if r.Pagination == nil {
 		panic("never here: this method should never be called in this state")
@@ -114,7 +114,7 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 	resolved, err := r.determineRepos(ctx, tr, start)
 	if err != nil {
 		if alert, err := errorToAlert(err); alert != nil {
-			return &SearchResultsResolver{db: r.db, SearchResults: alert.wrapResults()}, err
+			return alert.wrapResults(), err
 		}
 		return nil, err
 	}
@@ -177,14 +177,11 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 		"Finished", cursor.Finished,
 	)
 
-	return &SearchResultsResolver{
-		db: r.db,
-		SearchResults: &SearchResults{
-			Matches: results,
-			Stats:   common,
-			Cursor:  cursor,
-			Alert:   alert,
-		},
+	return &SearchResults{
+		Matches: results,
+		Stats:   common,
+		Cursor:  cursor,
+		Alert:   alert,
 	}, nil
 }
 

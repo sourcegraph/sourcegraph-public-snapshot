@@ -461,7 +461,7 @@ func LogSearchLatency(ctx context.Context, db dbutil.DB, si *run.SearchInputs, d
 
 // evaluateLeaf performs a single search operation and corresponds to the
 // evaluation of leaf expression in a query.
-func (r *searchResolver) evaluateLeaf(ctx context.Context) (_ *SearchResultsResolver, err error) {
+func (r *searchResolver) evaluateLeaf(ctx context.Context) (_ *SearchResults, err error) {
 	tr, ctx := trace.New(ctx, "evaluateLeaf", "")
 	defer func() {
 		tr.SetError(err)
@@ -474,7 +474,7 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (_ *SearchResultsReso
 		if count := r.Query.Count(); count != nil {
 			stableResultCount = int32(*count)
 			if stableResultCount > maxSearchResultsPerPaginatedRequest {
-				return alertForQuery(r.rawQuery(), fmt.Errorf("Stable searches are limited to at max count:%d results. Consider removing 'stable:', narrowing the search with 'repo:', or using the paginated search API.", maxSearchResultsPerPaginatedRequest)).wrap(r.db), nil
+				return alertForQuery(r.rawQuery(), fmt.Errorf("Stable searches are limited to at max count:%d results. Consider removing 'stable:', narrowing the search with 'repo:', or using the paginated search API.", maxSearchResultsPerPaginatedRequest)).wrapResults(), nil
 			}
 		}
 
@@ -524,7 +524,7 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (_ *SearchResultsReso
 
 // unionMerge performs a merge of file match results, merging line matches when
 // they occur in the same file.
-func unionMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
+func unionMerge(left, right *SearchResults) *SearchResults {
 	dedup := result.NewDeduper()
 
 	// Add results to maps for deduping
@@ -541,7 +541,7 @@ func unionMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 }
 
 // union returns the union of two sets of search results and merges common search data.
-func union(left, right *SearchResultsResolver) *SearchResultsResolver {
+func union(left, right *SearchResults) *SearchResults {
 	if right == nil {
 		return left
 	}
@@ -559,7 +559,7 @@ func union(left, right *SearchResultsResolver) *SearchResultsResolver {
 
 // intersectMerge performs a merge of file match results, merging line matches
 // for files contained in both result sets, and updating counts.
-func intersectMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
+func intersectMerge(left, right *SearchResults) *SearchResults {
 	rightFileMatches := make(map[result.Key]*result.FileMatch)
 	for _, r := range right.Matches {
 		if fileMatch, ok := r.(*result.FileMatch); ok {
@@ -589,7 +589,7 @@ func intersectMerge(left, right *SearchResultsResolver) *SearchResultsResolver {
 
 // intersect returns the intersection of two sets of search result content
 // matches, based on whether a single file path contains content matches in both sets.
-func intersect(left, right *SearchResultsResolver) *SearchResultsResolver {
+func intersect(left, right *SearchResults) *SearchResults {
 	if left == nil || right == nil {
 		return nil
 	}
@@ -604,7 +604,7 @@ func intersect(left, right *SearchResultsResolver) *SearchResultsResolver {
 // and likely yields fewer than N results). If the intersection does not yield N
 // results, and is not exhaustive for every expression, we rerun the search by
 // doubling count again.
-func (r *searchResolver) evaluateAnd(ctx context.Context, q query.Basic) (*SearchResultsResolver, error) {
+func (r *searchResolver) evaluateAnd(ctx context.Context, q query.Basic) (*SearchResults, error) {
 	start := time.Now()
 
 	// Invariant: this function is only reachable from callers that
@@ -613,8 +613,8 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, q query.Basic) (*Searc
 
 	var (
 		err        error
-		result     *SearchResultsResolver
-		termResult *SearchResultsResolver
+		result     *SearchResults
+		termResult *SearchResults
 	)
 
 	// The number of results we want. Note that for intersect, this number
@@ -654,7 +654,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, q query.Basic) (*Searc
 			return nil, err
 		}
 		if result == nil {
-			return &SearchResultsResolver{}, nil
+			return &SearchResults{}, nil
 		}
 		if len(result.Matches) == 0 {
 			// result might contain an alert.
@@ -667,7 +667,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, q query.Basic) (*Searc
 			case <-ctx.Done():
 				usedTime := time.Since(start)
 				suggestTime := longer(2, usedTime)
-				return alertForTimeout(usedTime, suggestTime, r).wrap(r.db), nil
+				return alertForTimeout(usedTime, suggestTime, r).wrapResults(), nil
 			default:
 			}
 
@@ -676,7 +676,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, q query.Basic) (*Searc
 				return nil, err
 			}
 			if termResult == nil {
-				return &SearchResultsResolver{}, nil
+				return &SearchResults{}, nil
 			}
 			if len(termResult.Matches) == 0 {
 				// termResult might contain an alert.
@@ -696,7 +696,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, q query.Basic) (*Searc
 		tryCount *= 2
 		if tryCount > maxTryCount {
 			// We've capped out what we're willing to do, throw alert.
-			return alertForCappedAndExpression().wrap(r.db), nil
+			return alertForCappedAndExpression().wrapResults(), nil
 		}
 	}
 	result.Stats.IsLimitHit = !exhausted
@@ -707,7 +707,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, q query.Basic) (*Searc
 // expressions that are ORed together by searching for each subexpression. If
 // the maximum number of results are reached after evaluating a subexpression,
 // we shortcircuit and return results immediately.
-func (r *searchResolver) evaluateOr(ctx context.Context, q query.Basic) (*SearchResultsResolver, error) {
+func (r *searchResolver) evaluateOr(ctx context.Context, q query.Basic) (*SearchResults, error) {
 	// Invariant: this function is only reachable from callers that
 	// guarantee a root node with one or more operands.
 	operands := q.Pattern.(query.Operator).Operands
@@ -717,7 +717,7 @@ func (r *searchResolver) evaluateOr(ctx context.Context, q query.Basic) (*Search
 		wantCount, _ = strconv.Atoi(count) // Invariant: count is already validated
 	}
 
-	result := &SearchResultsResolver{}
+	result := &SearchResults{}
 	for _, term := range operands {
 		new, err := r.evaluatePatternExpression(ctx, q.MapPattern(term))
 		if err != nil {
@@ -749,11 +749,11 @@ func (r *searchResolver) setQuery(q []query.Node) {
 }
 
 // evaluatePatternExpression evaluates a search pattern containing and/or expressions.
-func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.Basic) (*SearchResultsResolver, error) {
+func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.Basic) (*SearchResults, error) {
 	switch term := q.Pattern.(type) {
 	case query.Operator:
 		if len(term.Operands) == 0 {
-			return &SearchResultsResolver{}, nil
+			return &SearchResults{}, nil
 		}
 
 		switch term.Kind {
@@ -770,14 +770,14 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.
 		return r.evaluateLeaf(ctx)
 	case query.Parameter:
 		// evaluatePatternExpression does not process Parameter nodes.
-		return &SearchResultsResolver{}, nil
+		return &SearchResults{}, nil
 	}
 	// Unreachable.
 	return nil, fmt.Errorf("unrecognized type %T in evaluatePatternExpression", q.Pattern)
 }
 
 // evaluate evaluates all expressions of a search query.
-func (r *searchResolver) evaluate(ctx context.Context, q query.Basic) (*SearchResultsResolver, error) {
+func (r *searchResolver) evaluate(ctx context.Context, q query.Basic) (*SearchResults, error) {
 	if q.Pattern == nil {
 		r.setQuery(query.ToNodes(q.Parameters))
 		return r.evaluateLeaf(ctx)
@@ -876,7 +876,8 @@ func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolve
 
 func (r *searchResolver) resultsBatch(ctx context.Context) (*SearchResultsResolver, error) {
 	start := time.Now()
-	srr, err := r.resultsRecursive(ctx, r.Plan)
+	sr, err := r.resultsRecursive(ctx, r.Plan)
+	srr := r.resultsToResolver(sr)
 	r.logBatch(ctx, srr, start, err)
 	return srr, err
 }
@@ -897,7 +898,18 @@ func (r *searchResolver) resultsStreaming(ctx context.Context) (*SearchResultsRe
 		}
 		return srr, err
 	}
-	return r.resultsRecursive(ctx, r.Plan)
+	sr, err := r.resultsRecursive(ctx, r.Plan)
+	srr := r.resultsToResolver(sr)
+	return srr, err
+}
+
+func (r *searchResolver) resultsToResolver(results *SearchResults) *SearchResultsResolver {
+	return &SearchResultsResolver{
+		SearchResults: results,
+		limit:         r.MaxResults(),
+		db:            r.db,
+		UserSettings:  r.UserSettings,
+	}
 }
 
 func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, error) {
@@ -926,7 +938,7 @@ func DetermineStatusForLogs(srr *SearchResultsResolver, err error) string {
 	}
 }
 
-func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) (srr *SearchResultsResolver, err error) {
+func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) (sr *SearchResults, err error) {
 	tr, ctx := trace.New(ctx, "Results", "")
 	defer func() {
 		tr.SetError(err)
@@ -943,7 +955,7 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 	}
 
 	for _, q := range plan {
-		predicatePlan, err := substitutePredicates(q, func(pred query.Predicate) (*SearchResultsResolver, error) {
+		predicatePlan, err := substitutePredicates(q, func(pred query.Predicate) (*SearchResults, error) {
 			// Disable streaming for subqueries so we can use
 			// the results rather than sending them back to the caller
 			orig := r.stream
@@ -977,25 +989,18 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 
 		if newResult != nil {
 			newResult.Matches = selectResults(newResult.Matches, q)
-			srr = union(srr, newResult)
-			if len(srr.Matches) > wantCount {
-				srr.Matches = srr.Matches[:wantCount]
+			sr = union(sr, newResult)
+			if len(sr.Matches) > wantCount {
+				sr.Matches = sr.Matches[:wantCount]
 				break
 			}
 		}
 	}
 
-	if srr != nil {
-		r.sortResults(srr.Matches)
+	if sr != nil {
+		r.sortResults(sr.Matches)
 	}
-	// copy userSettings from searchResolver to SearchResultsResolver
-	if srr != nil {
-		srr.UserSettings = r.UserSettings
-	}
-	if srr == nil {
-		srr = &SearchResultsResolver{db: r.db}
-	}
-	return srr, err
+	return sr, err
 }
 
 // searchResultsToRepoNodes converts a set of search results into repository nodes
@@ -1020,7 +1025,7 @@ func searchResultsToRepoNodes(matches []result.Match) ([]query.Node, error) {
 // resultsWithTimeoutSuggestion calls doResults, and in case of deadline
 // exceeded returns a search alert with a did-you-mean link for the same
 // query with a longer timeout.
-func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*SearchResultsResolver, error) {
+func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*SearchResults, error) {
 	start := time.Now()
 	rr, err := r.doResults(ctx, result.TypeEmpty)
 
@@ -1031,20 +1036,20 @@ func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*Sea
 	// In this case, or if we got a partial timeout where ALL repositories timed out,
 	// we do not return partial results and instead display a timeout alert.
 	shouldShowAlert := err == context.DeadlineExceeded
-	if err == nil && rr.allReposTimedout() {
+	if err == nil && rr.Stats.AllReposTimedOut() {
 		shouldShowAlert = true
 	}
 	if shouldShowAlert {
 		usedTime := time.Since(start)
 		suggestTime := longer(2, usedTime)
-		return alertForTimeout(usedTime, suggestTime, r).wrap(r.db), nil
+		return alertForTimeout(usedTime, suggestTime, r).wrapResults(), nil
 	}
 	return rr, err
 }
 
 // substitutePredicates replaces all the predicates in a query with their expanded form. The predicates
 // are expanded using the doExpand function.
-func substitutePredicates(q query.Basic, evaluate func(query.Predicate) (*SearchResultsResolver, error)) (query.Plan, error) {
+func substitutePredicates(q query.Basic, evaluate func(query.Predicate) (*SearchResults, error)) (query.Plan, error) {
 	var topErr error
 	success := false
 	newQ := query.MapParameter(q.ToParseTree(), func(field, value string, neg bool, ann query.Annotation) query.Node {
@@ -1197,10 +1202,11 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 	for {
 		// Query search results.
 		var err error
-		v, err = r.doResults(ctx, result.TypeEmpty)
+		results, err := r.doResults(ctx, result.TypeEmpty)
 		if err != nil {
 			return nil, err // do not cache errors.
 		}
+		v = r.resultsToResolver(results)
 		if v.MatchCount() > 0 {
 			break
 		}
@@ -1342,7 +1348,7 @@ func (r *searchResolver) isGlobalSearch() bool {
 // regardless of what `type:` is specified in the query string.
 //
 // Partial results AND an error may be returned.
-func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.Types) (_ *SearchResultsResolver, err error) {
+func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.Types) (_ *SearchResults, err error) {
 	tr, ctx := trace.New(ctx, "doResults", r.rawQuery())
 	defer func() {
 		tr.SetError(err)
@@ -1461,7 +1467,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 	resolved, err := r.determineRepos(ctx, tr, start)
 	if err != nil {
 		if alert, err := errorToAlert(err); alert != nil {
-			return &SearchResultsResolver{db: r.db, SearchResults: alert.wrapResults()}, err
+			return alert.wrapResults(), err
 		}
 		return nil, err
 	}
@@ -1572,16 +1578,11 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 
 	r.sortResults(matches)
 
-	resultsResolver := SearchResultsResolver{
-		db: r.db,
-		SearchResults: &SearchResults{
-			Matches: matches,
-			Stats:   common,
-			Alert:   alert,
-		},
-		limit: limit,
-	}
-	return &resultsResolver, err
+	return &SearchResults{
+		Matches: matches,
+		Stats:   common,
+		Alert:   alert,
+	}, err
 }
 
 // isContextError returns true if ctx.Err() is not nil or if err
