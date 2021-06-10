@@ -1,6 +1,6 @@
 import { ComboboxList, ComboboxOption, ComboboxOptionText } from '@reach/combobox'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
-import React, { ReactElement } from 'react'
+import React from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
@@ -22,7 +22,7 @@ interface RepositorySuggestion {
 /**
  * Renders suggestion panel for repositories combobox component.
  */
-export function SuggestionsPanel(props: SuggestionsPanelProps): ReactElement {
+export const SuggestionsPanel: React.FunctionComponent<SuggestionsPanelProps> = props => {
     const { value, suggestions } = props
 
     if (suggestions === undefined) {
