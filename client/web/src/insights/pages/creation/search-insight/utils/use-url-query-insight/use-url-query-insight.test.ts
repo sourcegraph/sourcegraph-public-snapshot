@@ -30,5 +30,29 @@ describe('getInsightDataFromQuery', () => {
                 seriesQuery: 'context:global test patterntype:literal',
             })
         })
+
+        it('with multiple repo: filters regexp literals and "test" pattern query', () => {
+            const queryString =
+                'context:global test repo:^github\\.com/sourcegraph/sourcegraph$|^github\\.com/sourcegraph/about patterntype:literal'
+
+            const result = getInsightDataFromQuery(queryString)
+
+            expect(result).toStrictEqual({
+                repositories: 'github.com/sourcegraph/sourcegraph, github.com/sourcegraph/about',
+                seriesQuery: 'context:global test patterntype:literal',
+            })
+        })
+
+        it('with repo: filters and "repo: " pattern query', () => {
+            const queryString =
+                'context:global "repo: " repo:^github\\.com/sourcegraph/sourcegraph$ patterntype:literal'
+
+            const result = getInsightDataFromQuery(queryString)
+
+            expect(result).toStrictEqual({
+                repositories: 'github.com/sourcegraph/sourcegraph',
+                seriesQuery: 'context:global "repo: " patterntype:literal',
+            })
+        })
     })
 })

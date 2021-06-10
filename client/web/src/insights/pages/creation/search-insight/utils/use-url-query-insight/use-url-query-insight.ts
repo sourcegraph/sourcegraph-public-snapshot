@@ -1,9 +1,40 @@
 import { useMemo } from 'react'
 
+import { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
+import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
+import { Filter, Token } from '@sourcegraph/shared/src/search/query/token'
+
 import { DEFAULT_ACTIVE_COLOR } from '../../components/form-color-input/FormColorInput'
 import { createDefaultEditSeries } from '../../components/search-insight-creation-content/hooks/use-editable-series'
 import { INITIAL_INSIGHT_VALUES } from '../../components/search-insight-creation-content/initial-insight-values'
 import { CreateInsightFormFields } from '../../types'
+
+/**
+ * Type guard for repo: filter token.
+ *
+ * @param token - query parsed lexical token
+ */
+const isRepoFilter = (token: Token): token is Filter => token.type === 'filter' && token.field.value === 'repo'
+
+/**
+ * Generate query string without extra whitespaces.
+ */
+const getSanitizedQueryString = (query: string): string => query.replace(/\s+/g, ' ').trim()
+
+/**
+ * Generate repositories string value without special reg exp
+ * characters and extra whitespaces.
+ */
+const getSanitizedRepositoriesString = (repositories: string[]): string =>
+    repositories
+        .map(repo =>
+            repo
+                // Remove special regexp characters like ^\$
+                .replace(/(\^)|(\$)|(\\)/gi, '')
+                // Remove whitespaces at the start and end
+                .trim()
+        )
+        .join(', ')
 
 export interface InsightData {
     repositories: string
@@ -18,26 +49,42 @@ export interface InsightData {
  * Exported for testing only.
  */
 export function getInsightDataFromQuery(query: string | null): InsightData | null {
-    if (!query) {
+    const sequence = scanSearchQuery(query ?? '')
+
+    if (!query || sequence.type === 'error') {
         return null
     }
 
-    const queryWithoutRepo = query.replaceAll(/repo:.+?($|\s)/gi, '')
-    const repos = query.match(/repo:.+?($|\s)/gi)
+    const tokens = Array.isArray(sequence.term) ? sequence.term : [sequence.term]
+    const repositories = []
+
+    /** Find all repo: filters and get their values for insight repositories field */
+    for (const token of tokens) {
+        if (isRepoFilter(token)) {
+            const repoValue = token.value?.value
+
+            if (repoValue) {
+                /**
+                 * Split repo value in order to support case with multiple repo values
+                 * in repo: filter.
+                 *
+                 * Example repo:^github\.com/org/repo-1$ | ^github\.com/org/repo-2$
+                 */
+                repositories.push(...repoValue.split('|'))
+            }
+        }
+    }
+
+    /**
+     * Generate a string query from tokens without repo: filters for the insight
+     * query field.
+     */
+    const tokensWithoutRepoFilters = tokens.filter(token => !isRepoFilter(token))
+    const humanReadableQueryString = stringHuman(tokensWithoutRepoFilters)
 
     return {
-        seriesQuery: queryWithoutRepo.replace(/\s+/g, ' ').trim(),
-        repositories:
-            repos !== null
-                ? repos
-                      .map(repo =>
-                          repo
-                              .replace(/(repo:)|(\^)|(\$)|(\\)/gi, '')
-                              .replace(/\s+/g, ' ')
-                              .trim()
-                      )
-                      .join(', ')
-                : '',
+        seriesQuery: getSanitizedQueryString(humanReadableQueryString),
+        repositories: getSanitizedRepositoriesString(repositories),
     }
 }
 
