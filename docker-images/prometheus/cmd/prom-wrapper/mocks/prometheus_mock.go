@@ -4,10 +4,11 @@ package mocks
 
 import (
 	"context"
-	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
-	model "github.com/prometheus/common/model"
 	"sync"
 	"time"
+
+	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
+	model "github.com/prometheus/common/model"
 )
 
 // MockAPI is a mock implementation of the API interface (from the package

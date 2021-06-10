@@ -4,6 +4,10 @@ package resolvers
 
 import (
 	"context"
+	"regexp"
+	"sync"
+	"time"
+
 	enqueuer "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
 	gitserver "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	dbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
@@ -13,9 +17,6 @@ import (
 	protocol "github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	config "github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	semantic "github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
-	"regexp"
-	"sync"
-	"time"
 )
 
 // MockDBStore is a mock implementation of the DBStore interface (from the
