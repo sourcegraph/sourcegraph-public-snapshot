@@ -202,8 +202,7 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                     ) : (
                         <DefaultExtensionIcon className={iconClassName} />
                     )}
-                    {/* Don't show experimental badge for featured extensions. */}
-                    {!featured && extension.registryExtension?.isWorkInProgress && (
+                    {extension.registryExtension?.isWorkInProgress && (
                         <ExtensionStatusBadge
                             viewerCanAdminister={extension.registryExtension.viewerCanAdminister}
                             className="extension-card__badge"
