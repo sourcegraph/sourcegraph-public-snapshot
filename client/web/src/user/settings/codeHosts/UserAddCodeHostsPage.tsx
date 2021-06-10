@@ -12,6 +12,7 @@ import { AddExternalServiceOptions } from '../../../components/externalServices/
 import { PageTitle } from '../../../components/PageTitle'
 import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
 import { SourcegraphContext } from '../../../jscontext'
+import { useGitHubScopeContext } from '../../../site/GitHubCodeHostScopeAlert/GithubScopeProvider'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
 import { githubRepoScopeRequired } from '../cloud-ga'
@@ -64,7 +65,15 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     onUserExternalServicesOrRepositoriesUpdate,
 }) => {
     const [statusOrError, setStatusOrError] = useState<Status>()
-    const [updateAuthRequired, setUpdateAuthRequired] = useState(false)
+    const { scopes: gitHubScopes, setScopes: setGitHubScopes } = useGitHubScopeContext()
+
+    // If we have a GitHub service, check whether we need to prompt the user to
+    // update their scope
+    const isGitHubTokenUpdateRequired = gitHubScopes ? githubRepoScopeRequired(user.tags, gitHubScopes) : false
+
+    useEffect(() => {
+        eventLogger.logViewEvent('UserSettingsCodeHostConnections')
+    }, [])
 
     const fetchExternalServices = useCallback(async () => {
         setStatusOrError('loading')
@@ -83,21 +92,19 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 
         setStatusOrError(services)
 
-        // If we have a GitHub service, check whether we need to prompt the user to
-        // update their scope
-        const gitHubService = services.GITHUB
-        if (gitHubService) {
-            const scopes = gitHubService.grantedScopes || []
-            setUpdateAuthRequired(githubRepoScopeRequired(user.tags, scopes))
-        }
-
         const repoCount = fetchedServices.reduce((sum, codeHost) => sum + codeHost.repoCount, 0)
         onUserExternalServicesOrRepositoriesUpdate(fetchedServices.length, repoCount)
-    }, [user.id, user.tags, onUserExternalServicesOrRepositoriesUpdate, setUpdateAuthRequired])
+    }, [user.id, onUserExternalServicesOrRepositoriesUpdate])
 
-    useEffect(() => {
-        eventLogger.logViewEvent('UserSettingsCodeHostConnections')
-    }, [])
+    const resetScopeAndFetchServices = useCallback((): void => {
+        // after the token is updated - we'll set GitHub's scopes to null and
+        // hide the global CTA banner
+        setGitHubScopes(null)
+
+        fetchExternalServices().catch(error => {
+            setStatusOrError(asError(error))
+        })
+    }, [fetchExternalServices, setGitHubScopes])
 
     useEffect(() => {
         fetchExternalServices().catch(error => {
@@ -159,7 +166,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         return [
             ...servicesWithProblems.map(getServiceWarningFragment),
             getAddReposBanner(notYetSyncedServiceNames),
-            getGitHubUpdateAuthBanner(updateAuthRequired),
+            getGitHubUpdateAuthBanner(isGitHubTokenUpdateRequired),
         ]
     }
 
@@ -235,25 +242,27 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
             {codeHostExternalServices && isServicesByKind(statusOrError) ? (
                 <Container>
                     <ul className="list-group">
-                        {Object.entries(codeHostExternalServices).map(([id, { kind, defaultDisplayName, icon }]) =>
-                            authProvidersByKind[kind] ? (
+                        {Object.entries(codeHostExternalServices).map(([id, { kind, defaultDisplayName, icon }]) => {
+                            const isTokenUpdateRequired = ExternalServiceKind.GITHUB && isGitHubTokenUpdateRequired
+
+                            return authProvidersByKind[kind] ? (
                                 <li key={id} className="list-group-item user-code-hosts-page__code-host-item">
                                     <CodeHostItem
                                         service={isServicesByKind(statusOrError) ? statusOrError[kind] : undefined}
                                         kind={kind}
                                         name={defaultDisplayName}
-                                        updateAuthRequired={
-                                            id && kind === ExternalServiceKind.GITHUB ? updateAuthRequired : false
-                                        }
+                                        isTokenUpdateRequired={isTokenUpdateRequired}
                                         navigateToAuthProvider={navigateToAuthProvider}
                                         icon={icon}
                                         onDidAdd={addNewService}
-                                        onDidRemove={fetchExternalServices}
+                                        onDidRemove={
+                                            isTokenUpdateRequired ? resetScopeAndFetchServices : fetchExternalServices
+                                        }
                                         onDidError={handleError}
                                     />
                                 </li>
                             ) : null
-                        )}
+                        })}
                     </ul>
                 </Container>
             ) : (
