@@ -1,11 +1,8 @@
 .modal {
-    z-index: 1000;
-    position: fixed;
-    left: 0;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
+    padding: 0;
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color-2);
+    background-color: transparent;
     display: flex;
     align-items: center;
     justify-content: center;
