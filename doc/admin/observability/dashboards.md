@@ -1727,6 +1727,16 @@ This panel indicates number of worker instances running the codeintel-commitgrap
 
 <br />
 
+#### worker: worker_job_codeintel-auto-indexing_count
+
+This panel indicates number of worker instances running the codeintel-auto-indexing job.
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#worker-worker-job-codeintel-auto-indexing-count).
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
 ### Worker: Precise code intelligence commit graph updater
 
 #### worker: codeintel_commit_graph_queue_size
