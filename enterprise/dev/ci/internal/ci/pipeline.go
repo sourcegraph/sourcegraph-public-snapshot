@@ -4,6 +4,7 @@ package ci
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 // GeneratePipeline is the main pipeline generation function. It defines the build pipeline for each of the
 // main CI cases, which are defined in the main switch statement in the function.
 func GeneratePipeline(c Config) (*bk.Pipeline, error) {
+	log.Printf("configuration: %+v", c)
 	if err := c.ensureCommit(); err != nil {
 		return nil, err
 	}
