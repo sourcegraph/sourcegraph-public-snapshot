@@ -210,7 +210,7 @@ func SearchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 		indexed = &IndexedSearchRequest{
 			args:  args,
 			typ:   zoekt.TextRequest,
-			repos: &indexedRepoRevs{},
+			repos: &zoekt.IndexedRepoRevs{},
 		}
 	} else {
 		indexed, err = NewIndexedSearchRequest(ctx, args, zoekt.TextRequest, stream)
