@@ -84,6 +84,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case c.buildCandidatesNoTest:
 		pipelineOperations = []func(*bk.Pipeline){
 			addDockerImages(c, false),
+			wait,
 		}
 
 	case c.patchNoTest:
