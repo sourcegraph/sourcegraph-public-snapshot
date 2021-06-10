@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel"
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -23,7 +24,7 @@ func main() {
 	go setAuthzProviders()
 
 	shared.Start(map[string]shared.Job{
-		// Empty for now
+		"codeintel-janitor": codeintel.NewJanitorJob(),
 	})
 }
 

@@ -12,15 +12,9 @@ type Config struct {
 
 	UploadStoreConfig                         *uploadstore.Config
 	CommitGraphUpdateTaskInterval             time.Duration
-	CleanupTaskInterval                       time.Duration
-	CommitResolverTaskInterval                time.Duration
-	CommitResolverMinimumTimeSinceLastCheck   time.Duration
-	CommitResolverBatchSize                   int
 	AutoIndexingTaskInterval                  time.Duration
 	AutoIndexingSkipManualInterval            time.Duration
 	HunkCacheSize                             int
-	DataTTL                                   time.Duration
-	UploadTimeout                             time.Duration
 	IndexBatchSize                            int
 	MinimumTimeSinceLastEnqueue               time.Duration
 	MinimumSearchCount                        int
@@ -48,13 +42,7 @@ func init() {
 	config.UploadStoreConfig = uploadStoreConfig
 
 	config.HunkCacheSize = config.GetInt("PRECISE_CODE_INTEL_HUNK_CACHE_SIZE", "1000", "The capacity of the git diff hunk cache.")
-	config.DataTTL = config.GetInterval("PRECISE_CODE_INTEL_DATA_TTL", "720h", "The maximum time an non-critical index can live in the database.")
-	config.UploadTimeout = config.GetInterval("PRECISE_CODE_INTEL_UPLOAD_TIMEOUT", "24h", "The maximum time an upload can be in the 'uploading' state.")
 	config.CommitGraphUpdateTaskInterval = config.GetInterval("PRECISE_CODE_INTEL_COMMIT_GRAPH_UPDATE_TASK_INTERVAL", "10s", "The frequency with which to run periodic codeintel commit graph update tasks.")
-	config.CleanupTaskInterval = config.GetInterval("PRECISE_CODE_INTEL_CLEANUP_TASK_INTERVAL", "1m", "The frequency with which to run periodic codeintel cleanup tasks.")
-	config.CommitResolverTaskInterval = config.GetInterval("PRECISE_CODE_INTEL_COMMIT_RESOLVER_TASK_INTERVAL", "10s", "The frequency with which to run the periodic commit resolver task.")
-	config.CommitResolverMinimumTimeSinceLastCheck = config.GetInterval("PRECISE_CODE_INTEL_COMMIT_RESOLVER_MINIMUM_TIME_SINCE_LAST_CHECK", "24h", "The minimum time the commit resolver will re-check an upload or index record.")
-	config.CommitResolverBatchSize = config.GetInt("PRECISE_CODE_INTEL_COMMIT_RESOLVER_BATCH_SIZE", "100", "The maximum number of unique commits to resolve at a time.")
 	config.AutoIndexingTaskInterval = config.GetInterval("PRECISE_CODE_INTEL_AUTO_INDEXING_TASK_INTERVAL", "10m", "The frequency with which to run periodic codeintel auto-indexing tasks.")
 	config.AutoIndexingSkipManualInterval = config.GetInterval("PRECISE_CODE_INTEL_AUTO_INDEXING_SKIP_MANUAL", "24h", "The duration the auto-indexer will wait after a manual upload to a repository before it starts auto-indexing again. Manually queueing an auto-index run will cancel this waiting period.")
 	config.IndexBatchSize = config.GetInt("PRECISE_CODE_INTEL_INDEX_BATCH_SIZE", "100", "The number of indexable repositories to schedule at a time.")

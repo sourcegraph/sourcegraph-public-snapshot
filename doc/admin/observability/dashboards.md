@@ -402,82 +402,6 @@ This panel indicates commit graph updater errors every 5m.
 
 <br />
 
-### Frontend: Precise code intelligence janitor
-
-#### frontend: codeintel_janitor_errors
-
-This panel indicates janitor errors every 5m.
-
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-codeintel-janitor-errors).
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-#### frontend: codeintel_upload_records_removed
-
-This panel indicates upload records expired or deleted every 5m.
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-#### frontend: codeintel_index_records_removed
-
-This panel indicates index records expired or deleted every 5m.
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-#### frontend: codeintel_lsif_data_removed
-
-This panel indicates data for unreferenced upload records removed every 5m.
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-#### frontend: codeintel_background_upload_resets
-
-This panel indicates upload records re-queued (due to unresponsive worker) every 5m.
-
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-codeintel-background-upload-resets).
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-#### frontend: codeintel_background_upload_reset_failures
-
-This panel indicates upload records errored due to repeated reset every 5m.
-
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-codeintel-background-upload-reset-failures).
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-#### frontend: codeintel_background_index_resets
-
-This panel indicates index records re-queued (due to unresponsive indexer) every 5m.
-
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-codeintel-background-index-resets).
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-#### frontend: codeintel_background_index_reset_failures
-
-This panel indicates index records errored due to repeated reset every 5m.
-
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-codeintel-background-index-reset-failures).
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
 ### Frontend: Auto-indexing
 
 #### frontend: codeintel_indexing_99th_percentile_duration
@@ -1850,6 +1774,82 @@ This panel indicates percentage pods available.
 ## Worker
 
 <p class="subtitle">Manages background processes.</p>
+
+### Worker: Precise code intelligence janitor
+
+#### worker: codeintel_janitor_errors
+
+This panel indicates janitor errors every 5m.
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#worker-codeintel-janitor-errors).
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### worker: codeintel_upload_records_removed
+
+This panel indicates upload records expired or deleted every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### worker: codeintel_index_records_removed
+
+This panel indicates index records expired or deleted every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### worker: codeintel_lsif_data_removed
+
+This panel indicates data for unreferenced upload records removed every 5m.
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### worker: codeintel_background_upload_resets
+
+This panel indicates upload records re-queued (due to unresponsive worker) every 5m.
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#worker-codeintel-background-upload-resets).
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### worker: codeintel_background_upload_reset_failures
+
+This panel indicates upload records errored due to repeated reset every 5m.
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#worker-codeintel-background-upload-reset-failures).
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### worker: codeintel_background_index_resets
+
+This panel indicates index records re-queued (due to unresponsive indexer) every 5m.
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#worker-codeintel-background-index-resets).
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### worker: codeintel_background_index_reset_failures
+
+This panel indicates index records errored due to repeated reset every 5m.
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#worker-codeintel-background-index-reset-failures).
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
 
 ### Worker: Internal service requests
 

@@ -13,7 +13,6 @@ import (
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/background/commitgraph"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/background/indexing"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/background/janitor"
 	codeintelresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	codeintelgqlresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
@@ -112,7 +111,6 @@ func newUploadHandler(ctx context.Context, db dbutil.DB) (func(internal bool) ht
 func newBackgroundRoutines(observationContext *observation.Context) (routines []goroutine.BackgroundRoutine) {
 	routines = append(routines, newCommitGraphRoutines(observationContext)...)
 	routines = append(routines, newIndexingRoutines(observationContext)...)
-	routines = append(routines, newJanitorRoutines(observationContext)...)
 	return routines
 }
 
@@ -161,23 +159,5 @@ func newIndexingRoutines(observationContext *observation.Context) []goroutine.Ba
 			config.DependencyIndexerSchedulerConcurrency,
 			workerutil.NewMetrics(observationContext, "codeintel_dependency_indexing_processor", nil),
 		),
-	}
-}
-
-func newJanitorRoutines(observationContext *observation.Context) []goroutine.BackgroundRoutine {
-	dbStore := &janitor.DBStoreShim{Store: services.dbStore}
-	uploadWorkerStore := dbstore.WorkerutilUploadStore(services.dbStore, observationContext)
-	indexWorkerStore := dbstore.WorkerutilIndexStore(services.dbStore, observationContext)
-	lsifStore := services.lsifStore
-	metrics := janitor.NewMetrics(observationContext)
-
-	return []goroutine.BackgroundRoutine{
-		janitor.NewAbandonedUploadJanitor(dbStore, config.UploadTimeout, config.CleanupTaskInterval, metrics),
-		janitor.NewDeletedRepositoryJanitor(dbStore, config.CleanupTaskInterval, metrics),
-		janitor.NewHardDeleter(dbStore, lsifStore, config.CleanupTaskInterval, metrics),
-		janitor.NewRecordExpirer(dbStore, config.DataTTL, config.CleanupTaskInterval, metrics),
-		janitor.NewUploadResetter(uploadWorkerStore, config.CleanupTaskInterval, metrics, observationContext),
-		janitor.NewIndexResetter(indexWorkerStore, config.CleanupTaskInterval, metrics, observationContext),
-		janitor.NewUnknownCommitJanitor(dbStore, config.CommitResolverMinimumTimeSinceLastCheck, config.CommitResolverBatchSize, config.CommitResolverTaskInterval, metrics),
 	}
 }
