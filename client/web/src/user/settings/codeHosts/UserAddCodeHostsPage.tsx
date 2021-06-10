@@ -65,7 +65,6 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     onUserExternalServicesOrRepositoriesUpdate,
 }) => {
     const [statusOrError, setStatusOrError] = useState<Status>()
-    // const [isGitHubTokenUpdateRequired, setIsGitHubTokenUpdateRequired] = useState(false)
     const { scopes: gitHubScopes, setScopes: setGitHubScopes } = useGitHubScopeContext()
 
     // If we have a GitHub service, check whether we need to prompt the user to
