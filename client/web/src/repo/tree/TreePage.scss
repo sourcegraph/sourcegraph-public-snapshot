@@ -4,12 +4,16 @@
 
 .tree-page {
     overflow-y: auto;
-    padding: 1rem 2rem;
     flex: 1;
+    background-color: var(--code-bg);
 
-    .theme-redesign & {
-        background-color: var(--code-bg);
-        margin-bottom: 2rem;
+    // We need to increase specificity here, because the child selector from where
+    // this is set has higher specificity than this plain one.
+    // stylelint-disable-next-line selector-max-id
+    &__container:not(#\9) {
+        border: none;
+        border-radius: 0;
+        padding-bottom: 2rem;
     }
 
     &__title {
@@ -19,12 +23,7 @@
     }
 
     &__section {
-        margin-bottom: 1.75rem;
         width: 100%;
-
-        &-header {
-            margin-bottom: 0.125rem;
-        }
 
         max-width: map-get($grid-breakpoints, xl);
 
