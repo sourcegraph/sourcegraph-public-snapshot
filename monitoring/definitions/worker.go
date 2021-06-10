@@ -19,12 +19,15 @@ func Worker() *monitoring.Container {
 				Rows: append([]monitoring.Row{
 					{
 						{
-							Name:           "worker_job_count",
-							Description:    "number of worker instances running each job",
-							Query:          `sum by (job_name) (src_worker_jobs{job="worker"})`,
-							Panel:          monitoring.Panel().LegendFormat("instances running {{job_name}}"),
-							NoAlert:        true,
-							Interpretation: "Number of worker instances running each job type",
+							Name:        "worker_job_count",
+							Description: "number of worker instances running each job",
+							Query:       `sum by (job_name) (src_worker_jobs{job="worker"})`,
+							Panel:       monitoring.Panel().LegendFormat("instances running {{job_name}}"),
+							NoAlert:     true,
+							Interpretation: `
+								The number of worker instances running each job type.
+								It is necessary for each job type to be managed by at least one worker instance.
+							`,
 						},
 					},
 				}, createWorkerActiveJobRows()...),

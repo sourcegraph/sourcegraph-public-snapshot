@@ -1739,7 +1739,8 @@ This panel indicates percentage pods available.
 
 This panel indicates number of worker instances running each job.
 
-Number of worker instances running each job type
+The number of worker instances running each job type.
+It is necessary for each job type to be managed by at least one worker instance.
 
 
 <br />
