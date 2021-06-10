@@ -27,7 +27,7 @@ import { getTourOptions, useFeatureTour } from '../useFeatureTour'
 
 const HAS_SEEN_FEATURE_TOUR_STEP_KEY = 'has-seen-create-code-monitor-feature-tour-step'
 
-function getFeatureTourStep(onClose: () => void): HTMLElement {
+function getFeatureTourElement(onClose: () => void): HTMLElement {
     const container = document.createElement('div')
     container.className = styles.featureTourStep
     container.innerHTML = `
@@ -116,7 +116,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
     const tour = useFeatureTour(
         'create-code-monitor-feature-tour',
         !!showCreateCodeMonitoringButton && canCreateMonitorFromQuery,
-        getFeatureTourStep,
+        getFeatureTourElement,
         HAS_SEEN_FEATURE_TOUR_STEP_KEY,
         getTourOptions({
             attachTo: {

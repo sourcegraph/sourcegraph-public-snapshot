@@ -33,7 +33,7 @@ export interface SearchContextDropdownProps
     className?: string
 }
 
-function getFeatureTourStep(onClose: () => void): HTMLElement {
+function getFeatureTourElement(onClose: () => void): HTMLElement {
     const container = document.createElement('div')
     container.className = styles.featureTourStep
     container.innerHTML = `
@@ -75,7 +75,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         submitSearch,
         fetchAutoDefinedSearchContexts,
         fetchSearchContexts,
-        showSearchContextFeatureTourStep = false,
+        showSearchContextFeatureTour = false,
         submitSearchOnSearchContextChange = true,
         isSearchOnboardingTourVisible,
         className,
@@ -83,8 +83,8 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
 
     const tour = useFeatureTour(
         'search-contexts-start-tour',
-        showSearchContextFeatureTourStep && !isSearchOnboardingTourVisible,
-        getFeatureTourStep,
+        showSearchContextFeatureTour && !isSearchOnboardingTourVisible,
+        getFeatureTourElement,
         HAS_SEEN_FEATURE_TOUR_STEP_KEY,
         getTourOptions({
             attachTo: {

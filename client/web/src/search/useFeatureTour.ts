@@ -17,34 +17,34 @@ export const getTourOptions = (stepOptions: Shepherd.Step.StepOptions): Shepherd
 })
 
 export const useFeatureTour = (
-    featureStepId: string,
+    featureId: string,
     showFeatureTour: boolean,
-    getFeatureTourStepElement: (onClose: () => void) => HTMLElement,
+    getFeatureTourElement: (onClose: () => void) => HTMLElement,
     localStorageKey: string,
     tourOptions: Shepherd.Tour.TourOptions
 ): Shepherd.Tour => {
-    const [hasSeenFeatureTourStep, setHasSeenFeatureTourStep] = useLocalStorage(localStorageKey, false)
+    const [hasSeenFeatureTour, setHasSeenFeatureTour] = useLocalStorage(localStorageKey, false)
 
     const tour = useMemo(() => new Shepherd.Tour(tourOptions), [tourOptions])
     useEffect(() => {
-        tour.addSteps([{ id: featureStepId, text: getFeatureTourStepElement(() => tour.cancel()) }])
-    }, [tour, featureStepId, getFeatureTourStepElement])
+        tour.addSteps([{ id: featureId, text: getFeatureTourElement(() => tour.cancel()) }])
+    }, [tour, featureId, getFeatureTourElement])
 
     useEffect(() => {
-        if (!tour.isActive() && showFeatureTour && !hasSeenFeatureTourStep) {
+        if (!tour.isActive() && showFeatureTour && !hasSeenFeatureTour) {
             tour.start()
         }
-    }, [showFeatureTour, hasSeenFeatureTourStep, tour])
+    }, [showFeatureTour, hasSeenFeatureTour, tour])
 
     useEffect(() => {
         const onCanceled = (): void => {
-            setHasSeenFeatureTourStep(true)
+            setHasSeenFeatureTour(true)
         }
         tour.on('cancel', onCanceled)
         return () => {
             tour.off('cancel', onCanceled)
         }
-    }, [tour, setHasSeenFeatureTourStep])
+    }, [tour, setHasSeenFeatureTour])
 
     useEffect(() => () => tour.cancel(), [tour])
 
