@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
+	"github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -208,11 +209,11 @@ func SearchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 	if args.Mode == search.ZoektGlobalSearch {
 		indexed = &IndexedSearchRequest{
 			args:  args,
-			typ:   textRequest,
+			typ:   zoekt.TextRequest,
 			repos: &indexedRepoRevs{},
 		}
 	} else {
-		indexed, err = NewIndexedSearchRequest(ctx, args, textRequest, stream)
+		indexed, err = NewIndexedSearchRequest(ctx, args, zoekt.TextRequest, stream)
 		if err != nil {
 			return err
 		}

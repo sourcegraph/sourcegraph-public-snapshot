@@ -30,13 +30,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-type IndexedRequestType string
-
-const (
-	textRequest   IndexedRequestType = "text"
-	symbolRequest IndexedRequestType = "symbol"
-)
-
 // IndexedSearchRequest is responsible for translating a Sourcegraph search
 // query into a Zoekt query and mapping the results from zoekt back to
 // Sourcegraph result types.
@@ -59,7 +52,7 @@ type IndexedSearchRequest struct {
 
 	// inputs
 	args *search.TextParameters
-	typ  IndexedRequestType
+	typ  zoektutil.IndexedRequestType
 
 	// repos is the repository revisions that are indexed and will be
 	// searched.
@@ -69,7 +62,7 @@ type IndexedSearchRequest struct {
 	since func(time.Time) time.Duration
 }
 
-func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, typ IndexedRequestType, stream streaming.Sender) (_ *IndexedSearchRequest, err error) {
+func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, typ zoektutil.IndexedRequestType, stream streaming.Sender) (_ *IndexedSearchRequest, err error) {
 	tr, ctx := trace.New(ctx, "newIndexedSearchRequest", string(typ))
 	tr.LogFields(trace.Stringer("global_search_mode", args.Mode))
 	defer func() {
@@ -112,7 +105,7 @@ func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 
 	// Only include indexes with symbol information if a symbol request.
 	var filter func(repo *zoekt.Repository) bool
-	if typ == symbolRequest {
+	if typ == zoektutil.SymbolRequest {
 		filter = func(repo *zoekt.Repository) bool {
 			return repo.HasSymbols
 		}
@@ -195,7 +188,7 @@ func (s *IndexedSearchRequest) Search(ctx context.Context, c streaming.Sender) e
 // Timeouts are reported through the context, and as a special case errNoResultsInTimeout
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
-func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, typ IndexedRequestType, since func(t time.Time) time.Duration, c streaming.Sender) error {
+func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexedRepoRevs, typ zoektutil.IndexedRequestType, since func(t time.Time) time.Duration, c streaming.Sender) error {
 	if args == nil {
 		return nil
 	}
@@ -329,7 +322,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 				}
 
 				var lines []*result.LineMatch
-				if typ != symbolRequest {
+				if typ != zoektutil.SymbolRequest {
 					lines = zoektFileMatchToLineMatches(&file)
 				}
 
@@ -337,7 +330,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *indexe
 					inputRev := inputRev // copy so we can take the pointer
 
 					var symbols []*result.SymbolMatch
-					if typ == symbolRequest {
+					if typ == zoektutil.SymbolRequest {
 						symbols = zoektFileMatchToSymbolResults(repo, inputRev, &file)
 					}
 					fm := result.FileMatch{
@@ -567,7 +560,7 @@ func contextWithoutDeadline(cOld context.Context) (context.Context, context.Canc
 	return cNew, cancel
 }
 
-func queryToZoektQuery(query *search.TextPatternInfo, typ IndexedRequestType) (zoektquery.Q, error) {
+func queryToZoektQuery(query *search.TextPatternInfo, typ zoektutil.IndexedRequestType) (zoektquery.Q, error) {
 	var and []zoektquery.Q
 
 	var q zoektquery.Q
@@ -593,7 +586,7 @@ func queryToZoektQuery(query *search.TextPatternInfo, typ IndexedRequestType) (z
 		q = &zoektquery.Not{Child: q}
 	}
 
-	if typ == symbolRequest {
+	if typ == zoektutil.SymbolRequest {
 		// Tell zoekt q must match on symbols
 		q = &zoektquery.Symbol{
 			Expr: q,

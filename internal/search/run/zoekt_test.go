@@ -269,7 +269,7 @@ func TestIndexedSearch(t *testing.T) {
 				},
 			}
 
-			indexed, err := NewIndexedSearchRequest(context.Background(), args, textRequest, streaming.StreamFunc(func(streaming.SearchEvent) {}))
+			indexed, err := NewIndexedSearchRequest(context.Background(), args, zoektutil.TextRequest, streaming.StreamFunc(func(streaming.SearchEvent) {}))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -466,13 +466,13 @@ func TestZoektResultCountFactor(t *testing.T) {
 func TestQueryToZoektQuery(t *testing.T) {
 	cases := []struct {
 		Name    string
-		Type    IndexedRequestType
+		Type    zoektutil.IndexedRequestType
 		Pattern *search.TextPatternInfo
 		Query   string
 	}{
 		{
 			Name: "substr",
-			Type: textRequest,
+			Type: zoektutil.TextRequest,
 			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              false,
@@ -485,7 +485,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 		},
 		{
 			Name: "symbol substr",
-			Type: symbolRequest,
+			Type: zoektutil.SymbolRequest,
 			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              false,
@@ -498,7 +498,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 		},
 		{
 			Name: "regex",
-			Type: textRequest,
+			Type: zoektutil.TextRequest,
 			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              false,
@@ -511,7 +511,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 		},
 		{
 			Name: "path",
-			Type: textRequest,
+			Type: zoektutil.TextRequest,
 			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              false,
@@ -524,7 +524,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 		},
 		{
 			Name: "case",
-			Type: textRequest,
+			Type: zoektutil.TextRequest,
 			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              true,
@@ -537,7 +537,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 		},
 		{
 			Name: "casepath",
-			Type: textRequest,
+			Type: zoektutil.TextRequest,
 			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              true,
@@ -550,7 +550,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 		},
 		{
 			Name: "path matches only",
-			Type: textRequest,
+			Type: zoektutil.TextRequest,
 			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              false,
@@ -565,7 +565,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 		},
 		{
 			Name: "content matches only",
-			Type: textRequest,
+			Type: zoektutil.TextRequest,
 			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              false,
@@ -580,7 +580,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 		},
 		{
 			Name: "content and path matches 1",
-			Type: textRequest,
+			Type: zoektutil.TextRequest,
 			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              false,
@@ -595,7 +595,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 		},
 		{
 			Name: "content and path matches 2",
-			Type: textRequest,
+			Type: zoektutil.TextRequest,
 			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              false,
@@ -610,7 +610,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 		},
 		{
 			Name: "repos must include",
-			Type: textRequest,
+			Type: zoektutil.TextRequest,
 			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				Pattern:                      "foo",
