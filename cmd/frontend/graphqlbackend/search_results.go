@@ -900,6 +900,9 @@ func (r *searchResolver) resultsStreaming(ctx context.Context) (*SearchResultsRe
 }
 
 func (r *searchResolver) resultsToResolver(results *SearchResults) *SearchResultsResolver {
+	if results == nil {
+		results = &SearchResults{}
+	}
 	return &SearchResultsResolver{
 		SearchResults: results,
 		limit:         r.MaxResults(),
