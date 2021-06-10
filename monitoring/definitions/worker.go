@@ -12,6 +12,50 @@ func Worker() *monitoring.Container {
 		Description: "Manages background processes.",
 		Groups: []monitoring.Group{
 			{
+				Title:  "Precise code intelligence commit graph updater",
+				Hidden: true,
+				Rows: []monitoring.Row{
+					{
+						{
+							Name:              "codeintel_commit_graph_queue_size",
+							Description:       "commit graph queue size",
+							Query:             `max(src_dirty_repositories_total)`,
+							Warning:           monitoring.Alert().GreaterOrEqual(100, nil),
+							Panel:             monitoring.Panel().LegendFormat("repositories with stale commit graphs"),
+							Owner:             monitoring.ObservableOwnerCodeIntel,
+							PossibleSolutions: "none",
+						},
+						{
+							Name:              "codeintel_commit_graph_queue_growth_rate",
+							Description:       "commit graph queue growth rate over 30m",
+							Query:             `sum(increase(src_dirty_repositories_total[30m])) / sum(increase(src_codeintel_commit_graph_updater_total[30m]))`,
+							Warning:           monitoring.Alert().GreaterOrEqual(5, nil),
+							Panel:             monitoring.Panel().LegendFormat("rate of (enqueued / processed)"),
+							Owner:             monitoring.ObservableOwnerCodeIntel,
+							PossibleSolutions: "none",
+						},
+						{
+							Name:              "codeintel_commit_graph_updater_99th_percentile_duration",
+							Description:       "99th percentile successful commit graph updater operation duration over 5m",
+							Query:             `histogram_quantile(0.99, sum by (le)(rate(src_codeintel_commit_graph_updater_duration_seconds_bucket{job=~"worker"}[5m])))`,
+							Warning:           monitoring.Alert().GreaterOrEqual(20, nil),
+							Panel:             monitoring.Panel().LegendFormat("update").Unit(monitoring.Seconds),
+							Owner:             monitoring.ObservableOwnerCodeIntel,
+							PossibleSolutions: "none",
+						},
+						{
+							Name:              "codeintel_commit_graph_updater_errors",
+							Description:       "commit graph updater errors every 5m",
+							Query:             `sum(increase(src_codeintel_commit_graph_updater_errors_total{job=~"worker"}[5m]))`,
+							Warning:           monitoring.Alert().GreaterOrEqual(20, nil),
+							Panel:             monitoring.Panel().LegendFormat("errors"),
+							Owner:             monitoring.ObservableOwnerCodeIntel,
+							PossibleSolutions: "none",
+						},
+					},
+				},
+			},
+			{
 				Title:  "Precise code intelligence janitor",
 				Hidden: true,
 				Rows: []monitoring.Row{

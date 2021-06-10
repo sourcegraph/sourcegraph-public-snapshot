@@ -360,48 +360,6 @@ This panel indicates gitserver client errors every 5m.
 
 <br />
 
-### Frontend: Precise code intelligence commit graph updater
-
-#### frontend: codeintel_commit_graph_queue_size
-
-This panel indicates commit graph queue size.
-
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-codeintel-commit-graph-queue-size).
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-#### frontend: codeintel_commit_graph_queue_growth_rate
-
-This panel indicates commit graph queue growth rate over 30m.
-
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-codeintel-commit-graph-queue-growth-rate).
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-#### frontend: codeintel_commit_graph_updater_99th_percentile_duration
-
-This panel indicates 99th percentile successful commit graph updater operation duration over 5m.
-
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-codeintel-commit-graph-updater-99th-percentile-duration).
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
-#### frontend: codeintel_commit_graph_updater_errors
-
-This panel indicates commit graph updater errors every 5m.
-
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#frontend-codeintel-commit-graph-updater-errors).
-
-<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
-
-<br />
-
 ### Frontend: Auto-indexing
 
 #### frontend: codeintel_indexing_99th_percentile_duration
@@ -1774,6 +1732,48 @@ This panel indicates percentage pods available.
 ## Worker
 
 <p class="subtitle">Manages background processes.</p>
+
+### Worker: Precise code intelligence commit graph updater
+
+#### worker: codeintel_commit_graph_queue_size
+
+This panel indicates commit graph queue size.
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#worker-codeintel-commit-graph-queue-size).
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### worker: codeintel_commit_graph_queue_growth_rate
+
+This panel indicates commit graph queue growth rate over 30m.
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#worker-codeintel-commit-graph-queue-growth-rate).
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### worker: codeintel_commit_graph_updater_99th_percentile_duration
+
+This panel indicates 99th percentile successful commit graph updater operation duration over 5m.
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#worker-codeintel-commit-graph-updater-99th-percentile-duration).
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
+
+#### worker: codeintel_commit_graph_updater_errors
+
+This panel indicates commit graph updater errors every 5m.
+
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#worker-codeintel-commit-graph-updater-errors).
+
+<sub>*Managed by the [Sourcegraph Code-intelligence team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<br />
 
 ### Worker: Precise code intelligence janitor
 

@@ -24,7 +24,8 @@ func main() {
 	go setAuthzProviders()
 
 	shared.Start(map[string]shared.Job{
-		"codeintel-janitor": codeintel.NewJanitorJob(),
+		"codeintel-commitgraph": codeintel.NewCommitGraphJob(),
+		"codeintel-janitor":     codeintel.NewJanitorJob(),
 	})
 }
 

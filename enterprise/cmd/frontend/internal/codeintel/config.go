@@ -11,7 +11,6 @@ type Config struct {
 	env.BaseConfig
 
 	UploadStoreConfig                         *uploadstore.Config
-	CommitGraphUpdateTaskInterval             time.Duration
 	AutoIndexingTaskInterval                  time.Duration
 	AutoIndexingSkipManualInterval            time.Duration
 	HunkCacheSize                             int
@@ -42,7 +41,6 @@ func init() {
 	config.UploadStoreConfig = uploadStoreConfig
 
 	config.HunkCacheSize = config.GetInt("PRECISE_CODE_INTEL_HUNK_CACHE_SIZE", "1000", "The capacity of the git diff hunk cache.")
-	config.CommitGraphUpdateTaskInterval = config.GetInterval("PRECISE_CODE_INTEL_COMMIT_GRAPH_UPDATE_TASK_INTERVAL", "10s", "The frequency with which to run periodic codeintel commit graph update tasks.")
 	config.AutoIndexingTaskInterval = config.GetInterval("PRECISE_CODE_INTEL_AUTO_INDEXING_TASK_INTERVAL", "10m", "The frequency with which to run periodic codeintel auto-indexing tasks.")
 	config.AutoIndexingSkipManualInterval = config.GetInterval("PRECISE_CODE_INTEL_AUTO_INDEXING_SKIP_MANUAL", "24h", "The duration the auto-indexer will wait after a manual upload to a repository before it starts auto-indexing again. Manually queueing an auto-index run will cancel this waiting period.")
 	config.IndexBatchSize = config.GetInt("PRECISE_CODE_INTEL_INDEX_BATCH_SIZE", "100", "The number of indexable repositories to schedule at a time.")
