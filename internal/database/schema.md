@@ -1524,6 +1524,51 @@ Referenced by:
 
 ```
 
+# Table "public.security_event_logs"
+```
+      Column       |           Type           | Collation | Nullable |                     Default                     
+-------------------+--------------------------+-----------+----------+-------------------------------------------------
+ id                | bigint                   |           | not null | nextval('security_event_logs_id_seq'::regclass)
+ name              | text                     |           | not null | 
+ url               | text                     |           | not null | 
+ user_id           | integer                  |           | not null | 
+ anonymous_user_id | text                     |           | not null | 
+ source            | text                     |           | not null | 
+ argument          | jsonb                    |           | not null | 
+ version           | text                     |           | not null | 
+ timestamp         | timestamp with time zone |           | not null | 
+Indexes:
+    "security_event_logs_pkey" PRIMARY KEY, btree (id)
+    "security_event_logs_anonymous_user_id" btree (anonymous_user_id)
+    "security_event_logs_name" btree (name)
+    "security_event_logs_source" btree (source)
+    "security_event_logs_timestamp" btree ("timestamp")
+    "security_event_logs_timestamp_at_utc" btree (date(timezone('UTC'::text, "timestamp")))
+    "security_event_logs_user_id" btree (user_id)
+Check constraints:
+    "security_event_logs_check_has_user" CHECK (user_id = 0 AND anonymous_user_id <> ''::text OR user_id <> 0 AND anonymous_user_id = ''::text OR user_id <> 0 AND anonymous_user_id <> ''::text)
+    "security_event_logs_check_name_not_empty" CHECK (name <> ''::text)
+    "security_event_logs_check_source_not_empty" CHECK (source <> ''::text)
+    "security_event_logs_check_version_not_empty" CHECK (version <> ''::text)
+
+```
+
+Contains security-relevant events with a long time horizon for storage.
+
+**anonymous_user_id**: The UUID of the actor associated with the event.
+
+**argument**: An arbitrary JSON blob containing event data.
+
+**name**: The event name as a CAPITALIZED_SNAKE_CASE string.
+
+**source**: The site section (WEB, BACKEND, etc.) that generated the event.
+
+**url**: The URL within the Sourcegraph app which generated the event.
+
+**user_id**: The ID of the actor associated with the event.
+
+**version**: The version of Sourcegraph which generated the event.
+
 # Table "public.settings"
 ```
      Column     |           Type           | Collation | Nullable |               Default                

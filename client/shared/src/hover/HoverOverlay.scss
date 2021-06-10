@@ -1,8 +1,11 @@
 @import '~@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css';
 
 .hover-overlay {
-    --hover-overlay-vertical-padding: 0.5rem;
-    --hover-overlay-horizontal-padding: 0.5rem;
+    --hover-overlay-vertical-padding: 0.25rem;
+    --hover-overlay-horizontal-padding: 1rem;
+    --hover-overlay-contents-right-padding: 1rem;
+    --hover-overlay-content-margin-top: 0.5rem;
+    --hover-overlay-separator-color: var(--border-color);
 
     // Fixes the issue with `position: sticky` of the close button in Safari.
     // The sticky element misbehaves because `.card` has a `display: flex` rule.
@@ -15,27 +18,15 @@
     transition: opacity 100ms ease-in-out;
     // Make sure content doesn't leak behind border-radius
     overflow: hidden;
-
-    &__close-button,
-    &__badge {
-        // We want text to wrap around the close button and badges.
-        float: right;
-        margin-left: 0.25rem;
-    }
-
-    &__badge {
-        text-transform: uppercase;
-    }
-
-    &__icon {
-        float: left;
-        margin-right: 0.25rem;
-    }
+    padding-bottom: var(--hover-overlay-vertical-padding);
 
     &__close-button {
         // The close button should stay in place when scrolling a large hover content.
         position: sticky;
-        top: 0;
+        float: right;
+        top: var(--hover-overlay-content-margin-top);
+        margin-right: -1.25rem;
+        margin-left: 0;
 
         // Overlay alert background
         z-index: 1;
@@ -44,30 +35,108 @@
         // not centered within the space left of the close button.
         &--loading {
             position: absolute;
-            top: 0.5rem;
-            right: 0.5rem;
+            top: calc(var(--hover-overlay-content-margin-top) + var(--hover-overlay-vertical-padding));
+            right: 0.75rem;
+            // While loading close-button has an absolute position with the `right` coordinate,
+            // so `margin-right` is redundant in this state.
+            margin-right: 0;
+        }
+    }
+
+    &__badge {
+        float: right;
+        // Align badge vertically with the close button and first row of the text content.
+        margin-top: var(--hover-overlay-content-margin-top);
+        margin-left: 0.5rem;
+        margin-right: 0.25rem;
+        // Small margin-bottom to add some space between the badge and long content that wraps around it.
+        margin-bottom: 0.25rem;
+        // Needs to be absolute value to align well with the content
+        // because it's wrapped into a `small` which might have different font-size.
+        line-height: 1rem;
+        text-transform: uppercase;
+
+        &-label {
+            vertical-align: top;
+        }
+
+        :first-of-type {
+            margin-right: 0;
         }
     }
 
     &__contents {
-        padding: var(--hover-overlay-vertical-padding) var(--hover-overlay-horizontal-padding);
         // Make very large MarkupContents scroll.
         overflow-y: auto;
         max-height: 10rem;
-        border-bottom: 1px solid var(--border-color);
-    }
+        padding-top: var(--hover-overlay-vertical-padding);
+        padding-bottom: 0;
+        padding-left: var(--hover-overlay-horizontal-padding);
+        padding-right: var(--hover-overlay-contents-right-padding);
 
-    // We use <hr>s as a divider between multiple contents.
-    // This has the nice property of having floating buttons that text wraps around.
-    // stylelint-disable-next-line selector-max-compound-selectors
-    hr {
-        margin: var(--hover-overlay-vertical-padding) calc(var(--hover-overlay-horizontal-padding) * -1);
-        overflow: visible;
-        background: var(--border-color);
-        border: none;
-        // The <hr> acts like a border, which should always be exactly 1px
-        // stylelint-disable-next-line declaration-property-unit-whitelist
-        height: 1px;
+        &--with-close-button {
+            // Required to avoid close button and text content overlap on scroll.
+            --hover-overlay-contents-right-padding: 2rem;
+        }
+
+        // To center loader-icon relative to whole overlay block make horizontal paddings equal.
+        &--loading {
+            padding: var(--hover-overlay-vertical-padding) var(--hover-overlay-horizontal-padding);
+        }
+
+        // These styles should not be applied to content inside of the alerts block.
+        .hover-overlay__content {
+            // Required to apply Body/Small styles. We cannot wrap only text into `<small>` element
+            // because it's part of the markdown which could contain `<code>` and `<small>` too.
+            font-size: 0.75rem;
+            line-height: (16/12);
+            color: var(--hover-overlay-content-color);
+
+            // Required for any first content item to align with the close button on the first row.
+            > *:first-child {
+                margin-top: var(--hover-overlay-content-margin-top);
+                margin-bottom: 0.5rem;
+            }
+        }
+
+        // Descendant selectors are needed here to style rendered markdown.
+        // stylelint-disable selector-max-compound-selectors
+        p {
+            margin-top: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        pre {
+            margin-top: var(--hover-overlay-content-margin-top);
+            margin-bottom: 0.5rem;
+            // Required for the correct line-height of the `<code>` element.
+            line-height: 1;
+        }
+
+        code {
+            font-size: 0.75rem;
+        }
+
+        // We use <hr>s as a divider between multiple contents.
+        // This has the nice property of having floating buttons that text wraps around.
+        hr {
+            // `<p>` and `<pre>` define their own margins, `<hr>` is only concerned with rendering the separator itself.
+            margin-top: 0;
+            margin-bottom: 0;
+            // Enlarge `<hr>` width on the right to span across extra left and right padding.
+            margin-left: calc(var(--hover-overlay-horizontal-padding) * -1);
+            margin-right: calc(var(--hover-overlay-contents-right-padding) * -1);
+            // stylelint-disable-next-line declaration-property-unit-whitelist
+            height: 1px;
+            overflow: visible;
+            border: none;
+            // The <hr> acts like a border, which should always be exactly 1px
+            // @quinn keast
+            // By using one colour for the border and another for the internal separators,
+            // we create better distinction between the popover and its background content, without making it too strongly contrasted within.
+            background-color: var(--hover-overlay-separator-color);
+        }
+        // stylelint-enable selector-max-compound-selectors
     }
 
     &__content {
@@ -78,15 +147,6 @@
 
         // Descendant selectors are needed here to style rendered markdown.
         // stylelint-disable selector-max-compound-selectors
-        p,
-        pre {
-            margin-bottom: 0.5rem;
-
-            &:last-child {
-                margin-bottom: 0;
-            }
-        }
-
         pre,
         code {
             padding: 0;
@@ -99,27 +159,42 @@
         // stylelint-enable selector-max-compound-selectors
     }
 
+    // Every block inside of the overlay should have equal horizontal padding.
+    // Only `contents` has bigger padding on the right to avoid close button overlap on scroll.
+    &__actions,
     &__alerts {
-        display: flex;
-        flex-direction: column;
+        padding-left: var(--hover-overlay-horizontal-padding);
+        padding-right: var(--hover-overlay-horizontal-padding);
+    }
 
+    &__alerts {
+        display: grid;
+        flex-direction: column;
+        row-gap: 0.75rem;
+        // `padding-top` and `border` are required to separate alerts block from the scrollable content.
+        // Otherwise text scrolls right from the alert border which doesn't look good.
+        border-top: 1px solid var(--hover-overlay-separator-color);
+        padding-top: 0.75rem;
+        padding-bottom: 0.75rem;
         // Make sure HoverOverlay doesn't get too large even with large alerts.
         overflow-y: auto;
         max-height: 20rem;
     }
 
     &__alert {
-        padding: 0.5rem;
-        margin: 0;
-        border-radius: 0;
-        border: none;
-        // important is needed because some code host alert styles can define a different border with higher specificity.
-        border-bottom: 1px solid var(--border-color) !important;
+        // Use flex container to move dismiss button to the right and center it vertically.
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0;
 
-        // this is necessary otherwise single line alerts will render on two lines
-        // if they are dismissible.
-        p:last-child {
+        .hover-overlay__content {
             display: inline;
+        }
+
+        // Descendant selector is needed here to style rendered markdown.
+        p:last-child {
+            margin-bottom: 0;
         }
     }
 
@@ -128,206 +203,45 @@
     }
 
     &__alert-dismiss {
-        float: right;
         margin-left: 0.75rem;
+        line-height: 1;
     }
 
     &__actions {
         display: flex;
-    }
-
-    &__action:not(:first-child) {
-        border-left: 1px solid var(--border-color);
+        padding-top: 0.75rem;
+        padding-bottom: 0.5rem;
+        border-top: 1px solid var(--hover-overlay-separator-color);
     }
 
     &__action {
-        flex: 1 1 auto;
+        flex: 0 1 auto;
         text-align: center;
         border: none;
-        border-radius: 0;
+
+        & + & {
+            margin-left: 0.25rem;
+        }
     }
 
     &__loader-row {
         display: flex;
         align-items: center;
         justify-content: center;
-    }
-
-    &__loader-row,
-    &__hover-error {
         padding: 0.5rem;
-        margin: -0.5rem;
         border: none;
         border-radius: 0;
     }
 
-    .theme-redesign & {
-        --hover-overlay-vertical-padding: 0.25rem;
-        --hover-overlay-horizontal-padding: 1rem;
-        --hover-overlay-contents-right-padding: 1rem;
-        --hover-overlay-content-margin-top: 0.5rem;
-        --hover-overlay-separator-color: var(--border-color);
-
-        padding-bottom: var(--hover-overlay-vertical-padding);
-
-        &__loader-row {
-            margin: 0;
-        }
-
-        &__hover-error-redesign {
-            margin-top: var(--hover-overlay-content-margin-top);
-            margin-bottom: 0.5rem;
-        }
-
-        &__hover-empty {
-            display: block;
-            // Because hover-empty is `<small>` we need bigger margin-top to align it with the close button.
-            margin-top: var(--hover-overlay-content-margin-top);
-            margin-bottom: 0.5rem;
-        }
-
-        &__badge {
-            // Align badge vertically with the close button and first row of the text content.
-            margin-top: var(--hover-overlay-content-margin-top);
-            margin-left: 0.5rem;
-            margin-right: 0.25rem;
-            // Small margin-bottom to add some space between the badge and long content that wraps around it.
-            margin-bottom: 0.25rem;
-            // Needs to be absolute value to align well with the content
-            // because it's wrapped into a `small` which might have different font-size.
-            line-height: 1rem;
-
-            &-label {
-                vertical-align: top;
-            }
-        }
-
-        &__close-button {
-            top: var(--hover-overlay-content-margin-top);
-            margin-right: -1.25rem;
-            margin-left: 0;
-
-            &--loading {
-                // While loading close-button has an absolute position with the `right` coordinate,
-                // so `margin-right` is redundant in this state.
-                margin-right: 0;
-            }
-        }
-
-        &__contents {
-            padding-top: var(--hover-overlay-vertical-padding);
-            padding-bottom: 0;
-            padding-right: var(--hover-overlay-contents-right-padding);
-            border-bottom: none;
-
-            &--with-close-button {
-                // Required to avoid close button and text content overlap on scroll.
-                --hover-overlay-contents-right-padding: 2rem;
-            }
-
-            // To center loader-icon relative to whole overlay block make horizontal paddings equal.
-            &--loading {
-                padding: var(--hover-overlay-vertical-padding) var(--hover-overlay-horizontal-padding);
-            }
-
-            // These styles should not be applied to content inside of the alerts block.
-            .hover-overlay__content {
-                // Required to apply Body/Small styles. We cannot wrap only text into `<small>` element
-                // because it's part of the markdown which could contain `<code>` and `<small>` too.
-                font-size: 0.75rem;
-                line-height: (16/12);
-                color: var(--hover-overlay-content-color);
-
-                // Required for any first content item to align with the close button on the first row.
-                > *:first-child {
-                    margin-top: var(--hover-overlay-content-margin-top);
-                    margin-bottom: 0.5rem;
-                }
-            }
-
-            // Descendant selectors are needed here to style rendered markdown.
-            // stylelint-disable selector-max-compound-selectors
-            hr {
-                // `<p>` and `<pre>` define their own margins in the redesign version.
-                // `<hr>` is only concerned with rendering the separator itself.
-                margin-top: 0;
-                margin-bottom: 0;
-                // Enlarge `<hr>` width on the right to span across extra right padding.
-                margin-right: calc(var(--hover-overlay-contents-right-padding) * -1);
-                // @quinn keast
-                // By using one colour for the border and another for the internal separators,
-                // we create better distinction between the popover and its background content, without making it too strongly contrasted within.
-                background-color: var(--hover-overlay-separator-color);
-            }
-
-            p {
-                margin-top: 0.75rem;
-                margin-bottom: 0.75rem;
-            }
-
-            pre {
-                margin-top: var(--hover-overlay-content-margin-top);
-                margin-bottom: 0.5rem;
-                // Required for the correct line-height of the `<code>` element.
-                line-height: 1;
-            }
-
-            code {
-                font-size: 0.75rem;
-            }
-        }
-
-        // Every block inside of the overlay should have equal horizontal padding.
-        // Only `contents` has bigger padding on the right to avoid close button overlap on scroll.
-        &__actions,
-        &__alerts {
-            padding-left: var(--hover-overlay-horizontal-padding);
-            padding-right: var(--hover-overlay-horizontal-padding);
-        }
-
-        &__alerts {
-            display: grid;
-            row-gap: 0.75rem;
-            // `padding-top` and `border` are required to separate alerts block from the scrollable content.
-            // Otherwise text scrolls right from the alert border which doesn't look good.
-            border-top: 1px solid var(--hover-overlay-separator-color);
-            padding-top: 0.75rem;
-            padding-bottom: 0.75rem;
-        }
-
-        &__alert-dismiss {
-            line-height: 1;
-        }
-
-        &__alert-redesign {
-            // Use flex container to move dismiss button to the right and center it vertically.
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0;
-
-            // Descendant selector is needed here to style rendered markdown.
-            p:last-child {
-                margin-bottom: 0;
-            }
-        }
-
-        &__actions {
-            padding-top: 0.75rem;
-            padding-bottom: 0.5rem;
-            border-top: 1px solid var(--hover-overlay-separator-color);
-        }
-
-        &__action {
-            flex-grow: 0;
-
-            &:not(:first-child) {
-                border-left: none;
-            }
-        }
+    &__hover-error {
+        margin-top: var(--hover-overlay-content-margin-top);
+        margin-bottom: 0.75rem;
     }
 
-    .theme-redesign &__action + &__action {
-        margin-left: 0.25rem;
+    &__hover-empty {
+        display: block;
+        // Because hover-empty is `<small>` we need bigger margin-top to align it with the close button.
+        margin-top: var(--hover-overlay-content-margin-top);
+        margin-bottom: 0.5rem;
     }
 }
