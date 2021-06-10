@@ -260,5 +260,9 @@ func (s BitbucketServerSource) MergeChangeset(ctx context.Context, c *Changeset,
 		return errors.New("Changeset is not a Bitbucket Server pull request")
 	}
 
-	return s.client.CreatePullRequestComment(ctx, pr, text)
+	if err := s.client.MergePullRequest(ctx, pr); err != nil {
+		return err
+	}
+
+	return c.Changeset.SetMetadata(pr)
 }

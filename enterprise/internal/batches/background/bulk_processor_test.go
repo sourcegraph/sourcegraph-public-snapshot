@@ -29,7 +29,7 @@ func TestBulkProcessor(t *testing.T) {
 	t.Run("Unknown job type", func(t *testing.T) {
 		fake := &sources.FakeChangesetSource{}
 		bp := &bulkProcessor{
-			store:   bstore,
+			tx:      bstore,
 			sourcer: sources.NewFakeSourcer(nil, fake),
 		}
 		job := &types.ChangesetJob{
@@ -50,7 +50,7 @@ func TestBulkProcessor(t *testing.T) {
 	t.Run("Comment job", func(t *testing.T) {
 		fake := &sources.FakeChangesetSource{}
 		bp := &bulkProcessor{
-			store:   bstore,
+			tx:      bstore,
 			sourcer: sources.NewFakeSourcer(nil, fake),
 		}
 		job := &types.ChangesetJob{
@@ -73,7 +73,7 @@ func TestBulkProcessor(t *testing.T) {
 	t.Run("Detach job", func(t *testing.T) {
 		fake := &sources.FakeChangesetSource{}
 		bp := &bulkProcessor{
-			store:   bstore,
+			tx:      bstore,
 			sourcer: sources.NewFakeSourcer(nil, fake),
 		}
 		job := &types.ChangesetJob{

@@ -33,7 +33,7 @@ func (e unknownJobTypeErr) NonRetryable() bool {
 }
 
 type bulkProcessor struct {
-	store   *store.Store
+	tx      *store.Store
 	sourcer sources.Sourcer
 
 	css  sources.ChangesetSource
@@ -42,24 +42,27 @@ type bulkProcessor struct {
 }
 
 func (b *bulkProcessor) process(ctx context.Context, job *btypes.ChangesetJob) (err error) {
+	// Use the acting user for the operation to enforce repository permissions.
+	ctx = actor.WithActor(ctx, actor.FromUser(job.UserID))
+
 	// Load changeset.
-	b.ch, err = b.store.GetChangeset(ctx, store.GetChangesetOpts{ID: job.ChangesetID})
+	b.ch, err = b.tx.GetChangeset(ctx, store.GetChangesetOpts{ID: job.ChangesetID})
 	if err != nil {
 		return errors.Wrap(err, "loading changeset")
 	}
 
 	// Load repo.
-	b.repo, err = b.store.Repos().Get(ctx, b.ch.RepoID)
+	b.repo, err = b.tx.Repos().Get(ctx, b.ch.RepoID)
 	if err != nil {
 		return errors.Wrap(err, "loading repo")
 	}
 
 	// Construct changeset source.
-	b.css, err = b.sourcer.ForRepo(ctx, b.store, b.repo)
+	b.css, err = b.sourcer.ForRepo(ctx, b.tx, b.repo)
 	if err != nil {
 		return errors.Wrap(err, "loading ChangesetSource")
 	}
-	b.css, err = sources.WithAuthenticatorForUser(ctx, b.store, b.css, job.UserID, b.repo)
+	b.css, err = sources.WithAuthenticatorForUser(ctx, b.tx, b.css, job.UserID, b.repo)
 	if err != nil {
 		return errors.Wrap(err, "authenticating ChangesetSource")
 	}
@@ -112,13 +115,11 @@ func (b *bulkProcessor) detach(ctx context.Context, job *btypes.ChangesetJob) er
 
 	// If we successfully marked the record as to-be-detached, trigger a reconciler run.
 	b.ch.ResetReconcilerState(global.DefaultReconcilerEnqueueState())
-	return b.store.UpdateChangeset(ctx, b.ch)
+	return b.tx.UpdateChangeset(ctx, b.ch)
 }
 
 func (b *bulkProcessor) reenqueueChangeset(ctx context.Context, job *btypes.ChangesetJob) error {
-	svc := service.New(b.store)
-	// Use the acting user for the operation to enforce repository permissions.
-	ctx = actor.WithActor(ctx, actor.FromUser(job.UserID))
+	svc := service.New(b.tx)
 	_, _, err := svc.ReenqueueChangeset(ctx, b.ch.ID)
 	return err
 }
@@ -132,25 +133,17 @@ func (b *bulkProcessor) mergeChangeset(ctx context.Context, job *btypes.Changese
 		return err
 	}
 
-	tx, err := b.store.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		err = tx.Done(err)
-	}()
-
 	events, err := cs.Changeset.Events()
 	if err != nil {
 		log15.Error("Events", "err", err)
 		return errcode.MakeNonRetryable(err)
 	}
-	state.SetDerivedState(ctx, tx.Repos(), cs.Changeset, events)
+	state.SetDerivedState(ctx, b.tx.Repos(), cs.Changeset, events)
 
-	if err := tx.UpsertChangesetEvents(ctx, events...); err != nil {
+	if err := b.tx.UpsertChangesetEvents(ctx, events...); err != nil {
 		log15.Error("UpsertChangesetEvents", "err", err)
 		return err
 	}
 
-	return tx.UpdateChangeset(ctx, cs.Changeset)
+	return b.tx.UpdateChangeset(ctx, cs.Changeset)
 }

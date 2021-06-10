@@ -1507,3 +1507,25 @@ func (c *Client) CreatePullRequestComment(ctx context.Context, pr *PullRequest, 
 	_, err := c.send(ctx, "POST", path, qry, &payload, &resp)
 	return err
 }
+
+func (c *Client) MergePullRequest(ctx context.Context, pr *PullRequest) error {
+	if pr.ToRef.Repository.Slug == "" {
+		return errors.New("repository slug empty")
+	}
+
+	if pr.ToRef.Repository.Project.Key == "" {
+		return errors.New("project key empty")
+	}
+
+	path := fmt.Sprintf(
+		"rest/api/1.0/projects/%s/repos/%s/pull-requests/%d/merge",
+		pr.ToRef.Repository.Project.Key,
+		pr.ToRef.Repository.Slug,
+		pr.ID,
+	)
+
+	qry := url.Values{"version": {strconv.Itoa(pr.Version)}}
+
+	_, err := c.send(ctx, "POST", path, qry, nil, pr)
+	return err
+}

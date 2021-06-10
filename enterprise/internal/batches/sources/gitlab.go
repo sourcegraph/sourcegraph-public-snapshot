@@ -426,11 +426,21 @@ func (s *GitLabSource) CreateComment(ctx context.Context, c *Changeset, text str
 
 // MergeChangeset merges a Changeset on the code host, if in a mergeable state.
 func (s *GitLabSource) MergeChangeset(ctx context.Context, c *Changeset, text string) error {
-	project := c.Repo.Metadata.(*gitlab.Project)
 	mr, ok := c.Changeset.Metadata.(*gitlab.MergeRequest)
 	if !ok {
 		return errors.New("Changeset is not a GitLab merge request")
 	}
+	project := c.Repo.Metadata.(*gitlab.Project)
 
-	return s.client.CreateMergeRequestNote(ctx, project, mr, text)
+	updated, err := s.client.MergeMergeRequest(ctx, project, mr)
+	if err != nil {
+		return errors.Wrap(err, "merging GitLab merge request")
+	}
+
+	// These additional API calls can go away once we can use the GraphQL API.
+	if err := s.decorateMergeRequestData(ctx, project, mr); err != nil {
+		return errors.Wrapf(err, "retrieving additional data for merge request %d", mr.IID)
+	}
+
+	return c.Changeset.SetMetadata(updated)
 }

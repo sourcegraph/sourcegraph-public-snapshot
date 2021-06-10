@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -266,7 +267,8 @@ func (s GithubSource) MergeChangeset(ctx context.Context, c *Changeset, text str
 	} else if repo.SquashMergeAllowed {
 		mergeMethod = "SQUASH"
 	} else {
-		return errors.New("no merge method allowed on repo")
+		mergeMethod = "MERGE"
+		log15.Error("no merge method allowed on repo, falling back to MERGE")
 	}
 	pr, ok := c.Changeset.Metadata.(*github.PullRequest)
 	if !ok {

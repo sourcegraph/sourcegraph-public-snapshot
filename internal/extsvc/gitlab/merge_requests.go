@@ -240,6 +240,36 @@ func (c *Client) UpdateMergeRequest(ctx context.Context, project *Project, mr *M
 	return resp, nil
 }
 
+func (c *Client) MergeMergeRequest(ctx context.Context, project *Project, mr *MergeRequest) (*MergeRequest, error) {
+	if MockMergeMergeRequest != nil {
+		return MockMergeMergeRequest(c, ctx, project, mr)
+	}
+
+	payload := struct {
+		MergeWhenPipelineSucceeds bool `json:"merge_when_pipeline_succeeds,omitempty"`
+	}{
+		MergeWhenPipelineSucceeds: false,
+	}
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return nil, errors.Wrap(err, "marshalling options")
+	}
+
+	time.Sleep(c.rateLimitMonitor.RecommendedWaitForBackgroundOp(1))
+
+	req, err := http.NewRequest("PUT", fmt.Sprintf("projects/%d/merge_requests/%d/merge", project.ID, mr.IID), bytes.NewBuffer(data))
+	if err != nil {
+		return nil, errors.Wrap(err, "creating request to merge a merge request")
+	}
+
+	resp := &MergeRequest{}
+	if _, _, err := c.do(ctx, req, resp); err != nil {
+		return nil, errors.Wrap(err, "sending request to merge a merge request")
+	}
+
+	return resp, nil
+}
+
 func (c *Client) CreateMergeRequestNote(ctx context.Context, project *Project, mr *MergeRequest, body string) error {
 	if MockCreateMergeRequestNote != nil {
 		return MockCreateMergeRequestNote(c, ctx, project, mr, body)
