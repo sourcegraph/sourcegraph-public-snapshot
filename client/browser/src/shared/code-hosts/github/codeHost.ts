@@ -385,7 +385,7 @@ export const githubCodeHost: CodeHost = {
         actionItemClassName: 'btn btn-secondary',
         actionItemPressedClassName: 'active',
         closeButtonClassName: 'btn-octicon p-0',
-        badgeClassName: 'flash',
+        badgeClassName: 'label',
         getAlertClassName: createNotificationClassNameGetter(notificationClassNames, 'flash-full'),
         iconClassName,
     },
