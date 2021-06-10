@@ -569,7 +569,7 @@ func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *struct {
 		return nil, errors.New("neither name nor cloneURL given")
 	}
 
-	repo, err := backend.Repos.GetByName(ctx, name)
+	repo, err := backend.NewRepos(r.db).GetByName(ctx, name)
 	if err != nil {
 		if err, ok := err.(backend.ErrRepoSeeOther); ok {
 			return &repositoryRedirect{redirect: &RedirectResolver{url: err.RedirectURL}}, nil

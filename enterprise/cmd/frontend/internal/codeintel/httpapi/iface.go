@@ -4,11 +4,13 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )
 
 type DBStore interface {
 	Transact(ctx context.Context) (DBStore, error)
 	Done(err error) error
+	Handle() *basestore.TransactableHandle
 
 	GetUploadByID(ctx context.Context, uploadID int) (dbstore.Upload, bool, error)
 	InsertUpload(ctx context.Context, upload dbstore.Upload) (int, error)
