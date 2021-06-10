@@ -40,6 +40,7 @@ import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
+import { fetchFeatureFlags, FlagSet } from './featureFlags/featureFlags'
 import { logInsightMetrics } from './insights'
 import { KeyboardShortcutsProps } from './keyboardShortcuts/keyboardShortcuts'
 import { Layout, LayoutProps } from './Layout'
@@ -218,6 +219,11 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      * Whether the design refresh toggle is enabled.
      */
     designRefreshToggleEnabled: boolean
+
+    /**
+     * Evaluated feature flags for the current viewer
+     */
+    featureFlags: FlagSet
 }
 
 const notificationClassNames = {
@@ -312,6 +318,10 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             // eslint-disable-next-line react/no-unused-state
             enableAPIDocs: false,
             designRefreshToggleEnabled: false,
+            // Disabling linter here because this is not yet used anywhere.
+            // This can be re-enabled as soon as feature flags are leveraged.
+            // eslint-disable-next-line react/no-unused-state
+            featureFlags: {},
         }
     }
 
@@ -407,6 +417,15 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                         location.reload()
                     }
                 })
+        )
+
+        this.subscriptions.add(
+            fetchFeatureFlags().subscribe(event => {
+                // Disabling linter here because this is not yet used anywhere.
+                // This can be re-enabled as soon as feature flags are leveraged.
+                // eslint-disable-next-line react/no-unused-state
+                this.setState({ featureFlags: event })
+            })
         )
 
         if (this.state.parsedSearchQuery && !filterExists(this.state.parsedSearchQuery, FilterType.context)) {

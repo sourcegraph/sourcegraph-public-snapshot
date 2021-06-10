@@ -39,7 +39,7 @@ export const FIXTURE_WARNING_MARKDOWN_ALERT: HoverAlert = {
     summary: {
         kind: MarkupKind.Markdown,
         value:
-            'This is a warning alert. [It uses Markdown.](https://sourcegraph.com) `To render things easily`. *Cool!*',
+            "This is a warning alert. [It uses Markdown.](https://sourcegraph.com) `To render things easily`. *Cool!*\n\nIt's a second paragraph.",
     },
     type: 'test-alert-type',
     iconKind: 'warning',

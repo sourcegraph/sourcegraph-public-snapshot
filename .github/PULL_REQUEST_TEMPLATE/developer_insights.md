@@ -19,6 +19,7 @@ Insert description here...
   - [ ] Milestone Z
   - [ ] Milestone ...
 - [ ] Documentation text/screenshots updated (if relevant)
+- [ ] Changelog updated (if user-facing)
 - [ ] Approved by a frontend engineer (if touching frontend code)
 - [ ] Approved by a backend engineer (if touching backend code)
 - [ ] Approved by a designer (if it touches the UI)

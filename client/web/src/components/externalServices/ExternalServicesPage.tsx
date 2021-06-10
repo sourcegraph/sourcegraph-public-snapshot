@@ -85,9 +85,9 @@ export const ExternalServicesPage: React.FunctionComponent<Props> = ({
     }
     return (
         <div className="site-admin-external-services-page">
-            <PageTitle title="Manage repositories" />
+            <PageTitle title="Manage code hosts" />
             <div className="d-flex justify-content-between align-items-center mb-3">
-                <h2 className="mb-0">Manage repositories</h2>
+                <h2 className="mb-0">Manage code hosts</h2>
                 {!isManagingOtherUser && (
                     <Link
                         className="btn btn-primary test-goto-add-external-service-page"
@@ -105,8 +105,8 @@ export const ExternalServicesPage: React.FunctionComponent<Props> = ({
                 ExternalServicesResult['externalServices']
             >
                 className="list-group list-group-flush mt-3"
-                noun="external service"
-                pluralNoun="external services"
+                noun="code host"
+                pluralNoun="code hosts"
                 queryConnection={queryConnection}
                 nodeComponent={ExternalServiceNode}
                 nodeComponentProps={{
