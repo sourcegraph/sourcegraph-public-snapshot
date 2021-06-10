@@ -17,7 +17,7 @@ type featuredExtensionsResolver struct {
 	db                 dbutil.DB
 }
 
-func (r *extensionRegistryResolver) FeaturedExtensions(ctx context.Context) (graphqlbackend.FeaturedExtensions, error) {
+func (r *extensionRegistryResolver) FeaturedExtensions(ctx context.Context) (graphqlbackend.FeaturedExtensionsConnection, error) {
 	return &featuredExtensionsResolver{db: r.db}, nil
 }
 

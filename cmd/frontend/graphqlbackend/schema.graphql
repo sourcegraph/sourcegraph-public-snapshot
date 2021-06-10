@@ -5822,7 +5822,7 @@ type ExtensionRegistry {
     """
     A list of featured extensions in the registry.
     """
-    featuredExtensions: FeaturedExtensions
+    featuredExtensions: FeaturedExtensionsConnection
 }
 
 """
@@ -6079,7 +6079,7 @@ type RegistryExtensionConnection {
 """
 A list of featured extensions in the registry.
 """
-type FeaturedExtensions {
+type FeaturedExtensionsConnection {
     """
     A list of featured registry extensions.
     """

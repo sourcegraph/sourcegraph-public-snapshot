@@ -46,7 +46,7 @@ type ExtensionRegistryResolver interface {
 	PublishExtension(context.Context, *ExtensionRegistryPublishExtensionArgs) (ExtensionRegistryMutationResult, error)
 	DeleteExtension(context.Context, *ExtensionRegistryDeleteExtensionArgs) (*EmptyResponse, error)
 	LocalExtensionIDPrefix() *string
-	FeaturedExtensions(context.Context) (FeaturedExtensions, error)
+	FeaturedExtensions(context.Context) (FeaturedExtensionsConnection, error)
 
 	ImplementsLocalExtensionRegistry() bool // not exposed via GraphQL
 	// FilterRemoteExtensions enforces `allowRemoteExtensions` by returning a
@@ -156,8 +156,8 @@ type RegistryPublisherConnection interface {
 	PageInfo(context.Context) (*graphqlutil.PageInfo, error)
 }
 
-// FeaturedExtensions is the interface for the GraphQL type FeaturedExtensions.
-type FeaturedExtensions interface {
+// FeaturedExtensions is the interface for the GraphQL type FeaturedExtensionsConnection.
+type FeaturedExtensionsConnection interface {
 	Nodes(context.Context) ([]RegistryExtension, error)
 	Error(context.Context) *string
 }
