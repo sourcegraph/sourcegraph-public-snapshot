@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 )
@@ -110,7 +111,8 @@ func logBackendEvent(ctx context.Context, db dbutil.DB, name string, args interf
 	if err != nil {
 		return err
 	}
-	return usagestats.LogBackendEvent(db, actor.UID, name, jsonArg)
+	featureFlags := featureflag.FromContext(ctx)
+	return usagestats.LogBackendEvent(db, actor.UID, name, jsonArg, featureFlags)
 }
 
 func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {

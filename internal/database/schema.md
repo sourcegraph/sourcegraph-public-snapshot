@@ -533,6 +533,7 @@ Referenced by:
  argument          | jsonb                    |           | not null | 
  version           | text                     |           | not null | 
  timestamp         | timestamp with time zone |           | not null | 
+ feature_flags     | jsonb                    |           |          | 
 Indexes:
     "event_logs_pkey" PRIMARY KEY, btree (id)
     "event_logs_anonymous_user_id" btree (anonymous_user_id)
