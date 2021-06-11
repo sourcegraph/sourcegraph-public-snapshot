@@ -4,9 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { Observable } from 'rxjs'
 import { AggregableBadge, Badge } from 'sourcegraph'
 
-import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
-
-import * as GQL from '../graphql/schema'
+import { FileLineMatch, FileSymbolMatch, getFileMatchUrl, getRepositoryUrl, getRevision } from '../search/stream'
 import { SettingsCascadeProps } from '../settings/settings'
 import { pluralize } from '../util/strings'
 import { useRedesignToggle } from '../util/useRedesignToggle'
@@ -15,17 +13,10 @@ import { FetchFileParameters } from './CodeExcerpt'
 import { EventLogger, FileMatchChildren } from './FileMatchChildren'
 import { LinkOrSpan } from './LinkOrSpan'
 import { RepoFileLink } from './RepoFileLink'
+import { RepoIcon } from './RepoIcon'
 import { Props as ResultContainerProps, ResultContainer } from './ResultContainer'
 
 const SUBSET_COUNT_KEY = 'fileMatchSubsetCount'
-
-export type FileLineMatch = Partial<Pick<GQL.IFileMatch, 'revSpec' | 'symbols' | 'limitHit'>> & {
-    file: Pick<GQL.IFile, 'path' | 'url'> & { commit: Pick<GQL.IGitCommit, 'oid'> }
-    repository: Pick<GQL.IRepository, 'name' | 'url'>
-    lineMatches: LineMatch[]
-}
-
-export type LineMatch = Pick<GQL.ILineMatch, 'preview' | 'lineNumber' | 'offsetAndLengths' | 'limitHit'> & Badge
 
 export interface MatchItem extends Badge {
     highlightRanges: {
@@ -45,7 +36,7 @@ interface Props extends SettingsCascadeProps {
     /**
      * The file match search result.
      */
-    result: FileLineMatch
+    result: FileLineMatch | FileSymbolMatch
 
     /**
      * Formatted repository name to be displayed in repository link. If not
@@ -92,31 +83,32 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
     const [isRedesignEnabled] = useRedesignToggle()
 
     const result = props.result
-    const items: MatchItem[] = props.result.lineMatches.map(match => ({
-        highlightRanges: match.offsetAndLengths.map(([start, highlightLength]) => ({ start, highlightLength })),
-        preview: match.preview,
-        line: match.lineNumber,
-        aggregableBadges: match.aggregableBadges,
-    }))
+    const items: MatchItem[] =
+        result.type === 'file'
+            ? result.lineMatches.map(match => ({
+                  highlightRanges: match.offsetAndLengths.map(([start, highlightLength]) => ({
+                      start,
+                      highlightLength,
+                  })),
+                  preview: match.line,
+                  line: match.lineNumber,
+              }))
+            : []
 
-    const { repoAtRevURL, revDisplayName } =
-        result.revSpec?.__typename === 'GitRevSpecExpr' && result.revSpec.object?.commit
-            ? { repoAtRevURL: result.revSpec.object?.commit?.url, revDisplayName: result.revSpec.expr }
-            : result.revSpec?.__typename === 'GitRef'
-            ? { repoAtRevURL: result.revSpec.url, revDisplayName: result.revSpec.displayName }
-            : { repoAtRevURL: result.repository.url, revDisplayName: '' }
+    const repoAtRevisionURL = getRepositoryUrl(result.repository, result.branches)
+    const revisionDisplayName = getRevision(result.branches, result.version)
 
     const renderTitle = (): JSX.Element => (
         <>
-            {isRedesignEnabled && <RepoIcon repoName={result.repository.name} className="icon-inline text-muted" />}
+            {isRedesignEnabled && <RepoIcon repoName={result.repository} className="icon-inline text-muted" />}
             <RepoFileLink
-                repoName={result.repository.name}
-                repoURL={repoAtRevURL}
-                filePath={result.file.path}
-                fileURL={result.file.url}
+                repoName={result.repository}
+                repoURL={repoAtRevisionURL}
+                filePath={result.name}
+                fileURL={getFileMatchUrl(result)}
                 repoDisplayName={
                     props.repoDisplayName
-                        ? `${props.repoDisplayName}${revDisplayName ? `@${revDisplayName}` : ''}`
+                        ? `${props.repoDisplayName}${revisionDisplayName ? `@${revisionDisplayName}` : ''}`
                         : undefined
                 }
                 className={isRedesignEnabled ? 'ml-1' : undefined}
@@ -151,7 +143,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
         <FileMatchChildren {...props} items={items} result={result} allMatches={true} subsetMatches={subsetMatches} />
     )
 
-    const matchCount = items.length || result.symbols?.length
+    const matchCount = items.length || (result.type === 'symbol' ? result.symbols?.length : 0)
     const matchCountLabel = matchCount ? `${matchCount} ${pluralize('match', matchCount, 'matches')}` : ''
 
     if (props.showAllMatches) {
