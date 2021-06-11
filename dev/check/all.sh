@@ -19,7 +19,6 @@ CHECKS=(
   ./go-dbconn-import.sh
   ./go-generate.sh
   ./go-lint.sh
-  # ./go-error-package.sh
   # Disabled until we can figure out why it's flaky
   #./ioutil.sh
   ./no-alpine-guard.sh
