@@ -70,9 +70,7 @@ export class CaseInsensitiveFuzzySearch extends FuzzySearch {
                     offsets.add(offset)
                 }
             }
-            const positions: RangePosition[] = [...offsets]
-                .sort((a, b) => a - b)
-                .map(offset => ({ startOffset: offset, endOffset: offset + 1, isExact: false }))
+            const positions = compressedRangePositions([...offsets])
             return {
                 positions,
                 text: candidate.text,
@@ -107,4 +105,26 @@ export class CaseInsensitiveFuzzySearch extends FuzzySearch {
         }
         return undefined
     }
+}
+
+/**
+ * Returns the minimal number of range positions that enclose the given offset positions.
+ *
+ * Consecutive offset positions get compressed into a single range position. For example, the
+ * offsets [1, 2, 3, 5, 6] become two range positions [1-3, 5-6].
+ */
+function compressedRangePositions(offsets: number[]): RangePosition[] {
+    offsets.sort((a, b) => a - b)
+    const ranges: RangePosition[] = []
+    let index = 0
+    while (index < offsets.length) {
+        const start = offsets[index]
+        index++
+        while (index < offsets.length && offsets[index] === offsets[index - 1] + 1) {
+            index++
+        }
+        const end = offsets[index - 1] + 1
+        ranges.push({ startOffset: start, endOffset: end, isExact: false })
+    }
+    return ranges
 }

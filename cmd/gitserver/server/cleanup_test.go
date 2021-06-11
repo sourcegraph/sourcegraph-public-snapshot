@@ -125,7 +125,7 @@ func TestCleanupInactive(t *testing.T) {
 // relevant internal magic numbers and transformations change.
 func TestGitGCAuto(t *testing.T) {
 	// Create a test repository with detectable garbage that GC can prune.
-	root := tmpDir(t)
+	root := t.TempDir()
 	repo := filepath.Join(root, "garbage-repo")
 	defer os.RemoveAll(root)
 	runCmd(t, root, "git", "init", repo)
@@ -326,7 +326,7 @@ func TestCleanupExpired(t *testing.T) {
 }
 
 func TestCleanupOldLocks(t *testing.T) {
-	root := tmpDir(t)
+	root := t.TempDir()
 
 	// Only recent lock files should remain.
 	mkFiles(t, root,
@@ -394,7 +394,7 @@ func TestCleanupOldLocks(t *testing.T) {
 }
 
 func TestSetupAndClearTmp(t *testing.T) {
-	root := tmpDir(t)
+	root := t.TempDir()
 
 	s := &Server{ReposDir: root}
 
@@ -456,7 +456,7 @@ func TestSetupAndClearTmp(t *testing.T) {
 }
 
 func TestSetupAndClearTmp_Empty(t *testing.T) {
-	root := tmpDir(t)
+	root := t.TempDir()
 
 	s := &Server{ReposDir: root}
 
@@ -470,7 +470,7 @@ func TestSetupAndClearTmp_Empty(t *testing.T) {
 }
 
 func TestRemoveRepoDirectory(t *testing.T) {
-	root := tmpDir(t)
+	root := t.TempDir()
 
 	mkFiles(t, root,
 		"github.com/foo/baz/.git/HEAD",
@@ -553,7 +553,7 @@ func TestRemoveRepoDirectory(t *testing.T) {
 }
 
 func TestRemoveRepoDirectory_Empty(t *testing.T) {
-	root := tmpDir(t)
+	root := t.TempDir()
 
 	mkFiles(t, root,
 		"github.com/foo/baz/.git/HEAD",
@@ -631,16 +631,6 @@ func (f *fakeDiskSizer) BytesFreeOnDisk(mountPoint string) (uint64, error) {
 
 func (f *fakeDiskSizer) DiskSizeBytes(mountPoint string) (uint64, error) {
 	return f.diskSize, nil
-}
-
-func tmpDir(t *testing.T) string {
-	t.Helper()
-	dir, err := os.MkdirTemp("", filepath.Base(t.Name()))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { os.RemoveAll(dir) })
-	return dir
 }
 
 func mkFiles(t *testing.T, root string, paths ...string) {

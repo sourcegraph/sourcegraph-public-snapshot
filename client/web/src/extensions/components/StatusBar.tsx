@@ -33,6 +33,9 @@ interface StatusBarProps extends ExtensionsControllerProps<'extHostAPI' | 'execu
     location: H.Location
 
     statusBarRef?: React.Ref<HTMLDivElement>
+
+    /** Whether to hide the status bar while extensions are loading. */
+    hideWhileInitializing?: boolean
 }
 
 export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
@@ -42,12 +45,9 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
     uri,
     location,
     statusBarRef,
+    hideWhileInitializing,
 }) => {
     const statusBarItems = useObservable(useMemo(() => getStatusBarItems(), [getStatusBarItems]))
-
-    const haveExtensionsLoaded = useObservable(
-        useMemo(() => haveInitialExtensionsLoaded(extensionsController.extHostAPI), [extensionsController])
-    )
 
     // Wait a generous amount of time on top of initial extension loading
     // before showing "Install extensions" message to be forgiving of extensions
@@ -79,6 +79,10 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
 
     const LeftIcon = isRedesignEnabled ? ChevronLeftIcon : MenuLeftIcon
     const RightIcon = isRedesignEnabled ? ChevronRightIcon : MenuRightIcon
+
+    if (!hasEnoughTimePassed && hideWhileInitializing) {
+        return null
+    }
 
     return (
         <div
@@ -118,8 +122,7 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
                                   location={location}
                               />
                           ))
-                        : haveExtensionsLoaded &&
-                          hasEnoughTimePassed && (
+                        : hasEnoughTimePassed && (
                               <div className="status-bar__item ml-2">
                                   <small className="text-muted">
                                       No information from extensions available.{' '}

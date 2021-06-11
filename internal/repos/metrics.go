@@ -90,7 +90,7 @@ var (
 	})
 )
 
-func MustRegisterMetrics(db dbutil.DB) {
+func MustRegisterMetrics(db dbutil.DB, sourcegraphDotCom bool) {
 	scanCount := func(sql string) (float64, error) {
 		row := db.QueryRowContext(context.Background(), sql)
 		var count int64
@@ -228,16 +228,24 @@ SELECT COUNT(*) FROM external_service_sync_jobs WHERE state = 'errored'
 		return count
 	})
 
+	backoffQuery := `
+-- source: internal/repos/metrics.go:src_repoupdater_errored_sync_jobs_total
+SELECT extract(epoch from max(now() - last_sync_at)) FROM external_services
+WHERE deleted_at IS NULL
+AND NOT cloud_default
+AND last_sync_at IS NOT NULL
+`
+	if sourcegraphDotCom {
+		// We don't want to include user added external services on sourcegraph.com as we
+		// have no control over how they're configured
+		backoffQuery = backoffQuery + " AND namespace_user_id IS NULL"
+	}
+
 	promauto.NewGaugeFunc(prometheus.GaugeOpts{
 		Name: "src_repoupdater_max_sync_backoff",
 		Help: "The maximum number of seconds since any external service synced",
 	}, func() float64 {
-		seconds, err := scanNullFloat(`
--- source: internal/repos/metrics.go:src_repoupdater_errored_sync_jobs_total
-SELECT extract(epoch from max(now() - last_sync_at)) FROM external_services
-WHERE deleted_at IS NULL
-AND last_sync_at IS NOT NULL
-`)
+		seconds, err := scanNullFloat(backoffQuery)
 		if err != nil {
 			log15.Error("Failed to get max sync backoff", "err", err)
 			return 0

@@ -1,14 +1,9 @@
 import classNames from 'classnames'
-import { MdiReactIconComponentType } from 'mdi-react'
-import WarningIcon from 'mdi-react/AlertCircleOutlineIcon'
-import ErrorIcon from 'mdi-react/AlertDecagramOutlineIcon'
-import InformationIcon from 'mdi-react/InfoCircleOutlineIcon'
 import React from 'react'
 import { HoverAlert } from 'sourcegraph'
 
 import { NotificationType } from '../../api/extension/extensionHostApi'
 import { renderMarkdown } from '../../util/markdown'
-import { useRedesignToggle } from '../../util/useRedesignToggle'
 import { GetAlertClassName } from '../HoverOverlay.types'
 
 export interface HoverOverlayAlertsProps {
@@ -19,21 +14,6 @@ export interface HoverOverlayAlertsProps {
     getAlertClassName?: GetAlertClassName
 }
 
-const hoverAlertIconComponents: Record<Required<HoverAlert>['iconKind'], MdiReactIconComponentType> = {
-    info: InformationIcon,
-    warning: WarningIcon,
-    error: ErrorIcon,
-}
-
-function hoverAlertIconComponent(
-    iconKind?: Required<HoverAlert>['iconKind'],
-    className?: string
-): JSX.Element | undefined {
-    const PredefinedIcon = iconKind && hoverAlertIconComponents[iconKind]
-
-    return PredefinedIcon && <PredefinedIcon className={classNames('hover-overlay__alert-icon', className)} />
-}
-
 const iconKindToNotificationType: Record<Required<HoverAlert>['iconKind'], Parameters<GetAlertClassName>[0]> = {
     info: NotificationType.Info,
     warning: NotificationType.Warning,
@@ -41,9 +21,7 @@ const iconKindToNotificationType: Record<Required<HoverAlert>['iconKind'], Param
 }
 
 export const HoverOverlayAlerts: React.FunctionComponent<HoverOverlayAlertsProps> = props => {
-    const { hoverAlerts, iconClassName, onAlertDismissed, getAlertClassName = () => undefined } = props
-
-    const [isRedesignEnabled] = useRedesignToggle()
+    const { hoverAlerts, onAlertDismissed, getAlertClassName = () => undefined } = props
 
     const createAlertDismissedHandler = (alertType: string) => (event: React.MouseEvent<HTMLAnchorElement>) => {
         event.preventDefault()
@@ -59,13 +37,10 @@ export const HoverOverlayAlerts: React.FunctionComponent<HoverOverlayAlertsProps
                 <div
                     key={index}
                     className={classNames(
-                        isRedesignEnabled ? 'hover-overlay__alert-redesign' : 'hover-overlay__alert',
-                        isRedesignEnabled
-                            ? getAlertClassName(iconKind ? iconKindToNotificationType[iconKind] : NotificationType.Info)
-                            : getAlertClassName(NotificationType.Info)
+                        'hover-overlay__alert',
+                        getAlertClassName(iconKind ? iconKindToNotificationType[iconKind] : NotificationType.Info)
                     )}
                 >
-                    {!isRedesignEnabled && hoverAlertIconComponent(iconKind, iconClassName)}
                     {summary.kind === 'plaintext' ? (
                         <span className="hover-overlay__content">{summary.value}</span>
                     ) : (

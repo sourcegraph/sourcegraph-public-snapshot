@@ -1,8 +1,9 @@
-/* eslint-disable jsx-a11y/no-noninteractive-element-interactions */
-// NOTE: the eslint-disable above can't be a eslint-disable-next-line because
-// JSX syntax doesn't support comments on the line where it's needed.
+import classnames from 'classnames'
+import CloseIcon from 'mdi-react/CloseIcon'
+import React, { useState } from 'react'
 
-import React from 'react'
+import { pluralize } from '@sourcegraph/shared/src/util/strings'
+import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
 import { CaseInsensitiveFuzzySearch } from '../../fuzzyFinder/CaseInsensitiveFuzzySearch'
 import { FuzzySearch, FuzzySearchResult, SearchIndexing, SearchValue } from '../../fuzzyFinder/FuzzySearch'
@@ -11,10 +12,6 @@ import { WordSensitiveFuzzySearch } from '../../fuzzyFinder/WordSensitiveFuzzySe
 import { FuzzyFinderProps, Indexing, FuzzyFSM } from './FuzzyFinder'
 import styles from './FuzzyModal.module.scss'
 import { HighlightedLink } from './HighlightedLink'
-
-// Enable this URL query parameter to see debugging information like latency
-// numbers and the false-positive ratio for the bloom filter.
-const IS_DEBUG = window.location.href.toString().includes('fuzzyFinder=debug')
 
 // The default value of 80k filenames is picked from the following observations:
 // - case-insensitive search is slow but works in the torvalds/linux repo (72k files)
@@ -29,34 +26,27 @@ const lastFuzzySearchResult = new Map<string, FuzzySearchResult>()
 // The number of results to jump by on PageUp/PageDown keyboard shortcuts.
 const PAGE_DOWN_INCREMENT = 10
 
-export interface FuzzyModalProps
-    extends VisibilityProps,
-        FuzzyFinderProps,
-        MaxResultsProps,
-        FocusIndexProps,
-        FuzzyFSMProps,
-        QueryProps {
+export interface FuzzyModalProps extends FuzzyFinderProps {
+    initialMaxResults: number
+    initialQuery: string
     downloadFilenames: () => Promise<string[]>
-}
-interface VisibilityProps {
+
     isVisible: boolean
     onClose: () => void
-}
-interface QueryProps {
-    query: string
-    setQuery: (query: string) => void
-}
-interface MaxResultsProps {
-    maxResults: number
-    increaseMaxResults: () => void
-}
-interface FocusIndexProps {
-    focusIndex: number
-    setFocusIndex: (focusIndex: number) => void
-}
-interface FuzzyFSMProps {
+
     fsm: FuzzyFSM
     setFsm: (fsm: FuzzyFSM) => void
+}
+
+interface FuzzyModalState {
+    query: string
+    setQuery: (query: string) => void
+
+    focusIndex: number
+    setFocusIndex: (focusIndex: number) => void
+
+    maxResults: number
+    increaseMaxResults: () => void
 }
 
 /**
@@ -65,16 +55,43 @@ interface FuzzyFSMProps {
  * Similar to "Go to file" in VS Code or the "t" keyboard shortcut on github.com
  */
 export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
-    const fuzzyResult = renderFuzzyResult(props)
+    // NOTE: the query is cached in local storage to mimic the file pickers in
+    // IntelliJ (by default) and VS Code (when "Workbench > Quick Open >
+    // Preserve Input" is enabled).
+    const [query, setQuery] = useLocalStorage(`fuzzy-modal.query.${props.repoName}`, props.initialQuery)
+
+    // The "focus index" is the index of the file result that the user has
+    // select with up/down arrow keys. The focused item is highlighted and the
+    // window.location is moved to that URL when the user presses the enter key.
+    const [focusIndex, setFocusIndex] = useState(0)
+
+    // The maximum number of results to display in the fuzzy finder. For large
+    // repositories, a generic query like "src" may return thousands of results
+    // making DOM rendering slow.  The user can increase this number by clicking
+    // on a button at the bottom of the result list.
+    const [maxResults, setMaxResults] = useState(props.initialMaxResults)
+
+    const state: FuzzyModalState = {
+        query,
+        setQuery,
+        focusIndex,
+        setFocusIndex,
+        maxResults,
+        increaseMaxResults: () => {
+            setMaxResults(maxResults + props.initialMaxResults)
+        },
+    }
+
+    const fuzzyResult = renderFuzzyResult(props, state)
 
     // Sets the new "focus index" so that it's rounded by the number of
     // displayed filenames.  Cycles so that the user can press-hold the down
     // arrow and it goes all the way down and back up to the top result.
     function setRoundedFocusIndex(increment: number): void {
-        const newNumber = props.focusIndex + increment
+        const newNumber = state.focusIndex + increment
         const index = newNumber % fuzzyResult.resultsCount
         const nextIndex = index < 0 ? fuzzyResult.resultsCount + index : index
-        props.setFocusIndex(nextIndex)
+        state.setFocusIndex(nextIndex)
         document.querySelector(`#fuzzy-modal-result-${nextIndex}`)?.scrollIntoView(false)
     }
 
@@ -91,16 +108,16 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
                 setRoundedFocusIndex(PAGE_DOWN_INCREMENT)
                 break
             case 'ArrowUp':
-                event.preventDefault() // Don't move the cursor to the start of the input.
+                event.preventDefault() // Don't move the cursor to the start of input.
                 setRoundedFocusIndex(-1)
                 break
             case 'PageUp':
                 setRoundedFocusIndex(-PAGE_DOWN_INCREMENT)
                 break
             case 'Enter':
-                if (props.focusIndex < fuzzyResult.resultsCount) {
+                if (state.focusIndex < fuzzyResult.resultsCount) {
                     const fileAnchor = document.querySelector<HTMLAnchorElement>(
-                        `#fuzzy-modal-result-${props.focusIndex} a`
+                        `#fuzzy-modal-result-${state.focusIndex} a`
                     )
                     fileAnchor?.click()
                     props.onClose()
@@ -112,54 +129,67 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
 
     return (
         // Use 'onMouseDown' instead of 'onClick' to allow selecting the text and mouse up outside the modal
+        // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
         <div role="navigation" className={styles.modal} onMouseDown={() => props.onClose()}>
+            {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
             <div role="navigation" className={styles.content} onMouseDown={event => event.stopPropagation()}>
                 <div className={styles.header}>
-                    <input
-                        autoComplete="off"
-                        id="fuzzy-modal-input"
-                        className={styles.input}
-                        value={props.query}
-                        onChange={event => {
-                            props.setQuery(event.target.value)
-                            props.setFocusIndex(0)
-                        }}
-                        type="text"
-                        onKeyDown={onInputKeyDown}
-                    />
-                </div>
-                <div className={styles.body}>{fuzzyResult.element}</div>
-                <div className={styles.footer}>
-                    <button type="button" className="btn btn-secondary" onClick={() => props.onClose()}>
-                        Close
+                    <h3 className="mb-0">Find file</h3>
+                    <button type="button" className="btn btn-icon" onClick={() => props.onClose()}>
+                        <CloseIcon className={`icon-inline ${styles.closeIcon}`} />
                     </button>
-                    {fuzzyFooter(props.fsm, fuzzyResult)}
                 </div>
+                <input
+                    autoComplete="off"
+                    spellCheck="false"
+                    id="fuzzy-modal-input"
+                    className={classnames('form-control', 'px-2', 'py-1', styles.input)}
+                    placeholder="Enter a partial file path or name"
+                    value={state.query}
+                    onChange={event => {
+                        state.setQuery(event.target.value)
+                        state.setFocusIndex(0)
+                    }}
+                    type="text"
+                    onKeyDown={onInputKeyDown}
+                />
+                <div className={styles.summary}>
+                    <FuzzyResultsSummary fsm={props.fsm} files={fuzzyResult} />
+                </div>
+                {fuzzyResult.element}
+                {!fuzzyResult.isComplete && (
+                    <button
+                        className={classnames('btn btn-secondary', styles.showMore)}
+                        type="button"
+                        onClick={() => state.increaseMaxResults()}
+                    >
+                        Show more
+                    </button>
+                )}
             </div>
         </div>
     )
 }
 
 function plural(what: string, count: number, isComplete: boolean): string {
-    return count.toLocaleString() + (isComplete ? '' : '+') + ' ' + what + (count === 1 ? '' : 's')
+    return `${count.toLocaleString()}${isComplete ? '' : '+'} ${pluralize(what, count)}`
+}
+interface FuzzyResultsSummaryProps {
+    fsm: FuzzyFSM
+    files: RenderedFuzzyResult
 }
 
-function fuzzyFooter(fsm: FuzzyFSM, files: RenderedFuzzyResult): JSX.Element {
-    return IS_DEBUG ? (
-        <>
-            <span>{files.falsePositiveRatio && Math.round(files.falsePositiveRatio * 100)}fp</span>
-            <span>{files.elapsedMilliseconds && Math.round(files.elapsedMilliseconds).toLocaleString()}ms</span>
-        </>
-    ) : (
-        <>
-            <span>{plural('result', files.resultsCount, files.isComplete)}</span>
-            <span>
-                {fsm.key === 'indexing' && indexingProgressBar(fsm)}
-                {plural('total file', files.totalFileCount, true)}
-            </span>
-        </>
-    )
-}
+const FuzzyResultsSummary: React.FunctionComponent<FuzzyResultsSummaryProps> = ({ fsm, files }) => (
+    <>
+        <span className={styles.resultCount}>
+            {plural('result', files.resultsCount, files.isComplete)} -{' '}
+            {fsm.key === 'indexing' && indexingProgressBar(fsm)} {plural('total file', files.totalFileCount, true)}
+        </span>
+        <i className="text-muted">
+            <kbd>↑</kbd> and <kbd>↓</kbd> arrow keys browse. <kbd>⏎</kbd> selects.
+        </i>
+    </>
+)
 
 function indexingProgressBar(indexing: Indexing): JSX.Element {
     const indexedFiles = indexing.indexing.indexedFileCount
@@ -181,7 +211,7 @@ interface RenderedFuzzyResult {
     falsePositiveRatio?: number
 }
 
-function renderFuzzyResult(props: FuzzyModalProps): RenderedFuzzyResult {
+function renderFuzzyResult(props: FuzzyModalProps, state: FuzzyModalState): RenderedFuzzyResult {
     function empty(element: JSX.Element): RenderedFuzzyResult {
         return {
             element,
@@ -211,24 +241,29 @@ function renderFuzzyResult(props: FuzzyModalProps): RenderedFuzzyResult {
             later()
                 .then(() => continueIndexing(loader))
                 .then(next => props.setFsm(next), onError('onIndexing'))
-            return renderFiles(props, props.fsm.indexing.partialFuzzy, props.fsm.indexing)
+            return renderFiles(props, state, props.fsm.indexing.partialFuzzy, props.fsm.indexing)
         }
         case 'ready':
-            return renderFiles(props, props.fsm.fuzzy)
+            return renderFiles(props, state, props.fsm.fuzzy)
         default:
             return empty(<p>ERROR</p>)
     }
 }
 
-function renderFiles(props: FuzzyModalProps, search: FuzzySearch, indexing?: SearchIndexing): RenderedFuzzyResult {
+function renderFiles(
+    props: FuzzyModalProps,
+    state: FuzzyModalState,
+    search: FuzzySearch,
+    indexing?: SearchIndexing
+): RenderedFuzzyResult {
     const indexedFileCount = indexing ? indexing.indexedFileCount : ''
-    const cacheKey = `${props.query}-${props.maxResults}${indexedFileCount}`
+    const cacheKey = `${state.query}-${state.maxResults}${indexedFileCount}`
     let fuzzyResult = lastFuzzySearchResult.get(cacheKey)
     if (!fuzzyResult) {
         const start = window.performance.now()
         fuzzyResult = search.search({
-            query: props.query,
-            maxResults: props.maxResults,
+            query: state.query,
+            maxResults: state.maxResults,
             createUrl: filename => `/${props.repoName}@${props.commitID}/-/blob/${filename}`,
             onClick: () => props.onClose(),
         })
@@ -239,32 +274,25 @@ function renderFiles(props: FuzzyModalProps, search: FuzzySearch, indexing?: Sea
     const links = fuzzyResult.links
     if (links.length === 0) {
         return {
-            element: <p>No files matching '{props.query}'</p>,
+            element: <p>No files matching '{state.query}'</p>,
             resultsCount: 0,
             totalFileCount: search.totalFileCount,
             isComplete: fuzzyResult.isComplete,
         }
     }
-    const linksToRender = links.slice(0, props.maxResults)
+    const linksToRender = links.slice(0, state.maxResults)
     return {
         element: (
-            <ul className={`${styles.results} text-monospace`}>
+            <ul className={styles.results}>
                 {linksToRender.map((file, fileIndex) => (
                     <li
                         id={`fuzzy-modal-result-${fileIndex}`}
                         key={file.text}
-                        className={fileIndex === props.focusIndex ? styles.focused : ''}
+                        className={classnames('p-1', fileIndex === state.focusIndex && styles.focused)}
                     >
                         <HighlightedLink {...file} />
                     </li>
                 ))}
-                {!fuzzyResult.isComplete && (
-                    <li>
-                        <button className="btn btn-seconday" type="button" onClick={() => props.increaseMaxResults()}>
-                            (...truncated, click to show more results){' '}
-                        </button>
-                    </li>
-                )}
             </ul>
         ),
         resultsCount: linksToRender.length,

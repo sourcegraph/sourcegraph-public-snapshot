@@ -17,4 +17,5 @@ jobs:
                   team/search=@lguychard
                   team/code-intelligence=@macraig
                   team/code-insights=@joelkw @felixfbecker
-                  team/distribution=@davejrt @ggilmore @daxmc99
+                  team/distribution=@davejrt @ggilmore @daxmc99 @dan-mckean
+                  team/security=@dan-mckean

@@ -222,7 +222,9 @@ describe('Search', () => {
         test('Is set from the URL query parameter when loading a search-related page', async () => {
             testContext.overrideGraphQL({
                 ...commonSearchGraphQLResults,
-                RegistryExtensions: () => ({ extensionRegistry: { extensions: { error: null, nodes: [] } } }),
+                RegistryExtensions: () => ({
+                    extensionRegistry: { extensions: { error: null, nodes: [] }, featuredExtensions: null },
+                }),
             })
             testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
 
@@ -406,7 +408,7 @@ describe('Search', () => {
         // To avoid covering the Percy snapshots
         const hideCreateCodeMonitorFeatureTour = () =>
             driver.page.evaluate(() => {
-                localStorage.setItem('has-seen-create-code-monitor-feature-tour-step', 'true')
+                localStorage.setItem('has-seen-create-code-monitor-feature-tour', 'true')
                 location.reload()
             })
 
@@ -495,7 +497,7 @@ describe('Search', () => {
     describe('Feature tour', () => {
         const resetCreateCodeMonitorFeatureTour = () =>
             driver.page.evaluate(() => {
-                localStorage.setItem('has-seen-create-code-monitor-feature-tour-step', 'false')
+                localStorage.setItem('has-seen-create-code-monitor-feature-tour', 'false')
                 location.reload()
             })
 
