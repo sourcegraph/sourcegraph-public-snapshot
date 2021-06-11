@@ -5,7 +5,10 @@ import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } fro
 import { Subscription, Observable, Unsubscribable, ReplaySubject } from 'rxjs'
 
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
+import { toMonacoRange } from '@sourcegraph/shared/src/search/query/decoratedToken'
 import { getProviders } from '@sourcegraph/shared/src/search/query/providers'
+import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
+import { Token } from '@sourcegraph/shared/src/search/query/token'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { SearchSuggestion } from '@sourcegraph/shared/src/search/suggestions'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
@@ -337,6 +340,60 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
         })
         return () => disposable.dispose()
     }, [editor, onSubmit])
+
+    useEffect(() => {
+        if (!editor) {
+            return
+        }
+
+        const FILTER_DECORATION_CLASS = 'monaco-filter-decoration'
+
+        const inside = (column: number, { range }: Pick<Token, 'range'>): boolean =>
+            range.start + 1 <= column && range.end + 1 >= column
+
+        const removeDecoration = (
+            model: Monaco.editor.ITextModel,
+            decoration: Monaco.editor.IModelDecoration | undefined
+        ): void => {
+            if (decoration) {
+                model.deltaDecorations([decoration.id], [])
+            }
+        }
+
+        const disposable = editor.onDidChangeCursorPosition(() => {
+            const model = editor.getModel()
+            if (!model) {
+                return
+            }
+
+            const existingDecoration = model
+                .getAllDecorations()
+                .find(decoration => decoration.options.className === FILTER_DECORATION_CLASS)
+
+            const position = editor.getPosition()
+            if (!position) {
+                removeDecoration(model, existingDecoration)
+                return
+            }
+
+            const scanResult = scanSearchQuery(model.getValue(), interpretComments, patternType)
+            const filterWithCursor =
+                scanResult.type === 'success'
+                    ? scanResult.term.find(token => token.type === 'filter' && inside(position.column, token))
+                    : undefined
+
+            if (!filterWithCursor) {
+                removeDecoration(model, existingDecoration)
+                return
+            }
+
+            const filterMonacoRange = toMonacoRange(filterWithCursor.range)
+            removeDecoration(model, existingDecoration)
+            model.deltaDecorations([], [{ range: filterMonacoRange, options: { className: FILTER_DECORATION_CLASS } }])
+        })
+
+        return () => disposable.dispose()
+    }, [editor, interpretComments, patternType])
 
     const options: Monaco.editor.IStandaloneEditorConstructionOptions = {
         readOnly: false,

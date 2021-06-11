@@ -67,6 +67,10 @@ body,
     min-width: 0;
 }
 
+.monaco-filter-decoration {
+    border: 1px solid var(--border-color-2);
+}
+
 // Pages
 @import './Layout';
 @import './api/ApiConsole';
