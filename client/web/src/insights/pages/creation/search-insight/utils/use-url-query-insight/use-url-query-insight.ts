@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { memoize } from 'lodash'
 
 import { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
@@ -72,31 +72,26 @@ export function getInsightDataFromQuery(query: string | null): InsightData | nul
 
 /**
  * Returns initial values for the search insight from query param 'insight-query'.
- *
- * This logic is trying to find a value for the data query field in a query param
- * and extract the repo: filters for the repositories field in a creation UI.
  */
-export function useUrlQueryInsight(queryParameters: string): CreateInsightFormFields | null {
-    return useMemo(() => {
-        const queryParametersString = new URLSearchParams(queryParameters).get('query')
+export const getUrlQueryInsight = memoize((queryParameters: string): CreateInsightFormFields | null => {
+    const queryParametersString = new URLSearchParams(queryParameters).get('query')
 
-        const insightData = getInsightDataFromQuery(queryParametersString)
+    const insightData = getInsightDataFromQuery(queryParametersString)
 
-        if (insightData === null) {
-            return null
-        }
+    if (insightData === null) {
+        return null
+    }
 
-        return {
-            ...INITIAL_INSIGHT_VALUES,
-            series: [
-                createDefaultEditSeries({
-                    edit: true,
-                    valid: true,
-                    name: 'Search series #1',
-                    query: insightData.seriesQuery,
-                }),
-            ],
-            repositories: insightData.repositories,
-        }
-    }, [queryParameters])
-}
+    return {
+        ...INITIAL_INSIGHT_VALUES,
+        series: [
+            createDefaultEditSeries({
+                edit: true,
+                valid: true,
+                name: 'Search series #1',
+                query: insightData.seriesQuery,
+            }),
+        ],
+        repositories: insightData.repositories,
+    }
+})
