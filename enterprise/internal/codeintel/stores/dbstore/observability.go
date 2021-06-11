@@ -28,10 +28,12 @@ type operations struct {
 	getIndexByID                           *observation.Operation
 	getIndexConfigurationByRepositoryID    *observation.Operation
 	getIndexes                             *observation.Operation
+	getIndexesByIDs                        *observation.Operation
 	getOldestCommitDate                    *observation.Operation
 	getRepositoriesWithIndexConfiguration  *observation.Operation
 	getUploadByID                          *observation.Operation
 	getUploads                             *observation.Operation
+	getUploadsByIDs                        *observation.Operation
 	hardDeleteUploadByID                   *observation.Operation
 	hasCommit                              *observation.Operation
 	hasRepository                          *observation.Operation
@@ -117,10 +119,12 @@ func newOperations(observationContext *observation.Context) *operations {
 		getIndexByID:                           op("GetIndexByID"),
 		getIndexConfigurationByRepositoryID:    op("GetIndexConfigurationByRepositoryID"),
 		getIndexes:                             op("GetIndexes"),
+		getIndexesByIDs:                        op("GetIndexesByIDs"),
 		getOldestCommitDate:                    op("GetOldestCommitDate"),
 		getRepositoriesWithIndexConfiguration:  op("GetRepositoriesWithIndexConfiguration"),
 		getUploadByID:                          op("GetUploadByID"),
 		getUploads:                             op("GetUploads"),
+		getUploadsByIDs:                        op("GetUploadsByIDs"),
 		hardDeleteUploadByID:                   op("HardDeleteUploadByID"),
 		hasCommit:                              op("HasCommit"),
 		hasRepository:                          op("HasRepository"),

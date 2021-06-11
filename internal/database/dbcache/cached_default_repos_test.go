@@ -118,35 +118,28 @@ func TestListDefaultRepos(t *testing.T) {
 		_, err := db.ExecContext(ctx, `
 			-- insert one public user-added repo, i.e. a repo added by an external service owned by a user
 			INSERT INTO users(id, username) VALUES (1, 'foo');
-			INSERT INTO repo(id, name) VALUES (10, 'github.com/foo/bar10');
+			INSERT INTO repo(id, name, stars) VALUES (10, 'github.com/foo/bar10', 5);
 			INSERT INTO external_services(id, kind, display_name, config, namespace_user_id) VALUES (100, 'github', 'github', '{}', 1);
-			INSERT INTO external_service_repos VALUES (100, 10, 'https://github.com/foo/bar10');
-			INSERT INTO external_service_repos(repo_id, external_service_id, clone_url) VALUES (10, 1, 'example.com');
-			INSERT INTO gitserver_repos(repo_id, clone_status, shard_id) VALUES (10, 'cloned', 'test');
+			INSERT INTO external_service_repos(repo_id, external_service_id, clone_url, user_id) VALUES (10, 100, '', 1);
 
 			-- insert one repo referenced in the default repo table
-			INSERT INTO repo(id, name) VALUES (11, 'github.com/foo/bar11');
+			INSERT INTO repo(id, name, stars) VALUES (11, 'github.com/foo/bar11', 4);
 			INSERT INTO default_repos(repo_id) VALUES(11);
-			INSERT INTO external_service_repos(repo_id, external_service_id, clone_url) VALUES (11, 1, 'example.com');
-			INSERT INTO gitserver_repos(repo_id, clone_status, shard_id) VALUES (11, 'cloned', 'test');
+			INSERT INTO external_service_repos(repo_id, external_service_id, clone_url, user_id) VALUES (11, 1, '', NULL);
 
 			-- insert a repo only referenced by a cloud_default external service
-			INSERT INTO repo(id, name) VALUES (13, 'github.com/foo/bar13');
+			INSERT INTO repo(id, name, stars) VALUES (13, 'github.com/foo/bar13', 3);
 			INSERT INTO external_services(id, kind, display_name, config, cloud_default) VALUES (101, 'github', 'github', '{}', true);
-			INSERT INTO external_service_repos VALUES (101, 13, 'https://github.com/foo/bar13');
-			INSERT INTO gitserver_repos(repo_id, clone_status, shard_id) VALUES (13, 'cloned', 'test');
+			INSERT INTO external_service_repos(repo_id, external_service_id, clone_url, user_id) VALUES (13, 101, 'https://github.com/foo/bar13', NULL);
 
 			-- insert a repo only referenced by a cloud_default external service, but also in user_public_repos
-			INSERT INTO repo(id, name) VALUES (14, 'github.com/foo/bar14');
-			INSERT INTO external_service_repos VALUES (101, 14, 'https://github.com/foo/bar14');
+			INSERT INTO repo(id, name, stars) VALUES (14, 'github.com/foo/bar14', 2);
+			INSERT INTO external_service_repos(repo_id, external_service_id, clone_url, user_id) VALUES (14, 101, 'https://github.com/foo/bar14', NULL);
 			INSERT INTO user_public_repos(user_id, repo_id, repo_uri) VALUES (1, 14, 'github.com/foo/bar/14');
-			INSERT INTO gitserver_repos(repo_id, clone_status, shard_id) VALUES (14, 'cloned', 'test');
 
 			-- insert one private user-added repo, i.e. a repo added by an external service owned by a user
 			INSERT INTO repo(id, name, private) VALUES (15, 'github.com/foo/bar15', true);
-			INSERT INTO external_service_repos VALUES (100, 15, 'https://github.com/foo/bar15');
-			INSERT INTO external_service_repos(repo_id, external_service_id, clone_url) VALUES (15, 1, 'example.com');
-			INSERT INTO gitserver_repos(repo_id, clone_status, shard_id) VALUES (15, 'cloned', 'test');
+			INSERT INTO external_service_repos(repo_id, external_service_id, clone_url, user_id) VALUES (15, 100, 'example.com', 1);
 		`)
 		if err != nil {
 			t.Fatal(err)
@@ -167,12 +160,12 @@ func TestListDefaultRepos(t *testing.T) {
 					Name: "github.com/foo/bar11",
 				},
 				{
-					ID:   api.RepoID(15),
-					Name: "github.com/foo/bar15",
-				},
-				{
 					ID:   api.RepoID(14),
 					Name: "github.com/foo/bar14",
+				},
+				{
+					ID:   api.RepoID(15),
+					Name: "github.com/foo/bar15",
 				},
 			}
 			if diff := cmp.Diff(want, repos, cmpopts.EquateEmpty()); diff != "" {

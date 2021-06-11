@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
-	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
@@ -250,6 +250,7 @@ func (s GithubSource) makeRepo(r *github.Repository) *types.Repo {
 		Description:  r.Description,
 		Fork:         r.IsFork,
 		Archived:     r.IsArchived,
+		Stars:        r.StargazerCount,
 		Private:      r.IsPrivate,
 		Sources: map[string]*types.SourceInfo{
 			urn: {

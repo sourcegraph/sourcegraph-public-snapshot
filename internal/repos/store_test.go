@@ -50,6 +50,7 @@ func testStoreUpsertRepos(t *testing.T, store *repos.Store) func(*testing.T) {
 			Name:        "github.com/foo/bar",
 			URI:         "github.com/foo/bar",
 			Description: "The description",
+			Stars:       100,
 			CreatedAt:   now,
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "AAAAA==",
@@ -69,6 +70,7 @@ func testStoreUpsertRepos(t *testing.T, store *repos.Store) func(*testing.T) {
 			Name:        "gitlab.com/foo/bar",
 			URI:         "gitlab.com/foo/bar",
 			Description: "The description",
+			Stars:       100,
 			CreatedAt:   now,
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "1234",
@@ -209,6 +211,7 @@ func testStoreUpsertRepos(t *testing.T, store *repos.Store) func(*testing.T) {
 				r.Description += suffix
 				r.UpdatedAt = now
 				r.CreatedAt = now
+				r.Stars++
 				r.Archived = !r.Archived
 				r.Fork = !r.Fork
 			}

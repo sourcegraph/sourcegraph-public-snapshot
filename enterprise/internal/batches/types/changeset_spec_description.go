@@ -1,8 +1,8 @@
 package types
 
 import (
+	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/lib/batches"
 )

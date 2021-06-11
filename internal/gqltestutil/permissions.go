@@ -1,6 +1,6 @@
 package gqltestutil
 
-import "github.com/pkg/errors"
+import "github.com/cockroachdb/errors"
 
 // ScheduleRepositoryPermissionsSync schedules a permissions syncing request for
 // the given repository.

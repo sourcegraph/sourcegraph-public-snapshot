@@ -5,15 +5,15 @@ package endpoint
 import (
 	"fmt"
 	"hash/crc32"
-	"io/ioutil"
 	"net/url"
+	"os"
 	"sort"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
-	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	corev1 "k8s.io/api/core/v1"
@@ -285,7 +285,7 @@ func newConsistentHashMap(keys []string) *hashMap {
 // when the client was created, the official k8s client does not
 func namespace() string {
 	const filename = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
-	data, err := ioutil.ReadFile(filename)
+	data, err := os.ReadFile(filename)
 	if err != nil {
 		log15.Warn("endpoint: falling back to kubernetes default namespace", "error", filename+" is empty")
 		return "default"

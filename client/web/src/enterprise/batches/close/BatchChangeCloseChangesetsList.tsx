@@ -1,4 +1,3 @@
-import classNames from 'classnames'
 import * as H from 'history'
 import React, { useCallback, useMemo, useEffect } from 'react'
 import { Subject } from 'rxjs'
@@ -17,6 +16,7 @@ import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { isDefined, property } from '@sourcegraph/shared/src/util/types'
 import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Container } from '@sourcegraph/wildcard'
 
 import { getHover, getDocumentHighlights } from '../../../backend/features'
 import { FilteredConnectionQueryArguments, FilteredConnection } from '../../../components/FilteredConnection'
@@ -144,52 +144,54 @@ export const BatchChangeCloseChangesetsList: React.FunctionComponent<Props> = ({
 
     return (
         <div className="list-group position-relative" ref={nextContainerElement}>
-            <FilteredConnection<
-                ChangesetFields,
-                Omit<ChangesetCloseNodeProps, 'node'>,
-                {},
-                (BatchChangeChangesetsResult['node'] & { __typename: 'BatchChange' })['changesets']
-            >
-                className="mt-2"
-                nodeComponent={ChangesetCloseNode}
-                nodeComponentProps={{
-                    isLightTheme,
-                    viewerCanAdminister,
-                    history,
-                    location,
-                    extensionInfo: { extensionsController, hoverifier },
-                    queryExternalChangesetWithFileDiffs,
-                    willClose,
-                }}
-                queryConnection={queryChangesetsConnection}
-                hideSearch={true}
-                defaultFirst={15}
-                noun="open changeset"
-                pluralNoun="open changesets"
-                history={history}
-                location={location}
-                useURLQuery={true}
-                listComponent="div"
-                listClassName={classNames(styles.batchChangeCloseChangesetsListGrid, 'mb-3')}
-                headComponent={
-                    willClose ? BatchChangeCloseHeaderWillCloseChangesets : BatchChangeCloseHeaderWillKeepChangesets
-                }
-                noSummaryIfAllNodesVisible={true}
-                onUpdate={onUpdate}
-                emptyElement={<CloseChangesetsListEmptyElement />}
-            />
-            {hoverState?.hoverOverlayProps && (
-                <WebHoverOverlay
-                    {...hoverState.hoverOverlayProps}
-                    telemetryService={telemetryService}
-                    extensionsController={extensionsController}
-                    isLightTheme={isLightTheme}
+            <Container>
+                <FilteredConnection<
+                    ChangesetFields,
+                    Omit<ChangesetCloseNodeProps, 'node'>,
+                    {},
+                    (BatchChangeChangesetsResult['node'] & { __typename: 'BatchChange' })['changesets']
+                >
+                    nodeComponent={ChangesetCloseNode}
+                    nodeComponentProps={{
+                        isLightTheme,
+                        viewerCanAdminister,
+                        history,
+                        location,
+                        extensionInfo: { extensionsController, hoverifier },
+                        queryExternalChangesetWithFileDiffs,
+                        willClose,
+                    }}
+                    queryConnection={queryChangesetsConnection}
+                    hideSearch={true}
+                    defaultFirst={15}
+                    noun="open changeset"
+                    pluralNoun="open changesets"
+                    history={history}
                     location={location}
-                    platformContext={platformContext}
-                    hoverRef={nextOverlayElement}
-                    onCloseButtonClick={nextCloseButtonClick}
+                    useURLQuery={true}
+                    listComponent="div"
+                    listClassName={styles.batchChangeCloseChangesetsListGrid}
+                    headComponent={
+                        willClose ? BatchChangeCloseHeaderWillCloseChangesets : BatchChangeCloseHeaderWillKeepChangesets
+                    }
+                    noSummaryIfAllNodesVisible={true}
+                    onUpdate={onUpdate}
+                    emptyElement={<CloseChangesetsListEmptyElement />}
+                    className="filtered-connection__centered-summary"
                 />
-            )}
+                {hoverState?.hoverOverlayProps && (
+                    <WebHoverOverlay
+                        {...hoverState.hoverOverlayProps}
+                        telemetryService={telemetryService}
+                        extensionsController={extensionsController}
+                        isLightTheme={isLightTheme}
+                        location={location}
+                        platformContext={platformContext}
+                        hoverRef={nextOverlayElement}
+                        onCloseButtonClick={nextCloseButtonClick}
+                    />
+                )}
+            </Container>
         </div>
     )
 }

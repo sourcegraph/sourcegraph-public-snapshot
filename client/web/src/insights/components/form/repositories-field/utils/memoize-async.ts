@@ -29,20 +29,19 @@ export function memoizeAsync<P, T>(
 
         const promise = func(parameters)
 
-        promise.then(
-            result => {
+        promise
+            .then(result => {
                 requestCache.delete(key)
                 valuesCache.set(key, result)
 
                 return result
-            },
-            error => {
+            })
+            .catch(error => {
                 requestCache.delete(key)
 
                 // Re-throw error for consumers reject and catch handlers
                 throw error
-            }
-        )
+            })
 
         requestCache.set(key, promise)
 

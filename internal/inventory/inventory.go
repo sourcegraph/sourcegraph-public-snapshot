@@ -6,12 +6,12 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"io/fs"
 	"log"
-	"os"
 
+	"github.com/cockroachdb/errors"
 	"github.com/go-enry/go-enry/v2"
 	"github.com/go-enry/go-enry/v2/data"
-	"github.com/pkg/errors"
 )
 
 // Inventory summarizes a tree's contents (e.g., which programming
@@ -36,7 +36,7 @@ type Lang struct {
 
 var newLine = []byte{'\n'}
 
-func getLang(ctx context.Context, file os.FileInfo, buf []byte, getFileReader func(ctx context.Context, path string) (io.ReadCloser, error)) (Lang, error) {
+func getLang(ctx context.Context, file fs.FileInfo, buf []byte, getFileReader func(ctx context.Context, path string) (io.ReadCloser, error)) (Lang, error) {
 	if file == nil {
 		return Lang{}, nil
 	}

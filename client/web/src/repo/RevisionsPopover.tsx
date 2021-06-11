@@ -254,7 +254,7 @@ export const RevisionsPopover: React.FunctionComponent<Props> = props => {
             <div className="tablist-wrapper revisions-popover__tabs">
                 <TabList>
                     {TABS.map(({ label, id }) => (
-                        <Tab key={id} data-test-tab={id}>
+                        <Tab key={id} data-tab-content={id}>
                             <span className="tablist-wrapper--tab-label">{label}</span>
                         </Tab>
                     ))}

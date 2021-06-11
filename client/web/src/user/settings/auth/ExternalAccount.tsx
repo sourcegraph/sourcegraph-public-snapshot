@@ -54,7 +54,7 @@ export const ExternalAccount: React.FunctionComponent<Props> = ({ account, authP
                         <>
                             {account.external.userName} (
                             <Link to={account.external.userUrl} target="_blank" rel="noopener noreferrer">
-                                <span className="text-primary">@{account.external.userLogin}</span>
+                                @{account.external.userLogin}
                             </Link>
                             )
                         </>
@@ -73,7 +73,11 @@ export const ExternalAccount: React.FunctionComponent<Props> = ({ account, authP
                         loading={isLoading}
                         label="Add"
                         type="button"
-                        className="btn btn-secondary btn-block"
+                        className={classNames(
+                            'btn btn-block',
+                            !isRedesignEnabled && 'btn-secondary',
+                            isRedesignEnabled && 'btn-success'
+                        )}
                         onClick={navigateToAuthProvider}
                     />
                 )}

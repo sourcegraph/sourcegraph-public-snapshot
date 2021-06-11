@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestatsdeprecated"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/eventlogger"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 )
 
@@ -19,7 +20,8 @@ func telemetryHandler(db dbutil.DB) http.Handler {
 		if err != nil {
 			log15.Error("telemetryHandler: Decode", "error", err)
 		}
-		err = usagestats.LogBackendEvent(db, tr.UserID, tr.EventName, tr.Argument)
+		featureFlags := featureflag.FromContext(r.Context())
+		err = usagestats.LogBackendEvent(db, tr.UserID, tr.EventName, tr.Argument, featureFlags)
 		if err != nil {
 			log15.Error("telemetryHandler: usagestats.LogBackendEvent", "error", err)
 		}

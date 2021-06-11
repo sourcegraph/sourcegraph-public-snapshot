@@ -2,7 +2,6 @@ package search
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -320,7 +319,7 @@ func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request) (matche
 		return nil, false, false, nil
 	}
 
-	zipFile, err := ioutil.TempFile("", "*.zip")
+	zipFile, err := os.CreateTemp("", "*.zip")
 	if err != nil {
 		return nil, false, false, err
 	}

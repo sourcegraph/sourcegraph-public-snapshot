@@ -533,6 +533,7 @@ Referenced by:
  argument          | jsonb                    |           | not null | 
  version           | text                     |           | not null | 
  timestamp         | timestamp with time zone |           | not null | 
+ feature_flags     | jsonb                    |           |          | 
 Indexes:
     "event_logs_pkey" PRIMARY KEY, btree (id)
     "event_logs_anonymous_user_id" btree (anonymous_user_id)
@@ -1008,6 +1009,7 @@ Associates an upload with the set of packages they require within a given packag
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::text
+    "lsif_uploads_associated_index_id" btree (associated_index_id)
     "lsif_uploads_commit_last_checked_at" btree (commit_last_checked_at) WHERE state <> 'deleted'::text
     "lsif_uploads_committed_at" btree (committed_at) WHERE state = 'completed'::text
     "lsif_uploads_state" btree (state)
@@ -1383,6 +1385,7 @@ Referenced by:
  metadata              | jsonb                    |           | not null | '{}'::jsonb
  private               | boolean                  |           | not null | false
  cloned                | boolean                  |           | not null | false
+ stars                 | integer                  |           |          | 
 Indexes:
     "repo_pkey" PRIMARY KEY, btree (id)
     "repo_external_unique_idx" UNIQUE, btree (external_service_type, external_service_id, external_id)
@@ -1395,6 +1398,7 @@ Indexes:
     "repo_name_idx" btree (lower(name::text) COLLATE "C")
     "repo_name_trgm" gin (lower(name::text) gin_trgm_ops)
     "repo_private" btree (private)
+    "repo_stars_idx" btree (stars DESC NULLS LAST)
     "repo_uri_idx" btree (uri)
 Check constraints:
     "check_name_nonempty" CHECK (name <> ''::citext)
@@ -1520,6 +1524,51 @@ Referenced by:
     TABLE "search_context_repos" CONSTRAINT "search_context_repos_search_context_id_fk" FOREIGN KEY (search_context_id) REFERENCES search_contexts(id) ON DELETE CASCADE
 
 ```
+
+# Table "public.security_event_logs"
+```
+      Column       |           Type           | Collation | Nullable |                     Default                     
+-------------------+--------------------------+-----------+----------+-------------------------------------------------
+ id                | bigint                   |           | not null | nextval('security_event_logs_id_seq'::regclass)
+ name              | text                     |           | not null | 
+ url               | text                     |           | not null | 
+ user_id           | integer                  |           | not null | 
+ anonymous_user_id | text                     |           | not null | 
+ source            | text                     |           | not null | 
+ argument          | jsonb                    |           | not null | 
+ version           | text                     |           | not null | 
+ timestamp         | timestamp with time zone |           | not null | 
+Indexes:
+    "security_event_logs_pkey" PRIMARY KEY, btree (id)
+    "security_event_logs_anonymous_user_id" btree (anonymous_user_id)
+    "security_event_logs_name" btree (name)
+    "security_event_logs_source" btree (source)
+    "security_event_logs_timestamp" btree ("timestamp")
+    "security_event_logs_timestamp_at_utc" btree (date(timezone('UTC'::text, "timestamp")))
+    "security_event_logs_user_id" btree (user_id)
+Check constraints:
+    "security_event_logs_check_has_user" CHECK (user_id = 0 AND anonymous_user_id <> ''::text OR user_id <> 0 AND anonymous_user_id = ''::text OR user_id <> 0 AND anonymous_user_id <> ''::text)
+    "security_event_logs_check_name_not_empty" CHECK (name <> ''::text)
+    "security_event_logs_check_source_not_empty" CHECK (source <> ''::text)
+    "security_event_logs_check_version_not_empty" CHECK (version <> ''::text)
+
+```
+
+Contains security-relevant events with a long time horizon for storage.
+
+**anonymous_user_id**: The UUID of the actor associated with the event.
+
+**argument**: An arbitrary JSON blob containing event data.
+
+**name**: The event name as a CAPITALIZED_SNAKE_CASE string.
+
+**source**: The site section (WEB, BACKEND, etc.) that generated the event.
+
+**url**: The URL within the Sourcegraph app which generated the event.
+
+**user_id**: The ID of the actor associated with the event.
+
+**version**: The version of Sourcegraph which generated the event.
 
 # Table "public.settings"
 ```
@@ -1777,6 +1826,8 @@ Triggers:
  first_version | text                     |           | not null | 
 Indexes:
     "versions_pkey" PRIMARY KEY, btree (service)
+Triggers:
+    versions_insert BEFORE INSERT ON versions FOR EACH ROW EXECUTE FUNCTION versions_insert_row_trigger()
 
 ```
 

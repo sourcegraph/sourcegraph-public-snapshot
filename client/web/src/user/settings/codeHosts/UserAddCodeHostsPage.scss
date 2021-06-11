@@ -6,6 +6,9 @@
     }
     &__icon--dashed {
         color: var(--border-color);
+        .theme-redesign & {
+            color: var(--border-color-2);
+        }
     }
     &__modal--plain {
         background-color: var(--theme-bg-plain);
@@ -20,26 +23,12 @@
             border: 0;
             padding: 0;
             &:not(:last-child) {
-                margin-bottom: 0.5rem;
+                margin-bottom: 1rem;
             }
             + .user-code-hosts-page__code-host-item {
                 border-top: 1px solid var(--border-color);
-                padding-top: 0.5rem;
+                padding-top: 1rem;
             }
         }
-    }
-
-    $update: #7048e8;
-
-    &__btn--update {
-        @include button-variant(
-            $update,
-            darken($update, 7.5%),
-            darken($update, 10%),
-            lighten($update, 5%),
-            lighten($update, 10%),
-            darken($update, 30%)
-        );
-        color: $white;
     }
 }

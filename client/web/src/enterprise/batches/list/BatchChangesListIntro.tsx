@@ -12,28 +12,29 @@ export interface BatchChangesListIntroProps {
     licensed: boolean | undefined
 }
 
-export const BatchChangesListIntro: React.FunctionComponent<BatchChangesListIntroProps> = ({ licensed }) => (
-    <div className="row mb-2">
-        {licensed === true ? (
-            <div className="col-12">
-                <BatchChangesChangelogAlert />
-            </div>
-        ) : (
-            <>
-                {licensed === false && (
-                    <>
-                        <div className="col-12 col-md-6">
-                            <BatchChangesUnlicensedAlert />
-                        </div>
-                        <div className="col-12 col-md-6">
-                            <BatchChangesChangelogAlert />
-                        </div>
-                    </>
-                )}
-            </>
-        )}
-    </div>
-)
+export const BatchChangesListIntro: React.FunctionComponent<BatchChangesListIntroProps> = ({ licensed }) => {
+    if (licensed === undefined) {
+        return null
+    }
+    return (
+        <div className="row">
+            {licensed === true ? (
+                <div className="col-12">
+                    <BatchChangesChangelogAlert />
+                </div>
+            ) : (
+                <>
+                    <div className="col-12 col-md-6 mb-3">
+                        <BatchChangesUnlicensedAlert />
+                    </div>
+                    <div className="col-12 col-md-6 mb-3">
+                        <BatchChangesChangelogAlert />
+                    </div>
+                </>
+            )}
+        </div>
+    )
+}
 
 const BatchChangesChangelogAlert: React.FunctionComponent = () => (
     <DismissibleAlert
@@ -43,7 +44,7 @@ const BatchChangesChangelogAlert: React.FunctionComponent = () => (
         <div className={classNames(styles.batchChangesListIntroCard, 'card h-100 p-2')}>
             <div className="card-body">
                 <h4>New Batch Changes features in version 3.28</h4>
-                <ul className="text-muted mb-0 pl-3">
+                <ul className="mb-0 pl-3">
                     <li>
                         <WarningIcon className="icon-inline text-warning" /> <strong>Deprecation:</strong> Starting with
                         Sourcegraph 3.29, we will stop using code host connection tokens for creating changesets. If a
@@ -52,7 +53,7 @@ const BatchChangesChangelogAlert: React.FunctionComponent = () => (
                         uninterrupted Batch Changes usage.
                     </li>
                 </ul>
-                <ul className="text-muted mb-0 pl-3">
+                <ul className="mb-0 pl-3">
                     <li>
                         Commenting on changesets{' '}
                         <a
@@ -65,7 +66,7 @@ const BatchChangesChangelogAlert: React.FunctionComponent = () => (
                         .
                     </li>
                 </ul>
-                <ul className="text-muted mb-0 pl-3">
+                <ul className="mb-0 pl-3">
                     <li>
                         Steps in batch specs can be run conditionally using{' '}
                         <a
@@ -78,7 +79,7 @@ const BatchChangesChangelogAlert: React.FunctionComponent = () => (
                         .
                     </li>
                 </ul>
-                <ul className="text-muted mb-0 pl-3">
+                <ul className="mb-0 pl-3">
                     <li>
                         User and site credentials can be encrypted in the database by adding a key to{' '}
                         <a
@@ -104,11 +105,11 @@ const BatchChangesUnlicensedAlert: React.FunctionComponent = () => (
                 <SourcegraphIcon className="mr-3 col-2 mt-2 d-none d-sm-block" />
                 <div>
                     <h4>Batch changes trial</h4>
-                    <p className="text-muted">
+                    <p>
                         Batch changes is a paid feature of Sourcegraph. All users can create sample batch changes with
                         up to five changesets without a license.
                     </p>
-                    <p className="text-muted mb-0">
+                    <p className="mb-0">
                         <a href="https://about.sourcegraph.com/contact/sales/">Contact sales</a> to obtain a trial
                         license.
                     </p>

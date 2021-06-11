@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -203,7 +203,7 @@ func (s *GitLabSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
 
 	mr, err := s.client.GetMergeRequest(ctx, project, gitlab.ID(iid))
 	if err != nil {
-		if errors.Cause(err) == gitlab.ErrMergeRequestNotFound {
+		if errors.Is(err, gitlab.ErrMergeRequestNotFound) {
 			return ChangesetNotFoundError{Changeset: cs}
 		}
 		return errors.Wrapf(err, "retrieving merge request %d", iid)

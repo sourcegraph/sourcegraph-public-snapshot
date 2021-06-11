@@ -3,7 +3,7 @@ package conversion
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -14,7 +14,7 @@ import (
 )
 
 func TestCorrelate(t *testing.T) {
-	input, err := ioutil.ReadFile("../testdata/dump1.lsif")
+	input, err := os.ReadFile("../testdata/dump1.lsif")
 	if err != nil {
 		t.Fatalf("unexpected error reading test file: %s", err)
 	}
@@ -198,7 +198,7 @@ func TestCorrelate(t *testing.T) {
 }
 
 func TestCorrelateMetaDataRoot(t *testing.T) {
-	input, err := ioutil.ReadFile("../testdata/dump2.lsif")
+	input, err := os.ReadFile("../testdata/dump2.lsif")
 	if err != nil {
 		t.Fatalf("unexpected error reading test file: %s", err)
 	}
@@ -247,7 +247,7 @@ func TestCorrelateMetaDataRoot(t *testing.T) {
 }
 
 func TestCorrelateMetaDataRootX(t *testing.T) {
-	input, err := ioutil.ReadFile("../testdata/dump3.lsif")
+	input, err := os.ReadFile("../testdata/dump3.lsif")
 	if err != nil {
 		t.Fatalf("unexpected error reading test file: %s", err)
 	}

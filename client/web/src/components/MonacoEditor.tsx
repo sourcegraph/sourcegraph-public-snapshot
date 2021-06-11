@@ -142,8 +142,35 @@ monaco.editor.defineTheme(SOURCEGRAPH_DARK_REDESIGN, {
         ...darkColors,
         background: '#181b26',
         'editor.background': '#181b26',
+        'editorSuggestWidget.border': '#343a4d',
+        'editorHoverWidget.border': '#343a4d',
     },
-    rules: darkRules,
+    rules: [
+        ...darkRules,
+        // Sourcegraph base language tokens
+        { token: 'identifier', foreground: '#f9fafb' },
+        { token: 'field', foreground: '#4393e7' },
+        { token: 'keyword', foreground: '#d68cf3' },
+        { token: 'openingParen', foreground: '#d68cf3' },
+        { token: 'closingParen', foreground: '#d68cf3' },
+        // Sourcegraph decorated language tokens
+        { token: 'metaRepoRevisionSeparator', foreground: '#569cd9' },
+        { token: 'metaContextPrefix', foreground: '#d68cf3' },
+        { token: 'metaPredicateNameAccess', foreground: '#d68cf3' },
+        { token: 'metaPredicateDot', foreground: '#f9fafb' },
+        // Regexp pattern highlighting
+        { token: 'metaRegexpCharacterSet', foreground: '#d68cf3' },
+        { token: 'metaRegexpCharacterClass', foreground: '#d68cf3' },
+        { token: 'metaRegexpCharacterClassMember', foreground: '#f9fafb' },
+        { token: 'metaRegexpCharacterClassRange', foreground: '#f9fafb' },
+        { token: 'metaRegexpCharacterClassRangeHyphen', foreground: '#d68cf3' },
+        // Structural pattern highlighting
+        { token: 'metaStructuralVariable', foreground: '#f9fafb' },
+        // Revision highlighting
+        { token: 'metaRevisionCommitHash', foreground: '#f9fafb' },
+        { token: 'metaRevisionLabel', foreground: '#f9fafb' },
+        { token: 'metaRevisionReferencePath', foreground: '#f9fafb' },
+    ],
 })
 
 monaco.editor.defineTheme(SOURCEGRAPH_DARK, {
@@ -163,8 +190,42 @@ monaco.editor.defineTheme(SOURCEGRAPH_LIGHT, {
 monaco.editor.defineTheme(SOURCEGRAPH_LIGHT_REDESIGN, {
     base: 'vs',
     inherit: true,
-    colors: lightColors,
-    rules: lightRules,
+    colors: {
+        ...lightColors,
+        'editor.foreground': '#14171f',
+        'editorCursor.foreground': '#14171f',
+        'editorSuggestWidget.foreground': '#14171f',
+        'editorSuggestWidget.border': '#dbe2f0',
+        'editorHoverWidget.foreground': '#14171f',
+        'editorHoverWidget.border': '#dbe2f0',
+        'editor.hoverHighlightBackground': '#343a4d',
+    },
+    rules: [
+        ...lightRules,
+        // Sourcegraph base language tokens
+        { token: 'identifier', foreground: '#14171f' },
+        { token: 'field', foreground: '#0b70db' },
+        { token: 'keyword', foreground: '#a305e1' },
+        { token: 'openingParen', foreground: '#a305e1' },
+        { token: 'closingParen', foreground: '#a305e1' },
+        // Sourcegraph decorated language tokens
+        { token: 'metaRepoRevisionSeparator', foreground: '#0b70db' },
+        { token: 'metaContextPrefix', foreground: '#a305e1' },
+        { token: 'metaPredicateNameAccess', foreground: '#a305e1' },
+        { token: 'metaPredicateDot', foreground: '#14171f' },
+        // Regexp pattern highlighting
+        { token: 'metaRegexpCharacterSet', foreground: '#a305e1' },
+        { token: 'metaRegexpCharacterClass', foreground: '#a305e1' },
+        { token: 'metaRegexpCharacterClassMember', foreground: '#14171f' },
+        { token: 'metaRegexpCharacterClassRange', foreground: '#14171f' },
+        { token: 'metaRegexpCharacterClassRangeHyphen', foreground: '#a305e1' },
+        // Structural pattern highlighting
+        { token: 'metaStructuralVariable', foreground: '#14171f' },
+        // Revision highlighting
+        { token: 'metaRevisionCommitHash', foreground: '#14171f' },
+        { token: 'metaRevisionLabel', foreground: '#14171f' },
+        { token: 'metaRevisionReferencePath', foreground: '#14171f' },
+    ],
 })
 
 interface Props extends ThemeProps {

@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"strconv"
@@ -69,6 +68,22 @@ var (
 			return nil, err
 		}
 		return toRegistryAPIExtension(ctx, x)
+	}
+
+	registryGetFeaturedExtensions = func(ctx context.Context) ([]*registry.Extension, error) {
+		dbExtensions, err := dbExtensions{}.GetFeaturedExtensions(ctx)
+		if err != nil {
+			return nil, err
+		}
+		registryExtensions := []*registry.Extension{}
+		for _, x := range dbExtensions {
+			registryExtension, err := toRegistryAPIExtension(ctx, x)
+			if err != nil {
+				continue
+			}
+			registryExtensions = append(registryExtensions, registryExtension)
+		}
+		return registryExtensions, nil
 	}
 )
 
@@ -185,6 +200,14 @@ func handleRegistry(w http.ResponseWriter, r *http.Request) (err error) {
 		}
 		result = xs
 
+	case urlPath == extensionsPath+"/featured":
+		operation = "featured"
+		x, err := registryGetFeaturedExtensions(r.Context())
+		if err != nil {
+			return err
+		}
+		result = x
+
 	case strings.HasPrefix(urlPath, extensionsPath+"/"):
 		var (
 			spec = strings.TrimPrefix(urlPath, extensionsPath+"/")
@@ -239,7 +262,7 @@ func init() {
 	}
 
 	readFakeExtensions := func() ([]*registry.Extension, error) {
-		data, err := ioutil.ReadFile(path)
+		data, err := os.ReadFile(path)
 		if err != nil {
 			return nil, err
 		}
@@ -270,5 +293,8 @@ func init() {
 			return nil, err
 		}
 		return frontendregistry.FindRegistryExtension(xs, "extensionID", extensionID), nil
+	}
+	registryGetFeaturedExtensions = func(ctx context.Context) ([]*registry.Extension, error) {
+		return []*registry.Extension{}, nil
 	}
 }

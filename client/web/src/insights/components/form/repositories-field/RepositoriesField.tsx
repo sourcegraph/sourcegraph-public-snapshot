@@ -42,8 +42,15 @@ export const RepositoriesField = forwardRef(
         const [caretPosition, setCaretPosition] = useState<number | null>(null)
         const [panel, setPanel] = useState(false)
 
-        const { value: search } = getSuggestionsSearchTerm({ value, caretPosition })
-        const { searchValue, suggestions } = useRepoSuggestions({ search, disable: !panel })
+        const { repositories, value: search, index: searchTermIndex } = getSuggestionsSearchTerm({
+            value,
+            caretPosition,
+        })
+        const { searchValue, suggestions } = useRepoSuggestions({
+            excludedItems: repositories,
+            search,
+            disable: !panel,
+        })
 
         // Support top level reference prop
         useImperativeHandle(reference, () => inputReference.current)
@@ -56,13 +63,12 @@ export const RepositoriesField = forwardRef(
 
         const handleSelect = (selectValue: string): void => {
             const separatorString = ', '
-            const { repositories, index } = getSuggestionsSearchTerm({ value, caretPosition })
 
-            if (index !== null) {
+            if (searchTermIndex !== null) {
                 const newRepositoriesSerializedValue = [
-                    ...repositories.slice(0, index),
+                    ...repositories.slice(0, searchTermIndex),
                     selectValue,
-                    ...repositories.slice(index + 1),
+                    ...repositories.slice(searchTermIndex + 1),
                 ].join(separatorString)
 
                 onChange(newRepositoriesSerializedValue)
@@ -79,8 +85,9 @@ export const RepositoriesField = forwardRef(
                         return
                     }
 
-                    const endOfSelectedItem = [...repositories.slice(0, index), selectValue].join(separatorString)
-                        .length
+                    const endOfSelectedItem = [...repositories.slice(0, searchTermIndex), selectValue].join(
+                        separatorString
+                    ).length
 
                     inputReference.current.setSelectionRange(endOfSelectedItem, endOfSelectedItem)
                 }, 0)

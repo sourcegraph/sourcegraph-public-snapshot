@@ -1,6 +1,6 @@
 import { ComboboxList, ComboboxOption, ComboboxOptionText } from '@reach/combobox'
-import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
-import React, { ReactElement } from 'react'
+import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
+import React from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
@@ -22,7 +22,7 @@ interface RepositorySuggestion {
 /**
  * Renders suggestion panel for repositories combobox component.
  */
-export function SuggestionsPanel(props: SuggestionsPanelProps): ReactElement {
+export const SuggestionsPanel: React.FunctionComponent<SuggestionsPanelProps> = props => {
     const { value, suggestions } = props
 
     if (suggestions === undefined) {
@@ -44,12 +44,16 @@ export function SuggestionsPanel(props: SuggestionsPanelProps): ReactElement {
         <ComboboxList className={styles.suggestionsList}>
             {suggestions.map(suggestion => (
                 <ComboboxOption className={styles.suggestionsListItem} key={suggestion.id} value={suggestion.name}>
-                    <SourceBranchIcon className="mr-1" size="1rem" />
+                    <SourceRepositoryIcon className="mr-1" size="1rem" />
                     <ComboboxOptionText />
                 </ComboboxOption>
             ))}
 
-            {isValueEmpty && <span className={styles.suggestionsListItem}>Start entering the value</span>}
+            {isValueEmpty && (
+                <span className={styles.suggestionsListItem}>
+                    <i>Start typing</i>
+                </span>
+            )}
 
             {!isValueEmpty && !suggestions.length && (
                 <span className={styles.suggestionsListItem}>No results found</span>

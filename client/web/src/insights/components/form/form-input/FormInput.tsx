@@ -15,6 +15,7 @@ interface FormInputProps extends InputHTMLAttributes<HTMLInputElement> {
     className?: string
     /** Error massage for input. */
     error?: string
+    /** Prop to control error input element state. */
     errorInputState?: boolean
     /** Valid sign to show valid state on input. */
     valid?: boolean
@@ -33,7 +34,7 @@ interface FormInputProps extends InputHTMLAttributes<HTMLInputElement> {
  */
 export const FormInput = forwardRef((props, reference) => {
     const {
-        as: Comp = 'input',
+        as: Component = 'input',
         type = 'text',
         title,
         description,
@@ -52,7 +53,7 @@ export const FormInput = forwardRef((props, reference) => {
             {title && <div className="mb-2">{title}</div>}
 
             <LoaderInput className="d-flex" loading={loading}>
-                <Comp
+                <Component
                     type={type}
                     className={classnames(styles.input, inputClassName, 'form-control', 'with-invalid-icon', {
                         'is-valid': valid,

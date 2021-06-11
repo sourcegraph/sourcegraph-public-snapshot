@@ -2,9 +2,6 @@
 
 .empty-changeset-list-element {
     &__body {
-        @media (--xs-breakpoint-down) {
-            padding: 0 !important;
-            padding-top: 0.5rem !important;
-        }
+        max-width: 45rem;
     }
 }

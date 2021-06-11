@@ -3,12 +3,12 @@ package srccli
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"sort"
 
 	"github.com/Masterminds/semver"
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/linkheader"
 )
@@ -97,7 +97,7 @@ func releaseVersionsPage(url string) ([]*semver.Version, string, error) {
 	}
 	defer resp.Body.Close()
 
-	respContent, err := ioutil.ReadAll(resp.Body)
+	respContent, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, "", err
 	}

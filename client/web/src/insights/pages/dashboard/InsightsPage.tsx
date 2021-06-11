@@ -54,7 +54,7 @@ export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props =>
                     annotation={<FeedbackBadge status="prototype" feedback={{ mailto: 'support@sourcegraph.com' }} />}
                     path={[{ icon: InsightsIcon, text: 'Code insights' }]}
                     actions={
-                        <Link to="/insights/create-intro" onClick={logAddMoreClick} className="btn btn-secondary mr-1">
+                        <Link to="/insights/create" onClick={logAddMoreClick} className="btn btn-secondary mr-1">
                             <PlusIcon className="icon-inline" /> Create new insight
                         </Link>
                     }

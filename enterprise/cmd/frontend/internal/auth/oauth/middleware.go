@@ -4,15 +4,14 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
-	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
@@ -100,9 +99,9 @@ func newOAuthFlowHandler(db dbutil.DB, serviceType string) http.Handler {
 }
 
 func getExtraScopes(ctx context.Context, db dbutil.DB, serviceType string) ([]string, error) {
-	// On Sourcegraph Cloud and for GitHub or GitLab, check if the user is allowed to
-	// add private code and if so, ask the code host for additional scopes
-	if !envvar.SourcegraphDotComMode() || (serviceType != extsvc.TypeGitHub && serviceType != extsvc.KindGitLab) {
+	// On Sourcegraph Cloud and for GitHub, check if the user is allowed to add
+	// private code and if so, ask the code host for additional scopes
+	if !envvar.SourcegraphDotComMode() || (serviceType != extsvc.TypeGitHub) {
 		return nil, nil
 	}
 
@@ -117,8 +116,6 @@ func getExtraScopes(ctx context.Context, db dbutil.DB, serviceType string) ([]st
 	switch serviceType {
 	case extsvc.TypeGitHub:
 		return []string{"repo"}, nil
-	case extsvc.TypeGitLab:
-		return []string{}, nil
 	default:
 		return nil, errors.Errorf("unknown service type: %q", serviceType)
 	}
@@ -149,7 +146,7 @@ func previewAndDuplicateReader(reader io.ReadCloser) (preview string, freshReade
 		return "", reader, nil
 	}
 	defer reader.Close()
-	b, err := ioutil.ReadAll(reader)
+	b, err := io.ReadAll(reader)
 	if err != nil {
 		return "", nil, err
 	}
@@ -157,7 +154,7 @@ func previewAndDuplicateReader(reader io.ReadCloser) (preview string, freshReade
 	if len(preview) > 1000 {
 		preview = preview[:1000]
 	}
-	return preview, ioutil.NopCloser(bytes.NewReader(b)), nil
+	return preview, io.NopCloser(bytes.NewReader(b)), nil
 }
 
 func (l *loggingRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {

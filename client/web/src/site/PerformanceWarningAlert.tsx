@@ -12,10 +12,7 @@ const onClickCTA = (): void => {
  * An alert that explains the performance limitations of single-node Docker deployments.
  */
 export const PerformanceWarningAlert: React.FunctionComponent = () => (
-    <DismissibleAlert
-        partialStorageKey="performanceWarningAlert"
-        className="alert alert-warning align-items-center m-2"
-    >
+    <DismissibleAlert partialStorageKey="performanceWarningAlert" className="alert-warning align-items-center m-2">
         <WarningIcon className="redesign-d-none icon-inline mr-2 flex-shrink-0" />
         <div>
             Search performance and accuracy are limited on single-node Docker deployments. We recommend that instances

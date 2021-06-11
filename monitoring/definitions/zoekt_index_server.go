@@ -54,7 +54,8 @@ func ZoektIndexServer() *monitoring.Container {
 							NoAlert:     true,
 							Owner:       monitoring.ObservableOwnerSearch,
 							Panel: monitoring.Panel().LegendFormat("{{state}}").With(func(o monitoring.Observable, p *sdk.Panel) {
-								p.GraphPanel.Yaxes[0].LogBase = 2 // log to show the huge number of "noop" or "empty"
+								p.GraphPanel.Yaxes[0].LogBase = 2  // log to show the huge number of "noop" or "empty"
+								p.GraphPanel.Tooltip.Shared = true // show multiple lines simultaneously
 							}),
 							Interpretation: "A persistent failing state indicates some repositories cannot be indexed, perhaps due to size and timeouts.",
 						},

@@ -1,10 +1,10 @@
 package main
 
 import (
-	"io/ioutil"
+	"io"
 	"os"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 	"gopkg.in/yaml.v2"
 )
 
@@ -15,7 +15,7 @@ func ParseConfigFile(name string) (*Config, error) {
 	}
 	defer file.Close()
 
-	data, err := ioutil.ReadAll(file)
+	data, err := io.ReadAll(file)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading configuration file")
 	}

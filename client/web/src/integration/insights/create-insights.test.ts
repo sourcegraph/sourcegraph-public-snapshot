@@ -1,5 +1,7 @@
 import assert from 'assert'
 
+import delay from 'delay'
+
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { emptyResponse } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
@@ -71,13 +73,15 @@ describe('Code insight create insight page', () => {
             },
         })
 
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/create-lang-stats-insight')
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/create/lang-stats')
 
         // Waiting for all important part of creation form will be rendered.
         await driver.page.waitForSelector('[data-testid="code-stats-insight-creation-page-content"]')
 
         // Add new repo to repositories field
         await driver.page.type('[name="repository"]', 'github.com/sourcegraph/sourcegraph')
+        // Wait until async validation on repository field will be finished
+        await delay(1000)
 
         // With repository filled input we have to have code stats insight live preview
         // charts - pie chart
@@ -151,7 +155,7 @@ describe('Code insight create insight page', () => {
             },
         })
 
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/create-search-insight')
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/create/search')
 
         // Waiting for all important part of creation form will be rendered.
         await driver.page.waitForSelector('[data-testid="search-insight-create-page-content"]')

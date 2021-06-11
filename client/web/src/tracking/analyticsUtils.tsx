@@ -7,6 +7,7 @@ import { asError } from '@sourcegraph/shared/src/util/errors'
 import { IS_CHROME } from '../marketing/util'
 
 import { eventLogger } from './eventLogger'
+import { stripURLParameters } from './util'
 
 interface EventQueryParameters {
     utm_campaign?: string
@@ -113,17 +114,4 @@ export function handleQueryEvents(url: string): void {
     }
 
     stripURLParameters(url, ['utm_campaign', 'utm_source', 'utm_medium', 'badge'])
-}
-
-/**
- * Strip provided URL parameters and update window history
- */
-export function stripURLParameters(url: string, parametersToRemove: string[] = []): void {
-    const parsedUrl = new URL(url)
-    for (const key of parametersToRemove) {
-        if (parsedUrl.searchParams.has(key)) {
-            parsedUrl.searchParams.delete(key)
-        }
-    }
-    window.history.replaceState(window.history.state, window.document.title, parsedUrl.href)
 }

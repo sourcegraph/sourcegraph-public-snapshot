@@ -18,7 +18,7 @@ interface CodeHostItemProps {
     name: string
     icon: React.ComponentType<{ className?: string }>
     navigateToAuthProvider: (kind: ExternalServiceKind) => void
-    updateAuthRequired?: boolean
+    isTokenUpdateRequired: boolean
     // optional service object fields when the code host connection is active
     service?: ListExternalServiceFields
 
@@ -31,7 +31,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
     service,
     kind,
     name,
-    updateAuthRequired,
+    isTokenUpdateRequired,
     icon: Icon,
     navigateToAuthProvider,
     onDidRemove,
@@ -75,48 +75,67 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                 ) : (
                     <CircleDashedIcon className="icon-inline mb-0 mr-2 user-code-hosts-page__icon--dashed" />
                 )}
-                <Icon className="icon-inline mb-0 mr-1" />
+                <Icon className="mb-0 mr-1" />
             </div>
             <div className="flex-1 align-self-center">
                 <h3 className="m-0">{name}</h3>
             </div>
             <div className="align-self-center">
-                {service?.id ? (
+                {/* always show remove button when the service exists */}
+                {service?.id && (
                     <button
                         type="button"
-                        className="btn btn-link btn-sm text-danger shadow-none"
+                        className="btn btn-link text-danger shadow-none"
                         onClick={toggleRemoveConnectionModal}
                     >
                         Remove
                     </button>
-                ) : oauthInFlight ? (
-                    <LoaderButton
-                        type="button"
-                        className="btn btn-primary theme-dark"
-                        loading={true}
-                        disabled={true}
-                        label="Connect"
-                        alwaysShowLabel={true}
-                    />
+                )}
+
+                {/* Show one of: update, updating, connect, connecting buttons */}
+                {!service?.id ? (
+                    oauthInFlight ? (
+                        <LoaderButton
+                            type="button"
+                            className={classNames(
+                                'btn',
+                                !isRedesignEnabled && 'btn-primary',
+                                isRedesignEnabled && 'btn-success'
+                            )}
+                            loading={true}
+                            disabled={true}
+                            label="Connecting..."
+                            alwaysShowLabel={true}
+                        />
+                    ) : (
+                        <button
+                            type="button"
+                            className={classNames(
+                                'btn',
+                                !isRedesignEnabled && 'btn-primary',
+                                isRedesignEnabled && 'btn-success'
+                            )}
+                            onClick={toAuthProvider}
+                        >
+                            Connect
+                        </button>
+                    )
                 ) : (
-                    <button type="button" className="btn btn-primary" onClick={toAuthProvider}>
-                        Connect
-                    </button>
-                )}
-                {updateAuthRequired && !oauthInFlight && (
-                    <button type="button" className="btn user-code-hosts-page__btn--update" onClick={toAuthProvider}>
-                        Update
-                    </button>
-                )}
-                {updateAuthRequired && oauthInFlight && (
-                    <LoaderButton
-                        type="button"
-                        className="btn user-code-hosts-page__btn--update theme-dark"
-                        loading={true}
-                        disabled={true}
-                        label="Update"
-                        alwaysShowLabel={true}
-                    />
+                    isTokenUpdateRequired &&
+                    (oauthInFlight ? (
+                        <LoaderButton
+                            type="button"
+                            className="btn btn-merged"
+                            loading={true}
+                            disabled={true}
+                            label="Updating..."
+                            alwaysShowLabel={true}
+                        />
+                    ) : (
+                        <button type="button" className="btn btn-merged" onClick={toAuthProvider}>
+                            Update
+                        </button>
+                    ))
                 )}
             </div>
         </div>
