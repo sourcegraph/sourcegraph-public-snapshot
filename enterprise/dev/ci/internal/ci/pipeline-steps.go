@@ -369,7 +369,7 @@ func addDockerImages(c Config, final bool) func(*bk.Pipeline) {
 			}
 
 		// build candidate images but do not deploy `insiders` images
-		case c.taggedRelease || c.isBackendDryRun || c.shouldRunE2EandQA():
+		case c.taggedRelease || c.isBackendDryRun || c.shouldRunE2EandQA() || c.buildCandidatesNoTest:
 			for _, dockerImage := range images.SourcegraphDockerImages {
 				addDockerImage(c, dockerImage, false)(pipeline)
 			}

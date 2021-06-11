@@ -72,6 +72,14 @@ func getBy(ctx context.Context, registry *url.URL, op, field, value string) (*Ex
 	return x, nil
 }
 
+func GetFeaturedExtensions(ctx context.Context, registry *url.URL) ([]*Extension, error) {
+	var x []*Extension
+	if err := httpGet(ctx, "registry.GetFeaturedExtensions", toURL(registry, "extensions/featured", nil), &x); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
 type notFoundError struct{ field, value string }
 
 func (notFoundError) NotFound() bool { return true }

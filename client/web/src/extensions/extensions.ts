@@ -14,8 +14,13 @@ import { RegistryExtensionFieldsForList } from '../graphql-operations'
 import { validCategories } from './extension/extension'
 import { ConfiguredExtensionCache, ExtensionsEnablement } from './ExtensionRegistry'
 
+export type MinimalConfiguredRegistryExtension = Pick<
+    ConfiguredRegistryExtension<RegistryExtensionFieldsForList>,
+    'manifest' | 'id'
+>
+
 export interface ConfiguredRegistryExtensions {
-    [id: string]: Pick<ConfiguredRegistryExtension<RegistryExtensionFieldsForList>, 'manifest' | 'id'>
+    [id: string]: MinimalConfiguredRegistryExtension
 }
 
 export interface ConfiguredExtensionRegistry {
@@ -83,6 +88,30 @@ export function configureExtensionRegistry(
     }
 
     return { extensions, extensionIDsByCategory }
+}
+
+/**
+ * Configures featured extensions to be displayed on the extension registry.
+ *
+ * Share configured extension cache with `configureExtensionRegistry`
+ * since featured extensions are likely to be displayed twice on the page.
+ */
+export function configureFeaturedExtensions(
+    featuredExtensions: RegistryExtensionFieldsForList[],
+    configuredExtensionCache: ConfiguredExtensionCache
+): MinimalConfiguredRegistryExtension[] {
+    const extensions: MinimalConfiguredRegistryExtension[] = []
+
+    for (const featuredExtension of featuredExtensions) {
+        let configuredRegistryExtension = configuredExtensionCache.get(featuredExtension.id)
+        if (!configuredRegistryExtension) {
+            configuredRegistryExtension = toConfiguredRegistryExtension(featuredExtension)
+            configuredExtensionCache.set(featuredExtension.id, configuredRegistryExtension)
+        }
+        extensions.push(configuredRegistryExtension)
+    }
+
+    return extensions
 }
 
 /**
