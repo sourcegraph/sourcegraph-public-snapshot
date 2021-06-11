@@ -1268,6 +1268,7 @@ func (r *Resolver) MergeChangesets(ctx context.Context, args *graphqlbackend.Mer
 	// 🚨 SECURITY: CreateChangesetJobs checks whether current user is authorized.
 	svc := service.New(r.store)
 	published := btypes.ChangesetPublicationStatePublished
+	openState := btypes.ChangesetExternalStateOpen
 	bulkGroupID, err := svc.CreateChangesetJobs(
 		ctx,
 		batchChangeID,
@@ -1277,6 +1278,7 @@ func (r *Resolver) MergeChangesets(ctx context.Context, args *graphqlbackend.Mer
 		store.ListChangesetsOpts{
 			PublicationState: &published,
 			ReconcilerStates: []btypes.ReconcilerState{btypes.ReconcilerStateCompleted},
+			ExternalState:    &openState,
 		},
 	)
 	if err != nil {
