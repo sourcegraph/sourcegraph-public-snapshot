@@ -482,7 +482,7 @@ func makeTestServer(ctx context.Context, repoDir, remote string, db dbutil.DB) *
 
 func TestCloneRepo(t *testing.T) {
 	ctx := context.Background()
-	remote := tmpDir(t)
+	remote := t.TempDir()
 	repoName := api.RepoName("example.com/foo/bar")
 	db := dbtesting.GetDB(t)
 
@@ -523,7 +523,7 @@ func TestCloneRepo(t *testing.T) {
 	// Add a bad tag
 	cmd("git", "tag", "HEAD")
 
-	reposDir := tmpDir(t)
+	reposDir := t.TempDir()
 	s := makeTestServer(ctx, reposDir, remote, db)
 
 	_, err := s.cloneRepo(ctx, repoName, nil)
@@ -579,7 +579,7 @@ func TestCloneRepo(t *testing.T) {
 
 func TestHandleRepoUpdate(t *testing.T) {
 	ctx := context.Background()
-	remote := tmpDir(t)
+	remote := t.TempDir()
 	repoName := api.RepoName("example.com/foo/bar")
 	db := dbtesting.GetDB(t)
 
@@ -601,7 +601,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 	// Add a bad tag
 	cmd("git", "tag", "HEAD")
 
-	reposDir := tmpDir(t)
+	reposDir := t.TempDir()
 
 	s := makeTestServer(ctx, reposDir, remote, db)
 	s.ctx = context.Background()
@@ -667,7 +667,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 }
 
 func TestRemoveBadRefs(t *testing.T) {
-	dir := tmpDir(t)
+	dir := t.TempDir()
 	gitDir := GitDir(filepath.Join(dir, ".git"))
 
 	cmd := func(name string, arg ...string) string {
@@ -713,8 +713,8 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 
 	t.Run("with no remote HEAD file", func(t *testing.T) {
 		var (
-			remote   = tmpDir(t)
-			reposDir = tmpDir(t)
+			remote   = t.TempDir()
+			reposDir = t.TempDir()
 			cmd      = func(name string, arg ...string) string {
 				t.Helper()
 				return runCmd(t, remote, name, arg...)
@@ -731,8 +731,8 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 	})
 	t.Run("with an empty remote HEAD file", func(t *testing.T) {
 		var (
-			remote   = tmpDir(t)
-			reposDir = tmpDir(t)
+			remote   = t.TempDir()
+			reposDir = t.TempDir()
 			cmd      = func(name string, arg ...string) string {
 				t.Helper()
 				return runCmd(t, remote, name, arg...)
@@ -749,8 +749,8 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 	})
 	t.Run("with no local HEAD file", func(t *testing.T) {
 		var (
-			remote   = tmpDir(t)
-			reposDir = tmpDir(t)
+			remote   = t.TempDir()
+			reposDir = t.TempDir()
 			cmd      = func(name string, arg ...string) string {
 				t.Helper()
 				return runCmd(t, remote, name, arg...)
@@ -787,8 +787,8 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 	})
 	t.Run("with an empty local HEAD file", func(t *testing.T) {
 		var (
-			remote   = tmpDir(t)
-			reposDir = tmpDir(t)
+			remote   = t.TempDir()
+			reposDir = t.TempDir()
 			cmd      = func(name string, arg ...string) string {
 				t.Helper()
 				return runCmd(t, remote, name, arg...)
@@ -887,7 +887,7 @@ func TestHostnameMatch(t *testing.T) {
 func TestSyncRepoState(t *testing.T) {
 	ctx := context.Background()
 	db := dbtesting.GetDB(t)
-	remoteDir := tmpDir(t)
+	remoteDir := t.TempDir()
 
 	cmd := func(name string, arg ...string) string {
 		t.Helper()
@@ -900,7 +900,7 @@ func TestSyncRepoState(t *testing.T) {
 	cmd("git", "add", "hello.txt")
 	cmd("git", "commit", "-m", "hello")
 
-	reposDir := tmpDir(t)
+	reposDir := t.TempDir()
 	repoName := api.RepoName("example.com/foo/bar")
 	hostname := "test"
 
