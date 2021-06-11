@@ -147,8 +147,13 @@ func (b *bulkProcessor) mergeChangeset(ctx context.Context, job *btypes.Changese
 
 	if err := b.tx.UpsertChangesetEvents(ctx, events...); err != nil {
 		log15.Error("UpsertChangesetEvents", "err", err)
-		return err
+		return errcode.MakeNonRetryable(err)
 	}
 
-	return b.tx.UpdateChangeset(ctx, cs.Changeset)
+	if err := b.tx.UpdateChangeset(ctx, cs.Changeset); err != nil {
+		log15.Error("UpdateChangeset", "err", err)
+		return errcode.MakeNonRetryable(err)
+	}
+
+	return nil
 }

@@ -263,6 +263,9 @@ func (s GithubSource) MergeChangeset(ctx context.Context, c *Changeset, squash b
 	}
 
 	if err := s.client.MergePullRequest(ctx, pr, squash); err != nil {
+		if github.IsNotMergeable(err) {
+			return ChangesetNotMergeableError{ErrorMsg: err.Error()}
+		}
 		return err
 	}
 

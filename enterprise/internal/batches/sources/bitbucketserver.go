@@ -264,6 +264,9 @@ func (s BitbucketServerSource) MergeChangeset(ctx context.Context, c *Changeset,
 	}
 
 	if err := s.client.MergePullRequest(ctx, pr); err != nil {
+		if errors.Is(err, bitbucketserver.ErrNotMergeable) {
+			return &ChangesetNotMergeableError{ErrorMsg: err.Error()}
+		}
 		return err
 	}
 

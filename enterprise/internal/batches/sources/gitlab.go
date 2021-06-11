@@ -437,6 +437,9 @@ func (s *GitLabSource) MergeChangeset(ctx context.Context, c *Changeset, squash 
 
 	updated, err := s.client.MergeMergeRequest(ctx, project, mr, squash)
 	if err != nil {
+		if errors.Is(err, gitlab.ErrNotMergeable) {
+			return ChangesetNotMergeableError{ErrorMsg: err.Error()}
+		}
 		return errors.Wrap(err, "merging GitLab merge request")
 	}
 

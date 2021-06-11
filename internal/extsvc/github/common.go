@@ -1586,6 +1586,21 @@ func IsRateLimitExceeded(err error) bool {
 	return false
 }
 
+// IsNotMergeable reports whether err is a GitHub API error reporting that a PR
+// was not in a mergeable state.
+func IsNotMergeable(err error) bool {
+	errs, ok := err.(graphqlErrors)
+	if !ok {
+		return false
+	}
+	for _, err := range errs {
+		if strings.Contains(strings.ToLower(err.Message), "pull request is not mergeable") {
+			return true
+		}
+	}
+	return false
+}
+
 var errInternalRateLimitExceeded = errors.New("internal rate limit exceeded")
 
 // ErrIncompleteResults is returned when the GitHub Search API returns an `incomplete_results: true` field in their response

@@ -1432,6 +1432,10 @@ func (e *httpError) NoSuchLabelException() bool {
 	return strings.Contains(string(e.Body), bitbucketNoSuchLabelException)
 }
 
+func (e *httpError) MergePreconditionFailedException() bool {
+	return e.StatusCode == 409
+}
+
 const (
 	bitbucketDuplicatePRException       = "com.atlassian.bitbucket.pull.DuplicatePullRequestException"
 	bitbucketNoSuchLabelException       = "com.atlassian.bitbucket.label.NoSuchLabelException"
@@ -1508,6 +1512,10 @@ func (c *Client) CreatePullRequestComment(ctx context.Context, pr *PullRequest, 
 	return err
 }
 
+// ErrNotMergeable is returned by MergePullRequest when the pull request failed
+// to merge, because a precondition is not met.
+var ErrNotMergeable = errors.New("pull request cannot be merged")
+
 func (c *Client) MergePullRequest(ctx context.Context, pr *PullRequest) error {
 	if pr.ToRef.Repository.Slug == "" {
 		return errors.New("repository slug empty")
@@ -1527,5 +1535,12 @@ func (c *Client) MergePullRequest(ctx context.Context, pr *PullRequest) error {
 	qry := url.Values{"version": {strconv.Itoa(pr.Version)}}
 
 	_, err := c.send(ctx, "POST", path, qry, nil, pr)
-	return err
+	if err != nil {
+		wrappedErr := errors.Unwrap(err)
+		if e, ok := wrappedErr.(*httpError); ok && e.MergePreconditionFailedException() {
+			return errors.Wrap(ErrNotMergeable, err.Error())
+		}
+		return err
+	}
+	return nil
 }
