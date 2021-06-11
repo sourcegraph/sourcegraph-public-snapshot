@@ -3,7 +3,7 @@ import * as React from 'react'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { IHighlightLineRange, SymbolKind } from '../graphql/schema'
+import { IHighlightLineRange } from '../graphql/schema'
 import { FileLineMatch, FileSymbolMatch, getFileMatchUrl } from '../search/stream'
 import { isSettingsValid, SettingsCascadeProps } from '../settings/settings'
 import { SymbolIcon } from '../symbols/SymbolIcon'
