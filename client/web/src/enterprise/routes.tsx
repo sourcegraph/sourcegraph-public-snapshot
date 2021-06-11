@@ -31,8 +31,6 @@ export const enterpriseRoutes: readonly LayoutRouteProps<{}>[] = [
         condition: props => props.showBatchChanges,
     },
     {
-        // Always allow this route independent of the feature flag, it's currently linked to from code insights.
-        // The feature flag controls the button on the search results page.
         path: '/stats',
         render: lazyComponent(() => import('./search/stats/SearchStatsPage'), 'SearchStatsPage'),
     },
