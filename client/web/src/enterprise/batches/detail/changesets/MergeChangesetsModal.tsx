@@ -40,6 +40,10 @@ export const MergeChangesetsModal: React.FunctionComponent<MergeChangesetsModalP
         }
     }, [changesetIDs, mergeChangesets, batchChangeID, squash, afterCreate])
 
+    const onToggleSquash = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
+        setSquash(event.target.checked)
+    }, [])
+
     return (
         <Dialog
             className="modal-body modal-body--top-third p-4 rounded border"
@@ -55,7 +59,7 @@ export const MergeChangesetsModal: React.FunctionComponent<MergeChangesetsModalP
                             id={CHECKBOX_ID}
                             type="checkbox"
                             checked={squash}
-                            onChange={event => setSquash(event.target.checked)}
+                            onChange={onToggleSquash}
                             className="form-check-input"
                             disabled={isLoading === true}
                         />

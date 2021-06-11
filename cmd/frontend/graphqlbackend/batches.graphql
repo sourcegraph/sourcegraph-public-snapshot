@@ -2091,7 +2091,7 @@ extend type Mutation {
     reenqueueChangesets(batchChange: ID!, changesets: [ID!]!): BulkOperation!
 
     """
-    Merge multiple changesets. When squash is true, the commits will be squashed
+    Merge multiple changesets. If squash is true, the commits will be squashed
     into a single commit.
 
     Experimental: This API is likely to change in the future.
