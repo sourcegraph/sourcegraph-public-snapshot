@@ -2,20 +2,13 @@ import { useMemo } from 'react'
 
 import { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
-import { Filter, Token } from '@sourcegraph/shared/src/search/query/token'
-import { dedupeWhitespace } from '@sourcegraph/shared/src/util/strings';
+import { isRepoFilter } from '@sourcegraph/shared/src/search/query/validate'
+import { dedupeWhitespace } from '@sourcegraph/shared/src/util/strings'
 
 import { DEFAULT_ACTIVE_COLOR } from '../../components/form-color-input/FormColorInput'
 import { createDefaultEditSeries } from '../../components/search-insight-creation-content/hooks/use-editable-series'
 import { INITIAL_INSIGHT_VALUES } from '../../components/search-insight-creation-content/initial-insight-values'
 import { CreateInsightFormFields } from '../../types'
-
-/**
- * Type guard for repo: filter token.
- *
- * @param token - query parsed lexical token
- */
-const isRepoFilter = (token: Token): token is Filter => token.type === 'filter' && token.field.value === 'repo'
 
 /**
  * Generate repositories string value without special reg exp
