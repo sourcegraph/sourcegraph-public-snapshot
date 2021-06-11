@@ -522,7 +522,7 @@ func fromRepository(rm *result.RepoMatch, repoCache map[api.RepoID]*types.Repo) 
 	}
 
 	if r, ok := repoCache[rm.ID]; ok {
-		repoEvent.Stars = r.Stars
+		repoEvent.RepoStars = r.Stars
 		repoEvent.Description = r.Description
 		repoEvent.Fork = r.Fork
 		repoEvent.Archived = r.Archived

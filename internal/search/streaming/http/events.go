@@ -42,7 +42,7 @@ type EventRepoMatch struct {
 
 	Repository  string   `json:"repository"`
 	Branches    []string `json:"branches,omitempty"`
-	Stars       int      `json:"stars"`
+	RepoStars   int      `json:"repoStars"`
 	Description string   `json:"description"`
 	Fork        bool     `json:"fork"`
 	Archived    bool     `json:"archived"`
