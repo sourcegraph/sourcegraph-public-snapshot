@@ -10,6 +10,7 @@ import { useTitleValidator } from '../../../../../components/form/hooks/useTitle
 import { Organization } from '../../../../../components/visibility-picker/VisibilityPicker'
 import { InsightTypePrefix } from '../../../../../core/types'
 import { CreateInsightFormFields } from '../../types'
+import { getSanitizedRepositories } from '../../utils/insight-sanitizer'
 import { SearchInsightLivePreview } from '../live-preview-chart/SearchInsightLivePreview'
 import { SearchInsightCreationForm } from '../search-insight-creation-form/SearchInsightCreationForm'
 
@@ -108,11 +109,13 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
     }
 
     const validEditSeries = editSeries.filter(series => series.valid)
+    const repositoriesList = getSanitizedRepositories(repositories.input.value)
 
     // If some fields that needed to run live preview  are invalid
     // we should disabled live chart preview
     const allFieldsForPreviewAreValid =
         (repositories.meta.validState === 'VALID' || repositories.meta.validState === 'CHECKING') &&
+        repositoriesList.length > 0 &&
         (series.meta.validState === 'VALID' || validEditSeries.length) &&
         stepValue.meta.validState === 'VALID'
 

@@ -1,5 +1,7 @@
 import assert from 'assert'
 
+import delay from 'delay'
+
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { emptyResponse } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
@@ -73,6 +75,8 @@ describe('Code insight create insight page', () => {
 
         // Add new repo to repositories field
         await driver.page.type('input[name="repository"]', 'github.com/sourcegraph/sourcegraph')
+        // Wait until async validation on repository field will be finished
+        await delay(1000)
 
         // With repository filled input we have to have code stats insight live preview
         // charts - pie chart
@@ -138,6 +142,11 @@ describe('Code insight create insight page', () => {
                  * */
                 BulkSearchCommits: () => INSIGHT_TYPES_MIGRATION_COMMITS,
                 BulkSearch: () => INSIGHT_TYPES_MIGRATION_BULK_SEARCH,
+
+                /** Mock for repository suggest component. */
+                RepositorySearchSuggestions: () => ({
+                    repositories: { nodes: [] },
+                }),
             },
         })
 
@@ -147,7 +156,7 @@ describe('Code insight create insight page', () => {
         await driver.page.waitForSelector('[data-testid="search-insight-create-page-content"]')
 
         // Add new repo to repositories field
-        await driver.page.type('input[name="repositories"]', 'github.com/sourcegraph/sourcegraph')
+        await driver.page.type('[name="repositories"]', 'github.com/sourcegraph/sourcegraph')
 
         // Change insight title
         await driver.page.type('input[name="title"]', 'Test insight title')

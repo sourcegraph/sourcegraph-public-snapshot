@@ -5,7 +5,10 @@ import { InsightTypePrefix, SearchBasedInsight } from '../../../../core/types'
 import { CreateInsightFormFields, EditableDataSeries } from '../types'
 
 export function getSanitizedRepositories(rawRepositories: string): string[] {
-    return rawRepositories.trim().split(/\s*,\s*/)
+    return rawRepositories
+        .trim()
+        .split(/\s*,\s*/)
+        .filter(repo => repo)
 }
 
 export function getSanitizedLine(line: EditableDataSeries): DataSeries {
