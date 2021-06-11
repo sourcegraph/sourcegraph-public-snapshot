@@ -4,11 +4,11 @@ import React from 'react'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
 import { ResultContainer } from '@sourcegraph/shared/src/components/ResultContainer'
+import { CommitMatch, getMatchTitle, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 
 import { CommitSearchResultMatch } from './CommitSearchResultMatch'
-import { CommitMatch, getMatchTitle, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
 
 interface Props extends ThemeProps {
     result: CommitMatch | RepositoryMatch
@@ -18,8 +18,7 @@ interface Props extends ThemeProps {
 }
 
 export const SearchResult: React.FunctionComponent<Props> = ({ result, history, icon, isLightTheme, repoName }) => {
-    const renderTitle = (): JSX.Element => {
-        return (
+    const renderTitle = (): JSX.Element => (
             <div className="search-result__title">
                 <RepoIcon repoName={repoName} className="icon-inline text-muted flex-shrink-0" />
                 <Markdown
@@ -34,7 +33,6 @@ export const SearchResult: React.FunctionComponent<Props> = ({ result, history, 
                 )}
             </div>
         )
-    }
 
     const renderBody = (): JSX.Element => {
         if (result.type === 'repo') {

@@ -3,7 +3,7 @@ import * as React from 'react'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { IHighlightLineRange } from '../graphql/schema'
+import { IHighlightLineRange, SymbolKind } from '../graphql/schema'
 import { FileLineMatch, FileSymbolMatch, getFileMatchUrl } from '../search/stream'
 import { isSettingsValid, SettingsCascadeProps } from '../settings/settings'
 import { SymbolIcon } from '../symbols/SymbolIcon'
@@ -144,7 +144,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                     className="file-match-children__item test-file-match-children-item"
                     key={`symbol:${symbol.name}${String(symbol.containerName)}${symbol.url}`}
                 >
-                    <SymbolIcon kind={symbol.kind} className="icon-inline mr-1" />
+                    <SymbolIcon kind={SymbolKind[symbol.kind]} className="icon-inline mr-1" />
                     <code>
                         {symbol.name}{' '}
                         {symbol.containerName && <span className="text-muted">{symbol.containerName}</span>}

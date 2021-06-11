@@ -5,6 +5,7 @@ import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     extensionsController,
@@ -15,7 +16,6 @@ import {
 
 import { AuthenticatedUser } from '../../../auth'
 import { WebStory } from '../../../components/WebStory'
-import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 
 import { StreamingSearchResults, StreamingSearchResultsProps } from './StreamingSearchResults'
 

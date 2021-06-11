@@ -10,6 +10,7 @@ import { FileMatch } from '@sourcegraph/shared/src/components/FileMatch'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     extensionsController,
@@ -22,7 +23,6 @@ import {
 import { SearchResult } from '../../../components/SearchResult'
 import { SavedSearchModal } from '../../../savedSearches/SavedSearchModal'
 import * as helpers from '../../helpers'
-import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { SearchResultsInfoBar } from '../SearchResultsInfoBar'
 import { VersionContextWarning } from '../VersionContextWarning'
 

@@ -4,8 +4,8 @@ import { defaultIfEmpty, map, materialize, scan } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
-import { SearchPatternType } from '../graphql-operations'
 import { displayRepoName } from '../components/RepoFileLink'
+import { SearchPatternType } from '../graphql-operations'
 import { SymbolKind } from '../graphql/schema'
 
 export type SearchEvent =
@@ -438,7 +438,7 @@ export function getRepoMatchUrl(repoMatch: RepositoryMatch): string {
     return '/' + encodeURI(label)
 }
 
-export function getMatchUrl(match: SearchMatch) {
+export function getMatchUrl(match: SearchMatch): string {
     switch (match.type) {
         case 'file':
         case 'symbol':

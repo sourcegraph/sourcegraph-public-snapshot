@@ -8,11 +8,11 @@ import sanitizeHtml from 'sanitize-html'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
+import { CommitMatch } from '@sourcegraph/shared/src/search/stream'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { highlightNode } from '@sourcegraph/shared/src/util/dom'
 
 import { highlightCode } from '../search/backend'
-import { CommitMatch } from '@sourcegraph/shared/src/search/stream'
 
 interface CommitSearchResultMatchProps extends ThemeProps {
     item: CommitMatch
