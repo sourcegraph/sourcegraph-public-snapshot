@@ -633,6 +633,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                 location={location}
                 className="blob-status-bar__body"
                 statusBarRef={nextStatusBarElement}
+                hideWhileInitializing={true}
             />
         </>
     )
