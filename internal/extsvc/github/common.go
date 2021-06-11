@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -16,8 +15,8 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver"
+	"github.com/cockroachdb/errors"
 	"github.com/google/go-github/github"
-	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/segmentio/fasthash/fnv1"
@@ -1024,6 +1023,7 @@ const timelineItemTypesFmtStr = `ASSIGNED_EVENT, CLOSED_EVENT, ISSUE_COMMENT, RE
 
 var ghe220Semver, _ = semver.NewConstraint("~2.20.0")
 var ghe221PlusOrDotComSemver, _ = semver.NewConstraint(">= 2.21.0")
+var ghe300PlusOrDotComSemver, _ = semver.NewConstraint(">= 3.0.0")
 
 func timelineItemTypes(version *semver.Version) (string, error) {
 	if ghe220Semver.Check(version) {
@@ -1452,7 +1452,7 @@ func doRequest(ctx context.Context, apiURL *url.URL, auth auth.Authenticator, ra
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
 		var err APIError
-		if body, readErr := ioutil.ReadAll(io.LimitReader(resp.Body, 1<<13)); readErr != nil { // 8kb
+		if body, readErr := io.ReadAll(io.LimitReader(resp.Body, 1<<13)); readErr != nil { // 8kb
 			err.Message = fmt.Sprintf("failed to read error response from GitHub API: %v: %q", readErr, string(body))
 		} else if decErr := json.Unmarshal(body, &err); decErr != nil {
 			err.Message = fmt.Sprintf("failed to decode error response from GitHub API: %v: %q", decErr, string(body))
@@ -1576,6 +1576,10 @@ type Repository struct {
 	// This field will always be blank on repos stored in our database because the value will be different
 	// depending on which token was used to fetch it
 	ViewerPermission string // ADMIN, WRITE, READ, or empty if unknown. Only the graphql api populates this. https://developer.github.com/v4/enum/repositorypermission/
+
+	// Metadata retained for ranking
+	StargazerCount int `json:",omitempty"`
+	ForkCount      int `json:",omitempty"`
 }
 
 func ownerNameCacheKey(owner, name string) string       { return "0:" + owner + "/" + name }
@@ -1645,6 +1649,8 @@ type restRepository struct {
 	Locked      bool                      `json:"locked"`
 	Disabled    bool                      `json:"disabled"`
 	Permissions restRepositoryPermissions `json:"permissions"`
+	Stars       int                       `json:"stargazers_count"`
+	Forks       int                       `json:"forks_count"`
 }
 
 // getRepositoryFromAPI attempts to fetch a repository from the GitHub API without use of the redis cache.
@@ -1678,6 +1684,8 @@ func convertRestRepo(restRepo restRepository) *Repository {
 		IsLocked:         restRepo.Locked,
 		IsDisabled:       restRepo.Disabled,
 		ViewerPermission: convertRestRepoPermissions(restRepo.Permissions),
+		StargazerCount:   restRepo.Stars,
+		ForkCount:        restRepo.Forks,
 	}
 }
 

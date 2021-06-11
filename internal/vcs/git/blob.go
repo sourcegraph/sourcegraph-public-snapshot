@@ -4,11 +4,10 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"strings"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -69,7 +68,7 @@ func readFileBytes(ctx context.Context, repo api.RepoName, commit api.CommitID, 
 	if maxBytes > 0 {
 		r = io.LimitReader(r, maxBytes)
 	}
-	data, err := ioutil.ReadAll(r)
+	data, err := io.ReadAll(r)
 	if err != nil {
 		return nil, err
 	}

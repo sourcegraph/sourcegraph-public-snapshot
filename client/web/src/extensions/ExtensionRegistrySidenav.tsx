@@ -1,8 +1,10 @@
 import classnames from 'classnames'
-import React, { useCallback, useState } from 'react'
+import React, { useState } from 'react'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 
 import { EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
+
+import { SidebarGroup, SidebarGroupHeader, SidebarGroupItems } from '../components/Sidebar'
 
 import { ExtensionCategoryOrAll, ExtensionsEnablement } from './ExtensionRegistry'
 import styles from './ExtensionRegistrySidenav.module.scss'
@@ -21,6 +23,9 @@ interface ExtensionsCategoryFiltersProps {
 interface ExtensionsEnablementDropdownProps {
     enablementFilter: ExtensionsEnablement
     setEnablementFilter: React.Dispatch<React.SetStateAction<ExtensionsEnablement>>
+
+    showExperimentalExtensions: boolean
+    toggleExperimentalExtensions: () => void
 }
 
 /**
@@ -29,34 +34,42 @@ interface ExtensionsEnablementDropdownProps {
  */
 export const ExtensionRegistrySidenav: React.FunctionComponent<
     ExtensionsCategoryFiltersProps & ExtensionsEnablementDropdownProps
-> = ({ selectedCategory, onSelectCategory, enablementFilter, setEnablementFilter }) => {
+> = ({
+    selectedCategory,
+    onSelectCategory,
+    enablementFilter,
+    setEnablementFilter,
+    showExperimentalExtensions,
+    toggleExperimentalExtensions,
+}) => {
     const [isOpen, setIsOpen] = useState(false)
-    const toggleIsOpen = useCallback(() => setIsOpen(open => !open), [])
+    const toggleIsOpen = (): void => setIsOpen(open => !open)
 
-    const showAll = useCallback(() => setEnablementFilter('all'), [setEnablementFilter])
-    const showEnabled = useCallback(() => setEnablementFilter('enabled'), [setEnablementFilter])
-    const showDisabled = useCallback(() => setEnablementFilter('disabled'), [setEnablementFilter])
+    const showAll = (): void => setEnablementFilter('all')
+    const showEnabled = (): void => setEnablementFilter('enabled')
+    const showDisabled = (): void => setEnablementFilter('disabled')
 
     return (
         <div className={classnames(styles.column, 'mr-4 flex-grow-0 flex-shrink-0')}>
-            <div className="d-flex flex-column">
-                <h3 className={classnames(styles.header, 'mb-3')}>Categories</h3>
-
-                {['All' as const, ...EXTENSION_CATEGORIES].map(category => (
-                    <button
-                        type="button"
-                        className={classnames(
-                            'btn text-left',
-                            selectedCategory === category ? 'btn-primary' : styles.inactiveCategory
-                        )}
-                        data-test-extension-category={category}
-                        key={category}
-                        onClick={() => onSelectCategory(category)}
-                    >
-                        {category}
-                    </button>
-                ))}
-            </div>
+            <SidebarGroup>
+                <SidebarGroupHeader label="Categories" />
+                <SidebarGroupItems>
+                    {['All' as const, ...EXTENSION_CATEGORIES].map(category => (
+                        <button
+                            type="button"
+                            className={classnames(
+                                'btn text-left sidebar__link--inactive d-flex sidebar-nav-link w-100',
+                                selectedCategory === category && 'btn-primary'
+                            )}
+                            data-test-extension-category={category}
+                            key={category}
+                            onClick={() => onSelectCategory(category)}
+                        >
+                            {category}
+                        </button>
+                    ))}
+                </SidebarGroupItems>
+            </SidebarGroup>
 
             <hr className={classnames('my-3', styles.divider)} />
 
@@ -73,6 +86,27 @@ export const ExtensionRegistrySidenav: React.FunctionComponent<
                     </DropdownItem>
                     <DropdownItem onClick={showDisabled} disabled={enablementFilter === 'disabled'}>
                         Show disabled extensions
+                    </DropdownItem>
+
+                    <DropdownItem divider={true} />
+
+                    <DropdownItem
+                        // Hack: clicking <label> inside <DropdownItem> doesn't affect checked state,
+                        // so use a <span> for which click events are handled by <DropdownItem>.
+                        onClick={toggleExperimentalExtensions}
+                    >
+                        <div className="d-flex align-items-center">
+                            <input
+                                type="checkbox"
+                                checked={showExperimentalExtensions}
+                                onChange={toggleExperimentalExtensions}
+                                className=""
+                                aria-labelledby="show-experimental-extensions"
+                            />
+                            <span className="m-0 pl-2" id="show-experimental-extensions">
+                                Show experimental extensions
+                            </span>
+                        </div>
                     </DropdownItem>
                 </DropdownMenu>
             </ButtonDropdown>

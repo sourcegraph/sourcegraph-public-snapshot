@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import { isPlainObject } from 'lodash'
 import * as Monaco from 'monaco-editor'
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
@@ -44,6 +45,8 @@ export interface MonacoQueryInputProps
 
     // Whether comments are parsed and highlighted
     interpretComments?: boolean
+
+    className?: string
 }
 
 const SOURCEGRAPH_SEARCH = 'sourcegraphSearch' as const
@@ -156,6 +159,7 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     interpretComments,
     isSourcegraphDotCom,
     isLightTheme,
+    className,
 }) => {
     const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
 
@@ -367,7 +371,11 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
         cursorWidth: 1,
     }
     return (
-        <div ref={setContainer} className="flex-grow-1 flex-shrink-past-contents" onFocus={onFocus}>
+        <div
+            ref={setContainer}
+            className={classNames('flex-grow-1 flex-shrink-past-contents', className)}
+            onFocus={onFocus}
+        >
             <MonacoEditor
                 id="monaco-query-input"
                 language={SOURCEGRAPH_SEARCH}

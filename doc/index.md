@@ -32,7 +32,7 @@ TODO(ryan): Replace with updated screencast
 
 For next steps and further configuration options, visit the [site administration documentation](admin/index.md).
 
-> NOTE: If you get stuck or need help, [file an issue](https://github.com/sourcegraph/sourcegraph/issues/new?&title=Improve+Sourcegraph+quickstart+guide), [tweet (@srcgraph)](https://twitter.com/srcgraph) or [email](mailto:support@sourcegraph.com?subject=Sourcegraph%20quickstart%20guide).
+> NOTE: If you get stuck or need help, [file an issue](https://github.com/sourcegraph/sourcegraph/issues/new?&title=Improve+Sourcegraph+quickstart+guide), [tweet (@sourcegraph)](https://twitter.com/sourcegraph) or [email](mailto:support@sourcegraph.com?subject=Sourcegraph%20quickstart%20guide).
 
 <span class="virtual-br"></span>
 
@@ -43,7 +43,7 @@ For next steps and further configuration options, visit the [site administration
 
 > To fix this, run:
 
-> `mkdir -p ~/.sourcegraph/config ~/.sourcegraph/data && chcon -R -t svirt_sandbox_file_t ~/.sourcegraph/config ~/.sourcegraph/data`
+> `mkdir -p ~/.sourcegraph/config ~/.sourcegraph/data && chown -R -t svirt_sandbox_file_t ~/.sourcegraph/config ~/.sourcegraph/data`
 
 ## Upgrading Sourcegraph
 
@@ -87,5 +87,5 @@ For self-hosted Sourcegraph instances, you run a Docker image or Kubernetes clus
 - [Contributing to Sourcegraph](dev/index.md)
 - [Sourcegraph handbook](https://about.sourcegraph.com/handbook)
 - [Sourcegraph blog](https://about.sourcegraph.com/blog/)
-- [@srcgraph on Twitter](https://twitter.com/srcgraph)
+- [@sourcegraph on Twitter](https://twitter.com/sourcegraph)
 - [Product Roadmap](https://about.sourcegraph.com/direction)

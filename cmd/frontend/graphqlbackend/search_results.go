@@ -12,21 +12,21 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/honeycombio/libhoney-go"
 	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -219,7 +219,7 @@ func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFi
 	}
 	tr.LogFields(otlog.Bool("globbing", globbing))
 
-	filters := SearchFilters{
+	filters := streaming.SearchFilters{
 		Globbing: globbing,
 	}
 	filters.Update(streaming.SearchEvent{
@@ -450,8 +450,9 @@ func LogSearchLatency(ctx context.Context, db dbutil.DB, si *run.SearchInputs, d
 		if a.IsAuthenticated() {
 			value := fmt.Sprintf(`{"durationMs": %d}`, durationMs)
 			eventName := fmt.Sprintf("search.latencies.%s", types[0])
+			featureFlags := featureflag.FromContext(ctx)
 			go func() {
-				err := usagestats.LogBackendEvent(db, a.UID, eventName, json.RawMessage(value))
+				err := usagestats.LogBackendEvent(db, a.UID, eventName, json.RawMessage(value), featureFlags)
 				if err != nil {
 					log15.Warn("Could not log search latency", "err", err)
 				}
@@ -1268,35 +1269,20 @@ func (r *searchResolver) determineResultTypes(args search.TextParameters, forceT
 // determineRepos wraps resolveRepositories. It interprets the response and
 // error to see if an alert needs to be returned. Only one of the return
 // values will be non-nil.
-func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, start time.Time) (*searchrepos.Resolved, *searchAlert, error) {
-	resolved, err := r.resolveRepositories(ctx, nil)
+func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, start time.Time) (*searchrepos.Resolved, error) {
+	resolved, err := r.resolveRepositories(ctx, resolveRepositoriesOpts{})
 	if err != nil {
-		if errors.Is(err, authz.ErrStalePermissions{}) {
-			log15.Debug("searchResolver.determineRepos", "err", err)
-			alert := alertForStalePermissions()
-			return nil, alert, nil
-		}
-		e := git.BadCommitError{}
-		if errors.As(err, &e) {
-			alert := r.alertForInvalidRevision(e.Spec)
-			return nil, alert, nil
-		}
-		if errors.Is(err, context.DeadlineExceeded) {
-			return nil, alertForTimeout(r.SearchInputs), nil
-		}
-		return nil, nil, err
+		return nil, err
 	}
 
 	tr.LazyPrintf("searching %d repos, %d missing", len(resolved.RepoRevs), len(resolved.MissingRepoRevs))
 	if len(resolved.RepoRevs) == 0 {
-		alert := r.alertForNoResolvedRepos(ctx)
-		return nil, alert, nil
+		return nil, r.errorForNoResolvedRepos(ctx)
 	}
 	if resolved.OverLimit {
-		alert := r.alertForOverRepoLimit(ctx)
-		return nil, alert, nil
+		return nil, r.errorForOverRepoLimit(ctx)
 	}
-	return &resolved, nil, nil
+	return &resolved, nil
 }
 
 // isGlobalSearch returns true if the query does not contain repo, repogroup, or
@@ -1438,12 +1424,12 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 		}
 	}
 
-	resolved, alertResult, err := r.determineRepos(ctx, tr, start)
+	resolved, err := r.determineRepos(ctx, tr, start)
 	if err != nil {
+		if alert, err := errorToAlert(err); alert != nil {
+			return &SearchResultsResolver{db: r.db, alert: alert}, err
+		}
 		return nil, err
-	}
-	if alertResult != nil {
-		return &SearchResultsResolver{db: r.db, alert: alertResult}, nil
 	}
 	if len(resolved.MissingRepoRevs) > 0 {
 		agg.Error(&missingRepoRevsError{Missing: resolved.MissingRepoRevs})

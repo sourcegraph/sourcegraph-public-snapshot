@@ -1,12 +1,13 @@
 package util
 
 import (
+	"io/fs"
 	"os"
 	"sort"
 	"time"
 )
 
-// FileInfo implements os.FileInfo.
+// FileInfo implements fs.FileInfo.
 type FileInfo struct {
 	Name_    string
 	Mode_    os.FileMode
@@ -23,11 +24,11 @@ func (fi *FileInfo) IsDir() bool        { return fi.Mode().IsDir() }
 func (fi *FileInfo) Sys() interface{}   { return fi.Sys_ }
 
 // SortFileInfosByName sorts fis by name, alphabetically.
-func SortFileInfosByName(fis []os.FileInfo) {
+func SortFileInfosByName(fis []fs.FileInfo) {
 	sort.Sort(fileInfosByName(fis))
 }
 
-type fileInfosByName []os.FileInfo
+type fileInfosByName []fs.FileInfo
 
 func (v fileInfosByName) Len() int           { return len(v) }
 func (v fileInfosByName) Less(i, j int) bool { return v[i].Name() < v[j].Name() }

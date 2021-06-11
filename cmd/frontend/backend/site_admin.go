@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -14,11 +15,11 @@ import (
 var ErrMustBeSiteAdmin = errors.New("must be site admin")
 
 // CheckCurrentUserIsSiteAdmin returns an error if the current user is NOT a site admin.
-func CheckCurrentUserIsSiteAdmin(ctx context.Context) error {
+func CheckCurrentUserIsSiteAdmin(ctx context.Context, db dbutil.DB) error {
 	if hasAuthzBypass(ctx) {
 		return nil
 	}
-	user, err := CurrentUser(ctx)
+	user, err := CurrentUser(ctx, db)
 	if err != nil {
 		return err
 	}
@@ -32,11 +33,11 @@ func CheckCurrentUserIsSiteAdmin(ctx context.Context) error {
 }
 
 // CheckUserIsSiteAdmin returns an error if the user is NOT a site admin.
-func CheckUserIsSiteAdmin(ctx context.Context, userID int32) error {
+func CheckUserIsSiteAdmin(ctx context.Context, db dbutil.DB, userID int32) error {
 	if hasAuthzBypass(ctx) {
 		return nil
 	}
-	user, err := database.GlobalUsers.GetByID(ctx, userID)
+	user, err := database.Users(db).GetByID(ctx, userID)
 	if err != nil {
 		return err
 	}
@@ -66,7 +67,7 @@ func (e *InsufficientAuthorizationError) Unauthorized() bool { return true }
 // user themselves, but nobody else.
 //
 // Returns an error containing the name of the given user.
-func CheckSiteAdminOrSameUser(ctx context.Context, subjectUserID int32) error {
+func CheckSiteAdminOrSameUser(ctx context.Context, db dbutil.DB, subjectUserID int32) error {
 	if hasAuthzBypass(ctx) {
 		return nil
 	}
@@ -74,11 +75,11 @@ func CheckSiteAdminOrSameUser(ctx context.Context, subjectUserID int32) error {
 	if a.IsAuthenticated() && a.UID == subjectUserID {
 		return nil
 	}
-	isSiteAdminErr := CheckCurrentUserIsSiteAdmin(ctx)
+	isSiteAdminErr := CheckCurrentUserIsSiteAdmin(ctx, db)
 	if isSiteAdminErr == nil {
 		return nil
 	}
-	subjectUser, err := database.GlobalUsers.GetByID(ctx, subjectUserID)
+	subjectUser, err := database.Users(db).GetByID(ctx, subjectUserID)
 	if err != nil {
 		return &InsufficientAuthorizationError{fmt.Sprintf("must be authenticated as an admin (%s)", isSiteAdminErr.Error())}
 	}
@@ -100,8 +101,8 @@ func CheckSameUser(ctx context.Context, subjectUserID int32) error {
 
 // CurrentUser gets the current authenticated user
 // It returns nil, nil if no user is found
-func CurrentUser(ctx context.Context) (*types.User, error) {
-	user, err := database.GlobalUsers.GetByCurrentAuthUser(ctx)
+func CurrentUser(ctx context.Context, db dbutil.DB) (*types.User, error) {
+	user, err := database.Users(db).GetByCurrentAuthUser(ctx)
 	if err != nil {
 		if errcode.IsNotFound(err) || err == database.ErrNoCurrentUser {
 			return nil, nil

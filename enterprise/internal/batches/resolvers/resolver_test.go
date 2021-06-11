@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/batch-change-utils/overridable"
 
@@ -26,7 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -35,7 +35,7 @@ import (
 func TestNullIDResilience(t *testing.T) {
 	ct.MockRSAKeygen(t)
 
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
 	sr := New(store.New(db, nil))
 
 	s, err := graphqlbackend.NewSchema(db, sr, nil, nil, nil, nil, nil, nil)
@@ -81,6 +81,8 @@ func TestNullIDResilience(t *testing.T) {
 		fmt.Sprintf(`mutation { deleteBatchChangesCredential(batchChangesCredential: %q) { alwaysNil } }`, marshalBatchChangesCredentialID(0, true)),
 		fmt.Sprintf(`mutation { createChangesetComments(batchChange: %q, changesets: [], body: "test") { id } }`, marshalBatchChangeID(0)),
 		fmt.Sprintf(`mutation { createChangesetComments(batchChange: %q, changesets: [%q], body: "test") { id } }`, marshalBatchChangeID(1), marshalChangesetID(0)),
+		fmt.Sprintf(`mutation { reenqueueChangesets(batchChange: %q, changesets: []) { id } }`, marshalBatchChangeID(0)),
+		fmt.Sprintf(`mutation { reenqueueChangesets(batchChange: %q, changesets: [%q]) { id } }`, marshalBatchChangeID(1), marshalChangesetID(0)),
 	}
 
 	for _, m := range mutations {
@@ -101,7 +103,7 @@ func TestCreateBatchSpec(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
 
 	user := ct.CreateTestUser(t, db, true)
 	userID := user.ID
@@ -282,7 +284,7 @@ func TestCreateChangesetSpec(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
 
 	userID := ct.CreateTestUser(t, db, true).ID
 
@@ -355,7 +357,7 @@ func TestApplyBatchChange(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
 
 	// Ensure our site configuration doesn't have rollout windows so we get a
 	// consistent initial state.
@@ -516,7 +518,7 @@ func TestCreateBatchChange(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
 
 	userID := ct.CreateTestUser(t, db, true).ID
 
@@ -578,7 +580,7 @@ func TestMoveBatchChange(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
 
 	user := ct.CreateTestUser(t, db, true)
 	userID := user.ID
@@ -843,7 +845,7 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 	ct.MockRSAKeygen(t)
 
 	ctx := context.Background()
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
 
 	pruneUserCredentials(t, db, nil)
 
@@ -973,7 +975,7 @@ func TestDeleteBatchChangesCredential(t *testing.T) {
 	ct.MockRSAKeygen(t)
 
 	ctx := context.Background()
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
 
 	pruneUserCredentials(t, db, nil)
 
@@ -1062,7 +1064,7 @@ func TestCreateChangesetComments(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
 	cstore := store.New(db, nil)
 
 	userID := ct.CreateTestUser(t, db, true).ID
@@ -1154,6 +1156,115 @@ func TestCreateChangesetComments(t *testing.T) {
 const mutationCreateChangesetComments = `
 mutation($batchChange: ID!, $changesets: [ID!]!, $body: String!) {
     createChangesetComments(batchChange: $batchChange, changesets: $changesets, body: $body) { id }
+}
+`
+
+func TestReenqueueChangesets(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := context.Background()
+	db := dbtest.NewDB(t, "")
+	cstore := store.New(db, nil)
+
+	userID := ct.CreateTestUser(t, db, true).ID
+	batchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test-reenqueue", userID)
+	otherBatchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test-reenqueue-other", userID)
+	batchChange := ct.CreateBatchChange(t, ctx, cstore, "test-reenqueue", userID, batchSpec.ID)
+	otherBatchChange := ct.CreateBatchChange(t, ctx, cstore, "test-reenqueue-other", userID, otherBatchSpec.ID)
+	repos, _ := ct.CreateTestRepos(t, context.Background(), db, 1)
+	repo := repos[0]
+	changeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+		Repo:             repo.ID,
+		BatchChange:      batchChange.ID,
+		PublicationState: btypes.ChangesetPublicationStatePublished,
+		ReconcilerState:  btypes.ReconcilerStateFailed,
+	})
+	otherChangeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+		Repo:             repo.ID,
+		BatchChange:      otherBatchChange.ID,
+		PublicationState: btypes.ChangesetPublicationStatePublished,
+		ReconcilerState:  btypes.ReconcilerStateFailed,
+	})
+	successfulChangeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+		Repo:             repo.ID,
+		BatchChange:      otherBatchChange.ID,
+		PublicationState: btypes.ChangesetPublicationStatePublished,
+		ReconcilerState:  btypes.ReconcilerStateCompleted,
+	})
+
+	r := &Resolver{store: cstore}
+	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	generateInput := func() map[string]interface{} {
+		return map[string]interface{}{
+			"batchChange": marshalBatchChangeID(batchChange.ID),
+			"changesets":  []string{string(marshalChangesetID(changeset.ID))},
+			"body":        "test-body",
+		}
+	}
+
+	var response struct {
+		ReenqueueChangesets apitest.BulkOperation
+	}
+	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+
+	t.Run("0 changesets fails", func(t *testing.T) {
+		input := generateInput()
+		input["changesets"] = []string{}
+		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationReenqueueChangesets)
+
+		if len(errs) != 1 {
+			t.Fatalf("expected single errors, but got none")
+		}
+		if have, want := errs[0].Message, "specify at least one changeset"; have != want {
+			t.Fatalf("wrong error. want=%q, have=%q", want, have)
+		}
+	})
+
+	t.Run("changeset in different batch change fails", func(t *testing.T) {
+		input := generateInput()
+		input["changesets"] = []string{string(marshalChangesetID(otherChangeset.ID))}
+		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationReenqueueChangesets)
+
+		if len(errs) != 1 {
+			t.Fatalf("expected single errors, but got none")
+		}
+		if have, want := errs[0].Message, "some changesets could not be found"; have != want {
+			t.Fatalf("wrong error. want=%q, have=%q", want, have)
+		}
+	})
+
+	t.Run("successful changeset fails", func(t *testing.T) {
+		input := generateInput()
+		input["changesets"] = []string{string(marshalChangesetID(successfulChangeset.ID))}
+		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationReenqueueChangesets)
+
+		if len(errs) != 1 {
+			t.Fatalf("expected single errors, but got none")
+		}
+		if have, want := errs[0].Message, "some changesets could not be found"; have != want {
+			t.Fatalf("wrong error. want=%q, have=%q", want, have)
+		}
+	})
+
+	t.Run("runs successfully", func(t *testing.T) {
+		input := generateInput()
+		apitest.MustExec(actorCtx, t, s, input, &response, mutationReenqueueChangesets)
+
+		if response.ReenqueueChangesets.ID == "" {
+			t.Fatalf("expected bulk operation to be created, but was not")
+		}
+	})
+}
+
+const mutationReenqueueChangesets = `
+mutation($batchChange: ID!, $changesets: [ID!]!) {
+    reenqueueChangesets(batchChange: $batchChange, changesets: $changesets) { id }
 }
 `
 

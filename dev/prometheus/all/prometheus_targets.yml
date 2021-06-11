@@ -34,11 +34,23 @@
   targets:
     # zoekt-indexserver
     - host.docker.internal:6072
+    - host.docker.internal:6073
+- labels:
+    job: zoekt-webserver
+  targets:
+    # zoekt-webserver
+    - host.docker.internal:3070
+    - host.docker.internal:3071
 - labels:
     job: precise-code-intel-worker
   targets:
     # precise-code-intel-worker
     - host.docker.internal:6088
+- labels:
+    job: worker
+  targets:
+    # worker
+    - host.docker.internal:6089
 - labels:
     job: executor-queue
   targets:

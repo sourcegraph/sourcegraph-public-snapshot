@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 )
 
 // WaitForReposToBeCloned waits (up to two minutes) for all repositories

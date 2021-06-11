@@ -12,6 +12,7 @@ import { ExtensionCategory, EXTENSION_CATEGORIES } from '@sourcegraph/shared/src
 import { Settings, SettingsCascadeProps, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { PageTitle } from '../components/PageTitle'
@@ -24,7 +25,12 @@ import { eventLogger } from '../tracking/eventLogger'
 
 import { ExtensionBanner } from './ExtensionBanner'
 import { ExtensionRegistrySidenav } from './ExtensionRegistrySidenav'
-import { configureExtensionRegistry, ConfiguredExtensionRegistry } from './extensions'
+import {
+    configureExtensionRegistry,
+    ConfiguredExtensionRegistry,
+    MinimalConfiguredRegistryExtension,
+    configureFeaturedExtensions,
+} from './extensions'
 import { ExtensionsAreaRouteContext } from './ExtensionsArea'
 import { ExtensionsList } from './ExtensionsList'
 
@@ -40,17 +46,30 @@ interface Props
 const LOADING = 'loading' as const
 const URL_QUERY_PARAM = 'query'
 const URL_CATEGORY_PARAM = 'category'
+const SHOW_EXPERIMENTAL_EXTENSIONS_KEY = 'show-experimental-extensions'
 
-export type ExtensionListData = typeof LOADING | (ConfiguredExtensionRegistry & { error: string | null }) | ErrorLike
+export type ExtensionListData =
+    | typeof LOADING
+    | (ConfiguredExtensionRegistry & {
+          featuredExtensions?: MinimalConfiguredRegistryExtension[]
+          error: string | null
+      })
+    | ErrorLike
 
 export type ExtensionsEnablement = 'all' | 'enabled' | 'disabled'
 
 export type ExtensionCategoryOrAll = ExtensionCategory | 'All'
 
 const extensionRegistryQuery = gql`
-    query RegistryExtensions($query: String, $prioritizeExtensionIDs: [String!]!) {
+    query RegistryExtensions($query: String, $prioritizeExtensionIDs: [String!]!, $getFeatured: Boolean!) {
         extensionRegistry {
             extensions(query: $query, prioritizeExtensionIDs: $prioritizeExtensionIDs) {
+                nodes {
+                    ...RegistryExtensionFieldsForList
+                }
+                error
+            }
+            featuredExtensions @include(if: $getFeatured) {
                 nodes {
                     ...RegistryExtensionFieldsForList
                 }
@@ -93,10 +112,7 @@ const extensionRegistryQuery = gql`
     }
 `
 
-export type ConfiguredExtensionCache = Map<
-    string,
-    Pick<ConfiguredRegistryExtension<RegistryExtensionFieldsForList>, 'manifest' | 'id'>
->
+export type ConfiguredExtensionCache = Map<string, MinimalConfiguredRegistryExtension>
 
 /** A page that displays overview information about the available extensions. */
 export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
@@ -127,6 +143,28 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
     // query changes) when any more complexity is introduced.
     const [changedCategory, setChangedCategory] = useState(false)
 
+    // Whether to show extensions that set "wip" to true in their manifests.
+    const [storedShowExperimentalExtensions, setShowExperimentalExtensions] = useLocalStorage(
+        SHOW_EXPERIMENTAL_EXTENSIONS_KEY,
+        false
+    )
+    // Referrers can override user's "show experimental" setting by setting URL parameter 'experimental=true'
+    const parameterShowExperimental = getExperimentalFromLocation(location)
+    const showExperimentalExtensions = parameterShowExperimental || storedShowExperimentalExtensions
+    const toggleExperimentalExtensions = (): void => {
+        if (parameterShowExperimental) {
+            // Clear search parameter when user clicks "show experimental" checkbox
+            history.replace(
+                getRegistryLocationDescriptor({
+                    query: getQueryFromLocation(location),
+                    category: getCategoryFromLocation(location),
+                    experimental: false,
+                })
+            )
+        }
+        setShowExperimentalExtensions(!showExperimentalExtensions)
+    }
+
     /**
      * Note: pass `settingsCascade` instead of making it a dependency to prevent creating
      * new subscriptions when user toggles extensions
@@ -151,7 +189,13 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
                         setQuery(query)
                         setSelectedCategory(getCategoryFromLocation(window.location))
 
-                        history.replace(getRegistryLocationDescriptor(query, category))
+                        history.replace(
+                            getRegistryLocationDescriptor({
+                                query,
+                                category,
+                                experimental: getExperimentalFromLocation(window.location),
+                            })
+                        )
                     }),
                     debounce(({ immediate }) => timer(immediate ? 0 : 50)),
                     distinctUntilChanged(
@@ -170,12 +214,19 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
                             query = `${query} category:"${category}"`
                         }
 
+                        // Only fetch + show featured extensions when there's no query or category selected.
+                        const shouldGetFeaturedExtensions = category === 'All' && query.trim() === ''
+
                         const resultOrError = platformContext.requestGraphQL<
                             RegistryExtensionsResult,
                             RegistryExtensionsVariables
                         >({
                             request: extensionRegistryQuery,
-                            variables: { query, prioritizeExtensionIDs: viewerConfiguredExtensions },
+                            variables: {
+                                query,
+                                prioritizeExtensionIDs: viewerConfiguredExtensions,
+                                getFeatured: shouldGetFeaturedExtensions,
+                            },
                             mightContainPrivateInfo: true,
                         })
 
@@ -197,8 +248,16 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
 
                         const { error, nodes } = data.extensionRegistry.extensions
 
+                        const featuredExtensions = data.extensionRegistry.featuredExtensions?.nodes
+                            ? configureFeaturedExtensions(
+                                  data.extensionRegistry.featuredExtensions.nodes,
+                                  configuredExtensionCache
+                              )
+                            : undefined
+
                         return {
                             error,
+                            featuredExtensions,
                             ...configureExtensionRegistry(nodes, configuredExtensionCache),
                         }
                     }),
@@ -237,12 +296,13 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
         (category: ExtensionCategoryOrAll) => {
             const query = getQueryFromLocation(window.location)
             const currentCategory = getCategoryFromLocation(window.location)
+            const experimental = getExperimentalFromLocation(window.location)
 
             if (category !== currentCategory) {
                 setChangedCategory(true)
             }
 
-            history.push(getRegistryLocationDescriptor(query, category))
+            history.push(getRegistryLocationDescriptor({ query, category, experimental }))
         },
         [history]
     )
@@ -265,6 +325,8 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
                         onSelectCategory={onSelectCategory}
                         enablementFilter={enablementFilter}
                         setEnablementFilter={setEnablementFilter}
+                        showExperimentalExtensions={showExperimentalExtensions}
+                        toggleExperimentalExtensions={toggleExperimentalExtensions}
                     />
                     <div className="flex-grow-1">
                         <div className="mb-5">
@@ -307,6 +369,7 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
                                 enablementFilter={enablementFilter}
                                 selectedCategory={selectedCategory}
                                 onShowFullCategoryClicked={onSelectCategory}
+                                showExperimentalExtensions={showExperimentalExtensions}
                             />
                         </div>
                         {/* Only show the banner when there are no selected categories and it is not loading */}
@@ -341,22 +404,38 @@ function getCategoryFromLocation(location: Pick<H.Location, 'search'>): Extensio
     return 'All'
 }
 
+function getExperimentalFromLocation(location: Pick<H.Location, 'search'>): boolean {
+    const parameters = new URLSearchParams(location.search)
+    const experimental = parameters.get('experimental')
+
+    return experimental === 'true'
+}
+
 /**
  * Returns location descriptor object to push/replace onto the history stack
  * whenever the query or category is changed.
  */
-function getRegistryLocationDescriptor(query: string, category: ExtensionCategoryOrAll): H.LocationDescriptorObject {
+function getRegistryLocationDescriptor({
+    query,
+    category,
+    experimental,
+}: {
+    query: string
+    category: ExtensionCategoryOrAll
+    experimental: boolean
+}): H.LocationDescriptorObject {
+    const search = new URLSearchParams()
+
+    search.set(URL_CATEGORY_PARAM, category)
+    if (query) {
+        search.set(URL_QUERY_PARAM, query)
+    }
+    if (experimental) {
+        search.set('experimental', 'true')
+    }
+
     return {
-        search: new URLSearchParams(
-            query
-                ? {
-                      [URL_QUERY_PARAM]: query,
-                      [URL_CATEGORY_PARAM]: category,
-                  }
-                : {
-                      [URL_CATEGORY_PARAM]: category,
-                  }
-        ).toString(),
+        search: search.toString(),
         hash: window.location.hash,
     }
 }

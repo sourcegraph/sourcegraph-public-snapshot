@@ -10,7 +10,7 @@ import (
 	"encoding/pem"
 	"encoding/xml"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -371,7 +371,7 @@ func TestMiddleware(t *testing.T) {
 	})
 	t.Run("authenticated request to home page", func(t *testing.T) {
 		resp := doRequest("GET", "http://example.com/", "", loggedInCookies, true, nil)
-		respBody, _ := ioutil.ReadAll(resp.Body)
+		respBody, _ := io.ReadAll(resp.Body)
 		if want := http.StatusOK; resp.StatusCode != want {
 			t.Errorf("got status code %v, want %v", resp.StatusCode, want)
 		}
@@ -381,7 +381,7 @@ func TestMiddleware(t *testing.T) {
 	})
 	t.Run("authenticated request to sub page", func(t *testing.T) {
 		resp := doRequest("GET", "http://example.com/page", "", loggedInCookies, true, nil)
-		respBody, _ := ioutil.ReadAll(resp.Body)
+		respBody, _ := io.ReadAll(resp.Body)
 		if want := http.StatusOK; resp.StatusCode != want {
 			t.Errorf("got status code %v, want %v", resp.StatusCode, want)
 		}

@@ -144,7 +144,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	// be exposing. We have a bit more to do in this method, though, and the
 	// process will be marked ready further down this function.
 
-	repos.MustRegisterMetrics(db)
+	repos.MustRegisterMetrics(db, envvar.SourcegraphDotComMode())
 
 	store := repos.NewStore(db, sql.TxOptions{Isolation: sql.LevelDefault})
 	{

@@ -216,12 +216,7 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
 
         return (
             <div className="registry-extension-area">
-                <ExtensionAreaHeader
-                    {...this.props}
-                    {...context}
-                    navItems={this.props.extensionAreaHeaderNavItems}
-                    className="border-bottom"
-                />
+                <ExtensionAreaHeader {...this.props} {...context} navItems={this.props.extensionAreaHeaderNavItems} />
                 <div className="container pt-3">
                     <ErrorBoundary location={this.props.location}>
                         <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>

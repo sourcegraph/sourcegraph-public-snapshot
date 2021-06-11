@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/opentracing/opentracing-go/log"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -264,8 +264,7 @@ func (c *Client) ListFiles(ctx context.Context, repositoryID int, commit string,
 	return matching, nil
 }
 
-// ListFiles returns a list of root-relative file paths matching the given pattern in a particular
-// commit of a repository.
+// ResolveRevision returns the absolute commit for a commit-ish spec.
 func (c *Client) ResolveRevision(ctx context.Context, repositoryID int, versionString string) (commitID api.CommitID, err error) {
 	ctx, endObservation := c.operations.resolveRevision.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),

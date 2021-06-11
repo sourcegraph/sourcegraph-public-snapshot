@@ -16,12 +16,14 @@ import { RepogroupPage } from './repogroups/RepogroupPage'
 import { stackStorm } from './repogroups/StackStorm'
 import { stanford } from './repogroups/Stanford'
 import { temporal } from './repogroups/Temporal'
-import { StreamingSearchResults } from './search/results/streaming/StreamingSearchResults'
-import { isMacPlatform, UserRepositoriesUpdateProps } from './util'
+import { isMacPlatform, UserExternalServicesOrRepositoriesUpdateProps } from './util'
 import { lazyComponent } from './util/lazyComponent'
 
 const SearchPage = lazyComponent(() => import('./search/input/SearchPage'), 'SearchPage')
-const SearchResults = lazyComponent(() => import('./search/results/SearchResults'), 'SearchResults')
+const StreamingSearchResults = lazyComponent(
+    () => import('./search/results/streaming/StreamingSearchResults'),
+    'StreamingSearchResults'
+)
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
 const ExtensionsArea = lazyComponent(() => import('./extensions/ExtensionsArea'), 'ExtensionsArea')
 const SearchConsolePage = lazyComponent(() => import('./search/SearchConsolePage'), 'SearchConsolePage')
@@ -36,7 +38,7 @@ export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof
         BreadcrumbsProps,
         BreadcrumbSetters,
         ExtensionAlertProps,
-        UserRepositoriesUpdateProps {
+        UserExternalServicesOrRepositoriesUpdateProps {
     isSourcegraphDotCom: boolean
     isRedesignEnabled: boolean
 }
@@ -79,18 +81,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     },
     {
         path: '/search',
-        render: props =>
-            props.parsedSearchQuery ? (
-                props.isRedesignEnabled || // Force streaming search if redesing is enabled
-                (!isErrorLike(props.settingsCascade.final) &&
-                    props.settingsCascade.final?.experimentalFeatures?.searchStreaming) ? (
-                    <StreamingSearchResults {...props} />
-                ) : (
-                    <SearchResults {...props} deployType={window.context.deployType} />
-                )
-            ) : (
-                <SearchPage {...props} />
-            ),
+        render: props => (props.parsedSearchQuery ? <StreamingSearchResults {...props} /> : <SearchPage {...props} />),
         exact: true,
     },
     {
@@ -107,14 +98,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         path: '/search/console',
         render: props =>
             props.showMultilineSearchConsole ? (
-                <SearchConsolePage
-                    {...props}
-                    isMacPlatform={isMacPlatform}
-                    allExpanded={false}
-                    showSavedQueryModal={false}
-                    deployType={window.context.deployType}
-                    showSavedQueryButton={false}
-                />
+                <SearchConsolePage {...props} isMacPlatform={isMacPlatform} />
             ) : (
                 <Redirect to="/search" />
             ),
@@ -146,11 +130,6 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/organizations',
         render: lazyComponent(() => import('./org/OrgsArea'), 'OrgsArea'),
-    },
-    {
-        path: '/search',
-        render: props => <SearchResults {...props} deployType={window.context.deployType} />,
-        exact: true,
     },
     {
         path: '/site-admin/init',

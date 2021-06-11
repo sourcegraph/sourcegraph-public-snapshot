@@ -203,6 +203,7 @@ export const listExternalServiceFragment = gql`
             namespaceName
             url
         }
+        grantedScopes
     }
 `
 
@@ -225,6 +226,46 @@ export function queryExternalServices(
             }
 
             ${listExternalServiceFragment}
+        `,
+        variables
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || !data.externalServices || errors) {
+                throw createAggregateError(errors)
+            }
+            return data.externalServices
+        })
+    )
+}
+
+interface ExternalServicesScopeVariables {
+    namespace: Scalars['ID']
+}
+
+interface ExternalServicesScopeResult {
+    externalServices: {
+        nodes: {
+            id: ExternalServiceFields['id']
+            kind: ExternalServiceFields['kind']
+            grantedScopes: string[]
+        }[]
+    }
+}
+
+export function queryExternalServicesScope(
+    variables: ExternalServicesScopeVariables
+): Observable<ExternalServicesScopeResult['externalServices']> {
+    return requestGraphQL<ExternalServicesScopeResult, ExternalServicesScopeVariables>(
+        gql`
+            query ExternalServicesScopes($namespace: ID!) {
+                externalServices(first: null, after: null, namespace: $namespace) {
+                    nodes {
+                        id
+                        kind
+                        grantedScopes
+                    }
+                }
+            }
         `,
         variables
     ).pipe(

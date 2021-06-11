@@ -31,8 +31,10 @@ export const SearchSidebarSection: React.FunctionComponent<{
 
     const [collapsed, setCollapsed] = useState(false)
 
+    const searchVisible = showSearch && children.length > 1
+
     return children.length > 0 ? (
-        <div className={className}>
+        <div className={classNames(styles.sidebarSection, className)}>
             <button
                 type="button"
                 className={classNames('btn btn-outline-secondary', styles.sidebarSectionCollapseButton)}
@@ -40,12 +42,16 @@ export const SearchSidebarSection: React.FunctionComponent<{
                 aria-label={collapsed ? 'Expand' : 'Collapse'}
             >
                 <h5 className="flex-grow-1">{header}</h5>
-                {collapsed ? <ChevronLeftIcon className="icon-inline" /> : <ChevronDownIcon className="icon-inline" />}
+                {collapsed ? (
+                    <ChevronLeftIcon className="icon-inline mr-1" />
+                ) : (
+                    <ChevronDownIcon className="icon-inline mr-1" />
+                )}
             </button>
 
             <Collapse isOpen={!collapsed}>
-                <div className="pb-4">
-                    {showSearch && children.length > 1 && (
+                <div className={classNames('pb-4', !searchVisible && 'border-top')}>
+                    {searchVisible && (
                         <input
                             type="search"
                             placeholder="Find..."

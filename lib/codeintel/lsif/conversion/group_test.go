@@ -9,7 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/bloomfilter"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/datastructures"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion/datastructures"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/reader"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"

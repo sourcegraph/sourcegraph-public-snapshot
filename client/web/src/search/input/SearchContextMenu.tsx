@@ -19,31 +19,12 @@ import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { SearchContextInputProps } from '..'
+import { AuthenticatedUser } from '../../auth'
 import { SearchContextFields } from '../../graphql-operations'
 
-const HighlightedSearchTerm: React.FunctionComponent<{ text: string; searchFilter: string }> = ({
-    text,
-    searchFilter,
-}) => {
-    if (searchFilter.length > 0) {
-        const index = text.toLowerCase().indexOf(searchFilter.toLowerCase())
-        if (index > -1) {
-            const before = text.slice(0, index)
-            const highlighted = text.slice(index, index + searchFilter.length)
-            const after = text.slice(index + searchFilter.length)
-            return (
-                <>
-                    {before}
-                    <strong className="search-context-menu__item--highlighted">{highlighted}</strong>
-                    {after}
-                </>
-            )
-        }
-    }
-    return <>{text}</>
-}
+import { HighlightedSearchContextSpec } from './HighlightedSearchContextSpec'
 
-const SearchContextMenuItem: React.FunctionComponent<{
+export const SearchContextMenuItem: React.FunctionComponent<{
     spec: string
     description: string
     selected: boolean
@@ -60,7 +41,7 @@ const SearchContextMenuItem: React.FunctionComponent<{
             onClick={setContext}
         >
             <small className="search-context-menu__item-name font-weight-medium" title={spec}>
-                <HighlightedSearchTerm text={spec} searchFilter={searchFilter} />
+                <HighlightedSearchContextSpec spec={spec} searchFilter={searchFilter} />
             </small>{' '}
             <small className="search-context-menu__item-description" title={description}>
                 {description}
@@ -73,7 +54,14 @@ const SearchContextMenuItem: React.FunctionComponent<{
 }
 
 export interface SearchContextMenuProps
-    extends Omit<SearchContextInputProps, 'showSearchContext' | 'setSelectedSearchContextSpec'> {
+    extends Omit<
+        SearchContextInputProps,
+        | 'showSearchContext'
+        | 'setSelectedSearchContextSpec'
+        | 'hasUserAddedRepositories'
+        | 'hasUserAddedExternalServices'
+    > {
+    authenticatedUser: AuthenticatedUser | null
     closeMenu: () => void
     selectSearchContextSpec: (spec: string) => void
 }
@@ -96,9 +84,11 @@ const getFirstMenuItem = (): HTMLButtonElement | null =>
     document.querySelector('.search-context-menu__item:first-child')
 
 export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> = ({
+    authenticatedUser,
     selectedSearchContextSpec,
     defaultSearchContextSpec,
     selectSearchContextSpec,
+    getUserSearchContextNamespaces,
     fetchAutoDefinedSearchContexts,
     fetchSearchContexts,
     closeMenu,
@@ -201,6 +191,7 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
                             first: searchContextsPerPageToLoad,
                             query,
                             after: cursor,
+                            namespaces: getUserSearchContextNamespaces(authenticatedUser),
                         }),
                     ])
                 ),
@@ -223,7 +214,14 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
             })
 
         return () => subscription.unsubscribe()
-    }, [loadNextPageUpdates, setSearchContexts, setLastPageInfo, fetchSearchContexts])
+    }, [
+        authenticatedUser,
+        loadNextPageUpdates,
+        setSearchContexts,
+        setLastPageInfo,
+        getUserSearchContextNamespaces,
+        fetchSearchContexts,
+    ])
 
     const autoDefinedSearchContexts = useObservable(
         fetchAutoDefinedSearchContexts.pipe(catchError(error => [asError(error)]))

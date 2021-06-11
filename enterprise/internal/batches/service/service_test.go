@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -33,7 +33,7 @@ func TestServicePermissionLevels(t *testing.T) {
 	}
 
 	ctx := backend.WithAuthzBypass(context.Background())
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
 
 	s := store.New(db, nil)
 	svc := New(s)
@@ -175,7 +175,7 @@ func TestService(t *testing.T) {
 	}
 
 	ctx := backend.WithAuthzBypass(context.Background())
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
 
 	admin := ct.CreateTestUser(t, db, true)
 	user := ct.CreateTestUser(t, db, false)
@@ -899,7 +899,9 @@ func TestService(t *testing.T) {
 				[]int64{changeset.ID},
 				btypes.ChangesetJobTypeComment,
 				btypes.ChangesetJobCommentPayload{Message: "test"},
-				store.ListChangesetsOpts{},
+				store.ListChangesetsOpts{
+					ReconcilerStates: []btypes.ReconcilerState{btypes.ReconcilerStateCompleted},
+				},
 			)
 			if err != ErrChangesetsForJobNotFound {
 				t.Fatalf("wrong error. want=%s, got=%s", ErrChangesetsForJobNotFound, err)

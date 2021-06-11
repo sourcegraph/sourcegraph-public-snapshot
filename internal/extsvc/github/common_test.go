@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -47,7 +47,7 @@ func (s *mockHTTPResponseBody) Do(req *http.Request) (*http.Response, error) {
 	return &http.Response{
 		Request:    req,
 		StatusCode: status,
-		Body:       ioutil.NopCloser(strings.NewReader(s.responseBody)),
+		Body:       io.NopCloser(strings.NewReader(s.responseBody)),
 	}, nil
 }
 
@@ -59,7 +59,7 @@ func (s mockHTTPEmptyResponse) Do(req *http.Request) (*http.Response, error) {
 	return &http.Response{
 		Request:    req,
 		StatusCode: s.statusCode,
-		Body:       ioutil.NopCloser(bytes.NewReader(nil)),
+		Body:       io.NopCloser(bytes.NewReader(nil)),
 	}, nil
 }
 
@@ -83,18 +83,23 @@ func TestClient_GetRepository(t *testing.T) {
 	"full_name": "o/r",
 	"description": "d",
 	"html_url": "https://github.example.com/o/r",
-	"fork": true
+	"fork": true,
+	"stargazers_count": 30,
+	"watchers_count": 20,
+	"forks_count": 5
 }
 `,
 	}
 	c := newTestClient(t, &mock)
 
 	want := Repository{
-		ID:            "i",
-		NameWithOwner: "o/r",
-		Description:   "d",
-		URL:           "https://github.example.com/o/r",
-		IsFork:        true,
+		ID:             "i",
+		NameWithOwner:  "o/r",
+		Description:    "d",
+		URL:            "https://github.example.com/o/r",
+		IsFork:         true,
+		StargazerCount: 30,
+		ForkCount:      5,
 	}
 
 	repo, err := c.GetRepository(context.Background(), "owner", "repo")
@@ -123,7 +128,7 @@ func TestClient_GetRepository(t *testing.T) {
 		t.Errorf("mock.count == %d, expected to hit cache", mock.count)
 	}
 	if !reflect.DeepEqual(repo, &want) {
-		t.Errorf("got repository %+v, want %+v", repo, &want)
+		t.Errorf("got cached repository %+v, want %+v", repo, &want)
 	}
 }
 
@@ -332,7 +337,7 @@ repo8: repository(owner: "sourcegraph", name: "contains.dot") { ... on Repositor
 	mock := mockHTTPResponseBody{responseBody: ""}
 	apiURL := &url.URL{Scheme: "https", Host: "example.com", Path: "/"}
 	c := NewV4Client(apiURL, nil, &mock)
-	query, err := c.buildGetReposBatchQuery(repos)
+	query, err := c.buildGetReposBatchQuery(context.Background(), repos)
 	if err != nil {
 		t.Fatal(err)
 	}

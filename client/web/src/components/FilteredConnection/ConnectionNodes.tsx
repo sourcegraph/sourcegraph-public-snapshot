@@ -60,6 +60,9 @@ export interface ConnectionNodesDisplayProps {
     /** CSS class name for the list element (<ul>, <table>, or <div>). */
     listClassName?: string
 
+    /** CSS class name for the summary container element. */
+    summaryClassName?: string
+
     /** CSS class name for the "Show more" button. */
     showMoreClassName?: string
 
@@ -117,6 +120,7 @@ export const ConnectionNodes = <C extends Connection<N>, N, NP = {}, HP = {}>({
     nodeComponentProps,
     listComponent: ListComponent = 'ul',
     listClassName,
+    summaryClassName,
     headComponent: HeadComponent,
     headComponentProps,
     footComponent: FootComponent,
@@ -158,9 +162,11 @@ export const ConnectionNodes = <C extends Connection<N>, N, NP = {}, HP = {}>({
         <NodeComponent key={hasID(node) ? node.id : index} node={node} {...nodeComponentProps!} />
     ))
 
+    const summaryContainerClassName = classNames(summaryClassName, 'filtered-connection__summary-container')
+
     return (
         <>
-            <div className="filtered-connection__summary-container">{connectionQuery && summary}</div>
+            <div className={summaryContainerClassName}>{connectionQuery && summary}</div>
             {connection.nodes.length > 0 && (
                 <ListComponent className={classNames('filtered-connection__nodes', listClassName)} data-testid="nodes">
                     {HeadComponent && (
@@ -175,7 +181,7 @@ export const ConnectionNodes = <C extends Connection<N>, N, NP = {}, HP = {}>({
                 </ListComponent>
             )}
             {!loading && (
-                <div className="filtered-connection__summary-container">
+                <div className={summaryContainerClassName}>
                     {!connectionQuery && summary}
                     {!noShowMore && hasNextPage && (
                         <button

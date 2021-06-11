@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-	"io/ioutil"
+	"io/fs"
 	"log"
 	"os"
 	"os/exec"
@@ -16,8 +16,8 @@ import (
 	"testing/quick"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -32,7 +32,7 @@ const (
 )
 
 func TestCleanup_computeStats(t *testing.T) {
-	root, err := ioutil.TempDir("", "gitserver-test-")
+	root, err := os.MkdirTemp("", "gitserver-test-")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -66,7 +66,7 @@ func TestCleanup_computeStats(t *testing.T) {
 	// we hardcode the name here so the tests break if someone changes the
 	// value of reposStatsName. We don't want it to change without good reason
 	// since it will temporarily break the repo-stats endpoint.
-	b, err := ioutil.ReadFile(filepath.Join(root, "repos-stats.json"))
+	b, err := os.ReadFile(filepath.Join(root, "repos-stats.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -90,7 +90,7 @@ func TestCleanup_computeStats(t *testing.T) {
 }
 
 func TestCleanupInactive(t *testing.T) {
-	root, err := ioutil.TempDir("", "gitserver-test-")
+	root, err := os.MkdirTemp("", "gitserver-test-")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -125,7 +125,7 @@ func TestCleanupInactive(t *testing.T) {
 // relevant internal magic numbers and transformations change.
 func TestGitGCAuto(t *testing.T) {
 	// Create a test repository with detectable garbage that GC can prune.
-	root := tmpDir(t)
+	root := t.TempDir()
 	repo := filepath.Join(root, "garbage-repo")
 	defer os.RemoveAll(root)
 	runCmd(t, root, "git", "init", repo)
@@ -174,7 +174,7 @@ func TestGitGCAuto(t *testing.T) {
 }
 
 func TestCleanupExpired(t *testing.T) {
-	root, err := ioutil.TempDir("", "gitserver-test-")
+	root, err := os.MkdirTemp("", "gitserver-test-")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -326,7 +326,7 @@ func TestCleanupExpired(t *testing.T) {
 }
 
 func TestCleanupOldLocks(t *testing.T) {
-	root := tmpDir(t)
+	root := t.TempDir()
 
 	// Only recent lock files should remain.
 	mkFiles(t, root,
@@ -394,7 +394,7 @@ func TestCleanupOldLocks(t *testing.T) {
 }
 
 func TestSetupAndClearTmp(t *testing.T) {
-	root := tmpDir(t)
+	root := t.TempDir()
 
 	s := &Server{ReposDir: root}
 
@@ -434,7 +434,7 @@ func TestSetupAndClearTmp(t *testing.T) {
 	// Wait until async cleaning is done
 	for i := 0; i < 1000; i++ {
 		found := false
-		files, err := ioutil.ReadDir(s.ReposDir)
+		files, err := os.ReadDir(s.ReposDir)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -456,7 +456,7 @@ func TestSetupAndClearTmp(t *testing.T) {
 }
 
 func TestSetupAndClearTmp_Empty(t *testing.T) {
-	root := tmpDir(t)
+	root := t.TempDir()
 
 	s := &Server{ReposDir: root}
 
@@ -470,7 +470,7 @@ func TestSetupAndClearTmp_Empty(t *testing.T) {
 }
 
 func TestRemoveRepoDirectory(t *testing.T) {
-	root := tmpDir(t)
+	root := t.TempDir()
 
 	mkFiles(t, root,
 		"github.com/foo/baz/.git/HEAD",
@@ -553,7 +553,7 @@ func TestRemoveRepoDirectory(t *testing.T) {
 }
 
 func TestRemoveRepoDirectory_Empty(t *testing.T) {
-	root := tmpDir(t)
+	root := t.TempDir()
 
 	mkFiles(t, root,
 		"github.com/foo/baz/.git/HEAD",
@@ -633,16 +633,6 @@ func (f *fakeDiskSizer) DiskSizeBytes(mountPoint string) (uint64, error) {
 	return f.diskSize, nil
 }
 
-func tmpDir(t *testing.T) string {
-	t.Helper()
-	dir, err := ioutil.TempDir("", filepath.Base(t.Name()))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { os.RemoveAll(dir) })
-	return dir
-}
-
 func mkFiles(t *testing.T, root string, paths ...string) {
 	t.Helper()
 	for _, p := range paths {
@@ -655,7 +645,7 @@ func mkFiles(t *testing.T, root string, paths ...string) {
 
 func writeFile(t *testing.T, path string, content []byte) {
 	t.Helper()
-	err := ioutil.WriteFile(path, content, 0666)
+	err := os.WriteFile(path, content, 0666)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -669,7 +659,7 @@ func assertPaths(t *testing.T, root string, want ...string) {
 		notfound[p] = struct{}{}
 	}
 	var unwanted []string
-	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+	err := filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -738,7 +728,7 @@ func TestFreeUpSpace(t *testing.T) {
 	})
 	t.Run("oldest repo gets removed to free up space", func(t *testing.T) {
 		// Set up.
-		rd, err := ioutil.TempDir("", "freeUpSpace")
+		rd, err := os.MkdirTemp("", "freeUpSpace")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -787,10 +777,10 @@ func makeFakeRepo(d string, sizeBytes int) error {
 	if err := os.MkdirAll(gd, 0700); err != nil {
 		return errors.Wrap(err, "creating .git dir and any parents")
 	}
-	if err := ioutil.WriteFile(filepath.Join(gd, "HEAD"), nil, 0666); err != nil {
+	if err := os.WriteFile(filepath.Join(gd, "HEAD"), nil, 0666); err != nil {
 		return errors.Wrap(err, "creating HEAD file")
 	}
-	if err := ioutil.WriteFile(filepath.Join(gd, "space_eater"), make([]byte, sizeBytes), 0666); err != nil {
+	if err := os.WriteFile(filepath.Join(gd, "space_eater"), make([]byte, sizeBytes), 0666); err != nil {
 		return errors.Wrapf(err, "writing to space_eater file")
 	}
 	return nil

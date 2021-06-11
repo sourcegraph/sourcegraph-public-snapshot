@@ -2,10 +2,10 @@ import * as H from 'history'
 import React from 'react'
 
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
+import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
 import { ResultContainer } from '@sourcegraph/shared/src/components/ResultContainer'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { getRepoIcon } from '@sourcegraph/shared/src/util/getRepoIcon'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
@@ -23,10 +23,9 @@ export const SearchResult: React.FunctionComponent<Props> = ({ result, history, 
 
     const renderTitle = (): JSX.Element => {
         if (isRedesignEnabled) {
-            const RepoIcon = getRepoIcon(repoName)
             return (
                 <div className="search-result__title">
-                    {RepoIcon && <RepoIcon className="icon-inline text-muted flex-shrink-0" />}
+                    <RepoIcon repoName={repoName} className="icon-inline text-muted flex-shrink-0" />
                     <Markdown
                         className="test-search-result-label ml-1 flex-shrink-past-contents text-truncate"
                         dangerousInnerHTML={result.label.html ? result.label.html : renderMarkdown(result.label.text)}
@@ -70,7 +69,7 @@ export const SearchResult: React.FunctionComponent<Props> = ({ result, history, 
         if (isRedesignEnabled && result.__typename === 'Repository') {
             return (
                 <div className="search-result-match p-2">
-                    <small>Repository name match</small>
+                    <small>Repository match</small>
                 </div>
             )
         }

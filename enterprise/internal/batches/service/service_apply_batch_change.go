@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/rewirer"
@@ -60,7 +60,7 @@ func (s *Service) ApplyBatchChange(ctx context.Context, opts ApplyBatchChangeOpt
 	}
 
 	// 🚨 SECURITY: Only site-admins or the creator of batchSpec can apply it.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, batchSpec.UserID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, s.store.DB(), batchSpec.UserID); err != nil {
 		return nil, err
 	}
 

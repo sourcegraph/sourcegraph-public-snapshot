@@ -3,12 +3,12 @@ package repos
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -142,7 +142,7 @@ func (s OtherSource) otherRepoFromCloneURL(urn string, u *url.URL) (*types.Repo,
 				CloneURL: repoURL,
 			},
 		},
-		Metadata: &types.OtherRepoMetadata{
+		Metadata: &extsvc.OtherRepoMetadata{
 			RelativePath: strings.TrimPrefix(repoURL, serviceID),
 		},
 	}, nil
@@ -160,7 +160,7 @@ func (s OtherSource) srcExpose(ctx context.Context) ([]*types.Repo, error) {
 	}
 	defer resp.Body.Close()
 
-	b, err := ioutil.ReadAll(resp.Body)
+	b, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read response from src-expose")
 	}
@@ -198,7 +198,7 @@ func (s OtherSource) srcExpose(ctx context.Context) ([]*types.Repo, error) {
 				CloneURL: cloneURL,
 			},
 		}
-		r.Metadata = &types.OtherRepoMetadata{
+		r.Metadata = &extsvc.OtherRepoMetadata{
 			RelativePath: strings.TrimPrefix(cloneURL, s.conn.Url),
 		}
 		// The only required field left is Name

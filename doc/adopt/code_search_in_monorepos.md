@@ -66,6 +66,6 @@ These monorepos are large, of course. If you have a small monorepo, then you sho
 
 ## Feedback
 
-Do you have additional or better arguments? Do you disagree with any of these arguments? Use the **Edit this page** link or contact us ([@srcgraph](https://twitter.com/srcgraph)) to suggest improvements.
+Do you have additional or better arguments? Do you disagree with any of these arguments? Use the **Edit this page** link or contact us ([@sourcegraph](https://twitter.com/sourcegraph)) to suggest improvements.
 
 Disclaimer: [Sourcegraph](https://about.sourcegraph.com) is a universal code search company, so of course we would say these things, right? But our intrinsic love for code search came first. It's *why* we started/joined Sourcegraph and want to [bring code search to every dev](https://about.sourcegraph.com/company/strategy).

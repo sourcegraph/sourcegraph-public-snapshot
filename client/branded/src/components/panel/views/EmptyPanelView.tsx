@@ -1,13 +1,23 @@
+import classNames from 'classnames'
 import CancelIcon from 'mdi-react/CancelIcon'
 import React from 'react'
 
-/**
- * An empty panel view.
- */
-export const EmptyPanelView: React.FunctionComponent<{ className?: string }> = ({ className = '' }) => (
-    <div className="panel">
-        <div className={`panel__empty ${className}`}>
-            <CancelIcon className="icon-inline" /> Nothing to show here
+import styles from './EmptyPanelView.module.scss'
+
+interface EmptyPanelViewProps {
+    className?: string
+}
+
+export const EmptyPanelView: React.FunctionComponent<EmptyPanelViewProps> = props => {
+    const { className, children } = props
+
+    return (
+        <div className={classNames(styles.emptyPanel, className)}>
+            {children || (
+                <>
+                    <CancelIcon className="icon-inline mr-2" /> Nothing to show here
+                </>
+            )}
         </div>
-    </div>
-)
+    )
+}

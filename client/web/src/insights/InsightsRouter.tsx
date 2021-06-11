@@ -6,27 +6,12 @@ import { AuthenticatedUser } from '../auth'
 import { HeroPage } from '../components/HeroPage'
 import { lazyComponent } from '../util/lazyComponent'
 
+import { CreationRoutes } from './pages/creation/CreationRoutes'
 import { SearchInsightCreationPageProps } from './pages/creation/search-insight/SearchInsightCreationPage'
 import { InsightsPageProps } from './pages/dashboard/InsightsPage'
 import { EditInsightPageProps } from './pages/edit/EditInsightPage'
 
 const InsightsLazyPage = lazyComponent(() => import('./pages/dashboard/InsightsPage'), 'InsightsPage')
-
-const IntroCreationLazyPage = lazyComponent(
-    () => import('./pages/creation/intro/IntroCreationPage'),
-    'IntroCreationPage'
-)
-
-const SearchInsightCreationLazyPage = lazyComponent(
-    () => import('./pages/creation/search-insight/SearchInsightCreationPage'),
-    'SearchInsightCreationPage'
-)
-
-const LangStatsInsightCreationLazyPage = lazyComponent(
-    () => import('./pages/creation/lang-stats/LangStatsInsightCreationPage'),
-    'LangStatsInsightCreationPage'
-)
-
 const EditInsightLazyPage = lazyComponent(() => import('./pages/edit/EditInsightPage'), 'EditInsightPage')
 
 const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
@@ -48,7 +33,9 @@ export interface InsightsRouterProps
     authenticatedUser: Pick<AuthenticatedUser, 'id' | 'organizations' | 'username'> | null
 }
 
-/** Main Insight routing component. Main entry point to code insights UI. */
+/**
+ * Main Insight routing component. Main entry point to code insights UI.
+ */
 export const InsightsRouter: React.FunctionComponent<InsightsRouterProps> = props => {
     const { match, ...outerProps } = props
 
@@ -57,32 +44,15 @@ export const InsightsRouter: React.FunctionComponent<InsightsRouterProps> = prop
             <Route render={props => <InsightsLazyPage {...outerProps} {...props} />} path={match.url} exact={true} />
 
             <Route
-                path={`${match.url}/create-search-insight`}
+                path={`${match.url}/create`}
                 render={() => (
-                    <SearchInsightCreationLazyPage
-                        telemetryService={outerProps.telemetryService}
+                    <CreationRoutes
                         platformContext={outerProps.platformContext}
                         authenticatedUser={outerProps.authenticatedUser}
                         settingsCascade={outerProps.settingsCascade}
-                    />
-                )}
-            />
-
-            <Route
-                path={`${match.url}/create-lang-stats-insight`}
-                render={() => (
-                    <LangStatsInsightCreationLazyPage
                         telemetryService={outerProps.telemetryService}
-                        platformContext={outerProps.platformContext}
-                        authenticatedUser={outerProps.authenticatedUser}
-                        settingsCascade={outerProps.settingsCascade}
                     />
                 )}
-            />
-
-            <Route
-                path={`${match.url}/create-intro`}
-                render={() => <IntroCreationLazyPage telemetryService={outerProps.telemetryService} />}
             />
 
             <Route

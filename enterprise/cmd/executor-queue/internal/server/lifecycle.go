@@ -13,9 +13,13 @@ var shutdownErr = errors.New("server shutting down")
 
 // heartbeat will release the transaction for any job that is not confirmed to be in-progress
 // by the given executor. This method is called when the executor POSTs its in-progress job
-// identifiers to the /heartbeat route.
-func (h *handler) heartbeat(ctx context.Context, executorName string, jobIDs []int) error {
-	return h.requeueJobs(ctx, h.pruneJobs(executorName, jobIDs))
+// identifiers to the /heartbeat route. This method returns the set of identifiers which the
+// executor erroneously claims to hold (and are sent back as a hint to stop processing).
+func (h *handler) heartbeat(ctx context.Context, executorName string, jobIDs []int) ([]int, error) {
+	unknownIDs := h.unknownJobs(executorName, jobIDs)
+	deadJobs := h.pruneJobs(executorName, jobIDs)
+	err := h.requeueJobs(ctx, deadJobs)
+	return unknownIDs, err
 }
 
 // cleanup will release the transactions held by any executor that has not sent a heartbeat
@@ -36,6 +40,35 @@ func (h *handler) shutdown() {
 			}
 		}
 	}
+}
+
+// unknownJobs returns the set of job identifiers reported by the executor which do not
+// have an associated transaction held by this instance of the executor queue. This can
+// occur when the executor-queue restarts and loses its transaction state. We send these
+// identifiers back to the executor as a hint to stop processing.
+func (h *handler) unknownJobs(executorName string, ids []int) []int {
+	h.m.Lock()
+	defer h.m.Unlock()
+
+	executor, ok := h.executors[executorName]
+	if !ok {
+		// If executor is unknown, all ids are unknown
+		return ids
+	}
+
+	idMap := map[int]struct{}{}
+	for _, job := range executor.jobs {
+		idMap[job.record.RecordID()] = struct{}{}
+	}
+
+	unknown := make([]int, 0, len(ids))
+	for _, id := range ids {
+		if _, ok := idMap[id]; !ok {
+			unknown = append(unknown, id)
+		}
+	}
+
+	return unknown
 }
 
 // pruneJobs updates the set of job identifiers assigned to the given executor and returns

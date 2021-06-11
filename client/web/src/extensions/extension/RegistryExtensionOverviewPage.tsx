@@ -5,6 +5,7 @@ import GithubIcon from 'mdi-react/GithubIcon'
 import React, { useMemo, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 
+import { splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
 import { ExtensionCategory, ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { isEncodedImage } from '@sourcegraph/shared/src/util/icon'
@@ -17,6 +18,7 @@ import { DefaultExtensionIcon, DefaultSourcegraphExtensionIcon } from '../icons'
 import { extensionIDPrefix, extensionsQuery, urlToExtensionsQuery, validCategories } from './extension'
 import { ExtensionAreaRouteContext } from './ExtensionArea'
 import { ExtensionReadme } from './RegistryExtensionReadme'
+import { SourcegraphExtensionFeedback } from './SourcegraphExtensionFeedback'
 
 interface Props extends Pick<ExtensionAreaRouteContext, 'extension' | 'telemetryService' | 'isLightTheme'> {}
 
@@ -91,6 +93,8 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<Props> = ({
             categories = validatedCategories
         }
     }
+
+    const { isSourcegraphExtension } = splitExtensionID(extension.id)
 
     return (
         <div className="registry-extension-overview-page d-flex flex-wrap">
@@ -216,6 +220,11 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<Props> = ({
                                 </div>
                             )}
                         </dd>
+                        {isSourcegraphExtension && (
+                            <dd className="mt-2 py-2">
+                                <SourcegraphExtensionFeedback extensionID={extension.id} />
+                            </dd>
+                        )}
                     </dl>
                 </small>
             </aside>

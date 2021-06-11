@@ -246,6 +246,21 @@
           "type": "boolean",
           "default": false,
           "!go": { "pointer": false }
+        },
+        "ranking": {
+          "description": "Experimental search result ranking options.",
+          "type": "object",
+          "properties": {
+            "repoScores": {
+              "description": "a map of URI directories to numeric scores for specifying search result importance, like {\"github.com\": 500, \"github.com/sourcegraph\": 300, \"github.com/sourcegraph/sourcegraph\": 100}. Would rank \"github.com/sourcegraph/sourcegraph\" as 500+300+100=900, and \"github.com/other/foo\" as 500.",
+              "type": "object",
+              "default": {},
+              "group": "Search",
+              "additionalProperties": {
+                "type": "number"
+              }
+            }
+          }
         }
       },
       "examples": [
@@ -869,6 +884,22 @@
       "default": 1,
       "examples": [10]
     },
+    "insights.query.worker.rateLimit": {
+      "description": "Maximum number of Code Insights queries initiated per second on a worker node.",
+      "type": "number",
+      "group": "CodeInsights",
+      "default": 2,
+      "examples": [10.0, 0.5],
+      "!go": { "pointer": true }
+    },
+    "insights.historical.worker.rateLimit": {
+      "description": "Maximum number of historical Code Insights data frames that may be analyzed per second.",
+      "type": "number",
+      "group": "CodeInsights",
+      "default": 10,
+      "examples": [50.0, 0.5],
+      "!go": { "pointer": true }
+    },
     "htmlHeadTop": {
       "description": "HTML to inject at the top of the `<head>` element on each page, for analytics scripts",
       "type": "string",
@@ -1443,12 +1474,15 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["cloudkms", "mounted", "noop"]
+          "enum": ["cloudkms", "awskms", "mounted", "noop"]
         }
       },
       "oneOf": [
         {
           "$ref": "#/definitions/CloudKMSEncryptionKey"
+        },
+        {
+          "$ref": "#/definitions/AWSKMSEncryptionKey"
         },
         {
           "$ref": "#/definitions/MountedEncryptionKey"
@@ -1471,6 +1505,26 @@
           "const": "cloudkms"
         },
         "keyname": {
+          "type": "string"
+        },
+        "credentialsFile": {
+          "type": "string"
+        }
+      }
+    },
+    "AWSKMSEncryptionKey": {
+      "description": "AWS KMS Encryption Key, used to encrypt data in AWS environments",
+      "type": "object",
+      "required": ["type", "keyId"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "awskms"
+        },
+        "keyId": {
+          "type": "string"
+        },
+        "region": {
           "type": "string"
         },
         "credentialsFile": {

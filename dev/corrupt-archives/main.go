@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
@@ -10,12 +10,20 @@ import (
 )
 
 func corruptArchives(dir string) error {
-	files, err := ioutil.ReadDir(dir)
+	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return nil
 	}
 
-	archives := []os.FileInfo{}
+	files := make([]fs.FileInfo, len(entries))
+	for i := range entries {
+		files[i], err = entries[i].Info()
+		if err != nil {
+			return err
+		}
+	}
+
+	archives := []fs.FileInfo{}
 	for _, f := range files {
 		if strings.HasSuffix(f.Name(), ".zip") {
 			archives = append(archives, f)

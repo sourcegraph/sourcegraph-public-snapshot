@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
@@ -20,7 +19,6 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -28,10 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
-
-func init() {
-	dbtesting.DBNameSuffix = "batchchangesresolversdb"
-}
 
 var update = flag.Bool("update", false, "update testdata")
 
@@ -209,7 +203,7 @@ func mockRepoComparison(t *testing.T, baseRev, headRev, diff string) {
 		if have, want := args[len(args)-2], spec; have != want {
 			t.Fatalf("gitserver.ExecReader received wrong spec: %q, want %q", have, want)
 		}
-		return ioutil.NopCloser(strings.NewReader(diff)), nil
+		return io.NopCloser(strings.NewReader(diff)), nil
 	}
 	t.Cleanup(func() { git.Mocks.ExecReader = nil })
 

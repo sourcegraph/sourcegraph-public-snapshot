@@ -1,5 +1,7 @@
 import classNames from 'classnames'
 import * as H from 'history'
+import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
+import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import MenuLeftIcon from 'mdi-react/MenuLeftIcon'
 import MenuRightIcon from 'mdi-react/MenuRightIcon'
 import React, { useCallback, useMemo, useState } from 'react'
@@ -13,6 +15,7 @@ import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/feature
 import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { useCarousel } from '../../components/useCarousel'
@@ -28,6 +31,11 @@ interface StatusBarProps extends ExtensionsControllerProps<'extHostAPI' | 'execu
     uri?: string
 
     location: H.Location
+
+    statusBarRef?: React.Ref<HTMLDivElement>
+
+    /** Whether to hide the status bar while extensions are loading. */
+    hideWhileInitializing?: boolean
 }
 
 export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
@@ -36,12 +44,10 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
     extensionsController,
     uri,
     location,
+    statusBarRef,
+    hideWhileInitializing,
 }) => {
     const statusBarItems = useObservable(useMemo(() => getStatusBarItems(), [getStatusBarItems]))
-
-    const haveExtensionsLoaded = useObservable(
-        useMemo(() => haveInitialExtensionsLoaded(extensionsController.extHostAPI), [extensionsController])
-    )
 
     // Wait a generous amount of time on top of initial extension loading
     // before showing "Install extensions" message to be forgiving of extensions
@@ -69,6 +75,15 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
         onPositiveClicked,
     } = useCarousel({ direction: 'leftToRight' })
 
+    const [isRedesignEnabled] = useRedesignToggle()
+
+    const LeftIcon = isRedesignEnabled ? ChevronLeftIcon : MenuLeftIcon
+    const RightIcon = isRedesignEnabled ? ChevronRightIcon : MenuRightIcon
+
+    if (!hasEnoughTimePassed && hideWhileInitializing) {
+        return null
+    }
+
     return (
         <div
             className={classNames(
@@ -76,6 +91,7 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
                 'percy-hide', // TODO: Fix flaky status bar in Percy tests: https://github.com/sourcegraph/sourcegraph/issues/20751
                 className
             )}
+            ref={statusBarRef}
         >
             <ErrorBoundary
                 location={location}
@@ -93,10 +109,10 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
                         className="btn btn-link status-bar__scroll border-0"
                         onClick={onNegativeClicked}
                     >
-                        <MenuLeftIcon className="icon-inline" />
+                        <LeftIcon className="icon-inline" />
                     </button>
                 )}
-                <div className="status-bar__items d-flex px-2" ref={carouselReference}>
+                <div className="status-bar__items d-flex align-items-center px-2" ref={carouselReference}>
                     {!!statusBarItems && statusBarItems !== 'loading' && statusBarItems.length > 0
                         ? statusBarItems.map(statusBarItem => (
                               <StatusBarItem
@@ -106,8 +122,7 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
                                   location={location}
                               />
                           ))
-                        : haveExtensionsLoaded &&
-                          hasEnoughTimePassed && (
+                        : hasEnoughTimePassed && (
                               <div className="status-bar__item ml-2">
                                   <small className="text-muted">
                                       No information from extensions available.{' '}
@@ -124,7 +139,7 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
                         className="btn btn-link status-bar__scroll border-0"
                         onClick={onPositiveClicked}
                     >
-                        <MenuRightIcon className="icon-inline" />
+                        <RightIcon className="icon-inline" />
                     </button>
                 )}
             </ErrorBoundary>
@@ -168,11 +183,13 @@ const StatusBarItem: React.FunctionComponent<
 
     const noop = !command
 
+    const interactive = Boolean(command || statusBarItem.tooltip)
+
     return (
         <ButtonLink
             className={classNames(
                 `${className}__item h-100 d-flex align-items-center px-1 text-decoration-none`,
-                statusBarItem.tooltip && `${className}__item--tooltipped`,
+                interactive && `${className}__item--interactive`,
                 noop && `${className}__item--noop`
             )}
             data-tooltip={statusBarItem.tooltip}

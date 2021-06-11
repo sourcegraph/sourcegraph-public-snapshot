@@ -7,5 +7,5 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 # actual image currently lives here: https://github.com/sourcegraph/infrastructure/tree/master/docker-images
 #
 # TODO: Move the image to this directory so it is open-source and built in CI automatically.
-docker pull index.docker.io/sourcegraph/redis-cache:20-02-03_da9d71ca@sha256:7820219195ab3e8fdae5875cd690fed1b2a01fd1063bd94210c0e9d529c38e56
-docker tag index.docker.io/sourcegraph/redis-cache:20-02-03_da9d71ca@sha256:7820219195ab3e8fdae5875cd690fed1b2a01fd1063bd94210c0e9d529c38e56 "$IMAGE"
+docker pull index.docker.io/sourcegraph/redis-cache:21-06-10_6ded3b35fa@sha256:35245d84f0d154d12501ea4b997fa21913939cc4ce7c4de288b44d1d7e50624c
+docker tag index.docker.io/sourcegraph/redis-cache:21-06-10_6ded3b35fa@sha256:35245d84f0d154d12501ea4b997fa21913939cc4ce7c4de288b44d1d7e50624c "$IMAGE"

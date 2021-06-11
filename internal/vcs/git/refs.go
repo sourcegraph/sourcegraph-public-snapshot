@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/avelino/slugify"
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 	"github.com/rainycape/unidecode"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"

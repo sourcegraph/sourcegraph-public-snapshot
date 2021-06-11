@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"io"
-	"io/ioutil"
 	"strings"
 	"testing"
 )
@@ -132,7 +131,7 @@ index 9bd8209..d2acfa9 100644
 		}
 
 		Mocks.ExecReader = func(args []string) (io.ReadCloser, error) {
-			return ioutil.NopCloser(strings.NewReader(testDiff)), nil
+			return io.NopCloser(strings.NewReader(testDiff)), nil
 		}
 		defer ResetMocks()
 

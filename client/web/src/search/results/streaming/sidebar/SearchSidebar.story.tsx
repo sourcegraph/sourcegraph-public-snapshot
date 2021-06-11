@@ -68,7 +68,7 @@ const filters: Filter[] = [
     {
         label: 'bitbucket.com/test/test',
         value: 'repo:^bitbucket\\.com/test/test$',
-        count: 10,
+        count: 1,
         limitHit: true,
         kind: 'repo',
     },

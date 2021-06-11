@@ -60,7 +60,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
             handlePosition="right"
             storageKey={SIZE_STORAGE_KEY}
             element={
-                <div className={classnames('d-flex w-100 border-right', !isRedesignEnabled && 'bg-2')}>
+                <div className={classnames('d-flex w-100', !isRedesignEnabled && 'bg-2 border-right')}>
                     <Tabs
                         className="w-100 test-repo-revision-sidebar"
                         defaultIndex={tabIndex}
@@ -68,10 +68,10 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
                     >
                         <div className={classnames('tablist-wrapper d-flex flex-1', isRedesignEnabled && 'mx-3')}>
                             <TabList>
-                                <Tab data-test-tab="files">
+                                <Tab data-tab-content="files">
                                     <span className="tablist-wrapper--tab-label">Files</span>
                                 </Tab>
-                                <Tab data-test-tab="symbols">
+                                <Tab data-tab-content="symbols">
                                     <span className="tablist-wrapper--tab-label">Symbols</span>
                                 </Tab>
                             </TabList>
@@ -88,11 +88,11 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
                         <div
                             aria-hidden={true}
                             className={classnames(
-                                'd-flex repo-revision-container__tabpanels explorer overflow-auto',
+                                'd-flex repo-revision-container__tabpanels explorer',
                                 isRedesignEnabled && 'px-3'
                             )}
                         >
-                            <TabPanels className="w-100">
+                            <TabPanels className="w-100 overflow-auto">
                                 <TabPanel tabIndex={-1}>
                                     {tabIndex === 0 && (
                                         <Tree

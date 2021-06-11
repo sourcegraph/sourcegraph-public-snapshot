@@ -3,26 +3,11 @@ import * as H from 'history'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql/schema'
 
 import { getSearchTypeFromQuery, toggleSearchType, toggleSearchFilter, submitSearch } from './helpers'
-import { SearchType } from './results/SearchResults'
+import { SearchType } from './results/streaming/StreamingSearchResults'
 
 jest.mock('../tracking/eventLogger', () => ({ eventLogger: { log: () => undefined } }))
 
 describe('search/helpers', () => {
-    describe('queryIndexOfScope()', () => {
-        test.skip('should return the index of a scope if contained in the query', () => {
-            /* noop */
-        })
-        test.skip('should return the index of a scope if at the beginning of the query', () => {
-            /* noop */
-        })
-        test.skip('should return the -1 if the scope is not contained in the query', () => {
-            /* noop */
-        })
-        test.skip('should return the -1 if the scope is contained as a substring of another scope', () => {
-            /* noop */
-        })
-    })
-
     describe('submitSearch()', () => {
         test('should update history', () => {
             const history = H.createMemoryHistory({})

@@ -58,6 +58,7 @@ export interface ExtensionManifest {
     description?: string
     readme?: string
     url: string
+    wip?: boolean
     repository?: {
         type?: string
         url: string

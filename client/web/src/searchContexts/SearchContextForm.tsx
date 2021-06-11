@@ -15,6 +15,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Container } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { ALLOW_NAVIGATION, AwayPrompt } from '../components/AwayPrompt'
@@ -238,109 +239,111 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
 
     return (
         <Form onSubmit={submitRequest}>
-            <div className="d-flex">
-                <div className="mr-2">
-                    <div className="mb-2">Owner</div>
-                    <SearchContextOwnerDropdown
-                        isDisabled={!!searchContext}
-                        selectedNamespace={selectedNamespace}
-                        setSelectedNamespace={setSelectedNamespace}
-                        authenticatedUser={authenticatedUser}
-                    />
+            <Container className="mb-3">
+                <div className="d-flex">
+                    <div className="mr-2">
+                        <div className="mb-2">Owner</div>
+                        <SearchContextOwnerDropdown
+                            isDisabled={!!searchContext}
+                            selectedNamespace={selectedNamespace}
+                            setSelectedNamespace={setSelectedNamespace}
+                            authenticatedUser={authenticatedUser}
+                        />
+                    </div>
+                    <div className="flex-1">
+                        <div className="mb-2">Context name</div>
+                        <input
+                            className={classNames('w-100', 'form-control', styles.searchContextFormNameInput)}
+                            data-testid="search-context-name-input"
+                            value={name}
+                            type="text"
+                            pattern="^[a-zA-Z0-9_\-\/\.]+$"
+                            required={true}
+                            maxLength={MAX_NAME_LENGTH}
+                            onChange={event => {
+                                setName(event.target.value)
+                            }}
+                        />
+                    </div>
                 </div>
-                <div className="flex-1">
-                    <div className="mb-2">Context name</div>
-                    <input
-                        className={classNames('w-100', 'form-control', styles.searchContextFormNameInput)}
-                        data-testid="search-context-name-input"
-                        value={name}
-                        type="text"
-                        pattern="^[a-zA-Z0-9_\-\/\.]+$"
-                        required={true}
-                        maxLength={MAX_NAME_LENGTH}
-                        onChange={event => {
-                            setName(event.target.value)
-                        }}
-                    />
-                </div>
-            </div>
-            <div className="text-muted my-2">
-                <small>
-                    The best context names are short and semantic. {MAX_NAME_LENGTH} characters max. Alphanumeric and{' '}
-                    <kbd>.</kbd>
-                    <kbd>_</kbd>
-                    <kbd>/</kbd>
-                    <kbd>-</kbd> characters only.
-                </small>
-            </div>
-            <div>
-                <div className={classNames('mb-1', styles.searchContextFormPreviewTitle)}>Preview</div>
-                {searchContextSpecPreview}
-            </div>
-            <hr className={classNames('my-4', styles.searchContextFormDivider)} />
-            <div>
-                <div className="mb-2">
-                    Description <span className="text-muted">(optional)</span>
-                </div>
-                <textarea
-                    className="form-control w-100"
-                    data-testid="search-context-description-input"
-                    maxLength={MAX_DESCRIPTION_LENGTH}
-                    value={description}
-                    rows={5}
-                    onChange={event => {
-                        const value = event.target.value
-                        if (value.length <= MAX_DESCRIPTION_LENGTH) {
-                            setDescription(event.target.value)
-                        }
-                    }}
-                />
-                <div className="mt-1 text-muted">
+                <div className="text-muted my-2">
                     <small>
-                        <span>Markdown formatting is supported</span>
-                        <span className="px-1">&middot;</span>
-                        <span>{MAX_DESCRIPTION_LENGTH - description.length} characters remaining</span>
+                        The best context names are short and semantic. {MAX_NAME_LENGTH} characters max. Alphanumeric
+                        and <kbd>.</kbd>
+                        <kbd>_</kbd>
+                        <kbd>/</kbd>
+                        <kbd>-</kbd> characters only.
                     </small>
                 </div>
-            </div>
-            <div className="mt-3">
-                <div className="mb-3">Visibility</div>
-                {visibilityRadioButtons.map(radio => (
-                    <label key={radio.visibility} className="d-flex mt-2">
-                        <div className="mr-2">
-                            <input
-                                className={styles.searchContextFormVisibilityRadio}
-                                name="visibility"
-                                type="radio"
-                                value={radio.visibility}
-                                checked={visibility === radio.visibility}
-                                required={true}
-                                onChange={() => setVisibility(radio.visibility)}
-                            />
-                        </div>
-                        <div>
-                            <strong className={styles.searchContextFormVisibilityTitle}>{radio.title}</strong>
-                            <div className="text-muted">
-                                <small>{radio.description}</small>
-                            </div>
-                        </div>
-                    </label>
-                ))}
-            </div>
-            <hr className={classNames('my-4', styles.searchContextFormDivider)} />
-            <div>
-                <div className="mb-1">Repositories and revisions</div>
-                <div className="text-muted mb-3">
-                    Define which repositories and revisions should be included in this search context.
+                <div>
+                    <div className={classNames('mb-1', styles.searchContextFormPreviewTitle)}>Preview</div>
+                    {searchContextSpecPreview}
                 </div>
-                <SearchContextRepositoriesFormArea
-                    {...props}
-                    onChange={onRepositoriesConfigChange}
-                    validateRepositories={validateRepositories}
-                    repositories={searchContext?.repositories}
-                />
-            </div>
-            <hr className={classNames('my-4', styles.searchContextFormDivider)} />
+                <hr className={classNames('my-4', styles.searchContextFormDivider)} />
+                <div>
+                    <div className="mb-2">
+                        Description <span className="text-muted">(optional)</span>
+                    </div>
+                    <textarea
+                        className="form-control w-100"
+                        data-testid="search-context-description-input"
+                        maxLength={MAX_DESCRIPTION_LENGTH}
+                        value={description}
+                        rows={5}
+                        onChange={event => {
+                            const value = event.target.value
+                            if (value.length <= MAX_DESCRIPTION_LENGTH) {
+                                setDescription(event.target.value)
+                            }
+                        }}
+                    />
+                    <div className="mt-1 text-muted">
+                        <small>
+                            <span>Markdown formatting is supported</span>
+                            <span className="px-1">&middot;</span>
+                            <span>{MAX_DESCRIPTION_LENGTH - description.length} characters remaining</span>
+                        </small>
+                    </div>
+                </div>
+                <div className="mt-3">
+                    <div className="mb-3">Visibility</div>
+                    {visibilityRadioButtons.map(radio => (
+                        <label key={radio.visibility} className="d-flex mt-2">
+                            <div className="mr-2">
+                                <input
+                                    className={styles.searchContextFormVisibilityRadio}
+                                    name="visibility"
+                                    type="radio"
+                                    value={radio.visibility}
+                                    checked={visibility === radio.visibility}
+                                    required={true}
+                                    onChange={() => setVisibility(radio.visibility)}
+                                />
+                            </div>
+                            <div>
+                                <strong className={styles.searchContextFormVisibilityTitle}>{radio.title}</strong>
+                                <div className="text-muted">
+                                    <small>{radio.description}</small>
+                                </div>
+                            </div>
+                        </label>
+                    ))}
+                </div>
+                <hr className={classNames('my-4', styles.searchContextFormDivider)} />
+                <div>
+                    <div className="mb-1">Repositories and revisions</div>
+                    <div className="text-muted mb-3">
+                        Define which repositories and revisions should be included in this search context.
+                    </div>
+                    <SearchContextRepositoriesFormArea
+                        {...props}
+                        onChange={onRepositoriesConfigChange}
+                        validateRepositories={validateRepositories}
+                        repositories={searchContext?.repositories}
+                    />
+                </div>
+            </Container>
+            <hr className={classNames('redesign-d-none my-4', styles.searchContextFormDivider)} />
             <div className="d-flex">
                 <button
                     type="submit"

@@ -6,9 +6,9 @@ import (
 	"strconv"
 	"sync"
 
+	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -196,7 +196,7 @@ func (r *batchSpecResolver) ExpiresAt() *graphqlbackend.DateTime {
 }
 
 func (r *batchSpecResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
-	return checkSiteAdminOrSameUser(ctx, r.batchSpec.UserID)
+	return checkSiteAdminOrSameUser(ctx, r.store.DB(), r.batchSpec.UserID)
 }
 
 type batchChangeDescriptionResolver struct {

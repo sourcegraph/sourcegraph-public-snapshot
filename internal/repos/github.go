@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
-	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
@@ -250,6 +250,7 @@ func (s GithubSource) makeRepo(r *github.Repository) *types.Repo {
 		Description:  r.Description,
 		Fork:         r.IsFork,
 		Archived:     r.IsArchived,
+		Stars:        r.StargazerCount,
 		Private:      r.IsPrivate,
 		Sources: map[string]*types.SourceInfo{
 			urn: {
@@ -264,7 +265,7 @@ func (s GithubSource) makeRepo(r *github.Repository) *types.Repo {
 // remoteURL returns the repository's Git remote URL
 //
 // note: this used to contain credentials but that is no longer the case
-// if you need to get an authenticated clone url use types.RepoCloneURL
+// if you need to get an authenticated clone url use repos.CloneURL
 func (s *GithubSource) remoteURL(repo *github.Repository) string {
 	if s.config.GitURLType == "ssh" {
 		url := fmt.Sprintf("git@%s:%s.git", s.originalHostname, repo.NameWithOwner)

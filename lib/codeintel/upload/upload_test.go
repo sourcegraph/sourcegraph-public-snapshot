@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -22,7 +21,7 @@ func TestUploadIndex(t *testing.T) {
 	}
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		payload, err := ioutil.ReadAll(r.Body)
+		payload, err := io.ReadAll(r.Body)
 		if err != nil {
 			t.Fatalf("unexpected error reading request body: %s", err)
 		}
@@ -31,7 +30,7 @@ func TestUploadIndex(t *testing.T) {
 		if err != nil {
 			t.Fatalf("unexpected error creating gzip.Reader: %s", err)
 		}
-		decompressed, err := ioutil.ReadAll(gzipReader)
+		decompressed, err := io.ReadAll(gzipReader)
 		if err != nil {
 			t.Fatalf("unexpected error reading from gzip.Reader: %s", err)
 		}
@@ -45,7 +44,7 @@ func TestUploadIndex(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	f, err := ioutil.TempFile("", "")
+	f, err := os.CreateTemp("", "")
 	if err != nil {
 		t.Fatalf("unexpected error creating temp file: %s", err)
 	}
@@ -93,7 +92,7 @@ func TestUploadIndexMultipart(t *testing.T) {
 		}
 
 		if r.URL.Query().Get("index") != "" {
-			payload, err := ioutil.ReadAll(r.Body)
+			payload, err := io.ReadAll(r.Body)
 			if err != nil {
 				t.Fatalf("unexpected error reading request body: %s", err)
 			}
@@ -108,7 +107,7 @@ func TestUploadIndexMultipart(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	f, err := ioutil.TempFile("", "")
+	f, err := os.CreateTemp("", "")
 	if err != nil {
 		t.Fatalf("unexpected error creating temp file: %s", err)
 	}
@@ -151,7 +150,7 @@ func TestUploadIndexMultipart(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error creating gzip.Reader: %s", err)
 	}
-	decompressed, err := ioutil.ReadAll(gzipReader)
+	decompressed, err := io.ReadAll(gzipReader)
 	if err != nil {
 		t.Fatalf("unexpected error reading from gzip.Reader: %s", err)
 	}

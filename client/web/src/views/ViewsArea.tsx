@@ -10,7 +10,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
-import { CaseSensitivityProps, PatternTypeProps, CopyQueryButtonProps, SearchContextProps } from '../search'
+import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '../search'
 
 import { ViewPage } from './ViewPage'
 
@@ -20,7 +20,6 @@ interface Props
         SettingsCascadeProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        CopyQueryButtonProps,
         VersionContextProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         TelemetryProps {

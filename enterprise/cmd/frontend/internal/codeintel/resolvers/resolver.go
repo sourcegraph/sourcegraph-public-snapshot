@@ -22,6 +22,8 @@ import (
 type Resolver interface {
 	GetUploadByID(ctx context.Context, id int) (store.Upload, bool, error)
 	GetIndexByID(ctx context.Context, id int) (store.Index, bool, error)
+	GetUploadsByIDs(ctx context.Context, ids ...int) ([]store.Upload, error)
+	GetIndexesByIDs(ctx context.Context, ids ...int) ([]store.Index, error)
 	UploadConnectionResolver(opts store.GetUploadsOptions) *UploadsResolver
 	IndexConnectionResolver(opts store.GetIndexesOptions) *IndexesResolver
 	DeleteUploadByID(ctx context.Context, uploadID int) error
@@ -78,6 +80,14 @@ func (r *resolver) GetUploadByID(ctx context.Context, id int) (store.Upload, boo
 
 func (r *resolver) GetIndexByID(ctx context.Context, id int) (store.Index, bool, error) {
 	return r.dbStore.GetIndexByID(ctx, id)
+}
+
+func (r *resolver) GetUploadsByIDs(ctx context.Context, ids ...int) ([]store.Upload, error) {
+	return r.dbStore.GetUploadsByIDs(ctx, ids...)
+}
+
+func (r *resolver) GetIndexesByIDs(ctx context.Context, ids ...int) ([]store.Index, error) {
+	return r.dbStore.GetIndexesByIDs(ctx, ids...)
 }
 
 func (r *resolver) UploadConnectionResolver(opts store.GetUploadsOptions) *UploadsResolver {

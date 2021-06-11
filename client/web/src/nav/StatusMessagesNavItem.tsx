@@ -99,11 +99,11 @@ function entryIcon(entryType: EntryType, isRedesignEnabled?: boolean): JSX.Eleme
     const { CloudAlertIcon, CloudSyncIcon, CloudCheckIcon } = iconsToShow(isRedesignEnabled)
     switch (entryType) {
         case 'warning':
-            return <CloudAlertIcon className="icon-inline mr-1" />
+            return <CloudAlertIcon className="icon-inline-md mr-1" />
         case 'success':
-            return <CloudCheckIcon className="icon-inline mr-1" />
+            return <CloudCheckIcon className="icon-inline-md mr-1" />
         case 'progress':
-            return <CloudSyncIcon className="icon-inline mr-1" />
+            return <CloudSyncIcon className="icon-inline-md mr-1" />
     }
 }
 
@@ -229,12 +229,12 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         const { CloudAlertIcon, CloudSyncIcon, CloudCheckIcon } = iconsToShow(this.props.isRedesignEnabled)
 
         if (isErrorLike(this.state.messagesOrError)) {
-            return <CloudAlertIcon className="icon-inline" />
+            return <CloudAlertIcon className="icon-inline-md" />
         }
         if (this.state.messagesOrError.some(({ __typename }) => __typename === 'ExternalServiceSyncError')) {
             return (
                 <CloudAlertIcon
-                    className="icon-inline"
+                    className="icon-inline-md"
                     data-tooltip={this.state.isOpen ? undefined : 'Syncing repositories failed!'}
                 />
             )
@@ -242,14 +242,14 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         if (this.state.messagesOrError.some(({ __typename }) => __typename === 'CloningProgress')) {
             return (
                 <CloudSyncIcon
-                    className="icon-inline"
+                    className="icon-inline-md"
                     data-tooltip={this.state.isOpen ? undefined : 'Cloning repositories...'}
                 />
             )
         }
         return (
             <CloudCheckIcon
-                className="icon-inline"
+                className="icon-inline-md"
                 data-tooltip={this.state.isOpen ? undefined : 'Repositories up to date'}
             />
         )

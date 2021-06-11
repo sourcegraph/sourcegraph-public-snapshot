@@ -14,7 +14,7 @@ import (
 
 	"golang.org/x/net/context/ctxhttp"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 )
 
 type graphQLQuery struct {
@@ -34,7 +34,6 @@ const gqlSearchQuery = `query Search(
 			results {
 				__typename
 				... on FileMatch {
-					resource
 					limitHit
 					lineMatches {
 						preview

@@ -8,6 +8,7 @@ import { FormInput } from '../../../../../components/form/form-input/FormInput'
 import { FormRadioInput } from '../../../../../components/form/form-radio-input/FormRadioInput'
 import { useFieldAPI } from '../../../../../components/form/hooks/useField'
 import { FORM_ERROR, SubmissionErrors } from '../../../../../components/form/hooks/useForm'
+import { RepositoriesField } from '../../../../../components/form/repositories-field/RepositoriesField'
 import {
     getVisibilityValue,
     Organization,
@@ -28,6 +29,7 @@ interface CreationSearchInsightFormProps {
     submitting: boolean
     submitted: boolean
     className?: string
+    isFormClearActive?: boolean
 
     title: useFieldAPI<CreateInsightFormFields['title']>
     repositories: useFieldAPI<CreateInsightFormFields['repositories']>
@@ -55,6 +57,8 @@ interface CreationSearchInsightFormProps {
     onEditSeriesCommit: (seriesIndex: number, editedSeries: EditableDataSeries) => void
     onEditSeriesCancel: (closedCardIndex: number) => void
     onSeriesRemove: (removedSeriesIndex: number) => void
+
+    onFormReset: () => void
 }
 
 /**
@@ -77,12 +81,14 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
         stepValue,
         step,
         className,
+        isFormClearActive,
         onCancel,
         onSeriesLiveChange,
         onEditSeriesRequest,
         onEditSeriesCommit,
         onEditSeriesCancel,
         onSeriesRemove,
+        onFormReset,
     } = props
 
     const isEditMode = mode === 'edit'
@@ -93,6 +99,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
             noValidate={true}
             ref={innerRef}
             onSubmit={handleSubmit}
+            onReset={onFormReset}
             className={classnames(className, 'd-flex flex-column')}
         >
             <FormGroup
@@ -101,9 +108,10 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                 subtitle="Create a list of repositories to run your search over"
             >
                 <FormInput
+                    as={RepositoriesField}
                     autoFocus={true}
                     required={true}
-                    description="Separate repositories with comas"
+                    description="Separate repositories with commas"
                     placeholder="Example: github.com/sourcegraph/sourcegraph"
                     loading={repositories.meta.validState === 'CHECKING'}
                     valid={repositories.meta.touched && repositories.meta.validState === 'VALID'}
@@ -219,7 +227,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
 
             <hr className={styles.creationInsightFormSeparator} />
 
-            <div>
+            <div className="d-flex flex-wrap align-items-baseline">
                 {submitErrors?.[FORM_ERROR] && <ErrorAlert error={submitErrors[FORM_ERROR]} />}
 
                 <LoaderButton
@@ -228,11 +236,16 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                     label={submitting ? 'Submitting' : isEditMode ? 'Edit insight' : 'Create code insight'}
                     type="submit"
                     disabled={submitting}
-                    className="btn btn-primary mr-2"
+                    data-testid="insight-save-button"
+                    className="btn btn-primary mr-2 mb-2"
                 />
 
-                <button type="button" className="btn btn-outline-secondary" onClick={onCancel}>
+                <button type="button" className="btn btn-outline-secondary mb-2 mr-auto" onClick={onCancel}>
                     Cancel
+                </button>
+
+                <button type="reset" disabled={!isFormClearActive} className="btn btn-outline-secondary border-0">
+                    Clear all fields
                 </button>
             </div>
         </form>

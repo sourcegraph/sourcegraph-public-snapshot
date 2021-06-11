@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -60,7 +60,7 @@ func newOIDCIDServer(t *testing.T, code string, oidcProvider *schema.OpenIDConne
 			http.Error(w, "unexpected", http.StatusBadRequest)
 			return
 		}
-		b, _ := ioutil.ReadAll(r.Body)
+		b, _ := io.ReadAll(r.Body)
 		values, _ := url.ParseQuery(string(b))
 
 		if values.Get("code") != code {
@@ -120,7 +120,7 @@ func TestMiddleware(t *testing.T) {
 
 	defer licensing.TestingSkipFeatureChecks()()
 
-	tempdir, err := ioutil.TempDir("", "sourcegraph-oidc-test")
+	tempdir, err := os.MkdirTemp("", "sourcegraph-oidc-test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -302,7 +302,7 @@ func TestMiddleware_NoOpenRedirect(t *testing.T) {
 
 	defer licensing.TestingSkipFeatureChecks()()
 
-	tempdir, err := ioutil.TempDir("", "sourcegraph-oidc-test-no-open-redirect")
+	tempdir, err := os.MkdirTemp("", "sourcegraph-oidc-test-no-open-redirect")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -61,7 +61,7 @@ func TestSrcExpose(t *testing.T) {
 					CloneURL: s.URL + "/foo/.git",
 				},
 			},
-			Metadata: &types.OtherRepoMetadata{RelativePath: "/foo/.git"},
+			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/foo/.git"},
 		}, {
 			URI:  "bar/baz",
 			Name: "bar/baz",
@@ -76,7 +76,7 @@ func TestSrcExpose(t *testing.T) {
 					CloneURL: s.URL + "/bar/baz/.git",
 				},
 			},
-			Metadata: &types.OtherRepoMetadata{RelativePath: "/bar/baz/.git"},
+			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/bar/baz/.git"},
 		}},
 	}, {
 		name: "override",
@@ -96,7 +96,7 @@ func TestSrcExpose(t *testing.T) {
 					CloneURL: s.URL + "/repos/foo/.git",
 				},
 			},
-			Metadata: &types.OtherRepoMetadata{RelativePath: "/repos/foo/.git"},
+			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/repos/foo/.git"},
 		}},
 	}, {
 		name: "immutable",
@@ -115,7 +115,7 @@ func TestSrcExpose(t *testing.T) {
 					CloneURL: s.URL + "/foo/.git",
 				},
 			},
-			Metadata: &types.OtherRepoMetadata{RelativePath: "/foo/.git"},
+			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/foo/.git"},
 		}},
 	}}
 

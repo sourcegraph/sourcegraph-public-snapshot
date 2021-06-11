@@ -39,7 +39,7 @@
         letter-spacing: normal;
         font-size: 0.75rem;
         margin: 0 0.375rem;
-        padding: 0;
+        padding: 0 0.125rem;
         color: var(--body-color);
         text-transform: none;
         display: inline-flex;
@@ -59,7 +59,7 @@
         }
         // ::after used here for avoids the CLS when the font-weight change (see: https://css-tricks.com/bold-on-hover-without-the-layout-shift/)
         &::after {
-            content: attr(data-test-tab);
+            content: attr(data-tab-content);
             height: 0;
             text-transform: capitalize;
             visibility: hidden; // a11y: avoid detection for voice over
@@ -67,6 +67,10 @@
             user-select: none;
             pointer-events: none;
             font-weight: 700;
+        }
+
+        &:first-of-type {
+            margin-left: 0;
         }
 
         &:focus-visible {
@@ -84,7 +88,7 @@
 
     .tablist-wrapper {
         min-height: 2rem;
-        border-bottom: 1px solid var(--border-color);
+        border-bottom: 1px solid var(--border-color-2);
         padding-bottom: 0;
         display: flex;
         align-items: stretch;

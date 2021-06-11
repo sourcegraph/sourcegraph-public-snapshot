@@ -31,7 +31,6 @@ exports[`ViewPage renders view 1`] = `
     />
     <QueryInputInViewContent
       caseSensitive={false}
-      copyQueryButton={false}
       globbing={false}
       history={
         Object {

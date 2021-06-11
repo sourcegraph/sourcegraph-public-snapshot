@@ -123,6 +123,7 @@ const fetchLsifUploads = fetch(
         finishedAt: null,
         failure: null,
         placeInQueue: null,
+        associatedIndex: null,
     },
     {
         id: '2',
@@ -132,6 +133,7 @@ const fetchLsifUploads = fetch(
         finishedAt: null,
         placeInQueue: 3,
         failure: null,
+        associatedIndex: null,
     },
     {
         id: '3',
@@ -141,6 +143,7 @@ const fetchLsifUploads = fetch(
         finishedAt: null,
         failure: null,
         placeInQueue: null,
+        associatedIndex: null,
     },
     {
         id: '4',
@@ -150,6 +153,7 @@ const fetchLsifUploads = fetch(
         finishedAt: '2020-06-15T12:30:30+00:00',
         failure: null,
         placeInQueue: null,
+        associatedIndex: null,
     },
     {
         id: '5',
@@ -159,6 +163,7 @@ const fetchLsifUploads = fetch(
         finishedAt: '2020-06-15T12:30:30+00:00',
         failure: 'Whoops! The server encountered a boo-boo handling this input.',
         placeInQueue: null,
+        associatedIndex: null,
     }
 )
 

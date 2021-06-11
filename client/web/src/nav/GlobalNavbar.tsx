@@ -27,7 +27,7 @@ import { StatusMessagesNavItem } from '@sourcegraph/web/src/nav/StatusMessagesNa
 import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '@sourcegraph/wildcard/src/components/NavBar'
 
 import { AuthenticatedUser } from '../auth'
-import { BatchChangesIconNav } from '../batches/icons'
+import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import { CodeMonitoringProps } from '../code-monitoring'
 import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { BrandLogo } from '../components/branding/BrandLogo'
@@ -42,7 +42,6 @@ import { VersionContext } from '../schema/site.schema'
 import {
     PatternTypeProps,
     CaseSensitivityProps,
-    CopyQueryButtonProps,
     OnboardingTourProps,
     ParsedSearchQueryProps,
     isSearchContextSpecAvailable,
@@ -52,6 +51,7 @@ import {
 import { QueryState } from '../search/helpers'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { ThemePreferenceProps } from '../theme'
+import { userExternalServicesEnabledFromTags } from '../user/settings/cloud-ga'
 import { UserSettingsSidebarItems } from '../user/settings/UserSettingsSidebar'
 import { showDotComMarketing } from '../util/features'
 
@@ -71,7 +71,6 @@ interface Props
         Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
         PatternTypeProps,
         CaseSensitivityProps,
-        CopyQueryButtonProps,
         VersionContextProps,
         SearchContextInputProps,
         CodeMonitoringProps,
@@ -130,6 +129,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     location,
     history,
     minimalNavLinks,
+    isSourcegraphDotCom,
     ...props
 }) => {
     // Workaround: can't put this in optional parameter value because of https://github.com/babel/babel/issues/11166
@@ -142,7 +142,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     // Design Refresh will include repositories section as part of the user navigation bar
     // This filter makes sure repositories feature flag is active.
     const showRepositorySection = useMemo(
-        () => !!props.userSettingsSideBarItems?.account.find(item => item.label === 'Repositories'),
+        () => !!props.userSettingsSideBarItems?.find(item => item.label === 'Repositories'),
         [props.userSettingsSideBarItems]
     )
 
@@ -192,6 +192,10 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
 
     const [isRedesignEnabled] = useRedesignToggle()
 
+    const settings = !isErrorLike(props.settingsCascade.final) ? props.settingsCascade.final : null
+    const codeInsights =
+        settings?.experimentalFeatures?.codeInsights && settings?.['insights.displayLocation.insightsPage'] !== false
+
     const logo = (
         <LinkOrSpan to={authRequired ? undefined : '/search'} className="global-navbar__logo-link">
             <BrandLogo
@@ -209,6 +213,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
             location={location}
             history={history}
             isLightTheme={isLightTheme}
+            isSourcegraphDotCom={isSourcegraphDotCom}
             {...props}
         />
     )
@@ -223,6 +228,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
             isLightTheme={isLightTheme}
             patternType={patternType}
             caseSensitive={caseSensitive}
+            isSourcegraphDotCom={isSourcegraphDotCom}
         />
     )
 
@@ -243,15 +249,17 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                         <NavItem icon={MagnifyIcon}>
                             <NavLink to="/search">Code Search</NavLink>
                         </NavItem>
-                        <NavItem icon={CodeMonitoringLogo}>
-                            <NavLink to="/code-monitoring">Monitoring</NavLink>
-                        </NavItem>
-                        <NavItem icon={BatchChangesIconNav}>
-                            <NavLink to="/batch-changes">Batch Changes</NavLink>
-                        </NavItem>
-                        <NavItem icon={BarChartIcon}>
-                            <NavLink to="/insights">Insights</NavLink>
-                        </NavItem>
+                        {props.enableCodeMonitoring && (
+                            <NavItem icon={CodeMonitoringLogo}>
+                                <NavLink to="/code-monitoring">Monitoring</NavLink>
+                            </NavItem>
+                        )}
+                        {props.showBatchChanges && <BatchChangesNavItem isSourcegraphDotCom={isSourcegraphDotCom} />}
+                        {codeInsights && (
+                            <NavItem icon={BarChartIcon}>
+                                <NavLink to="/insights">Insights</NavLink>
+                            </NavItem>
+                        )}
                         <NavItem icon={PuzzleOutlineIcon}>
                             <NavLink to="/extensions">Extensions</NavLink>
                         </NavItem>
@@ -303,13 +311,8 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                             />
                         </NavAction>
                         {props.authenticatedUser &&
-                            (window.context?.externalServicesUserModeEnabled ||
-                                props.authenticatedUser?.siteAdmin ||
-                                props.authenticatedUser?.tags?.some(
-                                    tag =>
-                                        tag === 'AllowUserExternalServicePublic' ||
-                                        tag === 'AllowUserExternalServicePrivate'
-                                )) && (
+                            (props.authenticatedUser.siteAdmin ||
+                                userExternalServicesEnabledFromTags(props.authenticatedUser.tags)) && (
                                 <NavAction>
                                     <StatusMessagesNavItem
                                         isSiteAdmin={props.authenticatedUser?.siteAdmin || false}
@@ -348,20 +351,17 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                                             props.settingsCascade.final?.['alerts.codeHostIntegrationMessaging']) ||
                                         'browser-extension'
                                     }
-                                    showRedesignToggle={
-                                        !isErrorLike(props.settingsCascade.final) &&
-                                        Boolean(
-                                            props.settingsCascade.final?.experimentalFeatures
-                                                ?.designRefreshToggleEnabled
-                                        )
-                                    }
                                     keyboardShortcutForSwitchTheme={KEYBOARD_SHORTCUT_SWITCH_THEME}
                                 />
                             </NavAction>
                         )}
                     </NavActions>
                 </NavBar>
-                {showSearchBox && <div className="d-flex w-100 flex-row px-3 py-2 border-bottom">{searchNavBar}</div>}
+                {showSearchBox && (
+                    <div className="w-100 px-3 pt-2">
+                        <div className="pb-2 border-bottom">{searchNavBar}</div>
+                    </div>
+                )}
             </>
         )
     }

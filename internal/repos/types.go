@@ -2,8 +2,12 @@ package repos
 
 import (
 	"context"
+	"encoding/hex"
+	"fmt"
+	"hash/fnv"
+	"strings"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -98,4 +102,62 @@ func (r *RateLimitSyncer) SyncRateLimiters(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+type ScopeCache interface {
+	Get(string) ([]byte, bool)
+	Set(string, []byte)
+}
+
+// GrantedScopes returns a slice of scopes granted by the service based on the token
+// provided in the config. It makes a request to the code host.
+//
+// Currently only GitHub is supported, other code hosts will simply return an
+// empty slice
+func GrantedScopes(ctx context.Context, cache ScopeCache, svc *types.ExternalService) ([]string, error) {
+	if svc.Kind != extsvc.KindGitHub {
+		return nil, nil
+	}
+	src, err := NewSource(svc, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating source")
+	}
+	switch v := src.(type) {
+	case *GithubSource:
+		token := v.config.Token
+		if token == "" {
+			return nil, errors.New("missing token")
+		}
+		key, err := hashToken(token)
+		if err != nil {
+			return nil, err
+		}
+		if result, ok := cache.Get(key); ok && len(result) > 0 {
+			return strings.Split(string(result), ","), nil
+		}
+
+		// Slow path
+		src, err := NewGithubSource(svc, nil)
+		if err != nil {
+			return nil, errors.Wrap(err, "creating source")
+		}
+		scopes, err := src.v3Client.GetAuthenticatedUserOAuthScopes(ctx)
+		if err != nil {
+			return nil, errors.Wrap(err, "getting scopes")
+		}
+		cache.Set(key, []byte(strings.Join(scopes, ",")))
+		return scopes, nil
+	default:
+		return nil, fmt.Errorf("unsupported config type: %T", v)
+	}
+}
+
+func hashToken(token string) (string, error) {
+	h := fnv.New32()
+	_, err := h.Write([]byte(token))
+	if err != nil {
+		return "", errors.Wrap(err, "hashing token")
+	}
+	b := h.Sum(nil)
+	return hex.EncodeToString(b), nil
 }

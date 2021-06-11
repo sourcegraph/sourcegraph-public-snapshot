@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -303,37 +303,45 @@ func decodedViewerFinalSettings(ctx context.Context, db dbutil.DB) (_ *schema.Se
 	return &settings, nil
 }
 
+type resolveRepositoriesOpts struct {
+	effectiveRepoFieldValues []string
+
+	limit int // Maximum repositories to return
+}
+
 // resolveRepositories calls ResolveRepositories, caching the result for the common case
-// where effectiveRepoFieldValues == nil.
-func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoFieldValues []string) (searchrepos.Resolved, error) {
-	var err error
-	var repoRevs, missingRepoRevs []*search.RepositoryRevisions
-	var overLimit bool
+// where opts.effectiveRepoFieldValues == nil.
+func (r *searchResolver) resolveRepositories(ctx context.Context, opts resolveRepositoriesOpts) (resolved searchrepos.Resolved, err error) {
 	if mockResolveRepositories != nil {
-		return mockResolveRepositories(effectiveRepoFieldValues)
+		return mockResolveRepositories(opts.effectiveRepoFieldValues)
 	}
 
-	tr, ctx := trace.New(ctx, "graphql.resolveRepositories", fmt.Sprintf("effectiveRepoFieldValues: %v", effectiveRepoFieldValues))
+	tr, ctx := trace.New(ctx, "graphql.resolveRepositories", fmt.Sprintf("opts: %+v", opts))
 	defer func() {
-		if err != nil {
-			tr.SetError(err)
-		} else {
-			tr.LazyPrintf("numRepoRevs: %d, numMissingRepoRevs: %d, overLimit: %v", len(repoRevs), len(missingRepoRevs), overLimit)
-		}
+		tr.SetError(err)
+		tr.LazyPrintf("%s", resolved.String())
 		tr.Finish()
 	}()
-	if effectiveRepoFieldValues == nil {
+
+	if len(opts.effectiveRepoFieldValues) == 0 && opts.limit == 0 {
+		// Cache if opts are empty, so that multiple calls to resolveRepositories only
+		// hit the database once.
 		r.reposMu.Lock()
 		defer r.reposMu.Unlock()
 		if r.resolved.RepoRevs != nil || r.resolved.MissingRepoRevs != nil || r.repoErr != nil {
 			tr.LazyPrintf("cached")
 			return *r.resolved, r.repoErr
 		}
+		defer func() {
+			r.resolved = &resolved
+			r.repoErr = err
+		}()
 	}
 
 	repoFilters, minusRepoFilters := r.Query.Repositories()
-	if effectiveRepoFieldValues != nil {
-		repoFilters = effectiveRepoFieldValues
+	if opts.effectiveRepoFieldValues != nil {
+		repoFilters = opts.effectiveRepoFieldValues
+
 	}
 	repoGroupFilters, _ := r.Query.StringValues(query.FieldRepoGroup)
 
@@ -379,6 +387,8 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 	}
 
 	tr.LazyPrintf("resolveRepositories - start")
+	defer tr.LazyPrintf("resolveRepositories - done")
+
 	options := searchrepos.Options{
 		RepoFilters:        repoFilters,
 		MinusRepoFilters:   minusRepoFilters,
@@ -394,23 +404,20 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		OnlyPublic:         visibility == query.Public,
 		CommitAfter:        commitAfter,
 		Query:              r.Query,
+		Ranked:             true,
+		Limit:              opts.limit,
 	}
 	repositoryResolver := &searchrepos.Resolver{
 		DB:               r.db,
 		Zoekt:            r.zoekt,
 		DefaultReposFunc: backend.Repos.ListDefault,
 	}
-	resolved, err := repositoryResolver.Resolve(ctx, options)
-	tr.LazyPrintf("resolveRepositories - done")
-	if effectiveRepoFieldValues == nil {
-		r.resolved = &resolved
-		r.repoErr = err
-	}
-	return resolved, err
+
+	return repositoryResolver.Resolve(ctx, options)
 }
 
 func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]SearchSuggestionResolver, error) {
-	resolved, err := r.resolveRepositories(ctx, nil)
+	resolved, err := r.resolveRepositories(ctx, resolveRepositoriesOpts{})
 	if err != nil {
 		return nil, err
 	}

@@ -45,7 +45,7 @@ describe('FilterLink', () => {
     const fileFilter: Filter = {
         label: '-file:_test\\.go$',
         value: '-file:_test\\.go$',
-        count: 1230,
+        count: 1,
         limitHit: false,
         kind: 'file',
     }
@@ -124,7 +124,7 @@ describe('FilterLink', () => {
         const onFilterChosen = sinon.spy()
 
         const links = getRepoFilterLinks(filters, onFilterChosen)
-        const link = mount(<>{links}</>).find('.test-sidebar-filter-link')
+        const link = mount(<>{links}</>).find('[data-testid="filter-link"]')
         link.simulate('click')
 
         sinon.assert.calledWithExactly(onFilterChosen, repoFilter1.value)

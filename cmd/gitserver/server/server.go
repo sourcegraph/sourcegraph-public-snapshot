@@ -10,7 +10,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
@@ -23,11 +22,11 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"golang.org/x/time/rate"
@@ -293,9 +292,7 @@ func (s *Server) Handler() http.Handler {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	mux.Handle("/git/", http.StripPrefix("/git", &gitServiceHandler{
-		Dir: func(d string) string { return string(s.dir(api.RepoName(d))) },
-	}))
+	mux.Handle("/git/", http.StripPrefix("/git", s.gitServiceHandler()))
 
 	return mux
 }
@@ -532,7 +529,7 @@ func (s *Server) acquireCloneableLimiter(ctx context.Context) (context.Context, 
 	return s.cloneableLimiter.Acquire(ctx)
 }
 
-// tempDir is a wrapper around ioutil.TempDir, but using the server's
+// tempDir is a wrapper around os.MkdirTemp, but using the server's
 // temporary directory filepath.Join(s.ReposDir, tempDirName).
 //
 // This directory is cleaned up by gitserver and will be ignored by repository
@@ -545,7 +542,7 @@ func (s *Server) tempDir(prefix string) (name string, err error) {
 		return "", err
 	}
 
-	return ioutil.TempDir(dir, prefix)
+	return os.MkdirTemp(dir, prefix)
 }
 
 func (s *Server) ignorePath(path string) bool {
@@ -1719,7 +1716,7 @@ func removeBadRefs(ctx context.Context, dir GitDir) {
 func ensureHEAD(dir GitDir) {
 	head, err := os.Stat(dir.Path("HEAD"))
 	if os.IsNotExist(err) || head.Size() == 0 {
-		ioutil.WriteFile(dir.Path("HEAD"), []byte("ref: refs/heads/master"), 0600)
+		os.WriteFile(dir.Path("HEAD"), []byte("ref: refs/heads/master"), 0600)
 	}
 }
 
@@ -1818,10 +1815,7 @@ func setLastChanged(dir GitDir) error {
 	if _, err := os.Stat(hashFile); os.IsNotExist(err) {
 		// This is the first time we are calculating the hash. Give a more
 		// approriate timestamp for sg_refhash than the current time.
-		stamp, err = computeLatestCommitTimestamp(dir)
-		if err != nil {
-			return errors.Wrapf(err, "computeLatestCommitTimestamp failed for %s", dir)
-		}
+		stamp = computeLatestCommitTimestamp(dir)
 	}
 
 	_, err = updateFileIfDifferent(hashFile, hash)
@@ -1842,8 +1836,8 @@ func setLastChanged(dir GitDir) error {
 
 // computeLatestCommitTimestamp returns the timestamp of the most recent
 // commit if any. If there are no commits or the latest commit is in the
-// future, time.Now is returned.
-func computeLatestCommitTimestamp(dir GitDir) (time.Time, error) {
+// future, or there is any error, time.Now is returned.
+func computeLatestCommitTimestamp(dir GitDir) time.Time {
 	now := time.Now() // return current time if we don't find a more accurate time
 	cmd := exec.Command("git", "rev-list", "--all", "--timestamp", "-n", "1")
 	dir.Set(cmd)
@@ -1851,26 +1845,28 @@ func computeLatestCommitTimestamp(dir GitDir) (time.Time, error) {
 	// If we don't have a more specific stamp, we'll return the current time,
 	// and possibly an error.
 	if err != nil {
-		return now, err
+		log15.Warn("computeLatestCommitTimestamp: failed to execute, defaulting to time.Now", "repo", dir, "error", err)
+		return now
 	}
 
 	words := bytes.Split(output, []byte(" "))
 	// An empty rev-list output, without an error, is okay.
 	if len(words) < 2 {
-		return now, nil
+		return now
 	}
 
 	// We should have a timestamp and a commit hash; format is
 	// 1521316105 ff03fac223b7f16627b301e03bf604e7808989be
 	epoch, err := strconv.ParseInt(string(words[0]), 10, 64)
 	if err != nil {
-		return now, errors.Wrap(err, "invalid timestamp in rev-list output")
+		log15.Warn("computeLatestCommitTimestamp: ignoring corrupted timestamp, defaulting to time.Now", "repo", dir, "timestamp", words[0])
+		return now
 	}
 	stamp := time.Unix(epoch, 0)
 	if stamp.After(now) {
-		return now, nil
+		return now
 	}
-	return stamp, nil
+	return stamp
 }
 
 // computeRefHash returns a hash of the refs for dir. The hash should only
@@ -1907,8 +1903,8 @@ func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, rev stri
 	if rev == "" || rev == "HEAD" {
 		return false
 	}
-	// rev-parse on an OID does not check if the commit actually exists, so it
-	// is always works. So we append ^0 to force the check
+	// rev-parse on an OID does not check if the commit actually exists, so it always
+	// works. So we append ^0 to force the check
 	if isAbsoluteRevision(rev) {
 		rev = rev + "^0"
 	}
@@ -1928,7 +1924,7 @@ const headFileRefPrefix = "ref: "
 // It just reads the .git/HEAD file from the bare git repository directory.
 func quickSymbolicRefHead(dir GitDir) (string, error) {
 	// See if HEAD contains a commit hash and fail if so.
-	head, err := ioutil.ReadFile(dir.Path("HEAD"))
+	head, err := os.ReadFile(dir.Path("HEAD"))
 	if err != nil {
 		return "", err
 	}
@@ -1949,7 +1945,7 @@ func quickSymbolicRefHead(dir GitDir) (string, error) {
 // It just reads the relevant files from the bare git repository directory.
 func quickRevParseHead(dir GitDir) (string, error) {
 	// See if HEAD contains a commit hash and return it if so.
-	head, err := ioutil.ReadFile(dir.Path("HEAD"))
+	head, err := os.ReadFile(dir.Path("HEAD"))
 	if err != nil {
 		return "", err
 	}
@@ -1969,7 +1965,7 @@ func quickRevParseHead(dir GitDir) (string, error) {
 		return "", fmt.Errorf("invalid ref format: %s", headRef)
 	}
 	headRefFile := dir.Path(filepath.FromSlash(string(headRef)))
-	if refs, err := ioutil.ReadFile(headRefFile); err == nil {
+	if refs, err := os.ReadFile(headRefFile); err == nil {
 		return string(bytes.TrimSpace(refs)), nil
 	}
 

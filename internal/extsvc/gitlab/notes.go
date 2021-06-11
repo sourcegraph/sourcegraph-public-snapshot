@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 )
 
 // GetMergeRequestNotes retrieves the notes for the given merge request. As the

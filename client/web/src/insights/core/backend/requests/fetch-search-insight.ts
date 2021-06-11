@@ -23,7 +23,6 @@ const bulkSearchFieldsFragment = gql`
 export function fetchRawSearchInsightResults(searchQueries: string[]): Observable<Record<string, BulkSearchFields>> {
     return requestGraphQL<Record<string, BulkSearchFields>>(
         `
-            ${bulkSearchFieldsFragment}
             query BulkSearch(${searchQueries.map((searchQuery, index) => `$query${index}: String!`).join(', ')}) {
                 ${searchQueries
                     .map(
@@ -34,7 +33,9 @@ export function fetchRawSearchInsightResults(searchQueries: string[]): Observabl
                         `
                     )
                     .join('\n')}
-            }`,
+            }
+            ${bulkSearchFieldsFragment}
+        `,
         Object.fromEntries(searchQueries.map((query, index) => [`query${index}`, query]))
     ).pipe(map(dataOrThrowErrors))
 }
@@ -62,7 +63,6 @@ const bulkSearchCommitsFragment = gql`
 export function fetchSearchInsightCommits(commitQueries: string[]): Observable<Record<string, BulkSearchCommits>> {
     return requestGraphQL<Record<string, BulkSearchCommits>>(
         `
-            ${bulkSearchCommitsFragment}
             query BulkSearchCommits(${commitQueries.map((query, index) => `$query${index}: String!`).join(', ')}) {
                 ${commitQueries
                     .map(
@@ -74,6 +74,7 @@ export function fetchSearchInsightCommits(commitQueries: string[]): Observable<R
                     )
                     .join('\n')}
             }
+            ${bulkSearchCommitsFragment}
         `,
         Object.fromEntries(commitQueries.map((query, index) => [`query${index}`, query]))
     ).pipe(map(dataOrThrowErrors))

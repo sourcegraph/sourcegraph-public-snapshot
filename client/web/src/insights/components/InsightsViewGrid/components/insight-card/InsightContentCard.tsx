@@ -83,7 +83,7 @@ export const InsightContentCard: React.FunctionComponent<InsightCardProps> = pro
                 </>
             ) : isErrorLike(view) ? (
                 <>
-                    <ErrorAlert className="m-0" error={view} />
+                    <ErrorAlert data-testid={`${id} insight error`} className="m-0" error={view} />
                     <InsightDescription
                         className={styles.insightCardDescription}
                         title={id}

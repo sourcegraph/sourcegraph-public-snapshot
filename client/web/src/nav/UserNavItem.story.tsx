@@ -21,6 +21,8 @@ add(
                     {...webProps}
                     testIsOpen={true}
                     showRepositorySection={true}
+                    showSearchContext={true}
+                    showSearchContextManagement={true}
                     authenticatedUser={{
                         username: 'alice',
                         displayName: 'alice doe',
@@ -76,6 +78,8 @@ add(
                     {...webProps}
                     testIsOpen={true}
                     showRepositorySection={true}
+                    showSearchContext={true}
+                    showSearchContextManagement={true}
                     authenticatedUser={{
                         username: 'alice',
                         displayName: 'alice doe',

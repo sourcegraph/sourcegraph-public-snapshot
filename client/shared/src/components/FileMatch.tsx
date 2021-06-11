@@ -1,11 +1,13 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import React, { useEffect, useState } from 'react'
 import { Observable } from 'rxjs'
 import { AggregableBadge, Badge } from 'sourcegraph'
 
+import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
+
 import * as GQL from '../graphql/schema'
 import { SettingsCascadeProps } from '../settings/settings'
-import { getRepoIcon } from '../util/getRepoIcon'
 import { pluralize } from '../util/strings'
 import { useRedesignToggle } from '../util/useRedesignToggle'
 
@@ -104,26 +106,23 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
             ? { repoAtRevURL: result.revSpec.url, revDisplayName: result.revSpec.displayName }
             : { repoAtRevURL: result.repository.url, revDisplayName: '' }
 
-    const renderTitle = (): JSX.Element => {
-        const RepoIcon = getRepoIcon(result.repository.name)
-        return (
-            <>
-                {isRedesignEnabled && RepoIcon && <RepoIcon className="icon-inline text-muted" />}
-                <RepoFileLink
-                    repoName={result.repository.name}
-                    repoURL={repoAtRevURL}
-                    filePath={result.file.path}
-                    fileURL={result.file.url}
-                    repoDisplayName={
-                        props.repoDisplayName
-                            ? `${props.repoDisplayName}${revDisplayName ? `@${revDisplayName}` : ''}`
-                            : undefined
-                    }
-                    className={isRedesignEnabled ? 'ml-1' : undefined}
-                />
-            </>
-        )
-    }
+    const renderTitle = (): JSX.Element => (
+        <>
+            {isRedesignEnabled && <RepoIcon repoName={result.repository.name} className="icon-inline text-muted" />}
+            <RepoFileLink
+                repoName={result.repository.name}
+                repoURL={repoAtRevURL}
+                filePath={result.file.path}
+                fileURL={result.file.url}
+                repoDisplayName={
+                    props.repoDisplayName
+                        ? `${props.repoDisplayName}${revDisplayName ? `@${revDisplayName}` : ''}`
+                        : undefined
+                }
+                className={isRedesignEnabled ? 'ml-1' : undefined}
+            />
+        </>
+    )
 
     const description =
         items.length > 0 ? (
@@ -135,7 +134,10 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
                         target="_blank"
                         rel="noopener noreferrer"
                         data-tooltip={badge.hoverMessage}
-                        className="badge badge-secondary text-muted text-uppercase file-match__badge"
+                        className={classNames(
+                            'badge badge-secondary text-muted text-uppercase file-match__badge',
+                            isRedesignEnabled && 'badge-sm'
+                        )}
                     >
                         {badge.text}
                     </LinkOrSpan>

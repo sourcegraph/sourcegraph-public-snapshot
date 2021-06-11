@@ -19,18 +19,13 @@ Array [
         className="search-context-menu__item-name font-weight-medium"
         title="@username"
       >
-        <HighlightedSearchTerm
+        <HighlightedSearchContextSpec
           searchFilter="ser"
-          text="@username"
+          spec="@username"
         >
-          @u
-          <strong
-            className="search-context-menu__item--highlighted"
-          >
-            ser
-          </strong>
-          name
-        </HighlightedSearchTerm>
+          @
+          username
+        </HighlightedSearchContextSpec>
       </small>
        
       <small
@@ -58,18 +53,15 @@ Array [
         className="search-context-menu__item-name font-weight-medium"
         title="@username/test-version-1.5"
       >
-        <HighlightedSearchTerm
+        <HighlightedSearchContextSpec
           searchFilter="ser"
-          text="@username/test-version-1.5"
+          spec="@username/test-version-1.5"
         >
-          @u
-          <strong
-            className="search-context-menu__item--highlighted"
-          >
-            ser
-          </strong>
-          name/test-version-1.5
-        </HighlightedSearchTerm>
+          @
+          username
+          /
+          test-version-1.5
+        </HighlightedSearchContextSpec>
       </small>
        
       <small

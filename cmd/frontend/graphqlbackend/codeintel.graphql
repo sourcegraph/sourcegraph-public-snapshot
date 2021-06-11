@@ -425,7 +425,7 @@ type LSIFUpload implements Node {
     startedAt: DateTime
 
     """
-    The time the upload compelted or errored.
+    The time the upload completed or errored.
     """
     finishedAt: DateTime
 
@@ -446,6 +446,11 @@ type LSIFUpload implements Node {
     The rank of this upload in the queue. The value of this field is null if the upload has been processed.
     """
     placeInQueue: Int
+
+    """
+    The LSIF indexing job that created this upload record.
+    """
+    associatedIndex: LSIFIndex
 }
 
 """
@@ -538,7 +543,7 @@ type LSIFIndex implements Node {
     startedAt: DateTime
 
     """
-    The time the index compelted or errored.
+    The time the index completed or errored.
     """
     finishedAt: DateTime
 
@@ -556,6 +561,11 @@ type LSIFIndex implements Node {
     The rank of this index in the queue. The value of this field is null if the index has been processed.
     """
     placeInQueue: Int
+
+    """
+    The LSIF upload created as part of this indexing job.
+    """
+    associatedUpload: LSIFUpload
 }
 
 """

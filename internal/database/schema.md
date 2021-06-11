@@ -533,6 +533,7 @@ Referenced by:
  argument          | jsonb                    |           | not null | 
  version           | text                     |           | not null | 
  timestamp         | timestamp with time zone |           | not null | 
+ feature_flags     | jsonb                    |           |          | 
 Indexes:
     "event_logs_pkey" PRIMARY KEY, btree (id)
     "event_logs_anonymous_user_id" btree (anonymous_user_id)
@@ -622,6 +623,67 @@ Referenced by:
 
 ```
 
+# Table "public.feature_flag_overrides"
+```
+      Column       |           Type           | Collation | Nullable | Default 
+-------------------+--------------------------+-----------+----------+---------
+ namespace_org_id  | integer                  |           |          | 
+ namespace_user_id | integer                  |           |          | 
+ flag_name         | text                     |           | not null | 
+ flag_value        | boolean                  |           | not null | 
+ created_at        | timestamp with time zone |           | not null | now()
+ updated_at        | timestamp with time zone |           | not null | now()
+ deleted_at        | timestamp with time zone |           |          | 
+Indexes:
+    "feature_flag_overrides_unique_org_flag" UNIQUE CONSTRAINT, btree (namespace_org_id, flag_name)
+    "feature_flag_overrides_unique_user_flag" UNIQUE CONSTRAINT, btree (namespace_user_id, flag_name)
+    "feature_flag_overrides_org_id" btree (namespace_org_id) WHERE namespace_org_id IS NOT NULL
+    "feature_flag_overrides_user_id" btree (namespace_user_id) WHERE namespace_user_id IS NOT NULL
+Check constraints:
+    "feature_flag_overrides_has_org_or_user_id" CHECK (namespace_org_id IS NOT NULL OR namespace_user_id IS NOT NULL)
+Foreign-key constraints:
+    "feature_flag_overrides_flag_name_fkey" FOREIGN KEY (flag_name) REFERENCES feature_flags(flag_name) ON DELETE CASCADE
+    "feature_flag_overrides_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE
+    "feature_flag_overrides_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE
+
+```
+
+# Table "public.feature_flags"
+```
+   Column   |           Type           | Collation | Nullable | Default 
+------------+--------------------------+-----------+----------+---------
+ flag_name  | text                     |           | not null | 
+ flag_type  | feature_flag_type        |           | not null | 
+ bool_value | boolean                  |           |          | 
+ rollout    | integer                  |           |          | 
+ created_at | timestamp with time zone |           | not null | now()
+ updated_at | timestamp with time zone |           | not null | now()
+ deleted_at | timestamp with time zone |           |          | 
+Indexes:
+    "feature_flags_pkey" PRIMARY KEY, btree (flag_name)
+Check constraints:
+    "feature_flags_rollout_check" CHECK (rollout >= 0 AND rollout <= 10000)
+    "required_bool_fields" CHECK (1 =
+CASE
+    WHEN flag_type = 'bool'::feature_flag_type AND bool_value IS NULL THEN 0
+    WHEN flag_type <> 'bool'::feature_flag_type AND bool_value IS NOT NULL THEN 0
+    ELSE 1
+END)
+    "required_rollout_fields" CHECK (1 =
+CASE
+    WHEN flag_type = 'rollout'::feature_flag_type AND rollout IS NULL THEN 0
+    WHEN flag_type <> 'rollout'::feature_flag_type AND rollout IS NOT NULL THEN 0
+    ELSE 1
+END)
+Referenced by:
+    TABLE "feature_flag_overrides" CONSTRAINT "feature_flag_overrides_flag_name_fkey" FOREIGN KEY (flag_name) REFERENCES feature_flags(flag_name) ON DELETE CASCADE
+
+```
+
+**bool_value**: Bool value only defined when flag_type is bool
+
+**rollout**: Rollout only defined when flag_type is rollout. Increments of 0.01%
+
 # Table "public.gitserver_repos"
 ```
         Column         |           Type           | Collation | Nullable |      Default       
@@ -677,6 +739,32 @@ Indexes:
 ```
 
 See [enterprise/internal/insights/background/queryrunner/worker.go:Job](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/internal/insights/background/queryrunner/worker.go+type+Job&patternType=literal)
+
+# Table "public.lsif_dependency_indexing_jobs"
+```
+     Column      |           Type           | Collation | Nullable |                          Default                          
+-----------------+--------------------------+-----------+----------+-----------------------------------------------------------
+ id              | integer                  |           | not null | nextval('lsif_dependency_indexing_jobs_id_seq'::regclass)
+ state           | text                     |           | not null | 'queued'::text
+ failure_message | text                     |           |          | 
+ queued_at       | timestamp with time zone |           | not null | now()
+ started_at      | timestamp with time zone |           |          | 
+ finished_at     | timestamp with time zone |           |          | 
+ process_after   | timestamp with time zone |           |          | 
+ num_resets      | integer                  |           | not null | 0
+ num_failures    | integer                  |           | not null | 0
+ execution_logs  | json[]                   |           |          | 
+ upload_id       | integer                  |           |          | 
+Indexes:
+    "lsif_dependency_indexing_jobs_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "lsif_dependency_indexing_jobs_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
+
+```
+
+Tracks jobs that scan imports of indexes to schedule auto-index jobs.
+
+**upload_id**: The identifier of the triggering upload record.
 
 # Table "public.lsif_dirty_repositories"
 ```
@@ -921,6 +1009,7 @@ Associates an upload with the set of packages they require within a given packag
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::text
+    "lsif_uploads_associated_index_id" btree (associated_index_id)
     "lsif_uploads_commit_last_checked_at" btree (commit_last_checked_at) WHERE state <> 'deleted'::text
     "lsif_uploads_committed_at" btree (committed_at) WHERE state = 'completed'::text
     "lsif_uploads_state" btree (state)
@@ -928,6 +1017,7 @@ Indexes:
 Check constraints:
     "lsif_uploads_commit_valid_chars" CHECK (commit ~ '^[a-z0-9]{40}$'::text)
 Referenced by:
+    TABLE "lsif_dependency_indexing_jobs" CONSTRAINT "lsif_dependency_indexing_jobs_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
     TABLE "lsif_packages" CONSTRAINT "lsif_packages_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
     TABLE "lsif_references" CONSTRAINT "lsif_references_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
 
@@ -1063,6 +1153,7 @@ Referenced by:
     TABLE "batch_changes" CONSTRAINT "batch_changes_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE
     TABLE "cm_monitors" CONSTRAINT "cm_monitors_org_id_fk" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE
     TABLE "cm_recipients" CONSTRAINT "cm_recipients_org_id_fk" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE
+    TABLE "feature_flag_overrides" CONSTRAINT "feature_flag_overrides_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE
     TABLE "names" CONSTRAINT "names_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id) ON UPDATE CASCADE ON DELETE CASCADE
     TABLE "org_invitations" CONSTRAINT "org_invitations_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id)
     TABLE "org_members" CONSTRAINT "org_members_references_orgs" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT
@@ -1075,26 +1166,27 @@ Referenced by:
 
 # Table "public.out_of_band_migrations"
 ```
-     Column      |           Type           | Collation | Nullable |                      Default                       
------------------+--------------------------+-----------+----------+----------------------------------------------------
- id              | integer                  |           | not null | nextval('out_of_band_migrations_id_seq'::regclass)
- team            | text                     |           | not null | 
- component       | text                     |           | not null | 
- description     | text                     |           | not null | 
- introduced      | text                     |           | not null | 
- deprecated      | text                     |           |          | 
- progress        | double precision         |           | not null | 0
- created         | timestamp with time zone |           | not null | now()
- last_updated    | timestamp with time zone |           |          | 
- non_destructive | boolean                  |           | not null | 
- apply_reverse   | boolean                  |           | not null | false
+          Column          |           Type           | Collation | Nullable |                      Default                       
+--------------------------+--------------------------+-----------+----------+----------------------------------------------------
+ id                       | integer                  |           | not null | nextval('out_of_band_migrations_id_seq'::regclass)
+ team                     | text                     |           | not null | 
+ component                | text                     |           | not null | 
+ description              | text                     |           | not null | 
+ progress                 | double precision         |           | not null | 0
+ created                  | timestamp with time zone |           | not null | now()
+ last_updated             | timestamp with time zone |           |          | 
+ non_destructive          | boolean                  |           | not null | 
+ apply_reverse            | boolean                  |           | not null | false
+ is_enterprise            | boolean                  |           | not null | false
+ introduced_version_major | integer                  |           | not null | 
+ introduced_version_minor | integer                  |           | not null | 
+ deprecated_version_major | integer                  |           |          | 
+ deprecated_version_minor | integer                  |           |          | 
 Indexes:
     "out_of_band_migrations_pkey" PRIMARY KEY, btree (id)
 Check constraints:
     "out_of_band_migrations_component_nonempty" CHECK (component <> ''::text)
-    "out_of_band_migrations_deprecated_valid_version" CHECK (deprecated ~ '^(\d+)\.(\d+)\.(\d+)$'::text)
     "out_of_band_migrations_description_nonempty" CHECK (description <> ''::text)
-    "out_of_band_migrations_introduced_valid_version" CHECK (introduced ~ '^(\d+)\.(\d+)\.(\d+)$'::text)
     "out_of_band_migrations_progress_range" CHECK (progress >= 0::double precision AND progress <= 1::double precision)
     "out_of_band_migrations_team_nonempty" CHECK (team <> ''::text)
 Referenced by:
@@ -1110,13 +1202,19 @@ Stores metadata and progress about an out-of-band migration routine.
 
 **created**: The date and time the migration was inserted into the database (via an upgrade).
 
-**deprecated**: The lowest Sourcegraph version that assumes the migration has completed.
+**deprecated_version_major**: The lowest Sourcegraph version (major component) that assumes the migration has completed.
+
+**deprecated_version_minor**: The lowest Sourcegraph version (minor component) that assumes the migration has completed.
 
 **description**: A brief description about the migration.
 
 **id**: A globally unique primary key for this migration. The same key is used consistently across all Sourcegraph instances for the same migration.
 
-**introduced**: The Sourcegraph version in which this migration was first introduced.
+**introduced_version_major**: The Sourcegraph version (major component) in which this migration was first introduced.
+
+**introduced_version_minor**: The Sourcegraph version (minor component) in which this migration was first introduced.
+
+**is_enterprise**: When true, these migrations are invisible to OSS mode.
 
 **last_updated**: The date and time the migration was last updated.
 
@@ -1287,6 +1385,7 @@ Referenced by:
  metadata              | jsonb                    |           | not null | '{}'::jsonb
  private               | boolean                  |           | not null | false
  cloned                | boolean                  |           | not null | false
+ stars                 | integer                  |           |          | 
 Indexes:
     "repo_pkey" PRIMARY KEY, btree (id)
     "repo_external_unique_idx" UNIQUE, btree (external_service_type, external_service_id, external_id)
@@ -1299,6 +1398,7 @@ Indexes:
     "repo_name_idx" btree (lower(name::text) COLLATE "C")
     "repo_name_trgm" gin (lower(name::text) gin_trgm_ops)
     "repo_private" btree (private)
+    "repo_stars_idx" btree (stars DESC NULLS LAST)
     "repo_uri_idx" btree (uri)
 Check constraints:
     "check_name_nonempty" CHECK (name <> ''::citext)
@@ -1424,6 +1524,51 @@ Referenced by:
     TABLE "search_context_repos" CONSTRAINT "search_context_repos_search_context_id_fk" FOREIGN KEY (search_context_id) REFERENCES search_contexts(id) ON DELETE CASCADE
 
 ```
+
+# Table "public.security_event_logs"
+```
+      Column       |           Type           | Collation | Nullable |                     Default                     
+-------------------+--------------------------+-----------+----------+-------------------------------------------------
+ id                | bigint                   |           | not null | nextval('security_event_logs_id_seq'::regclass)
+ name              | text                     |           | not null | 
+ url               | text                     |           | not null | 
+ user_id           | integer                  |           | not null | 
+ anonymous_user_id | text                     |           | not null | 
+ source            | text                     |           | not null | 
+ argument          | jsonb                    |           | not null | 
+ version           | text                     |           | not null | 
+ timestamp         | timestamp with time zone |           | not null | 
+Indexes:
+    "security_event_logs_pkey" PRIMARY KEY, btree (id)
+    "security_event_logs_anonymous_user_id" btree (anonymous_user_id)
+    "security_event_logs_name" btree (name)
+    "security_event_logs_source" btree (source)
+    "security_event_logs_timestamp" btree ("timestamp")
+    "security_event_logs_timestamp_at_utc" btree (date(timezone('UTC'::text, "timestamp")))
+    "security_event_logs_user_id" btree (user_id)
+Check constraints:
+    "security_event_logs_check_has_user" CHECK (user_id = 0 AND anonymous_user_id <> ''::text OR user_id <> 0 AND anonymous_user_id = ''::text OR user_id <> 0 AND anonymous_user_id <> ''::text)
+    "security_event_logs_check_name_not_empty" CHECK (name <> ''::text)
+    "security_event_logs_check_source_not_empty" CHECK (source <> ''::text)
+    "security_event_logs_check_version_not_empty" CHECK (version <> ''::text)
+
+```
+
+Contains security-relevant events with a long time horizon for storage.
+
+**anonymous_user_id**: The UUID of the actor associated with the event.
+
+**argument**: An arbitrary JSON blob containing event data.
+
+**name**: The event name as a CAPITALIZED_SNAKE_CASE string.
+
+**source**: The site section (WEB, BACKEND, etc.) that generated the event.
+
+**url**: The URL within the Sourcegraph app which generated the event.
+
+**user_id**: The ID of the actor associated with the event.
+
+**version**: The version of Sourcegraph which generated the event.
 
 # Table "public.settings"
 ```
@@ -1648,6 +1793,7 @@ Referenced by:
     TABLE "discussion_threads" CONSTRAINT "discussion_threads_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "external_service_repos" CONSTRAINT "external_service_repos_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "external_services" CONSTRAINT "external_services_namepspace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
+    TABLE "feature_flag_overrides" CONSTRAINT "feature_flag_overrides_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "names" CONSTRAINT "names_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE
     TABLE "org_invitations" CONSTRAINT "org_invitations_recipient_user_id_fkey" FOREIGN KEY (recipient_user_id) REFERENCES users(id)
     TABLE "org_invitations" CONSTRAINT "org_invitations_sender_user_id_fkey" FOREIGN KEY (sender_user_id) REFERENCES users(id)
@@ -1672,13 +1818,16 @@ Triggers:
 
 # Table "public.versions"
 ```
-   Column   |           Type           | Collation | Nullable | Default 
-------------+--------------------------+-----------+----------+---------
- service    | text                     |           | not null | 
- version    | text                     |           | not null | 
- updated_at | timestamp with time zone |           | not null | now()
+    Column     |           Type           | Collation | Nullable | Default 
+---------------+--------------------------+-----------+----------+---------
+ service       | text                     |           | not null | 
+ version       | text                     |           | not null | 
+ updated_at    | timestamp with time zone |           | not null | now()
+ first_version | text                     |           | not null | 
 Indexes:
     "versions_pkey" PRIMARY KEY, btree (service)
+Triggers:
+    versions_insert BEFORE INSERT ON versions FOR EACH ROW EXECUTE FUNCTION versions_insert_row_trigger()
 
 ```
 
@@ -2110,6 +2259,11 @@ Indexes:
 
 - critical
 - site
+
+# Type feature_flag_type
+
+- bool
+- rollout
 
 # Type lsif_index_state
 

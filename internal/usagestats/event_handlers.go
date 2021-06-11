@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/pubsub"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
@@ -27,11 +28,12 @@ type Event struct {
 	FirstSourceURL *string
 	URL            string
 	Source         string
+	FeatureFlags   featureflag.FlagSet
 	Argument       json.RawMessage
 }
 
 // LogBackendEvent is a convenience function for logging backend events.
-func LogBackendEvent(db dbutil.DB, userID int32, eventName string, argument json.RawMessage) error {
+func LogBackendEvent(db dbutil.DB, userID int32, eventName string, argument json.RawMessage, featureFlags featureflag.FlagSet) error {
 	return LogEvent(context.Background(), db, Event{
 		EventName:    eventName,
 		UserID:       userID,
@@ -39,6 +41,7 @@ func LogBackendEvent(db dbutil.DB, userID int32, eventName string, argument json
 		URL:          "",
 		Source:       "BACKEND",
 		Argument:     argument,
+		FeatureFlags: featureFlags,
 	})
 }
 
@@ -53,7 +56,7 @@ func LogEvent(ctx context.Context, db dbutil.DB, args Event) error {
 			return err
 		}
 	}
-	return logLocalEvent(ctx, db, args.EventName, args.URL, args.UserID, args.UserCookieID, args.Source, args.Argument)
+	return logLocalEvent(ctx, db, args.EventName, args.URL, args.UserID, args.UserCookieID, args.Source, args.Argument, args.FeatureFlags)
 }
 
 type bigQueryEvent struct {
@@ -61,11 +64,10 @@ type bigQueryEvent struct {
 	AnonymousUserID string `json:"anonymous_user_id"`
 	FirstSourceURL  string `json:"first_source_url"`
 	UserID          int    `json:"user_id"`
-	URL             string `json:"url"`
 	Source          string `json:"source"`
 	Timestamp       string `json:"timestamp"`
 	Version         string `json:"version"`
-	Argument        string `json:"argument"`
+	FeatureFlags    string `json:"feature_flags"`
 }
 
 // publishSourcegraphDotComEvent publishes Sourcegraph.com events to BigQuery.
@@ -80,16 +82,19 @@ func publishSourcegraphDotComEvent(args Event) error {
 	if args.FirstSourceURL != nil {
 		firstSourceURL = *args.FirstSourceURL
 	}
+	featureFlagJSON, err := json.Marshal(args.FeatureFlags)
+	if err != nil {
+		return err
+	}
 	event, err := json.Marshal(bigQueryEvent{
 		EventName:       args.EventName,
 		UserID:          int(args.UserID),
 		AnonymousUserID: args.UserCookieID,
 		FirstSourceURL:  firstSourceURL,
-		URL:             args.URL,
 		Source:          args.Source,
 		Timestamp:       time.Now().UTC().Format(time.RFC3339),
 		Version:         version.Version(),
-		Argument:        string(args.Argument),
+		FeatureFlags:    string(featureFlagJSON),
 	})
 	if err != nil {
 		return err
@@ -98,7 +103,7 @@ func publishSourcegraphDotComEvent(args Event) error {
 }
 
 // logLocalEvent logs users events.
-func logLocalEvent(ctx context.Context, db dbutil.DB, name, url string, userID int32, userCookieID, source string, argument json.RawMessage) error {
+func logLocalEvent(ctx context.Context, db dbutil.DB, name, url string, userID int32, userCookieID, source string, argument json.RawMessage, featureFlags featureflag.FlagSet) error {
 	if name == "SearchResultsQueried" {
 		err := logSiteSearchOccurred()
 		if err != nil {
@@ -120,6 +125,7 @@ func logLocalEvent(ctx context.Context, db dbutil.DB, name, url string, userID i
 		Source:          source,
 		Argument:        argument,
 		Timestamp:       timeNow().UTC(),
+		FeatureFlags:    featureFlags,
 	}
 	return database.EventLogs(db).Insert(ctx, info)
 }

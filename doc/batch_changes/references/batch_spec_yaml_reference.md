@@ -5,7 +5,7 @@
 
 /* The sidebar on this page contains a lot of long identifiers without
 whitespace. In order to make them more readable we increase the width of the
-sidebar. /*
+sidebar. */
 @media (min-width: 1200px) {
   body > #page > main > #index {
     width: 35%;
@@ -161,7 +161,7 @@ The shell command to run in the container. It can also be a multi-line shell scr
 <span class="badge badge-feature">Templating</span> <code>steps.run</code> can include <a href="batch_spec_templating">template variables</a> in Sourcegraph 3.22 and <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.21.5.
 </aside>
 
-## [`steps.container`](#steps-run)
+## [`steps.container`](#steps-container)
 
 The Docker image used to launch the Docker container in which the shell command is run.
 

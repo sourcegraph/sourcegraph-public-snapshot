@@ -1,7 +1,7 @@
 package gqltestutil
 
 import (
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 )
 
 // CreateUser creates a new user with the given username and email.

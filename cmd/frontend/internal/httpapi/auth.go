@@ -83,7 +83,7 @@ func AccessTokenAuthMiddleware(db dbutil.DB, next http.Handler) http.Handler {
 			} else {
 				// 🚨 SECURITY: Confirm that the sudo token's subject is still a site admin, to
 				// prevent users from retaining site admin privileges after being demoted.
-				if err := backend.CheckUserIsSiteAdmin(r.Context(), subjectUserID); err != nil {
+				if err := backend.CheckUserIsSiteAdmin(r.Context(), db, subjectUserID); err != nil {
 					log15.Error("Sudo access token's subject is not a site admin.", "subjectUserID", subjectUserID, "err", err)
 					http.Error(w, "The subject user of a sudo access token must be a site admin.", http.StatusForbidden)
 					return

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 	"github.com/stripe/stripe-go"
 	"github.com/stripe/stripe-go/invoice"
 	"github.com/stripe/stripe-go/plan"
@@ -74,7 +74,7 @@ func (r ProductSubscriptionLicensingResolver) PreviewProductSubscriptionInvoice(
 		}
 		// 🚨 SECURITY: Users may only preview invoices for their own product subscriptions. Site admins
 		// may preview invoices for all product subscriptions.
-		if err := backend.CheckSiteAdminOrSameUser(ctx, *accountUserID); err != nil {
+		if err := backend.CheckSiteAdminOrSameUser(ctx, r.DB, *accountUserID); err != nil {
 			return nil, err
 		}
 	} else {
@@ -132,7 +132,7 @@ func (r ProductSubscriptionLicensingResolver) PreviewProductSubscriptionInvoice(
 		}
 		// 🚨 SECURITY: Only site admins and the subscription's account owner may preview invoices
 		// for product subscriptions.
-		if err := backend.CheckSiteAdminOrSameUser(ctx, subToUpdate.v.UserID); err != nil {
+		if err := backend.CheckSiteAdminOrSameUser(ctx, r.DB, subToUpdate.v.UserID); err != nil {
 			return nil, err
 		}
 

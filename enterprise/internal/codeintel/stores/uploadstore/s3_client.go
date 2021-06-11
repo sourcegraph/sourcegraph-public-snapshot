@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"strings"
 	"sync"
 	"time"
@@ -15,9 +14,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -130,7 +129,7 @@ func (s *s3Store) Get(ctx context.Context, key string) (_ io.ReadCloser, err err
 		}
 	})
 
-	return ioutil.NopCloser(reader), nil
+	return io.NopCloser(reader), nil
 }
 
 // ioCopyHook is a pointer to io.Copy. This function is replaced in unit tests so that we can

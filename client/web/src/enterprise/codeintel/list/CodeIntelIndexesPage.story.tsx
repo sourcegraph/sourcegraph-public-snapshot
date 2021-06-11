@@ -26,6 +26,7 @@ add('Page', () => {
             finishedAt: null,
             placeInQueue: 3,
             failure: null,
+            associatedUpload: null,
         },
         {
             id: '2',
@@ -35,6 +36,7 @@ add('Page', () => {
             finishedAt: null,
             failure: null,
             placeInQueue: null,
+            associatedUpload: null,
         },
         {
             id: '3',
@@ -44,6 +46,7 @@ add('Page', () => {
             finishedAt: '2020-06-15T12:30:30+00:00',
             failure: null,
             placeInQueue: null,
+            associatedUpload: null,
         },
         {
             id: '4',
@@ -53,6 +56,7 @@ add('Page', () => {
             finishedAt: '2020-06-15T12:30:30+00:00',
             failure: 'Whoops! The server encountered a boo-boo handling this input.',
             placeInQueue: null,
+            associatedUpload: null,
         }
     )
 

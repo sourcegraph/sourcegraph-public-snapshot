@@ -3,8 +3,9 @@
 > NOTE: Please see install instructions for [macOS](#macos) and [Ubuntu](#ubuntu) in succeeding sections.
 
 Sourcegraph has the following dependencies:
+
 - [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) (v2.18 or higher)
-- [Go](https://golang.org/doc/install) (v1.14 or higher)
+- [Go](https://golang.org/doc/install) (see current version in [`.tool-versions`](https://github.com/sourcegraph/sourcegraph/blob/main/.tool-versions))
 - [Node JS](https://nodejs.org/en/download/) (see current recommended version in [.nvmrc](https://github.com/sourcegraph/sourcegraph/blob/main/.nvmrc))
 - [make](https://www.gnu.org/software/make/)
 - [Docker](https://docs.docker.com/engine/installation/) (v18 or higher)
@@ -16,6 +17,14 @@ Sourcegraph has the following dependencies:
 - [Golang Migrate](https://github.com/golang-migrate/migrate/) (v4.7.0 or higher)
 - [Comby](https://github.com/comby-tools/comby/) (v0.11.3 or higher)
 - [Watchman](https://facebook.github.io/watchman/)
+
+You can choose to install Redis and/or PostgreSQL directly on your system, or you can run them as docker containers with [docker compose](https://docs.docker.com/compose/). The following instructions will describe both options.
+
+Running within a container provides some advantages such as storing the data separately from the container, you do not need to run it as a system service and its easy to use different database versions or multiple databases.
+
+Running as system services might yield better performance, especially on macOS.
+
+No matter which option you choose, docker is required because the development server starts additional docker containers.
 
 The following are two recommendations for installing these dependencies:
 
@@ -30,13 +39,28 @@ The following are two recommendations for installing these dependencies:
     brew install --cask docker
     ```
 
-3.  Install Go, Node Version Manager, PostgreSQL, Redis, Git, golang-migrate, Comby, SQLite tools, and jq with the following command:
+3.  Install Go, Yarn, Git, golang-migrate, Comby, SQLite tools, and jq with the following command:
 
     ```
-    brew install go yarn redis postgresql git gnu-sed golang-migrate comby sqlite pcre FiloSottile/musl-cross/musl-cross jq watchman
+    brew install go yarn git gnu-sed golang-migrate comby sqlite pcre FiloSottile/musl-cross/musl-cross jq watchman
     ```
 
-4.  Install the Node Version Manager (`nvm`) using:
+4. (without docker) Install PostgreSQL and Redis
+
+    If you want to run Redis and/or PostgreSQL directly on your system install them with the follwing command:
+
+    ```
+    brew install postgresql
+    brew install redis
+    ```
+
+5. (with docker) Install Docker Compose
+
+    We provide a docker compose file at `dev/compose.yml` to make it easy to run Redis and PostgreSQL as docker containers. Fortunately `docker-compose` comes with Docker for Mac so no additional step is required.
+
+    See the official [docker compose documentation](https://docs.docker.com/compose/install/).
+
+6.  Install the Node Version Manager (`nvm`) using:
 
     ```
     NVM_VERSION="$(curl https://api.github.com/repos/nvm-sh/nvm/releases/latest | jq -r .name)"
@@ -48,7 +72,7 @@ The following are two recommendations for installing these dependencies:
     `source ~/.zshrc`) or restart your terminal session to pick up the `nvm`
     definitions. Re-running the install script will update the installation.
 
-    Note: `nvm` is implemented as a shell function, so it may not show up in
+    > NOTE: `nvm` is implemented as a shell function, so it may not show up in
     the output of `which nvm`. Use `type nvm` to verify whether it is set up.
     There is also a Homebrew package for `nvm`, but it is unsupported by the
     `nvm` maintainers.
@@ -62,7 +86,7 @@ The following are two recommendations for installing these dependencies:
 
     * Then add the following to your `config.fish`:
 
-        ```
+        ```sh
         function nvm
           bass source ~/.nvm/nvm.sh --no-use ';' nvm $argv
         end
@@ -70,7 +94,7 @@ The following are two recommendations for installing these dependencies:
         set -x NVM_DIR ~/.nvm
         ```
 
-5.  Install the current recommended version of Node JS by running the following
+7.  Install the current recommended version of Node JS by running the following
     from the working directory of a sourcegraph repository clone:
 
     ```
@@ -81,20 +105,22 @@ The following are two recommendations for installing these dependencies:
     After doing this, `node -v` should show the same version mentioned in
     `.nvmrc` at the root of the sourcegraph repository.
 
-    Note: Although there is a Homebrew package for Node, we advise using `nvm`
+    > NOTE: Although there is a Homebrew package for Node, we advise using `nvm`
     instead, to ensure you get a Node version compatible with the current state
     of the sourcegraph repository.
 
-6.  Configure PostgreSQL and Redis to start automatically
+8.  (optional) Configure PostgreSQL and Redis to start automatically
+
+    If you have installed PostgreSQL and Redis directly on your system, start them with the following commands:
 
     ```
     brew services start postgresql
     brew services start redis
     ```
 
-    (You can stop them later by calling `stop` instead of `start` above.)
+    You can stop them later by calling `stop` instead of `start` above.
 
-7.  Ensure `psql`, the PostgreSQL command line client, is on your `$PATH`.
+9.  Ensure `psql`, the PostgreSQL command line client, is on your `$PATH`.
     Homebrew does not put it there by default. Homebrew gives you the command to run to insert `psql` in your path in the "Caveats" section of `brew info postgresql`. Alternatively, you can use the command below. It might need to be adjusted depending on your Homebrew prefix (`/usr/local` below) and shell (bash below).
 
     ```
@@ -102,7 +128,7 @@ The following are two recommendations for installing these dependencies:
     source ~/.bash_profile
     ```
 
-8.  Open a new Terminal window to ensure `psql` is now on your `$PATH`.
+10.  Open a new Terminal window to ensure `psql` is now on your `$PATH`.
 
 ## Ubuntu
 
@@ -131,7 +157,11 @@ The following are two recommendations for installing these dependencies:
 3. Install dependencies:
 
     ```
-    sudo apt install -y make git-all postgresql postgresql-contrib redis-server libpcre3-dev libsqlite3-dev pkg-config golang-go musl-tools docker-ce docker-ce-cli containerd.io yarn jq libnss3-tools
+    sudo apt install -y make git-all libpcre3-dev libsqlite3-dev pkg-config golang-go musl-tools docker-ce docker-ce-cli containerd.io yarn jq libnss3-tools
+
+    # (without docker) install PostgreSQL and/or Redis if you don't want to run them as docker containers
+    sudo apt install -y redis-server
+    sudo apt install -y postgresql postgresql-contrib
 
     # install golang-migrate (you must rename the extracted binary to `golang-migrate` and move the binary into your $PATH)
     curl -L https://github.com/golang-migrate/migrate/releases/download/v4.7.0/migrate.linux-amd64.tar.gz | tar xvz
@@ -159,27 +189,22 @@ The following are two recommendations for installing these dependencies:
     nvm install
     ```
 
-4. Configure startup services
+3. (with docker) Install Docker Compose
+
+    We provide a docker compose file at `dev/compose.yml` to make it easy to run Redis and PostgreSQL as docker containers.
+
+    > NOTE: Although Ubuntu provides a `docker-compose` package, we recommend to install the latest version via `pip` so that it is compatible with our compose file.
+
+    See the official [docker compose documentation](https://docs.docker.com/compose/install/) for more details on different installation options.
+
+4. (without docker) Configure startup services
+
+    If you have installed PostgreSQL and Redis directly on your system, start them with the following commands:
 
     ```
-    sudo systemctl enable postgresql
-    sudo systemctl enable redis-server.service
+    sudo systemctl enable --now postgresql
+    sudo systemctl enable --now redis-server.service
     ```
-
-5. (optional) You can also run Redis using Docker
-
-    In this case you should not enable the `redis-server.service` from the previous step.
-
-    ```
-    dockerd # if docker isn't already running
-    docker run -p 6379:6379 -v $REDIS_DATA_DIR redis
-    # $REDIS_DATA_DIR should be an absolute path to a folder where you intend to store Redis data
-    ```
-
-    You need to have Redis running when you start the dev server later on. If you have issues running Docker, try [adding your user to the docker group][dockerGroup], and/or [updating the socket file permissions][socketPermissions], or try running these commands under `sudo`.
-
-    [dockerGroup]: https://stackoverflow.com/a/48957722
-    [socketPermissions]: https://stackoverflow.com/a/51362528
 
 ## (optional) asdf
 

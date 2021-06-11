@@ -406,7 +406,7 @@ export const CommandListPopoverButton: React.FunctionComponent<CommandListPopove
             id={id}
             onClick={toggleIsOpen}
         >
-            <ConsoleIcon className="icon-inline" />
+            <ConsoleIcon className="icon-inline-md" />
 
             {showCaret && <MenuDropdownIcon />}
 

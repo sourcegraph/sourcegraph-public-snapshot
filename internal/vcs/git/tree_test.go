@@ -3,6 +3,7 @@ package git
 import (
 	"bytes"
 	"context"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -51,7 +52,7 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 		t.Errorf("file1 Stat !IsRegular (mode: %o)", file1Info.Mode())
 	}
 
-	checkSymlinkFileInfo := func(name string, link os.FileInfo) {
+	checkSymlinkFileInfo := func(name string, link fs.FileInfo) {
 		t.Helper()
 		if link.Mode()&os.ModeSymlink == 0 {
 			t.Errorf("link mode is not symlink (mode: %o)", link.Mode())
@@ -403,7 +404,7 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		checkSubmoduleFileInfo := func(label string, submod os.FileInfo) {
+		checkSubmoduleFileInfo := func(label string, submod fs.FileInfo) {
 			if want := "submod"; submod.Name() != want {
 				t.Errorf("%s: submod.Name(): got %q, want %q", label, submod.Name(), want)
 			}
@@ -430,7 +431,7 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 			}
 		}
 
-		// Check the submodule os.FileInfo both when it's returned by
+		// Check the submodule fs.FileInfo both when it's returned by
 		// Stat and when it's returned in a list by ReadDir.
 		submod, err := Stat(ctx, test.repo, commitID, "submod")
 		if err != nil {

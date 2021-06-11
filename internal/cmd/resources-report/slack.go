@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 )
@@ -102,7 +102,7 @@ func sendSlackBlocks(ctx context.Context, webhook string, blocks []slackBlock) e
 	}
 	if resp.StatusCode != 200 {
 		defer resp.Body.Close()
-		message, err := ioutil.ReadAll(resp.Body)
+		message, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return fmt.Errorf("failed to post report to slack: %s", resp.Status)
 		}
