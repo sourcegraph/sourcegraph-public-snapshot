@@ -7,6 +7,7 @@ import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { PatternTypeProps, CaseSensitivityProps, OnboardingTourProps, SearchContextInputProps } from '..'
 import { AuthenticatedUser } from '../../auth'
@@ -65,6 +66,10 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
                 autoFocus={autoFocus}
                 showSearchContextHighlightTourStep={true}
                 isSearchOnboardingTourVisible={false}
+                acceptSearchSuggestionOnEnter={
+                    !isErrorLike(props.settingsCascade.final) &&
+                    props.settingsCascade.final?.experimentalFeatures?.acceptSearchSuggestionOnEnter
+                }
             />
         </Form>
     )

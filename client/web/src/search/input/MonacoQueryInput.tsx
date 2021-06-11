@@ -25,6 +25,7 @@ export interface MonacoQueryInputProps
         Pick<CaseSensitivityProps, 'caseSensitive'>,
         Pick<PatternTypeProps, 'patternType'>,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
+        Pick<SearchContextProps, 'acceptSearchSuggestionOnEnter'>,
         VersionContextProps {
     isSourcegraphDotCom: boolean // significant for query suggestions
     queryState: QueryState
@@ -159,6 +160,7 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     isSourcegraphDotCom,
     isLightTheme,
     className,
+    acceptSearchSuggestionOnEnter,
 }) => {
     const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
 
@@ -323,6 +325,22 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
         if (!editor) {
             return
         }
+
+        if (!acceptSearchSuggestionOnEnter) {
+            // Unconditionally trigger the search when pressing `Enter`,
+            // including when there are visible completion suggestions.
+            const disposable = editor.addAction({
+                id: 'submitOnEnter',
+                label: 'submitOnEnter',
+                keybindings: [Monaco.KeyCode.Enter],
+                run: () => {
+                    onSubmit()
+                    editor.trigger('submitOnEnter', 'hideSuggestWidget', [])
+                },
+            })
+            return () => disposable.dispose()
+        }
+
         const run = (): void => {
             onSubmit()
             editor.trigger('submitOnEnter', 'hideSuggestWidget', [])
@@ -351,7 +369,7 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
                 disposable.dispose()
             }
         }
-    }, [editor, onSubmit])
+    }, [editor, onSubmit, acceptSearchSuggestionOnEnter])
 
     const options: Monaco.editor.IStandaloneEditorConstructionOptions = {
         readOnly: false,

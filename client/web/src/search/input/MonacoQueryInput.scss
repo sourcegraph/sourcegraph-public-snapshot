@@ -32,6 +32,22 @@
         }
 
         .suggest-widget .monaco-list .monaco-list-row.focused.string-label > .contents > .main > .right {
+            // Show keyboard tip to press Tab to complete
+            &::after {
+                content: 'Tab';
+                display: flex;
+                align-items: center;
+                border: 1px solid var(--text-muted);
+                border-radius: 0.25rem;
+                height: 1.25rem;
+                margin-top: 0.375rem;
+                font-size: 0.65rem;
+                line-height: 1;
+                padding: 0.25rem 0.375rem;
+                color: var(--text-muted);
+                opacity: 0.75;
+            }
+
             // Restore old look of "Read more" icon
             > .readMore {
                 position: static;

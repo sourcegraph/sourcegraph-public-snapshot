@@ -9,6 +9,7 @@ import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps, isSettingsValid } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import {
     PatternTypeProps,
@@ -120,6 +121,10 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                         onSubmit={onSubmit}
                         autoFocus={showOnboardingTour ? shouldFocusQueryInput : props.autoFocus !== false}
                         showSearchContextHighlightTourStep={true}
+                        acceptSearchSuggestionOnEnter={
+                            !isErrorLike(props.settingsCascade.final) &&
+                            props.settingsCascade.final?.experimentalFeatures?.acceptSearchSuggestionOnEnter
+                        }
                     />
                 </div>
                 {props.showQueryBuilder && (
