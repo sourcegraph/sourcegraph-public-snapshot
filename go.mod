@@ -127,7 +127,6 @@ require (
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/peterbourgon/ff v1.7.0
 	github.com/peterhellberg/link v1.1.0
-	github.com/pkg/errors v0.9.1
 	github.com/pquerna/cachecontrol v0.0.0-20200819021114-67c6ae64274f // indirect
 	github.com/princjef/gomarkdoc v0.1.3
 	github.com/prometheus/alertmanager v0.21.0
