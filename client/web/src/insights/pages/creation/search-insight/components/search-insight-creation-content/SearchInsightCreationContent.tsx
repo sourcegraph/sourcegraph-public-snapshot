@@ -15,6 +15,7 @@ import { SearchInsightLivePreview } from '../live-preview-chart/SearchInsightLiv
 import { SearchInsightCreationForm } from '../search-insight-creation-form/SearchInsightCreationForm'
 
 import { useEditableSeries, createDefaultEditSeries } from './hooks/use-editable-series'
+import { INITIAL_INSIGHT_VALUES } from './initial-insight-values'
 import styles from './SearchInsightCreationContent.module.scss'
 import {
     repositoriesExistValidator,
@@ -22,18 +23,6 @@ import {
     requiredStepValueField,
     seriesRequired,
 } from './validators'
-
-const INITIAL_VALUES: CreateInsightFormFields = {
-    visibility: 'personal',
-    // If user opens creation form to create insight
-    // we want to show the series form as soon as possible without
-    // force user to click 'add another series' button
-    series: [createDefaultEditSeries({ edit: true })],
-    step: 'months',
-    stepValue: '2',
-    title: '',
-    repositories: '',
-}
 
 export interface SearchInsightCreationContentProps {
     /** This component might be used in edit or creation insight case. */
@@ -61,7 +50,7 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
         mode = 'creation',
         organizations = [],
         settings,
-        initialValue = INITIAL_VALUES,
+        initialValue = INITIAL_INSIGHT_VALUES,
         className,
         dataTestId,
         onSubmit,
