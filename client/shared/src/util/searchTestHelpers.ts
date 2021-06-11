@@ -7,7 +7,7 @@ import { pretendProxySubscribable, pretendRemote } from '../api/util'
 import { Controller } from '../extensions/controller'
 import { AggregateStreamingSearchResults, FileLineMatch, RepositoryMatch } from '../search/stream'
 
-export const RESULT = {
+export const RESULT: FileLineMatch = {
     type: 'file',
     name: '.travis.yml',
     version: 'e64efc72b421e893cbf63f17ba2221e7d6d0b0f3',
@@ -19,14 +19,14 @@ export const RESULT = {
             offsetAndLengths: [[7, 4]],
         },
     ],
-} as FileLineMatch
+}
 
-export const REPO_MATCH_RESULT = {
+export const REPO_MATCH_RESULT: RepositoryMatch = {
     type: 'repo',
     repository: 'github.com/golang/oauth2',
-} as RepositoryMatch
+}
 
-export const MULTIPLE_MATCH_RESULT = {
+export const MULTIPLE_MATCH_RESULT: FileLineMatch = {
     type: 'file',
     name: 'clientcredentials/clientcredentials_test.go',
     version: 'e64efc72b421e893cbf63f17ba2221e7d6d0b0f3',
@@ -88,9 +88,9 @@ export const MULTIPLE_MATCH_RESULT = {
             offsetAndLengths: [[8, 4]],
         },
     ],
-} as FileLineMatch
+}
 
-export const SEARCH_RESULT = {
+export const SEARCH_RESULT: AggregateStreamingSearchResults = {
     state: 'complete',
     progress: {
         durationMs: 78,
@@ -109,9 +109,9 @@ export const SEARCH_RESULT = {
         },
     ],
     results: [RESULT],
-} as AggregateStreamingSearchResults
+}
 
-export const MULTIPLE_SEARCH_RESULT = {
+export const MULTIPLE_SEARCH_RESULT: AggregateStreamingSearchResults = {
     ...SEARCH_RESULT,
     progress: {
         durationMs: 78,
@@ -125,7 +125,6 @@ export const MULTIPLE_SEARCH_RESULT = {
             type: 'file',
             name: 'example_test.go',
             repository: 'github.com/golang/oauth2',
-            version: 'e64efc72b421e893cbf63f17ba2221e7d6d0b0f3',
             lineMatches: [
                 {
                     line: 'package oauth2_test',
@@ -133,9 +132,9 @@ export const MULTIPLE_SEARCH_RESULT = {
                     offsetAndLengths: [[15, 4]],
                 },
             ],
-        } as FileLineMatch,
+        },
     ],
-} as AggregateStreamingSearchResults
+}
 
 export const HIGHLIGHTED_FILE_LINES = [
     [
