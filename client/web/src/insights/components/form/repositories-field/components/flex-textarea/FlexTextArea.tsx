@@ -7,7 +7,7 @@ import styles from './FlexTextarea.module.scss'
  * Sync value of line height with our global styles
  * See line-height-base scss variable with 20/14 value.
  */
-const TEXTAREA_LINE_HEIGHT = 20
+const DEFAULT_TEXTAREA_LINE_HEIGHT = 20
 
 export type IProps = {
     initialRow?: number
@@ -38,11 +38,12 @@ export const FlexTextArea = forwardRef((props: IProps, reference: Ref<HTMLInputE
         }
 
         const previousRows = target.rows
+        const textareaLineHeight = parseFloat(getComputedStyle(target).lineHeight) ?? DEFAULT_TEXTAREA_LINE_HEIGHT
 
         // reset number of rows in textarea
         target.rows = minRows
 
-        const currentRows = Math.floor(target.scrollHeight / TEXTAREA_LINE_HEIGHT)
+        const currentRows = Math.floor(target.scrollHeight / textareaLineHeight)
 
         if (currentRows === previousRows) {
             target.rows = currentRows
