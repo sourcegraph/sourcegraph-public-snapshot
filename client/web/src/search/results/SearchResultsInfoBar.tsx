@@ -25,7 +25,7 @@ import { SearchPatternType } from '../../graphql-operations'
 import styles from '../FeatureTour.module.scss'
 import { getTourOptions, useFeatureTour } from '../useFeatureTour'
 
-const HAS_SEEN_FEATURE_TOUR_KEY = 'has-seen-create-code-monitor-feature-tour-step'
+const HAS_SEEN_FEATURE_TOUR_KEY = 'has-seen-create-code-monitor-feature-tour'
 
 function getFeatureTourElement(onClose: () => void): HTMLElement {
     const container = document.createElement('div')
