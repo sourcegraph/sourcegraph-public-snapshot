@@ -4,7 +4,7 @@ import (
 	"context"
 	"math"
 	"regexp"
-	"sync"
+	"runtime"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -127,58 +127,57 @@ func repoRevsToRepoMatches(ctx context.Context, repos []*search.RepositoryRevisi
 
 func matchRepos(pattern *regexp.Regexp, resolved []*search.RepositoryRevisions, results chan<- []*search.RepositoryRevisions) {
 	/*
-		Local benchmarks showed diminishing returns for higher levels of concurrency.
-		5 workers seems to be a good trade-off for now. We might want to revisit this
-		benchmark over time.
-
-		go test -cpu 1,2,3,4,5,6,7,8,9,10 -count=5 -bench=SearchRepo .
-
-		   goos: darwin
-		   goarch: amd64
-		   pkg: github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend
-		   BenchmarkSearchRepositories       	      13	 132088878 ns/op
-		   BenchmarkSearchRepositories-2     	      16	  69968357 ns/op
-		   BenchmarkSearchRepositories-3     	      24	  48294832 ns/op
-		   BenchmarkSearchRepositories-4     	      28	  42497674 ns/op
-		   BenchmarkSearchRepositories-5     	      27	  42851670 ns/op
-		   BenchmarkSearchRepositories-6     	      28	  39327860 ns/op
-		   BenchmarkSearchRepositories-7     	      27	  38198665 ns/op
-		   BenchmarkSearchRepositories-8     	      28	  38877182 ns/op
-		   BenchmarkSearchRepositories-9     	      26	  42457771 ns/op
-		   BenchmarkSearchRepositories-10    	      26	  40519692 ns/op
+		goos: linux
+		goarch: amd64
+		pkg: github.com/sourcegraph/sourcegraph/internal/search/run
+		cpu: Intel(R) Core(TM) i9-8950HK CPU @ 2.90GHz
+		BenchmarkSearchRepositories-8   	      39	  31514267 ns/op
+		BenchmarkSearchRepositories-8   	      26	  38898255 ns/op
+		BenchmarkSearchRepositories-8   	      36	  31482727 ns/op
+		BenchmarkSearchRepositories-8   	      33	  30513691 ns/op
+		BenchmarkSearchRepositories-8   	      30	  37038388 ns/op
+		BenchmarkSearchRepositories-8   	      30	  38095363 ns/op
+		BenchmarkSearchRepositories-8   	      36	  39347784 ns/op
+		BenchmarkSearchRepositories-8   	      28	  41431416 ns/op
+		BenchmarkSearchRepositories-8   	      30	  41695426 ns/op
+		BenchmarkSearchRepositories-8   	      28	  39782412 ns/op
+		PASS
+		ok  	github.com/sourcegraph/sourcegraph/internal/search/run	18.729s
 	*/
-	step := len(resolved) / 5 // for benchmarking, replace 5 with runtime.GOMAXPROCS(0)
-	if step == 0 {
-		step = len(resolved)
-	} else {
-		step += 1
-	}
+	workers := runtime.NumCPU()
+	limit := len(resolved) / workers
 
-	var wg sync.WaitGroup
-	offset := 0
-	for offset < len(resolved) {
-		next := offset + step
-		if next > len(resolved) {
-			next = len(resolved)
+	last := make(chan struct{})
+	close(last)
+
+	for i := 0; i < workers; i++ {
+		page := resolved[i*limit : i*limit+limit]
+		if i == workers-1 {
+			page = resolved[i*limit:]
 		}
-		wg.Add(1)
-		go func(repos []*search.RepositoryRevisions) {
-			defer wg.Done()
+
+		wait := last
+		done := make(chan struct{})
+		last = done
+
+		go func() {
+			defer close(done)
 
 			var matched []*search.RepositoryRevisions
-			for _, r := range repos {
+			for _, r := range page {
 				if pattern.MatchString(string(r.Repo.Name)) {
 					matched = append(matched, r)
 				}
 			}
-			if len(matched) > 0 {
-				results <- matched
-			}
-		}(resolved[offset:next])
-		offset = next
+
+			// Wait for the previous chunk to send its matches
+			// before sending ours.
+			<-wait
+			results <- matched
+		}()
 	}
 
-	wg.Wait()
+	<-last
 }
 
 // reposToAdd determines which repositories should be included in the result set based on whether they fit in the subset

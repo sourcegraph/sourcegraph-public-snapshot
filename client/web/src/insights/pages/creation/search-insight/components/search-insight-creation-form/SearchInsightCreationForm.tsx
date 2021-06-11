@@ -28,6 +28,7 @@ interface CreationSearchInsightFormProps {
     submitting: boolean
     submitted: boolean
     className?: string
+    isFormClearActive?: boolean
 
     title: useFieldAPI<CreateInsightFormFields['title']>
     repositories: useFieldAPI<CreateInsightFormFields['repositories']>
@@ -55,6 +56,8 @@ interface CreationSearchInsightFormProps {
     onEditSeriesCommit: (seriesIndex: number, editedSeries: EditableDataSeries) => void
     onEditSeriesCancel: (closedCardIndex: number) => void
     onSeriesRemove: (removedSeriesIndex: number) => void
+
+    onFormReset: () => void
 }
 
 /**
@@ -77,12 +80,14 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
         stepValue,
         step,
         className,
+        isFormClearActive,
         onCancel,
         onSeriesLiveChange,
         onEditSeriesRequest,
         onEditSeriesCommit,
         onEditSeriesCancel,
         onSeriesRemove,
+        onFormReset,
     } = props
 
     const isEditMode = mode === 'edit'
@@ -93,6 +98,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
             noValidate={true}
             ref={innerRef}
             onSubmit={handleSubmit}
+            onReset={onFormReset}
             className={classnames(className, 'd-flex flex-column')}
         >
             <FormGroup
@@ -219,7 +225,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
 
             <hr className={styles.creationInsightFormSeparator} />
 
-            <div>
+            <div className="d-flex flex-wrap align-items-baseline">
                 {submitErrors?.[FORM_ERROR] && <ErrorAlert error={submitErrors[FORM_ERROR]} />}
 
                 <LoaderButton
@@ -229,11 +235,15 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                     type="submit"
                     disabled={submitting}
                     data-testid="insight-save-button"
-                    className="btn btn-primary mr-2"
+                    className="btn btn-primary mr-2 mb-2"
                 />
 
-                <button type="button" className="btn btn-outline-secondary" onClick={onCancel}>
+                <button type="button" className="btn btn-outline-secondary mb-2 mr-auto" onClick={onCancel}>
                     Cancel
+                </button>
+
+                <button type="reset" disabled={!isFormClearActive} className="btn btn-outline-secondary border-0">
+                    Clear all fields
                 </button>
             </div>
         </form>

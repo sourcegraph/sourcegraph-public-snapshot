@@ -11,7 +11,7 @@
     "schema": "gulp schema",
     "graphql-operations": "gulp graphQlOperations",
     "watch-schema": "gulp watchSchema",
-    "download-puppeteer-browser":"TS_NODE_COMPILER_OPTIONS=\"{\\\"module\\\":\\\"commonjs\\\"}\" ts-node ./scripts/download-puppeteer-browser.ts"
+    "download-puppeteer-browser": "TS_NODE_COMPILER_OPTIONS=\"{\\\"module\\\":\\\"commonjs\\\"}\" ts-node ./scripts/download-puppeteer-browser.ts"
   },
   "sideEffects": true
 }

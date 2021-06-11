@@ -204,8 +204,8 @@ func testSyncerSync(t *testing.T, s *repos.Store) func(*testing.T) {
 				err:  "<nil>",
 			},
 			testCase{
-				// If the source is unauthorized we should treat this as if zero repos were returned as it indicates
-				// that the source no longer has access to its repos
+				// If the source is unauthorized we should treat this as if zero repos were
+				// returned as it indicates that the source no longer has access to its repos
 				name:    string(tc.repo.Name) + "/unauthorized",
 				sourcer: repos.NewFakeSourcer(&repos.ErrUnauthorized{}),
 				store:   s,
@@ -218,6 +218,22 @@ func testSyncerSync(t *testing.T, s *repos.Store) func(*testing.T) {
 				)}},
 				svcs: []*types.ExternalService{tc.svc},
 				err:  "bad credentials",
+			},
+			testCase{
+				// If the source is forbidden we should treat this as if zero repos were returned
+				// as it indicates that the source no longer has access to its repos
+				name:    string(tc.repo.Name) + "/forbidden",
+				sourcer: repos.NewFakeSourcer(&repos.ErrForbidden{}),
+				store:   s,
+				stored: types.Repos{tc.repo.With(
+					types.Opt.RepoSources(tc.svc.URN()),
+				)},
+				now: clock.Now,
+				diff: repos.Diff{Deleted: types.Repos{tc.repo.With(
+					types.Opt.RepoSources(tc.svc.URN(), svcdup.URN()),
+				)}},
+				svcs: []*types.ExternalService{tc.svc},
+				err:  "forbidden",
 			},
 			testCase{
 				// If the source account has been suspended we should treat this as if zero repos were returned as it indicates

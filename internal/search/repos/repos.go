@@ -63,7 +63,10 @@ func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 
 	excludePatterns := op.MinusRepoFilters
 
-	maxRepoListSize := SearchLimits().MaxRepos
+	limit := op.Limit
+	if limit == 0 {
+		limit = SearchLimits().MaxRepos
+	}
 
 	// If any repo groups are specified, take the intersection of the repo
 	// groups and the set of repos specified with repo:. (If none are specified
@@ -79,8 +82,8 @@ func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 
 		// Ensure we don't omit any repos explicitly included via a repo group. (Each explicitly
 		// listed repo generates at least one pattern.)
-		if len(patterns) > maxRepoListSize {
-			maxRepoListSize = len(patterns)
+		if len(patterns) > limit {
+			limit = len(patterns)
 		}
 	}
 
@@ -123,8 +126,8 @@ func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 		tr.LazyPrintf("defaultrepos: took %s to add %d repos", time.Since(start), len(defaultRepos))
 
 		// Search all default repos since indexed search is fast.
-		if len(defaultRepos) > maxRepoListSize {
-			maxRepoListSize = len(defaultRepos)
+		if len(defaultRepos) > limit {
+			limit = len(defaultRepos)
 		}
 	}
 
@@ -132,17 +135,18 @@ func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 	var excluded ExcludedRepos
 	if len(defaultRepos) > 0 {
 		repos = defaultRepos
-		if len(repos) > maxRepoListSize {
-			repos = repos[:maxRepoListSize]
+		if len(repos) > limit {
+			repos = repos[:limit]
 		}
 	} else {
 		tr.LazyPrintf("Repos.List - start")
+
 		options := database.ReposListOptions{
 			IncludePatterns: includePatterns,
 			Names:           versionContextRepositories,
 			ExcludePattern:  UnionRegExps(excludePatterns),
 			// List N+1 repos so we can see if there are repos omitted due to our repo limit.
-			LimitOffset:  &database.LimitOffset{Limit: maxRepoListSize + 1},
+			LimitOffset:  &database.LimitOffset{Limit: limit + 1},
 			NoForks:      op.NoForks,
 			OnlyForks:    op.OnlyForks,
 			NoArchived:   op.NoArchived,
@@ -156,6 +160,16 @@ func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 		} else if searchContext.NamespaceUserID != 0 {
 			options.UserID = searchContext.NamespaceUserID
 			options.IncludeUserPublicRepos = true
+		}
+
+		if op.Ranked {
+			options.OrderBy = database.RepoListOrderBy{
+				{
+					Field:      database.RepoListStars,
+					Descending: true,
+					Nulls:      "LAST",
+				},
+			}
 		}
 
 		// PERF: We Query concurrently since Count and List call can be slow
@@ -175,7 +189,7 @@ func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 			return Resolved{}, err
 		}
 	}
-	overLimit := len(repos) >= maxRepoListSize
+	overLimit := len(repos) >= limit
 	repoRevs := make([]*search.RepositoryRevisions, 0, len(repos))
 	var missingRepoRevs []*search.RepositoryRevisions
 	tr.LazyPrintf("Associate/validate revs - start")
@@ -309,6 +323,8 @@ type Options struct {
 	CommitAfter        string
 	OnlyPrivate        bool
 	OnlyPublic         bool
+	Ranked             bool // Return results ordered by rank
+	Limit              int
 	Query              query.Q
 }
 

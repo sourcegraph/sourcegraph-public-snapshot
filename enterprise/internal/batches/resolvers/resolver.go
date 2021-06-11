@@ -1144,27 +1144,9 @@ func (r *Resolver) DetachChangesets(ctx context.Context, args *graphqlbackend.De
 		return nil, err
 	}
 
-	batchChangeID, err := unmarshalBatchChangeID(args.BatchChange)
+	batchChangeID, changesetIDs, err := unmarshalBulkOperationBaseArgs(args.BulkOperationBaseArgs)
 	if err != nil {
 		return nil, err
-	}
-
-	if batchChangeID == 0 {
-		return nil, ErrIDIsZero{}
-	}
-
-	var changesetIDs []int64
-	for _, raw := range args.Changesets {
-		id, err := unmarshalChangesetID(raw)
-		if err != nil {
-			return nil, err
-		}
-
-		if id == 0 {
-			return nil, ErrIDIsZero{}
-		}
-
-		changesetIDs = append(changesetIDs, id)
 	}
 
 	// 🚨 SECURITY: CreateChangesetJobs checks whether current user is authorized.
@@ -1201,35 +1183,14 @@ func (r *Resolver) CreateChangesetComments(ctx context.Context, args *graphqlbac
 		return nil, errors.New("empty comment body is not allowed")
 	}
 
-	batchChangeID, err := unmarshalBatchChangeID(args.BatchChange)
+	batchChangeID, changesetIDs, err := unmarshalBulkOperationBaseArgs(args.BulkOperationBaseArgs)
 	if err != nil {
 		return nil, err
 	}
 
-	if batchChangeID == 0 {
-		return nil, ErrIDIsZero{}
-	}
-
-	var changesetIDs []int64
-	for _, raw := range args.Changesets {
-		id, err := unmarshalChangesetID(raw)
-		if err != nil {
-			return nil, err
-		}
-
-		if id == 0 {
-			return nil, ErrIDIsZero{}
-		}
-
-		changesetIDs = append(changesetIDs, id)
-	}
-
-	if len(changesetIDs) == 0 {
-		return nil, errors.New("specify at least one changeset")
-	}
-
 	// 🚨 SECURITY: CreateChangesetJobs checks whether current user is authorized.
 	svc := service.New(r.store)
+	published := btypes.ChangesetPublicationStatePublished
 	bulkGroupID, err := svc.CreateChangesetJobs(
 		ctx,
 		batchChangeID,
@@ -1241,6 +1202,43 @@ func (r *Resolver) CreateChangesetComments(ctx context.Context, args *graphqlbac
 		store.ListChangesetsOpts{
 			// Also include archived changesets, we allow commenting on them as well.
 			IncludeArchived: true,
+			// We can only comment on published changesets.
+			PublicationState: &published,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return r.bulkOperationByIDString(ctx, bulkGroupID)
+}
+
+func (r *Resolver) ReenqueueChangesets(ctx context.Context, args *graphqlbackend.ReenqueueChangesetsArgs) (_ graphqlbackend.BulkOperationResolver, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.ReenqueueChangesets", fmt.Sprintf("BatchChange: %q, len(Changesets): %d", args.BatchChange, len(args.Changesets)))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+	if err := batchChangesEnabled(ctx, r.store.DB()); err != nil {
+		return nil, err
+	}
+
+	batchChangeID, changesetIDs, err := unmarshalBulkOperationBaseArgs(args.BulkOperationBaseArgs)
+	if err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: CreateChangesetJobs checks whether current user is authorized.
+	svc := service.New(r.store)
+	bulkGroupID, err := svc.CreateChangesetJobs(
+		ctx,
+		batchChangeID,
+		changesetIDs,
+		btypes.ChangesetJobTypeReenqueue,
+		&btypes.ChangesetJobReenqueuePayload{},
+		store.ListChangesetsOpts{
+			// Only allow to retry failed changesets.
+			ReconcilerStates: []btypes.ReconcilerState{btypes.ReconcilerStateFailed},
 		},
 	)
 	if err != nil {
@@ -1288,4 +1286,34 @@ const defaultMaxFirstParam = 10000
 
 func validateFirstParamDefaults(first int32) error {
 	return validateFirstParam(first, defaultMaxFirstParam)
+}
+
+func unmarshalBulkOperationBaseArgs(args graphqlbackend.BulkOperationBaseArgs) (batchChangeID int64, changesetIDs []int64, err error) {
+	batchChangeID, err = unmarshalBatchChangeID(args.BatchChange)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	if batchChangeID == 0 {
+		return 0, nil, ErrIDIsZero{}
+	}
+
+	for _, raw := range args.Changesets {
+		id, err := unmarshalChangesetID(raw)
+		if err != nil {
+			return 0, nil, err
+		}
+
+		if id == 0 {
+			return 0, nil, ErrIDIsZero{}
+		}
+
+		changesetIDs = append(changesetIDs, id)
+	}
+
+	if len(changesetIDs) == 0 {
+		return 0, nil, errors.New("specify at least one changeset")
+	}
+
+	return batchChangeID, changesetIDs, nil
 }

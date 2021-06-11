@@ -75,10 +75,10 @@ type FeatureFlagRollout struct {
 	// Rollout is an integer between 0 and 10000, representing the percent of
 	// users for which this feature flag will evaluate to 'true' in increments
 	// of 0.01%
-	Rollout int
+	Rollout int32
 }
 
-type FeatureFlagOverride struct {
+type Override struct {
 	UserID   *int32
 	OrgID    *int32
 	FlagName string

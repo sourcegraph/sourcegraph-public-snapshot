@@ -123,6 +123,17 @@ func IsUnauthorized(err error) bool {
 	})
 }
 
+// IsForbidden will check if err or one of its causes is a forbidden error.
+func IsForbidden(err error) bool {
+	type forbiddener interface {
+		Forbidden() bool
+	}
+	return isErrorPredicate(err, func(err error) bool {
+		e, ok := err.(forbiddener)
+		return ok && e.Forbidden()
+	})
+}
+
 // IsAccountSuspended will check if err or one of its causes was due to the
 // account being suspended
 func IsAccountSuspended(err error) bool {
