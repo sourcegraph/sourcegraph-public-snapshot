@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/go-enry/go-enry/v2"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 )

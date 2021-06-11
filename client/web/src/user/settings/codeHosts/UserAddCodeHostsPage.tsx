@@ -114,7 +114,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 
     const getGitHubUpdateAuthBanner = (needsUpdate: boolean): JSX.Element | null =>
         needsUpdate ? (
-            <div className="alert alert-info mb-4" role="alert" key="add-repos">
+            <div className="alert alert-info mb-4" role="alert" key="update-github">
                 Update your GitHub code host connection to search private code with Sourcegraph.
             </div>
         ) : null

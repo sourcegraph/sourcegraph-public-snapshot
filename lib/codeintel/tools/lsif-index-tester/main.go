@@ -12,7 +12,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/inconshreveable/log15"
