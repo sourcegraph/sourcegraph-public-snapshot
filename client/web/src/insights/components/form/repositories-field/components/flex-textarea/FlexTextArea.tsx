@@ -3,6 +3,12 @@ import React, { forwardRef, InputHTMLAttributes, Ref, useEffect, useImperativeHa
 
 import styles from './FlexTextarea.module.scss'
 
+/**
+ * Sync value of line height with our global styles
+ * See line-height-base scss variable with 20/14 value.
+ */
+const TEXTAREA_LINE_HEIGHT = 20
+
 export type IProps = {
     initialRow?: number
     minRows?: number
@@ -25,7 +31,6 @@ export const FlexTextArea = forwardRef((props: IProps, reference: Ref<HTMLInputE
     useImperativeHandle(reference, () => (innerReference.current as unknown) as HTMLInputElement)
 
     useEffect(() => {
-        const textareaLineHeight = 22
         const target = innerReference.current
 
         if (!target) {
@@ -33,9 +38,11 @@ export const FlexTextArea = forwardRef((props: IProps, reference: Ref<HTMLInputE
         }
 
         const previousRows = target.rows
-        target.rows = minRows // reset number of rows in textarea
 
-        const currentRows = Math.floor(target.scrollHeight / textareaLineHeight)
+        // reset number of rows in textarea
+        target.rows = minRows
+
+        const currentRows = Math.floor(target.scrollHeight / TEXTAREA_LINE_HEIGHT)
 
         if (currentRows === previousRows) {
             target.rows = currentRows
