@@ -848,7 +848,7 @@ func (o *alertObserver) Done(stats *streaming.Stats) (*searchAlert, error) {
 	}
 
 	if !o.hasResults && stats.Status.All(search.RepoStatusTimedout) && stats.Status.Len() == len(stats.Repos) {
-		return alertForTimeout(o.Inputs), nil
+		o.update(alertForTimeout(o.Inputs))
 	}
 
 	if o.hasResults && o.err != nil {
