@@ -44,6 +44,7 @@ All notable changes to Sourcegraph are documented in this file.
   - **Promoting extensibility:** We've brought the extension registry back to the main navigation and improved its design and navigation.
 
   With bulk of the redesign complete, future releases will include more improvements and refinements.
+- Pressing `Enter` in the search bar now selects completion suggestions, when visible, instead of triggering a search. Use `Cmd/Ctrl + Enter` to trigger a search if there are visible completion suggestions. [#21962](https://github.com/sourcegraph/sourcegraph/pull/21962)
 
 ### Fixed
 
