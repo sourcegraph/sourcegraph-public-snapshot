@@ -168,7 +168,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
     className="hierarchical-locations-view "
   >
     <div
-      className="resizable resizable--right hierarchical-locations-view__resizable"
+      className="resizable hierarchical-locations-view__resizable"
       style={
         Object {
           "width": "200px",
@@ -236,7 +236,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
         </button>
       </div>
       <div
-        className="resizable__handle resizable__handle--right "
+        className="handle handleRight hierarchical-locations-view__resizable-handle"
         onMouseDown={[Function]}
         role="presentation"
       />
