@@ -3,17 +3,14 @@
 @import './TreeEntriesSection';
 
 .tree-page {
-    overflow-y: auto;
-    flex: 1;
-    background-color: var(--code-bg);
+    border: none !important;
+    border-radius: 0 !important;
+    padding-bottom: 2rem !important;
 
-    // We need to increase specificity here, because the child selector from where
-    // this is set has higher specificity than this plain one.
-    // stylelint-disable-next-line selector-max-id
-    &__container:not(#\9) {
-        border: none;
-        border-radius: 0;
-        padding-bottom: 2rem;
+    &__container {
+        overflow-y: auto;
+        flex: 1;
+        background-color: var(--code-bg);
     }
 
     &__title {

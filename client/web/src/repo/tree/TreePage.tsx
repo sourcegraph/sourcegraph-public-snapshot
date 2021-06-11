@@ -352,8 +352,8 @@ export const TreePage: React.FunctionComponent<Props> = ({
         </div>
     )
     return (
-        <div className="tree-page__container">
-            <Container className="tree-page">
+        <div className="tree-page">
+            <Container className="tree-page__container">
                 <PageTitle title={getPageTitle()} />
                 {treeOrError === undefined ? (
                     <div>
