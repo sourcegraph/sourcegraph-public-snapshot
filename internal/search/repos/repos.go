@@ -41,6 +41,10 @@ type Resolved struct {
 	OverLimit       bool
 }
 
+func (r *Resolved) String() string {
+	return fmt.Sprintf("Resolved{RepoRevs=%d, MissingRepoRevs=%d, OverLimit=%v, %#v}", len(r.RepoRevs), len(r.MissingRepoRevs), r.OverLimit, r.ExcludedRepos)
+}
+
 type Resolver struct {
 	DB               dbutil.DB
 	Zoekt            *searchbackend.Zoekt

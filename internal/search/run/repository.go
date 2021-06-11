@@ -6,9 +6,11 @@ import (
 	"regexp"
 	"runtime"
 
+	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -20,7 +22,7 @@ var MockSearchRepositories func(args *search.TextParameters) ([]result.Match, *s
 //
 // For a repository to match a query, the repository's name must match all of the repo: patterns AND the
 // default patterns (i.e., the patterns that are not prefixed with any search field).
-func SearchRepositories(ctx context.Context, args *search.TextParameters, limit int32, stream streaming.Sender) error {
+func SearchRepositories(ctx context.Context, args *search.TextParameters, limit int32, stream streaming.Sender) (err error) {
 	if MockSearchRepositories != nil {
 		results, stats, err := MockSearchRepositories(args)
 		stream.Send(streaming.SearchEvent{
@@ -29,6 +31,12 @@ func SearchRepositories(ctx context.Context, args *search.TextParameters, limit 
 		})
 		return err
 	}
+
+	tr, ctx := trace.New(ctx, "run.SearchRepositories", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
 
 	ctx, stream, cancel := streaming.WithLimit(ctx, stream, int(limit))
 	defer cancel()
@@ -55,6 +63,7 @@ func SearchRepositories(ctx context.Context, args *search.TextParameters, limit 
 	// Matching repositories based whether they contain files at a certain path (etc.) is not yet implemented.
 	for field := range args.Query.Fields() {
 		if _, ok := fieldAllowlist[field]; !ok {
+			tr.LazyPrintf("contains dissallowed field: %s", field)
 			return nil
 		}
 	}
@@ -63,6 +72,10 @@ func SearchRepositories(ctx context.Context, args *search.TextParameters, limit 
 	if !args.Query.IsCaseSensitive() {
 		patternRe = "(?i)" + patternRe
 	}
+
+	tr.LogFields(
+		otlog.String("pattern", patternRe),
+		otlog.Int32("limit", limit))
 
 	pattern, err := regexp.Compile(patternRe)
 	if err != nil {
@@ -74,6 +87,8 @@ func SearchRepositories(ctx context.Context, args *search.TextParameters, limit 
 	if err != nil {
 		return err
 	}
+
+	tr.LogFields(otlog.Int("resolved.len", len(resolved)))
 
 	results := make(chan []*search.RepositoryRevisions)
 	go func() {
@@ -98,11 +113,14 @@ func SearchRepositories(ctx context.Context, args *search.TextParameters, limit 
 		return nil
 	}
 
+	count := 0
 	for repos := range results {
+		count += len(repos)
 		stream.Send(streaming.SearchEvent{
 			Results: repoRevsToRepoMatches(ctx, repos),
 		})
 	}
+	tr.LogFields(otlog.Int("matched.len", count))
 
 	return nil
 }

@@ -308,19 +308,14 @@ type resolveRepositoriesOpts struct {
 // resolveRepositories calls ResolveRepositories, caching the result for the common case
 // where opts.effectiveRepoFieldValues == nil.
 func (r *searchResolver) resolveRepositories(ctx context.Context, opts resolveRepositoriesOpts) (resolved searchrepos.Resolved, err error) {
-	var repoRevs, missingRepoRevs []*search.RepositoryRevisions
-	var overLimit bool
 	if mockResolveRepositories != nil {
 		return mockResolveRepositories(opts.effectiveRepoFieldValues)
 	}
 
 	tr, ctx := trace.New(ctx, "graphql.resolveRepositories", fmt.Sprintf("opts: %+v", opts))
 	defer func() {
-		if err != nil {
-			tr.SetError(err)
-		} else {
-			tr.LazyPrintf("numRepoRevs: %d, numMissingRepoRevs: %d, overLimit: %v", len(repoRevs), len(missingRepoRevs), overLimit)
-		}
+		tr.SetError(err)
+		tr.LazyPrintf("%s", resolved.String())
 		tr.Finish()
 	}()
 
