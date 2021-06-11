@@ -1273,7 +1273,7 @@ func (r *Resolver) MergeChangesets(ctx context.Context, args *graphqlbackend.Mer
 		batchChangeID,
 		changesetIDs,
 		btypes.ChangesetJobTypeMerge,
-		&btypes.ChangesetJobMergePayload{},
+		&btypes.ChangesetJobMergePayload{Squash: args.Squash},
 		store.ListChangesetsOpts{
 			PublicationState: &published,
 			ReconcilerStates: []btypes.ReconcilerState{btypes.ReconcilerStateCompleted},

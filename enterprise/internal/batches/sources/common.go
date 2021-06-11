@@ -69,7 +69,10 @@ type ChangesetSource interface {
 	// CreateComment posts a comment on the Changeset.
 	CreateComment(context.Context, *Changeset, string) error
 	// MergeChangeset merges a Changeset on the code host, if in a mergeable state.
-	MergeChangeset(context.Context, *Changeset, string) error
+	// If squash is true, and the code host supports squash merges, the source
+	// must attempt a squash merge. Otherwise, it is expected to perform a regular
+	// merge.
+	MergeChangeset(ctx context.Context, ch *Changeset, squash bool) error
 }
 
 // A Changeset of an existing Repo.

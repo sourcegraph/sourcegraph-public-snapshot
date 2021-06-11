@@ -2091,11 +2091,12 @@ extend type Mutation {
     reenqueueChangesets(batchChange: ID!, changesets: [ID!]!): BulkOperation!
 
     """
-    Merge multiple changesets.
+    Merge multiple changesets. When squash is true, the commits will be squashed
+    into a single commit.
 
     Experimental: This API is likely to change in the future.
     """
-    mergeChangesets(batchChange: ID!, changesets: [ID!]!): BulkOperation!
+    mergeChangesets(batchChange: ID!, changesets: [ID!]!, squash: Boolean = false): BulkOperation!
 }
 
 extend type Query {

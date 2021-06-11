@@ -240,15 +240,19 @@ func (c *Client) UpdateMergeRequest(ctx context.Context, project *Project, mr *M
 	return resp, nil
 }
 
-func (c *Client) MergeMergeRequest(ctx context.Context, project *Project, mr *MergeRequest) (*MergeRequest, error) {
+func (c *Client) MergeMergeRequest(ctx context.Context, project *Project, mr *MergeRequest, squash bool) (*MergeRequest, error) {
 	if MockMergeMergeRequest != nil {
 		return MockMergeMergeRequest(c, ctx, project, mr)
 	}
 
 	payload := struct {
-		MergeWhenPipelineSucceeds bool `json:"merge_when_pipeline_succeeds,omitempty"`
+		Squash              bool   `json:"squash,omitempty"`
+		SquashCommitMessage string `json:"squash_commit_message,omitempty"`
 	}{
-		MergeWhenPipelineSucceeds: false,
+		Squash: squash,
+	}
+	if squash {
+		payload.SquashCommitMessage = mr.Title + "\n\n" + mr.Description
 	}
 	data, err := json.Marshal(payload)
 	if err != nil {

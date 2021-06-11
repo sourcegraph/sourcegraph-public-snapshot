@@ -55,7 +55,9 @@ type ChangesetJobDetachPayload struct{}
 
 type ChangesetJobReenqueuePayload struct{}
 
-type ChangesetJobMergePayload struct{}
+type ChangesetJobMergePayload struct {
+	Squash bool `json:"squash,omitempty"`
+}
 
 // ChangesetJob describes a one-time action to be taken on a changeset.
 type ChangesetJob struct {

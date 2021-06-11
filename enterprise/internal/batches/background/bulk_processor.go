@@ -125,11 +125,16 @@ func (b *bulkProcessor) reenqueueChangeset(ctx context.Context, job *btypes.Chan
 }
 
 func (b *bulkProcessor) mergeChangeset(ctx context.Context, job *btypes.ChangesetJob) (err error) {
+	typedPayload, ok := job.Payload.(*btypes.ChangesetJobMergePayload)
+	if !ok {
+		return fmt.Errorf("invalid payload type for changeset_job, want=%T have=%T", &btypes.ChangesetJobMergePayload{}, job.Payload)
+	}
+
 	cs := &sources.Changeset{
 		Changeset: b.ch,
 		Repo:      b.repo,
 	}
-	if err := b.css.MergeChangeset(ctx, cs, ""); err != nil {
+	if err := b.css.MergeChangeset(ctx, cs, typedPayload.Squash); err != nil {
 		return err
 	}
 

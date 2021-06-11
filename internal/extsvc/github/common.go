@@ -962,7 +962,7 @@ mutation MergePullRequest($input: MergePullRequestInput!) {
 `
 
 // MergePullRequest tries to merge the PullRequest on Github.
-func (c *V4Client) MergePullRequest(ctx context.Context, pr *PullRequest, mergeMethod, authorEmail string) error {
+func (c *V4Client) MergePullRequest(ctx context.Context, pr *PullRequest, squash bool) error {
 	version := c.determineGitHubVersion(ctx)
 	prFragment, err := pullRequestFragments(version)
 	if err != nil {
@@ -979,11 +979,17 @@ func (c *V4Client) MergePullRequest(ctx context.Context, pr *PullRequest, mergeM
 		} `json:"mergePullRequest"`
 	}
 
+	var mergeMethod = "MERGE"
+	if squash {
+		mergeMethod = "SQUASH"
+	}
 	input := map[string]interface{}{"input": struct {
-		AuthorEmail   string `json:"authorEmail,omitempty"`
 		PullRequestID string `json:"pullRequestId"`
 		MergeMethod   string `json:"mergeMethod,omitempty"`
-	}{PullRequestID: pr.ID, AuthorEmail: authorEmail, MergeMethod: mergeMethod}}
+	}{
+		PullRequestID: pr.ID,
+		MergeMethod:   mergeMethod,
+	}}
 	if err := c.requestGraphQL(ctx, prFragment+"\n"+mergePullRequestMutation, input, &result); err != nil {
 		return err
 	}

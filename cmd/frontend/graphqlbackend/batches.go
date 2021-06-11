@@ -225,6 +225,7 @@ type ReenqueueChangesetsArgs struct {
 
 type MergeChangesetsArgs struct {
 	BulkOperationBaseArgs
+	Squash bool
 }
 
 type BatchChangesResolver interface {

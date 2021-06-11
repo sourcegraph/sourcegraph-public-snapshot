@@ -279,7 +279,7 @@ func (s *FakeChangesetSource) AuthenticatedUsername(ctx context.Context) (string
 	return s.Username, nil
 }
 
-func (s *FakeChangesetSource) MergeChangeset(ctx context.Context, c *Changeset, body string) error {
+func (s *FakeChangesetSource) MergeChangeset(ctx context.Context, c *Changeset, squash bool) error {
 	// s.CreateCommentCalled = true
 	return s.Err
 }

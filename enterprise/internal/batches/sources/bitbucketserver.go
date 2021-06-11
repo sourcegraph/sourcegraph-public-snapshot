@@ -254,7 +254,10 @@ func (s BitbucketServerSource) CreateComment(ctx context.Context, c *Changeset, 
 }
 
 // MergeChangeset merges a Changeset on the code host, if in a mergeable state.
-func (s BitbucketServerSource) MergeChangeset(ctx context.Context, c *Changeset, text string) error {
+// If squash is true, and the code host supports squash merges, the source
+// must attempt a squash merge. Otherwise, it is expected to perform a regular
+// merge.
+func (s BitbucketServerSource) MergeChangeset(ctx context.Context, c *Changeset, squash bool) error {
 	pr, ok := c.Changeset.Metadata.(*bitbucketserver.PullRequest)
 	if !ok {
 		return errors.New("Changeset is not a Bitbucket Server pull request")

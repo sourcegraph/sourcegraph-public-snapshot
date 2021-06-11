@@ -673,16 +673,20 @@ export async function reenqueueChangesets(batchChange: Scalars['ID'], changesets
     dataOrThrowErrors(result)
 }
 
-export async function mergeChangesets(batchChange: Scalars['ID'], changesets: Scalars['ID'][]): Promise<void> {
+export async function mergeChangesets(
+    batchChange: Scalars['ID'],
+    changesets: Scalars['ID'][],
+    squash: boolean
+): Promise<void> {
     const result = await requestGraphQL<MergeChangesetsResult, MergeChangesetsVariables>(
         gql`
-            mutation MergeChangesets($batchChange: ID!, $changesets: [ID!]!) {
-                mergeChangesets(batchChange: $batchChange, changesets: $changesets) {
+            mutation MergeChangesets($batchChange: ID!, $changesets: [ID!]!, $squash: Boolean!) {
+                mergeChangesets(batchChange: $batchChange, changesets: $changesets, squash: $squash) {
                     id
                 }
             }
         `,
-        { batchChange, changesets }
+        { batchChange, changesets, squash }
     ).toPromise()
     dataOrThrowErrors(result)
 }

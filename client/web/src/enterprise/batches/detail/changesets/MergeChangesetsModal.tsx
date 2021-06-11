@@ -1,6 +1,7 @@
 import Dialog from '@reach/dialog'
 import React, { useCallback, useState } from 'react'
 
+import { Form } from '@sourcegraph/branded/src/components/Form'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
@@ -26,45 +27,62 @@ export const MergeChangesetsModal: React.FunctionComponent<MergeChangesetsModalP
     mergeChangesets = _mergeChangesets,
 }) => {
     const [isLoading, setIsLoading] = useState<boolean | Error>(false)
+    const [squash, setSquash] = useState<boolean>(false)
 
     const onSubmit = useCallback<React.FormEventHandler>(async () => {
         setIsLoading(true)
         try {
             const ids = await changesetIDs()
-            await mergeChangesets(batchChangeID, ids)
+            await mergeChangesets(batchChangeID, ids, squash)
             afterCreate()
         } catch (error) {
             setIsLoading(asError(error))
         }
-    }, [changesetIDs, mergeChangesets, batchChangeID, afterCreate])
+    }, [changesetIDs, mergeChangesets, batchChangeID, squash, afterCreate])
 
     return (
         <Dialog
             className="modal-body modal-body--top-third p-4 rounded border"
             onDismiss={onCancel}
-            aria-labelledby={LABEL_ID}
+            aria-labelledby={MODAL_LABEL_ID}
         >
-            <div className="web-content">
-                <h3 id={LABEL_ID}>Merge changesets</h3>
-                <p className="mb-4">Are you sure you want to attempt to merge all the selected changesets?</p>
-                {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
-                <div className="d-flex justify-content-end">
-                    <button
-                        type="button"
-                        disabled={isLoading === true}
-                        className="btn btn-outline-secondary mr-2"
-                        onClick={onCancel}
-                    >
-                        Cancel
-                    </button>
-                    <button type="button" onClick={onSubmit} disabled={isLoading === true} className="btn btn-primary">
-                        {isLoading === true && <LoadingSpinner className="icon-inline" />}
-                        Merge
-                    </button>
+            <h3 id={MODAL_LABEL_ID}>Merge changesets</h3>
+            <p className="mb-4">Are you sure you want to attempt to merge all the selected changesets?</p>
+            <Form>
+                <div className="form-group">
+                    <div className="form-check">
+                        <input
+                            id={CHECKBOX_ID}
+                            type="checkbox"
+                            checked={squash}
+                            onChange={event => setSquash(event.target.checked)}
+                            className="form-check-input"
+                            disabled={isLoading === true}
+                        />
+                        <label className="form-check-label" htmlFor={CHECKBOX_ID}>
+                            Squash merge all selected changesets.
+                        </label>
+                    </div>
                 </div>
+            </Form>
+            {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
+            <div className="d-flex justify-content-end">
+                <button
+                    type="button"
+                    disabled={isLoading === true}
+                    className="btn btn-outline-secondary mr-2"
+                    onClick={onCancel}
+                >
+                    Cancel
+                </button>
+                <button type="button" onClick={onSubmit} disabled={isLoading === true} className="btn btn-primary">
+                    {isLoading === true && <LoadingSpinner className="icon-inline" />}
+                    Merge
+                </button>
             </div>
         </Dialog>
     )
 }
 
-const LABEL_ID = 'merge-changesets-modal-title'
+const MODAL_LABEL_ID = 'merge-changesets-modal-title'
+const CHECKBOX_ID = 'merge-changesets-modal-squash-check'
