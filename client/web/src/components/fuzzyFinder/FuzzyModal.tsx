@@ -1,4 +1,5 @@
-import classnames from 'classnames'
+import Dialog from '@reach/dialog'
+import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useState } from 'react'
 
@@ -17,6 +18,8 @@ import { HighlightedLink } from './HighlightedLink'
 // - case-insensitive search is slow but works in the torvalds/linux repo (72k files)
 // - case-insensitive search is almost unusable in the chromium/chromium repo (360k files)
 const DEFAULT_CASE_INSENSITIVE_FILE_COUNT_THRESHOLD = 80000
+
+const FUZZY_MODAL_TITLE = 'fuzzy-modal-title'
 
 // Cache for the last fuzzy query. This value is only used to avoid redoing the
 // full fuzzy search on every re-render when the user presses the down/up arrow
@@ -128,22 +131,29 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
     }
 
     return (
-        // Use 'onMouseDown' instead of 'onClick' to allow selecting the text and mouse up outside the modal
-        // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
-        <div role="navigation" className={styles.modal} onMouseDown={() => props.onClose()}>
-            {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
-            <div role="navigation" className={styles.content} onMouseDown={event => event.stopPropagation()}>
+        <Dialog
+            className={classNames(styles.modal, 'modal-body p-4 rounded border')}
+            onDismiss={() => props.onClose()}
+            aria-labelledby={FUZZY_MODAL_TITLE}
+        >
+            <div className={styles.content}>
                 <div className={styles.header}>
-                    <h3 className="mb-0">Find file</h3>
-                    <button type="button" className="btn btn-icon" onClick={() => props.onClose()}>
+                    <h3 className="mb-0" id={FUZZY_MODAL_TITLE}>
+                        Find file
+                    </h3>
+                    <button type="button" className="btn btn-icon" onClick={() => props.onClose()} aria-label="Close">
                         <CloseIcon className={`icon-inline ${styles.closeIcon}`} />
                     </button>
                 </div>
                 <input
                     autoComplete="off"
                     spellCheck="false"
+                    role="combobox"
+                    aria-autocomplete="list"
+                    aria-controls="fuzzy-modal-results"
+                    aria-expanded={props.fsm.key !== 'downloading'}
                     id="fuzzy-modal-input"
-                    className={classnames('form-control', 'px-2', 'py-1', styles.input)}
+                    className={classNames('form-control py-1', styles.input)}
                     placeholder="Enter a partial file path or name"
                     value={state.query}
                     onChange={event => {
@@ -159,7 +169,7 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
                 {fuzzyResult.element}
                 {!fuzzyResult.isComplete && (
                     <button
-                        className={classnames('btn btn-secondary', styles.showMore)}
+                        className={classNames('btn btn-secondary', styles.showMore)}
                         type="button"
                         onClick={() => state.increaseMaxResults()}
                     >
@@ -167,7 +177,7 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
                     </button>
                 )}
             </div>
-        </div>
+        </Dialog>
     )
 }
 
@@ -283,12 +293,12 @@ function renderFiles(
     const linksToRender = links.slice(0, state.maxResults)
     return {
         element: (
-            <ul className={styles.results}>
+            <ul id="fuzzy-modal-results" className={styles.results}>
                 {linksToRender.map((file, fileIndex) => (
                     <li
                         id={`fuzzy-modal-result-${fileIndex}`}
                         key={file.text}
-                        className={classnames('p-1', fileIndex === state.focusIndex && styles.focused)}
+                        className={classNames('p-1', fileIndex === state.focusIndex && styles.focused)}
                     >
                         <HighlightedLink {...file} />
                     </li>
