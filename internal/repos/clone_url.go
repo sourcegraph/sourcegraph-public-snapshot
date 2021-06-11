@@ -66,8 +66,10 @@ func CloneURL(kind, config string, repo *types.Repo) (string, error) {
 		if r, ok := repo.Metadata.(*extsvc.OtherRepoMetadata); ok {
 			return otherCloneURL(repo, r), nil
 		}
+	default:
+		return "", errors.Errorf("unknown external service kind %q for repo %d", kind, repo.ID)
 	}
-	return "", errors.Errorf("unknown external service kind %q for repo %d", kind, repo.ID)
+	return "", errors.Errorf("unknown repo.Metadata type %T for repo %d", repo.Metadata, repo.ID)
 }
 
 func awsCodeCloneURL(repo *awscodecommit.Repository, cfg *schema.AWSCodeCommitConnection) string {
