@@ -35,7 +35,7 @@ All notable changes to Sourcegraph are documented in this file.
 
   - **Refined search results:** The redesigned search bar provides more space for expressive queries, and the new results sidebar helps to discover search syntax without referencing documentation.
   - **Improved focus on code:** We’ve reduced non-essential UI elements to provide greater focus on the code itself, and positioned the most important items so they’re unobtrusive and live exactly where they are needed.
-  - **Improved layouts:** We’ve improved pages like diff diff views to make them easier to use and to help users quickly find the information they need.
+  - **Improved layouts:** We’ve improved pages like diff views to make them easier to use and to help find information quickly.
   - **New navigation:** A new global navigation provides immediate discoverability and access to current and future functionality.
   - **Promoting extensibility:** We've brought the extension registry back to the main navigation and improved its design and navigation.
 
