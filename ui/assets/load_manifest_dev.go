@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"os"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 )
 
 var MockLoadWebpackManifest func() (*WebpackManifest, error)

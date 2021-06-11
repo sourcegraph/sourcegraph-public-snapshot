@@ -1,7 +1,7 @@
 package gqltestutil
 
 import (
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 )
 
 // CreateAccessToken creates a new access token with given note and scopes for the

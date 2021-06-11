@@ -9,10 +9,10 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/cockroachdb/errors"
 	"github.com/getsentry/raven-go"
 	"github.com/gorilla/mux"
 	"github.com/opentracing/opentracing-go"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/env"

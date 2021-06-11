@@ -10,8 +10,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/cockroachdb/errors"
 	"github.com/machinebox/graphql"
-	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 )
 

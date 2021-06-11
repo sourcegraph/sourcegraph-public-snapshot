@@ -24,7 +24,7 @@ require (
 	github.com/beevik/etree v1.1.0
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
 	github.com/certifi/gocertifi v0.0.0-20200211180108-c7c1fbc02894 // indirect
-	github.com/cockroachdb/errors v1.8.2
+	github.com/cockroachdb/errors v1.8.4
 	github.com/cockroachdb/redact v1.0.9 // indirect
 	github.com/cockroachdb/sentry-go v0.6.1-cockroachdb.2
 	github.com/containerd/containerd v1.4.0 // indirect
@@ -61,7 +61,6 @@ require (
 	github.com/go-openapi/validate v0.19.11 // indirect
 	github.com/go-redsync/redsync v1.4.2
 	github.com/gobwas/glob v0.2.3
-	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-migrate/migrate/v4 v4.11.0
 	github.com/golang/gddo v0.0.0-20200831202555-721e228c7686
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e
@@ -128,7 +127,6 @@ require (
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/peterbourgon/ff v1.7.0
 	github.com/peterhellberg/link v1.1.0
-	github.com/pkg/errors v0.9.1
 	github.com/pquerna/cachecontrol v0.0.0-20200819021114-67c6ae64274f // indirect
 	github.com/princjef/gomarkdoc v0.1.3
 	github.com/prometheus/alertmanager v0.21.0
