@@ -48,4 +48,10 @@ The extension is expected to work slow when there are issues with the gitserver 
 2. Once it is enabled, you will find an `Export to CSV` button in the Search-Results page
 
 
+#### search-export: Network Error when downloading CSV
+
+It's likely that the CSV file exceeds the browser's limit for data URI size. Users can limit the size of search match preview size through their user settings (see ["contributions"](https://sourcegraph.com/extensions/sourcegraph/search-export/-/contributions) for search-export). If decreasing the size of search match previews doesn't resolve the issue, users can decrease the amount of search results exported with the `count:` filter in their search query.
+
+___
+
 See the [Sourcegraph browser extension docs](https://docs.sourcegraph.com/integration/browser_extension#troubleshooting) for more troubleshooting tips.
