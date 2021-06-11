@@ -46,27 +46,21 @@ export function getInsightDataFromQuery(query: string | null): InsightData | nul
     const tokens = Array.isArray(sequence.term) ? sequence.term : [sequence.term]
     const repositories = []
 
-    /** Find all repo: filters and get their values for insight repositories field */
+    // Find all repo: filters and get their values for insight repositories field
     for (const token of tokens) {
         if (isRepoFilter(token)) {
             const repoValue = token.value?.value
 
             if (repoValue) {
-                /**
-                 * Split repo value in order to support case with multiple repo values
-                 * in repo: filter.
-                 *
-                 * Example repo:^github\.com/org/repo-1$ | ^github\.com/org/repo-2$
-                 */
+                // Split repo value in order to support case with multiple repo values
+                // in repo: filter. Example repo:^github\.com/org/repo-1$ | ^github\.com/org/repo-2$
                 repositories.push(...repoValue.split('|'))
             }
         }
     }
 
-    /**
-     * Generate a string query from tokens without repo: filters for the insight
-     * query field.
-     */
+    // Generate a string query from tokens without repo: filters for the insight
+    // query field.
     const tokensWithoutRepoFilters = tokens.filter(token => !isRepoFilter(token))
     const humanReadableQueryString = stringHuman(tokensWithoutRepoFilters)
 
@@ -84,7 +78,7 @@ export function getInsightDataFromQuery(query: string | null): InsightData | nul
  */
 export function useUrlQueryInsight(queryParameters: string): CreateInsightFormFields | null {
     return useMemo(() => {
-        const queryParametersString = new URLSearchParams(queryParameters).get('insight-query')
+        const queryParametersString = new URLSearchParams(queryParameters).get('query')
 
         const insightData = getInsightDataFromQuery(queryParametersString)
 
