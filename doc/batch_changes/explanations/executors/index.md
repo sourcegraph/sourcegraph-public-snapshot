@@ -18,7 +18,7 @@ The Sourcegraph executor is written in [Go](https://golang.org), and is availabl
 ## Getting started
 
 1. [Ensure you meet the prerequisites.](#prerequisites)
-1. [Choose your deployment model.](#deployment-models)
+2. [Choose your deployment model.](#deployment-models)
 
 Then follow the instructions for your chosen deployment model:
 
@@ -38,98 +38,14 @@ You can also read about [how Sourcegraph executors work](#how-executors-work).
 
 Two deployment models are supported:
 
-1. [**Docker containers running on a server.**](pure-docker.md) In this model, changesets are computed in Docker containers run directly on the server. This model fits well in environments that do not use Kubernetes, and that expect relatively steady usage of Batch Changes over time.
-1. 
+1. [**Docker containers running on a server.**](pure-docker.md) In this model, changesets are computed in Docker containers run directly on the server. This model fits well in environments that do not use Kubernetes, have high I/O performance requirements, and that expect relatively steady usage of Batch Changes over time.
+1. [**Jobs running in a Kubernetes cluster.**](kubernetes.md) In this model, changeset steps are run as separate Kubernetes jobs. By configuring a namespace for Sourcegraph executor use, limits can be placed on the resources that will be used by executors, and nodes can be scaled in ways that make sense for your environment.
 
 The linked pages provide instructions on installing and configuring Sourcegraph executors in their respective environments.
 
-## Installing the executor
-
-The executor can be installed in one of the following ways:
-
-- [In a container](#in-a-container)
-- [From an RPM/DEB repository](#from-an-rpm-deb-repository)
-- [By downloading a binary manually](#by-downloading-a-binary-manually)
-
-### In a container
-
-We support running the container in [Docker](#docker) or [Kubernetes](#kubernetes) via a Helm chart.
-
-#### Docker
-
-You can start the container like any other Docker image:
-
-```sh
-docker run -d --name sourcegraph-executor --restart always \
-  sourcegraph/executor:latest
-```
-
-If you intend to run executor tasks on the same Docker instance that is running the executor, then you'll also need to map in the Docker socket:
-
-```sh
-docker run -d --name sourcegraph-executor --restart always \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  sourcegraph/executor:latest
-```
-
-#### Kubernetes
-
-_TODO: I think we're going to end up with something like https://docs.gitlab.com/executor/install/kubernetes.html here: we ship a Helm chart. I'd love Distribution to weigh in on this, though._
-
-### From an RPM/DEB repository
-
-<!-- aharvey: I've done this for a living in the past, and I don't consider this part of the MVP because it's painful, but it _is_ going to appeal strongly to a certain vintage of admin. (That is, people my age and older.) -->
-
-Sourcegraph provides packages for supported versions of [Debian, Ubuntu](#debian), and [RHEL](#rhel). You can [install the binary manually](#by-downloading-a-binary-manually) on other Linux distributions, and on other operating systems.
-
-#### Debian
-
-1. Add the Sourcegraph repository:
-
-    ```
-    curl https://packages.sourcegraph.com/sourcegraph.gpg | apt-key add -
-    add-apt-repository "deb https://packages.sourcegraph.com/debian $(lsb_release -c) non-free"
-    ```
-
-2. Install the `sourcegraph-executor` package:
-
-    ```
-    apt update
-    apt install sourcegraph-executor
-    ```
-
-#### RHEL
-
-<!-- TODO: as above, but yum flavoured -->
-
-### By downloading a binary manually
-
-You can download the current version of the executor binary for these platforms:
-
-- [Windows x86-64](TODO)
-- [macOS x86-64](TODO)
-- [macOS ARM](TODO)
-- [Linux x86-64](TODO)
-
-Once downloaded, you should configure your operating system to execute this binary as a service, noting that you will need to configure environment variables [in the next step](#configuring-the-executor).
-
-## Configuring the executor
-
-The Sourcegraph executor is configured through environment variables. The first three variables below are required; others are optional.
-
-| Variable | Default value | Description |
-|----------|---------------|-------------|
-| `EXECUTOR_QUEUE_NAME` | **No default; must be provided** | The name of the queue to listen to; `batches` for Batch Changes. |
-| `EXECUTOR_FRONTEND_URL` | **No default; must be provided** | The Sourcegraph URL; eg `https://sourcegraph.com`. |
-| `EXECUTOR_REGISTRATION_TOKEN` | **No default; must be provided** | The executor registration token, as downloaded from the [Sourcegraph site settings](TODO). |
-| `EXECUTOR_BACKEND` | `docker` | The backend that should be used to execute tasks; either `docker` or `kubernetes`. |
-| `EXECUTOR_MAX_NUM_JOBS` | `1` | The maximum number of jobs (or tasks) that will be run concurrently by this executor. |
-<!-- aharvey: There are lots of othe  r options at https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3b1fbde4e2207de103a6736706bbfd0adaa579b6/-/blob/enterprise/cmd/executor/config.go#L36-52; most aren't super relevant for user facing documentation. What we _will_ need is whatever options we need to wire up executing jobs on k8s. -->
-
-<!-- aharvey: TODO: I might want to replace this with "connecting". -->
 ## Registering the executor
 
-The Sourcegraph executor should register itself automatically when started with a valid `EXECUTOR_FRONTEND_URL` and `EXECUTOR_REGISTRATION_TOKEN`, as described in [configuring the executor](#configuring-the-executor). Once registered, it will appear in the executors page within the Sourcegraph site admin, and the following output will appear in the container log:
+The Sourcegraph executor should register itself automatically when started with a valid `EXECUTOR_FRONTEND_URL` and `EXECUTOR_REGISTRATION_TOKEN`, as described in [configuration](configuration.md). Once registered, it will appear in the executors page within the Sourcegraph site admin, and the following output will appear in the container log:
 
 ```
 ✱ Sourcegraph executor connected to https://sourcegraph.com; listening for jobs
@@ -139,13 +55,13 @@ If the executor fails to register, check the output of the executor container: i
 
 # Using executors
 
-If one or several executors are registered with the Sourcegraph instance, they will be used to create changesets by default. You can choose to use your local environment to compute the changeset by adding the `--local` flag to the CLI command.
+If one or more Batch Changes executors are registered with the Sourcegraph instance, they will be used to create changesets by default. You can choose to use your local environment to compute the changeset by adding the `--local` flag to the CLI command.
 
-When running a batch change, the executor will attempt to pull missing container images. The environment running the executor must have access to the docker registry hosting the requested images.
+When running a batch change, the executor will attempt to pull missing container images. The environment running the executor must have access to the Docker registry hosting the requested images.
 
 ## Who has access to executors
 
-All batch changes users on your Sourcegraph instance have access to executors.
+All Batch Changes users on your Sourcegraph instance have access to executors.
 
 ## Debugging
 
@@ -155,7 +71,7 @@ TODO: mockups or decription
 
 Jobs are executed on a FIFO-basis. Users can interrupt a job from the interface.
 
-Each executor will run one job at a time: you should scale the number of executors you have running to the maximum concurrency you wish to support. <!-- TODO: get some input on autoscaling for k8s -->
+Each executor will run at least one job at a time: you should scale the number of executors and configure the `EXECUTOR_MAX_NUM_JOBS` environment variable to the maximum concurrency you wish to support. Kubernetes users should also be mindful of [scaling Kubernetes executors](kubernetes.md#scaling).
 
 # Administering and monitoring executors
 

@@ -20,31 +20,44 @@ aharvey: I originally had a few paragraphs on packaged RPM/DEB deployments. I th
 For now I've also skipped any mention of Windows or macOS, but there's nothing stopping us from shipping those. (Although it's probably of relatively little use, given the hard Docker requirement; why not just run Linux natively?)
 -->
 
-The Sourcegraph executor is a service, written in Go, that is shipped as a static binary for Linux. The service must be configured to start after Docker, and is [configured](#configuration) through environment variables.
+The Sourcegraph executor is a service, written in Go, that is shipped as a static binary for Linux. The service must be configured to start after Docker, and is [configured through environment variables](configuration.md).
 
 On a systemd-based distribution, the following steps will install the executor:
 
-1. Download the executor from https://github.com/sourcegraph/sourcegraph/releases/XXX/sourcegraph-executor.tar.gz.
-2. Extract it to a suitable location using tar; eg: `tar -C /opt/sourcegraph -zxf sourcegraph-executor.tar.gz`
-3. Add a systemd service to start the executor; for example by creating the below unit in `/etc/systemd/system/sourcegraph-executor.service` and enabling it with `systemctl enable sourcegraph-executor`:
+<ol>
+<li>Download the executor: https://github.com/sourcegraph/sourcegraph/releases/XXX/sourcegraph-executor.tar.gz
 
-    ```
-    [Unit]
-    Description=Sourcegraph executor
-    After=docker.service
-    Requires=docker.socket
+<li>Extract it to a suitable location using tar; eg: `tar -C /opt/sourcegraph -zxf sourcegraph-executor.tar.gz`
 
-    [Service]
-    Type=simple
-    ExecStart=/opt/sourcegraph/bin/executor
-    EnvironmentFile=/opt/sourcegraph/etc/executor.env
+<li>Add a systemd service to start the executor; for example by creating the below unit in `/etc/systemd/system/sourcegraph-executor.service`:
 
-    [Install]
-    WantedBy=multi-user.target
-    ```
-4. [Configure the executor](#configuration) by setting the required environment variables in the environment file (`/opt/sourcegraph/etc/executor.env`, in this example).
-5. Start the executor with `systemctl start sourcegraph-executor`.
+```ini
+[Unit]
+Description=Sourcegraph executor
+After=docker.service
+Requires=docker.socket
 
-## Configuration
+[Service]
+Type=simple
+ExecStart=/opt/sourcegraph/bin/executor
+EnvironmentFile=/opt/sourcegraph/etc/executor.env
 
-TODO: environment variables
+[Install]
+WantedBy=multi-user.target
+```
+    
+<li>Configure the executor by setting [the required environment variables](configuration.md) in the environment file (`/opt/sourcegraph/etc/executor.env`, in this example). For example:
+
+```bash
+EXECUTOR_QUEUE_NAME=batches
+EXECUTOR_FRONTEND_URL=https://sourcegraph.at.my.company/
+EXECUTOR_FRONTEND_USERNAME=executor
+EXECUTOR_FRONTEND_PASSWORD=a-highly-secure-password
+EXECUTOR_BACKEND=docker
+EXECUTOR_MAX_NUM_JOBS=4
+```
+
+<li>Enable the executor service: `systemctl enable sourcegraph-executor.service`
+
+<li>Start the executor service: `systemctl start sourcegraph-executor`
+</ol>
