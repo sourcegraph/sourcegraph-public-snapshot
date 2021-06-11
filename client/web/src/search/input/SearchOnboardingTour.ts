@@ -18,7 +18,7 @@ import { isMacPlatform } from '../../util'
 import { QueryState } from '../helpers'
 
 import { MonacoQueryInputProps } from './MonacoQueryInput'
-import { defaultTourOptions } from './tour-options'
+import { defaultPopperModifiers, defaultTourOptions } from './tour-options'
 
 export const HAS_CANCELLED_TOUR_KEY = 'has-cancelled-onboarding-tour'
 export const HAS_COMPLETED_TOUR_KEY = 'has-completed-onboarding-tour'
@@ -29,14 +29,7 @@ const tourOptions: Shepherd.Tour.TourOptions = {
         ...defaultTourOptions.defaultStepOptions,
         classes: 'web-content',
         popperOptions: {
-            // Removes default behavior of autofocusing steps
-            modifiers: [
-                {
-                    name: 'focusAfterRender',
-                    enabled: false,
-                },
-                { name: 'offset', options: { offset: [0, 8] } },
-            ],
+            modifiers: [...defaultPopperModifiers, { name: 'offset', options: { offset: [0, 8] } }],
         },
     },
 }
