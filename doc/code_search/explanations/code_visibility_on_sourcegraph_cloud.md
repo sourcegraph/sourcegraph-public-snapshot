@@ -1,9 +1,9 @@
 # Who can see your code on Sourcegraph Cloud
 
-Sourcegraph protects your private code using repository permissions from GitHub and GitLab to determine who can see repositories you've [added to Sourcegraph Cloud](../how-to/adding_repositories_to_cloud.md).
+Sourcegraph Cloud protects your private code using repository permissions from GitHub.com and GitLab.com to determine who can see repositories you've [added to Sourcegraph Cloud](../how-to/adding_repositories_to_cloud.md).
 
 ## Public repositories
-If a repository is public on GitHub or GitLab, other users on Sourcegraph Cloud can view and search across that repository. The repository will appear in the global search context.
+If a repository is public on GitHub.com or GitLab.com, other users on Sourcegraph Cloud can view and search across that repository. The repository will appear in the global search context.
 
 ## Private repositories
 If a repository is private on GitHub or GitLab, only users who have permission to access that repository on the code host **and** have added that repository to Sourcegraph Cloud can view and search that repository. The repository will not appear in search results for other users.
