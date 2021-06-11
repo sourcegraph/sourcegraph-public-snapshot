@@ -24,6 +24,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -32,6 +34,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // StreamHandler is an http handler which streams back search results.
@@ -151,6 +154,8 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		_ = matchesBuf.Append(m)
 	}
 
+	repoCache := make(map[api.RepoID]*types.Repo, 10)
+
 	flushTicker := time.NewTicker(h.flushTickerInternal)
 	defer flushTicker.Stop()
 
@@ -179,13 +184,19 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		progress.Update(event)
 		filters.Update(event)
 
+		// Ensure that, for each result in the event, we have a copy of the full repo metadata.
+		if err := updateRepoCache(ctx, h.db, repoCache, event); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
 		for _, match := range event.Results {
 			if display <= 0 {
 				break
 			}
 
 			display = match.Limit(display)
-			matchesAppend(fromMatch(match))
+			matchesAppend(fromMatch(match, repoCache))
 		}
 
 		// Instantly send results if we have not sent any yet.
@@ -273,6 +284,47 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			log15.Warn("streaming: slow search request", searchlogs.MapToLog15Ctx(ev.Fields())...)
 		}
 	}
+}
+
+// updateRepoCache requests repo metadata for each repo referenced by results in the event. It only makes a database request if there
+// are new repos that do not already exist in the cache.
+func updateRepoCache(ctx context.Context, db dbutil.DB, repoCache map[api.RepoID]*types.Repo, event streaming.SearchEvent) error {
+	uncachedIDs := make(map[api.RepoID]struct{}, 10)
+	for _, r := range event.Results {
+		var id api.RepoID
+		switch v := r.(type) {
+		case *result.FileMatch:
+			id = v.Repo.ID
+		case *result.RepoMatch:
+			id = v.ID
+		case *result.CommitMatch:
+			id = v.RepoName.ID
+		default:
+			return fmt.Errorf("unknown match type %T", r)
+		}
+
+		if _, ok := repoCache[id]; !ok {
+			uncachedIDs[id] = struct{}{}
+		}
+	}
+
+	if len(uncachedIDs) == 0 {
+		return nil
+	}
+
+	uncachedIDSlice := make([]api.RepoID, 0, len(uncachedIDs))
+	for id := range uncachedIDs {
+		uncachedIDSlice = append(uncachedIDSlice, id)
+	}
+
+	repos, err := database.Repos(db).GetReposSetByIDs(ctx, uncachedIDSlice...)
+	if err != nil {
+		return err
+	}
+	for id, repo := range repos {
+		repoCache[id] = repo
+	}
+	return nil
 }
 
 // startSearch will start a search. It returns the events channel which
@@ -377,20 +429,20 @@ func fromStrPtr(s *string) string {
 	return *s
 }
 
-func fromMatch(match result.Match) streamhttp.EventMatch {
+func fromMatch(match result.Match, repoCache map[api.RepoID]*types.Repo) streamhttp.EventMatch {
 	switch v := match.(type) {
 	case *result.FileMatch:
-		return fromFileMatch(v)
+		return fromFileMatch(v, repoCache)
 	case *result.RepoMatch:
-		return fromRepository(v)
+		return fromRepository(v, repoCache)
 	case *result.CommitMatch:
-		return fromCommit(v)
+		return fromCommit(v, repoCache)
 	default:
 		panic(fmt.Sprintf("unknown match type %T", v))
 	}
 }
 
-func fromFileMatch(fm *result.FileMatch) streamhttp.EventMatch {
+func fromFileMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Repo) streamhttp.EventMatch {
 	if syms := fm.Symbols; len(syms) > 0 {
 		return fromSymbolMatch(fm)
 	}
@@ -409,10 +461,16 @@ func fromFileMatch(fm *result.FileMatch) streamhttp.EventMatch {
 		branches = []string{*fm.InputRev}
 	}
 
+	var stars int
+	if r, ok := repoCache[fm.Repo.ID]; ok {
+		stars = r.Stars
+	}
+
 	return &streamhttp.EventFileMatch{
 		Type:        streamhttp.FileMatchType,
 		Path:        fm.Path,
 		Repository:  string(fm.Repo.Name),
+		RepoStars:   stars,
 		Branches:    branches,
 		Version:     string(fm.CommitID),
 		LineMatches: lineMatches,
@@ -451,20 +509,29 @@ func fromSymbolMatch(fm *result.FileMatch) *streamhttp.EventSymbolMatch {
 	}
 }
 
-func fromRepository(rm *result.RepoMatch) *streamhttp.EventRepoMatch {
+func fromRepository(rm *result.RepoMatch, repoCache map[api.RepoID]*types.Repo) *streamhttp.EventRepoMatch {
 	var branches []string
 	if rev := rm.Rev; rev != "" {
 		branches = []string{rev}
 	}
 
-	return &streamhttp.EventRepoMatch{
+	repoEvent := &streamhttp.EventRepoMatch{
 		Type:       streamhttp.RepoMatchType,
 		Repository: string(rm.Name),
 		Branches:   branches,
 	}
+
+	if r, ok := repoCache[rm.ID]; ok {
+		repoEvent.RepoStars = r.Stars
+		repoEvent.Description = r.Description
+		repoEvent.Fork = r.Fork
+		repoEvent.Archived = r.Archived
+	}
+
+	return repoEvent
 }
 
-func fromCommit(commit *result.CommitMatch) *streamhttp.EventCommitMatch {
+func fromCommit(commit *result.CommitMatch, repoCache map[api.RepoID]*types.Repo) *streamhttp.EventCommitMatch {
 	content := commit.Body.Value
 
 	highlights := commit.Body.Highlights
@@ -473,12 +540,18 @@ func fromCommit(commit *result.CommitMatch) *streamhttp.EventCommitMatch {
 		ranges[i] = [3]int32{h.Line, h.Character, h.Length}
 	}
 
+	var stars int
+	if r, ok := repoCache[commit.RepoName.ID]; ok {
+		stars = r.Stars
+	}
+
 	return &streamhttp.EventCommitMatch{
 		Type:       streamhttp.CommitMatchType,
 		Label:      commit.Label(),
 		URL:        commit.URL().String(),
 		Detail:     commit.Detail(),
 		Repository: string(commit.RepoName.Name),
+		RepoStars:  stars,
 		Content:    content,
 		Ranges:     ranges,
 	}
