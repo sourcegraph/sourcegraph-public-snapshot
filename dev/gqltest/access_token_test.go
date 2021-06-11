@@ -29,7 +29,7 @@ func TestAccessToken(t *testing.T) {
 	t.Run("use an invalid token gets 401", func(t *testing.T) {
 		_, err := client.CurrentUserID("a bad token")
 		gotErr := fmt.Sprintf("%v", errors.Cause(err))
-		wantErr := "401: Invalid access token.\n"
+		wantErr := "401: Invalid access token."
 		if gotErr != wantErr {
 			t.Fatalf("err: want %q but got %q", wantErr, gotErr)
 		}
