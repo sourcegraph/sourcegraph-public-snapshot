@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"sync"
-	"time"
 
 	"github.com/cockroachdb/errors"
 	otlog "github.com/opentracing/opentracing-go/log"
@@ -68,8 +67,6 @@ func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (
 		tr.SetError(err)
 		tr.Finish()
 	}()
-
-	start := time.Now()
 
 	settings := args.Settings
 	if settings == nil {
@@ -137,7 +134,6 @@ func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (
 			Pagination:     pagination,
 			PatternType:    searchType,
 			DefaultLimit:   defaultLimit,
-			Start:          start,
 		},
 
 		stream: args.Stream,
@@ -259,11 +255,6 @@ func (r *searchResolver) Inputs() run.SearchInputs {
 // rawQuery returns the original query string input.
 func (r *searchResolver) rawQuery() string {
 	return r.OriginalQuery
-}
-
-func (r *searchResolver) countIsSet() bool {
-	count := r.Query.Count()
-	return count != nil
 }
 
 // protocol returns what type of search we are doing (batch, stream,

@@ -82,7 +82,7 @@ func alertForQuery(queryString string, err error) *searchAlert {
 }
 
 func alertForTimeout(inputs *run.SearchInputs) *searchAlert {
-	usedTime := time.Since(inputs.Start)
+	usedTime := inputs.Timeout()
 	suggestTime := longer(2, usedTime)
 
 	q, err := query.ParseLiteral(inputs.OriginalQuery) // Invariant: query is already validated; guard against error anyway.

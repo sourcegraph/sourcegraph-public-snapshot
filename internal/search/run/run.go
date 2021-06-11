@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -29,9 +30,6 @@ type SearchInputs struct {
 
 	// DefaultLimit is the default limit to use if not specified in query.
 	DefaultLimit int
-
-	// Start is the time the search started
-	Start time.Time
 }
 
 // MaxResults computes the limit for the query.
@@ -56,6 +54,27 @@ func (inputs SearchInputs) MaxResults() int {
 	}
 
 	return defaultMaxSearchResults
+}
+
+// Timeout computes the timeout for the query.
+func (inputs SearchInputs) Timeout() time.Duration {
+	// The default timeout to use for queries.
+	d := 20 * time.Second
+
+	maxTimeout := time.Duration(searchrepos.SearchLimits().MaxTimeoutSeconds) * time.Second
+
+	if timeout := inputs.Query.Timeout(); timeout != nil {
+		d = *timeout
+	} else if inputs.Query.Count() != nil {
+		// If `count:` is set but `timeout:` is not explicitly set, use the max timeout
+		d = maxTimeout
+	}
+
+	if d > maxTimeout {
+		d = maxTimeout
+	}
+
+	return d
 }
 
 // SearchPaginationInfo describes information around a paginated search

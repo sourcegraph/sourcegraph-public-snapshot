@@ -628,10 +628,7 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, q query.Basic) (*Searc
 	maxTryCount := 40000
 
 	// Set an overall timeout in addition to the timeouts that are set for leaf-requests.
-	ctx, cancel, err := r.withTimeout(ctx)
-	if err != nil {
-		return nil, err
-	}
+	ctx, cancel := context.WithTimeout(ctx, r.SearchInputs.Timeout())
 	defer cancel()
 
 	if count := q.GetCount(); count != "" {
@@ -1212,31 +1209,8 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 	return stats, nil
 }
 
-var (
-	// The default timeout to use for queries.
-	defaultTimeout = 20 * time.Second
-)
-
 func (r *searchResolver) searchTimeoutFieldSet() bool {
-	timeout := r.Query.Timeout()
-	return timeout != nil || r.countIsSet()
-}
-
-func (r *searchResolver) withTimeout(ctx context.Context) (context.Context, context.CancelFunc, error) {
-	d := defaultTimeout
-	maxTimeout := time.Duration(searchrepos.SearchLimits().MaxTimeoutSeconds) * time.Second
-	timeout := r.Query.Timeout()
-	if timeout != nil {
-		d = *timeout
-	} else if r.countIsSet() {
-		// If `count:` is set but `timeout:` is not explicitly set, use the max timeout
-		d = maxTimeout
-	}
-	if d > maxTimeout {
-		d = maxTimeout
-	}
-	ctx, cancel := context.WithTimeout(ctx, d)
-	return ctx, cancel, nil
+	return r.Query.Timeout() != nil || r.Query.Count() != nil
 }
 
 func (r *searchResolver) determineResultTypes(args search.TextParameters, forceTypes result.Types) result.Types {
@@ -1269,7 +1243,7 @@ func (r *searchResolver) determineResultTypes(args search.TextParameters, forceT
 // determineRepos wraps resolveRepositories. It interprets the response and
 // error to see if an alert needs to be returned. Only one of the return
 // values will be non-nil.
-func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, start time.Time) (*searchrepos.Resolved, error) {
+func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace) (*searchrepos.Resolved, error) {
 	resolved, err := r.resolveRepositories(ctx, resolveRepositoriesOpts{})
 	if err != nil {
 		return nil, err
@@ -1317,10 +1291,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 
 	start := time.Now()
 
-	ctx, cancel, err := r.withTimeout(ctx)
-	if err != nil {
-		return nil, err
-	}
+	ctx, cancel := context.WithTimeout(ctx, r.SearchInputs.Timeout())
 	defer cancel()
 
 	limit := r.MaxResults()
@@ -1424,7 +1395,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 		}
 	}
 
-	resolved, err := r.determineRepos(ctx, tr, start)
+	resolved, err := r.determineRepos(ctx, tr)
 	if err != nil {
 		if alert, err := errorToAlert(err); alert != nil {
 			return &SearchResultsResolver{db: r.db, alert: alert}, err
