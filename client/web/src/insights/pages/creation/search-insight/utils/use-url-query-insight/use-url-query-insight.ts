@@ -5,7 +5,6 @@ import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { isRepoFilter } from '@sourcegraph/shared/src/search/query/validate'
 import { dedupeWhitespace } from '@sourcegraph/shared/src/util/strings'
 
-import { DEFAULT_ACTIVE_COLOR } from '../../components/form-color-input/FormColorInput'
 import { createDefaultEditSeries } from '../../components/search-insight-creation-content/hooks/use-editable-series'
 import { INITIAL_INSIGHT_VALUES } from '../../components/search-insight-creation-content/initial-insight-values'
 import { CreateInsightFormFields } from '../../types'
@@ -101,7 +100,6 @@ export function useUrlQueryInsight(queryParameters: string): CreateInsightFormFi
                     valid: true,
                     name: 'Search series #1',
                     query: insightData.seriesQuery,
-                    stroke: DEFAULT_ACTIVE_COLOR,
                 }),
             ],
             repositories: insightData.repositories,
