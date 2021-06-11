@@ -1636,10 +1636,6 @@ type Repository struct {
 	// Metadata retained for ranking
 	StargazerCount int `json:",omitempty"`
 	ForkCount      int `json:",omitempty"`
-
-	MergeCommitAllowed bool `json:"mergeCommitAllowed,omitempty"`
-	RebaseMergeAllowed bool `json:"rebaseMergeAllowed,omitempty"`
-	SquashMergeAllowed bool `json:"mergeMergeAllowed,omitempty"`
 }
 
 func ownerNameCacheKey(owner, name string) string       { return "0:" + owner + "/" + name }
@@ -1698,22 +1694,19 @@ type restRepositoryPermissions struct {
 }
 
 type restRepository struct {
-	ID               string `json:"node_id"` // GraphQL ID
-	DatabaseID       int64  `json:"id"`
-	FullName         string `json:"full_name"` // same as nameWithOwner
-	Description      string
-	HTMLURL          string                    `json:"html_url"` // web URL
-	Private          bool                      `json:"private"`
-	Fork             bool                      `json:"fork"`
-	Archived         bool                      `json:"archived"`
-	Locked           bool                      `json:"locked"`
-	Disabled         bool                      `json:"disabled"`
-	Permissions      restRepositoryPermissions `json:"permissions"`
-	Stars            int                       `json:"stargazers_count"`
-	Forks            int                       `json:"forks_count"`
-	AllowMergeCommit bool                      `json:"allow_merge_commit"`
-	AllowRebaseMerge bool                      `json:"allow_rebase_merge"`
-	AllowSquashMerge bool                      `json:"allow_squash_merge"`
+	ID          string `json:"node_id"` // GraphQL ID
+	DatabaseID  int64  `json:"id"`
+	FullName    string `json:"full_name"` // same as nameWithOwner
+	Description string
+	HTMLURL     string                    `json:"html_url"` // web URL
+	Private     bool                      `json:"private"`
+	Fork        bool                      `json:"fork"`
+	Archived    bool                      `json:"archived"`
+	Locked      bool                      `json:"locked"`
+	Disabled    bool                      `json:"disabled"`
+	Permissions restRepositoryPermissions `json:"permissions"`
+	Stars       int                       `json:"stargazers_count"`
+	Forks       int                       `json:"forks_count"`
 }
 
 // getRepositoryFromAPI attempts to fetch a repository from the GitHub API without use of the redis cache.
@@ -1736,22 +1729,19 @@ func (c *V3Client) getRepositoryFromAPI(ctx context.Context, owner, name string)
 // to a standard format.
 func convertRestRepo(restRepo restRepository) *Repository {
 	return &Repository{
-		ID:                 restRepo.ID,
-		DatabaseID:         restRepo.DatabaseID,
-		NameWithOwner:      restRepo.FullName,
-		Description:        restRepo.Description,
-		URL:                restRepo.HTMLURL,
-		IsPrivate:          restRepo.Private,
-		IsFork:             restRepo.Fork,
-		IsArchived:         restRepo.Archived,
-		IsLocked:           restRepo.Locked,
-		IsDisabled:         restRepo.Disabled,
-		ViewerPermission:   convertRestRepoPermissions(restRepo.Permissions),
-		StargazerCount:     restRepo.Stars,
-		ForkCount:          restRepo.Forks,
-		MergeCommitAllowed: restRepo.AllowMergeCommit,
-		RebaseMergeAllowed: restRepo.AllowRebaseMerge,
-		SquashMergeAllowed: restRepo.AllowSquashMerge,
+		ID:               restRepo.ID,
+		DatabaseID:       restRepo.DatabaseID,
+		NameWithOwner:    restRepo.FullName,
+		Description:      restRepo.Description,
+		URL:              restRepo.HTMLURL,
+		IsPrivate:        restRepo.Private,
+		IsFork:           restRepo.Fork,
+		IsArchived:       restRepo.Archived,
+		IsLocked:         restRepo.Locked,
+		IsDisabled:       restRepo.Disabled,
+		ViewerPermission: convertRestRepoPermissions(restRepo.Permissions),
+		StargazerCount:   restRepo.Stars,
+		ForkCount:        restRepo.Forks,
 	}
 }
 

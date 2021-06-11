@@ -448,9 +448,6 @@ fragment RepositoryFields on Repository {
 	viewerPermission
 	stargazerCount
 	forkCount
-	mergeCommitAllowed
-	rebaseMergeAllowed
-	squashMergeAllowed
 }
 	`
 	}
@@ -475,9 +472,6 @@ fragment RepositoryFields on Repository {
 	isLocked
 	isDisabled
 	forkCount
-	mergeCommitAllowed
-	rebaseMergeAllowed
-	squashMergeAllowed
 	%s
 }
 	`, strings.Join(ghe300Fields, "\n	"))
