@@ -150,7 +150,7 @@ export const CodeIntelUploadsPage: FunctionComponent<CodeIntelUploadsPageProps> 
     )
 }
 
-const EmptyLSIFUploadsElement: React.FunctionComponent<{}> = () => (
+const EmptyLSIFUploadsElement: React.FunctionComponent = () => (
     <p className="text-muted text-center w-100 mb-0 mt-1">
         <MapSearchIcon className="mb-2" />
         <br />
