@@ -65,6 +65,11 @@ describe('Code insight create insight page', () => {
                 }),
 
                 LangStatsInsightContent: () => LangStatsInsightContent,
+
+                /** Mock for repository suggest component. */
+                RepositorySearchSuggestions: () => ({
+                    repositories: { nodes: [] },
+                }),
             },
         })
 
@@ -74,7 +79,7 @@ describe('Code insight create insight page', () => {
         await driver.page.waitForSelector('[data-testid="code-stats-insight-creation-page-content"]')
 
         // Add new repo to repositories field
-        await driver.page.type('input[name="repository"]', 'github.com/sourcegraph/sourcegraph')
+        await driver.page.type('[name="repository"]', 'github.com/sourcegraph/sourcegraph')
         // Wait until async validation on repository field will be finished
         await delay(1000)
 

@@ -37,6 +37,16 @@ const mockAPI = createMockInsightAPI({
 
         return getRandomLangStatsMock()
     },
+    getRepositorySuggestions: async () => {
+        await sleep(2000)
+
+        return [
+            { id: '1', name: 'github.com/example/sub-repo-1' },
+            { id: '2', name: 'github.com/example/sub-repo-2' },
+            { id: '3', name: 'github.com/another-example/sub-repo-1' },
+            { id: '4', name: 'github.com/another-example/sub-repo-2' },
+        ]
+    },
 })
 
 add('Page', () => (
