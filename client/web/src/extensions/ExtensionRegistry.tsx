@@ -144,11 +144,26 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
     const [changedCategory, setChangedCategory] = useState(false)
 
     // Whether to show extensions that set "wip" to true in their manifests.
-    const [showExperimentalExtensions, setShowExperimentalExtensions] = useLocalStorage(
+    const [storedShowExperimentalExtensions, setShowExperimentalExtensions] = useLocalStorage(
         SHOW_EXPERIMENTAL_EXTENSIONS_KEY,
         false
     )
-    const toggleExperimentalExtensions = (): void => setShowExperimentalExtensions(!showExperimentalExtensions)
+    // Referrers can override user's "show experimental" setting by setting URL parameter 'experimental=true'
+    const parameterShowExperimental = getExperimentalFromLocation(location)
+    const showExperimentalExtensions = parameterShowExperimental || storedShowExperimentalExtensions
+    const toggleExperimentalExtensions = (): void => {
+        if (parameterShowExperimental) {
+            // Clear search parameter when user clicks "show experimental" checkbox
+            history.replace(
+                getRegistryLocationDescriptor({
+                    query: getQueryFromLocation(location),
+                    category: getCategoryFromLocation(location),
+                    experimental: false,
+                })
+            )
+        }
+        setShowExperimentalExtensions(!showExperimentalExtensions)
+    }
 
     /**
      * Note: pass `settingsCascade` instead of making it a dependency to prevent creating
@@ -174,7 +189,13 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
                         setQuery(query)
                         setSelectedCategory(getCategoryFromLocation(window.location))
 
-                        history.replace(getRegistryLocationDescriptor(query, category))
+                        history.replace(
+                            getRegistryLocationDescriptor({
+                                query,
+                                category,
+                                experimental: getExperimentalFromLocation(window.location),
+                            })
+                        )
                     }),
                     debounce(({ immediate }) => timer(immediate ? 0 : 50)),
                     distinctUntilChanged(
@@ -275,12 +296,13 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
         (category: ExtensionCategoryOrAll) => {
             const query = getQueryFromLocation(window.location)
             const currentCategory = getCategoryFromLocation(window.location)
+            const experimental = getExperimentalFromLocation(window.location)
 
             if (category !== currentCategory) {
                 setChangedCategory(true)
             }
 
-            history.push(getRegistryLocationDescriptor(query, category))
+            history.push(getRegistryLocationDescriptor({ query, category, experimental }))
         },
         [history]
     )
@@ -382,22 +404,38 @@ function getCategoryFromLocation(location: Pick<H.Location, 'search'>): Extensio
     return 'All'
 }
 
+function getExperimentalFromLocation(location: Pick<H.Location, 'search'>): boolean {
+    const parameters = new URLSearchParams(location.search)
+    const experimental = parameters.get('experimental')
+
+    return experimental === 'true'
+}
+
 /**
  * Returns location descriptor object to push/replace onto the history stack
  * whenever the query or category is changed.
  */
-function getRegistryLocationDescriptor(query: string, category: ExtensionCategoryOrAll): H.LocationDescriptorObject {
+function getRegistryLocationDescriptor({
+    query,
+    category,
+    experimental,
+}: {
+    query: string
+    category: ExtensionCategoryOrAll
+    experimental: boolean
+}): H.LocationDescriptorObject {
+    const search = new URLSearchParams()
+
+    search.set(URL_CATEGORY_PARAM, category)
+    if (query) {
+        search.set(URL_QUERY_PARAM, query)
+    }
+    if (experimental) {
+        search.set('experimental', 'true')
+    }
+
     return {
-        search: new URLSearchParams(
-            query
-                ? {
-                      [URL_QUERY_PARAM]: query,
-                      [URL_CATEGORY_PARAM]: category,
-                  }
-                : {
-                      [URL_CATEGORY_PARAM]: category,
-                  }
-        ).toString(),
+        search: search.toString(),
         hash: window.location.hash,
     }
 }
