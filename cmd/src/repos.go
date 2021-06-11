@@ -1,9 +1,12 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"time"
+
+	"github.com/sourcegraph/src-cli/internal/api"
 )
 
 var reposCommands commander
@@ -19,8 +22,6 @@ The commands are:
 
 	get        gets a repository
 	list       lists repositories
-	enable     enables repositories
-	disable    disables repositories
 	delete 	   deletes repositories
 
 Use "src repos [command] -h" for more information about a command.
@@ -87,4 +88,27 @@ type ExternalRepository struct {
 type GitRef struct {
 	Name        string `json:"name"`
 	DisplayName string `json:"displayName"`
+}
+
+func fetchRepositoryID(ctx context.Context, client api.Client, repoName string) (string, error) {
+	query := `query RepositoryID($repoName: String!) {
+  repository(name: $repoName) {
+    id
+  }
+}`
+
+	var result struct {
+		Repository struct {
+			ID string
+		}
+	}
+	if ok, err := client.NewRequest(query, map[string]interface{}{
+		"repoName": repoName,
+	}).Do(ctx, &result); err != nil || !ok {
+		return "", err
+	}
+	if result.Repository.ID == "" {
+		return "", fmt.Errorf("repository not found: %s", repoName)
+	}
+	return result.Repository.ID, nil
 }
