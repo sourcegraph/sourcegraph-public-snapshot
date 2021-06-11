@@ -5,7 +5,7 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { isExtensionEnabled } from '@sourcegraph/shared/src/extensions/extension'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { ExtensionCategory, EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
-import { SettingsCascadeProps, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
+import { mergeSettings, SettingsCascadeProps, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { createRecord } from '@sourcegraph/shared/src/util/createRecord'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
@@ -71,6 +71,23 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
                 // Even if the user has permission to administer Site settings, changes cannot be made
                 // through the API if global settings are configured through the GLOBAL_SETTINGS_FILE envvar.
                 if (subject.subject.allowSiteSettingsEdits) {
+                    // Merge default settings (to include e.g. programming language extension settings that may not
+                    // have been modified by site admins).
+                    const defaultSubject = settingsCascade.subjects.find(
+                        subject => subject.subject.__typename === 'DefaultSettings'
+                    )
+                    const defaultSettings =
+                        !!defaultSubject?.settings && !isErrorLike(defaultSubject.settings)
+                            ? defaultSubject.settings
+                            : undefined
+
+                    if (!!subject.settings && !isErrorLike(subject.settings) && defaultSettings) {
+                        // Site settings have higher precedence than default settings, so put them
+                        // after default settings in the array.
+                        const mergedSettings = mergeSettings([defaultSettings, subject.settings])
+                        return { ...subject, settings: mergedSettings }
+                    }
+
                     return subject
                 }
                 break
