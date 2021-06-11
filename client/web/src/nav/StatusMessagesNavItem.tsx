@@ -3,7 +3,7 @@ import * as H from 'history'
 import { isEqual } from 'lodash'
 import { MdiReactIconProps } from 'mdi-react'
 import AlertIcon from 'mdi-react/AlertIcon'
-import CheckboxMarkedCircleIcon from 'mdi-react/CheckboxMarkedCircleIcon'
+import CheckboxCircleIcon from 'mdi-react/CheckboxMarkedCircleIcon'
 import CloudAlertIconCurrent from 'mdi-react/CloudAlertIcon'
 import CloudCheckIconCurrent from 'mdi-react/CloudCheckIcon'
 import CloudOffOutlineIcon from 'mdi-react/CloudOffOutlineIcon'
@@ -56,6 +56,10 @@ function fetchAllStatusMessages(): Observable<StatusMessagesResult['statusMessag
                     message
                 }
 
+                ... on IndexingError {
+                    message
+                }
+
                 ... on ExternalServiceSyncError {
                     message
                     externalService {
@@ -102,25 +106,24 @@ function iconsToShow(isRedesignEnabled = false): IconsToShow {
     const CloudSyncIcon = isRedesignEnabled ? CloudSyncIconRefresh : CloudSyncIconCurrent
     const CloudCheckIcon = isRedesignEnabled ? CloudCheckIconRefresh : CloudCheckIconCurrent
     const SyncIconMdi = isRedesignEnabled ? CloudSyncIconRefresh : SyncIcon
-    return { CloudAlertIcon, CloudSyncIcon, CloudCheckIcon,  SyncIcon: SyncIconMdi }
+    return { CloudAlertIcon, CloudSyncIcon, CloudCheckIcon, SyncIcon: SyncIconMdi }
 }
 
-function entryIcon(entryType: EntryType, isRedesignEnabled?: boolean): JSX.Element {
-    const { CloudAlertIcon, SyncIcon, CloudCheckIcon } = iconsToShow(isRedesignEnabled)
+function entryIcon(entryType: EntryType): JSX.Element {
     switch (entryType) {
         case 'error': {
             return <InformationCircleIcon size={14} className="text-danger status-messages-nav-item__entry-icon" />
         }
         case 'warning':
-            return <CloudAlertIcon size={14} className="text-warning status-messages-nav-item__entry-icon" />
+            return <AlertIcon size={14} className="text-warning status-messages-nav-item__entry-icon" />
         case 'success':
-            return <CloudCheckIcon size={14} className="text-success status-messages-nav-item__entry-icon" />
+            return <CheckboxCircleIcon size={14} className="text-success status-messages-nav-item__entry-icon" />
         case 'progress':
             return <SyncIcon size={14} className="text-primary status-messages-nav-item__entry-icon" />
         case 'not-active':
             return (
                 <CircleDashedIcon
-                    size={14}
+                    size={16}
                     className="status-messages-nav-item__entry-icon status-messages-nav-item__entry-icon--off"
                 />
             )
@@ -141,9 +144,8 @@ const getMessageColor = (entryType: string): string => {
 
 const StatusMessagesNavItemEntry: React.FunctionComponent<StatusMessageEntryProps> = props => (
     <div key={props.message} className="status-messages-nav-item__entry">
-        <small className="d-inline-block  text-muted status-messages-nav-item__entry-sync">Code sync status</small>
         <h4 className="d-flex align-items-center mb-0">
-            {entryIcon(props.entryType, props.isRedesignEnabled)}
+            {entryIcon(props.entryType)}
             {props.title ? props.title : 'Your repositories'}
         </h4>
         {props.entryType === 'not-active' ? (
@@ -266,13 +268,13 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         this.subscriptions.unsubscribe()
     }
 
-    // StatusMessageFields | ExternalServiceNoActivityReason | []
     private renderMessage(
         message: Message,
         user: { isSiteAdmin: boolean; createdAt: string }
     ): JSX.Element | JSX.Element[] {
         const codeHostsLink = `/users/${this.props.username}/settings/code-hosts`
-        const repositoriesLink = `/users/${this.props.username}/settings/repositories/manage`
+        const viewRepositoriesLink = `/users/${this.props.username}/settings/repositories`
+        const manageRepositoriesLink = `${viewRepositoriesLink}/manage`
 
         // no status messages
         if (Array.isArray(message) && message.length === 0) {
@@ -280,7 +282,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                 <StatusMessagesNavItemEntry
                     key="up-to-date"
                     message="Repositories available for search"
-                    linkTo={repositoriesLink}
+                    linkTo={viewRepositoriesLink}
                     linkText="Manage repositories"
                     linkOnClick={this.toggleIsOpen}
                     entryType="success"
@@ -296,7 +298,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                     <StatusMessagesNavItemEntry
                         key={message}
                         message="Add repositories to start searching your code on Sourcegraph."
-                        linkTo={repositoriesLink}
+                        linkTo={manageRepositoriesLink}
                         linkText="Add repositories"
                         linkOnClick={this.toggleIsOpen}
                         entryType="not-active"
@@ -321,46 +323,12 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
             )
         }
 
-        const cloningProgress = message.find(message_ => message_.type === 'CloningProgress');
+        const cloningProgress = message.find(message_ => message_.type === 'CloningProgress')
+        const indexing = message.find(message_ => message_.type === 'IndexingProgress')
 
-        // const indexing = message.find(message_ => message_.type === 'IndexingProgress');
-
-        // if (cloningProgress && indexing) {
-        //     message = message.filter(message_ => message_.type !== 'IndexingProgress')
-        // }
-
-        message = [
-            {
-                type: 'CloningProgress',
-                message: '42 repositories cloning...',
-            },
-            {
-                type: 'IndexingProgress',
-                message: 'Indexing 3 repositories...',
-            },
-            {
-                type: 'IndexingProgress',
-                message: '',
-            },
-            {
-                type: 'SyncError',
-                message: '2 repositories could not be synced',
-            },
-            {
-                type: 'ExternalServiceSyncError',
-                externalService: {
-                    id: '123',
-                    displayName: 'Github',
-                },
-                message: 'Some message',
-            },
-            {
-                type: 'IndexingError',
-                message: 'Could not complete indexing.'
-            },
-        ]
-
-        const indexing = message.find(message_ => message_.type === 'IndexingProgress');
+        if (cloningProgress && indexing) {
+            message = message.filter(message_ => message_.type !== 'IndexingProgress')
+        }
 
         return message.map(message_ => {
             switch (message_.type) {
@@ -370,11 +338,11 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                             key={message_.message}
                             message={message_.message}
                             messageHint="Your repositories may not be up to date."
-                            linkTo={repositoriesLink}
+                            linkTo={viewRepositoriesLink}
                             linkText="View status"
                             linkOnClick={this.toggleIsOpen}
                             entryType="progress"
-                            progressHint={indexing ? indexing.message : ''}
+                            progressHint={indexing && indexing.type === 'IndexingProgress' ? indexing.message : ''}
                             isRedesignEnabled={this.props.isRedesignEnabled}
                         />
                     )
@@ -383,7 +351,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                         <StatusMessagesNavItemEntry
                             key={message_.message}
                             message="Repositories available for search"
-                            linkTo={repositoriesLink}
+                            linkTo={viewRepositoriesLink}
                             linkText="Manage repositories"
                             linkOnClick={this.toggleIsOpen}
                             entryType="success"
@@ -417,19 +385,19 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                             isRedesignEnabled={this.props.isRedesignEnabled}
                         />
                     )
-                    case 'IndexingError':
-                        return (
-                            <StatusMessagesNavItemEntry
-                                key={message_.message}
-                                message={message_.message}
-                                messageHint="Your repositories are up to date, but search speed may be slower than usual."
-                                linkTo={codeHostsLink}
-                                linkText="Troubleshoot"
-                                linkOnClick={this.toggleIsOpen}
-                                entryType="warning"
-                                isRedesignEnabled={this.props.isRedesignEnabled}
-                            />
-                        )
+                case 'IndexingError':
+                    return (
+                        <StatusMessagesNavItemEntry
+                            key={message_.message}
+                            message={message_.message}
+                            messageHint="Your repositories are up to date, but search speed may be slower than usual."
+                            linkTo={codeHostsLink}
+                            linkText="Troubleshoot"
+                            linkOnClick={this.toggleIsOpen}
+                            entryType="warning"
+                            isRedesignEnabled={this.props.isRedesignEnabled}
+                        />
+                    )
             }
         })
     }
@@ -444,8 +412,14 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         if (isNoActivityReason(this.state.messagesOrError)) {
             return (
                 <CloudOffOutlineIcon
-                    className="icon-inline"
-                    data-tooltip={this.state.isOpen ? undefined : 'No code host connections or repos'}
+                    className="icon-inline-md"
+                    data-tooltip={
+                        this.state.isOpen
+                            ? undefined
+                            : this.state.messagesOrError === 'NO_CODEHOSTS'
+                            ? 'No code host connections'
+                            : 'No repositories'
+                    }
                 />
             )
         }
@@ -487,6 +461,9 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
 
                 <DropdownMenu right={true} className="status-messages-nav-item__dropdown-menu p-0">
                     <div className="status-messages-nav-item__dropdown-menu-content">
+                        <small className="d-inline-block text-muted status-messages-nav-item__entry-sync">
+                            Code sync status
+                        </small>
                         {isErrorLike(this.state.messagesOrError) ? (
                             <ErrorAlert
                                 className="status-messages-nav-item__entry"

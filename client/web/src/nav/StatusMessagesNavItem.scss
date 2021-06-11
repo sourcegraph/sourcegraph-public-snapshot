@@ -7,13 +7,16 @@
         min-width: 20rem;
         max-width: 20rem;
         user-select: text;
+        box-sizing: content-box;
     }
     &__dropdown-menu-content {
         max-height: 50vh;
         overflow-y: auto;
+        padding: 1rem;
+        padding-bottom: 0;
     }
     &__entry {
-        padding: 1rem;
+        padding-bottom: 1rem;
         word-wrap: break-word;
         white-space: pre-line;
         &-link {
@@ -39,7 +42,7 @@
             }
         }
         &-sync {
-            margin-bottom: 0.625rem;
+            margin-bottom: 0.75rem;
         }
         &-message {
             padding: 0;
