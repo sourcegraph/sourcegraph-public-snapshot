@@ -1,14 +1,16 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`<HierarchicalLocationsView /> displays a single location when complete 1`] = `
-<div
-  className="hierarchical-locations-wrapper"
->
+<div>
   <div
-    className="hierarchical-locations-view "
+    className="referencesContainer"
+    data-testid="hierarchical-locations-view"
   >
     <div
-      className="file-locations hierarchical-locations-view__content"
+      className="d-flex"
+    />
+    <div
+      className="file-locations fileLocations"
     >
       <div>
         <VisibilitySensor
@@ -161,88 +163,66 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
 `;
 
 exports[`<HierarchicalLocationsView /> displays multiple locations grouped by file 1`] = `
-<div
-  className="hierarchical-locations-wrapper"
->
+<div>
   <div
-    className="hierarchical-locations-view "
+    className="referencesContainer"
+    data-testid="hierarchical-locations-view"
   >
     <div
-      className="resizable hierarchical-locations-view__resizable"
-      style={
-        Object {
-          "width": "200px",
-        }
-      }
+      className="d-flex"
     >
       <div
-        className="list-group list-group-flush hierarchical-locations-view__list test-hierarchical-locations-view-list"
+        className="resizable resizableGroup"
+        style={
+          Object {
+            "width": "200px",
+          }
+        }
       >
-        <button
-          className="list-group-item list-group-item-action hierarchical-locations-view__item active"
-          onClick={[Function]}
-          type="button"
+        <div
+          className="list-group groupList"
+          data-testid="hierarchical-locations-view-list"
         >
-          <span
-            className="hierarchical-locations-view__item-name"
-            title="file1.txt"
+          <button
+            className="list-group-item list-group-item-action locationButton active"
+            data-testid="hierarchical-locations-view-button"
+            onClick={[Function]}
+            type="button"
           >
             <span
-              className="hierarchical-locations-view__item-name-text"
+              className="locationName"
+              title="github.com/foo/bar"
             >
               <span
-                className=""
+                className="locationNameText"
               >
-                 
-                <span>
-                  file1.txt
+                <span
+                  className=""
+                >
+                   
+                  foo/
+                  <span>
+                    bar
+                  </span>
                 </span>
               </span>
             </span>
-          </span>
-          <span
-            className="hierarchical-locations-view__item-badge ml-1"
-          >
-            2
-          </span>
-        </button>
-        <button
-          className="list-group-item list-group-item-action hierarchical-locations-view__item"
-          onClick={[Function]}
-          type="button"
-        >
-          <span
-            className="hierarchical-locations-view__item-name"
-            title="file2.txt"
-          >
             <span
-              className="hierarchical-locations-view__item-name-text"
+              className="locationBadge ml-1"
             >
-              <span
-                className=""
-              >
-                 
-                <span>
-                  file2.txt
-                </span>
-              </span>
+              5
             </span>
-          </span>
-          <span
-            className="hierarchical-locations-view__item-badge ml-1"
-          >
-            3
-          </span>
-        </button>
+          </button>
+        </div>
+        <div
+          className="handle handleRight resizableHandle"
+          onMouseDown={[Function]}
+          role="presentation"
+        />
       </div>
-      <div
-        className="handle handleRight hierarchical-locations-view__resizable-handle"
-        onMouseDown={[Function]}
-        role="presentation"
-      />
     </div>
     <div
-      className="file-locations hierarchical-locations-view__content"
+      className="file-locations fileLocations"
     >
       <div>
         <VisibilitySensor
@@ -419,14 +399,16 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
 `;
 
 exports[`<HierarchicalLocationsView /> displays partial locations before complete 1`] = `
-<div
-  className="hierarchical-locations-wrapper"
->
+<div>
   <div
-    className="hierarchical-locations-view "
+    className="referencesContainer"
+    data-testid="hierarchical-locations-view"
   >
     <div
-      className="file-locations hierarchical-locations-view__content"
+      className="d-flex"
+    />
+    <div
+      className="file-locations fileLocations"
     >
       <div>
         <VisibilitySensor
