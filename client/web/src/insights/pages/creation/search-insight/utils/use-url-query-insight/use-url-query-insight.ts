@@ -3,6 +3,7 @@ import { useMemo } from 'react'
 import { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Filter, Token } from '@sourcegraph/shared/src/search/query/token'
+import { dedupeWhitespace } from '@sourcegraph/shared/src/util/strings';
 
 import { DEFAULT_ACTIVE_COLOR } from '../../components/form-color-input/FormColorInput'
 import { createDefaultEditSeries } from '../../components/search-insight-creation-content/hooks/use-editable-series'
@@ -15,11 +16,6 @@ import { CreateInsightFormFields } from '../../types'
  * @param token - query parsed lexical token
  */
 const isRepoFilter = (token: Token): token is Filter => token.type === 'filter' && token.field.value === 'repo'
-
-/**
- * Generate query string without extra whitespaces.
- */
-const getSanitizedQueryString = (query: string): string => query.replace(/\s+/g, ' ').trim()
 
 /**
  * Generate repositories string value without special reg exp
@@ -83,7 +79,7 @@ export function getInsightDataFromQuery(query: string | null): InsightData | nul
     const humanReadableQueryString = stringHuman(tokensWithoutRepoFilters)
 
     return {
-        seriesQuery: getSanitizedQueryString(humanReadableQueryString),
+        seriesQuery: dedupeWhitespace(humanReadableQueryString),
         repositories: getSanitizedRepositoriesString(repositories),
     }
 }
