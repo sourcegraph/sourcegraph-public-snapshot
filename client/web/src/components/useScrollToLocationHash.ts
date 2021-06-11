@@ -25,6 +25,7 @@ export const useScrollToLocationHash = (location: H.Location): void => {
         if (location.hash) {
             const idOrName = location.hash.slice(1)
             if (idOrName !== scrolledTo) {
+                // eslint-disable-next-line unicorn/prefer-query-selector
                 const element =
                     tryCatch(() => document.getElementById(idOrName)) ||
                     document.getElementsByName(idOrName).item(0)
