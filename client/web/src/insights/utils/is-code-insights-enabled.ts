@@ -35,11 +35,11 @@ export function isCodeInsightsEnabled(
         return false
     }
 
-    return viewsKeys.reduce<boolean>((isEnabled, viewKey) => {
+    return viewsKeys.every(viewKey => {
         if (views[viewKey]) {
-            return isEnabled && final?.[`insights.displayLocation.${viewKey}`] !== false
+            return final?.[`insights.displayLocation.${viewKey}`] !== false
         }
 
-        return isEnabled
-    }, true)
+        return true
+    })
 }
