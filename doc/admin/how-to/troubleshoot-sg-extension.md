@@ -50,4 +50,10 @@ The ESlint extension requires the eslint.insight.repository and eslint.insight.s
 #### Open-in-intellij: Sourcegraph fails to load a file when trying to open the file from intellij Plugin.
 This is most likely due to the file being opened in a Sourcegraph instance that does not have access to your files. You must first configure the plugin in order to use it with your private instance. See the plugin docs for more information.
 
+#### search-export: Network Error when downloading CSV
+
+It's likely that the CSV file exceeds the browser's limit for data URI size. Users can limit the size of search match preview size through their user settings (see ["contributions"](https://sourcegraph.com/extensions/sourcegraph/search-export/-/contributions) for search-export). If decreasing the size of search match previews doesn't resolve the issue, users can decrease the amount of search results exported with the `count:` filter in their search query.
+
+___
+
 See the [Sourcegraph browser extension docs](https://docs.sourcegraph.com/integration/browser_extension#troubleshooting) for more troubleshooting tips.
