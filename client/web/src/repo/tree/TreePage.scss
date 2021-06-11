@@ -3,6 +3,10 @@
 @import './TreeEntriesSection';
 
 .tree-page {
+    // For the other sub-pages in the RepoArea, we use a child selector to add the
+    // border and radius to the sub-page containers. Since we use the Container
+    // component here, we already have a pair of borders and had duplicate borders
+    // without it. This should be removed once we can get rid of that child selector.
     border: none !important;
     border-radius: 0 !important;
     padding-bottom: 2rem !important;
