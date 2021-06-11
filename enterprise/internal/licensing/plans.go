@@ -3,7 +3,7 @@ package licensing
 import (
 	"strings"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 )
 
 // A Plan is a pricing plan, with an associated set of features that it offers.

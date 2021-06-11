@@ -29,7 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 
 	"github.com/gorilla/schema"
 	"github.com/opentracing/opentracing-go/ext"

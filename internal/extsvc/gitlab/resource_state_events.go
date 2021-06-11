@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 )
 
 // GetMergeRequestResourceStateEvents retrieves the events for the given merge request. As the

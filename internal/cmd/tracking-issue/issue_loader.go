@@ -8,9 +8,9 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 	"github.com/machinebox/graphql"
-	"github.com/pkg/errors"
 )
 
 const costPerSearch = 30
