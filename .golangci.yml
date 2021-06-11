@@ -15,6 +15,10 @@ linters:
     - unused
 
 linters-settings:
+  depguard:
+    list-type: blacklist
+    packages-with-error-message:
+      - github.com/pkg/errors: "Use github.com/cockroachdb/errors instead"
   gocritic:
     disabled-checks:
       - appendAssign      # Too many false positives
