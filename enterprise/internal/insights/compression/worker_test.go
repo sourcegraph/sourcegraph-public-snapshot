@@ -48,7 +48,7 @@ func TestCommitIndexer_indexAll(t *testing.T) {
 		"no-commits": {},
 	}
 	indexer.getCommits = mockCommits(commits)
-	indexer.getRepoId = mockIds(map[string]int{"repo-one": 1, "really-big-repo": 2, "no-commits": 3})
+	indexer.getRepoID = mockIds(map[string]int{"repo-one": 1, "really-big-repo": 2, "no-commits": 3})
 	indexer.allReposIterator = mockIterator([]string{"repo-one", "really-big-repo", "no-commits"})
 
 	commitStore.GetMetadataFunc.PushReturn(CommitIndexMetadata{

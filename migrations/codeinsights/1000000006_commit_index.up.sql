@@ -9,7 +9,7 @@ CREATE TABLE commit_index
 	PRIMARY KEY (committed_at, repo_id, commit_bytea)
 );
 
-CREATE INDEX commit_index_repo_id_idx ON commit_index USING btree (repo_id);
+CREATE INDEX commit_index_repo_id_idx ON commit_index USING btree (repo_id, committed_at);
 
 CREATE TABLE commit_index_metadata
 (

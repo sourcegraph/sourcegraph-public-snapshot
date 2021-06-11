@@ -43,40 +43,37 @@ func (c *DBCommitStore) Transact(ctx context.Context) (*DBCommitStore, error) {
 
 func (c *DBCommitStore) Save(ctx context.Context, id api.RepoID, commit *git.Commit) error {
 	ref := commit.ID
-	err := c.Exec(ctx, sqlf.Sprintf(insertCommitIndexStr, id, dbutil.CommitBytea(ref), commit.Committer.Date))
-	if err != nil {
+	if err := c.Exec(ctx, sqlf.Sprintf(insertCommitIndexStr, id, dbutil.CommitBytea(ref), commit.Committer.Date)); err != nil {
 		return fmt.Errorf("error saving commit for repo_id: %v ref %v: %w", id, ref, err)
 	}
 
 	return nil
 }
 
-func (c *DBCommitStore) InsertCommits(ctx context.Context, id api.RepoID, commits []*git.Commit) error {
+func (c *DBCommitStore) InsertCommits(ctx context.Context, id api.RepoID, commits []*git.Commit) (err error) {
 	tx, err := c.Transact(ctx)
 	if err != nil {
 		return err
 	}
 
-	defer tx.Store.Done(err)
+	defer func() { err = tx.Store.Done(err) }()
 
 	for _, commit := range commits {
-
-		err = tx.Save(ctx, id, commit)
-		if err != nil {
+		if err = tx.Save(ctx, id, commit); err != nil {
 			return err
 		}
 	}
 
-	_, err = tx.UpsertMetadataStamp(ctx, id)
-	if err != nil {
+	if _, err = tx.UpsertMetadataStamp(ctx, id); err != nil {
 		return err
 	}
+
 	return nil
 }
 
 // Get Fetch all commits that occur for a specific repository and fall in a specific time range. The time range
 // is start inclusive and end exclusive [start, end)
-func (c *DBCommitStore) Get(ctx context.Context, id api.RepoID, start time.Time, end time.Time) ([]CommitStamp, error) {
+func (c *DBCommitStore) Get(ctx context.Context, id api.RepoID, start time.Time, end time.Time) (_ []CommitStamp, err error) {
 	rows, err := c.Query(ctx, sqlf.Sprintf(getCommitsInRangeStr, id, start, end))
 	if err != nil {
 		return []CommitStamp{}, err
@@ -86,7 +83,7 @@ func (c *DBCommitStore) Get(ctx context.Context, id api.RepoID, start time.Time,
 	results := make([]CommitStamp, 0)
 	for rows.Next() {
 		var stamp CommitStamp
-		if err := rows.Scan(&stamp.RepoId, &stamp.Commit, &stamp.CommittedAt); err != nil {
+		if err := rows.Scan(&stamp.RepoID, &stamp.Commit, &stamp.CommittedAt); err != nil {
 			return []CommitStamp{}, err
 		}
 
@@ -96,7 +93,7 @@ func (c *DBCommitStore) Get(ctx context.Context, id api.RepoID, start time.Time,
 	return results, nil
 }
 
-//GetMetadata Returns commit index metadata for a given repository
+// GetMetadata Returns commit index metadata for a given repository
 func (c *DBCommitStore) GetMetadata(ctx context.Context, id api.RepoID) (CommitIndexMetadata, error) {
 	row := c.QueryRow(ctx, sqlf.Sprintf(getCommitIndexMetadataStr, id))
 
@@ -108,7 +105,7 @@ func (c *DBCommitStore) GetMetadata(ctx context.Context, id api.RepoID) (CommitI
 	return metadata, nil
 }
 
-// UpsertMetadataStamp insert (or update if the row already exists) the index metadata timestamp for a given repository
+// UpsertMetadataStamp inserts (or updates, if the row already exists) the index metadata timestamp for a given repository
 func (c *DBCommitStore) UpsertMetadataStamp(ctx context.Context, id api.RepoID) (CommitIndexMetadata, error) {
 	row := c.QueryRow(ctx, sqlf.Sprintf(upsertCommitIndexMetadataStampStr, id))
 
@@ -121,7 +118,7 @@ func (c *DBCommitStore) UpsertMetadataStamp(ctx context.Context, id api.RepoID) 
 }
 
 type CommitStamp struct {
-	RepoId      int
+	RepoID      int
 	Commit      dbutil.CommitBytea
 	CommittedAt time.Time
 }

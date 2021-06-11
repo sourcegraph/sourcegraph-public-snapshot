@@ -3,9 +3,9 @@ package compression
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 
 	"github.com/inconshreveable/log15"
@@ -27,7 +27,7 @@ type RepoStore interface {
 type CommitIndexer struct {
 	limiter           *rate.Limiter
 	allReposIterator  func(ctx context.Context, each func(repoName string) error) error
-	getRepoId         func(ctx context.Context, name api.RepoName) (*types.Repo, error)
+	getRepoID         func(ctx context.Context, name api.RepoName) (*types.Repo, error)
 	getCommits        func(ctx context.Context, name api.RepoName, after time.Time) ([]*git.Commit, error)
 	commitStore       CommitStore
 	maxHistoricalTime time.Time
@@ -35,7 +35,7 @@ type CommitIndexer struct {
 }
 
 func NewCommitIndexer(background context.Context, base dbutil.DB, insights dbutil.DB) *CommitIndexer {
-	//todo: add a setting for historical index length
+	//TODO(insights): add a setting for historical index length
 	startTime := time.Now().AddDate(-1, 0, 0)
 
 	repoStore := database.Repos(base)
@@ -57,7 +57,7 @@ func NewCommitIndexer(background context.Context, base dbutil.DB, insights dbuti
 	indexer := CommitIndexer{
 		limiter:           limiter,
 		allReposIterator:  iterator.ForEach,
-		getRepoId:         repoStore.GetByName,
+		getRepoID:         repoStore.GetByName,
 		commitStore:       commitStore,
 		maxHistoricalTime: startTime,
 		background:        background,
@@ -73,13 +73,12 @@ func NewCommitIndexerWorker(ctx context.Context, base dbutil.DB, insights dbutil
 }
 
 func (i *CommitIndexer) Handler(ctx context.Context) goroutine.BackgroundRoutine {
-	//todo consider adding setting for index interval
+	//TODO(insights) consider adding setting for index interval
 	interval := time.Hour * 1
 
-	//todo convert this to a metrics generating goroutine
+	//TODO(insights) convert this to a metrics generating goroutine
 	return goroutine.NewPeriodicGoroutine(ctx, interval,
 		goroutine.NewHandlerWithErrorMessage("commit_indexer_handler", func(ctx context.Context) error {
-
 			return i.indexAll(ctx)
 		}))
 }
@@ -93,10 +92,18 @@ func (i *CommitIndexer) indexAll(ctx context.Context) error {
 	return nil
 }
 
-// indexRepository Attempt to index the commits given a repository name. This method will absorb any errors that
+// indexRepository attempts to index the commits given a repository name. This method will absorb any errors that
 // occur during execution and skip the index for this repository.
 // If this repository already has some commits indexed, only commits made more recently than the previous index will be added.
 func (i *CommitIndexer) indexRepository(name string) error {
+	err := i.index(name)
+	if err != nil {
+		log15.Error(err.Error())
+	}
+	return nil
+}
+
+func (i *CommitIndexer) index(name string) error {
 	ctx, cancel := context.WithTimeout(i.background, time.Second*45)
 	defer cancel()
 
@@ -109,17 +116,15 @@ func (i *CommitIndexer) indexRepository(name string) error {
 
 	repoName := api.RepoName(name)
 
-	repo, err := i.getRepoId(ctx, repoName)
+	repo, err := i.getRepoID(ctx, repoName)
 	if err != nil {
-		logger.Error("unable to resolve repository id", "repo_name", repoName, "error", err)
-		return nil
+		return errors.Wrapf(err, "unable to resolve repository id repo_name: %v", repoName)
 	}
 	repoId := repo.ID
 
 	metadata, err := getMetadata(ctx, repoId, i.commitStore)
 	if err != nil {
-		logger.Error("unable to fetch commit index metadata", "repo_id", repoId, "error", err)
-		return nil
+		return errors.Wrapf(err, "unable to fetch commit index metadata repo_id: %v", repoId)
 	}
 
 	if !metadata.Enabled {
@@ -132,36 +137,35 @@ func (i *CommitIndexer) indexRepository(name string) error {
 	logger.Debug("fetching commits", "repo_id", repoId, "after", searchTime)
 	commits, err := i.getCommits(ctx, repoName, searchTime)
 	if err != nil {
-		logger.Error("error fetching commits", "repo_id", repoId, "error", err.Error())
-		return nil
+		return errors.Wrapf(err, "error fetching commits from gitserver repo_id: %v", repoId)
 	}
 
 	if len(commits) == 0 {
 		logger.Info("commit index up to date", "repo_id", repoId)
 
-		_, err = i.commitStore.UpsertMetadataStamp(ctx, repoId)
-		if err != nil {
-			logger.Error(err.Error())
+		if _, err = i.commitStore.UpsertMetadataStamp(ctx, repoId); err != nil {
+			return err
+
 		}
+
 		return nil
 	}
 
 	log15.Info("indexing commits", "repo_id", repoId, "count", len(commits))
 	err = i.commitStore.InsertCommits(ctx, repoId, commits)
 	if err != nil {
-		logger.Error("error updating commit index", err.Error())
-		return nil
+		return errors.Wrapf(err, "unable to update commit index repo_id: %v", repoId)
 	}
 
 	return nil
 }
 
-//getCommits Fetch the commits from the remote gitserver for a repository after a certain time.
+//getCommits fetches the commits from the remote gitserver for a repository after a certain time.
 func getCommits(ctx context.Context, name api.RepoName, after time.Time) ([]*git.Commit, error) {
 	return git.Commits(ctx, name, git.CommitsOptions{N: 0, DateOrder: true, NoEnsureRevision: true, After: after.Format(time.RFC3339)})
 }
 
-//getMetadata Get the index metadata for a repository. The metadata will be generated if it doesn't already exist, such as
+//getMetadata gets the index metadata for a repository. The metadata will be generated if it doesn't already exist, such as
 // in the case of a newly installed repository.
 func getMetadata(ctx context.Context, id api.RepoID, store CommitStore) (CommitIndexMetadata, error) {
 	metadata, err := store.GetMetadata(ctx, id)
