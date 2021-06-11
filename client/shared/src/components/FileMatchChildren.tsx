@@ -144,7 +144,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                     className="file-match-children__item test-file-match-children-item"
                     key={`symbol:${symbol.name}${String(symbol.containerName)}${symbol.url}`}
                 >
-                    <SymbolIcon kind={SymbolKind[symbol.kind]} className="icon-inline mr-1" />
+                    <SymbolIcon kind={symbol.kind} className="icon-inline mr-1" />
                     <code>
                         {symbol.name}{' '}
                         {symbol.containerName && <span className="text-muted">{symbol.containerName}</span>}
