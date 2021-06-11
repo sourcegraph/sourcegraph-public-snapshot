@@ -46,7 +46,7 @@ interface SymbolMatch {
     url: string
     name: string
     containerName: string
-    kind: SymbolKind
+    kind: `${SymbolKind}`
 }
 
 type MarkdownText = string

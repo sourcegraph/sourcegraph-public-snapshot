@@ -22,7 +22,7 @@ import {
 import { SearchResult } from '../../../components/SearchResult'
 import { SavedSearchModal } from '../../../savedSearches/SavedSearchModal'
 import * as helpers from '../../helpers'
-import { AggregateStreamingSearchResults } from '../../stream'
+import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { SearchResultsInfoBar } from '../SearchResultsInfoBar'
 import { VersionContextWarning } from '../VersionContextWarning'
 
@@ -32,16 +32,7 @@ import { StreamingSearchResults, StreamingSearchResultsProps } from './Streaming
 describe('StreamingSearchResults', () => {
     const history = createBrowserHistory()
 
-    const streamingSearchResult: AggregateStreamingSearchResults = {
-        state: 'complete',
-        results: MULTIPLE_SEARCH_RESULT.results,
-        filters: MULTIPLE_SEARCH_RESULT.dynamicFilters,
-        progress: {
-            durationMs: 500,
-            matchCount: MULTIPLE_SEARCH_RESULT.matchCount,
-            skipped: [],
-        },
-    }
+    const streamingSearchResult = MULTIPLE_SEARCH_RESULT
 
     const defaultProps: StreamingSearchResultsProps = {
         parsedSearchQuery: 'r:golang/oauth2 test f:travis',
@@ -66,7 +57,7 @@ describe('StreamingSearchResults', () => {
         },
         platformContext: { forceUpdateTooltip: sinon.spy(), settings: NEVER },
 
-        streamSearch: () => of(streamingSearchResult),
+        streamSearch: () => of(MULTIPLE_SEARCH_RESULT),
 
         fetchHighlightedFileLineRanges: HIGHLIGHTED_FILE_LINES_REQUEST,
         isLightTheme: true,
@@ -233,7 +224,7 @@ describe('StreamingSearchResults', () => {
     it('should render correct components for file match and repository match', () => {
         const results: AggregateStreamingSearchResults = {
             ...streamingSearchResult,
-            results: [RESULT, REPO_MATCH_RESULT] as GQL.SearchResult[],
+            results: [RESULT, REPO_MATCH_RESULT],
         }
         const element = mount(
             <BrowserRouter>

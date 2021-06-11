@@ -5,7 +5,7 @@ import * as React from 'react'
 
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
-import { Progress } from '../../../stream'
+import { Progress } from '@sourcegraph/shared/src/search/stream'
 
 import { StreamingProgressProps } from './StreamingProgress'
 

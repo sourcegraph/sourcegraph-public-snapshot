@@ -8,7 +8,7 @@ import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
 import { SyntaxHighlightedSearchQuery } from '../../../../components/SyntaxHighlightedSearchQuery'
 import { Settings } from '../../../../schema/settings.schema'
-import { Filter } from '../../../stream'
+import { Filter } from '@sourcegraph/shared/src/search/stream'
 
 import styles from './SearchSidebarSection.module.scss'
 

@@ -1,6 +1,6 @@
 /* eslint-disable no-template-curly-in-string */
 import { WebGraphQlOperations } from '../graphql-operations'
-import { SearchEvent } from '../search/stream'
+import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
 
 export const diffSearchStreamEvents: SearchEvent[] = [
     {

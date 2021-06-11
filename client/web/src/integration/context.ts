@@ -12,7 +12,7 @@ import {
 
 import { WebGraphQlOperations } from '../graphql-operations'
 import { SourcegraphContext } from '../jscontext'
-import { SearchEvent } from '../search/stream'
+import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
 
 import { commonWebGraphQlResults } from './graphQlResults'
 import { createJsContext } from './jscontext'

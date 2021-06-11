@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import { Progress, StreamingResultsState } from '../../../stream'
+import { Progress, StreamingResultsState } from '@sourcegraph/shared/src/search/stream'
 
 import { StreamingProgressCount } from './StreamingProgressCount'
 import { StreamingProgressSkippedButton } from './StreamingProgressSkippedButton'

@@ -69,7 +69,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                    ›
                    
                   <a
-                    href="/github.com/foo/bar/-/blob/undefined?subtree=true"
+                    href="/github.com/foo/bar/-/blob/?subtree=true"
                   >
                     <strong>
                       
@@ -94,7 +94,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
               >
                 <a
                   className="file-match-children__item file-match-children__item-clickable test-file-match-children-item"
-                  href="/github.com/foo/bar/-/blob/undefined?subtree=true#L2:1"
+                  href="/github.com/foo/bar/-/blob/?subtree=true#L2:1"
                   onClick={[Function]}
                 >
                   <VisibilitySensor
@@ -467,7 +467,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                    ›
                    
                   <a
-                    href="/github.com/foo/bar/-/blob/undefined?subtree=true"
+                    href="/github.com/foo/bar/-/blob/?subtree=true"
                   >
                     <strong>
                       
@@ -492,7 +492,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
               >
                 <a
                   className="file-match-children__item file-match-children__item-clickable test-file-match-children-item"
-                  href="/github.com/foo/bar/-/blob/undefined?subtree=true#L2:1"
+                  href="/github.com/foo/bar/-/blob/?subtree=true#L2:1"
                   onClick={[Function]}
                 >
                   <VisibilitySensor

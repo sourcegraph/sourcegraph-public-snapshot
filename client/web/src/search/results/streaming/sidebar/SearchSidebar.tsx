@@ -9,7 +9,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 
 import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '../../..'
 import { submitSearch, toggleSearchFilter } from '../../../helpers'
-import { Filter } from '../../../stream'
+import { Filter } from '@sourcegraph/shared/src/search/stream'
 
 import { getDynamicFilterLinks, getRepoFilterLinks, getSearchScopeLinks } from './FilterLink'
 import { getQuickLinks } from './QuickLink'

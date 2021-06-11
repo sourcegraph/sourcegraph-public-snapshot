@@ -4,7 +4,7 @@ import { act } from 'react-dom/test-utils'
 import { ButtonDropdown } from 'reactstrap'
 import sinon from 'sinon'
 
-import { Progress } from '../../../stream'
+import { Progress } from '@sourcegraph/shared/src/search/stream'
 
 import { StreamingProgressSkippedButton } from './StreamingProgressSkippedButton'
 import { StreamingProgressSkippedPopover } from './StreamingProgressSkippedPopover'

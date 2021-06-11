@@ -5,7 +5,7 @@ import React from 'react'
 import sinon from 'sinon'
 
 import { SearchScope } from '../../../../schema/settings.schema'
-import { Filter } from '../../../stream'
+import { Filter } from '@sourcegraph/shared/src/search/stream'
 
 import { getDynamicFilterLinks, getRepoFilterLinks, getSearchScopeLinks } from './FilterLink'
 

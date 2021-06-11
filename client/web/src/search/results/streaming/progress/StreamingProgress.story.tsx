@@ -3,7 +3,7 @@ import * as React from 'react'
 import sinon from 'sinon'
 
 import { WebStory } from '../../../../components/WebStory'
-import { Progress } from '../../../stream'
+import { Progress } from '@sourcegraph/shared/src/search/stream'
 
 import { StreamingProgress } from './StreamingProgress'
 
