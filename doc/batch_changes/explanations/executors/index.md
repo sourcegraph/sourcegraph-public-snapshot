@@ -75,11 +75,13 @@ Each executor will run at least one job at a time: you should scale the number o
 
 # Administering and monitoring executors
 
-TODO
+TODO: let's mock up some UI tomorrow
 
 # How executors work
 
-TODO
+Each executor connects to Sourcegraph on startup and waits for jobs to execute. When a batch spec is submitted to Sourcegraph for execution, they are distributed out to available executors on a FIFO basis.
+
+When the executor has a job to run, it uses the [backend](configuration.md) to either start a series of Docker containers, one per step, or a Kubernetes job that in turn runs the required containers. Upon completion, the changeset spec is uploaded to Sourcegraph and a batch change is created, updated, or previewed.
 
 # Executor vs CLI workflow comparison
 
@@ -96,10 +98,13 @@ The current version of Sourcegraph executors has known limitations
 # FAQ
 
 #### Can large batch changes execution be distributed on multiple executors?
-Answer
 
-#### I have several machines configured as executors, and they don't have the same specs (eg. memory). Can I submit some bacth changes specifically to a given machine?
-Answer
+They can! Each changeset that is computed can be run concurrently, provided there are enough executors available. See the [scheduling](#scheduling) section for more detail.
+
+#### I have several machines configured as executors, and they don't have the same specs (eg. memory). Can I submit some batch changes specifically to a given machine?
+
+No, all executors are equal in the eyes of Sourcegraph. We suggest making all executors equal, or using [Kubernetes resource limits](kubernetes.md) to place whatever limits are required for relatively even job distribution.
 
 #### What happens if execution fails?
-Answer
+
+TODO: let's mock up some UI tomorrow
