@@ -408,7 +408,7 @@ describe('Search', () => {
         // To avoid covering the Percy snapshots
         const hideCreateCodeMonitorFeatureTour = () =>
             driver.page.evaluate(() => {
-                localStorage.setItem('has-seen-create-code-monitor-feature-tour-step', 'true')
+                localStorage.setItem('has-seen-create-code-monitor-feature-tour', 'true')
                 location.reload()
             })
 
@@ -497,7 +497,7 @@ describe('Search', () => {
     describe('Feature tour', () => {
         const resetCreateCodeMonitorFeatureTour = () =>
             driver.page.evaluate(() => {
-                localStorage.setItem('has-seen-create-code-monitor-feature-tour-step', 'false')
+                localStorage.setItem('has-seen-create-code-monitor-feature-tour', 'false')
                 location.reload()
             })
 
