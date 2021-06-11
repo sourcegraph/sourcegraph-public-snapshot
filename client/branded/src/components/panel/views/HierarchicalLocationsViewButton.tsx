@@ -2,7 +2,8 @@ import classNames from 'classnames'
 import React from 'react'
 
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
+
+import styles from './HierarchicalLocationsViewButton.module.scss'
 
 interface HierarchicalLocationsViewButtonProps {
     groupKey: string
@@ -14,31 +15,23 @@ interface HierarchicalLocationsViewButtonProps {
 export const HierarchicalLocationsViewButton: React.FunctionComponent<HierarchicalLocationsViewButtonProps> = props => {
     const { groupKey, groupCount, isActive, onClick } = props
 
-    const [isRedesignEnabled] = useRedesignToggle()
-
     return (
         <button
             type="button"
+            data-testid="hierarchical-locations-view-button"
             className={classNames(
-                'list-group-item list-group-item-action hierarchical-locations-view__item',
+                'list-group-item list-group-item-action',
+                styles.locationButton,
                 isActive && 'active'
             )}
             onClick={onClick}
         >
-            <span className="hierarchical-locations-view__item-name" title={groupKey}>
-                <span className="hierarchical-locations-view__item-name-text">
+            <span className={styles.locationName} title={groupKey}>
+                <span className={styles.locationNameText}>
                     <RepoLink to={null} repoName={groupKey} />
                 </span>
             </span>
-            <span
-                className={classNames(
-                    'hierarchical-locations-view__item-badge',
-                    !isRedesignEnabled && 'badge badge-secondary badge-pill ',
-                    isRedesignEnabled && 'ml-1'
-                )}
-            >
-                {groupCount}
-            </span>
+            <span className={classNames(styles.locationBadge, 'ml-1')}>{groupCount}</span>
         </button>
     )
 }

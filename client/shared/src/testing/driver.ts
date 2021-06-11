@@ -482,9 +482,12 @@ export class Driver {
             "//*[contains(@class, 'panel')]//*[contains(@tabindex, '0')]//*[contains(text(), 'References')]"
         )
         // verify there are some references
-        await this.page.waitForSelector('[data-testid="panel-tabs-content"] .hierarchical-locations-view__item', {
-            visible: true,
-        })
+        await this.page.waitForSelector(
+            '[data-testid="panel-tabs-content"] [data-testid="hierarchical-locations-view-button"]',
+            {
+                visible: true,
+            }
+        )
     }
 
     private async makeRequest<T = void>({ url, init }: { url: string; init: RequestInit & Serializable }): Promise<T> {
