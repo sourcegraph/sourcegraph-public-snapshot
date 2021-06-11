@@ -39,6 +39,8 @@ All notable changes to Sourcegraph are documented in this file.
   - **New navigation:** A new global navigation provides immediate discoverability and access to current and future functionality.
   - **Promoting extensibility:** We've brought the extension registry back to the main navigation and improved its design and navigation.
 
+  With bulk of the redesign complete, future releases will include more improvements along these lines.
+
 ### Fixed
 
 - Stricter validation of structural search queries. The `type:` parameter is not supported for structural searches and returns an appropriate alert. [#21487](https://github.com/sourcegraph/sourcegraph/pull/21487)
