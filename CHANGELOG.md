@@ -39,7 +39,7 @@ All notable changes to Sourcegraph are documented in this file.
   - **New navigation:** A new global navigation provides immediate discoverability and access to current and future functionality.
   - **Promoting extensibility:** We've brought the extension registry back to the main navigation and improved its design and navigation.
 
-  With bulk of the redesign complete, future releases will include more improvements along these lines.
+  With bulk of the redesign complete, future releases will include more improvements and refinements.
 
 ### Fixed
 
