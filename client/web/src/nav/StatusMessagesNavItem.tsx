@@ -180,14 +180,17 @@ const StatusMessagesNavItemEntry: React.FunctionComponent<StatusMessageEntryProp
     </div>
 )
 
-interface Props {
-    fetchMessages?: () => Observable<StatusMessagesResult['statusMessages']>
-    isSiteAdmin: boolean
-    isRedesignEnabled?: boolean
-    history: H.History
-    userCreatedAt: string
-    userID: string
+interface User {
+    id: string
     username: string
+    isSiteAdmin: boolean
+}
+
+interface Props {
+    user: User
+    history: H.History
+    fetchMessages?: () => Observable<StatusMessagesResult['statusMessages']>
+    isRedesignEnabled?: boolean
 }
 
 enum ExternalServiceNoActivityReasons {
@@ -210,14 +213,6 @@ interface State {
 const REFRESH_INTERVAL_AFTER_ERROR_MS = 3000
 const REFRESH_INTERVAL_MS = 10000
 
-const isUserCreatedAfterCloudGA = (createdAt: string): boolean => {
-    // TODO: better way to dynamically set this date
-    const CLOUD_GA = new Date(2021, 4, 1)
-    const userCreatedAt = new Date(createdAt)
-
-    return userCreatedAt > CLOUD_GA
-}
-
 /**
  * Displays a status icon in the navbar reflecting the completion of backend
  * tasks such as repository cloning, and exposes a dropdown menu containing
@@ -233,7 +228,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
     public componentDidMount(): void {
         this.subscriptions.add(
             queryExternalServices({
-                namespace: this.props.userID,
+                namespace: this.props.user.id,
                 first: null,
                 after: null,
             })
@@ -268,12 +263,9 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         this.subscriptions.unsubscribe()
     }
 
-    private renderMessage(
-        message: Message,
-        user: { isSiteAdmin: boolean; createdAt: string }
-    ): JSX.Element | JSX.Element[] {
-        const codeHostsLink = `/users/${this.props.username}/settings/code-hosts`
-        const viewRepositoriesLink = `/users/${this.props.username}/settings/repositories`
+    private renderMessage(message: Message, isSiteAdmin: boolean): JSX.Element | JSX.Element[] {
+        const codeHostsLink = `/users/${this.props.user.username}/settings/code-hosts`
+        const viewRepositoriesLink = `/users/${this.props.user.username}/settings/repositories`
         const manageRepositoriesLink = `${viewRepositoriesLink}/manage`
 
         // no status messages
@@ -309,11 +301,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
             return (
                 <StatusMessagesNavItemEntry
                     key={message}
-                    message={`${
-                        isUserCreatedAfterCloudGA(user.createdAt)
-                            ? 'Connect with a code host to start adding your code to Sourcegraph.'
-                            : 'You can now add and search your own repositories on Sourcegraph! Connect with a code host to get started.'
-                    }`}
+                    message="Connect with a code host to start adding your code to Sourcegraph."
                     linkTo={codeHostsLink}
                     linkText="Connect with code host"
                     linkOnClick={this.toggleIsOpen}
@@ -471,10 +459,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                                 error={this.state.messagesOrError}
                             />
                         ) : (
-                            this.renderMessage(this.state.messagesOrError, {
-                                isSiteAdmin: this.props.isSiteAdmin,
-                                createdAt: this.props.userCreatedAt,
-                            })
+                            this.renderMessage(this.state.messagesOrError, this.props.user.isSiteAdmin)
                         )}
                     </div>
                 </DropdownMenu>
