@@ -42,9 +42,9 @@ func (c *DBCommitStore) Transact(ctx context.Context) (*DBCommitStore, error) {
 }
 
 func (c *DBCommitStore) Save(ctx context.Context, id api.RepoID, commit *git.Commit) error {
-	ref := commit.ID
-	if err := c.Exec(ctx, sqlf.Sprintf(insertCommitIndexStr, id, dbutil.CommitBytea(ref), commit.Committer.Date)); err != nil {
-		return fmt.Errorf("error saving commit for repo_id: %v ref %v: %w", id, ref, err)
+	commitID := commit.ID
+	if err := c.Exec(ctx, sqlf.Sprintf(insertCommitIndexStr, id, dbutil.CommitBytea(commitID), commit.Committer.Date)); err != nil {
+		return fmt.Errorf("error saving commit for repo_id: %v commit_id %v: %w", id, commitID, err)
 	}
 
 	return nil
