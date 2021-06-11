@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/url"
 
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
@@ -66,10 +66,8 @@ func CloneURL(kind, config string, repo *types.Repo) (string, error) {
 		if r, ok := repo.Metadata.(*extsvc.OtherRepoMetadata); ok {
 			return otherCloneURL(repo, r), nil
 		}
-	default:
-		return "", errors.Errorf("unknown external service kind %q for repo %d", kind, repo.ID)
 	}
-	return "", errors.Errorf("unknown repo.Metadata type %T for repo %d", repo.Metadata, repo.ID)
+	return "", errors.Errorf("unknown external service kind %q for repo %d", kind, repo.ID)
 }
 
 func awsCodeCloneURL(repo *awscodecommit.Repository, cfg *schema.AWSCodeCommitConnection) string {
@@ -149,6 +147,9 @@ func githubCloneURL(repo *github.Repository, cfg *schema.GitHubConnection) (stri
 		return url, nil
 	}
 
+	if repo.URL == "" {
+		return "", errors.New("empty repo.URL")
+	}
 	if cfg.Token == "" {
 		return repo.URL, nil
 	}
