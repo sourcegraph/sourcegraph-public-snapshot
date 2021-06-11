@@ -6,7 +6,7 @@ import { LoaderButton } from '../../../../../../components/LoaderButton'
 import { FormInput } from '../../../../../components/form/form-input/FormInput'
 import { useFieldAPI } from '../../../../../components/form/hooks/useField'
 import { FORM_ERROR, SubmissionErrors } from '../../../../../components/form/hooks/useForm'
-import { RepositoriesField } from '../../../../../components/form/repositories-field/RepositoriesField';
+import { RepositoriesField } from '../../../../../components/form/repositories-field/RepositoriesField'
 import {
     getVisibilityValue,
     Organization,
