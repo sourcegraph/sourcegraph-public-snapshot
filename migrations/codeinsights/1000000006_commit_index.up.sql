@@ -2,11 +2,11 @@ BEGIN;
 
 CREATE TABLE commit_index
 (
-	commit_time TIMESTAMPTZ NOT NULL,
+	committed_at TIMESTAMPTZ NOT NULL,
 	repo_id INT NOT NULL,
-	ref TEXT NOT NULL,
+	commit_bytea bytea NOT NULL,
 
-	PRIMARY KEY (commit_time, repo_id, ref)
+	PRIMARY KEY (committed_at, repo_id, commit_bytea)
 );
 
 CREATE INDEX commit_index_repo_id_idx ON commit_index USING btree (repo_id);

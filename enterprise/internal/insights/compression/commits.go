@@ -43,7 +43,7 @@ func (c *DBCommitStore) Transact(ctx context.Context) (*DBCommitStore, error) {
 
 func (c *DBCommitStore) Save(ctx context.Context, id api.RepoID, commit *git.Commit) error {
 	ref := commit.ID
-	err := c.Exec(ctx, sqlf.Sprintf(insertCommitIndexStr, id, ref, commit.Committer.Date))
+	err := c.Exec(ctx, sqlf.Sprintf(insertCommitIndexStr, id, dbutil.CommitBytea(ref), commit.Committer.Date))
 	if err != nil {
 		return fmt.Errorf("error saving commit for repo_id: %v ref %v: %w", id, ref, err)
 	}
@@ -86,7 +86,7 @@ func (c *DBCommitStore) Get(ctx context.Context, id api.RepoID, start time.Time,
 	results := make([]CommitStamp, 0)
 	for rows.Next() {
 		var stamp CommitStamp
-		if err := rows.Scan(&stamp.RepoId, &stamp.Ref, &stamp.CommitTime); err != nil {
+		if err := rows.Scan(&stamp.RepoId, &stamp.Commit, &stamp.CommittedAt); err != nil {
 			return []CommitStamp{}, err
 		}
 
@@ -121,9 +121,9 @@ func (c *DBCommitStore) UpsertMetadataStamp(ctx context.Context, id api.RepoID) 
 }
 
 type CommitStamp struct {
-	RepoId     int
-	Ref        string
-	CommitTime time.Time
+	RepoId      int
+	Commit      dbutil.CommitBytea
+	CommittedAt time.Time
 }
 
 type CommitIndexMetadata struct {
@@ -134,12 +134,12 @@ type CommitIndexMetadata struct {
 
 const getCommitsInRangeStr = `
 -- source: enterprise/internal/insights/compression/commits.go:Get
-SELECT repo_id, ref, commit_time FROM commit_index WHERE repo_id = %s AND commit_time >= %s AND commit_time < %s ORDER BY commit_time desc;
+SELECT repo_id, commit_bytea, committed_at FROM commit_index WHERE repo_id = %s AND committed_at >= %s AND committed_at < %s ORDER BY committed_at desc;
 `
 
 const insertCommitIndexStr = `
 -- source: enterprise/internal/insights/compression/commits.go:Save
-INSERT INTO commit_index(repo_id, ref, commit_time) VALUES (%s, %s, %s);
+INSERT INTO commit_index(repo_id, commit_bytea, committed_at) VALUES (%s, %s, %s);
 `
 
 const getCommitIndexMetadataStr = `
