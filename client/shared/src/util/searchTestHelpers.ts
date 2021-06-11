@@ -10,7 +10,6 @@ import { AggregateStreamingSearchResults, FileLineMatch, RepositoryMatch } from 
 export const RESULT: FileLineMatch = {
     type: 'file',
     name: '.travis.yml',
-    version: 'e64efc72b421e893cbf63f17ba2221e7d6d0b0f3',
     repository: 'github.com/golang/oauth2',
     lineMatches: [
         {
@@ -29,8 +28,6 @@ export const REPO_MATCH_RESULT: RepositoryMatch = {
 export const MULTIPLE_MATCH_RESULT: FileLineMatch = {
     type: 'file',
     name: 'clientcredentials/clientcredentials_test.go',
-    version: 'e64efc72b421e893cbf63f17ba2221e7d6d0b0f3',
-
     repository: 'github.com/golang/oauth2',
     lineMatches: [
         {
