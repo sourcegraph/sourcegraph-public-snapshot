@@ -1,4 +1,3 @@
-import * as H from 'history'
 import React from 'react'
 
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
@@ -12,27 +11,26 @@ import { CommitSearchResultMatch } from './CommitSearchResultMatch'
 
 interface Props extends ThemeProps {
     result: CommitMatch | RepositoryMatch
-    history: H.History
     repoName: string
     icon: React.ComponentType<{ className?: string }>
 }
 
-export const SearchResult: React.FunctionComponent<Props> = ({ result, history, icon, isLightTheme, repoName }) => {
+export const SearchResult: React.FunctionComponent<Props> = ({ result, icon, isLightTheme, repoName }) => {
     const renderTitle = (): JSX.Element => (
-            <div className="search-result__title">
-                <RepoIcon repoName={repoName} className="icon-inline text-muted flex-shrink-0" />
-                <Markdown
-                    className="test-search-result-label ml-1 flex-shrink-past-contents text-truncate"
-                    dangerousInnerHTML={renderMarkdown(getMatchTitle(result))}
-                />
-                {result.type === 'commit' && result.detail && (
-                    <>
-                        <span className="search-result__spacer" />
-                        <Markdown className="flex-shrink-0" dangerousInnerHTML={renderMarkdown(result.detail)} />
-                    </>
-                )}
-            </div>
-        )
+        <div className="search-result__title">
+            <RepoIcon repoName={repoName} className="icon-inline text-muted flex-shrink-0" />
+            <Markdown
+                className="test-search-result-label ml-1 flex-shrink-past-contents text-truncate"
+                dangerousInnerHTML={renderMarkdown(getMatchTitle(result))}
+            />
+            {result.type === 'commit' && result.detail && (
+                <>
+                    <span className="search-result__spacer" />
+                    <Markdown className="flex-shrink-0" dangerousInnerHTML={renderMarkdown(result.detail)} />
+                </>
+            )}
+        </div>
+    )
 
     const renderBody = (): JSX.Element => {
         if (result.type === 'repo') {

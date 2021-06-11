@@ -34,7 +34,6 @@ export interface StreamingSearchResultsListProps extends ThemeProps, SettingsCas
     results?: AggregateStreamingSearchResults
 
     location: H.Location
-    history: H.History
 
     allExpanded: boolean
 
@@ -44,7 +43,6 @@ export interface StreamingSearchResultsListProps extends ThemeProps, SettingsCas
 export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearchResultsListProps> = ({
     results,
     location,
-    history,
     isLightTheme,
     allExpanded,
     fetchHighlightedFileLineRanges,
@@ -99,7 +97,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                             result={result}
                             repoName={result.repository}
                             isLightTheme={isLightTheme}
-                            history={history}
                         />
                     )
                 case 'repo':
@@ -109,20 +106,11 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                             result={result}
                             repoName={result.repository}
                             isLightTheme={isLightTheme}
-                            history={history}
                         />
                     )
             }
         },
-        [
-            isLightTheme,
-            history,
-            location,
-            logSearchResultClicked,
-            allExpanded,
-            fetchHighlightedFileLineRanges,
-            settingsCascade,
-        ]
+        [isLightTheme, location, logSearchResultClicked, allExpanded, fetchHighlightedFileLineRanges, settingsCascade]
     )
 
     return (
