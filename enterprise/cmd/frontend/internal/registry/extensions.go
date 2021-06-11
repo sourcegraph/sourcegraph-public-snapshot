@@ -21,6 +21,18 @@ func init() {
 		}
 		return &extensionDBResolver{db: db, v: x}, nil
 	}
+
+	registry.GetLocalFeaturedExtensions = func(ctx context.Context, db dbutil.DB) ([]graphqlbackend.RegistryExtension, error) {
+		dbExtensions, err := dbExtensions{}.GetFeaturedExtensions(ctx)
+		if err != nil {
+			return nil, err
+		}
+		registryExtensions := make([]graphqlbackend.RegistryExtension, len(dbExtensions))
+		for i, x := range dbExtensions {
+			registryExtensions[i] = &extensionDBResolver{db: db, v: x}
+		}
+		return registryExtensions, nil
+	}
 }
 
 // prefixLocalExtensionID adds the local registry's extension ID prefix (from

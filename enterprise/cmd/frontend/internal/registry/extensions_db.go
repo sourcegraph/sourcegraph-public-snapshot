@@ -11,6 +11,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
@@ -178,6 +179,52 @@ func (s dbExtensions) GetByExtensionID(ctx context.Context, extensionID string) 
 		return nil, extensionNotFoundError{[]interface{}{fmt.Sprintf("extensionID %q", extensionID)}}
 	}
 	return results[0], nil
+}
+
+// Temporary: we manually set these. Featured extensions live on sourcegraph.com, all other instances ask
+// dotcom for these extensions and filter based on site configuration.
+var featuredExtensionIDs = []string{"sourcegraph/codecov", "sourcegraph/sentry", "sourcegraph/vscode-extras"}
+
+// GetFeaturedExtensions retrieves the set of currently featured extensions.
+// This should only be called on dotcom; all other instances should retrieve these
+// extensions from dotcom through the HTTP API.
+//
+// 🚨 SECURITY: The caller must ensure that the actor is permitted to view these registry extensions.
+func (s dbExtensions) GetFeaturedExtensions(ctx context.Context) ([]*dbExtension, error) {
+	if envvar.SourcegraphDotComMode() {
+		return s.getFeaturedExtensions(ctx, featuredExtensionIDs)
+	}
+
+	return nil, errors.New("GetFeaturedExtensions should only be called on Sourcegraph.com")
+}
+
+func (s dbExtensions) getFeaturedExtensions(ctx context.Context, featuredExtensionIDs []string) ([]*dbExtension, error) {
+	if mocks.extensions.GetFeaturedExtensions != nil {
+		return mocks.extensions.GetFeaturedExtensions()
+	}
+
+	conds := make([]*sqlf.Query, 0, len(featuredExtensionIDs))
+
+	for i := 0; i < len(featuredExtensionIDs); i++ {
+		extensionID := featuredExtensionIDs[i]
+		parts := strings.SplitN(extensionID, "/", 2)
+		if len(parts) < 2 {
+			continue
+		}
+		publisherName := parts[0]
+		extensionName := parts[1]
+		conds = append(conds, sqlf.Sprintf("(x.name=%s AND (users.username=%s OR orgs.name=%s))", extensionName, publisherName, publisherName))
+	}
+
+	conds = []*sqlf.Query{
+		sqlf.Join(conds, " OR "),
+	}
+
+	results, err := s.list(ctx, conds, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	return results, nil
 }
 
 // dbExtensionsListOptions contains options for listing registry extensions.
@@ -366,10 +413,11 @@ func (dbExtensions) Delete(ctx context.Context, id int32) error {
 
 // mockExtensions mocks the registry extensions store.
 type mockExtensions struct {
-	Create           func(publisherUserID, publisherOrgID int32, name string) (int32, error)
-	GetByID          func(id int32) (*dbExtension, error)
-	GetByUUID        func(uuid string) (*dbExtension, error)
-	GetByExtensionID func(extensionID string) (*dbExtension, error)
-	Update           func(id int32, name *string) error
-	Delete           func(id int32) error
+	Create                func(publisherUserID, publisherOrgID int32, name string) (int32, error)
+	GetByID               func(id int32) (*dbExtension, error)
+	GetByUUID             func(uuid string) (*dbExtension, error)
+	GetByExtensionID      func(extensionID string) (*dbExtension, error)
+	GetFeaturedExtensions func() ([]*dbExtension, error)
+	Update                func(id int32, name *string) error
+	Delete                func(id int32) error
 }

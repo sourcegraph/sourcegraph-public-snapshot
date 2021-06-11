@@ -222,7 +222,9 @@ describe('Search', () => {
         test('Is set from the URL query parameter when loading a search-related page', async () => {
             testContext.overrideGraphQL({
                 ...commonSearchGraphQLResults,
-                RegistryExtensions: () => ({ extensionRegistry: { extensions: { error: null, nodes: [] } } }),
+                RegistryExtensions: () => ({
+                    extensionRegistry: { extensions: { error: null, nodes: [] }, featuredExtensions: null },
+                }),
             })
             testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
 

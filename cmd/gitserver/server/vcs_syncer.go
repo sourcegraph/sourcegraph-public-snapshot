@@ -115,7 +115,7 @@ func (s *GitRepoSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir GitDi
 	cmd, configRemoteOpts := s.fetchCommand(ctx, remoteURL)
 	dir.Set(cmd)
 	if output, err := runWith(ctx, cmd, configRemoteOpts, nil); err != nil {
-		return errors.Wrapf(err, "failed to update with output %q", string(output))
+		return errors.Wrapf(err, "failed to update with output %q", newURLRedactor(remoteURL).redact(string(output)))
 	}
 	return nil
 }
@@ -279,7 +279,7 @@ func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir
 	)
 	dir.Set(cmd)
 	if output, err := runWith(ctx, cmd, false, nil); err != nil {
-		return errors.Wrapf(err, "failed to update with output %q", string(output))
+		return errors.Wrapf(err, "failed to update with output %q", newURLRedactor(remoteURL).redact(string(output)))
 	}
 
 	// Force update "master" to "refs/remotes/p4/master" where changes are synced into

@@ -40,7 +40,7 @@ exports[`HoverOverlay actions and hover error 1`] = `
     className="hover-overlay__contents"
   >
     <div
-      className="hover-overlay__hover-error-redesign"
+      className="hover-overlay__hover-error"
     >
       M2
     </div>
@@ -385,7 +385,7 @@ exports[`HoverOverlay actions, hover and alert present 1`] = `
     className="hover-overlay__alerts"
   >
     <div
-      className="hover-overlay__alert-redesign"
+      className="hover-overlay__alert"
     >
       <span
         className="hover-overlay__content"
@@ -479,7 +479,7 @@ exports[`HoverOverlay hover error 1`] = `
     className="hover-overlay__contents"
   >
     <div
-      className="hover-overlay__hover-error-redesign"
+      className="hover-overlay__hover-error"
     >
       M
     </div>
@@ -503,7 +503,7 @@ exports[`HoverOverlay hover error, actions present 1`] = `
     className="hover-overlay__contents"
   >
     <div
-      className="hover-overlay__hover-error-redesign"
+      className="hover-overlay__hover-error"
     >
       M
     </div>

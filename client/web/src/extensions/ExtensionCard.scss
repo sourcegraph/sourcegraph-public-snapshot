@@ -1,6 +1,8 @@
 @import '../../../branded/src/components/Toggle.scss';
 
 .extension-card {
+    --icon-width: 3rem;
+
     &__background-section {
         height: 4.25rem;
         position: relative;
@@ -19,16 +21,26 @@
                 opacity: 0.15;
             }
         }
+
+        &--featured {
+            height: 8rem;
+        }
     }
 
     &__icon {
-        width: 3rem;
+        width: var(--icon-width);
         height: 3rem;
         object-fit: contain;
 
         position: absolute;
         left: 0;
         margin-left: 0.75rem;
+
+        &--featured {
+            // horizontally center icon over ::before pseudo-element background
+            left: calc(50% - (var(--icon-width) / 2));
+            margin-left: 0;
+        }
     }
 
     &__badge {

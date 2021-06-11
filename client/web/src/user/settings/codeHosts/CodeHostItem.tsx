@@ -18,7 +18,7 @@ interface CodeHostItemProps {
     name: string
     icon: React.ComponentType<{ className?: string }>
     navigateToAuthProvider: (kind: ExternalServiceKind) => void
-    updateAuthRequired?: boolean
+    isTokenUpdateRequired: boolean
     // optional service object fields when the code host connection is active
     service?: ListExternalServiceFields
 
@@ -31,7 +31,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
     service,
     kind,
     name,
-    updateAuthRequired,
+    isTokenUpdateRequired,
     icon: Icon,
     navigateToAuthProvider,
     onDidRemove,
@@ -121,7 +121,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                         </button>
                     )
                 ) : (
-                    updateAuthRequired &&
+                    isTokenUpdateRequired &&
                     (oauthInFlight ? (
                         <LoaderButton
                             type="button"
