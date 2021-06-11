@@ -76,7 +76,7 @@ import {
     getUserSearchContextNamespaces,
 } from './search/backend'
 import { QueryState } from './search/helpers'
-import { aggregateStreamingSearch } from './search/stream'
+import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 import { listUserRepositories } from './site-admin/backend'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'

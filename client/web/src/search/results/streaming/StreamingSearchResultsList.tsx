@@ -11,12 +11,12 @@ import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExce
 import { FileMatch } from '@sourcegraph/shared/src/components/FileMatch'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import {
     AggregateStreamingSearchResults,
     FileLineMatch,
     FileSymbolMatch,
     SearchMatch,
+    getMatchUrl,
 } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -62,11 +62,11 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
         setItemsToShow(initialItemsToShow)
     }, [location.search])
 
-    const itemKey = useCallback((item: GQL.GenericSearchResultInterface | GQL.IFileMatch): string => {
-        if (item.__typename === 'FileMatch') {
-            return `file:${item.file.url}`
+    const itemKey = useCallback((item: SearchMatch): string => {
+        if (item.type === 'file' || item.type === 'symbol') {
+            return `file:${getMatchUrl(item)}`
         }
-        return item.url
+        return getMatchUrl(item)
     }, [])
 
     const logSearchResultClicked = useCallback(() => telemetryService.log('SearchResultClicked'), [telemetryService])
@@ -127,7 +127,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
 
     return (
         <>
-            <VirtualList<GQL.SearchResult>
+            <VirtualList<SearchMatch>
                 className="mt-2"
                 itemsToShow={itemsToShow}
                 onShowMoreItems={onBottomHit}

@@ -5,6 +5,7 @@ import { defaultIfEmpty, map, materialize, scan } from 'rxjs/operators'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { SearchPatternType } from '../graphql-operations'
+import { displayRepoName } from '../components/RepoFileLink'
 
 export type SearchEvent =
     | { type: 'matches'; data: SearchMatch[] }
@@ -55,7 +56,7 @@ type MarkdownText = string
  *
  * @see GQL.IGenericSearchResultInterface
  */
-interface CommitMatch {
+export interface CommitMatch {
     type: 'commit'
     label: MarkdownText
     url: string
@@ -423,4 +424,35 @@ export function getRevision(branches?: string[], version?: string): string {
 export function getFileMatchUrl(fileMatch: FileLineMatch | FileSymbolMatch): string {
     const revision = getRevision(fileMatch.branches, fileMatch.version)
     return `/${fileMatch.repository}${revision ? '@' + revision : ''}/-/blob/${fileMatch.name}`
+}
+
+export function getRepoMatchLabel(repoMatch: RepositoryMatch): string {
+    const branch = repoMatch?.branches?.[0]
+    const revision = branch ? `@${branch}` : ''
+    return repoMatch.repository + revision
+}
+
+export function getRepoMatchUrl(repoMatch: RepositoryMatch): string {
+    const label = getRepoMatchLabel(repoMatch)
+    return '/' + encodeURI(label)
+}
+
+export function getMatchUrl(match: SearchMatch) {
+    switch (match.type) {
+        case 'file':
+        case 'symbol':
+            return getFileMatchUrl(match)
+        case 'commit':
+            return match.url
+        case 'repo':
+            return getRepoMatchUrl(match)
+    }
+}
+
+export function getMatchTitle(match: RepositoryMatch | CommitMatch): MarkdownText {
+    if (match.type === 'commit') {
+        return match.label
+    }
+
+    return `[${displayRepoName(getRepoMatchLabel(match))}](${getRepoMatchUrl(match)})`
 }
