@@ -121,6 +121,7 @@ export const MULTIPLE_SEARCH_RESULT: AggregateStreamingSearchResults = {
         {
             type: 'file',
             name: 'example_test.go',
+            version: 'some-branch',
             repository: 'github.com/golang/oauth2',
             lineMatches: [
                 {
