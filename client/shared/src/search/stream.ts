@@ -6,6 +6,7 @@ import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/er
 
 import { SearchPatternType } from '../graphql-operations'
 import { displayRepoName } from '../components/RepoFileLink'
+import { SymbolKind } from '../graphql/schema'
 
 export type SearchEvent =
     | { type: 'matches'; data: SearchMatch[] }
@@ -45,7 +46,7 @@ interface SymbolMatch {
     url: string
     name: string
     containerName: string
-    kind: string
+    kind: SymbolKind
 }
 
 type MarkdownText = string
