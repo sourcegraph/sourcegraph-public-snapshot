@@ -246,7 +246,7 @@ var ErrNotMergeable = errors.New("merge request is not in a mergeable state")
 
 func (c *Client) MergeMergeRequest(ctx context.Context, project *Project, mr *MergeRequest, squash bool) (*MergeRequest, error) {
 	if MockMergeMergeRequest != nil {
-		return MockMergeMergeRequest(c, ctx, project, mr)
+		return MockMergeMergeRequest(c, ctx, project, mr, squash)
 	}
 
 	payload := struct {
