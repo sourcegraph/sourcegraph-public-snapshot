@@ -1,6 +1,6 @@
 # Configuring Sourcegraph executors to compute Batch Changes
 
-> Note: This is a draft documentation page describing the potential end state of a  feature. It should serve only for discussion purposes.
+> Note: This is a draft documentation page describing the potential end state of a feature. It should serve only for discussion purposes.
 
 By default, Batch Changes uses a command line interface in your local environment to compute diffs and create changesets. This can be impractical for creating batch changes affecting hundreds or thousands of repositories, with large numbers of workspaces, or if the batch change steps require CPU, memory, or disk resources that are unavailable locally.
 
@@ -18,9 +18,14 @@ The Sourcegraph executor is written in [Go](https://golang.org), and is availabl
 ## Getting started
 
 1. [Ensure you meet the prerequisites.](#prerequisites)
-1. [Install the Sourcegraph executor.](#installing-the-executor)
-1. [Configure the Sourcegraph executor.](#configuring-the-executor)
-1. [Register the executor with Sourcegraph.](#registering-the-executor)
+1. [Choose your deployment model.](#deployment-models)
+
+Then follow the instructions for your chosen deployment model:
+
+* [Docker containers running on a server](pure-docker.md)
+* [Jobs running in a Kubernetes cluster](kubernetes.md)
+
+You can also read about [how Sourcegraph executors work](#how-executors-work).
 
 ## Prerequisites
 
@@ -28,6 +33,15 @@ The Sourcegraph executor is written in [Go](https://golang.org), and is availabl
 - As Sourcegraph executor tasks are run in containers, access to either Docker or Kubernetes is required.
 - Sourcegraph executor usage requires requires Sourcegraph version 3.XX.
 - As Sourcegraph executors run arbitrary user-submitted code, take care to place the executors within an appropriately secured part of your infrastructure. Network access to Sourcegraph is required, and your users will likely need read only access to internal resources required to run typical Batch Changes, such as internal package repositories and proxies. In general, you should trust Sourcegraph executors as much as you trust your Sourcegraph users to spawn and run services within your infrastructure.
+
+## Deployment models
+
+Two deployment models are supported:
+
+1. [**Docker containers running on a server.**](pure-docker.md) In this model, changesets are computed in Docker containers run directly on the server. This model fits well in environments that do not use Kubernetes, and that expect relatively steady usage of Batch Changes over time.
+1. 
+
+The linked pages provide instructions on installing and configuring Sourcegraph executors in their respective environments.
 
 ## Installing the executor
 
@@ -147,7 +161,7 @@ Each executor will run one job at a time: you should scale the number of executo
 
 TODO
 
-# How do executors work
+# How executors work
 
 TODO
 
