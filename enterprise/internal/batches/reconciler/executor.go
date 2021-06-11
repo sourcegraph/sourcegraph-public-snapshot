@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"sort"
 	"strings"
 	"time"
 
@@ -354,41 +353,37 @@ func loadChangesetSource(ctx context.Context, s *store.Store, sourcer sources.So
 	if err != nil {
 		return nil, err
 	}
-	// Default to use the owning batch change.
-	batchChangeID := ch.OwnedByBatchChangeID
-	// If we don't have an owning batch change (importing), fall back to one of the
-	// associated batch changes.
-	if batchChangeID == 0 {
-		if len(ch.BatchChanges) == 0 {
-			// This should never happen, but who knows.
-			return nil, errors.New("changeset is not associated to any batch change")
+	if ch.OwnedByBatchChangeID != 0 {
+		// If the changeset is owned by a batch change, we want to reconcile using
+		// the user's credentials, which means we need to know which user last
+		// applied the owning batch change. Let's go find out.
+		batchChange, err := loadBatchChange(ctx, s, ch.OwnedByBatchChangeID)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to load owning batch change")
 		}
-
-		associatedBatchChangeIDs := make([]int64, len(ch.BatchChanges))
-		for i, bc := range ch.BatchChanges {
-			associatedBatchChangeIDs[i] = bc.BatchChangeID
-		}
-		sort.SliceStable(associatedBatchChangeIDs, func(i, j int) bool {
-			return associatedBatchChangeIDs[i] < associatedBatchChangeIDs[j]
-		})
-		batchChangeID = associatedBatchChangeIDs[0]
-	}
-	// We want to reconcile using the user's credentials, or site credentials, if those aren't set.
-	batchChange, err := loadBatchChange(ctx, s, batchChangeID)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to load owning batch change")
-	}
-	css, err = sources.WithAuthenticatorForUser(ctx, s, css, batchChange.LastApplierID, repo)
-	if err != nil {
-		switch err {
-		case sources.ErrMissingCredentials:
-			return nil, &errMissingCredentials{repo: string(repo.Name)}
-		case sources.ErrNoSSHCredential:
-			return nil, &errNoSSHCredential{}
-		default:
-			if enpc, ok := err.(sources.ErrNoPushCredentials); ok {
-				return nil, &errNoPushCredentials{credentialsType: enpc.CredentialsType}
+		css, err = sources.WithAuthenticatorForUser(ctx, s, css, batchChange.LastApplierID, repo)
+		if err != nil {
+			switch err {
+			case sources.ErrMissingCredentials:
+				return nil, &errMissingCredentials{repo: string(repo.Name)}
+			case sources.ErrNoSSHCredential:
+				return nil, &errNoSSHCredential{}
+			default:
+				if enpc, ok := err.(sources.ErrNoPushCredentials); ok {
+					return nil, &errNoPushCredentials{credentialsType: enpc.CredentialsType}
+				}
+				return nil, err
 			}
+		}
+	} else {
+		// This retains the external service token, when no site credential is found.
+		// Unowned changesets are imported, and therefore don't need to use a user
+		// credential, since reconciliation isn't a mutating process. We try to use
+		// a site-credential, but it's ok if it doesn't exist.
+		// TODO: This code-path will fail once the site credentials are the only
+		// fallback we want to use.
+		css, err = sources.WithSiteAuthenticator(ctx, s, css, repo)
+		if err != nil {
 			return nil, err
 		}
 	}

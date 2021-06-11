@@ -2,7 +2,6 @@ package syncer
 
 import (
 	"context"
-	"sort"
 	"strconv"
 	"sync"
 	"time"
@@ -50,9 +49,8 @@ type SyncStore interface {
 	ExternalServices() *database.ExternalServiceStore
 	Clock() func() time.Time
 	DB() dbutil.DB
-	GetExternalServiceIDs(context.Context, store.GetExternalServiceIDsOpts) ([]int64, error)
+	GetExternalServiceIDs(ctx context.Context, opts store.GetExternalServiceIDsOpts) ([]int64, error)
 	UserCredentials() *database.UserCredentialsStore
-	GetBatchChange(context.Context, store.GetBatchChangeOpts) (*btypes.BatchChange, error)
 }
 
 // NewSyncRegistry creates a new sync registry which starts a syncer for each code host and will update them
@@ -409,7 +407,7 @@ func (s *changesetSyncer) computeSchedule(ctx context.Context) ([]scheduledSync,
 func (s *changesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 	log15.Debug("SyncChangeset", "syncer", s.codeHostURL, "id", id)
 
-	ch, err := s.syncStore.GetChangeset(ctx, store.GetChangesetOpts{
+	cs, err := s.syncStore.GetChangeset(ctx, store.GetChangesetOpts{
 		ID: id,
 
 		// Enforce precondition given in changeset sync state query.
@@ -424,20 +422,17 @@ func (s *changesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 		return err
 	}
 
-	repo, err := s.syncStore.Repos().Get(ctx, ch.RepoID)
+	repo, err := s.syncStore.Repos().Get(ctx, cs.RepoID)
 	if err != nil {
 		return err
 	}
 
-	source, err := loadChangesetSource(ctx, s.httpFactory, s.syncStore, ch, repo)
+	source, err := loadChangesetSource(ctx, s.httpFactory, s.syncStore, repo)
 	if err != nil {
-		if storeErr := storeSyncError(ctx, s.syncStore, ch, err); storeErr != nil {
-			return storeErr
-		}
 		return err
 	}
 
-	return SyncChangeset(ctx, s.syncStore, source, repo, ch)
+	return SyncChangeset(ctx, s.syncStore, source, repo, cs)
 }
 
 // SyncChangeset refreshes the metadata of the given changeset and
@@ -448,8 +443,10 @@ func SyncChangeset(ctx context.Context, syncStore SyncStore, source sources.Chan
 		_, ok := err.(sources.ChangesetNotFoundError)
 		if !ok {
 			// Store the error as the syncer error.
-			if storeErr := storeSyncError(ctx, syncStore, c, err); storeErr != nil {
-				return storeErr
+			errMsg := err.Error()
+			c.SyncErrorMessage = &errMsg
+			if err2 := syncStore.UpdateChangeset(ctx, c); err2 != nil {
+				return errors.Wrap(err, err2.Error())
 			}
 			return err
 		}
@@ -482,16 +479,7 @@ func SyncChangeset(ctx context.Context, syncStore SyncStore, source sources.Chan
 	return tx.UpsertChangesetEvents(ctx, events...)
 }
 
-func storeSyncError(ctx context.Context, syncStore SyncStore, ch *btypes.Changeset, err error) error {
-	msg := err.Error()
-	ch.SyncErrorMessage = &msg
-	if err2 := syncStore.UpdateChangeset(ctx, ch); err2 != nil {
-		return errors.Wrap(err, err2.Error())
-	}
-	return nil
-}
-
-func loadChangesetSource(ctx context.Context, cf *httpcli.Factory, syncStore SyncStore, ch *btypes.Changeset, repo *types.Repo) (sources.ChangesetSource, error) {
+func loadChangesetSource(ctx context.Context, cf *httpcli.Factory, syncStore SyncStore, repo *types.Repo) (sources.ChangesetSource, error) {
 	srcer := sources.NewSourcer(cf)
 	// This is a ChangesetSource authenticated with the external service
 	// token.
@@ -499,45 +487,7 @@ func loadChangesetSource(ctx context.Context, cf *httpcli.Factory, syncStore Syn
 	if err != nil {
 		return nil, err
 	}
-
-	// Default to use the owning batch change.
-	batchChangeID := ch.OwnedByBatchChangeID
-	// If we don't have an owning batch change (importing), fall back to one of the
-	// associated batch changes.
-	if batchChangeID == 0 {
-		if len(ch.BatchChanges) == 0 {
-			// This should never happen, but who knows.
-			return nil, errors.New("changeset is not associated to any batch change")
-		}
-
-		associatedBatchChangeIDs := make([]int64, len(ch.BatchChanges))
-		for i, bc := range ch.BatchChanges {
-			associatedBatchChangeIDs[i] = bc.BatchChangeID
-		}
-		sort.SliceStable(associatedBatchChangeIDs, func(i, j int) bool {
-			return associatedBatchChangeIDs[i] < associatedBatchChangeIDs[j]
-		})
-		batchChangeID = associatedBatchChangeIDs[0]
-	}
-	// We want to reconcile using the user's credentials, or site credentials, if those aren't set.
-	batchChange, err := loadBatchChange(ctx, syncStore, batchChangeID)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to load owning batch change")
-	}
-	return sources.WithAuthenticatorForUser(ctx, syncStore, source, batchChange.LastApplierID, repo)
-}
-
-func loadBatchChange(ctx context.Context, s SyncStore, id int64) (*btypes.BatchChange, error) {
-	if id == 0 {
-		return nil, errors.New("changeset has no owning batch change")
-	}
-
-	batchChange, err := s.GetBatchChange(ctx, store.GetBatchChangeOpts{ID: id})
-	if err != nil && err != store.ErrNoResults {
-		return nil, errors.Wrapf(err, "retrieving owning batch change: %d", id)
-	} else if batchChange == nil {
-		return nil, errors.Errorf("batch change not found: %d", id)
-	}
-
-	return batchChange, nil
+	// Try to use a site credential. If none is present, this falls back to
+	// the external service config. This code path should error in the future.
+	return sources.WithSiteAuthenticator(ctx, syncStore, source, repo)
 }
