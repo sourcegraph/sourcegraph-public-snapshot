@@ -149,6 +149,9 @@ func githubCloneURL(repo *github.Repository, cfg *schema.GitHubConnection) (stri
 		return url, nil
 	}
 
+	if repo.URL == "" {
+		return "", errors.New("empty repo.URL")
+	}
 	if cfg.Token == "" {
 		return repo.URL, nil
 	}
