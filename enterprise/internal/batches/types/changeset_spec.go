@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 	jsonutil "github.com/sourcegraph/batch-change-utils/json"
 	"github.com/sourcegraph/go-diff/diff"
 

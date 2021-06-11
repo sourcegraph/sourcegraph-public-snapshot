@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/beevik/etree"
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 	saml2 "github.com/russellhaering/gosaml2"
 	"github.com/russellhaering/gosaml2/types"
 	dsig "github.com/russellhaering/goxmldsig"

@@ -5,7 +5,7 @@ import (
 	"log"
 	"sync"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 	"golang.org/x/crypto/ssh"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"

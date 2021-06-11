@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
-	"github.com/pkg/errors"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 )
