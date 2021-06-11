@@ -1,3 +1,5 @@
+import { dedupeWhitespace } from '@sourcegraph/shared/src/util/strings'
+
 import { renderError } from '../../../../../../components/alerts'
 import { Validator } from '../../../../../components/form/hooks/useField'
 import { AsyncValidator } from '../../../../../components/form/hooks/utils/use-async-validation'
@@ -6,7 +8,14 @@ import { fetchRepositories } from '../../../../../core/backend/requests/fetch-re
 import { EditableDataSeries } from '../../types'
 import { getSanitizedRepositories } from '../../utils/insight-sanitizer'
 
-export const repositoriesFieldValidator = createRequiredValidator('Repositories is a required field.')
+export const repositoriesFieldValidator: Validator<string> = value => {
+    if (value !== undefined && dedupeWhitespace(value).trim() === '') {
+        return 'Repositories is a required field.'
+    }
+
+    return
+}
+
 export const requiredStepValueField = createRequiredValidator('Please specify a step between points.')
 /**
  * Custom validator for chart series. Since series has complex type
@@ -31,6 +40,11 @@ export const repositoriesExistValidator: AsyncValidator<string> = async value =>
 
     try {
         const repositoryNames = getSanitizedRepositories(value)
+
+        if (repositoryNames.length === 0) {
+            return
+        }
+
         const repositories = await fetchRepositories(repositoryNames).toPromise()
 
         const nullRepositoryIndex = repositories.findIndex(repo => !repo)
