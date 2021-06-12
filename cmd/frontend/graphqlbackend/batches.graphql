@@ -2092,7 +2092,7 @@ extend type Mutation {
 
     """
     Merge multiple changesets. If squash is true, the commits will be squashed
-    into a single commit.
+    into a single commit on code hosts that support squash-and-merge.
 
     Experimental: This API is likely to change in the future.
     """
