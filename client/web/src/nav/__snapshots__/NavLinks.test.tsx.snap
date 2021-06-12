@@ -550,7 +550,7 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
               </p>
               <a
                 class="text-primary"
-                href="/users/alice/settings/repositories"
+                href="/site-admin/repositories"
               >
                 Manage repositories
               </a>
@@ -1360,7 +1360,7 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
               </p>
               <a
                 class="text-primary"
-                href="/users/alice/settings/repositories"
+                href="/site-admin/repositories"
               >
                 Manage repositories
               </a>
@@ -2180,7 +2180,7 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
               </p>
               <a
                 class="text-primary"
-                href="/users/alice/settings/repositories"
+                href="/site-admin/repositories"
               >
                 Manage repositories
               </a>
@@ -2971,7 +2971,7 @@ exports[`NavLinks authed self-hosted /search 1`] = `
               </p>
               <a
                 class="text-primary"
-                href="/users/alice/settings/repositories"
+                href="/site-admin/repositories"
               >
                 Manage repositories
               </a>
