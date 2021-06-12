@@ -36,7 +36,7 @@ body.theme-light > #sidebar {
     background: #f1f6fe;
 }
 
-body.theme-light #index {
+body.theme-light #index, body.theme-light main img {
     background: #fcfcff;
 }
 
@@ -44,6 +44,6 @@ body.theme-dark > #sidebar {
     background: #112239;
 }
 
-body.theme-dark #index {
+body.theme-dark #index, body.theme-dark main img {
     background: #000018;
 }
