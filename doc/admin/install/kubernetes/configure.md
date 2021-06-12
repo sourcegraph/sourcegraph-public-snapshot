@@ -428,7 +428,7 @@ Increasing the number of `gitserver` replicas can improve performance when your 
 To change the number of `gitserver` replicas:
 
 - Update the `replicas` field in [gitserver.StatefulSet.yaml](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/base/gitserver/gitserver.StatefulSet.yaml).
-- Update the `SRC_GIT_SERVERS` environment variable in the frontend service to reflect the number of replicas.
+- Update the `SRC_GIT_SERVERS` environment variable in the [sourcegraph-frontend.Deployment.yaml](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/base/frontend/sourcegraph-frontend.Deployment.yaml) to reflect the number of replicas.
 
    For example, if there are 2 gitservers then `SRC_GIT_SERVERS` should have the value `gitserver-0.gitserver:3178 gitserver-1.gitserver:3178`:
 

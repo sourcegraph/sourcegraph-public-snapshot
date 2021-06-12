@@ -1,21 +1,21 @@
 sequenceDiagram
-  Providers ->>+ LSIF Provider: DefinitionsAndHover(textDocument, position)
+  Providers ->>+ LSIF provider: DefinitionsAndHover(textDocument, position)
 
   par
-    LSIF Provider ->>+ GraphQL API: LSIF.Ranges(position +/- W)
-    GraphQL API  -->>- LSIF Provider: ranges
+    LSIF provider ->>+ GraphQL API: LSIF.Ranges(position +/- W)
+    GraphQL API  -->>- LSIF provider: ranges
   and
-    LSIF Provider ->>+ GraphQL API: LSIF.Definition+Hover(position)
-    GraphQL API  -->>- LSIF Provider: {definitions, hover text}
+    LSIF provider ->>+ GraphQL API: LSIF.Definition+Hover(position)
+    GraphQL API  -->>- LSIF provider: {definitions, hover text}
   end
 
-  LSIF Provider -->>- Providers: {definitions, hover text}
+  LSIF provider -->>- Providers: {definitions, hover text}
 
   alt if no hover text
-    Providers        ->>+ Search Provider: Hover(textDocument, position)
-    Search Provider  ->>+ Providers: Definition(textDocument, position)
-    Providers       -->>- Search Provider: definition
-    Search Provider  ->>+ GraphQL API: GetFileContent(definition)
-    GraphQL API     -->>- Search Provider: file content
-    Search Provider -->>- Providers: hover text
+    Providers        ->>+ Search provider: Hover(textDocument, position)
+    Search provider  ->>+ Providers: Definition(textDocument, position)
+    Providers       -->>- Search provider: definition
+    Search provider  ->>+ GraphQL API: GetFileContent(definition)
+    GraphQL API     -->>- Search provider: file content
+    Search provider -->>- Providers: hover text
   end

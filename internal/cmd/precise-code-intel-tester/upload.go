@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
@@ -13,7 +13,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/cmd/precise-code-intel-tester/util"
 )
@@ -74,7 +74,7 @@ var indexFilenamePattern = regexp.MustCompile(`^(.+)\.\d+\.([0-9A-Fa-f]{40})\.du
 
 // readRevsByRepo returns a list of revisions by repository names for which there is an index file.
 func readRevsByRepo() (map[string][]string, error) {
-	infos, err := ioutil.ReadDir(indexDir)
+	infos, err := os.ReadDir(indexDir)
 	if err != nil {
 		return nil, err
 	}
@@ -278,7 +278,7 @@ func uploadStates(ctx context.Context, ids, names []string) (stateByUpload map[s
 			} `json:"codeIntelligenceCommitGraph"`
 		} `json:"data"`
 	}{}
-	if err := util.QueryGraphQL(ctx, endpoint, token, query, nil, &payload); err != nil {
+	if err := util.QueryGraphQL(ctx, endpoint, "CodeIntelTesterUploadStates", token, query, nil, &payload); err != nil {
 		return nil, nil, err
 	}
 

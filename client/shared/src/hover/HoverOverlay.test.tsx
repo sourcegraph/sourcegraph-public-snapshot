@@ -1,7 +1,6 @@
 import * as H from 'history'
 import React from 'react'
 import renderer from 'react-test-renderer'
-import { createRenderer } from 'react-test-renderer/shallow'
 import { NEVER } from 'rxjs'
 
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
@@ -11,11 +10,9 @@ import { subtypeOf } from '../util/types'
 
 import { HoverOverlay, HoverOverlayProps } from './HoverOverlay'
 
-const renderShallow = (element: React.ReactElement<HoverOverlayProps>): React.ReactElement => {
-    const renderer = createRenderer()
-    renderer.render(element)
-    return renderer.getRenderOutput()
-}
+jest.mock('../actions/ActionItem', () => ({
+    ActionItem: 'ActionItem',
+}))
 
 describe('HoverOverlay', () => {
     const NOOP_EXTENSIONS_CONTROLLER = { executeCommand: () => Promise.resolve() }
@@ -67,12 +64,14 @@ describe('HoverOverlay', () => {
 
     test('actions present', () => {
         expect(
-            renderShallow(
-                <HoverOverlay
-                    {...commonProps}
-                    actionsOrError={[{ action: { id: 'a', command: 'c', title: 'Some title' }, active: true }]}
-                />
-            )
+            renderer
+                .create(
+                    <HoverOverlay
+                        {...commonProps}
+                        actionsOrError={[{ action: { id: 'a', command: 'c', title: 'Some title' }, active: true }]}
+                    />
+                )
+                .toJSON()
         ).toMatchSnapshot()
     })
 
@@ -109,108 +108,122 @@ describe('HoverOverlay', () => {
 
     test('actions and hover present', () => {
         expect(
-            renderShallow(
-                <HoverOverlay
-                    {...commonProps}
-                    actionsOrError={[{ action: { id: 'a', command: 'c' }, active: true }]}
-                    hoverOrError={{ contents: [{ kind: MarkupKind.Markdown, value: 'v' }] }}
-                />
-            )
+            renderer
+                .create(
+                    <HoverOverlay
+                        {...commonProps}
+                        actionsOrError={[{ action: { id: 'a', command: 'c' }, active: true }]}
+                        hoverOrError={{ contents: [{ kind: MarkupKind.Markdown, value: 'v' }] }}
+                    />
+                )
+                .toJSON()
         ).toMatchSnapshot()
     })
 
     test('actions, hover and alert present', () => {
         expect(
-            renderShallow(
-                <HoverOverlay
-                    {...commonProps}
-                    actionsOrError={[{ action: { id: 'a', command: 'c' }, active: true }]}
-                    hoverOrError={{
-                        contents: [{ kind: MarkupKind.Markdown, value: 'v' }],
-                        alerts: [
-                            {
-                                summary: {
-                                    kind: MarkupKind.Markdown,
-                                    value: 'Testing `markdown` rendering.',
+            renderer
+                .create(
+                    <HoverOverlay
+                        {...commonProps}
+                        actionsOrError={[{ action: { id: 'a', command: 'c' }, active: true }]}
+                        hoverOrError={{
+                            contents: [{ kind: MarkupKind.Markdown, value: 'v' }],
+                            alerts: [
+                                {
+                                    summary: {
+                                        kind: MarkupKind.Markdown,
+                                        value: 'Testing `markdown` rendering.',
+                                    },
+                                    type: 'test-alert-dismissalType',
                                 },
-                                type: 'test-alert-dismissalType',
-                            },
-                        ],
-                    }}
-                />
-            )
+                            ],
+                        }}
+                    />
+                )
+                .toJSON()
         ).toMatchSnapshot()
     })
 
     test('actions present, hover loading', () => {
         expect(
-            renderShallow(
-                <HoverOverlay
-                    {...commonProps}
-                    actionsOrError={[{ action: { id: 'a', command: 'c' }, active: true }]}
-                    hoverOrError="loading"
-                />
-            )
+            renderer
+                .create(
+                    <HoverOverlay
+                        {...commonProps}
+                        actionsOrError={[{ action: { id: 'a', command: 'c' }, active: true }]}
+                        hoverOrError="loading"
+                    />
+                )
+                .toJSON()
         ).toMatchSnapshot()
     })
 
     test('hover present, actions loading', () => {
         expect(
-            renderShallow(
-                <HoverOverlay
-                    {...commonProps}
-                    actionsOrError="loading"
-                    hoverOrError={{ contents: [{ kind: MarkupKind.Markdown, value: 'v' }] }}
-                />
-            )
+            renderer
+                .create(
+                    <HoverOverlay
+                        {...commonProps}
+                        actionsOrError="loading"
+                        hoverOrError={{ contents: [{ kind: MarkupKind.Markdown, value: 'v' }] }}
+                    />
+                )
+                .toJSON()
         ).toMatchSnapshot()
     })
 
     test('actions error', () => {
         expect(
-            renderShallow(<HoverOverlay {...commonProps} actionsOrError={{ message: 'm', name: 'c' }} />)
+            renderer.create(<HoverOverlay {...commonProps} actionsOrError={{ message: 'm', name: 'c' }} />).toJSON()
         ).toMatchSnapshot()
     })
 
     test('hover error', () => {
         expect(
-            renderShallow(<HoverOverlay {...commonProps} hoverOrError={{ message: 'm', name: 'c' }} />)
+            renderer.create(<HoverOverlay {...commonProps} hoverOrError={{ message: 'm', name: 'c' }} />).toJSON()
         ).toMatchSnapshot()
     })
 
     test('actions and hover error', () => {
         expect(
-            renderShallow(
-                <HoverOverlay
-                    {...commonProps}
-                    actionsOrError={{ message: 'm1', name: 'c1' }}
-                    hoverOrError={{ message: 'm2', name: 'c2' }}
-                />
-            )
+            renderer
+                .create(
+                    <HoverOverlay
+                        {...commonProps}
+                        actionsOrError={{ message: 'm1', name: 'c1' }}
+                        hoverOrError={{ message: 'm2', name: 'c2' }}
+                    />
+                )
+                .toJSON()
         ).toMatchSnapshot()
     })
 
     test('actions error, hover present', () => {
         expect(
-            renderShallow(
-                <HoverOverlay
-                    {...commonProps}
-                    actionsOrError={{ message: 'm', name: 'c' }}
-                    hoverOrError={{ contents: [{ kind: MarkupKind.Markdown, value: 'v' }] }}
-                />
-            )
+            renderer
+                .create(
+                    <HoverOverlay
+                        {...commonProps}
+                        actionsOrError={{ message: 'm', name: 'c' }}
+                        hoverOrError={{ contents: [{ kind: MarkupKind.Markdown, value: 'v' }] }}
+                    />
+                )
+                .toJSON()
         ).toMatchSnapshot()
     })
 
     test('hover error, actions present', () => {
         expect(
-            renderShallow(
-                <HoverOverlay
-                    {...commonProps}
-                    actionsOrError={[{ action: { id: 'a', command: 'c' }, active: true }]}
-                    hoverOrError={{ message: 'm', name: 'c' }}
-                />
-            )
+            renderer
+                .create(
+                    <HoverOverlay
+                        {...commonProps}
+                        actionsOrError={[{ action: { id: 'a', command: 'c' }, active: true }]}
+                        hoverOrError={{ message: 'm', name: 'c' }}
+                    />
+                )
+                .toJSON()
         ).toMatchSnapshot()
     })
 })

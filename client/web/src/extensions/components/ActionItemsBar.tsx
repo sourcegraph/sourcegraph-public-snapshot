@@ -24,6 +24,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LocalStorageSubject } from '@sourcegraph/shared/src/util/LocalStorageSubject'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { useCarousel } from '../../components/useCarousel'
@@ -204,12 +205,21 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(props => {
         useMemo(() => haveInitialExtensionsLoaded(props.extensionsController.extHostAPI), [props.extensionsController])
     )
 
+    const [isRedesignEnabled] = useRedesignToggle()
+
     if (!isOpen) {
-        return null
+        return isRedesignEnabled ? <div className="action-items__bar--collapsed " /> : null
     }
 
     return (
-        <div className="action-items__bar p-0 border-left position-relative d-flex flex-column" ref={barReference}>
+        <div
+            className={classNames(
+                'action-items__bar p-0 position-relative d-flex flex-column',
+                isRedesignEnabled ? 'mr-2' : 'border-left'
+                // RepoRevisionContainer content provides the border after redesign
+            )}
+            ref={barReference}
+        >
             {/* To be clear to users that this isn't an error reported by extensions about e.g. the code they're viewing. */}
             <ErrorBoundary location={props.location} render={error => <span>Component error: {error.message}</span>}>
                 <ActionItemsDivider />
@@ -245,11 +255,15 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(props => {
                                     'action-items__action--inactive',
                                     !hasIconURL && 'action-items__action--no-icon-inactive'
                                 )
+                                const listItemClassName = classNames(
+                                    'action-items__list-item',
+                                    index !== items.length - 1 && 'mb-1'
+                                )
 
                                 const dataContent = !hasIconURL ? item.action.category?.slice(0, 1) : undefined
 
                                 return (
-                                    <li key={item.action.id} className="action-items__list-item">
+                                    <li key={item.action.id} className={listItemClassName}>
                                         <ActionItem
                                             {...props}
                                             {...item}
@@ -262,6 +276,7 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(props => {
                                             hideLabel={true}
                                             tabIndex={-1}
                                             hideExternalLinkIcon={true}
+                                            disabledDuringExecution={true}
                                         />
                                     </li>
                                 )
@@ -284,7 +299,10 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(props => {
                     <li className="action-items__list-item">
                         <Link
                             to="/extensions"
-                            className={classNames(actionItemClassName, 'action-items__list-item')}
+                            className={classNames(
+                                actionItemClassName,
+                                'action-items__list-item action-items__aux-icon'
+                            )}
                             data-tooltip="Add extensions"
                         >
                             <PlusIcon className="icon-inline" />
@@ -307,35 +325,45 @@ export const ActionItemsToggle: React.FunctionComponent<ActionItemsToggleProps> 
         useMemo(() => haveInitialExtensionsLoaded(extensionsController.extHostAPI), [extensionsController])
     )
 
+    const [isRedesignEnabled] = useRedesignToggle()
+
     return barInPage ? (
-        <li
-            data-tooltip={`${isOpen ? 'Close' : 'Open'} extensions panel`}
-            className={classNames(className, 'nav-item border-left')}
-        >
-            <div
-                className={classNames(
-                    'action-items__toggle-container',
-                    isOpen && 'action-items__toggle-container--open'
-                )}
+        <>
+            {isRedesignEnabled && <div className="action-items__divider-vertical" />}
+            <li
+                data-tooltip={`${isOpen ? 'Close' : 'Open'} extensions panel`}
+                className={classNames(className, 'nav-item', isRedesignEnabled ? 'mr-2' : 'border-left')}
+                // RepoRevisionContainer content provides the border after redesign
             >
-                <ButtonLink
-                    className={classNames(actionItemClassName)}
-                    onSelect={toggle}
-                    buttonLinkRef={toggleReference}
-                >
-                    {!haveExtensionsLoaded ? (
-                        <LoadingSpinner className="icon-inline" />
-                    ) : isOpen ? (
-                        <ChevronDoubleUpIcon className="icon-inline" />
-                    ) : (
-                        <PuzzleOutlineIcon className="icon-inline" />
+                <div
+                    className={classNames(
+                        'action-items__toggle-container',
+                        isOpen && 'action-items__toggle-container--open'
                     )}
-                </ButtonLink>
-            </div>
-        </li>
+                >
+                    <ButtonLink
+                        className={classNames(
+                            actionItemClassName,
+                            'action-items__aux-icon',
+                            'action-items__action--toggle'
+                        )}
+                        onSelect={toggle}
+                        buttonLinkRef={toggleReference}
+                    >
+                        {!haveExtensionsLoaded ? (
+                            <LoadingSpinner className="icon-inline" />
+                        ) : isOpen ? (
+                            <ChevronDoubleUpIcon className="icon-inline" />
+                        ) : (
+                            <PuzzleOutlineIcon className="icon-inline" />
+                        )}
+                    </ButtonLink>
+                </div>
+            </li>
+        </>
     ) : null
 }
 
 const ActionItemsDivider: React.FunctionComponent<{ className?: string }> = ({ className }) => (
-    <li className={classNames(className, 'action-items__divider position-relative rounded-sm d-flex')} />
+    <li className={classNames(className, 'action-items__divider-horizontal position-relative rounded-sm d-flex')} />
 )

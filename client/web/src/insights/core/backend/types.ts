@@ -7,6 +7,8 @@ import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
+import { RepositorySuggestion } from './requests/fetch-repository-suggestions'
+
 export enum ViewInsightProviderSourceType {
     Backend = 'Backend',
     Extension = 'Extension',
@@ -59,4 +61,5 @@ export interface ApiService {
     ) => Observable<void>
     getSearchInsightContent: (insight: SearchInsightSettings) => Promise<sourcegraph.LineChartContent<any, string>>
     getLangStatsInsightContent: (insight: LangStatsInsightsSettings) => Promise<sourcegraph.PieChartContent<any>>
+    getRepositorySuggestions: (query: string) => Promise<RepositorySuggestion[]>
 }

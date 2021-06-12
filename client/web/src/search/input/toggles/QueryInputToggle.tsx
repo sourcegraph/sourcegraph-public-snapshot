@@ -5,6 +5,8 @@ import { fromEvent } from 'rxjs'
 import { filter } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
 
+import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
+
 import { PatternTypeProps, CaseSensitivityProps } from '../..'
 
 export interface ToggleProps extends PatternTypeProps, CaseSensitivityProps {
@@ -34,6 +36,8 @@ export interface ToggleProps extends PatternTypeProps, CaseSensitivityProps {
  */
 export const QueryInputToggle: React.FunctionComponent<ToggleProps> = ({ onToggle, ...props }) => {
     const toggleCheckbox = useRef<HTMLDivElement | null>(null)
+
+    const [isRedesignEnabled] = useRedesignToggle()
 
     const disabledRule = useMemo(() => props.disableOn?.find(({ condition }) => condition), [props.disableOn])
     const onCheckboxToggled = useCallback(() => {
@@ -72,11 +76,12 @@ export const QueryInputToggle: React.FunctionComponent<ToggleProps> = ({ onToggl
             ref={toggleCheckbox}
             onClick={onCheckboxToggled}
             className={classNames(
-                'btn btn-icon icon-inline toggle-container__toggle',
+                'btn btn-icon toggle-container__toggle',
                 props.className,
                 { disabled: !!disabledRule },
                 { 'toggle-container__toggle--active': isActive },
-                props.activeClassName
+                props.activeClassName,
+                !isRedesignEnabled && 'icon-inline'
             )}
             role="checkbox"
             aria-disabled={!!disabledRule}
@@ -85,7 +90,7 @@ export const QueryInputToggle: React.FunctionComponent<ToggleProps> = ({ onToggl
             tabIndex={0}
             data-tooltip={tooltipValue}
         >
-            <Icon />
+            <Icon className="icon-inline" />
         </div>
     )
 }

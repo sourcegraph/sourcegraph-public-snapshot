@@ -4,13 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
 	"time"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 )
 
 type uploadRequestOptions struct {
@@ -85,7 +84,7 @@ func performRequest(req *http.Request, logger RequestLogger) (*http.Response, []
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if logger != nil {
 		logger.LogResponse(req, resp, body, time.Since(started))
 	}

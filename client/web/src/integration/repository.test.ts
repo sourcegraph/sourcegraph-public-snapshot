@@ -383,7 +383,7 @@ describe('Repository', () => {
 
             await driver.page.goto(driver.sourcegraphBaseUrl + '/' + repositoryName)
 
-            await driver.page.waitForSelector('h2.tree-page__title')
+            await driver.page.waitForSelector('header.test-tree-page-title')
 
             // Assert that the directory listing displays properly
             await driver.page.waitForSelector('.test-tree-entries')
@@ -416,8 +416,8 @@ describe('Repository', () => {
             await driver.page.waitForSelector('.test-repo-header-repo-link')
             await driver.page.click('.test-repo-header-repo-link')
 
-            await driver.page.waitForSelector('h2.tree-page__title')
-            await assertSelectorHasText('h2.tree-page__title', ' ' + shortRepositoryName)
+            await driver.page.waitForSelector('header.test-tree-page-title')
+            await assertSelectorHasText('header.test-tree-page-title', shortRepositoryName)
             await driver.assertWindowLocation(repositorySourcegraphUrl)
 
             await driver.findElementWithText(clickedCommit, { selector: '.git-commit-node__oid', action: 'click' })
@@ -521,8 +521,8 @@ describe('Repository', () => {
 
             await driver.page.goto(driver.sourcegraphBaseUrl + repositorySourcegraphUrl)
 
-            await driver.page.waitForSelector('h2.tree-page__title')
-            await assertSelectorHasText('h2.tree-page__title', ` ${shortRepositoryName}`)
+            await driver.page.waitForSelector('header.test-tree-page-title')
+            await assertSelectorHasText('header.test-tree-page-title', shortRepositoryName)
             await assertSelectorHasText('.test-tree-entry-file', 'readme.md')
 
             await driver.page.waitForSelector('#monaco-query-input .view-lines')
@@ -558,8 +558,8 @@ describe('Repository', () => {
 
             await driver.page.goto(driver.sourcegraphBaseUrl + repositorySourcegraphUrl)
 
-            await driver.page.waitForSelector('h2.tree-page__title')
-            await assertSelectorHasText('h2.tree-page__title', ' my org/repo with spaces')
+            await driver.page.waitForSelector('header.test-tree-page-title')
+            await assertSelectorHasText('header.test-tree-page-title', 'my org/repo with spaces')
             await assertSelectorHasText('.test-tree-entry-file', 'readme.md')
 
             // page.click() fails for some reason with Error: Node is either not visible or not an HTMLElement

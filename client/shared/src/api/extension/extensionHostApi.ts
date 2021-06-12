@@ -452,7 +452,16 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
                 return proxySubscribable(EMPTY)
             }
 
-            return proxySubscribable(viewer.mergedStatusBarItems.pipe(debounceTime(0)))
+            return proxySubscribable(
+                viewer.mergedStatusBarItems.pipe(
+                    debounceTime(0),
+                    map(statusBarItems =>
+                        statusBarItems.sort(
+                            (a, b) => a.text[0].toLowerCase().charCodeAt(0) - b.text[0].toLowerCase().charCodeAt(0)
+                        )
+                    )
+                )
+            )
         },
 
         // Content
@@ -657,9 +666,12 @@ function callViewProviders<W extends ContributableViewContainer>(
                         [undefined],
                         providerResultToObservable(viewProvider.provideView(context)).pipe(
                             defaultIfEmpty<sourcegraph.View | null | undefined>(null),
-                            catchError((error): [ErrorLike] => {
+                            catchError((error: unknown): [ErrorLike] => {
                                 console.error('View provider errored:', error)
-                                return [asError(error)]
+                                // Pass only primitive copied values because Error object is not
+                                // cloneable in Firefox and Safari
+                                const { message, name, stack } = asError(error)
+                                return [{ message, name, stack } as ErrorLike]
                             })
                         )
                     ).pipe(map(view => ({ id, view })))

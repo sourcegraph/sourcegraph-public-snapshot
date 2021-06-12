@@ -6,7 +6,6 @@ import (
 	"context"
 	"flag"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -105,7 +104,7 @@ func TestHandleEnqueueSinglePayload(t *testing.T) {
 			t.Errorf("unexpected bundle id. want=%s have=%s", "upload-42.lsif.gz", call.Arg1)
 		}
 
-		contents, err := ioutil.ReadAll(call.Arg2)
+		contents, err := io.ReadAll(call.Arg2)
 		if err != nil {
 			t.Fatalf("unexpected error reading payload: %s", err)
 		}
@@ -172,7 +171,7 @@ func TestHandleEnqueueSinglePayloadNoIndexerName(t *testing.T) {
 			t.Errorf("unexpected bundle id. want=%s have=%s", "upload-42.lsif.gz", call.Arg1)
 		}
 
-		contents, err := ioutil.ReadAll(call.Arg2)
+		contents, err := io.ReadAll(call.Arg2)
 		if err != nil {
 			t.Fatalf("unexpected error reading payload: %s", err)
 		}
@@ -308,7 +307,7 @@ func TestHandleEnqueueMultipartUpload(t *testing.T) {
 			t.Errorf("unexpected bundle id. want=%s have=%s", "upload-42.3.lsif.gz", call.Arg1)
 		}
 
-		contents, err := ioutil.ReadAll(call.Arg2)
+		contents, err := io.ReadAll(call.Arg2)
 		if err != nil {
 			t.Fatalf("unexpected error reading payload: %s", err)
 		}

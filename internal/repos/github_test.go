@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -13,9 +12,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/inconshreveable/log15"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -64,6 +63,7 @@ func TestGithubSource_GetRepo(t *testing.T) {
 					Name:        "github.com/sourcegraph/sourcegraph",
 					Description: "Code search and navigation tool (self-hosted)",
 					URI:         "github.com/sourcegraph/sourcegraph",
+					Stars:       2220,
 					ExternalRepo: api.ExternalRepoSpec{
 						ID:          "MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==",
 						ServiceType: "github",
@@ -76,11 +76,13 @@ func TestGithubSource_GetRepo(t *testing.T) {
 						},
 					},
 					Metadata: &github.Repository{
-						ID:            "MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==",
-						DatabaseID:    41288708,
-						NameWithOwner: "sourcegraph/sourcegraph",
-						Description:   "Code search and navigation tool (self-hosted)",
-						URL:           "https://github.com/sourcegraph/sourcegraph",
+						ID:             "MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==",
+						DatabaseID:     41288708,
+						NameWithOwner:  "sourcegraph/sourcegraph",
+						Description:    "Code search and navigation tool (self-hosted)",
+						URL:            "https://github.com/sourcegraph/sourcegraph",
+						StargazerCount: 2220,
+						ForkCount:      164,
 					},
 				}
 
@@ -133,7 +135,7 @@ func TestGithubSource_GetRepo(t *testing.T) {
 }
 
 func TestGithubSource_makeRepo(t *testing.T) {
-	b, err := ioutil.ReadFile(filepath.Join("testdata", "github-repos.json"))
+	b, err := os.ReadFile(filepath.Join("testdata", "github-repos.json"))
 	if err != nil {
 		t.Fatal(err)
 	}

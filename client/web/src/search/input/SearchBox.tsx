@@ -1,9 +1,11 @@
 import React from 'react'
 
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import { CopyQueryButtonProps, SearchContextInputProps } from '..'
+import { SearchContextInputProps } from '..'
+import { AuthenticatedUser } from '../../auth'
 import { VersionContextDropdown } from '../../nav/VersionContextDropdown'
 import { VersionContext } from '../../schema/site.schema'
 import { QueryState, submitSearch } from '../helpers'
@@ -18,7 +20,8 @@ export interface SearchBoxProps
     extends Omit<TogglesProps, 'navbarSearchQuery'>,
         ThemeProps,
         SearchContextInputProps,
-        CopyQueryButtonProps {
+        TelemetryProps {
+    authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean // significant for query suggestions
     queryState: QueryState
     onChange: (newState: QueryState) => void
@@ -62,22 +65,27 @@ export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
                     setVersionContext={props.setVersionContext}
                     availableVersionContexts={props.availableVersionContexts}
                     selectedSearchContextSpec={props.selectedSearchContextSpec}
+                    className={styles.searchBoxVersionContextDropdown}
                 />
             )}
             <div className={`${styles.searchBoxBackgroundContainer} flex-shrink-past-contents`}>
                 {props.showSearchContext && (
-                    <SearchContextDropdown query={queryState.query} submitSearch={submitSearch} {...props} />
+                    <>
+                        <SearchContextDropdown
+                            {...props}
+                            query={queryState.query}
+                            submitSearch={submitSearch}
+                            className={styles.searchBoxContextDropdown}
+                        />
+                        <div className={styles.searchBoxSeparator} />
+                    </>
                 )}
                 <div className={`${styles.searchBoxFocusContainer} flex-shrink-past-contents`}>
-                    <LazyMonacoQueryInput {...props} />
-                    <Toggles
-                        {...props}
-                        navbarSearchQuery={queryState.query}
-                        className={styles.searchBoxToggleContainer}
-                    />
+                    <LazyMonacoQueryInput {...props} className={styles.searchBoxInput} />
+                    <Toggles {...props} navbarSearchQuery={queryState.query} className={styles.searchBoxToggles} />
                 </div>
             </div>
-            <SearchButton />
+            <SearchButton className={styles.searchBoxButton} />
         </div>
     )
 }

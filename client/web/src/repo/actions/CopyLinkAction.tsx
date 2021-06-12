@@ -40,7 +40,7 @@ export const CopyLinkAction: React.FunctionComponent = () => {
     return (
         <button
             type="button"
-            className={classNames('btn btn-icon my-2', isRedesignEnabled && 'btn-sm')}
+            className={classNames('btn btn-icon', isRedesignEnabled && 'btn-sm p-2', !isRedesignEnabled && 'my-2')}
             data-tooltip={copied ? 'Copied!' : 'Copy link to clipboard'}
             aria-label="Copy link"
             onClick={onClick}

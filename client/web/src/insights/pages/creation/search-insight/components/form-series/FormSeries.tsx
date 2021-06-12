@@ -64,7 +64,7 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
     } = props
 
     return (
-        <ul className="list-unstyled d-flex flex-column">
+        <ul data-testid="form-series" className="list-unstyled d-flex flex-column">
             {series.map((line, index) =>
                 line.edit ? (
                     <FormSeriesInput
@@ -93,6 +93,7 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
             )}
 
             <button
+                data-testid="add-series-button"
                 type="button"
                 onClick={() => onEditSeriesRequest(series.length)}
                 className={classnames(styles.formSeriesItem, styles.formSeriesAddButton, 'btn btn-link p-3')}

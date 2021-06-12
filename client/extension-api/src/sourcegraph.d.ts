@@ -1253,7 +1253,7 @@ declare module 'sourcegraph' {
          * A search context is a set of repositories and revisions on a Sourcegraph instance.
          * When set, extensions use it to scope search queries, code intelligence actions, etc.
          *
-         * See more information at https://docs.sourcegraph.com/code_search/explanations/features#search-contexts-experimental.
+         * See more information at https://docs.sourcegraph.com/code_search/explanations/features#search-contexts.
          */
         export const searchContext: string | undefined
 

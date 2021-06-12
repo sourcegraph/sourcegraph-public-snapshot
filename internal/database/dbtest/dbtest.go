@@ -1,14 +1,19 @@
 package dbtest
 
 import (
+	crand "crypto/rand"
 	"database/sql"
+	"encoding/binary"
+	"errors"
+	"hash/fnv"
 	"math/rand"
 	"net/url"
 	"os"
 	"strconv"
+	"sync"
 	"testing"
-	"time"
 
+	"github.com/jackc/pgconn"
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
@@ -38,6 +43,19 @@ func NewTx(t testing.TB, db *sql.DB) *sql.Tx {
 	return tx
 }
 
+// Use a shared, locked RNG to avoid issues with multiple concurrent tests getting
+// the same random database number (unlikely, but has been observed).
+// Use crypto/rand.Read() to use an OS source of entropy, since, against all odds,
+// using nanotime was causing conflicts.
+var rng = rand.New(rand.NewSource(func() int64 {
+	b := [8]byte{}
+	if _, err := crand.Read(b[:]); err != nil {
+		panic(err)
+	}
+	return int64(binary.LittleEndian.Uint64(b[:]))
+}()))
+var rngLock sync.Mutex
+
 // NewDB returns a connection to a clean, new temporary testing database
 // with the same schema as Sourcegraph's production Postgres database.
 func NewDB(t testing.TB, dsn string) *sql.DB {
@@ -56,27 +74,18 @@ func NewDB(t testing.TB, dsn string) *sql.DB {
 		}
 	}
 
-	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
+	initTemplateDB(t, config)
+
+	rngLock.Lock()
 	dbname := "sourcegraph-test-" + strconv.FormatUint(rng.Uint64(), 10)
+	rngLock.Unlock()
 
 	db := dbConn(t, config)
-	dbExec(t, db, `CREATE DATABASE `+pq.QuoteIdentifier(dbname))
+	dbExec(t, db, `CREATE DATABASE `+pq.QuoteIdentifier(dbname)+` TEMPLATE `+pq.QuoteIdentifier(templateDBName()))
 
 	config.Path = "/" + dbname
 	testDB := dbConn(t, config)
-
-	for _, database := range []*dbconn.Database{
-		dbconn.Frontend,
-		dbconn.CodeIntel,
-	} {
-		m, err := dbconn.NewMigrate(testDB, database)
-		if err != nil {
-			t.Fatalf("failed to construct migrations: %s", err)
-		}
-		if err = dbconn.DoMigrate(m); err != nil {
-			t.Fatalf("failed to apply migrations: %s", err)
-		}
-	}
+	testDB.SetMaxOpenConns(3)
 
 	t.Cleanup(func() {
 		defer db.Close()
@@ -94,6 +103,66 @@ func NewDB(t testing.TB, dsn string) *sql.DB {
 	})
 
 	return testDB
+}
+
+var templateOnce sync.Once
+
+// initTemplateDB creates a template database with a fully migrated schema for the
+// current package. New databases can then do a cheap copy of the migrated schema
+// rather than running the full migration every time.
+func initTemplateDB(t testing.TB, config *url.URL) {
+	templateOnce.Do(func() {
+		templateName := templateDBName()
+		db := dbConn(t, config)
+		_, err := db.Exec(`CREATE DATABASE ` + pq.QuoteIdentifier(templateName))
+		if err != nil {
+			pgErr := &pgconn.PgError{}
+			if errors.As(err, &pgErr) && pgErr.Code == "42P04" {
+				// Ignore database already exists errors.
+				// Postgres doesn't support CREATE DATABASE IF NOT EXISTS,
+				// so we just try to create it, and ignore the error if it's
+				// because the database already exists.
+			} else {
+				t.Fatalf("Failed to create database: %s", err)
+			}
+		}
+		defer db.Close()
+
+		cfgCopy := *config
+		cfgCopy.Path = "/" + templateName
+		templateDB := dbConn(t, &cfgCopy)
+		defer templateDB.Close()
+
+		for _, database := range []*dbconn.Database{
+			dbconn.Frontend,
+			dbconn.CodeIntel,
+		} {
+			m, err := dbconn.NewMigrate(templateDB, database)
+			if err != nil {
+				t.Fatalf("failed to construct migrations: %s", err)
+			}
+			defer m.Close()
+			if err = dbconn.DoMigrate(m); err != nil {
+				t.Fatalf("failed to apply migrations: %s", err)
+			}
+		}
+	})
+}
+
+// templateDBName returns the name of the template database
+// for the currently running package.
+func templateDBName() string {
+	return "sourcegraph-test-template-" + wdHash()
+}
+
+// wdHash returns a hash of the current working directory.
+// This is useful to get a stable identifier for the package running
+// the tests.
+func wdHash() string {
+	h := fnv.New64()
+	wd, _ := os.Getwd()
+	h.Write([]byte(wd))
+	return strconv.Itoa(int(h.Sum64()))
 }
 
 func dbConn(t testing.TB, cfg *url.URL) *sql.DB {

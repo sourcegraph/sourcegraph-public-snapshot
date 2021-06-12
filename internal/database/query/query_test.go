@@ -5,8 +5,8 @@ import (
 	"log"
 	"testing"
 
+	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/query"
 )

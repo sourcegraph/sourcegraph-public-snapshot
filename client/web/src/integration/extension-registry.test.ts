@@ -154,6 +154,7 @@ describe('Extension Registry', () => {
                             },
                             settingsURL: '/site-admin/global-settings',
                             viewerCanAdminister: true,
+                            allowSiteSettingsEdits: true,
                         },
                         {
                             __typename: 'User',
@@ -195,6 +196,7 @@ describe('Extension Registry', () => {
                         error: null,
                         nodes: registryExtensionNodes,
                     },
+                    featuredExtensions: null,
                 },
             }),
             Extensions: () => ({
@@ -273,7 +275,11 @@ describe('Extension Registry', () => {
                 })
             }, 'RegistryExtensions')
 
-            assert.deepStrictEqual(request, { query: 'sqs', prioritizeExtensionIDs: ['sqs/word-count'] })
+            assert.deepStrictEqual(request, {
+                getFeatured: false,
+                query: 'sqs',
+                prioritizeExtensionIDs: ['sqs/word-count'],
+            })
         })
     })
 

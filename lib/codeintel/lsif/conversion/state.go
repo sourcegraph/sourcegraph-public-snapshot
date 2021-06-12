@@ -1,7 +1,7 @@
 package conversion
 
 import (
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/datastructures"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion/datastructures"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol"
 )
 

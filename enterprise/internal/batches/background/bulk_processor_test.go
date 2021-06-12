@@ -10,12 +10,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
 
 func TestBulkProcessor(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
 	tx := dbtest.NewTx(t, db)
 	bstore := store.New(tx, nil)
 	user := ct.CreateTestUser(t, db, true)

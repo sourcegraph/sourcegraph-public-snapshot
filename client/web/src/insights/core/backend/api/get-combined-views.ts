@@ -5,7 +5,7 @@ import { catchError, map, switchMap } from 'rxjs/operators'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-import { asError } from '@sourcegraph/shared/src/util/errors'
+import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { fetchBackendInsights } from '../requests/fetch-backend-insights'
 import { ViewInsightProviderResult, ViewInsightProviderSourceType } from '../types'
@@ -21,7 +21,13 @@ export const getCombinedViews = (
     combineLatest([
         getExtensionsInsights().pipe(
             map(extensionInsights =>
-                extensionInsights.map(insight => ({ ...insight, source: ViewInsightProviderSourceType.Extension }))
+                extensionInsights.map(insight => ({
+                    ...insight,
+                    // Convert error like errors since Firefox and Safari don't support
+                    // receiving native errors from web worker thread
+                    view: isErrorLike(insight.view) ? asError(insight.view) : insight.view,
+                    source: ViewInsightProviderSourceType.Extension,
+                }))
             )
         ),
         fetchBackendInsights().pipe(

@@ -7,7 +7,7 @@ import (
 	"encoding/base64"
 	"encoding/xml"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"path"
@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/beevik/etree"
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 	saml2 "github.com/russellhaering/gosaml2"
 	"github.com/russellhaering/gosaml2/types"
 	dsig "github.com/russellhaering/goxmldsig"
@@ -273,7 +273,7 @@ func readIdentityProviderMetadata(ctx context.Context, c *providerConfig) ([]byt
 		return nil, fmt.Errorf("non-200 HTTP response for SAML Identity Provider metadata URL: %s", c.identityProviderMetadataURL)
 	}
 
-	data, err := ioutil.ReadAll(resp.Body)
+	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, errors.WithMessage(err, "reading SAML Identity Provider metadata")
 	}

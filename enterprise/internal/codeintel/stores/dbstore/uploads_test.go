@@ -176,6 +176,62 @@ func TestGetQueuedUploadRank(t *testing.T) {
 	}
 }
 
+func TestGetUploadsByIDs(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
+	ctx := context.Background()
+
+	insertUploads(t, db,
+		Upload{ID: 1},
+		Upload{ID: 2},
+		Upload{ID: 3},
+		Upload{ID: 4},
+		Upload{ID: 5},
+		Upload{ID: 6},
+		Upload{ID: 7},
+		Upload{ID: 8},
+		Upload{ID: 9},
+		Upload{ID: 10},
+	)
+
+	t.Run("fetch", func(t *testing.T) {
+		indexes, err := store.GetUploadsByIDs(ctx, 2, 4, 6, 8, 12)
+		if err != nil {
+			t.Fatalf("unexpected error getting indexes for repo: %s", err)
+		}
+
+		var ids []int
+		for _, index := range indexes {
+			ids = append(ids, index.ID)
+		}
+		sort.Ints(ids)
+
+		if diff := cmp.Diff([]int{2, 4, 6, 8}, ids); diff != "" {
+			t.Errorf("unexpected index ids (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("enforce repository permissions", func(t *testing.T) {
+		// Enable permissions user mapping forces checking repository permissions
+		// against permissions tables in the database, which should effectively block
+		// all access because permissions tables are empty.
+		before := globals.PermissionsUserMapping()
+		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
+		defer globals.SetPermissionsUserMapping(before)
+
+		indexes, err := store.GetUploadsByIDs(ctx, 1, 2, 3, 4)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(indexes) > 0 {
+			t.Fatalf("Want no index but got %d indexes", len(indexes))
+		}
+	})
+}
+
 func TestDeleteUploadsStuckUploading(t *testing.T) {
 	if testing.Short() {
 		t.Skip()

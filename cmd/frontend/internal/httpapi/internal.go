@@ -4,15 +4,15 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"path"
 	"strconv"
 
+	"github.com/cockroachdb/errors"
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -29,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func serveReposGetByName(w http.ResponseWriter, r *http.Request) error {
@@ -157,6 +158,27 @@ func serveConfiguration(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
+func repoRankFromConfig(siteConfig schema.SiteConfiguration, repoName string) float64 {
+	val := 0.0
+	if siteConfig.ExperimentalFeatures == nil || siteConfig.ExperimentalFeatures.Ranking == nil {
+		return val
+	}
+	scores := siteConfig.ExperimentalFeatures.Ranking.RepoScores
+	if len(scores) == 0 {
+		return val
+	}
+	// try every "directory" in the repo name to assign it a value, so a repoName like
+	// "github.com/sourcegraph/zoekt" will have "github.com", "github.com/sourcegraph",
+	// and "github.com/sourcegraph/zoekt" tested.
+	for i := 0; i < len(repoName); i++ {
+		if repoName[i] == '/' {
+			val += scores[repoName[:i]]
+		}
+	}
+	val += scores[repoName]
+	return val
+}
+
 // serveSearchConfiguration is _only_ used by the zoekt index server. Zoekt does
 // not depend on frontend and therefore does not have access to `conf.Watch`.
 // Additionally, it only cares about certain search specific settings so this
@@ -186,8 +208,12 @@ func serveSearchConfiguration(w http.ResponseWriter, r *http.Request) error {
 			return string(commitID), err
 		}
 
+		priority := float64(repo.Stars) + repoRankFromConfig(siteConfig, repoName)
+
 		return &searchbackend.RepoIndexOptions{
 			RepoID:     int32(repo.ID),
+			Public:     !repo.Private,
+			Priority:   priority,
 			GetVersion: getVersion,
 		}, nil
 	}
@@ -576,7 +602,7 @@ func serveGitExec(w http.ResponseWriter, r *http.Request) error {
 		req.URL.Scheme = "http"
 		req.URL.Host = addr
 		req.URL.Path = "/exec"
-		req.Body = ioutil.NopCloser(bytes.NewReader(buf.Bytes()))
+		req.Body = io.NopCloser(bytes.NewReader(buf.Bytes()))
 		req.ContentLength = int64(buf.Len())
 	}
 

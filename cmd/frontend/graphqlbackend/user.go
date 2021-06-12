@@ -38,7 +38,7 @@ func (r *schemaResolver) User(ctx context.Context, args struct {
 		// 🚨 SECURITY: Only site admins are allowed to look up by email address on Sourcegraph.com, for
 		// user privacy reasons.
 		if envvar.SourcegraphDotComMode() {
-			if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+			if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 				return nil, err
 			}
 		}
@@ -100,7 +100,7 @@ func (r *UserResolver) DatabaseID() int32 { return r.user.ID }
 // Deprecated: use Emails instead.
 func (r *UserResolver) Email(ctx context.Context) (string, error) {
 	// 🚨 SECURITY: Only the user and admins are allowed to access the email address.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.user.ID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
 		return "", err
 	}
 
@@ -153,7 +153,7 @@ func (r *UserResolver) settingsSubject() api.SettingsSubject {
 func (r *UserResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
 	// 🚨 SECURITY: Only the user and admins are allowed to access the user's settings, because they
 	// may contain secrets or other sensitive data.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.user.ID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
 		return nil, err
 	}
 
@@ -175,7 +175,7 @@ func (r *UserResolver) ConfigurationCascade() *settingsCascade { return r.Settin
 
 func (r *UserResolver) SiteAdmin(ctx context.Context) (bool, error) {
 	// 🚨 SECURITY: Only the user and admins are allowed to determine if the user is a site admin.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.user.ID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
 		return false, err
 	}
 
@@ -196,7 +196,7 @@ func (r *schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (
 	}
 
 	// 🚨 SECURITY: Only the user and site admins are allowed to update the user.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, userID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
 		return nil, err
 	}
 
@@ -211,7 +211,7 @@ func (r *schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (
 		AvatarURL:   args.AvatarURL,
 	}
 	if args.Username != nil && viewerIsChangingUsername(ctx, r.db, userID, *args.Username) {
-		if !viewerCanChangeUsername(ctx, userID) {
+		if !viewerCanChangeUsername(ctx, r.db, userID) {
 			return nil, fmt.Errorf("unable to change username because auth.enableUsernameChanges is false in site configuration")
 		}
 		update.Username = *args.Username
@@ -249,7 +249,7 @@ func (r *UserResolver) Organizations(ctx context.Context) (*orgConnectionStaticR
 
 func (r *UserResolver) Tags(ctx context.Context) ([]string, error) {
 	// 🚨 SECURITY: Only the user and admins are allowed to access the user's tags.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.user.ID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
 		return nil, err
 	}
 	return r.user.Tags, nil
@@ -257,7 +257,7 @@ func (r *UserResolver) Tags(ctx context.Context) ([]string, error) {
 
 func (r *UserResolver) SurveyResponses(ctx context.Context) ([]*surveyResponseResolver, error) {
 	// 🚨 SECURITY: Only the user and admins are allowed to access the user's survey responses.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.user.ID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
 		return nil, err
 	}
 
@@ -273,7 +273,7 @@ func (r *UserResolver) SurveyResponses(ctx context.Context) ([]*surveyResponseRe
 }
 
 func (r *UserResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.user.ID); errcode.IsUnauthorized(err) {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); errcode.IsUnauthorized(err) {
 		return false, nil
 	} else if err != nil {
 		return false, err
@@ -341,7 +341,7 @@ func (r *schemaResolver) CreatePassword(ctx context.Context, args *struct {
 
 // ViewerCanChangeUsername returns if the current user can change the username of the user.
 func (r *UserResolver) ViewerCanChangeUsername(ctx context.Context) bool {
-	return viewerCanChangeUsername(ctx, r.user.ID)
+	return viewerCanChangeUsername(ctx, r.db, r.user.ID)
 }
 
 // TODO(campaigns-deprecation):
@@ -433,15 +433,15 @@ func (r *UserResolver) BatchChangesCodeHosts(ctx context.Context, args *ListBatc
 	return EnterpriseResolvers.batchChangesResolver.BatchChangesCodeHosts(ctx, args)
 }
 
-func viewerCanChangeUsername(ctx context.Context, userID int32) bool {
-	if err := backend.CheckSiteAdminOrSameUser(ctx, userID); err != nil {
+func viewerCanChangeUsername(ctx context.Context, db dbutil.DB, userID int32) bool {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, db, userID); err != nil {
 		return false
 	}
 	if conf.Get().AuthEnableUsernameChanges {
 		return true
 	}
 	// 🚨 SECURITY: Only site admins are allowed to change a user's username when auth.enableUsernameChanges == false.
-	return backend.CheckCurrentUserIsSiteAdmin(ctx) == nil
+	return backend.CheckCurrentUserIsSiteAdmin(ctx, db) == nil
 }
 
 // Users may be trying to change their own username, or someone else's.
@@ -469,7 +469,7 @@ func (r *UserResolver) Monitors(ctx context.Context, args *ListMonitorsArgs) (Mo
 }
 
 func (r *UserResolver) PublicRepositories(ctx context.Context) ([]*RepositoryResolver, error) {
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.user.ID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
 		return nil, err
 	}
 	repos, err := database.UserPublicRepos(r.db).ListByUser(ctx, r.user.ID)

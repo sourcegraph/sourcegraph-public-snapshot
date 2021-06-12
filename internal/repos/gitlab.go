@@ -3,15 +3,14 @@ package repos
 import (
 	"context"
 	"fmt"
-
 	"net/url"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
-	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
@@ -102,8 +101,8 @@ func newGitLabSource(svc *types.ExternalService, c *schema.GitLabConnection, cf 
 	provider := gitlab.NewClientProvider(baseURL, cli)
 
 	var client *gitlab.Client
-	switch c.TokenType {
-	case "oauth":
+	switch gitlab.TokenType(c.TokenType) {
+	case gitlab.TokenTypeOAuth:
 		client = provider.GetOAuthClient(c.Token)
 	default:
 		client = provider.GetPATClient(c.Token, "")
@@ -195,6 +194,7 @@ func (s GitLabSource) makeRepo(proj *gitlab.Project) *types.Repo {
 		Description:  proj.Description,
 		Fork:         proj.ForkedFromProject != nil,
 		Archived:     proj.Archived,
+		Stars:        proj.StarCount,
 		Private:      proj.Visibility == "private",
 		Sources: map[string]*types.SourceInfo{
 			urn: {
@@ -209,7 +209,7 @@ func (s GitLabSource) makeRepo(proj *gitlab.Project) *types.Repo {
 // remoteURL returns the GitLab projects's Git remote URL
 //
 // note: this used to contain credentials but that is no longer the case
-// if you need to get an authenticated clone url use types.RepoCloneURL
+// if you need to get an authenticated clone url use repos.CloneURL
 func (s *GitLabSource) remoteURL(proj *gitlab.Project) string {
 	if s.config.GitURLType == "ssh" {
 		return proj.SSHURLToRepo // SSH authentication must be provided out-of-band

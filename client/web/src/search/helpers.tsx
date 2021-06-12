@@ -9,7 +9,7 @@ import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
 import { eventLogger } from '../tracking/eventLogger'
 
-import { SearchType } from './results/SearchResults'
+import { SearchType } from './results/streaming/StreamingSearchResults'
 
 import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '.'
 

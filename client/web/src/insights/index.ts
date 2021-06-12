@@ -9,3 +9,6 @@ export * from './core/analytics'
 export { InsightsViewGrid } from './components'
 export { InsightsRouter } from './InsightsRouter'
 export type { InsightsViewGridProps } from './components'
+
+// Guard
+export { isCodeInsightsEnabled } from './utils/is-code-insights-enabled'

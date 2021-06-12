@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestatsdeprecated"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
@@ -22,7 +23,7 @@ import (
 
 func (r *UserResolver) UsageStatistics(ctx context.Context) (*userUsageStatisticsResolver, error) {
 	if envvar.SourcegraphDotComMode() {
-		if err := backend.CheckSiteAdminOrSameUser(ctx, r.user.ID); err != nil {
+		if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
 			return nil, err
 		}
 	}
@@ -103,6 +104,7 @@ func (r *schemaResolver) LogEvent(ctx context.Context, args *struct {
 	}
 
 	actor := actor.FromContext(ctx)
+	ffs := featureflag.FromContext(ctx)
 	return nil, usagestats.LogEvent(ctx, r.db, usagestats.Event{
 		EventName:      args.Event,
 		URL:            args.URL,
@@ -111,6 +113,7 @@ func (r *schemaResolver) LogEvent(ctx context.Context, args *struct {
 		FirstSourceURL: args.FirstSourceURL,
 		Source:         args.Source,
 		Argument:       payload,
+		FeatureFlags:   ffs,
 	})
 }
 

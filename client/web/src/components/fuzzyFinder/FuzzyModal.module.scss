@@ -1,51 +1,53 @@
 .modal {
-    z-index: 1000;
-    position: fixed;
-    left: 0;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    height: 80vh;
+    width: 80vw;
 }
 
 .content {
-    width: 80vw;
-    background-color: var(--color-bg-2);
+    display: flex;
+    align-items: stretch;
+    flex-direction: column;
+    height: 100%;
 }
 
-.header,
-.footer {
-    padding: 1rem;
-}
-
-.body {
-    height: 80vh;
-    overflow-y: scroll;
-    padding: 0.5rem;
+.header {
+    display: flex;
+    justify-content: space-between;
+    padding-bottom: 0.25rem;
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
 }
 
 .input {
-    border: none;
-    width: 100%;
-    padding: 0.25rem;
-    font-size: 2em;
+    margin-bottom: 0.75rem;
 }
 
 .results {
+    overflow: hidden auto;
+    flex: 1;
     text-align: left;
     list-style-type: none;
     padding: unset;
-    color: var(--body-color);
 }
 
 .focused {
-    background-color: var(--color-bg-3);
+    border-radius: var(--border-radius);
+    background-color: var(--color-bg-2);
 }
 
-.footer {
+.summary {
     display: flex;
-    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.result-count {
+    flex: 1;
+}
+
+.close-icon {
+    color: var(--icon-color);
+}
+
+.show-more {
+    align-self: center;
 }

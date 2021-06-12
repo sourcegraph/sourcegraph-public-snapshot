@@ -19,6 +19,10 @@ type zoektIndexOptions struct {
 	// RepoID is the Sourcegraph Repository ID.
 	RepoID int32
 
+	// Public is true if the repository is public and does not require auth
+	// filtering.
+	Public bool
+
 	// LargeFiles is a slice of glob patterns where matching file paths should
 	// be indexed regardless of their size. The pattern syntax can be found
 	// here: https://golang.org/pkg/path/filepath/#Match.
@@ -30,6 +34,9 @@ type zoektIndexOptions struct {
 	// Branches is a slice of branches to index.
 	Branches []zoekt.RepositoryBranch `json:",omitempty"`
 
+	// Priority indicates ranking in results, higher first.
+	Priority float64 `json:",omitempty"`
+
 	// Error if non-empty indicates the request failed for the repo.
 	Error string `json:",omitempty"`
 }
@@ -39,6 +46,13 @@ type zoektIndexOptions struct {
 type RepoIndexOptions struct {
 	// RepoID is the Sourcegraph Repository ID.
 	RepoID int32
+
+	// Public is true if the repository is public and does not require auth
+	// filtering.
+	Public bool
+
+	// Priority indicates ranking in results, higher first.
+	Priority float64
 
 	// GetVersion is used to resolve revisions for a repo. If it fails, the
 	// error is encoded in the body. If the revision is missing, an empty
@@ -89,6 +103,8 @@ func getIndexOptions(
 
 	o := &zoektIndexOptions{
 		RepoID:     opts.RepoID,
+		Public:     opts.Public,
+		Priority:   opts.Priority,
 		LargeFiles: c.SearchLargeFiles,
 		Symbols:    getBoolPtr(c.SearchIndexSymbolsEnabled, true),
 	}

@@ -7,12 +7,12 @@ import (
 	"io"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -745,6 +745,7 @@ WITH batch AS (
       external_id           text,
       archived              boolean,
       fork                  boolean,
+      stars                 integer,
       private               boolean,
       metadata              jsonb
     )
@@ -766,6 +767,7 @@ SET
   external_id           = batch.external_id,
   archived              = batch.archived,
   fork                  = batch.fork,
+  stars                 = batch.stars,
   private               = batch.private,
   metadata              = batch.metadata
 FROM batch
@@ -801,6 +803,7 @@ INSERT INTO repo (
   external_id,
   archived,
   fork,
+  stars,
   private,
   metadata
 )
@@ -816,6 +819,7 @@ SELECT
   external_id,
   archived,
   fork,
+  stars,
   private,
   metadata
 FROM batch
@@ -916,6 +920,7 @@ type repoRecord struct {
 	ExternalID          *string         `json:"external_id,omitempty"`
 	Archived            bool            `json:"archived"`
 	Fork                bool            `json:"fork"`
+	Stars               int             `json:"stars"`
 	Private             bool            `json:"private"`
 	Metadata            json.RawMessage `json:"metadata"`
 	Sources             json.RawMessage `json:"sources,omitempty"`
@@ -945,6 +950,7 @@ func newRepoRecord(r *types.Repo) (*repoRecord, error) {
 		ExternalID:          nullStringColumn(r.ExternalRepo.ID),
 		Archived:            r.Archived,
 		Fork:                r.Fork,
+		Stars:               r.Stars,
 		Private:             r.Private,
 		Metadata:            metadata,
 		Sources:             sources,

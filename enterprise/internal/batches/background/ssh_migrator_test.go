@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -15,7 +15,7 @@ import (
 
 func TestSSHMigrator(t *testing.T) {
 	ctx := context.Background()
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
 	user := ct.CreateTestUser(t, db, false)
 
 	ct.MockRSAKeygen(t)

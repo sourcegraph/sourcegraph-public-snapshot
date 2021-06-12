@@ -34,12 +34,23 @@
   targets:
     # zoekt-indexserver
     - 127.0.0.1:6072
+    - 127.0.0.1:6073
+- labels:
+    job: zoekt-webserver
+  targets:
+    # zoekt-webserver
+    - 127.0.0.1:3070
+    - 127.0.0.1:3071
 - labels:
     job: precise-code-intel-worker
   targets:
     # precise-code-intel-worker
     - 127.0.0.1:6088
 - labels:
+    job: worker
+  targets:
+    # worker
+    - 127.0.0.1:6089
 - labels:
     job: executor-queue
   targets:

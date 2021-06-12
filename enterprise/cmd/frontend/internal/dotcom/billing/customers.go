@@ -6,9 +6,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
-	"github.com/pkg/errors"
 	"github.com/stripe/stripe-go"
 	"github.com/stripe/stripe-go/customer"
 

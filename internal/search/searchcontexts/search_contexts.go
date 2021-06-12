@@ -84,7 +84,7 @@ func ValidateSearchContextWriteAccessForCurrentUser(ctx context.Context, db dbut
 		return errors.New("namespaceUserID and namespaceOrgID are mutually exclusive")
 	}
 
-	user, err := backend.CurrentUser(ctx)
+	user, err := backend.CurrentUser(ctx, db)
 	if err != nil {
 		return err
 	}

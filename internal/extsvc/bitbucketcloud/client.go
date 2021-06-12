@@ -4,16 +4,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
-	"github.com/pkg/errors"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -174,7 +174,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 
 	defer resp.Body.Close()
 
-	bs, err := ioutil.ReadAll(resp.Body)
+	bs, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}

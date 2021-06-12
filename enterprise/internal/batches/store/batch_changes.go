@@ -4,8 +4,8 @@ import (
 	"context"
 	"strconv"
 
+	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
-	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-diff/diff"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"

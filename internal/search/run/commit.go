@@ -13,7 +13,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"

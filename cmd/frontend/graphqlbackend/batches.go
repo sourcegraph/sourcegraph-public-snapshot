@@ -199,9 +199,13 @@ type ListViewerBatchChangesCodeHostsArgs struct {
 	OnlyWithoutCredential bool
 }
 
-type DetachChangesetsArgs struct {
+type BulkOperationBaseArgs struct {
 	BatchChange graphql.ID
 	Changesets  []graphql.ID
+}
+
+type DetachChangesetsArgs struct {
+	BulkOperationBaseArgs
 }
 
 type ListBatchChangeBulkOperationArgs struct {
@@ -211,9 +215,12 @@ type ListBatchChangeBulkOperationArgs struct {
 }
 
 type CreateChangesetCommentsArgs struct {
-	BatchChange graphql.ID
-	Changesets  []graphql.ID
-	Body        string
+	BulkOperationBaseArgs
+	Body string
+}
+
+type ReenqueueChangesetsArgs struct {
+	BulkOperationBaseArgs
 }
 
 type BatchChangesResolver interface {
@@ -244,6 +251,7 @@ type BatchChangesResolver interface {
 	ReenqueueChangeset(ctx context.Context, args *ReenqueueChangesetArgs) (ChangesetResolver, error)
 	DetachChangesets(ctx context.Context, args *DetachChangesetsArgs) (BulkOperationResolver, error)
 	CreateChangesetComments(ctx context.Context, args *CreateChangesetCommentsArgs) (BulkOperationResolver, error)
+	ReenqueueChangesets(ctx context.Context, args *ReenqueueChangesetsArgs) (BulkOperationResolver, error)
 
 	// Queries
 

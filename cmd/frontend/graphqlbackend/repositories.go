@@ -17,18 +17,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func (r *schemaResolver) Repositories(args *struct {
+type repositoryArgs struct {
 	graphqlutil.ConnectionArgs
-	Query      *string
-	Names      *[]string
-	Cloned     bool
-	NotCloned  bool
-	Indexed    bool
-	NotIndexed bool
-	OrderBy    string
-	Descending bool
-	After      *string
-}) (*repositoryConnectionResolver, error) {
+	Query       *string
+	Names       *[]string
+	Cloned      bool
+	NotCloned   bool
+	Indexed     bool
+	NotIndexed  bool
+	FailedFetch bool
+	OrderBy     string
+	Descending  bool
+	After       *string
+}
+
+func (r *schemaResolver) Repositories(args *repositoryArgs) (*repositoryConnectionResolver, error) {
 	opt := database.ReposListOptions{
 		OrderBy: database.RepoListOrderBy{{
 			Field:      toDBRepoListColumn(args.OrderBy),
@@ -58,14 +61,18 @@ func (r *schemaResolver) Repositories(args *struct {
 			opt.CursorDirection = "next"
 		}
 	}
+
+	opt.FailedFetch = args.FailedFetch
 	args.ConnectionArgs.Set(&opt.LimitOffset)
+
 	return &repositoryConnectionResolver{
-		db:         r.db,
-		opt:        opt,
-		cloned:     args.Cloned,
-		notCloned:  args.NotCloned,
-		indexed:    args.Indexed,
-		notIndexed: args.NotIndexed,
+		db:          r.db,
+		opt:         opt,
+		cloned:      args.Cloned,
+		notCloned:   args.NotCloned,
+		indexed:     args.Indexed,
+		notIndexed:  args.NotIndexed,
+		failedFetch: args.FailedFetch,
 	}, nil
 }
 
@@ -82,12 +89,13 @@ type RepositoryConnectionResolver interface {
 var _ RepositoryConnectionResolver = &repositoryConnectionResolver{}
 
 type repositoryConnectionResolver struct {
-	db         dbutil.DB
-	opt        database.ReposListOptions
-	cloned     bool
-	notCloned  bool
-	indexed    bool
-	notIndexed bool
+	db          dbutil.DB
+	opt         database.ReposListOptions
+	cloned      bool
+	notCloned   bool
+	indexed     bool
+	notIndexed  bool
+	failedFetch bool
 
 	// cache results because they are used by multiple fields
 	once  sync.Once
@@ -101,7 +109,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 
 		if envvar.SourcegraphDotComMode() {
 			// 🚨 SECURITY: Don't allow non-admins to perform huge queries on Sourcegraph.com.
-			if isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx) == nil; !isSiteAdmin {
+			if isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil; !isSiteAdmin {
 				if opt2.LimitOffset == nil {
 					opt2.LimitOffset = &database.LimitOffset{Limit: 1000}
 				}
@@ -140,6 +148,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			// explicitly set to false by the client.
 			opt2.OnlyCloned = true
 		}
+		opt2.FailedFetch = r.failedFetch
 
 		for {
 			// Cursor-based pagination requires that we fetch limit+1 records, so
@@ -205,9 +214,17 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*Repository
 }
 
 func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *TotalCountArgs) (countptr *int32, err error) {
-	// 🚨 SECURITY: Only site admins can do this, because a total repository count does not respect repository permissions.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
+	if r.opt.UserID != 0 {
+		// 🚨 SECURITY: If filtering by user, restrict to that user
+		if err := backend.CheckSameUser(ctx, r.opt.UserID); err != nil {
+			return nil, err
+		}
+	} else {
+		// 🚨 SECURITY: Only site admins can list all repos, because a total repository
+		// count does not respect repository permissions.
+		if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+			return nil, err
+		}
 	}
 
 	i32ptr := func(v int32) *int32 {

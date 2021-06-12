@@ -37,7 +37,9 @@ export async function startDevelopmentServer(): Promise<void> {
         hot: IS_HOT_RELOAD_ENABLED,
         // TODO: resolve https://github.com/webpack/webpack-dev-server/issues/2313 and enable HTTPS.
         https: false,
-        historyApiFallback: true,
+        historyApiFallback: {
+            disableDotRule: true,
+        },
         port: SOURCEGRAPH_HTTPS_PORT,
         publicPath: STATIC_ASSETS_URL,
         contentBase: STATIC_ASSETS_PATH,

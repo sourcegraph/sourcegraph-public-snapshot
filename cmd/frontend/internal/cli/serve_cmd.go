@@ -17,10 +17,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/tmpfriend"
-	"github.com/opentracing/opentracing-go"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/throttled/throttled/v2/store/redigostore"
-	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
@@ -43,7 +40,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
@@ -178,11 +174,7 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 	// Create an out-of-band migration runner onto which each enterprise init function
 	// can register migration routines to run in the background while they still have
 	// work remaining.
-	outOfBandMigrationRunner := oobmigration.NewRunnerWithDB(db, time.Second*30, &observation.Context{
-		Logger:     log15.Root(),
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
-		Registerer: prometheus.DefaultRegisterer,
-	})
+	outOfBandMigrationRunner := newOutOfBandMigrationRunner(ctx, db)
 
 	// Run a background job to handle encryption of external service configuration.
 	extsvcMigrator := database.NewExternalServiceConfigMigratorWithDB(db)
@@ -252,11 +244,6 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 	globals.WatchExternalURL(defaultExternalURL(nginxAddr, httpAddr))
 	globals.WatchPermissionsUserMapping()
 
-	// bgInit is a group of background goroutines that need to finish before
-	// we are marked as ready.
-	var bgInit errgroup.Group
-	bgInit.Go(func() error { return backend.Warmup(ctx) })
-
 	goroutine.Go(func() { bg.CheckRedisCacheEvictionPolicy() })
 	goroutine.Go(func() { bg.DeleteOldCacheDataInRedis() })
 	goroutine.Go(func() { bg.DeleteOldEventLogsInPostgres(context.Background(), db) })
@@ -294,10 +281,6 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 	}
 	if internalAPI != nil {
 		routines = append(routines, internalAPI)
-	}
-
-	if err := bgInit.Wait(); err != nil {
-		return err
 	}
 
 	if printLogo {

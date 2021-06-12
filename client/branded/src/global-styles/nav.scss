@@ -14,8 +14,13 @@ $nav-tabs-link-active-border-color: var(--border-color) var(--border-color) tran
 .nav-tabs > .nav-item > .nav-link {
     height: 100%;
     .theme-redesign & {
-        color: var(--text-muted);
+        display: inline-flex;
+        align-items: center;
+        flex-direction: column;
+        justify-content: center;
         border: none;
+        border-bottom: 2px solid transparent;
+        color: var(--text-muted);
         &:focus-visible {
             border-radius: var(--border-radius);
             // Add this new stacking context in order to show the focus ring without cutting any edge.
@@ -27,13 +32,30 @@ $nav-tabs-link-active-border-color: var(--border-color) var(--border-color) tran
             margin-top: 0;
             color: var(--body-color);
         }
+        // ::after used here for avoids the CLS when the font-weight change (see: https://css-tricks.com/bold-on-hover-without-the-layout-shift/)
+        .text-content {
+            display: inline-flex;
+            align-items: center;
+            flex-direction: column;
+            justify-content: center;
+            &::after {
+                content: attr(data-tab-content);
+                height: 0;
+                text-transform: capitalize;
+                visibility: hidden; // a11y: avoid detection for voice over
+                overflow: hidden;
+                user-select: none;
+                pointer-events: none;
+                font-weight: 700;
+            }
+        }
     }
 }
 
 .nav-tabs > .nav-item > .nav-link.active {
     .theme-redesign & {
         color: var(--body-color);
-        font-weight: 600;
+        font-weight: 700;
         border-bottom: 2px solid var(--brand-secondary);
     }
 }

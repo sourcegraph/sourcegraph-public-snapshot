@@ -9,7 +9,7 @@ import { UploadConnection } from './backend'
 import { CodeIntelUploadsPage } from './CodeIntelUploadsPage'
 
 const { add } = storiesOf('web/codeintel/list/CodeIntelUploadPage', module)
-    .addDecorator(story => <div className="p-3 container web-content">{story()}</div>)
+    .addDecorator(story => <div className="p-3 container">{story()}</div>)
     .addParameters({
         chromatic: {
             viewports: [320, 576, 978, 1440],
@@ -19,6 +19,12 @@ const { add } = storiesOf('web/codeintel/list/CodeIntelUploadPage', module)
 add('SiteAdminPage', () => (
     <EnterpriseWebStory>
         {props => <CodeIntelUploadsPage {...props} now={now} fetchLsifUploads={fetchLsifUploads} />}
+    </EnterpriseWebStory>
+))
+
+add('Empty', () => (
+    <EnterpriseWebStory>
+        {props => <CodeIntelUploadsPage {...props} now={now} fetchLsifUploads={fetchEmptyLsifUploads} />}
     </EnterpriseWebStory>
 ))
 
@@ -106,11 +112,11 @@ const fetch = (
             isLatestForRepo: false,
             ...upload,
         })),
-        totalCount: 10,
+        totalCount: uploads.length > 0 ? uploads.length + 5 : 0,
         pageInfo: {
             __typename: 'PageInfo',
-            endCursor: 'fakenextpage',
-            hasNextPage: true,
+            endCursor: uploads.length > 0 ? 'fakenextpage' : null,
+            hasNextPage: uploads.length > 0,
         },
     })
 
@@ -123,6 +129,7 @@ const fetchLsifUploads = fetch(
         finishedAt: null,
         failure: null,
         placeInQueue: null,
+        associatedIndex: null,
     },
     {
         id: '2',
@@ -132,6 +139,7 @@ const fetchLsifUploads = fetch(
         finishedAt: null,
         placeInQueue: 3,
         failure: null,
+        associatedIndex: null,
     },
     {
         id: '3',
@@ -141,6 +149,7 @@ const fetchLsifUploads = fetch(
         finishedAt: null,
         failure: null,
         placeInQueue: null,
+        associatedIndex: null,
     },
     {
         id: '4',
@@ -150,6 +159,7 @@ const fetchLsifUploads = fetch(
         finishedAt: '2020-06-15T12:30:30+00:00',
         failure: null,
         placeInQueue: null,
+        associatedIndex: null,
     },
     {
         id: '5',
@@ -159,7 +169,10 @@ const fetchLsifUploads = fetch(
         finishedAt: '2020-06-15T12:30:30+00:00',
         failure: 'Whoops! The server encountered a boo-boo handling this input.',
         placeInQueue: null,
+        associatedIndex: null,
     }
 )
+
+const fetchEmptyLsifUploads = fetch()
 
 const now = () => new Date('2020-06-15T15:25:00+00:00')

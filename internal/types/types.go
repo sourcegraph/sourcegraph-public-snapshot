@@ -46,6 +46,8 @@ type Repo struct {
 	Fork bool
 	// Archived is whether the repository has been archived.
 	Archived bool
+	// Stars is the star count the repository has in the code host.
+	Stars int `json:",omitempty"`
 	// Private is whether the repository is private.
 	Private bool
 	// CreatedAt is when this repository was created on Sourcegraph.
@@ -118,6 +120,10 @@ func (r *Repo) Update(n *Repo) (modified bool) {
 
 	if r.Private != n.Private {
 		r.Private, modified = n.Private, true
+	}
+
+	if r.Stars != n.Stars {
+		r.Stars, modified = n.Stars, true
 	}
 
 	if !reflect.DeepEqual(r.Sources, n.Sources) {
@@ -828,7 +834,26 @@ type SearchUsagePeriod struct {
 	Structural *SearchEventStatistics
 	Symbol     *SearchEventStatistics
 
-	// Counts statistics for fields.
+	// Counts of search query attributes. Ref: RFC 384.
+	OperatorOr              *SearchCountStatistics
+	OperatorAnd             *SearchCountStatistics
+	OperatorNot             *SearchCountStatistics
+	SelectRepo              *SearchCountStatistics
+	SelectFile              *SearchCountStatistics
+	SelectContent           *SearchCountStatistics
+	SelectSymbol            *SearchCountStatistics
+	SelectCommitDiffAdded   *SearchCountStatistics
+	SelectCommitDiffRemoved *SearchCountStatistics
+	RepoContains            *SearchCountStatistics
+	RepoContainsFile        *SearchCountStatistics
+	RepoContainsContent     *SearchCountStatistics
+	RepoContainsCommitAfter *SearchCountStatistics
+	CountAll                *SearchCountStatistics
+	NonGlobalContext        *SearchCountStatistics
+	OnlyPatterns            *SearchCountStatistics
+	OnlyPatternsThreeOrMore *SearchCountStatistics
+
+	// DEPRECATED. Counts statistics for fields.
 	After              *SearchCountStatistics
 	Archived           *SearchCountStatistics
 	Author             *SearchCountStatistics
@@ -849,7 +874,7 @@ type SearchUsagePeriod struct {
 	Timeout            *SearchCountStatistics
 	Type               *SearchCountStatistics
 
-	// Search modes statistics is deprecated.
+	// DEPRECATED. Search modes statistics refers to removed functionality.
 	SearchModes *SearchModeUsageStatistics
 }
 

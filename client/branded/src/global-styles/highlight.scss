@@ -763,3 +763,16 @@
         }
     }
 }
+
+// Redesign theme overrides
+.theme-redesign {
+    .hl-source.hl-diff {
+        .hl-markup.hl-deleted {
+            background: var(--diff-remove-bg);
+        }
+
+        .hl-markup.hl-inserted {
+            background: var(--diff-add-bg);
+        }
+    }
+}

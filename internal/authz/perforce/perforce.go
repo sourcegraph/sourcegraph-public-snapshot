@@ -6,14 +6,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/url"
 	"strings"
 
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	jsoniter "github.com/json-iterator/go"
 	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -128,7 +127,7 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 	}
 
 	// Drain remaining body
-	_, _ = io.Copy(ioutil.Discard, rc)
+	_, _ = io.Copy(io.Discard, rc)
 	return nil, nil
 }
 
@@ -335,7 +334,7 @@ func (p *Provider) getGroupMembers(ctx context.Context, group string) ([]string,
 	}
 
 	// Drain remaining body
-	_, _ = io.Copy(ioutil.Discard, rc)
+	_, _ = io.Copy(io.Discard, rc)
 
 	p.cachedGroupMembers[group] = members
 	return p.cachedGroupMembers[group], nil

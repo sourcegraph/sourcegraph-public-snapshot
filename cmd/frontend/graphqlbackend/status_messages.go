@@ -3,7 +3,7 @@ package graphqlbackend
 import (
 	"context"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -13,7 +13,7 @@ import (
 )
 
 func (r *schemaResolver) StatusMessages(ctx context.Context) ([]*statusMessageResolver, error) {
-	currentUser, err := backend.CurrentUser(ctx)
+	currentUser, err := backend.CurrentUser(ctx, r.db)
 	if err != nil {
 		return nil, err
 	}

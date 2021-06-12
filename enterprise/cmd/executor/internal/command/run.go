@@ -70,7 +70,7 @@ func runCommand(ctx context.Context, command command, logger *Logger) (err error
 
 	startTime := time.Now()
 	pipeContents, pipeReaderWaitGroup := readProcessPipes(stdout, stderr)
-	exitCode, err := monitorCommand(cmd, pipeReaderWaitGroup)
+	exitCode, err := monitorCommand(ctx, cmd, pipeReaderWaitGroup)
 	duration := time.Since(startTime)
 
 	logger.Log(workerutil.ExecutionLogEntry{
@@ -162,12 +162,15 @@ func readProcessPipes(stdout, stderr io.Reader) (*bytes.Buffer, *sync.WaitGroup)
 // monitorCommand starts the given command and waits for the given wait group to complete.
 // This function returns a non-nil error only if there was a system issue - commands that
 // run but fail due to a non-zero exit code will return a nil error and the exit code.
-func monitorCommand(cmd *exec.Cmd, pipeReaderWaitGroup *sync.WaitGroup) (int, error) {
+func monitorCommand(ctx context.Context, cmd *exec.Cmd, pipeReaderWaitGroup *sync.WaitGroup) (int, error) {
 	if err := cmd.Start(); err != nil {
 		return 0, err
 	}
 
-	pipeReaderWaitGroup.Wait()
+	select {
+	case <-ctx.Done():
+	case <-watchWaitGroup(pipeReaderWaitGroup):
+	}
 
 	if err := cmd.Wait(); err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
@@ -176,4 +179,14 @@ func monitorCommand(cmd *exec.Cmd, pipeReaderWaitGroup *sync.WaitGroup) (int, er
 	}
 
 	return 0, nil
+}
+
+func watchWaitGroup(wg *sync.WaitGroup) <-chan struct{} {
+	ch := make(chan struct{})
+	go func() {
+		wg.Wait()
+		close(ch)
+	}()
+
+	return ch
 }

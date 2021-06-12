@@ -10,12 +10,12 @@ import (
 	"sync"
 	"unicode/utf8"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/uuid"
 	"github.com/inconshreveable/log15"
 	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/pkg/errors"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"

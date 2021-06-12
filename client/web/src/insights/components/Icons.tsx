@@ -1,3 +1,3 @@
 import BarChartIcon from 'mdi-react/BarChartIcon'
 
-export const InsightsIcon = BarChartIcon
+export const CodeInsightsIcon = BarChartIcon

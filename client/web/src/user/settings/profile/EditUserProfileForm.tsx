@@ -5,6 +5,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { Container } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { requestGraphQL } from '../../../backend/graphql'
@@ -89,31 +90,35 @@ export const EditUserProfileForm: React.FunctionComponent<Props> = ({
     )
 
     return (
-        <Form className="w-100" onSubmit={onSubmit}>
-            <UserProfileFormFields
-                value={value}
-                onChange={onChange}
-                usernameFieldDisabled={!user.viewerCanChangeUsername}
-                disabled={opState === true}
-            />
-            <button
-                type="submit"
-                className="btn btn-primary"
-                disabled={opState === true}
-                id="test-EditUserProfileForm__save"
-            >
-                Save
-            </button>
-            {isErrorLike(opState) && <div className="mt-3 alert alert-danger">{opState.message}</div>}
-            {opState === 'success' && (
-                <div className="mt-3 alert alert-success test-EditUserProfileForm__success">User profile updated.</div>
-            )}
-            {after && (
-                <>
-                    <hr className="my-4" />
-                    {after}
-                </>
-            )}
-        </Form>
+        <Container>
+            <Form className="w-100" onSubmit={onSubmit}>
+                <UserProfileFormFields
+                    value={value}
+                    onChange={onChange}
+                    usernameFieldDisabled={!user.viewerCanChangeUsername}
+                    disabled={opState === true}
+                />
+                <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={opState === true}
+                    id="test-EditUserProfileForm__save"
+                >
+                    Save
+                </button>
+                {isErrorLike(opState) && <div className="mt-3 alert alert-danger">{opState.message}</div>}
+                {opState === 'success' && (
+                    <div className="mt-3 mb-0 alert alert-success test-EditUserProfileForm__success">
+                        User profile updated.
+                    </div>
+                )}
+                {after && (
+                    <>
+                        <hr className="my-4" />
+                        {after}
+                    </>
+                )}
+            </Form>
+        </Container>
     )
 }

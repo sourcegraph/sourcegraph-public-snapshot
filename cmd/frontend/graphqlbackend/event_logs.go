@@ -14,7 +14,7 @@ func (r *UserResolver) EventLogs(ctx context.Context, args *struct {
 	EventName *string // return only event logs matching the event name
 }) (*userEventLogsConnectionResolver, error) {
 	// 🚨 SECURITY: Event logs can only be viewed by the user or site admin.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.user.ID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
 		return nil, err
 	}
 	var opt database.EventLogsListOptions

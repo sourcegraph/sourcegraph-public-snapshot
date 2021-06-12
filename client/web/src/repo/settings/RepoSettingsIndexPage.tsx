@@ -12,6 +12,7 @@ import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
+import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { ErrorAlert } from '../../components/alerts'
@@ -156,88 +157,98 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="repo-settings-index-page">
+            <>
                 <PageTitle title="Index settings" />
-                <h2>Indexing</h2>
-                {this.state.loading && <LoadingSpinner className="icon-inline" />}
-                {this.state.error && (
-                    <ErrorAlert prefix="Error getting repository index status" error={this.state.error} />
-                )}
-                {!this.state.error &&
-                    !this.state.loading &&
-                    (this.state.textSearchIndex ? (
-                        <>
-                            <p>Index branches to enhance search performance at scale.</p>
-                            {this.state.textSearchIndex.refs && (
-                                <ul className="repo-settings-index-page__refs">
-                                    {this.state.textSearchIndex.refs.map((reference, index) => (
-                                        <TextSearchIndexedReference
-                                            key={index}
-                                            repo={this.props.repo}
-                                            indexedRef={reference}
-                                        />
-                                    ))}
-                                </ul>
-                            )}
-                            {this.state.textSearchIndex.status && (
-                                <>
-                                    <h3>Statistics</h3>
-                                    <table className="table repo-settings-index-page__stats">
-                                        <tbody>
-                                            <tr>
-                                                <th>Last updated</th>
-                                                <td>
-                                                    <Timestamp date={this.state.textSearchIndex.status.updatedAt} />
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <th>Content size</th>
-                                                <td>
-                                                    {prettyBytes(this.state.textSearchIndex.status.contentByteSize)} (
-                                                    {this.state.textSearchIndex.status.contentFilesCount}{' '}
-                                                    {pluralize(
-                                                        'file',
-                                                        this.state.textSearchIndex.status.contentFilesCount
-                                                    )}
-                                                    )
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <th>Index size</th>
-                                                <td>
-                                                    {prettyBytes(this.state.textSearchIndex.status.indexByteSize)} (
-                                                    {this.state.textSearchIndex.status.indexShardsCount}{' '}
-                                                    {pluralize(
-                                                        'shard',
-                                                        this.state.textSearchIndex.status.indexShardsCount
-                                                    )}
-                                                    )
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <th>New lines count</th>
-                                                <td>
-                                                    {this.state.textSearchIndex.status.newLinesCount.toLocaleString()}{' '}
-                                                    (default branch:{' '}
-                                                    {this.state.textSearchIndex.status.defaultBranchNewLinesCount.toLocaleString()}
-                                                    ) (other branches:{' '}
-                                                    {this.state.textSearchIndex.status.otherBranchesNewLinesCount.toLocaleString()}
-                                                    )
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </>
-                            )}
-                        </>
-                    ) : (
-                        <div className="alert alert-info">
-                            This Sourcegraph site has not enabled indexed search. See{' '}
-                            <Link to="/help/admin/search">search documentation</Link> for information on how to enable
-                            it.
-                        </div>
-                    ))}
-            </div>
+                <PageHeader
+                    path={[{ text: 'Indexing' }]}
+                    headingElement="h2"
+                    className="mb-3"
+                    description={
+                        !this.state.error && !this.state.loading && this.state.textSearchIndex ? (
+                            <>Index branches to enhance search performance at scale.</>
+                        ) : undefined
+                    }
+                />
+                <Container className="repo-settings-index-page">
+                    {this.state.loading && <LoadingSpinner className="icon-inline" />}
+                    {this.state.error && (
+                        <ErrorAlert prefix="Error getting repository index status" error={this.state.error} />
+                    )}
+                    {!this.state.error &&
+                        !this.state.loading &&
+                        (this.state.textSearchIndex ? (
+                            <>
+                                {this.state.textSearchIndex.refs && (
+                                    <ul className="repo-settings-index-page__refs">
+                                        {this.state.textSearchIndex.refs.map((reference, index) => (
+                                            <TextSearchIndexedReference
+                                                key={index}
+                                                repo={this.props.repo}
+                                                indexedRef={reference}
+                                            />
+                                        ))}
+                                    </ul>
+                                )}
+                                {this.state.textSearchIndex.status && (
+                                    <>
+                                        <h3>Statistics</h3>
+                                        <table className="table repo-settings-index-page__stats mb-0">
+                                            <tbody>
+                                                <tr>
+                                                    <th>Last updated</th>
+                                                    <td>
+                                                        <Timestamp date={this.state.textSearchIndex.status.updatedAt} />
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Content size</th>
+                                                    <td>
+                                                        {prettyBytes(this.state.textSearchIndex.status.contentByteSize)}{' '}
+                                                        ({this.state.textSearchIndex.status.contentFilesCount}{' '}
+                                                        {pluralize(
+                                                            'file',
+                                                            this.state.textSearchIndex.status.contentFilesCount
+                                                        )}
+                                                        )
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Index size</th>
+                                                    <td>
+                                                        {prettyBytes(this.state.textSearchIndex.status.indexByteSize)} (
+                                                        {this.state.textSearchIndex.status.indexShardsCount}{' '}
+                                                        {pluralize(
+                                                            'shard',
+                                                            this.state.textSearchIndex.status.indexShardsCount
+                                                        )}
+                                                        )
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <th>New lines count</th>
+                                                    <td>
+                                                        {this.state.textSearchIndex.status.newLinesCount.toLocaleString()}{' '}
+                                                        (default branch:{' '}
+                                                        {this.state.textSearchIndex.status.defaultBranchNewLinesCount.toLocaleString()}
+                                                        ) (other branches:{' '}
+                                                        {this.state.textSearchIndex.status.otherBranchesNewLinesCount.toLocaleString()}
+                                                        )
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </>
+                                )}
+                            </>
+                        ) : (
+                            <div className="alert alert-info mb-0">
+                                This Sourcegraph site has not enabled indexed search. See{' '}
+                                <Link to="/help/admin/search">search documentation</Link> for information on how to
+                                enable it.
+                            </div>
+                        ))}
+                </Container>
+            </>
         )
     }
 }
