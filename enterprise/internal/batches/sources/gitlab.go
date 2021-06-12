@@ -425,9 +425,7 @@ func (s *GitLabSource) CreateComment(ctx context.Context, c *Changeset, text str
 }
 
 // MergeChangeset merges a Changeset on the code host, if in a mergeable state.
-// If squash is true, and the code host supports squash merges, the source
-// must attempt a squash merge. Otherwise, it is expected to perform a regular
-// merge.
+// If squash is true, a squash-then-merge merge will be performed.
 func (s *GitLabSource) MergeChangeset(ctx context.Context, c *Changeset, squash bool) error {
 	mr, ok := c.Changeset.Metadata.(*gitlab.MergeRequest)
 	if !ok {
