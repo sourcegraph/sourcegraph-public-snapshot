@@ -114,6 +114,7 @@ func (s *sourcer) loadBatchesSource(ctx context.Context, tx SourcerStore, extern
 	if err != nil {
 		return nil, errors.Wrap(err, "building changeset source")
 	}
+	// TODO: This should be the default, once we don't use external service tokens anymore.
 	// This ensures that we never use a changeset source without an authenticator.
 	// cred, err := loadSiteCredential(ctx, tx, repo)
 	// if err != nil {
