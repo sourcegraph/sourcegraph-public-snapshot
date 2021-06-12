@@ -264,9 +264,26 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
     }
 
     private renderMessage(message: Message, isSiteAdmin: boolean): JSX.Element | JSX.Element[] {
-        const codeHostsLink = `/users/${this.props.user.username}/settings/code-hosts`
-        const viewRepositoriesLink = `/users/${this.props.user.username}/settings/repositories`
-        const manageRepositoriesLink = `${viewRepositoriesLink}/manage`
+        const userSettings = `/users/${this.props.user.username}/settings/`
+        const makeGetCodeHostLink = (isSiteAdmin: boolean) => (id: string): string =>
+            isSiteAdmin ? `/site-admin/external-services/${id}` : `${userSettings}/code-hosts`
+
+        const roleLinks = {
+            admin: {
+                viewRepositories: '/site-admin/repositories',
+                manageRepositories: '/site-admin/external-services',
+                manageCodeHosts: '/site-admin/external-services',
+                getCodeHostLink: makeGetCodeHostLink(true),
+            },
+            nonAdmin: {
+                viewRepositories: `${userSettings}/repositories`,
+                manageRepositories: `${userSettings}/repositories/manage`,
+                manageCodeHosts: `${userSettings}/code-hosts`,
+                getCodeHostLink: makeGetCodeHostLink(false),
+            },
+        }
+
+        const links = isSiteAdmin ? roleLinks.admin : roleLinks.nonAdmin
 
         // no status messages
         if (Array.isArray(message) && message.length === 0) {
@@ -274,7 +291,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                 <StatusMessagesNavItemEntry
                     key="up-to-date"
                     message="Repositories available for search"
-                    linkTo={viewRepositoriesLink}
+                    linkTo={links.viewRepositories}
                     linkText="Manage repositories"
                     linkOnClick={this.toggleIsOpen}
                     entryType="success"
@@ -290,7 +307,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                     <StatusMessagesNavItemEntry
                         key={message}
                         message="Add repositories to start searching your code on Sourcegraph."
-                        linkTo={manageRepositoriesLink}
+                        linkTo={links.manageRepositories}
                         linkText="Add repositories"
                         linkOnClick={this.toggleIsOpen}
                         entryType="not-active"
@@ -302,7 +319,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                 <StatusMessagesNavItemEntry
                     key={message}
                     message="Connect with a code host to start adding your code to Sourcegraph."
-                    linkTo={codeHostsLink}
+                    linkTo={links.manageCodeHosts}
                     linkText="Connect with code host"
                     linkOnClick={this.toggleIsOpen}
                     entryType="not-active"
@@ -326,7 +343,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                             key={message_.message}
                             message={message_.message}
                             messageHint="Your repositories may not be up to date."
-                            linkTo={viewRepositoriesLink}
+                            linkTo={links.viewRepositories}
                             linkText="View status"
                             linkOnClick={this.toggleIsOpen}
                             entryType="progress"
@@ -339,7 +356,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                         <StatusMessagesNavItemEntry
                             key={message_.message}
                             message="Repositories available for search"
-                            linkTo={viewRepositoriesLink}
+                            linkTo={links.viewRepositories}
                             linkText="Manage repositories"
                             linkOnClick={this.toggleIsOpen}
                             entryType="success"
@@ -353,7 +370,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                             key={message_.externalService.id}
                             message={`Can't connect to ${message_.externalService.displayName}`}
                             messageHint="Verify the code host configuration."
-                            linkTo={codeHostsLink}
+                            linkTo={links.getCodeHostLink(message_.externalService.id)}
                             linkText="Manage code hosts"
                             linkOnClick={this.toggleIsOpen}
                             entryType="error"
@@ -366,7 +383,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                             key={message_.message}
                             message={message_.message}
                             messageHint="Your repositories may not be up to date."
-                            linkTo={codeHostsLink}
+                            linkTo={links.viewRepositories}
                             linkText="Manage repositories"
                             linkOnClick={this.toggleIsOpen}
                             entryType="error"
@@ -379,7 +396,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                             key={message_.message}
                             message={message_.message}
                             messageHint="Your repositories are up to date, but search speed may be slower than usual."
-                            linkTo={codeHostsLink}
+                            linkTo={links.viewRepositories}
                             linkText="Troubleshoot"
                             linkOnClick={this.toggleIsOpen}
                             entryType="warning"
