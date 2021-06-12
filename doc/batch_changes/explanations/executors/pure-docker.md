@@ -1,5 +1,11 @@
 # Running Sourcegraph executors on bare servers
 
+<style>
+@import url(draft.css);
+</style>
+
+<div id="draft"><span>DRAFT</span></div>
+
 In this model, changesets are computed in Docker containers run directly on the server.
 
 ## Pros

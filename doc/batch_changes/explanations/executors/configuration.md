@@ -1,5 +1,11 @@
 # Configuration
 
+<style>
+@import url(draft.css);
+</style>
+
+<div id="draft"><span>DRAFT</span></div>
+
 Sourcegraph executors use environment variables to configure their credentials and behaviour. The required and optional variables are listed below:
 
 | Variable | Required | Default value | Description |

@@ -1,5 +1,11 @@
 # Running Sourcegraph executors in a Kubernetes cluster
 
+<style>
+@import url(draft.css);
+</style>
+
+<div id="draft"><span>DRAFT</span></div>
+
 In this model, changesets are computed in Kubernetes jobs, with each step being run as a separate container.
 
 ## Pros

@@ -1,5 +1,11 @@
 # Configuring Sourcegraph executors to compute Batch Changes
 
+<style>
+@import url(executors/draft.css);
+</style>
+
+<div id="draft"><span>DRAFT</span></div>
+
 > Note: This is a draft documentation page describing the potential end state of a feature. It should serve only for discussion purposes.
 
 By default, Batch Changes uses a command line interface in your local environment to compute diffs and create changesets. This can be impractical for creating batch changes affecting hundreds or thousands of repositories, with large numbers of workspaces, or if the batch change steps require CPU, memory, or disk resources that are unavailable locally.
