@@ -98,7 +98,8 @@ const AVAILABLE_ACTIONS: ChangesetListAction[] = [
         experimental: true,
         buttonLabel: 'Merge changesets',
         dropdownTitle: 'Merge changesets',
-        dropdownDescription: 'Attempt to merge all selected changesets. Some changesets may be unmergeable if there are rules preventing merge, such as CI requirements.',
+        dropdownDescription:
+            'Attempt to merge all selected changesets. Some changesets may be unmergeable if there are rules preventing merge, such as CI requirements.',
         isAvailable: ({ state }) => state === ChangesetState.OPEN,
         onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => (
             <MergeChangesetsModal
