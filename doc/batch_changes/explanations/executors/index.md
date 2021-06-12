@@ -71,7 +71,13 @@ All Batch Changes users on your Sourcegraph instance have access to executors.
 
 ## Debugging
 
-TODO: mockups or decription
+You can view your active and recent executed batch specs by going to the **Executed Batch Specs** tab on the Batch Changes page. This will display a list of batch specs that you have executed and their progress:
+
+<img src="jobs.png" class="screenshot">
+
+Batch specs that had one or more failures are marked with the red **Failed** badge. You can expand those batch specs to drill into the details of which jobs failed, and access the logs from the executor. These logs will include all output to stdout and stderr from executing the steps in the batch spec.
+
+> NOTE: Previously executed batch specs are removed after one week.
 
 ## Scheduling
 
@@ -81,7 +87,7 @@ Each executor will run at least one job at a time: you should scale the number o
 
 # Administering and monitoring executors
 
-TODO: let's mock up some UI tomorrow
+<!-- aharvey: Executors are currently stateless from the perspective of the backend, as far as I can tell. This likely means we can't build a sensible UI right now for administration or monitoring. Do we want to drop this section? -->
 
 # How executors work
 
@@ -113,4 +119,4 @@ No, all executors are equal in the eyes of Sourcegraph. We suggest making all ex
 
 #### What happens if execution fails?
 
-TODO: let's mock up some UI tomorrow
+You can check the status of your pending 
