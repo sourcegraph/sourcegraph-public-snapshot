@@ -93,7 +93,7 @@ func TestCodeInsightsUsageStatistics(t *testing.T) {
 
 	want.WeeklyAggregatedUsage = wantedWeeklyUsage
 	want.InsightTimeIntervals = []types.InsightTimeIntervalPing{}
-	want.InsightOrgVisible = []types.OrgVisibleInsightPing{}
+	want.InsightOrgVisible = []types.OrgVisibleInsightPing{{Type: "search"}, {Type: "lang-stats"}}
 
 	if diff := cmp.Diff(want, have); diff != "" {
 		t.Fatal(diff)
@@ -142,98 +142,6 @@ func TestWithCreationPings(t *testing.T) {
 	got := make(map[types.PingName]types.AggregatedPingStats)
 	for _, v := range results {
 		got[v.Name] = v
-	}
-
-	if !cmp.Equal(want, got) {
-		t.Fatal(fmt.Sprintf("want: %v got: %v", want, got))
-	}
-}
-
-func TestGetInsightTimeIntervals(t *testing.T) {
-	ctx := context.Background()
-	now := time.Date(2021, 1, 28, 0, 0, 0, 0, time.UTC)
-
-	db := dbtesting.GetDB(t)
-
-	user1 := "420657f0-d443-4d16-ac7d-003d8cdc91ef"
-
-	_, err := db.Exec(`
-		INSERT INTO event_logs
-			(id, name, argument, url, user_id, anonymous_user_id, source, version, timestamp)
-		VALUES
-			(1, 'InsightsGroupedStepSizes', '[60, 90, 30]', '', 1, $2, 'WEB', '3.23.0', $1::timestamp - interval '2 day'),
-			(2, 'InsightsGroupedStepSizes', '[60, 90, 30, 60]', '', 1, $2, 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(3, 'NotIncluded', '[60, 90, 30]', '', 1, $2, 'WEB', '3.23.0', $1::timestamp - interval '1 day')
-	`, now, user1)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	want := []types.InsightTimeIntervalPing{
-		{
-			IntervalDays: 30,
-			TotalCount:   1,
-		},
-		{
-			IntervalDays: 60,
-			TotalCount:   2,
-		},
-		{
-			IntervalDays: 90,
-			TotalCount:   1,
-		},
-	}
-
-	got, err := GetInsightTimeIntervals(ctx, db, func() time.Time {
-		return now
-	})
-
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if !cmp.Equal(want, got) {
-		t.Fatal(fmt.Sprintf("want: %v got: %v", want, got))
-	}
-}
-
-func TestGetInsightCountsByOrg(t *testing.T) {
-	ctx := context.Background()
-	now := time.Date(2021, 1, 28, 0, 0, 0, 0, time.UTC)
-
-	db := dbtesting.GetDB(t)
-
-	user1 := "420657f0-d443-4d16-ac7d-003d8cdc91ef"
-
-	_, err := db.Exec(`
-		INSERT INTO event_logs
-			(id, name, argument, url, user_id, anonymous_user_id, source, version, timestamp)
-		VALUES
-			(1, 'InsightsGroupedCount', '{"codeStatsInsights": 0, "searchBasedInsights": 2}', '', 1, $2, 'WEB', '3.23.0', $1::timestamp - interval '2 day'),
-			(2, 'InsightsGroupedCount', '{"codeStatsInsights": 1, "searchBasedInsights": 3}', '', 1, $2, 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(3, 'NotIncluded', '[60, 90, 30]', '', 1, $2, 'WEB', '3.23.0', $1::timestamp - interval '1 day')
-	`, now, user1)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	want := []types.OrgVisibleInsightPing{
-		{
-			Type:       "codeStatsInsights",
-			TotalCount: 1,
-		},
-		{
-			Type:       "searchBasedInsights",
-			TotalCount: 3,
-		},
-	}
-
-	got, err := GetInsightCountsByOrg(ctx, db, func() time.Time {
-		return now
-	})
-
-	if err != nil {
-		t.Fatal(err)
 	}
 
 	if !cmp.Equal(want, got) {

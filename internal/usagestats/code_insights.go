@@ -2,8 +2,13 @@ package usagestats
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 
 	"github.com/lib/pq"
 
@@ -111,13 +116,13 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db dbutil.DB) (*types.C
 	}
 	stats.WeeklyAggregatedUsage = weeklyUsage
 
-	timeIntervals, err := GetInsightTimeIntervals(ctx, db, timeNow)
+	timeIntervals, err := GetTimeStepCounts(ctx, db)
 	if err != nil {
 		return nil, err
 	}
 	stats.InsightTimeIntervals = timeIntervals
 
-	orgVisible, err := GetInsightCountsByOrg(ctx, db, timeNow)
+	orgVisible, err := GetOrgInsightCounts(ctx, db)
 	if err != nil {
 		return nil, err
 	}
@@ -126,54 +131,75 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db dbutil.DB) (*types.C
 	return &stats, nil
 }
 
+func GetTimeStepCounts(ctx context.Context, db dbutil.DB) ([]types.InsightTimeIntervalPing, error) {
+
+	insights, err := GetSearchInsights(ctx, db, All)
+	if err != nil {
+		return []types.InsightTimeIntervalPing{}, err
+	}
+
+	daysCounts := make(map[int]int, 0)
+
+	for _, insight := range insights {
+		days := convertStepToDays(insight)
+		daysCounts[days] += 1
+	}
+
+	results := make([]types.InsightTimeIntervalPing, 0)
+	for interval, count := range daysCounts {
+		results = append(results, types.InsightTimeIntervalPing{
+			IntervalDays: interval,
+			TotalCount:   count,
+		})
+	}
+
+	return results, nil
+}
+
+//convertStepToDays converts the step interval defined in the insight settings to days, rounded down
+func convertStepToDays(insight SearchInsight) int {
+
+	if insight.Step.Days != nil {
+		return *insight.Step.Days
+	} else if insight.Step.Hours != nil {
+		return 0
+	} else if insight.Step.Weeks != nil {
+		return *insight.Step.Weeks * 7
+	} else if insight.Step.Months != nil {
+		return *insight.Step.Months * 30
+	} else if insight.Step.Years != nil {
+		return *insight.Step.Years * 365
+	}
+
+	return 0
+}
+
+func GetOrgInsightCounts(ctx context.Context, db dbutil.DB) ([]types.OrgVisibleInsightPing, error) {
+
+	insights, err := GetSearchInsights(ctx, db, Org)
+	if err != nil {
+		return []types.OrgVisibleInsightPing{}, err
+	}
+
+	search := types.OrgVisibleInsightPing{Type: "search"}
+	search.TotalCount = len(insights)
+
+	langStatsInsights, err := GetLangStatsInsights(ctx, db, Org)
+	if err != nil {
+		return []types.OrgVisibleInsightPing{}, err
+	}
+	lang := types.OrgVisibleInsightPing{Type: "lang-stats"}
+	lang.TotalCount = len(langStatsInsights)
+
+	return []types.OrgVisibleInsightPing{search, lang}, nil
+}
+
 func GetCreationViewUsage(ctx context.Context, db dbutil.DB, timeSupplier func() time.Time) ([]types.AggregatedPingStats, error) {
 	builder := creationPagesPingBuilder(timeSupplier)
 
 	results, err := builder.Sample(ctx, db)
 	if err != nil {
 		return []types.AggregatedPingStats{}, err
-	}
-
-	return results, nil
-}
-
-func GetInsightTimeIntervals(ctx context.Context, db dbutil.DB, timeSupplier func() time.Time) ([]types.InsightTimeIntervalPing, error) {
-	//	query for
-	rows, err := db.QueryContext(ctx, insightTimeIntervalQueryStr, timeSupplier())
-	if err != nil {
-		return []types.InsightTimeIntervalPing{}, err
-	}
-	defer rows.Close()
-
-	results := make([]types.InsightTimeIntervalPing, 0)
-
-	for rows.Next() {
-		var temp types.InsightTimeIntervalPing
-		if err := rows.Scan(&temp.IntervalDays, &temp.TotalCount); err != nil {
-			return []types.InsightTimeIntervalPing{}, err
-		}
-		results = append(results, temp)
-	}
-
-	return results, nil
-}
-
-func GetInsightCountsByOrg(ctx context.Context, db dbutil.DB, timeSupplier func() time.Time) ([]types.OrgVisibleInsightPing, error) {
-	//	query for
-	rows, err := db.QueryContext(ctx, insightOrgVisiblePingQueryStr, timeSupplier())
-	if err != nil {
-		return []types.OrgVisibleInsightPing{}, err
-	}
-	defer rows.Close()
-
-	results := make([]types.OrgVisibleInsightPing, 0)
-
-	for rows.Next() {
-		var temp types.OrgVisibleInsightPing
-		if err := rows.Scan(&temp.Type, &temp.TotalCount); err != nil {
-			return []types.OrgVisibleInsightPing{}, err
-		}
-		results = append(results, temp)
 	}
 
 	return results, nil
@@ -269,22 +295,119 @@ AND timestamp > DATE_TRUNC('%v', $1::TIMESTAMP)
 GROUP BY name;
 `
 
-const insightTimeIntervalQueryStr = `
--- source:internal/usagestats/code_insights.go:GetInsightTimeIntervals
-SELECT JSON_ARRAY_ELEMENTS(argument::JSON)::TEXT AS interval_days, COUNT(*)
-FROM event_logs
-JOIN (SELECT MAX(id) AS id FROM event_logs WHERE name = 'InsightsGroupedStepSizes') AS most_recent_event
-ON most_recent_event.id = event_logs.id
-WHERE name = 'InsightsGroupedStepSizes'
-AND timestamp > DATE_TRUNC('week', $1::TIMESTAMP)
-GROUP BY name, interval_days;
-`
+type TimeSeries struct {
+	Name   string
+	Stroke string
+	Query  string
+}
 
-const insightOrgVisiblePingQueryStr = `
--- source:internal/usagestats/code_insights.go:GetInsightCountsByOrg
-SELECT flattened.key AS type, flattened.value AS total_count FROM event_logs
-JOIN JSON_EACH_TEXT(event_logs.argument::JSON) AS flattened ON true
-JOIN (SELECT MAX(id) AS id FROM event_logs WHERE name = 'InsightsGroupedCount') AS most_recent_event
-     ON most_recent_event.id = event_logs.id
-WHERE event_logs.name = 'InsightsGroupedCount'
-AND timestamp > DATE_TRUNC('week', $1::TIMESTAMP);`
+type Interval struct {
+	Years  *int
+	Months *int
+	Weeks  *int
+	Days   *int
+	Hours  *int
+}
+
+type SearchInsight struct {
+	ID           string
+	Title        string
+	Repositories []string
+	Series       []TimeSeries
+	Step         Interval
+	Visibility   string
+}
+
+type LangStatsInsight struct {
+	ID             string
+	Title          string
+	Repository     string
+	OtherThreshold float32
+}
+
+type SettingFilter string
+
+const (
+	Org  SettingFilter = "org"
+	User SettingFilter = "user"
+	All  SettingFilter = "all"
+)
+
+// GetSettings returns all settings on the Sourcegraph installation that can be filtered by a type. This is useful for
+// generating aggregates for code insights which are currently stored in the settings.
+// 🚨 SECURITY: This method bypasses any user permissions to fetch a list of all settings on the Sourcegraph installation.
+//It is used for generating aggregated analytics that require an accurate view across all settings, such as for code insights🚨
+func GetSettings(ctx context.Context, db dbutil.DB, filter SettingFilter, prefix string) ([]*api.Settings, error) {
+	settingStore := database.Settings(db)
+	settings, err := settingStore.ListAll(ctx, prefix)
+	if err != nil {
+		return []*api.Settings{}, err
+	}
+	filtered := make([]*api.Settings, 0)
+
+	for _, setting := range settings {
+		if setting.Subject.Org != nil && filter == Org {
+			filtered = append(filtered, setting)
+		} else if setting.Subject.User != nil && filter == User {
+			filtered = append(filtered, setting)
+		} else if filter == All {
+			filtered = append(filtered, setting)
+		}
+	}
+
+	return filtered, nil
+}
+
+func GetSearchInsights(ctx context.Context, db dbutil.DB, filter SettingFilter) ([]SearchInsight, error) {
+
+	settings, err := GetSettings(ctx, db, filter, "searchInsights.")
+	if err != nil {
+		return []SearchInsight{}, err
+	}
+
+	results := make([]SearchInsight, 0)
+
+	for _, setting := range settings {
+		var raw map[string]json.RawMessage
+		if err := jsonc.Unmarshal(setting.Contents, &raw); err != nil {
+			return []SearchInsight{}, err
+		}
+		var temp SearchInsight
+
+		for id, body := range raw {
+			temp.ID = id
+			if err := json.Unmarshal(body, &temp); err != nil {
+				return []SearchInsight{}, err
+			}
+			results = append(results, temp)
+		}
+	}
+	return results, nil
+}
+
+func GetLangStatsInsights(ctx context.Context, db dbutil.DB, filter SettingFilter) ([]LangStatsInsight, error) {
+
+	settings, err := GetSettings(ctx, db, filter, "codeStatsInsights.")
+	if err != nil {
+		return []LangStatsInsight{}, err
+	}
+
+	results := make([]LangStatsInsight, 0)
+
+	for _, setting := range settings {
+		var raw map[string]json.RawMessage
+		if err := jsonc.Unmarshal(setting.Contents, &raw); err != nil {
+			return []LangStatsInsight{}, err
+		}
+		var temp LangStatsInsight
+
+		for id, body := range raw {
+			temp.ID = id
+			if err := json.Unmarshal(body, &temp); err != nil {
+				return []LangStatsInsight{}, err
+			}
+			results = append(results, temp)
+		}
+	}
+	return results, nil
+}
