@@ -116,17 +116,22 @@ func (s *sourcer) loadBatchesSource(ctx context.Context, tx SourcerStore, extern
 	}
 	// TODO: This should be the default, once we don't use external service tokens anymore.
 	// This ensures that we never use a changeset source without an authenticator.
-	// cred, err := loadSiteCredential(ctx, s.store, repo)
+	// cred, err := loadSiteCredential(ctx, tx, repo)
 	// if err != nil {
 	// 	return nil, err
 	// }
 	// if cred != nil {
-	// 	return s.WithAuthenticator(css, cred)
+	// 	return css.WithAuthenticator(cred)
 	// }
 	return css, nil
 }
 
 func gitserverPushConfig(ctx context.Context, store *database.ExternalServiceStore, repo *types.Repo, au auth.Authenticator) (*protocol.PushConfig, error) {
+	// Empty authenticators are not allowed.
+	if au == nil {
+		return nil, ErrNoPushCredentials{}
+	}
+
 	extSvcType := repo.ExternalRepo.ServiceType
 	cloneURL, err := extractCloneURL(ctx, store, repo)
 	if err != nil {
@@ -135,17 +140,6 @@ func gitserverPushConfig(ctx context.Context, store *database.ExternalServiceSto
 	u, err := vcs.ParseURL(cloneURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing repository clone URL")
-	}
-
-	if au == nil {
-		// This is OK: we'll just send no key and gitserver will use
-		// the keys installed locally for SSH and the token from the
-		// clone URL for https.
-		// This path is only triggered when `loadAuthenticator` returns
-		// nil, which is only the case for site-admins currently.
-		// We want to revisit this once we start disabling usage of global
-		// credentials altogether in RFC312.
-		return &protocol.PushConfig{RemoteURL: u.String()}, nil
 	}
 
 	// If the repo is cloned using SSH, we need to pass along a private key and passphrase.
@@ -197,6 +191,10 @@ func ToDraftChangesetSource(css ChangesetSource) (DraftChangesetSource, error) {
 	return draftCss, nil
 }
 
+// WithAuthenticatorForUser authenticates the given ChangesetSource with a credential
+// usable by the given user with userID. User credentials are preferred, with a
+// fallback to site credentials. If none of these exist, ErrMissingCredentials
+// is returned.
 func WithAuthenticatorForUser(ctx context.Context, tx SourcerStore, css ChangesetSource, userID int32, repo *types.Repo) (ChangesetSource, error) {
 	cred, err := loadUserCredential(ctx, tx, userID, repo)
 	if err != nil {
@@ -212,22 +210,6 @@ func WithAuthenticatorForUser(ctx context.Context, tx SourcerStore, css Changese
 	}
 	if cred != nil {
 		return css.WithAuthenticator(cred)
-	}
-	// For now, default to the internal authenticator of the source.
-	// This is either a site-credential or the external service token.
-
-	// If neither exist, we need to check if the user is an admin: if they are,
-	// then we can use the nil return from loadUserCredential() to fall
-	// back to the global credentials used for the code host. If
-	// not, then we need to error out.
-	// Once we tackle https://github.com/sourcegraph/sourcegraph/issues/16814,
-	// this code path should be removed.
-	user, err := database.Users(tx.DB()).GetByID(ctx, userID)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to load user")
-	}
-	if user.SiteAdmin {
-		return css, nil
 	}
 
 	// Otherwise, we can't authenticate the given ChangesetSource, so we need to bail out.
@@ -245,6 +227,7 @@ func WithSiteAuthenticator(ctx context.Context, tx SourcerStore, css ChangesetSo
 	if cred != nil {
 		return css.WithAuthenticator(cred)
 	}
+	// TODO: This should return ErrMissingCredentials.
 	return css, nil
 }
 
@@ -285,6 +268,7 @@ func loadExternalService(ctx context.Context, s *database.ExternalServiceStore, 
 		}
 	}
 
+	// TODO: Allow external service configs with no token, too.
 	return nil, errors.New("no external services found")
 }
 
@@ -339,8 +323,8 @@ func loadSiteCredential(ctx context.Context, s SourcerStore, repo *types.Repo) (
 
 // setOAuthTokenAuth sets the user part of the given URL to use the provided OAuth token,
 // with the specific quirks per code host.
-func setOAuthTokenAuth(u *vcs.URL, extsvcType, token string) error {
-	switch extsvcType {
+func setOAuthTokenAuth(u *vcs.URL, extSvcType, token string) error {
+	switch extSvcType {
 	case extsvc.TypeGitHub:
 		u.User = url.User(token)
 
@@ -349,6 +333,9 @@ func setOAuthTokenAuth(u *vcs.URL, extsvcType, token string) error {
 
 	case extsvc.TypeBitbucketServer:
 		return errors.New("require username/token to push commits to BitbucketServer")
+
+	default:
+		panic(fmt.Sprintf("setOAuthTokenAuth: invalid external service type %q", extSvcType))
 	}
 	return nil
 }
@@ -362,6 +349,9 @@ func setBasicAuth(u *vcs.URL, extSvcType, username, password string) error {
 
 	case extsvc.TypeBitbucketServer:
 		u.User = url.UserPassword(username, password)
+
+	default:
+		panic(fmt.Sprintf("setBasicAuth: invalid external service type %q", extSvcType))
 	}
 	return nil
 }

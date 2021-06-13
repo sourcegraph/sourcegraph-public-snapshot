@@ -29,6 +29,7 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 	admin := ct.CreateTestUser(t, db, true)
 
 	rs, extSvc := ct.CreateTestRepos(t, ctx, db, 1)
+	ct.CreateTestSiteCredential(t, store, rs[0])
 
 	state := ct.MockChangesetSyncState(&protocol.RepoInfo{
 		Name: rs[0].Name,
