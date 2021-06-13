@@ -21,3 +21,16 @@ func DeleteOldEventLogsInPostgres(ctx context.Context, db dbutil.DB) {
 		time.Sleep(time.Hour)
 	}
 }
+
+func DeleteOldSecurityEventLogsInPostgres(ctx context.Context, db dbutil.DB) {
+	for {
+		_, err := db.ExecContext(
+			ctx,
+			`DELETE FROM security_event_logs WHERE "timestamp" < now() - interval '186' day`,
+		)
+		if err != nil {
+			log15.Error("deleting expired rows from security_event_logs table", "error", err)
+		}
+		time.Sleep(time.Hour)
+	}
+}
