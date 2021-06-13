@@ -240,6 +240,47 @@ func (c *Client) UpdateMergeRequest(ctx context.Context, project *Project, mr *M
 	return resp, nil
 }
 
+// ErrNotMergeable is returned by MergeMergeRequest when the merge request cannot
+// be merged, because a precondition isn't met.
+var ErrNotMergeable = errors.New("merge request is not in a mergeable state")
+
+func (c *Client) MergeMergeRequest(ctx context.Context, project *Project, mr *MergeRequest, squash bool) (*MergeRequest, error) {
+	if MockMergeMergeRequest != nil {
+		return MockMergeMergeRequest(c, ctx, project, mr, squash)
+	}
+
+	payload := struct {
+		Squash              bool   `json:"squash,omitempty"`
+		SquashCommitMessage string `json:"squash_commit_message,omitempty"`
+	}{
+		Squash: squash,
+	}
+	if squash {
+		payload.SquashCommitMessage = mr.Title + "\n\n" + mr.Description
+	}
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return nil, errors.Wrap(err, "marshalling options")
+	}
+
+	time.Sleep(c.rateLimitMonitor.RecommendedWaitForBackgroundOp(1))
+
+	req, err := http.NewRequest("PUT", fmt.Sprintf("projects/%d/merge_requests/%d/merge", project.ID, mr.IID), bytes.NewBuffer(data))
+	if err != nil {
+		return nil, errors.Wrap(err, "creating request to merge a merge request")
+	}
+
+	resp := &MergeRequest{}
+	if _, _, err := c.do(ctx, req, resp); err != nil {
+		if e, ok := errors.Cause(err).(HTTPError); ok && e.Code() == http.StatusMethodNotAllowed {
+			return nil, errors.Wrap(ErrNotMergeable, err.Error())
+		}
+		return nil, errors.Wrap(err, "sending request to merge a merge request")
+	}
+
+	return resp, nil
+}
+
 func (c *Client) CreateMergeRequestNote(ctx context.Context, project *Project, mr *MergeRequest, body string) error {
 	if MockCreateMergeRequestNote != nil {
 		return MockCreateMergeRequestNote(c, ctx, project, mr, body)

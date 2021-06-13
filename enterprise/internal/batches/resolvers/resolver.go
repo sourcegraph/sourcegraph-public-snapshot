@@ -1250,6 +1250,44 @@ func (r *Resolver) ReenqueueChangesets(ctx context.Context, args *graphqlbackend
 	return r.bulkOperationByIDString(ctx, bulkGroupID)
 }
 
+func (r *Resolver) MergeChangesets(ctx context.Context, args *graphqlbackend.MergeChangesetsArgs) (_ graphqlbackend.BulkOperationResolver, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.MergeChangesets", fmt.Sprintf("BatchChange: %q, len(Changesets): %d", args.BatchChange, len(args.Changesets)))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+	if err := batchChangesEnabled(ctx, r.store.DB()); err != nil {
+		return nil, err
+	}
+
+	batchChangeID, changesetIDs, err := unmarshalBulkOperationBaseArgs(args.BulkOperationBaseArgs)
+	if err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: CreateChangesetJobs checks whether current user is authorized.
+	svc := service.New(r.store)
+	published := btypes.ChangesetPublicationStatePublished
+	openState := btypes.ChangesetExternalStateOpen
+	bulkGroupID, err := svc.CreateChangesetJobs(
+		ctx,
+		batchChangeID,
+		changesetIDs,
+		btypes.ChangesetJobTypeMerge,
+		&btypes.ChangesetJobMergePayload{Squash: args.Squash},
+		store.ListChangesetsOpts{
+			PublicationState: &published,
+			ReconcilerStates: []btypes.ReconcilerState{btypes.ReconcilerStateCompleted},
+			ExternalState:    &openState,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return r.bulkOperationByIDString(ctx, bulkGroupID)
+}
+
 func parseBatchChangeState(s *string) (btypes.BatchChangeState, error) {
 	if s == nil {
 		return btypes.BatchChangeStateAny, nil

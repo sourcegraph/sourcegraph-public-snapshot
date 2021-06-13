@@ -95,7 +95,7 @@ func (b *bulkProcessorWorker) HandlerFunc() dbworker.HandlerFunc {
 	return func(ctx context.Context, tx dbworkerstore.Store, record workerutil.Record) error {
 		processor := &bulkProcessor{
 			sourcer: b.sourcer,
-			store:   b.store.With(tx),
+			tx:      b.store.With(tx),
 		}
 		return processor.process(ctx, record.(*btypes.ChangesetJob))
 	}

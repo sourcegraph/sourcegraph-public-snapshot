@@ -29,7 +29,7 @@ func TestBulkProcessor(t *testing.T) {
 	t.Run("Unknown job type", func(t *testing.T) {
 		fake := &sources.FakeChangesetSource{}
 		bp := &bulkProcessor{
-			store:   bstore,
+			tx:      bstore,
 			sourcer: sources.NewFakeSourcer(nil, fake),
 		}
 		job := &types.ChangesetJob{
@@ -50,7 +50,7 @@ func TestBulkProcessor(t *testing.T) {
 	t.Run("Comment job", func(t *testing.T) {
 		fake := &sources.FakeChangesetSource{}
 		bp := &bulkProcessor{
-			store:   bstore,
+			tx:      bstore,
 			sourcer: sources.NewFakeSourcer(nil, fake),
 		}
 		job := &types.ChangesetJob{
@@ -73,7 +73,7 @@ func TestBulkProcessor(t *testing.T) {
 	t.Run("Detach job", func(t *testing.T) {
 		fake := &sources.FakeChangesetSource{}
 		bp := &bulkProcessor{
-			store:   bstore,
+			tx:      bstore,
 			sourcer: sources.NewFakeSourcer(nil, fake),
 		}
 		job := &types.ChangesetJob{
@@ -101,6 +101,60 @@ func TestBulkProcessor(t *testing.T) {
 		}
 		if ch.ReconcilerState != btypes.ReconcilerStateQueued {
 			t.Fatalf("invalid reconciler state, got=%q", ch.ReconcilerState)
+		}
+	})
+
+	t.Run("Reenqueue job", func(t *testing.T) {
+		fake := &sources.FakeChangesetSource{}
+		bp := &bulkProcessor{
+			tx:      bstore,
+			sourcer: sources.NewFakeSourcer(nil, fake),
+		}
+		job := &types.ChangesetJob{
+			JobType:     types.ChangesetJobTypeReenqueue,
+			ChangesetID: changeset.ID,
+			UserID:      user.ID,
+		}
+		changeset.ReconcilerState = btypes.ReconcilerStateFailed
+		if err := bstore.UpdateChangeset(ctx, changeset); err != nil {
+			t.Fatal(err)
+		}
+		if err := bstore.CreateChangesetJob(ctx, job); err != nil {
+			t.Fatal(err)
+		}
+		err := bp.process(ctx, job)
+		if err != nil {
+			t.Fatal(err)
+		}
+		changeset, err = bstore.GetChangesetByID(ctx, changeset.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if have, want := changeset.ReconcilerState, btypes.ReconcilerStateQueued; have != want {
+			t.Fatalf("unexpected reconciler state, have=%q want=%q", have, want)
+		}
+	})
+
+	t.Run("Merge job", func(t *testing.T) {
+		fake := &sources.FakeChangesetSource{}
+		bp := &bulkProcessor{
+			tx:      bstore,
+			sourcer: sources.NewFakeSourcer(nil, fake),
+		}
+		job := &types.ChangesetJob{
+			JobType:     types.ChangesetJobTypeMerge,
+			ChangesetID: changeset.ID,
+			UserID:      user.ID,
+		}
+		if err := bstore.CreateChangesetJob(ctx, job); err != nil {
+			t.Fatal(err)
+		}
+		err := bp.process(ctx, job)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !fake.MergeChangesetCalled {
+			t.Fatal("expected MergeChangeset to be called but wasn't")
 		}
 	})
 }
