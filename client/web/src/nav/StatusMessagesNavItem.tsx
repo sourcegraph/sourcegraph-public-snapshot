@@ -264,7 +264,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
     }
 
     private renderMessage(message: Message, isSiteAdmin: boolean): JSX.Element | JSX.Element[] {
-        const userSettings = `/users/${this.props.user.username}/settings/`
+        const userSettings = `/users/${this.props.user.username}/settings`
         const makeGetCodeHostLink = (isSiteAdmin: boolean) => (id: string): string =>
             isSiteAdmin ? `/site-admin/external-services/${id}` : `${userSettings}/code-hosts`
 
