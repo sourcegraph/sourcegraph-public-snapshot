@@ -85,9 +85,11 @@ Jobs are executed on a FIFO-basis. Users can interrupt a job from the interface.
 
 Each executor will run at least one job at a time: you should scale the number of executors and configure the `EXECUTOR_MAX_NUM_JOBS` environment variable to the maximum concurrency you wish to support. Kubernetes users should also be mindful of [scaling Kubernetes executors](kubernetes.md#scaling).
 
-# Administering and monitoring executors
 
-<!-- aharvey: Executors are currently stateless from the perspective of the backend, as far as I can tell. This likely means we can't build a sensible UI right now for administration or monitoring. Do we want to drop this section? -->
+<!-- # Administering and monitoring executors
+aharvey: Executors are currently stateless from the perspective of the backend, as far as I can tell. This likely means we can't build a sensible UI right now for administration or monitoring. Do we want to drop this section?
+malomarrec: commented out for now.
+-->
 
 # How executors work
 
@@ -97,7 +99,7 @@ When the executor has a job to run, it uses the [backend](configuration.md) to e
 
 # Executor vs CLI workflow comparison
 
-With the CLI workflow, the changeset creation step has to be ran locally, which can take a long time for large, complex batch changes. With the executor workflow, the changeset creation step is offloaded to the executor, which means that all the steps can happen in the same user interface, and processing is offloaded to the executor.
+With the CLI workflow, the changeset creation step has to be ran locally, which can take a long time for large, complex batch changes. With the executor workflow, the changeset creation steps are offloaded to the executor(s), which means that processing is offloaded to the executor, and creating a batch change can be done using the GUI only.
 
 <img src="https://mermaid.ink/svg/eyJjb2RlIjoiZ3JhcGggTFJcbiAgICBBKEluc3RhbGwgc3JjIENMSSkgLS0-IEIoV3JpdGUgc3BlYylcbiAgICAgLS0-IEMoUnVuIENMSSB0byA8YnIvPiBjcmVhdGUgY2hhbmdlc2V0cylcbiAgICAgLS0-IEQoUHJldmlldylcbiAgICAgLS0-IEUoQXBwbHkpXG4gICAgIC0tPiBGKFRyYWNrIHByb2dyZXNzKVxuICAgICBHKCAgKSAtLT4gSChXcml0ZSBzcGVjKSBcbiAgICAgLS0-IEkoRXhlY3V0b3IgY3JlYXRlcyA8YnIvPiBjaGFuZ2VzZXRzKVxuICAgICAtLT4gSihQcmV2aWV3KVxuICAgICAtLT4gSyhBcHBseSlcbiAgICAgLS0-IEwoVHJhY2sgcHJvZ3Jlc3MpXG4gICAgIE0obG9jYWxseSlcbiAgICAgTihvbiBTb3VyY2VncmFwaClcblxuc3R5bGUgTSBzdHJva2U6I0ZGNTU0Mywgc3Ryb2tlLXdpZHRoOjNweFxuc3R5bGUgQSBzdHJva2U6I0ZGNTU0Mywgc3Ryb2tlLXdpZHRoOjNweFxuc3R5bGUgQiBzdHJva2U6I0ZGNTU0Mywgc3Ryb2tlLXdpZHRoOjNweFxuc3R5bGUgQyBzdHJva2U6I0ZGNTU0Mywgc3Ryb2tlLXdpZHRoOjNweFxuXG5zdHlsZSBOIHN0cm9rZTojQTExMkZGLCBzdHJva2Utd2lkdGg6M3B4XG5zdHlsZSBEIHN0cm9rZTojQTExMkZGLCBzdHJva2Utd2lkdGg6M3B4XG5zdHlsZSBFIHN0cm9rZTojQTExMkZGLCBzdHJva2Utd2lkdGg6M3B4XG5zdHlsZSBGIHN0cm9rZTojQTExMkZGLCBzdHJva2Utd2lkdGg6M3B4XG5zdHlsZSBHIHN0cm9rZTojRkZGRkZGLCBmaWxsOiNGRkZGRkZcbnN0eWxlIEggc3Ryb2tlOiNBMTEyRkYsIHN0cm9rZS13aWR0aDozcHhcbnN0eWxlIEkgc3Ryb2tlOiNBMTEyRkYsIHN0cm9rZS13aWR0aDozcHhcbnN0eWxlIEogc3Ryb2tlOiNBMTEyRkYsIHN0cm9rZS13aWR0aDozcHhcbnN0eWxlIEsgc3Ryb2tlOiNBMTEyRkYsIHN0cm9rZS13aWR0aDozcHhcbnN0eWxlIEwgc3Ryb2tlOiNBMTEyRkYsIHN0cm9rZS13aWR0aDozcHhcblxubGlua1N0eWxlIDUgc3Ryb2tlLXdpZHRoOjBweFxuIiwibWVybWFpZCI6eyJ0aGVtZSI6ImRlZmF1bHQifSwidXBkYXRlRWRpdG9yIjpmYWxzZX0">
 
@@ -117,6 +119,5 @@ They can! Each changeset that is computed can be run concurrently, provided ther
 
 No, all executors are equal in the eyes of Sourcegraph. We suggest making all executors equal, or using [Kubernetes resource limits](kubernetes.md) to place whatever limits are required for relatively even job distribution.
 
-#### What happens if execution fails?
-
-You can check the status of your pending 
+#### What happens if the execution of a step fails?
+If the execution of a step on a given repository fails, that repository will be skipped, and execution on the other repositories will continue. Standard error and output will be available to the user for debugging purposes.
