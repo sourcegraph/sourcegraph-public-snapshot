@@ -16,6 +16,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hashicorp/golang-lru"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
@@ -44,6 +45,7 @@ func StreamHandler(db dbutil.DB) http.Handler {
 		newSearchResolver:   defaultNewSearchResolver,
 		flushTickerInternal: 100 * time.Millisecond,
 		pingTickerInterval:  5 * time.Second,
+		repoMetadataCache:   newRepoMetadataCache(1000),
 	}
 }
 
@@ -52,6 +54,7 @@ type streamHandler struct {
 	newSearchResolver   func(context.Context, dbutil.DB, *graphqlbackend.SearchArgs) (searchResolver, error)
 	flushTickerInternal time.Duration
 	pingTickerInterval  time.Duration
+	repoMetadataCache   repoMetadataCache
 }
 
 func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -88,6 +91,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	eventWriter.StatHook = eventStreamOTHook(tr.LogFields)
 
 	events, inputs, results := h.startSearch(ctx, args)
+	events = batchedEvents(events, 5*time.Millisecond)
 
 	traceURL := ""
 	if span := opentracing.SpanFromContext(ctx); span != nil {
@@ -154,8 +158,6 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		_ = matchesBuf.Append(m)
 	}
 
-	repoCache := make(map[api.RepoID]*types.Repo, 10)
-
 	flushTicker := time.NewTicker(h.flushTickerInternal)
 	defer flushTicker.Stop()
 
@@ -185,7 +187,8 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		filters.Update(event)
 
 		// Ensure that, for each result in the event, we have a copy of the full repo metadata.
-		if err := updateRepoCache(ctx, h.db, repoCache, event); err != nil {
+		repoList, err := h.repoMetadataCache.GetEventRepos(ctx, h.db, event)
+		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -196,7 +199,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 
 			display = match.Limit(display)
-			matchesAppend(fromMatch(match, repoCache))
+			matchesAppend(fromMatch(match, repoList))
 		}
 
 		// Instantly send results if we have not sent any yet.
@@ -284,47 +287,6 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			log15.Warn("streaming: slow search request", searchlogs.MapToLog15Ctx(ev.Fields())...)
 		}
 	}
-}
-
-// updateRepoCache requests repo metadata for each repo referenced by results in the event. It only makes a database request if there
-// are new repos that do not already exist in the cache.
-func updateRepoCache(ctx context.Context, db dbutil.DB, repoCache map[api.RepoID]*types.Repo, event streaming.SearchEvent) error {
-	uncachedIDs := make(map[api.RepoID]struct{}, 10)
-	for _, r := range event.Results {
-		var id api.RepoID
-		switch v := r.(type) {
-		case *result.FileMatch:
-			id = v.Repo.ID
-		case *result.RepoMatch:
-			id = v.ID
-		case *result.CommitMatch:
-			id = v.RepoName.ID
-		default:
-			return fmt.Errorf("unknown match type %T", r)
-		}
-
-		if _, ok := repoCache[id]; !ok {
-			uncachedIDs[id] = struct{}{}
-		}
-	}
-
-	if len(uncachedIDs) == 0 {
-		return nil
-	}
-
-	uncachedIDSlice := make([]api.RepoID, 0, len(uncachedIDs))
-	for id := range uncachedIDs {
-		uncachedIDSlice = append(uncachedIDSlice, id)
-	}
-
-	repos, err := database.Repos(db).GetReposSetByIDs(ctx, uncachedIDSlice...)
-	if err != nil {
-		return err
-	}
-	for id, repo := range repos {
-		repoCache[id] = repo
-	}
-	return nil
 }
 
 // startSearch will start a search. It returns the events channel which
@@ -654,4 +616,88 @@ func GuessSource(r *http.Request) trace.SourceType {
 	}
 
 	return trace.SourceOther
+}
+
+func batchedEvents(source <-chan streaming.SearchEvent, delay time.Duration) <-chan streaming.SearchEvent {
+	results := make(chan streaming.SearchEvent)
+	go func() {
+		defer close(results)
+		ticker := time.NewTicker(delay)
+		defer ticker.Stop()
+
+		var newE streaming.SearchEvent
+		hasResults := false
+		for {
+			select {
+			case e, ok := <-source:
+				if !ok {
+					return
+				}
+				newE.Results = append(newE.Results, e.Results...)
+				newE.Stats.Update(&e.Stats)
+				hasResults = true
+			case <-ticker.C:
+				if hasResults {
+					results <- newE
+					newE = streaming.SearchEvent{}
+				}
+				hasResults = false
+			}
+		}
+	}()
+	return results
+}
+
+type repoMetadataCache struct {
+	lru *lru.TwoQueueCache
+}
+
+func (c *repoMetadataCache) GetEventRepos(ctx context.Context, db dbutil.DB, event streaming.SearchEvent) (map[api.RepoID]*types.Repo, error) {
+	res := make(map[api.RepoID]*types.Repo, 10)
+	uncachedIDs := make(map[api.RepoID]struct{}, 10)
+	for _, r := range event.Results {
+		var id api.RepoID
+		switch v := r.(type) {
+		case *result.FileMatch:
+			id = v.Repo.ID
+		case *result.RepoMatch:
+			id = v.ID
+		case *result.CommitMatch:
+			id = v.RepoName.ID
+		default:
+			return nil, fmt.Errorf("unknown match type %T", r)
+		}
+
+		if repo, ok := c.lru.Get(id); ok {
+			res[id] = repo.(*types.Repo)
+		} else {
+			uncachedIDs[id] = struct{}{}
+		}
+	}
+
+	if len(uncachedIDs) == 0 {
+		return res, nil
+	}
+
+	uncachedIDSlice := make([]api.RepoID, 0, len(uncachedIDs))
+	for id := range uncachedIDs {
+		uncachedIDSlice = append(uncachedIDSlice, id)
+	}
+
+	repos, err := database.Repos(db).GetByIDs(ctx, uncachedIDSlice...)
+	if err != nil {
+		return nil, err
+	}
+	for _, repo := range repos {
+		c.lru.Add(repo.ID, repo)
+		res[repo.ID] = repo
+	}
+	return res, nil
+}
+
+func newRepoMetadataCache(size int) repoMetadataCache {
+	l, _ := lru.New2Q(size)
+	return repoMetadataCache{
+		lru: l,
+	}
 }
