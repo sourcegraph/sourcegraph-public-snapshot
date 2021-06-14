@@ -46,7 +46,7 @@ function generateStep(options: { tour: Shepherd.Tour; stepNumber: number; conten
     const close = document.createElement('div')
     close.className = 'd-flex align-items-center'
     close.innerHTML = `
-        <div class="tour-card__separator mx-3"></div>
+        <div class="tour-card__separator"></div>
         <div class="tour-card__close">${closeIconSvg}</div>
     `
     element.append(close)
@@ -75,8 +75,8 @@ function generateStep1(
     const content = document.createElement('div')
     content.className = 'd-flex align-items-center'
     content.innerHTML = `
-        <div class="tour-card__title mr-3">Get started</div>
-        <button class="btn btn-link p-0 mr-3 tour-card__link tour-language-button">Search a language</button>
+        <div class="tour-card__title">Get started</div>
+        <button class="btn btn-link p-0 tour-card__link tour-language-button">Search a language</button>
         <button class="btn btn-link p-0 tour-card__link tour-repo-button">Search a repository</button>
     `
     content.querySelector('.tour-language-button')?.addEventListener('click', () => {
@@ -169,7 +169,7 @@ const generateStepContent = (title: string, description: string): HTMLElement =>
     const element = document.createElement('div')
     element.className = 'd-flex align-items-center'
     element.innerHTML = `
-        <div class="tour-card__title mr-3">${title}</div>
+        <div class="tour-card__title">${title}</div>
         <div class="tour-card__description text-monospace">${description}</div>
     `
     return element
@@ -373,7 +373,13 @@ export const useSearchOnboardingTour = ({
     // 'Complete' tour on unmount.
     useEffect(
         () => () => {
-            tour.complete()
+            // Shepherd does not mix well with multiple active tours (because it stores the current active tour in a mutable global variable).
+            // This causes weird behaviour where cancelling one tour cancells other tours as well. Cancelling the tour doesn't always remove it
+            // from the DOM, so we have to manually hide it (e.g. when navigating between pages).
+            tour.hide()
+            if (tour.isActive()) {
+                tour.complete()
+            }
         },
         [tour]
     )

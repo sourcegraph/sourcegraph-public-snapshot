@@ -8,6 +8,10 @@
     padding: 0.375rem 0.75rem;
     height: 1.75rem;
 
+    @media (--sm-breakpoint-down) {
+        padding: 0.25rem 0.5rem;
+    }
+
     box-shadow: 0 1px 4px rgba($gray-07, 0.3);
 
     .theme-redesign & {
@@ -58,9 +62,10 @@
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.5px;
+        margin-right: 1rem;
 
         @media (--sm-breakpoint-down) {
-            font-size: 0.5rem;
+            margin-right: 0.5rem;
         }
 
         .theme-dark & {
@@ -73,6 +78,11 @@
         width: 1px;
         height: 0.875rem;
         background-color: var(--oc-cyan-1);
+        margin: 0 1rem;
+
+        @media (--sm-breakpoint-down) {
+            margin: 0 0.5rem;
+        }
 
         .theme-dark & {
             background-color: var(--oc-blue-7);
@@ -82,8 +92,12 @@
     &__link {
         font-size: 0.75rem;
 
-        @media (--sm-breakpoint-down) {
-            font-size: 0.625rem;
+        &:first-of-type {
+            margin-right: 1rem;
+
+            @media (--sm-breakpoint-down) {
+                margin-right: 0.5rem;
+            }
         }
 
         .theme-dark & {
@@ -112,10 +126,6 @@
     &__description {
         font-size: 0.75rem;
         font-weight: 400;
-
-        @media (--sm-breakpoint-down) {
-            font-size: 0.625rem;
-        }
 
         .theme-dark & {
             color: var(--oc-blue-1);
