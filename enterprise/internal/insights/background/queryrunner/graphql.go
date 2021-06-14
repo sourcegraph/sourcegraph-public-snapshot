@@ -11,7 +11,7 @@ import (
 
 	"golang.org/x/net/context/ctxhttp"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 )
 
 // This file contains all the methods required to execute Sourcegraph searches using our GraphQL

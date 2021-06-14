@@ -3,8 +3,8 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Observable } from 'rxjs'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
-import { FilterType, FILTERS } from '@sourcegraph/shared/src/search/query/filters'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
+import { isRepoFilter } from '@sourcegraph/shared/src/search/query/validate'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
@@ -132,10 +132,7 @@ function processRepositories(eventLogResult: EventLogResult): string[] | null {
         const scannedQuery = scanSearchQuery(queryFromURL || '')
         if (scannedQuery.type === 'success') {
             for (const token of scannedQuery.term) {
-                if (
-                    token.type === 'filter' &&
-                    (token.field.value === FilterType.repo || token.field.value === FILTERS[FilterType.repo].alias)
-                ) {
+                if (isRepoFilter(token)) {
                     if (token.value && !recentlySearchedRepos.includes(token.value.value)) {
                         recentlySearchedRepos.push(token.value.value)
                     }

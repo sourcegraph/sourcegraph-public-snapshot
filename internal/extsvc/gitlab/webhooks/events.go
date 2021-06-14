@@ -3,7 +3,7 @@ package webhooks
 import (
 	"encoding/json"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 )

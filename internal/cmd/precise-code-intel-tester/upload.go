@@ -13,7 +13,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/cmd/precise-code-intel-tester/util"
 )
@@ -278,7 +278,7 @@ func uploadStates(ctx context.Context, ids, names []string) (stateByUpload map[s
 			} `json:"codeIntelligenceCommitGraph"`
 		} `json:"data"`
 	}{}
-	if err := util.QueryGraphQL(ctx, endpoint, token, query, nil, &payload); err != nil {
+	if err := util.QueryGraphQL(ctx, endpoint, "CodeIntelTesterUploadStates", token, query, nil, &payload); err != nil {
 		return nil, nil, err
 	}
 

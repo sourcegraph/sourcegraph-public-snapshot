@@ -1,7 +1,7 @@
 package gqltestutil
 
 import (
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 )
 
 // GitBlob returns blob content of the file in given repository at given revision.

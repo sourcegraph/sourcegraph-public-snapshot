@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/url"
 
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
@@ -149,6 +149,9 @@ func githubCloneURL(repo *github.Repository, cfg *schema.GitHubConnection) (stri
 		return url, nil
 	}
 
+	if repo.URL == "" {
+		return "", errors.New("empty repo.URL")
+	}
 	if cfg.Token == "" {
 		return repo.URL, nil
 	}

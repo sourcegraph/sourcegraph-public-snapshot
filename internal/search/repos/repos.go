@@ -12,9 +12,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -39,6 +39,10 @@ type Resolved struct {
 	MissingRepoRevs []*search.RepositoryRevisions
 	ExcludedRepos   ExcludedRepos
 	OverLimit       bool
+}
+
+func (r *Resolved) String() string {
+	return fmt.Sprintf("Resolved{RepoRevs=%d, MissingRepoRevs=%d, OverLimit=%v, %#v}", len(r.RepoRevs), len(r.MissingRepoRevs), r.OverLimit, r.ExcludedRepos)
 }
 
 type Resolver struct {

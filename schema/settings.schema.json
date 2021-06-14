@@ -45,7 +45,7 @@
           }
         },
         "searchStats": {
-          "description": "Enables a new page that shows language statistics about the results for a search query.",
+          "description": "Enables a button on the search results page that shows language statistics about the results for a search query.",
           "type": "boolean",
           "default": false,
           "!go": {

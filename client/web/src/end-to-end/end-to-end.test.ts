@@ -1041,15 +1041,16 @@ describe('e2e test suite', () => {
                         await driver.assertNonemptyLocalRefs()
 
                         // verify the appropriate # of references are fetched
-                        await driver.page.waitForSelector('.panel__tabs-content .file-match-children', {
+                        await driver.page.waitForSelector('[data-testid="panel-tabs-content"] .file-match-children', {
                             visible: true,
                         })
                         await retry(async () =>
                             expect(
                                 await driver.page.evaluate(
                                     () =>
-                                        document.querySelectorAll('.panel__tabs-content .file-match-children__item')
-                                            .length
+                                        document.querySelectorAll(
+                                            '[data-testid="panel-tabs-content"] .file-match-children__item'
+                                        ).length
                                 )
                             ).toEqual(
                                 // Basic code intel finds 8 references with some overlapping context, resulting in 4 hunks.

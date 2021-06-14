@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 )
 
 // copyConfigs will copy /etc/sourcegraph/{netrc,gitconfig} to locations read

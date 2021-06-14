@@ -1,7 +1,7 @@
 import classnames from 'classnames'
 import React, { useCallback, useContext, useEffect } from 'react'
 import { Redirect } from 'react-router'
-import { useHistory } from 'react-router-dom'
+import { useHistory, useLocation } from 'react-router-dom'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -23,6 +23,7 @@ import {
 import styles from './SearchInsightCreationPage.module.scss'
 import { CreateInsightFormFields } from './types'
 import { getSanitizedSearchInsight } from './utils/insight-sanitizer'
+import { getUrlQueryInsight } from './utils/use-url-query-insight/use-url-query-insight'
 
 export interface SearchInsightCreationPageProps
     extends PlatformContextProps<'updateSettings'>,
@@ -38,13 +39,26 @@ export interface SearchInsightCreationPageProps
 /** Displays create insight page with creation form. */
 export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCreationPageProps> = props => {
     const { platformContext, authenticatedUser, settingsCascade, telemetryService } = props
-    const { updateSubjectSettings, getSubjectSettings } = useContext(InsightsApiContext)
-    const history = useHistory()
 
-    const [initialFormValues, setInitialFormValues] = useLocalStorage<CreateInsightFormFields | undefined>(
+    const history = useHistory()
+    const { search } = useLocation()
+    const { updateSubjectSettings, getSubjectSettings } = useContext(InsightsApiContext)
+
+    // Search insight creation UI form can take value from query param in order
+    // to support 1-click insight creation from search result page.
+    const queryParameterInsight = getUrlQueryInsight(search)
+
+    // Creation UI saves all form values in local storage to be able restore these
+    // values if page was fully refreshed or user came back from other page.
+    const [localStorageFormValues, setInitialFormValues] = useLocalStorage<CreateInsightFormFields | undefined>(
         'insights.search-insight-creation',
         undefined
     )
+
+    console.log('render')
+
+    // Query param insight values have a higher priority that local storage values
+    const initialFormValues = queryParameterInsight ?? localStorageFormValues
 
     useEffect(() => {
         telemetryService.logViewEvent('CodeInsightsSearchBasedCreationPage')

@@ -1,14 +1,7 @@
-import ConsoleIcon from 'mdi-react/ConsoleIcon'
 import * as React from 'react'
-import { Link, RouteComponentProps } from 'react-router-dom'
+import { RouteComponentProps } from 'react-router-dom'
 
-import {
-    SIDEBAR_BUTTON_CLASS,
-    SidebarGroupItems,
-    SidebarGroupHeader,
-    SidebarGroup,
-    SidebarNavItem,
-} from '../../components/Sidebar'
+import { SidebarGroupItems, SidebarGroupHeader, SidebarGroup, SidebarNavItem } from '../../components/Sidebar'
 import { SettingsAreaRepositoryFields } from '../../graphql-operations'
 import { NavGroupDescriptor } from '../../util/contributions'
 
@@ -49,10 +42,5 @@ export const RepoSettingsSidebar: React.FunctionComponent<Props> = ({
                     </SidebarGroup>
                 )
         )}
-
-        <Link to="/api/console" className={SIDEBAR_BUTTON_CLASS}>
-            <ConsoleIcon className="icon-inline" />
-            API console
-        </Link>
     </div>
 )

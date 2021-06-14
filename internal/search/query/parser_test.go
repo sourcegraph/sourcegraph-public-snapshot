@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/cockroachdb/errors"
 	"github.com/hexops/autogold"
-	"github.com/pkg/errors"
 )
 
 func collectLabels(nodes []Node) (result labels) {
