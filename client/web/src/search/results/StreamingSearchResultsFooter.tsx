@@ -4,7 +4,7 @@ import React from 'react'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 
-import { ErrorAlert } from '../../../components/alerts'
+import { ErrorAlert } from '../../components/alerts'
 
 import { StreamingProgressCount } from './progress/StreamingProgressCount'
 

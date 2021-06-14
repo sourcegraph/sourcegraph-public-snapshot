@@ -1,7 +1,7 @@
 import { mount } from 'enzyme'
 import React from 'react'
 
-import { SearchPatternType } from '../../../../graphql-operations'
+import { SearchPatternType } from '../../../graphql-operations'
 
 import { getSearchTypeLinks, SearchTypeLinksProps } from './SearchTypeLink'
 

@@ -14,8 +14,8 @@ import {
     REPO_MATCH_RESULT,
 } from '@sourcegraph/shared/src/util/searchTestHelpers'
 
-import { AuthenticatedUser } from '../../../auth'
-import { WebStory } from '../../../components/WebStory'
+import { AuthenticatedUser } from '../../auth'
+import { WebStory } from '../../components/WebStory'
 
 import { StreamingSearchResults, StreamingSearchResultsProps } from './StreamingSearchResults'
 
@@ -63,7 +63,7 @@ const defaultProps: StreamingSearchResultsProps = {
     enableCodeMonitoring: false,
 }
 
-const { add } = storiesOf('web/search/results/streaming/StreamingSearchResults', module).addParameters({
+const { add } = storiesOf('web/search/results/StreamingSearchResults', module).addParameters({
     chromatic: { viewports: [577, 769, 993] },
 })
 

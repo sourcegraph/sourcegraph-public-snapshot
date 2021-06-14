@@ -7,8 +7,8 @@ import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
-import { SyntaxHighlightedSearchQuery } from '../../../../components/SyntaxHighlightedSearchQuery'
-import { Settings } from '../../../../schema/settings.schema'
+import { SyntaxHighlightedSearchQuery } from '../../../components/SyntaxHighlightedSearchQuery'
+import { Settings } from '../../../schema/settings.schema'
 
 import styles from './SearchSidebarSection.module.scss'
 

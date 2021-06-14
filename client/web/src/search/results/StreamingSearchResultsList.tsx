@@ -22,8 +22,8 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import { SearchResult } from '../../../components/SearchResult'
-import { eventLogger } from '../../../tracking/eventLogger'
+import { SearchResult } from '../../components/SearchResult'
+import { eventLogger } from '../../tracking/eventLogger'
 
 import { StreamingSearchResultFooter } from './StreamingSearchResultsFooter'
 

@@ -20,14 +20,14 @@ import {
     RESULT,
 } from '@sourcegraph/shared/src/util/searchTestHelpers'
 
-import { SearchResult } from '../../../components/SearchResult'
-import { SavedSearchModal } from '../../../savedSearches/SavedSearchModal'
-import * as helpers from '../../helpers'
-import { SearchResultsInfoBar } from '../SearchResultsInfoBar'
-import { VersionContextWarning } from '../VersionContextWarning'
+import { SearchResult } from '../../components/SearchResult'
+import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
+import * as helpers from '../helpers'
 
 import { StreamingProgress } from './progress/StreamingProgress'
+import { SearchResultsInfoBar } from './SearchResultsInfoBar'
 import { StreamingSearchResults, StreamingSearchResultsProps } from './StreamingSearchResults'
+import { VersionContextWarning } from './VersionContextWarning'
 
 describe('StreamingSearchResults', () => {
     const history = createBrowserHistory()

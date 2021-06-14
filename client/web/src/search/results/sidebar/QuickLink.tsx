@@ -4,7 +4,7 @@ import React from 'react'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 
-import { Settings } from '../../../../schema/settings.schema'
+import { Settings } from '../../../schema/settings.schema'
 
 import styles from './SearchSidebarSection.module.scss'
 

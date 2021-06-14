@@ -3,14 +3,11 @@ import * as React from 'react'
 
 import { Progress } from '@sourcegraph/shared/src/search/stream'
 
-import { WebStory } from '../../../../components/WebStory'
+import { WebStory } from '../../../components/WebStory'
 
 import { StreamingProgressSkippedPopover } from './StreamingProgressSkippedPopover'
 
-const { add } = storiesOf(
-    'web/search/results/streaming/progress/StreamingProgressSkippedPopover',
-    module
-).addParameters({
+const { add } = storiesOf('web/search/results/progress/StreamingProgressSkippedPopover', module).addParameters({
     design: {
         type: 'figma',
         url: 'https://www.figma.com/file/IyiXZIbPHK447NCXov0AvK/13928-Streaming-search?node-id=280%3A17768',
