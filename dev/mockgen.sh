@@ -2,10 +2,9 @@
 
 set -euf -o pipefail
 
-ROOT="$(dirname "${BASH_SOURCE[0]}")/.."
-
-export GOBIN="$ROOT/.bin"
-export PATH=$GOBIN:$PATH
+export GOBIN
+GOBIN="$(realpath "$(dirname "${BASH_SOURCE[0]}")/../.bin")"
+export PATH="$GOBIN:$PATH"
 export GO111MODULE=on
 
 # Keep this in sync with go.mod
