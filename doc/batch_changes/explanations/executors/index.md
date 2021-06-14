@@ -14,7 +14,7 @@ By default, Batch Changes uses a command line interface in your local environmen
 If you are on a developer tool team rolling out batch changes to your company, the requirement to create batch changes locally might make adoption more difficult for some of your users.
 
 <!-- aharvey: Trying to make the point here that this is also (eventually) useful for Code Intel. -->
-**The Sourcegraph executor is an application that allows users to offload expensive tasks, such as computing Batch Changes and generating LSIF data for [precise code intelligence](../../code_intelligence/explanations/precise_code_intelligence.md).**
+**The Sourcegraph executor is an application that allows users to offload expensive tasks, such as computing Batch Changes and generating LSIF data for [precise code intelligence](../../../code_intelligence/explanations/precise_code_intelligence.md).**
 
 - If you use Sourcegraph enterprise on-premise, you can install Sourcegraph executors on infrastructure you own or manage.
 - Sourcegraph.com offers a batch change execution environment based on Sourcegraph executor. You don't have to do anything to use it.
