@@ -301,7 +301,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         }
 
         // no code hosts or no repos
-        if (isNoActivityReason(message)) {
+        if (isNoActivityReason(message) && !this.props.user.isSiteAdmin) {
             if (message === ExternalServiceNoActivityReasons.NO_REPOS) {
                 return (
                     <StatusMessagesNavItemEntry
