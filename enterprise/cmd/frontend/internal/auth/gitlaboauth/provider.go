@@ -75,8 +75,12 @@ func getStateConfig() gologin.CookieConfig {
 }
 
 func requestedScopes(extraScopes []string) []string {
-	scopes := []string{"read_user", "read_api"}
-	if !envvar.SourcegraphDotComMode() {
+	scopes := []string{"read_user"}
+	if envvar.SourcegraphDotComMode() {
+		// By default, request `read_api`. User's who are allowed to add private code
+		// will request full `api` access via extraScopes.
+		scopes = append(scopes, "read_api")
+	} else {
 		scopes = append(scopes, "api")
 	}
 	// Append extra scopes and ensure there are no duplicates
