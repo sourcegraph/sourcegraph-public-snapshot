@@ -101,7 +101,7 @@ func TestStatusMessages(t *testing.T) {
 			res: []StatusMessage{
 				{
 					Cloning: &CloningProgress{
-						Message: "1 repository not yet cloned",
+						Message: "1 repository cloning...",
 					},
 				},
 			},
@@ -118,7 +118,7 @@ func TestStatusMessages(t *testing.T) {
 			res: []StatusMessage{
 				{
 					Cloning: &CloningProgress{
-						Message: "1 repository not yet cloned",
+						Message: "1 repository cloning...",
 					},
 				},
 			},
@@ -133,7 +133,7 @@ func TestStatusMessages(t *testing.T) {
 			res: []StatusMessage{
 				{
 					Cloning: &CloningProgress{
-						Message: "1 repository not yet cloned",
+						Message: "1 repository cloning...",
 					},
 				},
 			},
@@ -157,7 +157,7 @@ func TestStatusMessages(t *testing.T) {
 			res: []StatusMessage{
 				{
 					Cloning: &CloningProgress{
-						Message: "2 repositories not yet cloned",
+						Message: "2 repositories cloning...",
 					},
 				},
 			},
