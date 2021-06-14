@@ -29,6 +29,10 @@ func TestStatusMessages(t *testing.T) {
 					message
 				}
 
+				... on IndexingError {
+					message
+				}
+
 				... on ExternalServiceSyncError {
 					message
 					externalService {
@@ -136,6 +140,10 @@ func TestStatusMessages(t *testing.T) {
 							{
 								"__typename": "SyncError",
 								"message": "Could not save to database"
+							},
+							{
+								"__typename": "IndexingError",
+								"message": "Could not complete indexing."
 							}
 						]
 					}

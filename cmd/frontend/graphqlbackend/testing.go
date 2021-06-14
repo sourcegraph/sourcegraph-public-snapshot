@@ -66,6 +66,8 @@ func RunTests(t *testing.T, tests []*Test) {
 
 // RunTest runs a single GraphQL test case.
 func RunTest(t *testing.T, test *Test) {
+	t.Helper()
+
 	if test.Context == nil {
 		test.Context = context.Background()
 	}
