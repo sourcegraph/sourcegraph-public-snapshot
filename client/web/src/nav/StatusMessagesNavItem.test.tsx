@@ -39,7 +39,11 @@ describe('StatusMessagesNavItem', () => {
         test('as site admin', () => {
             expect(
                 mount(
-                    <StatusMessagesNavItem fetchMessages={fetchMessages} user={user} history={createMemoryHistory()} />
+                    <StatusMessagesNavItem
+                        fetchMessages={fetchMessages}
+                        user={{ ...user, isSiteAdmin: true }}
+                        history={createMemoryHistory()}
+                    />
                 )
             ).toMatchSnapshot()
         })
@@ -67,7 +71,11 @@ describe('StatusMessagesNavItem', () => {
         test('as site admin', () => {
             expect(
                 mount(
-                    <StatusMessagesNavItem fetchMessages={fetchMessages} user={user} history={createMemoryHistory()} />
+                    <StatusMessagesNavItem
+                        fetchMessages={fetchMessages}
+                        user={{ ...user, isSiteAdmin: true }}
+                        history={createMemoryHistory()}
+                    />
                 )
             ).toMatchSnapshot()
         })
@@ -91,7 +99,11 @@ describe('StatusMessagesNavItem', () => {
         test('as site admin', () => {
             expect(
                 mount(
-                    <StatusMessagesNavItem fetchMessages={fetchMessages} user={user} history={createMemoryHistory()} />
+                    <StatusMessagesNavItem
+                        fetchMessages={fetchMessages}
+                        user={{ ...user, isSiteAdmin: true }}
+                        history={createMemoryHistory()}
+                    />
                 )
             ).toMatchSnapshot()
         })

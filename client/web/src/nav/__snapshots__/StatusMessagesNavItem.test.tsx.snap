@@ -341,7 +341,7 @@ exports[`StatusMessagesNavItem one CloningProgress message as site admin 1`] = `
   user={
     Object {
       "id": "VXNlcjox",
-      "isSiteAdmin": false,
+      "isSiteAdmin": true,
       "username": "user",
     }
   }
@@ -451,7 +451,7 @@ exports[`StatusMessagesNavItem one CloningProgress message as site admin 1`] = `
                   key="up-to-date"
                   linkOnClick={[Function]}
                   linkText="Manage repositories"
-                  linkTo="/users/user/settings/repositories"
+                  linkTo="/site-admin/repositories"
                   message="Repositories available for search"
                 >
                   <div
@@ -478,11 +478,11 @@ exports[`StatusMessagesNavItem one CloningProgress message as site admin 1`] = `
                       <AnchorLink
                         className="text-primary"
                         onClick={[Function]}
-                        to="/users/user/settings/repositories"
+                        to="/site-admin/repositories"
                       >
                         <a
                           className="text-primary"
-                          href="/users/user/settings/repositories"
+                          href="/site-admin/repositories"
                           onClick={[Function]}
                         >
                           Manage repositories
@@ -675,7 +675,7 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as site admi
   user={
     Object {
       "id": "VXNlcjox",
-      "isSiteAdmin": false,
+      "isSiteAdmin": true,
       "username": "user",
     }
   }
@@ -785,7 +785,7 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as site admi
                   key="up-to-date"
                   linkOnClick={[Function]}
                   linkText="Manage repositories"
-                  linkTo="/users/user/settings/repositories"
+                  linkTo="/site-admin/repositories"
                   message="Repositories available for search"
                 >
                   <div
@@ -812,11 +812,11 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as site admi
                       <AnchorLink
                         className="text-primary"
                         onClick={[Function]}
-                        to="/users/user/settings/repositories"
+                        to="/site-admin/repositories"
                       >
                         <a
                           className="text-primary"
-                          href="/users/user/settings/repositories"
+                          href="/site-admin/repositories"
                           onClick={[Function]}
                         >
                           Manage repositories
@@ -1009,7 +1009,7 @@ exports[`StatusMessagesNavItem one SyncError message as site admin 1`] = `
   user={
     Object {
       "id": "VXNlcjox",
-      "isSiteAdmin": false,
+      "isSiteAdmin": true,
       "username": "user",
     }
   }
@@ -1119,7 +1119,7 @@ exports[`StatusMessagesNavItem one SyncError message as site admin 1`] = `
                   key="up-to-date"
                   linkOnClick={[Function]}
                   linkText="Manage repositories"
-                  linkTo="/users/user/settings/repositories"
+                  linkTo="/site-admin/repositories"
                   message="Repositories available for search"
                 >
                   <div
@@ -1146,11 +1146,11 @@ exports[`StatusMessagesNavItem one SyncError message as site admin 1`] = `
                       <AnchorLink
                         className="text-primary"
                         onClick={[Function]}
-                        to="/users/user/settings/repositories"
+                        to="/site-admin/repositories"
                       >
                         <a
                           className="text-primary"
-                          href="/users/user/settings/repositories"
+                          href="/site-admin/repositories"
                           onClick={[Function]}
                         >
                           Manage repositories
