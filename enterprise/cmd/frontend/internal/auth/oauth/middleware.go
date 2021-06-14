@@ -102,7 +102,7 @@ func newOAuthFlowHandler(db dbutil.DB, serviceType string) http.Handler {
 var extraScopes = map[string][]string{
 	// We need `repo` scopes for reading private repos
 	extsvc.TypeGitHub: {"repo"},
-	// We need full api scope for cloning private repos
+	// We need full `api` scope for cloning private repos
 	extsvc.TypeGitLab: {"api"},
 }
 
