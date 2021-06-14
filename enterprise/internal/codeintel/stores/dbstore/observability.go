@@ -55,7 +55,6 @@ type operations struct {
 	referencesForUpload                    *observation.Operation
 	refreshCommitResolvability             *observation.Operation
 	repoName                               *observation.Operation
-	repoUsageStatistics                    *observation.Operation
 	requeue                                *observation.Operation
 	requeueIndex                           *observation.Operation
 	resetIndexableRepositories             *observation.Operation
@@ -146,7 +145,6 @@ func newOperations(observationContext *observation.Context) *operations {
 		referencesForUpload:                    op("ReferencesForUpload"),
 		refreshCommitResolvability:             op("RefreshCommitResolvability"),
 		repoName:                               op("RepoName"),
-		repoUsageStatistics:                    op("RepoUsageStatistics"),
 		requeue:                                op("Requeue"),
 		requeueIndex:                           op("RequeueIndex"),
 		resetIndexableRepositories:             op("ResetIndexableRepositories"),

@@ -19,7 +19,6 @@ import (
 )
 
 type IndexScheduler struct {
-	// TODO: groupnames
 	dbStore                     DBStore
 	settingStore                IndexingSettingStore
 	repoStore                   IndexingRepoStore
@@ -93,6 +92,12 @@ func (s *IndexScheduler) Handle(ctx context.Context) error {
 		// Good
 		UserID:          0,
 		IncludePatterns: []string{includePatterns},
+		PatternQuery: nil,
+		NoForks:      true,
+		NoArchived:   true,
+		NoCloned:     true,
+		NoPrivate:    true,
+		LimitOffset:  &database.LimitOffset{},
 
 		// Not sure
 		// Select:          []string{},
@@ -107,35 +112,17 @@ func (s *IndexScheduler) Handle(ctx context.Context) error {
 		// ExternalRepos:               []api.ExternalRepoSpec{},
 		// ExternalRepoIncludePrefixes: []api.ExternalRepoSpec{},
 		// ExternalRepoExcludePrefixes: []api.ExternalRepoSpec{},
-		PatternQuery: nil,
-		NoForks:      true,
-		NoArchived:   true,
-		NoCloned:     true,
-		NoPrivate:    true,
-		LimitOffset:  &database.LimitOffset{},
 	}
 
-	validRepositories, err := s.repoStore.ListRepoNames(ctx, options)
+	repoGroupRepositoryIDs, err := s.repoStore.ListRepoNames(ctx, options)
 	if err != nil {
 		fmt.Println(err)
 	} else {
-		fmt.Println(validRepositories)
+		fmt.Println(repoGroupRepositoryIDs)
 	}
 
-	// todo: replace w/ repogroup and not disabled
-	// validRepositories, err := s.dbStore.IndexableRepositories(ctx, store.IndexableRepositoryQueryOptions{
-	// 	Limit:                       s.batchSize,
-	// 	MinimumTimeSinceLastEnqueue: s.minimumTimeSinceLastEnqueue,
-	// 	MinimumSearchCount:          s.minimumSearchCount,
-	// 	MinimumPreciseCount:         s.minimumPreciseCount,
-	// 	MinimumSearchRatio:          s.minimumSearchRatio,
-	// })
-	// if err != nil {
-	// 	return errors.Wrap(err, "dbstore.IndexableRepositories")
-	// }
-
 	var indexableRepositoryIDs []int
-	for _, indexableRepository := range validRepositories {
+	for _, indexableRepository := range repoGroupRepositoryIDs {
 		indexableRepositoryIDs = append(indexableRepositoryIDs, int(indexableRepository.ID))
 	}
 

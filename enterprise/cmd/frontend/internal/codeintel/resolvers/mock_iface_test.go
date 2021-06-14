@@ -4,10 +4,6 @@ package resolvers
 
 import (
 	"context"
-	"regexp"
-	"sync"
-	"time"
-
 	enqueuer "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
 	gitserver "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	dbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
@@ -17,6 +13,9 @@ import (
 	protocol "github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	config "github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	semantic "github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"regexp"
+	"sync"
+	"time"
 )
 
 // MockDBStore is a mock implementation of the DBStore interface (from the
@@ -2561,9 +2560,6 @@ type MockEnqueuerDBStore struct {
 	// IsQueuedFunc is an instance of a mock function object controlling the
 	// behavior of the method IsQueued.
 	IsQueuedFunc *EnqueuerDBStoreIsQueuedFunc
-	// RepoUsageStatisticsFunc is an instance of a mock function object
-	// controlling the behavior of the method RepoUsageStatistics.
-	RepoUsageStatisticsFunc *EnqueuerDBStoreRepoUsageStatisticsFunc
 	// ResetIndexableRepositoriesFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// ResetIndexableRepositories.
@@ -2622,11 +2618,6 @@ func NewMockEnqueuerDBStore() *MockEnqueuerDBStore {
 				return false, nil
 			},
 		},
-		RepoUsageStatisticsFunc: &EnqueuerDBStoreRepoUsageStatisticsFunc{
-			defaultHook: func(context.Context) ([]dbstore.RepoUsageStatistics, error) {
-				return nil, nil
-			},
-		},
 		ResetIndexableRepositoriesFunc: &EnqueuerDBStoreResetIndexableRepositoriesFunc{
 			defaultHook: func(context.Context, time.Time) error {
 				return nil
@@ -2673,9 +2664,6 @@ func NewMockEnqueuerDBStoreFrom(i EnqueuerDBStore) *MockEnqueuerDBStore {
 		},
 		IsQueuedFunc: &EnqueuerDBStoreIsQueuedFunc{
 			defaultHook: i.IsQueued,
-		},
-		RepoUsageStatisticsFunc: &EnqueuerDBStoreRepoUsageStatisticsFunc{
-			defaultHook: i.RepoUsageStatistics,
 		},
 		ResetIndexableRepositoriesFunc: &EnqueuerDBStoreResetIndexableRepositoriesFunc{
 			defaultHook: i.ResetIndexableRepositories,
@@ -3562,115 +3550,6 @@ func (c EnqueuerDBStoreIsQueuedFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c EnqueuerDBStoreIsQueuedFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// EnqueuerDBStoreRepoUsageStatisticsFunc describes the behavior when the
-// RepoUsageStatistics method of the parent MockEnqueuerDBStore instance is
-// invoked.
-type EnqueuerDBStoreRepoUsageStatisticsFunc struct {
-	defaultHook func(context.Context) ([]dbstore.RepoUsageStatistics, error)
-	hooks       []func(context.Context) ([]dbstore.RepoUsageStatistics, error)
-	history     []EnqueuerDBStoreRepoUsageStatisticsFuncCall
-	mutex       sync.Mutex
-}
-
-// RepoUsageStatistics delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockEnqueuerDBStore) RepoUsageStatistics(v0 context.Context) ([]dbstore.RepoUsageStatistics, error) {
-	r0, r1 := m.RepoUsageStatisticsFunc.nextHook()(v0)
-	m.RepoUsageStatisticsFunc.appendCall(EnqueuerDBStoreRepoUsageStatisticsFuncCall{v0, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the RepoUsageStatistics
-// method of the parent MockEnqueuerDBStore instance is invoked and the hook
-// queue is empty.
-func (f *EnqueuerDBStoreRepoUsageStatisticsFunc) SetDefaultHook(hook func(context.Context) ([]dbstore.RepoUsageStatistics, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// RepoUsageStatistics method of the parent MockEnqueuerDBStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *EnqueuerDBStoreRepoUsageStatisticsFunc) PushHook(hook func(context.Context) ([]dbstore.RepoUsageStatistics, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
-func (f *EnqueuerDBStoreRepoUsageStatisticsFunc) SetDefaultReturn(r0 []dbstore.RepoUsageStatistics, r1 error) {
-	f.SetDefaultHook(func(context.Context) ([]dbstore.RepoUsageStatistics, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
-func (f *EnqueuerDBStoreRepoUsageStatisticsFunc) PushReturn(r0 []dbstore.RepoUsageStatistics, r1 error) {
-	f.PushHook(func(context.Context) ([]dbstore.RepoUsageStatistics, error) {
-		return r0, r1
-	})
-}
-
-func (f *EnqueuerDBStoreRepoUsageStatisticsFunc) nextHook() func(context.Context) ([]dbstore.RepoUsageStatistics, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *EnqueuerDBStoreRepoUsageStatisticsFunc) appendCall(r0 EnqueuerDBStoreRepoUsageStatisticsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of EnqueuerDBStoreRepoUsageStatisticsFuncCall
-// objects describing the invocations of this function.
-func (f *EnqueuerDBStoreRepoUsageStatisticsFunc) History() []EnqueuerDBStoreRepoUsageStatisticsFuncCall {
-	f.mutex.Lock()
-	history := make([]EnqueuerDBStoreRepoUsageStatisticsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// EnqueuerDBStoreRepoUsageStatisticsFuncCall is an object that describes an
-// invocation of method RepoUsageStatistics on an instance of
-// MockEnqueuerDBStore.
-type EnqueuerDBStoreRepoUsageStatisticsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []dbstore.RepoUsageStatistics
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c EnqueuerDBStoreRepoUsageStatisticsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c EnqueuerDBStoreRepoUsageStatisticsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

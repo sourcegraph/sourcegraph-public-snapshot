@@ -18,7 +18,6 @@ type DBStore interface {
 	With(other basestore.ShareableStore) DBStore
 	IndexableRepositories(ctx context.Context, opts dbstore.IndexableRepositoryQueryOptions) ([]dbstore.IndexableRepository, error)
 	GetRepositoriesWithIndexConfiguration(ctx context.Context) ([]int, error)
-	RepoUsageStatistics(ctx context.Context) ([]dbstore.RepoUsageStatistics, error)
 	ResetIndexableRepositories(ctx context.Context, lastUpdatedBefore time.Time) error
 	UpdateIndexableRepository(ctx context.Context, indexableRepository dbstore.UpdateableIndexableRepository, now time.Time) error
 	GetUploads(ctx context.Context, opts dbstore.GetUploadsOptions) ([]dbstore.Upload, int, error)

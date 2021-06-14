@@ -24,7 +24,6 @@ type DBStore interface {
 	ResetIndexableRepositories(ctx context.Context, lastUpdatedBefore time.Time) error
 	IsQueued(ctx context.Context, repositoryID int, commit string) (bool, error)
 	InsertIndex(ctx context.Context, index dbstore.Index) (int, error)
-	RepoUsageStatistics(ctx context.Context) ([]dbstore.RepoUsageStatistics, error)
 	GetRepositoriesWithIndexConfiguration(ctx context.Context) ([]int, error)
 	GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (dbstore.IndexConfiguration, bool, error)
 }
