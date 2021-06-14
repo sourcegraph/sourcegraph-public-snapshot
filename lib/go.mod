@@ -5,7 +5,8 @@ go 1.16
 require (
 	github.com/alecthomas/kingpin v2.2.6+incompatible
 	github.com/alecthomas/units v0.0.0-20210208195552-ff826a37aa15 // indirect
-	github.com/derision-test/go-mockgen v0.0.0-20210315170118-149556bc84f1 // indirect
+	github.com/cockroachdb/errors v1.8.4
+	github.com/derision-test/go-mockgen v0.0.0-20210315170118-149556bc84f1
 	github.com/efritz/pentimento v0.0.0-20190429011147-ade47d831101
 	github.com/fatih/color v1.11.0
 	github.com/go-stack/stack v1.8.0 // indirect
@@ -21,7 +22,6 @@ require (
 	github.com/mattn/go-isatty v0.0.12
 	github.com/mattn/go-runewidth v0.0.12
 	github.com/nsf/termbox-go v0.0.0-20200418040025-38ba6e5628f1
-	github.com/pkg/errors v0.9.1
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
 	golang.org/x/sys v0.0.0-20210423082822-04245dca01da
 	gopkg.in/yaml.v2 v2.4.0

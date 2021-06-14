@@ -1,14 +1,22 @@
 import { renderError } from '../../../../../../components/alerts'
+import { Validator } from '../../../../../components/form/hooks/useField'
 import { AsyncValidator } from '../../../../../components/form/hooks/utils/use-async-validation'
 import { createRequiredValidator } from '../../../../../components/form/validators'
 import { fetchRepositories } from '../../../../../core/backend/requests/fetch-repositories'
 
-export const repositoriesFieldValidator = createRequiredValidator('Repositories is a required field for code insight.')
+export const repositoriesFieldValidator: Validator<string> = value => {
+    if (value !== undefined && value.trim() === '') {
+        return 'Repositories is a required field for code insight.'
+    }
+
+    return
+}
+
 export const thresholdFieldValidator = createRequiredValidator('Threshold is a required field for code insight.')
 
 // [TODO] [VK] Move this validator behind insight api context for better testing approach
 export const repositoryFieldAsyncValidator: AsyncValidator<string> = async value => {
-    if (!value) {
+    if (value === undefined || value.trim() === '') {
         return
     }
 

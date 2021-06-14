@@ -15,8 +15,8 @@ import (
 
 	"gopkg.in/src-d/go-git.v4/plumbing/format/config"
 
+	"github.com/cockroachdb/errors"
 	"github.com/golang/groupcache/lru"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"

@@ -3,7 +3,7 @@ package window
 import (
 	"time"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 	"go.uber.org/ratelimit"
 )
 

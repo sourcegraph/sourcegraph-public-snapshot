@@ -223,6 +223,11 @@ type ReenqueueChangesetsArgs struct {
 	BulkOperationBaseArgs
 }
 
+type MergeChangesetsArgs struct {
+	BulkOperationBaseArgs
+	Squash bool
+}
+
 type BatchChangesResolver interface {
 	//
 	// MUTATIONS
@@ -252,6 +257,7 @@ type BatchChangesResolver interface {
 	DetachChangesets(ctx context.Context, args *DetachChangesetsArgs) (BulkOperationResolver, error)
 	CreateChangesetComments(ctx context.Context, args *CreateChangesetCommentsArgs) (BulkOperationResolver, error)
 	ReenqueueChangesets(ctx context.Context, args *ReenqueueChangesetsArgs) (BulkOperationResolver, error)
+	MergeChangesets(ctx context.Context, args *MergeChangesetsArgs) (BulkOperationResolver, error)
 
 	// Queries
 

@@ -19,8 +19,6 @@ CHECKS=(
   ./go-dbconn-import.sh
   ./go-generate.sh
   ./go-lint.sh
-  # Disabled until we can figure out why it's flaky
-  #./ioutil.sh
   ./no-alpine-guard.sh
   ./no-localhost-guard.sh
   ./bash-syntax.sh

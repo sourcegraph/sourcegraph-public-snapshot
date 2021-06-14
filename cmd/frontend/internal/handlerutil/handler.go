@@ -10,7 +10,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 
 	"github.com/neelance/parallel"
 

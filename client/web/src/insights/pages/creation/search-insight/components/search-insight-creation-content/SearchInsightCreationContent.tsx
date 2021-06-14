@@ -10,10 +10,12 @@ import { useTitleValidator } from '../../../../../components/form/hooks/useTitle
 import { Organization } from '../../../../../components/visibility-picker/VisibilityPicker'
 import { InsightTypePrefix } from '../../../../../core/types'
 import { CreateInsightFormFields } from '../../types'
+import { getSanitizedRepositories } from '../../utils/insight-sanitizer'
 import { SearchInsightLivePreview } from '../live-preview-chart/SearchInsightLivePreview'
 import { SearchInsightCreationForm } from '../search-insight-creation-form/SearchInsightCreationForm'
 
 import { useEditableSeries, createDefaultEditSeries } from './hooks/use-editable-series'
+import { INITIAL_INSIGHT_VALUES } from './initial-insight-values'
 import styles from './SearchInsightCreationContent.module.scss'
 import {
     repositoriesExistValidator,
@@ -21,18 +23,6 @@ import {
     requiredStepValueField,
     seriesRequired,
 } from './validators'
-
-const INITIAL_VALUES: CreateInsightFormFields = {
-    visibility: 'personal',
-    // If user opens creation form to create insight
-    // we want to show the series form as soon as possible without
-    // force user to click 'add another series' button
-    series: [createDefaultEditSeries({ edit: true })],
-    step: 'months',
-    stepValue: '2',
-    title: '',
-    repositories: '',
-}
 
 export interface SearchInsightCreationContentProps {
     /** This component might be used in edit or creation insight case. */
@@ -60,7 +50,7 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
         mode = 'creation',
         organizations = [],
         settings,
-        initialValue = INITIAL_VALUES,
+        initialValue = INITIAL_INSIGHT_VALUES,
         className,
         dataTestId,
         onSubmit,
@@ -108,11 +98,13 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
     }
 
     const validEditSeries = editSeries.filter(series => series.valid)
+    const repositoriesList = getSanitizedRepositories(repositories.input.value)
 
     // If some fields that needed to run live preview  are invalid
     // we should disabled live chart preview
     const allFieldsForPreviewAreValid =
         (repositories.meta.validState === 'VALID' || repositories.meta.validState === 'CHECKING') &&
+        repositoriesList.length > 0 &&
         (series.meta.validState === 'VALID' || validEditSeries.length) &&
         stepValue.meta.validState === 'VALID'
 

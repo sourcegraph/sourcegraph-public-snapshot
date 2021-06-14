@@ -1,7 +1,5 @@
 import classNames from 'classnames'
-import WarningIcon from 'mdi-react/WarningIcon'
 import React from 'react'
-import { Link } from 'react-router-dom'
 
 import { SourcegraphIcon } from '../../../auth/icons'
 import { DismissibleAlert } from '../../../components/DismissibleAlert'
@@ -44,15 +42,6 @@ const BatchChangesChangelogAlert: React.FunctionComponent = () => (
         <div className={classNames(styles.batchChangesListIntroCard, 'card h-100 p-2')}>
             <div className="card-body">
                 <h4>New Batch Changes features in version 3.28</h4>
-                <ul className="mb-0 pl-3">
-                    <li>
-                        <WarningIcon className="icon-inline text-warning" /> <strong>Deprecation:</strong> Starting with
-                        Sourcegraph 3.29, we will stop using code host connection tokens for creating changesets. If a
-                        site-admin on your instance relied on the global configuration, please ask them to go add global
-                        credentials for Batch Changes in the <Link to="/site-admin/batch-changes">admin UI</Link> for
-                        uninterrupted Batch Changes usage.
-                    </li>
-                </ul>
                 <ul className="mb-0 pl-3">
                     <li>
                         Commenting on changesets{' '}

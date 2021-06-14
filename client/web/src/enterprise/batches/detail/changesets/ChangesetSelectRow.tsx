@@ -12,6 +12,7 @@ import { queryAllChangesetIDs } from '../backend'
 import styles from './ChangesetSelectRow.module.scss'
 import { CreateCommentModal } from './CreateCommentModal'
 import { DetachChangesetsModal } from './DetachChangesetsModal'
+import { MergeChangesetsModal } from './MergeChangesetsModal'
 import { ReenqueueChangesetsModal } from './ReenqueueChangesetsModal'
 
 /**
@@ -38,6 +39,7 @@ interface ChangesetListAction {
         onDone: () => void,
         onCancel: () => void
     ) => void | JSX.Element
+    experimental?: boolean
 }
 
 const AVAILABLE_ACTIONS: ChangesetListAction[] = [
@@ -84,6 +86,23 @@ const AVAILABLE_ACTIONS: ChangesetListAction[] = [
         isAvailable: () => true,
         onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => (
             <CreateCommentModal
+                batchChangeID={batchChangeID}
+                changesetIDs={changesetIDs}
+                afterCreate={onDone}
+                onCancel={onCancel}
+            />
+        ),
+    },
+    {
+        type: 'merge',
+        experimental: true,
+        buttonLabel: 'Merge changesets',
+        dropdownTitle: 'Merge changesets',
+        dropdownDescription:
+            'Attempt to merge all selected changesets. Some changesets may be unmergeable if there are rules preventing merge, such as CI requirements.',
+        isAvailable: ({ state }) => state === ChangesetState.OPEN,
+        onTrigger: (batchChangeID, changesetIDs, onDone, onCancel) => (
+            <MergeChangesetsModal
                 batchChangeID={batchChangeID}
                 changesetIDs={changesetIDs}
                 afterCreate={onDone}
@@ -172,7 +191,10 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
         }
     }, [allSelected, batchChangeID, onSubmit, queryArguments, selected, selectedAction])
 
-    const buttonLabel = selectedAction === undefined ? 'Select action' : selectedAction.buttonLabel
+    let buttonLabel = selectedAction === undefined ? 'Select action' : selectedAction.buttonLabel
+    if (selectedAction?.experimental) {
+        buttonLabel += ' (Experimental)'
+    }
 
     // If we have ALL all selected, we take the totalCount in the current connection, otherwise the count of selected changeset IDs.
     const selectedAmount = allSelected ? totalCount : selected.size
@@ -252,7 +274,15 @@ const ActionDropdownItem: React.FunctionComponent<ActionDropdownItemProps> = ({ 
     return (
         <div className="dropdown-item">
             <button type="button" className="btn text-left" onClick={onClick}>
-                <h4 className="mb-1">{action.dropdownTitle}</h4>
+                <h4 className="mb-1">
+                    {action.dropdownTitle}
+                    {action.experimental && (
+                        <>
+                            {' '}
+                            <small className="badge badge-info">Experimental</small>
+                        </>
+                    )}
+                </h4>
                 <p className="text-wrap text-muted mb-0">
                     <small>{action.dropdownDescription}</small>
                 </p>

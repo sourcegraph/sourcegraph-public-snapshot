@@ -8,6 +8,7 @@ import { FormInput } from '../../../../../components/form/form-input/FormInput'
 import { FormRadioInput } from '../../../../../components/form/form-radio-input/FormRadioInput'
 import { useFieldAPI } from '../../../../../components/form/hooks/useField'
 import { FORM_ERROR, SubmissionErrors } from '../../../../../components/form/hooks/useForm'
+import { RepositoriesField } from '../../../../../components/form/repositories-field/RepositoriesField'
 import {
     getVisibilityValue,
     Organization,
@@ -107,6 +108,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                 subtitle="Create a list of repositories to run your search over"
             >
                 <FormInput
+                    as={RepositoriesField}
                     autoFocus={true}
                     required={true}
                     description="Separate repositories with commas"

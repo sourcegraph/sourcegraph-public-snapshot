@@ -11,10 +11,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgconn"
 	"github.com/opentracing/opentracing-go/ext"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )

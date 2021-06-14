@@ -2,6 +2,7 @@ package gitlab
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"testing"
 
@@ -412,6 +413,73 @@ func TestCreateMergeRequestNote(t *testing.T) {
 		}
 
 		err := client.CreateMergeRequestNote(ctx, project, empty, "test-comment")
+		if err != nil {
+			t.Errorf("unexpected non-nil error: %+v", err)
+		}
+	})
+}
+
+func TestMergeMergeRequest(t *testing.T) {
+	ctx := context.Background()
+	empty := &MergeRequest{}
+	project := &Project{}
+
+	t.Run("error status code", func(t *testing.T) {
+		client := newTestClient(t)
+		client.httpClient = &mockHTTPEmptyResponse{http.StatusNotFound}
+
+		_, err := client.MergeMergeRequest(ctx, project, empty, false)
+		if err == nil {
+			t.Error("unexpected nil error")
+		}
+	})
+
+	t.Run("malformed response", func(t *testing.T) {
+		client := newTestClient(t)
+		client.httpClient = &mockHTTPResponseBody{
+			responseBody: `this is not valid JSON`,
+		}
+
+		_, err := client.MergeMergeRequest(ctx, project, empty, false)
+		if err == nil {
+			t.Error("unexpected nil error")
+		}
+	})
+
+	t.Run("invalid response", func(t *testing.T) {
+		client := newTestClient(t)
+		client.httpClient = &mockHTTPResponseBody{
+			responseBody: `{"id":"the id cannot be a string"}`,
+		}
+
+		_, err := client.MergeMergeRequest(ctx, project, empty, false)
+		if err == nil {
+			t.Error("unexpected nil error")
+		}
+	})
+
+	t.Run("not mergeable", func(t *testing.T) {
+		client := newTestClient(t)
+		client.httpClient = &mockHTTPEmptyResponse{
+			statusCode: 405,
+		}
+
+		_, err := client.MergeMergeRequest(ctx, project, empty, false)
+		if err == nil {
+			t.Error("unexpected nil error")
+		}
+		if !errors.Is(err, ErrNotMergeable) {
+			t.Errorf("invalid error, want=%v have=%v", ErrNotMergeable, err)
+		}
+	})
+
+	t.Run("success", func(t *testing.T) {
+		client := newTestClient(t)
+		client.httpClient = &mockHTTPResponseBody{
+			responseBody: `{"body":"test-merge"}`,
+		}
+
+		_, err := client.MergeMergeRequest(ctx, project, empty, false)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %+v", err)
 		}
