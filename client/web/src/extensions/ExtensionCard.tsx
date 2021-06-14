@@ -45,6 +45,9 @@ interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettin
     settingsURL: string | null | undefined
     /** The currently authenticated user. */
     authenticatedUser: AuthenticatedUser | null
+
+    /** Whether this is a featured extension. */
+    featured?: boolean
 }
 
 /** ms after which to remove visual feedback */
@@ -63,6 +66,7 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
     viewerSubject,
     siteSubject,
     authenticatedUser,
+    featured,
 }) {
     const manifest: ExtensionManifest | undefined =
         extension.manifest && !isErrorLike(extension.manifest) ? extension.manifest : undefined
@@ -174,6 +178,8 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
         return headerColorFromExtensionID(extension.id)
     }, [manifest?.headerColor, extension.id])
 
+    const iconClassName = classNames('extension-card__icon', featured && 'extension-card__icon--featured')
+
     return (
         <div
             className={classNames('extension-card card position-relative flex-1', {
@@ -185,15 +191,16 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                 <div
                     className={classNames(
                         'extension-card__background-section d-flex align-items-center',
-                        headerColorStyles[headerColorClassName]
+                        headerColorStyles[headerColorClassName],
+                        featured && 'extension-card__background-section--featured'
                     )}
                 >
                     {icon ? (
-                        <img className="extension-card__icon" src={icon} alt="" />
+                        <img className={iconClassName} src={icon} alt="" />
                     ) : isSourcegraphExtension ? (
-                        <DefaultSourcegraphExtensionIcon className="extension-card__icon" />
+                        <DefaultSourcegraphExtensionIcon className={iconClassName} />
                     ) : (
-                        <DefaultExtensionIcon className="extension-card__icon" />
+                        <DefaultExtensionIcon className={iconClassName} />
                     )}
                     {extension.registryExtension?.isWorkInProgress && (
                         <ExtensionStatusBadge
@@ -215,7 +222,12 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                             )}
                         </span>
                     </div>
-                    <div className="mt-3 extension-card__description">
+                    <div
+                        className={classNames(
+                            'mt-3 extension-card__description',
+                            featured && 'extension-card__description--featured'
+                        )}
+                    >
                         {extension.manifest ? (
                             isErrorLike(extension.manifest) ? (
                                 <span className="text-danger small" title={extension.manifest.message}>

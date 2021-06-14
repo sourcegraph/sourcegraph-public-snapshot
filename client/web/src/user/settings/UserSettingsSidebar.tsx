@@ -77,7 +77,7 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
                             <SidebarNavItem
                                 key={org.id}
                                 to={`/organizations/${org.name}/settings`}
-                                className="text-truncate text-nowrap"
+                                className="text-truncate text-nowrap align-items-center"
                             >
                                 <OrgAvatar org={org.name} className="d-inline-flex mr-1" /> {org.name}
                             </SidebarNavItem>

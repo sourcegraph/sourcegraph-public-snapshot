@@ -1,21 +1,21 @@
 package main
 
 import (
+	"os"
 	"os/exec"
 	"strings"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 )
 
 func runGitCmd(args ...string) (string, error) {
 	cmd := exec.Command("git", args...)
-	cmd.Env = []string{
+	cmd.Env = append(os.Environ(),
 		// Don't use the system wide git config.
 		"GIT_CONFIG_NOSYSTEM=1",
 		// And also not any other, because they can mess up output, change defaults, .. which can do unexpected things.
-		"GIT_CONFIG=/dev/null",
-	}
+		"GIT_CONFIG=/dev/null")
 
 	return runCommandInRoot(cmd)
 }

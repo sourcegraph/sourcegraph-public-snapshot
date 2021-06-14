@@ -1,25 +1,14 @@
 .web-hover-overlay {
-    &__badge {
-        color: var(--text-muted);
-    }
+    --hover-overlay-content-color: var(--text-muted);
+    --hover-overlay-separator-color: var(--border-color-2);
 
-    :global(.theme-redesign) & {
-        --hover-overlay-content-color: var(--text-muted);
-        --hover-overlay-separator-color: var(--border-color-2);
+    border-color: var(--border-color);
+    box-shadow: var(--dropdown-shadow);
+    border-radius: var(--popover-border-radius);
 
-        border-color: var(--border-color);
-        box-shadow: var(--dropdown-shadow);
-        border-radius: var(--popover-border-radius);
-
-        &__close-button {
-            width: 1rem;
-            height: 1rem;
-            color: var(--icon-color);
-        }
-
-        &__action {
-            // Needed to overwrite pre-redesign `border-radius: 0`;
-            border-radius: var(--border-radius);
-        }
+    &__close-button {
+        width: 1rem;
+        height: 1rem;
+        color: var(--icon-color);
     }
 }

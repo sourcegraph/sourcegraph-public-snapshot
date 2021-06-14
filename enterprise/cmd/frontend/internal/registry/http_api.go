@@ -69,6 +69,22 @@ var (
 		}
 		return toRegistryAPIExtension(ctx, x)
 	}
+
+	registryGetFeaturedExtensions = func(ctx context.Context) ([]*registry.Extension, error) {
+		dbExtensions, err := dbExtensions{}.GetFeaturedExtensions(ctx)
+		if err != nil {
+			return nil, err
+		}
+		registryExtensions := []*registry.Extension{}
+		for _, x := range dbExtensions {
+			registryExtension, err := toRegistryAPIExtension(ctx, x)
+			if err != nil {
+				continue
+			}
+			registryExtensions = append(registryExtensions, registryExtension)
+		}
+		return registryExtensions, nil
+	}
 )
 
 func toRegistryAPIExtension(ctx context.Context, v *dbExtension) (*registry.Extension, error) {
@@ -184,6 +200,14 @@ func handleRegistry(w http.ResponseWriter, r *http.Request) (err error) {
 		}
 		result = xs
 
+	case urlPath == extensionsPath+"/featured":
+		operation = "featured"
+		x, err := registryGetFeaturedExtensions(r.Context())
+		if err != nil {
+			return err
+		}
+		result = x
+
 	case strings.HasPrefix(urlPath, extensionsPath+"/"):
 		var (
 			spec = strings.TrimPrefix(urlPath, extensionsPath+"/")
@@ -269,5 +293,8 @@ func init() {
 			return nil, err
 		}
 		return frontendregistry.FindRegistryExtension(xs, "extensionID", extensionID), nil
+	}
+	registryGetFeaturedExtensions = func(ctx context.Context) ([]*registry.Extension, error) {
+		return []*registry.Extension{}, nil
 	}
 }

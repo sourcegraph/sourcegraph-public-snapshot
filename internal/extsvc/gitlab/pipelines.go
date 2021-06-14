@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 )
 
 // GetMergeRequestPipelines retrieves the pipelines that have been executed as

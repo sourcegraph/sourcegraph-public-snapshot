@@ -23,6 +23,8 @@ import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
 import { WebActionsNavItems as ActionsNavItems } from '../../components/shared'
 import { SearchPatternType } from '../../graphql-operations'
 
+import { CreateCodeInsightButton } from './components/CreateCodeInsightButton'
+
 export interface SearchResultsInfoBarProps
     extends ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
@@ -33,6 +35,11 @@ export interface SearchResultsInfoBarProps
     history: H.History
     /** The currently authenticated user or null */
     authenticatedUser: Pick<AuthenticatedUser, 'id'> | null
+
+    /**
+     * Whether the code insights feature flag is enabled.
+     */
+    enableCodeInsights?: boolean
 
     /** The search query and if any results were found */
     query?: string
@@ -178,6 +185,12 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                     {(createCodeMonitorButton || saveSearchButton) && (
                         <li className="search-results-info-bar__divider" aria-hidden="true" />
                     )}
+                    <CreateCodeInsightButton
+                        query={props.query}
+                        authenticatedUser={props.authenticatedUser}
+                        patternType={props.patternType}
+                        enableCodeInsights={props.enableCodeInsights}
+                    />
                     {createCodeMonitorButton}
                     {saveSearchButton}
 

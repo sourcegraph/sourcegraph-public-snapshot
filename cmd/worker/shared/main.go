@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -54,6 +55,10 @@ func Start(additionalJobs map[string]Job) {
 
 	// Validate environment variables
 	mustValidateConfigs(jobs)
+
+	// Emit metrics to help site admins detect instances that accidentally
+	// omit a job from from the instance's deployment configuration.
+	emitJobCountMetrics(jobs)
 
 	// Create the background routines that the worker will monitor for its
 	// lifetime. There may be a non-trivial startup time on this step as we
@@ -127,6 +132,27 @@ func mustValidateConfigs(jobs map[string]Job) {
 		sort.Strings(descriptions)
 
 		log.Fatalf("Failed to load configuration:\n%s", strings.Join(descriptions, "\n"))
+	}
+}
+
+// emitJobCountMetrics registers and emits an initial value for gauges referencing each of
+// the jobs that will be run by this instance of the worker. Since these metrics are summed
+// over all instances (and we don't change the jobs that are registered to a running worker),
+// we only need to emit an initial count once.
+func emitJobCountMetrics(jobs map[string]Job) {
+	gauge := prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "src_worker_jobs",
+		Help: "Total number of jobs running in the worker.",
+	}, []string{"job_name"})
+
+	prometheus.DefaultRegisterer.MustRegister(gauge)
+
+	for name := range jobs {
+		if !shouldRunJob(name) {
+			continue
+		}
+
+		gauge.WithLabelValues(name).Set(1)
 	}
 }
 

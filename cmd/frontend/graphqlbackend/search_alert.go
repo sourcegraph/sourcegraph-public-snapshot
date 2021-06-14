@@ -773,7 +773,7 @@ func multierrorToAlert(me *multierror.Error) (resAlert *searchAlert, resErr erro
 	for _, err := range me.Errors {
 		alert, err := errorToAlert(err)
 		resAlert = maxAlertByPriority(resAlert, alert)
-		multierror.Append(resErr, err)
+		resErr = multierror.Append(resErr, err)
 	}
 
 	return resAlert, resErr

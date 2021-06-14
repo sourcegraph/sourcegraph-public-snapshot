@@ -8,7 +8,7 @@ import (
 	"sort"
 
 	"github.com/Masterminds/semver"
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/linkheader"
 )

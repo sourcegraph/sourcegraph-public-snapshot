@@ -7,10 +7,10 @@ import (
 	"time"
 
 	"cloud.google.com/go/storage"
+	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
-	"github.com/pkg/errors"
 	"google.golang.org/api/option"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"

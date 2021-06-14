@@ -5,6 +5,7 @@ import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetrySer
 
 import { browserExtensionMessageReceived, handleQueryEvents, pageViewQueryParameters } from './analyticsUtils'
 import { serverAdmin } from './services/serverAdminWrapper'
+import { redactSensitiveInfoFromURL } from './util'
 
 export const ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
 export const FIRST_SOURCE_URL_KEY = 'sourcegraphSourceUrl'
@@ -98,9 +99,11 @@ export class EventLogger implements TelemetryService {
     public getFirstSourceURL(): string {
         const firstSourceURL = this.firstSourceURL || cookies.get(FIRST_SOURCE_URL_KEY) || location.href
 
+        const redactedURL = redactSensitiveInfoFromURL(firstSourceURL)
+
         // Use cookies instead of localStorage so that the ID can be shared with subdomains (about.sourcegraph.com).
         // Always set to renew expiry and migrate from localStorage
-        cookies.set(FIRST_SOURCE_URL_KEY, firstSourceURL, {
+        cookies.set(FIRST_SOURCE_URL_KEY, redactedURL, {
             // 365 days expiry, but renewed on activity.
             expires: 365,
             // Enforce HTTPS

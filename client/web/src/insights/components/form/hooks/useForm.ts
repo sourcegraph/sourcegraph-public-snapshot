@@ -269,7 +269,7 @@ export function useForm<FormValues extends object>(props: UseFormProps<FormValue
                 // Hack to focus first invalid input on submit, since we are not using
                 // native behavior in order to avoid poor UX of native validation focus on error
                 // we have to find and focus invalid input by ourselves
-                formElementReference.current?.querySelector<HTMLInputElement>('input:invalid')?.focus()
+                formElementReference.current?.querySelector<HTMLInputElement>(':invalid:not(fieldset)')?.focus()
             }
         },
     }

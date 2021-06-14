@@ -27,6 +27,7 @@ import {
 import { AuthenticatedUser } from '../../../auth'
 import { CodeMonitoringProps } from '../../../code-monitoring'
 import { PageTitle } from '../../../components/PageTitle'
+import { isCodeInsightsEnabled } from '../../../insights'
 import { SavedSearchModal } from '../../../savedSearches/SavedSearchModal'
 import { QueryState, submitSearch } from '../../helpers'
 import { SearchAlert } from '../SearchAlert'
@@ -224,6 +225,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
             <SearchResultsInfoBar
                 {...props}
                 query={query}
+                enableCodeInsights={isCodeInsightsEnabled(props.settingsCascade)}
                 resultsFound={results ? results.results.length > 0 : false}
                 className={classNames('flex-grow-1', styles.streamingSearchResultsInfobar)}
                 allExpanded={allExpanded}

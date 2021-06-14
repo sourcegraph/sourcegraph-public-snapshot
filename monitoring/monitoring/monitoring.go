@@ -566,8 +566,8 @@ func (o Observable) validate() error {
 	if v := string([]rune(o.Description)[0]); v != strings.ToLower(v) {
 		return fmt.Errorf("Description must be lowercase; found \"%s\"", o.Description)
 	}
-	if o.Owner == "" {
-		return errors.New("Owner must be defined")
+	if o.Owner == "" && !o.NoAlert {
+		return errors.New("Owner must be defined for observables with alerts")
 	}
 	if o.Panel.panelType != "graph" && o.Panel.panelType != "heatmap" {
 		return errors.New(`Panel.panelType must be "", "graph", or "heatmap"`)

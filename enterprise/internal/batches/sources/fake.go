@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -51,6 +51,7 @@ type FakeChangesetSource struct {
 	CreateCommentCalled         bool
 	AuthenticatedUsernameCalled bool
 	ValidateAuthenticatorCalled bool
+	MergeChangesetCalled        bool
 
 	// The Changeset.HeadRef to be expected in CreateChangeset/UpdateChangeset calls.
 	WantHeadRef string
@@ -277,4 +278,9 @@ func (s *FakeChangesetSource) ValidateAuthenticator(context.Context) error {
 func (s *FakeChangesetSource) AuthenticatedUsername(ctx context.Context) (string, error) {
 	s.AuthenticatedUsernameCalled = true
 	return s.Username, nil
+}
+
+func (s *FakeChangesetSource) MergeChangeset(ctx context.Context, c *Changeset, squash bool) error {
+	s.MergeChangesetCalled = true
+	return s.Err
 }

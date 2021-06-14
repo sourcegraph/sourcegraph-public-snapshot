@@ -47,7 +47,6 @@ func TestEventLogs_ValidInfo(t *testing.T) {
 			event: &Event{Name: "test_event", URL: "http://sourcegraph.com", UserID: 1},
 			err:   `INSERT: ERROR: new row for relation "event_logs" violates check constraint "event_logs_check_source_not_empty" (SQLSTATE 23514)`,
 		},
-
 		{
 			name:  "ValidInsert",
 			event: &Event{Name: "test_event", UserID: 1, URL: "http://sourcegraph.com", Source: "WEB"},

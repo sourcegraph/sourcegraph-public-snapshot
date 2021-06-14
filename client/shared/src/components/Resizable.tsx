@@ -1,9 +1,13 @@
+import classNames from 'classnames'
 import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators'
 
+import styles from './Resizable.module.scss'
+
 interface Props<C extends React.ReactElement = React.ReactElement> {
     className?: string
+    handleClassName?: string
 
     /**
      * Where the resize handle is (which also determines the axis along which the element can be
@@ -25,6 +29,18 @@ interface Props<C extends React.ReactElement = React.ReactElement> {
      * The element that is resizable on its right side.
      */
     element: C
+}
+
+const containerClassNameMap: Record<Props['handlePosition'], string> = {
+    top: styles.resizableTop,
+    left: styles.resizableLeft,
+    right: '',
+}
+
+const handleClassNameMap: Record<Props['handlePosition'], string> = {
+    top: styles.handleTop,
+    left: styles.handleLeft,
+    right: styles.handleRight,
 }
 
 const isHorizontal = (handlePosition: Props['handlePosition']): boolean =>
@@ -81,19 +97,25 @@ export class Resizable<C extends React.ReactElement> extends React.PureComponent
     }
 
     public render(): React.ReactNode {
+        const { size, resizing } = this.state
+        const { element, handlePosition, handleClassName, className } = this.props
+
         return (
             <div
                 // eslint-disable-next-line react/forbid-dom-props
-                style={{ [isHorizontal(this.props.handlePosition) ? 'width' : 'height']: `${this.state.size}px` }}
-                className={`resizable resizable--${this.props.handlePosition} ${this.props.className || ''}`}
+                style={{ [isHorizontal(handlePosition) ? 'width' : 'height']: `${size}px` }}
+                className={classNames(styles.resizable, containerClassNameMap[handlePosition], className)}
                 ref={this.setContainerRef}
             >
-                {this.props.element}
+                {element}
                 <div
                     role="presentation"
-                    className={`resizable__handle resizable__handle--${this.props.handlePosition} ${
-                        this.state.resizing ? 'resizable__handle--resizing' : ''
-                    }`}
+                    className={classNames(
+                        styles.handle,
+                        handleClassNameMap[handlePosition],
+                        resizing && styles.handleResizing,
+                        handleClassName
+                    )}
                     onMouseDown={this.onMouseDown}
                 />
             </div>

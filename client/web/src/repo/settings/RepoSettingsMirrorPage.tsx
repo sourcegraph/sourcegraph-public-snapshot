@@ -1,5 +1,4 @@
 import * as H from 'history'
-import CheckIcon from 'mdi-react/CheckIcon'
 import LockIcon from 'mdi-react/LockIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -10,6 +9,7 @@ import { catchError, switchMap, tap } from 'rxjs/operators'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { asError } from '@sourcegraph/shared/src/util/errors'
+import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../components/alerts'
 import { FeedbackText } from '../../components/FeedbackText'
@@ -210,17 +210,17 @@ class CheckMirrorRepositoryConnectionActionContainer extends React.PureComponent
                             <ErrorAlert className="action-container__alert" error={this.state.errorDescription} />
                         )}
                         {this.state.loading && (
-                            <div className="alert alert-primary action-container__alert">
+                            <div className="alert alert-primary action-container__alert mb-0">
                                 <LoadingSpinner className="icon-inline" /> Checking connection...
                             </div>
                         )}
                         {this.state.result &&
                             (this.state.result.error === null ? (
-                                <div className="alert alert-success action-container__alert">
-                                    <CheckIcon className="icon-inline" /> The remote repository is reachable.
+                                <div className="alert alert-success action-container__alert mb-0">
+                                    The remote repository is reachable.
                                 </div>
                             ) : (
-                                <div className="alert alert-danger action-container__alert">
+                                <div className="alert alert-danger action-container__alert mb-0">
                                     <p>The remote repository is unreachable. Logs follow.</p>
                                     <div>
                                         <pre className="check-mirror-repository-connection-action-container__log">
@@ -231,6 +231,7 @@ class CheckMirrorRepositoryConnectionActionContainer extends React.PureComponent
                             ))}
                     </>
                 }
+                className="mb-0"
             />
         )
     }
@@ -294,74 +295,79 @@ export class RepoSettingsMirrorPage extends React.PureComponent<
 
     public render(): JSX.Element | null {
         return (
-            <div className="repo-settings-mirror-page">
+            <>
                 <PageTitle title="Mirror settings" />
-                <h2>Mirroring and cloning</h2>
-                {this.state.loading && <LoadingSpinner className="icon-inline" />}
-                {this.state.error && <ErrorAlert error={this.state.error} />}
-                <div className="form-group">
-                    <label>
-                        Remote repository URL{' '}
-                        <small className="text-info">
-                            <LockIcon className="icon-inline" /> Only visible to site admins
-                        </small>
-                    </label>
-                    <input
-                        className="form-control"
-                        value={this.props.repo.mirrorInfo.remoteURL || '(unknown)'}
-                        readOnly={true}
-                    />
-                    {this.state.repo.viewerCanAdminister && (
-                        <small className="form-text text-muted">
-                            Configure repository mirroring in{' '}
-                            <Link to="/site-admin/external-services">external services</Link>.
-                        </small>
-                    )}
-                </div>
-                <UpdateMirrorRepositoryActionContainer
-                    repo={this.state.repo}
-                    onDidUpdateRepository={this.onDidUpdateRepository}
-                    disabled={typeof this.state.reachable === 'boolean' && !this.state.reachable}
-                    disabledReason={
-                        typeof this.state.reachable === 'boolean' && !this.state.reachable ? 'Not reachable' : undefined
-                    }
-                    history={this.props.history}
-                />
-                <CheckMirrorRepositoryConnectionActionContainer
-                    repo={this.state.repo}
-                    onDidUpdateReachability={this.onDidUpdateReachability}
-                    history={this.props.history}
-                />
-                {typeof this.state.reachable === 'boolean' && !this.state.reachable && (
-                    <div className="alert alert-info repo-settings-mirror-page__troubleshooting">
-                        Problems cloning or updating this repository?
-                        <ul className="repo-settings-mirror-page__steps">
-                            <li className="repo-settings-mirror-page__step">
-                                Inspect the <strong>Check connection</strong> error log output to see why the remote
-                                repository is not reachable.
-                            </li>
-                            <li className="repo-settings-mirror-page__step">
-                                <code>
-                                    <strong>No ECDSA host key is known ... Host key verification failed?</strong>
-                                </code>{' '}
-                                See{' '}
-                                <Link to="/help/admin/repo/auth#ssh-authentication-config-keys-known-hosts">
-                                    SSH repository authentication documentation
-                                </Link>{' '}
-                                for how to provide an SSH <code>known_hosts</code> file with the remote host's SSH host
-                                key.
-                            </li>
-                            <li className="repo-settings-mirror-page__step">
-                                Consult <Link to="/help/admin/repo/add">Sourcegraph repositories documentation</Link>{' '}
-                                for resolving other authentication issues (such as HTTPS certificates and SSH keys).
-                            </li>
-                            <li className="repo-settings-mirror-page__step">
-                                <FeedbackText headerText="Questions?" />
-                            </li>
-                        </ul>
+                <PageHeader path={[{ text: 'Mirroring and cloning' }]} headingElement="h2" className="mb-3" />
+                <Container className="repo-settings-mirror-page">
+                    {this.state.loading && <LoadingSpinner className="icon-inline" />}
+                    {this.state.error && <ErrorAlert error={this.state.error} />}
+                    <div className="form-group">
+                        <label>
+                            Remote repository URL{' '}
+                            <small className="text-info">
+                                <LockIcon className="icon-inline" /> Only visible to site admins
+                            </small>
+                        </label>
+                        <input
+                            className="form-control"
+                            value={this.props.repo.mirrorInfo.remoteURL || '(unknown)'}
+                            readOnly={true}
+                        />
+                        {this.state.repo.viewerCanAdminister && (
+                            <small className="form-text text-muted">
+                                Configure repository mirroring in{' '}
+                                <Link to="/site-admin/external-services">external services</Link>.
+                            </small>
+                        )}
                     </div>
-                )}
-            </div>
+                    <UpdateMirrorRepositoryActionContainer
+                        repo={this.state.repo}
+                        onDidUpdateRepository={this.onDidUpdateRepository}
+                        disabled={typeof this.state.reachable === 'boolean' && !this.state.reachable}
+                        disabledReason={
+                            typeof this.state.reachable === 'boolean' && !this.state.reachable
+                                ? 'Not reachable'
+                                : undefined
+                        }
+                        history={this.props.history}
+                    />
+                    <CheckMirrorRepositoryConnectionActionContainer
+                        repo={this.state.repo}
+                        onDidUpdateReachability={this.onDidUpdateReachability}
+                        history={this.props.history}
+                    />
+                    {typeof this.state.reachable === 'boolean' && !this.state.reachable && (
+                        <div className="alert alert-info repo-settings-mirror-page__troubleshooting">
+                            Problems cloning or updating this repository?
+                            <ul className="repo-settings-mirror-page__steps">
+                                <li className="repo-settings-mirror-page__step">
+                                    Inspect the <strong>Check connection</strong> error log output to see why the remote
+                                    repository is not reachable.
+                                </li>
+                                <li className="repo-settings-mirror-page__step">
+                                    <code>
+                                        <strong>No ECDSA host key is known ... Host key verification failed?</strong>
+                                    </code>{' '}
+                                    See{' '}
+                                    <Link to="/help/admin/repo/auth#ssh-authentication-config-keys-known-hosts">
+                                        SSH repository authentication documentation
+                                    </Link>{' '}
+                                    for how to provide an SSH <code>known_hosts</code> file with the remote host's SSH
+                                    host key.
+                                </li>
+                                <li className="repo-settings-mirror-page__step">
+                                    Consult{' '}
+                                    <Link to="/help/admin/repo/add">Sourcegraph repositories documentation</Link> for
+                                    resolving other authentication issues (such as HTTPS certificates and SSH keys).
+                                </li>
+                                <li className="repo-settings-mirror-page__step">
+                                    <FeedbackText headerText="Questions?" />
+                                </li>
+                            </ul>
+                        </div>
+                    )}
+                </Container>
+            </>
         )
     }
 

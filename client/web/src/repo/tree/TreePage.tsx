@@ -35,6 +35,7 @@ import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservabl
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 import { encodeURIPathComponent, toPrettyBlobURL, toURIWithPath } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { getFileDecorations } from '../../backend/features'
 import { queryGraphQL } from '../../backend/graphql'
@@ -321,8 +322,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
         <>No commits in this tree.</>
     ) : (
         <div className="test-tree-page-no-recent-commits">
-            No commits in this tree in the past year.
-            <br />
+            <p className="mb-2">No commits in this tree in the past year.</p>
             <button
                 type="button"
                 className="btn btn-secondary btn-sm test-tree-page-show-all-commits"
@@ -336,12 +336,15 @@ export const TreePage: React.FunctionComponent<Props> = ({
     const TotalCountSummary: React.FunctionComponent<{ totalCount: number }> = ({ totalCount }) => (
         <div className="mt-2">
             {showOlderCommits ? (
-                <>{totalCount} total commits in this tree.</>
+                <>
+                    {totalCount} total {pluralize('commit', totalCount)} in this tree.
+                </>
             ) : (
                 <>
-                    {totalCount} {pluralize('commit', totalCount)} in this tree in the past year.
-                    <br />
-                    <button type="button" className="btn btn-secondary btn-sm mt-1" onClick={onShowOlderCommitsClicked}>
+                    <p className="mb-2">
+                        {totalCount} {pluralize('commit', totalCount)} in this tree in the past year.
+                    </p>
+                    <button type="button" className="btn btn-secondary btn-sm" onClick={onShowOlderCommitsClicked}>
                         Show all commits
                     </button>
                 </>
@@ -350,142 +353,150 @@ export const TreePage: React.FunctionComponent<Props> = ({
     )
     return (
         <div className="tree-page">
-            <PageTitle title={getPageTitle()} />
-            {treeOrError === undefined ? (
-                <div>
-                    <LoadingSpinner className="icon-inline tree-page__entries-loader" /> Loading files and directories
-                </div>
-            ) : isErrorLike(treeOrError) ? (
-                // If the tree is actually a blob, be helpful and redirect to the blob page.
-                // We don't have error names on GraphQL errors.
-                /not a directory/i.test(treeOrError.message) ? (
-                    <Redirect to={toPrettyBlobURL({ repoName: repo.name, revision, commitID, filePath })} />
-                ) : (
-                    <ErrorAlert error={treeOrError} />
-                )
-            ) : (
-                <>
-                    <header className="mb-3">
-                        {treeOrError.isRoot ? (
-                            <>
-                                <h2 className="tree-page__title">
-                                    <SourceRepositoryIcon className="icon-inline" /> {displayRepoName(repo.name)}
-                                </h2>
-                                {repo.description && <p>{repo.description}</p>}
-                                <div className="btn-group mb-3">
-                                    {enableAPIDocs && (
-                                        <Link className="btn btn-secondary" to={`${treeOrError.url}/-/docs`}>
-                                            <BookOpenVariantIcon className="icon-inline" /> API docs
-                                        </Link>
-                                    )}
-                                    <Link className="btn btn-secondary" to={`${treeOrError.url}/-/commits`}>
-                                        <SourceCommitIcon className="icon-inline" /> Commits
-                                    </Link>
-                                    <Link
-                                        className="btn btn-secondary"
-                                        to={`/${encodeURIPathComponent(repo.name)}/-/branches`}
-                                    >
-                                        <SourceBranchIcon className="icon-inline" /> Branches
-                                    </Link>
-                                    <Link
-                                        className="btn btn-secondary"
-                                        to={`/${encodeURIPathComponent(repo.name)}/-/tags`}
-                                    >
-                                        <TagIcon className="icon-inline" /> Tags
-                                    </Link>
-                                    <Link
-                                        className="btn btn-secondary"
-                                        to={
-                                            revision
-                                                ? `/${encodeURIPathComponent(
-                                                      repo.name
-                                                  )}/-/compare/...${encodeURIComponent(revision)}`
-                                                : `/${encodeURIPathComponent(repo.name)}/-/compare`
-                                        }
-                                    >
-                                        <HistoryIcon className="icon-inline" /> Compare
-                                    </Link>
-                                    <Link
-                                        className="btn btn-secondary"
-                                        to={`/${encodeURIPathComponent(repo.name)}/-/stats/contributors`}
-                                    >
-                                        <UserIcon className="icon-inline" /> Contributors
-                                    </Link>
-                                    {repo.viewerCanAdminister && (
-                                        <Link
-                                            className="btn btn-secondary"
-                                            to={`/${encodeURIPathComponent(repo.name)}/-/settings`}
-                                        >
-                                            <SettingsIcon className="icon-inline" /> Settings
-                                        </Link>
-                                    )}
-                                </div>
-                            </>
-                        ) : (
-                            <h2 className="tree-page__title">
-                                <FolderIcon className="icon-inline" /> {filePath}
-                            </h2>
-                        )}
-                    </header>
-                    {views && (
-                        <InsightsViewGrid
-                            {...props}
-                            className="tree-page__section"
-                            views={views}
-                            patternType={patternType}
-                            settingsCascade={settingsCascade}
-                            caseSensitive={caseSensitive}
-                        />
-                    )}
-                    <section className="tree-page__section test-tree-entries">
-                        <h3 className="tree-page__section-header">Files and directories</h3>
-                        <TreeEntriesSection
-                            parentPath={filePath}
-                            entries={treeOrError.entries}
-                            fileDecorationsByPath={fileDecorationsByPath}
-                            isLightTheme={props.isLightTheme}
-                        />
-                    </section>
-                    <ActionsContainer {...props} menu={ContributableMenu.DirectoryPage} empty={null}>
-                        {items => (
-                            <section className="tree-page__section">
-                                <h3 className="tree-page__section-header">Actions</h3>
-                                {items.map(item => (
-                                    <ActionItem
-                                        {...props}
-                                        key={item.action.id}
-                                        {...item}
-                                        className="btn btn-secondary mr-1 mb-1"
-                                    />
-                                ))}
-                            </section>
-                        )}
-                    </ActionsContainer>
-
-                    <div className="tree-page__section">
-                        <h3 className="tree-page__section-header">Changes</h3>
-                        <FilteredConnection<GitCommitFields, Pick<GitCommitNodeProps, 'className' | 'compact'>>
-                            location={props.location}
-                            className="mt-2 tree-page__section--commits"
-                            listClassName="list-group list-group-flush"
-                            noun="commit in this tree"
-                            pluralNoun="commits in this tree"
-                            queryConnection={queryCommits}
-                            nodeComponent={GitCommitNode}
-                            nodeComponentProps={{
-                                className: 'list-group-item',
-                                compact: true,
-                            }}
-                            updateOnChange={`${repo.name}:${revision}:${filePath}:${String(showOlderCommits)}`}
-                            defaultFirst={7}
-                            useURLQuery={false}
-                            hideSearch={true}
-                            emptyElement={emptyElement}
-                            totalCountSummaryComponent={TotalCountSummary}
-                        />
+            <Container className="tree-page__container">
+                <PageTitle title={getPageTitle()} />
+                {treeOrError === undefined ? (
+                    <div>
+                        <LoadingSpinner className="icon-inline tree-page__entries-loader" /> Loading files and
+                        directories
                     </div>
-                </>
-            )}
+                ) : isErrorLike(treeOrError) ? (
+                    // If the tree is actually a blob, be helpful and redirect to the blob page.
+                    // We don't have error names on GraphQL errors.
+                    /not a directory/i.test(treeOrError.message) ? (
+                        <Redirect to={toPrettyBlobURL({ repoName: repo.name, revision, commitID, filePath })} />
+                    ) : (
+                        <ErrorAlert error={treeOrError} />
+                    )
+                ) : (
+                    <>
+                        <header className="mb-3">
+                            {treeOrError.isRoot ? (
+                                <>
+                                    <PageHeader
+                                        path={[{ icon: SourceRepositoryIcon, text: displayRepoName(repo.name) }]}
+                                        className="mb-3 test-tree-page-title"
+                                    />
+                                    {repo.description && <p>{repo.description}</p>}
+                                    <div className="btn-group">
+                                        {enableAPIDocs && (
+                                            <Link
+                                                className="btn btn-outline-secondary"
+                                                to={`${treeOrError.url}/-/docs`}
+                                            >
+                                                <BookOpenVariantIcon className="icon-inline" /> API docs
+                                            </Link>
+                                        )}
+                                        <Link className="btn btn-outline-secondary" to={`${treeOrError.url}/-/commits`}>
+                                            <SourceCommitIcon className="icon-inline" /> Commits
+                                        </Link>
+                                        <Link
+                                            className="btn btn-outline-secondary"
+                                            to={`/${encodeURIPathComponent(repo.name)}/-/branches`}
+                                        >
+                                            <SourceBranchIcon className="icon-inline" /> Branches
+                                        </Link>
+                                        <Link
+                                            className="btn btn-outline-secondary"
+                                            to={`/${encodeURIPathComponent(repo.name)}/-/tags`}
+                                        >
+                                            <TagIcon className="icon-inline" /> Tags
+                                        </Link>
+                                        <Link
+                                            className="btn btn-outline-secondary"
+                                            to={
+                                                revision
+                                                    ? `/${encodeURIPathComponent(
+                                                          repo.name
+                                                      )}/-/compare/...${encodeURIComponent(revision)}`
+                                                    : `/${encodeURIPathComponent(repo.name)}/-/compare`
+                                            }
+                                        >
+                                            <HistoryIcon className="icon-inline" /> Compare
+                                        </Link>
+                                        <Link
+                                            className="btn btn-outline-secondary"
+                                            to={`/${encodeURIPathComponent(repo.name)}/-/stats/contributors`}
+                                        >
+                                            <UserIcon className="icon-inline" /> Contributors
+                                        </Link>
+                                        {repo.viewerCanAdminister && (
+                                            <Link
+                                                className="btn btn-outline-secondary"
+                                                to={`/${encodeURIPathComponent(repo.name)}/-/settings`}
+                                            >
+                                                <SettingsIcon className="icon-inline" /> Settings
+                                            </Link>
+                                        )}
+                                    </div>
+                                </>
+                            ) : (
+                                <PageHeader
+                                    path={[{ icon: FolderIcon, text: filePath }]}
+                                    className="mb-3 test-tree-page-title"
+                                />
+                            )}
+                        </header>
+                        {views && (
+                            <InsightsViewGrid
+                                {...props}
+                                className="tree-page__section mb-3"
+                                views={views}
+                                patternType={patternType}
+                                settingsCascade={settingsCascade}
+                                caseSensitive={caseSensitive}
+                            />
+                        )}
+                        <section className="tree-page__section test-tree-entries mb-3">
+                            <h2>Files and directories</h2>
+                            <TreeEntriesSection
+                                parentPath={filePath}
+                                entries={treeOrError.entries}
+                                fileDecorationsByPath={fileDecorationsByPath}
+                                isLightTheme={props.isLightTheme}
+                            />
+                        </section>
+                        <ActionsContainer {...props} menu={ContributableMenu.DirectoryPage} empty={null}>
+                            {items => (
+                                <section className="tree-page__section">
+                                    <h2>Actions</h2>
+                                    {items.map(item => (
+                                        <ActionItem
+                                            {...props}
+                                            key={item.action.id}
+                                            {...item}
+                                            className="btn btn-secondary mr-1 mb-1"
+                                        />
+                                    ))}
+                                </section>
+                            )}
+                        </ActionsContainer>
+
+                        <div className="tree-page__section">
+                            <h2>Changes</h2>
+                            <FilteredConnection<GitCommitFields, Pick<GitCommitNodeProps, 'className' | 'compact'>>
+                                location={props.location}
+                                className="mt-2 tree-page__section--commits"
+                                listClassName="list-group list-group-flush"
+                                noun="commit in this tree"
+                                pluralNoun="commits in this tree"
+                                queryConnection={queryCommits}
+                                nodeComponent={GitCommitNode}
+                                nodeComponentProps={{
+                                    className: 'list-group-item',
+                                    compact: true,
+                                }}
+                                updateOnChange={`${repo.name}:${revision}:${filePath}:${String(showOlderCommits)}`}
+                                defaultFirst={7}
+                                useURLQuery={false}
+                                hideSearch={true}
+                                emptyElement={emptyElement}
+                                totalCountSummaryComponent={TotalCountSummary}
+                            />
+                        </div>
+                    </>
+                )}
+            </Container>
         </div>
     )
 }

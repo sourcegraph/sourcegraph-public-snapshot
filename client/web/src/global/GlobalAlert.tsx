@@ -1,6 +1,3 @@
-import ErrorIcon from 'mdi-react/ErrorIcon'
-import InformationIcon from 'mdi-react/InformationIcon'
-import WarningIcon from 'mdi-react/WarningIcon'
 import React from 'react'
 
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
@@ -17,13 +14,7 @@ export const GlobalAlert: React.FunctionComponent<{ alert: GQL.IAlert; className
     alert,
     className: commonClassName,
 }) => {
-    const Icon = alertIconForType(alert.type)
-    const content = (
-        <>
-            <Icon className="redesign-d-none icon-inline mr-2 flex-shrink-0" />
-            <Markdown dangerousInnerHTML={renderMarkdown(alert.message)} />
-        </>
-    )
+    const content = <Markdown dangerousInnerHTML={renderMarkdown(alert.message)} />
     const className = `${commonClassName} alert alert-${alertClassForType(alert.type)} d-flex`
     if (alert.isDismissibleWithKey) {
         return (
@@ -33,19 +24,6 @@ export const GlobalAlert: React.FunctionComponent<{ alert: GQL.IAlert; className
         )
     }
     return <div className={className}>{content}</div>
-}
-
-function alertIconForType(type: AlertType): React.ComponentType<{ className?: string }> {
-    switch (type) {
-        case AlertType.INFO:
-            return InformationIcon
-        case AlertType.WARNING:
-            return WarningIcon
-        case AlertType.ERROR:
-            return ErrorIcon
-        default:
-            return WarningIcon
-    }
 }
 
 function alertClassForType(type: AlertType): string {

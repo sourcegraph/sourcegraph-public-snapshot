@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"

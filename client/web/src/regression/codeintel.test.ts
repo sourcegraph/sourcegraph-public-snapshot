@@ -268,7 +268,7 @@ async function testCodeNavigation(
     await (await driver.findElementWithText('Go to definition')).click()
 
     if (Array.isArray(expectedDefinition)) {
-        await driver.page.waitForSelector('.hierarchical-locations-view')
+        await driver.page.waitForSelector('[data-test-id="hierarchical-locations-view"]')
         const defLinks = await collectLinks(driver)
         for (const definition of expectedDefinition) {
             expect(defLinks).toContainEqual(definition)
@@ -301,7 +301,9 @@ async function collectLinks(driver: Driver): Promise<Set<string>> {
 
     const links = new Set<string>()
     for (const title of panelTabTitles) {
-        const tabElement = await driver.page.$$(`.test-hierarchical-locations-view-list span[title="${title}"]`)
+        const tabElement = await driver.page.$$(
+            `[data-testid="hierarchical-locations-view-list"] span[title="${title}"]`
+        )
         if (tabElement.length > 0) {
             await tabElement[0].click()
         }
@@ -321,9 +323,9 @@ async function collectLinks(driver: Driver): Promise<Set<string>> {
 async function getPanelTabTitles(driver: Driver): Promise<string[]> {
     return (
         await Promise.all(
-            (await driver.page.$$('.hierarchical-locations-view > div:nth-child(1) span[title]')).map(elementHandle =>
-                elementHandle.evaluate(element => element.getAttribute('title') || '')
-            )
+            (
+                await driver.page.$$('[data-testid="hierarchical-locations-view-list"]:first-child span[title]')
+            ).map(elementHandle => elementHandle.evaluate(element => element.getAttribute('title') || ''))
         )
     ).map(normalizeWhitespace)
 }

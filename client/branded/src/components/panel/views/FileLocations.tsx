@@ -1,6 +1,5 @@
 import * as H from 'history'
 import { upperFirst } from 'lodash'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Observable, Subject, Subscription } from 'rxjs'
@@ -20,7 +19,7 @@ import { parseRepoURI, toPrettyBlobURL, toRepoURL } from '@sourcegraph/shared/sr
 
 export const FileLocationsError: React.FunctionComponent<{ error: ErrorLike }> = ({ error }) => (
     <div className="file-locations__error alert alert-danger m-2">
-        <AlertCircleIcon className="redesign-d-none icon-inline" /> Error getting locations: {upperFirst(error.message)}
+        Error getting locations: {upperFirst(error.message)}
     </div>
 )
 

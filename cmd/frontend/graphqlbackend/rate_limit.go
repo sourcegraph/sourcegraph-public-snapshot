@@ -5,12 +5,12 @@ import (
 	"strconv"
 	"sync/atomic"
 
+	"github.com/cockroachdb/errors"
 	"github.com/graphql-go/graphql/language/ast"
 	"github.com/graphql-go/graphql/language/kinds"
 	"github.com/graphql-go/graphql/language/parser"
 	"github.com/graphql-go/graphql/language/visitor"
 	"github.com/inconshreveable/log15"
-	"github.com/pkg/errors"
 	"github.com/throttled/throttled/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"

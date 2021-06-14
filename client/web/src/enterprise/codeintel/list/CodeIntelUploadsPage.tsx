@@ -1,10 +1,11 @@
+import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { of } from 'rxjs'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { PageHeader } from '@sourcegraph/wildcard'
+import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import {
     FilteredConnection,
@@ -103,56 +104,64 @@ export const CodeIntelUploadsPage: FunctionComponent<CodeIntelUploadsPageProps> 
     )
 
     return (
-        <div className="code-intel-uploads web-content">
+        <div className="code-intel-uploads">
             <PageTitle title="Precise code intelligence uploads" />
             <PageHeader
-                path={[{ text: 'Precise code intelligence upload' }]}
+                headingElement="h2"
+                path={[{ text: 'Precise code intelligence uploads' }]}
                 description={
                     <>
-                        <p>
-                            Enable precise code intelligence by{' '}
-                            <a
-                                href="https://docs.sourcegraph.com/code_intelligence/explanations/precise_code_intelligence"
-                                target="_blank"
-                                rel="noreferrer noopener"
-                            >
-                                uploading LSIF data
-                            </a>
-                            .
-                        </p>
-                        <p>
-                            Current uploads provide code intelligence for the latest commit on the default branch and
-                            are used in cross-repository <em>Find References</em> requests. Non-current uploads may
-                            still provide code intelligence for historic and branch commits.
-                        </p>
+                        Current uploads provide code intelligence for the latest commit on the default branch and are
+                        used in cross-repository <em>Find References</em> requests. Non-current uploads may still
+                        provide code intelligence for historic and branch commits.
                     </>
                 }
+                className="mb-3"
             />
 
-            {repo && commitGraphMetadata && (
-                <CommitGraphMetadata
-                    stale={commitGraphMetadata.stale}
-                    updatedAt={commitGraphMetadata.updatedAt}
-                    now={now}
-                />
-            )}
+            <Container>
+                {repo && commitGraphMetadata && (
+                    <CommitGraphMetadata
+                        stale={commitGraphMetadata.stale}
+                        updatedAt={commitGraphMetadata.updatedAt}
+                        now={now}
+                    />
+                )}
 
-            <div className="list-group position-relative">
-                <FilteredConnection<LsifUploadFields, Omit<CodeIntelUploadNodeProps, 'node'>>
-                    listComponent="div"
-                    listClassName="codeintel-uploads__grid mb-3"
-                    noun="upload"
-                    pluralNoun="uploads"
-                    nodeComponent={CodeIntelUploadNode}
-                    nodeComponentProps={{ now }}
-                    queryConnection={queryUploads}
-                    history={props.history}
-                    location={props.location}
-                    cursorPaging={true}
-                    filters={filters}
-                    defaultFilter="current"
-                />
-            </div>
+                <div className="list-group position-relative">
+                    <FilteredConnection<LsifUploadFields, Omit<CodeIntelUploadNodeProps, 'node'>>
+                        listComponent="div"
+                        listClassName="codeintel-uploads__grid"
+                        noun="upload"
+                        pluralNoun="uploads"
+                        nodeComponent={CodeIntelUploadNode}
+                        nodeComponentProps={{ now }}
+                        queryConnection={queryUploads}
+                        history={props.history}
+                        location={props.location}
+                        cursorPaging={true}
+                        filters={filters}
+                        defaultFilter="current"
+                        emptyElement={<EmptyLSIFUploadsElement />}
+                    />
+                </div>
+            </Container>
         </div>
     )
 }
+
+const EmptyLSIFUploadsElement: React.FunctionComponent = () => (
+    <p className="text-muted text-center w-100 mb-0 mt-1">
+        <MapSearchIcon className="mb-2" />
+        <br />
+        No uploads yet. Enable precise code intelligence by{' '}
+        <a
+            href="https://docs.sourcegraph.com/code_intelligence/explanations/precise_code_intelligence"
+            target="_blank"
+            rel="noreferrer noopener"
+        >
+            uploading LSIF data
+        </a>
+        .
+    </p>
+)

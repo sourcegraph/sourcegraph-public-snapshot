@@ -28,7 +28,7 @@ interface InsightValues {
 }
 
 function getInsightFormValues(): InsightValues {
-    const repositories = document.querySelector<HTMLInputElement>('input[name="repositories"]')?.value
+    const repositories = document.querySelector<HTMLInputElement>('[name="repositories"]')?.value
     const title = document.querySelector<HTMLInputElement>('input[name="title"]')?.value
     const visibility = document.querySelector<HTMLInputElement>('input[name="visibility"]:checked')?.value
     const granularityType = document.querySelector<HTMLInputElement>('input[name="step"]:checked')?.value ?? ''
@@ -185,6 +185,11 @@ describe('Code insight edit insight page', () => {
                  * */
                 BulkSearchCommits: () => INSIGHT_TYPES_MIGRATION_COMMITS,
                 BulkSearch: () => INSIGHT_TYPES_MIGRATION_BULK_SEARCH,
+
+                /** Mock for repository suggest component. */
+                RepositorySearchSuggestions: () => ({
+                    repositories: { nodes: [] },
+                }),
             },
         })
 
@@ -197,8 +202,12 @@ describe('Code insight edit insight page', () => {
 
         // Edit all insight form fields ↓
 
+        // Move user cursor at the end of the input
+        await driver.page.click('[name="repositories"]', { clickCount: 3 })
+        await driver.page.keyboard.press('ArrowRight')
+
         // Add new repo to repositories field
-        await driver.page.type('input[name="repositories"]', ', github.com/sourcegraph/about')
+        await driver.page.keyboard.type(', github.com/sourcegraph/about')
 
         // Change insight title
         await clearAndType(driver, 'input[name="title"]', 'Test insight title')
@@ -339,6 +348,11 @@ describe('Code insight edit insight page', () => {
                  * */
                 BulkSearchCommits: () => INSIGHT_TYPES_MIGRATION_COMMITS,
                 BulkSearch: () => INSIGHT_TYPES_MIGRATION_BULK_SEARCH,
+
+                /** Mock for repository suggest component. */
+                RepositorySearchSuggestions: () => ({
+                    repositories: { nodes: [] },
+                }),
             },
         })
 

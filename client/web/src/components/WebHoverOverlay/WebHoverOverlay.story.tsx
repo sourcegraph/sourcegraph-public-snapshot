@@ -193,7 +193,7 @@ add('With dismissible alert with icon', () => (
     />
 ))
 
-add('With long markdown text dismissible alert with icon.', () => (
+add('With long markdown text and dismissible alert with icon.', () => (
     <WebHoverOverlay
         {...commonProps()}
         hoverOrError={{
