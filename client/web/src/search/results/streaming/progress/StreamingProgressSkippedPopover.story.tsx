@@ -1,8 +1,9 @@
 import { storiesOf } from '@storybook/react'
 import * as React from 'react'
 
+import { Progress } from '@sourcegraph/shared/src/search/stream'
+
 import { WebStory } from '../../../../components/WebStory'
-import { Progress } from '../../../stream'
 
 import { StreamingProgressSkippedPopover } from './StreamingProgressSkippedPopover'
 

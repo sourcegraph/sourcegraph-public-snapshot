@@ -3,9 +3,8 @@ import CalculatorIcon from 'mdi-react/CalculatorIcon'
 import ClipboardPulseOutlineIcon from 'mdi-react/ClipboardPulseOutlineIcon'
 import * as React from 'react'
 
+import { Progress } from '@sourcegraph/shared/src/search/stream'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
-
-import { Progress } from '../../../stream'
 
 import { StreamingProgressProps } from './StreamingProgress'
 

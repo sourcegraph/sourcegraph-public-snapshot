@@ -3,13 +3,13 @@ import React, { useCallback } from 'react'
 import { useHistory } from 'react-router'
 import StickyBox from 'react-sticky-box'
 
+import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '../../..'
 import { submitSearch, toggleSearchFilter } from '../../../helpers'
-import { Filter } from '../../../stream'
 
 import { getDynamicFilterLinks, getRepoFilterLinks, getSearchScopeLinks } from './FilterLink'
 import { getQuickLinks } from './QuickLink'

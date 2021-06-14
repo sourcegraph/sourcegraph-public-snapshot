@@ -3,7 +3,7 @@ import React, { ChangeEvent } from 'react'
 import { Button, Form, Input } from 'reactstrap'
 import sinon from 'sinon'
 
-import { Progress } from '../../../stream'
+import { Progress } from '@sourcegraph/shared/src/search/stream'
 
 import { StreamingProgressSkippedPopover } from './StreamingProgressSkippedPopover'
 

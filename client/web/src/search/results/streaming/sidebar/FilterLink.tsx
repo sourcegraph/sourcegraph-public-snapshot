@@ -3,12 +3,12 @@ import React from 'react'
 
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
+import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
 import { SyntaxHighlightedSearchQuery } from '../../../../components/SyntaxHighlightedSearchQuery'
 import { Settings } from '../../../../schema/settings.schema'
-import { Filter } from '../../../stream'
 
 import styles from './SearchSidebarSection.module.scss'
 

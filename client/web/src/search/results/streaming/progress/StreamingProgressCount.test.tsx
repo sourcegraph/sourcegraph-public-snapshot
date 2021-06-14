@@ -1,7 +1,7 @@
 import { mount } from 'enzyme'
 import React from 'react'
 
-import { Progress } from '../../../stream'
+import { Progress } from '@sourcegraph/shared/src/search/stream'
 
 import { StreamingProgressCount } from './StreamingProgressCount'
 

@@ -5,7 +5,7 @@ import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     extensionsController,
@@ -16,7 +16,6 @@ import {
 
 import { AuthenticatedUser } from '../../../auth'
 import { WebStory } from '../../../components/WebStory'
-import { AggregateStreamingSearchResults } from '../../stream'
 
 import { StreamingSearchResults, StreamingSearchResultsProps } from './StreamingSearchResults'
 
@@ -25,11 +24,11 @@ history.replace({ search: 'q=r:golang/oauth2+test+f:travis' })
 
 const streamingSearchResult: AggregateStreamingSearchResults = {
     state: 'complete',
-    results: [...MULTIPLE_SEARCH_RESULT.results, REPO_MATCH_RESULT] as GQL.SearchResult[],
-    filters: MULTIPLE_SEARCH_RESULT.dynamicFilters,
+    results: [...MULTIPLE_SEARCH_RESULT.results, REPO_MATCH_RESULT],
+    filters: MULTIPLE_SEARCH_RESULT.filters,
     progress: {
         durationMs: 500,
-        matchCount: MULTIPLE_SEARCH_RESULT.matchCount,
+        matchCount: MULTIPLE_SEARCH_RESULT.progress.matchCount,
         skipped: [],
     },
 }
@@ -135,10 +134,10 @@ add('progress with warnings', () => {
     const result: AggregateStreamingSearchResults = {
         state: 'complete',
         results: MULTIPLE_SEARCH_RESULT.results,
-        filters: MULTIPLE_SEARCH_RESULT.dynamicFilters,
+        filters: MULTIPLE_SEARCH_RESULT.filters,
         progress: {
             durationMs: 500,
-            matchCount: MULTIPLE_SEARCH_RESULT.matchCount,
+            matchCount: MULTIPLE_SEARCH_RESULT.progress.matchCount,
             skipped: [
                 {
                     reason: 'excluded-fork',
@@ -207,10 +206,10 @@ add('loading with some results', () => {
     const result: AggregateStreamingSearchResults = {
         state: 'loading',
         results: MULTIPLE_SEARCH_RESULT.results,
-        filters: MULTIPLE_SEARCH_RESULT.dynamicFilters,
+        filters: MULTIPLE_SEARCH_RESULT.filters,
         progress: {
             durationMs: 500,
-            matchCount: MULTIPLE_SEARCH_RESULT.matchCount,
+            matchCount: MULTIPLE_SEARCH_RESULT.progress.matchCount,
             skipped: [],
         },
     }
@@ -222,10 +221,10 @@ add('server-side alert', () => {
     const result: AggregateStreamingSearchResults = {
         state: 'complete',
         results: MULTIPLE_SEARCH_RESULT.results,
-        filters: MULTIPLE_SEARCH_RESULT.dynamicFilters,
+        filters: MULTIPLE_SEARCH_RESULT.filters,
         progress: {
             durationMs: 500,
-            matchCount: MULTIPLE_SEARCH_RESULT.matchCount,
+            matchCount: MULTIPLE_SEARCH_RESULT.progress.matchCount,
             skipped: [],
         },
         alert: {
@@ -245,7 +244,7 @@ add('server-side alert with no results', () => {
         filters: [],
         progress: {
             durationMs: 500,
-            matchCount: MULTIPLE_SEARCH_RESULT.matchCount,
+            matchCount: MULTIPLE_SEARCH_RESULT.progress.matchCount,
             skipped: [],
         },
         alert: {
@@ -265,7 +264,7 @@ add('error with no results', () => {
         filters: [],
         progress: {
             durationMs: 500,
-            matchCount: MULTIPLE_SEARCH_RESULT.matchCount,
+            matchCount: MULTIPLE_SEARCH_RESULT.progress.matchCount,
             skipped: [],
         },
         error: new Error('test error'),
@@ -278,10 +277,10 @@ add('error with some results', () => {
     const result: AggregateStreamingSearchResults = {
         state: 'error',
         results: MULTIPLE_SEARCH_RESULT.results,
-        filters: MULTIPLE_SEARCH_RESULT.dynamicFilters,
+        filters: MULTIPLE_SEARCH_RESULT.filters,
         progress: {
             durationMs: 500,
-            matchCount: MULTIPLE_SEARCH_RESULT.matchCount,
+            matchCount: MULTIPLE_SEARCH_RESULT.progress.matchCount,
             skipped: [],
         },
         error: new Error('test error'),
@@ -294,10 +293,10 @@ add('limit hit with some results', () => {
     const result: AggregateStreamingSearchResults = {
         state: 'complete',
         results: MULTIPLE_SEARCH_RESULT.results,
-        filters: MULTIPLE_SEARCH_RESULT.dynamicFilters,
+        filters: MULTIPLE_SEARCH_RESULT.filters,
         progress: {
             durationMs: 500,
-            matchCount: MULTIPLE_SEARCH_RESULT.matchCount,
+            matchCount: MULTIPLE_SEARCH_RESULT.progress.matchCount,
             skipped: [
                 {
                     reason: 'document-match-limit',

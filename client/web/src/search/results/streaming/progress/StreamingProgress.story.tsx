@@ -2,8 +2,9 @@ import { storiesOf } from '@storybook/react'
 import * as React from 'react'
 import sinon from 'sinon'
 
+import { Progress } from '@sourcegraph/shared/src/search/stream'
+
 import { WebStory } from '../../../../components/WebStory'
-import { Progress } from '../../../stream'
 
 import { StreamingProgress } from './StreamingProgress'
 

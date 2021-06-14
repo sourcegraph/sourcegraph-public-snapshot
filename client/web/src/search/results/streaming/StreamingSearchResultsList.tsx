@@ -11,14 +11,19 @@ import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExce
 import { FileMatch } from '@sourcegraph/shared/src/components/FileMatch'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import {
+    AggregateStreamingSearchResults,
+    FileLineMatch,
+    FileSymbolMatch,
+    SearchMatch,
+    getMatchUrl,
+} from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { SearchResult } from '../../../components/SearchResult'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { AggregateStreamingSearchResults } from '../../stream'
 
 import { StreamingSearchResultFooter } from './StreamingSearchResultsFooter'
 
@@ -29,7 +34,6 @@ export interface StreamingSearchResultsListProps extends ThemeProps, SettingsCas
     results?: AggregateStreamingSearchResults
 
     location: H.Location
-    history: H.History
 
     allExpanded: boolean
 
@@ -39,7 +43,6 @@ export interface StreamingSearchResultsListProps extends ThemeProps, SettingsCas
 export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearchResultsListProps> = ({
     results,
     location,
-    history,
     isLightTheme,
     allExpanded,
     fetchHighlightedFileLineRanges,
@@ -57,19 +60,20 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
         setItemsToShow(initialItemsToShow)
     }, [location.search])
 
-    const itemKey = useCallback((item: GQL.GenericSearchResultInterface | GQL.IFileMatch): string => {
-        if (item.__typename === 'FileMatch') {
-            return `file:${item.file.url}`
+    const itemKey = useCallback((item: SearchMatch): string => {
+        if (item.type === 'file' || item.type === 'symbol') {
+            return `file:${getMatchUrl(item)}`
         }
-        return item.url
+        return getMatchUrl(item)
     }, [])
 
     const logSearchResultClicked = useCallback(() => telemetryService.log('SearchResultClicked'), [telemetryService])
 
     const renderResult = useCallback(
-        (result: GQL.GenericSearchResultInterface | GQL.IFileMatch): JSX.Element => {
-            switch (result.__typename) {
-                case 'FileMatch':
+        (result: SearchMatch): JSX.Element => {
+            switch (result.type) {
+                case 'file':
+                case 'symbol':
                     return (
                         <FileMatch
                             location={location}
@@ -82,46 +86,36 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                             isLightTheme={isLightTheme}
                             allExpanded={allExpanded}
                             fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
-                            repoDisplayName={displayRepoName(result.repository.name)}
+                            repoDisplayName={displayRepoName(result.repository)}
                             settingsCascade={settingsCascade}
                         />
                     )
-                case 'CommitSearchResult':
+                case 'commit':
                     return (
                         <SearchResult
                             icon={SourceCommitIcon}
                             result={result}
-                            repoName={result.commit.repository.name}
+                            repoName={result.repository}
                             isLightTheme={isLightTheme}
-                            history={history}
                         />
                     )
-                case 'Repository':
+                case 'repo':
                     return (
                         <SearchResult
                             icon={SourceRepositoryIcon}
                             result={result}
-                            repoName={result.name}
+                            repoName={result.repository}
                             isLightTheme={isLightTheme}
-                            history={history}
                         />
                     )
             }
         },
-        [
-            isLightTheme,
-            history,
-            location,
-            logSearchResultClicked,
-            allExpanded,
-            fetchHighlightedFileLineRanges,
-            settingsCascade,
-        ]
+        [isLightTheme, location, logSearchResultClicked, allExpanded, fetchHighlightedFileLineRanges, settingsCascade]
     )
 
     return (
         <>
-            <VirtualList<GQL.SearchResult>
+            <VirtualList<SearchMatch>
                 className="mt-2"
                 itemsToShow={itemsToShow}
                 onShowMoreItems={onBottomHit}
@@ -136,11 +130,11 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
     )
 }
 
-function getFileMatchIcon(result: GQL.IFileMatch): React.ComponentType<{ className?: string }> {
-    if (result.lineMatches && result.lineMatches.length > 0) {
+function getFileMatchIcon(result: FileLineMatch | FileSymbolMatch): React.ComponentType<{ className?: string }> {
+    if (result.type === 'file' && result.lineMatches && result.lineMatches.length > 0) {
         return FileDocumentIcon
     }
-    if (result.symbols && result.symbols.length > 0) {
+    if (result.type === 'symbol' && result.symbols && result.symbols.length > 0) {
         return AlphaSBoxIcon
     }
     return FileIcon

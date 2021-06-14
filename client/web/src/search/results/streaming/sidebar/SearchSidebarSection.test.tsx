@@ -2,7 +2,7 @@ import { mount } from 'enzyme'
 import React from 'react'
 import sinon from 'sinon'
 
-import { Filter } from '../../../stream'
+import { Filter } from '@sourcegraph/shared/src/search/stream'
 
 import { FilterLink, getDynamicFilterLinks } from './FilterLink'
 import { SearchSidebarSection } from './SearchSidebarSection'

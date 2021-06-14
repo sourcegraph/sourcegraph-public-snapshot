@@ -7,6 +7,7 @@ import { ISavedSearch } from '@sourcegraph/shared/src/graphql/schema'
 import { discreteValueAliases, escapeSpaces, FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { Filter } from '@sourcegraph/shared/src/search/query/token'
 import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/validate'
+import { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 import { replaceRange } from '@sourcegraph/shared/src/util/strings'
@@ -25,7 +26,6 @@ import {
     deleteSearchContext,
     getUserSearchContextNamespaces,
 } from './backend'
-import { AggregateStreamingSearchResults, StreamSearchOptions } from './stream'
 
 /**
  * Parses the query out of the URL search params (the 'q' parameter). In non-interactive mode, if the 'q' parameter is not present, it

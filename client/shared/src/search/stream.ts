@@ -2,28 +2,23 @@
 import { Observable, fromEvent, Subscription, OperatorFunction, pipe, Subscriber, Notification } from 'rxjs'
 import { defaultIfEmpty, map, materialize, scan } from 'rxjs/operators'
 
-import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
+import { displayRepoName } from '../components/RepoFileLink'
 import { SearchPatternType } from '../graphql-operations'
-
-// This is an initial proof of concept implementation of search streaming.
-// The protocol and implementation is still in the design phase. Feel free to
-// change anything and everything here. We are iteratively improving this
-// until it is no longer a proof of concept and instead works well.
+import { SymbolKind } from '../graphql/schema'
 
 export type SearchEvent =
-    | { type: 'matches'; data: Match[] }
+    | { type: 'matches'; data: SearchMatch[] }
     | { type: 'progress'; data: Progress }
     | { type: 'filters'; data: Filter[] }
     | { type: 'alert'; data: Alert }
     | { type: 'error'; data: ErrorLike }
     | { type: 'done'; data: {} }
 
-type Match = FileMatch | RepositoryMatch | CommitMatch | FileSymbolMatch
+export type SearchMatch = FileLineMatch | RepositoryMatch | CommitMatch | FileSymbolMatch
 
-interface FileMatch {
+export interface FileLineMatch {
     type: 'file'
     name: string
     repository: string
@@ -38,7 +33,7 @@ interface LineMatch {
     offsetAndLengths: number[][]
 }
 
-interface FileSymbolMatch {
+export interface FileSymbolMatch {
     type: 'symbol'
     name: string
     repository: string
@@ -51,7 +46,7 @@ interface SymbolMatch {
     url: string
     name: string
     containerName: string
-    kind: string
+    kind: SymbolKind
 }
 
 type MarkdownText = string
@@ -62,7 +57,7 @@ type MarkdownText = string
  *
  * @see GQL.IGenericSearchResultInterface
  */
-interface CommitMatch {
+export interface CommitMatch {
     type: 'commit'
     label: MarkdownText
     url: string
@@ -173,145 +168,11 @@ interface ProposedQuery {
     query: string
 }
 
-const toGQLLineMatch = (line: LineMatch): GQL.ILineMatch => ({
-    __typename: 'LineMatch',
-    limitHit: false,
-    lineNumber: line.lineNumber,
-    offsetAndLengths: line.offsetAndLengths,
-    preview: line.line,
-})
-
-function toGQLFileMatchBase(fileMatch: FileMatch | FileSymbolMatch): GQL.IFileMatch {
-    let revision = ''
-    if (fileMatch.branches) {
-        const branch = fileMatch.branches[0]
-        if (branch !== '') {
-            revision = branch
-        }
-    } else if (fileMatch.version) {
-        revision = fileMatch.version
-    }
-
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-    const file: GQL.IGitBlob = {
-        path: fileMatch.name,
-        // /github.com/gorilla/mux@v1.7.2/-/blob/mux_test.go
-        // TODO return in response?
-        url: `/${fileMatch.repository}${revision ? '@' + revision : ''}/-/blob/${fileMatch.name}`,
-        commit: {
-            oid: fileMatch.version || '',
-        },
-    } as GQL.IGitBlob
-    const repository = toGQLRepositoryMatch({
-        type: 'repo',
-        repository: fileMatch.repository,
-        branches: fileMatch.branches,
-    })
-
-    const revisionSpec = revision
-        ? ({
-              __typename: 'GitRef',
-              displayName: revision,
-              url: '/' + fileMatch.repository + '@' + revision,
-          } as GQL.IGitRef)
-        : null
-
-    return {
-        __typename: 'FileMatch',
-        file,
-        repository,
-        revSpec: revisionSpec,
-        symbols: [],
-        lineMatches: [],
-        limitHit: false,
-    }
-}
-
-const toGQLFileMatch = (fm: FileMatch): GQL.IFileMatch => ({
-    ...toGQLFileMatchBase(fm),
-    lineMatches: fm.lineMatches.map(toGQLLineMatch),
-})
-
-function toGQLSymbol(symbol: SymbolMatch): GQL.ISymbol {
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-    return {
-        __typename: 'Symbol',
-        ...symbol,
-    } as GQL.ISymbol
-}
-
-const toGQLSymbolMatch = (fm: FileSymbolMatch): GQL.IFileMatch => ({
-    ...toGQLFileMatchBase(fm),
-    symbols: fm.symbols.map(toGQLSymbol),
-})
-
-// eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-const toMarkdown = (text: string | MarkdownText): GQL.IMarkdown => ({ __typename: 'Markdown', text } as GQL.IMarkdown)
-
-export const toMarkdownCodeHtml = (text: string | MarkdownText): GQL.IMarkdown => ({
-    __typename: 'Markdown',
-    html: text.replace(/^```[_a-z]*\n/i, '').replace(/```$/i, ''), // Remove Markdown code indicators to render code as plain text
-    text, // The full result with Markdown code indicators is still needed as SearchResultMatch.tsx uses this to determine syntax highlighting
-})
-
-export function toGQLRepositoryMatch(repo: RepositoryMatch): GQL.IRepository {
-    const branch = repo?.branches?.[0]
-    const revision = branch ? `@${branch}` : ''
-    const label = repo.repository + revision
-    const url = '/' + encodeURI(label)
-
-    // We only need to return the subset defined in IGenericSearchResultInterface
-    const gqlRepo: unknown = {
-        __typename: 'Repository',
-        label: toMarkdown(`[${displayRepoName(label)}](${url})`),
-        url,
-        detail: toMarkdown('Repository match'),
-        matches: [],
-        name: repo.repository,
-    }
-
-    return gqlRepo as GQL.IRepository
-}
-
-function toGQLCommitMatch(commit: CommitMatch): GQL.ICommitSearchResult {
-    const match: GQL.ISearchResultMatch = {
-        __typename: 'SearchResultMatch',
-        url: commit.url,
-        body: toMarkdownCodeHtml(commit.content),
-        highlights: commit.ranges.map(([line, character, length]) => ({
-            __typename: 'Highlight',
-            line,
-            character,
-            length,
-        })),
-    }
-
-    const gqlCommit: Partial<GQL.IGitCommit> = {
-        __typename: 'GitCommit',
-        repository: toGQLRepositoryMatch({
-            type: 'repo',
-            repository: commit.repository,
-        }),
-    }
-
-    // We only need to return the subset defined in IGenericSearchResultInterface
-    const gqlCommitResult: Partial<GQL.ICommitSearchResult> = {
-        __typename: 'CommitSearchResult',
-        label: toMarkdown(commit.label),
-        url: commit.url,
-        detail: toMarkdown(commit.detail),
-        commit: gqlCommit as GQL.IGitCommit,
-        matches: [match],
-    }
-
-    return gqlCommitResult as GQL.ICommitSearchResult
-}
-
 export type StreamingResultsState = 'loading' | 'error' | 'complete'
 
 interface BaseAggregateResults {
     state: StreamingResultsState
-    results: GQL.SearchResult[]
+    results: SearchMatch[]
     alert?: Alert
     filters: Filter[]
     progress: Progress
@@ -339,19 +200,6 @@ const emptyAggregateResults: AggregateStreamingSearchResults = {
     },
 }
 
-function toGQLSearchResult(match: Match): GQL.SearchResult {
-    switch (match.type) {
-        case 'file':
-            return toGQLFileMatch(match)
-        case 'repo':
-            return toGQLRepositoryMatch(match)
-        case 'commit':
-            return toGQLCommitMatch(match)
-        case 'symbol':
-            return toGQLSymbolMatch(match)
-    }
-}
-
 /**
  * Converts a stream of SearchEvents into AggregateStreamingSearchResults
  */
@@ -369,7 +217,7 @@ const switchAggregateSearchResults: OperatorFunction<SearchEvent, AggregateStrea
                             return {
                                 ...results,
                                 // Matches are additive
-                                results: results.results.concat(newEvent.value.data.map(toGQLSearchResult)),
+                                results: results.results.concat(newEvent.value.data),
                             }
 
                         case 'progress':
@@ -551,4 +399,61 @@ function search({
 /** Initiate a streaming search and aggregate the results */
 export function aggregateStreamingSearch(options: StreamSearchOptions): Observable<AggregateStreamingSearchResults> {
     return search(options).pipe(switchAggregateSearchResults)
+}
+
+export function getRepositoryUrl(repository: string, branches?: string[]): string {
+    const branch = branches?.[0]
+    const revision = branch ? `@${branch}` : ''
+    const label = repository + revision
+    return '/' + encodeURI(label)
+}
+
+export function getRevision(branches?: string[], version?: string): string {
+    let revision = ''
+    if (branches) {
+        const branch = branches[0]
+        if (branch !== '') {
+            revision = branch
+        }
+    } else if (version) {
+        revision = version
+    }
+
+    return revision
+}
+
+export function getFileMatchUrl(fileMatch: FileLineMatch | FileSymbolMatch): string {
+    const revision = getRevision(fileMatch.branches, fileMatch.version)
+    return `/${fileMatch.repository}${revision ? '@' + revision : ''}/-/blob/${fileMatch.name}`
+}
+
+export function getRepoMatchLabel(repoMatch: RepositoryMatch): string {
+    const branch = repoMatch?.branches?.[0]
+    const revision = branch ? `@${branch}` : ''
+    return repoMatch.repository + revision
+}
+
+export function getRepoMatchUrl(repoMatch: RepositoryMatch): string {
+    const label = getRepoMatchLabel(repoMatch)
+    return '/' + encodeURI(label)
+}
+
+export function getMatchUrl(match: SearchMatch): string {
+    switch (match.type) {
+        case 'file':
+        case 'symbol':
+            return getFileMatchUrl(match)
+        case 'commit':
+            return match.url
+        case 'repo':
+            return getRepoMatchUrl(match)
+    }
+}
+
+export function getMatchTitle(match: RepositoryMatch | CommitMatch): MarkdownText {
+    if (match.type === 'commit') {
+        return match.label
+    }
+
+    return `[${displayRepoName(getRepoMatchLabel(match))}](${getRepoMatchUrl(match)})`
 }

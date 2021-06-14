@@ -4,8 +4,9 @@ import GitlabIcon from 'mdi-react/GitlabIcon'
 import React from 'react'
 import sinon from 'sinon'
 
+import { Filter } from '@sourcegraph/shared/src/search/stream'
+
 import { SearchScope } from '../../../../schema/settings.schema'
-import { Filter } from '../../../stream'
 
 import { getDynamicFilterLinks, getRepoFilterLinks, getSearchScopeLinks } from './FilterLink'
 

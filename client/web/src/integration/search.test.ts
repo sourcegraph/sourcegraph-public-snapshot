@@ -3,11 +3,11 @@ import { test } from 'mocha'
 import { Key } from 'ts-key-enum'
 
 import { SharedGraphQlOperations, SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
+import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { RepoGroupsResult, SearchSuggestionsResult, WebGraphQlOperations } from '../graphql-operations'
-import { SearchEvent } from '../search/stream'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
