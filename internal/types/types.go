@@ -1088,7 +1088,7 @@ type InsightUsageStatistics struct {
 
 type PingName string
 
-//AggregatedPingStats Generic representation of an aggregated ping statistic
+//AggregatedPingStats is a generic representation of an aggregated ping statistic
 type AggregatedPingStats struct {
 	Name        PingName
 	TotalCount  int
