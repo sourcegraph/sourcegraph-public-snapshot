@@ -16,6 +16,7 @@ import { getTourOptions, useFeatureTour } from '../useFeatureTour'
 
 import { SearchContextCtaPrompt } from './SearchContextCtaPrompt'
 import { SearchContextMenu } from './SearchContextMenu'
+import { defaultPopperModifiers } from './tour-options'
 
 export interface SearchContextDropdownProps
     extends Omit<SearchContextInputProps, 'showSearchContext'>,
@@ -92,11 +93,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
                 on: 'bottom',
             },
             popperOptions: {
-                modifiers: [
-                    // Removes default behavior of autofocusing steps
-                    { name: 'focusAfterRender', enabled: false },
-                    { name: 'offset', options: { offset: [140, 16] } },
-                ],
+                modifiers: [...defaultPopperModifiers, { name: 'offset', options: { offset: [140, 16] } }],
             },
         })
     )

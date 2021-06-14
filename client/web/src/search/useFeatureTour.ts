@@ -25,16 +25,19 @@ export const useFeatureTour = (
 ): Shepherd.Tour => {
     const [hasSeenFeatureTour, setHasSeenFeatureTour] = useLocalStorage(localStorageKey, false)
 
-    const tour = useMemo(() => new Shepherd.Tour(tourOptions), [tourOptions])
+    // tourOptions are excluded from deps array because we need to keep the reference to the same tour instance
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const tour = useMemo(() => new Shepherd.Tour(tourOptions), [])
     useEffect(() => {
         tour.addSteps([{ id: featureId, text: getFeatureTourElement(() => tour.cancel()) }])
     }, [tour, featureId, getFeatureTourElement])
 
     useEffect(() => {
+        console.log('useFeatureTour', featureId, showFeatureTour, hasSeenFeatureTour)
         if (!tour.isActive() && showFeatureTour && !hasSeenFeatureTour) {
             tour.start()
         }
-    }, [showFeatureTour, hasSeenFeatureTour, tour])
+    }, [featureId, showFeatureTour, hasSeenFeatureTour, tour])
 
     useEffect(() => {
         const onCanceled = (): void => {
@@ -46,7 +49,15 @@ export const useFeatureTour = (
         }
     }, [tour, setHasSeenFeatureTour])
 
-    useEffect(() => () => tour.cancel(), [tour])
+    useEffect(
+        () => () => {
+            tour.hide()
+            if (tour.isActive()) {
+                tour.cancel()
+            }
+        },
+        [tour]
+    )
 
     return tour
 }
