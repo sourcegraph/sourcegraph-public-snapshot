@@ -96,7 +96,7 @@ Bloat factor grows when the rate of creation of unreachable rows outpaces the au
 
 A better solution is to reduce the number of dead rows created during these batch updates. We can use a technique similar to the section above, but instead of issuing a single `INSERT` statement, we can issue an `INSERT` statement for all _new_ rows, a `DELETE` statement for all _missing_ rows, and an `UPDATE` statement for all _changed_ rows. This is likely to affect a much smaller number of total rows when the new and old data set have a large overlap (i.e., the majority of rows are unchanged between updates).
 
-In the following, we assume that `col1`, `col2`, and `col3` cover the identity of the row, and `col4` is a simple data point (which can be updated without changing the identity the row). For this to be optimally efficient, `col4` should not be present in any index so that a [HOT update](https://www.cybertec-postgresql.com/en/hot-updates-in-postgresql-for-better-performance/https://www.cybertec-postgresql.com/en/hot-updates-in-postgresql-for-better-performance/) is possible.
+In the following, we assume that `col1`, `col2`, and `col3` cover the identity of the row, and `col4` is a simple data point (which can be updated without changing the identity the row). For this to be optimally efficient, `col4` should not be present in any index so that a [HOT update](https://www.cybertec-postgresql.com/en/hot-updates-in-postgresql-for-better-performance/) is possible.
 
 #### Insert
 
