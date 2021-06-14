@@ -43,7 +43,8 @@
         cursor: pointer;
         transform: scale(0.99);
     }
-    &--active {
+    &--active,
+    &--inactive {
         border: none;
     }
 }
@@ -78,11 +79,5 @@
     }
     to {
         transform: scale(1.285555);
-    }
-}
-
-.theme-redesign {
-    .border--inactive {
-        border: none;
     }
 }
