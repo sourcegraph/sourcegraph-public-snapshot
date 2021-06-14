@@ -20,6 +20,7 @@ import { HighlightedLink } from './HighlightedLink'
 const DEFAULT_CASE_INSENSITIVE_FILE_COUNT_THRESHOLD = 80000
 
 const FUZZY_MODAL_TITLE = 'fuzzy-modal-title'
+const FUZZY_MODAL_RESULTS = 'fuzzy-modal-results'
 
 // Cache for the last fuzzy query. This value is only used to avoid redoing the
 // full fuzzy search on every re-render when the user presses the down/up arrow
@@ -150,8 +151,10 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
                     spellCheck="false"
                     role="combobox"
                     aria-autocomplete="list"
-                    aria-controls="fuzzy-modal-results"
+                    aria-controls={FUZZY_MODAL_RESULTS}
+                    aria-owns={FUZZY_MODAL_RESULTS}
                     aria-expanded={props.fsm.key !== 'downloading'}
+                    aria-activedescendant={fuzzyResultId(state.focusIndex)}
                     id="fuzzy-modal-input"
                     className={classNames('form-control py-1', styles.input)}
                     placeholder="Enter a partial file path or name"
@@ -293,11 +296,13 @@ function renderFiles(
     const linksToRender = links.slice(0, state.maxResults)
     return {
         element: (
-            <ul id="fuzzy-modal-results" className={styles.results}>
+            <ul id={FUZZY_MODAL_RESULTS} className={styles.results} role="listbox" aria-label="Fuzzy finder results">
                 {linksToRender.map((file, fileIndex) => (
                     <li
-                        id={`fuzzy-modal-result-${fileIndex}`}
+                        id={fuzzyResultId(fileIndex)}
                         key={file.text}
+                        role="option"
+                        aria-selected={fileIndex === state.focusIndex}
                         className={classNames('p-1', fileIndex === state.focusIndex && styles.focused)}
                     >
                         <HighlightedLink {...file} />
@@ -380,4 +385,8 @@ function cleanLegacyCacheStorage(): void {
         () => {},
         () => {}
     )
+}
+
+function fuzzyResultId(id: number): string {
+    return `fuzzy-modal-result-${id}`
 }
