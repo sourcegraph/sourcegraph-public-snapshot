@@ -19,6 +19,7 @@ linters-settings:
   depguard:
     list-type: blacklist
     packages-with-error-message:
+      - errors: "Use github.com/cockroachdb/errors instead"
       - github.com/pkg/errors: "Use github.com/cockroachdb/errors instead"
       - ioutil: "The ioutil package has been deprecated"
   gocritic:
