@@ -8,6 +8,7 @@ import (
 	"github.com/dghubble/gologin"
 	"golang.org/x/oauth2"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -75,7 +76,9 @@ func getStateConfig() gologin.CookieConfig {
 
 func requestedScopes(extraScopes []string) []string {
 	scopes := []string{"read_user", "read_api"}
-
+	if !envvar.SourcegraphDotComMode() {
+		scopes = append(scopes, "api")
+	}
 	// Append extra scopes and ensure there are no duplicates
 	for _, s := range extraScopes {
 		var found bool
