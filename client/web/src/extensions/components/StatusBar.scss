@@ -1,6 +1,15 @@
 .status-bar {
     background-color: var(--color-bg-2);
     height: 1.5rem;
+    // Define `width` and `display` in this class, instead of with utility classes,
+    // to allow consumers to override them with utility classes
+    width: 100%;
+    display: flex;
+
+    .theme-redesign & {
+        background-color: var(--code-bg);
+        height: 2rem;
+    }
 
     &__items {
         overflow-x: auto;

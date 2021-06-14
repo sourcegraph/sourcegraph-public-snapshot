@@ -36,6 +36,9 @@ interface StatusBarProps extends ExtensionsControllerProps<'extHostAPI' | 'execu
 
     /** Whether to hide the status bar while extensions are loading. */
     hideWhileInitializing?: boolean
+
+    /** If specified, this text will be displayed in a badge left of the status bar items */
+    badgeText?: string
 }
 
 export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
@@ -46,6 +49,7 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
     location,
     statusBarRef,
     hideWhileInitializing,
+    badgeText,
 }) => {
     const statusBarItems = useObservable(useMemo(() => getStatusBarItems(), [getStatusBarItems]))
 
@@ -87,7 +91,7 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
     return (
         <div
             className={classNames(
-                'status-bar w-100 border-top d-flex',
+                'status-bar border-top',
                 'percy-hide', // TODO: Fix flaky status bar in Percy tests: https://github.com/sourcegraph/sourcegraph/issues/20751
                 className
             )}
@@ -113,6 +117,7 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
                     </button>
                 )}
                 <div className="status-bar__items d-flex align-items-center px-2" ref={carouselReference}>
+                    {badgeText && <p className="badge badge-secondary m-0">{badgeText}</p>}
                     {!!statusBarItems && statusBarItems !== 'loading' && statusBarItems.length > 0
                         ? statusBarItems.map(statusBarItem => (
                               <StatusBarItem
