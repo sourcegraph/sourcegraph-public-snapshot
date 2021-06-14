@@ -1,5 +1,5 @@
 import * as H from 'history'
-import * as React from 'react'
+import React, { useCallback } from 'react'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
@@ -8,13 +8,17 @@ import { isSettingsValid, SettingsCascadeProps } from '../settings/settings'
 import { SymbolIcon } from '../symbols/SymbolIcon'
 import { ThemeProps } from '../theme'
 import { isErrorLike } from '../util/errors'
-import { toPositionOrRangeHash, appendSubtreeQueryParameter } from '../util/url'
+import {
+    toPositionOrRangeQueryParameter,
+    appendSubtreeQueryParameter,
+    appendLineRangeQueryParameter,
+} from '../util/url'
 import { useRedesignToggle } from '../util/useRedesignToggle'
 
 import { CodeExcerpt, FetchFileParameters } from './CodeExcerpt'
 import { CodeExcerptUnhighlighted } from './CodeExcerptUnhighlighted'
 import { FileLineMatch, MatchItem } from './FileMatch'
-import { calculateMatchGroups } from './FileMatchContext'
+import { calculateMatchGroups, MatchGroup } from './FileMatchContext'
 import { Link } from './Link'
 
 export interface EventLogger {
@@ -117,6 +121,17 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
         [result, fetchHighlightedFileLineRanges, grouped, optimizeHighlighting, eventLogger, onFirstResultLoad]
     )
 
+    const codeExcerptLink = useCallback(
+        (group: MatchGroup) => {
+            const positionOrRangeQueryParameter = toPositionOrRangeQueryParameter({ position: group.position })
+            return appendLineRangeQueryParameter(
+                appendSubtreeQueryParameter(result.file.url),
+                positionOrRangeQueryParameter
+            )
+        },
+        [result.file.url]
+    )
+
     if (NO_SEARCH_HIGHLIGHTING) {
         return (
             <CodeExcerptUnhighlighted urlWithoutPosition={result.file.url} items={matches} onSelect={props.onSelect} />
@@ -152,9 +167,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                     className="file-match-children__item-code-wrapper test-file-match-children-item-wrapper"
                 >
                     <Link
-                        to={appendSubtreeQueryParameter(
-                            `${result.file.url}${toPositionOrRangeHash({ position: group.position })}`
-                        )}
+                        to={codeExcerptLink(group)}
                         className="file-match-children__item file-match-children__item-clickable test-file-match-children-item"
                         onClick={props.onSelect}
                     >

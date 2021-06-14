@@ -11,7 +11,7 @@ import { ReferenceParameters, TextDocumentPositionParameters } from '@sourcegrap
 import { Activation, ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { AbsoluteRepoFile, ModeSpec, parseHash, UIPositionSpec } from '@sourcegraph/shared/src/util/url'
+import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash, UIPositionSpec } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { RepoRevisionSidebarCommits } from '../../RepoRevisionSidebarCommits'
@@ -118,7 +118,7 @@ export function useBlobPanelViews({
 
     // Source for history panel
     const panelSubject = useMemo(() => {
-        const parsedHash = parseHash(location.hash)
+        const parsedHash = parseQueryAndHash(location.search, location.hash)
         return {
             repoID,
             repoName,

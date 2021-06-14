@@ -1,7 +1,7 @@
 import * as React from 'react'
 
 import { highlightNode } from '../util/dom'
-import { toPositionOrRangeHash } from '../util/url'
+import { toPositionOrRangeQueryParameter } from '../util/url'
 
 import { Link } from './Link'
 
@@ -39,7 +39,7 @@ export class CodeExcerptUnhighlighted extends React.PureComponent<Props> {
                         }
                     >
                         <Link
-                            to={`${this.props.urlWithoutPosition}${toPositionOrRangeHash({
+                            to={`${this.props.urlWithoutPosition}?${toPositionOrRangeQueryParameter({
                                 position: { line: line + 1, character: highlightRanges[0].start + 1 },
                             })}`}
                             key={index}

@@ -289,13 +289,13 @@ describe('util/url', () => {
 
         test('formats url with position', () => {
             expect(toPrettyBlobURL({ ...context, position: lineCharPosition })).toBe(
-                '/github.com/gorilla/mux/-/blob/mux.go#L1:1'
+                '/github.com/gorilla/mux/-/blob/mux.go?L1:1'
             )
         })
 
         test('formats url with view state', () => {
             expect(toPrettyBlobURL({ ...context, position: lineCharPosition, viewState: 'references' })).toBe(
-                '/github.com/gorilla/mux/-/blob/mux.go#L1:1&tab=references'
+                '/github.com/gorilla/mux/-/blob/mux.go?L1:1#tab=references'
             )
         })
     })
@@ -323,7 +323,7 @@ describe('util/url', () => {
 
         test('default sourcegraph URL, with position', () => {
             expect(toAbsoluteBlobURL(sourcegraphUrl, { ...target, position: { line: 1, character: 1 } })).toBe(
-                'https://sourcegraph.com/github.com/gorilla/mux/-/blob/mux.go#L1:1'
+                'https://sourcegraph.com/github.com/gorilla/mux/-/blob/mux.go?L1:1'
             )
         })
     })
@@ -570,13 +570,13 @@ describe('isExternalLink', () => {
 
 describe('appendSubtreeQueryParam', () => {
     it('appends subtree=true to urls', () => {
-        expect(appendSubtreeQueryParameter('/github.com/sourcegraph/sourcegraph/-/blob/.gitattributes#L2:24')).toBe(
-            '/github.com/sourcegraph/sourcegraph/-/blob/.gitattributes?subtree=true#L2:24'
+        expect(appendSubtreeQueryParameter('/github.com/sourcegraph/sourcegraph/-/blob/.gitattributes?L2:24')).toBe(
+            '/github.com/sourcegraph/sourcegraph/-/blob/.gitattributes?L2:24&subtree=true'
         )
     })
     it('appends subtree=true to urls with other query params', () => {
         expect(
-            appendSubtreeQueryParameter('/github.com/sourcegraph/sourcegraph/-/blob/.gitattributes?test=test#L2:24')
-        ).toBe('/github.com/sourcegraph/sourcegraph/-/blob/.gitattributes?test=test&subtree=true#L2:24')
+            appendSubtreeQueryParameter('/github.com/sourcegraph/sourcegraph/-/blob/.gitattributes?test=test&L2:24')
+        ).toBe('/github.com/sourcegraph/sourcegraph/-/blob/.gitattributes?test=test&L2:24&subtree=true')
     })
 })
