@@ -4,9 +4,11 @@ import { defer } from 'rxjs'
 import { retry } from 'rxjs/operators'
 import type { LineChartContent } from 'sourcegraph'
 
-import { EMPTY_DATA_POINT_VALUE } from '../../../../views/ChartViewContent/charts/line/constants'
-import { fetchRawSearchInsightResults, fetchSearchInsightCommits } from '../requests/fetch-search-insight'
-import { SearchInsightSettings } from '../types'
+import { EMPTY_DATA_POINT_VALUE } from '../../../../../views/ChartViewContent/charts/line/constants'
+import { fetchRawSearchInsightResults, fetchSearchInsightCommits } from '../../requests/fetch-search-insight'
+import { SearchInsightSettings } from '../../types'
+
+import { queryHasCountFilter } from './query-has-count-filter'
 
 interface RepoCommit {
     date: Date
@@ -60,7 +62,7 @@ export async function getSearchInsightContent(insight: SearchInsightSettings): P
             date,
             repo,
             commit,
-            query: `repo:^${escapeRegExp(repo)}$@${commit} ${query} count:99999`,
+            query: `repo:^${escapeRegExp(repo)}$@${commit} ${getQueryWithCount(query)}`,
         }))
     )
 
@@ -186,4 +188,11 @@ function getDaysToQuery(step: Duration): Date[] {
     }
 
     return dates
+}
+
+function getQueryWithCount(query: string): string {
+    return queryHasCountFilter(query)
+        ? query
+        : // Increase the number to the maximum value to get all the data we can have
+          `${query} count:99999`
 }
