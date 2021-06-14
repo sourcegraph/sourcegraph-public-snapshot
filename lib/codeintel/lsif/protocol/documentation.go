@@ -115,10 +115,47 @@ func NewDocumentationResult(id uint64, result Documentation) DocumentationResult
 // "documentationString" should still be emitted - but with an empty string for the MarkupContent.
 // This enables validators to ensure the indexer knows how to emit both label and detail strings
 // properly, and just chose to emit none specifically.
+//
+// If this documentationResult is for the project root, the identifier should be an empty string.
+// Similarly, if there is no project root documentation (e.g. it would just be an index page for
+// documentation below the project root), an empty label and detail string should be attached.
+//
 type Documentation struct {
-	// A human-readable URL slug identifier for this documentation. It should be unique relative to
-	// sibling Documentation.
-	Slug string `json:"slug"`
+	// A human readable identifier for this documentationResult, uniquely identifying it within the
+	// scope of the parent page (or an empty string, if this is the root documentationResult.)
+	//
+	// Clients may build a path identifiers to a specific documentationResult _page_ by joining the
+	// identifiers of each documentationResult with `newPage: true` starting from the desired root
+	// until the target page is reached. For example, if trying to build a paths from the workspace
+	// root to a Go method "ServeHTTP" on a "Router" struct, you may have the following
+	// documentationResults describing the Go package structure:
+	//
+	//  	[
+	//  	  {identifier: "",                 newPage: true},
+	//  	  {identifier: "internal",         newPage: true},
+	//  	  {identifier: "pkg",              newPage: true},
+	//  	  {identifier: "mux",              newPage: true},
+	//  	  {identifier: "Router",           newPage: false},
+	//  	  {identifier: "Router.ServeHTTP", newPage: false},
+	//  	]
+	//
+	// The first entry (identifier="") is root documentationResult of the workspace. Note that
+	// since identifiers are unique relative to the parent page, the `Router` struct and the
+	// `Router.ServeHTTP` method have unique identifiers relative to the parent `mux` page.
+	// Thus, to build a path to either simply join all the `newPage: true` identifiers
+	// ("/internal/pkg/mux") and use the identifier of any child once `newPage: false` is reached:
+	//
+	//  	/internal/pkg/mux#Router
+	//  	/internal/pkg/mux#Router.ServeHTTP
+	//
+	// The identifier is relative to the parent page so that language indexers may choose to format
+	// the effective e.g. URL hash in a way that makes sense in the given language, e.g. C++ for
+	// example could use `Router::ServeHTTP` instead of a "." joiner.
+	//
+	// An identifier may contain any characters, including slashes and "#". If clients intend to
+	// use identifiers in a context where those characters are forbidden (e.g. URLs) then they must
+	// replace them with something else.
+	Identifier string `json:"identifier"`
 
 	// Whether or not this Documentation is the beginning of a new major section, meaning it and its
 	// its children should be e.g. displayed on their own dedicated page.
@@ -145,7 +182,7 @@ const (
 // strings, which are "documentationString" vertices. The overall structure looks like the
 // following roughly:
 //
-// 	{id: 53, type:"vertex", label:"documentationResult", result:{slug:"httpserver", ...}}
+// 	{id: 53, type:"vertex", label:"documentationResult", result:{identifier:"httpserver", ...}}
 // 	{id: 54, type:"vertex", label:"documentationString", result:{kind:"plaintext", "value": "A single-line label for an HTTPServer instance"}}
 // 	{id: 55, type:"vertex", label:"documentationString", result:{kind:"plaintext", "value": "A multi-line\n detailed\n explanation of an HTTPServer instance, what it does, etc."}}
 // 	{id: 54, type:"edge", label:"documentationString", inV: 54, outV: 53, kind:"label"}
