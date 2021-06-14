@@ -8,7 +8,7 @@ import { WebStory } from '../../../components/WebStory'
 
 import { StreamingProgress } from './StreamingProgress'
 
-const { add } = storiesOf('web/search/results/streaming/progress/StreamingProgress', module)
+const { add } = storiesOf('web/search/results/progress/StreamingProgress', module)
     .addParameters({
         design: {
             type: 'figma',

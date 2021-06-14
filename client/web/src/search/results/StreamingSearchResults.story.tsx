@@ -63,7 +63,7 @@ const defaultProps: StreamingSearchResultsProps = {
     enableCodeMonitoring: false,
 }
 
-const { add } = storiesOf('web/search/results/streaming/StreamingSearchResults', module).addParameters({
+const { add } = storiesOf('web/search/results/StreamingSearchResults', module).addParameters({
     chromatic: { viewports: [577, 769, 993] },
 })
 
