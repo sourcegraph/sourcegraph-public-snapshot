@@ -23,6 +23,7 @@ import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
 import { WebActionsNavItems as ActionsNavItems } from '../../components/shared'
 import { SearchPatternType } from '../../graphql-operations'
 import styles from '../FeatureTour.module.scss'
+import { defaultPopperModifiers } from '../input/tour-options'
 import { getTourOptions, useFeatureTour } from '../useFeatureTour'
 
 const HAS_SEEN_FEATURE_TOUR_KEY = 'has-seen-create-code-monitor-feature-tour'
@@ -131,11 +132,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                 on: 'bottom',
             },
             popperOptions: {
-                modifiers: [
-                    // Removes default behavior of autofocusing steps
-                    { name: 'focusAfterRender', enabled: false },
-                    { name: 'offset', options: { offset: [-100, 8] } },
-                ],
+                modifiers: [...defaultPopperModifiers, { name: 'offset', options: { offset: [-100, 8] } }],
             },
         })
     )
