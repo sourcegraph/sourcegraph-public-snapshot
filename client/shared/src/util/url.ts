@@ -1,5 +1,3 @@
-import { json } from 'express'
-
 import { Position, Range, Selection } from '@sourcegraph/extension-api-types'
 
 import { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
