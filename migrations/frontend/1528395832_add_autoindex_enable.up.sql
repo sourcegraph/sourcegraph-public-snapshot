@@ -8,7 +8,7 @@ BEGIN;
 --    migrate library handled it. However, it does not! /facepalm
 
 ALTER TABLE lsif_index_configuration
-  ADD COLUMN "autoindex_enabled" BOOLEAN NOT NULL DEFAULT TRUE
+  ADD COLUMN "autoindex_enabled" BOOLEAN NOT NULL DEFAULT TRUE;
 
 -- TODO: Later we should remove lsif_indexable_repositories
 

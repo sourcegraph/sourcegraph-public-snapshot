@@ -7,4 +7,7 @@ BEGIN;
 --  * Historically we advised against transactions since we thought the
 --    migrate library handled it. However, it does not! /facepalm
 
+ALTER TABLE lsif_index_configuration
+  DROP COLUMN IF EXISTS "autoindex_enabled";
+
 COMMIT;
