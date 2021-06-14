@@ -4,8 +4,8 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
-import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '../../..'
-import { toggleSearchType } from '../../../helpers'
+import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '../..'
+import { toggleSearchType } from '../../helpers'
 import { SearchType } from '../StreamingSearchResults'
 
 import styles from './SearchSidebarSection.module.scss'

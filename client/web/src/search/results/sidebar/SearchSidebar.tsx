@@ -8,8 +8,8 @@ import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '../../..'
-import { submitSearch, toggleSearchFilter } from '../../../helpers'
+import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '../..'
+import { submitSearch, toggleSearchFilter } from '../../helpers'
 
 import { getDynamicFilterLinks, getRepoFilterLinks, getSearchScopeLinks } from './FilterLink'
 import { getQuickLinks } from './QuickLink'

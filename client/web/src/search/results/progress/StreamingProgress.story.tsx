@@ -4,7 +4,7 @@ import sinon from 'sinon'
 
 import { Progress } from '@sourcegraph/shared/src/search/stream'
 
-import { WebStory } from '../../../../components/WebStory'
+import { WebStory } from '../../../components/WebStory'
 
 import { StreamingProgress } from './StreamingProgress'
 

@@ -1,7 +1,7 @@
 import { mount } from 'enzyme'
 import React from 'react'
 
-import { QuickLink } from '../../../../schema/settings.schema'
+import { QuickLink } from '../../../schema/settings.schema'
 
 import { getQuickLinks } from './QuickLink'
 

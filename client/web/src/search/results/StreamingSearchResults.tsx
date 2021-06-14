@@ -23,21 +23,21 @@ import {
     resolveVersionContext,
     ParsedSearchQueryProps,
     MutableVersionContextProps,
-} from '../..'
-import { AuthenticatedUser } from '../../../auth'
-import { CodeMonitoringProps } from '../../../code-monitoring'
-import { PageTitle } from '../../../components/PageTitle'
-import { isCodeInsightsEnabled } from '../../../insights'
-import { SavedSearchModal } from '../../../savedSearches/SavedSearchModal'
-import { QueryState, submitSearch } from '../../helpers'
-import { SearchAlert } from '../SearchAlert'
-import { SearchResultsInfoBar } from '../SearchResultsInfoBar'
-import { VersionContextWarning } from '../VersionContextWarning'
+} from '..'
+import { AuthenticatedUser } from '../../auth'
+import { CodeMonitoringProps } from '../../code-monitoring'
+import { PageTitle } from '../../components/PageTitle'
+import { isCodeInsightsEnabled } from '../../insights'
+import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
+import { QueryState, submitSearch } from '../helpers'
 
 import { StreamingProgress } from './progress/StreamingProgress'
+import { SearchAlert } from './SearchAlert'
+import { SearchResultsInfoBar } from './SearchResultsInfoBar'
 import { SearchSidebar } from './sidebar/SearchSidebar'
 import styles from './StreamingSearchResults.module.scss'
 import { StreamingSearchResultsList } from './StreamingSearchResultsList'
+import { VersionContextWarning } from './VersionContextWarning'
 
 export interface StreamingSearchResultsProps
     extends SearchStreamingProps,

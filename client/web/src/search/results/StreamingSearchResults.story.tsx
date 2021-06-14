@@ -14,8 +14,8 @@ import {
     REPO_MATCH_RESULT,
 } from '@sourcegraph/shared/src/util/searchTestHelpers'
 
-import { AuthenticatedUser } from '../../../auth'
-import { WebStory } from '../../../components/WebStory'
+import { AuthenticatedUser } from '../../auth'
+import { WebStory } from '../../components/WebStory'
 
 import { StreamingSearchResults, StreamingSearchResultsProps } from './StreamingSearchResults'
 
