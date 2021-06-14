@@ -60,31 +60,6 @@ func TestIndexSchedulerUpdate(t *testing.T) {
 		Name: "test repo",
 	}}, nil)
 
-	options := database.ReposListOptions{
-		Select:          []string{},
-		Query:           "",
-		IncludePatterns: []string{},
-		ExcludePattern:  "",
-		Names:           []string{},
-		URIs:            []string{},
-		// IDs:             []api.RepoID{},
-		UserID:          0,
-		SearchContextID: 0,
-		ServiceTypes:    []string{},
-		// ExternalServiceIDs:          []int64{},
-		// ExternalRepos:               []api.ExternalRepoSpec{},
-		// ExternalRepoIncludePrefixes: []api.ExternalRepoSpec{},
-		// ExternalRepoExcludePrefixes: []api.ExternalRepoSpec{},
-		PatternQuery: nil,
-		NoForks:      true,
-		NoArchived:   true,
-		NoCloned:     true,
-		NoPrivate:    true,
-		LimitOffset:  &database.LimitOffset{},
-	}
-
-	fmt.Println(mockRepoStore.ListRepoNames(context.Background(), options))
-
 	scheduler := &IndexScheduler{
 		dbStore:       mockDBStore,
 		settingStore:  mockSettingStore,
@@ -110,4 +85,10 @@ func TestIndexSchedulerUpdate(t *testing.T) {
 			t.Errorf("unexpected repository IDs (-want +got):\n%s", diff)
 		}
 	}
+}
+
+func TestDisabledAutoindexConfiguration(t *testing.T) {
+	// ListRepoNames -> a, b, c, d
+	// GetAutoindexDisabledRepositories -> c
+	// Result: a, b, d
 }

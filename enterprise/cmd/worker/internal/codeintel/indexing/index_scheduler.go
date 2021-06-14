@@ -75,7 +75,6 @@ func (s *IndexScheduler) Handle(ctx context.Context) error {
 		return nil
 	}
 
-	// TODO: Check for the new flag in the DB for this.
 	configuredRepositoryIDs, err := s.dbStore.GetRepositoriesWithIndexConfiguration(ctx)
 	if err != nil {
 		return errors.Wrap(err, "dbstore.GetRepositoriesWithIndexConfiguration")
@@ -92,12 +91,12 @@ func (s *IndexScheduler) Handle(ctx context.Context) error {
 		// Good
 		UserID:          0,
 		IncludePatterns: []string{includePatterns},
-		PatternQuery: nil,
-		NoForks:      true,
-		NoArchived:   true,
-		NoCloned:     true,
-		NoPrivate:    true,
-		LimitOffset:  &database.LimitOffset{},
+		PatternQuery:    nil,
+		NoForks:         true,
+		NoArchived:      true,
+		NoCloned:        true,
+		NoPrivate:       true,
+		LimitOffset:     &database.LimitOffset{},
 
 		// Not sure
 		// Select:          []string{},
@@ -121,9 +120,19 @@ func (s *IndexScheduler) Handle(ctx context.Context) error {
 		fmt.Println(repoGroupRepositoryIDs)
 	}
 
+	disabledRepoGroupsList, err := s.dbStore.GetAutoindexDisabledRepositories(ctx)
+	disabledRepoGroups := map[int]struct{}{}
+	for _, v := range disabledRepoGroupsList {
+		disabledRepoGroups[v] = struct{}{}
+	}
+
 	var indexableRepositoryIDs []int
 	for _, indexableRepository := range repoGroupRepositoryIDs {
-		indexableRepositoryIDs = append(indexableRepositoryIDs, int(indexableRepository.ID))
+		repoID := int(indexableRepository.ID)
+		if _, ok := disabledRepoGroups[repoID]; ok {
+			continue
+		}
+		indexableRepositoryIDs = append(indexableRepositoryIDs, repoID)
 	}
 
 	var queueErr error
