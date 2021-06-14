@@ -5,7 +5,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import { SearchContextInputProps, SearchContextProps } from '..'
+import { SearchContextInputProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { VersionContextDropdown } from '../../nav/VersionContextDropdown'
 import { VersionContext } from '../../schema/site.schema'
@@ -19,7 +19,6 @@ import { Toggles, TogglesProps } from './toggles/Toggles'
 
 export interface SearchBoxProps
     extends Omit<TogglesProps, 'navbarSearchQuery'>,
-        Pick<SearchContextProps, 'acceptSearchSuggestionOnEnter'>,
         ThemeProps,
         SearchContextInputProps,
         TelemetryProps,

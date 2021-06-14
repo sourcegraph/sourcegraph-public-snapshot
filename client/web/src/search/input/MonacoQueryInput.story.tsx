@@ -24,9 +24,9 @@ const defaultProps: MonacoQueryInputProps = {
     caseSensitive: false,
     versionContext: undefined,
     selectedSearchContextSpec: 'global',
-    acceptSearchSuggestionOnEnter: false,
     onChange: () => {},
     onSubmit: () => {},
+    settingsCascade: { final: null, subjects: null },
 }
 
 add(

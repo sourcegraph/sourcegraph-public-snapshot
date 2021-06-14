@@ -9,7 +9,9 @@ import { getProviders } from '@sourcegraph/shared/src/search/query/providers'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { SearchSuggestion } from '@sourcegraph/shared/src/search/suggestions'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { hasProperty } from '@sourcegraph/shared/src/util/types'
 
 import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '..'
@@ -25,7 +27,7 @@ export interface MonacoQueryInputProps
         Pick<CaseSensitivityProps, 'caseSensitive'>,
         Pick<PatternTypeProps, 'patternType'>,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
-        Pick<SearchContextProps, 'acceptSearchSuggestionOnEnter'>,
+        SettingsCascadeProps,
         VersionContextProps {
     isSourcegraphDotCom: boolean // significant for query suggestions
     queryState: QueryState
@@ -160,8 +162,11 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     isSourcegraphDotCom,
     isLightTheme,
     className,
-    acceptSearchSuggestionOnEnter,
+    settingsCascade,
 }) => {
+    const acceptSearchSuggestionOnEnter: boolean | undefined =
+        !isErrorLike(settingsCascade.final) &&
+        settingsCascade.final?.experimentalFeatures?.acceptSearchSuggestionOnEnter
     const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
 
     // Trigger a layout of the Monaco editor when its container gets resized.

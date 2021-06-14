@@ -189,7 +189,6 @@ export interface OnboardingTourProps {
 }
 
 export interface SearchContextProps {
-    acceptSearchSuggestionOnEnter?: boolean
     showSearchContext: boolean
     showSearchContextManagement: boolean
     showSearchContextHighlightTourStep?: boolean
