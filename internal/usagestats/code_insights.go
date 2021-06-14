@@ -138,7 +138,7 @@ func GetTimeStepCounts(ctx context.Context, db dbutil.DB) ([]types.InsightTimeIn
 		return []types.InsightTimeIntervalPing{}, err
 	}
 
-	daysCounts := make(map[int]int, 0)
+	daysCounts := make(map[int]int)
 
 	for _, insight := range insights {
 		days := convertStepToDays(insight)
