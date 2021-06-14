@@ -234,15 +234,17 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
             })
                 .pipe(
                     switchMap(({ nodes: services }) => {
-                        if (services.length === 0) {
-                            return of(ExternalServiceNoActivityReasons.NO_CODEHOSTS)
-                        }
+                        if (!this.props.user.isSiteAdmin) {
+                            if (services.length === 0) {
+                                return of(ExternalServiceNoActivityReasons.NO_CODEHOSTS)
+                            }
 
-                        if (
-                            !services.some(service => service.repoCount !== 0) &&
-                            services.every(service => service.lastSyncError === null && service.warning === null)
-                        ) {
-                            return of(ExternalServiceNoActivityReasons.NO_REPOS)
+                            if (
+                                !services.some(service => service.repoCount !== 0) &&
+                                services.every(service => service.lastSyncError === null && service.warning === null)
+                            ) {
+                                return of(ExternalServiceNoActivityReasons.NO_REPOS)
+                            }
                         }
 
                         return (this.props.fetchMessages ?? fetchAllStatusMessages)()
@@ -301,7 +303,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         }
 
         // no code hosts or no repos
-        if (isNoActivityReason(message) && !this.props.user.isSiteAdmin) {
+        if (isNoActivityReason(message)) {
             if (message === ExternalServiceNoActivityReasons.NO_REPOS) {
                 return (
                     <StatusMessagesNavItemEntry
