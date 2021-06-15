@@ -45,6 +45,7 @@ var SourcegraphDockerImages = []string{
 	"executor",
 
 	// Images under docker-images/
+	"alpine-3.12",
 	"cadvisor",
 	"indexed-searcher",
 	"postgres-11.4",

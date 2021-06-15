@@ -3,11 +3,11 @@ import React, { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
+import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
 import { SearchPatternType } from '../../graphql-operations'
-import { AggregateStreamingSearchResults } from '../stream'
 
 interface SearchAlertProps {
     alert: Required<AggregateStreamingSearchResults>['alert']

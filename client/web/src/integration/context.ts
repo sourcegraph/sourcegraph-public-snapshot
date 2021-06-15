@@ -4,6 +4,7 @@ import path from 'path'
 import html from 'tagged-template-noop'
 
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
 import {
     createSharedIntegrationTestContext,
     IntegrationTestContext,
@@ -12,7 +13,6 @@ import {
 
 import { WebGraphQlOperations } from '../graphql-operations'
 import { SourcegraphContext } from '../jscontext'
-import { SearchEvent } from '../search/stream'
 
 import { commonWebGraphQlResults } from './graphQlResults'
 import { createJsContext } from './jscontext'

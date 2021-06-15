@@ -9,13 +9,14 @@ import { Badged } from 'sourcegraph'
 import { Location } from '@sourcegraph/extension-api-types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
-import { FileLineMatch, FileMatch, LineMatch } from '@sourcegraph/shared/src/components/FileMatch'
+import { FileMatch } from '@sourcegraph/shared/src/components/FileMatch'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
+import { FileLineMatch } from '@sourcegraph/shared/src/search/stream'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { property, isDefined } from '@sourcegraph/shared/src/util/types'
-import { parseRepoURI, toPrettyBlobURL, toRepoURL } from '@sourcegraph/shared/src/util/url'
+import { isDefined, property } from '@sourcegraph/shared/src/util/types'
+import { parseRepoURI } from '@sourcegraph/shared/src/util/url'
 
 export const FileLocationsError: React.FunctionComponent<{ error: ErrorLike }> = ({ error }) => (
     <div className="file-locations__error alert alert-danger m-2">
@@ -193,35 +194,17 @@ export class FileLocations extends React.PureComponent<Props, State> {
 function referencesToFileLineMatch(uri: string, references: Badged<Location>[]): FileLineMatch {
     const parsedUri = parseRepoURI(uri)
     return {
-        file: {
-            path: parsedUri.filePath || '',
-            url: toPrettyBlobURL({
-                repoName: parsedUri.repoName,
-                filePath: parsedUri.filePath!,
-                revision: parsedUri.commitID || '',
-            }),
-            commit: {
-                oid: (parsedUri.commitID || parsedUri.revision)!,
-            },
-        },
-        repository: {
-            name: parsedUri.repoName,
-            // This is the only usage of toRepoURL, and it is arguably simpler than getting the value from the
-            // GraphQL API. We will be removing these old-style git: URIs eventually, so it's not worth fixing this
-            // deprecated usage.
-            url: toRepoURL(parsedUri),
-        },
-        limitHit: false,
-        lineMatches: references.filter(property('range', isDefined)).map(
-            (reference): LineMatch => ({
-                preview: '',
-                limitHit: false,
-                lineNumber: reference.range.start.line,
-                offsetAndLengths: [
-                    [reference.range.start.character, reference.range.end.character - reference.range.start.character],
-                ],
-                aggregableBadges: reference.aggregableBadges,
-            })
-        ),
+        type: 'file',
+        name: parsedUri.filePath || '',
+        version: (parsedUri.commitID || parsedUri.revision)!,
+        repository: parsedUri.repoName,
+        lineMatches: references.filter(property('range', isDefined)).map(reference => ({
+            line: '',
+            lineNumber: reference.range.start.line,
+            offsetAndLengths: [
+                [reference.range.start.character, reference.range.end.character - reference.range.start.character],
+            ],
+            aggregableBadges: reference.aggregableBadges,
+        })),
     }
 }

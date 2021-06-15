@@ -22,6 +22,7 @@ import { Notifications } from '@sourcegraph/shared/src/notifications/Notificatio
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
+import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import {
@@ -76,7 +77,6 @@ import {
     getUserSearchContextNamespaces,
 } from './search/backend'
 import { QueryState } from './search/helpers'
-import { aggregateStreamingSearch } from './search/stream'
 import { listUserRepositories } from './site-admin/backend'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'

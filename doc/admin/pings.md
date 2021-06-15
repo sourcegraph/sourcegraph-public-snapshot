@@ -90,6 +90,12 @@ By default, Sourcegraph also aggregates usage and performance metrics for some p
   - Total counts of edits, additions, and removals of insights by type
   - Total count of clicks on the "Add more insights" and "Configure insights" buttons on the insights page
   - Weekly count of users that have created an insight, and count of users that have created their first insight this week                  
+  - Weekly count of total and unique views to the `Create new insight`, `Create search insight`, and `Create language insight` pages
+  - Weekly count of total and unique clicks of the `Create search insight`, `Create language usage insight`, and `Explore the extensions` buttons on the `Create new insight` page
+  - Weekly count of total and unique clicks of the `Create` and `Cancel` buttons on the `Create search insight` and `Create language insight` pages
+  - Total count of insights grouped by time interval (step size) in days  
+  - Total count of insights set organization visible grouped by insight type
+
 - Code monitoring usage data
   - Total number of views of the code monitoring page
   - Total number of views of the create code monitor page
@@ -109,7 +115,7 @@ Sourcegraph only connects to Sourcegraph.com for two purposes:
 1. The pings described above are sent, in order to:
    - Check for new product updates.
    - Send [anonymous, non-specific, aggregate metrics](#pings) back to Sourcegraph.com (see the full list above).
-1. [Sourcegraph extensions](../extensions/index.md) are fetched from Sourcegraph.com's extension registry (unless you are using a [private extension registry](extensions.md#publish-extensions-to-a-private-extension-registry)).
+1. [Sourcegraph extensions](../extensions/index.md) are fetched from Sourcegraph.com`s extension registry (unless you are using a [private extension registry](extensions.md#publish-extensions-to-a-private-extension-registry)).
 
 There are no other automatic external connections to Sourcegraph.com (or any other site on the internet).
 
