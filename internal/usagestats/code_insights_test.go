@@ -2,9 +2,14 @@ package usagestats
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"reflect"
+	"sort"
 	"testing"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 
 	"github.com/google/go-cmp/cmp"
 
@@ -148,3 +153,218 @@ func TestWithCreationPings(t *testing.T) {
 		t.Fatal(fmt.Sprintf("want: %v got: %v", want, got))
 	}
 }
+
+func TestFilterSettingJson(t *testing.T) {
+	var want map[string]json.RawMessage
+	if err := jsonc.Unmarshal(insightAloneSettingStr, &want); err != nil {
+		t.Fatal(err)
+	}
+
+	input := insightInlineSettingStr
+	got, err := FilterSettingJson(input, "searchInsights.")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Fatalf("unexpected json map diff:%v", diff)
+	}
+
+	for key, val := range got {
+		t.Logf("k: %v val: %v", key, val)
+	}
+}
+
+func TestGetSearchInsights(t *testing.T) {
+	db := dbtesting.GetDB(t)
+	ctx := context.Background()
+	_, err := db.Exec(`INSERT INTO orgs(id, name) VALUES (1, 'first-org'), (2, 'second-org');`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = db.Exec(`
+
+			INSERT INTO settings (id, org_id, contents, created_at, user_id, author_user_id)
+			VALUES  (1, 1, $1, CURRENT_TIMESTAMP, NULL, NULL),
+					(2, 2, $2, CURRENT_TIMESTAMP, NULL, NULL);`,
+		insightSettingMulti, insightSettingSimple)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	step := 2
+	want := []SearchInsight{
+		{
+			ID:           "searchInsights.insight.global.first",
+			Title:        "my insight",
+			Repositories: []string{"github.com/sourcegraph/sourcegraph"},
+			Series: []TimeSeries{{
+				Name:   "Redis",
+				Stroke: "var(--oc-red-7)",
+				Query:  "redis",
+			}},
+			Step:       Interval{Weeks: &step},
+			Visibility: "",
+		},
+		{
+			ID:           "searchInsights.insight.global.second",
+			Title:        "my insight",
+			Repositories: []string{"github.com/sourcegraph/sourcegraph"},
+			Series: []TimeSeries{{
+				Name:   "Redis",
+				Stroke: "var(--oc-red-7)",
+				Query:  "redis",
+			}},
+			Step:       Interval{Weeks: &step},
+			Visibility: "",
+		},
+		{
+			ID:           "searchInsights.insight.global.simple",
+			Title:        "my insight",
+			Repositories: []string{"github.com/sourcegraph/sourcegraph"},
+			Series: []TimeSeries{{
+				Name:   "Redis",
+				Stroke: "var(--oc-red-7)",
+				Query:  "redis",
+			}},
+			Step:       Interval{Weeks: &step},
+			Visibility: "",
+		},
+	}
+
+	got, err := GetSearchInsights(ctx, db, All)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Sorting the slices so that we can reliably compare them
+	sort.Slice(got, func(i, j int) bool {
+		return got[i].ID < got[j].ID
+	})
+	sort.Slice(want, func(i, j int) bool {
+		return want[i].ID < want[j].ID
+
+	})
+
+	if !reflect.DeepEqual(want, got) {
+		t.Fatalf("unexpected insights diff: %v", cmp.Diff(want, got))
+	}
+}
+
+func TestGetLangStatsInsights(t *testing.T) {
+	db := dbtesting.GetDB(t)
+	ctx := context.Background()
+	_, err := db.Exec(`INSERT INTO orgs(id, name) VALUES (1, 'first-org'), (2, 'second-org');`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = db.Exec(`
+
+			INSERT INTO settings (id, org_id, contents, created_at, user_id, author_user_id)
+			VALUES  (1, 1, $1, CURRENT_TIMESTAMP, NULL, NULL)`,
+		langStatsInsightSettingStr)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := []LangStatsInsight{
+		{
+			ID:             "codeStatsInsights.insight.global.lang1",
+			Title:          "my insight",
+			Repository:     "github.com/sourcegraph/sourcegraph",
+			OtherThreshold: float32(0),
+		},
+	}
+
+	got, err := GetLangStatsInsights(ctx, db, All)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !reflect.DeepEqual(want, got) {
+		t.Fatalf("unexpected insights diff: %v", cmp.Diff(want, got))
+	}
+}
+
+const insightSettingSimple = `{"searchInsights.insight.global.simple": {
+    "title": "my insight",
+    "repositories": ["github.com/sourcegraph/sourcegraph"],
+    "series": [
+      {
+        "name": "Redis",
+        "query": "redis",
+        "stroke": "var(--oc-red-7)"
+      }
+    ],
+    "step": {
+      "weeks": 2
+    }
+  }}`
+
+const insightSettingMulti = `{"searchInsights.insight.global.first": {
+    "title": "my insight",
+    "repositories": ["github.com/sourcegraph/sourcegraph"],
+    "series": [
+      {
+        "name": "Redis",
+        "query": "redis",
+        "stroke": "var(--oc-red-7)"
+      }
+    ],
+    "step": {
+      "weeks": 2
+    }
+  },
+"searchInsights.insight.global.second": {
+    "title": "my insight",
+    "repositories": ["github.com/sourcegraph/sourcegraph"],
+    "series": [
+      {
+        "name": "Redis",
+        "query": "redis",
+        "stroke": "var(--oc-red-7)"
+      }
+    ],
+    "step": {
+      "weeks": 2
+    }
+  }}`
+
+const insightAloneSettingStr = `{"searchInsights.insight.global.myinsight": {
+    "title": "my insight",
+    "repositories": ["github.com/sourcegraph/sourcegraph"],
+    "series": [
+      {
+        "name": "Redis",
+        "query": "redis",
+        "stroke": "var(--oc-red-7)"
+      }
+    ],
+    "step": {
+      "weeks": 2
+    }
+  }}`
+
+const insightInlineSettingStr = `{"searchInsights.insight.global.myinsight": {
+    "title": "my insight",
+    "repositories": ["github.com/sourcegraph/sourcegraph"],
+    "series": [
+      {
+        "name": "Redis",
+        "query": "redis",
+        "stroke": "var(--oc-red-7)"
+      }
+    ],
+    "step": {
+      "weeks": 2
+    }
+  },
+  "codecov.insight.pie": true}`
+
+const langStatsInsightSettingStr = `{"codeStatsInsights.insight.global.lang1": {
+    "title": "my insight",
+    "repository": "github.com/sourcegraph/sourcegraph",
+  }}`
