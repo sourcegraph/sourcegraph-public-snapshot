@@ -700,10 +700,8 @@ export const addLineRangeQueryParameter = (searchParameters: URLSearchParams, ra
     if (existingLineRangeKey) {
         searchParameters.delete(existingLineRangeKey)
     }
-    if (range) {
-        searchParameters.set(range, '')
-    }
-    return searchParameters
+    // If a non-empty range exists add it to the start of the parameters, otherwise return the existing search parameters
+    return range ? new URLSearchParams([[range, ''], ...searchParameters.entries()]) : searchParameters
 }
 
 export const appendLineRangeQueryParameter = (url: string, range: string): string => {

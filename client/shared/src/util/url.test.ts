@@ -13,6 +13,7 @@ import {
     appendSubtreeQueryParameter,
     RepoFile,
     encodeURIPathComponent,
+    appendLineRangeQueryParameter,
 } from './url'
 
 /**
@@ -578,5 +579,16 @@ describe('appendSubtreeQueryParam', () => {
         expect(
             appendSubtreeQueryParameter('/github.com/sourcegraph/sourcegraph/-/blob/.gitattributes?test=test&L2:24')
         ).toBe('/github.com/sourcegraph/sourcegraph/-/blob/.gitattributes?test=test&L2:24&subtree=true')
+    })
+})
+
+describe('appendLineRangeQueryParameter', () => {
+    it('appends line range to the start of query with existing parameters', () => {
+        expect(
+            appendLineRangeQueryParameter(
+                '/github.com/sourcegraph/sourcegraph/-/blob/.gitattributes?test=test',
+                'L24:24'
+            )
+        ).toBe('/github.com/sourcegraph/sourcegraph/-/blob/.gitattributes?L24:24&test=test')
     })
 })

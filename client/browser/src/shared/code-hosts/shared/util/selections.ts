@@ -9,7 +9,6 @@ export function getSelectionsFromHash(): Selection[] {
     return lprToSelectionsZeroIndexed(parseHash(window.location.hash))
 }
 
-// TODO: This too?
 export function observeSelectionsFromHash(): Observable<Selection[]> {
     return fromEvent(window, 'hashchange').pipe(
         map(getSelectionsFromHash),
