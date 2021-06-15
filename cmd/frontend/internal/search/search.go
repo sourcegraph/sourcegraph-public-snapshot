@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
@@ -192,7 +193,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// Ensure that, for each result in the event, we have a copy of the full repo metadata.
 		var repoList map[api.RepoID]*types.Repo
 		if featureflag.FromContext(ctx).GetBoolOr("repoMetadata", false) {
-			repoList, err = h.repoMetadataCache.GetReposForEvent(ctx, h.db, event)
+			repoList, err = getReposForEvent(ctx, h.db, h.repoMetadataCache, event)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
@@ -674,4 +675,41 @@ func batchedEvents(source <-chan streaming.SearchEvent, delay time.Duration) <-c
 
 	}()
 	return results
+}
+
+func getReposForEvent(ctx context.Context, db dbutil.DB, cache repos.MetadataCache, event streaming.SearchEvent) (map[api.RepoID]*types.Repo, error) {
+	res := make(map[api.RepoID]*types.Repo, 10)
+	uncachedIDs := make(map[api.RepoID]struct{})
+	for _, match := range event.Results {
+		id := match.RepoName().ID
+		if repo, ok := cache.Get(id); ok {
+			res[id] = repo
+		} else {
+			uncachedIDs[id] = struct{}{}
+		}
+	}
+
+	// All repos referenced in the event were populated from the cache,
+	// so no need to hit the database
+	if len(uncachedIDs) == 0 {
+		return res, nil
+	}
+
+	uncachedIDSlice := make([]api.RepoID, 0, len(uncachedIDs))
+	for id := range uncachedIDs {
+		uncachedIDSlice = append(uncachedIDSlice, id)
+	}
+
+	// Retrieve all repo metadata that doesn't exist in the cache
+	repos, err := database.Repos(db).GetByIDs(ctx, uncachedIDSlice...)
+	if err != nil {
+		return nil, err
+	}
+
+	// Update the cache and the result
+	for _, repo := range repos {
+		cache.Add(repo.ID, repo)
+		res[repo.ID] = repo
+	}
+	return res, nil
 }

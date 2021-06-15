@@ -1,7 +1,6 @@
 package repos
 
 import (
-	"context"
 	"time"
 
 	lru "github.com/hashicorp/golang-lru"
@@ -9,9 +8,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -68,43 +64,6 @@ func (c *MetadataCache) Add(id api.RepoID, repo *types.Repo) {
 		validUntil: time.Now().Add(10 * time.Minute),
 	}
 	c.lru.Add(id, e)
-}
-
-func (c *MetadataCache) GetReposForEvent(ctx context.Context, db dbutil.DB, event streaming.SearchEvent) (map[api.RepoID]*types.Repo, error) {
-	res := make(map[api.RepoID]*types.Repo, 10)
-	uncachedIDs := make(map[api.RepoID]struct{})
-	for _, match := range event.Results {
-		id := match.RepoName().ID
-		if repo, ok := c.Get(id); ok {
-			res[id] = repo
-		} else {
-			uncachedIDs[id] = struct{}{}
-		}
-	}
-
-	// All repos referenced in the event were populated from the cache,
-	// so no need to hit the database
-	if len(uncachedIDs) == 0 {
-		return res, nil
-	}
-
-	uncachedIDSlice := make([]api.RepoID, 0, len(uncachedIDs))
-	for id := range uncachedIDs {
-		uncachedIDSlice = append(uncachedIDSlice, id)
-	}
-
-	// Retrieve all repo metadata that doesn't exist in the cache
-	repos, err := database.Repos(db).GetByIDs(ctx, uncachedIDSlice...)
-	if err != nil {
-		return nil, err
-	}
-
-	// Update the cache and the result
-	for _, repo := range repos {
-		c.Add(repo.ID, repo)
-		res[repo.ID] = repo
-	}
-	return res, nil
 }
 
 func NewMetadataCache(size int) MetadataCache {
