@@ -208,17 +208,21 @@ func TestGitLabCloneURLs(t *testing.T) {
 	tests := []struct {
 		Token      string
 		GitURLType string
+		TokenType  string
 		Want       string
 	}{
-		{"", "", "https://gitlab.com/gitlab-org/gitaly.git"},
-		{"abcd", "", "https://git:abcd@gitlab.com/gitlab-org/gitaly.git"},
-		{"abcd", "ssh", "git@gitlab.com:gitlab-org/gitaly.git"},
+		{Want: "https://gitlab.com/gitlab-org/gitaly.git"},
+		{Token: "abcd", Want: "https://git:abcd@gitlab.com/gitlab-org/gitaly.git"},
+		{Token: "abcd", TokenType: "oauth", Want: "https://oauth2:abcd@gitlab.com/gitlab-org/gitaly.git"},
+		{Token: "abcd", GitURLType: "ssh", Want: "git@gitlab.com:gitlab-org/gitaly.git"},
+		{Token: "abcd", GitURLType: "ssh", Want: "git@gitlab.com:gitlab-org/gitaly.git"},
 	}
 
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("Token(%q) / URLType(%q)", test.Token, test.GitURLType), func(t *testing.T) {
 			cfg := schema.GitLabConnection{
 				Token:      test.Token,
+				TokenType:  test.TokenType,
 				GitURLType: test.GitURLType,
 			}
 

@@ -7,6 +7,8 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
+
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
@@ -69,6 +71,9 @@ func StartBackgroundJobs(ctx context.Context, mainAppDB *sql.DB) {
 
 		// TODO(slimsag): future: register another worker here for webhook querying.
 	}
+
+	//todo(insights) add setting to disable this indexer
+	routines = append(routines, compression.NewCommitIndexerWorker(ctx, mainAppDB, timescale))
 
 	// Register the background goroutine which discovers historical gaps in data and enqueues
 	// work to fill them - if not disabled.

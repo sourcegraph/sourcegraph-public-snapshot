@@ -62,7 +62,7 @@ func SearchSymbols(ctx context.Context, args *search.TextParameters, limit int, 
 	ctx, stream, cancel := streaming.WithLimit(ctx, stream, limit)
 	defer cancel()
 
-	indexed, err := newIndexedSearchRequest(ctx, args, symbolRequest, stream)
+	indexed, err := zoektutil.NewIndexedSearchRequest(ctx, args, zoektutil.SymbolRequest, stream)
 	if err != nil {
 		return err
 	}

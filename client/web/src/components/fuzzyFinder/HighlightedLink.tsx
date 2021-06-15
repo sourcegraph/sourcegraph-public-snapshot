@@ -64,7 +64,7 @@ export const HighlightedLink: React.FunctionComponent<HighlightedLinkProps> = pr
 
     return props.url ? (
         <code>
-            <Link className={styles.link} to={props.url} onClick={() => props.onClick?.()}>
+            <Link tabIndex={-1} className={styles.link} to={props.url} onClick={() => props.onClick?.()}>
                 {spans}
             </Link>
         </code>

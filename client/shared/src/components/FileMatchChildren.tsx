@@ -3,22 +3,22 @@ import React, { useCallback } from 'react'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { ISymbol, IHighlightLineRange } from '../graphql/schema'
+import { IHighlightLineRange } from '../graphql/schema'
+import { FileLineMatch, FileSymbolMatch, getFileMatchUrl } from '../search/stream'
 import { isSettingsValid, SettingsCascadeProps } from '../settings/settings'
 import { SymbolIcon } from '../symbols/SymbolIcon'
 import { ThemeProps } from '../theme'
 import { isErrorLike } from '../util/errors'
 import {
+    appendLineRangeQueryParameter,
     toPositionOrRangeQueryParameter,
     appendSubtreeQueryParameter,
-    appendLineRangeQueryParameter,
 } from '../util/url'
-import { useRedesignToggle } from '../util/useRedesignToggle'
 
 import { CodeExcerpt, FetchFileParameters } from './CodeExcerpt'
 import { CodeExcerptUnhighlighted } from './CodeExcerptUnhighlighted'
-import { FileLineMatch, MatchItem } from './FileMatch'
-import { calculateMatchGroups, MatchGroup } from './FileMatchContext'
+import { MatchItem } from './FileMatch'
+import { MatchGroup, calculateMatchGroups } from './FileMatchContext'
 import { Link } from './Link'
 
 export interface EventLogger {
@@ -29,7 +29,7 @@ interface FileMatchProps extends SettingsCascadeProps, ThemeProps {
     location: H.Location
     eventLogger?: EventLogger
     items: MatchItem[]
-    result: FileLineMatch
+    result: FileLineMatch | FileSymbolMatch
     /* Called when the first result has fully loaded. */
     onFirstResultLoad?: () => void
     /**
@@ -51,8 +51,6 @@ interface FileMatchProps extends SettingsCascadeProps, ThemeProps {
 const NO_SEARCH_HIGHLIGHTING = localStorage.getItem('noSearchHighlighting') !== null
 
 export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props => {
-    const [isRedesignEnabled] = useRedesignToggle()
-
     // The number of lines of context to show before and after each match.
     let context = 1
 
@@ -89,9 +87,9 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
             const startTime = Date.now()
             return fetchHighlightedFileLineRanges(
                 {
-                    repoName: result.repository.name,
-                    commitID: result.file.commit.oid,
-                    filePath: result.file.path,
+                    repoName: result.repository,
+                    commitID: result.version || '',
+                    filePath: result.name,
                     disableTimeout: false,
                     isLightTheme,
                     ranges: optimizeHighlighting
@@ -125,30 +123,37 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
         (group: MatchGroup) => {
             const positionOrRangeQueryParameter = toPositionOrRangeQueryParameter({ position: group.position })
             return appendLineRangeQueryParameter(
-                appendSubtreeQueryParameter(result.file.url),
+                appendSubtreeQueryParameter(getFileMatchUrl(result)),
                 positionOrRangeQueryParameter
             )
         },
-        [result.file.url]
+        [result]
     )
 
     if (NO_SEARCH_HIGHLIGHTING) {
         return (
-            <CodeExcerptUnhighlighted urlWithoutPosition={result.file.url} items={matches} onSelect={props.onSelect} />
+            <CodeExcerptUnhighlighted
+                urlWithoutPosition={getFileMatchUrl(result)}
+                items={matches}
+                onSelect={props.onSelect}
+            />
         )
     }
+
+    const noMatches =
+        grouped.length === 0 && (result.type !== 'symbol' || !result.symbols || result.symbols.length === 0)
 
     return (
         <div className="file-match-children">
             {/* No symbols or line matches means that this is a path match */}
-            {isRedesignEnabled && (!result.symbols || result.symbols.length === 0) && grouped.length === 0 && (
+            {noMatches && (
                 <div className="file-match-children__item">
                     <small>Path match</small>
                 </div>
             )}
 
             {/* Symbols */}
-            {(result.symbols || []).map((symbol: ISymbol) => (
+            {((result.type === 'symbol' && result.symbols) || []).map(symbol => (
                 <Link
                     to={symbol.url}
                     className="file-match-children__item test-file-match-children-item"
@@ -161,9 +166,11 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                     </code>
                 </Link>
             ))}
+
+            {/* Line matches */}
             {grouped.map((group, index) => (
                 <div
-                    key={`linematch:${result.file.url}${group.position.line}:${group.position.character}`}
+                    key={`linematch:${getFileMatchUrl(result)}${group.position.line}:${group.position.character}`}
                     className="file-match-children__item-code-wrapper test-file-match-children-item-wrapper"
                 >
                     <Link
@@ -172,9 +179,9 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                         onClick={props.onSelect}
                     >
                         <CodeExcerpt
-                            repoName={result.repository.name}
-                            commitID={result.file.commit.oid}
-                            filePath={result.file.path}
+                            repoName={result.repository}
+                            commitID={result.version || ''}
+                            filePath={result.name}
                             startLine={group.startLine}
                             endLine={group.endLine}
                             highlightRanges={group.matches}

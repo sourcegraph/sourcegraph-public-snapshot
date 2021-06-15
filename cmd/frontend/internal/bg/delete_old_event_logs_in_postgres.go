@@ -11,6 +11,8 @@ import (
 
 func DeleteOldEventLogsInPostgres(ctx context.Context, db dbutil.DB) {
 	for {
+		// We choose 93 days as the interval to ensure that we have at least the last three months
+		// of logs at all times.
 		_, err := db.ExecContext(
 			ctx,
 			`DELETE FROM event_logs WHERE "timestamp" < now() - interval '93' day`,
@@ -24,6 +26,8 @@ func DeleteOldEventLogsInPostgres(ctx context.Context, db dbutil.DB) {
 
 func DeleteOldSecurityEventLogsInPostgres(ctx context.Context, db dbutil.DB) {
 	for {
+		// We choose 186 days as the interval to ensure that we have at least the last six months of
+		// logs at all times.
 		_, err := db.ExecContext(
 			ctx,
 			`DELETE FROM security_event_logs WHERE "timestamp" < now() - interval '186' day`,

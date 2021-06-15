@@ -611,12 +611,8 @@ func pathParentsByFrequency(paths []string) []string {
 	return parents
 }
 
-// Wrap an alert in a SearchResultsResolver. ElapsedMilliseconds() will
-// calculate a very large value for duration if start takes on the nil-value of
-// year 1. As a workaround, wrap instantiates start with time.now().
-// TODO(rvantonder): #10801.
-func (a searchAlert) wrap(db dbutil.DB) *SearchResultsResolver {
-	return &SearchResultsResolver{db: db, alert: &a}
+func (a searchAlert) wrapResults() *SearchResults {
+	return &SearchResults{Alert: &a}
 }
 
 func (a searchAlert) wrapSearchImplementer(db dbutil.DB) *alertSearchImplementer {
@@ -634,7 +630,7 @@ type alertSearchImplementer struct {
 }
 
 func (a alertSearchImplementer) Results(context.Context) (*SearchResultsResolver, error) {
-	return a.alert.wrap(a.db), nil
+	return &SearchResultsResolver{db: a.db, SearchResults: a.alert.wrapResults()}, nil
 }
 
 func (alertSearchImplementer) Suggestions(context.Context, *searchSuggestionsArgs) ([]SearchSuggestionResolver, error) {
