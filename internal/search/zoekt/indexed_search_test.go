@@ -1,7 +1,9 @@
-package run
+package zoekt
 
 import (
 	"context"
+	"crypto/md5"
+	"encoding/binary"
 	"fmt"
 	"sort"
 	"testing"
@@ -18,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -269,7 +270,7 @@ func TestIndexedSearch(t *testing.T) {
 				},
 			}
 
-			indexed, err := newIndexedSearchRequest(context.Background(), args, textRequest, streaming.StreamFunc(func(streaming.SearchEvent) {}))
+			indexed, err := NewIndexedSearchRequest(context.Background(), args, TextRequest, streaming.StreamFunc(func(streaming.SearchEvent) {}))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -455,7 +456,7 @@ func TestZoektResultCountFactor(t *testing.T) {
 	}
 	for _, tt := range cases {
 		t.Run(tt.name, func(t *testing.T) {
-			got := zoektutil.ResultCountFactor(tt.numRepos, tt.pattern.FileMatchLimit, tt.globalSearch)
+			got := ResultCountFactor(tt.numRepos, tt.pattern.FileMatchLimit, tt.globalSearch)
 			if tt.want != got {
 				t.Fatalf("Want scaling factor %d but got %d", tt.want, got)
 			}
@@ -466,13 +467,13 @@ func TestZoektResultCountFactor(t *testing.T) {
 func TestQueryToZoektQuery(t *testing.T) {
 	cases := []struct {
 		Name    string
-		Type    indexedRequestType
+		Type    IndexedRequestType
 		Pattern *search.TextPatternInfo
 		Query   string
 	}{
 		{
 			Name: "substr",
-			Type: textRequest,
+			Type: TextRequest,
 			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              false,
@@ -485,7 +486,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 		},
 		{
 			Name: "symbol substr",
-			Type: symbolRequest,
+			Type: SymbolRequest,
 			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              false,
@@ -498,7 +499,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 		},
 		{
 			Name: "regex",
-			Type: textRequest,
+			Type: TextRequest,
 			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              false,
@@ -511,7 +512,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 		},
 		{
 			Name: "path",
-			Type: textRequest,
+			Type: TextRequest,
 			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              false,
@@ -524,7 +525,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 		},
 		{
 			Name: "case",
-			Type: textRequest,
+			Type: TextRequest,
 			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              true,
@@ -537,7 +538,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 		},
 		{
 			Name: "casepath",
-			Type: textRequest,
+			Type: TextRequest,
 			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              true,
@@ -550,7 +551,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 		},
 		{
 			Name: "path matches only",
-			Type: textRequest,
+			Type: TextRequest,
 			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              false,
@@ -565,7 +566,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 		},
 		{
 			Name: "content matches only",
-			Type: textRequest,
+			Type: TextRequest,
 			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              false,
@@ -580,7 +581,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 		},
 		{
 			Name: "content and path matches 1",
-			Type: textRequest,
+			Type: TextRequest,
 			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              false,
@@ -595,7 +596,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 		},
 		{
 			Name: "content and path matches 2",
-			Type: textRequest,
+			Type: TextRequest,
 			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              false,
@@ -610,7 +611,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 		},
 		{
 			Name: "repos must include",
-			Type: textRequest,
+			Type: TextRequest,
 			Pattern: &search.TextPatternInfo{
 				IsRegExp:                     true,
 				Pattern:                      "foo",
@@ -922,4 +923,45 @@ func TestBufferedSender(t *testing.T) {
 	}
 	// Drain the buffer to make sure that cleanup() can return.
 	<-c
+}
+
+func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {
+	r := make([]*search.RepositoryRevisions, len(repos))
+	for i, repospec := range repos {
+		repoName, revs := search.ParseRepositoryRevisions(repospec)
+		if len(revs) == 0 {
+			// treat empty list as preferring master
+			revs = []search.RevisionSpecifier{{RevSpec: ""}}
+		}
+		r[i] = &search.RepositoryRevisions{Repo: mkRepos(repoName)[0], Revs: revs}
+	}
+	return r
+}
+
+func mkRepos(names ...string) []types.RepoName {
+	var repos []types.RepoName
+	for _, name := range names {
+		sum := md5.Sum([]byte(name))
+		id := api.RepoID(binary.BigEndian.Uint64(sum[:]))
+		if id < 0 {
+			id = -(id / 2)
+		}
+		if id == 0 {
+			id++
+		}
+		repos = append(repos, types.RepoName{ID: id, Name: api.RepoName(name)})
+	}
+	return repos
+}
+
+func matchesToFileMatches(matches []result.Match) ([]*result.FileMatch, error) {
+	fms := make([]*result.FileMatch, 0, len(matches))
+	for _, match := range matches {
+		fm, ok := match.(*result.FileMatch)
+		if !ok {
+			return nil, fmt.Errorf("expected only file match results")
+		}
+		fms = append(fms, fm)
+	}
+	return fms, nil
 }
