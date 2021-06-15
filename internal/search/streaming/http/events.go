@@ -19,7 +19,7 @@ type EventFileMatch struct {
 
 	Path       string   `json:"name"`
 	Repository string   `json:"repository"`
-	RepoStars  int      `json:"repoStars"`
+	RepoStars  int      `json:"repoStars,omitempty"`
 	Branches   []string `json:"branches,omitempty"`
 	Version    string   `json:"version,omitempty"`
 
@@ -42,8 +42,8 @@ type EventRepoMatch struct {
 
 	Repository  string   `json:"repository"`
 	Branches    []string `json:"branches,omitempty"`
-	RepoStars   int      `json:"repoStars"`
-	Description string   `json:"description"`
+	RepoStars   int      `json:"repoStars,omitempty"`
+	Description string   `json:"description,omitempty"`
 	Fork        bool     `json:"fork"`
 	Archived    bool     `json:"archived"`
 }
@@ -57,7 +57,7 @@ type EventSymbolMatch struct {
 
 	Path       string   `json:"name"`
 	Repository string   `json:"repository"`
-	RepoStars  int      `json:"repoStars"`
+	RepoStars  int      `json:"repoStars,omitempty"`
 	Branches   []string `json:"branches,omitempty"`
 	Version    string   `json:"version,omitempty"`
 
@@ -85,7 +85,7 @@ type EventCommitMatch struct {
 	URL        string `json:"url"`
 	Detail     string `json:"detail"`
 	Repository string `json:"repository"`
-	RepoStars  int    `json:"repoStars"`
+	RepoStars  int    `json:"repoStars,omitempty"`
 	Content    string `json:"content"`
 	// [line, character, length]
 	Ranges [][3]int32 `json:"ranges"`

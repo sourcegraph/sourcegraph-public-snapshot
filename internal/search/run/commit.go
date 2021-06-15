@@ -289,7 +289,7 @@ func logCommitSearchResultsToMatches(op *search.CommitParameters, repoName types
 				Value:      matchBody,
 				Highlights: matchHighlights,
 			},
-			RepoName: repoName,
+			Repo: repoName,
 		}
 	}
 
