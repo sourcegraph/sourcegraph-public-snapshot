@@ -343,7 +343,6 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                     />
                 </div>
             </Container>
-            <hr className={classNames('redesign-d-none my-4', styles.searchContextFormDivider)} />
             <div className="d-flex">
                 <button
                     type="submit"

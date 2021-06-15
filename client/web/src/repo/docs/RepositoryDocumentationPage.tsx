@@ -1,6 +1,5 @@
 import * as H from 'history'
 import { upperFirst } from 'lodash'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useEffect, useCallback, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -60,7 +59,7 @@ const fetchDocumentationPage = (args: DocumentationPageVariables): Observable<GQ
             if (!data || !data.node) {
                 throw createAggregateError(errors)
             }
-            const repo = data.node as GQL.IRepository
+            const repo = data.node
             if (
                 !repo.commit ||
                 !repo.commit.tree ||
@@ -75,9 +74,7 @@ const fetchDocumentationPage = (args: DocumentationPageVariables): Observable<GQ
     )
 
 const PageError: React.FunctionComponent<{ error: ErrorLike }> = ({ error }) => (
-    <div className="repository-docs-page__error alert alert-danger m-2">
-        <AlertCircleIcon className="redesign-d-none icon-inline" /> Error: {upperFirst(error.message)}
-    </div>
+    <div className="repository-docs-page__error alert alert-danger m-2">Error: {upperFirst(error.message)}</div>
 )
 
 const PageNotFound: React.FunctionComponent = () => (

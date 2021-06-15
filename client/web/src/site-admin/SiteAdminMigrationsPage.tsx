@@ -225,7 +225,6 @@ interface MigrationUpgradeWarningBannerProps {
 const MigrationUpgradeWarningBanner: React.FunctionComponent<MigrationUpgradeWarningBannerProps> = ({ migrations }) => (
     <div className="alert alert-warning">
         <p>
-            <WarningIcon className="redesign-d-none icon-inline mr-2" />
             The next version of Sourcegraph removes support for reading an old data format. Your Sourcegraph instance
             must complete the following migrations to ensure your data remains readable.{' '}
             <strong>If you upgrade your Sourcegraph instance now, you may corrupt or lose data.</strong>

@@ -1,6 +1,5 @@
 import classNames from 'classnames'
 import * as H from 'history'
-import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 import React, { useCallback, useState } from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
@@ -64,7 +63,6 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<CreateUpdateB
                 )}
             >
                 <div className={classNames(styles.createUpdateBatchChangeAlertCopy, 'flex-grow-1 mr-3')}>
-                    <InfoCircleOutlineIcon className="redesign-d-none icon-inline mr-2" />
                     {!batchChange && (
                         <>
                             Review the proposed changesets below. Click 'Apply spec' or run <code>src batch apply</code>{' '}
