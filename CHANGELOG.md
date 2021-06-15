@@ -50,6 +50,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Stricter validation of structural search queries. The `type:` parameter is not supported for structural searches and returns an appropriate alert. [#21487](https://github.com/sourcegraph/sourcegraph/pull/21487)
 - Batch changeset specs that are not attached to changesets will no longer prematurely expire before the batch specs that they are associated with. [#21678](https://github.com/sourcegraph/sourcegraph/pull/21678)
+- Code insights line chart no longer has a negative quadrant [#22018](https://github.com/sourcegraph/sourcegraph/pull/22018)
 
 ### Removed
 
