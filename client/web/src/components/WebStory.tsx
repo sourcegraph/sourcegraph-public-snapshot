@@ -26,10 +26,15 @@ export const WebStory: React.FunctionComponent<
         webStyles?: string
     }
 > = ({ children, webStyles = _webStyles, ...memoryRouterProps }) => {
-    const [isLightTheme, setIsLightTheme] = useState(!useDarkMode())
+    const isDarkMode = useDarkMode()
+    const [isLightTheme, setIsLightTheme] = useState(!isDarkMode)
     const breadcrumbSetters = useBreadcrumbs()
     const Children = useMemo(() => withRouter(children), [children])
     useStyles(webStyles)
+
+    useLayoutEffect(() => {
+        setIsLightTheme(!isDarkMode)
+    }, [isDarkMode])
 
     useLayoutEffect(() => {
         const listener = ((event: CustomEvent<boolean>): void => {

@@ -22,8 +22,13 @@ export const BrandedStory: React.FunctionComponent<
         styles?: string
     }
 > = ({ children: Children, styles = brandedStyles, ...memoryRouterProps }) => {
-    const [isLightTheme, setIsLightTheme] = useState(!useDarkMode())
+    const isDarkMode = useDarkMode()
+    const [isLightTheme, setIsLightTheme] = useState(!isDarkMode)
     useStyles(styles)
+
+    useLayoutEffect(() => {
+        setIsLightTheme(!isDarkMode)
+    }, [isDarkMode])
 
     useLayoutEffect(() => {
         const listener = ((event: CustomEvent<boolean>): void => {
