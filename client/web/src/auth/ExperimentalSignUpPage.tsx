@@ -1,6 +1,6 @@
+import classNames from 'classnames'
 import GithubIcon from 'mdi-react/GithubIcon'
 import React from 'react'
-import classNames from 'classnames'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
