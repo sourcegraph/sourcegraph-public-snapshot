@@ -14,6 +14,18 @@ $redesign-gray-06: #798baf;
 // Exception that's used in $theme-colors-redesign and in --box-shadow variable.
 $redesign-gray-08: #343a4d;
 
+// Tell Bootstrap to use colors from redesign colors.
+$blue: $redesign-blue;
+$indigo: $redesign-indigo;
+$purple: $redesign-purple;
+$pink: $redesign-pink;
+$red: $redesign-red;
+$orange: $redesign-orange;
+$yellow: $redesign-yellow;
+$green: $redesign-green;
+$teal: $redesign-teal;
+$cyan: $redesign-cyan;
+
 // Core semantic base colors.
 $theme-colors-redesign: (
     primary: $redesign-blue,
