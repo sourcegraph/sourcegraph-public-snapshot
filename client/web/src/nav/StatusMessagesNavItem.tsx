@@ -431,7 +431,9 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
             )
         }
 
-        if (this.state.messagesOrError.some(({ type }) => type === 'ExternalServiceSyncError')) {
+        if (
+            this.state.messagesOrError.some(({ type }) => type === 'ExternalServiceSyncError' || type === 'SyncError')
+        ) {
             return (
                 <CloudAlertIcon
                     className="icon-inline-md"
