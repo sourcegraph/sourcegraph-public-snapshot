@@ -58,6 +58,7 @@
     }
 
     &__icon {
-        fill: $body-color !important;
+        // TODO: Check if this is avaiable in /shared
+        fill: var(--body-color) !important;
     }
 }
