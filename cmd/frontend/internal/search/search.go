@@ -45,7 +45,7 @@ func StreamHandler(db dbutil.DB) http.Handler {
 		newSearchResolver:   defaultNewSearchResolver,
 		flushTickerInternal: 100 * time.Millisecond,
 		pingTickerInterval:  5 * time.Second,
-		repoMetadataCache:   repos.NewMetadataCache(1000),
+		repoMetadataCache:   repos.NewMetadataCache(5000),
 	}
 }
 

@@ -5,6 +5,8 @@ import (
 	"time"
 
 	lru "github.com/hashicorp/golang-lru"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -13,6 +15,23 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
+var (
+	metadataCacheHits = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "src_repo_metadata_cache_hits",
+		Help: "Number of repo metadata cache accesses that were served by the cache",
+	})
+
+	metadataCacheMisses = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "src_repo_metadata_cache_misses",
+		Help: "Number of repo metadata cache accesses that were not served by the cache and were loaded by the DB",
+	})
+)
+
+// MetadataCache is an in-memory cache for the metadata of the most frequently searched
+// repos. Its intent is to reduce database roundtrips and load by storing the results of
+// converting types.RepoName into *types.Repo. With repo results returned in priority order
+// by stars, this should have a fairly high hit rate.
+// If we move querying the full repo metadata from the database in advance, this will be obsolete.
 type MetadataCache struct {
 	lru *lru.TwoQueueCache
 }
@@ -27,6 +46,7 @@ type cacheEntry struct {
 func (c *MetadataCache) Get(id api.RepoID) (*types.Repo, bool) {
 	ci, ok := c.lru.Get(id)
 	if !ok {
+		metadataCacheMisses.Inc()
 		return nil, false
 	}
 	ce := ci.(cacheEntry)
@@ -34,9 +54,11 @@ func (c *MetadataCache) Get(id api.RepoID) (*types.Repo, bool) {
 	// Evict the entry if it has expired
 	if time.Now().After(ce.validUntil) {
 		c.lru.Remove(id)
+		metadataCacheMisses.Inc()
 		return nil, false
 	}
 
+	metadataCacheHits.Inc()
 	return ce.repo, true
 }
 
