@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/Masterminds/semver"
-	"github.com/graph-gophers/graphql-go/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
@@ -63,7 +62,7 @@ func (d Dependency) GitTagFromVersion() string {
 func ParseMavenDependency(dependency string) (Dependency, error) {
 	parts := strings.Split(dependency, ":")
 	if len(parts) < 3 {
-		return Dependency{}, errors.Errorf("dependency %s must contain at least two colon ':' characters", dependency)
+		return Dependency{}, fmt.Errorf("dependency %q must contain at least two colon ':' characters", dependency)
 
 	}
 	version := parts[2]
@@ -86,10 +85,11 @@ func ParseMavenDependency(dependency string) (Dependency, error) {
 	}, nil
 }
 
-func ParseMavenModule(path string) (Module, error) {
-	parts := strings.SplitN(strings.TrimPrefix(path, "maven/"), "/", 2)
+// ParseMavenModule returns a parsed JVM module from the provided URL path, without a leading `/`
+func ParseMavenModule(urlPath string) (Module, error) {
+	parts := strings.SplitN(strings.TrimPrefix(urlPath, "maven/"), "/", 2)
 	if len(parts) != 2 {
-		return Module{}, fmt.Errorf("failed to parse a maven module from the path %s", path)
+		return Module{}, fmt.Errorf("failed to parse a maven module from the path %s", urlPath)
 	}
 
 	return Module{

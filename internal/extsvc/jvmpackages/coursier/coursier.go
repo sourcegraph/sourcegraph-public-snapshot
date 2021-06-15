@@ -62,5 +62,5 @@ func runCoursierCommand(ctx context.Context, config *schema.JvmPackagesConnectio
 		return nil, errors.Wrapf(err, "coursier command %q failed with stderr %q and stdout %q", cmd, stderr, &stdout)
 	}
 
-	return strings.Split(strings.Trim(stdout.String(), " \n"), "\n"), nil
+	return strings.Split(strings.TrimSpace(stdout.String()), "\n"), nil
 }

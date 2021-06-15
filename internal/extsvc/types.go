@@ -124,6 +124,8 @@ const (
 
 	// TypeOther is the (api.ExternalRepoSpec).ServiceType value for other projects.
 	TypeOther = "other"
+
+	defaultRateLimit = rate.Limit(2)
 )
 
 // KindToType returns a Type constants given a Kind
@@ -368,15 +370,13 @@ func GetLimitFromConfig(kind string, config interface{}) (rlc RateLimitConfig, e
 		}
 		rlc.BaseURL = c.Url
 	case *schema.BitbucketCloudConnection:
-		// 2/s is the default limit we enforce
-		rlc.Limit = rate.Limit(2)
+		rlc.Limit = defaultRateLimit
 		if c != nil && c.RateLimit != nil {
 			rlc.Limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 			rlc.IsDefault = false
 		}
 		rlc.BaseURL = c.Url
 	case *schema.PerforceConnection:
-		// 2/s is the default limit we enforce
 		rlc.Limit = rate.Limit(5000.0 / 3600.0)
 		if c != nil && c.RateLimit != nil {
 			rlc.Limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
@@ -384,8 +384,7 @@ func GetLimitFromConfig(kind string, config interface{}) (rlc RateLimitConfig, e
 		}
 		rlc.BaseURL = c.P4Port
 	case *schema.JvmPackagesConnection:
-		// 2/s is the default limit we enforce
-		rlc.Limit = rate.Limit(5000.0 / 3600.0)
+		rlc.Limit = defaultRateLimit
 		if c != nil && c.Maven.RateLimit != nil {
 			rlc.Limit = limitOrInf(c.Maven.RateLimit.Enabled, c.Maven.RateLimit.RequestsPerHour)
 			rlc.IsDefault = false
