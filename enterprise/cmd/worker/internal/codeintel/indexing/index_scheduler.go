@@ -2,7 +2,6 @@ package indexing
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -88,36 +87,16 @@ func (s *IndexScheduler) Handle(ctx context.Context) error {
 	_, includePatterns := searchrepos.RepoGroupsToIncludePatterns([]string{"cncf"}, groupsByName)
 
 	options := database.ReposListOptions{
-		// Good
-		UserID:          0,
 		IncludePatterns: []string{includePatterns},
-		PatternQuery:    nil,
+		OnlyCloned:      true,
 		NoForks:         true,
 		NoArchived:      true,
-		NoCloned:        true,
 		NoPrivate:       true,
-		LimitOffset:     &database.LimitOffset{},
-
-		// Not sure
-		// Select:          []string{},
-		// Query:           "",
-		// ExcludePattern:  "",
-		// Names:           []string{},
-		// URIs:            []string{},
-		// IDs:             []api.RepoID{},
-		// SearchContextID: 0,
-		// ServiceTypes:    []string{},
-		// ExternalServiceIDs:          []int64{},
-		// ExternalRepos:               []api.ExternalRepoSpec{},
-		// ExternalRepoIncludePrefixes: []api.ExternalRepoSpec{},
-		// ExternalRepoExcludePrefixes: []api.ExternalRepoSpec{},
 	}
 
 	repoGroupRepositoryIDs, err := s.repoStore.ListRepoNames(ctx, options)
 	if err != nil {
-		fmt.Println(err)
-	} else {
-		fmt.Println(repoGroupRepositoryIDs)
+		return err
 	}
 
 	disabledRepoGroupsList, err := s.dbStore.GetAutoindexDisabledRepositories(ctx)

@@ -11,8 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
 
-// TODO: Check that false flag makes it so we don't return stuff here.
-
 func TestGetRepositoriesWithIndexConfiguration(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -139,12 +137,18 @@ func TestGetRepositoriesWithIndexConfigurationIgnoresDisabledRepos(t *testing.T)
 		t.Fatalf("unexpected error while fetching repositories with index configuration: %s", err)
 	}
 
-	// 45 is not even, so it's removed
+	// 45 is not even, so it's disabled
 	expectedRepositoryIDs := []int{
 		42,
 		44,
 	}
 	if diff := cmp.Diff(expectedRepositoryIDs, repositoryIDs); diff != "" {
+		t.Errorf("unexpected repository identifiers (-want +got):\n%s", diff)
+	}
+
+	disabledRepositoryIDs, err := store.GetAutoindexDisabledRepositories(context.Background())
+	expectedDisabledRepositoryIDs := []int{45}
+	if diff := cmp.Diff(expectedDisabledRepositoryIDs, disabledRepositoryIDs); diff != "" {
 		t.Errorf("unexpected repository identifiers (-want +got):\n%s", diff)
 	}
 }
