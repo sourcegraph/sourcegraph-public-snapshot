@@ -4,7 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
+
+	"github.com/cockroachdb/errors"
+
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -116,15 +121,19 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db dbutil.DB) (*types.C
 	}
 	stats.WeeklyAggregatedUsage = weeklyUsage
 
+	// These two pings are slightly more fragile than the others because they deserialize json from settings. They are
+	// also less important. So, in the case of any errors here we will not fail the entire ping for code insights.
 	timeIntervals, err := GetTimeStepCounts(ctx, db)
 	if err != nil {
-		return nil, err
+		log15.Error(fmt.Sprintf("code-insights/GetTimeStepCounts: %v", err))
+		return nil, nil
 	}
 	stats.InsightTimeIntervals = timeIntervals
 
 	orgVisible, err := GetOrgInsightCounts(ctx, db)
 	if err != nil {
-		return nil, err
+		log15.Error(fmt.Sprintf("code-insights/GetOrgInsightCounts: %v", err))
+		return nil, nil
 	}
 	stats.InsightOrgVisible = orgVisible
 
@@ -355,26 +364,47 @@ func GetSettings(ctx context.Context, db dbutil.DB, filter SettingFilter, prefix
 	return filtered, nil
 }
 
-func GetSearchInsights(ctx context.Context, db dbutil.DB, filter SettingFilter) ([]SearchInsight, error) {
+// FilterSettingJson will return a json map that only contains keys that match a prefix string, mapped to the keyed contents.
+func FilterSettingJson(settingJson string, prefix string) (map[string]json.RawMessage, error) {
+	var raw map[string]json.RawMessage
 
-	settings, err := GetSettings(ctx, db, filter, "searchInsights.")
+	if err := jsonc.Unmarshal(settingJson, &raw); err != nil {
+		return map[string]json.RawMessage{}, err
+	}
+
+	for key, _ := range raw {
+		if !strings.HasPrefix(key, prefix) {
+			delete(raw, key)
+		}
+	}
+
+	return raw, nil
+}
+
+func GetSearchInsights(ctx context.Context, db dbutil.DB, filter SettingFilter) ([]SearchInsight, error) {
+	prefix := "searchInsights."
+	settings, err := GetSettings(ctx, db, filter, prefix)
 	if err != nil {
 		return []SearchInsight{}, err
 	}
 
+	var raw map[string]json.RawMessage
 	results := make([]SearchInsight, 0)
 
 	for _, setting := range settings {
-		var raw map[string]json.RawMessage
-		if err := jsonc.Unmarshal(setting.Contents, &raw); err != nil {
+		raw, err = FilterSettingJson(setting.Contents, prefix)
+		if err != nil {
 			return []SearchInsight{}, err
 		}
+
 		var temp SearchInsight
 
 		for id, body := range raw {
 			temp.ID = id
 			if err := json.Unmarshal(body, &temp); err != nil {
-				return []SearchInsight{}, err
+				// We would prefer to report some metrics if at all possible, so skip any deserialization errors
+				log15.Error(errors.Wrapf(err, "parsing error in setting body for setting key: %\n", id).Error())
+				continue
 			}
 			results = append(results, temp)
 		}
@@ -383,25 +413,30 @@ func GetSearchInsights(ctx context.Context, db dbutil.DB, filter SettingFilter) 
 }
 
 func GetLangStatsInsights(ctx context.Context, db dbutil.DB, filter SettingFilter) ([]LangStatsInsight, error) {
+	prefix := "codeStatsInsights."
 
-	settings, err := GetSettings(ctx, db, filter, "codeStatsInsights.")
+	settings, err := GetSettings(ctx, db, filter, prefix)
 	if err != nil {
 		return []LangStatsInsight{}, err
 	}
 
+	var raw map[string]json.RawMessage
 	results := make([]LangStatsInsight, 0)
 
 	for _, setting := range settings {
-		var raw map[string]json.RawMessage
-		if err := jsonc.Unmarshal(setting.Contents, &raw); err != nil {
+		raw, err = FilterSettingJson(setting.Contents, prefix)
+		if err != nil {
 			return []LangStatsInsight{}, err
 		}
+
 		var temp LangStatsInsight
 
 		for id, body := range raw {
 			temp.ID = id
 			if err := json.Unmarshal(body, &temp); err != nil {
-				return []LangStatsInsight{}, err
+				// We would prefer to report some metrics if at all possible, so skip any deserialization errors
+				log15.Error(errors.Wrapf(err, "parsing error in setting body for setting key: %v\n", id).Error())
+				continue
 			}
 			results = append(results, temp)
 		}
