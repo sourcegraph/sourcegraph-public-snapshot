@@ -45,7 +45,7 @@ type pageCollector struct {
 func (p *pageCollector) collect(ctx context.Context, ch chan<- *semantic.DocumentationPageData) (remainingPages []*pageCollector) {
 	var walk func(parent *semantic.DocumentationNode, documentationResult int, pathID string)
 	walk = func(parent *semantic.DocumentationNode, documentationResult int, pathID string) {
-		isPageRoot := documentationResult == p.startingDocumentationResult
+		isRootPage := documentationResult == p.startingDocumentationResult
 
 		labelID := p.state.DocumentationStringLabel[documentationResult]
 		detailID := p.state.DocumentationStringDetail[documentationResult]
@@ -54,41 +54,37 @@ func (p *pageCollector) collect(ctx context.Context, ch chan<- *semantic.Documen
 			Documentation: documentation,
 			Label:         p.state.DocumentationStringsData[labelID],
 			Detail:        p.state.DocumentationStringsData[detailID],
+			PathID:        documentation.Identifier,
 		}
-		if isPageRoot && !p.isChildPage {
-			// We intentionally discard the project root PathID. This was the slug chosen by
-			// the LSIF indexer, and has an arbitrary name like "/index". But we want a consistent
-			// name "/" always for the root path ID: "/".
-			this.PathID = "/"
-		} else {
-			this.PathID = pathID + documentation.Slug
-		}
-
-		if parent != nil && (isPageRoot || this.Documentation.NewPage) {
-			// This documentationResult is a child of our parent, but it's a brand new page. We
-			// spawn a new pageCollector to collect this page. We can't simply emit our page right
-			// now, because we might not be finished collecting all the other descendant children
-			// of this node.
-			parent.Children = append(parent.Children, semantic.DocumentationNodeChild{
-				PathID: this.PathID,
-			})
-			remainingPages = append(remainingPages, &pageCollector{
-				isChildPage:                 true,
-				parentPathID:                parent.PathID,
-				state:                       p.state,
-				startingDocumentationResult: documentationResult,
-			})
-		} else if parent != nil {
-			parent.Children = append(parent.Children, semantic.DocumentationNodeChild{
-				Node: this,
-			})
+		if parent != nil {
+			if isRootPage || this.Documentation.NewPage {
+				// This documentationResult is a child of our parent, but it's a brand new page. We
+				// spawn a new pageCollector to collect this page. We can't simply emit our page right
+				// now, because we might not be finished collecting all the other descendant children
+				// of this node.
+				this.PathID = pathID + "/" + documentation.Identifier
+				parent.Children = append(parent.Children, semantic.DocumentationNodeChild{
+					PathID: this.PathID,
+				})
+				remainingPages = append(remainingPages, &pageCollector{
+					isChildPage:                 true,
+					parentPathID:                parent.PathID,
+					state:                       p.state,
+					startingDocumentationResult: documentationResult,
+				})
+			} else {
+				this.PathID = pathID + "#" + documentation.Identifier
+				parent.Children = append(parent.Children, semantic.DocumentationNodeChild{
+					Node: this,
+				})
+			}
 		}
 
 		children := p.state.DocumentationChildren[documentationResult]
 		for _, child := range children {
 			walk(this, child, this.PathID)
 		}
-		if isPageRoot {
+		if isRootPage {
 			// collected a whole page
 			ch <- &semantic.DocumentationPageData{Tree: this}
 		}
