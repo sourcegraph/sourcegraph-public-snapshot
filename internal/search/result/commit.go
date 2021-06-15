@@ -13,7 +13,7 @@ import (
 
 type CommitMatch struct {
 	Commit         git.Commit
-	RepoName       types.RepoName
+	Repo           types.RepoName
 	Refs           []string
 	SourceRefs     []string
 	MessagePreview *HighlightedString
@@ -35,6 +35,10 @@ func (r *CommitMatch) ResultCount() int {
 	return 1
 }
 
+func (r *CommitMatch) RepoName() types.RepoName {
+	return r.Repo
+}
+
 func (r *CommitMatch) Limit(limit int) int {
 	if len(r.Body.Highlights) == 0 {
 		return limit - 1 // just counting the commit
@@ -49,8 +53,8 @@ func (r *CommitMatch) Select(path filter.SelectPath) Match {
 	switch path.Type {
 	case filter.Repository:
 		return &RepoMatch{
-			Name: r.RepoName.Name,
-			ID:   r.RepoName.ID,
+			Name: r.Repo.Name,
+			ID:   r.Repo.ID,
 		}
 	case filter.Commit:
 		if len(path.Fields) > 0 && path.Fields[0] == "diff" {
@@ -78,7 +82,7 @@ func (r *CommitMatch) Key() Key {
 	}
 	return Key{
 		TypeRank: typeRank,
-		Repo:     r.RepoName.Name,
+		Repo:     r.Repo.Name,
 		Commit:   r.Commit.ID,
 	}
 }
@@ -86,8 +90,8 @@ func (r *CommitMatch) Key() Key {
 func (r *CommitMatch) Label() string {
 	message := r.Commit.Message.Subject()
 	author := r.Commit.Author.Name
-	repoName := displayRepoName(string(r.RepoName.Name))
-	repoURL := (&RepoMatch{Name: r.RepoName.Name, ID: r.RepoName.ID}).URL().String()
+	repoName := displayRepoName(string(r.Repo.Name))
+	repoURL := (&RepoMatch{Name: r.Repo.Name, ID: r.Repo.ID}).URL().String()
 	commitURL := r.URL().String()
 
 	return fmt.Sprintf("[%s](%s) › [%s](%s): [%s](%s)", repoName, repoURL, author, commitURL, message, commitURL)
@@ -100,7 +104,7 @@ func (r *CommitMatch) Detail() string {
 }
 
 func (r *CommitMatch) URL() *url.URL {
-	u := (&RepoMatch{Name: r.RepoName.Name, ID: r.RepoName.ID}).URL()
+	u := (&RepoMatch{Name: r.Repo.Name, ID: r.Repo.ID}).URL()
 	u.Path = u.Path + "/-/commit/" + string(r.Commit.ID)
 	return u
 }
