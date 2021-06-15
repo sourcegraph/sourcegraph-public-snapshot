@@ -70,9 +70,6 @@ func CloneURL(kind, config string, repo *types.Repo) (string, error) {
 	case *schema.JvmPackagesConnection:
 		if r, ok := repo.Metadata.(*jvmpackages.Metadata); ok {
 			return r.Module.CloneURL(), nil
-		} else {
-			log15.Info("", "r", repo, "metadata", repo.Metadata)
-			fmt.Printf("%T", repo.Metadata)
 		}
 	default:
 		return "", errors.Errorf("unknown external service kind %q for repo %d", kind, repo.ID)

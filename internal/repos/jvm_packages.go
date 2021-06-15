@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -49,7 +47,7 @@ func (s JvmPackagesSource) ListRepos(ctx context.Context, results chan SourceRes
 func (s JvmPackagesSource) listDependentRepos(ctx context.Context, results chan SourceResult) {
 	modules, err := MavenModules(*s.config)
 	if err != nil {
-		log15.Error("failed to parse JVM modules", "configuration", *s.config, "error", err)
+		results <- SourceResult{Err: err}
 		return
 	}
 	for _, module := range modules {

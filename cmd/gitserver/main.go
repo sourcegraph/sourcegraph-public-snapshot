@@ -93,8 +93,6 @@ func main() {
 				return "", err
 			}
 
-			log15.Info("GetRemoteURLFunc", "r", r)
-
 			for _, info := range r.Sources {
 				// build the clone url using the external service config instead of using
 				// the source CloneURL field

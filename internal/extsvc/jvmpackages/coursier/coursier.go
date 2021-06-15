@@ -7,12 +7,13 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+var CoursierBinary = "coursier"
 
 func ListArtifactIDs(ctx context.Context, config *schema.JvmPackagesConnection, groupID string) ([]string, error) {
 	return runCoursierCommand(ctx, config, "complete", groupID+":")
@@ -43,8 +44,7 @@ func Exists(ctx context.Context, config *schema.JvmPackagesConnection, dependenc
 }
 
 func runCoursierCommand(ctx context.Context, config *schema.JvmPackagesConnection, args ...string) ([]string, error) {
-	log15.Info("runCoursierCommand", "args", args)
-	cmd := exec.CommandContext(ctx, "coursier", args...)
+	cmd := exec.CommandContext(ctx, CoursierBinary, args...)
 	if config.Maven.Credentials != "" {
 		cmd.Env = append(cmd.Env, fmt.Sprintf("COURSIER_CREDENTIALS=%v", config.Maven.Credentials))
 	}
@@ -59,7 +59,7 @@ func runCoursierCommand(ctx context.Context, config *schema.JvmPackagesConnectio
 	cmd.Stderr = &stderr
 	err := cmd.Run()
 	if err != nil {
-		return nil, errors.Wrap(err, stderr.String())
+		return nil, errors.Wrapf(err, "coursier command %q failed with stderr %q and stdout %q", cmd, stderr, &stdout)
 	}
 
 	return strings.Split(strings.Trim(stdout.String(), " \n"), "\n"), nil

@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/jvmpackages/coursier"
@@ -19,9 +19,10 @@ import (
 )
 
 const (
-	// DO NOT CHANGE THIS. We need this to be stable to have stable git revhash.
-	// Changing this would cause old links to 404 as previous revhashes would
-	// be invalidated by version tags having a new revhash.
+	// DO NOT CHANGE. This timestamp needs to be stable so that JVM package
+	// repos consistently produce the same git revhash.  Changing this
+	// timestamp will cause links to JVM package repos to return 404s
+	// because Sourcegraph URLs can optionally include the git commit sha.
 	stableGitCommitDate = "Thu Apr 8 14:24:52 2021 +0200"
 )
 
@@ -102,8 +103,7 @@ func (s JvmPackagesArtifactSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL
 			continue
 		}
 		if err := s.gitPushDependencyTag(ctx, string(dir), dependency, i == 0); err != nil {
-			log15.Error("error pushing dependency tag", "error", err, "tag", dependency)
-			return err
+			return errors.Wrapf(err, "error pushing dependency %q", dependency)
 		}
 	}
 
@@ -193,7 +193,7 @@ func (s JvmPackagesArtifactSyncer) gitPushDependencyTag(ctx context.Context, bar
 		return err
 	}
 
-	cmd = exec.CommandContext(ctx, "git", "push", "origin", "--tags")
+	cmd = exec.CommandContext(ctx, "git", "push", "--force", "origin", "--tags")
 	if err := runCommandInDirectory(ctx, cmd, tmpDirectory); err != nil {
 		return err
 	}
@@ -211,7 +211,7 @@ func (s JvmPackagesArtifactSyncer) gitPushDependencyTag(ctx context.Context, bar
 // commitJar creates a git commit in the given working directory that adds all the file contents of the given jar file.
 // A `*.jar` file works the same way as a `*.zip` file, it can even be uncompressed with the `unzip` command-line tool.
 func (s JvmPackagesArtifactSyncer) commitJar(ctx context.Context, dependency reposource.Dependency, workingDirectory, jarPath string) error {
-	cmd := exec.CommandContext(ctx, "unzip", jarPath, "-d", "./")
+	cmd := exec.CommandContext(ctx, "unzip", jarPath)
 	if err := runCommandInDirectory(ctx, cmd, workingDirectory); err != nil {
 		return err
 	}
@@ -237,7 +237,6 @@ func (s JvmPackagesArtifactSyncer) commitJar(ctx context.Context, dependency rep
 	}
 
 	cmd = exec.CommandContext(ctx, "git", "add", ".")
-	cmd.Dir = workingDirectory
 	if err := runCommandInDirectory(ctx, cmd, workingDirectory); err != nil {
 		return err
 	}
@@ -259,7 +258,8 @@ func runCommandInDirectory(ctx context.Context, cmd *exec.Cmd, workingDirectory 
 	cmd.Dir = workingDirectory
 	output, err := runWith(ctx, cmd, false, nil)
 	if err != nil {
-		return errors.Wrapf(err, "command %s failed with output %q", cmd.Args, string(output))
+		log15.Error("failed command", "cmd", cmd, "err", err)
+		return errors.Wrapf(err, "command %s failed with output %s", cmd.Args, string(output))
 	}
 	return nil
 }
