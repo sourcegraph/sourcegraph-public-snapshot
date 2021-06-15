@@ -1,0 +1,39 @@
+.search-reference {
+    isolation: isolate; // Prevent the z-index below from leaking out of this container
+
+    &__header {
+        font-size: 0.857rem;
+        font-weight: 400;
+        line-height: 1.3rem;
+    }
+
+    &__item {
+        flex-direction: column;
+    }
+
+    &__item:hover &__collapse-button {
+        visibility: visible;
+    }
+
+    &__collapse-button {
+        visibility: hidden;
+        border: none;
+        margin: 0;
+        padding: 0;
+
+        // Force the button's box-shadow to always show over the sibling element's border
+        position: relative;
+        z-index: 1;
+    }
+
+    &__description {
+        padding: 0.75rem 1rem;
+        background-color: var(--color-bg-1);
+        border-top: 1px solid #dbe2f0;
+        border-bottom: 1px solid #dbe2f0;
+    }
+
+    &__placeholder {
+        color: var(--text-muted);
+    }
+}

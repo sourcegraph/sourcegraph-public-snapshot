@@ -305,6 +305,7 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
         }
         editor.setPosition(position)
         editor.revealPosition(position)
+        editor.trigger('triggerSuggestions', 'editor.action.triggerSuggest', {})
     }, [editor, queryState])
 
     // Prevent newline insertion in model, and surface query changes with stripped newlines.

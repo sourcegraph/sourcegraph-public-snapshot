@@ -11,13 +11,14 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '../..'
 import { AuthenticatedUser } from '../../../auth'
 import { FeatureFlagProps } from '../../../featureFlags/featureFlags'
-import { submitSearch, toggleSearchFilter } from '../../helpers'
+import { QueryState, submitSearch, toggleSearchFilter } from '../../helpers'
 
 import { getDynamicFilterLinks, getRepoFilterLinks, getSearchSnippetLinks } from './FilterLink'
 import { getQuickLinks } from './QuickLink'
 import styles from './SearchSidebar.module.scss'
 import { SearchSidebarSection } from './SearchSidebarSection'
 import { getSearchTypeLinks } from './SearchTypeLink'
+import { SearchReference } from './SearchReference'
 
 export interface SearchSidebarProps
     extends Omit<PatternTypeProps, 'setPatternType'>,
@@ -31,9 +32,12 @@ export interface SearchSidebarProps
     query: string
     filters?: Filter[]
     className?: string
+    navbarSearchQueryState: QueryState
+    onNavbarQueryChange: (queryState: QueryState) => void
 }
 
 export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props => {
+    console.log(props.navbarSearchQueryState)
     const history = useHistory()
 
     const onFilterClicked = useCallback(
@@ -72,6 +76,9 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
     return (
         <div className={classNames(styles.searchSidebar, props.className)}>
             <StickyBox className={styles.searchSidebarStickyBox}>
+                <SearchSidebarSection className={styles.searchSidebarItem} header="Search reference">
+                    {[<SearchReference {...props} />]}
+                </SearchSidebarSection>
                 <SearchSidebarSection className={styles.searchSidebarItem} header="Search types">
                     {getSearchTypeLinks(props)}
                 </SearchSidebarSection>
