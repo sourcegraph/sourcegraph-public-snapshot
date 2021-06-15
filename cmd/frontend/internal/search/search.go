@@ -94,7 +94,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	events, inputs, results := h.startSearch(ctx, args)
 	flags := featureflag.FromContext(ctx)
 	if flags.GetBoolOr("repoMetadata", false) {
-		events = batchedEvents(events, 50*time.Millisecond)
+		events = batchEvents(events, 50*time.Millisecond)
 	}
 
 	traceURL := ""
@@ -631,9 +631,9 @@ func GuessSource(r *http.Request) trace.SourceType {
 	return trace.SourceOther
 }
 
-// batchedEvents takes an event stream and merges events htat come through close in time into a single event.
+// batchEvents takes an event stream and merges events htat come through close in time into a single event.
 // This makes downstream database and network operations more efficient by enabling batch reads.
-func batchedEvents(source <-chan streaming.SearchEvent, delay time.Duration) <-chan streaming.SearchEvent {
+func batchEvents(source <-chan streaming.SearchEvent, delay time.Duration) <-chan streaming.SearchEvent {
 	results := make(chan streaming.SearchEvent)
 	go func() {
 		defer close(results)
