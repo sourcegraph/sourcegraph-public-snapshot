@@ -13,6 +13,7 @@ describe('queryHasCount()', () => {
 
     // Return these tests when Safari will support look behind group in regexp
     // or when we have separate query parsers package
+    // See https://github.com/sourcegraph/sourcegraph/issues/22092
     it.skip('returns false when count is escaped', () => {
         assert.strictEqual(queryHasCountFilter('"count:100" lang:ts'), false)
     })
