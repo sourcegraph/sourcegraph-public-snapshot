@@ -1,6 +1,5 @@
 import classnames from 'classnames'
 import React, { useCallback, useContext, useEffect } from 'react'
-import { Redirect } from 'react-router'
 import { useHistory } from 'react-router-dom'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -34,7 +33,7 @@ export interface LangStatsInsightCreationPageProps
      * Authenticated user info, Used to decide where code insight will appears
      * in personal dashboard (private) or in organization dashboard (public)
      * */
-    authenticatedUser: Pick<AuthenticatedUser, 'id' | 'organizations'> | null
+    authenticatedUser: Pick<AuthenticatedUser, 'id' | 'organizations'>
 }
 
 export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsightCreationPageProps> = props => {
@@ -102,10 +101,6 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
 
     const handleChange = (event: FormChangeEvent<LangStatsCreationFormFields>): void => {
         setInitialFormValues(event.values)
-    }
-
-    if (authenticatedUser === null) {
-        return <Redirect to="/" />
     }
 
     const {
