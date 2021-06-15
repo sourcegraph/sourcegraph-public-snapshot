@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -164,6 +165,14 @@ func parseMigrationIndex(name string) (int, bool) {
 	}
 
 	return index, true
+}
+
+// Take a migration path and turn it into it's name.
+// Takes 12341234_hello.up.sql -> hello
+func parseMigrationName(name string) (string, bool) {
+	names := strings.SplitN(filepath.Base(name), "_", 2)
+	migrationName := strings.ReplaceAll(strings.ReplaceAll(names[1], ".down.sql", ""), ".up.sql", "")
+	return migrationName, true
 }
 
 // parseLastMigrationIndex parses a list of filenames and returns the highest migration
@@ -436,4 +445,210 @@ func readFilenamesNamesInDirectory(dir string) ([]string, error) {
 	}
 
 	return names, nil
+}
+
+type migration struct {
+	ID   int
+	Name string
+
+	UpName   string
+	DownName string
+}
+
+type migrationConflict struct {
+	ID     int
+	Trunk  migration
+	Branch migration
+}
+
+// trunk is the branch/revisikon that we are branched from. It's the good one. Usually it would be main
+func fixupMigrations(database Database, trunk, branch string) error {
+	out.Write("")
+	trunkMigrations, err := getMigrationsForRevision(database, trunk)
+	if err != nil {
+		return err
+	}
+
+	branchMigrations, err := getMigrationsForRevision(database, branch)
+	if err != nil {
+		return err
+	}
+
+	block := out.Block(output.Linef(output.EmojiLightbulb, output.StyleItalic, "Checking for conflicting migrations..."))
+	defer block.Close()
+
+	conflicts, err := findConflictingMigrations(trunkMigrations, branchMigrations)
+	if err != nil {
+		return err
+	}
+
+	if len(conflicts) == 0 {
+		block.WriteLine(output.Linef(output.EmojiSuccess, output.StyleReset, "... No conflicting migrations"))
+		return nil
+	}
+
+	if err := resolveConflictingMigrations(database, conflicts, trunkMigrations, block); err != nil {
+		return err
+	}
+
+	return err
+}
+
+func findConflictingMigrations(trunkMigrations, branchMigrations map[int]migration) ([]migrationConflict, error) {
+	conflicts := []migrationConflict{}
+
+	for migrationID, trunkMigration := range trunkMigrations {
+		branchMigration, ok := branchMigrations[migrationID]
+		if !ok {
+			return nil, errors.Newf(
+				"It appears you haven't rebased off of your trunk. Rebase first and then run again. You are missing: %s",
+				trunkMigration.Name,
+			)
+		}
+
+		if trunkMigration.Name != branchMigration.Name {
+			conflicts = append(conflicts, migrationConflict{
+				ID:     migrationID,
+				Trunk:  trunkMigration,
+				Branch: branchMigration,
+			})
+		}
+	}
+
+	return conflicts, nil
+}
+
+func getMigrationsForRevision(database Database, revision string) (map[int]migration, error) {
+	baseDir, err := migrationDirectoryForDatabase(database)
+	if err != nil {
+		return nil, err
+	}
+
+	output, err := runGitCmd("ls-tree", "--name-only", "-r", revision, baseDir)
+	if err != nil {
+		return nil, err
+	}
+
+	upMigrations := make(map[int]string)
+	downMigrations := make(map[int]string)
+
+	files := strings.Split(output, "\n")
+	for _, file := range files {
+		if file == "" {
+			continue
+		}
+
+		migrationID, ok := parseMigrationIndex(file)
+		if !ok {
+			return nil, errors.New("Bad migration file format")
+		}
+
+		if strings.HasSuffix(file, ".down.sql") {
+			downMigrations[migrationID] = file
+		} else if strings.HasSuffix(file, ".up.sql") {
+			upMigrations[migrationID] = file
+		} else {
+			return nil, errors.New("Somehow have a file that doesn't end with up or down")
+		}
+	}
+
+	// TODO: I guess you could probably have different ones but whatever for now.
+	//       That would be pretty broken situation.
+	if len(upMigrations) != len(downMigrations) {
+		return nil, errors.New("Not the same up and down migration numbers. Something is very broken.")
+	}
+
+	migrations := make(map[int]migration)
+	for migrationID := range upMigrations {
+		upMigration := upMigrations[migrationID]
+		downMigration := downMigrations[migrationID]
+
+		migrationName, ok := parseMigrationName(upMigration)
+		if !ok {
+			return nil, errors.New("Bad migration name")
+		}
+
+		migrations[migrationID] = migration{
+			ID:       migrationID,
+			Name:     migrationName,
+			UpName:   upMigration,
+			DownName: downMigration,
+		}
+
+	}
+
+	return migrations, nil
+}
+
+func resolveConflictingMigrations(
+	database Database,
+	conflicts []migrationConflict,
+	trunkMigrations map[int]migration,
+	block *output.Block,
+) error {
+	block.Writef("Database: %s\n", database.Name)
+
+	maxID := 0
+	for migrationID := range trunkMigrations {
+		maxID = int(math.Max(float64(maxID), float64(migrationID)))
+	}
+
+	for _, conflict := range conflicts {
+		maxID = maxID + 1
+
+		newUpPath, newDownPath, err := makeMigrationFilenames(database, maxID, conflict.Branch.Name)
+		if err != nil {
+			return err
+		}
+
+		oldUpPath, oldDownPath, err := makeMigrationFilenames(database, conflict.ID, conflict.Branch.Name)
+		if err != nil {
+			return err
+		}
+
+		block.Writef("Changing migration: %d %s", conflict.ID, conflict.Trunk.Name)
+
+		// This is a bit annoying, but git ls-tree only checks commited files
+		upErr := checkFile(oldUpPath, block)
+		downErr := checkFile(oldDownPath, block)
+
+		if upErr != nil || downErr != nil {
+			return errors.New("Could not find the migration files above. They may have already been removed. Try commiting?")
+		}
+
+		if err := moveMigration(oldUpPath, newUpPath, block); err != nil {
+			return nil
+		}
+		if err := moveMigration(oldDownPath, newDownPath, block); err != nil {
+			return nil
+		}
+	}
+
+	return nil
+}
+
+func checkFile(path string, block *output.Block) error {
+	repoRoot, err := root.RepositoryRoot()
+	if err != nil {
+		return err
+	}
+
+	_, err = os.Stat(path)
+	if os.IsNotExist(err) {
+		relativePath, _ := filepath.Rel(repoRoot, path)
+
+		block.WriteLine(output.Linef(output.EmojiFailure, output.StyleItalic, "File no longer exists: %s", relativePath))
+	}
+
+	return err
+
+}
+
+func moveMigration(oldpath, newpath string, block *output.Block) error {
+	if err := os.Rename(oldpath, newpath); err != nil {
+		return err
+	}
+
+	block.WriteLine(output.Linef(output.EmojiSuccess, output.StyleReset, "%s -> %s", filepath.Base(oldpath), filepath.Base(newpath)))
+	return nil
 }
