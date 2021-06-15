@@ -573,6 +573,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                         onUserExternalServicesOrRepositoriesUpdate={
                                             this.onUserExternalServicesOrRepositoriesUpdate
                                         }
+                                        featureFlags={this.state.featureFlags}
                                     />
                                 </GitHubServiceScopeProvider>
                             )}
