@@ -2,11 +2,12 @@ import classNames from 'classnames'
 import * as H from 'history'
 import ArrowCollapseUpIcon from 'mdi-react/ArrowCollapseUpIcon'
 import ArrowExpandDownIcon from 'mdi-react/ArrowExpandDownIcon'
-import DownloadIcon from 'mdi-react/DownloadIcon'
+import BookmarkOutlineIcon from 'mdi-react/BookmarkOutlineIcon'
 import FormatQuoteOpenIcon from 'mdi-react/FormatQuoteOpenIcon'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import MenuIcon from 'mdi-react/MenuIcon'
 import MenuUpIcon from 'mdi-react/MenuUpIcon'
+import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 
 import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
@@ -32,25 +33,32 @@ import {
     useFeatureTour,
 } from '../useFeatureTour'
 
+import { ButtonDropdownCta, ButtonDropdownCtaProps } from './ButtonDropdownCta'
 import { CreateCodeInsightButton } from './components/CreateCodeInsightButton'
 
-function getFeatureTourElement(onClose: () => void): HTMLElement {
-    const container = document.createElement('div')
-    container.className = styles.featureTourStep
-    container.innerHTML = `
-        <div>
-            <strong>New</strong>: Create a code monitor to get notified about new search results for a query.
-            <a href="https://docs.sourcegraph.com/code_monitoring" target="_blank">Learn more.</a>
-        </div>
-        <div class="d-flex justify-content-end text-muted">
-            <button type="button" class="btn btn-sm">
-                Close
-            </button>
-        </div>
-    `
-    const button = container.querySelector('button')
-    button?.addEventListener('click', onClose)
-    return container
+function getFeatureTourElementFn(isAuthenticatedUser: boolean): (onClose: () => void) => HTMLElement {
+    return (onClose: () => void): HTMLElement => {
+        const container = document.createElement('div')
+        container.className = styles.featureTourStep
+        container.innerHTML = `
+            <div>
+                <strong>New</strong>: Create a code monitor to get notified about new search results for a query.
+                ${
+                    isAuthenticatedUser
+                        ? '<a href="https://docs.sourcegraph.com/code_monitoring" target="_blank">Learn more.</a>'
+                        : ''
+                }
+            </div>
+            <div class="d-flex justify-content-end text-muted">
+                <button type="button" class="btn btn-sm">
+                    Dismiss
+                </button>
+            </div>
+        `
+        const button = container.querySelector('button')
+        button?.addEventListener('click', onClose)
+        return container
+    }
 }
 
 export interface SearchResultsInfoBarProps
@@ -62,7 +70,7 @@ export interface SearchResultsInfoBarProps
         CodeMonitoringProps {
     history: H.History
     /** The currently authenticated user or null */
-    authenticatedUser: Pick<AuthenticatedUser, 'id'> | null
+    authenticatedUser: AuthenticatedUser | null
 
     /**
      * Whether the code insights feature flag is enabled.
@@ -78,7 +86,6 @@ export interface SearchResultsInfoBarProps
     onExpandAllResultsToggle: () => void
 
     // Saved queries
-    showSavedQueryButton?: boolean
     onSaveQueryClick: () => void
 
     location: H.Location
@@ -88,6 +95,33 @@ export interface SearchResultsInfoBarProps
     stats: JSX.Element
 
     onShowFiltersChanged?: (show: boolean) => void
+}
+
+interface ButtonWithUnauthenticatedUserCtaPromptProps extends ButtonDropdownCtaProps {
+    authenticatedUser: AuthenticatedUser | null
+    authenticatedLinkTo?: string
+    className?: string
+    isAuthenticatedLinkDisabled?: boolean
+    onAuthenticatedLinkClick?: () => void
+}
+
+const ButtonWithUnauthenticatedUserCtaPrompt: React.FunctionComponent<ButtonWithUnauthenticatedUserCtaPromptProps> = props => {
+    if (props.authenticatedUser) {
+        return (
+            <ButtonLink
+                className={classNames(
+                    'btn btn-sm btn-outline-secondary mr-2 nav-link text-decoration-none',
+                    props.className
+                )}
+                to={props.authenticatedLinkTo}
+                onSelect={props.onAuthenticatedLinkClick}
+                disabled={props.isAuthenticatedLinkDisabled}
+            >
+                {props.button}
+            </ButtonLink>
+        )
+    }
+    return <ButtonDropdownCta {...props} />
 }
 
 /**
@@ -123,12 +157,15 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
         return globalTypeFilterValue === 'diff' || globalTypeFilterValue === 'commit'
     }, [props.query])
 
-    const showCreateCodeMonitoringButton = props.enableCodeMonitoring && props.query && props.authenticatedUser
+    const showCreateCodeMonitoringButton = props.enableCodeMonitoring && props.query
     const [hasSeenSearchContextsFeatureTour] = useLocalStorage(HAS_SEEN_SEARCH_CONTEXTS_FEATURE_TOUR_KEY, false)
     const tour = useFeatureTour(
         'create-code-monitor-feature-tour',
-        !!showCreateCodeMonitoringButton && canCreateMonitorFromQuery && hasSeenSearchContextsFeatureTour,
-        getFeatureTourElement,
+        !!showCreateCodeMonitoringButton &&
+            canCreateMonitorFromQuery &&
+            hasSeenSearchContextsFeatureTour &&
+            props.resultsFound,
+        getFeatureTourElementFn(!!props.authenticatedUser),
         HAS_SEEN_CODE_MONITOR_FEATURE_TOUR_KEY,
         getTourOptions({
             attachTo: {
@@ -136,14 +173,17 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                 on: 'bottom',
             },
             popperOptions: {
-                modifiers: [...defaultPopperModifiers, { name: 'offset', options: { offset: [-100, 8] } }],
+                modifiers: [...defaultPopperModifiers, { name: 'offset', options: { offset: [-100, 16] } }],
             },
         })
     )
 
     const onCreateCodeMonitorButtonSelect = useCallback(() => {
+        if (tour.isActive()) {
+            props.telemetryService.log('SignUpPLGMonitor_0_Tour')
+        }
         tour.cancel()
-    }, [tour])
+    }, [props.telemetryService, tour])
 
     const createCodeMonitorButton = useMemo(() => {
         if (!showCreateCodeMonitoringButton) {
@@ -156,49 +196,89 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
             <li
                 className="nav-item"
                 data-tooltip={
-                    !canCreateMonitorFromQuery
+                    props.authenticatedUser && !canCreateMonitorFromQuery
                         ? 'Code monitors only support type:diff or type:commit searches.'
                         : undefined
                 }
             >
-                <ButtonLink
-                    disabled={!canCreateMonitorFromQuery}
-                    to={toURL}
-                    className="btn btn-sm btn-outline-secondary mr-2 nav-link text-decoration-none create-code-monitor-button"
-                    onSelect={onCreateCodeMonitorButtonSelect}
-                >
-                    <CodeMonitoringLogo className="icon-inline mr-1" />
-                    Monitor
-                </ButtonLink>
+                <ButtonWithUnauthenticatedUserCtaPrompt
+                    authenticatedUser={props.authenticatedUser}
+                    authenticatedLinkTo={toURL}
+                    isAuthenticatedLinkDisabled={!canCreateMonitorFromQuery}
+                    onAuthenticatedLinkClick={onCreateCodeMonitorButtonSelect}
+                    className="create-code-monitor-button"
+                    button={
+                        <>
+                            <CodeMonitoringLogo className="icon-inline mr-1" />
+                            Monitor
+                        </>
+                    }
+                    icon={<CodeMonitoringLogo />}
+                    title="Monitor code for changes"
+                    copyText="Create a monitor and get notified when your code changes. Free for registered users."
+                    telemetryService={props.telemetryService}
+                    eventLogName="SignUpPLGMonitor_1_Search"
+                    onToggle={onCreateCodeMonitorButtonSelect}
+                />
             </li>
         )
     }, [
         showCreateCodeMonitoringButton,
+        props.authenticatedUser,
         props.location.search,
         props.query,
         props.patternType,
+        props.telemetryService,
         canCreateMonitorFromQuery,
         onCreateCodeMonitorButtonSelect,
     ])
 
-    const saveSearchButton = useMemo(() => {
-        if (props.showSavedQueryButton === false || !props.authenticatedUser) {
-            return null
-        }
-
-        return (
+    const saveSearchButton = useMemo(
+        () => (
             <li className="nav-item">
-                <button
-                    type="button"
-                    onClick={props.onSaveQueryClick}
-                    className="btn btn-sm btn-outline-secondary mr-2 nav-link text-decoration-none test-save-search-link"
-                >
-                    <DownloadIcon className="icon-inline mr-1" />
-                    Save search
-                </button>
+                <ButtonWithUnauthenticatedUserCtaPrompt
+                    authenticatedUser={props.authenticatedUser}
+                    onAuthenticatedLinkClick={props.onSaveQueryClick}
+                    className="test-save-search-link"
+                    button={
+                        <>
+                            <BookmarkOutlineIcon className="icon-inline mr-1" />
+                            Save search
+                        </>
+                    }
+                    icon={<BookmarkOutlineIcon />}
+                    title="Saved searches"
+                    copyText="Save your searches and quickly run them again. Free for registered users."
+                    telemetryService={props.telemetryService}
+                    eventLogName="SignUpPLGSaved_1_Search"
+                />
             </li>
-        )
-    }, [props.authenticatedUser, props.onSaveQueryClick, props.showSavedQueryButton])
+        ),
+        [props.authenticatedUser, props.onSaveQueryClick, props.telemetryService]
+    )
+
+    const extendButton = useMemo(
+        () => (
+            <li className="nav-item">
+                <ButtonWithUnauthenticatedUserCtaPrompt
+                    authenticatedUser={props.authenticatedUser}
+                    authenticatedLinkTo="/extensions"
+                    button={
+                        <>
+                            <PuzzleOutlineIcon className="icon-inline mr-1" />
+                            Extend
+                        </>
+                    }
+                    icon={<PuzzleOutlineIcon />}
+                    title="Extend your search experience"
+                    copyText="Customize workflows, display data alongside your code, and extend the UI via Sourcegraph extensions."
+                    telemetryService={props.telemetryService}
+                    eventLogName="SignUpPLGExtend_1_Search"
+                />
+            </li>
+        ),
+        [props.authenticatedUser, props.telemetryService]
+    )
 
     const extraContext = useMemo(
         () => ({
@@ -246,6 +326,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                         actionItemClass="btn nav-link btn-outline-secondary mr-2 text-decoration-none btn-sm"
                     />
 
+                    {extendButton}
                     {(createCodeMonitorButton || saveSearchButton) && (
                         <li className="search-results-info-bar__divider" aria-hidden="true" />
                     )}

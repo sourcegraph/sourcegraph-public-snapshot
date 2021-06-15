@@ -9,6 +9,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '../..'
+import { AuthenticatedUser } from '../../../auth'
 import { submitSearch, toggleSearchFilter } from '../../helpers'
 
 import { getDynamicFilterLinks, getRepoFilterLinks, getSearchScopeLinks } from './FilterLink'
@@ -24,6 +25,7 @@ export interface SearchSidebarProps
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         SettingsCascadeProps,
         TelemetryProps {
+    authenticatedUser: AuthenticatedUser | null
     query: string
     filters?: Filter[]
     className?: string
@@ -45,6 +47,10 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
         [history, props]
     )
 
+    const onSearchSnippetsCtaLinkClick = useCallback(() => {
+        props.telemetryService.log('SignUpPLGSnippet_1_Search')
+    }, [props.telemetryService])
+
     return (
         <div className={classNames(styles.searchSidebar, props.className)}>
             <StickyBox className={styles.searchSidebarStickyBox}>
@@ -57,7 +63,12 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                 <SearchSidebarSection className={styles.searchSidebarItem} header="Repositories" showSearch={true}>
                     {getRepoFilterLinks(props.filters, onFilterClicked)}
                 </SearchSidebarSection>
-                <SearchSidebarSection className={styles.searchSidebarItem} header="Search snippets">
+                <SearchSidebarSection
+                    className={styles.searchSidebarItem}
+                    header="Search snippets"
+                    ctaLinkText={!props.authenticatedUser ? 'Sign up to create code snippets' : undefined}
+                    onCtaLinkClick={onSearchSnippetsCtaLinkClick}
+                >
                     {getSearchScopeLinks(props.settingsCascade, onFilterClicked)}
                 </SearchSidebarSection>
                 <SearchSidebarSection className={styles.searchSidebarItem} header="Quicklinks">

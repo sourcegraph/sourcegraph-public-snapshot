@@ -4,6 +4,8 @@ import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import React, { useEffect, useState } from 'react'
 import { Collapse } from 'reactstrap'
 
+import { Link } from '@sourcegraph/shared/src/components/Link'
+
 import { FilterLink, FilterLinkProps } from './FilterLink'
 import styles from './SearchSidebarSection.module.scss'
 
@@ -12,7 +14,9 @@ export const SearchSidebarSection: React.FunctionComponent<{
     children?: React.ReactElement[]
     className?: string
     showSearch?: boolean // Search only works if children are FilterLink
-}> = ({ header, children = [], className, showSearch = false }) => {
+    ctaLinkText?: string
+    onCtaLinkClick?: () => void
+}> = ({ header, children = [], className, showSearch = false, ctaLinkText, onCtaLinkClick }) => {
     const [filter, setFilter] = useState('')
 
     // Clear filter when children change
@@ -71,6 +75,11 @@ export const SearchSidebarSection: React.FunctionComponent<{
                             <li className={classNames('text-muted', styles.sidebarSectionNoResults)}>No results</li>
                         )}
                     </ul>
+                    {ctaLinkText && (
+                        <Link className={styles.sidebarSectionCtaLink} onClick={onCtaLinkClick} to="/sign-up">
+                            {ctaLinkText}
+                        </Link>
+                    )}
                 </div>
             </Collapse>
         </div>

@@ -53,4 +53,24 @@
             padding-left: 1rem;
         }
     }
+
+    &__cta {
+        &-icon-wrapper {
+            padding: 0.5rem;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+        }
+
+        &-icon {
+            color: var(--merged-3);
+        }
+
+        &-title {
+            font-size: 1rem;
+        }
+
+        &-description {
+            font-size: 0.875rem;
+        }
+    }
 }

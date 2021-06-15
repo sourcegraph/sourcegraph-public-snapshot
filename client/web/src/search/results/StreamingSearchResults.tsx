@@ -5,6 +5,7 @@ import { Observable } from 'rxjs'
 import { debounceTime } from 'rxjs/operators'
 
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
+import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -15,6 +16,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { asError } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { MagnifyingGlassIcon } from '@sourcegraph/web/src/components/MagnifyingGlassIcon'
 
 import {
     CaseSensitivityProps,
@@ -208,6 +210,10 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
     )
     const [showSidebar, setShowSidebar] = useState(false)
 
+    const onSignUpClick = (): void => {
+        telemetryService.log('SignUpPLGSearchCTA_1_Search')
+    }
+
     return (
         <div className={styles.streamingSearchResults}>
             <PageTitle key="page-title" title={query} />
@@ -268,6 +274,28 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                     />
                 )}
 
+                {!authenticatedUser && (
+                    <div className="card my-2 mr-3 d-flex p-3 flex-row align-items-center">
+                        <div className={classNames('mr-3', styles.streamingSearchResultsCtaIconWrapper)}>
+                            <MagnifyingGlassIcon
+                                className={styles.streamingSearchResultsCtaIcon}
+                                fillCurrentColor={true}
+                            />
+                        </div>
+                        <div className="flex-1">
+                            <div className={classNames('mb-2', styles.streamingSearchResultsCtaTitle)}>
+                                <strong>Search your public (and soon private) code</strong>
+                            </div>
+                            <div className={classNames('text-muted', styles.streamingSearchResultsCtaDescription)}>
+                                Create a free account to search all of your repos at once.{' '}
+                                <i>(It's like a developer's super power.)</i>
+                            </div>
+                        </div>
+                        <Link className="btn btn-primary" to="/sign-up" onClick={onSignUpClick}>
+                            Sign up for Sourcegraph
+                        </Link>
+                    </div>
+                )}
                 <StreamingSearchResultsList {...props} results={results} allExpanded={allExpanded} />
             </div>
         </div>
