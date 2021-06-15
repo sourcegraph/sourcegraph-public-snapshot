@@ -1,4 +1,4 @@
-import React, { ReactElement, useState } from 'react'
+import React, { ReactElement, useCallback, useMemo, useState } from 'react'
 import classNames from 'classnames'
 import { Collapse } from 'reactstrap'
 
@@ -7,7 +7,7 @@ import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
 import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '../../..'
-import { QueryState, toggleSearchType } from '../../../helpers'
+import { QueryChangeSource, QueryState, toggleSearchType } from '../../../helpers'
 import { SearchType } from '../StreamingSearchResults'
 
 import styles from './SearchReference.module.scss'
@@ -53,7 +53,10 @@ const SearchReferenceEntry: React.FunctionComponent<SearchTypeLinkProps> = ({
                 <button
                     type="button"
                     className={classNames('btn btn-', styles.searchReferenceCollapseButton)}
-                    onClick={() => setCollapsed(collapsed => !collapsed)}
+                    onClick={event => {
+                        event.stopPropagation()
+                        setCollapsed(collapsed => !collapsed)
+                    }}
                     aria-label={collapsed ? 'Expand' : 'Collapse'}
                 >
                     <CollapseIcon className="icon-inline mr-1" />
@@ -70,6 +73,18 @@ const SearchReferenceEntry: React.FunctionComponent<SearchTypeLinkProps> = ({
 
 export const SearchReference = (props: SearchTypeLinksProps): ReactElement => {
     const filterTypes = filterTypeKeys.filter(type => type !== FilterType.patterntype)
+
+    const updateQuery = useCallback(
+        (filterType: FilterType) => {
+            props.onNavbarQueryChange({
+                ...props.onNavbarQueryChange,
+                query: `${props.navbarSearchQueryState.query} ${filterType}:`,
+                changeSource: QueryChangeSource.searchReference,
+            })
+        },
+        [props.onNavbarQueryChange, props.navbarSearchQueryState]
+    )
+
     return (
         <>
             <div className={styles.searchReferenceHeader}>Match types</div>
@@ -79,12 +94,7 @@ export const SearchReference = (props: SearchTypeLinksProps): ReactElement => {
                     filterType={FilterType.patterntype}
                     key={FilterType.patterntype}
                     value={label}
-                    onClick={(filterType: FilterType) =>
-                        props.onNavbarQueryChange({
-                            ...props.navbarSearchQueryState,
-                            query: `${props.navbarSearchQueryState.query} ${filterType}:`,
-                        })
-                    }
+                    onClick={updateQuery}
                 >
                     {FILTERS[FilterType.patterntype].description}
                 </SearchReferenceEntry>
@@ -96,12 +106,7 @@ export const SearchReference = (props: SearchTypeLinksProps): ReactElement => {
                     filterType={filterType}
                     key={filterType}
                     placeholder={'p'}
-                    onClick={(filterType: FilterType) =>
-                        props.onNavbarQueryChange({
-                            ...props.navbarSearchQueryState,
-                            query: `${props.navbarSearchQueryState.query} ${filterType}:`,
-                        })
-                    }
+                    onClick={updateQuery}
                 >
                     {FILTERS[filterType].description}
                 </SearchReferenceEntry>

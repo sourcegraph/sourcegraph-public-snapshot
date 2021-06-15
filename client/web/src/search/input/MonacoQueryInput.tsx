@@ -20,7 +20,7 @@ import { SearchPatternType } from '../../graphql-operations'
 import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '../../keyboardShortcuts/keyboardShortcuts'
 import { observeResize } from '../../util/dom'
 import { fetchSuggestions } from '../backend'
-import { QueryState } from '../helpers'
+import { QueryChangeSource, QueryState } from '../helpers'
 
 export interface MonacoQueryInputProps
     extends ThemeProps,
@@ -295,7 +295,7 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     // If an edit wasn't triggered by the user,
     // place the cursor at the end of the query.
     useEffect(() => {
-        if (!editor || queryState.fromUserInput) {
+        if (!editor || queryState.changeSource === QueryChangeSource.userInput) {
             return
         }
         const position = {
@@ -305,7 +305,10 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
         }
         editor.setPosition(position)
         editor.revealPosition(position)
-        editor.trigger('triggerSuggestions', 'editor.action.triggerSuggest', {})
+
+        if (queryState.changeSource === QueryChangeSource.searchReference) {
+            editor.trigger('triggerSuggestions', 'editor.action.triggerSuggest', {})
+        }
     }, [editor, queryState])
 
     // Prevent newline insertion in model, and surface query changes with stripped newlines.
@@ -314,7 +317,7 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
             return
         }
         const disposable = editor.onDidChangeModelContent(() => {
-            onChange({ query: editor.getValue().replace(/[\n\r↵]/g, ''), fromUserInput: true })
+            onChange({ query: editor.getValue().replace(/[\n\r↵]/g, ''), changeSource: QueryChangeSource.userInput })
         })
         return () => disposable.dispose()
     }, [editor, onChange])
