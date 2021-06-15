@@ -113,7 +113,7 @@ your user a specific value, or if you'd like to do an A/B test on members of the
 Sourcegraph org. 
 
 Overrides can either apply to a single user or an entire org. If both are set, a user
-override takes precedent over an org override.
+override takes precedence over an org override.
 
 If an override for a feature flag exists for a user (or the user's org), the value of 
 the override will be used instead of the value that would have been randomly selected for a user.
