@@ -7,8 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -125,14 +123,14 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db dbutil.DB) (*types.C
 	// also less important. So, in the case of any errors here we will not fail the entire ping for code insights.
 	timeIntervals, err := GetTimeStepCounts(ctx, db)
 	if err != nil {
-		log15.Error(fmt.Sprintf("code-insights/GetTimeStepCounts: %v", err))
+		log15.Error("code-insights/GetTimeStepCounts", "error", err)
 		return nil, nil
 	}
 	stats.InsightTimeIntervals = timeIntervals
 
 	orgVisible, err := GetOrgInsightCounts(ctx, db)
 	if err != nil {
-		log15.Error(fmt.Sprintf("code-insights/GetOrgInsightCounts: %v", err))
+		log15.Error("code-insights/GetOrgInsightCounts", "error", err)
 		return nil, nil
 	}
 	stats.InsightOrgVisible = orgVisible
@@ -404,7 +402,7 @@ func GetSearchInsights(ctx context.Context, db dbutil.DB, filter SettingFilter) 
 			temp.ID = id
 			if err := json.Unmarshal(body, &temp); err != nil {
 				// We would prefer to report some metrics if at all possible, so skip any deserialization errors
-				log15.Error(errors.Wrapf(err, "parsing error in setting body for setting key: %\n", id).Error())
+				log15.Error("parsing error in setting body", "id", id, "error", err)
 				continue
 			}
 			results = append(results, temp)
@@ -436,7 +434,7 @@ func GetLangStatsInsights(ctx context.Context, db dbutil.DB, filter SettingFilte
 			temp.ID = id
 			if err := json.Unmarshal(body, &temp); err != nil {
 				// We would prefer to report some metrics if at all possible, so skip any deserialization errors
-				log15.Error(errors.Wrapf(err, "parsing error in setting body for setting key: %v\n", id).Error())
+				log15.Error("parsing error in setting body", "id", id, "error", err)
 				continue
 			}
 			results = append(results, temp)
