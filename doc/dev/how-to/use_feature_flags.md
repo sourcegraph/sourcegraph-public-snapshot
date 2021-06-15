@@ -63,8 +63,8 @@ mutation CreateFeatureFlag{
 }
 ```
 
-The value of `rolloutBasisPoints` is measured in increments of 0.01% (a basis point), 
-for to create a feature flag that applies to 50% of users, set `rolloutBasisPoints` 
+The value of `rolloutBasisPoints` is measured in increments of 0.01% (a basis point).
+To create a feature flag that applies to 50% of users, set `rolloutBasisPoints` 
 to 5000.
 
 ### Measure the effect of the feature flag
