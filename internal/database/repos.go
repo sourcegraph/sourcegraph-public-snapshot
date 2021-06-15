@@ -344,7 +344,7 @@ func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 
 	typ, ok := extsvc.ParseServiceType(r.ExternalRepo.ServiceType)
 	if !ok {
-		log15.Error("scanRepo - failed to parseservice type", "r.ExternalRepo.ServiceType", r.ExternalRepo.ServiceType)
+		log15.Error("scanRepo - failed to parse service type", "r.ExternalRepo.ServiceType", r.ExternalRepo.ServiceType)
 		return nil
 	}
 	switch typ {

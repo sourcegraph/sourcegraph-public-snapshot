@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/Masterminds/semver"
+	"github.com/graph-gophers/graphql-go/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
@@ -59,10 +60,22 @@ func (d Dependency) GitTagFromVersion() string {
 	return "v" + d.Version
 }
 
-func ParseMavenDependency(dependency string) Dependency {
+func ParseMavenDependency(dependency string) (Dependency, error) {
 	parts := strings.Split(dependency, ":")
+	if len(parts) < 3 {
+		return Dependency{}, errors.Errorf("dependency %s must contain at least two colon ':' characters", dependency)
+
+	}
 	version := parts[2]
+
+	// Ignore error from semantic version parsing because we only use the
+	// semantic version for sorting dependencies, which falls back to
+	// lexicographical ordering if the semantic version is missing. We can't
+	// guarantee that every published Java package has a valid semantic
+	// version according to the implementation of the Go-lang semver
+	// package.
 	semanticVersion, _ := semver.NewVersion(version)
+
 	return Dependency{
 		Module: Module{
 			GroupId:    parts[0],
@@ -70,7 +83,7 @@ func ParseMavenDependency(dependency string) Dependency {
 		},
 		Version:         version,
 		SemanticVersion: semanticVersion,
-	}
+	}, nil
 }
 
 func ParseMavenModule(path string) (Module, error) {
