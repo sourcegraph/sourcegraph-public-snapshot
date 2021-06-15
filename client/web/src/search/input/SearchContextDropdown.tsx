@@ -12,7 +12,7 @@ import { CaseSensitivityProps, PatternTypeProps, SearchContextInputProps } from 
 import { AuthenticatedUser } from '../../auth'
 import styles from '../FeatureTour.module.scss'
 import { SubmitSearchParameters } from '../helpers'
-import { getTourOptions, useFeatureTour } from '../useFeatureTour'
+import { getTourOptions, HAS_SEEN_SEARCH_CONTEXTS_FEATURE_TOUR_KEY, useFeatureTour } from '../useFeatureTour'
 
 import { SearchContextCtaPrompt } from './SearchContextCtaPrompt'
 import { SearchContextMenu } from './SearchContextMenu'
@@ -58,8 +58,6 @@ function getFeatureTourElement(onClose: () => void): HTMLElement {
     return container
 }
 
-const HAS_SEEN_FEATURE_TOUR_KEY = 'has-seen-search-contexts-dropdown-highlight-tour-step'
-
 export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdownProps> = props => {
     const {
         isSourcegraphDotCom,
@@ -86,7 +84,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         'search-contexts-start-tour',
         showSearchContextFeatureTour && !isSearchOnboardingTourVisible,
         getFeatureTourElement,
-        HAS_SEEN_FEATURE_TOUR_KEY,
+        HAS_SEEN_SEARCH_CONTEXTS_FEATURE_TOUR_KEY,
         getTourOptions({
             attachTo: {
                 element: '.search-context-dropdown__button',

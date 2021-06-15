@@ -6,6 +6,9 @@ import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 import styles from './FeatureTour.module.scss'
 import { defaultTourOptions } from './input/tour-options'
 
+export const HAS_SEEN_SEARCH_CONTEXTS_FEATURE_TOUR_KEY = 'has-seen-search-contexts-dropdown-highlight-tour-step'
+export const HAS_SEEN_CODE_MONITOR_FEATURE_TOUR_KEY = 'has-seen-create-code-monitor-feature-tour'
+
 export const getTourOptions = (stepOptions: Shepherd.Step.StepOptions): Shepherd.Tour.TourOptions => ({
     ...defaultTourOptions,
     defaultStepOptions: {
@@ -33,7 +36,6 @@ export const useFeatureTour = (
     }, [tour, featureId, getFeatureTourElement])
 
     useEffect(() => {
-        console.log('useFeatureTour', featureId, showFeatureTour, hasSeenFeatureTour)
         if (!tour.isActive() && showFeatureTour && !hasSeenFeatureTour) {
             tour.start()
         }

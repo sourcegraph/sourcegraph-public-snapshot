@@ -15,6 +15,7 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/validate'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
 import { PatternTypeProps, CaseSensitivityProps } from '..'
 import { AuthenticatedUser } from '../../auth'
@@ -24,9 +25,14 @@ import { WebActionsNavItems as ActionsNavItems } from '../../components/shared'
 import { SearchPatternType } from '../../graphql-operations'
 import styles from '../FeatureTour.module.scss'
 import { defaultPopperModifiers } from '../input/tour-options'
-import { getTourOptions, useFeatureTour } from '../useFeatureTour'
+import {
+    getTourOptions,
+    HAS_SEEN_CODE_MONITOR_FEATURE_TOUR_KEY,
+    HAS_SEEN_SEARCH_CONTEXTS_FEATURE_TOUR_KEY,
+    useFeatureTour,
+} from '../useFeatureTour'
 
-const HAS_SEEN_FEATURE_TOUR_KEY = 'has-seen-create-code-monitor-feature-tour'
+import { CreateCodeInsightButton } from './components/CreateCodeInsightButton'
 
 function getFeatureTourElement(onClose: () => void): HTMLElement {
     const container = document.createElement('div')
@@ -46,8 +52,6 @@ function getFeatureTourElement(onClose: () => void): HTMLElement {
     button?.addEventListener('click', onClose)
     return container
 }
-
-import { CreateCodeInsightButton } from './components/CreateCodeInsightButton'
 
 export interface SearchResultsInfoBarProps
     extends ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
@@ -120,12 +124,12 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
     }, [props.query])
 
     const showCreateCodeMonitoringButton = props.enableCodeMonitoring && props.query && props.authenticatedUser
-
+    const [hasSeenSearchContextsFeatureTour] = useLocalStorage(HAS_SEEN_SEARCH_CONTEXTS_FEATURE_TOUR_KEY, false)
     const tour = useFeatureTour(
         'create-code-monitor-feature-tour',
-        !!showCreateCodeMonitoringButton && canCreateMonitorFromQuery,
+        !!showCreateCodeMonitoringButton && canCreateMonitorFromQuery && hasSeenSearchContextsFeatureTour,
         getFeatureTourElement,
-        HAS_SEEN_FEATURE_TOUR_KEY,
+        HAS_SEEN_CODE_MONITOR_FEATURE_TOUR_KEY,
         getTourOptions({
             attachTo: {
                 element: '.create-code-monitor-button',

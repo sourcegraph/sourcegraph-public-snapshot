@@ -495,11 +495,15 @@ describe('Search', () => {
     })
 
     describe('Feature tour', () => {
-        const resetCreateCodeMonitorFeatureTour = () =>
-            driver.page.evaluate(() => {
+        const resetCreateCodeMonitorFeatureTour = (dismissSearchContextsFeatureTour = true) =>
+            driver.page.evaluate((dismissSearchContextsFeatureTour: boolean) => {
                 localStorage.setItem('has-seen-create-code-monitor-feature-tour', 'false')
+                localStorage.setItem(
+                    'has-seen-search-contexts-dropdown-highlight-tour-step',
+                    dismissSearchContextsFeatureTour ? 'true' : 'false'
+                )
                 location.reload()
-            })
+            }, dismissSearchContextsFeatureTour)
 
         const isCreateCodeMonitorFeatureTourVisible = () =>
             driver.page.evaluate(
@@ -527,6 +531,16 @@ describe('Search', () => {
             await resetCreateCodeMonitorFeatureTour()
             await driver.page.waitForSelector('#monaco-query-input', { visible: true })
             expect(await isCreateCodeMonitorFeatureTourVisible()).toBeTruthy()
+        })
+
+        test('Do not show create code monitor button feature tour if search contexts feature tour is not dismissed', async () => {
+            testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test+type:diff', {
+                waitUntil: 'networkidle0',
+            })
+            await resetCreateCodeMonitorFeatureTour(false)
+            await driver.page.waitForSelector('#monaco-query-input', { visible: true })
+            expect(await isCreateCodeMonitorFeatureTourVisible()).toBeFalsy()
         })
     })
 })

@@ -290,7 +290,7 @@ describe('Search contexts', () => {
         await clearLocalStorage()
     })
 
-    test('Feature tour on search homepage', async () => {
+    test('Do not show feature tour on search homepage if already seen', async () => {
         await driver.page.goto(driver.sourcegraphBaseUrl + '/search', {
             waitUntil: 'networkidle0',
         })
