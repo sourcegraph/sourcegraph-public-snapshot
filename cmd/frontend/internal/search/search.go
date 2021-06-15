@@ -193,7 +193,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// Ensure that, for each result in the event, we have a copy of the full repo metadata.
 		var repoList map[api.RepoID]*types.Repo
 		if featureflag.FromContext(ctx).GetBoolOr("repoMetadata", false) {
-			repoList, err = getReposForEvent(ctx, h.db, h.repoMetadataCache, event)
+			repoList, err = getReposForResults(ctx, h.db, h.repoMetadataCache, event.Results)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
@@ -677,16 +677,27 @@ func batchEvents(source <-chan streaming.SearchEvent, delay time.Duration) <-cha
 	return results
 }
 
-func getReposForEvent(ctx context.Context, db dbutil.DB, cache repos.MetadataCache, event streaming.SearchEvent) (map[api.RepoID]*types.Repo, error) {
-	res := make(map[api.RepoID]*types.Repo, 10)
+// getReposForResults returns a *types.Repo for each repo referenced by the given results.
+// If all the repos in the result set are contained in the cache, no database roundtrip is necessary.
+// Otherwise, all repos that weren't in the cache are retrieved from the database, and the cache is updated.
+func getReposForResults(ctx context.Context, db dbutil.DB, cache repos.MetadataCache, results []result.Match) (map[api.RepoID]*types.Repo, error) {
+	res := make(map[api.RepoID]*types.Repo, 5)
 	uncachedIDs := make(map[api.RepoID]struct{})
-	for _, match := range event.Results {
+	for _, match := range results {
 		id := match.RepoName().ID
+
+		// Skip the more expensive cache access if we already got the repo
+		if _, ok := res[id]; ok {
+			continue
+		}
+
+		// Attempt to get the repo from the cache
 		if repo, ok := cache.Get(id); ok {
 			res[id] = repo
-		} else {
-			uncachedIDs[id] = struct{}{}
+			continue
 		}
+
+		uncachedIDs[id] = struct{}{}
 	}
 
 	// All repos referenced in the event were populated from the cache,
