@@ -276,6 +276,7 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(props => {
                                             hideLabel={true}
                                             tabIndex={-1}
                                             hideExternalLinkIcon={true}
+                                            disabledDuringExecution={true}
                                         />
                                     </li>
                                 )

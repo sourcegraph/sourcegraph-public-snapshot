@@ -5,138 +5,96 @@ import sinon from 'sinon'
 import { FlatExtensionHostAPI } from '../api/contract'
 import { pretendProxySubscribable, pretendRemote } from '../api/util'
 import { Controller } from '../extensions/controller'
-import {
-    IFileMatch,
-    IGitBlob,
-    IGitCommit,
-    ILineMatch,
-    IRepository,
-    ISearchResultMatch,
-    ISearchResults,
-    ISymbol,
-    SearchResult,
-} from '../graphql/schema'
+import { AggregateStreamingSearchResults, FileLineMatch, RepositoryMatch } from '../search/stream'
 
-export const RESULT = {
-    __typename: 'FileMatch' as const,
-    file: {
-        path: '.travis.yml',
-        url: '/github.com/golang/oauth2/-/blob/.travis.yml',
-        commit: { oid: 'e64efc72b421e893cbf63f17ba2221e7d6d0b0f3' } as IGitCommit,
-    } as IGitBlob,
-    repository: { name: 'github.com/golang/oauth2', url: '/github.com/golang/oauth2' } as IRepository,
-    limitHit: false,
-    symbols: [] as ISymbol[],
+export const RESULT: FileLineMatch = {
+    type: 'file',
+    name: '.travis.yml',
+    repository: 'github.com/golang/oauth2',
     lineMatches: [
         {
-            preview: '  - go test -v golang.org/x/oauth2/...',
+            line: '  - go test -v golang.org/x/oauth2/...',
             lineNumber: 12,
             offsetAndLengths: [[7, 4]],
-            limitHit: false,
-        } as ILineMatch,
-    ],
-} as IFileMatch
-
-export const REPO_MATCH_RESULT = {
-    __typename: 'Repository',
-    name: 'github.com/golang/oauth2',
-    url: '/github.com/golang/oauth2',
-    matches: [] as ISearchResultMatch[],
-    label: { __typename: 'Markdown', text: '[github.com/golang/oauth2](github.com/golang/oauth2)' },
-} as IRepository
-
-export const MULTIPLE_MATCH_RESULT = {
-    __typename: 'FileMatch',
-    file: {
-        path: 'clientcredentials/clientcredentials_test.go',
-        url: '/github.com/golang/oauth2/-/blob/clientcredentials/clientcredentials_test.go',
-        commit: {
-            oid: 'e64efc72b421e893cbf63f17ba2221e7d6d0b0f3',
         },
-    },
-    repository: {
-        name: 'github.com/golang/oauth2',
-        url: '/github.com/golang/oauth2',
-    },
-    limitHit: false,
-    symbols: [],
+    ],
+}
+
+export const REPO_MATCH_RESULT: RepositoryMatch = {
+    type: 'repo',
+    repository: 'github.com/golang/oauth2',
+}
+
+export const MULTIPLE_MATCH_RESULT: FileLineMatch = {
+    type: 'file',
+    name: 'clientcredentials/clientcredentials_test.go',
+    repository: 'github.com/golang/oauth2',
     lineMatches: [
         {
-            preview: '\t"net/http/httptest"',
+            line: '\t"net/http/httptest"',
             lineNumber: 11,
             offsetAndLengths: [[15, 4]],
-            limitHit: false,
         },
         {
-            preview: '\t"testing"',
+            line: '\t"testing"',
             lineNumber: 13,
             offsetAndLengths: [[2, 4]],
-            limitHit: false,
         },
         {
-            preview: 'func TestTokenSourceGrantTypeOverride(t *testing.T) {',
+            line: 'func TestTokenSourceGrantTypeOverride(t *testing.T) {',
             lineNumber: 36,
             offsetAndLengths: [
                 [5, 4],
                 [41, 4],
             ],
-            limitHit: false,
         },
         {
-            preview: '\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {',
+            line: '\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {',
             lineNumber: 39,
             offsetAndLengths: [[11, 4]],
-            limitHit: false,
         },
         {
-            preview: 'func TestTokenRequest(t *testing.T) {',
+            line: 'func TestTokenRequest(t *testing.T) {',
             lineNumber: 73,
             offsetAndLengths: [
                 [5, 4],
                 [25, 4],
             ],
-            limitHit: false,
         },
         {
-            preview: '\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {',
+            line: '\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {',
             lineNumber: 74,
             offsetAndLengths: [[11, 4]],
-            limitHit: false,
         },
         {
-            preview: 'func TestTokenRefreshRequest(t *testing.T) {',
+            line: 'func TestTokenRefreshRequest(t *testing.T) {',
             lineNumber: 115,
             offsetAndLengths: [
                 [5, 4],
                 [32, 4],
             ],
-            limitHit: false,
         },
         {
-            preview: '\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {',
+            line: '\tts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {',
             lineNumber: 117,
             offsetAndLengths: [[11, 4]],
-            limitHit: false,
         },
         {
-            preview: '\t\tio.WriteString(w, `{"access_token": "foo", "refresh_token": "bar"}`)',
+            line: '\t\tio.WriteString(w, `{"access_token": "foo", "refresh_token": "bar"}`)',
             lineNumber: 134,
             offsetAndLengths: [[8, 4]],
-            limitHit: false,
         },
     ],
 }
 
-export const SEARCH_RESULT = {
-    __typename: 'SearchResults' as const,
-    limitHit: false,
-    matchCount: 1,
-    approximateResultCount: '1',
-    missing: [] as IRepository[],
-    cloning: [] as IRepository[],
-    timedout: [] as IRepository[],
-    indexUnavailable: false,
-    dynamicFilters: [
+export const SEARCH_RESULT: AggregateStreamingSearchResults = {
+    state: 'complete',
+    progress: {
+        durationMs: 78,
+        matchCount: 1,
+        skipped: [],
+    },
+    filters: [
         { value: 'file:\\.yml$', label: 'file:\\.yml$', count: 1, limitHit: false, kind: 'file' },
         { value: 'case:yes', label: 'case:yes', count: 0, limitHit: false, kind: 'case' },
         {
@@ -148,48 +106,33 @@ export const SEARCH_RESULT = {
         },
     ],
     results: [RESULT],
-    alert: null,
-    elapsedMilliseconds: 78,
-} as ISearchResults
+}
 
-export const MULTIPLE_SEARCH_RESULT = {
+export const MULTIPLE_SEARCH_RESULT: AggregateStreamingSearchResults = {
     ...SEARCH_RESULT,
-    limitHit: false,
-    matchCount: 136,
-    approximateResultCount: '136',
+    progress: {
+        durationMs: 78,
+        matchCount: 136,
+        skipped: [],
+    },
     results: [
         RESULT,
         MULTIPLE_MATCH_RESULT,
         {
-            __typename: 'FileMatch',
-            file: {
-                path: 'example_test.go',
-                url: '/github.com/golang/oauth2/-/blob/example_test.go',
-                commit: {
-                    oid: 'e64efc72b421e893cbf63f17ba2221e7d6d0b0f3',
-                } as IGitCommit,
-            } as IGitBlob,
-            repository: {
-                name: 'github.com/golang/oauth2',
-                url: '/github.com/golang/oauth2',
-            } as IRepository,
-            limitHit: false,
-            symbols: [] as ISymbol[],
+            type: 'file',
+            name: 'example_test.go',
+            version: 'some-branch',
+            repository: 'github.com/golang/oauth2',
             lineMatches: [
                 {
-                    preview: 'package oauth2_test',
+                    line: 'package oauth2_test',
                     lineNumber: 4,
                     offsetAndLengths: [[15, 4]],
-                } as ILineMatch,
+                },
             ],
-        } as IFileMatch,
-    ] as SearchResult[],
-} as ISearchResults
-
-// Result from query: repo:^github\.com/golang/oauth2$ test f:travis
-export const SEARCH_REQUEST = sinon.spy(() => SEARCH_RESULT)
-export const MULTIPLE_SEARCH_REQUEST = sinon.spy(() => MULTIPLE_SEARCH_RESULT)
-export const OBSERVABLE_SEARCH_REQUEST = sinon.spy(() => of(SEARCH_RESULT))
+        },
+    ],
+}
 
 export const HIGHLIGHTED_FILE_LINES = [
     [

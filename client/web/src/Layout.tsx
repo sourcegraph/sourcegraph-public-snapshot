@@ -272,10 +272,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_HELP}
                 keyboardShortcuts={props.keyboardShortcuts}
             />
-            <GlobalAlerts
-                isSiteAdmin={!!props.authenticatedUser && props.authenticatedUser.siteAdmin}
-                settingsCascade={props.settingsCascade}
-            />
+            <GlobalAlerts authenticatedUser={props.authenticatedUser} settingsCascade={props.settingsCascade} />
             {!isSiteInit && <SurveyToast authenticatedUser={props.authenticatedUser} />}
             {!isSiteInit && !isSignInOrUp && (
                 <GlobalNavbar

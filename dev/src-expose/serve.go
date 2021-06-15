@@ -15,7 +15,7 @@ import (
 	"strings"
 	"sync/atomic"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 )
 
 type Serve struct {

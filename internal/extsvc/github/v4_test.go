@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
@@ -380,6 +380,47 @@ func TestCreatePullRequestComment(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+}
+
+func TestMergePullRequest(t *testing.T) {
+	cli, save := newV4Client(t, "TestMergePullRequest")
+	defer save()
+
+	t.Run("success", func(t *testing.T) {
+		pr := &PullRequest{
+			// https://github.com/sourcegraph/automation-testing/pull/424
+			ID: "MDExOlB1bGxSZXF1ZXN0NTc3Nzc3NzEy",
+		}
+
+		err := cli.MergePullRequest(context.Background(), pr, true)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		testutil.AssertGolden(t,
+			"testdata/golden/MergePullRequest-success",
+			update("MergePullRequest"),
+			pr,
+		)
+	})
+
+	t.Run("not mergeable", func(t *testing.T) {
+		pr := &PullRequest{
+			// https://github.com/sourcegraph/automation-testing/pull/419
+			ID: "MDExOlB1bGxSZXF1ZXN0NTY1Mzk1NTc3",
+		}
+
+		err := cli.MergePullRequest(context.Background(), pr, true)
+		if err == nil {
+			t.Fatal("invalid nil error")
+		}
+
+		testutil.AssertGolden(t,
+			"testdata/golden/MergePullRequest-error",
+			update("MergePullRequest"),
+			err,
+		)
+	})
 }
 
 func TestEstimateGraphQLCost(t *testing.T) {

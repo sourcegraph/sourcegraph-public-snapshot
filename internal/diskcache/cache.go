@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/opentracing/opentracing-go/ext"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )

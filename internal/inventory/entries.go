@@ -5,7 +5,7 @@ import (
 	"io/fs"
 	"sort"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 )
 
 // fileReadBufferSize is the size of the buffer we'll use while reading file contents

@@ -15,8 +15,8 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver"
+	"github.com/cockroachdb/errors"
 	"github.com/google/go-github/github"
-	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/segmentio/fasthash/fnv1"
@@ -951,6 +951,62 @@ func (c *V4Client) CreatePullRequestComment(ctx context.Context, pr *PullRequest
 	return c.requestGraphQL(ctx, createPullRequestCommentMutation, input, &result)
 }
 
+const mergePullRequestMutation = `
+mutation MergePullRequest($input: MergePullRequestInput!) {
+  mergePullRequest(input: $input) {
+	  pullRequest {
+		  ...pr
+	  }
+  }
+}
+`
+
+// MergePullRequest tries to merge the PullRequest on Github.
+func (c *V4Client) MergePullRequest(ctx context.Context, pr *PullRequest, squash bool) error {
+	version := c.determineGitHubVersion(ctx)
+	prFragment, err := pullRequestFragments(version)
+	if err != nil {
+		return err
+	}
+
+	var result struct {
+		MergePullRequest struct {
+			PullRequest struct {
+				PullRequest
+				Participants  struct{ Nodes []Actor }
+				TimelineItems TimelineItemConnection
+			} `json:"pullRequest"`
+		} `json:"mergePullRequest"`
+	}
+
+	var mergeMethod = "MERGE"
+	if squash {
+		mergeMethod = "SQUASH"
+	}
+	input := map[string]interface{}{"input": struct {
+		PullRequestID string `json:"pullRequestId"`
+		MergeMethod   string `json:"mergeMethod,omitempty"`
+	}{
+		PullRequestID: pr.ID,
+		MergeMethod:   mergeMethod,
+	}}
+	if err := c.requestGraphQL(ctx, prFragment+"\n"+mergePullRequestMutation, input, &result); err != nil {
+		return err
+	}
+
+	ti := result.MergePullRequest.PullRequest.TimelineItems
+	*pr = result.MergePullRequest.PullRequest.PullRequest
+	pr.TimelineItems = ti.Nodes
+	pr.Participants = result.MergePullRequest.PullRequest.Participants.Nodes
+
+	items, err := c.loadRemainingTimelineItems(ctx, pr.ID, ti.PageInfo)
+	if err != nil {
+		return err
+	}
+	pr.TimelineItems = append(pr.TimelineItems, items...)
+	return nil
+}
+
 func (c *V4Client) loadRemainingTimelineItems(ctx context.Context, prID string, pageInfo PageInfo) (items []TimelineItem, err error) {
 	version := c.determineGitHubVersion(ctx)
 	timelineItemTypes, err := timelineItemTypes(version)
@@ -1023,6 +1079,7 @@ const timelineItemTypesFmtStr = `ASSIGNED_EVENT, CLOSED_EVENT, ISSUE_COMMENT, RE
 
 var ghe220Semver, _ = semver.NewConstraint("~2.20.0")
 var ghe221PlusOrDotComSemver, _ = semver.NewConstraint(">= 2.21.0")
+var ghe300PlusOrDotComSemver, _ = semver.NewConstraint(">= 3.0.0")
 
 func timelineItemTypes(version *semver.Version) (string, error) {
 	if ghe220Semver.Check(version) {
@@ -1523,6 +1580,21 @@ func IsRateLimitExceeded(err error) bool {
 		// This error is not documented, so be lenient here (instead of just checking for exact
 		// error type match.)
 		if err.Type == "RATE_LIMITED" || strings.Contains(err.Message, "API rate limit exceeded") {
+			return true
+		}
+	}
+	return false
+}
+
+// IsNotMergeable reports whether err is a GitHub API error reporting that a PR
+// was not in a mergeable state.
+func IsNotMergeable(err error) bool {
+	errs, ok := err.(graphqlErrors)
+	if !ok {
+		return false
+	}
+	for _, err := range errs {
+		if strings.Contains(strings.ToLower(err.Message), "pull request is not mergeable") {
 			return true
 		}
 	}

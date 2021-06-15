@@ -127,13 +127,7 @@ $theme-colors-redesign: (
     --code-line-highlight-color: var(--color-bg-2);
     --diff-add-bg: #eeffec;
     --diff-remove-bg: #ffecec;
-
-    // TODO: Remove from use, replace with the variables referenced here.
-    // Issue: https://github.com/sourcegraph/sourcegraph/issues/19973
-    --link-hover-bg-color: var(--color-bg-2);
-    --link-hover-bg-color-2: var(--color-bg-3);
-    --disabled-action-bg-color: var(--color-bg-3);
-    --disabled-action-text-color: var(--text-muted);
+    --triggerarea-checklist-checkbox-color: var(--gray-05);
 }
 
 .theme-dark.theme-redesign {
@@ -180,6 +174,7 @@ $theme-colors-redesign: (
     --code-line-highlight-color: var(--body-bg);
     --diff-add-bg: #224035;
     --diff-remove-bg: #3e1d1d;
+    --triggerarea-checklist-checkbox-color: var(--gray-07);
 
     // TODO: Remove from use, replace with the variables referenced here.
     // Issue: https://github.com/sourcegraph/sourcegraph/issues/19973

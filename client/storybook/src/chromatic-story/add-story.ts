@@ -27,8 +27,6 @@ export const addStory = (options: AddStoryOptions): void => {
 
     // Add suffix to the story name based on theme options:
     // 1. Default + Dark:   "Text" -> "Text 🌚"
-    // 2. Redesign + Light: "Text" -> "Text [Redesign]"
-    // 3. Redesign + Dark:  "Text" -> "Text [Redesign] 🌚"
     const storyName = [name, isDarkModeEnabled && '🌚'].filter(Boolean).join(' ')
 
     /**

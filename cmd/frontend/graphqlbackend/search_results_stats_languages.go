@@ -23,7 +23,7 @@ func (srs *searchResultsStats) Languages(ctx context.Context) ([]*languageStatis
 		return nil, err
 	}
 
-	langs, err := searchResultsStatsLanguages(ctx, srr.SearchResults)
+	langs, err := searchResultsStatsLanguages(ctx, srr.Matches)
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +37,12 @@ func (srs *searchResultsStats) Languages(ctx context.Context) ([]*languageStatis
 
 func (srs *searchResultsStats) getResults(ctx context.Context) (*SearchResultsResolver, error) {
 	srs.once.Do(func() {
-		srs.srs, srs.srsErr = srs.sr.doResults(ctx, result.TypeEmpty)
+		results, err := srs.sr.doResults(ctx, result.TypeEmpty)
+		if err != nil {
+			srs.srsErr = err
+			return
+		}
+		srs.srs = srs.sr.resultsToResolver(results)
 	})
 	return srs.srs, srs.srsErr
 }

@@ -61,7 +61,7 @@ func RepoUpdater() *monitoring.Container {
 						{
 							Name:        "src_repoupdater_syncer_sync_errors_total",
 							Description: "sync error rate",
-							Query:       `sum by (family) (rate(src_repoupdater_syncer_sync_errors_total[5m]))`,
+							Query:       `max by (family) (rate(src_repoupdater_syncer_sync_errors_total[5m]))`,
 							Critical:    monitoring.Alert().Greater(0, nil).For(10 * time.Minute),
 							Panel:       monitoring.Panel().Unit(monitoring.Number),
 							Owner:       monitoring.ObservableOwnerCoreApplication,
@@ -80,7 +80,7 @@ func RepoUpdater() *monitoring.Container {
 						{
 							Name:              "syncer_sync_start",
 							Description:       "sync was started",
-							Query:             `sum by (family) (rate(src_repoupdater_syncer_start_sync[5m]))`,
+							Query:             `max by (family) (rate(src_repoupdater_syncer_start_sync[5m]))`,
 							Warning:           monitoring.Alert().LessOrEqual(0, nil).For(syncDurationThreshold),
 							Panel:             monitoring.Panel().LegendFormat("{{family}}").Unit(monitoring.Number),
 							Owner:             monitoring.ObservableOwnerCoreApplication,
@@ -89,7 +89,7 @@ func RepoUpdater() *monitoring.Container {
 						{
 							Name:              "syncer_sync_duration",
 							Description:       "95th repositories sync duration",
-							Query:             `histogram_quantile(0.95, sum by (le, family, success) (rate(src_repoupdater_syncer_sync_duration_seconds_bucket[1m])))`,
+							Query:             `histogram_quantile(0.95, max by (le, family, success) (rate(src_repoupdater_syncer_sync_duration_seconds_bucket[1m])))`,
 							Warning:           monitoring.Alert().GreaterOrEqual(30, nil).For(5 * time.Minute),
 							Panel:             monitoring.Panel().LegendFormat("{{family}}-{{success}}").Unit(monitoring.Seconds),
 							Owner:             monitoring.ObservableOwnerCoreApplication,
@@ -98,7 +98,7 @@ func RepoUpdater() *monitoring.Container {
 						{
 							Name:              "source_duration",
 							Description:       "95th repositories source duration",
-							Query:             `histogram_quantile(0.95, sum by (le) (rate(src_repoupdater_source_duration_seconds_bucket[1m])))`,
+							Query:             `histogram_quantile(0.95, max by (le) (rate(src_repoupdater_source_duration_seconds_bucket[1m])))`,
 							Warning:           monitoring.Alert().GreaterOrEqual(30, nil).For(5 * time.Minute),
 							Panel:             monitoring.Panel().Unit(monitoring.Seconds),
 							Owner:             monitoring.ObservableOwnerCoreApplication,
@@ -109,7 +109,7 @@ func RepoUpdater() *monitoring.Container {
 						{
 							Name:              "syncer_synced_repos",
 							Description:       "repositories synced",
-							Query:             `sum by (state) (rate(src_repoupdater_syncer_synced_repos_total[1m]))`,
+							Query:             `max by (state) (rate(src_repoupdater_syncer_synced_repos_total[1m]))`,
 							Warning:           monitoring.Alert().LessOrEqual(0, monitoring.StringPtr("max")).For(syncDurationThreshold),
 							Panel:             monitoring.Panel().LegendFormat("{{state}}").Unit(monitoring.Number),
 							Owner:             monitoring.ObservableOwnerCoreApplication,
@@ -118,7 +118,7 @@ func RepoUpdater() *monitoring.Container {
 						{
 							Name:              "sourced_repos",
 							Description:       "repositories sourced",
-							Query:             `sum(rate(src_repoupdater_source_repos_total[1m]))`,
+							Query:             `max(rate(src_repoupdater_source_repos_total[1m]))`,
 							Warning:           monitoring.Alert().LessOrEqual(0, nil).For(syncDurationThreshold),
 							Panel:             monitoring.Panel().Unit(monitoring.Number),
 							Owner:             monitoring.ObservableOwnerCoreApplication,
@@ -127,7 +127,7 @@ func RepoUpdater() *monitoring.Container {
 						{
 							Name:        "user_added_repos",
 							Description: "total number of user added repos",
-							Query:       `sum(src_repoupdater_user_repos_total)`,
+							Query:       `max(src_repoupdater_user_repos_total)`,
 							// 90% of our enforced limit
 							Critical:          monitoring.Alert().GreaterOrEqual(200000*0.9, nil).For(5 * time.Minute),
 							Panel:             monitoring.Panel().Unit(monitoring.Number),
@@ -139,7 +139,7 @@ func RepoUpdater() *monitoring.Container {
 						{
 							Name:              "purge_failed",
 							Description:       "repositories purge failed",
-							Query:             `sum(rate(src_repoupdater_purge_failed[1m]))`,
+							Query:             `max(rate(src_repoupdater_purge_failed[1m]))`,
 							Warning:           monitoring.Alert().Greater(0, nil).For(5 * time.Minute),
 							Panel:             monitoring.Panel().Unit(monitoring.Number),
 							Owner:             monitoring.ObservableOwnerCoreApplication,
@@ -150,7 +150,7 @@ func RepoUpdater() *monitoring.Container {
 						{
 							Name:              "sched_auto_fetch",
 							Description:       "repositories scheduled due to hitting a deadline",
-							Query:             `sum(rate(src_repoupdater_sched_auto_fetch[1m]))`,
+							Query:             `max(rate(src_repoupdater_sched_auto_fetch[1m]))`,
 							Warning:           monitoring.Alert().LessOrEqual(0, nil).For(syncDurationThreshold),
 							Panel:             monitoring.Panel().Unit(monitoring.Number),
 							Owner:             monitoring.ObservableOwnerCoreApplication,
@@ -159,7 +159,7 @@ func RepoUpdater() *monitoring.Container {
 						{
 							Name:        "sched_manual_fetch",
 							Description: "repositories scheduled due to user traffic",
-							Query:       `sum(rate(src_repoupdater_sched_manual_fetch[1m]))`,
+							Query:       `max(rate(src_repoupdater_sched_manual_fetch[1m]))`,
 							NoAlert:     true,
 							Panel:       monitoring.Panel().Unit(monitoring.Number),
 							Owner:       monitoring.ObservableOwnerCoreApplication,
@@ -173,7 +173,7 @@ func RepoUpdater() *monitoring.Container {
 						{
 							Name:              "sched_known_repos",
 							Description:       "repositories managed by the scheduler",
-							Query:             `sum(src_repoupdater_sched_known_repos)`,
+							Query:             `max(src_repoupdater_sched_known_repos)`,
 							Warning:           monitoring.Alert().LessOrEqual(0, nil).For(10 * time.Minute),
 							Panel:             monitoring.Panel().Unit(monitoring.Number),
 							Owner:             monitoring.ObservableOwnerCoreApplication,
@@ -192,7 +192,7 @@ func RepoUpdater() *monitoring.Container {
 						{
 							Name:              "sched_loops",
 							Description:       "scheduler loops",
-							Query:             `sum(rate(src_repoupdater_sched_loops[1m]))`,
+							Query:             `max(rate(src_repoupdater_sched_loops[1m]))`,
 							Warning:           monitoring.Alert().LessOrEqual(0, nil).For(syncDurationThreshold),
 							Panel:             monitoring.Panel().Unit(monitoring.Number),
 							Owner:             monitoring.ObservableOwnerCoreApplication,
@@ -203,7 +203,7 @@ func RepoUpdater() *monitoring.Container {
 						{
 							Name:              "sched_error",
 							Description:       "repositories schedule error rate",
-							Query:             `sum(rate(src_repoupdater_sched_error[1m]))`,
+							Query:             `max(rate(src_repoupdater_sched_error[1m]))`,
 							Critical:          monitoring.Alert().GreaterOrEqual(1, nil).For(time.Minute),
 							Panel:             monitoring.Panel().Unit(monitoring.Number),
 							Owner:             monitoring.ObservableOwnerCoreApplication,
@@ -220,7 +220,7 @@ func RepoUpdater() *monitoring.Container {
 						{
 							Name:              "perms_syncer_perms",
 							Description:       "time gap between least and most up to date permissions",
-							Query:             `sum by (type) (src_repoupdater_perms_syncer_perms_gap_seconds)`,
+							Query:             `max by (type) (src_repoupdater_perms_syncer_perms_gap_seconds)`,
 							Warning:           monitoring.Alert().GreaterOrEqual((3 * 24 * time.Hour).Seconds(), nil).For(5 * time.Minute), // 3 days
 							Panel:             monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Seconds),
 							Owner:             monitoring.ObservableOwnerCoreApplication,
@@ -229,7 +229,7 @@ func RepoUpdater() *monitoring.Container {
 						{
 							Name:              "perms_syncer_stale_perms",
 							Description:       "number of entities with stale permissions",
-							Query:             `sum by (type) (src_repoupdater_perms_syncer_stale_perms)`,
+							Query:             `max by (type) (src_repoupdater_perms_syncer_stale_perms)`,
 							Warning:           monitoring.Alert().GreaterOrEqual(100, nil).For(5 * time.Minute),
 							Panel:             monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Number),
 							Owner:             monitoring.ObservableOwnerCoreApplication,
@@ -238,7 +238,7 @@ func RepoUpdater() *monitoring.Container {
 						{
 							Name:        "perms_syncer_no_perms",
 							Description: "number of entities with no permissions",
-							Query:       `sum by (type) (src_repoupdater_perms_syncer_no_perms)`,
+							Query:       `max by (type) (src_repoupdater_perms_syncer_no_perms)`,
 							Warning:     monitoring.Alert().GreaterOrEqual(100, nil).For(5 * time.Minute),
 							Panel:       monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Number),
 							Owner:       monitoring.ObservableOwnerCoreApplication,
@@ -252,7 +252,7 @@ func RepoUpdater() *monitoring.Container {
 						{
 							Name:              "perms_syncer_sync_duration",
 							Description:       "95th permissions sync duration",
-							Query:             `histogram_quantile(0.95, sum by (le, type) (rate(src_repoupdater_perms_syncer_sync_duration_seconds_bucket[1m])))`,
+							Query:             `histogram_quantile(0.95, max by (le, type) (rate(src_repoupdater_perms_syncer_sync_duration_seconds_bucket[1m])))`,
 							Warning:           monitoring.Alert().GreaterOrEqual(30, nil).For(5 * time.Minute),
 							Panel:             monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Seconds),
 							Owner:             monitoring.ObservableOwnerCoreApplication,
@@ -261,7 +261,7 @@ func RepoUpdater() *monitoring.Container {
 						{
 							Name:        "perms_syncer_queue_size",
 							Description: "permissions sync queued items",
-							Query:       `sum(src_repoupdater_perms_syncer_queue_size)`,
+							Query:       `max(src_repoupdater_perms_syncer_queue_size)`,
 							Warning:     monitoring.Alert().GreaterOrEqual(100, nil).For(5 * time.Minute),
 							Panel:       monitoring.Panel().Unit(monitoring.Number),
 							Owner:       monitoring.ObservableOwnerCoreApplication,
@@ -275,7 +275,7 @@ func RepoUpdater() *monitoring.Container {
 						{
 							Name:        "perms_syncer_sync_errors",
 							Description: "permissions sync error rate",
-							Query:       `sum by (type) (ceil(rate(src_repoupdater_perms_syncer_sync_errors_total[1m])))`,
+							Query:       `max by (type) (ceil(rate(src_repoupdater_perms_syncer_sync_errors_total[1m])))`,
 							Critical:    monitoring.Alert().GreaterOrEqual(1, nil).For(time.Minute),
 							Panel:       monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Number),
 							Owner:       monitoring.ObservableOwnerCoreApplication,
@@ -378,7 +378,7 @@ func RepoUpdater() *monitoring.Container {
 						{
 							Name:           "github_graphql_rate_limit_wait_duration",
 							Description:    "time spent waiting for the GitHub graphql API rate limiter",
-							Query:          `sum by(name) (rate(src_github_rate_limit_wait_duration_seconds{resource="graphql"}[5m]))`,
+							Query:          `max by(name) (rate(src_github_rate_limit_wait_duration_seconds{resource="graphql"}[5m]))`,
 							Panel:          monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
 							Owner:          monitoring.ObservableOwnerCoreApplication,
 							NoAlert:        true,
@@ -387,7 +387,7 @@ func RepoUpdater() *monitoring.Container {
 						{
 							Name:           "github_rest_rate_limit_wait_duration",
 							Description:    "time spent waiting for the GitHub rest API rate limiter",
-							Query:          `sum by(name) (rate(src_github_rate_limit_wait_duration_seconds{resource="rest"}[5m]))`,
+							Query:          `max by(name) (rate(src_github_rate_limit_wait_duration_seconds{resource="rest"}[5m]))`,
 							Panel:          monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
 							Owner:          monitoring.ObservableOwnerCoreApplication,
 							NoAlert:        true,
@@ -396,7 +396,7 @@ func RepoUpdater() *monitoring.Container {
 						{
 							Name:           "github_search_rate_limit_wait_duration",
 							Description:    "time spent waiting for the GitHub search API rate limiter",
-							Query:          `sum by(name) (rate(src_github_rate_limit_wait_duration_seconds{resource="search"}[5m]))`,
+							Query:          `max by(name) (rate(src_github_rate_limit_wait_duration_seconds{resource="search"}[5m]))`,
 							Panel:          monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
 							Owner:          monitoring.ObservableOwnerCoreApplication,
 							NoAlert:        true,
@@ -417,7 +417,7 @@ func RepoUpdater() *monitoring.Container {
 						{
 							Name:           "gitlab_rest_rate_limit_wait_duration",
 							Description:    "time spent waiting for the GitLab rest API rate limiter",
-							Query:          `sum by(name) (rate(src_gitlab_rate_limit_wait_duration_seconds{resource="rest"}[5m]))`,
+							Query:          `max by(name) (rate(src_gitlab_rate_limit_wait_duration_seconds{resource="rest"}[5m]))`,
 							Panel:          monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
 							Owner:          monitoring.ObservableOwnerCoreApplication,
 							NoAlert:        true,

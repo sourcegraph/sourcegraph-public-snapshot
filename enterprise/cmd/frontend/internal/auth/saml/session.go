@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/beevik/etree"
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"

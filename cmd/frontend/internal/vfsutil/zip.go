@@ -7,7 +7,7 @@ import (
 
 	"golang.org/x/net/context/ctxhttp"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 

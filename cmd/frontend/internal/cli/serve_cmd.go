@@ -18,7 +18,6 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/tmpfriend"
 	"github.com/throttled/throttled/v2/store/redigostore"
-	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
@@ -245,14 +244,10 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 	globals.WatchExternalURL(defaultExternalURL(nginxAddr, httpAddr))
 	globals.WatchPermissionsUserMapping()
 
-	// bgInit is a group of background goroutines that need to finish before
-	// we are marked as ready.
-	var bgInit errgroup.Group
-	bgInit.Go(func() error { return backend.Warmup(ctx) })
-
 	goroutine.Go(func() { bg.CheckRedisCacheEvictionPolicy() })
 	goroutine.Go(func() { bg.DeleteOldCacheDataInRedis() })
 	goroutine.Go(func() { bg.DeleteOldEventLogsInPostgres(context.Background(), db) })
+	goroutine.Go(func() { bg.DeleteOldSecurityEventLogsInPostgres(context.Background(), db) })
 	goroutine.Go(func() { updatecheck.Start(db) })
 
 	// Parse GraphQL schema and set up resolvers that depend on dbconn.Global
@@ -287,10 +282,6 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 	}
 	if internalAPI != nil {
 		routines = append(routines, internalAPI)
-	}
-
-	if err := bgInit.Wait(); err != nil {
-		return err
 	}
 
 	if printLogo {

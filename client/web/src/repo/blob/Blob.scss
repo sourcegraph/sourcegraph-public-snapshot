@@ -6,10 +6,7 @@
     padding-top: 0.5rem;
     tab-size: 4;
     display: flex;
-
-    .theme-redesign & {
-        background-color: var(--code-bg);
-    }
+    background-color: var(--code-bg);
 
     &__code {
         flex: 1;
@@ -88,38 +85,32 @@
     // Unfortunately, <StatusBar> can overlap with <Blob>'s scrollbar, so calculate <StatusBar>'s
     // `right` and `maxWidth` at runtime.
     &__container {
-        .theme-redesign & {
-            position: relative;
+        position: relative;
 
-            --blob-status-bar-height: 2rem;
-            // Used to calculate status bar `bottom` along with scrollbar width.
-            --blob-status-bar-vertical-gap: 1rem;
-            // Used to calculate status bar `right` along with scrollbar width.
-            --blob-status-bar-horizontal-gap: 0.5rem;
-        }
+        --blob-status-bar-height: 2rem;
+        // Used to calculate status bar `bottom` along with scrollbar width.
+        --blob-status-bar-vertical-gap: 1rem;
+        // Used to calculate status bar `right` along with scrollbar width.
+        --blob-status-bar-horizontal-gap: 0.5rem;
     }
 
     // Add this class to <StatusBar>
     &__body {
-        position: static;
+        // Make the status bar "float" slightly above the bottom of the code view.
+        position: absolute;
+        bottom: var(--blob-status-bar-vertical-gap);
 
-        .theme-redesign & {
-            // Make the status bar "float" slightly above the bottom of the code view.
-            position: absolute;
-            bottom: var(--blob-status-bar-vertical-gap);
+        // Override default bootstrap `.w-100`, ensure that the status bar "sticks" to the right side.
+        width: auto !important;
+        // Default `right`, should be added with scrollbar width at runtime.
+        right: var(--blob-status-bar-horizontal-gap);
+        // `maxWidth` will also be subtracted by scrollbar width at runtime
+        max-width: calc(100% - (2 * var(--blob-status-bar-horizontal-gap)));
 
-            // Override default bootstrap `.w-100`, ensure that the status bar "sticks" to the right side.
-            width: auto !important;
-            // Default `right`, should be added with scrollbar width at runtime.
-            right: var(--blob-status-bar-horizontal-gap);
-            // `maxWidth` will also be subtracted by scrollbar width at runtime
-            max-width: calc(100% - (2 * var(--blob-status-bar-horizontal-gap)));
-
-            // Misc. style
-            height: var(--blob-status-bar-height);
-            border-radius: var(--border-radius);
-            border: 1px solid var(--border-color);
-            background-color: var(--body-bg);
-        }
+        // Misc. style
+        height: var(--blob-status-bar-height);
+        border-radius: var(--border-radius);
+        border: 1px solid var(--border-color);
+        background-color: var(--body-bg);
     }
 }

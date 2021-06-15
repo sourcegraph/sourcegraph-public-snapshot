@@ -204,6 +204,41 @@ func listRemoteRegistryExtensions(ctx context.Context, query string) ([]*registr
 	return xs, nil
 }
 
+// GetLocalFeaturedExtensions looks up and returns the featured registry extensions in the local registry
+// If this is not sourcegraph.com, it is not implemented.
+var GetLocalFeaturedExtensions func(ctx context.Context, db dbutil.DB) ([]graphqlbackend.RegistryExtension, error)
+
+// GetFeaturedExtensions returns the set of featured extensions.
+//
+// If this is sourcegraph.com, these are local extensions. Otherwise, these are remote extensions
+// retrieved from sourcegraph.com.
+func GetFeaturedExtensions(ctx context.Context, db dbutil.DB) ([]graphqlbackend.RegistryExtension, error) {
+	if envvar.SourcegraphDotComMode() && GetLocalFeaturedExtensions != nil {
+		return GetLocalFeaturedExtensions(ctx, db)
+	}
+
+	// Get remote featured extensions if the remote registry is sourcegraph.com.
+	registryURL, err := getRemoteRegistryURL()
+	if registryURL == nil || registryURL.String() != "https://sourcegraph.com/.api/registry" || err != nil {
+		return nil, err
+	}
+
+	remote, err := registry.GetFeaturedExtensions(ctx, registryURL)
+	if err != nil {
+		return nil, err
+	}
+	remote = FilterRemoteExtensions(remote)
+	for _, x := range remote {
+		x.RegistryURL = registryURL.String()
+	}
+	registryExtensions := make([]graphqlbackend.RegistryExtension, len(remote))
+	for i, x := range remote {
+		registryExtensions[i] = &registryExtensionRemoteResolver{v: x}
+	}
+
+	return registryExtensions, nil
+}
+
 // IsWorkInProgressExtension reports whether the extension manifest indicates that this extension is
 // marked as a work-in-progress extension (by having a "wip": true property, or (for backcompat) a
 // title that begins with "WIP:" or "[WIP]").

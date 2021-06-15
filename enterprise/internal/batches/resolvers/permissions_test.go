@@ -736,6 +736,18 @@ func TestPermissionLevels(t *testing.T) {
 					return fmt.Sprintf(`mutation { createChangesetComments(batchChange: %q, changesets: [%q], body: "test") { id } }`, batchChangeID, changesetID)
 				},
 			},
+			{
+				name: "reenqueueChangesets",
+				mutationFunc: func(batchChangeID, changesetID, batchSpecID string) string {
+					return fmt.Sprintf(`mutation { reenqueueChangesets(batchChange: %q, changesets: [%q]) { id } }`, batchChangeID, changesetID)
+				},
+			},
+			{
+				name: "mergeChangesets",
+				mutationFunc: func(batchChangeID, changesetID, batchSpecID string) string {
+					return fmt.Sprintf(`mutation { mergeChangesets(batchChange: %q, changesets: [%q]) { id } }`, batchChangeID, changesetID)
+				},
+			},
 		}
 
 		for _, m := range mutations {

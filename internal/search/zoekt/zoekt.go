@@ -20,7 +20,7 @@ const defaultMaxSearchResults = 30
 var defaultTimeout = 20 * time.Second
 
 func FileRe(pattern string, queryIsCaseSensitive bool) (zoektquery.Q, error) {
-	return ParseRe(pattern, true, false, queryIsCaseSensitive)
+	return parseRe(pattern, true, false, queryIsCaseSensitive)
 }
 
 func noOpAnyChar(re *syntax.Regexp) {
@@ -32,7 +32,7 @@ func noOpAnyChar(re *syntax.Regexp) {
 	}
 }
 
-func ParseRe(pattern string, filenameOnly bool, contentOnly bool, queryIsCaseSensitive bool) (zoektquery.Q, error) {
+func parseRe(pattern string, filenameOnly bool, contentOnly bool, queryIsCaseSensitive bool) (zoektquery.Q, error) {
 	// these are the flags used by zoekt, which differ to searcher.
 	re, err := syntax.Parse(pattern, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
 	if err != nil {
@@ -123,6 +123,6 @@ func ResultCountFactor(numRepos int, fileMatchLimit int32, globalSearch bool) (k
 	return k
 }
 
-// RepoRevFunc is a function which maps repository names returned from Zoekt
+// repoRevFunc is a function which maps repository names returned from Zoekt
 // into the Sourcegraph's resolved repository revisions for the search.
-type RepoRevFunc func(file *zoekt.FileMatch) (repo types.RepoName, revs []string, ok bool)
+type repoRevFunc func(file *zoekt.FileMatch) (repo types.RepoName, revs []string, ok bool)

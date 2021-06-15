@@ -43,6 +43,13 @@ const mockAPI = createMockInsightAPI({
             data: getRandomDataForMock(),
         }
     },
+    // eslint-disable-next-line @typescript-eslint/require-await
+    getRepositorySuggestions: async () => [
+        { id: '1', name: 'github.com/example/sub-repo-1' },
+        { id: '2', name: 'github.com/example/sub-repo-2' },
+        { id: '3', name: 'github.com/another-example/sub-repo-1' },
+        { id: '4', name: 'github.com/another-example/sub-repo-2' },
+    ],
 })
 
 add('Page', () => (

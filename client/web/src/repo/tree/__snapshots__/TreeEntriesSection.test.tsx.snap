@@ -11,6 +11,17 @@ exports[`TreeEntriesSection should render a grid of tree entries at the root 1`]
       class="d-flex align-items-center justify-content-between test-file-decorable-name overflow-hidden"
     >
       <span>
+        <svg
+          class="mdi-icon icon-inline mr-1"
+          fill="currentColor"
+          height="24"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M20,18H4V8H20M20,6H12L10,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V8C22,6.89 21.1,6 20,6Z"
+          />
+        </svg>
         src/
       </span>
       <div
@@ -38,6 +49,17 @@ exports[`TreeEntriesSection should render a grid of tree entries at the root 1`]
       class="d-flex align-items-center justify-content-between test-file-decorable-name overflow-hidden"
     >
       <span>
+        <svg
+          class="mdi-icon icon-inline mr-1"
+          fill="currentColor"
+          height="24"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M20,18H4V8H20M20,6H12L10,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V8C22,6.89 21.1,6 20,6Z"
+          />
+        </svg>
         testdata/
       </span>
       <div
@@ -65,6 +87,17 @@ exports[`TreeEntriesSection should render a grid of tree entries at the root 1`]
       class="d-flex align-items-center justify-content-between test-file-decorable-name overflow-hidden"
     >
       <span>
+        <svg
+          class="mdi-icon icon-inline mr-1"
+          fill="currentColor"
+          height="24"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M6,2A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2H6M6,4H13V9H18V20H6V4M8,12V14H16V12H8M8,16V18H13V16H8Z"
+          />
+        </svg>
         .editorconfig
       </span>
     </div>
@@ -78,6 +111,17 @@ exports[`TreeEntriesSection should render a grid of tree entries at the root 1`]
       class="d-flex align-items-center justify-content-between test-file-decorable-name overflow-hidden"
     >
       <span>
+        <svg
+          class="mdi-icon icon-inline mr-1"
+          fill="currentColor"
+          height="24"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M6,2A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2H6M6,4H13V9H18V20H6V4M8,12V14H16V12H8M8,16V18H13V16H8Z"
+          />
+        </svg>
         .eslintrc.json
       </span>
     </div>
@@ -96,6 +140,17 @@ exports[`TreeEntriesSection should render a grid of tree entries in a subdirecto
       class="d-flex align-items-center justify-content-between test-file-decorable-name overflow-hidden"
     >
       <span>
+        <svg
+          class="mdi-icon icon-inline mr-1"
+          fill="currentColor"
+          height="24"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M20,18H4V8H20M20,6H12L10,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V8C22,6.89 21.1,6 20,6Z"
+          />
+        </svg>
         testutils/
       </span>
       <div
@@ -123,6 +178,17 @@ exports[`TreeEntriesSection should render a grid of tree entries in a subdirecto
       class="d-flex align-items-center justify-content-between test-file-decorable-name overflow-hidden"
     >
       <span>
+        <svg
+          class="mdi-icon icon-inline mr-1"
+          fill="currentColor"
+          height="24"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M20,18H4V8H20M20,6H12L10,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V8C22,6.89 21.1,6 20,6Z"
+          />
+        </svg>
         typings/
       </span>
       <div
@@ -150,6 +216,17 @@ exports[`TreeEntriesSection should render a grid of tree entries in a subdirecto
       class="d-flex align-items-center justify-content-between test-file-decorable-name overflow-hidden"
     >
       <span>
+        <svg
+          class="mdi-icon icon-inline mr-1"
+          fill="currentColor"
+          height="24"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M6,2A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2H6M6,4H13V9H18V20H6V4M8,12V14H16V12H8M8,16V18H13V16H8Z"
+          />
+        </svg>
         errors.ts
       </span>
     </div>
@@ -163,6 +240,17 @@ exports[`TreeEntriesSection should render a grid of tree entries in a subdirecto
       class="d-flex align-items-center justify-content-between test-file-decorable-name overflow-hidden"
     >
       <span>
+        <svg
+          class="mdi-icon icon-inline mr-1"
+          fill="currentColor"
+          height="24"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M6,2A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2H6M6,4H13V9H18V20H6V4M8,12V14H16V12H8M8,16V18H13V16H8Z"
+          />
+        </svg>
         helpers.ts
       </span>
     </div>
@@ -181,6 +269,17 @@ exports[`TreeEntriesSection should render only direct children 1`] = `
       class="d-flex align-items-center justify-content-between test-file-decorable-name overflow-hidden"
     >
       <span>
+        <svg
+          class="mdi-icon icon-inline mr-1"
+          fill="currentColor"
+          height="24"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M20,18H4V8H20M20,6H12L10,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V8C22,6.89 21.1,6 20,6Z"
+          />
+        </svg>
         ref/
       </span>
       <div

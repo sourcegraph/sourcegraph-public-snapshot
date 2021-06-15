@@ -7,10 +7,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
@@ -179,6 +179,9 @@ func (r *RepositoryResolver) DefaultBranch(ctx context.Context) (*GitRefResolver
 		if err != nil {
 			return nil, err
 		}
+		if refName == "" {
+			return nil, nil
+		}
 		return &GitRefResolver{repo: r, name: refName}, nil
 	}
 	r.defaultBranchOnce.Do(func() {
@@ -294,6 +297,14 @@ func (r *RepositoryResolver) ResultCount() int32 {
 
 func (r *RepositoryResolver) Type(ctx context.Context) (*types.Repo, error) {
 	return r.repo(ctx)
+}
+
+func (r *RepositoryResolver) Stars(ctx context.Context) (int32, error) {
+	repo, err := r.repo(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return int32(repo.Stars), nil
 }
 
 func (r *RepositoryResolver) hydrate(ctx context.Context) error {

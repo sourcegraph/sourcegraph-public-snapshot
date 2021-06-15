@@ -457,7 +457,7 @@ func (r *searchResolver) errorForOverRepoLimit(ctx context.Context) *errOverRepo
 		return buildErr(proposedQueries, description)
 	}
 
-	resolved, _ := r.resolveRepositories(ctx, nil)
+	resolved, _ := r.resolveRepositories(ctx, resolveRepositoriesOpts{})
 	if len(resolved.RepoRevs) > 0 {
 		paths := make([]string, len(resolved.RepoRevs))
 		for i, repo := range resolved.RepoRevs {
@@ -486,7 +486,9 @@ func (r *searchResolver) errorForOverRepoLimit(ctx context.Context) *errOverRepo
 			repoFieldValues = append(repoFieldValues, repoParentPattern)
 			ctx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
 			defer cancel()
-			resolved, err := r.resolveRepositories(ctx, repoFieldValues)
+			resolved, err := r.resolveRepositories(ctx, resolveRepositoriesOpts{
+				effectiveRepoFieldValues: repoFieldValues,
+			})
 			if ctx.Err() != nil {
 				continue
 			} else if err != nil {
@@ -609,12 +611,8 @@ func pathParentsByFrequency(paths []string) []string {
 	return parents
 }
 
-// Wrap an alert in a SearchResultsResolver. ElapsedMilliseconds() will
-// calculate a very large value for duration if start takes on the nil-value of
-// year 1. As a workaround, wrap instantiates start with time.now().
-// TODO(rvantonder): #10801.
-func (a searchAlert) wrap(db dbutil.DB) *SearchResultsResolver {
-	return &SearchResultsResolver{db: db, alert: &a}
+func (a searchAlert) wrapResults() *SearchResults {
+	return &SearchResults{Alert: &a}
 }
 
 func (a searchAlert) wrapSearchImplementer(db dbutil.DB) *alertSearchImplementer {
@@ -632,7 +630,7 @@ type alertSearchImplementer struct {
 }
 
 func (a alertSearchImplementer) Results(context.Context) (*SearchResultsResolver, error) {
-	return a.alert.wrap(a.db), nil
+	return &SearchResultsResolver{db: a.db, SearchResults: a.alert.wrapResults()}, nil
 }
 
 func (alertSearchImplementer) Suggestions(context.Context, *searchSuggestionsArgs) ([]SearchSuggestionResolver, error) {
@@ -771,7 +769,7 @@ func multierrorToAlert(me *multierror.Error) (resAlert *searchAlert, resErr erro
 	for _, err := range me.Errors {
 		alert, err := errorToAlert(err)
 		resAlert = maxAlertByPriority(resAlert, alert)
-		multierror.Append(resErr, err)
+		resErr = multierror.Append(resErr, err)
 	}
 
 	return resAlert, resErr

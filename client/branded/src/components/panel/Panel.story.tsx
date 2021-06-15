@@ -1,7 +1,6 @@
 import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
 import React from 'react'
-import { MemoryRouter } from 'react-router'
 import { EMPTY, NEVER, of } from 'rxjs'
 
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
@@ -10,6 +9,8 @@ import { pretendProxySubscribable, pretendRemote } from '@sourcegraph/shared/src
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
 import webStyles from '@sourcegraph/web/src/main.scss'
+
+import { BrandedStory } from '../BrandedStory'
 
 import { Panel } from './Panel'
 
@@ -39,14 +40,9 @@ const panels: PanelViewData[] = [
 
 const { add } = storiesOf('branded/Panel', module)
     .addDecorator(story => (
-        <>
-            <div className="p-4">
-                <MemoryRouter initialEntries={[{ pathname: '/', hash: `#tab=${panels[0].id}` }]}>
-                    {story()}
-                </MemoryRouter>
-            </div>
-            <style>{webStyles}</style>
-        </>
+        <BrandedStory styles={webStyles} initialEntries={[{ pathname: '/', hash: `#tab=${panels[0].id}` }]}>
+            {() => <div className="p-4">{story()}</div>}
+        </BrandedStory>
     ))
     .addParameters({
         chromatic: {

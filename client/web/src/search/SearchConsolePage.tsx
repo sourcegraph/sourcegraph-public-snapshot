@@ -14,11 +14,8 @@ import { SearchPatternType } from '../graphql-operations'
 
 import { fetchSuggestions } from './backend'
 import { addSourcegraphSearchCodeIntelligence } from './input/MonacoQueryInput'
-import { LATEST_VERSION } from './results/streaming/StreamingSearchResults'
-import {
-    StreamingSearchResultsList,
-    StreamingSearchResultsListProps,
-} from './results/streaming/StreamingSearchResultsList'
+import { LATEST_VERSION } from './results/StreamingSearchResults'
+import { StreamingSearchResultsList, StreamingSearchResultsListProps } from './results/StreamingSearchResultsList'
 
 import { parseSearchURLQuery, parseSearchURLPatternType, SearchStreamingProps } from '.'
 

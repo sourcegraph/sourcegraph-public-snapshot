@@ -10,10 +10,10 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/cockroachdb/errors"
 	"github.com/gomodule/oauth1/oauth"
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"

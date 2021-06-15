@@ -2,22 +2,22 @@ import classNames from 'classnames'
 import CancelIcon from 'mdi-react/CancelIcon'
 import React from 'react'
 
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
+import styles from './EmptyPanelView.module.scss'
 
 interface EmptyPanelViewProps {
     className?: string
 }
 
 export const EmptyPanelView: React.FunctionComponent<EmptyPanelViewProps> = props => {
-    const { className } = props
-    const [isRedesignEnabled] = useRedesignToggle()
-    const EmptyPanelWrapper = isRedesignEnabled ? React.Fragment : 'div'
+    const { className, children } = props
 
     return (
-        <EmptyPanelWrapper {...(!isRedesignEnabled && { className: 'panel' })}>
-            <div className={classNames('panel__empty', className)}>
-                <CancelIcon className="icon-inline mr-2" /> Nothing to show here
-            </div>
-        </EmptyPanelWrapper>
+        <div className={classNames(styles.emptyPanel, className)}>
+            {children || (
+                <>
+                    <CancelIcon className="icon-inline mr-2" /> Nothing to show here
+                </>
+            )}
+        </div>
     )
 }

@@ -13,8 +13,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
-	"github.com/pkg/errors"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -316,6 +316,10 @@ func (err HTTPError) Error() string {
 
 func (err HTTPError) Unauthorized() bool {
 	return err.code == http.StatusUnauthorized
+}
+
+func (err HTTPError) Forbidden() bool {
+	return err.code == http.StatusForbidden
 }
 
 // HTTPErrorCode returns err's HTTP status code, if it is an HTTP error from
