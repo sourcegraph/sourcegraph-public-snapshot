@@ -37,6 +37,8 @@ On a systemd-based distribution, the following steps will install the executor:
 
 <li>Add a systemd service to start the executor; for example by creating the below unit in `/etc/systemd/system/sourcegraph-executor.service`:
 
+</ol>
+
 ```ini
 [Unit]
 Description=Sourcegraph executor
@@ -51,8 +53,9 @@ EnvironmentFile=/opt/sourcegraph/etc/executor.env
 [Install]
 WantedBy=multi-user.target
 ```
-    
+<ol start="4">
 <li>Configure the executor by setting [the required environment variables](configuration.md) in the environment file (`/opt/sourcegraph/etc/executor.env`, in this example). For example:
+</ol>
 
 ```bash
 EXECUTOR_QUEUE_NAME=batches
@@ -63,6 +66,7 @@ EXECUTOR_BACKEND=docker
 EXECUTOR_MAX_NUM_JOBS=4
 ```
 
+<ol start="5">
 <li>Enable the executor service: `systemctl enable sourcegraph-executor.service`
 
 <li>Start the executor service: `systemctl start sourcegraph-executor`
