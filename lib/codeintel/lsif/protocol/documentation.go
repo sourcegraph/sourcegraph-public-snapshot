@@ -152,6 +152,9 @@ type Documentation struct {
 	// the effective e.g. URL hash in a way that makes sense in the given language, e.g. C++ for
 	// example could use `Router::ServeHTTP` instead of a "." joiner.
 	//
+	// An identifier may contain any characters, including slashes and "#". If clients intend to
+	// use identifiers in a context where those characters are forbidden (e.g. URLs) then they must
+	// replace them with something else.
 	Identifier string `json:"identifier"`
 
 	// Whether or not this Documentation is the beginning of a new major section, meaning it and its
