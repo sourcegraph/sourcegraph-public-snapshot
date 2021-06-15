@@ -155,15 +155,12 @@ func TestWithCreationPings(t *testing.T) {
 }
 
 func TestFilterSettingJson(t *testing.T) {
-
 	var want map[string]json.RawMessage
-
 	if err := jsonc.Unmarshal(insightAloneSettingStr, &want); err != nil {
 		t.Fatal(err)
 	}
 
 	input := insightInlineSettingStr
-
 	got, err := FilterSettingJson(input, "searchInsights.")
 	if err != nil {
 		t.Fatal(err)
@@ -181,7 +178,6 @@ func TestFilterSettingJson(t *testing.T) {
 func TestGetSearchInsights(t *testing.T) {
 	db := dbtesting.GetDB(t)
 	ctx := context.Background()
-
 	_, err := db.Exec(`INSERT INTO orgs(id, name) VALUES (1, 'first-org'), (2, 'second-org');`)
 	if err != nil {
 		t.Fatal(err)
@@ -199,7 +195,6 @@ func TestGetSearchInsights(t *testing.T) {
 	}
 
 	step := 2
-
 	want := []SearchInsight{
 		{
 			ID:           "searchInsights.insight.global.first",
@@ -240,20 +235,18 @@ func TestGetSearchInsights(t *testing.T) {
 	}
 
 	got, err := GetSearchInsights(ctx, db, All)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	// Sorting the slices so that we can reliably compare them
 	sort.Slice(got, func(i, j int) bool {
 		return got[i].ID < got[j].ID
 	})
-
 	sort.Slice(want, func(i, j int) bool {
 		return want[i].ID < want[j].ID
 
 	})
-
-	if err != nil {
-		t.Fatal(err)
-	}
 
 	if !reflect.DeepEqual(want, got) {
 		t.Fatalf("unexpected insights diff: %v", cmp.Diff(want, got))
@@ -263,7 +256,6 @@ func TestGetSearchInsights(t *testing.T) {
 func TestGetLangStatsInsights(t *testing.T) {
 	db := dbtesting.GetDB(t)
 	ctx := context.Background()
-
 	_, err := db.Exec(`INSERT INTO orgs(id, name) VALUES (1, 'first-org'), (2, 'second-org');`)
 	if err != nil {
 		t.Fatal(err)
@@ -274,7 +266,6 @@ func TestGetLangStatsInsights(t *testing.T) {
 			INSERT INTO settings (id, org_id, contents, created_at, user_id, author_user_id)
 			VALUES  (1, 1, $1, CURRENT_TIMESTAMP, NULL, NULL)`,
 		langStatsInsightSettingStr)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -289,7 +280,6 @@ func TestGetLangStatsInsights(t *testing.T) {
 	}
 
 	got, err := GetLangStatsInsights(ctx, db, All)
-
 	if err != nil {
 		t.Fatal(err)
 	}
