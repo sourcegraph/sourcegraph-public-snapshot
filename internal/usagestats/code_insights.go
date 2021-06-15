@@ -372,13 +372,14 @@ func FilterSettingJson(settingJson string, prefix string) (map[string]json.RawMe
 		return map[string]json.RawMessage{}, err
 	}
 
-	for key := range raw {
-		if !strings.HasPrefix(key, prefix) {
-			delete(raw, key)
+	filtered := make(map[string]json.RawMessage)
+	for key, val := range raw {
+		if strings.HasPrefix(key, prefix) {
+			filtered[key] = val
 		}
 	}
 
-	return raw, nil
+	return filtered, nil
 }
 
 func GetSearchInsights(ctx context.Context, db dbutil.DB, filter SettingFilter) ([]SearchInsight, error) {
