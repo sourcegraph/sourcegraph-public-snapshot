@@ -37,9 +37,8 @@ The standard use of a feature flag for A/B testing will look like the following:
 In the frontend, evaluated feature flags for the current user are available on 
 the SourcegraphWebAppState. These can be prop-drilled into the components that need access to them.
 
-Whenever a flag is used from a flags set, it should be provided a default so that 
-the code can be deployed before creating the feature flag, the feature flag can safely 
-be deleted before removing the referencing code, and so enterprise deployments work as
+Ensure that a default value is set for feature flags so that 
+(i) code can be deployed before creating the feature flag, (ii) deleting the feature flag is safe before removing referenced code, (iii) enterprise deployments continue to work as
 expected. 
 
 For example:
