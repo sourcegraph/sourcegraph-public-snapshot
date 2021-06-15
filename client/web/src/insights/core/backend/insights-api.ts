@@ -3,7 +3,7 @@ import { of, throwError } from 'rxjs'
 import { getCombinedViews, getInsightCombinedViews } from './api/get-combined-views'
 import { getLangStatsInsightContent } from './api/get-lang-stats-insight-content'
 import { getRepositorySuggestions } from './api/get-repository-suggestions'
-import { getSearchInsightContent } from './api/get-search-insight-content'
+import { getSearchInsightContent } from './api/get-search-insight-content/get-search-insight-content'
 import { getSubjectSettings, updateSubjectSettings } from './api/subject-settings'
 import { ApiService } from './types'
 
