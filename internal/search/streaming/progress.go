@@ -108,3 +108,7 @@ func (c *Stats) String() string {
 func (c *Stats) Equal(other *Stats) bool {
 	return reflect.DeepEqual(c, other)
 }
+
+func (c *Stats) AllReposTimedOut() bool {
+	return c.Status.All(search.RepoStatusTimedout) && c.Status.Len() == len(c.Repos)
+}

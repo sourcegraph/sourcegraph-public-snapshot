@@ -57,8 +57,8 @@ func TestSearchResults(t *testing.T) {
 		if err != nil {
 			t.Fatal("Results:", err)
 		}
-		resultDescriptions := make([]string, len(results.SearchResults))
-		for i, match := range results.SearchResults {
+		resultDescriptions := make([]string, len(results.Matches))
+		for i, match := range results.Matches {
 			// NOTE: Only supports one match per line. If we need to test other cases,
 			// just remove that assumption in the following line of code.
 			switch m := match.(type) {
@@ -451,7 +451,7 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 		t.Run(test.descr, func(t *testing.T) {
 			for _, globbing := range []bool{true, false} {
 				mockDecodedViewerFinalSettings.SearchGlobbing = &globbing
-				actualDynamicFilters := (&SearchResultsResolver{db: db, SearchResults: test.searchResults}).DynamicFilters(context.Background())
+				actualDynamicFilters := (&SearchResultsResolver{db: db, SearchResults: &SearchResults{Matches: test.searchResults}}).DynamicFilters(context.Background())
 				actualDynamicFilterStrs := make(map[string]int)
 
 				for _, filter := range actualDynamicFilters {
@@ -667,10 +667,12 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			sr := &SearchResultsResolver{
-				db:            db,
-				SearchResults: tt.fields.results,
-				Stats:         tt.fields.searchResultsCommon,
-				alert:         tt.fields.alert,
+				db: db,
+				SearchResults: &SearchResults{
+					Stats:   tt.fields.searchResultsCommon,
+					Matches: tt.fields.results,
+					Alert:   tt.fields.alert,
+				},
 			}
 			if got := sr.ApproximateResultCount(); got != tt.want {
 				t.Errorf("searchResultsResolver.ApproximateResultCount() = %v, want %v", got, tt.want)
@@ -931,7 +933,7 @@ func TestEvaluateAnd(t *testing.T) {
 				t.Fatal("Results:", err)
 			}
 			if tt.wantAlert {
-				if results.alert == nil {
+				if results.SearchResults.Alert == nil {
 					t.Errorf("Expected results")
 				}
 			} else if int(results.MatchCount()) != len(zoektFileMatches) {
@@ -1052,31 +1054,27 @@ func fileResult(repo string, lineMatches []*result.LineMatch, symbolMatches []*r
 }
 
 func TestUnionMerge(t *testing.T) {
-	db := new(dbtesting.MockDB)
-
 	cases := []struct {
-		left  SearchResultsResolver
-		right SearchResultsResolver
+		left  SearchResults
+		right SearchResults
 		want  autogold.Value
 	}{
 		{
-			left: SearchResultsResolver{
-				db: db,
-				SearchResults: []result.Match{
+			left: SearchResults{
+				Matches: []result.Match{
 					diffResult("a", "a"),
 					commitResult("a", "a"),
 					repoResult("a"),
 					fileResult("a", nil, nil),
 				},
 			},
-			right: SearchResultsResolver{db: db},
+			right: SearchResults{},
 			want:  autogold.Want("LeftOnly", "File{url:a/,symbols:[],lineMatches:[]}, Repo:/a, Commit:/a/-/commit/a, Diff:/a/-/commit/a"),
 		},
 		{
-			left: SearchResultsResolver{db: db},
-			right: SearchResultsResolver{
-				db: db,
-				SearchResults: []result.Match{
+			left: SearchResults{},
+			right: SearchResults{
+				Matches: []result.Match{
 					diffResult("a", "a"),
 					commitResult("a", "a"),
 					repoResult("a"),
@@ -1086,16 +1084,16 @@ func TestUnionMerge(t *testing.T) {
 			want: autogold.Want("RightOnly", "File{url:a/,symbols:[],lineMatches:[]}, Repo:/a, Commit:/a/-/commit/a, Diff:/a/-/commit/a"),
 		},
 		{
-			left: SearchResultsResolver{db: db,
-				SearchResults: []result.Match{
+			left: SearchResults{
+				Matches: []result.Match{
 					diffResult("a", "a"),
 					commitResult("a", "a"),
 					repoResult("a"),
 					fileResult("a", nil, nil),
 				},
 			},
-			right: SearchResultsResolver{db: db,
-				SearchResults: []result.Match{
+			right: SearchResults{
+				Matches: []result.Match{
 					diffResult("b", "b"),
 					commitResult("b", "b"),
 					repoResult("b"),
@@ -1105,16 +1103,16 @@ func TestUnionMerge(t *testing.T) {
 			want: autogold.Want("MergeAllDifferent", "File{url:a/,symbols:[],lineMatches:[]}, Repo:/a, Commit:/a/-/commit/a, Diff:/a/-/commit/a, File{url:b/,symbols:[],lineMatches:[]}, Repo:/b, Commit:/b/-/commit/b, Diff:/b/-/commit/b"),
 		},
 		{
-			left: SearchResultsResolver{db: db,
-				SearchResults: []result.Match{
+			left: SearchResults{
+				Matches: []result.Match{
 					fileResult("b", []*result.LineMatch{
 						{Preview: "a"},
 						{Preview: "b"},
 					}, nil),
 				},
 			},
-			right: SearchResultsResolver{db: db,
-				SearchResults: []result.Match{
+			right: SearchResults{
+				Matches: []result.Match{
 					fileResult("b", []*result.LineMatch{
 						{Preview: "c"},
 						{Preview: "d"},
@@ -1124,16 +1122,16 @@ func TestUnionMerge(t *testing.T) {
 			want: autogold.Want("MergeFileLineMatches", "File{url:b/,symbols:[],lineMatches:[a,b,c,d]}"),
 		},
 		{
-			left: SearchResultsResolver{db: db,
-				SearchResults: []result.Match{
+			left: SearchResults{
+				Matches: []result.Match{
 					fileResult("a", []*result.LineMatch{
 						{Preview: "a"},
 						{Preview: "b"},
 					}, nil),
 				},
 			},
-			right: SearchResultsResolver{db: db,
-				SearchResults: []result.Match{
+			right: SearchResults{
+				Matches: []result.Match{
 					fileResult("b", []*result.LineMatch{
 						{Preview: "c"},
 						{Preview: "d"},
@@ -1143,16 +1141,16 @@ func TestUnionMerge(t *testing.T) {
 			want: autogold.Want("NoMergeFileSymbols", "File{url:a/,symbols:[],lineMatches:[a,b]}, File{url:b/,symbols:[],lineMatches:[c,d]}"),
 		},
 		{
-			left: SearchResultsResolver{db: db,
-				SearchResults: []result.Match{
+			left: SearchResults{
+				Matches: []result.Match{
 					fileResult("a", nil, []*result.SymbolMatch{
 						{Symbol: result.Symbol{Name: "a"}},
 						{Symbol: result.Symbol{Name: "b"}},
 					}),
 				},
 			},
-			right: SearchResultsResolver{db: db,
-				SearchResults: []result.Match{
+			right: SearchResults{
+				Matches: []result.Match{
 					fileResult("a", nil, []*result.SymbolMatch{
 						{Symbol: result.Symbol{Name: "c"}},
 						{Symbol: result.Symbol{Name: "d"}},
@@ -1166,8 +1164,8 @@ func TestUnionMerge(t *testing.T) {
 	for _, tc := range cases {
 		t.Run("", func(t *testing.T) {
 			got := unionMerge(&tc.left, &tc.right)
-			sort.Sort(result.Matches(got.SearchResults))
-			tc.want.Equal(t, searchResultResolversToString(got.SearchResults))
+			sort.Sort(result.Matches(got.Matches))
+			tc.want.Equal(t, searchResultResolversToString(got.Matches))
 		})
 	}
 }
