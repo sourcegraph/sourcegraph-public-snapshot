@@ -372,7 +372,7 @@ func FilterSettingJson(settingJson string, prefix string) (map[string]json.RawMe
 		return map[string]json.RawMessage{}, err
 	}
 
-	for key, _ := range raw {
+	for key := range raw {
 		if !strings.HasPrefix(key, prefix) {
 			delete(raw, key)
 		}

@@ -183,6 +183,9 @@ func TestGetSearchInsights(t *testing.T) {
 	ctx := context.Background()
 
 	_, err := db.Exec(`INSERT INTO orgs(id, name) VALUES (1, 'first-org'), (2, 'second-org');`)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	_, err = db.Exec(`
 
@@ -262,6 +265,9 @@ func TestGetLangStatsInsights(t *testing.T) {
 	ctx := context.Background()
 
 	_, err := db.Exec(`INSERT INTO orgs(id, name) VALUES (1, 'first-org'), (2, 'second-org');`)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	_, err = db.Exec(`
 
