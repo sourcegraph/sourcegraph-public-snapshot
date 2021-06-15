@@ -22,11 +22,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
+	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
-
-const maxUnindexedRepoRevSearchesPerQuery = 200
 
 // A global limiter on number of concurrent searcher searches.
 var textSearchLimiter = mutablelimiter.New(32)
@@ -202,17 +201,17 @@ func SearchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 		trace.Stringer("global_search_mode", args.Mode),
 	)
 
-	// performance: for global searches, we avoid calling newIndexedSearchRequest
+	// performance: for global searches, we avoid calling NewIndexedSearchRequest
 	// because zoekt will anyway have to search all its shards.
-	var indexed *indexedSearchRequest
+	var indexed *zoektutil.IndexedSearchRequest
 	if args.Mode == search.ZoektGlobalSearch {
-		indexed = &indexedSearchRequest{
-			args:  args,
-			typ:   textRequest,
-			repos: &indexedRepoRevs{},
+		indexed = &zoektutil.IndexedSearchRequest{
+			Args:     args,
+			Typ:      zoektutil.TextRequest,
+			RepoRevs: &zoektutil.IndexedRepoRevs{},
 		}
 	} else {
-		indexed, err = newIndexedSearchRequest(ctx, args, textRequest, stream)
+		indexed, err = zoektutil.NewIndexedSearchRequest(ctx, args, zoektutil.TextRequest, stream)
 		if err != nil {
 			return err
 		}

@@ -482,11 +482,11 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			}
 			var suggestions []SearchSuggestionResolver
 			if results != nil {
-				if len(results.SearchResults) > int(*args.First) {
-					results.SearchResults = results.SearchResults[:*args.First]
+				if len(results.Matches) > int(*args.First) {
+					results.Matches = results.Matches[:*args.First]
 				}
-				suggestions = make([]SearchSuggestionResolver, 0, len(results.SearchResults))
-				for i, res := range results.SearchResults {
+				suggestions = make([]SearchSuggestionResolver, 0, len(results.Matches))
+				for i, res := range results.Matches {
 					if fm, ok := res.(*result.FileMatch); ok {
 						fmResolver := &FileMatchResolver{
 							FileMatch:    *fm,
@@ -494,7 +494,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 						}
 						suggestions = append(suggestions, gitTreeSuggestionResolver{
 							gitTreeEntry: fmResolver.File(),
-							score:        len(results.SearchResults) - i,
+							score:        len(results.Matches) - i,
 						})
 					}
 				}

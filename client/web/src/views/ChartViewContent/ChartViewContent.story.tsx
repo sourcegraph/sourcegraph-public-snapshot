@@ -19,7 +19,7 @@ const commonProps = {
 }
 
 const { add } = storiesOf('web/ChartViewContent', module).addDecorator(story => (
-    <WebStory>{() => <div style={{ width: '32rem', height: '16rem' }}>{story()}</div>}</WebStory>
+    <WebStory>{() => <div style={{ width: '32rem', height: '20rem' }}>{story()}</div>}</WebStory>
 ))
 
 add('Line chart', () => (
@@ -28,10 +28,10 @@ add('Line chart', () => (
         content={{
             chart: 'line',
             data: [
-                { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, a: 110, b: 150 },
-                { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, a: 145, b: 260 },
-                { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, a: 94, b: 200 },
-                { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, a: 134, b: 190 },
+                { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, a: 0, b: 150 },
+                { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, a: 20, b: 260 },
+                { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, a: 56, b: 200 },
+                { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, a: 98, b: 190 },
                 { x: 1588965700286, a: 123, b: 170 },
             ],
             series: [

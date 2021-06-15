@@ -1,0 +1,13 @@
+.feature-tour {
+    background: var(--tour-bg);
+    border: none;
+    border-radius: 10px;
+
+    :global(.shepherd-arrow::after) {
+        border-bottom-color: var(--tour-bg);
+    }
+
+    &__step {
+        width: 17rem;
+    }
+}

@@ -12,5 +12,6 @@ export function getRangeWithPadding(range: [number, number], paddingCoefficient:
     const [min, max] = range
     const increment = ((max - min) * paddingCoefficient) / 2
 
-    return [min - increment, max + increment]
+    // Minimal value for insight line chart can't be less than 0
+    return [Math.max(min - increment, 0), max + increment]
 }
