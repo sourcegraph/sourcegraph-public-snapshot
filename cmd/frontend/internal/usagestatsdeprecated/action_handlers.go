@@ -51,7 +51,7 @@ func LogActivity(isAuthenticated bool, userID int32, userCookieID, event string)
 		return nil
 	}
 
-	// Regardless of authenicatation status, add the user's unique ID to the set of active users.
+	// Regardless of authentication status, add the user's unique ID to the set of active users.
 	if err := c.Send("SADD", usersActiveKeyFromDaysAgo(0), uniqueID); err != nil {
 		return err
 	}
