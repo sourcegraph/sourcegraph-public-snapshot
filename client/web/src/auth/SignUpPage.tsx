@@ -35,7 +35,7 @@ export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({ authentic
         return <Redirect to="/sign-in" />
     }
 
-    const doSignUp = (args: SignUpArguments): Promise<void> =>
+    const handleSignUp = (args: SignUpArguments): Promise<void> =>
         fetch('/-/sign-up', {
             credentials: 'same-origin',
             method: 'POST',
@@ -75,7 +75,7 @@ export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({ authentic
                 body={
                     <div className="signup-page__container pb-5">
                         {context.sourcegraphDotComMode && <p className="pt-1 pb-2">Start searching public code now</p>}
-                        <SignUpForm context={context} doSignUp={doSignUp} />
+                        <SignUpForm context={context} onSignUp={handleSignUp} />
                         <p className="mt-3">
                             Already have an account? <Link to={`/sign-in${location.search}`}>Sign in</Link>
                         </p>
