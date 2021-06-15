@@ -62,7 +62,7 @@ export const RepositoriesField = forwardRef((props: RepositoryFieldProps, refere
             setPanel(false)
 
             /**
-             * Setting the value ('setValue' above) triggers the reset selection of the input
+             * Setting the value ('onChange' above) triggers the reset selection of the input
              * if the user selects a value from suggestion panel for some sub-string of
              * the input value we need to preserve the selection at the end of the sub-string
              * and avoid resetting and putting the selection at the end of input string.
