@@ -1,8 +1,9 @@
-import React, { useLayoutEffect, useEffect, useState, useMemo } from 'react'
+import React, { useLayoutEffect, useState } from 'react'
 import { MemoryRouter, MemoryRouterProps } from 'react-router'
 import { useDarkMode } from 'storybook-dark-mode'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useStyles } from '@sourcegraph/storybook/src/hooks/useStyles'
 
 import brandedStyles from '../global-styles/index.scss'
 
@@ -36,9 +37,8 @@ export const BrandedStory: React.FunctionComponent<
     }
 > = ({ children: Children, styles = brandedStyles, ...memoryRouterProps }) => {
     const [isLightTheme, setIsLightTheme] = useState(!useDarkMode())
-    const styleTag = useMemo(() => applyCSSToDocumentHead(styles), [styles])
+    useStyles(styles)
 
-    useEffect(() => () => styleTag.remove(), [styleTag])
     useLayoutEffect(() => {
         const listener = ((event: CustomEvent<boolean>): void => {
             setIsLightTheme(event.detail)
