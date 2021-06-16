@@ -63,8 +63,8 @@ func (s JvmPackagesArtifactSyncer) CloneCommand(ctx context.Context, remoteURL *
 		return nil, err
 	}
 
-	cmd := exec.CommandContext(ctx, "git", "--bare", "init", "--initial-branch", "main")
-	if err := runCommandInDirectory(ctx, cmd, bareGitDirectory); err != nil {
+	cmd := exec.CommandContext(ctx, "git", "--bare", "init")
+	if _, err := runCommandInDirectory(ctx, cmd, bareGitDirectory); err != nil {
 		return nil, err
 	}
 
@@ -84,14 +84,12 @@ func (s JvmPackagesArtifactSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL
 
 	tags := make(map[string]bool)
 
-	cmd := exec.CommandContext(ctx, "git", "tag")
-	cmd.Dir = string(dir)
-	out, err := runWith(ctx, cmd, false, nil)
+	out, err := runCommandInDirectory(ctx, exec.CommandContext(ctx, "git", "tag"), string(dir))
 	if err != nil {
 		return err
 	}
 
-	for _, line := range strings.Split(string(out), "\n") {
+	for _, line := range strings.Split(out, "\n") {
 		if len(line) == 0 {
 			continue
 		}
@@ -118,7 +116,7 @@ func (s JvmPackagesArtifactSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL
 
 		if shouldBeRemoved {
 			cmd := exec.CommandContext(ctx, "git", "tag", "-d", tag)
-			if err := runCommandInDirectory(ctx, cmd, string(dir)); err != nil {
+			if _, err := runCommandInDirectory(ctx, cmd, string(dir)); err != nil {
 				log15.Error("failed to delete git tag", "error", err, "tag", tag)
 				continue
 			}
@@ -178,8 +176,8 @@ func (s JvmPackagesArtifactSyncer) gitPushDependencyTag(ctx context.Context, bar
 
 	path := paths[0]
 
-	cmd := exec.CommandContext(ctx, "git", "init", "--initial-branch", "main")
-	if err := runCommandInDirectory(ctx, cmd, tmpDirectory); err != nil {
+	cmd := exec.CommandContext(ctx, "git", "init")
+	if _, err := runCommandInDirectory(ctx, cmd, tmpDirectory); err != nil {
 		return err
 	}
 
@@ -189,18 +187,18 @@ func (s JvmPackagesArtifactSyncer) gitPushDependencyTag(ctx context.Context, bar
 	}
 
 	cmd = exec.CommandContext(ctx, "git", "remote", "add", "origin", bareGitDirectory)
-	if err := runCommandInDirectory(ctx, cmd, tmpDirectory); err != nil {
+	if _, err := runCommandInDirectory(ctx, cmd, tmpDirectory); err != nil {
 		return err
 	}
 
 	cmd = exec.CommandContext(ctx, "git", "push", "--force", "origin", "--tags")
-	if err := runCommandInDirectory(ctx, cmd, tmpDirectory); err != nil {
+	if _, err := runCommandInDirectory(ctx, cmd, tmpDirectory); err != nil {
 		return err
 	}
 
 	if isMainBranch {
 		cmd = exec.CommandContext(ctx, "git", "push", "--force", "origin", "main", dependency.GitTagFromVersion())
-		if err := runCommandInDirectory(ctx, cmd, tmpDirectory); err != nil {
+		if _, err := runCommandInDirectory(ctx, cmd, tmpDirectory); err != nil {
 			return err
 		}
 	}
@@ -212,7 +210,7 @@ func (s JvmPackagesArtifactSyncer) gitPushDependencyTag(ctx context.Context, bar
 // A `*.jar` file works the same way as a `*.zip` file, it can even be uncompressed with the `unzip` command-line tool.
 func (s JvmPackagesArtifactSyncer) commitJar(ctx context.Context, dependency reposource.Dependency, workingDirectory, jarPath string) error {
 	cmd := exec.CommandContext(ctx, "unzip", jarPath)
-	if err := runCommandInDirectory(ctx, cmd, workingDirectory); err != nil {
+	if _, err := runCommandInDirectory(ctx, cmd, workingDirectory); err != nil {
 		return err
 	}
 
@@ -237,31 +235,31 @@ func (s JvmPackagesArtifactSyncer) commitJar(ctx context.Context, dependency rep
 	}
 
 	cmd = exec.CommandContext(ctx, "git", "add", ".")
-	if err := runCommandInDirectory(ctx, cmd, workingDirectory); err != nil {
+	if _, err := runCommandInDirectory(ctx, cmd, workingDirectory); err != nil {
 		return err
 	}
 
 	cmd = exec.CommandContext(ctx, "git", "commit", "-m", dependency.CoursierSyntax(), "--date", stableGitCommitDate)
-	if err := runCommandInDirectory(ctx, cmd, workingDirectory); err != nil {
+	if _, err := runCommandInDirectory(ctx, cmd, workingDirectory); err != nil {
 		return err
 	}
 
 	cmd = exec.CommandContext(ctx, "git", "tag", "-m", dependency.CoursierSyntax(), dependency.GitTagFromVersion())
-	if err := runCommandInDirectory(ctx, cmd, workingDirectory); err != nil {
+	if _, err := runCommandInDirectory(ctx, cmd, workingDirectory); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func runCommandInDirectory(ctx context.Context, cmd *exec.Cmd, workingDirectory string) error {
+func runCommandInDirectory(ctx context.Context, cmd *exec.Cmd, workingDirectory string) (string, error) {
 	cmd.Dir = workingDirectory
 	output, err := runWith(ctx, cmd, false, nil)
 	if err != nil {
 		log15.Error("failed command", "cmd", cmd, "err", err)
-		return errors.Wrapf(err, "command %s failed with output %s", cmd.Args, string(output))
+		return "", errors.Wrapf(err, "command %s failed with output %s", cmd.Args, string(output))
 	}
-	return nil
+	return string(output), nil
 }
 
 type lsifJavaJson struct {
