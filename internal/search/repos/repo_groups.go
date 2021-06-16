@@ -35,7 +35,7 @@ func (r RepoRegexpPattern) String() string {
 
 var MockResolveRepoGroups func() (map[string][]RepoGroupValue, error)
 
-// Convert the repo groups from settings
+// RepoGroupsToIncludePatterns converts the repo groups from settings to an include pattern
 func RepoGroupsToIncludePatterns(groupNames []string, groups map[string][]RepoGroupValue) (string, int) {
 	patterns := repoGroupValuesToRegexp(groupNames, groups)
 	return UnionRegExps(patterns), len(patterns)

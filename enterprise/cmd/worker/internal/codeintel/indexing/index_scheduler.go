@@ -83,12 +83,14 @@ func (s *IndexScheduler) Handle(ctx context.Context) error {
 	}
 
 	// TODO(autoindex): We should create a way to gather _all_ repogroups (including all user repogroups)
+	//    https://github.com/sourcegraph/sourcegraph/issues/22130
 	settings, err := s.settingStore.GetLastestSchemaSettings(ctx, api.SettingsSubject{})
 	if err != nil {
 		return errors.Wrap(err, "IndexingSettingStore.GetLastestSchemaSettings")
 	}
 
 	// TODO(autoindex): Later we can remove using cncf explicitly and do all of them
+	//    https://github.com/sourcegraph/sourcegraph/issues/22130
 	groupsByName := searchrepos.ResolveRepoGroupsFromSettings(settings)
 	includePatterns, _ := searchrepos.RepoGroupsToIncludePatterns(enabledRepoGroupNames, groupsByName)
 

@@ -2,18 +2,14 @@ package indexing
 
 import (
 	"context"
-	"fmt"
 	"sort"
-	"sync"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 
-	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func init() {
@@ -21,38 +17,20 @@ func init() {
 }
 
 func TestIndexSchedulerUpdate(t *testing.T) {
-	// TODO: Switch to store method. Right now using global hax
-	var mu sync.Mutex
-	searchrepos.MockResolveRepoGroups = func() (map[string][]searchrepos.RepoGroupValue, error) {
-		mu.Lock()
-		defer mu.Unlock()
-		return map[string][]searchrepos.RepoGroupValue{
-			"cncf": {
-				searchrepos.RepoPath("foo-repo1"),
-				searchrepos.RepoPath("repo3"),
-			},
-		}, nil
-	}
-	defer func() { searchrepos.MockResolveRepoGroups = nil }()
-
-	database.Mocks.Repos.ListRepoNames = func(ctx context.Context, opt database.ReposListOptions) ([]types.RepoName, error) {
-		return []types.RepoName{}, nil
-	}
-	defer func() { database.Mocks.Repos.ListRepoNames = nil }()
-
-	// END HACKS
+	indexEnqueuer := NewMockIndexEnqueuer()
 
 	mockDBStore := NewMockDBStore()
 	mockDBStore.GetRepositoriesWithIndexConfigurationFunc.SetDefaultReturn([]int{43, 44, 45, 46}, nil)
 
 	mockSettingStore := NewMockIndexingSettingStore()
-	indexEnqueuer := NewMockIndexEnqueuer()
+	mockSettingStore.GetLastestSchemaSettingsFunc.SetDefaultReturn(&schema.Settings{
+		SearchRepositoryGroups: map[string][]interface{}{},
+	}, nil)
 
 	mockRepoStore := NewMockIndexingRepoStore()
-	mockRepoStore.ListRepoNamesFunc.SetDefaultReturn([]types.RepoName{{
-		ID:   0,
-		Name: "test repo",
-	}}, nil)
+	mockRepoStore.ListRepoNamesFunc.SetDefaultReturn([]types.RepoName{
+		{ID: 41}, {ID: 42}, {ID: 43},
+	}, nil)
 
 	scheduler := &IndexScheduler{
 		dbStore:       mockDBStore,
@@ -85,4 +63,41 @@ func TestDisabledAutoindexConfiguration(t *testing.T) {
 	// ListRepoNames -> a, b, c, d
 	// GetAutoindexDisabledRepositories -> c
 	// Result: a, b, d
+	indexEnqueuer := NewMockIndexEnqueuer()
+
+	mockDBStore := NewMockDBStore()
+	mockDBStore.GetRepositoriesWithIndexConfigurationFunc.SetDefaultReturn([]int{43, 44, 45, 46}, nil)
+	mockDBStore.GetAutoindexDisabledRepositoriesFunc.SetDefaultReturn([]int{41, 50}, nil)
+
+	mockSettingStore := NewMockIndexingSettingStore()
+	mockSettingStore.GetLastestSchemaSettingsFunc.SetDefaultReturn(&schema.Settings{
+		SearchRepositoryGroups: map[string][]interface{}{},
+	}, nil)
+
+	mockRepoStore := NewMockIndexingRepoStore()
+	mockRepoStore.ListRepoNamesFunc.SetDefaultReturn([]types.RepoName{
+		{ID: 41}, {ID: 42}, {ID: 43},
+	}, nil)
+
+	scheduler := &IndexScheduler{
+		dbStore:       mockDBStore,
+		settingStore:  mockSettingStore,
+		repoStore:     mockRepoStore,
+		operations:    newOperations(&observation.TestContext),
+		indexEnqueuer: indexEnqueuer,
+	}
+
+	if err := scheduler.Handle(context.Background()); err != nil {
+		t.Fatalf("unexpected error performing update: %s", err)
+	}
+
+	var repositoryIDs []int
+	for _, call := range indexEnqueuer.QueueIndexesForRepositoryFunc.History() {
+		repositoryIDs = append(repositoryIDs, call.Arg1)
+	}
+	sort.Ints(repositoryIDs)
+
+	if diff := cmp.Diff([]int{42, 43, 44, 45, 46}, repositoryIDs); diff != "" {
+		t.Errorf("unexpected repository IDs (-want +got):\n%s", diff)
+	}
 }
