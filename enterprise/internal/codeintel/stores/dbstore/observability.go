@@ -38,7 +38,6 @@ type operations struct {
 	hardDeleteUploadByID                   *observation.Operation
 	hasCommit                              *observation.Operation
 	hasRepository                          *observation.Operation
-	indexableRepositories                  *observation.Operation
 	indexQueueSize                         *observation.Operation
 	insertDependencyIndexingJob            *observation.Operation
 	insertIndex                            *observation.Operation
@@ -127,7 +126,6 @@ func newOperations(observationContext *observation.Context) *operations {
 		hardDeleteUploadByID:                   op("HardDeleteUploadByID"),
 		hasCommit:                              op("HasCommit"),
 		hasRepository:                          op("HasRepository"),
-		indexableRepositories:                  op("IndexableRepositories"),
 		indexQueueSize:                         op("IndexQueueSize"),
 		insertDependencyIndexingJob:            op("InsertDependencyIndexingJob"),
 		insertIndex:                            op("InsertIndex"),

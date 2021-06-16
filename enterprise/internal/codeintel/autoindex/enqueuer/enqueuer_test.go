@@ -267,12 +267,6 @@ func TestQueueIndexesForRepositoryInferred(t *testing.T) {
 	mockDBStore := NewMockDBStore()
 	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
 	mockDBStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
-	mockDBStore.IndexableRepositoriesFunc.SetDefaultReturn([]store.IndexableRepository{
-		{RepositoryID: 41},
-		{RepositoryID: 42},
-		{RepositoryID: 43},
-		{RepositoryID: 44},
-	}, nil)
 
 	mockGitserverClient := NewMockGitserverClient()
 	mockGitserverClient.HeadFunc.SetDefaultHook(func(ctx context.Context, repositoryID int) (string, error) {
@@ -332,19 +326,12 @@ func TestQueueIndexesForRepositoryInferred(t *testing.T) {
 			t.Errorf("unexpected commits (-want +got):\n%s", diff)
 		}
 	}
-
-	if len(mockDBStore.UpdateIndexableRepositoryFunc.History()) != 2 {
-		t.Errorf("unexpected number of calls to UpdateIndexableRepository. want=%d have=%d", 2, len(mockDBStore.UpdateIndexableRepositoryFunc.History()))
-	}
 }
 
 func TestQueueIndexesForRepositoryInferredTooLarge(t *testing.T) {
 	mockDBStore := NewMockDBStore()
 	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
 	mockDBStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
-	mockDBStore.IndexableRepositoriesFunc.SetDefaultReturn([]store.IndexableRepository{
-		{RepositoryID: 42},
-	}, nil)
 
 	var paths []string
 	for i := 0; i < 25; i++ {
