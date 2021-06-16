@@ -4,6 +4,7 @@ import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useState } from 'react'
 
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
+import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
 import { CaseInsensitiveFuzzySearch } from '../../fuzzyFinder/CaseInsensitiveFuzzySearch'
@@ -270,17 +271,26 @@ function renderFiles(
     search: FuzzySearch,
     indexing?: SearchIndexing
 ): RenderedFuzzyResult {
-    const { revision } = parseBrowserRepoURL(location.pathname + location.search + location.hash)
-    const revisionUrlPart = revision ? `@${revision}` : ''
+    // Parse the URL here instead of accepting it as a React prop because the
+    // URL can change based on shortcuts like `y` that won't trigger a re-render
+    // in React. By parsing the URL here, we avoid the risk of rendering links to a revision that
+    // doesn't match the active revision in the
+    const repoUrl = parseBrowserRepoURL(location.pathname + location.search + location.hash)
     const indexedFileCount = indexing ? indexing.indexedFileCount : ''
-    const cacheKey = `${state.query}-${state.maxResults}${indexedFileCount}-${revisionUrlPart}`
+    const cacheKey = `${state.query}-${state.maxResults}${indexedFileCount}-${repoUrl.revision || ''}`
     let fuzzyResult = lastFuzzySearchResult.get(cacheKey)
     if (!fuzzyResult) {
         const start = window.performance.now()
         fuzzyResult = search.search({
             query: state.query,
             maxResults: state.maxResults,
-            createUrl: filename => `/${props.repoName}${revisionUrlPart}/-/blob/${filename}`,
+            createUrl: filename =>
+                toPrettyBlobURL({
+                    filePath: filename,
+                    revision: repoUrl.revision,
+                    repoName: props.repoName,
+                    commitID: props.commitID,
+                }),
             onClick: () => props.onClose(),
         })
         fuzzyResult.elapsedMilliseconds = window.performance.now() - start
