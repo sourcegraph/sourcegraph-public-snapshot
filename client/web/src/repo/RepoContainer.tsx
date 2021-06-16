@@ -129,6 +129,7 @@ interface RepoContainerProps
 
 export const HOVER_COUNT_KEY = 'hover-count'
 const HAS_DISMISSED_ALERT_KEY = 'has-dismissed-extension-alert'
+const HAS_DISMISSED_FIREFOX_ALERT_KEY = 'has-dismissed-firefox-addon-alert'
 
 export const HOVER_THRESHOLD = 5
 
@@ -357,10 +358,18 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         setHasDismissedPopover(true)
     }, [])
 
+    const [hasDismissedFirefoxAlert, setHasDismissedFirefoxAlert] = useLocalStorage(
+        HAS_DISMISSED_FIREFOX_ALERT_KEY,
+        false
+    )
+    const showFirefoxAddonAlert = !hasDismissedFirefoxAlert
+
     const onAlertDismissed = useCallback(() => {
         onExtensionAlertDismissed()
         setHasDismissedExtensionAlert(true)
-    }, [onExtensionAlertDismissed, setHasDismissedExtensionAlert])
+        // TEMPORARY
+        setHasDismissedFirefoxAlert(true)
+    }, [onExtensionAlertDismissed, setHasDismissedExtensionAlert, setHasDismissedFirefoxAlert])
 
     if (!repoOrError) {
         // Render nothing while loading
@@ -405,12 +414,13 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                         }
                     />
                 )}
-            {showExtensionAlert && (
+            {(showExtensionAlert || showFirefoxAddonAlert) && (
                 <InstallBrowserExtensionAlert
                     isChrome={IS_CHROME}
                     onAlertDismissed={onAlertDismissed}
                     externalURLs={repoOrError.externalURLs}
                     codeHostIntegrationMessaging={codeHostIntegrationMessaging}
+                    showFirefoxAddonAlert={showFirefoxAddonAlert}
                 />
             )}
             <RepoHeader
