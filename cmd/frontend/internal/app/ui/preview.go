@@ -9,8 +9,8 @@ import (
 )
 
 var (
-	singleLineRegexp     = lazyregexp.New(`L(\d+)`)
-	multiLineRangeRegexp = lazyregexp.New(`L(\d+)-(\d+)`)
+	singleLineRegexp     = lazyregexp.New(`^L(\d+)(?::\d+)?$`)
+	multiLineRangeRegexp = lazyregexp.New(`^L(\d+)(?::\d+)?-(\d+)(?::\d+)?$`)
 )
 
 type lineRange struct {
