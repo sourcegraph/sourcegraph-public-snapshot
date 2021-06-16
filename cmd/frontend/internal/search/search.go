@@ -631,7 +631,7 @@ func GuessSource(r *http.Request) trace.SourceType {
 	return trace.SourceOther
 }
 
-// batchEvents takes an event stream and merges events htat come through close in time into a single event.
+// batchEvents takes an event stream and merges events that come through close in time into a single event.
 // This makes downstream database and network operations more efficient by enabling batch reads.
 func batchEvents(source <-chan streaming.SearchEvent, delay time.Duration) <-chan streaming.SearchEvent {
 	results := make(chan streaming.SearchEvent)
