@@ -26,8 +26,9 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = ({ node, d
         repoName: props.repo.name,
         revision: props.revision || '',
     }
-    const hash = node.pathID.slice(props.pagePathID.length + '/'.length).replace(/\//g, '-')
-    const thisPage = toDocumentationURL({ ...repoRevision, pathID: props.pagePathID }) + (hash ? '#' + hash : '')
+    const hashIndex = node.pathID.indexOf('#')
+    const hash = hashIndex ? node.pathID.slice(hashIndex + '#'.length) : ''
+    const thisPage = toDocumentationURL({ ...repoRevision, pathID: node.pathID })
 
     return (
         <div className="documentation-index-node">
