@@ -239,7 +239,7 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
       </button>
       <div
         aria-hidden="true"
-        class="web-content feedback-prompt__menu dropdown-menu dropdown-menu-right"
+        class="feedback-prompt__menu dropdown-menu dropdown-menu-right"
         role="menu"
         tabindex="-1"
       >
@@ -1024,7 +1024,7 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
       </button>
       <div
         aria-hidden="true"
-        class="web-content feedback-prompt__menu dropdown-menu dropdown-menu-right"
+        class="feedback-prompt__menu dropdown-menu dropdown-menu-right"
         role="menu"
         tabindex="-1"
       >
@@ -1819,7 +1819,7 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
       </button>
       <div
         aria-hidden="true"
-        class="web-content feedback-prompt__menu dropdown-menu dropdown-menu-right"
+        class="feedback-prompt__menu dropdown-menu dropdown-menu-right"
         role="menu"
         tabindex="-1"
       >
@@ -2585,7 +2585,7 @@ exports[`NavLinks authed self-hosted /search 1`] = `
       </button>
       <div
         aria-hidden="true"
-        class="web-content feedback-prompt__menu dropdown-menu dropdown-menu-right"
+        class="feedback-prompt__menu dropdown-menu dropdown-menu-right"
         role="menu"
         tabindex="-1"
       >
