@@ -120,7 +120,7 @@ const ExtensionSidenavBanner: React.FunctionComponent = () => (
     <div className={classnames(styles.banner, 'mx-2')}>
         <img className={classnames(styles.bannerIcon, 'mb-2')} src={extensionBannerIconURL} alt="" />
         {/* Override .theme-redesign h4 font-weight */}
-        <h4 className={classnames(styles.header, 'mt-2 font-weight-bold')}>Create custom extensions!</h4>
+        <h4 className="mt-2 font-weight-bold">Create custom extensions!</h4>
         <small>
             You can improve your workflow by creating custom extensions. See{' '}
             <a
