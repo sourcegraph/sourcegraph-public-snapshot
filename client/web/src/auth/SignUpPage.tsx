@@ -73,7 +73,15 @@ export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({
         })
 
     if (context.sourcegraphDotComMode && featureFlags.get('w0-signup-optimisation') && query.get('src')) {
-        return <ExperimentalSignUpPage source={query.get('src')} onSignUp={handleSignUp} isLightTheme={isLightTheme} />
+        return (
+            <ExperimentalSignUpPage
+                source={query.get('src')}
+                onSignUp={handleSignUp}
+                isLightTheme={isLightTheme}
+                useEmail={query.has('useEmail')}
+                context={context}
+            />
+        )
     }
 
     return (
