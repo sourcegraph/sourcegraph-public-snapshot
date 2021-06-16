@@ -431,7 +431,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *Indexe
 				return
 			}
 
-			matches := make([]*result.FileMatch, 0, len(files))
+			matches := make([]result.Match, 0, len(files))
 			for _, file := range files {
 				fileLimitHit := false
 				mu.Lock()
@@ -469,7 +469,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *Indexe
 			}
 
 			c.Send(streaming.SearchEvent{
-				Results: fileMatchesToMatches(matches),
+				Results: matches,
 				Stats: streaming.Stats{
 					IsLimitHit: limitHit,
 				},
@@ -497,15 +497,6 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *Indexe
 		return nil
 	}
 	return nil
-}
-
-func fileMatchesToMatches(fms []*result.FileMatch) []result.Match {
-	matches := make([]result.Match, 0, len(fms))
-	for _, fm := range fms {
-		newFm := fm
-		matches = append(matches, newFm)
-	}
-	return matches
 }
 
 // getRepos is a wrapper around p.Get. It returns an error if the promise
