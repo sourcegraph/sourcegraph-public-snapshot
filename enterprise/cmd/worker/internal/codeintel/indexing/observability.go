@@ -9,7 +9,6 @@ import (
 )
 
 type operations struct {
-	HandleIndexabilityUpdater *observation.Operation
 	HandleIndexScheduler      *observation.Operation
 	QueueRepository           *observation.Operation
 }
@@ -37,7 +36,6 @@ func newOperations(observationContext *observation.Context) *operations {
 		}
 
 		singletonOperations = &operations{
-			HandleIndexabilityUpdater: op("HandleIndexabilityUpdate"),
 			HandleIndexScheduler:      op("HandleIndexSchedule"),
 			QueueRepository:           op("QueueRepository"),
 		}

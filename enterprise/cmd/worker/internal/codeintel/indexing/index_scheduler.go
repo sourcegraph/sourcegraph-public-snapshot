@@ -69,6 +69,9 @@ func NewIndexScheduler(
 // For mocking in tests
 var indexSchedulerEnabled = conf.CodeIntelAutoIndexingEnabled
 
+// Used to filter the valid repo group names
+var enabledRepoGroupNames = []string{"cncf"}
+
 func (s *IndexScheduler) Handle(ctx context.Context) error {
 	if !indexSchedulerEnabled() {
 		return nil
@@ -76,15 +79,18 @@ func (s *IndexScheduler) Handle(ctx context.Context) error {
 
 	configuredRepositoryIDs, err := s.dbStore.GetRepositoriesWithIndexConfiguration(ctx)
 	if err != nil {
-		return errors.Wrap(err, "dbstore.GetRepositoriesWithIndexConfiguration")
+		return errors.Wrap(err, "DBStore.GetRepositoriesWithIndexConfiguration")
 	}
 
 	// TODO(autoindex): We should create a way to gather _all_ repogroups (including all user repogroups)
-	settings, _ := s.settingStore.GetLastestSchemaSettings(ctx, api.SettingsSubject{})
+	settings, err := s.settingStore.GetLastestSchemaSettings(ctx, api.SettingsSubject{})
+	if err != nil {
+		return errors.Wrap(err, "IndexingSettingStore.GetLastestSchemaSettings")
+	}
 
 	// TODO(autoindex): Later we can remove using cncf explicitly and do all of them
 	groupsByName := searchrepos.ResolveRepoGroupsFromSettings(settings)
-	includePatterns, _ := searchrepos.RepoGroupsToIncludePatterns([]string{"cncf"}, groupsByName)
+	includePatterns, _ := searchrepos.RepoGroupsToIncludePatterns(enabledRepoGroupNames, groupsByName)
 
 	options := database.ReposListOptions{
 		IncludePatterns: []string{includePatterns},
@@ -96,10 +102,14 @@ func (s *IndexScheduler) Handle(ctx context.Context) error {
 
 	repoGroupRepositoryIDs, err := s.repoStore.ListRepoNames(ctx, options)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "IndexingRepoStore.ListRepoNames")
 	}
 
 	disabledRepoGroupsList, err := s.dbStore.GetAutoindexDisabledRepositories(ctx)
+	if err != nil {
+		return errors.Wrap(err, "DBStore.GetAutoindexDisabledRepositories")
+	}
+
 	disabledRepoGroups := map[int]struct{}{}
 	for _, v := range disabledRepoGroupsList {
 		disabledRepoGroups[v] = struct{}{}
@@ -108,10 +118,9 @@ func (s *IndexScheduler) Handle(ctx context.Context) error {
 	var indexableRepositoryIDs []int
 	for _, indexableRepository := range repoGroupRepositoryIDs {
 		repoID := int(indexableRepository.ID)
-		if _, ok := disabledRepoGroups[repoID]; ok {
-			continue
+		if _, disabled := disabledRepoGroups[repoID]; !disabled {
+			indexableRepositoryIDs = append(indexableRepositoryIDs, repoID)
 		}
-		indexableRepositoryIDs = append(indexableRepositoryIDs, repoID)
 	}
 
 	var queueErr error

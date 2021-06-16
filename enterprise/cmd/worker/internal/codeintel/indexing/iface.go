@@ -3,7 +3,6 @@ package indexing
 import (
 	"context"
 	"regexp"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -17,11 +16,8 @@ import (
 // TODO: Go back through here and make sure we actually use each of these interface items
 type DBStore interface {
 	With(other basestore.ShareableStore) DBStore
-	IndexableRepositories(ctx context.Context, opts dbstore.IndexableRepositoryQueryOptions) ([]dbstore.IndexableRepository, error)
 	GetRepositoriesWithIndexConfiguration(ctx context.Context) ([]int, error)
 	GetAutoindexDisabledRepositories(ctx context.Context) ([]int, error)
-	ResetIndexableRepositories(ctx context.Context, lastUpdatedBefore time.Time) error
-	UpdateIndexableRepository(ctx context.Context, indexableRepository dbstore.UpdateableIndexableRepository, now time.Time) error
 	GetUploads(ctx context.Context, opts dbstore.GetUploadsOptions) ([]dbstore.Upload, int, error)
 	GetUploadByID(ctx context.Context, id int) (dbstore.Upload, bool, error)
 	ReferencesForUpload(ctx context.Context, uploadID int) (dbstore.PackageReferenceScanner, error)

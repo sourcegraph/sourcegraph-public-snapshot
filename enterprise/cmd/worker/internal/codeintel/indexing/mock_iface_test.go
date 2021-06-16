@@ -13,7 +13,6 @@ import (
 	schema "github.com/sourcegraph/sourcegraph/schema"
 	"regexp"
 	"sync"
-	"time"
 )
 
 // MockDBStore is a mock implementation of the DBStore interface (from the
@@ -35,20 +34,9 @@ type MockDBStore struct {
 	// GetUploadsFunc is an instance of a mock function object controlling
 	// the behavior of the method GetUploads.
 	GetUploadsFunc *DBStoreGetUploadsFunc
-	// IndexableRepositoriesFunc is an instance of a mock function object
-	// controlling the behavior of the method IndexableRepositories.
-	IndexableRepositoriesFunc *DBStoreIndexableRepositoriesFunc
 	// ReferencesForUploadFunc is an instance of a mock function object
 	// controlling the behavior of the method ReferencesForUpload.
 	ReferencesForUploadFunc *DBStoreReferencesForUploadFunc
-	// ResetIndexableRepositoriesFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// ResetIndexableRepositories.
-	ResetIndexableRepositoriesFunc *DBStoreResetIndexableRepositoriesFunc
-	// UpdateIndexableRepositoryFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// UpdateIndexableRepository.
-	UpdateIndexableRepositoryFunc *DBStoreUpdateIndexableRepositoryFunc
 	// WithFunc is an instance of a mock function object controlling the
 	// behavior of the method With.
 	WithFunc *DBStoreWithFunc
@@ -78,24 +66,9 @@ func NewMockDBStore() *MockDBStore {
 				return nil, 0, nil
 			},
 		},
-		IndexableRepositoriesFunc: &DBStoreIndexableRepositoriesFunc{
-			defaultHook: func(context.Context, dbstore.IndexableRepositoryQueryOptions) ([]dbstore.IndexableRepository, error) {
-				return nil, nil
-			},
-		},
 		ReferencesForUploadFunc: &DBStoreReferencesForUploadFunc{
 			defaultHook: func(context.Context, int) (dbstore.PackageReferenceScanner, error) {
 				return nil, nil
-			},
-		},
-		ResetIndexableRepositoriesFunc: &DBStoreResetIndexableRepositoriesFunc{
-			defaultHook: func(context.Context, time.Time) error {
-				return nil
-			},
-		},
-		UpdateIndexableRepositoryFunc: &DBStoreUpdateIndexableRepositoryFunc{
-			defaultHook: func(context.Context, dbstore.UpdateableIndexableRepository, time.Time) error {
-				return nil
 			},
 		},
 		WithFunc: &DBStoreWithFunc{
@@ -122,17 +95,8 @@ func NewMockDBStoreFrom(i DBStore) *MockDBStore {
 		GetUploadsFunc: &DBStoreGetUploadsFunc{
 			defaultHook: i.GetUploads,
 		},
-		IndexableRepositoriesFunc: &DBStoreIndexableRepositoriesFunc{
-			defaultHook: i.IndexableRepositories,
-		},
 		ReferencesForUploadFunc: &DBStoreReferencesForUploadFunc{
 			defaultHook: i.ReferencesForUpload,
-		},
-		ResetIndexableRepositoriesFunc: &DBStoreResetIndexableRepositoriesFunc{
-			defaultHook: i.ResetIndexableRepositories,
-		},
-		UpdateIndexableRepositoryFunc: &DBStoreUpdateIndexableRepositoryFunc{
-			defaultHook: i.UpdateIndexableRepository,
 		},
 		WithFunc: &DBStoreWithFunc{
 			defaultHook: i.With,
@@ -584,116 +548,6 @@ func (c DBStoreGetUploadsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
-// DBStoreIndexableRepositoriesFunc describes the behavior when the
-// IndexableRepositories method of the parent MockDBStore instance is
-// invoked.
-type DBStoreIndexableRepositoriesFunc struct {
-	defaultHook func(context.Context, dbstore.IndexableRepositoryQueryOptions) ([]dbstore.IndexableRepository, error)
-	hooks       []func(context.Context, dbstore.IndexableRepositoryQueryOptions) ([]dbstore.IndexableRepository, error)
-	history     []DBStoreIndexableRepositoriesFuncCall
-	mutex       sync.Mutex
-}
-
-// IndexableRepositories delegates to the next hook function in the queue
-// and stores the parameter and result values of this invocation.
-func (m *MockDBStore) IndexableRepositories(v0 context.Context, v1 dbstore.IndexableRepositoryQueryOptions) ([]dbstore.IndexableRepository, error) {
-	r0, r1 := m.IndexableRepositoriesFunc.nextHook()(v0, v1)
-	m.IndexableRepositoriesFunc.appendCall(DBStoreIndexableRepositoriesFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// IndexableRepositories method of the parent MockDBStore instance is
-// invoked and the hook queue is empty.
-func (f *DBStoreIndexableRepositoriesFunc) SetDefaultHook(hook func(context.Context, dbstore.IndexableRepositoryQueryOptions) ([]dbstore.IndexableRepository, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// IndexableRepositories method of the parent MockDBStore instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *DBStoreIndexableRepositoriesFunc) PushHook(hook func(context.Context, dbstore.IndexableRepositoryQueryOptions) ([]dbstore.IndexableRepository, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
-func (f *DBStoreIndexableRepositoriesFunc) SetDefaultReturn(r0 []dbstore.IndexableRepository, r1 error) {
-	f.SetDefaultHook(func(context.Context, dbstore.IndexableRepositoryQueryOptions) ([]dbstore.IndexableRepository, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
-func (f *DBStoreIndexableRepositoriesFunc) PushReturn(r0 []dbstore.IndexableRepository, r1 error) {
-	f.PushHook(func(context.Context, dbstore.IndexableRepositoryQueryOptions) ([]dbstore.IndexableRepository, error) {
-		return r0, r1
-	})
-}
-
-func (f *DBStoreIndexableRepositoriesFunc) nextHook() func(context.Context, dbstore.IndexableRepositoryQueryOptions) ([]dbstore.IndexableRepository, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *DBStoreIndexableRepositoriesFunc) appendCall(r0 DBStoreIndexableRepositoriesFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of DBStoreIndexableRepositoriesFuncCall
-// objects describing the invocations of this function.
-func (f *DBStoreIndexableRepositoriesFunc) History() []DBStoreIndexableRepositoriesFuncCall {
-	f.mutex.Lock()
-	history := make([]DBStoreIndexableRepositoriesFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// DBStoreIndexableRepositoriesFuncCall is an object that describes an
-// invocation of method IndexableRepositories on an instance of MockDBStore.
-type DBStoreIndexableRepositoriesFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 dbstore.IndexableRepositoryQueryOptions
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []dbstore.IndexableRepository
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c DBStoreIndexableRepositoriesFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c DBStoreIndexableRepositoriesFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
 // DBStoreReferencesForUploadFunc describes the behavior when the
 // ReferencesForUpload method of the parent MockDBStore instance is invoked.
 type DBStoreReferencesForUploadFunc struct {
@@ -801,227 +655,6 @@ func (c DBStoreReferencesForUploadFuncCall) Args() []interface{} {
 // invocation.
 func (c DBStoreReferencesForUploadFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
-}
-
-// DBStoreResetIndexableRepositoriesFunc describes the behavior when the
-// ResetIndexableRepositories method of the parent MockDBStore instance is
-// invoked.
-type DBStoreResetIndexableRepositoriesFunc struct {
-	defaultHook func(context.Context, time.Time) error
-	hooks       []func(context.Context, time.Time) error
-	history     []DBStoreResetIndexableRepositoriesFuncCall
-	mutex       sync.Mutex
-}
-
-// ResetIndexableRepositories delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockDBStore) ResetIndexableRepositories(v0 context.Context, v1 time.Time) error {
-	r0 := m.ResetIndexableRepositoriesFunc.nextHook()(v0, v1)
-	m.ResetIndexableRepositoriesFunc.appendCall(DBStoreResetIndexableRepositoriesFuncCall{v0, v1, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the
-// ResetIndexableRepositories method of the parent MockDBStore instance is
-// invoked and the hook queue is empty.
-func (f *DBStoreResetIndexableRepositoriesFunc) SetDefaultHook(hook func(context.Context, time.Time) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// ResetIndexableRepositories method of the parent MockDBStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *DBStoreResetIndexableRepositoriesFunc) PushHook(hook func(context.Context, time.Time) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
-func (f *DBStoreResetIndexableRepositoriesFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, time.Time) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
-func (f *DBStoreResetIndexableRepositoriesFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, time.Time) error {
-		return r0
-	})
-}
-
-func (f *DBStoreResetIndexableRepositoriesFunc) nextHook() func(context.Context, time.Time) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *DBStoreResetIndexableRepositoriesFunc) appendCall(r0 DBStoreResetIndexableRepositoriesFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of DBStoreResetIndexableRepositoriesFuncCall
-// objects describing the invocations of this function.
-func (f *DBStoreResetIndexableRepositoriesFunc) History() []DBStoreResetIndexableRepositoriesFuncCall {
-	f.mutex.Lock()
-	history := make([]DBStoreResetIndexableRepositoriesFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// DBStoreResetIndexableRepositoriesFuncCall is an object that describes an
-// invocation of method ResetIndexableRepositories on an instance of
-// MockDBStore.
-type DBStoreResetIndexableRepositoriesFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 time.Time
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c DBStoreResetIndexableRepositoriesFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c DBStoreResetIndexableRepositoriesFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// DBStoreUpdateIndexableRepositoryFunc describes the behavior when the
-// UpdateIndexableRepository method of the parent MockDBStore instance is
-// invoked.
-type DBStoreUpdateIndexableRepositoryFunc struct {
-	defaultHook func(context.Context, dbstore.UpdateableIndexableRepository, time.Time) error
-	hooks       []func(context.Context, dbstore.UpdateableIndexableRepository, time.Time) error
-	history     []DBStoreUpdateIndexableRepositoryFuncCall
-	mutex       sync.Mutex
-}
-
-// UpdateIndexableRepository delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockDBStore) UpdateIndexableRepository(v0 context.Context, v1 dbstore.UpdateableIndexableRepository, v2 time.Time) error {
-	r0 := m.UpdateIndexableRepositoryFunc.nextHook()(v0, v1, v2)
-	m.UpdateIndexableRepositoryFunc.appendCall(DBStoreUpdateIndexableRepositoryFuncCall{v0, v1, v2, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the
-// UpdateIndexableRepository method of the parent MockDBStore instance is
-// invoked and the hook queue is empty.
-func (f *DBStoreUpdateIndexableRepositoryFunc) SetDefaultHook(hook func(context.Context, dbstore.UpdateableIndexableRepository, time.Time) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// UpdateIndexableRepository method of the parent MockDBStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *DBStoreUpdateIndexableRepositoryFunc) PushHook(hook func(context.Context, dbstore.UpdateableIndexableRepository, time.Time) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
-func (f *DBStoreUpdateIndexableRepositoryFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, dbstore.UpdateableIndexableRepository, time.Time) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
-func (f *DBStoreUpdateIndexableRepositoryFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, dbstore.UpdateableIndexableRepository, time.Time) error {
-		return r0
-	})
-}
-
-func (f *DBStoreUpdateIndexableRepositoryFunc) nextHook() func(context.Context, dbstore.UpdateableIndexableRepository, time.Time) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *DBStoreUpdateIndexableRepositoryFunc) appendCall(r0 DBStoreUpdateIndexableRepositoryFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of DBStoreUpdateIndexableRepositoryFuncCall
-// objects describing the invocations of this function.
-func (f *DBStoreUpdateIndexableRepositoryFunc) History() []DBStoreUpdateIndexableRepositoryFuncCall {
-	f.mutex.Lock()
-	history := make([]DBStoreUpdateIndexableRepositoryFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// DBStoreUpdateIndexableRepositoryFuncCall is an object that describes an
-// invocation of method UpdateIndexableRepository on an instance of
-// MockDBStore.
-type DBStoreUpdateIndexableRepositoryFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 dbstore.UpdateableIndexableRepository
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 time.Time
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c DBStoreUpdateIndexableRepositoryFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c DBStoreUpdateIndexableRepositoryFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
 }
 
 // DBStoreWithFunc describes the behavior when the With method of the parent

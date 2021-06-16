@@ -789,11 +789,12 @@ Stores whether or not the nearest upload data for a repository is out of date (w
 
 # Table "public.lsif_index_configuration"
 ```
-    Column     |  Type   | Collation | Nullable |                       Default                        
----------------+---------+-----------+----------+------------------------------------------------------
- id            | bigint  |           | not null | nextval('lsif_index_configuration_id_seq'::regclass)
- repository_id | integer |           | not null | 
- data          | bytea   |           | not null | 
+      Column       |  Type   | Collation | Nullable |                       Default                        
+-------------------+---------+-----------+----------+------------------------------------------------------
+ id                | bigint  |           | not null | nextval('lsif_index_configuration_id_seq'::regclass)
+ repository_id     | integer |           | not null | 
+ data              | bytea   |           | not null | 
+ autoindex_enabled | boolean |           | not null | true
 Indexes:
     "lsif_index_configuration_pkey" PRIMARY KEY, btree (id)
     "lsif_index_configuration_repository_id_key" UNIQUE CONSTRAINT, btree (repository_id)

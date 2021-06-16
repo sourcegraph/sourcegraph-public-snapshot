@@ -4,11 +4,10 @@ package compression
 
 import (
 	"context"
-	"sync"
-	"time"
-
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	git "github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"sync"
+	"time"
 )
 
 // MockCommitStore is a mock implementation of the CommitStore interface
