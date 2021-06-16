@@ -44,12 +44,6 @@ func TestIndexSchedulerUpdate(t *testing.T) {
 
 	mockDBStore := NewMockDBStore()
 	mockDBStore.GetRepositoriesWithIndexConfigurationFunc.SetDefaultReturn([]int{43, 44, 45, 46}, nil)
-	mockDBStore.IndexableRepositoriesFunc.SetDefaultReturn([]store.IndexableRepository{
-		{RepositoryID: 41},
-		{RepositoryID: 42},
-		{RepositoryID: 43},
-		{RepositoryID: 44},
-	}, nil)
 
 	mockSettingStore := NewMockIndexingSettingStore()
 	indexEnqueuer := NewMockIndexEnqueuer()
