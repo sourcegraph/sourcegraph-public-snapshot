@@ -12,6 +12,7 @@ require (
 	github.com/json-iterator/go v1.1.11
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
 	github.com/mattn/go-isatty v0.0.12
+	github.com/mitchellh/copystructure v1.2.0
 	github.com/neelance/parallel v0.0.0-20160708114440-4de9ce63d14c
 	github.com/nsf/termbox-go v1.0.0 // indirect
 	github.com/olekukonko/tablewriter v0.0.4 // indirect

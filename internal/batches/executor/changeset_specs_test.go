@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/mitchellh/copystructure"
 	"github.com/sourcegraph/batch-change-utils/overridable"
 	"github.com/sourcegraph/src-cli/internal/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/git"
@@ -33,6 +34,12 @@ func TestCreateChangesetSpecs(t *testing.T) {
 	}
 
 	specWith := func(s *batches.ChangesetSpec, f func(s *batches.ChangesetSpec)) *batches.ChangesetSpec {
+		copy, err := copystructure.Copy(s)
+		if err != nil {
+			t.Fatalf("deep copying spec: %+v", err)
+		}
+
+		s = copy.(*batches.ChangesetSpec)
 		f(s)
 		return s
 	}
@@ -54,9 +61,15 @@ func TestCreateChangesetSpecs(t *testing.T) {
 		Repository: testRepo1,
 	}
 
-	taskWith := func(t *Task, f func(t *Task)) *Task {
-		f(t)
-		return t
+	taskWith := func(task *Task, f func(task *Task)) *Task {
+		copy, err := copystructure.Copy(task)
+		if err != nil {
+			t.Fatalf("deep copying task: %+v", err)
+		}
+
+		task = copy.(*Task)
+		f(task)
+		return task
 	}
 
 	defaultResult := executionResult{
