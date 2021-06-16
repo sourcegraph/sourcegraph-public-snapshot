@@ -307,7 +307,13 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
         editor.revealPosition(position)
 
         if (queryState.changeSource === QueryChangeSource.searchReference) {
-            editor.trigger('triggerSuggestions', 'editor.action.triggerSuggest', {})
+            if (queryState.selection) {
+                editor.setSelection(queryState.selection)
+            }
+            if (queryState.showSuggestions) {
+                editor.trigger('triggerSuggestions', 'editor.action.triggerSuggest', {})
+            }
+            editor.focus()
         }
     }, [editor, queryState])
 
@@ -316,8 +322,10 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
         if (!editor) {
             return
         }
+        const replacePattern = /[\n\r↵]/g
         const disposable = editor.onDidChangeModelContent(() => {
-            onChange({ query: editor.getValue().replace(/[\n\r↵]/g, ''), changeSource: QueryChangeSource.userInput })
+            const value = editor.getValue()
+            onChange({ query: value.replace(replacePattern, ''), changeSource: QueryChangeSource.userInput })
         })
         return () => disposable.dispose()
     }, [editor, onChange])

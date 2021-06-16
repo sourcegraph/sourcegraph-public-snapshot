@@ -12,6 +12,7 @@ import { eventLogger } from '../tracking/eventLogger'
 import { SearchType } from './results/StreamingSearchResults'
 
 import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '.'
+import { IRange } from 'monaco-editor'
 
 export interface SubmitSearchParameters
     extends Partial<Pick<ActivationProps, 'activation'>>,
@@ -193,6 +194,10 @@ export interface QueryState {
      *   searchReference: Select placeholder and show suggestions
      */
     changeSource?: QueryChangeSource
+    /** Whether or not to trigger the completion popover */
+    showSuggestions?: true
+    /** If set, the query input will apply this selection */
+    selection?: IRange
 }
 
 /**

@@ -1,39 +1,38 @@
-.search-reference {
-    isolation: isolate; // Prevent the z-index below from leaking out of this container
+.item {
+    flex-direction: column;
 
-    &__header {
-        font-size: 0.857rem;
-        font-weight: 400;
-        line-height: 1.3rem;
+    &.active {
+        background-color: var(--color-bg-3);
     }
 
-    &__item {
-        flex-direction: column;
+    &.active,
+    &:hover {
+        .collapse-button {
+            visibility: visible;
+        }
     }
+}
 
-    &__item:hover &__collapse-button {
-        visibility: visible;
-    }
+.description {
+    background-color: var(--color-bg-1);
+    border-top: 1px solid #dbe2f0;
+    border-bottom: 1px solid #dbe2f0;
+    margin-top: 0.25rem;
+    padding: 0.5rem 0.75rem;
+}
 
-    &__collapse-button {
-        visibility: hidden;
-        border: none;
-        margin: 0;
-        padding: 0;
+.placeholder {
+    font-style: italic;
+    color: var(--text-muted);
+}
 
-        // Force the button's box-shadow to always show over the sibling element's border
-        position: relative;
-        z-index: 1;
-    }
+.collapse-button {
+    visibility: hidden;
+    border: none;
+    margin: 0;
+    padding: 0;
 
-    &__description {
-        padding: 0.75rem 1rem;
-        background-color: var(--color-bg-1);
-        border-top: 1px solid #dbe2f0;
-        border-bottom: 1px solid #dbe2f0;
-    }
-
-    &__placeholder {
-        color: var(--text-muted);
-    }
+    // Force the button's box-shadow to always show over the sibling element's border
+    position: relative;
+    z-index: 1;
 }
