@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react'
 import { Link, Redirect, useLocation } from 'react-router-dom'
 
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { AuthenticatedUser } from '../auth'
@@ -15,7 +16,7 @@ import { SourcegraphIcon } from './icons'
 import { getReturnTo } from './SignInSignUpCommon'
 import { SignUpArguments, SignUpForm } from './SignUpForm'
 
-interface SignUpPageProps extends ThemeProps {
+interface SignUpPageProps extends ThemeProps, TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
     context: Pick<
         SourcegraphContext,
@@ -29,6 +30,7 @@ export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({
     context,
     featureFlags,
     isLightTheme,
+    telemetryService,
 }) => {
     const location = useLocation()
     const query = new URLSearchParams(location.search)
@@ -80,6 +82,7 @@ export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({
                 isLightTheme={isLightTheme}
                 showEmailForm={query.has(ShowEmailFormQueryParameter)}
                 context={context}
+                telemetryService={telemetryService}
             />
         )
     }

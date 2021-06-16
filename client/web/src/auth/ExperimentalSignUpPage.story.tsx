@@ -2,6 +2,8 @@ import { storiesOf } from '@storybook/react'
 import React from 'react'
 import sinon from 'sinon'
 
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+
 import { WebStory } from '../components/WebStory'
 import { SourcegraphContext } from '../jscontext'
 
@@ -35,6 +37,7 @@ add('default', () => (
                 onSignUp={sinon.stub()}
                 context={context}
                 showEmailForm={false}
+                telemetryService={NOOP_TELEMETRY_SERVICE}
             />
         )}
     </WebStory>
@@ -49,6 +52,7 @@ add('email form', () => (
                 onSignUp={sinon.stub()}
                 context={context}
                 showEmailForm={true}
+                telemetryService={NOOP_TELEMETRY_SERVICE}
             />
         )}
     </WebStory>
@@ -63,6 +67,7 @@ add('invalid source', () => (
                 onSignUp={sinon.stub()}
                 context={context}
                 showEmailForm={false}
+                telemetryService={NOOP_TELEMETRY_SERVICE}
             />
         )}
     </WebStory>

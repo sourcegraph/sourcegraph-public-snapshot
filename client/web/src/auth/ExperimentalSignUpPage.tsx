@@ -4,6 +4,7 @@ import GithubIcon from 'mdi-react/GithubIcon'
 import React from 'react'
 import { Link, useLocation } from 'react-router-dom'
 
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { BrandLogo } from '../components/branding/BrandLogo'
@@ -12,7 +13,7 @@ import { SourcegraphContext } from '../jscontext'
 import styles from './ExperimentalSignUpPage.module.scss'
 import { SignUpArguments, SignUpForm } from './SignUpForm'
 
-interface Props extends ThemeProps {
+interface Props extends ThemeProps, TelemetryProps {
     source: string | null
     showEmailForm: boolean
     /** Called to perform the signup on the server. */
@@ -37,6 +38,7 @@ export const ExperimentalSignUpPage: React.FunctionComponent<Props> = ({
     showEmailForm,
     onSignUp,
     context,
+    telemetryService,
 }) => {
     const location = useLocation()
 
@@ -60,10 +62,14 @@ export const ExperimentalSignUpPage: React.FunctionComponent<Props> = ({
         provider.authenticationURL?.startsWith('/.auth/gitlab/login?pc=https%3A%2F%2Fgitlab.com%2F')
     )
 
-    const title =
-        source && Object.keys(SourceToTitleMap).includes(source)
-            ? SourceToTitleMap[source as keyof typeof SourceToTitleMap]
-            : SourceToTitleMap.Context // Use Context as default
+    const sourceIsValid = source && Object.keys(SourceToTitleMap).includes(source)
+    const title = sourceIsValid ? SourceToTitleMap[source as keyof typeof SourceToTitleMap] : SourceToTitleMap.Context // Use Context as default
+
+    const logEvent = (): void => {
+        if (sourceIsValid) {
+            telemetryService.log(`SignUpPLG${source || ''}_2_ClickedSignUp`)
+        }
+    }
 
     return (
         <div className={styles.page}>
@@ -109,6 +115,7 @@ export const ExperimentalSignUpPage: React.FunctionComponent<Props> = ({
                                 <a
                                     href={githubProvider.authenticationURL}
                                     className={classNames(styles.signUpButton, styles.githubButton)}
+                                    onClick={logEvent}
                                 >
                                     <GithubIcon className="mr-3" /> Continue with GitHub
                                 </a>
@@ -117,6 +124,7 @@ export const ExperimentalSignUpPage: React.FunctionComponent<Props> = ({
                                 <a
                                     href={gitlabProvider.authenticationURL}
                                     className={classNames(styles.signUpButton, styles.gitlabButton)}
+                                    onClick={logEvent}
                                 >
                                     <GitlabColorIcon className="mr-3" /> Continue with GitLab
                                 </a>
@@ -142,7 +150,10 @@ export const ExperimentalSignUpPage: React.FunctionComponent<Props> = ({
                             </small>
 
                             <SignUpForm
-                                onSignUp={onSignUp}
+                                onSignUp={args => {
+                                    logEvent()
+                                    return onSignUp(args)
+                                }}
                                 context={{ authProviders: [], sourcegraphDotComMode: true }}
                                 buttonLabel="Sign up"
                                 experimental={true}
