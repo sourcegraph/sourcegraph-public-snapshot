@@ -43,7 +43,7 @@ interface SignUpFormProps {
     buttonLabel?: string
     context: Pick<SourcegraphContext, 'authProviders' | 'sourcegraphDotComMode'>
 
-    // For use in ExperimentalSignUpPage. Modifies styling and removes terms of service section.
+    // For use in ExperimentalSignUpPage. Modifies styling and removes terms of service and trial section.
     experimental?: boolean
 }
 
@@ -240,7 +240,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                         <small className="form-text text-muted">At least 12 characters</small>
                     )}
                 </div>
-                {enterpriseTrial && (
+                {!experimental && enterpriseTrial && (
                     <div className="form-group">
                         <div className="form-check">
                             <label className="form-check-label">
