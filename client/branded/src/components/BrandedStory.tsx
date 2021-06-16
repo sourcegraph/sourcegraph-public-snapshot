@@ -1,9 +1,9 @@
-import React, { useLayoutEffect, useState } from 'react'
+import React from 'react'
 import { MemoryRouter, MemoryRouterProps } from 'react-router'
-import { useDarkMode } from 'storybook-dark-mode'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useStyles } from '@sourcegraph/storybook/src/hooks/useStyles'
+import { useTheme } from '@sourcegraph/storybook/src/hooks/useTheme'
 
 import brandedStyles from '../global-styles/index.scss'
 
@@ -22,16 +22,8 @@ export const BrandedStory: React.FunctionComponent<
         styles?: string
     }
 > = ({ children: Children, styles = brandedStyles, ...memoryRouterProps }) => {
-    const [isLightTheme, setIsLightTheme] = useState(!useDarkMode())
+    const isLightTheme = useTheme()
     useStyles(styles)
-
-    useLayoutEffect(() => {
-        const listener = ((event: CustomEvent<boolean>): void => {
-            setIsLightTheme(event.detail)
-        }) as EventListener
-        document.body.addEventListener('chromatic-light-theme-toggled', listener)
-        return () => document.body.removeEventListener('chromatic-light-theme-toggled', listener)
-    }, [])
 
     return (
         <MemoryRouter {...memoryRouterProps}>

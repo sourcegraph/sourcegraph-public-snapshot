@@ -1,11 +1,11 @@
-import React, { useLayoutEffect, useMemo, useState } from 'react'
+import React, { useMemo } from 'react'
 import { MemoryRouter, MemoryRouterProps, RouteComponentProps, withRouter } from 'react-router'
-import { useDarkMode } from 'storybook-dark-mode'
 
 import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import { NOOP_TELEMETRY_SERVICE, TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useStyles } from '@sourcegraph/storybook/src/hooks/useStyles'
+import { useTheme } from '@sourcegraph/storybook/src/hooks/useTheme'
 
 import _webStyles from '../SourcegraphWebApp.scss'
 
@@ -26,18 +26,10 @@ export const WebStory: React.FunctionComponent<
         webStyles?: string
     }
 > = ({ children, webStyles = _webStyles, ...memoryRouterProps }) => {
-    const [isLightTheme, setIsLightTheme] = useState(!useDarkMode())
+    const isLightTheme = useTheme()
     const breadcrumbSetters = useBreadcrumbs()
     const Children = useMemo(() => withRouter(children), [children])
     useStyles(webStyles)
-
-    useLayoutEffect(() => {
-        const listener = ((event: CustomEvent<boolean>): void => {
-            setIsLightTheme(event.detail)
-        }) as EventListener
-        document.body.addEventListener('chromatic-light-theme-toggled', listener)
-        return () => document.body.removeEventListener('chromatic-light-theme-toggled', listener)
-    }, [])
 
     return (
         <MemoryRouter {...memoryRouterProps}>
