@@ -256,7 +256,7 @@ func parseRefDescriptions(lines []string) ([]RefDescription, error) {
 
 		createdDate, err := time.Parse(time.RFC3339, parts[3])
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf(`unexpected output from git for-each-ref (bad date format) "%s"`, line)
 		}
 
 		refDescriptions = append(refDescriptions, RefDescription{
