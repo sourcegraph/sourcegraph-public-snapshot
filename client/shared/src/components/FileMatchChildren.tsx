@@ -119,16 +119,13 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
         [result, fetchHighlightedFileLineRanges, grouped, optimizeHighlighting, eventLogger, onFirstResultLoad]
     )
 
-    const codeExcerptLink = useCallback(
-        (group: MatchGroup) => {
-            const positionOrRangeQueryParameter = toPositionOrRangeQueryParameter({ position: group.position })
-            return appendLineRangeQueryParameter(
-                appendSubtreeQueryParameter(getFileMatchUrl(result)),
-                positionOrRangeQueryParameter
-            )
-        },
-        [result]
-    )
+    const createCodeExcerptLink = (group: MatchGroup): string => {
+        const positionOrRangeQueryParameter = toPositionOrRangeQueryParameter({ position: group.position })
+        return appendLineRangeQueryParameter(
+            appendSubtreeQueryParameter(getFileMatchUrl(result)),
+            positionOrRangeQueryParameter
+        )
+    }
 
     if (NO_SEARCH_HIGHLIGHTING) {
         return (
@@ -174,7 +171,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                     className="file-match-children__item-code-wrapper test-file-match-children-item-wrapper"
                 >
                     <Link
-                        to={codeExcerptLink(group)}
+                        to={createCodeExcerptLink(group)}
                         className="file-match-children__item file-match-children__item-clickable test-file-match-children-item"
                         onClick={props.onSelect}
                     >
