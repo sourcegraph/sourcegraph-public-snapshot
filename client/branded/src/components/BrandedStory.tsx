@@ -13,20 +13,6 @@ export interface WebStoryProps extends MemoryRouterProps {
     children: React.FunctionComponent<ThemeProps>
 }
 
-const createStoryStyleTag = (): HTMLStyleElement => {
-    const styleTag = document.createElement('style')
-    styleTag.id = 'story-styles'
-    document.head.prepend(styleTag)
-    return styleTag
-}
-
-// Prepend global CSS styles to document head to keep them before CSS modules
-export function applyCSSToDocumentHead(css: string): HTMLStyleElement {
-    const styleTag = document.querySelector<HTMLStyleElement>('#story-styles') || createStoryStyleTag()
-    styleTag.textContent = css
-    return styleTag
-}
-
 /**
  * Wrapper component for webapp Storybook stories that provides light theme and react-router props.
  * Takes a render function as children that gets called with the props.
