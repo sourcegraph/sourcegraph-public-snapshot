@@ -302,7 +302,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                         window.getSelection()!.removeAllRanges()
 
                         const position = locateTarget(event.target as HTMLElement, domFunctions)
-                        let query: string
+                        let query: string | undefined
                         if (
                             position &&
                             event.shiftKey &&

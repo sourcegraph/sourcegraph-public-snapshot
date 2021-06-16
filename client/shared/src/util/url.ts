@@ -259,7 +259,7 @@ export interface AbsoluteRepoFilePosition
 export function toPositionOrRangeQueryParameter(context: {
     position?: { line: number; character?: number }
     range?: { start: { line: number; character?: number }; end: { line: number; character?: number } }
-}): string {
+}): string | undefined {
     if (context.range) {
         const emptyRange =
             context.range.start.line === context.range.end.line &&
@@ -274,7 +274,7 @@ export function toPositionOrRangeQueryParameter(context: {
     if (context.position) {
         return 'L' + toPositionHashComponent(context.position)
     }
-    return ''
+    return undefined
 }
 
 /**
@@ -695,7 +695,10 @@ export const appendSubtreeQueryParameter = (url: string): string => {
 export const formatSearchParameters = (searchParameters: URLSearchParams): string =>
     searchParameters.toString().replace(/%2F/g, '/').replace(/%3A/g, ':').replace(/=&/g, '&').replace(/=$/, '')
 
-export const addLineRangeQueryParameter = (searchParameters: URLSearchParams, range: string): URLSearchParams => {
+export const addLineRangeQueryParameter = (
+    searchParameters: URLSearchParams,
+    range: string | undefined
+): URLSearchParams => {
     const existingLineRangeKey = findLineKeyInSearchParameters(searchParameters)
     if (existingLineRangeKey) {
         searchParameters.delete(existingLineRangeKey)
@@ -704,7 +707,7 @@ export const addLineRangeQueryParameter = (searchParameters: URLSearchParams, ra
     return range ? new URLSearchParams([[range, ''], ...searchParameters.entries()]) : searchParameters
 }
 
-export const appendLineRangeQueryParameter = (url: string, range: string): string => {
+export const appendLineRangeQueryParameter = (url: string, range: string | undefined): string => {
     const newUrl = new URL(url, window.location.href)
     const searchQuery = formatSearchParameters(addLineRangeQueryParameter(newUrl.searchParams, range))
     return newUrl.pathname + `?${searchQuery}` + newUrl.hash
