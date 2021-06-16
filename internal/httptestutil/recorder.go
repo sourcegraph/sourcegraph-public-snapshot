@@ -55,17 +55,17 @@ func NewRecorderOpt(rec *recorder.Recorder) httpcli.Opt {
 	}
 }
 
-// NewGitHubRecorderFactory returns a *http.Factory that rewrites HTTP requests to
-// github-proxy to github.com and records all HTTP requests in "testdata/vcr/{name}"
-// with {name} being the name that's passed in.
-// If update is true, the HTTP requests are recorded, otherwise they're
-// replayed from the recorded cassete.
+// NewGitHubRecorderFactory returns a *http.Factory that rewrites HTTP requests
+// to github-proxy to github.com and records all HTTP requests in
+// "testdata/vcr/{name}" with {name} being the name that's passed in.
+//
+// If update is true, the HTTP requests are recorded, otherwise they're replayed
+// from the recorded cassette.
 func NewGitHubRecorderFactory(t testing.TB, update bool, name string) (*httpcli.Factory, func()) {
 	t.Helper()
 
-	cassete := filepath.Join("testdata/vcr/", strings.ReplaceAll(name, " ", "-"))
-
-	rec, err := NewRecorder(cassete, update, func(i *cassette.Interaction) error {
+	path := filepath.Join("testdata/vcr/", strings.ReplaceAll(name, " ", "-"))
+	rec, err := NewRecorder(path, update, func(i *cassette.Interaction) error {
 		return nil
 	})
 	if err != nil {
@@ -75,6 +75,32 @@ func NewGitHubRecorderFactory(t testing.TB, update bool, name string) (*httpcli.
 	mw := httpcli.NewMiddleware(httpcli.GitHubProxyRedirectMiddleware)
 
 	hc := httpcli.NewFactory(mw, NewRecorderOpt(rec))
+
+	return hc, func() {
+		if err := rec.Stop(); err != nil {
+			t.Errorf("failed to update test data: %s", err)
+		}
+	}
+}
+
+// NewRecorderFactory returns a *httpcli.Factory that records all HTTP requests
+// in "testdata/vcr/{name}" with {name} being the name that's passed in.
+//
+// If update is true, the HTTP requests are recorded, otherwise they're replayed
+// from the recorded cassette.
+func NewRecorderFactory(t testing.TB, update bool, name string) (*httpcli.Factory, func()) {
+	t.Helper()
+
+	path := filepath.Join("testdata/vcr/", strings.ReplaceAll(name, " ", "-"))
+
+	rec, err := NewRecorder(path, update, func(i *cassette.Interaction) error {
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	hc := httpcli.NewFactory(nil, NewRecorderOpt(rec))
 
 	return hc, func() {
 		if err := rec.Stop(); err != nil {

@@ -293,7 +293,7 @@ func (c *Client) ValidateToken(ctx context.Context) error {
 }
 
 func (c *Client) GetAuthenticatedUserOAuthScopes(ctx context.Context) ([]string, error) {
-	// The oauth token info path is not standard so we need to build it manually
+	// The oauth token info path is non standard so we need to build it manually
 	// without the default `/api/v4` prefix
 	u, _ := url.Parse(c.baseURL.String())
 	u.Path = "oauth/token/info"
