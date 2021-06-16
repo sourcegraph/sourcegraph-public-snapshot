@@ -5,10 +5,7 @@
         top: 0.55rem;
     }
     &__icon--dashed {
-        color: var(--border-color);
-        .theme-redesign & {
-            color: var(--border-color-2);
-        }
+        color: var(--icon-muted);
     }
     &__modal--plain {
         background-color: var(--theme-bg-plain);
