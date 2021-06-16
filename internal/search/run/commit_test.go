@@ -73,7 +73,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 
 	want := []*result.CommitMatch{{
 		Commit:      git.Commit{ID: "c1", Author: gitSignatureWithDate},
-		RepoName:    types.RepoName{ID: 1, Name: "repo"},
+		Repo:        types.RepoName{ID: 1, Name: "repo"},
 		DiffPreview: &result.HighlightedString{Value: "x", Highlights: []result.HighlightedRange{}},
 		Body:        result.HighlightedString{Value: "```diff\nx```", Highlights: []result.HighlightedRange{}},
 	}}

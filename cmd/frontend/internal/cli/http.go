@@ -47,10 +47,10 @@ func newExternalHTTPHandler(db dbutil.DB, schema *graphql.Schema, gitHubWebhook 
 		// 🚨 SECURITY: These all run after the auth handler so the client is authenticated.
 		apiHandler = hooks.PostAuthMiddleware(apiHandler)
 	}
+	apiHandler = featureflag.Middleware(database.FeatureFlags(db), apiHandler)
 	apiHandler = authMiddlewares.API(apiHandler) // 🚨 SECURITY: auth middleware
 	// 🚨 SECURITY: The HTTP API should not accept cookies as authentication (except those with the
 	// X-Requested-With header). Doing so would open it up to CSRF attacks.
-	apiHandler = featureflag.Middleware(database.FeatureFlags(db), apiHandler)
 	apiHandler = session.CookieMiddlewareWithCSRFSafety(apiHandler, corsAllowHeader, isTrustedOrigin) // API accepts cookies with special header
 	apiHandler = internalhttpapi.AccessTokenAuthMiddleware(db, apiHandler)                            // API accepts access tokens
 	apiHandler = gziphandler.GzipHandler(apiHandler)
@@ -64,6 +64,7 @@ func newExternalHTTPHandler(db dbutil.DB, schema *graphql.Schema, gitHubWebhook 
 		// 🚨 SECURITY: These all run after the auth handler so the client is authenticated.
 		appHandler = hooks.PostAuthMiddleware(appHandler)
 	}
+	appHandler = featureflag.Middleware(database.FeatureFlags(db), appHandler)
 	appHandler = handlerutil.CSRFMiddleware(appHandler, func() bool {
 		return globals.ExternalURL().Scheme == "https"
 	}) // after appAuthMiddleware because SAML IdP posts data to us w/o a CSRF token
