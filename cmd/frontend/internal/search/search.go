@@ -189,14 +189,18 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		progress.Update(event)
 		filters.Update(event)
 
-		repoMetadata := h.getEventRepoMetadata(ctx, event)
-
-		for _, match := range event.Results {
+		// Truncate the event to the match limit before fetching repo metadata
+		for i, match := range event.Results {
 			if display <= 0 {
+				event.Results = event.Results[:i]
 				break
 			}
 
 			display = match.Limit(display)
+		}
+
+		repoMetadata := h.getEventRepoMetadata(ctx, event)
+		for _, match := range event.Results {
 			matchesAppend(fromMatch(match, repoMetadata))
 		}
 
