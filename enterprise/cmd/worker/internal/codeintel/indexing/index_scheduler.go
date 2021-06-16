@@ -84,7 +84,7 @@ func (s *IndexScheduler) Handle(ctx context.Context) error {
 
 	// TODO(autoindex): Later we can remove using cncf explicitly and do all of them
 	groupsByName := searchrepos.ResolveRepoGroupsFromSettings(settings)
-	_, includePatterns := searchrepos.RepoGroupsToIncludePatterns([]string{"cncf"}, groupsByName)
+	includePatterns, _ := searchrepos.RepoGroupsToIncludePatterns([]string{"cncf"}, groupsByName)
 
 	options := database.ReposListOptions{
 		IncludePatterns: []string{includePatterns},

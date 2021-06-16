@@ -36,11 +36,13 @@ func (r RepoRegexpPattern) String() string {
 var MockResolveRepoGroups func() (map[string][]RepoGroupValue, error)
 
 // Convert the repo groups from settings
-func RepoGroupsToIncludePatterns(groupNames []string, groups map[string][]RepoGroupValue) ([]string, string) {
+func RepoGroupsToIncludePatterns(groupNames []string, groups map[string][]RepoGroupValue) (string, int) {
 	patterns := repoGroupValuesToRegexp(groupNames, groups)
-	return patterns, UnionRegExps(patterns)
+	return UnionRegExps(patterns), len(patterns)
 }
 
+// ResolveRepoGroups retrieves the repository group from settings and checks the database for any
+// user configured repogroups.
 func ResolveRepoGroups(ctx context.Context, settings *schema.Settings) (groups map[string][]RepoGroupValue, err error) {
 	if MockResolveRepoGroups != nil {
 		return MockResolveRepoGroups()
@@ -74,6 +76,8 @@ func ResolveRepoGroups(ctx context.Context, settings *schema.Settings) (groups m
 	return groups, nil
 }
 
+// ResolveRepoGroupsFromSettings retrieves the repository group configuration from settings. Will not check
+// the database for any user configured repogroups.
 func ResolveRepoGroupsFromSettings(settings *schema.Settings) map[string][]RepoGroupValue {
 	groups := map[string][]RepoGroupValue{}
 
