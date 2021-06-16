@@ -4,9 +4,10 @@ package discovery
 
 import (
 	"context"
+	"sync"
+
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	schema "github.com/sourcegraph/sourcegraph/schema"
-	"sync"
 )
 
 // MockSettingStore is a mock implementation of the SettingStore interface
