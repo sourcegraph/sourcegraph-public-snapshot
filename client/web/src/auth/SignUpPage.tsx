@@ -1,28 +1,39 @@
-import * as H from 'history'
-import * as React from 'react'
-import { Link, Redirect } from 'react-router-dom'
+import React, { useEffect } from 'react'
+import { Link, Redirect, useLocation } from 'react-router-dom'
+
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { AuthenticatedUser } from '../auth'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
+import { FlagSet } from '../featureFlags/featureFlags'
 import { SourcegraphContext } from '../jscontext'
 import { eventLogger } from '../tracking/eventLogger'
 
+import { ExperimentalSignUpPage } from './ExperimentalSignUpPage'
 import { SourcegraphIcon } from './icons'
 import { getReturnTo } from './SignInSignUpCommon'
 import { SignUpArguments, SignUpForm } from './SignUpForm'
 
-interface SignUpPageProps {
-    location: H.Location
+interface SignUpPageProps extends ThemeProps {
     authenticatedUser: AuthenticatedUser | null
     context: Pick<
         SourcegraphContext,
         'allowSignup' | 'experimentalFeatures' | 'authProviders' | 'sourcegraphDotComMode' | 'xhrHeaders'
     >
+    featureFlags: FlagSet
 }
 
-export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({ authenticatedUser, location, context }) => {
-    React.useEffect(() => {
+export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({
+    authenticatedUser,
+    context,
+    featureFlags,
+    isLightTheme,
+}) => {
+    const location = useLocation()
+    const query = new URLSearchParams(location.search)
+
+    useEffect(() => {
         eventLogger.logViewEvent('SignUp', null, false)
     }, [])
 
@@ -60,6 +71,10 @@ export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({ authentic
 
             return Promise.resolve()
         })
+
+    if (context.sourcegraphDotComMode && featureFlags['w0-signup-optimisation'] && query.get('src')) {
+        return <ExperimentalSignUpPage source={query.get('src')} onSignUp={handleSignUp} isLightTheme={isLightTheme} />
+    }
 
     return (
         <div className="signin-signup-page sign-up-page web-content">

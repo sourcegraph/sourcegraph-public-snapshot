@@ -16,6 +16,8 @@ describe('SignUpPage', () => {
     const commonProps = {
         history: createMemoryHistory(),
         location: createLocation('/'),
+        featureFlags: {},
+        isLightTheme: true,
     }
     const authProviders: SourcegraphContext['authProviders'] = [
         {
