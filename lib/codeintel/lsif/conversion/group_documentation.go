@@ -2,6 +2,7 @@ package conversion
 
 import (
 	"context"
+	"strings"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
@@ -45,8 +46,6 @@ type pageCollector struct {
 func (p *pageCollector) collect(ctx context.Context, ch chan<- *semantic.DocumentationPageData) (remainingPages []*pageCollector) {
 	var walk func(parent *semantic.DocumentationNode, documentationResult int, pathID string)
 	walk = func(parent *semantic.DocumentationNode, documentationResult int, pathID string) {
-		isRootPage := documentationResult == p.startingDocumentationResult
-
 		labelID := p.state.DocumentationStringLabel[documentationResult]
 		detailID := p.state.DocumentationStringDetail[documentationResult]
 		documentation := p.state.DocumentationResultsData[documentationResult]
@@ -54,15 +53,23 @@ func (p *pageCollector) collect(ctx context.Context, ch chan<- *semantic.Documen
 			Documentation: documentation,
 			Label:         p.state.DocumentationStringsData[labelID],
 			Detail:        p.state.DocumentationStringsData[detailID],
-			PathID:        documentation.Identifier,
+		}
+		switch {
+		case pathID == "":
+			this.PathID = "/"
+		case this.Documentation.NewPage && pathID == "/":
+			this.PathID = "/" + cleanPathIDElement(documentation.Identifier)
+		case this.Documentation.NewPage:
+			this.PathID = pathID + "/" + cleanPathIDElement(documentation.Identifier)
+		default:
+			this.PathID = pathID + "#" + cleanPathIDFragment(documentation.Identifier)
 		}
 		if parent != nil {
-			if isRootPage || this.Documentation.NewPage {
+			if this.Documentation.NewPage {
 				// This documentationResult is a child of our parent, but it's a brand new page. We
 				// spawn a new pageCollector to collect this page. We can't simply emit our page right
 				// now, because we might not be finished collecting all the other descendant children
 				// of this node.
-				this.PathID = pathID + "/" + documentation.Identifier
 				parent.Children = append(parent.Children, semantic.DocumentationNodeChild{
 					PathID: this.PathID,
 				})
@@ -73,7 +80,6 @@ func (p *pageCollector) collect(ctx context.Context, ch chan<- *semantic.Documen
 					startingDocumentationResult: documentationResult,
 				})
 			} else {
-				this.PathID = pathID + "#" + documentation.Identifier
 				parent.Children = append(parent.Children, semantic.DocumentationNodeChild{
 					Node: this,
 				})
@@ -82,9 +88,9 @@ func (p *pageCollector) collect(ctx context.Context, ch chan<- *semantic.Documen
 
 		children := p.state.DocumentationChildren[documentationResult]
 		for _, child := range children {
-			walk(this, child, this.PathID)
+			walk(this, child, pathIDTrimHash(this.PathID))
 		}
-		if isRootPage {
+		if documentationResult == p.startingDocumentationResult {
 			// collected a whole page
 			ch <- &semantic.DocumentationPageData{Tree: this}
 		}
@@ -131,4 +137,32 @@ func (p *pageCollector) collect(ctx context.Context, ch chan<- *semantic.Documen
 
 	close(ch) // collected all pages
 	return nil
+}
+
+// cleanPathIDElement replaces characters that may not be in URL path elements with dashes.
+//
+// It is not exhaustive, it only handles some common conflicts.
+func cleanPathIDElement(s string) string {
+	s = strings.Replace(s, "/", "-", -1)
+	s = strings.Replace(s, "#", "-", -1)
+	return s
+}
+
+// cleanPathIDFragment replaces characters that may not be in URL hashes with dashes.
+//
+// It is not exhaustive, it only handles some common conflicts.
+func cleanPathIDFragment(s string) string {
+	return strings.Replace(s, "#", "-", -1)
+}
+
+func joinPathIDs(a, b string) string {
+	return a + "/" + b
+}
+
+func pathIDTrimHash(pathID string) string {
+	i := strings.Index(pathID, "#")
+	if i >= 0 {
+		return pathID[:i]
+	}
+	return pathID
 }
