@@ -39,9 +39,11 @@ export class CodeExcerptUnhighlighted extends React.PureComponent<Props> {
                         }
                     >
                         <Link
-                            to={`${this.props.urlWithoutPosition}?${toPositionOrRangeQueryParameter({
-                                position: { line: line + 1, character: highlightRanges[0].start + 1 },
-                            })}`}
+                            to={`${this.props.urlWithoutPosition}?${
+                                toPositionOrRangeQueryParameter({
+                                    position: { line: line + 1, character: highlightRanges[0].start + 1 },
+                                }) ?? ''
+                            }`}
                             key={index}
                             onClick={this.props.onSelect}
                         >
