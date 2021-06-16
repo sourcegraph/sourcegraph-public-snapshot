@@ -5,10 +5,11 @@ import { useHistory, useLocation } from 'react-router-dom'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { asError } from '@sourcegraph/shared/src/util/errors'
+import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
 import { AuthenticatedUser } from '../../../../auth'
+import { ErrorAlert } from '../../../../components/alerts'
 import { Page } from '../../../../components/Page'
 import { PageTitle } from '../../../../components/PageTitle'
 import { FORM_ERROR, FormChangeEvent } from '../../../components/form/hooks/useForm'
@@ -22,7 +23,7 @@ import {
 import styles from './SearchInsightCreationPage.module.scss'
 import { CreateInsightFormFields } from './types'
 import { getSanitizedSearchInsight } from './utils/insight-sanitizer'
-import { getUrlQueryInsight } from './utils/use-url-query-insight/use-url-query-insight'
+import { useURLQueryInsight } from './utils/use-url-query-insight/use-url-query-insight'
 
 export interface SearchInsightCreationPageProps
     extends PlatformContextProps<'updateSettings'>,
@@ -45,7 +46,7 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
 
     // Search insight creation UI form can take value from query param in order
     // to support 1-click insight creation from search result page.
-    const queryParameterInsight = getUrlQueryInsight(search)
+    const { hasQueryInsight, data: urlQueryInsightValues } = useURLQueryInsight(search)
 
     // Creation UI saves all form values in local storage to be able restore these
     // values if page was fully refreshed or user came back from other page.
@@ -54,8 +55,12 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
         undefined
     )
 
-    // Query param insight values have a higher priority that local storage values
-    const initialFormValues = queryParameterInsight ?? localStorageFormValues
+    const hasUrlQueryInsightValues = hasQueryInsight && !isErrorLike(urlQueryInsightValues) && urlQueryInsightValues
+
+    // Query param insight values have a higher priority than local storage values
+    const initialFormValues = hasUrlQueryInsightValues
+        ? (urlQueryInsightValues as CreateInsightFormFields)
+        : localStorageFormValues
 
     useEffect(() => {
         telemetryService.logViewEvent('CodeInsightsSearchBasedCreationPage')
@@ -122,27 +127,44 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
         <Page className={classnames('col-10', styles.creationPage)}>
             <PageTitle title="Create new code insight" />
 
-            <div className="mb-5">
-                <h2>Create new code insight</h2>
+            {hasQueryInsight && urlQueryInsightValues === undefined && (
+                // loading state for 1 click creation insight values resolve operation
+                <span>Loading...</span>
+            )}
 
-                <p className="text-muted">
-                    Search-based code insights analyze your code based on any search query.{' '}
-                    <a href="https://docs.sourcegraph.com/code_insights" target="_blank" rel="noopener">
-                        Learn more.
-                    </a>
-                </p>
-            </div>
+            {hasQueryInsight && isErrorLike(urlQueryInsightValues) && <ErrorAlert error={urlQueryInsightValues} />}
 
-            <SearchInsightCreationContent
-                className="pb-5"
-                dataTestId="search-insight-create-page-content"
-                settings={settingsCascade.final}
-                initialValue={initialFormValues}
-                organizations={orgs}
-                onSubmit={handleSubmit}
-                onCancel={handleCancel}
-                onChange={handleChange}
-            />
+            {
+                // If we have query in URL we should be sure that we have initial values
+                // from URL query based insight. If we don't have query in URl we can render
+                // page without resolving URL query based insight values.
+                !hasQueryInsight ||
+                    (hasQueryInsight && !isErrorLike(urlQueryInsightValues) && urlQueryInsightValues && (
+                        <>
+                            <div className="mb-5">
+                                <h2>Create new code insight</h2>
+
+                                <p className="text-muted">
+                                    Search-based code insights analyze your code based on any search query.{' '}
+                                    <a href="https://docs.sourcegraph.com/code_insights" target="_blank" rel="noopener">
+                                        Learn more.
+                                    </a>
+                                </p>
+                            </div>
+
+                            <SearchInsightCreationContent
+                                className="pb-5"
+                                dataTestId="search-insight-create-page-content"
+                                settings={settingsCascade.final}
+                                initialValue={initialFormValues}
+                                organizations={orgs}
+                                onSubmit={handleSubmit}
+                                onCancel={handleCancel}
+                                onChange={handleChange}
+                            />
+                        </>
+                    ))
+            }
         </Page>
     )
 }

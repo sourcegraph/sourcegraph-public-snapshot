@@ -62,4 +62,5 @@ export interface ApiService {
     getSearchInsightContent: (insight: SearchInsightSettings) => Promise<sourcegraph.LineChartContent<any, string>>
     getLangStatsInsightContent: (insight: LangStatsInsightsSettings) => Promise<sourcegraph.PieChartContent<any>>
     getRepositorySuggestions: (query: string) => Promise<RepositorySuggestion[]>
+    getResolvedSearchRepositories: (query: string) => Promise<string[]>
 }
