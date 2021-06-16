@@ -10,7 +10,7 @@ import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 import { BatchChangeBurndownChart } from './BatchChangeBurndownChart'
 
 const { add } = storiesOf('web/batches/BurndownChart', module).addDecorator(story => (
-    <div className="p-3 container web-content">{story()}</div>
+    <div className="p-3 container">{story()}</div>
 ))
 
 add('All states', () => {

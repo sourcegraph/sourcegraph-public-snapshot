@@ -52,30 +52,6 @@ add(
     }
 )
 
-add(
-    'Web content',
-    () => (
-        <div className="web-content">
-            <h1>Web content</h1>
-            <p>
-                The <code>web-content</code> class changes the text styles of all descendants for content that more
-                closely matches rich web sites as opposed to our high-information-density, application-like code content
-                areas.
-            </p>
-
-            <TextStory />
-        </div>
-    ),
-    {
-        design: {
-            name: 'Figma',
-            type: 'figma',
-            url:
-                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=998%3A1515',
-        },
-    }
-)
-
 add('Code', () => (
     <>
         <h1>Code</h1>

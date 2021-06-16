@@ -22,7 +22,7 @@ import {
 import { BatchChangeClosePage } from './BatchChangeClosePage'
 
 const { add } = storiesOf('web/batches/close/BatchChangeClosePage', module)
-    .addDecorator(story => <div className="p-3 container web-content">{story()}</div>)
+    .addDecorator(story => <div className="p-3 container">{story()}</div>)
     .addParameters({
         chromatic: {
             viewports: [320, 576, 978, 1440],

@@ -7,7 +7,7 @@ import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 import { BatchChangesListIntro } from './BatchChangesListIntro'
 
 const { add } = storiesOf('web/batches/BatchChangesListIntro', module).addDecorator(story => (
-    <div className="p-3 container web-content">{story()}</div>
+    <div className="p-3 container">{story()}</div>
 ))
 
 enum LicensingState {

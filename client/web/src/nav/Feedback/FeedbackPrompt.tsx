@@ -186,7 +186,7 @@ export const FeedbackPrompt: React.FunctionComponent<Props> = ({ open, routes })
                 {!isRedesignEnabled && <MessageDrawIcon className="d-lg-none icon-inline" />}
                 <span className={classNames({ 'd-none d-lg-block': !isRedesignEnabled })}>Feedback</span>
             </DropdownToggle>
-            <DropdownMenu right={true} className="web-content feedback-prompt__menu">
+            <DropdownMenu right={true} className="feedback-prompt__menu">
                 <FeedbackPromptContent closePrompt={forceClose} routeMatch={match} />
             </DropdownMenu>
         </ButtonDropdown>

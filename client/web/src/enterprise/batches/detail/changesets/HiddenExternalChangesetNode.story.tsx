@@ -10,7 +10,7 @@ import gridStyles from './BatchChangeChangesets.module.scss'
 import { HiddenExternalChangesetNode } from './HiddenExternalChangesetNode'
 
 const { add } = storiesOf('web/batches/HiddenExternalChangesetNode', module).addDecorator(story => (
-    <div className={classNames(gridStyles.batchChangeChangesetsGrid, 'p-3 container web-content')}>{story()}</div>
+    <div className={classNames(gridStyles.batchChangeChangesetsGrid, 'p-3 container')}>{story()}</div>
 ))
 
 add('All states', () => {

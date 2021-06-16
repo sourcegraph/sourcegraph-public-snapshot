@@ -48,7 +48,7 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
     const showSearchShortcut = !isSafari
 
     return (
-        <div className="web-content after-install-page-content">
+        <div className="after-install-page-content">
             <div className="d-flex w-100 p-3 justify-content-between align-items-center">
                 <a href="https://sourcegraph.com/search" target="_blank" rel="noopener">
                     <SourcegraphLogo className="after-install-page-content__sourcegraph-logo" />

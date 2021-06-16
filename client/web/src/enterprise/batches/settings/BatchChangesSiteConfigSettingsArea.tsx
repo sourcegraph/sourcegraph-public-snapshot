@@ -12,7 +12,7 @@ export interface BatchChangesSiteConfigSettingsAreaProps extends Pick<RouteCompo
 
 /** The page area for all batch changes settings. It's shown in the site admin settings sidebar. */
 export const BatchChangesSiteConfigSettingsArea: React.FunctionComponent<BatchChangesSiteConfigSettingsAreaProps> = props => (
-    <div className="web-content">
+    <>
         <PageTitle title="Batch changes settings" />
         <CodeHostConnections
             headerLine={
@@ -27,5 +27,5 @@ export const BatchChangesSiteConfigSettingsArea: React.FunctionComponent<BatchCh
             userID={null}
             {...props}
         />
-    </div>
+    </>
 )

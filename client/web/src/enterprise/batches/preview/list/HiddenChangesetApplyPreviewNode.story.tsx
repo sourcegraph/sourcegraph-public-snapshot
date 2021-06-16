@@ -9,7 +9,7 @@ import { HiddenChangesetApplyPreviewNode } from './HiddenChangesetApplyPreviewNo
 import styles from './PreviewList.module.scss'
 
 const { add } = storiesOf('web/batches/preview/HiddenChangesetApplyPreviewNode', module).addDecorator(story => (
-    <div className={classNames(styles.previewListGrid, 'p-3 container web-content')}>{story()}</div>
+    <div className={classNames(styles.previewListGrid, 'p-3 container')}>{story()}</div>
 ))
 
 export const hiddenChangesetApplyPreviewStories: Record<string, HiddenChangesetApplyPreviewFields> = {
