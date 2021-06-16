@@ -31,7 +31,7 @@ import { PageTitle } from '../../components/PageTitle'
 import { isCodeInsightsEnabled } from '../../insights'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
 import { SearchStarRadialGradientIcon } from '../CtaIcons'
-import { QueryState, submitSearch } from '../helpers'
+import { getSubmittedSearchesCount, QueryState, submitSearch } from '../helpers'
 
 import { StreamingProgress } from './progress/StreamingProgress'
 import { SearchAlert } from './SearchAlert'
@@ -215,6 +215,8 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
     }
 
     const resultsFound = results ? results.results.length > 0 : false
+    const submittedSearchesCount = getSubmittedSearchesCount()
+    const isValidSignUpCtaCadence = submittedSearchesCount < 5 || submittedSearchesCount % 5 === 0
 
     return (
         <div className={styles.streamingSearchResults}>
@@ -276,7 +278,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                     />
                 )}
 
-                {!authenticatedUser && resultsFound && (
+                {!authenticatedUser && resultsFound && isValidSignUpCtaCadence && (
                     <div className="card my-2 mr-3 d-flex p-3 flex-row align-items-center">
                         <div className={classNames('mr-3', styles.streamingSearchResultsCtaIconWrapper)}>
                             <SearchStarRadialGradientIcon />
