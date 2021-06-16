@@ -37,17 +37,19 @@ func (f *File) URL() *url.URL {
 // FileMatch represents either:
 // - A collection of symbol results (len(Symbols) > 0)
 // - A collection of text content results (len(LineMatches) > 0)
-// - A result repsenting the whole file (len(Symbols) == 0 && len(LineMatches) == 0)
+// - A result representing the whole file (len(Symbols) == 0 && len(LineMatches) == 0)
 type FileMatch struct {
 	File
 
 	LineMatches []*LineMatch
 	Symbols     []*SymbolMatch `json:"-"`
 
-	LimitHit bool
+	LimitHit           bool
+	RepositoryPriority float64
 }
 
 func (fm *FileMatch) searchResultMarker() {}
+func (fm *FileMatch) Priority() float64   { return fm.RepositoryPriority }
 
 func (fm *FileMatch) ResultCount() int {
 	rc := len(fm.Symbols)

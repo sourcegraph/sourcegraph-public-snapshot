@@ -454,9 +454,10 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *Indexe
 						symbols = zoektFileMatchToSymbolResults(repo, inputRev, &file)
 					}
 					fm := result.FileMatch{
-						LineMatches: lines,
-						LimitHit:    fileLimitHit,
-						Symbols:     symbols,
+						RepositoryPriority: file.RepositoryPriority,
+						LineMatches:        lines,
+						LimitHit:           fileLimitHit,
+						Symbols:            symbols,
 						File: result.File{
 							InputRev: &inputRev,
 							CommitID: api.CommitID(file.Version),

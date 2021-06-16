@@ -15,6 +15,8 @@ type Match interface {
 	// Key returns a key which uniquely identifies this match.
 	Key() Key
 
+	Priority() float64
+
 	// ensure only types in this package can be a Match.
 	searchResultMarker()
 }

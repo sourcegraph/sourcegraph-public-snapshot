@@ -35,6 +35,10 @@ func (r *CommitMatch) ResultCount() int {
 	return 1
 }
 
+func (r *CommitMatch) Priority() float64 {
+	return 0
+}
+
 func (r *CommitMatch) Limit(limit int) int {
 	if len(r.Body.Highlights) == 0 {
 		return limit - 1 // just counting the commit

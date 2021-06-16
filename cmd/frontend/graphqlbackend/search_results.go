@@ -1641,35 +1641,38 @@ func compareDates(left, right *time.Time) bool {
 // Commits are sorted by date. Commits are not associated with searchrepos, and
 // will always list after repository or file match results, if any.
 func compareSearchResults(left, right result.Match, exactFilePatterns map[string]struct{}) bool {
-	sortKeys := func(match result.Match) (string, string, *time.Time) {
+	sortKeys := func(match result.Match) (float64, string, string, *time.Time) {
 		switch r := match.(type) {
 		case *result.RepoMatch:
-			return string(r.Name), "", nil
+			return r.Priority(), string(r.Name), "", nil
 		case *result.FileMatch:
-			return string(r.Repo.Name), r.Path, nil
+			return r.Priority(), string(r.Repo.Name), r.Path, nil
 		case *result.CommitMatch:
 			// Commits are relatively sorted by date, and after repo
 			// or path names. We use ~ as the key for repo and
 			// paths,lexicographically last in ASCII.
-			return "~", "~", &r.Commit.Author.Date
+			return r.Priority(), "~", "~", &r.Commit.Author.Date
 		}
 		// Unreachable.
 		panic("unreachable: compareSearchResults expects RepositoryResolver, FileMatchResolver, or CommitSearchResultResolver")
 	}
 
-	arepo, afile, adate := sortKeys(left)
-	brepo, bfile, bdate := sortKeys(right)
+	apri, arepo, afile, adate := sortKeys(left)
+	bpri, brepo, bfile, bdate := sortKeys(right)
 
-	if arepo == brepo {
-		if len(exactFilePatterns) == 0 {
-			if afile != bfile {
-				return afile < bfile
+	if apri == bpri {
+		if arepo == brepo {
+			if len(exactFilePatterns) == 0 {
+				if afile != bfile {
+					return afile < bfile
+				}
+				return compareDates(adate, bdate)
 			}
-			return compareDates(adate, bdate)
+			return compareFileLengths(afile, bfile, exactFilePatterns)
 		}
-		return compareFileLengths(afile, bfile, exactFilePatterns)
+		return arepo < brepo
 	}
-	return arepo < brepo
+	return apri < bpri
 }
 
 func selectResults(results []result.Match, q query.Basic) []result.Match {

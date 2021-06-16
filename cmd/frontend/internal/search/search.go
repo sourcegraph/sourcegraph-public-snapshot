@@ -5,6 +5,7 @@ package search
 
 import (
 	"bytes"
+	"container/heap"
 	"context"
 	"encoding/json"
 	"errors"
@@ -33,6 +34,9 @@ import (
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
+
+const MaxSearchBufferSize = 5 * (1 << 20) // 5MB
+const MaxQueueDelaySeconds = 0.3
 
 // StreamHandler is an http handler which streams back search results.
 func StreamHandler(db dbutil.DB) http.Handler {
@@ -126,6 +130,8 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Globbing: false, // TODO
 	}
 
+	queue := PriorityQueue{}
+
 	// Store marshalled matches and flush periodically or when we go over
 	// 32kb.
 	matchesBuf := &jsonArrayBuf{
@@ -146,9 +152,35 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			sendProgress()
 		}
 	}
-	matchesAppend := func(m streamhttp.EventMatch) {
+	queuePop := func() {
+		if queue.Len() == 0 {
+			return
+		}
+		item := heap.Pop(&queue).(*Item)
 		// Only possible error is EOF, ignore
-		_ = matchesBuf.Append(m)
+		_ = matchesBuf.Append(item.value)
+	}
+
+	queueFlush := func() {
+		for queue.Len() > 0 {
+			queuePop()
+		}
+	}
+
+	matchesAppend := func(m streamhttp.EventMatch, priority float64) {
+		b, err := json.Marshal(m)
+		if err != nil {
+			return
+		}
+
+		heap.Push(&queue, &Item{
+			value:    b,
+			priority: priority,
+		})
+
+		for queue.totalSize > MaxSearchBufferSize {
+			queuePop()
+		}
 	}
 
 	flushTicker := time.NewTicker(h.flushTickerInternal)
@@ -185,12 +217,13 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 
 			display = match.Limit(display)
-			matchesAppend(fromMatch(match))
+			matchesAppend(fromMatch(match), match.Priority())
 		}
 
 		// Instantly send results if we have not sent any yet.
-		if first && matchesBuf.Len() > 0 {
+		if first && queue.Len() > 0 && time.Since(start).Seconds() > MaxQueueDelaySeconds {
 			first = false
+			queuePop()
 			matchesFlush()
 
 			metricLatency.WithLabelValues(string(GuessSource(r))).
@@ -200,6 +233,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	queueFlush()
 	matchesFlush()
 
 	// Send dynamic filters once.
@@ -511,12 +545,7 @@ type jsonArrayBuf struct {
 
 // Append marshals v and adds it to the json array buffer. If the size of the
 // buffer exceed FlushSize the buffer is written out.
-func (j *jsonArrayBuf) Append(v interface{}) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
+func (j *jsonArrayBuf) Append(b []byte) error {
 	if j.buf.Len() == 0 {
 		j.buf.WriteByte('[')
 	} else {
@@ -581,4 +610,51 @@ func GuessSource(r *http.Request) trace.SourceType {
 	}
 
 	return trace.SourceOther
+}
+
+// PriorityQueue modified from https://golang.org/pkg/container/heap/
+// An Item is something we manage in a priority queue.
+type Item struct {
+	value    []byte  // The value of the item; arbitrary.
+	priority float64 // The priority of the item in the queue.
+	// The index is needed by update and is maintained by the heap.Interface methods.
+	index int // The index of the item in the heap.
+}
+
+// A PriorityQueue implements heap.Interface and holds Items.
+type PriorityQueue struct {
+	ents      []*Item
+	totalSize int
+}
+
+func (pq PriorityQueue) Len() int { return len(pq.ents) }
+
+func (pq PriorityQueue) Less(i, j int) bool {
+	// We want Pop to give us the highest, not lowest, priority so we use greater than here.
+	return pq.ents[i].priority > pq.ents[j].priority
+}
+
+func (pq PriorityQueue) Swap(i, j int) {
+	pq.ents[i], pq.ents[j] = pq.ents[j], pq.ents[i]
+	pq.ents[i].index = i
+	pq.ents[j].index = j
+}
+
+func (pq *PriorityQueue) Push(x interface{}) {
+	item := x.(*Item)
+	pq.totalSize += len(item.value)
+	n := len(pq.ents)
+	item.index = n
+	pq.ents = append(pq.ents, item)
+}
+
+func (pq *PriorityQueue) Pop() interface{} {
+	old := pq.ents
+	n := len(old)
+	item := old[n-1]
+	pq.totalSize -= len(item.value)
+	old[n-1] = nil  // avoid memory leak
+	item.index = -1 // for safety
+	pq.ents = old[0 : n-1]
+	return item
 }
