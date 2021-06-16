@@ -1,6 +1,5 @@
 import classnames from 'classnames'
 import React, { useCallback, useContext, useEffect } from 'react'
-import { Redirect } from 'react-router'
 import { useHistory, useLocation } from 'react-router-dom'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -33,7 +32,7 @@ export interface SearchInsightCreationPageProps
      * Authenticated user info, Used to decide where code insight will appears
      * in personal dashboard (private) or in organisation dashboard (public)
      * */
-    authenticatedUser: Pick<AuthenticatedUser, 'id' | 'organizations'> | null
+    authenticatedUser: Pick<AuthenticatedUser, 'id' | 'organizations'>
 }
 
 /** Displays create insight page with creation form. */
@@ -54,8 +53,6 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
         'insights.search-insight-creation',
         undefined
     )
-
-    console.log('render')
 
     // Query param insight values have a higher priority that local storage values
     const initialFormValues = queryParameterInsight ?? localStorageFormValues
@@ -116,11 +113,6 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
         setInitialFormValues(undefined)
         history.push('/insights')
     }, [history, setInitialFormValues, telemetryService])
-
-    // TODO [VK] Move this logic to high order component to simplify logic here
-    if (authenticatedUser === null) {
-        return <Redirect to="/" />
-    }
 
     const {
         organizations: { nodes: orgs },

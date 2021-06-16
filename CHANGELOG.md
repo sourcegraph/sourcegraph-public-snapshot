@@ -26,6 +26,8 @@ All notable changes to Sourcegraph are documented in this file.
 - The search page now has a `create insight` button to create search-based insight based on your search query [#21943](https://github.com/sourcegraph/sourcegraph/pull/21943)
 - Added support for Terraform syntax highlighting. [#22040](https://github.com/sourcegraph/sourcegraph/pull/22040)
 - A new bulk operation to merge many changesets at once has been added to Batch Changes. [#21959](https://github.com/sourcegraph/sourcegraph/pull/21959)
+- Pings include aggregated usage for the Code Insights creation UI, organization visible insight count per insight type, and insight step size in days. [#21671](https://github.com/sourcegraph/sourcegraph/pull/21671)
+- Search-based insight creation UI now supports `count:` filter in data series query input. [#22049](https://github.com/sourcegraph/sourcegraph/pull/22049)
 
 ### Changed
 
@@ -49,6 +51,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Stricter validation of structural search queries. The `type:` parameter is not supported for structural searches and returns an appropriate alert. [#21487](https://github.com/sourcegraph/sourcegraph/pull/21487)
 - Batch changeset specs that are not attached to changesets will no longer prematurely expire before the batch specs that they are associated with. [#21678](https://github.com/sourcegraph/sourcegraph/pull/21678)
+- Code insights line chart no longer has a negative quadrant [#22018](https://github.com/sourcegraph/sourcegraph/pull/22018)
+- Correctly handle field aliases in the query (like `r:` versus `repo:`) when used with `contains` predicates. [#22105](https://github.com/sourcegraph/sourcegraph/pull/22105)
 
 ### Removed
 

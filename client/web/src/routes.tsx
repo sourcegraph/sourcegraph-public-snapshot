@@ -21,7 +21,7 @@ import { lazyComponent } from './util/lazyComponent'
 
 const SearchPage = lazyComponent(() => import('./search/input/SearchPage'), 'SearchPage')
 const StreamingSearchResults = lazyComponent(
-    () => import('./search/results/streaming/StreamingSearchResults'),
+    () => import('./search/results/StreamingSearchResults'),
     'StreamingSearchResults'
 )
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')

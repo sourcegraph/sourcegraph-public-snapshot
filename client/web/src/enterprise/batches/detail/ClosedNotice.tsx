@@ -1,5 +1,4 @@
 import classNames from 'classnames'
-import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import React from 'react'
 
 import { BatchChangeFields } from '../../../graphql-operations'
@@ -16,8 +15,8 @@ export const ClosedNotice: React.FunctionComponent<ClosedNoticeProps> = ({ close
 
     return (
         <div className={classNames('alert alert-info', className)}>
-            <InformationOutlineIcon className="redesign-d-none icon-inline" /> Information on this page may be out of
-            date because changesets that only exist in closed batch changes are not synced with the code host.
+            Information on this page may be out of date because changesets that only exist in closed batch changes are
+            not synced with the code host.
         </div>
     )
 }

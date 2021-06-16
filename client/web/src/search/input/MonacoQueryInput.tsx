@@ -9,7 +9,9 @@ import { getProviders } from '@sourcegraph/shared/src/search/query/providers'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { SearchSuggestion } from '@sourcegraph/shared/src/search/suggestions'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { hasProperty } from '@sourcegraph/shared/src/util/types'
 
 import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '..'
@@ -25,6 +27,7 @@ export interface MonacoQueryInputProps
         Pick<CaseSensitivityProps, 'caseSensitive'>,
         Pick<PatternTypeProps, 'patternType'>,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
+        SettingsCascadeProps,
         VersionContextProps {
     isSourcegraphDotCom: boolean // significant for query suggestions
     queryState: QueryState
@@ -159,7 +162,11 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     isSourcegraphDotCom,
     isLightTheme,
     className,
+    settingsCascade,
 }) => {
+    const acceptSearchSuggestionOnEnter: boolean | undefined =
+        !isErrorLike(settingsCascade.final) &&
+        settingsCascade.final?.experimentalFeatures?.acceptSearchSuggestionOnEnter
     const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
 
     // Trigger a layout of the Monaco editor when its container gets resized.
@@ -323,17 +330,51 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
         if (!editor) {
             return
         }
-        const disposable = editor.addAction({
-            id: 'submitOnEnter',
-            label: 'submitOnEnter',
-            keybindings: [Monaco.KeyCode.Enter],
-            run: () => {
-                onSubmit()
-                editor.trigger('submitOnEnter', 'hideSuggestWidget', [])
-            },
-        })
-        return () => disposable.dispose()
-    }, [editor, onSubmit])
+
+        if (!acceptSearchSuggestionOnEnter) {
+            // Unconditionally trigger the search when pressing `Enter`,
+            // including when there are visible completion suggestions.
+            const disposable = editor.addAction({
+                id: 'submitOnEnter',
+                label: 'submitOnEnter',
+                keybindings: [Monaco.KeyCode.Enter],
+                run: () => {
+                    onSubmit()
+                    editor.trigger('submitOnEnter', 'hideSuggestWidget', [])
+                },
+            })
+            return () => disposable.dispose()
+        }
+
+        const run = (): void => {
+            onSubmit()
+            editor.trigger('submitOnEnter', 'hideSuggestWidget', [])
+        }
+        const disposables = [
+            // Trigger the search with "Enter" on the condition that there are
+            // no visible completion suggestions.
+            editor.addAction({
+                id: 'submitOnEnter',
+                label: 'submitOnEnter',
+                keybindings: [Monaco.KeyCode.Enter],
+                precondition: '!suggestWidgetVisible',
+                run,
+            }),
+            // Unconditionally trigger the search with "Command/Ctrl + Enter",
+            // ignoring the visibility of completion suggestions.
+            editor.addAction({
+                id: 'submitOnCommandEnter',
+                label: 'submitOnCommandEnter',
+                keybindings: [Monaco.KeyCode.Enter | Monaco.KeyMod.CtrlCmd],
+                run,
+            }),
+        ]
+        return () => {
+            for (const disposable of disposables) {
+                disposable.dispose()
+            }
+        }
+    }, [editor, onSubmit, acceptSearchSuggestionOnEnter])
 
     const options: Monaco.editor.IStandaloneEditorConstructionOptions = {
         readOnly: false,

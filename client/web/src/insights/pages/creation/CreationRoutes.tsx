@@ -24,7 +24,7 @@ interface CreationRoutesProps extends TelemetryProps, PlatformContextProps<'upda
      * Authenticated user info, Used to decide where code insight will appears
      * in personal dashboard (private) or in organisation dashboard (public)
      * */
-    authenticatedUser: Pick<AuthenticatedUser, 'id' | 'organizations' | 'username'> | null
+    authenticatedUser: AuthenticatedUser
 }
 
 /**

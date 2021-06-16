@@ -207,8 +207,7 @@ exports[`SignUpPage renders sign up page (cloud) 1`] = `
       <p
         className="mt-3"
       >
-        Already have an account?
-         
+        Already have an account? 
         <a
           href="/sign-in"
           onClick={[Function]}
@@ -378,8 +377,7 @@ exports[`SignUpPage renders sign up page (server) 1`] = `
       <p
         className="mt-3"
       >
-        Already have an account?
-         
+        Already have an account? 
         <a
           href="/sign-in"
           onClick={[Function]}

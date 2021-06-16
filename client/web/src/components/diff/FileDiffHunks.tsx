@@ -230,7 +230,7 @@ export const FileDiffHunks: React.FunctionComponent<FileHunksProps> = ({
             {extensionInfo && (
                 <StatusBar
                     getStatusBarItems={getStatusBarItems}
-                    className="border-bottom border-top-0"
+                    className="file-diff-node__status-bar border-bottom border-top-0"
                     extensionsController={extensionInfo.extensionsController}
                     location={location}
                 />

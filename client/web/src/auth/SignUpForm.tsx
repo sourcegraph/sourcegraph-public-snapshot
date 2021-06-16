@@ -38,7 +38,7 @@ interface SignUpFormProps {
     className?: string
 
     /** Called to perform the signup on the server. */
-    doSignUp: (args: SignUpArguments) => Promise<void>
+    onSignUp: (args: SignUpArguments) => Promise<void>
 
     buttonLabel?: string
     context: Pick<SourcegraphContext, 'authProviders' | 'sourcegraphDotComMode'>
@@ -49,7 +49,7 @@ const preventDefault = (event: React.FormEvent): void => event.preventDefault()
 /**
  * The form for creating an account
  */
-export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp, buttonLabel, className, context }) => {
+export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ onSignUp, buttonLabel, className, context }) => {
     const [loading, setLoading] = useState(false)
     const [requestedTrial, setRequestedTrial] = useState(false)
     const [error, setError] = useState<Error | null>(null)
@@ -93,7 +93,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
             }
 
             setLoading(true)
-            doSignUp({
+            onSignUp({
                 email: emailState.value,
                 username: usernameState.value,
                 password: passwordState.value,
@@ -106,7 +106,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ doSignUp,
             })
             eventLogger.log('InitiateSignUp')
         },
-        [doSignUp, disabled, emailState, usernameState, passwordState, requestedTrial]
+        [onSignUp, disabled, emailState, usernameState, passwordState, requestedTrial]
     )
 
     const onRequestTrialFieldChange = useCallback((event: React.ChangeEvent<HTMLInputElement>): void => {

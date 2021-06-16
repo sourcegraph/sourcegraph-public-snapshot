@@ -110,12 +110,13 @@ type ScopeCache interface {
 }
 
 // GrantedScopes returns a slice of scopes granted by the service based on the token
-// provided in the config. It makes a request to the code host.
+// provided in the config. It makes a request to the code host but responses are cached
+// in Redis based on the token.
 //
-// Currently only GitHub is supported, other code hosts will simply return an
-// empty slice
+// Currently only GitHub and GitLab user added external services are supported,
+// other code hosts will simply return an empty slice
 func GrantedScopes(ctx context.Context, cache ScopeCache, svc *types.ExternalService) ([]string, error) {
-	if svc.Kind != extsvc.KindGitHub {
+	if svc.NamespaceUserID == 0 || (svc.Kind != extsvc.KindGitHub && svc.Kind != extsvc.KindGitLab) {
 		return nil, nil
 	}
 	src, err := NewSource(svc, nil)
@@ -124,6 +125,7 @@ func GrantedScopes(ctx context.Context, cache ScopeCache, svc *types.ExternalSer
 	}
 	switch v := src.(type) {
 	case *GithubSource:
+		// Cached path
 		token := v.config.Token
 		if token == "" {
 			return nil, errors.New("missing token")
@@ -142,6 +144,35 @@ func GrantedScopes(ctx context.Context, cache ScopeCache, svc *types.ExternalSer
 			return nil, errors.Wrap(err, "creating source")
 		}
 		scopes, err := src.v3Client.GetAuthenticatedUserOAuthScopes(ctx)
+		if err != nil {
+			return nil, errors.Wrap(err, "getting scopes")
+		}
+		cache.Set(key, []byte(strings.Join(scopes, ",")))
+		return scopes, nil
+
+	case *GitLabSource:
+		// Cached path
+		token := v.config.Token
+		if v.config.TokenType != "oauth" {
+			return nil, errors.New("not an oauth token")
+		}
+		if token == "" {
+			return nil, errors.New("missing token")
+		}
+		key, err := hashToken(token)
+		if err != nil {
+			return nil, err
+		}
+		if result, ok := cache.Get(key); ok && len(result) > 0 {
+			return strings.Split(string(result), ","), nil
+		}
+
+		// Slow path
+		src, err := NewGitLabSource(svc, nil)
+		if err != nil {
+			return nil, errors.Wrap(err, "creating source")
+		}
+		scopes, err := src.client.GetAuthenticatedUserOAuthScopes(ctx)
 		if err != nil {
 			return nil, errors.Wrap(err, "getting scopes")
 		}

@@ -1,13 +1,12 @@
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
+import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
 import { SearchPatternType } from '../../graphql-operations'
-import { AggregateStreamingSearchResults } from '../stream'
 
 interface SearchAlertProps {
     alert: Required<AggregateStreamingSearchResults>['alert']
@@ -27,9 +26,7 @@ export const SearchAlert: React.FunctionComponent<SearchAlertProps> = ({
     children,
 }) => (
     <div className="alert alert-info m-2" data-testid="alert-container">
-        <h3>
-            <AlertCircleIcon className="redesign-d-none icon-inline" /> {alert.title}
-        </h3>
+        <h3>{alert.title}</h3>
 
         {alert.description && (
             <p>

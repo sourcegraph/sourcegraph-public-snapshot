@@ -155,7 +155,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
         className="nav-item"
       >
         <a
-          className="btn btn-sm btn-outline-secondary mr-2 nav-link text-decoration-none"
+          className="btn btn-sm btn-outline-secondary mr-2 nav-link text-decoration-none create-code-monitor-button"
           href="/code-monitoring/new?trigger-query=foo+type%3Adiff+patterntype%3Aliteral"
           onClick={[Function]}
           onKeyPress={[Function]}
@@ -361,7 +361,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
         data-tooltip="Code monitors only support type:diff or type:commit searches."
       >
         <a
-          className="btn btn-sm btn-outline-secondary mr-2 nav-link text-decoration-none disabled"
+          className="btn btn-sm btn-outline-secondary mr-2 nav-link text-decoration-none create-code-monitor-button disabled"
           href=""
           onAuxClick={[Function]}
           onClick={[Function]}
