@@ -16,7 +16,6 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { asError } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { MagnifyingGlassIcon } from '@sourcegraph/web/src/components/MagnifyingGlassIcon'
 
 import {
     CaseSensitivityProps,
@@ -31,6 +30,7 @@ import { CodeMonitoringProps } from '../../code-monitoring'
 import { PageTitle } from '../../components/PageTitle'
 import { isCodeInsightsEnabled } from '../../insights'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
+import { SearchStarRadialGradientIcon } from '../CtaIcons'
 import { QueryState, submitSearch } from '../helpers'
 
 import { StreamingProgress } from './progress/StreamingProgress'
@@ -214,6 +214,8 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
         telemetryService.log('SignUpPLGSearchCTA_1_Search')
     }
 
+    const resultsFound = results ? results.results.length > 0 : false
+
     return (
         <div className={styles.streamingSearchResults}>
             <PageTitle key="page-title" title={query} />
@@ -232,7 +234,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                 {...props}
                 query={query}
                 enableCodeInsights={isCodeInsightsEnabled(props.settingsCascade)}
-                resultsFound={results ? results.results.length > 0 : false}
+                resultsFound={resultsFound}
                 className={classNames('flex-grow-1', styles.streamingSearchResultsInfobar)}
                 allExpanded={allExpanded}
                 onExpandAllResultsToggle={onExpandAllResultsToggle}
@@ -274,13 +276,10 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                     />
                 )}
 
-                {!authenticatedUser && (
+                {!authenticatedUser && resultsFound && (
                     <div className="card my-2 mr-3 d-flex p-3 flex-row align-items-center">
                         <div className={classNames('mr-3', styles.streamingSearchResultsCtaIconWrapper)}>
-                            <MagnifyingGlassIcon
-                                className={styles.streamingSearchResultsCtaIcon}
-                                fillCurrentColor={true}
-                            />
+                            <SearchStarRadialGradientIcon />
                         </div>
                         <div className="flex-1">
                             <div className={classNames('mb-2', styles.streamingSearchResultsCtaTitle)}>

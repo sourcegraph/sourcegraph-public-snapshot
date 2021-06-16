@@ -24,6 +24,7 @@ import { CodeMonitoringProps } from '../../code-monitoring'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
 import { WebActionsNavItems as ActionsNavItems } from '../../components/shared'
 import { SearchPatternType } from '../../graphql-operations'
+import { BookmarkRadialGradientIcon, CodeMonitorRadialGradientIcon, ExtensionRadialGradientIcon } from '../CtaIcons'
 import styles from '../FeatureTour.module.scss'
 import { defaultPopperModifiers } from '../input/tour-options'
 import {
@@ -70,7 +71,7 @@ export interface SearchResultsInfoBarProps
         CodeMonitoringProps {
     history: H.History
     /** The currently authenticated user or null */
-    authenticatedUser: AuthenticatedUser | null
+    authenticatedUser: Pick<AuthenticatedUser, 'id'> | null
 
     /**
      * Whether the code insights feature flag is enabled.
@@ -98,7 +99,7 @@ export interface SearchResultsInfoBarProps
 }
 
 interface ButtonWithUnauthenticatedUserCtaPromptProps extends ButtonDropdownCtaProps {
-    authenticatedUser: AuthenticatedUser | null
+    authenticatedUser: Pick<AuthenticatedUser, 'id'> | null
     authenticatedLinkTo?: string
     className?: string
     isAuthenticatedLinkDisabled?: boolean
@@ -213,7 +214,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                             Monitor
                         </>
                     }
-                    icon={<CodeMonitoringLogo />}
+                    icon={<CodeMonitorRadialGradientIcon />}
                     title="Monitor code for changes"
                     copyText="Create a monitor and get notified when your code changes. Free for registered users."
                     telemetryService={props.telemetryService}
@@ -246,7 +247,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                             Save search
                         </>
                     }
-                    icon={<BookmarkOutlineIcon />}
+                    icon={<BookmarkRadialGradientIcon />}
                     title="Saved searches"
                     copyText="Save your searches and quickly run them again. Free for registered users."
                     telemetryService={props.telemetryService}
@@ -269,7 +270,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                             Extend
                         </>
                     }
-                    icon={<PuzzleOutlineIcon />}
+                    icon={<ExtensionRadialGradientIcon />}
                     title="Extend your search experience"
                     copyText="Customize workflows, display data alongside your code, and extend the UI via Sourcegraph extensions."
                     telemetryService={props.telemetryService}

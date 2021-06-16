@@ -56,13 +56,10 @@
 
     &__cta {
         &-icon-wrapper {
-            padding: 0.5rem;
+            // stylelint-disable-next-line declaration-property-unit-whitelist
+            padding: 15px;
             border-radius: var(--border-radius);
             border: 1px solid var(--border-color);
-        }
-
-        &-icon {
-            color: var(--merged-3);
         }
 
         &-title {
