@@ -195,8 +195,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if featureflag.FromContext(ctx).GetBoolOr("repoMetadata", false) {
 			repoList, err = getReposForResults(ctx, h.db, h.repoMetadataCache, event.Results)
 			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
+				log15.Error("streaming: failed to retrieve repo metadata: %s", err)
 			}
 		}
 

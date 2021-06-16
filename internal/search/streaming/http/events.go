@@ -44,8 +44,8 @@ type EventRepoMatch struct {
 	Branches    []string `json:"branches,omitempty"`
 	RepoStars   int      `json:"repoStars,omitempty"`
 	Description string   `json:"description,omitempty"`
-	Fork        bool     `json:"fork"`
-	Archived    bool     `json:"archived"`
+	Fork        bool     `json:"fork,omitempty"`
+	Archived    bool     `json:"archived,omitempty"`
 }
 
 func (e *EventRepoMatch) eventMatch() {}
