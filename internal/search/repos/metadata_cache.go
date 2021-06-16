@@ -1,6 +1,7 @@
 package repos
 
 import (
+	"context"
 	"time"
 
 	lru "github.com/hashicorp/golang-lru"
@@ -22,6 +23,51 @@ var (
 		Help: "Number of repo metadata cache accesses that were not served by the cache and were loaded by the DB",
 	})
 )
+
+type MetadataGetter interface {
+	GetByIDs(context.Context, ...api.RepoID) ([]*types.Repo, error)
+}
+
+type CachedMetadataGetter struct {
+	MetadataGetter
+	Cache MetadataCache
+}
+
+func (c CachedMetadataGetter) GetByIDs(ctx context.Context, ids ...api.RepoID) ([]*types.Repo, error) {
+	res := make([]*types.Repo, len(ids))
+	uncachedIDs := []api.RepoID{}
+	uncachedIndices := []int{}
+	for i, id := range ids {
+		if repo, ok := c.Cache.Get(id); ok {
+			res[i] = repo
+			continue
+		}
+
+		// Save the id and the its destination index so we can fetch all
+		// the uncached repos at once, then populate the return slice
+		// in the same order as the input ids.
+		uncachedIDs = append(uncachedIDs, id)
+		uncachedIndices = append(uncachedIndices, i)
+	}
+
+	// If all repos are in the cache, skip the database roundtrip
+	if len(uncachedIDs) == 0 {
+		return res, nil
+	}
+
+	repos, err := c.MetadataGetter.GetByIDs(ctx, uncachedIDs...)
+	if err != nil {
+		return nil, err
+	}
+
+	for i, resIndex := range uncachedIndices {
+		repo := repos[i]
+		c.Cache.Add(repo.ID, repo)
+		res[resIndex] = repo
+	}
+
+	return res, nil
+}
 
 // MetadataCache is an in-memory cache for the metadata of the most frequently searched
 // repos. Its intent is to reduce database roundtrips and load by storing the results of

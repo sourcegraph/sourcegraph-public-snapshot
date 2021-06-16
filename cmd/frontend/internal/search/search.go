@@ -92,8 +92,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	eventWriter.StatHook = eventStreamOTHook(tr.LogFields)
 
 	events, inputs, results := h.startSearch(ctx, args)
-	flags := featureflag.FromContext(ctx)
-	if flags.GetBoolOr("repoMetadata", false) {
+	if featureflag.FromContext(ctx).GetBoolOr("cc_batchEvents", false) {
 		events = batchEvents(events, 50*time.Millisecond)
 	}
 
@@ -190,14 +189,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		progress.Update(event)
 		filters.Update(event)
 
-		// Ensure that, for each result in the event, we have a copy of the full repo metadata.
-		var repoList map[api.RepoID]*types.Repo
-		if featureflag.FromContext(ctx).GetBoolOr("repoMetadata", false) {
-			repoList, err = getReposForResults(ctx, h.db, h.repoMetadataCache, event.Results)
-			if err != nil {
-				log15.Error("streaming: failed to retrieve repo metadata: %s", err)
-			}
-		}
+		repoMetadata := h.getEventRepoMetadata(ctx, event)
 
 		for _, match := range event.Results {
 			if display <= 0 {
@@ -205,7 +197,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 
 			display = match.Limit(display)
-			matchesAppend(fromMatch(match, repoList))
+			matchesAppend(fromMatch(match, repoMetadata))
 		}
 
 		// Instantly send results if we have not sent any yet.
@@ -293,6 +285,36 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			log15.Warn("streaming: slow search request", searchlogs.MapToLog15Ctx(ev.Fields())...)
 		}
 	}
+}
+
+func (h *streamHandler) getEventRepoMetadata(ctx context.Context, event streaming.SearchEvent) map[api.RepoID]*types.Repo {
+	tr, ctx := trace.New(ctx, "streamHandler.getEventRepoMetadata", "")
+	defer tr.Finish()
+
+	repoMetadata := make(map[api.RepoID]*types.Repo)
+
+	ffs := featureflag.FromContext(ctx)
+	if ffs.GetBoolOr("cc_repoMetadata", false) {
+		ids := repoIDs(event.Results)
+
+		var getter repos.MetadataGetter = database.Repos(h.db)
+		if ffs.GetBoolOr("cc_useRepoMetadataCache", false) {
+			getter = repos.CachedMetadataGetter{
+				MetadataGetter: getter,
+				Cache:          h.repoMetadataCache,
+			}
+		}
+
+		metadataList, err := getter.GetByIDs(ctx, ids...)
+		if err != nil {
+			log15.Error("streaming: failed to retrieve repo metadata: %s", err)
+		}
+		for i, id := range ids {
+			repoMetadata[id] = metadataList[i]
+		}
+	}
+
+	return repoMetadata
 }
 
 // startSearch will start a search. It returns the events channel which
@@ -676,50 +698,15 @@ func batchEvents(source <-chan streaming.SearchEvent, delay time.Duration) <-cha
 	return results
 }
 
-// getReposForResults returns a *types.Repo for each repo referenced by the given results.
-// If all the repos in the result set are contained in the cache, no database roundtrip is necessary.
-// Otherwise, all repos that weren't in the cache are retrieved from the database, and the cache is updated.
-func getReposForResults(ctx context.Context, db dbutil.DB, cache repos.MetadataCache, results []result.Match) (map[api.RepoID]*types.Repo, error) {
-	res := make(map[api.RepoID]*types.Repo, 5)
-	uncachedIDs := make(map[api.RepoID]struct{})
-	for _, match := range results {
-		id := match.RepoName().ID
-
-		// Skip the more expensive cache access if we already got the repo
-		if _, ok := res[id]; ok {
-			continue
-		}
-
-		// Attempt to get the repo from the cache
-		if repo, ok := cache.Get(id); ok {
-			res[id] = repo
-			continue
-		}
-
-		uncachedIDs[id] = struct{}{}
+func repoIDs(results []result.Match) []api.RepoID {
+	ids := make(map[api.RepoID]struct{}, 5)
+	for _, result := range results {
+		ids[result.RepoName().ID] = struct{}{}
 	}
 
-	// All repos referenced in the event were populated from the cache,
-	// so no need to hit the database
-	if len(uncachedIDs) == 0 {
-		return res, nil
+	res := make([]api.RepoID, 0, len(ids))
+	for id := range ids {
+		res = append(res, id)
 	}
-
-	uncachedIDSlice := make([]api.RepoID, 0, len(uncachedIDs))
-	for id := range uncachedIDs {
-		uncachedIDSlice = append(uncachedIDSlice, id)
-	}
-
-	// Retrieve all repo metadata that doesn't exist in the cache
-	repos, err := database.Repos(db).GetByIDs(ctx, uncachedIDSlice...)
-	if err != nil {
-		return nil, err
-	}
-
-	// Update the cache and the result
-	for _, repo := range repos {
-		cache.Add(repo.ID, repo)
-		res[repo.ID] = repo
-	}
-	return res, nil
+	return res
 }
