@@ -51,13 +51,6 @@
             padding-right: 0.5rem !important;
         }
 
-        &--interactive {
-            &:hover {
-                background-color: var(--color-bg-2);
-                color: var(--link-hover-color);
-            }
-        }
-
         &--noop {
             cursor: default;
         }
