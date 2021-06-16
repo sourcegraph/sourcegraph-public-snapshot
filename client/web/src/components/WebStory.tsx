@@ -1,8 +1,8 @@
-import React, { useLayoutEffect, useMemo, useState } from 'react'
+import React, { useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { MemoryRouter, MemoryRouterProps, RouteComponentProps, withRouter } from 'react-router'
 import { useDarkMode } from 'storybook-dark-mode'
 
-import { prependCSSToDocumentHead } from '@sourcegraph/branded/src/components/BrandedStory'
+import { applyCSSToDocumentHead } from '@sourcegraph/branded/src/components/BrandedStory'
 import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import { NOOP_TELEMETRY_SERVICE, TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -29,15 +29,9 @@ export const WebStory: React.FunctionComponent<
     const [isLightTheme, setIsLightTheme] = useState(!useDarkMode())
     const breadcrumbSetters = useBreadcrumbs()
     const Children = useMemo(() => withRouter(children), [children])
+    const styleTag = useMemo(() => applyCSSToDocumentHead(webStyles), [webStyles])
 
-    useLayoutEffect(() => {
-        const styleTag = prependCSSToDocumentHead(webStyles)
-
-        return () => {
-            styleTag.remove()
-        }
-    }, [webStyles])
-
+    useEffect(() => () => styleTag.remove(), [styleTag])
     useLayoutEffect(() => {
         const listener = ((event: CustomEvent<boolean>): void => {
             setIsLightTheme(event.detail)

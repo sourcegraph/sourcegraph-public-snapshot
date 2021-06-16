@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useState } from 'react'
+import React, { useLayoutEffect, useEffect, useState, useMemo } from 'react'
 import { MemoryRouter, MemoryRouterProps } from 'react-router'
 import { useDarkMode } from 'storybook-dark-mode'
 
@@ -12,12 +12,17 @@ export interface WebStoryProps extends MemoryRouterProps {
     children: React.FunctionComponent<ThemeProps>
 }
 
-// Prepend global CSS styles to document head to keep them before CSS modules
-export function prependCSSToDocumentHead(css: string): HTMLStyleElement {
+const createStoryStyleTag = (): HTMLStyleElement => {
     const styleTag = document.createElement('style')
-    styleTag.textContent = css
+    styleTag.id = 'story-styles'
     document.head.prepend(styleTag)
+    return styleTag
+}
 
+// Prepend global CSS styles to document head to keep them before CSS modules
+export function applyCSSToDocumentHead(css: string): HTMLStyleElement {
+    const styleTag = document.querySelector<HTMLStyleElement>('#story-styles') || createStoryStyleTag()
+    styleTag.textContent = css
     return styleTag
 }
 
@@ -31,15 +36,9 @@ export const BrandedStory: React.FunctionComponent<
     }
 > = ({ children: Children, styles = brandedStyles, ...memoryRouterProps }) => {
     const [isLightTheme, setIsLightTheme] = useState(!useDarkMode())
+    const styleTag = useMemo(() => applyCSSToDocumentHead(styles), [styles])
 
-    useLayoutEffect(() => {
-        const styleTag = prependCSSToDocumentHead(styles)
-
-        return () => {
-            styleTag.remove()
-        }
-    }, [styles])
-
+    useEffect(() => () => styleTag.remove(), [styleTag])
     useLayoutEffect(() => {
         const listener = ((event: CustomEvent<boolean>): void => {
             setIsLightTheme(event.detail)
