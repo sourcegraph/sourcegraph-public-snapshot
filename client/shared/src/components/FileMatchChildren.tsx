@@ -1,5 +1,5 @@
 import * as H from 'history'
-import React, { useCallback } from 'react'
+import React from 'react'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
