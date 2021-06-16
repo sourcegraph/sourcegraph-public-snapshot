@@ -10,7 +10,7 @@ import { FlagSet } from '../featureFlags/featureFlags'
 import { SourcegraphContext } from '../jscontext'
 import { eventLogger } from '../tracking/eventLogger'
 
-import { ExperimentalSignUpPage } from './ExperimentalSignUpPage'
+import { ExperimentalSignUpPage, ShowEmailFormQueryParameter } from './ExperimentalSignUpPage'
 import { SourcegraphIcon } from './icons'
 import { getReturnTo } from './SignInSignUpCommon'
 import { SignUpArguments, SignUpForm } from './SignUpForm'
@@ -78,7 +78,7 @@ export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({
                 source={query.get('src')}
                 onSignUp={handleSignUp}
                 isLightTheme={isLightTheme}
-                useEmail={query.has('useEmail')}
+                showEmailForm={query.has(ShowEmailFormQueryParameter)}
                 context={context}
             />
         )

@@ -31,10 +31,10 @@ add('default', () => (
         {({ isLightTheme }) => (
             <ExperimentalSignUpPage
                 isLightTheme={isLightTheme}
-                source="test"
+                source="Monitor"
                 onSignUp={sinon.stub()}
                 context={context}
-                useEmail={false}
+                showEmailForm={false}
             />
         )}
     </WebStory>
@@ -45,10 +45,24 @@ add('email form', () => (
         {({ isLightTheme }) => (
             <ExperimentalSignUpPage
                 isLightTheme={isLightTheme}
+                source="SearchCTA"
+                onSignUp={sinon.stub()}
+                context={context}
+                showEmailForm={true}
+            />
+        )}
+    </WebStory>
+))
+
+add('invalid source', () => (
+    <WebStory>
+        {({ isLightTheme }) => (
+            <ExperimentalSignUpPage
+                isLightTheme={isLightTheme}
                 source="test"
                 onSignUp={sinon.stub()}
                 context={context}
-                useEmail={true}
+                showEmailForm={false}
             />
         )}
     </WebStory>

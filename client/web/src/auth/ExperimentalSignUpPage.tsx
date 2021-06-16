@@ -14,24 +14,37 @@ import { SignUpArguments, SignUpForm } from './SignUpForm'
 
 interface Props extends ThemeProps {
     source: string | null
-    useEmail: boolean
+    showEmailForm: boolean
     /** Called to perform the signup on the server. */
     onSignUp: (args: SignUpArguments) => Promise<void>
     context: Pick<SourcegraphContext, 'authProviders'>
 }
 
+const SourceToTitleMap = {
+    Context: 'Easily search the code you care about.',
+    Saved: 'Create a library of useful searches.',
+    Monitor: 'Monitor code for changes.',
+    Extend: 'Augment code and workflows via extensions.',
+    SearchCTA: 'Add your public (and soon private) repositories.',
+    Snippet: 'Easily search the code you care about.',
+}
+
+export const ShowEmailFormQueryParameter = 'showEmail'
+
 export const ExperimentalSignUpPage: React.FunctionComponent<Props> = ({
     isLightTheme,
-    context,
-    useEmail,
+    source,
+    showEmailForm,
     onSignUp,
+    context,
 }) => {
     const location = useLocation()
+
     const queryWithUseEmailToggled = new URLSearchParams(location.search)
-    if (useEmail) {
-        queryWithUseEmailToggled.delete('useEmail')
+    if (showEmailForm) {
+        queryWithUseEmailToggled.delete(ShowEmailFormQueryParameter)
     } else {
-        queryWithUseEmailToggled.append('useEmail', 'true')
+        queryWithUseEmailToggled.append(ShowEmailFormQueryParameter, 'true')
     }
 
     const assetsRoot = window.context?.assetsRoot || ''
@@ -47,6 +60,11 @@ export const ExperimentalSignUpPage: React.FunctionComponent<Props> = ({
         provider.authenticationURL?.startsWith('/.auth/gitlab/login?pc=https%3A%2F%2Fgitlab.com%2F')
     )
 
+    const title =
+        source && Object.keys(SourceToTitleMap).includes(source)
+            ? SourceToTitleMap[source as keyof typeof SourceToTitleMap]
+            : SourceToTitleMap.Context // Use Context as default
+
     return (
         <div className={styles.page}>
             <header>
@@ -61,7 +79,7 @@ export const ExperimentalSignUpPage: React.FunctionComponent<Props> = ({
                 </div>
 
                 <div className={styles.limitWidth}>
-                    <h2 className={styles.pageHeading}>Easily search the code you care about.</h2>
+                    <h2 className={styles.pageHeading}>{title}</h2>
                 </div>
             </header>
 
@@ -85,7 +103,7 @@ export const ExperimentalSignUpPage: React.FunctionComponent<Props> = ({
 
                 <div className={styles.signUpWrapper}>
                     <h2>Create a free account</h2>
-                    {!useEmail ? (
+                    {!showEmailForm ? (
                         <>
                             {githubProvider && (
                                 <a
