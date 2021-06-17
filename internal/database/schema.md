@@ -1044,10 +1044,12 @@ Stores metadata about an LSIF index uploaded by a user.
 
 # Table "public.lsif_uploads_visible_at_tip"
 ```
-    Column     |  Type   | Collation | Nullable | Default 
----------------+---------+-----------+----------+---------
- repository_id | integer |           | not null | 
- upload_id     | integer |           | not null | 
+       Column       |  Type   | Collation | Nullable | Default  
+--------------------+---------+-----------+----------+----------
+ repository_id      | integer |           | not null | 
+ upload_id          | integer |           | not null | 
+ branch_or_tag_name | text    |           | not null | ''::text
+ is_default_branch  | boolean |           | not null | false
 Indexes:
     "lsif_uploads_visible_at_tip_repository_id_upload_id" btree (repository_id, upload_id)
 
@@ -1055,7 +1057,11 @@ Indexes:
 
 Associates a repository with the set of LSIF upload identifiers that can serve intelligence for the tip of the default branch.
 
-**upload_id**: The identifier of an upload visible at the tip of the default branch.
+**branch_or_tag_name**: The name of the branch or tag.
+
+**is_default_branch**: Whether the specified branch is the default of the repository. Always false for tags.
+
+**upload_id**: The identifier of the upload visible from the tip of the specified branch or tag.
 
 # Table "public.names"
 ```
