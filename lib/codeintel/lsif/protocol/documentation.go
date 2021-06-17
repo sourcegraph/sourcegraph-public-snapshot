@@ -116,9 +116,10 @@ func NewDocumentationResult(id uint64, result Documentation) DocumentationResult
 // This enables validators to ensure the indexer knows how to emit both label and detail strings
 // properly, and just chose to emit none specifically.
 //
-// If this documentationResult is for the project root, the identifier should be an empty string.
-// Similarly, if there is no project root documentation (e.g. it would just be an index page for
-// documentation below the project root), an empty label and detail string should be attached.
+// If this documentationResult is for the project root, the identifier and searchKey should be an
+// empty string. Similarly, if there is no project root documentation (e.g. it would just be an
+// index page for documentation below the project root), an empty label and detail string should be
+// attached.
 //
 type Documentation struct {
 	// A human readable identifier for this documentationResult, uniquely identifying it within the
@@ -160,6 +161,53 @@ type Documentation struct {
 	// Whether or not this Documentation is the beginning of a new major section, meaning it and its
 	// its children should be e.g. displayed on their own dedicated page.
 	NewPage bool `json:"newPage"`
+
+	// SearchKey is a key which can be used to implement search for a specific documentationResult.
+	// For example, in Go this may look like `mux.Router` or `mux.Router.ServeHTTP`. It should be
+	// of a format that makes sense to users of the language being documented.
+	//
+	// Search keys are not required to be unique. It is desirable for them to be generally unique
+	// within the scope of the workspace itself, or a project within the workspace (if the
+	// documentation is for something in a project.) However, it is not desirable for it to be unique
+	// globally across workspaces (you can think of the searchKey as always being prefixed with the
+	// workspace URI.)
+	//
+	// If a search key is describing a project within the workspace itself, it is encouraged for it
+	// to be unique within the context of the workspace. Sometimes this means using a full project
+	// path/name (e.g. `github.com/gorilla/mux/router` or `com.JodaOrg.JodaTime`) is required - while
+	// in other contexts the shortened name (`router` or `JodaTime`) may be sufficient.
+	//
+	// If a search key is describing a symbol within a project, a shortened project path/name prefix
+	// is usually sufficient: using `router.New` over `github.com/gorilla/mux/router.New` or
+	// `JodaTime.Time.now` over `com.JodaOrg.JodaTime.Time.now` is preferred. Clients will display
+	// enough additional information to disambiguiate between any conflicts (see below.)
+	//
+	// Clients are encouraged to treat matches towards the left of the string with higher relevance
+	// than matches towards the end of the string. For example, it is typically the case that search
+	// keys will start with the project/package/library/etc name, followed by namespaces, then a
+	// specific symbol. For example, if a user searches for `gorilla/mux.Error` the desired ranking
+	// for three theoretical semi-conflicting results would be:
+	//
+	// * github.com/gorilla/mux.Error (near exact match)
+	// * github.com/gorilla/router.Error (`mux` not matching on left, result ranked lower)
+	// * github.com/sourcegraph/mux.Error (`gorilla` not matching on left, result ranked lower)
+	//
+	// Clients are encouraged to use smart case sensitivity by default: if the user is searching for
+	// a mixed-case query, the search should be case-sensitive (and otherwise not.)
+	//
+	// Since search keys may not be unique, clients are encouraged to display alongside the search
+	// key other information about the documentation that will disambiguate identical keys. The
+	// following in specific is encouraged:
+	//
+	// * Always display the `label` string, which provides e.g. a one-line function signature.
+	// * Optionally display the `detail` string (e.g. when considering a specific result), as it
+	//   contains detailed information that can help disambiguate.
+	// * Always display the path identifier to the documentationResult _somewhere_, even if it is
+	//   a much more subtle location (see `identifier` docs), as it is a truly unique path to the
+	//   documentation and can be a final way for users to disambiguate if all other options fail.
+	//
+	// An empty string indicates this documentationResult should not be indexed by a search engine.
+	SearchKey string `json:"searchKey"`
 
 	// Tags about the type of content this documentation contains.
 	Tags []DocumentationTag `json:"tags"`
