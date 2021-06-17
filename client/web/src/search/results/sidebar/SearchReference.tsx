@@ -1,30 +1,25 @@
-import React, { ReactElement, useCallback, useMemo, useState } from 'react'
+import React, { ReactElement, useCallback, useState } from 'react'
 import classNames from 'classnames'
 import { Collapse } from 'reactstrap'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
-import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
 import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '../../..'
-import { QueryChangeSource, QueryState, toggleSearchType } from '../../../helpers'
-import { SearchType } from '../StreamingSearchResults'
+import { QueryChangeSource, QueryState } from '../../../helpers'
 
 import styles from './SearchReference.module.scss'
 import sidebarStyles from './SearchSidebarSection.module.scss'
-import {
-    FilterDefinition,
-    FILTERS,
-    FilterType,
-    filterTypeKeys,
-    NegatableFilter,
-} from '@sourcegraph/shared/src/search/query/filters'
+import { FILTERS, FilterType, filterTypeKeys, NegatableFilter } from '@sourcegraph/shared/src/search/query/filters'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import { Selection } from 'monaco-editor'
+import { debounceTime, distinctUntilChanged, map, tap } from 'rxjs/operators'
+import { Form } from '@sourcegraph/branded/src/components/Form'
+import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 interface SearchReferenceInfo {
-    placeholder: string
+    placeholder?: string
+    value?: string
 }
 
 const searchReferenceInfo: Record<Exclude<FilterType, NegatableFilter>, SearchReferenceInfo> &
@@ -32,7 +27,7 @@ const searchReferenceInfo: Record<Exclude<FilterType, NegatableFilter>, SearchRe
     [FilterType.after]: {
         placeholder: '"string time"',
     },
-    [FilterType.befoer]: {
+    [FilterType.before]: {
         placeholder: 'May 01 2020',
     },
     [FilterType.timeout]: {
@@ -76,34 +71,31 @@ const SearchReferenceEntry: React.FunctionComponent<SearchTypeLinkProps> = ({
 }) => {
     const [collapsed, setCollapsed] = useState(true)
     const CollapseIcon = collapsed ? ChevronRightIcon : ChevronDownIcon
-
     return (
         <li>
-            <div
+            <span
                 className={classNames(styles.item, sidebarStyles.sidebarSectionListItem, {
                     [styles.active]: !collapsed,
                 })}
             >
-                <span>
-                    <button
-                        type="button"
-                        className={classNames('btn btn-sm', styles.collapseButton)}
-                        onClick={event => {
-                            event.stopPropagation()
-                            setCollapsed(collapsed => !collapsed)
-                        }}
-                        aria-label={collapsed ? 'Expand' : 'Collapse'}
-                    >
-                        <CollapseIcon className="icon-inline mr-1" />
-                    </button>
-                    <button className="btn p-0" type="button" onClick={() => onClick(filterType)}>
-                        <span className="text-code">
-                            <span className="search-filter-keyword">{filterType}:</span>
-                            <span className={styles.placeholder}>{value || placeholder}</span>
-                        </span>
-                    </button>
-                </span>
-            </div>
+                <button
+                    type="button"
+                    className={classNames('btn btn-icon mr-1', styles.collapseButton)}
+                    onClick={event => {
+                        event.stopPropagation()
+                        setCollapsed(collapsed => !collapsed)
+                    }}
+                    aria-label={collapsed ? 'Show filter description' : 'Hide filter description'}
+                >
+                    <CollapseIcon className="icon-inline" />
+                </button>
+                <button className="btn p-0" type="button" onClick={() => onClick(filterType)}>
+                    <span className="text-monospace">
+                        <span className="search-filter-keyword">{filterType}:</span>
+                        {value ? value : <span className={styles.placeholder}>{placeholder}</span>}
+                    </span>
+                </button>
+            </span>
             <Collapse isOpen={!collapsed}>
                 <div className={styles.description}>{children}</div>
             </Collapse>
@@ -113,6 +105,28 @@ const SearchReferenceEntry: React.FunctionComponent<SearchTypeLinkProps> = ({
 
 export const SearchReference = (props: SearchTypeLinksProps): ReactElement => {
     const filterTypes = filterTypeKeys.filter(type => type !== FilterType.patterntype)
+    const [searchInput, setSearchInput] = useState('')
+    const [selectedFilters, setSelectedFilters] = useState<FilterType[]>([])
+
+    const [nextSearchValue] = useEventObservable<string, string>(
+        useCallback(
+            input =>
+                input.pipe(
+                    tap(input => setSearchInput(input)),
+                    debounceTime(150),
+                    distinctUntilChanged(),
+                    map(input => input.trim()),
+                    tap(searchValue => {
+                        setSelectedFilters(
+                            searchValue === ''
+                                ? []
+                                : filterTypeKeys.filter(filterType => filterType.indexOf(searchValue) > -1)
+                        )
+                    })
+                ),
+            [setSearchInput]
+        )
+    )
 
     const updateQuery = useCallback(
         (filterType: FilterType) => {
@@ -135,38 +149,77 @@ export const SearchReference = (props: SearchTypeLinksProps): ReactElement => {
         [props.onNavbarQueryChange, props.navbarSearchQueryState]
     )
 
+    let body
+    if (selectedFilters.length > 0) {
+        body = (
+            <ul className={styles.list}>
+                {selectedFilters.map(filterType => {
+                    const description = FILTERS[filterType].description
+                    return (
+                        <SearchReferenceEntry
+                            {...props}
+                            filterType={filterType}
+                            key={filterType}
+                            placeholder={searchReferenceInfo[filterType]?.placeholder ?? 'p'}
+                            onClick={updateQuery}
+                        >
+                            {typeof description === 'function' ? description(false) : description}
+                        </SearchReferenceEntry>
+                    )
+                })}
+            </ul>
+        )
+    } else {
+        body = (
+            <>
+                <small className={styles.header}>Match types</small>
+                <ul className={styles.list}>
+                    {FILTERS[FilterType.patterntype].discreteValues?.(undefined).map(({ label }) => (
+                        // TODO: Use dedicated state change function to set global
+                        // patterntype
+                        <SearchReferenceEntry
+                            {...props}
+                            filterType={FilterType.patterntype}
+                            key={FilterType.patterntype + label}
+                            value={label}
+                            onClick={updateQuery}
+                        >
+                            {FILTERS[FilterType.patterntype].description}
+                        </SearchReferenceEntry>
+                    ))}
+                </ul>
+                <small className={styles.header}>All Filters</small>
+                <ul className={styles.list}>
+                    {filterTypes.map(filterType => {
+                        const description = FILTERS[filterType].description
+                        return (
+                            <SearchReferenceEntry
+                                {...props}
+                                filterType={filterType}
+                                key={filterType}
+                                placeholder={searchReferenceInfo[filterType]?.placeholder ?? 'p'}
+                                onClick={updateQuery}
+                            >
+                                {typeof description === 'function' ? description(false) : description}
+                            </SearchReferenceEntry>
+                        )
+                    })}
+                </ul>
+            </>
+        )
+    }
+
     return (
         <>
-            <small>Match types</small>
-            {FILTERS[FilterType.patterntype].discreteValues?.(undefined).map(({ label }) => (
-                // TODO: Use dedicated state change function to set global
-                // patterntype
-                <ul className={sidebarStyles.sidebarSectionList}>
-                    <SearchReferenceEntry
-                        {...props}
-                        filterType={FilterType.patterntype}
-                        key={FilterType.patterntype}
-                        value={label}
-                        onClick={updateQuery}
-                    >
-                        {FILTERS[FilterType.patterntype].description}
-                    </SearchReferenceEntry>
-                </ul>
-            ))}
-            <small>All Filters</small>
-            {filterTypes.map(filterType => (
-                <ul className={sidebarStyles.sidebarSectionList}>
-                    <SearchReferenceEntry
-                        {...props}
-                        filterType={filterType}
-                        key={filterType}
-                        placeholder={searchReferenceInfo[filterType]?.placeholder ?? 'p'}
-                        onClick={updateQuery}
-                    >
-                        {FILTERS[filterType].description}
-                    </SearchReferenceEntry>
-                </ul>
-            ))}
+            <Form className={styles.filterForm} onSubmit={event => event.preventDefault()}>
+                <input
+                    className="form-control"
+                    onChange={event => nextSearchValue(event.target.value)}
+                    value={searchInput}
+                    placeholder="Filter..."
+                />
+            </Form>
+            {body}
         </>
     )
 }

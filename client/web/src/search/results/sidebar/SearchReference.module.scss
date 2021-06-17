@@ -1,6 +1,18 @@
-.item {
-    flex-direction: column;
+.header {
+    margin-top: 0.75rem;
+}
 
+.filterForm {
+    margin-bottom: 0.75rem;
+}
+
+.list {
+    list-style-type: none;
+    margin: 0 -0.125rem;
+    padding: 0.125rem;
+}
+
+.item {
     &.active {
         background-color: var(--color-bg-3);
     }
@@ -8,8 +20,12 @@
     &.active,
     &:hover {
         .collapse-button {
-            visibility: visible;
+            @extend .collapse-button, :focus;
         }
+    }
+
+    button {
+        font-size: inherit;
     }
 }
 
@@ -27,12 +43,27 @@
 }
 
 .collapse-button {
-    visibility: hidden;
     border: none;
     margin: 0;
     padding: 0;
+    width: 0;
 
     // Force the button's box-shadow to always show over the sibling element's border
     position: relative;
     z-index: 1;
+    overflow: hidden;
+    transition: width 0.1s ease-in-out;
+
+    svg {
+        opacity: 0;
+        transition: opacity 0.1s ease-in-out;
+    }
+}
+
+.collapse-button:focus {
+    width: 16px;
+
+    svg {
+        opacity: 1;
+    }
 }
