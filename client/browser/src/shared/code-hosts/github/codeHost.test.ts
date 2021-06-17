@@ -102,7 +102,7 @@ describe('github/codeHost', () => {
                         { part: undefined }
                     )
                 ).toBe(
-                    'https://sourcegraph.my.org/sourcegraph/sourcegraph@master/-/blob/browser/src/shared/code-hosts/code_intelligence.tsx#L5:12&tab=references'
+                    'https://sourcegraph.my.org/sourcegraph/sourcegraph@master/-/blob/browser/src/shared/code-hosts/code_intelligence.tsx?L5:12#tab=references'
                 )
             })
 
@@ -123,7 +123,7 @@ describe('github/codeHost', () => {
                         { part: undefined }
                     )
                 ).toBe(
-                    'https://sourcegraph.my.org/sourcegraph/sourcegraph@master/-/blob/browser/src/shared/code-hosts/code_intelligence.tsx#L5:12'
+                    'https://sourcegraph.my.org/sourcegraph/sourcegraph@master/-/blob/browser/src/shared/code-hosts/code_intelligence.tsx?L5:12'
                 )
             })
             it('returns an URL to a blob on the same code host if possible', () => {

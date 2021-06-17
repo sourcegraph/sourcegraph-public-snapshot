@@ -4,7 +4,7 @@ import {
     LineOrPositionOrRange,
     lprToRange,
     ParsedRepoURI,
-    parseHash,
+    parseQueryAndHash,
     RepoDocumentation,
     RepoFile,
     toPositionHashComponent,
@@ -110,25 +110,23 @@ export function parseBrowserRepoURL(href: string): ParsedRepoURI & Pick<ParsedRe
     }
     let position: Position | undefined
     let range: Range | undefined
-    if (url.hash) {
-        const parsedHash = parseHash(url.hash.slice('#'.length))
-        if (parsedHash.line) {
-            position = {
-                line: parsedHash.line,
-                character: parsedHash.character || 0,
-            }
-            if (parsedHash.endLine) {
-                range = {
-                    start: position,
-                    end: {
-                        line: parsedHash.endLine,
-                        character: parsedHash.endCharacter || 0,
-                    },
-                }
+
+    const parsedHash = parseQueryAndHash(url.search, url.hash)
+    if (parsedHash.line) {
+        position = {
+            line: parsedHash.line,
+            character: parsedHash.character || 0,
+        }
+        if (parsedHash.endLine) {
+            range = {
+                start: position,
+                end: {
+                    line: parsedHash.endLine,
+                    character: parsedHash.endCharacter || 0,
+                },
             }
         }
     }
-
     return { repoName, revision, rawRevision, commitID, filePath, commitRange, position, range }
 }
 

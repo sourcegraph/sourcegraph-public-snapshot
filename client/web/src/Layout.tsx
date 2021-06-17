@@ -12,7 +12,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { parseHash } from '@sourcegraph/shared/src/util/url'
+import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
@@ -328,13 +328,14 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                     </Switch>
                 </Suspense>
             </ErrorBoundary>
-            {parseHash(props.location.hash).viewState && props.location.pathname !== '/sign-in' && (
-                <ResizablePanel
-                    {...props}
-                    repoName={`git://${parseBrowserRepoURL(props.location.pathname).repoName}`}
-                    fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
-                />
-            )}
+            {parseQueryAndHash(props.location.search, props.location.hash).viewState &&
+                props.location.pathname !== '/sign-in' && (
+                    <ResizablePanel
+                        {...props}
+                        repoName={`git://${parseBrowserRepoURL(props.location.pathname).repoName}`}
+                        fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                    />
+                )}
             <GlobalContributions
                 key={3}
                 extensionsController={props.extensionsController}

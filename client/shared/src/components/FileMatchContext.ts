@@ -81,7 +81,7 @@ const calculateGroupPositions = (
 /**
  * Describes a single group of matches.
  */
-interface MatchGroup {
+export interface MatchGroup {
     // The matches in this group to display.
     matches: {
         line: number
