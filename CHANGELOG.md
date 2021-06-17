@@ -19,6 +19,10 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Removed
 
+## 3.29.0
+
+### Removed
+
 - The `src repos enable|disable` commands were removed as they are no longer supported.
 
 ## 3.28.3
