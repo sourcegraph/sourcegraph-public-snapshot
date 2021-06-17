@@ -18,7 +18,7 @@ Our guiding principle is to ensure all repositories configured by a site adminis
 
 ## Services
 
-`repo-updater` is a singleton service. It is responsible for the following:
+`repo-updater` is a singleton service. It is responsible for:
 
 * Communicating with code host APIs to coordinate the state we synchronize from them.
 * Maintaining the `repo` table which other services read.
