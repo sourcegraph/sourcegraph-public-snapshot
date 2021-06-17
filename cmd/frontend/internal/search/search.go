@@ -300,6 +300,10 @@ func (h *streamHandler) getEventRepoMetadata(ctx context.Context, event streamin
 	ffs := featureflag.FromContext(ctx)
 	if ffs.GetBoolOr("cc_repoMetadata", false) {
 		ids := repoIDs(event.Results)
+		if len(ids) == 0 {
+			// Return early if there are no repos in the event
+			return nil
+		}
 
 		var getter repos.MetadataGetter = database.Repos(h.db)
 		if ffs.GetBoolOr("cc_useRepoMetadataCache", false) {
@@ -311,7 +315,7 @@ func (h *streamHandler) getEventRepoMetadata(ctx context.Context, event streamin
 
 		metadataList, err := getter.GetByIDs(ctx, ids...)
 		if err != nil {
-			log15.Error("streaming: failed to retrieve repo metadata: %s", err)
+			log15.Error("streaming: failed to retrieve repo metadata", "error", err)
 		}
 		for i, id := range ids {
 			repoMetadata[id] = metadataList[i]
