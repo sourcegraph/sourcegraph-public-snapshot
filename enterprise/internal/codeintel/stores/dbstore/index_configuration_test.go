@@ -147,6 +147,10 @@ func TestGetRepositoriesWithIndexConfigurationIgnoresDisabledRepos(t *testing.T)
 	}
 
 	disabledRepositoryIDs, err := store.GetAutoindexDisabledRepositories(context.Background())
+	if err != nil {
+		t.Fatalf("unexped error getting disabled repositories: %s", err)
+	}
+
 	expectedDisabledRepositoryIDs := []int{45}
 	if diff := cmp.Diff(expectedDisabledRepositoryIDs, disabledRepositoryIDs); diff != "" {
 		t.Errorf("unexpected repository identifiers (-want +got):\n%s", diff)
