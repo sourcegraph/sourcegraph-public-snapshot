@@ -188,6 +188,7 @@ type Documentation struct {
 	//   a much more subtle location (see `identifier` docs), as it is a truly unique path to the
 	//   documentation and can be a final way for users to disambiguate if all other options fail.
 	//
+	// An empty string indicates this documentationResult should not be indexed by a search engine.
 	SearchKey string `json:"searchKey"`
 
 	// Tags about the type of content this documentation contains.
