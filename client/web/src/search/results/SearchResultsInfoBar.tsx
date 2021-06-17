@@ -127,7 +127,10 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
     const [hasSeenSearchContextsFeatureTour] = useLocalStorage(HAS_SEEN_SEARCH_CONTEXTS_FEATURE_TOUR_KEY, false)
     const tour = useFeatureTour(
         'create-code-monitor-feature-tour',
-        !!showCreateCodeMonitoringButton && canCreateMonitorFromQuery && hasSeenSearchContextsFeatureTour,
+        !!showCreateCodeMonitoringButton &&
+            canCreateMonitorFromQuery &&
+            hasSeenSearchContextsFeatureTour &&
+            props.resultsFound,
         getFeatureTourElement,
         HAS_SEEN_CODE_MONITOR_FEATURE_TOUR_KEY,
         getTourOptions({
