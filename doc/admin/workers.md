@@ -10,6 +10,8 @@ The following jobs are defined by the `worker` service.
 
 This job periodically updates the set of precise code intelligence indexes that are visible from each relevant commit for a repository. The commit graph for a repository is marked as stale (to be recalculated) after repository updates and precise code intelligence uploads and updated asynchronously by this job.
 
+**Scaling notes**: Throughput of this job can be effectively increased by increasing the number of workers running this job type. See [the horizontal scaling second](#2-scale-horizontally) below for additional details
+
 #### `codeintel-janitor`
 
 This job periodically removes expired and unreachable code intelligence data and reconciles data between the frontend and codeintel-db database instances.
@@ -30,11 +32,18 @@ There are several strategies for improving throughput and stability of the `work
 
 Scale the `worker` service vertically by increasing resources for the service container. Increase the CPU allocation when the service appears CPU-bound and increase the memory allocation when the service consistently uses the majority of its memory allocation or suffers from out-of-memory errors.
 
+The CPU and memory usage of each instance can be viewed in the worker service's Grafana dashboard. Out-of-memory errors will see a sudden rise in memory usage for a particular instance, followed immediately by a new instance coming online.
+
+![Worker resource usage panels (single instance)](https://storage.googleapis.com/sourcegraph-assets/grafana-workers-resources.png)
+![Worker resource usage panels (multiple instances)](https://storage.googleapis.com/sourcegraph-assets/grafana-workers-resources-multiple.png)
+
 ### 2. Scale horizontally
 
 Scale the `worker` service horizontally by increasing the number of running services.
 
 This is an effective strategy for some job types but not others. For example, the `codeintel-commitgraph` job running over two instances will be able to process the commit graph for two repositories concurrently. However, the `codeintel-janitor` job mostly issues SQL deletes to the database and is less likely to see a major benefit by increasing the number of containers. Also note that scaling in this manner will not reduce CPU or memory contention between jobs on the same container.
+
+To determine if this strategy is effective for a particular job type, refer to scaling notes for that job in the section above.
 
 ### 3. Split jobs and scale independently
 
