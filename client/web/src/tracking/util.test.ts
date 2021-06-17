@@ -44,7 +44,7 @@ describe('tracking/util', () => {
     })
 
     describe(`${getPreviousMonday.name}()`, () => {
-        it('gets the corrent day if it is a Monday', () => {
+        it('gets the current day if it is a Monday', () => {
             const date = new Date(2021, 5, 14) // June 14, 2021 is a Monday
             const monday = getPreviousMonday(date)
             expect(monday).toBe('2021-06-14')
