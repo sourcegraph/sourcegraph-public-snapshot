@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
@@ -30,7 +29,6 @@ var services struct {
 	dbStore         *store.Store
 	locker          *locker.Locker
 	lsifStore       *lsifstore.Store
-	settingStore    *database.SettingStore
 	uploadStore     uploadstore.Store
 	gitserverClient *gitserver.Client
 	indexEnqueuer   *enqueuer.IndexEnqueuer
@@ -60,7 +58,6 @@ func initServices(ctx context.Context, db dbutil.DB) error {
 		dbStore := store.NewWithDB(db, observationContext)
 		locker := locker.NewWithDB(db, "codeintel")
 		lsifStore := lsifstore.NewStore(codeIntelDB, observationContext)
-		settingStore := database.Settings(db)
 		uploadStore, err := uploadstore.CreateLazy(context.Background(), config.UploadStoreConfig, observationContext)
 		if err != nil {
 			log.Fatalf("Failed to initialize upload store: %s", err)
@@ -75,7 +72,6 @@ func initServices(ctx context.Context, db dbutil.DB) error {
 		services.dbStore = dbStore
 		services.locker = locker
 		services.lsifStore = lsifStore
-		services.settingStore = settingStore
 		services.uploadStore = uploadStore
 		services.gitserverClient = gitserverClient
 		services.indexEnqueuer = indexEnqueuer
