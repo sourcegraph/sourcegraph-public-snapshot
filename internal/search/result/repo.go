@@ -33,7 +33,7 @@ func (r *RepoMatch) ResultCount() int {
 }
 
 func (r *RepoMatch) Select(path filter.SelectPath) Match {
-	switch path.Type {
+	switch path.Type() {
 	case filter.Repository:
 		return r
 	}
