@@ -188,14 +188,11 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
         tour.cancel()
     }, [props.telemetryService, tour])
 
-    // We do not want to show the action buttons to unaunthenticated users without the `w0-signup-optimisation` flag enabled
-    // because it might lead to a broken state (e.g. unauthenticated user saving a search).
-    const showActionButton = props.authenticatedUser || !!props.featureFlags.get('w0-signup-optimisation')
     const showActionButtonExperimentalVersion =
         !props.authenticatedUser && !!props.featureFlags.get('w0-signup-optimisation')
 
     const createCodeMonitorButton = useMemo(() => {
-        if (!showCreateCodeMonitoringButton || !showActionButton) {
+        if (!showCreateCodeMonitoringButton) {
             return null
         }
         const searchParameters = new URLSearchParams(props.location.search)
@@ -232,7 +229,6 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
             </li>
         )
     }, [
-        showActionButton,
         showActionButtonExperimentalVersion,
         showCreateCodeMonitoringButton,
         props.authenticatedUser,
@@ -245,7 +241,9 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
     ])
 
     const saveSearchButton = useMemo(() => {
-        if (!showActionButton) {
+        // We do not want to show the save search button to unaunthenticated users without the `w0-signup-optimisation` flag enabled
+        // because unauthenticated users cannot save a search.
+        if (!props.authenticatedUser && !props.featureFlags.get('w0-signup-optimisation')) {
             return null
         }
         return (
@@ -268,13 +266,16 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                 />
             </li>
         )
-    }, [showActionButton, showActionButtonExperimentalVersion, props.onSaveQueryClick, props.telemetryService])
+    }, [
+        props.authenticatedUser,
+        props.featureFlags,
+        showActionButtonExperimentalVersion,
+        props.onSaveQueryClick,
+        props.telemetryService,
+    ])
 
-    const extendButton = useMemo(() => {
-        if (!showActionButton) {
-            return null
-        }
-        return (
+    const extendButton = useMemo(
+        () => (
             <li className="nav-item">
                 <ExperimentalActionButton
                     showExperimentalVersion={showActionButtonExperimentalVersion}
@@ -292,8 +293,9 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                     telemetryService={props.telemetryService}
                 />
             </li>
-        )
-    }, [showActionButton, showActionButtonExperimentalVersion, props.telemetryService])
+        ),
+        [showActionButtonExperimentalVersion, props.telemetryService]
+    )
 
     const extraContext = useMemo(
         () => ({
