@@ -21,6 +21,7 @@ export interface Settings {
     extensions?: { [extensionID: string]: boolean }
     experimentalFeatures?: {
         enableFastResultLoading?: boolean
+        acceptSearchSuggestionOnEnter?: boolean
     }
     [key: string]: any
 

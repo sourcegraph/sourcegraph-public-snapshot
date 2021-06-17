@@ -229,6 +229,11 @@ func TestScanPredicate(t *testing.T) {
 		Result:       `{"Kind":2,"Operands":[{"value":"abc","negated":false},{"value":"contains(file:test)","negated":false}],"Annotation":{"labels":0,"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":0}}}}`,
 		ResultLabels: "HeuristicDanglingParens,Regexp",
 	}).Equal(t, test(`abc contains(file:test)`))
+
+	autogold.Want("Resolve field aliases for predicates", value{
+		Result:       `{"field":"r","value":"contains.file(sup)","negated":false}`,
+		ResultLabels: "IsPredicate",
+	}).Equal(t, test(`r:contains.file(sup)`))
 }
 
 func TestScanField(t *testing.T) {

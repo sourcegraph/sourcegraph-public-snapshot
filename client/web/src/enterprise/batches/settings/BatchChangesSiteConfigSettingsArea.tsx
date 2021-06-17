@@ -1,4 +1,3 @@
-import InfoCircleIcon from 'mdi-react/InfoCircleIcon'
 import React from 'react'
 import { RouteComponentProps } from 'react-router'
 
@@ -20,7 +19,6 @@ export const BatchChangesSiteConfigSettingsArea: React.FunctionComponent<BatchCh
                 <>
                     <p>Add access tokens to enable Batch Changes changeset creation for all users.</p>
                     <div className="alert alert-info">
-                        <InfoCircleIcon className="redesign-d-none icon-inline mr-2" />
                         You are configuring <strong>global credentials</strong> for Batch Changes. The credentials on
                         this page can be used by all users of this Sourcegraph instance to create and sync changesets.
                     </div>

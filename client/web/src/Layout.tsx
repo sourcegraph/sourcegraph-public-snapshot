@@ -26,6 +26,7 @@ import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
+import { FlagSet } from './featureFlags/featureFlags'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
 import { KeyboardShortcutsProps, KEYBOARD_SHORTCUT_SHOW_HELP } from './keyboardShortcuts/keyboardShortcuts'
@@ -131,6 +132,11 @@ export interface LayoutProps
     showBatchChanges: boolean
     fetchSavedSearches: () => Observable<GQL.ISavedSearch[]>
     children?: never
+
+    /**
+     * Evaluated feature flags for the current viewer
+     */
+    featureFlags: FlagSet
 }
 
 export const Layout: React.FunctionComponent<LayoutProps> = props => {
