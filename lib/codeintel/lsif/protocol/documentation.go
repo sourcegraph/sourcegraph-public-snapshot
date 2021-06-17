@@ -116,9 +116,10 @@ func NewDocumentationResult(id uint64, result Documentation) DocumentationResult
 // This enables validators to ensure the indexer knows how to emit both label and detail strings
 // properly, and just chose to emit none specifically.
 //
-// If this documentationResult is for the project root, the identifier should be an empty string.
-// Similarly, if there is no project root documentation (e.g. it would just be an index page for
-// documentation below the project root), an empty label and detail string should be attached.
+// If this documentationResult is for the project root, the identifier and searchKey should be an
+// empty string. Similarly, if there is no project root documentation (e.g. it would just be an
+// index page for documentation below the project root), an empty label and detail string should be
+// attached.
 //
 type Documentation struct {
 	// A human readable identifier for this documentationResult, uniquely identifying it within the
