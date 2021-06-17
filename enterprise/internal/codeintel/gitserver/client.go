@@ -103,21 +103,21 @@ func (c *Client) CommitGraph(ctx context.Context, repositoryID int, opts CommitG
 	}})
 	defer endObservation(1, observation.Args{})
 
-	commands := []string{"log", "--pretty=%H %P", "--topo-order"}
+	args := []string{"log", "--pretty=%H %P", "--topo-order"}
 	if opts.AllRefs {
-		commands = append(commands, "--all")
+		args = append(args, "--all")
 	}
 	if opts.Commit != "" {
-		commands = append(commands, opts.Commit)
+		args = append(args, opts.Commit)
 	}
 	if opts.Since != nil {
-		commands = append(commands, fmt.Sprintf("--since=%s", opts.Since.Format(time.RFC3339)))
+		args = append(args, fmt.Sprintf("--since=%s", opts.Since.Format(time.RFC3339)))
 	}
 	if opts.Limit > 0 {
-		commands = append(commands, fmt.Sprintf("-%d", opts.Limit))
+		args = append(args, fmt.Sprintf("-%d", opts.Limit))
 	}
 
-	out, err := c.execResolveRevGitCommand(ctx, repositoryID, opts.Commit, commands...)
+	out, err := c.execResolveRevGitCommand(ctx, repositoryID, opts.Commit, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -130,22 +130,22 @@ func (c *Client) CommitGraph(ctx context.Context, repositoryID int, opts CommitG
 // is listed but has no ancestors then its parent slice is empty, but is still present in
 // the map and the ordering. If the ordering is to be correct, the git log output must be
 // formatted with --topo-order.
-func ParseCommitGraph(pair []string) *CommitGraph {
+func ParseCommitGraph(lines []string) *CommitGraph {
 	// Process lines backwards so that we see all parents before children.
-	// We get a topological ordering by simply scraping the keys off in
-	// this order.
+	// We get a topological ordering by simply scraping the keys off in this
+	// order.
 
-	n := len(pair) - 1
-	for i := 0; i < len(pair)/2; i++ {
-		pair[i], pair[n-i] = pair[n-i], pair[i]
+	n := len(lines) - 1
+	for i := 0; i < len(lines)/2; i++ {
+		lines[i], lines[n-i] = lines[n-i], lines[i]
 	}
 
-	graph := make(map[string][]string, len(pair))
-	order := make([]string, 0, len(pair))
+	graph := make(map[string][]string, len(lines))
+	order := make([]string, 0, len(lines))
 
 	var prefix []string
-	for _, pair := range pair {
-		line := strings.TrimSpace(pair)
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
 		}
@@ -172,6 +172,103 @@ func ParseCommitGraph(pair []string) *CommitGraph {
 		graph: graph,
 		order: append(prefix, order...),
 	}
+}
+
+// RefDescription describes a commit at the head of a branch or tag.
+type RefDescription struct {
+	Commit          string
+	Name            string
+	Type            RefType
+	IsDefaultBranch bool
+	CreatedDate     time.Time
+}
+
+type RefType int
+
+const (
+	RefTypeUnknown RefType = iota
+	RefTypeBranch
+	RefTypeTag
+)
+
+var refPrefixes = map[string]RefType{
+	"refs/heads/": RefTypeBranch,
+	"refs/tags/":  RefTypeTag,
+}
+
+// RefDescriptions returns a slice of objects describing the head of all branches
+// and tags of the given repository.
+func (c *Client) RefDescriptions(ctx context.Context, repositoryID int) (_ []RefDescription, err error) {
+	ctx, endObservation := c.operations.refDescriptions.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	args := []string{"for-each-ref", "--format=%(objectname):%(refname):%(HEAD):%(creatordate:iso8601-strict)"}
+	for prefix := range refPrefixes {
+		args = append(args, prefix)
+	}
+
+	out, err := c.execGitCommand(ctx, repositoryID, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	return parseRefDescriptions(strings.Split(out, "\n"))
+}
+
+// parseRefDescriptions converts the output of the for-each-ref command in the RefDescriptions
+// method to a slice of RefDescription objects. Each line should conform to the format string
+// `%(objectname):%(refname):%(HEAD):%(creatordate)`, where:
+//
+// - %(objectname) is the 40-character revhash
+// - %(refname) is the name of the tag or branch (prefixed with refs/heads/ or ref/tags/)
+// - %(HEAD) is `*` if the branch is the default branch (and whitesace otherwise)
+// - %(creatordate) is the ISO-formatted date the object was created
+func parseRefDescriptions(lines []string) ([]RefDescription, error) {
+	refDescriptions := make([]RefDescription, 0, len(lines))
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+
+		parts := strings.SplitN(line, ":", 4)
+		if len(parts) != 4 {
+			return nil, fmt.Errorf(`unexpected output from git for-each-ref "%s"`, line)
+		}
+
+		commit := parts[0]
+		isDefaultBranch := parts[2] == "*"
+
+		var name string
+		var refType RefType
+		for prefix, typ := range refPrefixes {
+			if strings.HasPrefix(parts[1], prefix) {
+				name = parts[1][len(prefix):]
+				refType = typ
+				break
+			}
+		}
+		if refType == RefTypeUnknown {
+			return nil, fmt.Errorf(`unexpected output from git for-each-ref "%s"`, line)
+		}
+
+		createdDate, err := time.Parse(time.RFC3339, parts[3])
+		if err != nil {
+			return nil, fmt.Errorf(`unexpected output from git for-each-ref (bad date format) "%s"`, line)
+		}
+
+		refDescriptions = append(refDescriptions, RefDescription{
+			Commit:          commit,
+			Name:            name,
+			Type:            refType,
+			IsDefaultBranch: isDefaultBranch,
+			CreatedDate:     createdDate,
+		})
+	}
+
+	return refDescriptions, nil
 }
 
 // RawContents returns the contents of a file in a particular commit of a repository.

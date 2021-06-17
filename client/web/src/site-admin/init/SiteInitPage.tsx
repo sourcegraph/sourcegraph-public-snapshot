@@ -85,7 +85,7 @@ export const SiteInitPage: React.FunctionComponent<Props> = ({
                             <SignUpForm
                                 className="w-100"
                                 buttonLabel="Create admin account & continue"
-                                doSignUp={initSite}
+                                onSignUp={initSite}
                                 context={context}
                             />
                         </>

@@ -1020,7 +1020,7 @@ func TestSearchContext(t *testing.T) {
 
 func commitResult(repo, commit string) *result.CommitMatch {
 	return &result.CommitMatch{
-		RepoName: types.RepoName{Name: api.RepoName(repo)},
+		Repo: types.RepoName{Name: api.RepoName(repo)},
 		Commit: git.Commit{
 			ID: api.CommitID(commit),
 		},
@@ -1030,7 +1030,7 @@ func commitResult(repo, commit string) *result.CommitMatch {
 func diffResult(repo, commit string) *result.CommitMatch {
 	return &result.CommitMatch{
 		DiffPreview: &result.HighlightedString{},
-		RepoName:    types.RepoName{Name: api.RepoName(repo)},
+		Repo:        types.RepoName{Name: api.RepoName(repo)},
 		Commit: git.Commit{
 			ID: api.CommitID(commit),
 		},

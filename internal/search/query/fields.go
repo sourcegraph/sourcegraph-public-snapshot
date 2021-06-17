@@ -75,3 +75,25 @@ var allFields = map[string]struct{}{
 	"revision":              empty,
 	FieldSelect:             empty,
 }
+
+var aliases = map[string]string{
+	"r":        FieldRepo,
+	"g":        FieldRepoGroup,
+	"f":        FieldFile,
+	"l":        FieldLang,
+	"language": FieldLang,
+	"since":    FieldAfter,
+	"until":    FieldBefore,
+	"m":        FieldMessage,
+	"msg":      FieldMessage,
+	"revision": FieldRev,
+}
+
+// resolveFieldAlias resolves an aliased field like `r:` to its canonical name
+// like `repo:`.
+func resolveFieldAlias(field string) string {
+	if canonical, ok := aliases[field]; ok {
+		return canonical
+	}
+	return field
+}

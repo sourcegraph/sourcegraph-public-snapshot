@@ -319,9 +319,6 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             // eslint-disable-next-line react/no-unused-state
             enableAPIDocs: false,
             designRefreshToggleEnabled: false,
-            // Disabling linter here because this is not yet used anywhere.
-            // This can be re-enabled as soon as feature flags are leveraged.
-            // eslint-disable-next-line react/no-unused-state
             featureFlags: new Map<FeatureFlagName, boolean>(),
         }
     }
@@ -573,6 +570,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                         onUserExternalServicesOrRepositoriesUpdate={
                                             this.onUserExternalServicesOrRepositoriesUpdate
                                         }
+                                        featureFlags={this.state.featureFlags}
                                     />
                                 </GitHubServiceScopeProvider>
                             )}
