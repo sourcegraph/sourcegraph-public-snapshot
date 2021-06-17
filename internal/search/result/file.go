@@ -64,8 +64,8 @@ func (fm *FileMatch) ResultCount() int {
 	return rc
 }
 
-func (fm *FileMatch) Select(t filter.SelectPath) Match {
-	switch t.Type {
+func (fm *FileMatch) Select(path filter.SelectPath) Match {
+	switch path.Root() {
 	case filter.Repository:
 		return &RepoMatch{
 			Name: fm.Repo.Name,
@@ -78,8 +78,8 @@ func (fm *FileMatch) Select(t filter.SelectPath) Match {
 	case filter.Symbol:
 		if len(fm.Symbols) > 0 {
 			fm.LineMatches = nil // Only return symbol match if symbols exist
-			if len(t.Fields) > 0 {
-				filteredSymbols := SelectSymbolKind(fm.Symbols, t.Fields[0])
+			if len(path) > 1 {
+				filteredSymbols := SelectSymbolKind(fm.Symbols, path[1])
 				if len(filteredSymbols) == 0 {
 					return nil // Remove file match if there are no symbol results after filtering
 				}
