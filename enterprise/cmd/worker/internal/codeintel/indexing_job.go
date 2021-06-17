@@ -61,7 +61,7 @@ func (j *indexingJob) Routines(ctx context.Context) ([]goroutine.BackgroundRouti
 	repoStore := database.Repos(db)
 
 	routines := []goroutine.BackgroundRoutine{
-		indexing.NewIndexScheduler(dbStoreShim, settingStore, repoStore, indexEnqueuer, indexingConfigInst.IndexBatchSize, indexingConfigInst.MinimumTimeSinceLastEnqueue, indexingConfigInst.MinimumSearchCount, float64(indexingConfigInst.MinimumSearchRatio)/100, indexingConfigInst.MinimumPreciseCount, indexingConfigInst.AutoIndexingTaskInterval, observationContext),
+		indexing.NewIndexScheduler(dbStoreShim, settingStore, repoStore, indexEnqueuer, indexingConfigInst.AutoIndexingTaskInterval, observationContext),
 		indexing.NewDependencyIndexingScheduler(dbStoreShim, dbstore.WorkerutilDependencyIndexingJobStore(dbStore, observationContext), indexEnqueuer, indexingConfigInst.DependencyIndexerSchedulerPollInterval, indexingConfigInst.DependencyIndexerSchedulerConcurrency, metrics),
 	}
 
