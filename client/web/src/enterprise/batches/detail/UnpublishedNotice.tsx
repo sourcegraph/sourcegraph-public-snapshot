@@ -1,5 +1,4 @@
 import classNames from 'classnames'
-import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import React from 'react'
 
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
@@ -20,8 +19,7 @@ export const UnpublishedNotice: React.FunctionComponent<UnpublishedNoticeProps> 
     }
     return (
         <div className={classNames('alert alert-secondary', className)}>
-            <SourceBranchIcon className="redesign-d-none icon-inline" /> {unpublished} unpublished{' '}
-            {pluralize('changeset', unpublished, 'changesets')}. Set{' '}
+            {unpublished} unpublished {pluralize('changeset', unpublished, 'changesets')}. Set{' '}
             <code className="badge badge-secondary">published: true</code> in the batch spec and re-run{' '}
             <code className="badge badge-secondary">src batch apply -f $BATCH_SPEC_FILE</code> to publish to your code
             host.

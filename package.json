@@ -19,7 +19,6 @@
     "graphql-lint": "graphql-schema-linter",
     "build-web": "yarn workspace @sourcegraph/web run build",
     "watch-web": "yarn workspace @sourcegraph/web run watch",
-    "code-insights-demo": "yarn workspace @sourcegraph/code-insights-demo run serve",
     "generate": "gulp generate",
     "watch-generate": "gulp watchGenerate",
     "test": "jest --testPathIgnorePatterns end-to-end regression integration storybook",

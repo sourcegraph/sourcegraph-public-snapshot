@@ -1,4 +1,3 @@
-import WarningIcon from 'mdi-react/WarningIcon'
 import * as React from 'react'
 
 /**
@@ -9,7 +8,6 @@ export const FreeUsersExceededAlert: React.FunctionComponent<{
     className?: string
 }> = ({ noLicenseWarningUserCount, className = '' }) => (
     <div className={`alert alert-danger ${className}`}>
-        <WarningIcon className="redesign-d-none icon-inline mr-2" />
         This Sourcegraph instance has reached{' '}
         {noLicenseWarningUserCount === null ? 'the limit for' : noLicenseWarningUserCount} free users, and an admin must{' '}
         <a className="site-alert__link" href="https://sourcegraph.com/user/subscriptions/new">

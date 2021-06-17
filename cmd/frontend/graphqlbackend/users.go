@@ -53,9 +53,6 @@ type userConnectionResolver struct {
 
 // compute caches results from the more expensive user list creation that occurs when activePeriod
 // is set to a specific length of time.
-//
-// Because usage statistics data isn't stored in PostgreSQL (but rather in Redis), adding this
-// parameter requires accessing a second data store.
 func (r *userConnectionResolver) compute(ctx context.Context) ([]*types.User, int, error) {
 	if r.activePeriod == nil {
 		return nil, 0, errors.New("activePeriod must not be nil")

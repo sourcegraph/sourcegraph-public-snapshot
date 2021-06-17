@@ -1,7 +1,6 @@
 import classnames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useContext, useMemo, useState } from 'react'
-import { Redirect } from 'react-router'
 import { useHistory, Link } from 'react-router-dom'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -29,7 +28,7 @@ export interface EditInsightPageProps extends SettingsCascadeProps, PlatformCont
      * Authenticated user info, Used to decide where code insight will appears
      * in personal dashboard (private) or in organisation dashboard (public)
      * */
-    authenticatedUser: Pick<AuthenticatedUser, 'id' | 'organizations' | 'username'> | null
+    authenticatedUser: Pick<AuthenticatedUser, 'id' | 'organizations' | 'username'>
 }
 
 interface ParsedInsightInfo {
@@ -152,11 +151,6 @@ export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = pr
                 }
             />
         )
-    }
-
-    // TODO [VK] Move this logic to high order component to simplify logic here
-    if (authenticatedUser === null) {
-        return <Redirect to="/" />
     }
 
     const {

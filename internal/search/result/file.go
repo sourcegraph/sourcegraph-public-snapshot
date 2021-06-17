@@ -47,6 +47,10 @@ type FileMatch struct {
 	LimitHit bool
 }
 
+func (fm *FileMatch) RepoName() types.RepoName {
+	return fm.File.Repo
+}
+
 func (fm *FileMatch) searchResultMarker() {}
 
 func (fm *FileMatch) ResultCount() int {

@@ -14,11 +14,10 @@ export const SIDEBAR_BUTTON_CLASS = 'btn text-left sidebar__link--inactive w-100
  */
 export const SidebarNavItem: React.FunctionComponent<{
     to: string
-    icon?: React.ComponentType<{ className?: string }>
     className?: string
     exact?: boolean
     source?: string
-}> = ({ icon: Icon, children, className, to, exact, source }) => {
+}> = ({ children, className, to, exact, source }) => {
     const [isRedesign] = useRedesignToggle()
     const buttonClassNames = isRedesign
         ? 'btn text-left sidebar__link--inactive d-flex sidebar-nav-link'
@@ -26,7 +25,6 @@ export const SidebarNavItem: React.FunctionComponent<{
     if (source === 'server') {
         return (
             <a href={to} className={classNames(buttonClassNames, className)}>
-                {Icon && <Icon className="icon-inline mr-2" />}
                 {children}
             </a>
         )
@@ -38,7 +36,6 @@ export const SidebarNavItem: React.FunctionComponent<{
             className={classNames(buttonClassNames, className)}
             activeClassName={isRedesign ? 'btn-primary' : undefined}
         >
-            {Icon && <Icon className="redesign-d-none icon-inline mr-2" />}
             {children}
         </NavLink>
     )

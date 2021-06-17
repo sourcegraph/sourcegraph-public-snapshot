@@ -41,7 +41,7 @@ import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
-import { fetchFeatureFlags, FlagSet } from './featureFlags/featureFlags'
+import { FeatureFlagName, fetchFeatureFlags, FlagSet } from './featureFlags/featureFlags'
 import { logInsightMetrics } from './insights'
 import { KeyboardShortcutsProps } from './keyboardShortcuts/keyboardShortcuts'
 import { Layout, LayoutProps } from './Layout'
@@ -319,10 +319,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             // eslint-disable-next-line react/no-unused-state
             enableAPIDocs: false,
             designRefreshToggleEnabled: false,
-            // Disabling linter here because this is not yet used anywhere.
-            // This can be re-enabled as soon as feature flags are leveraged.
-            // eslint-disable-next-line react/no-unused-state
-            featureFlags: {},
+            featureFlags: new Map<FeatureFlagName, boolean>(),
         }
     }
 
@@ -573,6 +570,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                         onUserExternalServicesOrRepositoriesUpdate={
                                             this.onUserExternalServicesOrRepositoriesUpdate
                                         }
+                                        featureFlags={this.state.featureFlags}
                                     />
                                 </GitHubServiceScopeProvider>
                             )}

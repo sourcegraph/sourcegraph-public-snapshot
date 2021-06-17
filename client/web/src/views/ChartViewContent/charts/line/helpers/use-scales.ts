@@ -9,6 +9,8 @@ import { Accessors } from '../types'
 import { getMinAndMax } from './get-min-max'
 import { getRangeWithPadding } from './get-range-with-padding'
 
+const LINE_VERTICAL_PADDING = 0.15
+
 interface UseScalesProps<Datum> {
     /**
      * D3 scales configuration
@@ -54,7 +56,7 @@ export function useScales<Datum>(props: UseScalesProps<Datum>): UseScalesOutput 
             ...config,
             y: {
                 ...config.y,
-                domain: getRangeWithPadding(getMinAndMax(data, accessors), 0.3),
+                domain: getRangeWithPadding(getMinAndMax(data, accessors), LINE_VERTICAL_PADDING),
             },
         }),
         [accessors, data, config]

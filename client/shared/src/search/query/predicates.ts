@@ -1,5 +1,5 @@
 /* eslint-disable no-template-curly-in-string */
-import { Completion } from './filters'
+import { Completion, resolveFieldAlias } from './filters'
 
 interface Access {
     name: string
@@ -115,6 +115,7 @@ export const scanPredicate = (field: string, value: string): Predicate | undefin
     }
     const name = match[0]
     const path = name.split('.')
+    field = resolveFieldAlias(field)
     const access = resolveAccess([field, ...path], PREDICATES)
     if (!access) {
         return undefined

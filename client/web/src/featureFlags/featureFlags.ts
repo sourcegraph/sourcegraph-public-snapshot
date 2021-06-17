@@ -6,6 +6,10 @@ import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { requestGraphQL } from '../backend/graphql'
 import { FetchFeatureFlagsResult } from '../graphql-operations'
 
+export type FeatureFlagName = 'w0-signup-optimisation'
+
+export type FlagSet = Map<FeatureFlagName, boolean>
+
 /**
  * Fetches the evaluated feature flags for the current user
  */
@@ -24,18 +28,11 @@ export function fetchFeatureFlags(): Observable<FlagSet> {
     ).pipe(
         map(dataOrThrowErrors),
         map(data => {
-            if (!data) {
-                return {}
-            }
-            const result: FlagSet = {}
+            const result = new Map<FeatureFlagName, boolean>()
             for (const flag of data.viewerFeatureFlags) {
-                result[flag.name] = flag.value
+                result.set(flag.name as FeatureFlagName, flag.value)
             }
             return result
         })
     )
-}
-
-export interface FlagSet {
-    [key: string]: boolean
 }
