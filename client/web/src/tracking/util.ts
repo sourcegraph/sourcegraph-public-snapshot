@@ -1,3 +1,5 @@
+import { padStart } from 'lodash'
+
 /**
  * Strip provided URL parameters and update window history
  */
@@ -33,4 +35,24 @@ export function redactSensitiveInfoFromURL(url: string): string {
     }
 
     return sourceURL.href
+}
+
+/**
+ * Returns the Monday at or before the supplied date, in YYYY-MM-DD format.
+ * This is used to generate cohort IDs for users who
+ * started using the site on the same week.
+ */
+export function getPreviousMonday(date: Date): string {
+    const previousMonday = new Date(date)
+
+    while (previousMonday.getDay() !== 1 /* Monday */) {
+        previousMonday.setDate(previousMonday.getDate() - 1)
+    }
+
+    const year = previousMonday.getFullYear()
+    const month = padStart((previousMonday.getMonth() + 1).toString(), 2, '0') // Months in JS are 0-indexed
+    const dayOfMonth = padStart(previousMonday.getDate().toString(), 2, '0')
+
+    const isoString = `${year}-${month}-${dayOfMonth}`
+    return isoString
 }
