@@ -4,7 +4,7 @@ _Auto-indexing is enabled only in the Cloud environment and are written to work 
 
 ## Scheduling
 
-TODO TJ - Add docs here.
+TODO(TJ) - These docs need to be updated once we complete the refactoring of autoindexing.
 
 The [IndexScheduler](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%40main+file:%5Eenterprise/cmd/frontend/internal/codeintel/background/indexing/index_scheduler%5C.go++func+%28s+*IndexScheduler%29+Handle%28&patternType=literal) will periodically [query the table](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%40main+file:%5Eenterprise/internal/codeintel/stores/dbstore/indexable_repos%5C.go+func+%28s+*Store%29+IndexableRepositories%28&patternType=literal) maintained by the indexability updater for a batch of repositories to index. The ordering expression for this query takes several parameters into account:
 
