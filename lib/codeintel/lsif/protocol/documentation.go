@@ -166,7 +166,12 @@ type Documentation struct {
 	// For example, in Go this may look like `mux.Router` or `mux.Router.ServeHTTP`. It should be
 	// of a format that makes sense to users of the language being documented.
 	//
-	// Search keys do not have to be unique, although they are encouraged to be generally unique
+	// Search keys do not have to be unique. For symbols, search keys are encouraged (but not
+	// required) to be unique within the scope of e.g. a project by prefixing the project name/path
+	// (there may be multiple projects in a workspace). For projects themselves, it is encouraged
+	// to include the full project path (e.g. `github.com/gorilla/mux` or `com.JodaOrg.JodaTime`)
+	// instead of the shortened name (`mux` or `JodaTime`).
+	//
 	// within the context of a project (there may be multiple projects in a workspace.)
 	//
 	// Clients are encouraged to treat matches towards the left of the string with higher relevance
