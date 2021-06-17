@@ -292,9 +292,6 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *streamHandler) getEventRepoMetadata(ctx context.Context, event streaming.SearchEvent) map[api.RepoID]*types.Repo {
-	tr, ctx := trace.New(ctx, "streamHandler.getEventRepoMetadata", "")
-	defer tr.Finish()
-
 	repoMetadata := make(map[api.RepoID]*types.Repo)
 
 	ffs := featureflag.FromContext(ctx)
