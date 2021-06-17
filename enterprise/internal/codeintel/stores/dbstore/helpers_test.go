@@ -229,11 +229,11 @@ func insertPackageReferences(t testing.TB, store *Store, packageReferences []lsi
 func insertVisibleAtTip(t testing.TB, db *sql.DB, repositoryID int, uploadIDs ...int) {
 	var rows []*sqlf.Query
 	for _, uploadID := range uploadIDs {
-		rows = append(rows, sqlf.Sprintf("(%s, %s)", repositoryID, uploadID))
+		rows = append(rows, sqlf.Sprintf("(%s, %s, true)", repositoryID, uploadID))
 	}
 
 	query := sqlf.Sprintf(
-		`INSERT INTO lsif_uploads_visible_at_tip (repository_id, upload_id) VALUES %s`,
+		`INSERT INTO lsif_uploads_visible_at_tip (repository_id, upload_id, is_default_branch) VALUES %s`,
 		sqlf.Join(rows, ","),
 	)
 	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
@@ -329,7 +329,7 @@ func getVisibleUploads(t testing.TB, db *sql.DB, repositoryID int, commits []str
 
 func getUploadsVisibleAtTip(t testing.TB, db *sql.DB, repositoryID int) []int {
 	query := sqlf.Sprintf(
-		`SELECT upload_id FROM lsif_uploads_visible_at_tip WHERE repository_id = %s ORDER BY upload_id`,
+		`SELECT upload_id FROM lsif_uploads_visible_at_tip WHERE repository_id = %s AND is_default_branch ORDER BY upload_id`,
 		repositoryID,
 	)
 

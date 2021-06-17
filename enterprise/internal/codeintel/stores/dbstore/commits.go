@@ -188,19 +188,27 @@ func scanCommitGraphMetadata(rows *sql.Rows, queryErr error) (updateToken, dirty
 	return 0, 0, nil, false, nil
 }
 
-// CalculateVisibleUploads uses the given commit graph and the tip commit of the default branch to determine the
-// set of LSIF uploads that are visible for each commit, and the set of uploads which are visible at the tip. The
-// decorated commit graph is serialized to Postgres for use by find closest dumps queries.
+// CalculateVisibleUploads uses the given commit graph and the tip of non-stale branches and tags to determine the
+// set of LSIF uploads that are visible for each commit, and the set of uploads which are visible at the tip of a
+// non-stale branch or tag. The decorated commit graph is serialized to Postgres for use by find closest dumps
+// queries.
 //
 // If dirtyToken is supplied, the repository will be unmarked when the supplied token does matches the most recent
 // token stored in the database, the flag will not be cleared as another request for update has come in since this
 // token has been read.
-func (s *Store) CalculateVisibleUploads(ctx context.Context, repositoryID int, commitGraph *gitserver.CommitGraph, tipCommit string, dirtyToken int, now time.Time) (err error) {
+func (s *Store) CalculateVisibleUploads(
+	ctx context.Context,
+	repositoryID int,
+	commitGraph *gitserver.CommitGraph,
+	refDescriptions map[string]gitserver.RefDescription,
+	dirtyToken int,
+	now time.Time,
+) (err error) {
 	ctx, traceLog, endObservation := s.operations.calculateVisibleUploads.WithAndLogger(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", repositoryID),
 			log.Int("numCommitGraphKeys", len(commitGraph.Order())),
-			log.String("tipCommit", tipCommit),
+			log.Int("numRefDescriptions", len(refDescriptions)),
 			log.Int("dirtyToken", dirtyToken),
 		},
 	})
@@ -227,7 +235,7 @@ func (s *Store) CalculateVisibleUploads(ctx context.Context, repositoryID int, c
 	graph := commitgraph.NewGraph(commitGraph, commitGraphView)
 
 	// Write the graph into temporary tables in Postgres
-	if err := tx.writeVisibleUploads(ctx, sanitizeCommitInput(ctx, graph, tipCommit)); err != nil {
+	if err := tx.writeVisibleUploads(ctx, sanitizeCommitInput(ctx, graph, refDescriptions)); err != nil {
 		return err
 	}
 
@@ -318,7 +326,7 @@ func (s *Store) writeVisibleUploads(ctx context.Context, sanitizedInput *sanitiz
 			ctx,
 			s.Handle().DB(),
 			"t_lsif_uploads_visible_at_tip",
-			[]string{"upload_id"},
+			[]string{"upload_id", "branch_or_tag_name", "is_default_branch"},
 			sanitizedInput.uploadsVisibleAtTipRowValues,
 		)
 	}
@@ -371,7 +379,9 @@ CREATE TEMPORARY TABLE t_lsif_nearest_uploads_links (
 const temporaryUploadsVisibleAtTipTableQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/commits.go:createTemporaryNearestUploadsTables
 CREATE TEMPORARY TABLE t_lsif_uploads_visible_at_tip (
-	upload_id integer NOT NULL
+	upload_id integer NOT NULL,
+	branch_or_tag_name text NOT NULL,
+	is_default_branch boolean NOT NULL
 ) ON COMMIT DROP
 `
 
@@ -486,7 +496,7 @@ func (s *Store) persistUploadsVisibleAtTip(ctx context.Context, repositoryID int
 
 	rowsInserted, rowsUpdated, rowsDeleted, err := s.bulkTransfer(
 		ctx,
-		sqlf.Sprintf(uploadsVisibleAtTipInsertQuery, repositoryID),
+		sqlf.Sprintf(uploadsVisibleAtTipInsertQuery, repositoryID, repositoryID),
 		nil,
 		sqlf.Sprintf(uploadsVisibleAtTipDeleteQuery, repositoryID),
 	)
@@ -505,9 +515,17 @@ func (s *Store) persistUploadsVisibleAtTip(ctx context.Context, repositoryID int
 const uploadsVisibleAtTipInsertQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/commits.go:persistUploadsVisibleAtTip
 INSERT INTO lsif_uploads_visible_at_tip
-SELECT %s, source.upload_id
+SELECT %s, source.upload_id, source.branch_or_tag_name, source.is_default_branch
 FROM t_lsif_uploads_visible_at_tip source
-WHERE source.upload_id NOT IN (SELECT vat.upload_id FROM lsif_uploads_visible_at_tip vat)
+WHERE NOT EXISTS (
+	SELECT 1
+	FROM lsif_uploads_visible_at_tip vat
+	WHERE
+		vat.repository_id = %s AND
+		vat.upload_id = source.upload_id AND
+		vat.branch_or_tag_name = source.branch_or_tag_name AND
+		vat.is_default_branch = source.is_default_branch
+)
 `
 
 const uploadsVisibleAtTipDeleteQuery = `
@@ -515,7 +533,14 @@ const uploadsVisibleAtTipDeleteQuery = `
 DELETE FROM lsif_uploads_visible_at_tip vat
 WHERE
 	vat.repository_id = %s AND
-	vat.upload_id NOT IN (SELECT source.upload_id FROM t_lsif_uploads_visible_at_tip source)
+	NOT EXISTS (
+		SELECT 1
+		FROM t_lsif_uploads_visible_at_tip source
+		WHERE
+			source.upload_id = vat.upload_id AND
+			source.branch_or_tag_name = vat.branch_or_tag_name AND
+			source.is_default_branch = vat.is_default_branch
+	)
 `
 
 // bulkTransfer performs the given insert, update, and delete queries and returns the number of records
@@ -629,10 +654,20 @@ type sanitizedCommitInput struct {
 	numUploadsVisibleAtTipRecords uint32 // populated once uploadsVisibleAtTipRowValues is exhausted
 }
 
+// TODO(efritz) - make default configurable via envvars
+const maxAgeForNonStaleBranches = time.Hour * 24 * 30 * 3 // ~three months
+const maxAgeForNonStaleTags = time.Hour * 24 * 365        // ~one year
+
 // sanitizeCommitInput reads the data that needs to be persisted from the given graph and writes the
 // sanitized values (ensures values match the column types) into channels for insertion into a particular
 // table.
-func sanitizeCommitInput(ctx context.Context, graph *commitgraph.Graph, tipCommit string) *sanitizedCommitInput {
+func sanitizeCommitInput(ctx context.Context, graph *commitgraph.Graph, refDescriptions map[string]gitserver.RefDescription) *sanitizedCommitInput {
+	// TODO(efritz) - allow overrides per-repo in database
+	maxAges := map[gitserver.RefType]time.Duration{
+		gitserver.RefTypeBranch: maxAgeForNonStaleBranches,
+		gitserver.RefTypeTag:    maxAgeForNonStaleTags,
+	}
+
 	nearestUploadsRowValues := make(chan []interface{})
 	nearestUploadsLinksRowValues := make(chan []interface{})
 	uploadsVisibleAtTipRowValues := make(chan []interface{})
@@ -679,15 +714,26 @@ func sanitizeCommitInput(ctx context.Context, graph *commitgraph.Graph, tipCommi
 			}
 		}
 
-		for _, uploadMeta := range graph.UploadsVisibleAtCommit(tipCommit) {
-			if !countingWrite(
-				ctx,
-				uploadsVisibleAtTipRowValues,
-				&sanitized.numUploadsVisibleAtTipRecords,
-				// row values
-				uploadMeta.UploadID,
-			) {
-				return
+		for commit, refDescription := range refDescriptions {
+			if !refDescription.IsDefaultBranch {
+				maxAge, ok := maxAges[refDescription.Type]
+				if !ok || time.Since(refDescription.CreatedDate) > maxAge {
+					continue
+				}
+			}
+
+			for _, uploadMeta := range graph.UploadsVisibleAtCommit(commit) {
+				if !countingWrite(
+					ctx,
+					uploadsVisibleAtTipRowValues,
+					&sanitized.numUploadsVisibleAtTipRecords,
+					// row values
+					uploadMeta.UploadID,
+					refDescription.Name,
+					refDescription.IsDefaultBranch,
+				) {
+					return
+				}
 			}
 		}
 	}()
