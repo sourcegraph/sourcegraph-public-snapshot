@@ -296,7 +296,7 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
     const resolvedRevisionOrError = props.resolvedRevisionOrError
 
     return (
-        <div className="repo-revision-container">
+        <div className="repo-revision-container pl-3">
             <Switch>
                 {props.routes.map(
                     ({ path, render, exact, condition = () => true }) =>

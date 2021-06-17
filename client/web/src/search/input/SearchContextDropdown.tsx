@@ -1,22 +1,22 @@
 import classNames from 'classnames'
 import * as H from 'history'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import { Dropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
-import Shepherd from 'shepherd.js'
 
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
 import { CaseSensitivityProps, PatternTypeProps, SearchContextInputProps } from '..'
 import { AuthenticatedUser } from '../../auth'
+import styles from '../FeatureTour.module.scss'
 import { SubmitSearchParameters } from '../helpers'
+import { getTourOptions, HAS_SEEN_SEARCH_CONTEXTS_FEATURE_TOUR_KEY, useFeatureTour } from '../useFeatureTour'
 
 import { SearchContextCtaPrompt } from './SearchContextCtaPrompt'
 import { SearchContextMenu } from './SearchContextMenu'
-import { defaultTourOptions } from './tour-options'
+import { defaultPopperModifiers } from './tour-options'
 
 export interface SearchContextDropdownProps
     extends Omit<SearchContextInputProps, 'showSearchContext'>,
@@ -34,27 +34,9 @@ export interface SearchContextDropdownProps
     className?: string
 }
 
-const tourOptions: Shepherd.Tour.TourOptions = {
-    ...defaultTourOptions,
-    defaultStepOptions: {
-        ...defaultTourOptions.defaultStepOptions,
-        arrow: true,
-        popperOptions: {
-            // Removes default behavior of autofocusing steps
-            modifiers: [
-                {
-                    name: 'focusAfterRender',
-                    enabled: false,
-                },
-                { name: 'offset', options: { offset: [2, 4] } },
-            ],
-        },
-    },
-}
-
-function getHighlightTourStep(onClose: () => void): HTMLElement {
+function getFeatureTourElement(onClose: () => void): HTMLElement {
     const container = document.createElement('div')
-    container.className = 'search-context-highlight-tour__step'
+    container.className = styles.featureTourStep
     container.innerHTML = `
         <div>
             <strong>New: Search contexts</strong>
@@ -71,67 +53,9 @@ function getHighlightTourStep(onClose: () => void): HTMLElement {
             </button>
         </div>
     `
-
     const button = container.querySelector('button')
-    if (button) {
-        button.addEventListener('click', onClose)
-    }
+    button?.addEventListener('click', onClose)
     return container
-}
-
-const HAS_SEEN_HIGHLIGHT_TOUR_STEP_KEY = 'has-seen-search-contexts-dropdown-highlight-tour-step'
-
-const useSearchContextHighlightTour = (
-    showSearchContextHighlightTourStep: boolean,
-    isSearchOnboardingTourVisible: boolean
-): Shepherd.Tour => {
-    const [hasSeenHighlightTourStep, setHasSeenHighlightTourStep] = useLocalStorage(
-        HAS_SEEN_HIGHLIGHT_TOUR_STEP_KEY,
-        false
-    )
-
-    const tour = useMemo(() => new Shepherd.Tour(tourOptions), [])
-    useEffect(() => {
-        tour.addSteps([
-            {
-                id: 'search-contexts-start-tour',
-                text: getHighlightTourStep(() => tour.cancel()),
-                classes: 'web-content shadow-lg py-4 px-3 search-context-highlight-tour',
-                attachTo: {
-                    element: '.search-context-dropdown__button',
-                    on: 'bottom',
-                },
-                popperOptions: {
-                    modifiers: [{ name: 'offset', options: { offset: [140, 16] } }],
-                },
-            },
-        ])
-    }, [tour])
-
-    useEffect(() => {
-        if (
-            !tour.isActive() &&
-            showSearchContextHighlightTourStep &&
-            !hasSeenHighlightTourStep &&
-            !isSearchOnboardingTourVisible
-        ) {
-            tour.start()
-        }
-    }, [showSearchContextHighlightTourStep, isSearchOnboardingTourVisible, hasSeenHighlightTourStep, tour])
-
-    useEffect(() => {
-        const onCanceled = (): void => {
-            setHasSeenHighlightTourStep(true)
-        }
-        tour.on('cancel', onCanceled)
-        return () => {
-            tour.off('cancel', onCanceled)
-        }
-    }, [tour, setHasSeenHighlightTourStep])
-
-    useEffect(() => () => tour.cancel(), [tour])
-
-    return tour
 }
 
 export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdownProps> = props => {
@@ -150,13 +74,27 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         submitSearch,
         fetchAutoDefinedSearchContexts,
         fetchSearchContexts,
-        showSearchContextHighlightTourStep = false,
+        showSearchContextFeatureTour = false,
         submitSearchOnSearchContextChange = true,
         isSearchOnboardingTourVisible,
         className,
     } = props
 
-    const tour = useSearchContextHighlightTour(showSearchContextHighlightTourStep, isSearchOnboardingTourVisible)
+    const tour = useFeatureTour(
+        'search-contexts-start-tour',
+        showSearchContextFeatureTour && !isSearchOnboardingTourVisible,
+        getFeatureTourElement,
+        HAS_SEEN_SEARCH_CONTEXTS_FEATURE_TOUR_KEY,
+        getTourOptions({
+            attachTo: {
+                element: '.search-context-dropdown__button',
+                on: 'bottom',
+            },
+            popperOptions: {
+                modifiers: [...defaultPopperModifiers, { name: 'offset', options: { offset: [140, 16] } }],
+            },
+        })
+    )
 
     const [isOpen, setIsOpen] = useState(false)
     const toggleOpen = useCallback(() => {

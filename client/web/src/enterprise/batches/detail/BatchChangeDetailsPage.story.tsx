@@ -26,7 +26,7 @@ import {
 import { BatchChangeDetailsPage } from './BatchChangeDetailsPage'
 
 const { add } = storiesOf('web/batches/details/BatchChangeDetailsPage', module)
-    .addDecorator(story => <div className="p-3 container web-content">{story()}</div>)
+    .addDecorator(story => <div className="p-3 container">{story()}</div>)
     .addParameters({
         chromatic: {
             viewports: [320, 576, 978, 1440],

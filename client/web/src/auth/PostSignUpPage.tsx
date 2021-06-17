@@ -26,7 +26,7 @@ export const PostSignUpPage: FunctionComponent<Props> = ({
     sourcegraphDotComMode &&
     ((authenticatedUser && experimentalFeatures.enablePostSignupFlow) ||
         authenticatedUser?.tags.includes('AllowUserViewPostSignup')) ? (
-        <div className="signin-signup-page post-signup-page web-content">
+        <div className="signin-signup-page post-signup-page">
             <PageTitle title="Post sign up page" />
 
             <HeroPage

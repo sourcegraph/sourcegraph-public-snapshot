@@ -12,9 +12,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -39,6 +39,10 @@ type Resolved struct {
 	MissingRepoRevs []*search.RepositoryRevisions
 	ExcludedRepos   ExcludedRepos
 	OverLimit       bool
+}
+
+func (r *Resolved) String() string {
+	return fmt.Sprintf("Resolved{RepoRevs=%d, MissingRepoRevs=%d, OverLimit=%v, %#v}", len(r.RepoRevs), len(r.MissingRepoRevs), r.OverLimit, r.ExcludedRepos)
 }
 
 type Resolver struct {
@@ -76,14 +80,16 @@ func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 		if err != nil {
 			return Resolved{}, err
 		}
-		patterns := repoGroupValuesToRegexp(groupNames, groups)
-		tr.LazyPrintf("repogroups: adding %d repos to include pattern", len(patterns))
-		includePatterns = append(includePatterns, UnionRegExps(patterns))
+
+		unionedPatterns, numPatterns := RepoGroupsToIncludePatterns(groupNames, groups)
+		includePatterns = append(includePatterns, unionedPatterns)
+
+		tr.LazyPrintf("repogroups: adding %d repos to include pattern", numPatterns)
 
 		// Ensure we don't omit any repos explicitly included via a repo group. (Each explicitly
 		// listed repo generates at least one pattern.)
-		if len(patterns) > limit {
-			limit = len(patterns)
+		if numPatterns > limit {
+			limit = numPatterns
 		}
 	}
 

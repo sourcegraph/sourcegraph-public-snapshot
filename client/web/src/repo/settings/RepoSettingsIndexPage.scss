@@ -3,6 +3,7 @@
 .repo-settings-index-page {
     &__refs {
         list-style-type: none;
+        padding-left: 0;
     }
     &__ref {
         display: flex;
@@ -11,6 +12,12 @@
         border: 1px solid var(--border-color);
         border-radius: 0.125rem;
         margin: 0.5rem 0;
+        &:first-of-type {
+            margin-top: 0;
+        }
+        &:last-of-type {
+            margin-bottom: 0;
+        }
         padding: 0.5rem 0.75rem;
         &-icon {
             margin-right: 0.25rem;

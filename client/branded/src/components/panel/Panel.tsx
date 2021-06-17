@@ -25,8 +25,8 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { combineLatestOrDefault } from '@sourcegraph/shared/src/util/rxjs/combineLatestOrDefault'
 import { isDefined } from '@sourcegraph/shared/src/util/types'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
+import styles from './Panel.module.scss'
 import { registerPanelToolbarContributions } from './views/contributions'
 import { EmptyPanelView } from './views/EmptyPanelView'
 import { ExtensionsLoadingPanelView } from './views/ExtensionsLoadingView'
@@ -223,30 +223,19 @@ export const Panel = React.memo<Props>(props => {
         setTabIndex(items.findIndex(({ id }) => id === currentTabID))
     }, [items, hash, currentTabID])
 
-    const [isRedesignEnabled] = useRedesignToggle()
-
     if (!areExtensionsReady) {
-        return <ExtensionsLoadingPanelView />
+        return <ExtensionsLoadingPanelView className={styles.panel} />
     }
 
     if (!items) {
-        if (isRedesignEnabled) {
-            return (
-                <div className="panel">
-                    <EmptyPanelView />
-                </div>
-            )
-        }
-
-        return <EmptyPanelView />
+        return <EmptyPanelView className={styles.panel} />
     }
 
     const activeTab: PanelItem | undefined = items[tabIndex]
-    const ActionsWrapper = isRedesignEnabled ? 'small' : React.Fragment
 
     return (
-        <Tabs className="panel" index={tabIndex} onChange={handleActiveTab}>
-            <div className="panel__header tablist-wrapper bg-body d-flex justify-content-between">
+        <Tabs className={styles.panel} index={tabIndex} onChange={handleActiveTab}>
+            <div className={classNames('tablist-wrapper d-flex justify-content-between', styles.header)}>
                 <TabList>
                     <div className="d-flex w-100">
                         {items.map(({ label, id }) => (
@@ -256,16 +245,16 @@ export const Panel = React.memo<Props>(props => {
                         ))}
                     </div>
                 </TabList>
-                <div className={classNames('align-items-center d-flex', !isRedesignEnabled && 'mr-2')}>
-                    <ActionsWrapper>
+                <div className="align-items-center d-flex">
+                    <small>
                         {activeTab && (
                             <ActionsNavItems
                                 {...props}
                                 // TODO remove references to Bootstrap from shared, get class name from prop
                                 // This is okay for now because the Panel is currently only used in the webapp
                                 listClass="d-flex justify-content-end list-unstyled m-0 align-items-center"
-                                listItemClass={isRedesignEnabled ? 'px-2 mx-2' : 'pr-4'}
-                                actionItemClass={classNames(isRedesignEnabled && 'font-weight-medium')}
+                                listItemClass="px-2 mx-2"
+                                actionItemClass="font-weight-medium"
                                 actionItemIconClass="icon-inline"
                                 menu={ContributableMenu.PanelToolbar}
                                 scope={{
@@ -277,11 +266,11 @@ export const Panel = React.memo<Props>(props => {
                                 location={location}
                             />
                         )}
-                    </ActionsWrapper>
+                    </small>
                     <button
                         type="button"
                         onClick={handlePanelClose}
-                        className={classNames('btn btn-icon', isRedesignEnabled && 'panel__dismiss ml-2')}
+                        className={classNames('btn btn-icon ml-2', styles.dismissButton)}
                         title="Close panel"
                         data-tooltip="Close panel"
                         data-placement="left"
@@ -290,10 +279,10 @@ export const Panel = React.memo<Props>(props => {
                     </button>
                 </div>
             </div>
-            <TabPanels>
+            <TabPanels className={styles.tabs}>
                 {activeTab ? (
                     items.map(({ id, element }) => (
-                        <TabPanel className="panel__tabs-content" key={id} data-test-content={id}>
+                        <TabPanel key={id} className={styles.tabsContent} data-testid="panel-tabs-content">
                             {id === activeTab.id ? element : null}
                         </TabPanel>
                     ))
@@ -308,7 +297,7 @@ export const Panel = React.memo<Props>(props => {
 /** A wrapper around Panel that makes it resizable. */
 export const ResizablePanel: React.FunctionComponent<Props> = props => (
     <Resizable
-        className="resizable-panel"
+        className={styles.resizablePanel}
         handlePosition="top"
         defaultSize={350}
         storageKey="panel-size"

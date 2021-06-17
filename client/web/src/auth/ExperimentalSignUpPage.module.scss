@@ -1,0 +1,172 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.page {
+    flex-grow: 1;
+    isolation: isolate;
+}
+
+.header-background-1 {
+    position: absolute;
+    width: 100vw;
+    top: 0;
+    bottom: 0;
+
+    :global(.theme-dark) & {
+        background: linear-gradient(0deg, #000000 -19.71%, rgba(0, 0, 0, 0) 78.37%);
+        mix-blend-mode: multiply;
+        opacity: 0.8;
+    }
+}
+
+.header-background-2 {
+    position: absolute;
+    width: 100vw;
+    top: 0;
+    bottom: 0;
+
+    :global(.theme-light) & {
+        background: radial-gradient(
+            72.88% 750.51% at 102.36% 110.93%,
+            #30b4fe 2.34%,
+            rgba(114, 183, 253, 0.15) 54.59%,
+            rgba(221, 236, 251, 0) 100%
+        );
+    }
+
+    :global(.theme-dark) & {
+        background: radial-gradient(
+            80% 821.52% at 90.97% 54.98%,
+            #00507d 2.34%,
+            rgba(0, 67, 135, 0.15) 54.59%,
+            rgba(0, 26, 52, 0) 100%
+        );
+    }
+
+    mix-blend-mode: multiply;
+}
+
+.header-background-3 {
+    position: absolute;
+    width: 100vw;
+    top: 0;
+    bottom: 0;
+
+    :global(.theme-light) & {
+        background: linear-gradient(
+            82.41deg,
+            rgba(114, 252, 226, 0.3) 13.74%,
+            rgba(182, 251, 238, 0.3) 34.35%,
+            rgba(210, 250, 247, 0) 96.66%
+        );
+    }
+
+    :global(.theme-dark) & {
+        background: linear-gradient(
+            83.13deg,
+            rgba(0, 130, 105, 0.7) 13.89%,
+            rgba(0, 55, 49, 0.7) 60.15%,
+            rgba(0, 12, 11, 0) 109.59%
+        );
+    }
+
+    mix-blend-mode: multiply;
+}
+
+.limit-width {
+    max-width: 64rem;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 2rem;
+    padding-right: 2rem;
+}
+
+.logo {
+    width: 14.0625rem;
+    height: 2.375rem;
+    margin-top: 6rem;
+    margin-bottom: 1rem;
+    position: relative;
+}
+
+.page-heading {
+    margin: 0;
+    padding-top: 1.5rem;
+    padding-bottom: 1rem;
+}
+
+.contents {
+    font-size: 1rem;
+    padding-top: 1.75rem;
+    position: relative;
+}
+
+.contents-left {
+    max-width: 27.5rem;
+}
+
+.feature-list {
+    margin: 2rem 0;
+}
+
+.companies-header {
+    font-size: 0.875rem;
+    margin-bottom: 2rem;
+}
+
+.sign-up-wrapper {
+    position: absolute;
+    top: -7.5rem;
+    right: 0;
+    width: 27.5rem;
+    background-color: var(--code-bg);
+    box-shadow: 0 2px 10px rgba(0, 27, 76, 0.16);
+    border-radius: 0.5rem;
+    padding: 3.5rem;
+
+    @media (--sm-breakpoint-down) {
+        position: static;
+        margin-top: 2rem;
+    }
+}
+
+.sign-up-button {
+    display: flex;
+    align-items: center;
+    border: none;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border-radius: 4px;
+}
+
+.github-button {
+    margin-bottom: 0.75rem;
+    margin-top: 1.5rem;
+
+    :global(.theme-dark) & {
+        background-color: var(--gray-03);
+        color: var(--gray-08);
+    }
+
+    :global(.theme-light) & {
+        background: #212529;
+        color: var(--white);
+    }
+}
+
+.gitlab-button {
+    background-color: #6e49cb;
+    margin-bottom: 1rem;
+
+    :global(.theme-dark) & {
+        color: var(--gray-04);
+    }
+
+    :global(.theme-light) & {
+        color: var(--white);
+    }
+}
+
+.separator {
+    margin-top: 1.5rem;
+    margin-bottom: 2rem;
+}

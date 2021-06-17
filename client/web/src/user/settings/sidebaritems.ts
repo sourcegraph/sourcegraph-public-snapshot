@@ -45,11 +45,11 @@ export const userSettingsSideBarItems: UserSettingsSidebarItems = [
         label: 'Repositories',
         to: '/repositories',
         condition: userExternalServicesEnabled,
+        status: 'new',
     },
     {
         label: 'Product research',
         to: '/product-research',
         condition: () => window.context.productResearchPageEnabled,
-        status: 'new',
     },
 ]

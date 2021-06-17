@@ -24,7 +24,7 @@ func (r *CommitSearchResultResolver) Commit() *GitCommitResolver {
 		if r.gitCommitResolver != nil {
 			return
 		}
-		repoResolver := NewRepositoryResolver(r.db, r.RepoName.ToRepo())
+		repoResolver := NewRepositoryResolver(r.db, r.Repo.ToRepo())
 		r.gitCommitResolver = toGitCommitResolver(repoResolver, r.db, r.CommitMatch.Commit.ID, &r.CommitMatch.Commit)
 	})
 	return r.gitCommitResolver

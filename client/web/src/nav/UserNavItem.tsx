@@ -127,7 +127,8 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                 <div className="position-relative">
                     <div
                         className={classNames('align-items-center d-flex', {
-                            'user-nav-item__avatar-background': isExtensionAlertAnimating,
+                            // Temporarily remove user avatar flash animation for redesign
+                            // 'user-nav-item__avatar-background': isExtensionAlertAnimating,
                         })}
                     >
                         <UserAvatar

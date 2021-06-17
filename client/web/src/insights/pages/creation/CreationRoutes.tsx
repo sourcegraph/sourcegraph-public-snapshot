@@ -24,7 +24,7 @@ interface CreationRoutesProps extends TelemetryProps, PlatformContextProps<'upda
      * Authenticated user info, Used to decide where code insight will appears
      * in personal dashboard (private) or in organisation dashboard (public)
      * */
-    authenticatedUser: Pick<AuthenticatedUser, 'id' | 'organizations' | 'username'> | null
+    authenticatedUser: AuthenticatedUser
 }
 
 /**
@@ -46,7 +46,6 @@ export const CreationRoutes: React.FunctionComponent<CreationRoutesProps> = prop
 
             <Route
                 path={`${match.url}/search`}
-                exact={true}
                 render={() => (
                     <SearchInsightCreationLazyPage
                         telemetryService={telemetryService}

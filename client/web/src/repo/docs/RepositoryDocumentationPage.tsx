@@ -1,6 +1,5 @@
 import * as H from 'history'
 import { upperFirst } from 'lodash'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useEffect, useCallback, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -60,14 +59,11 @@ const fetchDocumentationPage = (args: DocumentationPageVariables): Observable<GQ
             if (!data || !data.node) {
                 throw createAggregateError(errors)
             }
-            const repo = data.node as GQL.IRepository
-            if (
-                !repo.commit ||
-                !repo.commit.tree ||
-                !repo.commit.tree.lsif ||
-                !repo.commit.tree.lsif.documentationPage ||
-                !repo.commit.tree.lsif.documentationPage.tree
-            ) {
+            const repo = data.node
+            if (!repo.commit || !repo.commit.tree || !repo.commit.tree.lsif) {
+                throw new Error('no LSIF data')
+            }
+            if (!repo.commit.tree.lsif.documentationPage || !repo.commit.tree.lsif.documentationPage.tree) {
                 throw new Error('no LSIF documentation')
             }
             return repo.commit.tree.lsif.documentationPage
@@ -75,9 +71,7 @@ const fetchDocumentationPage = (args: DocumentationPageVariables): Observable<GQ
     )
 
 const PageError: React.FunctionComponent<{ error: ErrorLike }> = ({ error }) => (
-    <div className="repository-docs-page__error alert alert-danger m-2">
-        <AlertCircleIcon className="redesign-d-none icon-inline" /> Error: {upperFirst(error.message)}
-    </div>
+    <div className="repository-docs-page__error alert alert-danger m-2">Error: {upperFirst(error.message)}</div>
 )
 
 const PageNotFound: React.FunctionComponent = () => (
@@ -145,6 +139,9 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = ({ us
             <PageTitle title="API docs" />
             {page === LOADING ? <LoadingSpinner className="icon-inline m-1" /> : null}
             {isErrorLike(page) && page.message === 'page not found' ? <PageNotFound /> : null}
+            {isErrorLike(page) && page.message === 'no LSIF data' ? (
+                <p>This repository does not have LSIF data.</p>
+            ) : null}
             {isErrorLike(page) && page.message === 'no LSIF documentation' ? (
                 <p>This repository does not have LSIF documentation data. Currently, only lsif-go is supported.</p>
             ) : null}

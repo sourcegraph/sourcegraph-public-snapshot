@@ -49,6 +49,21 @@ export enum AliasedFilterType {
 }
 /* eslint-enable unicorn/prevent-abbreviations */
 
+export const ALIASES: Record<string, string> = {
+    r: 'repo',
+    g: 'repogroup',
+    f: 'file',
+    l: 'lang',
+    language: 'language',
+    since: 'after',
+    until: 'before',
+    m: 'message',
+    msg: 'message',
+    revision: 'rev',
+}
+
+export const resolveFieldAlias = (field: string): string => ALIASES[field] || field
+
 export const isFilterType = (filter: string): filter is FilterType => filter in FilterType
 export const isAliasedFilterType = (filter: string): boolean => filter in AliasedFilterType
 

@@ -109,7 +109,7 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
                     </p>
 
                     <Link
-                        to="/extensions?query=category:Insights"
+                        to="/extensions?query=category:Insights&experimental=true"
                         onClick={logExploreExtensionsClick}
                         className={classnames(styles.createIntroPageInsightButton, 'btn', 'btn-secondary')}
                     >

@@ -9,6 +9,7 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -26,6 +27,7 @@ func TestParseConfig(t *testing.T) {
 	tests := []struct {
 		name          string
 		args          args
+		dotcom        bool
 		wantProviders map[schema.GitLabAuthProvider]providers.Provider
 		wantProblems  []string
 	}{
@@ -36,6 +38,40 @@ func TestParseConfig(t *testing.T) {
 		},
 		{
 			name: "1 GitLab.com config",
+			args: args{cfg: &conf.Unified{SiteConfiguration: schema.SiteConfiguration{
+				ExternalURL: "https://sourcegraph.example.com",
+				AuthProviders: []schema.AuthProviders{{
+					Gitlab: &schema.GitLabAuthProvider{
+						ClientID:     "my-client-id",
+						ClientSecret: "my-client-secret",
+						DisplayName:  "GitLab",
+						Type:         extsvc.TypeGitLab,
+						Url:          "https://gitlab.com",
+					},
+				}},
+			}}},
+			wantProviders: map[schema.GitLabAuthProvider]providers.Provider{
+				{
+					ClientID:     "my-client-id",
+					ClientSecret: "my-client-secret",
+					DisplayName:  "GitLab",
+					Type:         extsvc.TypeGitLab,
+					Url:          "https://gitlab.com",
+				}: provider("https://gitlab.com/", oauth2.Config{
+					RedirectURL:  "https://sourcegraph.example.com/.auth/gitlab/callback",
+					ClientID:     "my-client-id",
+					ClientSecret: "my-client-secret",
+					Endpoint: oauth2.Endpoint{
+						AuthURL:  "https://gitlab.com/oauth/authorize",
+						TokenURL: "https://gitlab.com/oauth/token",
+					},
+					Scopes: []string{"read_user", "api"},
+				}),
+			},
+		},
+		{
+			name:   "1 GitLab.com config, Sourcegraph.com",
+			dotcom: true,
 			args: args{cfg: &conf.Unified{SiteConfiguration: schema.SiteConfiguration{
 				ExternalURL: "https://sourcegraph.example.com",
 				AuthProviders: []schema.AuthProviders{{
@@ -104,7 +140,7 @@ func TestParseConfig(t *testing.T) {
 						AuthURL:  "https://gitlab.com/oauth/authorize",
 						TokenURL: "https://gitlab.com/oauth/token",
 					},
-					Scopes: []string{"read_user", "read_api"},
+					Scopes: []string{"read_user", "api"},
 				}),
 				{
 					ClientID:     "my-client-id-2",
@@ -120,13 +156,19 @@ func TestParseConfig(t *testing.T) {
 						AuthURL:  "https://mycompany.com/oauth/authorize",
 						TokenURL: "https://mycompany.com/oauth/token",
 					},
-					Scopes: []string{"read_user", "read_api"},
+					Scopes: []string{"read_user", "api"},
 				}),
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			old := envvar.SourcegraphDotComMode()
+			envvar.MockSourcegraphDotComMode(tt.dotcom)
+			t.Cleanup(func() {
+				envvar.MockSourcegraphDotComMode(old)
+			})
+
 			gotProviders, gotProblems := parseConfig(tt.args.cfg)
 			gotConfigs := make(map[schema.GitLabAuthProvider]oauth2.Config)
 			for k, p := range gotProviders {

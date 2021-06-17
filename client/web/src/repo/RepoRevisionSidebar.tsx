@@ -2,7 +2,7 @@ import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
 import classnames from 'classnames'
 import * as H from 'history'
 import ChevronDoubleLeftIcon from 'mdi-react/ChevronDoubleLeftIcon'
-import FileTreeIcon from 'mdi-react/FileTreeIcon'
+import ChevronDoubleRightIcon from 'mdi-react/ChevronDoubleRightIcon'
 import React, { useCallback } from 'react'
 import { Button } from 'reactstrap'
 
@@ -45,11 +45,11 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
         return (
             <button
                 type="button"
-                className="position-absolute btn btn-icon btn-link border-right border-bottom repo-revision-container__toggle"
+                className="position-absolute btn btn-icon border-top border-bottom border-right mt-4 repo-revision-sidebar__toggle"
                 onClick={handleSidebarToggle}
                 data-tooltip="Show sidebar"
             >
-                <FileTreeIcon className="icon-inline" />
+                <ChevronDoubleRightIcon className="icon-inline" />
             </button>
         )
     }
@@ -62,11 +62,11 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
             element={
                 <div className={classnames('d-flex w-100', !isRedesignEnabled && 'bg-2 border-right')}>
                     <Tabs
-                        className="w-100 test-repo-revision-sidebar"
+                        className="w-100 test-repo-revision-sidebar mr-3"
                         defaultIndex={tabIndex}
                         onChange={handleTabsChange}
                     >
-                        <div className={classnames('tablist-wrapper d-flex flex-1', isRedesignEnabled && 'mx-3')}>
+                        <div className="tablist-wrapper d-flex flex-1">
                             <TabList>
                                 <Tab data-tab-content="files">
                                     <span className="tablist-wrapper--tab-label">Files</span>
@@ -82,16 +82,10 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
                                 data-tooltip="Collapse panel"
                                 data-placement="right"
                             >
-                                <ChevronDoubleLeftIcon className="icon-inline repo-revision-container__close-icon" />
+                                <ChevronDoubleLeftIcon className="icon-inline repo-revision-sidebar__close-icon" />
                             </Button>
                         </div>
-                        <div
-                            aria-hidden={true}
-                            className={classnames(
-                                'd-flex repo-revision-container__tabpanels explorer',
-                                isRedesignEnabled && 'px-3'
-                            )}
-                        >
+                        <div aria-hidden={true} className="d-flex repo-revision-sidebar__tabpanels explorer">
                             <TabPanels className="w-100 overflow-auto">
                                 <TabPanel tabIndex={-1}>
                                     {tabIndex === 0 && (

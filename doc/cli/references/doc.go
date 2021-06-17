@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 )
 
 func clean(base string) error {

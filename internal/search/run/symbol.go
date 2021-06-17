@@ -7,12 +7,12 @@ import (
 	"sort"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -62,7 +62,7 @@ func SearchSymbols(ctx context.Context, args *search.TextParameters, limit int, 
 	ctx, stream, cancel := streaming.WithLimit(ctx, stream, limit)
 	defer cancel()
 
-	indexed, err := newIndexedSearchRequest(ctx, args, symbolRequest, stream)
+	indexed, err := zoektutil.NewIndexedSearchRequest(ctx, args, zoektutil.SymbolRequest, stream)
 	if err != nil {
 		return err
 	}

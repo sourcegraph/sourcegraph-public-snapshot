@@ -13,7 +13,7 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 )
 
 var numFiles = flag.Int("nf", 100, "number of files to write")

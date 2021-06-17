@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/indexing"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -36,6 +37,11 @@ func (j *indexingJob) Routines(ctx context.Context) ([]goroutine.BackgroundRouti
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
+	db, err := shared.InitDatabase()
+	if err != nil {
+		return nil, err
+	}
+
 	dbStore, err := InitDBStore()
 	if err != nil {
 		return nil, err
@@ -51,9 +57,11 @@ func (j *indexingJob) Routines(ctx context.Context) ([]goroutine.BackgroundRouti
 	indexEnqueuer := enqueuer.NewIndexEnqueuer(enqueuerDBStoreShim, gitserverClient, repoupdater.DefaultClient, observationContext)
 	metrics := workerutil.NewMetrics(observationContext, "codeintel_dependency_indexing_processor", nil)
 
+	settingStore := database.Settings(db)
+	repoStore := database.Repos(db)
+
 	routines := []goroutine.BackgroundRoutine{
-		indexing.NewIndexScheduler(dbStoreShim, indexEnqueuer, indexingConfigInst.IndexBatchSize, indexingConfigInst.MinimumTimeSinceLastEnqueue, indexingConfigInst.MinimumSearchCount, float64(indexingConfigInst.MinimumSearchRatio)/100, indexingConfigInst.MinimumPreciseCount, indexingConfigInst.AutoIndexingTaskInterval, observationContext),
-		indexing.NewIndexabilityUpdater(dbStoreShim, gitserverClient, indexingConfigInst.MinimumSearchCount, float64(indexingConfigInst.MinimumSearchRatio)/100, indexingConfigInst.MinimumPreciseCount, indexingConfigInst.AutoIndexingSkipManualInterval, indexingConfigInst.AutoIndexingTaskInterval, observationContext),
+		indexing.NewIndexScheduler(dbStoreShim, settingStore, repoStore, indexEnqueuer, indexingConfigInst.IndexBatchSize, indexingConfigInst.MinimumTimeSinceLastEnqueue, indexingConfigInst.MinimumSearchCount, float64(indexingConfigInst.MinimumSearchRatio)/100, indexingConfigInst.MinimumPreciseCount, indexingConfigInst.AutoIndexingTaskInterval, observationContext),
 		indexing.NewDependencyIndexingScheduler(dbStoreShim, dbstore.WorkerutilDependencyIndexingJobStore(dbStore, observationContext), indexEnqueuer, indexingConfigInst.DependencyIndexerSchedulerPollInterval, indexingConfigInst.DependencyIndexerSchedulerConcurrency, metrics),
 	}
 

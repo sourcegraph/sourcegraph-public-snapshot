@@ -6,6 +6,7 @@ import { LoaderButton } from '../../../../../../components/LoaderButton'
 import { FormInput } from '../../../../../components/form/form-input/FormInput'
 import { useFieldAPI } from '../../../../../components/form/hooks/useField'
 import { FORM_ERROR, SubmissionErrors } from '../../../../../components/form/hooks/useForm'
+import { RepositoryField } from '../../../../../components/form/repositories-field/RepositoryField'
 import {
     getVisibilityValue,
     Organization,
@@ -64,6 +65,7 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
             onReset={onFormReset}
         >
             <FormInput
+                as={RepositoryField}
                 required={true}
                 autoFocus={true}
                 title="Repository"

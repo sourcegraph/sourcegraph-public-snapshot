@@ -13,7 +13,7 @@ const { add } = storiesOf('web/searchContexts/DeleteSearchContextModal', module)
     .addParameters({
         chromatic: { viewports: [1200] },
     })
-    .addDecorator(story => <div className="p-3 container web-content">{story()}</div>)
+    .addDecorator(story => <div className="p-3 container">{story()}</div>)
 
 const searchContext = {
     __typename: 'SearchContext',
