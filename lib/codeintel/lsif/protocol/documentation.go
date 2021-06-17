@@ -166,11 +166,21 @@ type Documentation struct {
 	// For example, in Go this may look like `mux.Router` or `mux.Router.ServeHTTP`. It should be
 	// of a format that makes sense to users of the language being documented.
 	//
-	// Search keys do not have to be unique. For symbols, search keys are encouraged (but not
-	// required) to be unique within the scope of e.g. a project by prefixing the project name/path
-	// (there may be multiple projects in a workspace). For projects themselves, it is encouraged
-	// to include the full project path (e.g. `github.com/gorilla/mux` or `com.JodaOrg.JodaTime`)
-	// instead of the shortened name (`mux` or `JodaTime`).
+	// Search keys are not required to be unique. It is desirable for them to be generally unique
+	// within the scope of the workspace itself, or a project within the workspace (if the
+	// documentation is for something in a project.) However, it is not desirable for it to be unique
+	// globally across workspaces (you can think of the searchKey as always being prefixed with the
+	// workspace URI.)
+	//
+	// If a search key is describing a project within the workspace itself, it is encouraged for it
+	// to be unique within the context of the workspace. Sometimes this means using a full project
+	// path/name (e.g. `github.com/gorilla/mux/router` or `com.JodaOrg.JodaTime`) is required - while
+	// in other contexts the shortened name (`router` or `JodaTime`) may be sufficient.
+	//
+	// If a search key is describing a symbol within a project, a shortened project path/name prefix
+	// is usually sufficient: using `router.New` over `github.com/gorilla/mux/router.New` or
+	// `JodaTime.Time.now` over `com.JodaOrg.JodaTime.Time.now` is preferred. Clients will display
+	// enough additional information to disambiguiate between any conflicts (see below.)
 	//
 	// Clients are encouraged to treat matches towards the left of the string with higher relevance
 	// than matches towards the end of the string. For example, it is typically the case that search
