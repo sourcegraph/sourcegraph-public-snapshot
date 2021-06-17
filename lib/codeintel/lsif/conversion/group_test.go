@@ -188,6 +188,22 @@ func TestGroupBundleData(t *testing.T) {
 				},
 				PackageInformationID: 0,
 			},
+			4005: {
+				Moniker: reader.Moniker{
+					Kind:       "export",
+					Scheme:     "scheme E",
+					Identifier: "ident E",
+				},
+				PackageInformationID: 5003,
+			},
+			4006: {
+				Moniker: reader.Moniker{
+					Kind:       "import",
+					Scheme:     "scheme E",
+					Identifier: "ident E",
+				},
+				PackageInformationID: 5003,
+			},
 		},
 		PackageInformationData: map[int]PackageInformation{
 			5001: {
@@ -197,6 +213,10 @@ func TestGroupBundleData(t *testing.T) {
 			5002: {
 				Name:    "pkg B",
 				Version: "1.2.3",
+			},
+			5003: {
+				Name:    "pkg C",
+				Version: "3.2.1",
 			},
 		},
 		DiagnosticResults: map[int][]Diagnostic{
@@ -247,8 +267,8 @@ func TestGroupBundleData(t *testing.T) {
 				},
 			},
 		},
-		ImportedMonikers: datastructures.IDSetWith(4001),
-		ExportedMonikers: datastructures.IDSetWith(4003),
+		ImportedMonikers: datastructures.IDSetWith(4001, 4006),
+		ExportedMonikers: datastructures.IDSetWith(4003, 4005),
 		Contains: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
 			1001: datastructures.IDSetWith(2001, 2002, 2003),
 			1002: datastructures.IDSetWith(2004, 2005, 2006),
@@ -278,7 +298,11 @@ func TestGroupBundleData(t *testing.T) {
 
 	expectedPackages := []semantic.Package{
 		{Scheme: "scheme C", Name: "pkg B", Version: "1.2.3"},
+		{Scheme: "scheme E", Name: "pkg C", Version: "3.2.1"},
 	}
+	sort.Slice(actualBundleData.Packages, func(i, j int) bool {
+		return actualBundleData.Packages[i].Scheme < actualBundleData.Packages[j].Scheme
+	})
 	if diff := cmp.Diff(expectedPackages, actualBundleData.Packages); diff != "" {
 		t.Errorf("unexpected packages (-want +got):\n%s", diff)
 	}
@@ -293,6 +317,9 @@ func TestGroupBundleData(t *testing.T) {
 			Filter:  expectedFilter,
 		},
 	}
+	sort.Slice(actualBundleData.PackageReferences, func(i, j int) bool {
+		return actualBundleData.PackageReferences[i].Scheme < actualBundleData.PackageReferences[j].Scheme
+	})
 	if diff := cmp.Diff(expectedPackageReferences, actualBundleData.PackageReferences); diff != "" {
 		t.Errorf("unexpected package references (-want +got):\n%s", diff)
 	}

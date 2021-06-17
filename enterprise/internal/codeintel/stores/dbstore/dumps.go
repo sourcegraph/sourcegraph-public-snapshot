@@ -395,7 +395,7 @@ WITH overlapping_dumps AS (
 	-- below. If we don't do this then we run into a pretty high
 	-- deadlock rate during upload processing as multiple workers
 	-- issue commands for the same set of records, but upload locks
-	-- records indeterministically.
+	-- records nondeterministically.
 	ORDER BY id FOR UPDATE
 ),
 updated AS (
