@@ -108,16 +108,16 @@ func (u *Updater) update(ctx context.Context, repositoryID, dirtyToken int) (err
 	}
 	traceLog(log.Int("numCommitGraphKeys", len(commitGraph.Order())))
 
-	tipCommit, err := u.gitserverClient.Head(ctx, repositoryID)
+	refDescriptions, err := u.gitserverClient.RefDescriptions(ctx, repositoryID)
 	if err != nil {
-		return errors.Wrap(err, "gitserver.Head")
+		return errors.Wrap(err, "gitserver.RefDescriptions")
 	}
-	traceLog(log.String("tipCommit", tipCommit))
+	traceLog(log.Int("numRefDescriptions", len(refDescriptions)))
 
 	// Decorate the commit graph with the set of processed uploads are visible from each commit,
 	// then bulk update the denormalized view in Postgres. We call this with an empty graph as well
 	// so that we end up clearing the stale data and bulk inserting nothing.
-	if err := u.dbStore.CalculateVisibleUploads(ctx, repositoryID, commitGraph, tipCommit, dirtyToken, time.Now()); err != nil {
+	if err := u.dbStore.CalculateVisibleUploads(ctx, repositoryID, commitGraph, refDescriptions, dirtyToken, time.Now()); err != nil {
 		return errors.Wrap(err, "dbstore.CalculateVisibleUploads")
 	}
 
