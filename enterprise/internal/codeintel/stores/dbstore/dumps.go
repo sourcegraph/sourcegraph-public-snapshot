@@ -73,8 +73,6 @@ func scanDumps(rows *sql.Rows, queryErr error) (_ []Dump, err error) {
 	return dumps, nil
 }
 
-const visibleAtTipFragment = `EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip WHERE repository_id = d.repository_id AND upload_id = d.id)`
-
 // GetDumpsByIDs returns a set of dumps by identifiers.
 func (s *Store) GetDumpsByIDs(ctx context.Context, ids []int) (_ []Dump, err error) {
 	ctx, traceLog, endObservation := s.operations.getDumpsByIDs.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
@@ -104,23 +102,23 @@ func (s *Store) GetDumpsByIDs(ctx context.Context, ids []int) (_ []Dump, err err
 const getDumpsByIDsQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/dumps.go:GetDumpsByIDs
 SELECT
-	d.id,
-	d.commit,
-	d.root,
-	` + visibleAtTipFragment + ` AS visible_at_tip,
-	d.uploaded_at,
-	d.state,
-	d.failure_message,
-	d.started_at,
-	d.finished_at,
-	d.process_after,
-	d.num_resets,
-	d.num_failures,
-	d.repository_id,
-	d.repository_name,
-	d.indexer,
-	d.associated_index_id
-FROM lsif_dumps_with_repository_name d WHERE d.id IN (%s)
+	u.id,
+	u.commit,
+	u.root,
+	EXISTS (` + visibleAtTipSubselectQuery + `) AS visible_at_tip,
+	u.uploaded_at,
+	u.state,
+	u.failure_message,
+	u.started_at,
+	u.finished_at,
+	u.process_after,
+	u.num_resets,
+	u.num_failures,
+	u.repository_id,
+	u.repository_name,
+	u.indexer,
+	u.associated_index_id
+FROM lsif_dumps_with_repository_name u WHERE u.id IN (%s)
 `
 
 // FindClosestDumps returns the set of dumps that can most accurately answer queries for the given repository, commit, path, and
@@ -168,24 +166,24 @@ const findClosestDumpsQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/dumps.go:FindClosestDumps
 WITH visible_uploads AS (%s)
 SELECT
-	d.id,
-	d.commit,
-	d.root,
-	` + visibleAtTipFragment + ` AS visible_at_tip,
-	d.uploaded_at,
-	d.state,
-	d.failure_message,
-	d.started_at,
-	d.finished_at,
-	d.process_after,
-	d.num_resets,
-	d.num_failures,
-	d.repository_id,
-	d.repository_name,
-	d.indexer,
-	d.associated_index_id
+	u.id,
+	u.commit,
+	u.root,
+	EXISTS (` + visibleAtTipSubselectQuery + `) AS visible_at_tip,
+	u.uploaded_at,
+	u.state,
+	u.failure_message,
+	u.started_at,
+	u.finished_at,
+	u.process_after,
+	u.num_resets,
+	u.num_failures,
+	u.repository_id,
+	u.repository_name,
+	u.indexer,
+	u.associated_index_id
 FROM visible_uploads vu
-JOIN lsif_dumps_with_repository_name d ON d.id = vu.upload_id
+JOIN lsif_dumps_with_repository_name u ON u.id = vu.upload_id
 WHERE %s
 `
 
@@ -260,24 +258,24 @@ JOIN lsif_uploads u ON u.id = vu.upload_id
 const findClosestDumpsFromGraphFragmentQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/dumps.go:FindClosestDumpsFromGraphFragment
 SELECT
-	d.id,
-	d.commit,
-	d.root,
-	` + visibleAtTipFragment + ` AS visible_at_tip,
-	d.uploaded_at,
-	d.state,
-	d.failure_message,
-	d.started_at,
-	d.finished_at,
-	d.process_after,
-	d.num_resets,
-	d.num_failures,
-	d.repository_id,
-	d.repository_name,
-	d.indexer,
-	d.associated_index_id
-FROM lsif_dumps_with_repository_name d
-WHERE d.id IN (%s) AND %s
+	u.id,
+	u.commit,
+	u.root,
+	EXISTS (` + visibleAtTipSubselectQuery + `) AS visible_at_tip,
+	u.uploaded_at,
+	u.state,
+	u.failure_message,
+	u.started_at,
+	u.finished_at,
+	u.process_after,
+	u.num_resets,
+	u.num_failures,
+	u.repository_id,
+	u.repository_name,
+	u.indexer,
+	u.associated_index_id
+FROM lsif_dumps_with_repository_name u
+WHERE u.id IN (%s) AND %s
 `
 
 // makeVisibleUploadCandidatesQuery returns a SQL query returning the set of uploads
@@ -346,10 +344,10 @@ WHERE t.r <= 1
 func makeFindClosestDumpConditions(path string, rootMustEnclosePath bool, indexer string) (conds []*sqlf.Query) {
 	if rootMustEnclosePath {
 		// Ensure that the root is a prefix of the path
-		conds = append(conds, sqlf.Sprintf(`%s LIKE (d.root || '%%%%')`, path))
+		conds = append(conds, sqlf.Sprintf(`%s LIKE (u.root || '%%%%')`, path))
 	} else {
 		// Ensure that the root is a prefix of the path or vice versa
-		conds = append(conds, sqlf.Sprintf(`(%s LIKE (d.root || '%%%%') OR d.root LIKE (%s || '%%%%'))`, path, path))
+		conds = append(conds, sqlf.Sprintf(`(%s LIKE (u.root || '%%%%') OR u.root LIKE (%s || '%%%%'))`, path, path))
 	}
 	if indexer != "" {
 		conds = append(conds, sqlf.Sprintf("indexer = %s", indexer))
