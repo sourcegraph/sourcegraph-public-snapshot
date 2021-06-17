@@ -149,14 +149,15 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalSer
 		unauthorized     bool
 		accountSuspended bool
 		forbidden        bool
+		isUserOwned      bool
 	)
 
 	if s.Logger != nil {
 		s.Logger.Debug("Syncing external service", "serviceID", externalServiceID)
 	}
 
-	ctx, save := s.observe(ctx, "Syncer.SyncExternalService", "")
-	defer save(&diff, &err)
+	ctx, save := s.observe(ctx, "Syncer.SyncExternalService")
+	defer save(&diff, &isUserOwned, &err)
 
 	ids := []int64{externalServiceID}
 	// We don't use tx here as the sourcing process below can be slow and we don't
@@ -170,7 +171,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalSer
 		return errors.Errorf("want 1 external service but got %d", len(svcs))
 	}
 	svc := svcs[0]
-	isUserOwned := svc.NamespaceUserID > 0
+	isUserOwned = svc.NamespaceUserID > 0
 
 	onSourced := func(*types.Repo) error { return nil } //noop
 
@@ -837,11 +838,11 @@ func (s *Syncer) makeNewRepoInserter(ctx context.Context, store *Store, publicOn
 	}, nil
 }
 
-func (s *Syncer) observe(ctx context.Context, family, title string) (context.Context, func(*Diff, *error)) {
+func (s *Syncer) observe(ctx context.Context, family string, title string) (context.Context, func(*Diff, bool, *error)) {
 	began := s.Now()
 	tr, ctx := trace.New(ctx, family, title)
 
-	return ctx, func(d *Diff, err *error) {
+	return ctx, func(d *Diff, isUserOwned bool, err *error) {
 		syncStarted.WithLabelValues(family).Inc()
 
 		now := s.Now()
@@ -876,7 +877,11 @@ func (s *Syncer) observe(ctx context.Context, family, title string) (context.Con
 
 		if !success {
 			tr.SetError(*err)
-			syncErrors.WithLabelValues(family).Add(1)
+			owner := "site"
+			if isUserOwned {
+				owner = "user"
+			}
+			syncErrors.WithLabelValues(family, owner).Add(1)
 		}
 
 		tr.Finish()
