@@ -77,7 +77,7 @@ export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({
     }
 
     return (
-        <div className="signin-signup-page sign-up-page web-content">
+        <div className="signin-signup-page sign-up-page">
             <PageTitle title="Sign up" />
             <HeroPage
                 icon={SourcegraphIcon}

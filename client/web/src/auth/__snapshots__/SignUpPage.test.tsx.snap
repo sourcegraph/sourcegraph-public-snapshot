@@ -4,7 +4,7 @@ exports[`SignUpPage renders redirect when user is authenticated 1`] = `null`;
 
 exports[`SignUpPage renders sign up page (cloud) 1`] = `
 <div
-  className="signin-signup-page sign-up-page web-content"
+  className="signin-signup-page sign-up-page"
 >
   <div
     className="hero-page hero-page__less-padding"
@@ -222,7 +222,7 @@ exports[`SignUpPage renders sign up page (cloud) 1`] = `
 
 exports[`SignUpPage renders sign up page (server) 1`] = `
 <div
-  className="signin-signup-page sign-up-page web-content"
+  className="signin-signup-page sign-up-page"
 >
   <div
     className="hero-page hero-page__less-padding"

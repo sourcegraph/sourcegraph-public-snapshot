@@ -6,7 +6,7 @@ import { EnterpriseWebStory } from '../components/EnterpriseWebStory'
 import { Description } from './Description'
 
 const { add } = storiesOf('web/batches/Description', module).addDecorator(story => (
-    <div className="p-3 container web-content">{story()}</div>
+    <div className="p-3 container">{story()}</div>
 ))
 
 add('Overview', () => (

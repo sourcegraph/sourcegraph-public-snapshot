@@ -18,7 +18,7 @@ const { add } = storiesOf('web/searchContexts/SearchContextsListTab', module)
         chromatic: { viewports: [1200] },
     })
     .addDecorator(story => (
-        <div className="p-3 container web-content" style={{ position: 'static' }}>
+        <div className="p-3 container" style={{ position: 'static' }}>
             {story()}
         </div>
     ))

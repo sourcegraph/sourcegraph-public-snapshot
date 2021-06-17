@@ -10,7 +10,7 @@ const { add } = storiesOf('web/Badge', module).addDecorator(story => (
     <>
         <style>{webStyles}</style>
         <div className="layout__app-router-container">
-            <div className="container web-content mt-3">{story()}</div>
+            <div className="container mt-3">{story()}</div>
         </div>
     </>
 ))
