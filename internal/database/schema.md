@@ -805,6 +805,8 @@ Foreign-key constraints:
 
 Stores the configuration used for code intel index jobs for a repository.
 
+**autoindex_enabled**: Whether or not auto-indexing should be attempted on this repo. Index jobs may be inferred from the repository contents if data is empty.
+
 **data**: The raw user-supplied [configuration](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.23/-/blob/enterprise/internal/codeintel/autoindex/config/types.go#L3:6) (encoded in JSONC).
 
 # Table "public.lsif_indexable_repositories"
