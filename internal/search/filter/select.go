@@ -20,9 +20,9 @@ func (sp SelectPath) String() string {
 	return strings.Join(sp, ".")
 }
 
-// Type is the top-level result type that is being selected.
+// Root is the top-level result type that is being selected.
 // Returns an empty string if SelectPath is empty
-func (sp SelectPath) Type() string {
+func (sp SelectPath) Root() string {
 	if len(sp) > 0 {
 		return sp[0]
 	}

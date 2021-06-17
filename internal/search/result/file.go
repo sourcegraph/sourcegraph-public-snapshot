@@ -65,7 +65,7 @@ func (fm *FileMatch) ResultCount() int {
 }
 
 func (fm *FileMatch) Select(path filter.SelectPath) Match {
-	switch path.Type() {
+	switch path.Root() {
 	case filter.Repository:
 		return &RepoMatch{
 			Name: fm.Repo.Name,
