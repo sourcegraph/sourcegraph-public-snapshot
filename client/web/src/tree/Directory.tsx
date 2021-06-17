@@ -41,7 +41,7 @@ export const Directory: React.FunctionComponent<TreeChildProps> = (props: TreeCh
                         <a
                             // needed because of dynamic styling
                             // eslint-disable-next-line react/forbid-dom-props
-                            style={treePadding(props.depth, true)}
+                            style={treePadding(props.depth, true, true)}
                             className="tree__row-icon test-tree-noop-link"
                             href={props.entryInfo.url}
                             onClick={props.noopRowClick}
@@ -83,7 +83,7 @@ export const Directory: React.FunctionComponent<TreeChildProps> = (props: TreeCh
                     className="tree__row-alert alert alert-warning"
                     // needed because of dynamic styling
                     // eslint-disable-next-line react/forbid-dom-props
-                    style={treePadding(props.depth, true)}
+                    style={treePadding(props.depth, true, true)}
                 >
                     Too many entries. Use search to find a specific file.
                 </div>
