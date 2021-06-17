@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -26,16 +25,4 @@ func Discover(ctx context.Context, settingStore SettingStore) ([]*schema.Insight
 		return nil, err
 	}
 	return globalSettings.Insights, nil
-}
-
-func parseUserSettings(settings *api.Settings) (*schema.Settings, error) {
-	if settings == nil {
-		// Settings have never been saved for this subject; equivalent to `{}`.
-		return &schema.Settings{}, nil
-	}
-	var v schema.Settings
-	if err := jsonc.Unmarshal(settings.Contents, &v); err != nil {
-		return nil, err
-	}
-	return &v, nil
 }

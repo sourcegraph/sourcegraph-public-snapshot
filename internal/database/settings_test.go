@@ -114,5 +114,4 @@ func TestGetLatestSchemaSettings(t *testing.T) {
 	if settings.SearchUppercase == nil || !(*settings.SearchUppercase) {
 		t.Errorf("Got invalid settings: %+v", settings)
 	}
-
 }

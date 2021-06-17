@@ -37,6 +37,11 @@ func (j *indexingJob) Routines(ctx context.Context) ([]goroutine.BackgroundRouti
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
+	db, err := shared.InitDatabase()
+	if err != nil {
+		return nil, err
+	}
+
 	dbStore, err := InitDBStore()
 	if err != nil {
 		return nil, err
@@ -52,9 +57,8 @@ func (j *indexingJob) Routines(ctx context.Context) ([]goroutine.BackgroundRouti
 	indexEnqueuer := enqueuer.NewIndexEnqueuer(enqueuerDBStoreShim, gitserverClient, repoupdater.DefaultClient, observationContext)
 	metrics := workerutil.NewMetrics(observationContext, "codeintel_dependency_indexing_processor", nil)
 
-	// TODO(autoindex): Not sure I like this here... ask eric later
-	settingStore := database.Settings(dbStore.Handle().DB())
-	repoStore := database.Repos(dbStore.Handle().DB())
+	settingStore := database.Settings(db)
+	repoStore := database.Repos(db)
 
 	routines := []goroutine.BackgroundRoutine{
 		indexing.NewIndexScheduler(dbStoreShim, settingStore, repoStore, indexEnqueuer, indexingConfigInst.IndexBatchSize, indexingConfigInst.MinimumTimeSinceLastEnqueue, indexingConfigInst.MinimumSearchCount, float64(indexingConfigInst.MinimumSearchRatio)/100, indexingConfigInst.MinimumPreciseCount, indexingConfigInst.AutoIndexingTaskInterval, observationContext),
