@@ -175,7 +175,12 @@ type Documentation struct {
 	// Clients are encouraged to treat matches towards the left of the string with higher relevance
 	// than matches towards the end of the string. For example, it is typically the case that search
 	// keys will start with the project/package/library/etc name, followed by namespaces, then a
-	// specific symbol.
+	// specific symbol. For example, if a user searches for `gorilla/mux.Error` the desired ranking
+	// for three theoretical semi-conflicting results would be:
+	//
+	// * github.com/gorilla/mux.Error (near exact match)
+	// * github.com/gorilla/router.Error (`mux` not matching on left, result ranked lower)
+	// * github.com/sourcegraph/mux.Error (`gorilla` not matching on left, result ranked lower)
 	//
 	// Clients are encouraged to use smart case sensitivity by default: if the user is searching for
 	// a mixed-case query, the search should be case-sensitive (and otherwise not.)
