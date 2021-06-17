@@ -1,5 +1,5 @@
 import H from 'history'
-import React, { useCallback, useEffect } from 'react'
+import React, { useEffect } from 'react'
 
 import { percentageDone } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ActivationChecklist } from '@sourcegraph/shared/src/components/activation/ActivationChecklist'
@@ -7,7 +7,6 @@ import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
-import { refreshAuthenticatedUser } from '../../../auth'
 import { PageTitle } from '../../../components/PageTitle'
 import { Timestamp } from '../../../components/time/Timestamp'
 import { EditUserProfilePage as EditUserProfilePageFragment } from '../../../graphql-operations'
@@ -41,24 +40,6 @@ export const UserSettingsProfilePage: React.FunctionComponent<Props> = ({
     ...props
 }) => {
     useEffect(() => eventLogger.logViewEvent('UserProfile'), [])
-
-    const onUpdate = useCallback<React.ComponentProps<typeof EditUserProfileForm>['onUpdate']>(
-        newValue => {
-            // Handle when username changes.
-            if (newValue.username !== user.username) {
-                props.history.push(`/users/${newValue.username}/settings/profile`)
-            }
-
-            parentOnUpdate(newValue)
-
-            // In case the edited user is the current user, immediately reflect the changes in the
-            // UI.
-            refreshAuthenticatedUser()
-                .toPromise()
-                .finally(() => {})
-        },
-        [parentOnUpdate, props.history, user.username]
-    )
 
     return (
         <div className="user-settings-profile-page">
@@ -94,9 +75,7 @@ export const UserSettingsProfilePage: React.FunctionComponent<Props> = ({
             {user && !isErrorLike(user) && (
                 <EditUserProfileForm
                     user={user}
-                    authenticatedUser={authenticatedUser}
                     initialValue={user}
-                    onUpdate={onUpdate}
                     after={
                         window.context.sourcegraphDotComMode && (
                             <p className="mt-4">
