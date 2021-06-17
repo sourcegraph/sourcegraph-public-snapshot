@@ -6,6 +6,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -55,10 +56,13 @@ func serveSignOutHandler(db dbutil.DB) func(w http.ResponseWriter, r *http.Reque
 
 // logSignOutEvent records an event into the security event log.
 func logSignOutEvent(r *http.Request, db dbutil.DB, name string) {
-	var (
-		ctx   = r.Context()
-		actor = actor.FromContext(ctx)
-	)
+	// We don't want to begin logging events in on-premises installations yet.
+	if !envvar.SourcegraphDotComMode() {
+		return
+	}
+
+	ctx := r.Context()
+	actor := actor.FromContext(ctx)
 
 	if err := database.SecurityEventLogs(db).Insert(ctx, &database.SecurityEvent{
 		Name:            name,
