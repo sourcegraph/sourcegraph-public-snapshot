@@ -79,7 +79,7 @@ func NewHandler(db dbutil.DB) http.Handler {
 		r.Header.Del("Cookie")
 		_ = r.Header.Write(w)
 	})))
-	addDebugHandlers(r.Get(router.Debug).Subrouter())
+	addDebugHandlers(r.Get(router.Debug).Subrouter(), db)
 
 	rickRoll := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "https://www.youtube.com/watch?v=dQw4w9WgXcQ", http.StatusFound)
