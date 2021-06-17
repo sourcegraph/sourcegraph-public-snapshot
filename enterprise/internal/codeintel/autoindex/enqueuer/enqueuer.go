@@ -2,7 +2,6 @@ package enqueuer
 
 import (
 	"context"
-	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
