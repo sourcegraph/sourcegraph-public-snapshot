@@ -27,6 +27,8 @@ export function fetchRepositoriesBySearch(searchQuery: string): Observable<strin
     ).pipe(
         map(dataOrThrowErrors),
         map(result => result.search?.results?.repositories ?? []),
-        map(result => result.map(repo => repo.name))
+        // Get only the first 10 repositories to avoid DDoS from the live preview in
+        // insight creation UI or at insights page.
+        map(result => result.map(repo => repo.name).slice(0, 10))
     )
 }
