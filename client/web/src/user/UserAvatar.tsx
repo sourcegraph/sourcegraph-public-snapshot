@@ -66,7 +66,11 @@ export const UserAvatar: React.FunctionComponent<Props> = ({
             return initials[0]
         }
 
-        return <div className={classNames('user-avatar', className)}>{getInitials(name)}</div>
+        return (
+            <div id={targetID} className={classNames('user-avatar', className)}>
+                {getInitials(name)}
+            </div>
+        )
     }
 
     return <AccountCircleIcon className={classNames('user-avatar', className)} id={targetID} {...otherProps} />
