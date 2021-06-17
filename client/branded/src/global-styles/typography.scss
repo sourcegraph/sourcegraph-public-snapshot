@@ -71,12 +71,14 @@ strong {
     font-weight: 600;
 }
 
+$input-font-size-sm: (11/14) + em;
+
 // Input / Small
 .form-control-sm,
 %form-control-sm,
 .custom-select-sm,
 %custom-select-sm {
-    font-size: (11/14) + em;
+    font-size: $input-font-size-sm;
 }
 
 // Label / Base
