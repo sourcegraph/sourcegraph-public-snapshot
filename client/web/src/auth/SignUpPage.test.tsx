@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router'
 import renderer from 'react-test-renderer'
 
 import { AuthenticatedUser } from '../auth'
+import { FeatureFlagName } from '../featureFlags/featureFlags'
 import { SourcegraphContext } from '../jscontext'
 
 import { SignUpPage } from './SignUpPage'
@@ -16,7 +17,7 @@ describe('SignUpPage', () => {
     const commonProps = {
         history: createMemoryHistory(),
         location: createLocation('/'),
-        featureFlags: {},
+        featureFlags: new Map<FeatureFlagName, boolean>(),
         isLightTheme: true,
     }
     const authProviders: SourcegraphContext['authProviders'] = [
