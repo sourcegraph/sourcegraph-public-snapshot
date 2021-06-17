@@ -112,7 +112,7 @@ func logBackendEvent(ctx context.Context, db dbutil.DB, name string, args interf
 		return err
 	}
 	featureFlags := featureflag.FromContext(ctx)
-	return usagestats.LogBackendEvent(db, actor.UID, name, jsonArg, featureFlags)
+	return usagestats.LogBackendEvent(db, actor.UID, name, jsonArg, featureFlags, nil)
 }
 
 func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {

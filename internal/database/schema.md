@@ -534,6 +534,7 @@ Referenced by:
  version           | text                     |           | not null | 
  timestamp         | timestamp with time zone |           | not null | 
  feature_flags     | jsonb                    |           |          | 
+ cohort_id         | date                     |           |          | 
 Indexes:
     "event_logs_pkey" PRIMARY KEY, btree (id)
     "event_logs_anonymous_user_id" btree (anonymous_user_id)
