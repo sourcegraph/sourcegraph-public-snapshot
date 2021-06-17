@@ -167,11 +167,15 @@ func parseMigrationIndex(name string) (int, bool) {
 	return index, true
 }
 
-// Take a migration path and turn it into it's name.
-// Takes 12341234_hello.up.sql -> hello
+// Returns the migration name from a filepath (e.g., 12341234_hello.up.sql -> hello).
 func parseMigrationName(name string) (string, bool) {
 	names := strings.SplitN(filepath.Base(name), "_", 2)
-	migrationName := strings.ReplaceAll(strings.ReplaceAll(names[1], ".down.sql", ""), ".up.sql", "")
+	if len(names) < 2 {
+		return "", false
+	}
+
+	baseName := names[1]
+	migrationName := strings.ReplaceAll(strings.ReplaceAll(baseName, ".down.sql", ""), ".up.sql", "")
 	return migrationName, true
 }
 
@@ -456,69 +460,12 @@ type migration struct {
 }
 
 type migrationConflict struct {
-	ID     int
-	Trunk  migration
-	Branch migration
+	ID    int
+	Main  migration
+	Local migration
 }
 
-// trunk is the branch/revisikon that we are branched from. It's the good one. Usually it would be main
-func fixupMigrations(database Database, trunk, branch string) error {
-	out.Write("")
-	trunkMigrations, err := getMigrationsForRevision(database, trunk)
-	if err != nil {
-		return err
-	}
-
-	branchMigrations, err := getMigrationsForRevision(database, branch)
-	if err != nil {
-		return err
-	}
-
-	block := out.Block(output.Linef(output.EmojiLightbulb, output.StyleItalic, "Checking for conflicting migrations..."))
-	defer block.Close()
-
-	conflicts, err := findConflictingMigrations(trunkMigrations, branchMigrations)
-	if err != nil {
-		return err
-	}
-
-	if len(conflicts) == 0 {
-		block.WriteLine(output.Linef(output.EmojiSuccess, output.StyleReset, "... No conflicting migrations"))
-		return nil
-	}
-
-	if err := resolveConflictingMigrations(database, conflicts, trunkMigrations, block); err != nil {
-		return err
-	}
-
-	return err
-}
-
-func findConflictingMigrations(trunkMigrations, branchMigrations map[int]migration) ([]migrationConflict, error) {
-	conflicts := []migrationConflict{}
-
-	for migrationID, trunkMigration := range trunkMigrations {
-		branchMigration, ok := branchMigrations[migrationID]
-		if !ok {
-			return nil, errors.Newf(
-				"It appears you haven't rebased off of your trunk. Rebase first and then run again. You are missing: %s",
-				trunkMigration.Name,
-			)
-		}
-
-		if trunkMigration.Name != branchMigration.Name {
-			conflicts = append(conflicts, migrationConflict{
-				ID:     migrationID,
-				Trunk:  trunkMigration,
-				Branch: branchMigration,
-			})
-		}
-	}
-
-	return conflicts, nil
-}
-
-func getMigrationsForRevision(database Database, revision string) (map[int]migration, error) {
+func getMigrationFilesFromGit(database Database, revision string) ([]string, error) {
 	baseDir, err := migrationDirectoryForDatabase(database)
 	if err != nil {
 		return nil, err
@@ -528,11 +475,108 @@ func getMigrationsForRevision(database Database, revision string) (map[int]migra
 	if err != nil {
 		return nil, err
 	}
+	files := strings.Split(output, "\n")
 
+	return files, nil
+}
+
+func getMigrationFilesFromDisk(database Database) ([]string, error) {
+	baseDir, err := migrationDirectoryForDatabase(database)
+	if err != nil {
+		return nil, err
+	}
+
+	entries, err := os.ReadDir(baseDir)
+	if err != nil {
+		return nil, err
+	}
+
+	files := make([]string, 0, len(entries))
+	for _, fileEntry := range entries {
+		files = append(files, fileEntry.Name())
+	}
+
+	return files, nil
+}
+
+func fixupMigrations(database Database, main string) error {
+	out.Write("")
+
+	mainFiles, err := getMigrationFilesFromGit(database, main)
+	if err != nil {
+		return err
+	}
+
+	mainMigrations, err := getMigrationsForRevision(mainFiles)
+	if err != nil {
+		return err
+	}
+
+	localFiles, err := getMigrationFilesFromDisk(database)
+	if err != nil {
+		return err
+	}
+
+	localMigrations, err := getMigrationsForRevision(localFiles)
+	if err != nil {
+		return err
+	}
+
+	block := out.Block(output.Linef(output.EmojiLightbulb, output.StyleItalic, "Checking for conflicting migrations..."))
+	defer block.Close()
+
+	conflicts, missing, err := findConflictingMigrations(mainMigrations, localMigrations)
+	if err != nil {
+		return err
+	}
+
+	for _, missed := range missing {
+		block.WriteLine(output.Linef(
+			output.EmojiWarning,
+			output.StyleReset,
+			"Missing migration '%d_%s' from %s branch. Consider rebasing.", missed.ID, missed.Name, main,
+		))
+	}
+
+	if len(conflicts) == 0 {
+		block.WriteLine(output.Linef(output.EmojiSuccess, output.StyleReset, "... No conflicting migrations"))
+		return nil
+	}
+
+	if err := resolveConflictingMigrations(database, conflicts, mainMigrations, block); err != nil {
+		return err
+	}
+
+	return err
+}
+
+func findConflictingMigrations(mainMigrations, localMigrations map[int]migration) ([]migrationConflict, []migration, error) {
+	conflicts := []migrationConflict{}
+	missing := []migration{}
+
+	for migrationID, mainMigration := range mainMigrations {
+		localMigration, ok := localMigrations[migrationID]
+		if !ok {
+			missing = append(missing, mainMigration)
+			continue
+		}
+
+		if mainMigration.Name != localMigration.Name {
+			conflicts = append(conflicts, migrationConflict{
+				ID:    migrationID,
+				Main:  mainMigration,
+				Local: localMigration,
+			})
+		}
+	}
+
+	return conflicts, missing, nil
+}
+
+func getMigrationsForRevision(files []string) (map[int]migration, error) {
 	upMigrations := make(map[int]string)
 	downMigrations := make(map[int]string)
 
-	files := strings.Split(output, "\n")
 	for _, file := range files {
 		if file == "" {
 			continue
@@ -540,32 +584,41 @@ func getMigrationsForRevision(database Database, revision string) (map[int]migra
 
 		migrationID, ok := parseMigrationIndex(file)
 		if !ok {
-			return nil, errors.New("Bad migration file format")
+			return nil, errors.Newf("bad migration file format: %s", file)
 		}
 
 		if strings.HasSuffix(file, ".down.sql") {
 			downMigrations[migrationID] = file
 		} else if strings.HasSuffix(file, ".up.sql") {
 			upMigrations[migrationID] = file
-		} else {
-			return nil, errors.New("Somehow have a file that doesn't end with up or down")
+		} else if strings.HasSuffix(file, ".sql") {
+			return nil, errors.Newf("sql file that doesn't fit migration file format: %s", file)
 		}
 	}
 
-	// TODO: I guess you could probably have different ones but whatever for now.
-	//       That would be pretty broken situation.
 	if len(upMigrations) != len(downMigrations) {
-		return nil, errors.New("Not the same up and down migration numbers. Something is very broken.")
+		return nil, errors.Newf(
+			"not the same number of up (%d) and down (%d) migrations. Check for corresponding up & down scripts for each migration.",
+			len(upMigrations),
+			len(downMigrations),
+		)
 	}
 
 	migrations := make(map[int]migration)
 	for migrationID := range upMigrations {
-		upMigration := upMigrations[migrationID]
-		downMigration := downMigrations[migrationID]
+		upMigration, ok := upMigrations[migrationID]
+		if !ok {
+			return nil, errors.Newf("missing up migration for ID: %d", migrationID)
+		}
+
+		downMigration, ok := downMigrations[migrationID]
+		if !ok {
+			return nil, errors.Newf("missing down migration for ID: %d", migrationID)
+		}
 
 		migrationName, ok := parseMigrationName(upMigration)
 		if !ok {
-			return nil, errors.New("Bad migration name")
+			return nil, errors.Newf("bad migration file name: %s", upMigration)
 		}
 
 		migrations[migrationID] = migration{
@@ -583,37 +636,43 @@ func getMigrationsForRevision(database Database, revision string) (map[int]migra
 func resolveConflictingMigrations(
 	database Database,
 	conflicts []migrationConflict,
-	trunkMigrations map[int]migration,
+	mainMigrations map[int]migration,
 	block *output.Block,
 ) error {
 	block.Writef("Database: %s\n", database.Name)
 
 	maxID := 0
-	for migrationID := range trunkMigrations {
+	for migrationID := range mainMigrations {
 		maxID = int(math.Max(float64(maxID), float64(migrationID)))
 	}
 
 	for _, conflict := range conflicts {
 		maxID = maxID + 1
 
-		newUpPath, newDownPath, err := makeMigrationFilenames(database, maxID, conflict.Branch.Name)
+		newUpPath, newDownPath, err := makeMigrationFilenames(database, maxID, conflict.Local.Name)
 		if err != nil {
 			return err
 		}
 
-		oldUpPath, oldDownPath, err := makeMigrationFilenames(database, conflict.ID, conflict.Branch.Name)
+		oldUpPath, oldDownPath, err := makeMigrationFilenames(database, conflict.ID, conflict.Local.Name)
 		if err != nil {
 			return err
 		}
 
-		block.Writef("Changing migration: %d %s", conflict.ID, conflict.Trunk.Name)
+		block.Writef("Changing migration: %d %s", conflict.ID, conflict.Main.Name)
 
 		// This is a bit annoying, but git ls-tree only checks commited files
 		upErr := checkFile(oldUpPath, block)
 		downErr := checkFile(oldDownPath, block)
 
 		if upErr != nil || downErr != nil {
-			return errors.New("Could not find the migration files above. They may have already been removed. Try commiting?")
+			// This should not be possible :) We should have died earlier but it's good to confirm
+			return errors.Newf(
+				"could not find both migration files for migration (%d): %s || %s",
+				conflict.ID,
+				oldUpPath,
+				oldDownPath,
+			)
 		}
 
 		if err := moveMigration(oldUpPath, newUpPath, block); err != nil {

@@ -125,9 +125,10 @@ var (
 
 	migrationFixupFlagSet          = flag.NewFlagSet("sg migration fixup", flag.ExitOnError)
 	migrationFixupDatabaseNameFlag = migrationFixupFlagSet.String("db", defaultDatabase.Name, "The target database instance")
+	migrationFixupMainNameFlag     = migrationFixupFlagSet.String("main", "main", "The branch/revision to compare with")
 	migrationFixupCommand          = &ffcli.Command{
 		Name:       "fixup",
-		ShortUsage: fmt.Sprintf("sg migration fixup [-db=%s]", defaultDatabase.Name),
+		ShortUsage: fmt.Sprintf("sg migration fixup [-db=%s] [-main=%s]", defaultDatabase.Name, "main"),
 		ShortHelp:  "Find and fix any conflicting migration names from rebasing on main",
 		FlagSet:    migrationFixupFlagSet,
 		Exec:       migrationFixupExec,
@@ -550,16 +551,19 @@ func migrationFixupExec(ctx context.Context, args []string) (err error) {
 		return flag.ErrHelp
 	}
 
-	var (
-		databaseName = *migrationSquashDatabaseNameFlag
-		database, ok = databaseByName(databaseName)
-	)
+	databaseName := *migrationFixupDatabaseNameFlag
+	database, ok := databaseByName(databaseName)
 	if !ok {
 		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: database %q not found :(\n", databaseName))
 		return flag.ErrHelp
 	}
 
-	return fixupMigrations(database, "main", "HEAD")
+	branchName := *migrationFixupMainNameFlag
+	if branchName == "" {
+		branchName = "main"
+	}
+
+	return fixupMigrations(database, branchName)
 }
 
 func printTestUsage(c *ffcli.Command) string {
@@ -721,7 +725,7 @@ func printMigrationFixupUsage(c *ffcli.Command) string {
 	var out strings.Builder
 
 	fmt.Fprintf(&out, "USAGE\n")
-	fmt.Fprintf(&out, "  sg migration fixup [-db=%s]\n", defaultDatabase.Name)
+	fmt.Fprintf(&out, "  sg migration fixup [-db=%s] [-main=%s]\n", defaultDatabase.Name, "main")
 	fmt.Fprintf(&out, "\n")
 	fmt.Fprintf(&out, "AVAILABLE DATABASES\n")
 

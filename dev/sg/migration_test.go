@@ -14,7 +14,7 @@ func TestSameMigrations(t *testing.T) {
 		},
 	}
 
-	if conflicts, _ := findConflictingMigrations(branch, branch); len(conflicts) > 0 {
+	if conflicts, _, _ := findConflictingMigrations(branch, branch); len(conflicts) > 0 {
 		t.Errorf("Failed when comparing exacly the same migrations: %+v", branch)
 	}
 }
@@ -38,7 +38,7 @@ func TestBranchHasExtraMigration(t *testing.T) {
 		},
 	}
 
-	if conflicts, _ := findConflictingMigrations(trunk, branch); len(conflicts) > 0 {
+	if conflicts, _, _ := findConflictingMigrations(trunk, branch); len(conflicts) > 0 {
 		t.Errorf("Failed when comparing exacly the same migrations: %+v", branch)
 	}
 }
@@ -62,9 +62,13 @@ func TestTrunkHasExtraMigration(t *testing.T) {
 		},
 	}
 
-	_, err := findConflictingMigrations(trunk, branch)
-	if err == nil {
-		t.Errorf("Error should have been set because you were missing a rebase")
+	_, missing, err := findConflictingMigrations(trunk, branch)
+	if err != nil {
+		t.Errorf("Should not error for missing a migration.")
+	}
+
+	if len(missing) != 1 || missing[0].Name != "second" {
+		t.Errorf("Should have returned only 'second' was missing, instead +%v", missing)
 	}
 }
 
@@ -91,12 +95,12 @@ func TestTrunkHasConflictingMigration(t *testing.T) {
 		},
 	}
 
-	conflicts, _ := findConflictingMigrations(trunk, branch)
+	conflicts, _, _ := findConflictingMigrations(trunk, branch)
 	expected := []migrationConflict{
 		{
 			ID:     2,
-			Trunk:  trunk[2],
-			Branch: branch[2],
+			Main:  trunk[2],
+			Local: branch[2],
 		},
 	}
 
