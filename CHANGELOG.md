@@ -30,6 +30,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Search-based insight creation UI now supports `count:` filter in data series query input. [#22049](https://github.com/sourcegraph/sourcegraph/pull/22049)
 - Code Insights background workers will now index commits in a new table `commit_index` for future optimization efforts. [#21994](https://github.com/sourcegraph/sourcegraph/pull/21994)
 - The creation UI for search-based insights now supports the `count:` filter in the data series query input. [#22049](https://github.com/sourcegraph/sourcegraph/pull/22049)
+- A new service, `worker`, has been introduced to run background jobs that were previously run in the frontend. See the [deployment documentation](https://docs.sourcegraph.com/admin/workers) for additional details. [#21768](https://github.com/sourcegraph/sourcegraph/pull/21768)
 
 ### Changed
 
