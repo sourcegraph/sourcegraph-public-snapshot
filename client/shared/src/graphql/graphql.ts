@@ -77,3 +77,13 @@ export function requestGraphQLCommon<T, V = object>({
         selector: response => checkOk(response).json(),
     })
 }
+
+export const graphQLClient = ({ headers }: { headers: RequestInit['headers'] }): ApolloClient<NormalizedCacheObject> =>
+    new ApolloClient({
+        uri: GRAPHQL_URI,
+        cache: new InMemoryCache(),
+        link: createHttpLink({
+            uri: ({ operationName }) => `${GRAPHQL_URI}?${operationName}`,
+            headers,
+        }),
+    })
