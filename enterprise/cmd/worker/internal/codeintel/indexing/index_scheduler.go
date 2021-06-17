@@ -18,16 +18,11 @@ import (
 )
 
 type IndexScheduler struct {
-	dbStore                     DBStore
-	settingStore                IndexingSettingStore
-	repoStore                   IndexingRepoStore
-	indexEnqueuer               IndexEnqueuer
-	operations                  *operations
-	batchSize                   int
-	minimumTimeSinceLastEnqueue time.Duration
-	minimumSearchCount          int
-	minimumSearchRatio          float64
-	minimumPreciseCount         int
+	dbStore       DBStore
+	settingStore  IndexingSettingStore
+	repoStore     IndexingRepoStore
+	indexEnqueuer IndexEnqueuer
+	operations    *operations
 }
 
 var _ goroutine.Handler = &IndexScheduler{}
@@ -37,25 +32,15 @@ func NewIndexScheduler(
 	settingStore IndexingSettingStore,
 	repoStore IndexingRepoStore,
 	indexEnqueuer IndexEnqueuer,
-	batchSize int,
-	minimumTimeSinceLastEnqueue time.Duration,
-	minimumSearchCount int,
-	minimumSearchRatio float64,
-	minimumPreciseCount int,
 	interval time.Duration,
 	observationContext *observation.Context,
 ) goroutine.BackgroundRoutine {
 	scheduler := &IndexScheduler{
-		dbStore:                     dbStore,
-		settingStore:                settingStore,
-		repoStore:                   repoStore,
-		indexEnqueuer:               indexEnqueuer,
-		batchSize:                   batchSize,
-		minimumTimeSinceLastEnqueue: minimumTimeSinceLastEnqueue,
-		minimumSearchCount:          minimumSearchCount,
-		minimumSearchRatio:          minimumSearchRatio,
-		minimumPreciseCount:         minimumPreciseCount,
-		operations:                  newOperations(observationContext),
+		dbStore:       dbStore,
+		settingStore:  settingStore,
+		repoStore:     repoStore,
+		indexEnqueuer: indexEnqueuer,
+		operations:    newOperations(observationContext),
 	}
 
 	return goroutine.NewPeriodicGoroutineWithMetrics(
