@@ -2,7 +2,6 @@ package enqueuer
 
 import (
 	"context"
-	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
@@ -192,18 +191,6 @@ func (s *IndexEnqueuer) queueIndexes(ctx context.Context, repositoryID int, comm
 			"repository_id", repositoryID,
 			"commit", commit,
 		)
-	}
-
-	now := time.Now().UTC()
-	update := store.UpdateableIndexableRepository{
-		RepositoryID:        repositoryID,
-		LastIndexEnqueuedAt: &now,
-	}
-
-	// TODO(efritz) - this may create records once a repository has an explicit
-	// index configuration. This shouldn't affect any indexing behavior at all.
-	if err := tx.UpdateIndexableRepository(ctx, update, now); err != nil {
-		return errors.Wrap(err, "dbstore.UpdateIndexableRepository")
 	}
 
 	return nil

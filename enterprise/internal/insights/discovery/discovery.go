@@ -11,6 +11,7 @@ import (
 // SettingStore is a subset of the API exposed by the database.Settings() store.
 type SettingStore interface {
 	GetLatest(context.Context, api.SettingsSubject) (*api.Settings, error)
+	GetLastestSchemaSettings(context.Context, api.SettingsSubject) (*schema.Settings, error)
 }
 
 // Discover uses the given settings store to look for insights in the global user settings.

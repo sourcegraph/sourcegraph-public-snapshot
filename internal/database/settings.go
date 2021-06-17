@@ -13,7 +13,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type SettingStore struct {
@@ -102,6 +104,26 @@ func (o *SettingStore) GetLatest(ctx context.Context, subject api.SettingsSubjec
 	}
 
 	return o.getLatest(ctx, subject)
+}
+
+func (o *SettingStore) GetLastestSchemaSettings(ctx context.Context, subject api.SettingsSubject) (*schema.Settings, error) {
+	apiSettings, err := o.GetLatest(ctx, subject)
+	if err != nil {
+		return nil, err
+	}
+
+	if apiSettings == nil {
+		// Settings have never been saved for this subject; equivalent to `{}`.
+		return &schema.Settings{}, nil
+	}
+
+	var v schema.Settings
+	if err := jsonc.Unmarshal(apiSettings.Contents, &v); err != nil {
+		return nil, err
+	}
+
+	return &v, nil
+
 }
 
 // ListAll lists ALL settings (across all users, orgs, etc).
