@@ -25,7 +25,7 @@ Our guiding principle is to ensure all repositories configured by a site adminis
 * Scheduling clones/fetches on `gitserver`.
 * Anything which communicates with a code host API.
 
-Our batch changes and background permissions syncers also live in `repo-updater` as they require communication with code host APIs.
+Our batch changes and background permissions syncers are also located in `repo-updater` as they require communication with code host APIs.
 
 >NOTE: The name `repo-updater` does not accurately capture what the service does. This is a historical artifact. We have not updated it due to the unnecessary operational burden it would put on our customers.
 
