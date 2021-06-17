@@ -5,6 +5,7 @@ import ArrowExpandDownIcon from 'mdi-react/ArrowExpandDownIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
+import StarIcon from 'mdi-react/StarIcon'
 import React, { useEffect, useState } from 'react'
 
 import { useRedesignToggle } from '../util/useRedesignToggle'
@@ -74,6 +75,11 @@ export interface Props {
      * This component does not accept children.
      */
     children?: never
+
+    /**
+     * The number of stars for the result's associated repo
+     */
+    repoStars?: number
 }
 
 /**
@@ -92,9 +98,11 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
     titleClassName,
     description,
     matchCountLabel,
+    repoStars,
 }) => {
     const [isRedesignEnabled] = useRedesignToggle()
     const [expanded, setExpanded] = useState(allExpanded || defaultExpanded)
+    const starDisplayString = starDisplay(repoStars)
 
     useEffect(() => setExpanded(allExpanded || defaultExpanded), [allExpanded, defaultExpanded])
 
@@ -150,9 +158,31 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
                         )}
                     </button>
                 )}
+                {matchCountLabel && isRedesignEnabled && starDisplayString && (
+                    <div className="result-container__header-divider" />
+                )}
+                {starDisplayString && (
+                    <>
+                        <StarIcon className="search-result__star" />
+                        {starDisplayString}
+                    </>
+                )}
             </div>
             {!expanded && collapsedChildren}
             {expanded && expandedChildren}
         </div>
     )
+}
+
+/**
+ * Converts the number of repo stars into a string, formatted nicely for large numbers
+ */
+const starDisplay = (repoStars?: number): string | undefined => {
+    if (repoStars !== undefined) {
+        if (repoStars > 1000) {
+            return `${Math.floor(repoStars / 1000)}k`
+        }
+        return repoStars.toString()
+    }
+    return undefined
 }
