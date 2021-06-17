@@ -223,6 +223,9 @@ const config = {
       { test: /\.ya?ml$/, use: ['raw-loader'] },
     ],
   },
+  node: {
+    fs: 'empty',
+  },
 }
 
 module.exports = config
