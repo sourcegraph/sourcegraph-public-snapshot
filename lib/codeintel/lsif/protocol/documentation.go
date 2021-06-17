@@ -161,6 +161,34 @@ type Documentation struct {
 	// its children should be e.g. displayed on their own dedicated page.
 	NewPage bool `json:"newPage"`
 
+	// SearchKey is a key which can be used to implement search for a specific documentationResult.
+	// For example, in Go this may look like `mux.Router` or `mux.Router.ServeHTTP`. It should be
+	// of a format that makes sense to users of the language being documented.
+	//
+	// Search keys do not have to be unique, although they are encouraged to be generally unique
+	// within the context of a project (there may be multiple projects in a workspace.)
+	//
+	// Clients are encouraged to treat matches towards the left of the string with higher relevance
+	// than matches towards the end of the string. For example, it is typically the case that search
+	// keys will start with the project/package/library/etc name, followed by namespaces, then a
+	// specific symbol.
+	//
+	// Clients are encouraged to use smart case sensitivity by default: if the user is searching for
+	// a mixed-case query, the search should be case-sensitive (and otherwise not.)
+	//
+	// Since search keys may not be unique, clients are encouraged to display alongside the search
+	// key other information about the documentation that will disambiguate identical keys. The
+	// following in specific is encouraged:
+	//
+	// * Always display the `label` string, which provides e.g. a one-line function signature.
+	// * Optionally display the `detail` string (e.g. when considering a specific result), as it
+	//   contains detailed information that can help disambiguate.
+	// * Always display the path identifier to the documentationResult _somewhere_, even if it is
+	//   a much more subtle location (see `identifier` docs), as it is a truly unique path to the
+	//   documentation and can be a final way for users to disambiguate if all other options fail.
+	//
+	SearchKey string `json:"searchKey"`
+
 	// Tags about the type of content this documentation contains.
 	Tags []DocumentationTag `json:"tags"`
 }
