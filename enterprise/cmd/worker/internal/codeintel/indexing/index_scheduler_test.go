@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -36,8 +37,9 @@ func TestIndexSchedulerUpdate(t *testing.T) {
 		dbStore:       mockDBStore,
 		settingStore:  mockSettingStore,
 		repoStore:     mockRepoStore,
-		operations:    newOperations(&observation.TestContext),
 		indexEnqueuer: indexEnqueuer,
+		limiter:       rate.NewLimiter(25, 1),
+		operations:    newOperations(&observation.TestContext),
 	}
 
 	if err := scheduler.Handle(context.Background()); err != nil {
@@ -83,8 +85,9 @@ func TestDisabledAutoindexConfiguration(t *testing.T) {
 		dbStore:       mockDBStore,
 		settingStore:  mockSettingStore,
 		repoStore:     mockRepoStore,
-		operations:    newOperations(&observation.TestContext),
 		indexEnqueuer: indexEnqueuer,
+		limiter:       rate.NewLimiter(25, 1),
+		operations:    newOperations(&observation.TestContext),
 	}
 
 	if err := scheduler.Handle(context.Background()); err != nil {
