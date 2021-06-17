@@ -72,7 +72,7 @@ The scheduler is divided into two parts:
 - [`updateQueue`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.14.0/-/blob/cmd/repo-updater/repos/scheduler.go#L392:6) is a priority queue of repositories to clone/fetch on `gitserver`.
 - [`schedule`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.14.0/-/blob/cmd/repo-updater/repos/scheduler.go#L567:6) which places repositories onto the `updateQueue` when it thinks it should be updated. This is what paces out updates for a repository. It contains heuristics such that recently updated repositories are more frequently checked.
 
-Repositories can also be placed onto the `updateQueue` if we receive a webhook indicating the repository has changed. (By default we don't setup webhooks when integrating into a code host.) When a user directly visits a repository on Sourcegraph we also enqueue it for update.
+Repositories can also be placed onto the `updateQueue` if we receive a webhook indicating the repository has changed. (By default, we don't set up webhooks when integrating into a code host.) When a user directly visits a repository on Sourcegraph, we also enqueue it for update.
 
 The [update scheduler](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.14.0/-/blob/cmd/repo-updater/repos/scheduler.go#L165:27) has a number of workers equal to the value of [`conf.GitMaxConcurrentClones`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.14.0/-/blob/schema/site.schema.json#L235-240), which process the `updateQueue` and issue git clone/fetch commands.
 
