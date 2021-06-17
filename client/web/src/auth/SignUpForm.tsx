@@ -42,6 +42,9 @@ interface SignUpFormProps {
 
     buttonLabel?: string
     context: Pick<SourcegraphContext, 'authProviders' | 'sourcegraphDotComMode'>
+
+    // For use in ExperimentalSignUpPage. Modifies styling and removes terms of service and trial section.
+    experimental?: boolean
 }
 
 const preventDefault = (event: React.FormEvent): void => event.preventDefault()
@@ -49,7 +52,13 @@ const preventDefault = (event: React.FormEvent): void => event.preventDefault()
 /**
  * The form for creating an account
  */
-export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ onSignUp, buttonLabel, className, context }) => {
+export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
+    onSignUp,
+    buttonLabel,
+    className,
+    context,
+    experimental = false,
+}) => {
     const [loading, setLoading] = useState(false)
     const [requestedTrial, setRequestedTrial] = useState(false)
     const [error, setError] = useState<Error | null>(null)
@@ -130,12 +139,12 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ onSignUp,
             {/* eslint-disable-next-line react/forbid-elements */}
             <form
                 className={classNames(
-                    'signin-signup-form',
-                    'signup-form',
+                    !experimental && 'signin-signup-form',
+                    !experimental && 'signup-form',
                     'test-signup-form',
-                    'rounded p-4',
+                    !experimental && 'rounded p-4',
                     'text-left',
-                    context.sourcegraphDotComMode || error ? 'mt-3' : 'mt-4',
+                    !experimental && (context.sourcegraphDotComMode || error) ? 'mt-3' : 'mt-4',
                     className
                 )}
                 onSubmit={handleSubmit}
@@ -231,7 +240,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ onSignUp,
                         <small className="form-text text-muted">At least 12 characters</small>
                     )}
                 </div>
-                {enterpriseTrial && (
+                {!experimental && enterpriseTrial && (
                     <div className="form-group">
                         <div className="form-check">
                             <label className="form-check-label">
@@ -282,7 +291,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({ onSignUp,
                     </>
                 )}
 
-                {signupTerms && (
+                {!experimental && signupTerms && (
                     <p className="mt-3 mb-0">
                         <small className="form-text text-muted">
                             By signing up, you agree to our {/* eslint-disable-next-line react/jsx-no-target-blank */}

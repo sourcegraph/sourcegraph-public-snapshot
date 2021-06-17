@@ -1,22 +1,75 @@
 import classNames from 'classnames'
+import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
 import React from 'react'
+import { Link, useLocation } from 'react-router-dom'
 
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { BrandLogo } from '../components/branding/BrandLogo'
+import { SourcegraphContext } from '../jscontext'
 
 import styles from './ExperimentalSignUpPage.module.scss'
-import { SignUpArguments } from './SignUpForm'
+import { SignUpArguments, SignUpForm } from './SignUpForm'
 
-interface Props extends ThemeProps {
+interface Props extends ThemeProps, TelemetryProps {
     source: string | null
+    showEmailForm: boolean
     /** Called to perform the signup on the server. */
     onSignUp: (args: SignUpArguments) => Promise<void>
+    context: Pick<SourcegraphContext, 'authProviders'>
 }
 
-export const ExperimentalSignUpPage: React.FunctionComponent<Props> = ({ isLightTheme }) => {
+const SourceToTitleMap = {
+    Context: 'Easily search the code you care about.',
+    Saved: 'Create a library of useful searches.',
+    Monitor: 'Monitor code for changes.',
+    Extend: 'Augment code and workflows via extensions.',
+    SearchCTA: 'Add your public (and soon private) repositories.',
+    Snippet: 'Easily search the code you care about.',
+}
+
+export const ShowEmailFormQueryParameter = 'showEmail'
+
+export const ExperimentalSignUpPage: React.FunctionComponent<Props> = ({
+    isLightTheme,
+    source,
+    showEmailForm,
+    onSignUp,
+    context,
+    telemetryService,
+}) => {
+    const location = useLocation()
+
+    const queryWithUseEmailToggled = new URLSearchParams(location.search)
+    if (showEmailForm) {
+        queryWithUseEmailToggled.delete(ShowEmailFormQueryParameter)
+    } else {
+        queryWithUseEmailToggled.append(ShowEmailFormQueryParameter, 'true')
+    }
+
     const assetsRoot = window.context?.assetsRoot || ''
+
+    // Since this page is only intented for use on Sourcegraph.com, it's OK to hardcode
+    // GitHub and GitLab auth providers here as they are the only ones used on Sourcegraph.com.
+    // In the future if this page is intented for use in Sourcegraph Sever, this would need to be generisized
+    // for other auth providers such SAML, OpenID, Okta, Azure AD, etc.
+    const githubProvider = context.authProviders.find(provider =>
+        provider.authenticationURL?.startsWith('/.auth/github/login?pc=https%3A%2F%2Fgithub.com%2F')
+    )
+    const gitlabProvider = context.authProviders.find(provider =>
+        provider.authenticationURL?.startsWith('/.auth/gitlab/login?pc=https%3A%2F%2Fgitlab.com%2F')
+    )
+
+    const sourceIsValid = source && Object.keys(SourceToTitleMap).includes(source)
+    const title = sourceIsValid ? SourceToTitleMap[source as keyof typeof SourceToTitleMap] : SourceToTitleMap.Context // Use Context as default
+
+    const logEvent = (): void => {
+        if (sourceIsValid) {
+            telemetryService.log(`SignUpPLG${source || ''}_2_ClickedSignUp`)
+        }
+    }
 
     return (
         <div className={styles.page}>
@@ -32,7 +85,7 @@ export const ExperimentalSignUpPage: React.FunctionComponent<Props> = ({ isLight
                 </div>
 
                 <div className={styles.limitWidth}>
-                    <h2 className={styles.pageHeading}>Easily search the code you care about.</h2>
+                    <h2 className={styles.pageHeading}>{title}</h2>
                 </div>
             </header>
 
@@ -56,27 +109,75 @@ export const ExperimentalSignUpPage: React.FunctionComponent<Props> = ({ isLight
 
                 <div className={styles.signUpWrapper}>
                     <h2>Create a free account</h2>
+                    {!showEmailForm ? (
+                        <>
+                            {githubProvider && (
+                                <a
+                                    href={githubProvider.authenticationURL}
+                                    className={classNames(styles.signUpButton, styles.githubButton)}
+                                    onClick={logEvent}
+                                >
+                                    <GithubIcon className="mr-3" /> Continue with GitHub
+                                </a>
+                            )}
+                            {gitlabProvider && (
+                                <a
+                                    href={gitlabProvider.authenticationURL}
+                                    className={classNames(styles.signUpButton, styles.gitlabButton)}
+                                    onClick={logEvent}
+                                >
+                                    <GitlabColorIcon className="mr-3" /> Continue with GitLab
+                                </a>
+                            )}
 
-                    <button type="button" className={classNames(styles.signUpButton, styles.githubButton)}>
-                        <GithubIcon className="mr-3" /> Continue with GitHub
-                    </button>
-                    <button type="button" className={classNames(styles.signUpButton, styles.gitlabButton)}>
-                        <GitlabColorIcon className="mr-3" /> Continue with GitLab
-                    </button>
+                            <div className="mb-4">
+                                Or,{' '}
+                                <Link to={`${location.pathname}?${queryWithUseEmailToggled.toString()}`}>
+                                    continue with email
+                                </Link>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            <small className="d-block mt-3">
+                                <Link
+                                    className="d-flex align-items-center"
+                                    to={`${location.pathname}?${queryWithUseEmailToggled.toString()}`}
+                                >
+                                    <ChevronLeftIcon className={classNames('icon-inline', styles.backIcon)} />
+                                    Go back
+                                </Link>
+                            </small>
 
-                    <div className="mb-4">
-                        Or, <a href="/">continue with email</a>
-                    </div>
+                            <SignUpForm
+                                onSignUp={args => {
+                                    logEvent()
+                                    return onSignUp(args)
+                                }}
+                                context={{ authProviders: [], sourcegraphDotComMode: true }}
+                                buttonLabel="Sign up"
+                                experimental={true}
+                                className="my-3"
+                            />
+                        </>
+                    )}
 
                     <small className="text-muted">
-                        By registering, you agree to our <a href="/">Terms of Service</a> and{' '}
-                        <a href="/">Privacy Policy</a>.
+                        By registering, you agree to our{' '}
+                        <a href="https://about.sourcegraph.com/terms" target="_blank" rel="noopener">
+                            Terms of Service
+                        </a>{' '}
+                        and{' '}
+                        <a href="https://about.sourcegraph.com/privacy" target="_blank" rel="noopener">
+                            Privacy Policy
+                        </a>
+                        .
                     </small>
 
                     <hr className={styles.separator} />
 
                     <div>
-                        Already have an account? <a href="/">Log in</a>
+                        Already have an account? <Link to={`/sign-in${location.search}`}>Log in</Link>
                     </div>
                 </div>
             </div>
