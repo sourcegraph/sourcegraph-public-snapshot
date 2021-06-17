@@ -2,6 +2,7 @@ import classnames from 'classnames'
 import React, { useCallback, useContext, useEffect } from 'react'
 import { useHistory, useLocation } from 'react-router-dom'
 
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -129,7 +130,10 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
 
             {hasQueryInsight && urlQueryInsightValues === undefined && (
                 // loading state for 1 click creation insight values resolve operation
-                <span>Loading...</span>
+                <div>
+                    {' '}
+                    <LoadingSpinner className="icon-inline" /> Resolving search query
+                </div>
             )}
 
             {hasQueryInsight && isErrorLike(urlQueryInsightValues) && <ErrorAlert error={urlQueryInsightValues} />}
@@ -138,32 +142,31 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
                 // If we have query in URL we should be sure that we have initial values
                 // from URL query based insight. If we don't have query in URl we can render
                 // page without resolving URL query based insight values.
-                !hasQueryInsight ||
-                    (hasQueryInsight && !isErrorLike(urlQueryInsightValues) && urlQueryInsightValues && (
-                        <>
-                            <div className="mb-5">
-                                <h2>Create new code insight</h2>
+                (!hasQueryInsight || hasUrlQueryInsightValues) && (
+                    <>
+                        <div className="mb-5">
+                            <h2>Create new code insight</h2>
 
-                                <p className="text-muted">
-                                    Search-based code insights analyze your code based on any search query.{' '}
-                                    <a href="https://docs.sourcegraph.com/code_insights" target="_blank" rel="noopener">
-                                        Learn more.
-                                    </a>
-                                </p>
-                            </div>
+                            <p className="text-muted">
+                                Search-based code insights analyze your code based on any search query.{' '}
+                                <a href="https://docs.sourcegraph.com/code_insights" target="_blank" rel="noopener">
+                                    Learn more.
+                                </a>
+                            </p>
+                        </div>
 
-                            <SearchInsightCreationContent
-                                className="pb-5"
-                                dataTestId="search-insight-create-page-content"
-                                settings={settingsCascade.final}
-                                initialValue={initialFormValues}
-                                organizations={orgs}
-                                onSubmit={handleSubmit}
-                                onCancel={handleCancel}
-                                onChange={handleChange}
-                            />
-                        </>
-                    ))
+                        <SearchInsightCreationContent
+                            className="pb-5"
+                            dataTestId="search-insight-create-page-content"
+                            settings={settingsCascade.final}
+                            initialValue={initialFormValues}
+                            organizations={orgs}
+                            onSubmit={handleSubmit}
+                            onCancel={handleCancel}
+                            onChange={handleChange}
+                        />
+                    </>
+                )
             }
         </Page>
     )

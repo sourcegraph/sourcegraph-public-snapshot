@@ -89,7 +89,7 @@ export interface UseURLQueryInsightResult {
  */
 export function useURLQueryInsight(queryParameters: string): UseURLQueryInsightResult {
     const { getResolvedSearchRepositories } = useContext(InsightsApiContext)
-    const [insight, setInsight] = useState<CreateInsightFormFields | ErrorLike | undefined>()
+    const [insightFormFields, setInsightFormFields] = useState<CreateInsightFormFields | ErrorLike | undefined>()
 
     const query = new URLSearchParams(queryParameters).get('query')
 
@@ -105,15 +105,15 @@ export function useURLQueryInsight(queryParameters: string): UseURLQueryInsightR
         // all indexed repositories.
         if (repositories.length > 0) {
             getResolvedSearchRepositories(query)
-                .then(repositories => setInsight(createInsightFormFields(seriesQuery, repositories)))
-                .catch(error => setInsight(asError(error)))
+                .then(repositories => setInsightFormFields(createInsightFormFields(seriesQuery, repositories)))
+                .catch(error => setInsightFormFields(asError(error)))
         } else {
-            setInsight(createInsightFormFields(seriesQuery, repositories))
+            setInsightFormFields(createInsightFormFields(seriesQuery, repositories))
         }
     }, [getResolvedSearchRepositories, query])
 
     return {
         hasQueryInsight: query !== null,
-        data: query !== null ? insight : undefined,
+        data: query !== null ? insightFormFields : undefined,
     }
 }
