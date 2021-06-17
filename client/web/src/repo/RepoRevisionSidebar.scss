@@ -1,7 +1,8 @@
 @import './RepoRevisionSidebarSymbols';
 
-.repo-revision-container {
+.repo-revision-sidebar {
     &__tabpanels {
+        margin-top: 0.25rem;
         height: calc(100% - 2rem);
     }
 
@@ -10,22 +11,20 @@
     }
 
     &__toggle {
-        color: var(--link-color);
-        background-color: var(--color-bg-2);
-        border-radius: 0;
-        isolation: isolate;
-        width: 2.5rem;
-        height: 2.5rem;
-        margin-right: -1.25rem;
         display: flex;
         justify-content: center;
+        left: 0;
+        width: 2rem;
+        height: 2rem;
         z-index: 1;
-        .theme-redesign & {
-            border-bottom-right-radius: var(--border-radius);
-            color: var(--body-color);
-            &:hover {
-                background-color: var(--color-bg-3);
-            }
+        isolation: isolate;
+        border-bottom-left-radius: 0;
+        border-top-left-radius: 0;
+        color: var(--icon-color);
+        background-color: var(--body-bg);
+
+        &:hover {
+            background-color: var(--color-bg-3);
         }
     }
 }
