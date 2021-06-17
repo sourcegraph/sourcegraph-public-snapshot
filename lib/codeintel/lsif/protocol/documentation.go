@@ -172,8 +172,6 @@ type Documentation struct {
 	// to include the full project path (e.g. `github.com/gorilla/mux` or `com.JodaOrg.JodaTime`)
 	// instead of the shortened name (`mux` or `JodaTime`).
 	//
-	// within the context of a project (there may be multiple projects in a workspace.)
-	//
 	// Clients are encouraged to treat matches towards the left of the string with higher relevance
 	// than matches towards the end of the string. For example, it is typically the case that search
 	// keys will start with the project/package/library/etc name, followed by namespaces, then a
