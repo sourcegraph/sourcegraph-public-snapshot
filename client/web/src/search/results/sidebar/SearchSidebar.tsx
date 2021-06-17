@@ -10,6 +10,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 
 import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '../..'
 import { AuthenticatedUser } from '../../../auth'
+import { FeatureFlagProps } from '../../../featureFlags/featureFlags'
 import { submitSearch, toggleSearchFilter } from '../../helpers'
 
 import { getDynamicFilterLinks, getRepoFilterLinks, getSearchScopeLinks } from './FilterLink'
@@ -24,7 +25,8 @@ export interface SearchSidebarProps
         VersionContextProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         SettingsCascadeProps,
-        TelemetryProps {
+        TelemetryProps,
+        FeatureFlagProps {
     authenticatedUser: AuthenticatedUser | null
     query: string
     filters?: Filter[]
@@ -51,6 +53,8 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
         props.telemetryService.log('SignUpPLGSnippet_1_Search')
     }, [props.telemetryService])
 
+    const showSnippetsCtaLink = !props.authenticatedUser && props.featureFlags.get('w0-signup-optimisation')
+
     return (
         <div className={classNames(styles.searchSidebar, props.className)}>
             <StickyBox className={styles.searchSidebarStickyBox}>
@@ -66,7 +70,8 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                 <SearchSidebarSection
                     className={styles.searchSidebarItem}
                     header="Search snippets"
-                    ctaLinkText={!props.authenticatedUser ? 'Sign up to create code snippets' : undefined}
+                    ctaLinkText={showSnippetsCtaLink ? 'Sign up to create code snippets' : undefined}
+                    ctaLinkTo={showSnippetsCtaLink ? '/sign-up?src=Snippet' : undefined}
                     onCtaLinkClick={onSearchSnippetsCtaLinkClick}
                 >
                     {getSearchScopeLinks(props.settingsCascade, onFilterClicked)}

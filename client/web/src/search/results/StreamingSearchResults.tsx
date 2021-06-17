@@ -28,6 +28,7 @@ import {
 import { AuthenticatedUser } from '../../auth'
 import { CodeMonitoringProps } from '../../code-monitoring'
 import { PageTitle } from '../../components/PageTitle'
+import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { isCodeInsightsEnabled } from '../../insights'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
 import { SearchStarRadialGradientIcon } from '../CtaIcons'
@@ -52,7 +53,8 @@ export interface StreamingSearchResultsProps
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         TelemetryProps,
         ThemeProps,
-        CodeMonitoringProps {
+        CodeMonitoringProps,
+        FeatureFlagProps {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
@@ -217,6 +219,11 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
     const resultsFound = results ? results.results.length > 0 : false
     const submittedSearchesCount = getSubmittedSearchesCount()
     const isValidSignUpCtaCadence = submittedSearchesCount < 5 || submittedSearchesCount % 5 === 0
+    const showSignUpCta =
+        !authenticatedUser &&
+        resultsFound &&
+        isValidSignUpCtaCadence &&
+        props.featureFlags.get('w0-signup-optimisation')
 
     return (
         <div className={styles.streamingSearchResults}>
@@ -278,7 +285,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                     />
                 )}
 
-                {!authenticatedUser && resultsFound && isValidSignUpCtaCadence && (
+                {showSignUpCta && (
                     <div className="card my-2 mr-3 d-flex p-3 flex-row align-items-center">
                         <div className={classNames('mr-3', styles.streamingSearchResultsCtaIconWrapper)}>
                             <SearchStarRadialGradientIcon />
@@ -292,7 +299,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                                 <i>(It's like a developer's super power.)</i>
                             </div>
                         </div>
-                        <Link className="btn btn-primary" to="/sign-up" onClick={onSignUpClick}>
+                        <Link className="btn btn-primary" to="/sign-up?src=SearchCTA" onClick={onSignUpClick}>
                             Sign up for Sourcegraph
                         </Link>
                     </div>

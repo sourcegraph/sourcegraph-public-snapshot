@@ -15,8 +15,9 @@ export const SearchSidebarSection: React.FunctionComponent<{
     className?: string
     showSearch?: boolean // Search only works if children are FilterLink
     ctaLinkText?: string
+    ctaLinkTo?: string
     onCtaLinkClick?: () => void
-}> = ({ header, children = [], className, showSearch = false, ctaLinkText, onCtaLinkClick }) => {
+}> = ({ header, children = [], className, showSearch = false, ctaLinkText, ctaLinkTo, onCtaLinkClick }) => {
     const [filter, setFilter] = useState('')
 
     // Clear filter when children change
@@ -75,8 +76,8 @@ export const SearchSidebarSection: React.FunctionComponent<{
                             <li className={classNames('text-muted', styles.sidebarSectionNoResults)}>No results</li>
                         )}
                     </ul>
-                    {ctaLinkText && (
-                        <Link className={styles.sidebarSectionCtaLink} onClick={onCtaLinkClick} to="/sign-up">
+                    {ctaLinkText && ctaLinkTo && (
+                        <Link className={styles.sidebarSectionCtaLink} onClick={onCtaLinkClick} to={ctaLinkTo}>
                             {ctaLinkText}
                         </Link>
                     )}

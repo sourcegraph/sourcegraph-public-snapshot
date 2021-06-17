@@ -7,6 +7,7 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 
 import { AuthenticatedUser } from '../../../auth'
 import { WebStory } from '../../../components/WebStory'
+import { EMPTY_FEATURE_FLAGS } from '../../../featureFlags/featureFlags'
 import { SearchPatternType } from '../../../graphql-operations'
 import { QuickLink, SearchScope } from '../../../schema/settings.schema'
 
@@ -48,6 +49,7 @@ const defaultProps: SearchSidebarProps = {
     query: '',
     settingsCascade: EMPTY_SETTINGS_CASCADE,
     telemetryService: NOOP_TELEMETRY_SERVICE,
+    featureFlags: EMPTY_FEATURE_FLAGS,
 }
 
 const quicklinks: QuickLink[] = [
@@ -143,6 +145,20 @@ add('with everything', () => (
                 {...defaultProps}
                 settingsCascade={{ subjects: [], final: { quicklinks, 'search.scopes': scopes } }}
                 filters={filters}
+            />
+        )}
+    </WebStory>
+))
+
+add('with cta link', () => (
+    <WebStory>
+        {() => (
+            <SearchSidebar
+                {...defaultProps}
+                authenticatedUser={null}
+                settingsCascade={{ subjects: [], final: { quicklinks, 'search.scopes': scopes } }}
+                filters={filters}
+                featureFlags={new Map([['w0-signup-optimisation', true]])}
             />
         )}
     </WebStory>

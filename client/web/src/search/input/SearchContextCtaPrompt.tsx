@@ -38,7 +38,7 @@ export const SearchContextCtaPrompt: React.FunctionComponent<SearchContextCtaPro
         ? hasUserAddedExternalServices
             ? `/users/${authenticatedUser.username}/settings/repositories`
             : `/users/${authenticatedUser.username}/settings/code-hosts`
-        : '/sign-up'
+        : '/sign-up?src=Context'
 
     const onClick = (): void => {
         const authenticatedActionKind = hasUserAddedExternalServices ? 'AddRepositories' : 'ConnectCodeHost'

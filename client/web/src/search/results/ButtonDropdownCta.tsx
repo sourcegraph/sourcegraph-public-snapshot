@@ -12,7 +12,7 @@ export interface ButtonDropdownCtaProps extends TelemetryProps {
     icon: JSX.Element
     title: string
     copyText: string
-    eventLogName: string
+    source: string
     onToggle?: () => void
     className?: string
 }
@@ -23,7 +23,7 @@ export const ButtonDropdownCta: React.FunctionComponent<ButtonDropdownCtaProps> 
     title,
     copyText,
     telemetryService,
-    eventLogName,
+    source,
     onToggle,
     className,
 }) => {
@@ -33,7 +33,7 @@ export const ButtonDropdownCta: React.FunctionComponent<ButtonDropdownCtaProps> 
         onToggle?.()
     }, [onToggle])
     const onClick = (): void => {
-        telemetryService.log(eventLogName)
+        telemetryService.log(`SignUpPLG${source}_1_Search`)
     }
 
     return (
@@ -61,7 +61,7 @@ export const ButtonDropdownCta: React.FunctionComponent<ButtonDropdownCtaProps> 
                         <div className={classNames('text-muted', styles.copyText)}>{copyText}</div>
                     </div>
                 </div>
-                <Link className="btn btn-primary" to="/sign-up" onClick={onClick}>
+                <Link className="btn btn-primary" to={`/sign-up?src=${source}`} onClick={onClick}>
                     Sign up for Sourcegraph
                 </Link>
             </DropdownMenu>

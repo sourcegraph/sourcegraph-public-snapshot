@@ -23,6 +23,7 @@ import { AuthenticatedUser } from '../../auth'
 import { CodeMonitoringProps } from '../../code-monitoring'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
 import { WebActionsNavItems as ActionsNavItems } from '../../components/shared'
+import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { SearchPatternType } from '../../graphql-operations'
 import { BookmarkRadialGradientIcon, CodeMonitorRadialGradientIcon, ExtensionRadialGradientIcon } from '../CtaIcons'
 import styles from '../FeatureTour.module.scss'
@@ -68,7 +69,8 @@ export interface SearchResultsInfoBarProps
         TelemetryProps,
         Pick<PatternTypeProps, 'patternType'>,
         Pick<CaseSensitivityProps, 'caseSensitive'>,
-        CodeMonitoringProps {
+        CodeMonitoringProps,
+        FeatureFlagProps {
     history: H.History
     /** The currently authenticated user or null */
     authenticatedUser: Pick<AuthenticatedUser, 'id'> | null
@@ -98,31 +100,31 @@ export interface SearchResultsInfoBarProps
     onShowFiltersChanged?: (show: boolean) => void
 }
 
-interface ButtonWithUnauthenticatedUserCtaPromptProps extends ButtonDropdownCtaProps {
-    authenticatedUser: Pick<AuthenticatedUser, 'id'> | null
-    authenticatedLinkTo?: string
+interface ExperimentalActionButtonProps extends ButtonDropdownCtaProps {
+    showExperimentalVersion: boolean
+    nonExperimentalLinkTo?: string
+    isNonExperimentalLinkDisabled?: boolean
+    onNonExperimentalLinkClick?: () => void
     className?: string
-    isAuthenticatedLinkDisabled?: boolean
-    onAuthenticatedLinkClick?: () => void
 }
 
-const ButtonWithUnauthenticatedUserCtaPrompt: React.FunctionComponent<ButtonWithUnauthenticatedUserCtaPromptProps> = props => {
-    if (props.authenticatedUser) {
-        return (
-            <ButtonLink
-                className={classNames(
-                    'btn btn-sm btn-outline-secondary mr-2 nav-link text-decoration-none',
-                    props.className
-                )}
-                to={props.authenticatedLinkTo}
-                onSelect={props.onAuthenticatedLinkClick}
-                disabled={props.isAuthenticatedLinkDisabled}
-            >
-                {props.button}
-            </ButtonLink>
-        )
+const ExperimentalActionButton: React.FunctionComponent<ExperimentalActionButtonProps> = props => {
+    if (props.showExperimentalVersion) {
+        return <ButtonDropdownCta {...props} />
     }
-    return <ButtonDropdownCta {...props} />
+    return (
+        <ButtonLink
+            className={classNames(
+                'btn btn-sm btn-outline-secondary mr-2 nav-link text-decoration-none',
+                props.className
+            )}
+            to={props.nonExperimentalLinkTo}
+            onSelect={props.onNonExperimentalLinkClick}
+            disabled={props.isNonExperimentalLinkDisabled}
+        >
+            {props.button}
+        </ButtonLink>
+    )
 }
 
 /**
@@ -186,8 +188,14 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
         tour.cancel()
     }, [props.telemetryService, tour])
 
+    // We do not want to show the action buttons to unaunthenticated users without the `w0-signup-optimisation` flag enabled
+    // because it might lead to a broken state (e.g. unauthenticated user saving a search).
+    const showActionButton = props.authenticatedUser || !!props.featureFlags.get('w0-signup-optimisation')
+    const showActionButtonExperimentalVersion =
+        !props.authenticatedUser && !!props.featureFlags.get('w0-signup-optimisation')
+
     const createCodeMonitorButton = useMemo(() => {
-        if (!showCreateCodeMonitoringButton) {
+        if (!showCreateCodeMonitoringButton || !showActionButton) {
             return null
         }
         const searchParameters = new URLSearchParams(props.location.search)
@@ -202,11 +210,11 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                         : undefined
                 }
             >
-                <ButtonWithUnauthenticatedUserCtaPrompt
-                    authenticatedUser={props.authenticatedUser}
-                    authenticatedLinkTo={toURL}
-                    isAuthenticatedLinkDisabled={!canCreateMonitorFromQuery}
-                    onAuthenticatedLinkClick={onCreateCodeMonitorButtonSelect}
+                <ExperimentalActionButton
+                    showExperimentalVersion={showActionButtonExperimentalVersion}
+                    nonExperimentalLinkTo={toURL}
+                    isNonExperimentalLinkDisabled={!canCreateMonitorFromQuery}
+                    onNonExperimentalLinkClick={onCreateCodeMonitorButtonSelect}
                     className="create-code-monitor-button"
                     button={
                         <>
@@ -218,12 +226,14 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                     title="Monitor code for changes"
                     copyText="Create a monitor and get notified when your code changes. Free for registered users."
                     telemetryService={props.telemetryService}
-                    eventLogName="SignUpPLGMonitor_1_Search"
+                    source="Monitor"
                     onToggle={onCreateCodeMonitorButtonSelect}
                 />
             </li>
         )
     }, [
+        showActionButton,
+        showActionButtonExperimentalVersion,
         showCreateCodeMonitoringButton,
         props.authenticatedUser,
         props.location.search,
@@ -234,12 +244,15 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
         onCreateCodeMonitorButtonSelect,
     ])
 
-    const saveSearchButton = useMemo(
-        () => (
+    const saveSearchButton = useMemo(() => {
+        if (!showActionButton) {
+            return null
+        }
+        return (
             <li className="nav-item">
-                <ButtonWithUnauthenticatedUserCtaPrompt
-                    authenticatedUser={props.authenticatedUser}
-                    onAuthenticatedLinkClick={props.onSaveQueryClick}
+                <ExperimentalActionButton
+                    showExperimentalVersion={showActionButtonExperimentalVersion}
+                    onNonExperimentalLinkClick={props.onSaveQueryClick}
                     className="test-save-search-link"
                     button={
                         <>
@@ -250,20 +263,22 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                     icon={<BookmarkRadialGradientIcon />}
                     title="Saved searches"
                     copyText="Save your searches and quickly run them again. Free for registered users."
+                    source="Saved"
                     telemetryService={props.telemetryService}
-                    eventLogName="SignUpPLGSaved_1_Search"
                 />
             </li>
-        ),
-        [props.authenticatedUser, props.onSaveQueryClick, props.telemetryService]
-    )
+        )
+    }, [showActionButton, showActionButtonExperimentalVersion, props.onSaveQueryClick, props.telemetryService])
 
-    const extendButton = useMemo(
-        () => (
+    const extendButton = useMemo(() => {
+        if (!showActionButton) {
+            return null
+        }
+        return (
             <li className="nav-item">
-                <ButtonWithUnauthenticatedUserCtaPrompt
-                    authenticatedUser={props.authenticatedUser}
-                    authenticatedLinkTo="/extensions"
+                <ExperimentalActionButton
+                    showExperimentalVersion={showActionButtonExperimentalVersion}
+                    nonExperimentalLinkTo="/extensions"
                     button={
                         <>
                             <PuzzleOutlineIcon className="icon-inline mr-1" />
@@ -273,13 +288,12 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                     icon={<ExtensionRadialGradientIcon />}
                     title="Extend your search experience"
                     copyText="Customize workflows, display data alongside your code, and extend the UI via Sourcegraph extensions."
+                    source="Extend"
                     telemetryService={props.telemetryService}
-                    eventLogName="SignUpPLGExtend_1_Search"
                 />
             </li>
-        ),
-        [props.authenticatedUser, props.telemetryService]
-    )
+        )
+    }, [showActionButton, showActionButtonExperimentalVersion, props.telemetryService])
 
     const extraContext = useMemo(
         () => ({
