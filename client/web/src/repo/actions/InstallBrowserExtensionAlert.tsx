@@ -11,7 +11,7 @@ interface Props {
     externalURLs: ExternalLinkFields[]
     isChrome: boolean
     codeHostIntegrationMessaging: 'browser-extension' | 'native-integration'
-    showFirefoxAddonAlert: boolean
+    showFirefoxAddonAlert?: boolean
 }
 
 // TODO(tj): Add Firefox once the Firefox extension is back
