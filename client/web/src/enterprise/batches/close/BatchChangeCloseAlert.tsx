@@ -3,6 +3,7 @@ import React, { useCallback, useState } from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { isErrorLike, asError } from '@sourcegraph/shared/src/util/errors'
+import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
 import { ErrorAlert } from '../../../components/alerts'
 import { Scalars } from '../../../graphql-operations'
@@ -73,7 +74,13 @@ export const BatchChangeCloseAlert: React.FunctionComponent<BatchChangeCloseAler
                                     disabled={isClosing === true || !viewerCanAdminister}
                                 />
                                 <label className="form-check-label" htmlFor="closeChangesets">
-                                    Also close all {totalCount} open changesets on code hosts.
+                                    Also close {pluralize('the', totalCount, 'all')} {totalCount}{' '}
+                                    {pluralize(
+                                        'open changeset on the code host',
+                                        totalCount,
+                                        'open changesets on the code hosts'
+                                    )}
+                                    .
                                 </label>
                             </div>
                         </>
