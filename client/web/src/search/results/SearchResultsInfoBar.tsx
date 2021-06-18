@@ -247,6 +247,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
         if (!props.authenticatedUser && !props.featureFlags.get('w0-signup-optimisation')) {
             return null
         }
+        console.log(props.location.pathname + props.location.search)
         return (
             <li className="nav-item">
                 <ExperimentalActionButton
@@ -263,12 +264,13 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                     title="Saved searches"
                     copyText="Save your searches and quickly run them again. Free for registered users."
                     source="Saved"
-                    returnTo="/code-monitoring"
+                    returnTo={props.location.pathname + props.location.search}
                     telemetryService={props.telemetryService}
                 />
             </li>
         )
     }, [
+        props.location,
         props.authenticatedUser,
         props.featureFlags,
         showActionButtonExperimentalVersion,
