@@ -129,7 +129,7 @@ func (s *JVMPackagesSource) ExternalServices() types.ExternalServices {
 }
 
 func MavenDependencies(connection schema.JVMPackagesConnection) (dependencies []reposource.Dependency, err error) {
-	for _, dep := range connection.Maven.Artifacts {
+	for _, dep := range connection.Maven.Dependencies {
 		dependency, err := reposource.ParseMavenDependency(dep)
 		if err != nil {
 			return nil, err

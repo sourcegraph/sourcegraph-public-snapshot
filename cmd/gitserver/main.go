@@ -154,7 +154,7 @@ func main() {
 					break
 				}
 
-				return &server.JVMPackagesArtifactSyncer{Config: &c}, nil
+				return &server.JVMPackagesSyncer{Config: &c}, nil
 			}
 			return &server.GitRepoSyncer{}, nil
 		},

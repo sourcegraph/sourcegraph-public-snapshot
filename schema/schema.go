@@ -533,8 +533,8 @@ type ExperimentalFeatures struct {
 	EnablePostSignupFlow bool `json:"enablePostSignupFlow,omitempty"`
 	// EventLogging description: Enables user event logging inside of the Sourcegraph instance. This will allow admins to have greater visibility of user activity, such as frequently viewed pages, frequent searches, and more. These event logs (and any specific user actions) are only stored locally, and never leave this Sourcegraph instance.
 	EventLogging string `json:"eventLogging,omitempty"`
-	// JVMPackages description: Allow adding JVM packages code host connections
-	JVMPackages string `json:"jvmPackages,omitempty"`
+	// JvmPackages description: Allow adding JVM packages code host connections
+	JvmPackages string `json:"jvmPackages,omitempty"`
 	// Perforce description: Allow adding Perforce code host connections
 	Perforce string `json:"perforce,omitempty"`
 	// Ranking description: Experimental search result ranking options.
@@ -889,10 +889,10 @@ type Log struct {
 
 // Maven description: Configuration for resolving from Maven repositories.
 type Maven struct {
-	// Artifacts description: An array of artifact "groupID:artifactID:version" strings specifying which Maven artifacts to mirror on Sourcegraph.
-	Artifacts []string `json:"artifacts,omitempty"`
 	// Credentials description: Contents of a coursier.credentials file needed for accessing the Maven repositories.
 	Credentials string `json:"credentials,omitempty"`
+	// Dependencies description: An array of artifact "groupID:artifactID:version" strings specifying which Maven artifacts to mirror on Sourcegraph.
+	Dependencies []string `json:"dependencies,omitempty"`
 	// RateLimit description: Rate limit applied when making background API requests to the Maven repository.
 	RateLimit *MavenRateLimit `json:"rateLimit,omitempty"`
 	// Repositories description: The url at which the maven repository can be found.
