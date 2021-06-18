@@ -7,6 +7,7 @@ import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import StarIcon from 'mdi-react/StarIcon'
 import React, { useEffect, useState } from 'react'
+import { starDisplay } from '@sourcegraph/shared/src/util/stars'
 
 import { useRedesignToggle } from '../util/useRedesignToggle'
 
@@ -172,17 +173,4 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
             {expanded && expandedChildren}
         </div>
     )
-}
-
-/**
- * Converts the number of repo stars into a string, formatted nicely for large numbers
- */
-const starDisplay = (repoStars?: number): string | undefined => {
-    if (repoStars !== undefined) {
-        if (repoStars > 1000) {
-            return `${Math.floor(repoStars / 1000)}k`
-        }
-        return repoStars.toString()
-    }
-    return undefined
 }

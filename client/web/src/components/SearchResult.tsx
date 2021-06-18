@@ -9,6 +9,7 @@ import { ResultContainer } from '@sourcegraph/shared/src/components/ResultContai
 import { CommitMatch, getMatchTitle, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
+import { starDisplay } from '@sourcegraph/shared/src/util/stars'
 
 import { CommitSearchResultMatch } from './CommitSearchResultMatch'
 
@@ -71,7 +72,7 @@ export const SearchResult: React.FunctionComponent<Props> = ({ result, icon, isL
                                 <>
                                     <div className="search-result__divider"></div>
                                     <div>
-                                        <ArchiveIcon className="icon-inline flex-shrink-0 text-muted" />
+                                        <ArchiveIcon className="search-result__icon icon-inline flex-shrink-0 text-muted" />
                                     </div>
                                     <div>
                                         <small>Archived</small>
@@ -107,17 +108,4 @@ export const SearchResult: React.FunctionComponent<Props> = ({ result, icon, isL
             expandedChildren={renderBody()}
         />
     )
-}
-
-/**
- * Converts the number of repo stars into a string, formatted nicely for large numbers
- */
-const starDisplay = (repoStars?: number): string | undefined => {
-    if (repoStars !== undefined) {
-        if (repoStars > 1000) {
-            return `${Math.floor(repoStars / 1000)}k`
-        }
-        return repoStars.toString()
-    }
-    return undefined
 }
