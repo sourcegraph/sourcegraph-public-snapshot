@@ -53,7 +53,7 @@ describe('Settings', () => {
                         },
                     },
                 }),
-                UserArea: () => ({
+                GetUserProfile: () => ({
                     user: {
                         __typename: 'User',
                         id: testUserID,

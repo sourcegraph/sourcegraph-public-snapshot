@@ -1,44 +1,19 @@
-import H from 'history'
 import React, { useEffect } from 'react'
 
 import { percentageDone } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ActivationChecklist } from '@sourcegraph/shared/src/components/activation/ActivationChecklist'
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../components/PageTitle'
 import { Timestamp } from '../../../components/time/Timestamp'
-import { EditUserProfilePage as EditUserProfilePageFragment } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { UserSettingsAreaRouteContext } from '../UserSettingsArea'
 
 import { EditUserProfileForm } from './EditUserProfileForm'
 
-export const EditUserProfilePageGQLFragment = gql`
-    fragment EditUserProfilePage on User {
-        id
-        username
-        displayName
-        avatarURL
-        viewerCanChangeUsername
-        createdAt
-    }
-`
+interface Props extends Pick<UserSettingsAreaRouteContext, 'user' | 'activation'> {}
 
-interface Props extends Pick<UserSettingsAreaRouteContext, 'onUserUpdate' | 'activation' | 'authenticatedUser'> {
-    user: EditUserProfilePageFragment
-
-    history: H.History
-    location: H.Location
-}
-
-export const UserSettingsProfilePage: React.FunctionComponent<Props> = ({
-    user,
-    authenticatedUser,
-    onUserUpdate: parentOnUpdate,
-    ...props
-}) => {
+export const UserSettingsProfilePage: React.FunctionComponent<Props> = ({ user, ...props }) => {
     useEffect(() => eventLogger.logViewEvent('UserProfile'), [])
 
     return (
@@ -65,14 +40,10 @@ export const UserSettingsProfilePage: React.FunctionComponent<Props> = ({
                 <Container className="mb-3">
                     <h3>Almost there!</h3>
                     <p>Complete the steps below to finish onboarding to Sourcegraph.</p>
-                    <ActivationChecklist
-                        history={props.history}
-                        steps={props.activation.steps}
-                        completed={props.activation.completed}
-                    />
+                    <ActivationChecklist steps={props.activation.steps} completed={props.activation.completed} />
                 </Container>
             )}
-            {user && !isErrorLike(user) && (
+            {user && (
                 <EditUserProfileForm
                     user={user}
                     initialValue={user}
