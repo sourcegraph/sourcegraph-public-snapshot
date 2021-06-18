@@ -1,10 +1,10 @@
 # Search snippets
 
-Every project and team has a different set of repositories they commonly work with and search over. Custom search snippets enable users and organizations to quickly filter their searches with any search fragment.
+Every project and team has a different set of repositories they commonly work with and queries they perform regularly. Custom search snippets enable users and organizations to quickly filter existing search results with search fragments matching those use cases.
 
-A search snippet is any valid query. For example, a search snippet that defines all repositories in the "example" organization would be `repo:^github\.com/example/`. In the UI, search snippet appear as suggested filters in the search sidebar (as of v3.29).DF
+A search snippet is any valid query. For example, a search snippet that defines all repositories in the "example" organization would be `repo:^github\.com/example/`. After adding this snippet to your settings, it would appear in the search snippet panel in the search sidebar under a label of your choosing (as of v3.29).
 
-NOTE: Search snippets are temporarily named search.scopes in site configuration files. 
+_NOTE: Search snippets are temporarily named search.scopes in site configuration files._
 
 ---
 
