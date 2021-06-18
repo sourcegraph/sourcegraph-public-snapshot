@@ -14,7 +14,7 @@ import { SiteFlags } from '../site'
 import { siteFlags } from '../site/backend'
 import { DockerForMacAlert } from '../site/DockerForMacAlert'
 import { FreeUsersExceededAlert } from '../site/FreeUsersExceededAlert'
-import { GitHubScopeAlert } from '../site/GitHubCodeHostScopeAlert/GitHubScopeAlert'
+import { GitHubScopeAlert, GitLabScopeAlert } from '../site/GitHubCodeHostScopeAlert/GitHubScopeAlert'
 import { LicenseExpirationAlert } from '../site/LicenseExpirationAlert'
 import { NeedsRepositoryConfigurationAlert } from '../site/NeedsRepositoryConfigurationAlert'
 
@@ -65,6 +65,9 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                         {window.context.likelyDockerOnMac && <DockerForMacAlert className="global-alerts__alert" />}
                         {window.context.sourcegraphDotComMode && (
                             <GitHubScopeAlert authenticatedUser={this.props.authenticatedUser} />
+                        )}
+                        {window.context.sourcegraphDotComMode && (
+                            <GitLabScopeAlert authenticatedUser={this.props.authenticatedUser} />
                         )}
                         {this.state.siteFlags.alerts.map((alert, index) => (
                             <GlobalAlert key={index} alert={alert} className="global-alerts__alert" />

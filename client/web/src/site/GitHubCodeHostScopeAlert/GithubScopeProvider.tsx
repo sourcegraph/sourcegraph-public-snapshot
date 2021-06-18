@@ -3,56 +3,69 @@ import React, { FunctionComponent, useState, useEffect, useCallback, createConte
 import { queryExternalServicesScope } from '../../components/externalServices/backend'
 import { ExternalServiceKind } from '../../graphql-operations'
 
-type Scopes = string[] | null
+interface Scopes {
+    github?: string[]
+    gitlab?: string[]
+}
 type SetScopes = (scopes: Scopes) => void
 
-interface GitHubScopeContext {
+interface CodeHostScopeContext {
     scopes: Scopes
     setScopes: SetScopes
 }
 
-const GitHubScopeContext = createContext<GitHubScopeContext | undefined>(undefined)
+const CodeHostScopeContext = createContext<CodeHostScopeContext | undefined>(undefined)
 
 interface Props {
     children: React.ReactNode
     authenticatedUser: { id: string; tags: string[] } | null
 }
 
-export const GitHubServiceScopeProvider: FunctionComponent<Props> = ({ children, authenticatedUser }) => {
-    const [scopes, setScopes] = useState<string[] | null>(null)
+export const CodeHostScopeProvider: FunctionComponent<Props> = ({ children, authenticatedUser }) => {
+    const [scopes, setScopes] = useState<Scopes>({})
 
-    const fetchGitHubServiceScope = useCallback(async (): Promise<void> => {
+    const fetchCodeHostScope = useCallback(async (): Promise<void> => {
         if (authenticatedUser) {
             // fetch all code hosts for given user
             const { nodes: fetchedServices } = await queryExternalServicesScope({
                 namespace: authenticatedUser.id,
             }).toPromise()
 
-            // check if user has a GitHub code host
+            // In theory users should have at most one of each
             const gitHubService = fetchedServices.find(({ kind }) => kind === ExternalServiceKind.GITHUB)
+            const gitLabService = fetchedServices.find(({ kind }) => kind === ExternalServiceKind.GITLAB)
+
+            const newScopes: Scopes = {}
 
             if (gitHubService) {
-                setScopes(gitHubService.grantedScopes)
+                newScopes.github = gitHubService.grantedScopes
+            }
+            if (gitLabService) {
+                newScopes.gitlab = gitLabService.grantedScopes
+            }
+
+            if (gitHubService || gitLabService) {
+                setScopes(newScopes)
             }
         }
     }, [authenticatedUser])
 
     useEffect(() => {
-        fetchGitHubServiceScope().catch(() => {
+        fetchCodeHostScope().catch(() => {
             // there's no actionable information we can display here
         })
-    }, [fetchGitHubServiceScope])
+    }, [fetchCodeHostScope])
 
-    const { Provider } = GitHubScopeContext
+    const { Provider } = CodeHostScopeContext
 
     return <Provider value={{ scopes, setScopes }}>{children}</Provider>
 }
 
-export const useGitHubScopeContext = (): GitHubScopeContext => {
-    const context = useContext(GitHubScopeContext)
+export const useCodeHostScopeContext = (): CodeHostScopeContext => {
+    const context = useContext(CodeHostScopeContext)
 
     if (context === undefined) {
-        throw new Error('useCount must be used within a GitHubServiceScopeProvider')
+        throw new Error('useCount must be used within a CodeHostScopeProvider')
     }
 
     return context
