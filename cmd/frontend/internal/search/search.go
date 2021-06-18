@@ -27,7 +27,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -89,9 +88,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	eventWriter.StatHook = eventStreamOTHook(tr.LogFields)
 
 	events, inputs, results := h.startSearch(ctx, args)
-	if featureflag.FromContext(ctx).GetBoolOr("cc_batchEvents", false) {
-		events = batchEvents(events, 50*time.Millisecond)
-	}
+	events = batchEvents(events, 50*time.Millisecond)
 
 	traceURL := ""
 	if span := opentracing.SpanFromContext(ctx); span != nil {
@@ -289,27 +286,22 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *streamHandler) getEventRepoMetadata(ctx context.Context, event streaming.SearchEvent) map[api.RepoID]*types.Repo {
-	ffs := featureflag.FromContext(ctx)
-	if ffs.GetBoolOr("cc_repoMetadata", false) {
-		ids := repoIDs(event.Results)
-		if len(ids) == 0 {
-			// Return early if there are no repos in the event
-			return nil
-		}
-
-		repoMetadata := make(map[api.RepoID]*types.Repo, len(ids))
-
-		metadataList, err := database.Repos(h.db).GetByIDs(ctx, ids...)
-		if err != nil {
-			log15.Error("streaming: failed to retrieve repo metadata", "error", err)
-		}
-		for _, repo := range metadataList {
-			repoMetadata[repo.ID] = repo
-		}
-		return repoMetadata
+	ids := repoIDs(event.Results)
+	if len(ids) == 0 {
+		// Return early if there are no repos in the event
+		return nil
 	}
 
-	return nil
+	repoMetadata := make(map[api.RepoID]*types.Repo, len(ids))
+
+	metadataList, err := database.Repos(h.db).GetByIDs(ctx, ids...)
+	if err != nil {
+		log15.Error("streaming: failed to retrieve repo metadata", "error", err)
+	}
+	for _, repo := range metadataList {
+		repoMetadata[repo.ID] = repo
+	}
+	return repoMetadata
 }
 
 // startSearch will start a search. It returns the events channel which
