@@ -11,18 +11,12 @@ import (
 	"testing"
 
 	"github.com/cockroachdb/errors"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/jvmpackages/coursier"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
-
-func check(t *testing.T, e error) {
-	t.Helper()
-	if e != nil {
-		t.Fatal(e)
-	}
-}
 
 const (
 	exampleJar                = "sources.jar"
@@ -39,21 +33,21 @@ const (
 func createPlaceholderSourcesJar(t *testing.T, dir, contents, jarName string) {
 	t.Helper()
 	sourcesPath, err := os.Create(path.Join(dir, jarName))
-	check(t, err)
+	assert.Nil(t, err)
 	zipWriter := zip.NewWriter(sourcesPath)
 	exampleWriter, err := zipWriter.Create(exampleFilePath)
-	check(t, err)
+	assert.Nil(t, err)
 	_, err = exampleWriter.Write([]byte(contents))
-	check(t, err)
-	check(t, zipWriter.Close())
-	check(t, sourcesPath.Close())
+	assert.Nil(t, err)
+	assert.Nil(t, zipWriter.Close())
+	assert.Nil(t, sourcesPath.Close())
 }
 
 func assertCommandOutput(t *testing.T, cmd *exec.Cmd, workingDir, expectedOut string) {
 	t.Helper()
 	cmd.Dir = workingDir
 	showOut, err := cmd.Output()
-	check(t, errors.Wrapf(err, "cmd=%q", cmd))
+	assert.Nil(t, errors.Wrapf(err, "cmd=%q", cmd))
 	if string(showOut) != expectedOut {
 		t.Fatalf("got %q, want %q", showOut, expectedOut)
 	}
@@ -61,7 +55,7 @@ func assertCommandOutput(t *testing.T, cmd *exec.Cmd, workingDir, expectedOut st
 
 func coursierScript(t *testing.T, dir string) string {
 	coursierPath, err := os.OpenFile(path.Join(dir, "coursier"), os.O_CREATE|os.O_RDWR, 07777)
-	check(t, err)
+	assert.Nil(t, err)
 	defer coursierPath.Close()
 	script := fmt.Sprintf(`#!/usr/bin/env bash
 ARG="$3"
@@ -77,7 +71,7 @@ fi
 		examplePackageVersion, path.Join(dir, exampleJar),
 		examplePackageVersion2, path.Join(dir, exampleJar2))
 	_, err = coursierPath.WriteString(script)
-	check(t, err)
+	assert.Nil(t, err)
 	return coursierPath.Name()
 }
 
@@ -87,13 +81,13 @@ func (s JvmPackagesArtifactSyncer) runCloneCommand(t *testing.T, bareGitDirector
 	}
 	s.Config.Maven.Artifacts = artifacts
 	cmd, err := s.CloneCommand(context.Background(), &url, bareGitDirectory)
-	check(t, err)
-	check(t, cmd.Run())
+	assert.Nil(t, err)
+	assert.Nil(t, cmd.Run())
 }
 
 func TestJvmCloneCommand(t *testing.T) {
 	dir, err := os.MkdirTemp("", "")
-	check(t, err)
+	assert.Nil(t, err)
 	defer os.RemoveAll(dir)
 
 	createPlaceholderSourcesJar(t, dir, exampleFileContents, exampleJar)

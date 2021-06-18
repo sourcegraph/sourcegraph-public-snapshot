@@ -32,14 +32,14 @@ type JvmPackagesArtifactSyncer struct {
 
 var _ VCSSyncer = &JvmPackagesArtifactSyncer{}
 
-func (s JvmPackagesArtifactSyncer) Type() string {
+func (s *JvmPackagesArtifactSyncer) Type() string {
 	return "jvm_packages"
 }
 
 // IsCloneable checks to see if the VCS remote URL is cloneable. Any non-nil
 // error indicates there is a problem.
-func (s JvmPackagesArtifactSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL) error {
-	dependencies, err := s.PackageDependencies(remoteURL.Path)
+func (s *JvmPackagesArtifactSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL) error {
+	dependencies, err := s.packageDependencies(remoteURL.Path)
 	if err != nil {
 		return err
 	}
@@ -57,18 +57,29 @@ func (s JvmPackagesArtifactSyncer) IsCloneable(ctx context.Context, remoteURL *v
 }
 
 // CloneCommand returns the command to be executed for cloning from remote.
-func (s JvmPackagesArtifactSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL, bareGitDirectory string) (*exec.Cmd, error) {
+// There is no external tool that performs all the step for creating a JVM
+// package repository so the actual cloning happens inside this method and the
+// returned command is a no-op. This means that the web UI can't display a
+// helpful progress bar while cloning JVM package repositories, but that's an
+// acceptable tradeoff we're willing to make.
+func (s *JvmPackagesArtifactSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL, bareGitDirectory string) (*exec.Cmd, error) {
 	err := os.MkdirAll(bareGitDirectory, 0755)
 	if err != nil {
 		return nil, err
 	}
 
+	tmp, err := os.MkdirTemp("", "")
+	if err != nil {
+		return nil, err
+	}
+	defer os.RemoveAll(tmp)
+
 	cmd := exec.CommandContext(ctx, "git", "--bare", "init")
-	if _, err := runCommandInDirectory(ctx, cmd, bareGitDirectory); err != nil {
+	if _, err := runCommandInDirectory(ctx, cmd, tmp); err != nil {
 		return nil, err
 	}
 
-	if err := s.Fetch(ctx, remoteURL, GitDir(bareGitDirectory)); err != nil {
+	if err := s.Fetch(ctx, remoteURL, GitDir(tmp)); err != nil {
 		return nil, err
 	}
 
@@ -76,8 +87,8 @@ func (s JvmPackagesArtifactSyncer) CloneCommand(ctx context.Context, remoteURL *
 }
 
 // Fetch does nothing for Maven packages because they are immutable and cannot be updated after publishing.
-func (s JvmPackagesArtifactSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir GitDir) error {
-	dependencies, err := s.PackageDependencies(remoteURL.Path)
+func (s *JvmPackagesArtifactSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir GitDir) error {
+	dependencies, err := s.packageDependencies(remoteURL.Path)
 	if err != nil {
 		return err
 	}
@@ -105,19 +116,16 @@ func (s JvmPackagesArtifactSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL
 		}
 	}
 
-	for tag := range tags {
-		shouldBeRemoved := true
-		for _, dependency := range dependencies {
-			if dependency.GitTagFromVersion() == tag {
-				shouldBeRemoved = false
-				break
-			}
-		}
+	dependencyTags := make(map[string]struct{})
+	for _, dependency := range dependencies {
+		dependencyTags[dependency.GitTagFromVersion()] = struct{}{}
+	}
 
-		if shouldBeRemoved {
+	for tag := range tags {
+		if _, isDependencyTag := dependencyTags[tag]; !isDependencyTag {
 			cmd := exec.CommandContext(ctx, "git", "tag", "-d", tag)
 			if _, err := runCommandInDirectory(ctx, cmd, string(dir)); err != nil {
-				log15.Error("failed to delete git tag", "error", err, "tag", tag)
+				log15.Error("Failed to delete git tag", "error", err, "tag", tag)
 				continue
 			}
 		}
@@ -127,13 +135,14 @@ func (s JvmPackagesArtifactSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL
 }
 
 // RemoteShowCommand returns the command to be executed for showing remote.
-func (s JvmPackagesArtifactSyncer) RemoteShowCommand(ctx context.Context, remoteURL *vcs.URL) (cmd *exec.Cmd, err error) {
+func (s *JvmPackagesArtifactSyncer) RemoteShowCommand(ctx context.Context, remoteURL *vcs.URL) (cmd *exec.Cmd, err error) {
 	return exec.CommandContext(ctx, "git", "remote", "show", "./"), nil
 }
 
-// PackageDependencies returns the list of JVM dependencies that belong to the given URL path.
+// packageDependencies returns the list of JVM dependencies that belong to the given URL path.
+// The returned package dependencies are sorted by semantic versioning.
 // A URL maps to a single JVM package, which may contain multiple versions (one git tag per version).
-func (s JvmPackagesArtifactSyncer) PackageDependencies(repoUrlPath string) (dependencies []reposource.Dependency, err error) {
+func (s *JvmPackagesArtifactSyncer) packageDependencies(repoUrlPath string) (dependencies []reposource.Dependency, err error) {
 	module, err := reposource.ParseMavenModule(repoUrlPath)
 	if err != nil {
 		return nil, err
@@ -158,7 +167,7 @@ func (s JvmPackagesArtifactSyncer) PackageDependencies(repoUrlPath string) (depe
 // tag points to a commit that adds all sources of given dependency. When
 // isMainBranch is true, the main branch of the bare git directory will also be
 // updated to point to the same commit as the git tag.
-func (s JvmPackagesArtifactSyncer) gitPushDependencyTag(ctx context.Context, bareGitDirectory string, dependency reposource.Dependency, isMainBranch bool) error {
+func (s *JvmPackagesArtifactSyncer) gitPushDependencyTag(ctx context.Context, bareGitDirectory string, dependency reposource.Dependency, isMainBranch bool) error {
 	tmpDirectory, err := ioutil.TempDir("", "maven")
 	if err != nil {
 		return err
@@ -208,7 +217,7 @@ func (s JvmPackagesArtifactSyncer) gitPushDependencyTag(ctx context.Context, bar
 
 // commitJar creates a git commit in the given working directory that adds all the file contents of the given jar file.
 // A `*.jar` file works the same way as a `*.zip` file, it can even be uncompressed with the `unzip` command-line tool.
-func (s JvmPackagesArtifactSyncer) commitJar(ctx context.Context, dependency reposource.Dependency, workingDirectory, jarPath string) error {
+func (s *JvmPackagesArtifactSyncer) commitJar(ctx context.Context, dependency reposource.Dependency, workingDirectory, jarPath string) error {
 	cmd := exec.CommandContext(ctx, "unzip", jarPath)
 	if _, err := runCommandInDirectory(ctx, cmd, workingDirectory); err != nil {
 		return err
@@ -220,7 +229,7 @@ func (s JvmPackagesArtifactSyncer) commitJar(ctx context.Context, dependency rep
 	}
 	defer file.Close()
 
-	jsonContents, err := json.Marshal(&lsifJavaJson{
+	jsonContents, err := json.Marshal(&lsifJavaJSON{
 		Kind:         "maven",
 		Jvm:          "8",
 		Dependencies: []string{dependency.CoursierSyntax()},
@@ -256,13 +265,12 @@ func runCommandInDirectory(ctx context.Context, cmd *exec.Cmd, workingDirectory 
 	cmd.Dir = workingDirectory
 	output, err := runWith(ctx, cmd, false, nil)
 	if err != nil {
-		log15.Error("failed command", "cmd", cmd, "err", err)
 		return "", errors.Wrapf(err, "command %s failed with output %s", cmd.Args, string(output))
 	}
 	return string(output), nil
 }
 
-type lsifJavaJson struct {
+type lsifJavaJSON struct {
 	Kind         string   `json:"kind"`
 	Jvm          string   `json:"jvm"`
 	Dependencies []string `json:"dependencies"`

@@ -16,19 +16,19 @@ type Module struct {
 	ArtifactId string
 }
 
-func (m Module) MatchesDependencyString(dependency string) bool {
+func (m *Module) MatchesDependencyString(dependency string) bool {
 	return strings.HasPrefix(dependency, fmt.Sprintf("%s:%s:", m.GroupId, m.ArtifactId))
 }
 
-func (m Module) SortText() string {
+func (m *Module) SortText() string {
 	return fmt.Sprintf("%s:%s", m.GroupId, m.ArtifactId)
 }
 
-func (m Module) RepoName() api.RepoName {
+func (m *Module) RepoName() api.RepoName {
 	return api.RepoName(fmt.Sprintf("maven/%s/%s", m.GroupId, m.ArtifactId))
 }
 
-func (m Module) CloneURL() string {
+func (m *Module) CloneURL() string {
 	cloneURL := url.URL{Path: string(m.RepoName())}
 	return cloneURL.String()
 }
@@ -51,11 +51,11 @@ func SortDependencies(dependencies []Dependency) {
 	})
 }
 
-func (d Dependency) CoursierSyntax() string {
+func (d *Dependency) CoursierSyntax() string {
 	return fmt.Sprintf("%s:%s:%s", d.Module.GroupId, d.Module.ArtifactId, d.Version)
 }
 
-func (d Dependency) GitTagFromVersion() string {
+func (d *Dependency) GitTagFromVersion() string {
 	return "v" + d.Version
 }
 

@@ -40,11 +40,11 @@ func newJvmPackagesSource(svc *types.ExternalService, c *schema.JvmPackagesConne
 
 // ListRepos returns all Maven artifacts accessible to all connections
 // configured in Sourcegraph via the external services configuration.
-func (s JvmPackagesSource) ListRepos(ctx context.Context, results chan SourceResult) {
+func (s *JvmPackagesSource) ListRepos(ctx context.Context, results chan SourceResult) {
 	s.listDependentRepos(ctx, results)
 }
 
-func (s JvmPackagesSource) listDependentRepos(ctx context.Context, results chan SourceResult) {
+func (s *JvmPackagesSource) listDependentRepos(ctx context.Context, results chan SourceResult) {
 	modules, err := MavenModules(*s.config)
 	if err != nil {
 		results <- SourceResult{Err: err}
@@ -59,7 +59,7 @@ func (s JvmPackagesSource) listDependentRepos(ctx context.Context, results chan 
 	}
 }
 
-func (s JvmPackagesSource) GetRepo(ctx context.Context, artifactPath string) (*types.Repo, error) {
+func (s *JvmPackagesSource) GetRepo(ctx context.Context, artifactPath string) (*types.Repo, error) {
 	module, err := reposource.ParseMavenModule(artifactPath)
 	if err != nil {
 		return nil, err
@@ -99,7 +99,7 @@ func (e *mavenArtifactNotFound) Error() string {
 	return fmt.Sprintf("not found: maven dependency '%v'", e.dependency)
 }
 
-func (s JvmPackagesSource) makeRepo(module reposource.Module) *types.Repo {
+func (s *JvmPackagesSource) makeRepo(module reposource.Module) *types.Repo {
 	urn := s.svc.URN()
 	cloneURL := module.CloneURL()
 	return &types.Repo{
@@ -124,7 +124,7 @@ func (s JvmPackagesSource) makeRepo(module reposource.Module) *types.Repo {
 }
 
 // ExternalServices returns a singleton slice containing the external service.
-func (s JvmPackagesSource) ExternalServices() types.ExternalServices {
+func (s *JvmPackagesSource) ExternalServices() types.ExternalServices {
 	return types.ExternalServices{s.svc}
 }
 
