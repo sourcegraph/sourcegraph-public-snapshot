@@ -21,6 +21,8 @@ import (
 
 // Correlate reads LSIF data from the given reader and returns a correlation state object with
 // the same data canonicalized and pruned for storage.
+//
+// If getChildren == nil, no pruning of irrelevant data is performed.
 func Correlate(ctx context.Context, r io.Reader, root string, getChildren pathexistence.GetChildrenFunc) (*semantic.GroupedBundleDataChans, error) {
 	// Read raw upload stream and return a correlation state
 	state, err := correlateFromReader(ctx, r, root)
@@ -31,9 +33,11 @@ func Correlate(ctx context.Context, r io.Reader, root string, getChildren pathex
 	// Remove duplicate elements, collapse linked elements
 	canonicalize(state)
 
-	// Remove elements we don't need to store
-	if err := prune(ctx, state, root, getChildren); err != nil {
-		return nil, err
+	if getChildren != nil {
+		// Remove elements we don't need to store
+		if err := prune(ctx, state, root, getChildren); err != nil {
+			return nil, err
+		}
 	}
 
 	// Convert data to the format we send to the writer
