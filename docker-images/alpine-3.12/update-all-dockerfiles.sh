@@ -10,7 +10,7 @@ update_image_reference() {
 
   # (sourcegraph\/alpine-3.12(\S*))(\s*)((AS)?.*)
   # local original="($old_image_stub:([^:space:]*))([:space:]*)((AS)?.*)"
-  local original="$old_image_stub:[^:space:]*@(sha256:[^:space:]*)"
+  local original="$old_image_stub:[[^:space:]]*@(sha256:[[^:space:]]*)"
   local replacement="\1"
 
   local new_text
