@@ -120,6 +120,13 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
             </div>
         ) : null
 
+    const getGitLabUpdateAuthBanner = (needsUpdate: boolean): JSX.Element | null =>
+        needsUpdate ? (
+            <div className="alert alert-info mb-4" role="alert" key="update-gitlab">
+                Update your GitLab code host connection to search private code with Sourcegraph.
+            </div>
+        ) : null
+
     const getAddReposBanner = (services: string[]): JSX.Element | null =>
         services.length > 0 ? (
             <div className="alert alert-success mb-4" role="alert" key="add-repos">
@@ -168,6 +175,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
             ...servicesWithProblems.map(getServiceWarningFragment),
             getAddReposBanner(notYetSyncedServiceNames),
             getGitHubUpdateAuthBanner(isGitHubTokenUpdateRequired),
+            getGitLabUpdateAuthBanner(isGitLabTokenUpdateRequired),
         ]
     }
 
@@ -245,8 +253,8 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                     <ul className="list-group">
                         {Object.entries(codeHostExternalServices).map(([id, { kind, defaultDisplayName, icon }]) => {
                             const isTokenUpdateRequired =
-                                (ExternalServiceKind.GITHUB || ExternalServiceKind.GITLAB) &&
-                                (isGitHubTokenUpdateRequired || isGitLabTokenUpdateRequired)
+                                (kind === ExternalServiceKind.GITHUB && isGitHubTokenUpdateRequired) ||
+                                (kind === ExternalServiceKind.GITLAB && isGitLabTokenUpdateRequired)
 
                             return authProvidersByKind[kind] ? (
                                 <li key={id} className="list-group-item user-code-hosts-page__code-host-item">
