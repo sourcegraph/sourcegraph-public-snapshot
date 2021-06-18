@@ -5,6 +5,8 @@ import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
+import { ExperimentalSignUpSource } from '../../auth/ExperimentalSignUpPage'
+
 import styles from './ButtonDropdownCta.module.scss'
 
 export interface ButtonDropdownCtaProps extends TelemetryProps {
@@ -12,7 +14,8 @@ export interface ButtonDropdownCtaProps extends TelemetryProps {
     icon: JSX.Element
     title: string
     copyText: string
-    source: string
+    source: ExperimentalSignUpSource
+    returnTo: string
     onToggle?: () => void
     className?: string
 }
@@ -24,6 +27,7 @@ export const ButtonDropdownCta: React.FunctionComponent<ButtonDropdownCtaProps> 
     copyText,
     telemetryService,
     source,
+    returnTo,
     onToggle,
     className,
 }) => {
@@ -61,7 +65,11 @@ export const ButtonDropdownCta: React.FunctionComponent<ButtonDropdownCtaProps> 
                         <div className={classNames('text-muted', styles.copyText)}>{copyText}</div>
                     </div>
                 </div>
-                <Link className="btn btn-primary" to={`/sign-up?src=${source}`} onClick={onClick}>
+                <Link
+                    className="btn btn-primary"
+                    to={`/sign-up?src=${source}&returnTo=${encodeURIComponent(returnTo)}`}
+                    onClick={onClick}
+                >
                     Sign up for Sourcegraph
                 </Link>
             </DropdownMenu>

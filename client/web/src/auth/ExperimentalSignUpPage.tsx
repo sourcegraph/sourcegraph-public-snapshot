@@ -30,6 +30,8 @@ const SourceToTitleMap = {
     Snippet: 'Easily search the code you care about.',
 }
 
+export type ExperimentalSignUpSource = keyof typeof SourceToTitleMap
+
 export const ShowEmailFormQueryParameter = 'showEmail'
 
 export const ExperimentalSignUpPage: React.FunctionComponent<Props> = ({
@@ -63,7 +65,7 @@ export const ExperimentalSignUpPage: React.FunctionComponent<Props> = ({
     )
 
     const sourceIsValid = source && Object.keys(SourceToTitleMap).includes(source)
-    const title = sourceIsValid ? SourceToTitleMap[source as keyof typeof SourceToTitleMap] : SourceToTitleMap.Context // Use Context as default
+    const title = sourceIsValid ? SourceToTitleMap[source as ExperimentalSignUpSource] : SourceToTitleMap.Context // Use Context as default
 
     const logEvent = (): void => {
         if (sourceIsValid) {

@@ -224,6 +224,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                     copyText="Create a monitor and get notified when your code changes. Free for registered users."
                     telemetryService={props.telemetryService}
                     source="Monitor"
+                    returnTo={toURL}
                     onToggle={onCreateCodeMonitorButtonSelect}
                 />
             </li>
@@ -262,11 +263,13 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                     title="Saved searches"
                     copyText="Save your searches and quickly run them again. Free for registered users."
                     source="Saved"
+                    returnTo={props.location.pathname + props.location.search}
                     telemetryService={props.telemetryService}
                 />
             </li>
         )
     }, [
+        props.location,
         props.authenticatedUser,
         props.featureFlags,
         showActionButtonExperimentalVersion,
@@ -290,6 +293,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                     title="Extend your search experience"
                     copyText="Customize workflows, display data alongside your code, and extend the UI via Sourcegraph extensions."
                     source="Extend"
+                    returnTo="/extensions"
                     telemetryService={props.telemetryService}
                 />
             </li>

@@ -71,7 +71,11 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                     className={styles.searchSidebarItem}
                     header="Search snippets"
                     ctaLinkText={showSnippetsCtaLink ? 'Sign up to create code snippets' : undefined}
-                    ctaLinkTo={showSnippetsCtaLink ? '/sign-up?src=Snippet' : undefined}
+                    ctaLinkTo={
+                        showSnippetsCtaLink
+                            ? `/sign-up?src=Snippet&returnTo=${encodeURIComponent('/user/settings')}`
+                            : undefined
+                    }
                     onCtaLinkClick={onSearchSnippetsCtaLinkClick}
                 >
                     {getSearchScopeLinks(props.settingsCascade, onFilterClicked)}

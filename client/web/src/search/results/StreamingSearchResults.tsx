@@ -304,6 +304,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                         </Link>
                     </div>
                 )}
+
                 <StreamingSearchResultsList {...props} results={results} allExpanded={allExpanded} />
             </div>
         </div>
