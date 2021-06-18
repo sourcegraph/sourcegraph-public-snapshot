@@ -10,13 +10,15 @@ update_image_reference() {
 
   # (sourcegraph\/alpine-3.12(\S*))(\s*)((AS)?.*)
   # local original="($old_image_stub:([^:space:]*))([:space:]*)((AS)?.*)"
-  local original="$old_image_stub:[[^:space:]]*@(sha256:[[^:space:]]*)"
-  local replacement="\1"
+  # local original="$old_image_stub:[[^:space:]]*@(sha256:[[^:space:]]*)"
+  # sourcegraph\/alpine-3.12:(\S*)@(sha256:\S*)
+  local original="(?P<prefix>^FROM\s+)(?P<repo>$old_image_stub:)(\S*@sha256:\S*)"
+  local replacement="\${prefix}\${repo}$new_tag_and_digest"
 
-  local new_text
-  new_text="$(sed -E "s|$original|$replacement|g" "$file")"
+  # local new_text
+  sd "$original" "$replacement" "$file"
 
-  echo "$new_text" >"$file"
+  # echo "$new_text" >"$file"
 }
 
 get_new_tag_and_digest() {
