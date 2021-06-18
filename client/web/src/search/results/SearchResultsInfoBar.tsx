@@ -160,11 +160,15 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
         return globalTypeFilterValue === 'diff' || globalTypeFilterValue === 'commit'
     }, [props.query])
 
-    const showCreateCodeMonitoringButton = props.enableCodeMonitoring && props.query
+    const showCreateCodeMonitoringButton =
+        props.enableCodeMonitoring &&
+        !!props.query &&
+        (!!props.authenticatedUser || !!props.featureFlags.get('w0-signup-optimisation'))
+
     const [hasSeenSearchContextsFeatureTour] = useLocalStorage(HAS_SEEN_SEARCH_CONTEXTS_FEATURE_TOUR_KEY, false)
     const tour = useFeatureTour(
         'create-code-monitor-feature-tour',
-        !!showCreateCodeMonitoringButton &&
+        showCreateCodeMonitoringButton &&
             canCreateMonitorFromQuery &&
             hasSeenSearchContextsFeatureTour &&
             props.resultsFound,
@@ -190,6 +194,18 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
 
     const showActionButtonExperimentalVersion =
         !props.authenticatedUser && !!props.featureFlags.get('w0-signup-optimisation')
+
+    const codeInsightsButton = useMemo(
+        () => (
+            <CreateCodeInsightButton
+                query={props.query}
+                authenticatedUser={props.authenticatedUser}
+                patternType={props.patternType}
+                enableCodeInsights={props.enableCodeInsights}
+            />
+        ),
+        [props.authenticatedUser, props.enableCodeInsights, props.patternType, props.query]
+    )
 
     const createCodeMonitorButton = useMemo(() => {
         if (!showCreateCodeMonitoringButton) {
@@ -279,26 +295,28 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
     ])
 
     const extendButton = useMemo(
-        () => (
-            <li className="nav-item">
-                <ExperimentalActionButton
-                    showExperimentalVersion={showActionButtonExperimentalVersion}
-                    nonExperimentalLinkTo="/extensions"
-                    button={
-                        <>
-                            <PuzzleOutlineIcon className="icon-inline mr-1" />
-                            Extend
-                        </>
-                    }
-                    icon={<ExtensionRadialGradientIcon />}
-                    title="Extend your search experience"
-                    copyText="Customize workflows, display data alongside your code, and extend the UI via Sourcegraph extensions."
-                    source="Extend"
-                    returnTo="/extensions"
-                    telemetryService={props.telemetryService}
-                />
-            </li>
-        ),
+        () =>
+            // Only show extend button to signed out users that have the feature flag enabled
+            showActionButtonExperimentalVersion ? (
+                <li className="nav-item">
+                    <ExperimentalActionButton
+                        showExperimentalVersion={showActionButtonExperimentalVersion}
+                        nonExperimentalLinkTo="/extensions"
+                        button={
+                            <>
+                                <PuzzleOutlineIcon className="icon-inline mr-1" />
+                                Extend
+                            </>
+                        }
+                        icon={<ExtensionRadialGradientIcon />}
+                        title="Extend your search experience"
+                        copyText="Customize workflows, display data alongside your code, and extend the UI via Sourcegraph extensions."
+                        source="Extend"
+                        returnTo="/extensions"
+                        telemetryService={props.telemetryService}
+                    />
+                </li>
+            ) : null,
         [showActionButtonExperimentalVersion, props.telemetryService]
     )
 
@@ -349,15 +367,12 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                     />
 
                     {extendButton}
-                    {(createCodeMonitorButton || saveSearchButton) && (
+
+                    {(codeInsightsButton || createCodeMonitorButton || saveSearchButton) && (
                         <li className="search-results-info-bar__divider" aria-hidden="true" />
                     )}
-                    <CreateCodeInsightButton
-                        query={props.query}
-                        authenticatedUser={props.authenticatedUser}
-                        patternType={props.patternType}
-                        enableCodeInsights={props.enableCodeInsights}
-                    />
+
+                    {codeInsightsButton}
                     {createCodeMonitorButton}
                     {saveSearchButton}
 
