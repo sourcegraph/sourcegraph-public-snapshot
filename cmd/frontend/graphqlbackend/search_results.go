@@ -447,7 +447,7 @@ func LogSearchLatency(ctx context.Context, db dbutil.DB, si *run.SearchInputs, d
 			eventName := fmt.Sprintf("search.latencies.%s", types[0])
 			featureFlags := featureflag.FromContext(ctx)
 			go func() {
-				err := usagestats.LogBackendEvent(db, a.UID, eventName, json.RawMessage(value), featureFlags)
+				err := usagestats.LogBackendEvent(db, a.UID, eventName, json.RawMessage(value), featureFlags, nil)
 				if err != nil {
 					log15.Warn("Could not log search latency", "err", err)
 				}

@@ -18,11 +18,18 @@ Our guiding principle is to ensure all repositories configured by a site adminis
 
 ## Services
 
-`repo-updater` is responsible for communicating with code host APIs and co-ordinating the state we synchronize from them. It is a singleton service. It is responsible for maintaining the `repo` table which other services read. It is also responsible for scheduling clones/fetches on `gitserver`. It is also responsible for anything which communicates with a code host API. So our batch changes and background permissions syncers also live in `repo-updater`.
+`repo-updater` is a singleton service. It is responsible for:
 
-`gitserver` is a scaleable stateful service which clones git repositories and can run git commands against them. All data maintained on this service is from cloning an upstream repository. We shard the set of repositories across the gitserver replicas. The main RPC gitserver supports is `exec` which returns the output of the specified git command.
+* Communicating with code host APIs to coordinate the state we synchronize from them.
+* Maintaining the `repo` table which other services read.
+* Scheduling clones/fetches on `gitserver`.
+* Anything which communicates with a code host API.
+
+Our batch changes and background permissions syncers are also located in `repo-updater` as they require communication with code host APIs.
 
 >NOTE: The name `repo-updater` does not accurately capture what the service does. This is a historical artifact. We have not updated it due to the unnecessary operational burden it would put on our customers.
+
+`gitserver` is a scaleable stateful service which clones git repositories and can run git commands against them. All data maintained on this service is from cloning an upstream repository. We shard the set of repositories across the gitserver replicas. The main RPC gitserver supports is `exec` which returns the output of the specified git command.
 
 ## Discovery
 
@@ -65,12 +72,12 @@ The scheduler is divided into two parts:
 - [`updateQueue`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.14.0/-/blob/cmd/repo-updater/repos/scheduler.go#L392:6) is a priority queue of repositories to clone/fetch on `gitserver`.
 - [`schedule`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.14.0/-/blob/cmd/repo-updater/repos/scheduler.go#L567:6) which places repositories onto the `updateQueue` when it thinks it should be updated. This is what paces out updates for a repository. It contains heuristics such that recently updated repositories are more frequently checked.
 
-Repositories can also placed onto the `updateQueue` if we receive a webhook indicating the repository has changed. (We don't by default setup webhooks when integrating into a code host). When a user directly visits a repository on Sourcegraph we also enqueue it for update.
+Repositories can also be placed onto the `updateQueue` if we receive a webhook indicating the repository has changed. (By default, we don't set up webhooks when integrating into a code host.) When a user directly visits a repository on Sourcegraph, we also enqueue it for update.
 
-The [update scheduler](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.14.0/-/blob/cmd/repo-updater/repos/scheduler.go#L165:27) has [`conf.GitMaxConcurrentClones`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.14.0/-/blob/schema/site.schema.json#L235-240) workers processing the `updateQueue` and issuing git clone/fetch commands.
+The [update scheduler](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.14.0/-/blob/cmd/repo-updater/repos/scheduler.go#L165:27) has a number of workers equal to the value of [`conf.GitMaxConcurrentClones`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.14.0/-/blob/schema/site.schema.json#L235-240), which process the `updateQueue` and issue git clone/fetch commands.
 
 >NOTE: gitserver also enforces `GitMaxConcurrentClones` per shard. So it is possible to have `GitMaxConcurrentClones * GITSERVER_REPLICA_COUNT` clone/fetch running, although uncommon.
 
 ## Identity Coherence
 
-Repositories can be referenced using an internal id that is coherent across updates, deletes, and even re-adding the original repository name to Sourcegraph after deleting. This id refers to the primary key column [`id`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/types/types.go#L33) in the [`repo` table](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.14.0/-/blob/cmd/frontend/db/schema.md#table-public-repo).
+Repositories can be referenced using an internal ID that is coherent across updates, deletes, and even re-adding the original repository name to Sourcegraph after deleting. This ID refers to the primary key column [`id`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/types/types.go#L33) in the [`repo` table](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.14.0/-/blob/cmd/frontend/db/schema.md#table-public-repo).

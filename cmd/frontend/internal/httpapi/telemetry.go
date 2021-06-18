@@ -21,7 +21,7 @@ func telemetryHandler(db dbutil.DB) http.Handler {
 			log15.Error("telemetryHandler: Decode", "error", err)
 		}
 		featureFlags := featureflag.FromContext(r.Context())
-		err = usagestats.LogBackendEvent(db, tr.UserID, tr.EventName, tr.Argument, featureFlags)
+		err = usagestats.LogBackendEvent(db, tr.UserID, tr.EventName, tr.Argument, featureFlags, nil)
 		if err != nil {
 			log15.Error("telemetryHandler: usagestats.LogBackendEvent", "error", err)
 		}

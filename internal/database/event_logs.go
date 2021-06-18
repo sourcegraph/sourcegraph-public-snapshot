@@ -57,6 +57,7 @@ type Event struct {
 	Source          string
 	Timestamp       time.Time
 	FeatureFlags    featureflag.FlagSet
+	CohortID        *string // date in YYYY-MM-DD format
 }
 
 func (l *EventLogStore) Insert(ctx context.Context, e *Event) error {
@@ -72,7 +73,7 @@ func (l *EventLogStore) Insert(ctx context.Context, e *Event) error {
 
 	_, err = l.Handle().DB().ExecContext(
 		ctx,
-		"INSERT INTO event_logs(name, url, user_id, anonymous_user_id, source, argument, version, timestamp, feature_flags) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)",
+		"INSERT INTO event_logs(name, url, user_id, anonymous_user_id, source, argument, version, timestamp, feature_flags, cohort_id) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
 		e.Name,
 		e.URL,
 		e.UserID,
@@ -82,6 +83,7 @@ func (l *EventLogStore) Insert(ctx context.Context, e *Event) error {
 		version.Version(),
 		e.Timestamp.UTC(),
 		featureFlags,
+		e.CohortID,
 	)
 	if err != nil {
 		return errors.Wrap(err, "INSERT")

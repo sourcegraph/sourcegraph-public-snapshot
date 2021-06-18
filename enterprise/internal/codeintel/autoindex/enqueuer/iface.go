@@ -3,7 +3,6 @@ package enqueuer
 import (
 	"context"
 	"regexp"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -19,12 +18,8 @@ type DBStore interface {
 	Done(err error) error
 
 	DirtyRepositories(ctx context.Context) (map[int]int, error)
-	IndexableRepositories(ctx context.Context, opts dbstore.IndexableRepositoryQueryOptions) ([]dbstore.IndexableRepository, error)
-	UpdateIndexableRepository(ctx context.Context, indexableRepository dbstore.UpdateableIndexableRepository, now time.Time) error
-	ResetIndexableRepositories(ctx context.Context, lastUpdatedBefore time.Time) error
 	IsQueued(ctx context.Context, repositoryID int, commit string) (bool, error)
 	InsertIndex(ctx context.Context, index dbstore.Index) (int, error)
-	RepoUsageStatistics(ctx context.Context) ([]dbstore.RepoUsageStatistics, error)
 	GetRepositoriesWithIndexConfiguration(ctx context.Context) ([]int, error)
 	GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (dbstore.IndexConfiguration, bool, error)
 }

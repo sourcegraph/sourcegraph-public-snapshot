@@ -1,12 +1,12 @@
 import classnames from 'classnames'
 import React, { useCallback, useContext, useEffect } from 'react'
-import { useHistory, useLocation } from 'react-router-dom'
+import { useHistory } from 'react-router-dom'
 
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { asError } from '@sourcegraph/shared/src/util/errors'
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
 import { AuthenticatedUser } from '../../../../auth'
 import { Page } from '../../../../components/Page'
@@ -22,7 +22,7 @@ import {
 import styles from './SearchInsightCreationPage.module.scss'
 import { CreateInsightFormFields } from './types'
 import { getSanitizedSearchInsight } from './utils/insight-sanitizer'
-import { getUrlQueryInsight } from './utils/use-url-query-insight/use-url-query-insight'
+import { useSearchInsightInitialValues } from './utils/use-initial-values'
 
 export interface SearchInsightCreationPageProps
     extends PlatformContextProps<'updateSettings'>,
@@ -40,22 +40,9 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
     const { platformContext, authenticatedUser, settingsCascade, telemetryService } = props
 
     const history = useHistory()
-    const { search } = useLocation()
     const { updateSubjectSettings, getSubjectSettings } = useContext(InsightsApiContext)
 
-    // Search insight creation UI form can take value from query param in order
-    // to support 1-click insight creation from search result page.
-    const queryParameterInsight = getUrlQueryInsight(search)
-
-    // Creation UI saves all form values in local storage to be able restore these
-    // values if page was fully refreshed or user came back from other page.
-    const [localStorageFormValues, setInitialFormValues] = useLocalStorage<CreateInsightFormFields | undefined>(
-        'insights.search-insight-creation',
-        undefined
-    )
-
-    // Query param insight values have a higher priority that local storage values
-    const initialFormValues = queryParameterInsight ?? localStorageFormValues
+    const { initialValues, loading, setLocalStorageFormValues } = useSearchInsightInitialValues()
 
     useEffect(() => {
         telemetryService.logViewEvent('CodeInsightsSearchBasedCreationPage')
@@ -85,7 +72,7 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
                 telemetryService.log('CodeInsightsSearchBasedCreationPageSubmitClick')
 
                 // Clear initial values if user successfully created search insight
-                setInitialFormValues(undefined)
+                setLocalStorageFormValues(undefined)
                 history.push('/insights')
             } catch (error) {
                 return { [FORM_ERROR]: asError(error) }
@@ -99,20 +86,20 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
             updateSubjectSettings,
             platformContext,
             telemetryService,
-            setInitialFormValues,
+            setLocalStorageFormValues,
             history,
         ]
     )
 
     const handleChange = (event: FormChangeEvent<CreateInsightFormFields>): void => {
-        setInitialFormValues(event.values)
+        setLocalStorageFormValues(event.values)
     }
 
     const handleCancel = useCallback(() => {
         telemetryService.log('CodeInsightsSearchBasedCreationPageCancelClick')
-        setInitialFormValues(undefined)
+        setLocalStorageFormValues(undefined)
         history.push('/insights')
-    }, [history, setInitialFormValues, telemetryService])
+    }, [history, setLocalStorageFormValues, telemetryService])
 
     const {
         organizations: { nodes: orgs },
@@ -122,27 +109,43 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
         <Page className={classnames('col-10', styles.creationPage)}>
             <PageTitle title="Create new code insight" />
 
-            <div className="mb-5">
-                <h2>Create new code insight</h2>
+            {loading && (
+                // loading state for 1 click creation insight values resolve operation
+                <div>
+                    <LoadingSpinner className="icon-inline" /> Resolving search query
+                </div>
+            )}
 
-                <p className="text-muted">
-                    Search-based code insights analyze your code based on any search query.{' '}
-                    <a href="https://docs.sourcegraph.com/code_insights" target="_blank" rel="noopener">
-                        Learn more.
-                    </a>
-                </p>
-            </div>
+            {
+                // If we have query in URL we should be sure that we have initial values
+                // from URL query based insight. If we don't have query in URl we can render
+                // page without resolving URL query based insight values.
+                !loading && (
+                    <>
+                        <div className="mb-5">
+                            <h2>Create new code insight</h2>
 
-            <SearchInsightCreationContent
-                className="pb-5"
-                dataTestId="search-insight-create-page-content"
-                settings={settingsCascade.final}
-                initialValue={initialFormValues}
-                organizations={orgs}
-                onSubmit={handleSubmit}
-                onCancel={handleCancel}
-                onChange={handleChange}
-            />
+                            <p className="text-muted">
+                                Search-based code insights analyze your code based on any search query.{' '}
+                                <a href="https://docs.sourcegraph.com/code_insights" target="_blank" rel="noopener">
+                                    Learn more.
+                                </a>
+                            </p>
+                        </div>
+
+                        <SearchInsightCreationContent
+                            className="pb-5"
+                            dataTestId="search-insight-create-page-content"
+                            settings={settingsCascade.final}
+                            initialValue={initialValues}
+                            organizations={orgs}
+                            onSubmit={handleSubmit}
+                            onCancel={handleCancel}
+                            onChange={handleChange}
+                        />
+                    </>
+                )
+            }
         </Page>
     )
 }

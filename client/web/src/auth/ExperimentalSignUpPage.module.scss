@@ -170,3 +170,8 @@
     margin-top: 1.5rem;
     margin-bottom: 2rem;
 }
+
+.back-icon {
+    margin-left: -0.25rem; // Negative margin so icon aligns with form taking internal padding into account.
+    margin-right: 0.25rem;
+}

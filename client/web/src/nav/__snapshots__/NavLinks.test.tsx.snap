@@ -588,6 +588,7 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
           >
             <div
               class="user-avatar icon-inline user-nav-item__avatar"
+              id="target-user-avatar"
             >
               a
             </div>
@@ -1373,6 +1374,7 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
           >
             <div
               class="user-avatar icon-inline user-nav-item__avatar"
+              id="target-user-avatar"
             >
               a
             </div>
@@ -2168,6 +2170,7 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
           >
             <div
               class="user-avatar icon-inline user-nav-item__avatar"
+              id="target-user-avatar"
             >
               a
             </div>
@@ -2934,6 +2937,7 @@ exports[`NavLinks authed self-hosted /search 1`] = `
           >
             <div
               class="user-avatar icon-inline user-nav-item__avatar"
+              id="target-user-avatar"
             >
               a
             </div>

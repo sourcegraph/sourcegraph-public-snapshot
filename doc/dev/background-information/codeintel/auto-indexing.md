@@ -4,14 +4,7 @@ _Auto-indexing is enabled only in the Cloud environment and are written to work 
 
 ## Scheduling
 
-The [IndexabilityUpdater](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%40main+file:%5Eenterprise/cmd/frontend/internal/codeintel/background/indexing/indexability_updater%5C.go+func+%28u+*IndexabilityUpdater%29+Handle%28&patternType=literal) periodically [updates a database table](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%40main+file:%5Eenterprise/internal/codeintel/stores/dbstore/repo_usage%5C.go+func+%28s+*Store%29+RepoUsageStatistics%28&patternType=literal) that aggregates code intelligence events into a list of repositories orderable by their popularity (or a close proxy thereof).
-
-The [IndexScheduler](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%40main+file:%5Eenterprise/cmd/frontend/internal/codeintel/background/indexing/index_scheduler%5C.go++func+%28s+*IndexScheduler%29+Handle%28&patternType=literal) will periodically [query the table](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%40main+file:%5Eenterprise/internal/codeintel/stores/dbstore/indexable_repos%5C.go+func+%28s+*Store%29+IndexableRepositories%28&patternType=literal) maintained by the indexability updater for a batch of repositories to index. The ordering expression for this query takes several parameters into account:
-
-- The time since the last index task was enqueued for this repository
-- The number of precise code intel results for this repository in the last week
-- The number of search-based code intel results for this repository in the last week
-- The ratio of precise code intel results over total code intel results for this repository in the last week
+Currently, scheduling is based primarily around repository groups (but the configuration and details are actively being worked on).
 
 Once the set of repositories to index have been determined, the set of steps required to index the repository are determined.
 
