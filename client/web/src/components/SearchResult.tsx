@@ -1,10 +1,10 @@
+import ArchiveIcon from 'mdi-react/ArchiveIcon'
+import SourceForkIcon from 'mdi-react/SourceForkIcon'
+import StarIcon from 'mdi-react/StarIcon'
 import React from 'react'
 
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
-import SourceForkIcon from 'mdi-react/SourceForkIcon'
-import ArchiveIcon from 'mdi-react/ArchiveIcon'
-import StarIcon from 'mdi-react/StarIcon'
 import { ResultContainer } from '@sourcegraph/shared/src/components/ResultContainer'
 import { CommitMatch, getMatchTitle, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -36,7 +36,7 @@ export const SearchResult: React.FunctionComponent<Props> = ({ result, icon, isL
                     </>
                 )}
                 {result.type === 'commit' && result.detail && starDisplayString && (
-                    <div className="search-result__divider"></div>
+                    <div className="search-result__divider" />
                 )}
                 {starDisplayString && (
                     <>
@@ -59,7 +59,7 @@ export const SearchResult: React.FunctionComponent<Props> = ({ result, icon, isL
                             </div>
                             {result.fork && (
                                 <>
-                                    <div className="search-result__divider"></div>
+                                    <div className="search-result__divider" />
                                     <div>
                                         <SourceForkIcon className="icon-inline flex-shrink-0 text-muted" />
                                     </div>
@@ -70,7 +70,7 @@ export const SearchResult: React.FunctionComponent<Props> = ({ result, icon, isL
                             )}
                             {result.archived && (
                                 <>
-                                    <div className="search-result__divider"></div>
+                                    <div className="search-result__divider" />
                                     <div>
                                         <ArchiveIcon className="search-result__icon icon-inline flex-shrink-0 text-muted" />
                                     </div>
@@ -82,7 +82,7 @@ export const SearchResult: React.FunctionComponent<Props> = ({ result, icon, isL
                         </div>
                         {result.description && (
                             <>
-                                <div className="search-result__divider-vertical"></div>
+                                <div className="search-result__divider-vertical" />
                                 <div className="search-result__description">
                                     <small>
                                         <em>{result.description}</em>

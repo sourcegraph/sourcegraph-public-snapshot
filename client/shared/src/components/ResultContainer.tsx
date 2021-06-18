@@ -7,6 +7,7 @@ import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import StarIcon from 'mdi-react/StarIcon'
 import React, { useEffect, useState } from 'react'
+
 import { starDisplay } from '@sourcegraph/shared/src/util/stars'
 
 import { useRedesignToggle } from '../util/useRedesignToggle'
