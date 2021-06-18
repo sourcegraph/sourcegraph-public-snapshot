@@ -8,7 +8,7 @@ import { Filter } from '@sourcegraph/shared/src/search/stream'
 
 import { SearchScope } from '../../../schema/settings.schema'
 
-import { getDynamicFilterLinks, getRepoFilterLinks, getSearchScopeLinks } from './FilterLink'
+import { getDynamicFilterLinks, getRepoFilterLinks, getSearchSnippetLinks } from './FilterLink'
 
 describe('FilterLink', () => {
     const repoFilter1: Filter = {
@@ -108,7 +108,7 @@ describe('FilterLink', () => {
         ]
         const onFilterChosen = sinon.stub()
 
-        const links = getSearchScopeLinks({ subjects: [], final: { 'search.scopes': scopes } }, onFilterChosen)
+        const links = getSearchSnippetLinks({ subjects: [], final: { 'search.scopes': scopes } }, onFilterChosen)
         expect(links.length).toBe(2)
         expect(mount(<>{links}</>)).toMatchSnapshot()
     })
@@ -116,7 +116,7 @@ describe('FilterLink', () => {
     it('should have no snippet links if no snippets present', () => {
         const onFilterChosen = sinon.stub()
 
-        const links = getSearchScopeLinks({ subjects: [], final: {} }, onFilterChosen)
+        const links = getSearchSnippetLinks({ subjects: [], final: {} }, onFilterChosen)
         expect(links.length).toBe(0)
     })
 

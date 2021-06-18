@@ -219,7 +219,7 @@
       }
     },
     "search.scopes": {
-      "description": "Predefined search scopes",
+      "description": "Predefined search snippets that can be appended to any search (also known as search scopes)",
       "type": "array",
       "items": {
         "$ref": "#/definitions/SearchScope"

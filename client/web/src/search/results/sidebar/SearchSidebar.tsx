@@ -13,7 +13,7 @@ import { AuthenticatedUser } from '../../../auth'
 import { FeatureFlagProps } from '../../../featureFlags/featureFlags'
 import { submitSearch, toggleSearchFilter } from '../../helpers'
 
-import { getDynamicFilterLinks, getRepoFilterLinks, getSearchScopeLinks } from './FilterLink'
+import { getDynamicFilterLinks, getRepoFilterLinks, getSearchSnippetLinks } from './FilterLink'
 import { getQuickLinks } from './QuickLink'
 import styles from './SearchSidebar.module.scss'
 import { SearchSidebarSection } from './SearchSidebarSection'
@@ -38,15 +38,29 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
 
     const onFilterClicked = useCallback(
         (value: string) => {
+            const newQuery = toggleSearchFilter(props.query, value)
+            submitSearch({ ...props, query: newQuery, source: 'filter', history })
+        },
+        [history, props]
+    )
+
+    const onDynamicFilterClicked = useCallback(
+        (value: string) => {
             props.telemetryService.log('DynamicFilterClicked', {
                 search_filter: { value },
             })
 
-            const newQuery = toggleSearchFilter(props.query, value)
-
-            submitSearch({ ...props, query: newQuery, source: 'filter', history })
+            onFilterClicked(value)
         },
-        [history, props]
+        [onFilterClicked, props.telemetryService]
+    )
+
+    const onSnippetClicked = useCallback(
+        (value: string) => {
+            props.telemetryService.log('SearchSnippetClicked')
+            onFilterClicked(value)
+        },
+        [onFilterClicked, props.telemetryService]
     )
 
     const onSearchSnippetsCtaLinkClick = useCallback(() => {
@@ -62,10 +76,10 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                     {getSearchTypeLinks(props)}
                 </SearchSidebarSection>
                 <SearchSidebarSection className={styles.searchSidebarItem} header="Dynamic filters">
-                    {getDynamicFilterLinks(props.filters, onFilterClicked)}
+                    {getDynamicFilterLinks(props.filters, onDynamicFilterClicked)}
                 </SearchSidebarSection>
                 <SearchSidebarSection className={styles.searchSidebarItem} header="Repositories" showSearch={true}>
-                    {getRepoFilterLinks(props.filters, onFilterClicked)}
+                    {getRepoFilterLinks(props.filters, onDynamicFilterClicked)}
                 </SearchSidebarSection>
                 <SearchSidebarSection
                     className={styles.searchSidebarItem}
@@ -78,7 +92,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                     }
                     onCtaLinkClick={onSearchSnippetsCtaLinkClick}
                 >
-                    {getSearchScopeLinks(props.settingsCascade, onFilterClicked)}
+                    {getSearchSnippetLinks(props.settingsCascade, onSnippetClicked)}
                 </SearchSidebarSection>
                 <SearchSidebarSection className={styles.searchSidebarItem} header="Quicklinks">
                     {getQuickLinks(props.settingsCascade)}
