@@ -325,7 +325,7 @@ func TestCalculateVisibleUploadsDistinctRoots(t *testing.T) {
 
 	// This database has the following commit graph:
 	//
-	// 1 --+-- [2]
+	// 1 -- [2]
 
 	uploads := []Upload{
 		{ID: 1, Commit: makeCommit(2), Root: "root1/"},
@@ -441,7 +441,7 @@ func TestCalculateVisibleUploadsIndexerName(t *testing.T) {
 
 	// This database has the following commit graph:
 	//
-	// [1] --+-- [2] --+-- [3] --+-- [4] --+-- 5
+	// [1] -- [2] -- [3] -- [4] -- 5
 
 	uploads := []Upload{
 		{ID: 1, Commit: makeCommit(1), Root: "root1/", Indexer: "idx1"},
@@ -565,11 +565,11 @@ func TestCalculateVisibleUploadsNonDefaultBranches(t *testing.T) {
 
 	// This database has the following commit graph:
 	//
-	//                +-- [08] --+-- {09} --+
+	//                +-- [08] ----- {09} --+
 	//                |                     |
-	// [01] -- {02} --+-- [03] --+-- {04} --+-- {05} --+-- [06] --+-- {07}
+	// [01] -- {02} --+-- [03] --+-- {04} --+-- {05} -- [06] -- {07}
 	//                           |
-	//                           +--- 10 ---+-- [11] --+-- {12}
+	//                           +--- 10 ------ [11] -- {12}
 	//
 	// 02: tag v1
 	// 04: tag v2
