@@ -1185,8 +1185,8 @@ const JVM_PACKAGES: AddExternalServiceOptions = {
     defaultDisplayName: 'JVM Dependencies',
     defaultConfig: `{
   "maven": {
-    "repositories": ["central"],
-    "dependencies": ["junit:junit:4.13.2", "org.hamcrest:hamcrest-core:1.3:default"]
+    "repositories": [],
+    "dependencies": []
   }
 }`,
     instructions: (
@@ -1198,8 +1198,10 @@ const JVM_PACKAGES: AddExternalServiceOptions = {
                     <code>"https://maven.google.com"</code>.
                 </li>
                 <li>
-                    In the configuration below, set <Field>maven.manuallyMirroredArtifacts</Field> to the list of
-                    artifacts that you want to manually add. For example, <code>"junit:junit:4.13.2"</code>.
+                    In the configuration below, set <Field>maven.dependencies</Field> to the list of artifacts that you
+                    want to manually add. For example,
+                    <code>"junit:junit:4.13.2"</code> or
+                    <code>"org.hamcrest:hamcrest-core:1.3:default"</code>.
                 </li>
             </ol>
         </div>
