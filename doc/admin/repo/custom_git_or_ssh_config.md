@@ -17,7 +17,7 @@ For example, to mount a `.gitconfig`, create a file `/mnt/sourcegraph/config/git
 Alternatively you can create a new Docker image which inherits from Sourcegraph and then mutates the environment:
 
 ``` dockerfile
-FROM sourcegraph/server:3.28.0
+FROM sourcegraph/server:3.29.0
 
 COPY gitconfig /etc/gitconfig
 COPY ssh /root/.ssh
