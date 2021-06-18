@@ -36,7 +36,7 @@ kubectl create clusterrolebinding cluster-admin-binding \
 # Use the branch of this repository corresponding to the version of Sourcegraph you wish to deploy, e.g. git checkout 3.24
 git clone https://github.com/sourcegraph/deploy-sourcegraph
 cd deploy-sourcegraph
-export SOURCEGRAPH_VERSION="v3.28.0"
+export SOURCEGRAPH_VERSION="v3.29.0"
 git checkout $SOURCEGRAPH_VERSION
 ```
 
