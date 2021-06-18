@@ -61,7 +61,7 @@ export const SearchResult: React.FunctionComponent<Props> = ({ result, icon, isL
                                 <>
                                     <div className="search-result__divider" />
                                     <div>
-                                        <SourceForkIcon className="icon-inline flex-shrink-0 text-muted" />
+                                        <SourceForkIcon className="search-result__icon icon-inline flex-shrink-0 text-muted" />
                                     </div>
                                     <div>
                                         <small>Fork</small>

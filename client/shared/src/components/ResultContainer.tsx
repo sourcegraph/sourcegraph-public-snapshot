@@ -161,7 +161,7 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
                     </button>
                 )}
                 {matchCountLabel && isRedesignEnabled && formattedRepositoryStarCount && (
-                    <div className="result-container__header-divider" />
+                    <div className="search-result__divider" />
                 )}
                 {formattedRepositoryStarCount && (
                     <>
