@@ -19,14 +19,11 @@ export function toDocumentationURL(target: RepoDocumentation): string {
 }
 
 /**
- * Returns the LineOrPositionOrRange and given URLSearchParams as a string.
+ * Returns the given URLSearchParams as a string.
  */
-export function formatHash(lpr: LineOrPositionOrRange, searchParameters: URLSearchParams): string {
-    if (!lpr.line) {
-        return `#${searchParameters.toString()}`
-    }
+export function formatHash(searchParameters: URLSearchParams): string {
     const anyParameters = [...searchParameters].length > 0
-    return `#L${formatLineOrPositionOrRange(lpr)}${anyParameters ? '&' + searchParameters.toString() : ''}`
+    return `${anyParameters ? '#' + searchParameters.toString() : ''}`
 }
 
 /**
@@ -35,10 +32,10 @@ export function formatHash(lpr: LineOrPositionOrRange, searchParameters: URLSear
  *
  * @param lpr The `LineOrPositionOrRange`
  */
-function formatLineOrPositionOrRange(lpr: LineOrPositionOrRange): string {
+export function formatLineOrPositionOrRange(lpr: LineOrPositionOrRange): string | undefined {
     const range = lprToRange(lpr)
     if (!range) {
-        return ''
+        return undefined
     }
     const emptyRange = range.start.line === range.end.line && range.start.character === range.end.character
     return emptyRange
