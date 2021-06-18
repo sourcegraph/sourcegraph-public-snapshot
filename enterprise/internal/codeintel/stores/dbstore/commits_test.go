@@ -556,6 +556,98 @@ func TestCalculateVisibleUploadsResetsDirtyFlag(t *testing.T) {
 	}
 }
 
+func TestCalculateVisibleUploadsNonDefaultBranches(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
+
+	// This database has the following commit graph:
+	//
+	//                +-- [08] --+-- {09} --+
+	//                |                     |
+	// [01] -- {02} --+-- [03] --+-- {04} --+-- {05} --+-- [06] --+-- {07}
+	//                           |
+	//                           +--- 10 ---+-- [11] --+-- {12}
+	//
+	// 02: tag v1
+	// 04: tag v2
+	// 05: tag v3
+	// 07: tip of main branch
+	// 09: tip of branch feat1
+	// 12: tip of branch feat2
+
+	uploads := []Upload{
+		{ID: 1, Commit: makeCommit(1)},
+		{ID: 2, Commit: makeCommit(3)},
+		{ID: 3, Commit: makeCommit(6)},
+		{ID: 4, Commit: makeCommit(8)},
+		{ID: 5, Commit: makeCommit(11)},
+	}
+	insertUploads(t, db, uploads...)
+
+	graph := gitserver.ParseCommitGraph([]string{
+		strings.Join([]string{makeCommit(12), makeCommit(11)}, " "),
+		strings.Join([]string{makeCommit(11), makeCommit(10)}, " "),
+		strings.Join([]string{makeCommit(10), makeCommit(3)}, " "),
+		strings.Join([]string{makeCommit(7), makeCommit(6)}, " "),
+		strings.Join([]string{makeCommit(6), makeCommit(5)}, " "),
+		strings.Join([]string{makeCommit(5), makeCommit(4), makeCommit(9)}, " "),
+		strings.Join([]string{makeCommit(9), makeCommit(8)}, " "),
+		strings.Join([]string{makeCommit(8), makeCommit(2)}, " "),
+		strings.Join([]string{makeCommit(4), makeCommit(3)}, " "),
+		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
+		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
+		strings.Join([]string{makeCommit(1)}, " "),
+	})
+
+	t1 := time.Now().Add(-time.Hour * 24 * 400)
+	t2 := time.Now().Add(-time.Hour * 24)
+
+	refDescriptions := map[string]gitserver.RefDescription{
+		// stale
+		makeCommit(2): {Name: "v1", Type: gitserver.RefTypeTag, CreatedDate: t1},
+		makeCommit(9): {Name: "feat1", Type: gitserver.RefTypeBranch, CreatedDate: t1},
+
+		// fresh
+		makeCommit(4):  {Name: "v2", Type: gitserver.RefTypeTag, CreatedDate: t2},
+		makeCommit(5):  {Name: "v3", Type: gitserver.RefTypeTag, CreatedDate: t2},
+		makeCommit(7):  {Name: "main", Type: gitserver.RefTypeBranch, IsDefaultBranch: true, CreatedDate: t2},
+		makeCommit(12): {Name: "feat2", Type: gitserver.RefTypeBranch, CreatedDate: t2},
+	}
+
+	if err := store.CalculateVisibleUploads(context.Background(), 50, graph, refDescriptions, 0, time.Time{}); err != nil {
+		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
+	}
+
+	expectedVisibleUploads := map[string][]int{
+		makeCommit(1):  {1},
+		makeCommit(2):  {1},
+		makeCommit(3):  {2},
+		makeCommit(4):  {2},
+		makeCommit(5):  {2},
+		makeCommit(6):  {3},
+		makeCommit(7):  {3},
+		makeCommit(8):  {4},
+		makeCommit(9):  {4},
+		makeCommit(10): {2},
+		makeCommit(11): {5},
+		makeCommit(12): {5},
+	}
+	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, db, 50, keysOf(expectedVisibleUploads))); diff != "" {
+		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
+	}
+
+	if diff := cmp.Diff([]int{3}, getUploadsVisibleAtTip(t, db, 50)); diff != "" {
+		t.Errorf("unexpected uploads visible at tip (-want +got):\n%s", diff)
+	}
+
+	if diff := cmp.Diff([]int{2, 3, 5}, getProtectedUploads(t, db, 50)); diff != "" {
+		t.Errorf("unexpected protected uploads (-want +got):\n%s", diff)
+	}
+}
+
 func keysOf(m map[string][]int) (keys []string) {
 	for k := range m {
 		keys = append(keys, k)

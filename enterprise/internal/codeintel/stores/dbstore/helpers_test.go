@@ -354,6 +354,20 @@ func getUploadsVisibleAtTip(t testing.TB, db *sql.DB, repositoryID int) []int {
 	return ids
 }
 
+func getProtectedUploads(t testing.TB, db *sql.DB, repositoryID int) []int {
+	query := sqlf.Sprintf(
+		`SELECT DISTINCT upload_id FROM lsif_uploads_visible_at_tip WHERE repository_id = %s ORDER BY upload_id`,
+		repositoryID,
+	)
+
+	ids, err := basestore.ScanInts(db.QueryContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...))
+	if err != nil {
+		t.Fatalf("unexpected error getting protected uploads: %s", err)
+	}
+
+	return ids
+}
+
 func normalizeVisibleUploads(uploadMetas map[string][]commitgraph.UploadMeta) map[string][]commitgraph.UploadMeta {
 	for _, uploads := range uploadMetas {
 		sort.Slice(uploads, func(i, j int) bool {
