@@ -263,13 +263,12 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                     title="Saved searches"
                     copyText="Save your searches and quickly run them again. Free for registered users."
                     source="Saved"
-                    returnTo={props.location.pathname + props.location.search}
+                    returnTo="/code-monitoring"
                     telemetryService={props.telemetryService}
                 />
             </li>
         )
     }, [
-        props.location,
         props.authenticatedUser,
         props.featureFlags,
         showActionButtonExperimentalVersion,

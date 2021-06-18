@@ -299,7 +299,11 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                                 <i>(It's like a developer's super power.)</i>
                             </div>
                         </div>
-                        <Link className="btn btn-primary" to="/sign-up?src=SearchCTA" onClick={onSignUpClick}>
+                        <Link
+                            className="btn btn-primary"
+                            to={`/sign-up?src=SearchCTA&returnTo=${encodeURIComponent('/user/settings/repositories')}`}
+                            onClick={onSignUpClick}
+                        >
                             Sign up for Sourcegraph
                         </Link>
                     </div>
