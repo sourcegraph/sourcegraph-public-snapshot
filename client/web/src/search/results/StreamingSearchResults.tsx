@@ -296,7 +296,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                             </div>
                             <div className={classNames('text-muted', styles.streamingSearchResultsCtaDescription)}>
                                 Create a free account to search all of your repos at once.{' '}
-                                <i>(It's like a developer's super power.)</i>
+                                <i>(It's like a developer's superpower.)</i>
                             </div>
                         </div>
                         <Link
