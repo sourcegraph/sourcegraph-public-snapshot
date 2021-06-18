@@ -9,6 +9,8 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '../..'
+import { AuthenticatedUser } from '../../../auth'
+import { FeatureFlagProps } from '../../../featureFlags/featureFlags'
 import { submitSearch, toggleSearchFilter } from '../../helpers'
 
 import { getDynamicFilterLinks, getRepoFilterLinks, getSearchSnippetLinks } from './FilterLink'
@@ -23,7 +25,9 @@ export interface SearchSidebarProps
         VersionContextProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         SettingsCascadeProps,
-        TelemetryProps {
+        TelemetryProps,
+        FeatureFlagProps {
+    authenticatedUser: AuthenticatedUser | null
     query: string
     filters?: Filter[]
     className?: string
@@ -59,6 +63,12 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
         [onFilterClicked, props.telemetryService]
     )
 
+    const onSearchSnippetsCtaLinkClick = useCallback(() => {
+        props.telemetryService.log('SignUpPLGSnippet_1_Search')
+    }, [props.telemetryService])
+
+    const showSnippetsCtaLink = !props.authenticatedUser && props.featureFlags.get('w0-signup-optimisation')
+
     return (
         <div className={classNames(styles.searchSidebar, props.className)}>
             <StickyBox className={styles.searchSidebarStickyBox}>
@@ -71,7 +81,17 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                 <SearchSidebarSection className={styles.searchSidebarItem} header="Repositories" showSearch={true}>
                     {getRepoFilterLinks(props.filters, onDynamicFilterClicked)}
                 </SearchSidebarSection>
-                <SearchSidebarSection className={styles.searchSidebarItem} header="Search snippets">
+                <SearchSidebarSection
+                    className={styles.searchSidebarItem}
+                    header="Search snippets"
+                    ctaLinkText={showSnippetsCtaLink ? 'Sign up to create code snippets' : undefined}
+                    ctaLinkTo={
+                        showSnippetsCtaLink
+                            ? `/sign-up?src=Snippet&returnTo=${encodeURIComponent('/user/settings')}`
+                            : undefined
+                    }
+                    onCtaLinkClick={onSearchSnippetsCtaLinkClick}
+                >
                     {getSearchSnippetLinks(props.settingsCascade, onSnippetClicked)}
                 </SearchSidebarSection>
                 <SearchSidebarSection className={styles.searchSidebarItem} header="Quicklinks">
