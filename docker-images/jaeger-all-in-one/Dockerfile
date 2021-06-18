@@ -5,7 +5,7 @@
 ARG JAEGER_VERSION
 FROM jaegertracing/all-in-one:${JAEGER_VERSION} as base
 
-FROM sourcegraph/alpine-3.12:99212_2021-06-14_51f6e1e@sha256:0b98031f67bda9b088421f137a1d7d959b44ad360175cfac59c4d6ccd19a4e57
+FROM sourcegraph/alpine-3.12:insiders@sha256:50b94f897a8cf85d3e0703f79c9e2588fe5c77c695d3d53aafd0ce6345557ed2
 USER root
 RUN apk update
 # hadolint ignore=DL3018

@@ -1,24 +1,24 @@
 #!/usr/bin/env bash
 
 cd "$(dirname "${BASH_SOURCE[0]}")"/../..
-set -euxo pipefail
+set -euo pipefail
+
+check_sd_installed() {
+  if ! command -v sd &>/dev/null; then
+    echo "'sd' command not installed. Please install 'sd' by following the instructions on https://github.com/chmln/sd#installation"
+    exit 1
+  fi
+}
 
 update_image_reference() {
   local old_image_stub="$1"
   local new_tag_and_digest="$2"
   local file="$3"
 
-  # (sourcegraph\/alpine-3.12(\S*))(\s*)((AS)?.*)
-  # local original="($old_image_stub:([^:space:]*))([:space:]*)((AS)?.*)"
-  # local original="$old_image_stub:[[^:space:]]*@(sha256:[[^:space:]]*)"
-  # sourcegraph\/alpine-3.12:(\S*)@(sha256:\S*)
-  local original="(?P<prefix>^FROM\s+)(?P<repo>$old_image_stub:)(\S*@sha256:\S*)"
-  local replacement="\${prefix}\${repo}$new_tag_and_digest"
+  local original="(?P<repo>$old_image_stub:)(\S*@sha256:\S*)"
+  local replacement="\${repo}$new_tag_and_digest"
 
-  # local new_text
   sd "$original" "$replacement" "$file"
-
-  # echo "$new_text" >"$file"
 }
 
 get_new_tag_and_digest() {
@@ -32,6 +32,8 @@ get_new_tag_and_digest() {
   digest="$(docker inspect --format='{{index .RepoDigests 0}}' "$image" | sed "s~$repo@~~g" | tr -d '\n')"
   echo -n "$tag@$digest"
 }
+
+check_sd_installed
 
 REPO="sourcegraph/alpine-3.12"
 
