@@ -37,7 +37,8 @@ type repoLister interface {
 
 func (r *repositoryTextSearchIndexResolver) resolve(ctx context.Context) (*zoekt.RepoListEntry, error) {
 	r.once.Do(func() {
-		repoList, err := r.client.List(ctx, zoektquery.NewRepoSet(r.repo.Name()))
+		q := &zoektquery.RepoBranches{Set: map[string][]string{r.repo.Name(): {"HEAD"}}}
+		repoList, err := r.client.List(ctx, q)
 		if err != nil {
 			r.err = err
 			return
