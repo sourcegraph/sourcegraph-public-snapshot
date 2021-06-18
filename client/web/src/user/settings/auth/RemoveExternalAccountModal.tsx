@@ -57,30 +57,28 @@ export const RemoveExternalAccountModal: React.FunctionComponent<{
             aria-describedby={`description--disconnect-${name}`}
             onDismiss={onDidCancel}
         >
-            <div className="web-content">
-                <h3 id={`heading--disconnect-${name}`} className="text-danger mb-4">
-                    Disconnect {name}?
-                </h3>
-                <Form onSubmit={onAccountRemove}>
-                    <div id={`description--disconnect-${name}`} className="form-group mb-4">
-                        You are about to remove the sign in connection with {name}. After removing it, you won’t be able
-                        to use {name} to sign in to Sourcegraph.
-                    </div>
-                    <div className="d-flex justify-content-end">
-                        <button
-                            type="button"
-                            disabled={isLoading}
-                            className="btn btn-outline-secondary mr-2"
-                            onClick={onDidCancel}
-                        >
-                            Cancel
-                        </button>
-                        <button type="submit" disabled={isLoading} className="btn btn-danger">
-                            Yes, disconnect {name}
-                        </button>
-                    </div>
-                </Form>
-            </div>
+            <h3 id={`heading--disconnect-${name}`} className="text-danger mb-4">
+                Disconnect {name}?
+            </h3>
+            <Form onSubmit={onAccountRemove}>
+                <div id={`description--disconnect-${name}`} className="form-group mb-4">
+                    You are about to remove the sign in connection with {name}. After removing it, you won’t be able to
+                    use {name} to sign in to Sourcegraph.
+                </div>
+                <div className="d-flex justify-content-end">
+                    <button
+                        type="button"
+                        disabled={isLoading}
+                        className="btn btn-outline-secondary mr-2"
+                        onClick={onDidCancel}
+                    >
+                        Cancel
+                    </button>
+                    <button type="submit" disabled={isLoading} className="btn btn-danger">
+                        Yes, disconnect {name}
+                    </button>
+                </div>
+            </Form>
         </Dialog>
     )
 }

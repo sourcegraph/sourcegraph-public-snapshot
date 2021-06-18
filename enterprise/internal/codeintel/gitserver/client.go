@@ -176,7 +176,6 @@ func ParseCommitGraph(lines []string) *CommitGraph {
 
 // RefDescription describes a commit at the head of a branch or tag.
 type RefDescription struct {
-	Commit          string
 	Name            string
 	Type            RefType
 	IsDefaultBranch bool
@@ -196,9 +195,9 @@ var refPrefixes = map[string]RefType{
 	"refs/tags/":  RefTypeTag,
 }
 
-// RefDescriptions returns a slice of objects describing the head of all branches
-// and tags of the given repository.
-func (c *Client) RefDescriptions(ctx context.Context, repositoryID int) (_ []RefDescription, err error) {
+// RefDescriptions returns a map from commits to descriptions of the tip of each
+// branch and tag of the given repository.
+func (c *Client) RefDescriptions(ctx context.Context, repositoryID int) (_ map[string]RefDescription, err error) {
 	ctx, endObservation := c.operations.refDescriptions.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 	}})
@@ -218,15 +217,15 @@ func (c *Client) RefDescriptions(ctx context.Context, repositoryID int) (_ []Ref
 }
 
 // parseRefDescriptions converts the output of the for-each-ref command in the RefDescriptions
-// method to a slice of RefDescription objects. Each line should conform to the format string
-// `%(objectname):%(refname):%(HEAD):%(creatordate)`, where:
+// method to a map from commits to RefDescription objects. Each line should conform to the format
+// string `%(objectname):%(refname):%(HEAD):%(creatordate)`, where
 //
 // - %(objectname) is the 40-character revhash
 // - %(refname) is the name of the tag or branch (prefixed with refs/heads/ or ref/tags/)
 // - %(HEAD) is `*` if the branch is the default branch (and whitesace otherwise)
 // - %(creatordate) is the ISO-formatted date the object was created
-func parseRefDescriptions(lines []string) ([]RefDescription, error) {
-	refDescriptions := make([]RefDescription, 0, len(lines))
+func parseRefDescriptions(lines []string) (map[string]RefDescription, error) {
+	refDescriptions := make(map[string]RefDescription, len(lines))
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
 		if line == "" {
@@ -259,13 +258,12 @@ func parseRefDescriptions(lines []string) ([]RefDescription, error) {
 			return nil, fmt.Errorf(`unexpected output from git for-each-ref (bad date format) "%s"`, line)
 		}
 
-		refDescriptions = append(refDescriptions, RefDescription{
-			Commit:          commit,
+		refDescriptions[commit] = RefDescription{
 			Name:            name,
 			Type:            refType,
 			IsDefaultBranch: isDefaultBranch,
 			CreatedDate:     createdDate,
-		})
+		}
 	}
 
 	return refDescriptions, nil

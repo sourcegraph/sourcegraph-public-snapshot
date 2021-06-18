@@ -126,7 +126,7 @@ export const AddCredentialModal: React.FunctionComponent<AddCredentialModalProps
             onDismiss={onCancel}
             aria-labelledby={labelId}
         >
-            <div className="web-content test-add-credential-modal">
+            <div className="test-add-credential-modal">
                 <ModalHeader
                     id={labelId}
                     externalServiceKind={externalServiceKind}

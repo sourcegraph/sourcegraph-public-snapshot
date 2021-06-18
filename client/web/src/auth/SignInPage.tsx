@@ -91,7 +91,7 @@ export const SignInPage: React.FunctionComponent<SignInPageProps> = props => {
         )
 
     return (
-        <div className="signin-signup-page sign-in-page web-content">
+        <div className="signin-signup-page sign-in-page">
             <PageTitle title="Sign in" />
             <HeroPage
                 icon={SourcegraphIcon}

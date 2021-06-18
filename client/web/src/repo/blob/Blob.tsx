@@ -56,13 +56,15 @@ import {
     LineOrPositionOrRange,
     lprToSelectionsZeroIndexed,
     ModeSpec,
-    parseHash,
     UIPositionSpec,
     RepoSpec,
     ResolvedRevisionSpec,
     RevisionSpec,
-    toPositionOrRangeHash,
     toURIWithPath,
+    parseQueryAndHash,
+    toPositionOrRangeQueryParameter,
+    addLineRangeQueryParameter,
+    formatSearchParameters,
 } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
@@ -197,7 +199,10 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         (lineOrPositionOrRange: LineOrPositionOrRange) => locationPositions.next(lineOrPositionOrRange),
         [locationPositions]
     )
-    const parsedHash = useMemo(() => parseHash(location.hash), [location.hash])
+    const parsedHash = useMemo(() => parseQueryAndHash(location.search, location.hash), [
+        location.search,
+        location.hash,
+    ])
     useDeepCompareEffect(() => {
         nextLocationPosition(parsedHash)
     }, [parsedHash])
@@ -297,7 +302,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                         window.getSelection()!.removeAllRanges()
 
                         const position = locateTarget(event.target as HTMLElement, domFunctions)
-                        let hash: string
+                        let query: string | undefined
                         if (
                             position &&
                             event.shiftKey &&
@@ -305,7 +310,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                             hoverifier.hoverState.selectedPosition.line !== undefined
                         ) {
                             // Compare with previous selections (maintained by hoverifier)
-                            hash = toPositionOrRangeHash({
+                            query = toPositionOrRangeQueryParameter({
                                 range: {
                                     start: {
                                         line: Math.min(hoverifier.hoverState.selectedPosition.line, position.line),
@@ -316,14 +321,15 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                                 },
                             })
                         } else {
-                            hash = toPositionOrRangeHash({ position })
+                            query = toPositionOrRangeQueryParameter({ position })
                         }
 
-                        if (!hash.startsWith('#')) {
-                            hash = '#' + hash
-                        }
-
-                        props.history.push({ ...location, hash })
+                        props.history.push({
+                            ...location,
+                            search: formatSearchParameters(
+                                addLineRangeQueryParameter(new URLSearchParams(location.search), query)
+                            ),
+                        })
                     }),
                     mapTo(undefined)
                 ),

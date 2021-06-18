@@ -31,13 +31,13 @@ type operations struct {
 	getIndexesByIDs                        *observation.Operation
 	getOldestCommitDate                    *observation.Operation
 	getRepositoriesWithIndexConfiguration  *observation.Operation
+	getAutoindexDisabledRepositories       *observation.Operation
 	getUploadByID                          *observation.Operation
 	getUploads                             *observation.Operation
 	getUploadsByIDs                        *observation.Operation
 	hardDeleteUploadByID                   *observation.Operation
 	hasCommit                              *observation.Operation
 	hasRepository                          *observation.Operation
-	indexableRepositories                  *observation.Operation
 	indexQueueSize                         *observation.Operation
 	insertDependencyIndexingJob            *observation.Operation
 	insertIndex                            *observation.Operation
@@ -55,14 +55,11 @@ type operations struct {
 	referencesForUpload                    *observation.Operation
 	refreshCommitResolvability             *observation.Operation
 	repoName                               *observation.Operation
-	repoUsageStatistics                    *observation.Operation
 	requeue                                *observation.Operation
 	requeueIndex                           *observation.Operation
-	resetIndexableRepositories             *observation.Operation
 	softDeleteOldUploads                   *observation.Operation
 	staleSourcedCommits                    *observation.Operation
 	updateCommitedAt                       *observation.Operation
-	updateIndexableRepository              *observation.Operation
 	updateIndexConfigurationByRepositoryID *observation.Operation
 	updatePackageReferences                *observation.Operation
 	updatePackages                         *observation.Operation
@@ -122,13 +119,13 @@ func newOperations(observationContext *observation.Context) *operations {
 		getIndexesByIDs:                        op("GetIndexesByIDs"),
 		getOldestCommitDate:                    op("GetOldestCommitDate"),
 		getRepositoriesWithIndexConfiguration:  op("GetRepositoriesWithIndexConfiguration"),
+		getAutoindexDisabledRepositories:       op("getAutoindexDisabledRepositories"),
 		getUploadByID:                          op("GetUploadByID"),
 		getUploads:                             op("GetUploads"),
 		getUploadsByIDs:                        op("GetUploadsByIDs"),
 		hardDeleteUploadByID:                   op("HardDeleteUploadByID"),
 		hasCommit:                              op("HasCommit"),
 		hasRepository:                          op("HasRepository"),
-		indexableRepositories:                  op("IndexableRepositories"),
 		indexQueueSize:                         op("IndexQueueSize"),
 		insertDependencyIndexingJob:            op("InsertDependencyIndexingJob"),
 		insertIndex:                            op("InsertIndex"),
@@ -146,14 +143,11 @@ func newOperations(observationContext *observation.Context) *operations {
 		referencesForUpload:                    op("ReferencesForUpload"),
 		refreshCommitResolvability:             op("RefreshCommitResolvability"),
 		repoName:                               op("RepoName"),
-		repoUsageStatistics:                    op("RepoUsageStatistics"),
 		requeue:                                op("Requeue"),
 		requeueIndex:                           op("RequeueIndex"),
-		resetIndexableRepositories:             op("ResetIndexableRepositories"),
 		softDeleteOldUploads:                   op("SoftDeleteOldUploads"),
 		staleSourcedCommits:                    op("StaleSourcedCommits"),
 		updateCommitedAt:                       op("UpdateCommitedAt"),
-		updateIndexableRepository:              op("UpdateIndexableRepository"),
 		updateIndexConfigurationByRepositoryID: op("UpdateIndexConfigurationByRepositoryID"),
 		updatePackageReferences:                op("UpdatePackageReferences"),
 		updatePackages:                         op("UpdatePackages"),

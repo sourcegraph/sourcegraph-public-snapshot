@@ -182,225 +182,78 @@ func (r *searchResolver) errorForNoResolvedRepos(ctx context.Context) *errNoReso
 		}
 	}
 
-	// TODO(sqs): handle -repo:foo fields.
+	isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil
+	if !envvar.SourcegraphDotComMode() {
+		if needsRepoConfig, err := needsRepositoryConfiguration(ctx, r.db); err == nil && needsRepoConfig {
+			if isSiteAdmin {
+				return &errNoResolvedRepos{
+					Title:       "No repositories or code hosts configured",
+					Description: "To start searching code, first go to site admin to configure repositories and code hosts.",
+				}
 
-	withoutRepoFields := query.OmitField(r.Query, query.FieldRepo)
-
-	switch {
-	case len(repoGroupFilters) > 1:
-		// This is a rare case, so don't bother proposing queries.
-		return &errNoResolvedRepos{
-			PrometheusType: "no_resolved_repos__more_than_one_repogroup",
-			Title:          "No repository exists in all specified groups and satisfies all of your repo: filters.",
-			Description:    "Expand your repository filters to see results",
-		}
-
-	case len(repoGroupFilters) == 1 && len(repoFilters) > 1:
-		if globbing {
-			return &errNoResolvedRepos{
-				PrometheusType: "no_resolved_repos__try_remove_filters_for_repogroup",
-				Title:          fmt.Sprintf("No repositories in repogroup:%s satisfied all of your repo: filters.", repoGroupFilters[0]),
-				Description:    "Remove repo: filters to see results",
-			}
-		}
-		proposedQueries := []*searchQueryDescription{}
-		tryRemoveRepoGroup := searchrepos.Options{
-			RepoFilters:      repoFilters,
-			MinusRepoFilters: minusRepoFilters,
-			OnlyForks:        onlyForks,
-			NoForks:          noForks,
-		}
-		if r.reposExist(ctx, tryRemoveRepoGroup) {
-			proposedQueries = []*searchQueryDescription{
-				{
-					description: fmt.Sprintf("include repositories outside of repogroup:%s", repoGroupFilters[0]),
-					query:       query.OmitField(r.Query, query.FieldRepoGroup),
-					patternType: r.PatternType,
-				},
-			}
-		}
-
-		unionRepoFilter := searchrepos.UnionRegExps(repoFilters)
-		tryAnyRepo := searchrepos.Options{
-			RepoFilters:      []string{unionRepoFilter},
-			MinusRepoFilters: minusRepoFilters,
-			RepoGroupFilters: repoGroupFilters,
-			OnlyForks:        onlyForks,
-			NoForks:          noForks,
-		}
-		if r.reposExist(ctx, tryAnyRepo) {
-			proposedQueries = append(proposedQueries, &searchQueryDescription{
-				description: "include repositories satisfying any (not all) of your repo: filters",
-				query:       withoutRepoFields + fmt.Sprintf(" repo:%s", unionRepoFilter),
-				patternType: r.PatternType,
-			})
-		} else {
-			// Fall back to removing repo filters.
-			proposedQueries = append(proposedQueries, &searchQueryDescription{
-				description: "remove repo: filters",
-				query:       withoutRepoFields,
-				patternType: r.PatternType,
-			})
-		}
-
-		return &errNoResolvedRepos{
-			PrometheusType:  "no_resolved_repos__try_remove_filters_for_repogroup",
-			Title:           fmt.Sprintf("No repositories in repogroup:%s satisfied all of your repo: filters.", repoGroupFilters[0]),
-			Description:     "Expand your repository filters to see results",
-			ProposedQueries: proposedQueries,
-		}
-
-	case len(repoGroupFilters) == 1 && len(repoFilters) == 1:
-		if globbing {
-			return &errNoResolvedRepos{
-				PrometheusType: "no_resolved_repogroups",
-				Title:          fmt.Sprintf("No repositories in repogroup:%s satisfied all of your repo: filters.", repoGroupFilters[0]),
-				Description:    "Remove repo: filters to see results",
-			}
-		}
-		proposedQueries := []*searchQueryDescription{}
-		tryRemoveRepoGroup := searchrepos.Options{
-			RepoFilters:      repoFilters,
-			MinusRepoFilters: minusRepoFilters,
-			OnlyForks:        onlyForks,
-			NoForks:          noForks,
-		}
-		if r.reposExist(ctx, tryRemoveRepoGroup) {
-			proposedQueries = []*searchQueryDescription{
-				{
-					description: fmt.Sprintf("include repositories outside of repogroup:%s", repoGroupFilters[0]),
-					query:       query.OmitField(r.Query, query.FieldRepoGroup),
-					patternType: r.PatternType,
-				},
-			}
-		}
-
-		proposedQueries = append(proposedQueries, &searchQueryDescription{
-			description: "remove repo: filters",
-			query:       withoutRepoFields,
-			patternType: r.PatternType,
-		})
-		return &errNoResolvedRepos{
-			PrometheusType:  "no_resolved_repogroups",
-			Title:           fmt.Sprintf("No repositories in repogroup:%s satisfied all of your repo: filters.", repoGroupFilters[0]),
-			Description:     "Expand your repository filters to see results",
-			ProposedQueries: proposedQueries,
-		}
-
-	case len(repoGroupFilters) == 0 && len(repoFilters) > 1:
-		if globbing {
-			return &errNoResolvedRepos{
-				PrometheusType: "no_resolved_repos__suggest_add_remove_repos",
-				Title:          "No repositories satisfied all of your repo: filters.",
-				Description:    "Remove repo: filters to see results",
-			}
-		}
-		proposedQueries := []*searchQueryDescription{}
-		unionRepoFilter := searchrepos.UnionRegExps(repoFilters)
-		tryAnyRepo := searchrepos.Options{
-			RepoFilters:      []string{unionRepoFilter},
-			MinusRepoFilters: minusRepoFilters,
-			RepoGroupFilters: repoGroupFilters,
-			OnlyForks:        onlyForks,
-			NoForks:          noForks,
-		}
-		if r.reposExist(ctx, tryAnyRepo) {
-			proposedQueries = append(proposedQueries, &searchQueryDescription{
-				description: "include repositories satisfying any (not all) of your repo: filters",
-				query:       withoutRepoFields + fmt.Sprintf(" repo:%s", unionRepoFilter),
-				patternType: r.PatternType,
-			})
-		}
-
-		proposedQueries = append(proposedQueries, &searchQueryDescription{
-			description: "remove repo: filters",
-			query:       withoutRepoFields,
-		})
-		return &errNoResolvedRepos{
-			PrometheusType:  "no_resolved_repos__suggest_add_remove_repos",
-			Title:           "No repositories satisfied all of your repo: filters.",
-			Description:     "Expand your repo: filters to see results",
-			ProposedQueries: proposedQueries,
-		}
-
-	case len(repoGroupFilters) == 0 && len(repoFilters) == 1:
-		isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil
-		if !envvar.SourcegraphDotComMode() {
-			if needsRepoConfig, err := needsRepositoryConfiguration(ctx, r.db); err == nil && needsRepoConfig {
-				if isSiteAdmin {
-					return &errNoResolvedRepos{
-						Title:       "No repositories or code hosts configured",
-						Description: "To start searching code, first go to site admin to configure repositories and code hosts.",
-					}
-
-				} else {
-					return &errNoResolvedRepos{
-						Title:       "No repositories or code hosts configured",
-						Description: "To start searching code, ask the site admin to configure and enable repositories.",
-					}
+			} else {
+				return &errNoResolvedRepos{
+					Title:       "No repositories or code hosts configured",
+					Description: "To start searching code, ask the site admin to configure and enable repositories.",
 				}
 			}
 		}
+	}
 
-		if globbing {
-			return &errNoResolvedRepos{
-				PrometheusType: "no_resolved_repos__generic",
-				Title:          "No repositories satisfied your repo: filter",
-				Description:    "Modify your repo: filter to see results",
-			}
+	if globbing {
+		return &errNoResolvedRepos{
+			PrometheusType: "no_resolved_repos__generic",
+			Title:          "No repositories found",
+			Description:    "Try using a different `repo:<regexp>` filter to see results",
 		}
+	}
 
-		proposedQueries := []*searchQueryDescription{}
-		if forksNotSet {
-			tryIncludeForks := searchrepos.Options{
-				RepoFilters:      repoFilters,
-				MinusRepoFilters: minusRepoFilters,
-				NoForks:          false,
-			}
-			if r.reposExist(ctx, tryIncludeForks) {
-				proposedQueries = append(proposedQueries, &searchQueryDescription{
-					description: "include forked repositories in your query.",
-					query:       r.OriginalQuery + " fork:yes",
-					patternType: r.PatternType,
-				})
-			}
+	proposedQueries := []*searchQueryDescription{}
+	if forksNotSet {
+		tryIncludeForks := searchrepos.Options{
+			RepoFilters:      repoFilters,
+			MinusRepoFilters: minusRepoFilters,
+			NoForks:          false,
 		}
-
-		if archivedNotSet {
-			tryIncludeArchived := searchrepos.Options{
-				RepoFilters:      repoFilters,
-				MinusRepoFilters: minusRepoFilters,
-				OnlyForks:        onlyForks,
-				NoForks:          noForks,
-				OnlyArchived:     true,
-			}
-			if r.reposExist(ctx, tryIncludeArchived) {
-				proposedQueries = append(proposedQueries, &searchQueryDescription{
-					description: "include archived repositories in your query.",
-					query:       r.OriginalQuery + " archived:yes",
-					patternType: r.PatternType,
-				})
-			}
-		}
-
-		if strings.TrimSpace(withoutRepoFields) != "" {
+		if r.reposExist(ctx, tryIncludeForks) {
 			proposedQueries = append(proposedQueries, &searchQueryDescription{
-				description: "remove repo: filter",
-				query:       withoutRepoFields,
+				description: "include forked repositories in your query.",
+				query:       r.OriginalQuery + " fork:yes",
 				patternType: r.PatternType,
 			})
 		}
+	}
+
+	if archivedNotSet {
+		tryIncludeArchived := searchrepos.Options{
+			RepoFilters:      repoFilters,
+			MinusRepoFilters: minusRepoFilters,
+			OnlyForks:        onlyForks,
+			NoForks:          noForks,
+			OnlyArchived:     true,
+		}
+		if r.reposExist(ctx, tryIncludeArchived) {
+			proposedQueries = append(proposedQueries, &searchQueryDescription{
+				description: "include archived repositories in your query.",
+				query:       r.OriginalQuery + " archived:yes",
+				patternType: r.PatternType,
+			})
+		}
+	}
+
+	if len(proposedQueries) > 0 {
 		return &errNoResolvedRepos{
-			PrometheusType:  "no_resolved_repos__generic",
-			Title:           "No repositories satisfied your repo: filter",
-			Description:     "Modify your repo: filter to see results",
+			PrometheusType:  "no_resolved_repos__repos_exist_when_altered",
+			Title:           "No repositories found",
+			Description:     "Try alter the query or use a different `repo:<regexp>` filter to see results",
 			ProposedQueries: proposedQueries,
 		}
 	}
-	// Should be unreachable. Return a generic alert if reached.
+
 	return &errNoResolvedRepos{
-		Title:       "No repository results.",
-		Description: "There are no repositories to search.",
+		PrometheusType: "no_resolved_repos__generic",
+		Title:          "No repositories found",
+		Description:    "Try using a different `repo:<regexp>` filter to see results",
 	}
 }
 

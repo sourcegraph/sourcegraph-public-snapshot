@@ -76,7 +76,7 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
     )
 
     return (
-        <div className="code-intel-indexes web-content">
+        <div className="code-intel-indexes">
             <PageTitle title="Precise code intelligence auto-index records" />
             <PageHeader
                 className="mb-3"

@@ -11,7 +11,7 @@ import styles from './PreviewList.module.scss'
 import { visibleChangesetApplyPreviewNodeStories } from './VisibleChangesetApplyPreviewNode.story'
 
 const { add } = storiesOf('web/batches/preview/ChangesetApplyPreviewNode', module).addDecorator(story => (
-    <div className={classNames(styles.previewListGrid, 'p-3 container web-content')}>{story()}</div>
+    <div className={classNames(styles.previewListGrid, 'p-3 container')}>{story()}</div>
 ))
 
 const queryEmptyFileDiffs = () => of({ totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] })

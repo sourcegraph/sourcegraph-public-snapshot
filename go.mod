@@ -162,7 +162,7 @@ require (
 	github.com/stripe/stripe-go v70.15.0+incompatible
 	github.com/temoto/robotstxt v1.1.1
 	github.com/throttled/throttled/v2 v2.7.1
-	github.com/tidwall/gjson v1.6.1
+	github.com/tidwall/gjson v1.6.8
 	github.com/tinylib/msgp v1.1.2 // indirect
 	github.com/tomnomnom/linkheader v0.0.0-20180905144013-02ca5825eb80
 	github.com/uber/gonduit v0.11.0

@@ -9,7 +9,7 @@ import { OutOfBandMigrationFields } from '../graphql-operations'
 import { SiteAdminMigrationsPage } from './SiteAdminMigrationsPage'
 
 const { add } = storiesOf('web/Site Admin/Migrations', module)
-    .addDecorator(story => <div className="p-3 container web-content">{story()}</div>)
+    .addDecorator(story => <div className="p-3 container">{story()}</div>)
     .addParameters({
         chromatic: {
             viewports: [320, 576, 978, 1440],

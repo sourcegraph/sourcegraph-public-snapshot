@@ -20,7 +20,8 @@ After setting or changing certain values in **Site admin > Global settings** the
 you might be asked to restart the frontend for the changes to take effect.
 In case of a Kubernetes deployment this can be done as follows:
 
-```bash
+```
+bash
 kubectl delete pods -l app=sourcegraph-frontend
 ``` 
 

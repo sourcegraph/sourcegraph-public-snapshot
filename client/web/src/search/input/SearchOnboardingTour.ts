@@ -27,7 +27,6 @@ const tourOptions: Shepherd.Tour.TourOptions = {
     ...defaultTourOptions,
     defaultStepOptions: {
         ...defaultTourOptions.defaultStepOptions,
-        classes: 'web-content',
         popperOptions: {
             modifiers: [...defaultPopperModifiers, { name: 'offset', options: { offset: [0, 8] } }],
         },

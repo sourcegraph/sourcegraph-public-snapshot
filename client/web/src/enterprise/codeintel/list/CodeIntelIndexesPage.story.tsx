@@ -9,7 +9,7 @@ import { IndexConnection } from './backend'
 import { CodeIntelIndexesPage } from './CodeIntelIndexesPage'
 
 const { add } = storiesOf('web/codeintel/list/CodeIntelIndexesPage', module)
-    .addDecorator(story => <div className="p-3 container web-content">{story()}</div>)
+    .addDecorator(story => <div className="p-3 container">{story()}</div>)
     .addParameters({
         chromatic: {
             viewports: [320, 576, 978, 1440],

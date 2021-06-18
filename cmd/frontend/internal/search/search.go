@@ -30,7 +30,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
@@ -46,7 +45,6 @@ func StreamHandler(db dbutil.DB) http.Handler {
 		newSearchResolver:   defaultNewSearchResolver,
 		flushTickerInternal: 100 * time.Millisecond,
 		pingTickerInterval:  5 * time.Second,
-		repoMetadataCache:   repos.NewMetadataCache(5000),
 	}
 }
 
@@ -55,7 +53,6 @@ type streamHandler struct {
 	newSearchResolver   func(context.Context, dbutil.DB, *graphqlbackend.SearchArgs) (searchResolver, error)
 	flushTickerInternal time.Duration
 	pingTickerInterval  time.Duration
-	repoMetadataCache   repos.MetadataCache
 }
 
 func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -292,33 +289,27 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *streamHandler) getEventRepoMetadata(ctx context.Context, event streaming.SearchEvent) map[api.RepoID]*types.Repo {
-	tr, ctx := trace.New(ctx, "streamHandler.getEventRepoMetadata", "")
-	defer tr.Finish()
-
-	repoMetadata := make(map[api.RepoID]*types.Repo)
-
 	ffs := featureflag.FromContext(ctx)
 	if ffs.GetBoolOr("cc_repoMetadata", false) {
 		ids := repoIDs(event.Results)
-
-		var getter repos.MetadataGetter = database.Repos(h.db)
-		if ffs.GetBoolOr("cc_useRepoMetadataCache", false) {
-			getter = repos.CachedMetadataGetter{
-				MetadataGetter: getter,
-				Cache:          h.repoMetadataCache,
-			}
+		if len(ids) == 0 {
+			// Return early if there are no repos in the event
+			return nil
 		}
 
-		metadataList, err := getter.GetByIDs(ctx, ids...)
+		repoMetadata := make(map[api.RepoID]*types.Repo, len(ids))
+
+		metadataList, err := database.Repos(h.db).GetByIDs(ctx, ids...)
 		if err != nil {
-			log15.Error("streaming: failed to retrieve repo metadata: %s", err)
+			log15.Error("streaming: failed to retrieve repo metadata", "error", err)
 		}
-		for i, id := range ids {
-			repoMetadata[id] = metadataList[i]
+		for _, repo := range metadataList {
+			repoMetadata[repo.ID] = repo
 		}
+		return repoMetadata
 	}
 
-	return repoMetadata
+	return nil
 }
 
 // startSearch will start a search. It returns the events channel which

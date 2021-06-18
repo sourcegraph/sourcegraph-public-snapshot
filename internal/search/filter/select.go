@@ -5,85 +5,82 @@ import (
 	"strings"
 )
 
-type SelectType string
-
 const (
-	Commit     SelectType = "commit"
-	Content    SelectType = "content"
-	File       SelectType = "file"
-	Repository SelectType = "repo"
-	Symbol     SelectType = "symbol"
+	Commit     = "commit"
+	Content    = "content"
+	File       = "file"
+	Repository = "repo"
+	Symbol     = "symbol"
 )
 
-// SelectPath represents a parsed and validated select value and fields.
-type SelectPath struct {
-	Type   SelectType
-	Fields []string
-}
+// SelectPath represents a parsed and validated select value
+type SelectPath []string
 
 func (sp SelectPath) String() string {
-	return string(sp.Type)
+	return strings.Join(sp, ".")
 }
 
-type Object map[string]interface{}
+// Root is the top-level result type that is being selected.
+// Returns an empty string if SelectPath is empty
+func (sp SelectPath) Root() string {
+	if len(sp) > 0 {
+		return sp[0]
+	}
+	return ""
+}
 
-var empty = struct{}{}
+type object map[string]object
 
-var validSelectors = map[SelectType]Object{
-	Commit: {
-		"diff": Object{
-			"added":   empty,
-			"removed": empty,
+var validSelectors = object{
+	Commit: object{
+		"diff": object{
+			"added":   nil,
+			"removed": nil,
 		},
 	},
-	Content:    {},
-	File:       {},
-	Repository: {},
-	Symbol: {
+	Content:    nil,
+	File:       nil,
+	Repository: nil,
+	Symbol: object{
 		/* cf. SymbolKind https://microsoft.github.io/language-server-protocol/specification */
-		"file":           empty,
-		"module":         empty,
-		"namespace":      empty,
-		"package":        empty,
-		"class":          empty,
-		"method":         empty,
-		"property":       empty,
-		"field":          empty,
-		"constructor":    empty,
-		"enum":           empty,
-		"interface":      empty,
-		"function":       empty,
-		"variable":       empty,
-		"constant":       empty,
-		"string":         empty,
-		"number":         empty,
-		"boolean":        empty,
-		"array":          empty,
-		"object":         empty,
-		"key":            empty,
-		"null":           empty,
-		"enum-member":    empty,
-		"struct":         empty,
-		"event":          empty,
-		"operator":       empty,
-		"type-parameter": empty,
+		"file":           nil,
+		"module":         nil,
+		"namespace":      nil,
+		"package":        nil,
+		"class":          nil,
+		"method":         nil,
+		"property":       nil,
+		"field":          nil,
+		"constructor":    nil,
+		"enum":           nil,
+		"interface":      nil,
+		"function":       nil,
+		"variable":       nil,
+		"constant":       nil,
+		"string":         nil,
+		"number":         nil,
+		"boolean":        nil,
+		"array":          nil,
+		"object":         nil,
+		"key":            nil,
+		"null":           nil,
+		"enum-member":    nil,
+		"struct":         nil,
+		"event":          nil,
+		"operator":       nil,
+		"type-parameter": nil,
 	},
-}
-
-func splitFields(s string) (string, []string) {
-	v := strings.Split(s, ".")
-	return v[0], v[1:]
 }
 
 func SelectPathFromString(s string) (SelectPath, error) {
-	selector, fields := splitFields(s)
-	if _, ok := validSelectors[SelectType(selector)]; !ok {
-		return SelectPath{}, fmt.Errorf("invalid select type '%s'", s)
-	}
-	if len(fields) > 0 {
-		if _, ok := validSelectors[SelectType(selector)][fields[0]]; !ok {
-			return SelectPath{}, fmt.Errorf("invalid field '%s' on select type '%s'", fields[0], selector)
+	fields := strings.Split(s, ".")
+	cur := validSelectors
+	for _, field := range fields {
+		child, ok := cur[field]
+		if !ok {
+			return SelectPath{}, fmt.Errorf("invalid field %q on select path %q", field, s)
 		}
+		cur = child
 	}
-	return SelectPath{Type: SelectType(selector), Fields: fields}, nil
+	return SelectPath(fields), nil
 }

@@ -42,7 +42,7 @@ export const RemoveCredentialModal: React.FunctionComponent<RemoveCredentialModa
             onDismiss={onCancel}
             aria-labelledby={labelId}
         >
-            <div className="web-content test-remove-credential-modal">
+            <div className="test-remove-credential-modal">
                 <ModalHeader
                     id={labelId}
                     externalServiceKind={codeHost.externalServiceKind}

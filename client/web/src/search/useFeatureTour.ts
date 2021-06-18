@@ -14,7 +14,7 @@ export const getTourOptions = (stepOptions: Shepherd.Step.StepOptions): Shepherd
     defaultStepOptions: {
         ...defaultTourOptions.defaultStepOptions,
         arrow: true,
-        classes: `web-content shadow-lg py-4 px-3 ${styles.featureTour}`,
+        classes: `shadow-lg py-4 px-3 ${styles.featureTour}`,
         ...stepOptions,
     },
 })

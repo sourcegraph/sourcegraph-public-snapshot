@@ -30,22 +30,6 @@ const props = {
     isSourcegraphDotCom: false,
 }
 
-add('Panels on Server', () => (
-    <WebStory>
-        {() => (
-            <div className="web-content">
-                <HomePanels {...props} />
-            </div>
-        )}
-    </WebStory>
-))
+add('Panels on Server', () => <WebStory>{() => <HomePanels {...props} />}</WebStory>)
 
-add('Panels on Cloud', () => (
-    <WebStory>
-        {() => (
-            <div className="web-content">
-                <HomePanels {...props} isSourcegraphDotCom={true} />
-            </div>
-        )}
-    </WebStory>
-))
+add('Panels on Cloud', () => <WebStory>{() => <HomePanels {...props} isSourcegraphDotCom={true} />}</WebStory>)

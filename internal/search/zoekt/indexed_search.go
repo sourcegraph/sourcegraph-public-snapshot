@@ -352,7 +352,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *Indexe
 	// Resolve repositories.
 	g.Go(func() error {
 		defer close(reposResolved)
-		if args.Mode == search.ZoektGlobalSearch || args.PatternInfo.Select.Type == filter.Repository {
+		if args.Mode == search.ZoektGlobalSearch || args.PatternInfo.Select.Root() == filter.Repository {
 			repos, err := getRepos(ctx, args.RepoPromise)
 			if err != nil {
 				return err
@@ -398,7 +398,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *Indexe
 
 		// PERF: if we are going to be selecting to repo results only anyways, we can just ask
 		// zoekt for only results of type repo.
-		if args.PatternInfo.Select.Type == filter.Repository {
+		if args.PatternInfo.Select.Root() == filter.Repository {
 			return zoektSearchReposOnly(ctx, args.Zoekt.Client, finalQuery, c, func() map[string]*search.RepositoryRevisions {
 				<-reposResolved
 				// getRepoInputRev is nil only if we encountered an error during repo resolution.

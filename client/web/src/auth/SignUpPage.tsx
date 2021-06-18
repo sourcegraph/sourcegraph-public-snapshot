@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react'
 import { Link, Redirect, useLocation } from 'react-router-dom'
 
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { AuthenticatedUser } from '../auth'
@@ -10,12 +11,12 @@ import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import { SourcegraphContext } from '../jscontext'
 import { eventLogger } from '../tracking/eventLogger'
 
-import { ExperimentalSignUpPage } from './ExperimentalSignUpPage'
+import { ExperimentalSignUpPage, ShowEmailFormQueryParameter } from './ExperimentalSignUpPage'
 import { SourcegraphIcon } from './icons'
 import { getReturnTo } from './SignInSignUpCommon'
 import { SignUpArguments, SignUpForm } from './SignUpForm'
 
-interface SignUpPageProps extends ThemeProps, FeatureFlagProps {
+interface SignUpPageProps extends ThemeProps, TelemetryProps, FeatureFlagProps {
     authenticatedUser: AuthenticatedUser | null
     context: Pick<
         SourcegraphContext,
@@ -28,6 +29,7 @@ export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({
     context,
     featureFlags,
     isLightTheme,
+    telemetryService,
 }) => {
     const location = useLocation()
     const query = new URLSearchParams(location.search)
@@ -72,11 +74,20 @@ export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({
         })
 
     if (context.sourcegraphDotComMode && featureFlags.get('w0-signup-optimisation') && query.get('src')) {
-        return <ExperimentalSignUpPage source={query.get('src')} onSignUp={handleSignUp} isLightTheme={isLightTheme} />
+        return (
+            <ExperimentalSignUpPage
+                source={query.get('src')}
+                onSignUp={handleSignUp}
+                isLightTheme={isLightTheme}
+                showEmailForm={query.has(ShowEmailFormQueryParameter)}
+                context={context}
+                telemetryService={telemetryService}
+            />
+        )
     }
 
     return (
-        <div className="signin-signup-page sign-up-page web-content">
+        <div className="signin-signup-page sign-up-page">
             <PageTitle title="Sign up" />
             <HeroPage
                 icon={SourcegraphIcon}

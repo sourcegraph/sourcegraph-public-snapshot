@@ -12,4 +12,5 @@
   - View [language statistics](features.md#statistics) for search results.
 - [Search details](search_details.md)
 - [Sourcegraph Cloud](sourcegraph_cloud.md)
+  - [Who can see your code on Sourcegraph Cloud](code_visibility_on_sourcegraph_cloud.md)
 - [Search tips](tips.md)
