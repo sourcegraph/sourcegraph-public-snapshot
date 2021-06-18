@@ -195,7 +195,7 @@ func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 			return Resolved{}, err
 		}
 	}
-	overLimit := len(repos) >= limit
+	overLimit := len(repos) > limit
 	repoRevs := make([]*search.RepositoryRevisions, 0, len(repos))
 	var missingRepoRevs []*search.RepositoryRevisions
 	tr.LazyPrintf("Associate/validate revs - start")

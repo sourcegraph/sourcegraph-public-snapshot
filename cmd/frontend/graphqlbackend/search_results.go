@@ -1319,9 +1319,6 @@ func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, st
 	if len(resolved.RepoRevs) == 0 {
 		return nil, r.errorForNoResolvedRepos(ctx)
 	}
-	if resolved.OverLimit {
-		return nil, r.errorForOverRepoLimit(ctx)
-	}
 	return &resolved, nil
 }
 
