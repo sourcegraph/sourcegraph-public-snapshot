@@ -14,25 +14,25 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// A JvmPackagesSource yields depots from a single Maven connection configured
+// A JVMPackagesSource yields depots from a single Maven connection configured
 // in Sourcegraph via the external services configuration.
-type JvmPackagesSource struct {
+type JVMPackagesSource struct {
 	svc    *types.ExternalService
-	config *schema.JvmPackagesConnection
+	config *schema.JVMPackagesConnection
 }
 
-// NewJvmPackagesSource returns a new MavenSource from the given external
+// NewJVMPackagesSource returns a new MavenSource from the given external
 // service.
-func NewJvmPackagesSource(svc *types.ExternalService) (*JvmPackagesSource, error) {
-	var c schema.JvmPackagesConnection
+func NewJVMPackagesSource(svc *types.ExternalService) (*JVMPackagesSource, error) {
+	var c schema.JVMPackagesConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return newJvmPackagesSource(svc, &c)
+	return newJVMPackagesSource(svc, &c)
 }
 
-func newJvmPackagesSource(svc *types.ExternalService, c *schema.JvmPackagesConnection) (*JvmPackagesSource, error) {
-	return &JvmPackagesSource{
+func newJVMPackagesSource(svc *types.ExternalService, c *schema.JVMPackagesConnection) (*JVMPackagesSource, error) {
+	return &JVMPackagesSource{
 		svc:    svc,
 		config: c,
 	}, nil
@@ -40,11 +40,11 @@ func newJvmPackagesSource(svc *types.ExternalService, c *schema.JvmPackagesConne
 
 // ListRepos returns all Maven artifacts accessible to all connections
 // configured in Sourcegraph via the external services configuration.
-func (s *JvmPackagesSource) ListRepos(ctx context.Context, results chan SourceResult) {
+func (s *JVMPackagesSource) ListRepos(ctx context.Context, results chan SourceResult) {
 	s.listDependentRepos(ctx, results)
 }
 
-func (s *JvmPackagesSource) listDependentRepos(ctx context.Context, results chan SourceResult) {
+func (s *JVMPackagesSource) listDependentRepos(ctx context.Context, results chan SourceResult) {
 	modules, err := MavenModules(*s.config)
 	if err != nil {
 		results <- SourceResult{Err: err}
@@ -59,7 +59,7 @@ func (s *JvmPackagesSource) listDependentRepos(ctx context.Context, results chan
 	}
 }
 
-func (s *JvmPackagesSource) GetRepo(ctx context.Context, artifactPath string) (*types.Repo, error) {
+func (s *JVMPackagesSource) GetRepo(ctx context.Context, artifactPath string) (*types.Repo, error) {
 	module, err := reposource.ParseMavenModule(artifactPath)
 	if err != nil {
 		return nil, err
@@ -99,7 +99,7 @@ func (e *mavenArtifactNotFound) Error() string {
 	return fmt.Sprintf("not found: maven dependency '%v'", e.dependency)
 }
 
-func (s *JvmPackagesSource) makeRepo(module reposource.Module) *types.Repo {
+func (s *JVMPackagesSource) makeRepo(module reposource.Module) *types.Repo {
 	urn := s.svc.URN()
 	cloneURL := module.CloneURL()
 	return &types.Repo{
@@ -107,8 +107,8 @@ func (s *JvmPackagesSource) makeRepo(module reposource.Module) *types.Repo {
 		URI:  string(module.RepoName()),
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          string(module.RepoName()),
-			ServiceID:   extsvc.TypeJvmPackages,
-			ServiceType: extsvc.TypeJvmPackages,
+			ServiceID:   extsvc.TypeJVMPackages,
+			ServiceType: extsvc.TypeJVMPackages,
 		},
 		Private: false,
 		Sources: map[string]*types.SourceInfo{
@@ -124,11 +124,11 @@ func (s *JvmPackagesSource) makeRepo(module reposource.Module) *types.Repo {
 }
 
 // ExternalServices returns a singleton slice containing the external service.
-func (s *JvmPackagesSource) ExternalServices() types.ExternalServices {
+func (s *JVMPackagesSource) ExternalServices() types.ExternalServices {
 	return types.ExternalServices{s.svc}
 }
 
-func MavenDependencies(connection schema.JvmPackagesConnection) (dependencies []reposource.Dependency, err error) {
+func MavenDependencies(connection schema.JVMPackagesConnection) (dependencies []reposource.Dependency, err error) {
 	for _, dep := range connection.Maven.Artifacts {
 		dependency, err := reposource.ParseMavenDependency(dep)
 		if err != nil {
@@ -139,7 +139,7 @@ func MavenDependencies(connection schema.JvmPackagesConnection) (dependencies []
 	return dependencies, nil
 }
 
-func MavenModules(connection schema.JvmPackagesConnection) ([]reposource.Module, error) {
+func MavenModules(connection schema.JVMPackagesConnection) ([]reposource.Module, error) {
 	isAdded := make(map[reposource.Module]bool)
 	modules := []reposource.Module{}
 	dependencies, err := MavenDependencies(connection)

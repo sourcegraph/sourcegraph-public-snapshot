@@ -197,7 +197,7 @@ func Main(enterpriseInit EnterpriseInit) {
 			Kinds: []string{
 				extsvc.KindGitHub,
 				extsvc.KindGitLab,
-				extsvc.KindJvmPackages,
+				extsvc.KindJVMPackages,
 			},
 		})
 		if err != nil {
@@ -219,8 +219,8 @@ func Main(enterpriseInit EnterpriseInit) {
 				if strings.HasPrefix(c.Url, "https://gitlab.com") && c.Token != "" {
 					server.GitLabDotComSource, err = repos.NewGitLabSource(e, cf)
 				}
-			case *schema.JvmPackagesConnection:
-				server.JvmPackagesSource, err = repos.NewJvmPackagesSource(e)
+			case *schema.JVMPackagesConnection:
+				server.JVMPackagesSource, err = repos.NewJVMPackagesSource(e)
 			}
 
 			if err != nil {

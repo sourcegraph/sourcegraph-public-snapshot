@@ -533,8 +533,8 @@ type ExperimentalFeatures struct {
 	EnablePostSignupFlow bool `json:"enablePostSignupFlow,omitempty"`
 	// EventLogging description: Enables user event logging inside of the Sourcegraph instance. This will allow admins to have greater visibility of user activity, such as frequently viewed pages, frequent searches, and more. These event logs (and any specific user actions) are only stored locally, and never leave this Sourcegraph instance.
 	EventLogging string `json:"eventLogging,omitempty"`
-	// JvmPackages description: Allow adding JVM packages code host connections
-	JvmPackages string `json:"jvmPackages,omitempty"`
+	// JVMPackages description: Allow adding JVM packages code host connections
+	JVMPackages string `json:"jvmPackages,omitempty"`
 	// Perforce description: Allow adding Perforce code host connections
 	Perforce string `json:"perforce,omitempty"`
 	// Ranking description: Experimental search result ranking options.
@@ -875,8 +875,8 @@ type InsightSeries struct {
 	Webhook string `json:"webhook,omitempty"`
 }
 
-// JvmPackagesConnection description: Configuration for a connection to a JVM packages repository.
-type JvmPackagesConnection struct {
+// JVMPackagesConnection description: Configuration for a connection to a JVM packages repository.
+type JVMPackagesConnection struct {
 	// Maven description: Configuration for resolving from Maven repositories.
 	Maven *Maven `json:"maven,omitempty"`
 }

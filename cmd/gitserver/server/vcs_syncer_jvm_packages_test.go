@@ -75,7 +75,7 @@ fi
 	return coursierPath.Name()
 }
 
-func (s JvmPackagesArtifactSyncer) runCloneCommand(t *testing.T, bareGitDirectory string, artifacts []string) {
+func (s JVMPackagesArtifactSyncer) runCloneCommand(t *testing.T, bareGitDirectory string, artifacts []string) {
 	url := vcs.URL{
 		URL: url.URL{Path: "maven/org.example/example"},
 	}
@@ -85,7 +85,7 @@ func (s JvmPackagesArtifactSyncer) runCloneCommand(t *testing.T, bareGitDirector
 	assert.Nil(t, cmd.Run())
 }
 
-func TestJvmCloneCommand(t *testing.T) {
+func TestJVMCloneCommand(t *testing.T) {
 	dir, err := os.MkdirTemp("", "")
 	assert.Nil(t, err)
 	defer os.RemoveAll(dir)
@@ -95,7 +95,7 @@ func TestJvmCloneCommand(t *testing.T) {
 
 	coursier.CoursierBinary = coursierScript(t, dir)
 
-	s := JvmPackagesArtifactSyncer{Config: &schema.JvmPackagesConnection{
+	s := JVMPackagesArtifactSyncer{Config: &schema.JVMPackagesConnection{
 		Maven: &schema.Maven{Artifacts: []string{}},
 	}}
 	bareGitDirectory := path.Join(dir, "git")

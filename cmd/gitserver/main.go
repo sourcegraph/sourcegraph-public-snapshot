@@ -135,8 +135,8 @@ func main() {
 				return &server.PerforceDepotSyncer{
 					MaxChanges: int(c.MaxChanges),
 				}, nil
-			case extsvc.TypeJvmPackages:
-				var c schema.JvmPackagesConnection
+			case extsvc.TypeJVMPackages:
+				var c schema.JVMPackagesConnection
 				for _, info := range r.Sources {
 					es, err := externalServiceStore.GetByID(ctx, info.ExternalServiceID())
 					if err != nil {
@@ -154,7 +154,7 @@ func main() {
 					break
 				}
 
-				return &server.JvmPackagesArtifactSyncer{Config: &c}, nil
+				return &server.JVMPackagesArtifactSyncer{Config: &c}, nil
 			}
 			return &server.GitRepoSyncer{}, nil
 		},

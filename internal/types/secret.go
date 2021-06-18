@@ -68,7 +68,7 @@ func (e *ExternalService) RedactConfigSecrets() error {
 		newCfg, err = redactField(e.Config)
 	case *schema.OtherExternalServiceConnection:
 		newCfg, err = redactField(e.Config, "url")
-	case *schema.JvmPackagesConnection:
+	case *schema.JVMPackagesConnection:
 		newCfg, err = e.Config, nil
 	default:
 		// return an error here, it's safer to fail than to incorrectly return unsafe data.
@@ -145,7 +145,7 @@ func (e *ExternalService) UnredactConfig(old *ExternalService) error {
 		unredacted, err = unredactField(old.Config, e.Config, &cfg)
 	case *schema.OtherExternalServiceConnection:
 		unredacted, err = unredactField(old.Config, e.Config, &cfg, jsonStringField{"url", &cfg.Url})
-	case *schema.JvmPackagesConnection:
+	case *schema.JVMPackagesConnection:
 		unredacted, err = e.Config, nil
 	default:
 		// return an error here, it's safer to fail than to incorrectly return unsafe data.

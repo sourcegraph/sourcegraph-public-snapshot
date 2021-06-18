@@ -26,19 +26,19 @@ const (
 	stableGitCommitDate = "Thu Apr 8 14:24:52 2021 +0200"
 )
 
-type JvmPackagesArtifactSyncer struct {
-	Config *schema.JvmPackagesConnection
+type JVMPackagesArtifactSyncer struct {
+	Config *schema.JVMPackagesConnection
 }
 
-var _ VCSSyncer = &JvmPackagesArtifactSyncer{}
+var _ VCSSyncer = &JVMPackagesArtifactSyncer{}
 
-func (s *JvmPackagesArtifactSyncer) Type() string {
+func (s *JVMPackagesArtifactSyncer) Type() string {
 	return "jvm_packages"
 }
 
 // IsCloneable checks to see if the VCS remote URL is cloneable. Any non-nil
 // error indicates there is a problem.
-func (s *JvmPackagesArtifactSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL) error {
+func (s *JVMPackagesArtifactSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL) error {
 	dependencies, err := s.packageDependencies(remoteURL.Path)
 	if err != nil {
 		return err
@@ -62,7 +62,7 @@ func (s *JvmPackagesArtifactSyncer) IsCloneable(ctx context.Context, remoteURL *
 // returned command is a no-op. This means that the web UI can't display a
 // helpful progress bar while cloning JVM package repositories, but that's an
 // acceptable tradeoff we're willing to make.
-func (s *JvmPackagesArtifactSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL, bareGitDirectory string) (*exec.Cmd, error) {
+func (s *JVMPackagesArtifactSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL, bareGitDirectory string) (*exec.Cmd, error) {
 	err := os.MkdirAll(bareGitDirectory, 0755)
 	if err != nil {
 		return nil, err
@@ -87,7 +87,7 @@ func (s *JvmPackagesArtifactSyncer) CloneCommand(ctx context.Context, remoteURL 
 }
 
 // Fetch does nothing for Maven packages because they are immutable and cannot be updated after publishing.
-func (s *JvmPackagesArtifactSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir GitDir) error {
+func (s *JVMPackagesArtifactSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir GitDir) error {
 	dependencies, err := s.packageDependencies(remoteURL.Path)
 	if err != nil {
 		return err
@@ -135,14 +135,14 @@ func (s *JvmPackagesArtifactSyncer) Fetch(ctx context.Context, remoteURL *vcs.UR
 }
 
 // RemoteShowCommand returns the command to be executed for showing remote.
-func (s *JvmPackagesArtifactSyncer) RemoteShowCommand(ctx context.Context, remoteURL *vcs.URL) (cmd *exec.Cmd, err error) {
+func (s *JVMPackagesArtifactSyncer) RemoteShowCommand(ctx context.Context, remoteURL *vcs.URL) (cmd *exec.Cmd, err error) {
 	return exec.CommandContext(ctx, "git", "remote", "show", "./"), nil
 }
 
 // packageDependencies returns the list of JVM dependencies that belong to the given URL path.
 // The returned package dependencies are sorted by semantic versioning.
 // A URL maps to a single JVM package, which may contain multiple versions (one git tag per version).
-func (s *JvmPackagesArtifactSyncer) packageDependencies(repoUrlPath string) (dependencies []reposource.Dependency, err error) {
+func (s *JVMPackagesArtifactSyncer) packageDependencies(repoUrlPath string) (dependencies []reposource.Dependency, err error) {
 	module, err := reposource.ParseMavenModule(repoUrlPath)
 	if err != nil {
 		return nil, err
@@ -167,7 +167,7 @@ func (s *JvmPackagesArtifactSyncer) packageDependencies(repoUrlPath string) (dep
 // tag points to a commit that adds all sources of given dependency. When
 // isMainBranch is true, the main branch of the bare git directory will also be
 // updated to point to the same commit as the git tag.
-func (s *JvmPackagesArtifactSyncer) gitPushDependencyTag(ctx context.Context, bareGitDirectory string, dependency reposource.Dependency, isMainBranch bool) error {
+func (s *JVMPackagesArtifactSyncer) gitPushDependencyTag(ctx context.Context, bareGitDirectory string, dependency reposource.Dependency, isMainBranch bool) error {
 	tmpDirectory, err := ioutil.TempDir("", "maven")
 	if err != nil {
 		return err
@@ -217,7 +217,7 @@ func (s *JvmPackagesArtifactSyncer) gitPushDependencyTag(ctx context.Context, ba
 
 // commitJar creates a git commit in the given working directory that adds all the file contents of the given jar file.
 // A `*.jar` file works the same way as a `*.zip` file, it can even be uncompressed with the `unzip` command-line tool.
-func (s *JvmPackagesArtifactSyncer) commitJar(ctx context.Context, dependency reposource.Dependency, workingDirectory, jarPath string) error {
+func (s *JVMPackagesArtifactSyncer) commitJar(ctx context.Context, dependency reposource.Dependency, workingDirectory, jarPath string) error {
 	cmd := exec.CommandContext(ctx, "unzip", jarPath)
 	if _, err := runCommandInDirectory(ctx, cmd, workingDirectory); err != nil {
 		return err
@@ -231,7 +231,7 @@ func (s *JvmPackagesArtifactSyncer) commitJar(ctx context.Context, dependency re
 
 	jsonContents, err := json.Marshal(&lsifJavaJSON{
 		Kind:         "maven",
-		Jvm:          "8",
+		JVM:          "8",
 		Dependencies: []string{dependency.CoursierSyntax()},
 	})
 	if err != nil {
@@ -272,6 +272,6 @@ func runCommandInDirectory(ctx context.Context, cmd *exec.Cmd, workingDirectory 
 
 type lsifJavaJSON struct {
 	Kind         string   `json:"kind"`
-	Jvm          string   `json:"jvm"`
+	JVM          string   `json:"jvm"`
 	Dependencies []string `json:"dependencies"`
 }

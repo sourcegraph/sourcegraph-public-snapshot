@@ -366,7 +366,7 @@ func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 		r.Metadata = new(phabricator.Repo)
 	case extsvc.TypeOther:
 		r.Metadata = new(extsvc.OtherRepoMetadata)
-	case extsvc.TypeJvmPackages:
+	case extsvc.TypeJVMPackages:
 		r.Metadata = new(jvmpackages.Metadata)
 	default:
 		log15.Error("scanRepo - unknown service type", "typ", typ)

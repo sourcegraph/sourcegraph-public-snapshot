@@ -67,7 +67,7 @@ func CloneURL(kind, config string, repo *types.Repo) (string, error) {
 		if r, ok := repo.Metadata.(*extsvc.OtherRepoMetadata); ok {
 			return otherCloneURL(repo, r), nil
 		}
-	case *schema.JvmPackagesConnection:
+	case *schema.JVMPackagesConnection:
 		if r, ok := repo.Metadata.(*jvmpackages.Metadata); ok {
 			return r.Module.CloneURL(), nil
 		}

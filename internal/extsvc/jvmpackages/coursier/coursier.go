@@ -15,15 +15,15 @@ import (
 
 var CoursierBinary = "coursier"
 
-func ListArtifactIDs(ctx context.Context, config *schema.JvmPackagesConnection, groupID string) ([]string, error) {
+func ListArtifactIDs(ctx context.Context, config *schema.JVMPackagesConnection, groupID string) ([]string, error) {
 	return runCoursierCommand(ctx, config, "complete", groupID+":")
 }
 
-func ListVersions(ctx context.Context, config *schema.JvmPackagesConnection, groupID, artifactID string) ([]string, error) {
+func ListVersions(ctx context.Context, config *schema.JVMPackagesConnection, groupID, artifactID string) ([]string, error) {
 	return runCoursierCommand(ctx, config, "complete", groupID+":"+artifactID+":")
 }
 
-func FetchSources(ctx context.Context, config *schema.JvmPackagesConnection, dependency reposource.Dependency) ([]string, error) {
+func FetchSources(ctx context.Context, config *schema.JVMPackagesConnection, dependency reposource.Dependency) ([]string, error) {
 	return runCoursierCommand(
 		ctx,
 		config,
@@ -33,7 +33,7 @@ func FetchSources(ctx context.Context, config *schema.JvmPackagesConnection, dep
 	)
 }
 
-func Exists(ctx context.Context, config *schema.JvmPackagesConnection, dependency reposource.Dependency) (bool, error) {
+func Exists(ctx context.Context, config *schema.JVMPackagesConnection, dependency reposource.Dependency) (bool, error) {
 	versions, err := runCoursierCommand(
 		ctx,
 		config,
@@ -43,7 +43,7 @@ func Exists(ctx context.Context, config *schema.JvmPackagesConnection, dependenc
 	return len(versions) > 0, err
 }
 
-func runCoursierCommand(ctx context.Context, config *schema.JvmPackagesConnection, args ...string) ([]string, error) {
+func runCoursierCommand(ctx context.Context, config *schema.JVMPackagesConnection, args ...string) ([]string, error) {
 	cmd := exec.CommandContext(ctx, CoursierBinary, args...)
 	if config.Maven.Credentials != "" {
 		cmd.Env = append(cmd.Env, fmt.Sprintf("COURSIER_CREDENTIALS=%v", config.Maven.Credentials))
