@@ -938,7 +938,7 @@ exports[`SearchResultsInfoBar feature flag enabled, unauthenticated user 1`] = `
             </div>
             <a
               className="btn btn-primary"
-              href="/sign-up?src=Saved&returnTo=%2Fcode-monitoring"
+              href="/sign-up?src=Saved&returnTo=%2Fsearch"
               onClick={[Function]}
             >
               Sign up for Sourcegraph
