@@ -17,6 +17,7 @@ import {
     ViewStateSpec,
     RenderModeSpec,
     UIRangeSpec,
+    appendSubtreeQueryParameter,
 } from '@sourcegraph/shared/src/util/url'
 
 import { queryGraphQL, requestGraphQL } from '../backend/graphql'
@@ -80,9 +81,7 @@ function toPrettyWebBlobURL(
         Partial<UIRangeSpec> &
         Partial<RenderModeSpec>
 ): string {
-    const url = new URL(toPrettyBlobURL(context), location.href)
-    url.searchParams.set('subtree', 'true')
-    return url.pathname + url.search + url.hash
+    return appendSubtreeQueryParameter(toPrettyBlobURL(context))
 }
 
 const settingsCascadeFragment = gql`
