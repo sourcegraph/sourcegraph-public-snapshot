@@ -15,6 +15,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -202,7 +203,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalSer
 			}
 			return nil
 		}
-	} else if s.SubsetSynced != nil {
+	} else if !envvar.SourcegraphDotComMode() {
 		// This is a site admin owned external service so we should stream inserts ASAP.
 		// It should insert outside of our transaction so that repos are visible to the rest of our
 		// system immediately.
