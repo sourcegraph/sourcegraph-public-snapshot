@@ -9,7 +9,7 @@ import { ResultContainer } from '@sourcegraph/shared/src/components/ResultContai
 import { CommitMatch, getMatchTitle, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
-import { starDisplay } from '@sourcegraph/shared/src/util/stars'
+import { formatRepositoryStarCount } from '@sourcegraph/shared/src/util/stars'
 
 import { CommitSearchResultMatch } from './CommitSearchResultMatch'
 
@@ -21,7 +21,7 @@ interface Props extends ThemeProps {
 
 export const SearchResult: React.FunctionComponent<Props> = ({ result, icon, isLightTheme, repoName }) => {
     const renderTitle = (): JSX.Element => {
-        const starDisplayString = starDisplay(result.repoStars)
+        const formattedRepositoryStarCount = formatRepositoryStarCount(result.repoStars)
         return (
             <div className="search-result__title">
                 <RepoIcon repoName={repoName} className="icon-inline text-muted flex-shrink-0" />
@@ -35,13 +35,13 @@ export const SearchResult: React.FunctionComponent<Props> = ({ result, icon, isL
                         <Markdown className="flex-shrink-0" dangerousInnerHTML={renderMarkdown(result.detail)} />
                     </>
                 )}
-                {result.type === 'commit' && result.detail && starDisplayString && (
+                {result.type === 'commit' && result.detail && formattedRepositoryStarCount && (
                     <div className="search-result__divider" />
                 )}
-                {starDisplayString && (
+                {formattedRepositoryStarCount && (
                     <>
                         <StarIcon className="search-result__star" />
-                        {starDisplayString}
+                        {formattedRepositoryStarCount}
                     </>
                 )}
             </div>

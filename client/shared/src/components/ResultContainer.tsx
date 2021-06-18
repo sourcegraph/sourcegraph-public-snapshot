@@ -8,7 +8,7 @@ import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import StarIcon from 'mdi-react/StarIcon'
 import React, { useEffect, useState } from 'react'
 
-import { starDisplay } from '@sourcegraph/shared/src/util/stars'
+import { formatRepositoryStarCount } from '@sourcegraph/shared/src/util/stars'
 
 import { useRedesignToggle } from '../util/useRedesignToggle'
 
@@ -104,7 +104,7 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
 }) => {
     const [isRedesignEnabled] = useRedesignToggle()
     const [expanded, setExpanded] = useState(allExpanded || defaultExpanded)
-    const starDisplayString = starDisplay(repoStars)
+    const formattedRepositoryStarCount = formatRepositoryStarCount(repoStars)
 
     useEffect(() => setExpanded(allExpanded || defaultExpanded), [allExpanded, defaultExpanded])
 
@@ -160,13 +160,13 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
                         )}
                     </button>
                 )}
-                {matchCountLabel && isRedesignEnabled && starDisplayString && (
+                {matchCountLabel && isRedesignEnabled && formattedRepositoryStarCount && (
                     <div className="result-container__header-divider" />
                 )}
-                {starDisplayString && (
+                {formattedRepositoryStarCount && (
                     <>
                         <StarIcon className="search-result__star" />
-                        {starDisplayString}
+                        {formattedRepositoryStarCount}
                     </>
                 )}
             </div>
