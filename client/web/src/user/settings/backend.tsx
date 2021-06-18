@@ -155,7 +155,7 @@ export function logEvent(event: string, eventProperties?: unknown): void {
         {
             event,
             userCookieID: eventLogger.getAnonymousUserID(),
-            cohortID: eventLogger.getCohortID() || null, // Must be called AFTER eventLogger.getAnonymousUserID()
+            cohortID: eventLogger.getCohortID() || null,
             firstSourceURL: eventLogger.getFirstSourceURL(),
             url: window.location.href,
             source: EventSource.WEB,

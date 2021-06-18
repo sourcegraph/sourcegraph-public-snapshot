@@ -14,11 +14,11 @@ export const FIRST_SOURCE_URL_KEY = 'sourcegraphSourceUrl'
 export class EventLogger implements TelemetryService {
     private hasStrippedQueryParameters = false
 
-    private anonymousUserID?: string
+    private anonymousUserID = ''
     private cohortID?: string
     private firstSourceURL?: string
 
-    private readonly CookieSettings: CookieAttributes = {
+    private readonly cookieSettings: CookieAttributes = {
         // 365 days expiry, but renewed on activity.
         expires: 365,
         // Enforce HTTPS
@@ -40,6 +40,8 @@ export class EventLogger implements TelemetryService {
                 console.debug('%cBrowser extension detected, sync completed', 'color: #aaa')
             }
         })
+
+        this.initializeLogParameters()
     }
 
     /**
@@ -85,29 +87,9 @@ export class EventLogger implements TelemetryService {
      * Get the anonymous identifier for this user (used to allow site admins
      * on a Sourcegraph instance to see a count of unique users on a daily,
      * weekly, and monthly basis).
-     * If the user doesn't have an anonymours ID yet, it generates one as well
-     * as a cohort ID based on the week the user's first visit.
      */
     public getAnonymousUserID(): string {
-        let anonymousUserID =
-            this.anonymousUserID || cookies.get(ANONYMOUS_USER_ID_KEY) || localStorage.getItem(ANONYMOUS_USER_ID_KEY)
-        if (!anonymousUserID) {
-            anonymousUserID = uuid.v4()
-            this.generateCohortID()
-        }
-        // Use cookies instead of localStorage so that the ID can be shared with subdomains (about.sourcegraph.com).
-        // Always set to renew expiry and migrate from localStorage
-        cookies.set(ANONYMOUS_USER_ID_KEY, anonymousUserID, this.CookieSettings)
-        localStorage.removeItem(ANONYMOUS_USER_ID_KEY)
-        this.anonymousUserID = anonymousUserID
-        return anonymousUserID
-    }
-
-    /** Generates a cohort ID for the user, which is the Monday of the week they first visited, in YYYY-MM-DD */
-    private generateCohortID(): void {
-        const cohortID = getPreviousMonday(new Date())
-        cookies.set(COHORT_ID_KEY, cohortID, this.CookieSettings)
-        this.cohortID = cohortID
+        return this.anonymousUserID
     }
 
     /**
@@ -115,9 +97,7 @@ export class EventLogger implements TelemetryService {
      * Users that have visited before the introduction of cohort IDs will not have one.
      */
     public getCohortID(): string | undefined {
-        const cohortId = this.cohortID || cookies.get(COHORT_ID_KEY)
-        this.cohortID = cohortId
-        return cohortId
+        return this.cohortID
     }
 
     public getFirstSourceURL(): string {
@@ -127,20 +107,41 @@ export class EventLogger implements TelemetryService {
 
         // Use cookies instead of localStorage so that the ID can be shared with subdomains (about.sourcegraph.com).
         // Always set to renew expiry and migrate from localStorage
-        cookies.set(FIRST_SOURCE_URL_KEY, redactedURL, {
-            // 365 days expiry, but renewed on activity.
-            expires: 365,
-            // Enforce HTTPS
-            secure: true,
-            // We only read the cookie with JS so we don't need to send it cross-site nor on initial page requests.
-            sameSite: 'Strict',
-            // Specify the Domain attribute to ensure subdomains (about.sourcegraph.com) can receive this cookie.
-            // https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#define_where_cookies_are_sent
-            domain: location.hostname,
-        })
+        cookies.set(FIRST_SOURCE_URL_KEY, redactedURL, this.cookieSettings)
 
         this.firstSourceURL = firstSourceURL
         return firstSourceURL
+    }
+
+    /**
+     * Gets the anonymous user ID and cohort ID of the user from cookies.
+     * If user doesn't have an anonymous user ID yet, a new one is generated, along with
+     * a cohort ID of the week the user first visited.
+     *
+     * If the user already has an anonymous user ID before the introduction of cohort IDs,
+     * the user will not haved a cohort ID.
+     *
+     * If user had an anonymous user ID in localStorage, it will be migrated to cookies.
+     */
+    private initializeLogParameters(): void {
+        let anonymousUserID = cookies.get(ANONYMOUS_USER_ID_KEY) || localStorage.getItem(ANONYMOUS_USER_ID_KEY)
+        let cohortID = cookies.get(COHORT_ID_KEY)
+
+        if (!anonymousUserID) {
+            anonymousUserID = uuid.v4()
+            cohortID = getPreviousMonday(new Date())
+        }
+
+        // Use cookies instead of localStorage so that the ID can be shared with subdomains (about.sourcegraph.com).
+        // Always set to renew expiry and migrate from localStorage
+        cookies.set(ANONYMOUS_USER_ID_KEY, anonymousUserID, this.cookieSettings)
+        localStorage.removeItem(ANONYMOUS_USER_ID_KEY)
+        if (cohortID) {
+            cookies.set(COHORT_ID_KEY, cohortID, this.cookieSettings)
+        }
+
+        this.anonymousUserID = anonymousUserID
+        this.cohortID = cohortID
     }
 }
 

@@ -1,4 +1,4 @@
-import { padStart } from 'lodash'
+import { formatISO, startOfWeek } from 'date-fns'
 
 /**
  * Strip provided URL parameters and update window history
@@ -43,16 +43,5 @@ export function redactSensitiveInfoFromURL(url: string): string {
  * started using the site on the same week.
  */
 export function getPreviousMonday(date: Date): string {
-    const previousMonday = new Date(date)
-
-    while (previousMonday.getDay() !== 1 /* Monday */) {
-        previousMonday.setDate(previousMonday.getDate() - 1)
-    }
-
-    const year = previousMonday.getFullYear()
-    const month = padStart((previousMonday.getMonth() + 1).toString(), 2, '0') // Months in JS are 0-indexed
-    const dayOfMonth = padStart(previousMonday.getDate().toString(), 2, '0')
-
-    const isoString = `${year}-${month}-${dayOfMonth}`
-    return isoString
+    return formatISO(startOfWeek(date, { weekStartsOn: 1 }), { representation: 'date' })
 }
