@@ -161,7 +161,7 @@ func (s *JVMPackagesSyncer) packageDependencies(repoUrlPath string) (dependencie
 // tag points to a commit that adds all sources of given dependency. When
 // isMainBranch is true, the main branch of the bare git directory will also be
 // updated to point to the same commit as the git tag.
-func (s *JVMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDirectory string, dependency reposource.Dependency, isMainBranch bool) error {
+func (s *JVMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDirectory string, dependency reposource.Dependency, isLatestVersion bool) error {
 	tmpDirectory, err := ioutil.TempDir("", "maven")
 	if err != nil {
 		return err
@@ -199,8 +199,12 @@ func (s *JVMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDir
 		return err
 	}
 
-	if isMainBranch {
-		cmd = exec.CommandContext(ctx, "git", "push", "--force", "origin", "main", dependency.GitTagFromVersion())
+	if isLatestVersion {
+		defaultBranch, err := runCommandInDirectory(ctx, exec.CommandContext(ctx, "git", "rev-parse", "--abbrev-ref", "HEAD"), tmpDirectory)
+		if err != nil {
+			return err
+		}
+		cmd = exec.CommandContext(ctx, "git", "push", "--force", "origin", strings.TrimSpace(defaultBranch)+":latest", dependency.GitTagFromVersion())
 		if _, err := runCommandInDirectory(ctx, cmd, tmpDirectory); err != nil {
 			return err
 		}
