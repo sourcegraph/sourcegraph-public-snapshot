@@ -19,7 +19,7 @@ import {
 } from './github'
 import { ensureEvent, getClient, EventOptions, calendarTime } from './google-calendar'
 import { postMessage, slackURL } from './slack'
-import { cacheFolder, formatDate, timezoneLink, hubSpotFeedbackFormStub } from './util'
+import { cacheFolder, formatDate, timezoneLink, hubSpotFeedbackFormStub, ensureDocker } from './util'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
 
@@ -44,6 +44,7 @@ export type StepID =
     | '_test:slack'
     | '_test:campaign-create-from-changes'
     | '_test:config'
+    | '_test:dockerensure'
 
 /**
  * Runs given release step with the provided configuration and arguments.
@@ -286,7 +287,14 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
         run: async config => {
             const { slackAnnounceChannel, dryRun } = config
             const { upcoming: release, previous } = await releaseVersions(config)
-
+            // ensure docker is running for 'batch changes'
+            try {
+                await ensureDocker()
+            } catch (error) {
+                console.log(error)
+                console.log('Docker required for batch changes')
+                process.exit(1)
+            }
             // set up campaign config
             const campaign = campaigns.releaseTrackingCampaign(release.version, await campaigns.sourcegraphCLIConfig())
 
@@ -644,6 +652,19 @@ Campaign: ${campaignURL}`,
         description: 'Test release configuration loading',
         run: config => {
             console.log(JSON.stringify(config, null, '  '))
+        },
+    },
+    {
+        id: '_test:dockerensure',
+        description: 'test docker ensure function',
+        run: async config => {
+            try {
+                await ensureDocker()
+            } catch (error) {
+                console.log(error)
+                console.log('Docker required for batch changes')
+                process.exit(1)
+            }
         },
     },
 ]
