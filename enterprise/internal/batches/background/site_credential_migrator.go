@@ -28,6 +28,7 @@ func (m *siteCredentialMigrator) Progress(ctx context.Context) (float64, error) 
 		m.store.Query(ctx, sqlf.Sprintf(
 			siteCredentialMigratorProgressQuery,
 			btypes.SiteCredentialPlaceholderEncryptionKeyID,
+			btypes.SiteCredentialUnmigratedEncryptionKeyID,
 		)),
 	)
 	if err != nil {
@@ -40,7 +41,7 @@ func (m *siteCredentialMigrator) Progress(ctx context.Context) (float64, error) 
 const siteCredentialMigratorProgressQuery = `
 -- source: enterprise/internal/batches/site_credential_migrator.go:Progress
 SELECT CASE c2.count WHEN 0 THEN 1 ELSE CAST((c2.count - c1.count) AS float) / CAST(c2.count AS float) END FROM
-	(SELECT COUNT(*) as count FROM batch_changes_site_credentials WHERE encryption_key_id IN ('', %s)) c1,
+	(SELECT COUNT(*) as count FROM batch_changes_site_credentials WHERE encryption_key_id IN (%s, %s)) c1,
 	(SELECT COUNT(*) as count FROM batch_changes_site_credentials) c2
 `
 
@@ -111,7 +112,7 @@ func (m *siteCredentialMigrator) Down(ctx context.Context) error {
 			}
 
 			cred.EncryptedCredential = raw
-			cred.EncryptionKeyID = ""
+			cred.EncryptionKeyID = btypes.SiteCredentialUnmigratedEncryptionKeyID
 			if err := tx.UpdateSiteCredential(ctx, cred); err != nil {
 				return errors.Wrapf(err, "upserting site credential %d", cred.ID)
 			}

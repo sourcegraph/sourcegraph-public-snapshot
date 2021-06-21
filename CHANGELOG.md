@@ -23,7 +23,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
--
+- The Batch Changes user and site credential encryption migrators added in Sourcegraph 3.28 could report zero progress when encryption was disabled, even though they had nothing to do. This has been fixed, and progress will now be correctly reported. [#22277](https://github.com/sourcegraph/sourcegraph/issues/22277)
 
 ### Removed
 
