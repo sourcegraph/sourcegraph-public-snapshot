@@ -65,7 +65,7 @@ export const useCodeHostScopeContext = (): CodeHostScopeContext => {
     const context = useContext(CodeHostScopeContext)
 
     if (context === undefined) {
-        throw new Error('useCount must be used within a CodeHostScopeProvider')
+        throw new Error('CodeHostScopeContext must be used within a CodeHostScopeProvider')
     }
 
     return context
