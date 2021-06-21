@@ -7,7 +7,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AuthenticatedUser } from '../auth'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
-import { FlagSet } from '../featureFlags/featureFlags'
+import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import { SourcegraphContext } from '../jscontext'
 import { eventLogger } from '../tracking/eventLogger'
 
@@ -16,13 +16,12 @@ import { SourcegraphIcon } from './icons'
 import { getReturnTo } from './SignInSignUpCommon'
 import { SignUpArguments, SignUpForm } from './SignUpForm'
 
-interface SignUpPageProps extends ThemeProps, TelemetryProps {
+interface SignUpPageProps extends ThemeProps, TelemetryProps, FeatureFlagProps {
     authenticatedUser: AuthenticatedUser | null
     context: Pick<
         SourcegraphContext,
         'allowSignup' | 'experimentalFeatures' | 'authProviders' | 'sourcegraphDotComMode' | 'xhrHeaders'
     >
-    featureFlags: FlagSet
 }
 
 export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({

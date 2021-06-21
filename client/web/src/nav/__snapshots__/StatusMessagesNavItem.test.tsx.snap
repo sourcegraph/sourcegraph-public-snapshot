@@ -4,7 +4,13 @@ exports[`StatusMessagesNavItem no messages 1`] = `
 <StatusMessagesNavItem
   fetchMessages={[Function]}
   history="[History]"
-  isSiteAdmin={false}
+  user={
+    Object {
+      "id": "VXNlcjox",
+      "isSiteAdmin": false,
+      "username": "user",
+    }
+  }
 >
   <ButtonDropdown
     className="nav-link py-0 px-0 percy-hide chromatic-ignore"
@@ -47,54 +53,108 @@ exports[`StatusMessagesNavItem no messages 1`] = `
                   href="#"
                   onClick={[Function]}
                 >
-                  <Memo(CloudCheckIcon)
+                  <CloudCheckIconRefresh
                     className="icon-inline-md"
                     data-tooltip="Repositories up to date"
-                  />
+                  >
+                    <svg
+                      className="phabricator-icon mdi-icon icon-inline-md"
+                      data-tooltip="Repositories up to date"
+                      fill="currentColor"
+                      height={24}
+                      viewBox="0 -4 20 20"
+                      width={24}
+                    >
+                      <g>
+                        <path
+                          d="M14.4175 5.6859L14.6515 6.82244L16.1402 5.33371L16.1315 5.33301C15.5482 2.49967 13.0482 0.333008 9.96484 0.333008C7.54818 0.333008 5.46484 1.66634 4.46484 3.66634C1.88151 3.99967 -0.0351562 6.08301 -0.0351562 8.66634C-0.0351562 11.4163 2.21484 13.6663 4.96484 13.6663H10.273L8.52301 11.9163H4.96484C3.18134 11.9163 1.71484 10.4498 1.71484 8.66634C1.71484 7.00858 2.9321 5.62862 4.68879 5.40195L5.61324 5.28267L6.03009 4.44896C6.7313 3.04654 8.20576 2.08301 9.96484 2.08301C12.1965 2.08301 13.9973 3.64505 14.4175 5.6859Z"
+                          fill="#798BAF"
+                        />
+                        <path
+                          d="M9.74232 8.18541L8.50488 9.42285L12.7475 13.6655L19.8287 6.59486L18.5913 5.35742L12.7528 11.1959L9.74232 8.18541Z"
+                          fill="#37B24D"
+                        />
+                      </g>
+                      <defs>
+                        <clipPath
+                          id="clip0"
+                        >
+                          <rect
+                            fill="white"
+                            height="20"
+                            width="20"
+                          />
+                        </clipPath>
+                      </defs>
+                    </svg>
+                  </CloudCheckIconRefresh>
                 </a>
               </InnerReference>
             </Reference>
           </DropdownToggle>
           <DropdownMenu
-            className="status-messages-nav-item__dropdown-menu"
+            className="status-messages-nav-item__dropdown-menu p-0"
             flip={true}
             right={true}
             tag="div"
           >
             <div
               aria-hidden={true}
-              className="status-messages-nav-item__dropdown-menu dropdown-menu dropdown-menu-right"
+              className="status-messages-nav-item__dropdown-menu p-0 dropdown-menu dropdown-menu-right"
               role="menu"
               tabIndex="-1"
             >
-              <h3>
-                Code host status
-              </h3>
               <div
                 className="status-messages-nav-item__dropdown-menu-content"
               >
+                <small
+                  className="d-inline-block text-muted status-messages-nav-item__entry-sync"
+                >
+                  Code sync status
+                </small>
                 <StatusMessagesNavItemEntry
                   entryType="success"
+                  key="up-to-date"
                   linkOnClick={[Function]}
                   linkText="Manage repositories"
-                  linkTo="/site-admin/external-services"
-                  showLink={false}
-                  text="All repositories hosted on the configured code hosts are synced."
-                  title="Repositories up to date"
+                  linkTo="/users/user/settings/repositories"
+                  message="Repositories available for search"
                 >
                   <div
-                    className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-success"
-                    key="All repositories hosted on the configured code hosts are synced."
+                    className="status-messages-nav-item__entry"
+                    key="Repositories available for search"
                   >
-                    <h4>
-                      <Memo(CloudCheckIcon)
-                        className="icon-inline-md mr-1"
+                    <h4
+                      className="d-flex align-items-center mb-0"
+                    >
+                      <Memo(CheckboxMarkedCircleIcon)
+                        className="text-success status-messages-nav-item__entry-icon"
+                        size={14}
                       />
-                      Repositories up to date
+                      Your repositories
                     </h4>
-                    <p>
-                      All repositories hosted on the configured code hosts are synced.
-                    </p>
+                    <div
+                      className="status-messages-nav-item__entry-card status-messages-nav-item__entry-card--active status-messages-nav-item__entry--border-success"
+                    >
+                      <p
+                        className="status-messages-nav-item__entry-message"
+                      >
+                        Repositories available for search
+                      </p>
+                      <AnchorLink
+                        className="text-primary"
+                        onClick={[Function]}
+                        to="/users/user/settings/repositories"
+                      >
+                        <a
+                          className="text-primary"
+                          href="/users/user/settings/repositories"
+                          onClick={[Function]}
+                        >
+                          Manage repositories
+                        </a>
+                      </AnchorLink>
+                    </div>
                   </div>
                 </StatusMessagesNavItemEntry>
               </div>
@@ -111,7 +171,13 @@ exports[`StatusMessagesNavItem one CloningProgress message as non-site admin 1`]
 <StatusMessagesNavItem
   fetchMessages={[Function]}
   history="[History]"
-  isSiteAdmin={false}
+  user={
+    Object {
+      "id": "VXNlcjox",
+      "isSiteAdmin": false,
+      "username": "user",
+    }
+  }
 >
   <ButtonDropdown
     className="nav-link py-0 px-0 percy-hide chromatic-ignore"
@@ -154,55 +220,108 @@ exports[`StatusMessagesNavItem one CloningProgress message as non-site admin 1`]
                   href="#"
                   onClick={[Function]}
                 >
-                  <Memo(CloudSyncIcon)
+                  <CloudCheckIconRefresh
                     className="icon-inline-md"
-                    data-tooltip="Cloning repositories..."
-                  />
+                    data-tooltip="Repositories up to date"
+                  >
+                    <svg
+                      className="phabricator-icon mdi-icon icon-inline-md"
+                      data-tooltip="Repositories up to date"
+                      fill="currentColor"
+                      height={24}
+                      viewBox="0 -4 20 20"
+                      width={24}
+                    >
+                      <g>
+                        <path
+                          d="M14.4175 5.6859L14.6515 6.82244L16.1402 5.33371L16.1315 5.33301C15.5482 2.49967 13.0482 0.333008 9.96484 0.333008C7.54818 0.333008 5.46484 1.66634 4.46484 3.66634C1.88151 3.99967 -0.0351562 6.08301 -0.0351562 8.66634C-0.0351562 11.4163 2.21484 13.6663 4.96484 13.6663H10.273L8.52301 11.9163H4.96484C3.18134 11.9163 1.71484 10.4498 1.71484 8.66634C1.71484 7.00858 2.9321 5.62862 4.68879 5.40195L5.61324 5.28267L6.03009 4.44896C6.7313 3.04654 8.20576 2.08301 9.96484 2.08301C12.1965 2.08301 13.9973 3.64505 14.4175 5.6859Z"
+                          fill="#798BAF"
+                        />
+                        <path
+                          d="M9.74232 8.18541L8.50488 9.42285L12.7475 13.6655L19.8287 6.59486L18.5913 5.35742L12.7528 11.1959L9.74232 8.18541Z"
+                          fill="#37B24D"
+                        />
+                      </g>
+                      <defs>
+                        <clipPath
+                          id="clip0"
+                        >
+                          <rect
+                            fill="white"
+                            height="20"
+                            width="20"
+                          />
+                        </clipPath>
+                      </defs>
+                    </svg>
+                  </CloudCheckIconRefresh>
                 </a>
               </InnerReference>
             </Reference>
           </DropdownToggle>
           <DropdownMenu
-            className="status-messages-nav-item__dropdown-menu"
+            className="status-messages-nav-item__dropdown-menu p-0"
             flip={true}
             right={true}
             tag="div"
           >
             <div
               aria-hidden={true}
-              className="status-messages-nav-item__dropdown-menu dropdown-menu dropdown-menu-right"
+              className="status-messages-nav-item__dropdown-menu p-0 dropdown-menu dropdown-menu-right"
               role="menu"
               tabIndex="-1"
             >
-              <h3>
-                Code host status
-              </h3>
               <div
                 className="status-messages-nav-item__dropdown-menu-content"
               >
+                <small
+                  className="d-inline-block text-muted status-messages-nav-item__entry-sync"
+                >
+                  Code sync status
+                </small>
                 <StatusMessagesNavItemEntry
-                  entryType="progress"
-                  key="0"
+                  entryType="success"
+                  key="up-to-date"
                   linkOnClick={[Function]}
-                  linkText="Configure synced repositories"
-                  linkTo="/site-admin/external-services"
-                  showLink={false}
-                  text="Currently cloning repositories..."
-                  title="Repositories cloning"
+                  linkText="Manage repositories"
+                  linkTo="/users/user/settings/repositories"
+                  message="Repositories available for search"
                 >
                   <div
-                    className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-progress"
-                    key="Currently cloning repositories..."
+                    className="status-messages-nav-item__entry"
+                    key="Repositories available for search"
                   >
-                    <h4>
-                      <Memo(CloudSyncIcon)
-                        className="icon-inline-md mr-1"
+                    <h4
+                      className="d-flex align-items-center mb-0"
+                    >
+                      <Memo(CheckboxMarkedCircleIcon)
+                        className="text-success status-messages-nav-item__entry-icon"
+                        size={14}
                       />
-                      Repositories cloning
+                      Your repositories
                     </h4>
-                    <p>
-                      Currently cloning repositories...
-                    </p>
+                    <div
+                      className="status-messages-nav-item__entry-card status-messages-nav-item__entry-card--active status-messages-nav-item__entry--border-success"
+                    >
+                      <p
+                        className="status-messages-nav-item__entry-message"
+                      >
+                        Repositories available for search
+                      </p>
+                      <AnchorLink
+                        className="text-primary"
+                        onClick={[Function]}
+                        to="/users/user/settings/repositories"
+                      >
+                        <a
+                          className="text-primary"
+                          href="/users/user/settings/repositories"
+                          onClick={[Function]}
+                        >
+                          Manage repositories
+                        </a>
+                      </AnchorLink>
+                    </div>
                   </div>
                 </StatusMessagesNavItemEntry>
               </div>
@@ -219,7 +338,13 @@ exports[`StatusMessagesNavItem one CloningProgress message as site admin 1`] = `
 <StatusMessagesNavItem
   fetchMessages={[Function]}
   history="[History]"
-  isSiteAdmin={true}
+  user={
+    Object {
+      "id": "VXNlcjox",
+      "isSiteAdmin": true,
+      "username": "user",
+    }
+  }
 >
   <ButtonDropdown
     className="nav-link py-0 px-0 percy-hide chromatic-ignore"
@@ -262,70 +387,108 @@ exports[`StatusMessagesNavItem one CloningProgress message as site admin 1`] = `
                   href="#"
                   onClick={[Function]}
                 >
-                  <Memo(CloudSyncIcon)
+                  <CloudCheckIconRefresh
                     className="icon-inline-md"
-                    data-tooltip="Cloning repositories..."
-                  />
+                    data-tooltip="Repositories up to date"
+                  >
+                    <svg
+                      className="phabricator-icon mdi-icon icon-inline-md"
+                      data-tooltip="Repositories up to date"
+                      fill="currentColor"
+                      height={24}
+                      viewBox="0 -4 20 20"
+                      width={24}
+                    >
+                      <g>
+                        <path
+                          d="M14.4175 5.6859L14.6515 6.82244L16.1402 5.33371L16.1315 5.33301C15.5482 2.49967 13.0482 0.333008 9.96484 0.333008C7.54818 0.333008 5.46484 1.66634 4.46484 3.66634C1.88151 3.99967 -0.0351562 6.08301 -0.0351562 8.66634C-0.0351562 11.4163 2.21484 13.6663 4.96484 13.6663H10.273L8.52301 11.9163H4.96484C3.18134 11.9163 1.71484 10.4498 1.71484 8.66634C1.71484 7.00858 2.9321 5.62862 4.68879 5.40195L5.61324 5.28267L6.03009 4.44896C6.7313 3.04654 8.20576 2.08301 9.96484 2.08301C12.1965 2.08301 13.9973 3.64505 14.4175 5.6859Z"
+                          fill="#798BAF"
+                        />
+                        <path
+                          d="M9.74232 8.18541L8.50488 9.42285L12.7475 13.6655L19.8287 6.59486L18.5913 5.35742L12.7528 11.1959L9.74232 8.18541Z"
+                          fill="#37B24D"
+                        />
+                      </g>
+                      <defs>
+                        <clipPath
+                          id="clip0"
+                        >
+                          <rect
+                            fill="white"
+                            height="20"
+                            width="20"
+                          />
+                        </clipPath>
+                      </defs>
+                    </svg>
+                  </CloudCheckIconRefresh>
                 </a>
               </InnerReference>
             </Reference>
           </DropdownToggle>
           <DropdownMenu
-            className="status-messages-nav-item__dropdown-menu"
+            className="status-messages-nav-item__dropdown-menu p-0"
             flip={true}
             right={true}
             tag="div"
           >
             <div
               aria-hidden={true}
-              className="status-messages-nav-item__dropdown-menu dropdown-menu dropdown-menu-right"
+              className="status-messages-nav-item__dropdown-menu p-0 dropdown-menu dropdown-menu-right"
               role="menu"
               tabIndex="-1"
             >
-              <h3>
-                Code host status
-              </h3>
               <div
                 className="status-messages-nav-item__dropdown-menu-content"
               >
+                <small
+                  className="d-inline-block text-muted status-messages-nav-item__entry-sync"
+                >
+                  Code sync status
+                </small>
                 <StatusMessagesNavItemEntry
-                  entryType="progress"
-                  key="0"
+                  entryType="success"
+                  key="up-to-date"
                   linkOnClick={[Function]}
-                  linkText="Configure synced repositories"
-                  linkTo="/site-admin/external-services"
-                  showLink={true}
-                  text="Currently cloning repositories..."
-                  title="Repositories cloning"
+                  linkText="Manage repositories"
+                  linkTo="/site-admin/repositories"
+                  message="Repositories available for search"
                 >
                   <div
-                    className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-progress"
-                    key="Currently cloning repositories..."
+                    className="status-messages-nav-item__entry"
+                    key="Repositories available for search"
                   >
-                    <h4>
-                      <Memo(CloudSyncIcon)
-                        className="icon-inline-md mr-1"
-                      />
-                      Repositories cloning
-                    </h4>
-                    <p>
-                      Currently cloning repositories...
-                    </p>
-                    <p
-                      className="status-messages-nav-item__entry-link"
+                    <h4
+                      className="d-flex align-items-center mb-0"
                     >
+                      <Memo(CheckboxMarkedCircleIcon)
+                        className="text-success status-messages-nav-item__entry-icon"
+                        size={14}
+                      />
+                      Your repositories
+                    </h4>
+                    <div
+                      className="status-messages-nav-item__entry-card status-messages-nav-item__entry-card--active status-messages-nav-item__entry--border-success"
+                    >
+                      <p
+                        className="status-messages-nav-item__entry-message"
+                      >
+                        Repositories available for search
+                      </p>
                       <AnchorLink
+                        className="text-primary"
                         onClick={[Function]}
-                        to="/site-admin/external-services"
+                        to="/site-admin/repositories"
                       >
                         <a
-                          href="/site-admin/external-services"
+                          className="text-primary"
+                          href="/site-admin/repositories"
                           onClick={[Function]}
                         >
-                          Configure synced repositories
+                          Manage repositories
                         </a>
                       </AnchorLink>
-                    </p>
+                    </div>
                   </div>
                 </StatusMessagesNavItemEntry>
               </div>
@@ -342,7 +505,13 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as non-site 
 <StatusMessagesNavItem
   fetchMessages={[Function]}
   history="[History]"
-  isSiteAdmin={false}
+  user={
+    Object {
+      "id": "VXNlcjox",
+      "isSiteAdmin": false,
+      "username": "user",
+    }
+  }
 >
   <ButtonDropdown
     className="nav-link py-0 px-0 percy-hide chromatic-ignore"
@@ -385,55 +554,108 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as non-site 
                   href="#"
                   onClick={[Function]}
                 >
-                  <Memo(CloudAlertIcon)
+                  <CloudCheckIconRefresh
                     className="icon-inline-md"
-                    data-tooltip="Syncing repositories failed!"
-                  />
+                    data-tooltip="Repositories up to date"
+                  >
+                    <svg
+                      className="phabricator-icon mdi-icon icon-inline-md"
+                      data-tooltip="Repositories up to date"
+                      fill="currentColor"
+                      height={24}
+                      viewBox="0 -4 20 20"
+                      width={24}
+                    >
+                      <g>
+                        <path
+                          d="M14.4175 5.6859L14.6515 6.82244L16.1402 5.33371L16.1315 5.33301C15.5482 2.49967 13.0482 0.333008 9.96484 0.333008C7.54818 0.333008 5.46484 1.66634 4.46484 3.66634C1.88151 3.99967 -0.0351562 6.08301 -0.0351562 8.66634C-0.0351562 11.4163 2.21484 13.6663 4.96484 13.6663H10.273L8.52301 11.9163H4.96484C3.18134 11.9163 1.71484 10.4498 1.71484 8.66634C1.71484 7.00858 2.9321 5.62862 4.68879 5.40195L5.61324 5.28267L6.03009 4.44896C6.7313 3.04654 8.20576 2.08301 9.96484 2.08301C12.1965 2.08301 13.9973 3.64505 14.4175 5.6859Z"
+                          fill="#798BAF"
+                        />
+                        <path
+                          d="M9.74232 8.18541L8.50488 9.42285L12.7475 13.6655L19.8287 6.59486L18.5913 5.35742L12.7528 11.1959L9.74232 8.18541Z"
+                          fill="#37B24D"
+                        />
+                      </g>
+                      <defs>
+                        <clipPath
+                          id="clip0"
+                        >
+                          <rect
+                            fill="white"
+                            height="20"
+                            width="20"
+                          />
+                        </clipPath>
+                      </defs>
+                    </svg>
+                  </CloudCheckIconRefresh>
                 </a>
               </InnerReference>
             </Reference>
           </DropdownToggle>
           <DropdownMenu
-            className="status-messages-nav-item__dropdown-menu"
+            className="status-messages-nav-item__dropdown-menu p-0"
             flip={true}
             right={true}
             tag="div"
           >
             <div
               aria-hidden={true}
-              className="status-messages-nav-item__dropdown-menu dropdown-menu dropdown-menu-right"
+              className="status-messages-nav-item__dropdown-menu p-0 dropdown-menu dropdown-menu-right"
               role="menu"
               tabIndex="-1"
             >
-              <h3>
-                Code host status
-              </h3>
               <div
                 className="status-messages-nav-item__dropdown-menu-content"
               >
+                <small
+                  className="d-inline-block text-muted status-messages-nav-item__entry-sync"
+                >
+                  Code sync status
+                </small>
                 <StatusMessagesNavItemEntry
-                  entryType="warning"
-                  key="0"
+                  entryType="success"
+                  key="up-to-date"
                   linkOnClick={[Function]}
-                  linkText="Edit \\"GitHub.com\\""
-                  linkTo="/site-admin/external-services/abcd"
-                  showLink={false}
-                  text="failed to list organization kubernetes repos: request returned status 404: Not Found"
-                  title="Syncing repositories from external service \\"GitHub.com\\" failed:"
+                  linkText="Manage repositories"
+                  linkTo="/users/user/settings/repositories"
+                  message="Repositories available for search"
                 >
                   <div
-                    className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-warning"
-                    key="failed to list organization kubernetes repos: request returned status 404: Not Found"
+                    className="status-messages-nav-item__entry"
+                    key="Repositories available for search"
                   >
-                    <h4>
-                      <Memo(CloudAlertIcon)
-                        className="icon-inline-md mr-1"
+                    <h4
+                      className="d-flex align-items-center mb-0"
+                    >
+                      <Memo(CheckboxMarkedCircleIcon)
+                        className="text-success status-messages-nav-item__entry-icon"
+                        size={14}
                       />
-                      Syncing repositories from external service "GitHub.com" failed:
+                      Your repositories
                     </h4>
-                    <p>
-                      failed to list organization kubernetes repos: request returned status 404: Not Found
-                    </p>
+                    <div
+                      className="status-messages-nav-item__entry-card status-messages-nav-item__entry-card--active status-messages-nav-item__entry--border-success"
+                    >
+                      <p
+                        className="status-messages-nav-item__entry-message"
+                      >
+                        Repositories available for search
+                      </p>
+                      <AnchorLink
+                        className="text-primary"
+                        onClick={[Function]}
+                        to="/users/user/settings/repositories"
+                      >
+                        <a
+                          className="text-primary"
+                          href="/users/user/settings/repositories"
+                          onClick={[Function]}
+                        >
+                          Manage repositories
+                        </a>
+                      </AnchorLink>
+                    </div>
                   </div>
                 </StatusMessagesNavItemEntry>
               </div>
@@ -450,7 +672,13 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as site admi
 <StatusMessagesNavItem
   fetchMessages={[Function]}
   history="[History]"
-  isSiteAdmin={true}
+  user={
+    Object {
+      "id": "VXNlcjox",
+      "isSiteAdmin": true,
+      "username": "user",
+    }
+  }
 >
   <ButtonDropdown
     className="nav-link py-0 px-0 percy-hide chromatic-ignore"
@@ -493,70 +721,108 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as site admi
                   href="#"
                   onClick={[Function]}
                 >
-                  <Memo(CloudAlertIcon)
+                  <CloudCheckIconRefresh
                     className="icon-inline-md"
-                    data-tooltip="Syncing repositories failed!"
-                  />
+                    data-tooltip="Repositories up to date"
+                  >
+                    <svg
+                      className="phabricator-icon mdi-icon icon-inline-md"
+                      data-tooltip="Repositories up to date"
+                      fill="currentColor"
+                      height={24}
+                      viewBox="0 -4 20 20"
+                      width={24}
+                    >
+                      <g>
+                        <path
+                          d="M14.4175 5.6859L14.6515 6.82244L16.1402 5.33371L16.1315 5.33301C15.5482 2.49967 13.0482 0.333008 9.96484 0.333008C7.54818 0.333008 5.46484 1.66634 4.46484 3.66634C1.88151 3.99967 -0.0351562 6.08301 -0.0351562 8.66634C-0.0351562 11.4163 2.21484 13.6663 4.96484 13.6663H10.273L8.52301 11.9163H4.96484C3.18134 11.9163 1.71484 10.4498 1.71484 8.66634C1.71484 7.00858 2.9321 5.62862 4.68879 5.40195L5.61324 5.28267L6.03009 4.44896C6.7313 3.04654 8.20576 2.08301 9.96484 2.08301C12.1965 2.08301 13.9973 3.64505 14.4175 5.6859Z"
+                          fill="#798BAF"
+                        />
+                        <path
+                          d="M9.74232 8.18541L8.50488 9.42285L12.7475 13.6655L19.8287 6.59486L18.5913 5.35742L12.7528 11.1959L9.74232 8.18541Z"
+                          fill="#37B24D"
+                        />
+                      </g>
+                      <defs>
+                        <clipPath
+                          id="clip0"
+                        >
+                          <rect
+                            fill="white"
+                            height="20"
+                            width="20"
+                          />
+                        </clipPath>
+                      </defs>
+                    </svg>
+                  </CloudCheckIconRefresh>
                 </a>
               </InnerReference>
             </Reference>
           </DropdownToggle>
           <DropdownMenu
-            className="status-messages-nav-item__dropdown-menu"
+            className="status-messages-nav-item__dropdown-menu p-0"
             flip={true}
             right={true}
             tag="div"
           >
             <div
               aria-hidden={true}
-              className="status-messages-nav-item__dropdown-menu dropdown-menu dropdown-menu-right"
+              className="status-messages-nav-item__dropdown-menu p-0 dropdown-menu dropdown-menu-right"
               role="menu"
               tabIndex="-1"
             >
-              <h3>
-                Code host status
-              </h3>
               <div
                 className="status-messages-nav-item__dropdown-menu-content"
               >
+                <small
+                  className="d-inline-block text-muted status-messages-nav-item__entry-sync"
+                >
+                  Code sync status
+                </small>
                 <StatusMessagesNavItemEntry
-                  entryType="warning"
-                  key="0"
+                  entryType="success"
+                  key="up-to-date"
                   linkOnClick={[Function]}
-                  linkText="Edit \\"GitHub.com\\""
-                  linkTo="/site-admin/external-services/abcd"
-                  showLink={true}
-                  text="failed to list organization kubernetes repos: request returned status 404: Not Found"
-                  title="Syncing repositories from external service \\"GitHub.com\\" failed:"
+                  linkText="Manage repositories"
+                  linkTo="/site-admin/repositories"
+                  message="Repositories available for search"
                 >
                   <div
-                    className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-warning"
-                    key="failed to list organization kubernetes repos: request returned status 404: Not Found"
+                    className="status-messages-nav-item__entry"
+                    key="Repositories available for search"
                   >
-                    <h4>
-                      <Memo(CloudAlertIcon)
-                        className="icon-inline-md mr-1"
-                      />
-                      Syncing repositories from external service "GitHub.com" failed:
-                    </h4>
-                    <p>
-                      failed to list organization kubernetes repos: request returned status 404: Not Found
-                    </p>
-                    <p
-                      className="status-messages-nav-item__entry-link"
+                    <h4
+                      className="d-flex align-items-center mb-0"
                     >
+                      <Memo(CheckboxMarkedCircleIcon)
+                        className="text-success status-messages-nav-item__entry-icon"
+                        size={14}
+                      />
+                      Your repositories
+                    </h4>
+                    <div
+                      className="status-messages-nav-item__entry-card status-messages-nav-item__entry-card--active status-messages-nav-item__entry--border-success"
+                    >
+                      <p
+                        className="status-messages-nav-item__entry-message"
+                      >
+                        Repositories available for search
+                      </p>
                       <AnchorLink
+                        className="text-primary"
                         onClick={[Function]}
-                        to="/site-admin/external-services/abcd"
+                        to="/site-admin/repositories"
                       >
                         <a
-                          href="/site-admin/external-services/abcd"
+                          className="text-primary"
+                          href="/site-admin/repositories"
                           onClick={[Function]}
                         >
-                          Edit "GitHub.com"
+                          Manage repositories
                         </a>
                       </AnchorLink>
-                    </p>
+                    </div>
                   </div>
                 </StatusMessagesNavItemEntry>
               </div>
@@ -573,7 +839,13 @@ exports[`StatusMessagesNavItem one SyncError message as non-site admin 1`] = `
 <StatusMessagesNavItem
   fetchMessages={[Function]}
   history="[History]"
-  isSiteAdmin={false}
+  user={
+    Object {
+      "id": "VXNlcjox",
+      "isSiteAdmin": false,
+      "username": "user",
+    }
+  }
 >
   <ButtonDropdown
     className="nav-link py-0 px-0 percy-hide chromatic-ignore"
@@ -616,55 +888,108 @@ exports[`StatusMessagesNavItem one SyncError message as non-site admin 1`] = `
                   href="#"
                   onClick={[Function]}
                 >
-                  <Memo(CloudCheckIcon)
+                  <CloudCheckIconRefresh
                     className="icon-inline-md"
                     data-tooltip="Repositories up to date"
-                  />
+                  >
+                    <svg
+                      className="phabricator-icon mdi-icon icon-inline-md"
+                      data-tooltip="Repositories up to date"
+                      fill="currentColor"
+                      height={24}
+                      viewBox="0 -4 20 20"
+                      width={24}
+                    >
+                      <g>
+                        <path
+                          d="M14.4175 5.6859L14.6515 6.82244L16.1402 5.33371L16.1315 5.33301C15.5482 2.49967 13.0482 0.333008 9.96484 0.333008C7.54818 0.333008 5.46484 1.66634 4.46484 3.66634C1.88151 3.99967 -0.0351562 6.08301 -0.0351562 8.66634C-0.0351562 11.4163 2.21484 13.6663 4.96484 13.6663H10.273L8.52301 11.9163H4.96484C3.18134 11.9163 1.71484 10.4498 1.71484 8.66634C1.71484 7.00858 2.9321 5.62862 4.68879 5.40195L5.61324 5.28267L6.03009 4.44896C6.7313 3.04654 8.20576 2.08301 9.96484 2.08301C12.1965 2.08301 13.9973 3.64505 14.4175 5.6859Z"
+                          fill="#798BAF"
+                        />
+                        <path
+                          d="M9.74232 8.18541L8.50488 9.42285L12.7475 13.6655L19.8287 6.59486L18.5913 5.35742L12.7528 11.1959L9.74232 8.18541Z"
+                          fill="#37B24D"
+                        />
+                      </g>
+                      <defs>
+                        <clipPath
+                          id="clip0"
+                        >
+                          <rect
+                            fill="white"
+                            height="20"
+                            width="20"
+                          />
+                        </clipPath>
+                      </defs>
+                    </svg>
+                  </CloudCheckIconRefresh>
                 </a>
               </InnerReference>
             </Reference>
           </DropdownToggle>
           <DropdownMenu
-            className="status-messages-nav-item__dropdown-menu"
+            className="status-messages-nav-item__dropdown-menu p-0"
             flip={true}
             right={true}
             tag="div"
           >
             <div
               aria-hidden={true}
-              className="status-messages-nav-item__dropdown-menu dropdown-menu dropdown-menu-right"
+              className="status-messages-nav-item__dropdown-menu p-0 dropdown-menu dropdown-menu-right"
               role="menu"
               tabIndex="-1"
             >
-              <h3>
-                Code host status
-              </h3>
               <div
                 className="status-messages-nav-item__dropdown-menu-content"
               >
+                <small
+                  className="d-inline-block text-muted status-messages-nav-item__entry-sync"
+                >
+                  Code sync status
+                </small>
                 <StatusMessagesNavItemEntry
-                  entryType="warning"
-                  key="0"
+                  entryType="success"
+                  key="up-to-date"
                   linkOnClick={[Function]}
-                  linkText="Configure synced repositories"
-                  linkTo="/site-admin/external-services"
-                  showLink={false}
-                  text="syncer.sync.store.upsert-repos: pg: unique constraint foobar"
-                  title="Syncing repositories failed:"
+                  linkText="Manage repositories"
+                  linkTo="/users/user/settings/repositories"
+                  message="Repositories available for search"
                 >
                   <div
-                    className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-warning"
-                    key="syncer.sync.store.upsert-repos: pg: unique constraint foobar"
+                    className="status-messages-nav-item__entry"
+                    key="Repositories available for search"
                   >
-                    <h4>
-                      <Memo(CloudAlertIcon)
-                        className="icon-inline-md mr-1"
+                    <h4
+                      className="d-flex align-items-center mb-0"
+                    >
+                      <Memo(CheckboxMarkedCircleIcon)
+                        className="text-success status-messages-nav-item__entry-icon"
+                        size={14}
                       />
-                      Syncing repositories failed:
+                      Your repositories
                     </h4>
-                    <p>
-                      syncer.sync.store.upsert-repos: pg: unique constraint foobar
-                    </p>
+                    <div
+                      className="status-messages-nav-item__entry-card status-messages-nav-item__entry-card--active status-messages-nav-item__entry--border-success"
+                    >
+                      <p
+                        className="status-messages-nav-item__entry-message"
+                      >
+                        Repositories available for search
+                      </p>
+                      <AnchorLink
+                        className="text-primary"
+                        onClick={[Function]}
+                        to="/users/user/settings/repositories"
+                      >
+                        <a
+                          className="text-primary"
+                          href="/users/user/settings/repositories"
+                          onClick={[Function]}
+                        >
+                          Manage repositories
+                        </a>
+                      </AnchorLink>
+                    </div>
                   </div>
                 </StatusMessagesNavItemEntry>
               </div>
@@ -681,7 +1006,13 @@ exports[`StatusMessagesNavItem one SyncError message as site admin 1`] = `
 <StatusMessagesNavItem
   fetchMessages={[Function]}
   history="[History]"
-  isSiteAdmin={true}
+  user={
+    Object {
+      "id": "VXNlcjox",
+      "isSiteAdmin": true,
+      "username": "user",
+    }
+  }
 >
   <ButtonDropdown
     className="nav-link py-0 px-0 percy-hide chromatic-ignore"
@@ -724,70 +1055,108 @@ exports[`StatusMessagesNavItem one SyncError message as site admin 1`] = `
                   href="#"
                   onClick={[Function]}
                 >
-                  <Memo(CloudCheckIcon)
+                  <CloudCheckIconRefresh
                     className="icon-inline-md"
                     data-tooltip="Repositories up to date"
-                  />
+                  >
+                    <svg
+                      className="phabricator-icon mdi-icon icon-inline-md"
+                      data-tooltip="Repositories up to date"
+                      fill="currentColor"
+                      height={24}
+                      viewBox="0 -4 20 20"
+                      width={24}
+                    >
+                      <g>
+                        <path
+                          d="M14.4175 5.6859L14.6515 6.82244L16.1402 5.33371L16.1315 5.33301C15.5482 2.49967 13.0482 0.333008 9.96484 0.333008C7.54818 0.333008 5.46484 1.66634 4.46484 3.66634C1.88151 3.99967 -0.0351562 6.08301 -0.0351562 8.66634C-0.0351562 11.4163 2.21484 13.6663 4.96484 13.6663H10.273L8.52301 11.9163H4.96484C3.18134 11.9163 1.71484 10.4498 1.71484 8.66634C1.71484 7.00858 2.9321 5.62862 4.68879 5.40195L5.61324 5.28267L6.03009 4.44896C6.7313 3.04654 8.20576 2.08301 9.96484 2.08301C12.1965 2.08301 13.9973 3.64505 14.4175 5.6859Z"
+                          fill="#798BAF"
+                        />
+                        <path
+                          d="M9.74232 8.18541L8.50488 9.42285L12.7475 13.6655L19.8287 6.59486L18.5913 5.35742L12.7528 11.1959L9.74232 8.18541Z"
+                          fill="#37B24D"
+                        />
+                      </g>
+                      <defs>
+                        <clipPath
+                          id="clip0"
+                        >
+                          <rect
+                            fill="white"
+                            height="20"
+                            width="20"
+                          />
+                        </clipPath>
+                      </defs>
+                    </svg>
+                  </CloudCheckIconRefresh>
                 </a>
               </InnerReference>
             </Reference>
           </DropdownToggle>
           <DropdownMenu
-            className="status-messages-nav-item__dropdown-menu"
+            className="status-messages-nav-item__dropdown-menu p-0"
             flip={true}
             right={true}
             tag="div"
           >
             <div
               aria-hidden={true}
-              className="status-messages-nav-item__dropdown-menu dropdown-menu dropdown-menu-right"
+              className="status-messages-nav-item__dropdown-menu p-0 dropdown-menu dropdown-menu-right"
               role="menu"
               tabIndex="-1"
             >
-              <h3>
-                Code host status
-              </h3>
               <div
                 className="status-messages-nav-item__dropdown-menu-content"
               >
+                <small
+                  className="d-inline-block text-muted status-messages-nav-item__entry-sync"
+                >
+                  Code sync status
+                </small>
                 <StatusMessagesNavItemEntry
-                  entryType="warning"
-                  key="0"
+                  entryType="success"
+                  key="up-to-date"
                   linkOnClick={[Function]}
-                  linkText="Configure synced repositories"
-                  linkTo="/site-admin/external-services"
-                  showLink={true}
-                  text="syncer.sync.store.upsert-repos: pg: unique constraint foobar"
-                  title="Syncing repositories failed:"
+                  linkText="Manage repositories"
+                  linkTo="/site-admin/repositories"
+                  message="Repositories available for search"
                 >
                   <div
-                    className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-warning"
-                    key="syncer.sync.store.upsert-repos: pg: unique constraint foobar"
+                    className="status-messages-nav-item__entry"
+                    key="Repositories available for search"
                   >
-                    <h4>
-                      <Memo(CloudAlertIcon)
-                        className="icon-inline-md mr-1"
-                      />
-                      Syncing repositories failed:
-                    </h4>
-                    <p>
-                      syncer.sync.store.upsert-repos: pg: unique constraint foobar
-                    </p>
-                    <p
-                      className="status-messages-nav-item__entry-link"
+                    <h4
+                      className="d-flex align-items-center mb-0"
                     >
+                      <Memo(CheckboxMarkedCircleIcon)
+                        className="text-success status-messages-nav-item__entry-icon"
+                        size={14}
+                      />
+                      Your repositories
+                    </h4>
+                    <div
+                      className="status-messages-nav-item__entry-card status-messages-nav-item__entry-card--active status-messages-nav-item__entry--border-success"
+                    >
+                      <p
+                        className="status-messages-nav-item__entry-message"
+                      >
+                        Repositories available for search
+                      </p>
                       <AnchorLink
+                        className="text-primary"
                         onClick={[Function]}
-                        to="/site-admin/external-services"
+                        to="/site-admin/repositories"
                       >
                         <a
-                          href="/site-admin/external-services"
+                          className="text-primary"
+                          href="/site-admin/repositories"
                           onClick={[Function]}
                         >
-                          Configure synced repositories
+                          Manage repositories
                         </a>
                       </AnchorLink>
-                    </p>
+                    </div>
                   </div>
                 </StatusMessagesNavItemEntry>
               </div>

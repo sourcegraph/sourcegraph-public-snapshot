@@ -163,7 +163,7 @@ describe('Code intelligence regression test suite', () => {
                 wait: { timeout: 2 * 1000 },
             })
             await driver.waitUntilURL(
-                `${config.sourcegraphBaseUrl}/github.com/sourcegraph/sourcegraph@c543dfd3936019befe94b881ade89e637d1a3dc3/-/blob/browser/config/webpack/base.config.ts#L6:7-6:17`,
+                `${config.sourcegraphBaseUrl}/github.com/sourcegraph/sourcegraph@c543dfd3936019befe94b881ade89e637d1a3dc3/-/blob/browser/config/webpack/base.config.ts?L6:7-6:17`,
                 { timeout: 2 * 1000 }
             )
         })

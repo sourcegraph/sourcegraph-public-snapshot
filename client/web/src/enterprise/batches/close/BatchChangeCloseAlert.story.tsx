@@ -1,4 +1,4 @@
-import { boolean } from '@storybook/addon-knobs'
+import { boolean, number } from '@storybook/addon-knobs'
 import { useState } from '@storybook/addons'
 import { storiesOf } from '@storybook/react'
 import React from 'react'
@@ -17,6 +17,7 @@ const { add } = storiesOf('web/batches/close/BatchChangeCloseAlert', module)
 
 add('Has open changesets', () => {
     const [closeChangesets, setCloseChangesets] = useState(false)
+    const totalCount = number('totalCount', 10)
     return (
         <EnterpriseWebStory>
             {props => (
@@ -24,7 +25,7 @@ add('Has open changesets', () => {
                     {...props}
                     batchChangeID="change123"
                     batchChangeURL="/users/john/batch-changes/change123"
-                    totalCount={10}
+                    totalCount={totalCount}
                     closeChangesets={closeChangesets}
                     setCloseChangesets={setCloseChangesets}
                     viewerCanAdminister={boolean('viewerCanAdminister', true)}

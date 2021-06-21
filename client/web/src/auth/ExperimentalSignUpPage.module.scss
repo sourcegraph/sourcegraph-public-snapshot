@@ -10,12 +10,6 @@
     width: 100vw;
     top: 0;
     bottom: 0;
-
-    :global(.theme-dark) & {
-        background: linear-gradient(0deg, #000000 -19.71%, rgba(0, 0, 0, 0) 78.37%);
-        mix-blend-mode: multiply;
-        opacity: 0.8;
-    }
 }
 
 .header-background-2 {
@@ -30,15 +24,6 @@
             #30b4fe 2.34%,
             rgba(114, 183, 253, 0.15) 54.59%,
             rgba(221, 236, 251, 0) 100%
-        );
-    }
-
-    :global(.theme-dark) & {
-        background: radial-gradient(
-            80% 821.52% at 90.97% 54.98%,
-            #00507d 2.34%,
-            rgba(0, 67, 135, 0.15) 54.59%,
-            rgba(0, 26, 52, 0) 100%
         );
     }
 
@@ -57,15 +42,6 @@
             rgba(114, 252, 226, 0.3) 13.74%,
             rgba(182, 251, 238, 0.3) 34.35%,
             rgba(210, 250, 247, 0) 96.66%
-        );
-    }
-
-    :global(.theme-dark) & {
-        background: linear-gradient(
-            83.13deg,
-            rgba(0, 130, 105, 0.7) 13.89%,
-            rgba(0, 55, 49, 0.7) 60.15%,
-            rgba(0, 12, 11, 0) 109.59%
         );
     }
 
