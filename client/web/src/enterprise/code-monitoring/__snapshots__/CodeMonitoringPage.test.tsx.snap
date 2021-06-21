@@ -148,16 +148,95 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
               <div
                 className="nav-item"
               >
-                <div
-                  className="nav-link active"
+                <NavLink
+                  activeClassName="active"
+                  className="nav-link"
+                  exact={true}
+                  to="/code-monitoring"
                 >
-                  <span
-                    className="text-content"
-                    data-tab-content="Code monitors"
+                  <Link
+                    aria-current="page"
+                    className="nav-link active"
+                    style={Object {}}
+                    to={
+                      Object {
+                        "hash": "",
+                        "key": null,
+                        "pathname": "/code-monitoring",
+                        "search": "",
+                        "state": null,
+                      }
+                    }
                   >
-                    Code monitors
-                  </span>
-                </div>
+                    <LinkAnchor
+                      aria-current="page"
+                      className="nav-link active"
+                      href="/code-monitoring"
+                      navigate={[Function]}
+                      style={Object {}}
+                    >
+                      <a
+                        aria-current="page"
+                        className="nav-link active"
+                        href="/code-monitoring"
+                        onClick={[Function]}
+                        style={Object {}}
+                      >
+                        <span
+                          className="text-content"
+                          data-tab-content="Code monitors"
+                        >
+                          Code monitors
+                        </span>
+                      </a>
+                    </LinkAnchor>
+                  </Link>
+                </NavLink>
+              </div>
+              <div
+                className="nav-item"
+              >
+                <NavLink
+                  activeClassName="active"
+                  className="nav-link"
+                  exact={true}
+                  to="/code-monitoring/getting-started"
+                >
+                  <Link
+                    aria-current={null}
+                    className="nav-link"
+                    to={
+                      Object {
+                        "hash": "",
+                        "key": null,
+                        "pathname": "/code-monitoring/getting-started",
+                        "search": "",
+                        "state": null,
+                      }
+                    }
+                  >
+                    <LinkAnchor
+                      aria-current={null}
+                      className="nav-link"
+                      href="/code-monitoring/getting-started"
+                      navigate={[Function]}
+                    >
+                      <a
+                        aria-current={null}
+                        className="nav-link"
+                        href="/code-monitoring/getting-started"
+                        onClick={[Function]}
+                      >
+                        <span
+                          className="text-content"
+                          data-tab-content="Getting started"
+                        >
+                          Getting started
+                        </span>
+                      </a>
+                    </LinkAnchor>
+                  </Link>
+                </NavLink>
               </div>
             </div>
           </div>
@@ -2152,16 +2231,95 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
               <div
                 className="nav-item"
               >
-                <div
-                  className="nav-link active"
+                <NavLink
+                  activeClassName="active"
+                  className="nav-link"
+                  exact={true}
+                  to="/code-monitoring"
                 >
-                  <span
-                    className="text-content"
-                    data-tab-content="Code monitors"
+                  <Link
+                    aria-current="page"
+                    className="nav-link active"
+                    style={Object {}}
+                    to={
+                      Object {
+                        "hash": "",
+                        "key": null,
+                        "pathname": "/code-monitoring",
+                        "search": "",
+                        "state": null,
+                      }
+                    }
                   >
-                    Code monitors
-                  </span>
-                </div>
+                    <LinkAnchor
+                      aria-current="page"
+                      className="nav-link active"
+                      href="/code-monitoring"
+                      navigate={[Function]}
+                      style={Object {}}
+                    >
+                      <a
+                        aria-current="page"
+                        className="nav-link active"
+                        href="/code-monitoring"
+                        onClick={[Function]}
+                        style={Object {}}
+                      >
+                        <span
+                          className="text-content"
+                          data-tab-content="Code monitors"
+                        >
+                          Code monitors
+                        </span>
+                      </a>
+                    </LinkAnchor>
+                  </Link>
+                </NavLink>
+              </div>
+              <div
+                className="nav-item"
+              >
+                <NavLink
+                  activeClassName="active"
+                  className="nav-link"
+                  exact={true}
+                  to="/code-monitoring/getting-started"
+                >
+                  <Link
+                    aria-current={null}
+                    className="nav-link"
+                    to={
+                      Object {
+                        "hash": "",
+                        "key": null,
+                        "pathname": "/code-monitoring/getting-started",
+                        "search": "",
+                        "state": null,
+                      }
+                    }
+                  >
+                    <LinkAnchor
+                      aria-current={null}
+                      className="nav-link"
+                      href="/code-monitoring/getting-started"
+                      navigate={[Function]}
+                    >
+                      <a
+                        aria-current={null}
+                        className="nav-link"
+                        href="/code-monitoring/getting-started"
+                        onClick={[Function]}
+                      >
+                        <span
+                          className="text-content"
+                          data-tab-content="Getting started"
+                        >
+                          Getting started
+                        </span>
+                      </a>
+                    </LinkAnchor>
+                  </Link>
+                </NavLink>
               </div>
             </div>
           </div>
@@ -2987,16 +3145,95 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
               <div
                 className="nav-item"
               >
-                <div
-                  className="nav-link active"
+                <NavLink
+                  activeClassName="active"
+                  className="nav-link"
+                  exact={true}
+                  to="/code-monitoring"
                 >
-                  <span
-                    className="text-content"
-                    data-tab-content="Code monitors"
+                  <Link
+                    aria-current="page"
+                    className="nav-link active"
+                    style={Object {}}
+                    to={
+                      Object {
+                        "hash": "",
+                        "key": null,
+                        "pathname": "/code-monitoring",
+                        "search": "",
+                        "state": null,
+                      }
+                    }
                   >
-                    Code monitors
-                  </span>
-                </div>
+                    <LinkAnchor
+                      aria-current="page"
+                      className="nav-link active"
+                      href="/code-monitoring"
+                      navigate={[Function]}
+                      style={Object {}}
+                    >
+                      <a
+                        aria-current="page"
+                        className="nav-link active"
+                        href="/code-monitoring"
+                        onClick={[Function]}
+                        style={Object {}}
+                      >
+                        <span
+                          className="text-content"
+                          data-tab-content="Code monitors"
+                        >
+                          Code monitors
+                        </span>
+                      </a>
+                    </LinkAnchor>
+                  </Link>
+                </NavLink>
+              </div>
+              <div
+                className="nav-item"
+              >
+                <NavLink
+                  activeClassName="active"
+                  className="nav-link"
+                  exact={true}
+                  to="/code-monitoring/getting-started"
+                >
+                  <Link
+                    aria-current={null}
+                    className="nav-link"
+                    to={
+                      Object {
+                        "hash": "",
+                        "key": null,
+                        "pathname": "/code-monitoring/getting-started",
+                        "search": "",
+                        "state": null,
+                      }
+                    }
+                  >
+                    <LinkAnchor
+                      aria-current={null}
+                      className="nav-link"
+                      href="/code-monitoring/getting-started"
+                      navigate={[Function]}
+                    >
+                      <a
+                        aria-current={null}
+                        className="nav-link"
+                        href="/code-monitoring/getting-started"
+                        onClick={[Function]}
+                      >
+                        <span
+                          className="text-content"
+                          data-tab-content="Getting started"
+                        >
+                          Getting started
+                        </span>
+                      </a>
+                    </LinkAnchor>
+                  </Link>
+                </NavLink>
               </div>
             </div>
           </div>

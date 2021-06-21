@@ -13,12 +13,9 @@ import { CodeMonitoringPageProps } from './CodeMonitoringPage'
 
 type CodeMonitorFilter = 'all' | 'user'
 
-export const CodeMonitorList: React.FunctionComponent<Required<CodeMonitoringPageProps>> = ({
-    authenticatedUser,
-    settingsCascade,
-    fetchUserCodeMonitors,
-    toggleCodeMonitorEnabled,
-}) => {
+export const CodeMonitorList: React.FunctionComponent<
+    Omit<Required<CodeMonitoringPageProps>, 'showGettingStarted'>
+> = ({ authenticatedUser, settingsCascade, fetchUserCodeMonitors, toggleCodeMonitorEnabled }) => {
     const location = useLocation()
     const history = useHistory()
     const [monitorListFilter, setMonitorListFilter] = useState<CodeMonitorFilter>('all')

@@ -3,7 +3,7 @@ import React from 'react'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 
 export const CodeMonitoringGettingStarted: React.FunctionComponent<{}> = () => (
-    <div className="mt-5">
+    <div>
         <div className="d-flex flex-column mb-5">
             <h2>Get started with code monitoring</h2>
             <p className="text-muted code-monitoring-page__start-subheading mb-4">
