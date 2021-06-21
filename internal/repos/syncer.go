@@ -872,7 +872,7 @@ func (s *Syncer) observe(ctx context.Context, family, title string) (context.Con
 	tr, ctx := trace.New(ctx, family, title)
 
 	return ctx, func(d *Diff, owner ownerType, err *error) {
-		syncStarted.WithLabelValues(family).Inc()
+		syncStarted.WithLabelValues(family, string(owner)).Inc()
 
 		now := s.Now()
 		took := s.Now().Sub(began).Seconds()
