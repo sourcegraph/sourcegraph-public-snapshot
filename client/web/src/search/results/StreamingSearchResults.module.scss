@@ -53,4 +53,21 @@
             padding-left: 1rem;
         }
     }
+
+    &__cta {
+        &-icon-wrapper {
+            // stylelint-disable-next-line declaration-property-unit-whitelist
+            padding: calc(1rem - 1px);
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+        }
+
+        &-title {
+            font-size: 1rem;
+        }
+
+        &-description {
+            font-size: 0.875rem;
+        }
+    }
 }
