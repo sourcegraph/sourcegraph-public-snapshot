@@ -36,10 +36,10 @@ func TestHeartbeat(t *testing.T) {
 	clock := glock.NewMockClock()
 	handler := newHandler(options, clock)
 
-	_, dequeued1, _ := handler.dequeue(context.Background(), "q1", "deadbeef")
-	_, dequeued2, _ := handler.dequeue(context.Background(), "q1", "deadveal")
-	_, dequeued3, _ := handler.dequeue(context.Background(), "q2", "deadbeef")
-	_, dequeued4, _ := handler.dequeue(context.Background(), "q2", "deadveal")
+	_, dequeued1, _ := handler.dequeue(context.Background(), "q1", "deadbeef", "test")
+	_, dequeued2, _ := handler.dequeue(context.Background(), "q1", "deadveal", "test")
+	_, dequeued3, _ := handler.dequeue(context.Background(), "q2", "deadbeef", "test")
+	_, dequeued4, _ := handler.dequeue(context.Background(), "q2", "deadveal", "test")
 	if !dequeued1 || !dequeued2 || !dequeued3 || !dequeued4 {
 		t.Fatalf("failed to dequeue records")
 	}
@@ -130,10 +130,10 @@ func TestCleanup(t *testing.T) {
 	clock := glock.NewMockClock()
 	handler := newHandler(options, clock)
 
-	_, dequeued1, _ := handler.dequeue(context.Background(), "q1", "deadbeef")
-	_, dequeued2, _ := handler.dequeue(context.Background(), "q1", "deadveal")
-	_, dequeued3, _ := handler.dequeue(context.Background(), "q2", "deadbeef")
-	_, dequeued4, _ := handler.dequeue(context.Background(), "q2", "deadveal")
+	_, dequeued1, _ := handler.dequeue(context.Background(), "q1", "deadbeef", "test")
+	_, dequeued2, _ := handler.dequeue(context.Background(), "q1", "deadveal", "test")
+	_, dequeued3, _ := handler.dequeue(context.Background(), "q2", "deadbeef", "test")
+	_, dequeued4, _ := handler.dequeue(context.Background(), "q2", "deadveal", "test")
 	if !dequeued1 || !dequeued2 || !dequeued3 || !dequeued4 {
 		t.Fatalf("failed to dequeue records")
 	}

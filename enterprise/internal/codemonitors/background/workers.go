@@ -173,7 +173,6 @@ func (r *queryRunner) Handle(ctx context.Context, workerStore dbworkerstore.Stor
 	err = s.LogSearch(ctx, newQuery, numResults, record.RecordID())
 	if err != nil {
 		return fmt.Errorf("LogSearch: %w", err)
-
 	}
 	return nil
 }
