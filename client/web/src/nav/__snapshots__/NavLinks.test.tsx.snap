@@ -477,59 +477,84 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
         href="#"
       >
         <svg
-          class="mdi-icon icon-inline-md"
+          class="phabricator-icon mdi-icon icon-inline-md"
           data-tooltip="Repositories up to date"
           fill="currentColor"
           height="24"
-          viewBox="0 0 24 24"
+          viewBox="0 -4 20 20"
           width="24"
         >
-          <path
-            d="M10,17L6.5,13.5L7.91,12.08L10,14.17L15.18,9L16.59,10.41M19.35,10.03C18.67,6.59 15.64,4 12,4C9.11,4 6.6,5.64 5.35,8.03C2.34,8.36 0,10.9 0,14A6,6 0 0,0 6,20H19A5,5 0 0,0 24,15C24,12.36 21.95,10.22 19.35,10.03Z"
-          />
+          <g>
+            <path
+              d="M14.4175 5.6859L14.6515 6.82244L16.1402 5.33371L16.1315 5.33301C15.5482 2.49967 13.0482 0.333008 9.96484 0.333008C7.54818 0.333008 5.46484 1.66634 4.46484 3.66634C1.88151 3.99967 -0.0351562 6.08301 -0.0351562 8.66634C-0.0351562 11.4163 2.21484 13.6663 4.96484 13.6663H10.273L8.52301 11.9163H4.96484C3.18134 11.9163 1.71484 10.4498 1.71484 8.66634C1.71484 7.00858 2.9321 5.62862 4.68879 5.40195L5.61324 5.28267L6.03009 4.44896C6.7313 3.04654 8.20576 2.08301 9.96484 2.08301C12.1965 2.08301 13.9973 3.64505 14.4175 5.6859Z"
+              fill="#798BAF"
+            />
+            <path
+              d="M9.74232 8.18541L8.50488 9.42285L12.7475 13.6655L19.8287 6.59486L18.5913 5.35742L12.7528 11.1959L9.74232 8.18541Z"
+              fill="#37B24D"
+            />
+          </g>
+          <defs>
+            <clipPath
+              id="clip0"
+            >
+              <rect
+                fill="white"
+                height="20"
+                width="20"
+              />
+            </clipPath>
+          </defs>
         </svg>
       </a>
       <div
         aria-hidden="true"
-        class="status-messages-nav-item__dropdown-menu dropdown-menu dropdown-menu-right"
+        class="status-messages-nav-item__dropdown-menu p-0 dropdown-menu dropdown-menu-right"
         role="menu"
         tabindex="-1"
       >
-        <h3>
-          Code host status
-        </h3>
         <div
           class="status-messages-nav-item__dropdown-menu-content"
         >
-          <div
-            class="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-success"
+          <small
+            class="d-inline-block text-muted status-messages-nav-item__entry-sync"
           >
-            <h4>
+            Code sync status
+          </small>
+          <div
+            class="status-messages-nav-item__entry"
+          >
+            <h4
+              class="d-flex align-items-center mb-0"
+            >
               <svg
-                class="mdi-icon icon-inline-md mr-1"
+                class="mdi-icon text-success status-messages-nav-item__entry-icon"
                 fill="currentColor"
-                height="24"
+                height="14"
                 viewBox="0 0 24 24"
-                width="24"
+                width="14"
               >
                 <path
-                  d="M10,17L6.5,13.5L7.91,12.08L10,14.17L15.18,9L16.59,10.41M19.35,10.03C18.67,6.59 15.64,4 12,4C9.11,4 6.6,5.64 5.35,8.03C2.34,8.36 0,10.9 0,14A6,6 0 0,0 6,20H19A5,5 0 0,0 24,15C24,12.36 21.95,10.22 19.35,10.03Z"
+                  d="M10,17L5,12L6.41,10.58L10,14.17L17.59,6.58L19,8M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"
                 />
               </svg>
-              Repositories up to date
+              Your repositories
             </h4>
-            <p>
-              All repositories hosted on the configured code hosts are synced.
-            </p>
-            <p
-              class="status-messages-nav-item__entry-link"
+            <div
+              class="status-messages-nav-item__entry-card status-messages-nav-item__entry-card--active status-messages-nav-item__entry--border-success"
             >
+              <p
+                class="status-messages-nav-item__entry-message"
+              >
+                Repositories available for search
+              </p>
               <a
-                href="/site-admin/external-services"
+                class="text-primary"
+                href="/site-admin/repositories"
               >
                 Manage repositories
               </a>
-            </p>
+            </div>
           </div>
         </div>
       </div>
@@ -1263,59 +1288,84 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
         href="#"
       >
         <svg
-          class="mdi-icon icon-inline-md"
+          class="phabricator-icon mdi-icon icon-inline-md"
           data-tooltip="Repositories up to date"
           fill="currentColor"
           height="24"
-          viewBox="0 0 24 24"
+          viewBox="0 -4 20 20"
           width="24"
         >
-          <path
-            d="M10,17L6.5,13.5L7.91,12.08L10,14.17L15.18,9L16.59,10.41M19.35,10.03C18.67,6.59 15.64,4 12,4C9.11,4 6.6,5.64 5.35,8.03C2.34,8.36 0,10.9 0,14A6,6 0 0,0 6,20H19A5,5 0 0,0 24,15C24,12.36 21.95,10.22 19.35,10.03Z"
-          />
+          <g>
+            <path
+              d="M14.4175 5.6859L14.6515 6.82244L16.1402 5.33371L16.1315 5.33301C15.5482 2.49967 13.0482 0.333008 9.96484 0.333008C7.54818 0.333008 5.46484 1.66634 4.46484 3.66634C1.88151 3.99967 -0.0351562 6.08301 -0.0351562 8.66634C-0.0351562 11.4163 2.21484 13.6663 4.96484 13.6663H10.273L8.52301 11.9163H4.96484C3.18134 11.9163 1.71484 10.4498 1.71484 8.66634C1.71484 7.00858 2.9321 5.62862 4.68879 5.40195L5.61324 5.28267L6.03009 4.44896C6.7313 3.04654 8.20576 2.08301 9.96484 2.08301C12.1965 2.08301 13.9973 3.64505 14.4175 5.6859Z"
+              fill="#798BAF"
+            />
+            <path
+              d="M9.74232 8.18541L8.50488 9.42285L12.7475 13.6655L19.8287 6.59486L18.5913 5.35742L12.7528 11.1959L9.74232 8.18541Z"
+              fill="#37B24D"
+            />
+          </g>
+          <defs>
+            <clipPath
+              id="clip0"
+            >
+              <rect
+                fill="white"
+                height="20"
+                width="20"
+              />
+            </clipPath>
+          </defs>
         </svg>
       </a>
       <div
         aria-hidden="true"
-        class="status-messages-nav-item__dropdown-menu dropdown-menu dropdown-menu-right"
+        class="status-messages-nav-item__dropdown-menu p-0 dropdown-menu dropdown-menu-right"
         role="menu"
         tabindex="-1"
       >
-        <h3>
-          Code host status
-        </h3>
         <div
           class="status-messages-nav-item__dropdown-menu-content"
         >
-          <div
-            class="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-success"
+          <small
+            class="d-inline-block text-muted status-messages-nav-item__entry-sync"
           >
-            <h4>
+            Code sync status
+          </small>
+          <div
+            class="status-messages-nav-item__entry"
+          >
+            <h4
+              class="d-flex align-items-center mb-0"
+            >
               <svg
-                class="mdi-icon icon-inline-md mr-1"
+                class="mdi-icon text-success status-messages-nav-item__entry-icon"
                 fill="currentColor"
-                height="24"
+                height="14"
                 viewBox="0 0 24 24"
-                width="24"
+                width="14"
               >
                 <path
-                  d="M10,17L6.5,13.5L7.91,12.08L10,14.17L15.18,9L16.59,10.41M19.35,10.03C18.67,6.59 15.64,4 12,4C9.11,4 6.6,5.64 5.35,8.03C2.34,8.36 0,10.9 0,14A6,6 0 0,0 6,20H19A5,5 0 0,0 24,15C24,12.36 21.95,10.22 19.35,10.03Z"
+                  d="M10,17L5,12L6.41,10.58L10,14.17L17.59,6.58L19,8M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"
                 />
               </svg>
-              Repositories up to date
+              Your repositories
             </h4>
-            <p>
-              All repositories hosted on the configured code hosts are synced.
-            </p>
-            <p
-              class="status-messages-nav-item__entry-link"
+            <div
+              class="status-messages-nav-item__entry-card status-messages-nav-item__entry-card--active status-messages-nav-item__entry--border-success"
             >
+              <p
+                class="status-messages-nav-item__entry-message"
+              >
+                Repositories available for search
+              </p>
               <a
-                href="/site-admin/external-services"
+                class="text-primary"
+                href="/site-admin/repositories"
               >
                 Manage repositories
               </a>
-            </p>
+            </div>
           </div>
         </div>
       </div>
@@ -2059,59 +2109,84 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
         href="#"
       >
         <svg
-          class="mdi-icon icon-inline-md"
+          class="phabricator-icon mdi-icon icon-inline-md"
           data-tooltip="Repositories up to date"
           fill="currentColor"
           height="24"
-          viewBox="0 0 24 24"
+          viewBox="0 -4 20 20"
           width="24"
         >
-          <path
-            d="M10,17L6.5,13.5L7.91,12.08L10,14.17L15.18,9L16.59,10.41M19.35,10.03C18.67,6.59 15.64,4 12,4C9.11,4 6.6,5.64 5.35,8.03C2.34,8.36 0,10.9 0,14A6,6 0 0,0 6,20H19A5,5 0 0,0 24,15C24,12.36 21.95,10.22 19.35,10.03Z"
-          />
+          <g>
+            <path
+              d="M14.4175 5.6859L14.6515 6.82244L16.1402 5.33371L16.1315 5.33301C15.5482 2.49967 13.0482 0.333008 9.96484 0.333008C7.54818 0.333008 5.46484 1.66634 4.46484 3.66634C1.88151 3.99967 -0.0351562 6.08301 -0.0351562 8.66634C-0.0351562 11.4163 2.21484 13.6663 4.96484 13.6663H10.273L8.52301 11.9163H4.96484C3.18134 11.9163 1.71484 10.4498 1.71484 8.66634C1.71484 7.00858 2.9321 5.62862 4.68879 5.40195L5.61324 5.28267L6.03009 4.44896C6.7313 3.04654 8.20576 2.08301 9.96484 2.08301C12.1965 2.08301 13.9973 3.64505 14.4175 5.6859Z"
+              fill="#798BAF"
+            />
+            <path
+              d="M9.74232 8.18541L8.50488 9.42285L12.7475 13.6655L19.8287 6.59486L18.5913 5.35742L12.7528 11.1959L9.74232 8.18541Z"
+              fill="#37B24D"
+            />
+          </g>
+          <defs>
+            <clipPath
+              id="clip0"
+            >
+              <rect
+                fill="white"
+                height="20"
+                width="20"
+              />
+            </clipPath>
+          </defs>
         </svg>
       </a>
       <div
         aria-hidden="true"
-        class="status-messages-nav-item__dropdown-menu dropdown-menu dropdown-menu-right"
+        class="status-messages-nav-item__dropdown-menu p-0 dropdown-menu dropdown-menu-right"
         role="menu"
         tabindex="-1"
       >
-        <h3>
-          Code host status
-        </h3>
         <div
           class="status-messages-nav-item__dropdown-menu-content"
         >
-          <div
-            class="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-success"
+          <small
+            class="d-inline-block text-muted status-messages-nav-item__entry-sync"
           >
-            <h4>
+            Code sync status
+          </small>
+          <div
+            class="status-messages-nav-item__entry"
+          >
+            <h4
+              class="d-flex align-items-center mb-0"
+            >
               <svg
-                class="mdi-icon icon-inline-md mr-1"
+                class="mdi-icon text-success status-messages-nav-item__entry-icon"
                 fill="currentColor"
-                height="24"
+                height="14"
                 viewBox="0 0 24 24"
-                width="24"
+                width="14"
               >
                 <path
-                  d="M10,17L6.5,13.5L7.91,12.08L10,14.17L15.18,9L16.59,10.41M19.35,10.03C18.67,6.59 15.64,4 12,4C9.11,4 6.6,5.64 5.35,8.03C2.34,8.36 0,10.9 0,14A6,6 0 0,0 6,20H19A5,5 0 0,0 24,15C24,12.36 21.95,10.22 19.35,10.03Z"
+                  d="M10,17L5,12L6.41,10.58L10,14.17L17.59,6.58L19,8M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"
                 />
               </svg>
-              Repositories up to date
+              Your repositories
             </h4>
-            <p>
-              All repositories hosted on the configured code hosts are synced.
-            </p>
-            <p
-              class="status-messages-nav-item__entry-link"
+            <div
+              class="status-messages-nav-item__entry-card status-messages-nav-item__entry-card--active status-messages-nav-item__entry--border-success"
             >
+              <p
+                class="status-messages-nav-item__entry-message"
+              >
+                Repositories available for search
+              </p>
               <a
-                href="/site-admin/external-services"
+                class="text-primary"
+                href="/site-admin/repositories"
               >
                 Manage repositories
               </a>
-            </p>
+            </div>
           </div>
         </div>
       </div>
@@ -2826,59 +2901,84 @@ exports[`NavLinks authed self-hosted /search 1`] = `
         href="#"
       >
         <svg
-          class="mdi-icon icon-inline-md"
+          class="phabricator-icon mdi-icon icon-inline-md"
           data-tooltip="Repositories up to date"
           fill="currentColor"
           height="24"
-          viewBox="0 0 24 24"
+          viewBox="0 -4 20 20"
           width="24"
         >
-          <path
-            d="M10,17L6.5,13.5L7.91,12.08L10,14.17L15.18,9L16.59,10.41M19.35,10.03C18.67,6.59 15.64,4 12,4C9.11,4 6.6,5.64 5.35,8.03C2.34,8.36 0,10.9 0,14A6,6 0 0,0 6,20H19A5,5 0 0,0 24,15C24,12.36 21.95,10.22 19.35,10.03Z"
-          />
+          <g>
+            <path
+              d="M14.4175 5.6859L14.6515 6.82244L16.1402 5.33371L16.1315 5.33301C15.5482 2.49967 13.0482 0.333008 9.96484 0.333008C7.54818 0.333008 5.46484 1.66634 4.46484 3.66634C1.88151 3.99967 -0.0351562 6.08301 -0.0351562 8.66634C-0.0351562 11.4163 2.21484 13.6663 4.96484 13.6663H10.273L8.52301 11.9163H4.96484C3.18134 11.9163 1.71484 10.4498 1.71484 8.66634C1.71484 7.00858 2.9321 5.62862 4.68879 5.40195L5.61324 5.28267L6.03009 4.44896C6.7313 3.04654 8.20576 2.08301 9.96484 2.08301C12.1965 2.08301 13.9973 3.64505 14.4175 5.6859Z"
+              fill="#798BAF"
+            />
+            <path
+              d="M9.74232 8.18541L8.50488 9.42285L12.7475 13.6655L19.8287 6.59486L18.5913 5.35742L12.7528 11.1959L9.74232 8.18541Z"
+              fill="#37B24D"
+            />
+          </g>
+          <defs>
+            <clipPath
+              id="clip0"
+            >
+              <rect
+                fill="white"
+                height="20"
+                width="20"
+              />
+            </clipPath>
+          </defs>
         </svg>
       </a>
       <div
         aria-hidden="true"
-        class="status-messages-nav-item__dropdown-menu dropdown-menu dropdown-menu-right"
+        class="status-messages-nav-item__dropdown-menu p-0 dropdown-menu dropdown-menu-right"
         role="menu"
         tabindex="-1"
       >
-        <h3>
-          Code host status
-        </h3>
         <div
           class="status-messages-nav-item__dropdown-menu-content"
         >
-          <div
-            class="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-success"
+          <small
+            class="d-inline-block text-muted status-messages-nav-item__entry-sync"
           >
-            <h4>
+            Code sync status
+          </small>
+          <div
+            class="status-messages-nav-item__entry"
+          >
+            <h4
+              class="d-flex align-items-center mb-0"
+            >
               <svg
-                class="mdi-icon icon-inline-md mr-1"
+                class="mdi-icon text-success status-messages-nav-item__entry-icon"
                 fill="currentColor"
-                height="24"
+                height="14"
                 viewBox="0 0 24 24"
-                width="24"
+                width="14"
               >
                 <path
-                  d="M10,17L6.5,13.5L7.91,12.08L10,14.17L15.18,9L16.59,10.41M19.35,10.03C18.67,6.59 15.64,4 12,4C9.11,4 6.6,5.64 5.35,8.03C2.34,8.36 0,10.9 0,14A6,6 0 0,0 6,20H19A5,5 0 0,0 24,15C24,12.36 21.95,10.22 19.35,10.03Z"
+                  d="M10,17L5,12L6.41,10.58L10,14.17L17.59,6.58L19,8M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"
                 />
               </svg>
-              Repositories up to date
+              Your repositories
             </h4>
-            <p>
-              All repositories hosted on the configured code hosts are synced.
-            </p>
-            <p
-              class="status-messages-nav-item__entry-link"
+            <div
+              class="status-messages-nav-item__entry-card status-messages-nav-item__entry-card--active status-messages-nav-item__entry--border-success"
             >
+              <p
+                class="status-messages-nav-item__entry-message"
+              >
+                Repositories available for search
+              </p>
               <a
-                href="/site-admin/external-services"
+                class="text-primary"
+                href="/site-admin/repositories"
               >
                 Manage repositories
               </a>
-            </p>
+            </div>
           </div>
         </div>
       </div>
