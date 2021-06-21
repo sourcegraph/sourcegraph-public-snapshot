@@ -8,4 +8,27 @@
     &__spacer {
         flex: 1;
     }
+    &__divider {
+        border-right: 1px solid var(--border-color-2);
+        height: 1rem;
+        margin: 0 0.5rem;
+    }
+    &__divider-vertical {
+        border-bottom: 1px solid var(--border-color-2);
+        width: 100%;
+        margin: 0.5rem 0;
+    }
+    &__match-type {
+        white-space: nowrap;
+    }
+    &__star {
+        fill: var(--yellow);
+        height: 1rem;
+        width: 1rem;
+        min-width: 1rem;
+        margin-right: 0.25rem;
+    }
+    &__icon {
+        margin-right: 0.25rem;
+    }
 }
