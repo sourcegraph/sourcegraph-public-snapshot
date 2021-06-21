@@ -1,5 +1,6 @@
 import PlusIcon from 'mdi-react/PlusIcon'
 import React, { useMemo, useEffect } from 'react'
+import { NavLink, Redirect } from 'react-router-dom'
 import { catchError, map, startWith } from 'rxjs/operators'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
@@ -26,6 +27,7 @@ export interface CodeMonitoringPageProps extends SettingsCascadeProps<Settings> 
     authenticatedUser: AuthenticatedUser
     fetchUserCodeMonitors?: typeof _fetchUserCodeMonitors
     toggleCodeMonitorEnabled?: typeof _toggleCodeMonitorEnabled
+    showGettingStarted?: boolean
 }
 
 export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps> = ({
@@ -33,6 +35,7 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
     authenticatedUser,
     fetchUserCodeMonitors = _fetchUserCodeMonitors,
     toggleCodeMonitorEnabled = _toggleCodeMonitorEnabled,
+    showGettingStarted = false,
 }) => {
     useEffect(() => eventLogger.logViewEvent('CodeMonitoringPage'), [])
 
@@ -53,6 +56,17 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
             [authenticatedUser.id, fetchUserCodeMonitors]
         )
     )
+
+    // If user has no code monitors, redirect to the getting started page
+    if (!showGettingStarted && userHasCodeMonitors === false) {
+        return <Redirect to="/code-monitoring/getting-started" />
+    }
+
+    const showList =
+        userHasCodeMonitors &&
+        userHasCodeMonitors !== 'loading' &&
+        !isErrorLike(userHasCodeMonitors) &&
+        !showGettingStarted
 
     return (
         <div className="code-monitoring-page">
@@ -88,30 +102,48 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
             />
             {userHasCodeMonitors === 'loading' && <LoadingSpinner />}
 
-            {!userHasCodeMonitors && <CodeMonitoringGettingStarted />}
-
-            {userHasCodeMonitors && userHasCodeMonitors !== 'loading' && !isErrorLike(userHasCodeMonitors) && (
-                <>
-                    <div className="d-flex flex-column">
-                        <div className="code-monitoring-page-tabs mb-4">
-                            <div className="nav nav-tabs">
-                                <div className="nav-item">
-                                    <div className="nav-link active">
-                                        <span className="text-content" data-tab-content="Code monitors">
-                                            Code monitors
-                                        </span>
-                                    </div>
-                                </div>
+            {(showGettingStarted || showList) && (
+                <div className="d-flex flex-column">
+                    <div className="code-monitoring-page-tabs mb-4">
+                        <div className="nav nav-tabs">
+                            <div className="nav-item">
+                                <NavLink
+                                    to="/code-monitoring"
+                                    className="nav-link"
+                                    activeClassName="active"
+                                    exact={true}
+                                >
+                                    <span className="text-content" data-tab-content="Code monitors">
+                                        Code monitors
+                                    </span>
+                                </NavLink>
+                            </div>
+                            <div className="nav-item">
+                                <NavLink
+                                    to="/code-monitoring/getting-started"
+                                    className="nav-link"
+                                    activeClassName="active"
+                                    exact={true}
+                                >
+                                    <span className="text-content" data-tab-content="Getting started">
+                                        Getting started
+                                    </span>
+                                </NavLink>
                             </div>
                         </div>
+                    </div>
+
+                    {showGettingStarted && <CodeMonitoringGettingStarted />}
+
+                    {showList && (
                         <CodeMonitorList
                             settingsCascade={settingsCascade}
                             authenticatedUser={authenticatedUser}
                             fetchUserCodeMonitors={fetchUserCodeMonitors}
                             toggleCodeMonitorEnabled={toggleCodeMonitorEnabled}
                         />
-                    </div>
-                </>
+                    )}
+                </div>
             )}
         </div>
     )
