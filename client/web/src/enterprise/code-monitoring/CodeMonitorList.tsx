@@ -33,14 +33,6 @@ export const CodeMonitorList: React.FunctionComponent<Required<CodeMonitoringPag
         [authenticatedUser, fetchUserCodeMonitors]
     )
 
-    const setAllFilter = useCallback<React.MouseEventHandler>(() => {
-        setMonitorListFilter('all')
-    }, [])
-
-    const setUserFilter = useCallback<React.MouseEventHandler>(() => {
-        setMonitorListFilter('user')
-    }, [])
-
     return (
         <>
             <div className="row mb-5">
@@ -51,7 +43,7 @@ export const CodeMonitorList: React.FunctionComponent<Required<CodeMonitoringPag
                         className={classnames('btn text-left', {
                             'btn-primary': monitorListFilter === 'all',
                         })}
-                        onClick={setAllFilter}
+                        onClick={() => setMonitorListFilter('all')}
                     >
                         All
                     </button>
@@ -60,7 +52,7 @@ export const CodeMonitorList: React.FunctionComponent<Required<CodeMonitoringPag
                         className={classnames('btn text-left', {
                             'btn-primary': monitorListFilter === 'user',
                         })}
-                        onClick={setUserFilter}
+                        onClick={() => setMonitorListFilter('user')}
                     >
                         Your code monitors
                     </button>
