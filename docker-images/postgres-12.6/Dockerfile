@@ -7,7 +7,7 @@ RUN sed -i 's/$/ 11/' /etc/apt/sources.list.d/pgdg.list
 # Libnss-sss is required depedency, see comment on this line in infrastructure
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libnss-sss=1.16.3-3.2 \
-    postgresql-11=11.11-0+deb10u1 \
+    postgresql-11=11.12-0+deb10u1 \
     postgresql-contrib=11+200+deb10u4 \
     && rm -rf /var/lib/apt/lists/*
 
