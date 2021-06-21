@@ -172,7 +172,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalSer
 
 	owner := ownerUndefined
 	ctx, save := s.observe(ctx, "Syncer.SyncExternalService", "")
-	defer save(&diff, owner, &err)
+	defer save(&diff, &owner, &err)
 
 	ids := []int64{externalServiceID}
 	// We don't use tx here as the sourcing process below can be slow and we don't
@@ -492,7 +492,7 @@ func (s *Syncer) SyncRepo(ctx context.Context, store *Store, sourcedRepo *types.
 	owner := ownerUndefined
 
 	ctx, save := s.observe(ctx, "Syncer.SyncRepo", string(sourcedRepo.Name))
-	defer save(&diff, owner, &err)
+	defer save(&diff, &owner, &err)
 
 	var txs *Store
 	if txs, err = store.Transact(ctx); err != nil {
@@ -511,7 +511,7 @@ func (s *Syncer) insertIfNew(ctx context.Context, store *Store, publicOnly bool,
 	var diff Diff
 
 	ctx, save := s.observe(ctx, "Syncer.InsertIfNew", string(sourcedRepo.Name))
-	defer save(&diff, owner, &err)
+	defer save(&diff, &owner, &err)
 
 	diff, err = s.syncRepo(ctx, store, true, publicOnly, sourcedRepo)
 	return err
@@ -867,12 +867,12 @@ func (s *Syncer) makeNewRepoInserter(ctx context.Context, store *Store, publicOn
 	}, nil
 }
 
-func (s *Syncer) observe(ctx context.Context, family, title string) (context.Context, func(*Diff, ownerType, *error)) {
+func (s *Syncer) observe(ctx context.Context, family, title string) (context.Context, func(*Diff, *ownerType, *error)) {
 	began := s.Now()
 	tr, ctx := trace.New(ctx, family, title)
 
-	return ctx, func(d *Diff, owner ownerType, err *error) {
-		syncStarted.WithLabelValues(family, string(owner)).Inc()
+	return ctx, func(d *Diff, owner *ownerType, err *error) {
+		syncStarted.WithLabelValues(family, string(*owner)).Inc()
 
 		now := s.Now()
 		took := s.Now().Sub(began).Seconds()
@@ -906,7 +906,7 @@ func (s *Syncer) observe(ctx context.Context, family, title string) (context.Con
 
 		if !success {
 			tr.SetError(*err)
-			syncErrors.WithLabelValues(family, string(owner)).Add(1)
+			syncErrors.WithLabelValues(family, string(*owner)).Add(1)
 		}
 
 		tr.Finish()
