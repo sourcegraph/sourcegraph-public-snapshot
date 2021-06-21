@@ -1,6 +1,6 @@
 import { mount } from 'enzyme'
-import * as H from 'history'
 import * as React from 'react'
+import { MemoryRouter } from 'react-router'
 import { of } from 'rxjs'
 import sinon from 'sinon'
 
@@ -16,15 +16,8 @@ jest.mock('../../tracking/eventLogger', () => ({
     eventLogger: { logViewEvent: () => undefined },
 }))
 
-const history = H.createBrowserHistory({})
-history.replace({ pathname: '/code-monitoring' })
 const additionalProps = {
-    history,
-    location: history.location,
     authenticatedUser: { id: 'foobar', username: 'alice', email: 'alice@alice.com' } as AuthenticatedUser,
-    breadcrumbs: [{ depth: 0, breadcrumb: null }],
-    setBreadcrumb: sinon.spy(),
-    useBreadcrumb: sinon.spy(),
     fetchUserCodeMonitors: ({ id, first, after }: ListUserCodeMonitorsVariables) =>
         of({
             nodes: mockCodeMonitorNodes,
@@ -53,23 +46,37 @@ const generateMockFetchMonitors = (count: number) => ({ id, first, after }: List
 describe('CodeMonitoringListPage', () => {
     test('Code monitoring page with less than 10 results', () => {
         expect(
-            mount(<CodeMonitoringPage {...additionalProps} fetchUserCodeMonitors={generateMockFetchMonitors(3)} />)
+            mount(
+                <MemoryRouter initialEntries={['/code-monitoring']}>
+                    <CodeMonitoringPage {...additionalProps} fetchUserCodeMonitors={generateMockFetchMonitors(3)} />
+                </MemoryRouter>
+            )
         ).toMatchSnapshot()
     })
     test('Code monitoring page with 10 results', () => {
         expect(
-            mount(<CodeMonitoringPage {...additionalProps} fetchUserCodeMonitors={generateMockFetchMonitors(10)} />)
+            mount(
+                <MemoryRouter initialEntries={['/code-monitoring']}>
+                    <CodeMonitoringPage {...additionalProps} fetchUserCodeMonitors={generateMockFetchMonitors(10)} />
+                </MemoryRouter>
+            )
         ).toMatchSnapshot()
     })
     test('Code monitoring page with more than 10 results', () => {
         expect(
-            mount(<CodeMonitoringPage {...additionalProps} fetchUserCodeMonitors={generateMockFetchMonitors(12)} />)
+            mount(
+                <MemoryRouter initialEntries={['/code-monitoring']}>
+                    <CodeMonitoringPage {...additionalProps} fetchUserCodeMonitors={generateMockFetchMonitors(12)} />
+                </MemoryRouter>
+            )
         ).toMatchSnapshot()
     })
 
     test('Clicking enabled toggle calls toggleCodeMonitorEnabled', () => {
         const component = mount(
-            <CodeMonitoringPage {...additionalProps} fetchUserCodeMonitors={generateMockFetchMonitors(1)} />
+            <MemoryRouter initialEntries={['/code-monitoring']}>
+                <CodeMonitoringPage {...additionalProps} fetchUserCodeMonitors={generateMockFetchMonitors(1)} />
+            </MemoryRouter>
         )
         const toggle = component.find('.test-toggle-monitor-enabled')
         toggle.simulate('click')
