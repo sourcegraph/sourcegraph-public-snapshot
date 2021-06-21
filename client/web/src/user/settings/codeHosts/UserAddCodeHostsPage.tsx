@@ -12,7 +12,7 @@ import { AddExternalServiceOptions } from '../../../components/externalServices/
 import { PageTitle } from '../../../components/PageTitle'
 import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
 import { SourcegraphContext } from '../../../jscontext'
-import { useCodeHostScopeContext } from '../../../site/GitHubCodeHostScopeAlert/GithubScopeProvider'
+import { useCodeHostScopeContext } from '../../../site/CodeHostScopeAlerts/CodeHostScopeProvider'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
 import { githubRepoScopeRequired, gitlabAPIScopeRequired } from '../cloud-ga'
