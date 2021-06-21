@@ -46,7 +46,7 @@ env:
 
   # Required for `frontend` and `web` commands
   SOURCEGRAPH_HTTPS_DOMAIN: sourcegraph.test
-  SOURCEGRAPH_HTTPS_PORT: 443
+  SOURCEGRAPH_HTTPS_PORT: 3443
 
   # Required for `web` commands
   NODE_OPTIONS: '--max_old_space_size=4096'
