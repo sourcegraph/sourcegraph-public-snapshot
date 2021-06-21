@@ -125,7 +125,7 @@ func (s *syncHandler) Handle(ctx context.Context, tx dbworkerstore.Store, record
 
 	store := s.store.With(tx)
 
-	return s.syncer.SyncExternalService(ctx, store, sj.ExternalServiceID, s.minSyncInterval())
+	return s.syncer.syncExternalService(ctx, store, sj.ExternalServiceID, s.minSyncInterval())
 }
 
 // sleep is a context aware time.Sleep
@@ -143,7 +143,7 @@ func (s *Syncer) TriggerExternalServiceSync(ctx context.Context, id int64) error
 }
 
 // SyncExternalService syncs repos using the supplied external service.
-func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalServiceID int64, minSyncInterval time.Duration) (err error) {
+func (s *Syncer) syncExternalService(ctx context.Context, tx *Store, externalServiceID int64, minSyncInterval time.Duration) (err error) {
 	var (
 		diff             Diff
 		unauthorized     bool

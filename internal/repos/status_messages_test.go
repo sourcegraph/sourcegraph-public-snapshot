@@ -341,7 +341,7 @@ func TestStatusMessages(t *testing.T) {
 				sourcer := NewFakeSourcer(tc.sourcerErr, NewFakeSource(siteLevelService, nil))
 				syncer.Sourcer = sourcer
 
-				err = syncer.SyncExternalService(ctx, store, siteLevelService.ID, time.Millisecond)
+				err = syncer.syncExternalService(ctx, store, siteLevelService.ID, time.Millisecond)
 				// In prod, SyncExternalService is kicked off by a worker queue. Any error
 				// returned will be stored in the external_service_sync_jobs table so we fake
 				// that here.

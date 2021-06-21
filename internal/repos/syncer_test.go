@@ -564,7 +564,7 @@ func testSyncerSync(t *testing.T, s *repos.Store) func(*testing.T) {
 				}
 
 				for _, svc := range tc.svcs {
-					err := syncer.SyncExternalService(ctx, st, svc.ID, time.Millisecond)
+					err := syncer.syncExternalService(ctx, st, svc.ID, time.Millisecond)
 
 					if have, want := fmt.Sprint(err), tc.err; have != want {
 						t.Errorf("have error %q, want %q", have, want)
@@ -1296,7 +1296,7 @@ func testOrphanedRepo(db *sql.DB) func(t *testing.T, store *repos.Store) func(t 
 				Store: store,
 				Now:   time.Now,
 			}
-			if err := syncer.SyncExternalService(ctx, store, svc1.ID, 10*time.Second); err != nil {
+			if err := syncer.syncExternalService(ctx, store, svc1.ID, 10*time.Second); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1305,7 +1305,7 @@ func testOrphanedRepo(db *sql.DB) func(t *testing.T, store *repos.Store) func(t 
 				s := repos.NewFakeSource(svc2, nil, githubRepo)
 				return repos.Sources{s}, nil
 			}
-			if err := syncer.SyncExternalService(ctx, store, svc2.ID, 10*time.Second); err != nil {
+			if err := syncer.syncExternalService(ctx, store, svc2.ID, 10*time.Second); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1320,7 +1320,7 @@ func testOrphanedRepo(db *sql.DB) func(t *testing.T, store *repos.Store) func(t 
 				s := repos.NewFakeSource(svc1, nil)
 				return repos.Sources{s}, nil
 			}
-			if err := syncer.SyncExternalService(ctx, store, svc1.ID, 10*time.Second); err != nil {
+			if err := syncer.syncExternalService(ctx, store, svc1.ID, 10*time.Second); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1344,7 +1344,7 @@ func testOrphanedRepo(db *sql.DB) func(t *testing.T, store *repos.Store) func(t 
 				s := repos.NewFakeSource(svc2, nil)
 				return repos.Sources{s}, nil
 			}
-			if err := syncer.SyncExternalService(ctx, store, svc2.ID, 10*time.Second); err != nil {
+			if err := syncer.syncExternalService(ctx, store, svc2.ID, 10*time.Second); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1406,7 +1406,7 @@ func testConflictingSyncers(db *sql.DB) func(t *testing.T, store *repos.Store) f
 				Store: store,
 				Now:   time.Now,
 			}
-			if err := syncer.SyncExternalService(ctx, store, svc1.ID, 10*time.Second); err != nil {
+			if err := syncer.syncExternalService(ctx, store, svc1.ID, 10*time.Second); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1419,7 +1419,7 @@ func testConflictingSyncers(db *sql.DB) func(t *testing.T, store *repos.Store) f
 				Store: store,
 				Now:   time.Now,
 			}
-			if err := syncer.SyncExternalService(ctx, store, svc2.ID, 10*time.Second); err != nil {
+			if err := syncer.syncExternalService(ctx, store, svc2.ID, 10*time.Second); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1463,7 +1463,7 @@ func testConflictingSyncers(db *sql.DB) func(t *testing.T, store *repos.Store) f
 				Store: store,
 				Now:   time.Now,
 			}
-			if err := syncer.SyncExternalService(ctx, tx1, svc1.ID, 10*time.Second); err != nil {
+			if err := syncer.syncExternalService(ctx, tx1, svc1.ID, 10*time.Second); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1486,7 +1486,7 @@ func testConflictingSyncers(db *sql.DB) func(t *testing.T, store *repos.Store) f
 					close(upsertCalledCh)
 					return store.UpsertRepos(ctx, repos...)
 				}
-				err := syncer2.SyncExternalService(ctx, &storeCp, svc2.ID, 10*time.Second)
+				err := syncer2.syncExternalService(ctx, &storeCp, svc2.ID, 10*time.Second)
 				errChan <- err
 			}()
 
@@ -1564,7 +1564,7 @@ func testSyncRepoMaintainsOtherSources(db *sql.DB) func(t *testing.T, store *rep
 				Store: store,
 				Now:   time.Now,
 			}
-			if err := syncer.SyncExternalService(ctx, store, svc1.ID, 10*time.Second); err != nil {
+			if err := syncer.syncExternalService(ctx, store, svc1.ID, 10*time.Second); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1577,7 +1577,7 @@ func testSyncRepoMaintainsOtherSources(db *sql.DB) func(t *testing.T, store *rep
 				Store: store,
 				Now:   time.Now,
 			}
-			if err := syncer.SyncExternalService(ctx, store, svc2.ID, 10*time.Second); err != nil {
+			if err := syncer.syncExternalService(ctx, store, svc2.ID, 10*time.Second); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1672,7 +1672,7 @@ func testUserAddedRepos(db *sql.DB, userID int32) func(t *testing.T, store *repo
 				Store: store,
 				Now:   time.Now,
 			}
-			if err := syncer.SyncExternalService(ctx, store, adminService.ID, 10*time.Second); err != nil {
+			if err := syncer.syncExternalService(ctx, store, adminService.ID, 10*time.Second); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1688,7 +1688,7 @@ func testUserAddedRepos(db *sql.DB, userID int32) func(t *testing.T, store *repo
 				Store: store,
 				Now:   time.Now,
 			}
-			if err := syncer.SyncExternalService(ctx, store, adminService.ID, 10*time.Second); err != nil {
+			if err := syncer.syncExternalService(ctx, store, adminService.ID, 10*time.Second); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1704,7 +1704,7 @@ func testUserAddedRepos(db *sql.DB, userID int32) func(t *testing.T, store *repo
 				Store: store,
 				Now:   time.Now,
 			}
-			if err := syncer.SyncExternalService(ctx, store, userService.ID, 10*time.Second); err != nil {
+			if err := syncer.syncExternalService(ctx, store, userService.ID, 10*time.Second); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1726,7 +1726,7 @@ func testUserAddedRepos(db *sql.DB, userID int32) func(t *testing.T, store *repo
 				Store: store,
 				Now:   time.Now,
 			}
-			if err := syncer.SyncExternalService(ctx, store, userService.ID, 10*time.Second); err != nil {
+			if err := syncer.syncExternalService(ctx, store, userService.ID, 10*time.Second); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1748,7 +1748,7 @@ func testUserAddedRepos(db *sql.DB, userID int32) func(t *testing.T, store *repo
 				Store: store,
 				Now:   time.Now,
 			}
-			if err := syncer.SyncExternalService(ctx, store, userService.ID, 10*time.Second); err != nil {
+			if err := syncer.syncExternalService(ctx, store, userService.ID, 10*time.Second); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1769,7 +1769,7 @@ func testUserAddedRepos(db *sql.DB, userID int32) func(t *testing.T, store *repo
 				Store:               store,
 				UserReposMaxPerUser: 1,
 			}
-			if err := syncer.SyncExternalService(ctx, store, userService.ID, 10*time.Second); err == nil {
+			if err := syncer.syncExternalService(ctx, store, userService.ID, 10*time.Second); err == nil {
 				t.Fatal("Expected an error, got none")
 			}
 
@@ -1783,7 +1783,7 @@ func testUserAddedRepos(db *sql.DB, userID int32) func(t *testing.T, store *repo
 				Store:               store,
 				UserReposMaxPerSite: 1,
 			}
-			if err := syncer.SyncExternalService(ctx, store, userService.ID, 10*time.Second); err == nil {
+			if err := syncer.syncExternalService(ctx, store, userService.ID, 10*time.Second); err == nil {
 				t.Fatal("Expected an error, got none")
 			}
 		}
@@ -1852,7 +1852,7 @@ func testNameOnConflictDiscardOld(db *sql.DB) func(t *testing.T, store *repos.St
 				Store: store,
 				Now:   time.Now,
 			}
-			if err := syncer.SyncExternalService(ctx, store, svc1.ID, 10*time.Second); err != nil {
+			if err := syncer.syncExternalService(ctx, store, svc1.ID, 10*time.Second); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1865,7 +1865,7 @@ func testNameOnConflictDiscardOld(db *sql.DB) func(t *testing.T, store *repos.St
 				Store: store,
 				Now:   time.Now,
 			}
-			if err := syncer.SyncExternalService(ctx, store, svc2.ID, 10*time.Second); err != nil {
+			if err := syncer.syncExternalService(ctx, store, svc2.ID, 10*time.Second); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1952,7 +1952,7 @@ func testNameOnConflictDiscardNew(db *sql.DB) func(t *testing.T, store *repos.St
 				Store: store,
 				Now:   time.Now,
 			}
-			if err := syncer.SyncExternalService(ctx, store, svc1.ID, 10*time.Second); err != nil {
+			if err := syncer.syncExternalService(ctx, store, svc1.ID, 10*time.Second); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1965,7 +1965,7 @@ func testNameOnConflictDiscardNew(db *sql.DB) func(t *testing.T, store *repos.St
 				Store: store,
 				Now:   time.Now,
 			}
-			if err := syncer.SyncExternalService(ctx, store, svc2.ID, 10*time.Second); err != nil {
+			if err := syncer.syncExternalService(ctx, store, svc2.ID, 10*time.Second); err != nil {
 				t.Fatal(err)
 			}
 
@@ -2052,7 +2052,7 @@ func testNameOnConflictOnRename(db *sql.DB) func(t *testing.T, store *repos.Stor
 				Store: store,
 				Now:   time.Now,
 			}
-			if err := syncer.SyncExternalService(ctx, store, svc1.ID, 10*time.Second); err != nil {
+			if err := syncer.syncExternalService(ctx, store, svc1.ID, 10*time.Second); err != nil {
 				t.Fatal(err)
 			}
 
@@ -2065,7 +2065,7 @@ func testNameOnConflictOnRename(db *sql.DB) func(t *testing.T, store *repos.Stor
 				Store: store,
 				Now:   time.Now,
 			}
-			if err := syncer.SyncExternalService(ctx, store, svc2.ID, 10*time.Second); err != nil {
+			if err := syncer.syncExternalService(ctx, store, svc2.ID, 10*time.Second); err != nil {
 				t.Fatal(err)
 			}
 
@@ -2083,7 +2083,7 @@ func testNameOnConflictOnRename(db *sql.DB) func(t *testing.T, store *repos.Stor
 				Store: store,
 				Now:   time.Now,
 			}
-			if err := syncer.SyncExternalService(ctx, store, svc1.ID, 10*time.Second); err != nil {
+			if err := syncer.syncExternalService(ctx, store, svc1.ID, 10*time.Second); err != nil {
 				t.Fatal(err)
 			}
 
@@ -2154,7 +2154,7 @@ func testDeleteExternalService(db *sql.DB) func(t *testing.T, store *repos.Store
 				Store: store,
 				Now:   time.Now,
 			}
-			if err := syncer.SyncExternalService(ctx, store, svc1.ID, 10*time.Second); err != nil {
+			if err := syncer.syncExternalService(ctx, store, svc1.ID, 10*time.Second); err != nil {
 				t.Fatal(err)
 			}
 
@@ -2167,7 +2167,7 @@ func testDeleteExternalService(db *sql.DB) func(t *testing.T, store *repos.Store
 				Store: store,
 				Now:   time.Now,
 			}
-			if err := syncer.SyncExternalService(ctx, store, svc2.ID, 10*time.Second); err != nil {
+			if err := syncer.syncExternalService(ctx, store, svc2.ID, 10*time.Second); err != nil {
 				t.Fatal(err)
 			}
 
