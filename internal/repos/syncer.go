@@ -155,7 +155,7 @@ func (s *Syncer) syncExternalService(ctx context.Context, tx *Store, externalSer
 		s.Logger.Debug("Syncing external service", "serviceID", externalServiceID)
 	}
 
-	ctx, save := s.observe(ctx, "Syncer.SyncExternalService", "")
+	ctx, save := s.observe(ctx, "Syncer.syncExternalService", "")
 	defer save(&diff, &err)
 
 	ids := []int64{externalServiceID}
