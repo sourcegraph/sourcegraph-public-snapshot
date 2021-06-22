@@ -931,7 +931,7 @@ func TestSyncRepoState(t *testing.T) {
 		t.Fatal("Expected an error")
 	}
 
-	err = s.syncRepoState([]string{hostname}, 10, 10)
+	err = s.syncRepoState([]string{hostname}, 10, 10, true)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -14,6 +14,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -306,14 +307,24 @@ func (s *Server) Janitor(interval time.Duration) {
 	}
 }
 
-// SyncRepoState syncs state on disk to the database for all repos and is expected to
-// run in a background goroutine.
+// SyncRepoState syncs state on disk to the database for all repos and is
+// expected to run in a background goroutine. We perform a full sync the first
+// time or if the known gitserver addresses has changed since the last run.
+// Otherwise, we only sync repos that have not yet been assigned a shard.
 func (s *Server) SyncRepoState(interval time.Duration, batchSize, perSecond int) {
+	fullSync := true
+	var previousAddrs []string
 	for {
 		addrs := conf.Get().ServiceConnections.GitServers
-		if err := s.syncRepoState(addrs, batchSize, perSecond); err != nil {
+		if !reflect.DeepEqual(addrs, previousAddrs) {
+			fullSync = true
+		}
+		// Copy addrs since we don't want to keep a pointer into the config struct
+		previousAddrs = append(previousAddrs[0:0], addrs...)
+		if err := s.syncRepoState(addrs, batchSize, perSecond, fullSync); err != nil {
 			log15.Error("Syncing repo state", "error ", err)
 		}
+		fullSync = false
 		time.Sleep(interval)
 	}
 }
@@ -348,7 +359,16 @@ var (
 	}, []string{"success"})
 )
 
-func (s *Server) syncRepoState(addrs []string, batchSize, perSecond int) error {
+func (s *Server) syncRepoState(addrs []string, batchSize, perSecond int, fullSync bool) error {
+	log15.Info("starting syncRepoState", "fullSync", fullSync)
+
+	// When fullSync is true we'll scan all repos in the database and ensure we set
+	// their clone state and assign any that belong to this shard with the correct
+	// shard_id.
+	//
+	// When fullSync is false, we assume that we only need to check repos that have
+	// not yet had their shard_id allocated.
+
 	// Sanity check our host exists in addrs before starting any work
 	var found bool
 	for _, a := range addrs {
@@ -407,7 +427,11 @@ func (s *Server) syncRepoState(addrs []string, batchSize, perSecond int) error {
 	}
 
 	var count int
-	err = store.IterateRepoGitserverStatus(ctx, func(repo types.RepoGitserverStatus) error {
+	options := database.IterateRepoGitserverStatusOptions{}
+	if !fullSync {
+		options.OnlyWithoutShard = true
+	}
+	err = store.IterateRepoGitserverStatus(ctx, options, func(repo types.RepoGitserverStatus) error {
 		count++
 		repoSyncStatePercentComplete.Set((float64(count) / float64(totalRepos)) * 100)
 
