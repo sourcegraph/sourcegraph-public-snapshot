@@ -274,14 +274,6 @@ func TestRecordSeriesPoints(t *testing.T) {
 	autogold.Want("points[2].String()", want[2].String()).Equal(t, points[2].String())
 	autogold.Want("points[3].String()", want[3].String()).Equal(t, points[3].String())
 
-	//// Confirm querying by repo ID works as expected.
-	//forRepoIDPoints, err := store.SeriesPoints(ctx, SeriesPointsOpts{RepoID: optionalRepoID(3)})
-	//if err != nil {
-	//	t.Fatal(err)
-	//}
-	//autogold.Want("len(forRepoIDPoints)", int(1)).Equal(t, len(forRepoIDPoints))
-	//autogold.Want("forRepoIDPoints[0].String()", `SeriesPoint{Time: "2020-02-17 00:00:00 +0000 UTC", Value: 1.1, Metadata: {"some": "data"}}`).Equal(t, forRepoIDPoints[0].String())
-
 	// TODO: future: once querying by RepoName and/or OriginalRepoName is possible, test that here:
 	// // Confirm querying by repo name works as expected.
 	// forRepoNamePoints, err := store.SeriesPoints(ctx, SeriesPointsOpts{RepoName: optionalString("repo1")})
