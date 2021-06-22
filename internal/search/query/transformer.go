@@ -9,20 +9,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
-// SubstituteAliases substitutes field name aliases for their canonical names.
+// SubstituteAliases substitutes field name aliases for their canonical names,
+// and substitutes `content:` for pattern nodes.
 func SubstituteAliases(searchType SearchType) func(nodes []Node) []Node {
-	aliases := map[string]string{
-		"r":        FieldRepo,
-		"g":        FieldRepoGroup,
-		"f":        FieldFile,
-		"l":        FieldLang,
-		"language": FieldLang,
-		"since":    FieldAfter,
-		"until":    FieldBefore,
-		"m":        FieldMessage,
-		"msg":      FieldMessage,
-		"revision": FieldRev,
-	}
 	mapper := func(nodes []Node) []Node {
 		return MapParameter(nodes, func(field, value string, negated bool, annotation Annotation) Node {
 			if field == "content" {
@@ -33,9 +22,7 @@ func SubstituteAliases(searchType SearchType) func(nodes []Node) []Node {
 				}
 				return Pattern{Value: value, Negated: negated, Annotation: annotation}
 			}
-			if canonical, ok := aliases[field]; ok {
-				field = canonical
-			}
+			field = resolveFieldAlias(field)
 			return Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
 		})
 	}

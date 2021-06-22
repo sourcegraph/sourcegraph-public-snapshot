@@ -45,7 +45,7 @@
           }
         },
         "searchStats": {
-          "description": "Enables a new page that shows language statistics about the results for a search query.",
+          "description": "Enables a button on the search results page that shows language statistics about the results for a search query.",
           "type": "boolean",
           "default": false,
           "!go": {
@@ -163,6 +163,14 @@
           "!go": {
             "pointer": true
           }
+        },
+        "acceptSearchSuggestionOnEnter": {
+          "description": "Whether the search bar should select completion suggestions when pressing enter",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
         }
       },
       "group": "Experimental"
@@ -211,7 +219,7 @@
       }
     },
     "search.scopes": {
-      "description": "Predefined search scopes",
+      "description": "Predefined search snippets that can be appended to any search (also known as search scopes)",
       "type": "array",
       "items": {
         "$ref": "#/definitions/SearchScope"

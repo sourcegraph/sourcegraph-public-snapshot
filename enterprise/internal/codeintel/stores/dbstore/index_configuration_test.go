@@ -99,3 +99,60 @@ func TestGetIndexConfigurationByRepositoryID(t *testing.T) {
 		t.Errorf("unexpected configuration payload (-want +got):\n%s", diff)
 	}
 }
+
+func TestGetRepositoriesWithIndexConfigurationIgnoresDisabledRepos(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
+
+	for _, repositoryID := range []int{42, 43, 44, 45, 46} {
+		query := sqlf.Sprintf(
+			`INSERT INTO repo (id, name) VALUES (%s, %s)`,
+			repositoryID,
+			fmt.Sprintf("github.com/baz/honk%2d", repositoryID),
+		)
+		if _, err := db.Exec(query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+			t.Fatalf("unexpected error inserting repo: %s", err)
+		}
+	}
+
+	// Only even repos are enabled
+	for i, repositoryID := range []int{42, 44, 45} {
+		query := sqlf.Sprintf(
+			`INSERT INTO lsif_index_configuration (id, repository_id, autoindex_enabled, data) VALUES (%s, %s, %s, %s)`,
+			i,
+			repositoryID,
+			repositoryID%2 == 0,
+			[]byte(`test`),
+		)
+		if _, err := db.Exec(query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+			t.Fatalf("unexpected error inserting repo: %s", err)
+		}
+	}
+
+	repositoryIDs, err := store.GetRepositoriesWithIndexConfiguration(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error while fetching repositories with index configuration: %s", err)
+	}
+
+	// 45 is not even, so it's disabled
+	expectedRepositoryIDs := []int{
+		42,
+		44,
+	}
+	if diff := cmp.Diff(expectedRepositoryIDs, repositoryIDs); diff != "" {
+		t.Errorf("unexpected repository identifiers (-want +got):\n%s", diff)
+	}
+
+	disabledRepositoryIDs, err := store.GetAutoindexDisabledRepositories(context.Background())
+	if err != nil {
+		t.Fatalf("unexped error getting disabled repositories: %s", err)
+	}
+
+	expectedDisabledRepositoryIDs := []int{45}
+	if diff := cmp.Diff(expectedDisabledRepositoryIDs, disabledRepositoryIDs); diff != "" {
+		t.Errorf("unexpected repository identifiers (-want +got):\n%s", diff)
+	}
+}

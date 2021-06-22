@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/cockroachdb/errors"
 	"github.com/dghubble/gologin"
 	oauth2Login "github.com/dghubble/gologin/oauth2"
-	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"

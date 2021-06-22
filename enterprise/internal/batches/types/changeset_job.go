@@ -41,8 +41,10 @@ func (s ChangesetJobState) ToDB() string { return strings.ToLower(string(s)) }
 type ChangesetJobType string
 
 var (
-	ChangesetJobTypeComment ChangesetJobType = "commentatore"
-	ChangesetJobTypeDetach  ChangesetJobType = "detach"
+	ChangesetJobTypeComment   ChangesetJobType = "commentatore"
+	ChangesetJobTypeDetach    ChangesetJobType = "detach"
+	ChangesetJobTypeReenqueue ChangesetJobType = "reenqueue"
+	ChangesetJobTypeMerge     ChangesetJobType = "merge"
 )
 
 type ChangesetJobCommentPayload struct {
@@ -50,6 +52,12 @@ type ChangesetJobCommentPayload struct {
 }
 
 type ChangesetJobDetachPayload struct{}
+
+type ChangesetJobReenqueuePayload struct{}
+
+type ChangesetJobMergePayload struct {
+	Squash bool `json:"squash,omitempty"`
+}
 
 // ChangesetJob describes a one-time action to be taken on a changeset.
 type ChangesetJob struct {

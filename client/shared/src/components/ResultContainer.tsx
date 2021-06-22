@@ -4,10 +4,10 @@ import ArrowCollapseUpIcon from 'mdi-react/ArrowCollapseUpIcon'
 import ArrowExpandDownIcon from 'mdi-react/ArrowExpandDownIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
-import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
+import StarIcon from 'mdi-react/StarIcon'
 import React, { useEffect, useState } from 'react'
 
-import { useRedesignToggle } from '../util/useRedesignToggle'
+import { formatRepositoryStarCount } from '@sourcegraph/shared/src/util/stars'
 
 export interface Props {
     /**
@@ -74,6 +74,11 @@ export interface Props {
      * This component does not accept children.
      */
     children?: never
+
+    /**
+     * The number of stars for the result's associated repo
+     */
+    repoStars?: number
 }
 
 /**
@@ -92,9 +97,10 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
     titleClassName,
     description,
     matchCountLabel,
+    repoStars,
 }) => {
-    const [isRedesignEnabled] = useRedesignToggle()
     const [expanded, setExpanded] = useState(allExpanded || defaultExpanded)
+    const formattedRepositoryStarCount = formatRepositoryStarCount(repoStars)
 
     useEffect(() => setExpanded(allExpanded || defaultExpanded), [allExpanded, defaultExpanded])
 
@@ -117,7 +123,7 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
                     {title}
                     {description && <span className="result-container__header-description ml-2">{description}</span>}
                 </div>
-                {matchCountLabel && isRedesignEnabled && (
+                {matchCountLabel && (
                     <>
                         <small className="mr-1">{matchCountLabel}</small>
                         {collapsible && <div className="result-container__header-divider" />}
@@ -131,24 +137,25 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
                     >
                         {expanded ? (
                             <>
-                                {collapseLabel && isRedesignEnabled && (
-                                    <ArrowCollapseUpIcon className="icon-inline mr-1" />
-                                )}
+                                {collapseLabel && <ArrowCollapseUpIcon className="icon-inline mr-1" />}
                                 {collapseLabel}
-                                {collapseLabel && !isRedesignEnabled && <ChevronUpIcon className="icon-inline" />}
                                 {!collapseLabel && <ChevronDownIcon className="icon-inline" />}
                             </>
                         ) : (
                             <>
-                                {expandLabel && isRedesignEnabled && (
-                                    <ArrowExpandDownIcon className="icon-inline mr-1" />
-                                )}
+                                {expandLabel && <ArrowExpandDownIcon className="icon-inline mr-1" />}
                                 {expandLabel}
-                                {expandLabel && !isRedesignEnabled && <ChevronDownIcon className="icon-inline" />}
                                 {!expandLabel && <ChevronLeftIcon className="icon-inline" />}
                             </>
                         )}
                     </button>
+                )}
+                {matchCountLabel && formattedRepositoryStarCount && <div className="search-result__divider" />}
+                {formattedRepositoryStarCount && (
+                    <>
+                        <StarIcon className="search-result__star" />
+                        {formattedRepositoryStarCount}
+                    </>
                 )}
             </div>
             {!expanded && collapsedChildren}

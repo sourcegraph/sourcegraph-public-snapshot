@@ -35,6 +35,7 @@
 - [Developing a worker](workers.md)
 - [Developing an out-of-band migration](oobmigrations.md)
 - [Developing a background routine](backgroundroutine.md)
+- [High-performance SQL](sql.md)
 
 ## [Languages](languages/index.md)
 

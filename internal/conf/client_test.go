@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cockroachdb/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 )
@@ -19,7 +21,10 @@ func TestClient_continuouslyUpdate(t *testing.T) {
 			return conftypes.RawUnified{}, &url.Error{
 				Op:  "Post",
 				URL: "https://example.com",
-				Err: &net.OpError{Op: "dial"},
+				Err: &net.OpError{
+					Op:  "dial",
+					Err: errors.New("connection reset"),
+				},
 			}
 		}
 		defer func() { api.MockInternalClientConfiguration = nil }()

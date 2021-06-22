@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestatsdeprecated"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
@@ -83,6 +84,7 @@ func (r *schemaResolver) LogEvent(ctx context.Context, args *struct {
 	URL            string
 	Source         string
 	Argument       *string
+	CohortID       *string
 }) (*EmptyResponse, error) {
 	if !conf.EventLoggingEnabled() {
 		return nil, nil
@@ -103,6 +105,7 @@ func (r *schemaResolver) LogEvent(ctx context.Context, args *struct {
 	}
 
 	actor := actor.FromContext(ctx)
+	ffs := featureflag.FromContext(ctx)
 	return nil, usagestats.LogEvent(ctx, r.db, usagestats.Event{
 		EventName:      args.Event,
 		URL:            args.URL,
@@ -111,6 +114,8 @@ func (r *schemaResolver) LogEvent(ctx context.Context, args *struct {
 		FirstSourceURL: args.FirstSourceURL,
 		Source:         args.Source,
 		Argument:       payload,
+		FeatureFlags:   ffs,
+		CohortID:       args.CohortID,
 	})
 }
 

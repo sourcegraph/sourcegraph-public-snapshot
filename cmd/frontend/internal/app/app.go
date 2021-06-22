@@ -57,7 +57,7 @@ func NewHandler(db dbutil.DB) http.Handler {
 	r.Get(router.SignUp).Handler(trace.Route(http.HandlerFunc(userpasswd.HandleSignUp)))
 	r.Get(router.SiteInit).Handler(trace.Route(http.HandlerFunc(userpasswd.HandleSiteInit)))
 	r.Get(router.SignIn).Handler(trace.Route(http.HandlerFunc(userpasswd.HandleSignIn)))
-	r.Get(router.SignOut).Handler(trace.Route(http.HandlerFunc(serveSignOut)))
+	r.Get(router.SignOut).Handler(trace.Route(http.HandlerFunc(serveSignOutHandler(db))))
 	r.Get(router.VerifyEmail).Handler(trace.Route(http.HandlerFunc(serveVerifyEmail)))
 	r.Get(router.ResetPasswordInit).Handler(trace.Route(http.HandlerFunc(userpasswd.HandleResetPasswordInit)))
 	r.Get(router.ResetPasswordCode).Handler(trace.Route(http.HandlerFunc(userpasswd.HandleResetPasswordCode)))
@@ -79,7 +79,7 @@ func NewHandler(db dbutil.DB) http.Handler {
 		r.Header.Del("Cookie")
 		_ = r.Header.Write(w)
 	})))
-	addDebugHandlers(r.Get(router.Debug).Subrouter())
+	addDebugHandlers(r.Get(router.Debug).Subrouter(), db)
 
 	rickRoll := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "https://www.youtube.com/watch?v=dQw4w9WgXcQ", http.StatusFound)

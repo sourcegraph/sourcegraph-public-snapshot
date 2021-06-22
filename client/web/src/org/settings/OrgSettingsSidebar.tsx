@@ -1,7 +1,4 @@
 import classNames from 'classnames'
-import AccountMultipleIcon from 'mdi-react/AccountMultipleIcon'
-import ClipboardAccountOutlineIcon from 'mdi-react/ClipboardAccountOutlineIcon'
-import EarthIcon from 'mdi-react/EarthIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router-dom'
 
@@ -37,13 +34,13 @@ export const OrgSettingsSidebar: React.FunctionComponent<Props> = ({ org, authen
             <SidebarGroup>
                 <SidebarGroupHeader label="Organization" />
                 <SidebarGroupItems>
-                    <SidebarNavItem icon={EarthIcon} to={match.url} exact={true}>
+                    <SidebarNavItem to={match.url} exact={true}>
                         Organization Settings
                     </SidebarNavItem>
-                    <SidebarNavItem icon={ClipboardAccountOutlineIcon} to={`${match.url}/profile`} exact={true}>
+                    <SidebarNavItem to={`${match.url}/profile`} exact={true}>
                         Profile
                     </SidebarNavItem>
-                    <SidebarNavItem icon={AccountMultipleIcon} to={`${match.url}/members`} exact={true}>
+                    <SidebarNavItem to={`${match.url}/members`} exact={true}>
                         Members
                     </SidebarNavItem>
                 </SidebarGroupItems>

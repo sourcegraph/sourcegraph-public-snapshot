@@ -144,7 +144,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	// be exposing. We have a bit more to do in this method, though, and the
 	// process will be marked ready further down this function.
 
-	repos.MustRegisterMetrics(db)
+	repos.MustRegisterMetrics(db, envvar.SourcegraphDotComMode())
 
 	store := repos.NewStore(db, sql.TxOptions{Isolation: sql.LevelDefault})
 	{
@@ -245,6 +245,10 @@ func Main(enterpriseInit EnterpriseInit) {
 	var gps *repos.GitolitePhabricatorMetadataSyncer
 	if !envvar.SourcegraphDotComMode() {
 		gps = repos.NewGitolitePhabricatorMetadataSyncer(store)
+
+		// WARNING: This enables the streaming inserter which allows it to sync private repos. If
+		// this is ever enabled for sourcegraph.com, we want to be sure we are not unintentionally
+		// syncing private repos.
 		syncer.SubsetSynced = make(chan repos.Diff)
 	}
 

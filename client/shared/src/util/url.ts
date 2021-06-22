@@ -256,25 +256,25 @@ export interface AbsoluteRepoFilePosition
  * @param position either 1-indexed partial position
  * @param range or 1-indexed partial range spec
  */
-export function toPositionOrRangeHash(context: {
+export function toPositionOrRangeQueryParameter(context: {
     position?: { line: number; character?: number }
     range?: { start: { line: number; character?: number }; end: { line: number; character?: number } }
-}): string {
+}): string | undefined {
     if (context.range) {
         const emptyRange =
             context.range.start.line === context.range.end.line &&
             context.range.start.character === context.range.end.character
         return (
-            '#L' +
+            'L' +
             (emptyRange
                 ? toPositionHashComponent(context.range.start)
                 : `${toPositionHashComponent(context.range.start)}-${toPositionHashComponent(context.range.end)}`)
         )
     }
     if (context.position) {
-        return '#L' + toPositionHashComponent(context.position)
+        return 'L' + toPositionHashComponent(context.position)
     }
-    return ''
+    return undefined
 }
 
 /**
@@ -349,6 +349,24 @@ export function isLegacyFragment(hash: string): boolean {
             hash.includes('$impl') ||
             hash.includes('$history'))
     )
+}
+
+/**
+ * Parses the URL search (query) portion and looks for a parameter which matches a line, position, or range in the file. If not found, it
+ * falls back to parsing the hash for backwards compatibility.
+ *
+ * @template V The type that describes the view state (typically a union of string constants). There is no runtime check that the return value satisfies V.
+ */
+export function parseQueryAndHash<V extends string>(
+    query: string,
+    hash: string
+): LineOrPositionOrRange & { viewState?: V } {
+    const lpr = findLineInSearchParameters(new URLSearchParams(query))
+    const parsedHash = parseHash<V>(hash)
+    if (!lpr) {
+        return parsedHash
+    }
+    return { ...lpr, viewState: parsedHash.viewState }
 }
 
 /**
@@ -430,23 +448,31 @@ function parseLineOrPositionOrRange(lineChar: string): LineOrPositionOrRange {
     return lpr
 }
 
-function toRenderModeQuery(context: Partial<RenderModeSpec>): string {
+function addRenderModeQueryParameter(
+    searchParameters: URLSearchParams,
+    context: Partial<RenderModeSpec>
+): URLSearchParams {
     if (context.renderMode === 'code') {
-        return '?view=code'
+        searchParameters.set('view', 'code')
     }
-    return ''
+    return searchParameters
 }
 
 /**
  * Finds the URL search parameter which has a key like "L1-2:3" without any
  * value.
  *
- * @param searchParams The URLSearchParams to look for the line in.
+ * @param searchParameters The URLSearchParams to look for the line in.
  */
 function findLineInSearchParameters(searchParameters: URLSearchParams): LineOrPositionOrRange | undefined {
+    const key = findLineKeyInSearchParameters(searchParameters)
+    return key ? parseLineOrPositionOrRange(key) : undefined
+}
+
+function findLineKeyInSearchParameters(searchParameters: URLSearchParams): string | undefined {
     for (const key of searchParameters.keys()) {
         if (key.startsWith('L')) {
-            return parseLineOrPositionOrRange(key)
+            return key
         }
         break
     }
@@ -484,9 +510,14 @@ export function encodeRepoRevision({ repoName, revision }: RepoSpec & Partial<Re
 export function toPrettyBlobURL(
     target: RepoFile & Partial<UIPositionSpec> & Partial<ViewStateSpec> & Partial<UIRangeSpec> & Partial<RenderModeSpec>
 ): string {
+    const searchParameters = addLineRangeQueryParameter(
+        addRenderModeQueryParameter(new URLSearchParams(), target),
+        toPositionOrRangeQueryParameter(target)
+    )
+    const searchQuery = [...searchParameters].length > 0 ? `?${formatSearchParameters(searchParameters)}` : ''
     return `/${encodeRepoRevision({ repoName: target.repoName, revision: target.revision })}/-/blob/${
         target.filePath
-    }${toRenderModeQuery(target)}${toPositionOrRangeHash(target)}${toViewStateHashComponent(target.viewState)}`
+    }${searchQuery}${toViewStateHash(target.viewState)}`
 }
 
 /**
@@ -519,8 +550,8 @@ export function escapeRevspecForURL(revision: string): string {
     return encodeURIPathComponent(revision)
 }
 
-export function toViewStateHashComponent(viewState: string | undefined): string {
-    return viewState ? `&tab=${viewState}` : ''
+export function toViewStateHash(viewState: string | undefined): string {
+    return viewState ? `#tab=${viewState}` : ''
 }
 
 const positionString = (position: Position): string =>
@@ -654,5 +685,30 @@ export const isExternalLink = (url: string): boolean =>
 export const appendSubtreeQueryParameter = (url: string): string => {
     const newUrl = new URL(url, window.location.href)
     newUrl.searchParams.set('subtree', 'true')
-    return newUrl.pathname + newUrl.search + newUrl.hash
+    return newUrl.pathname + `?${formatSearchParameters(newUrl.searchParams)}` + newUrl.hash
+}
+
+/**
+ * Stringifies the provided search parameters, replaces encoded `/` and `:` characters,
+ * and removes trailing `=`.
+ */
+export const formatSearchParameters = (searchParameters: URLSearchParams): string =>
+    searchParameters.toString().replace(/%2F/g, '/').replace(/%3A/g, ':').replace(/=&/g, '&').replace(/=$/, '')
+
+export const addLineRangeQueryParameter = (
+    searchParameters: URLSearchParams,
+    range: string | undefined
+): URLSearchParams => {
+    const existingLineRangeKey = findLineKeyInSearchParameters(searchParameters)
+    if (existingLineRangeKey) {
+        searchParameters.delete(existingLineRangeKey)
+    }
+    // If a non-empty range exists add it to the start of the parameters, otherwise return the existing search parameters
+    return range ? new URLSearchParams([[range, ''], ...searchParameters.entries()]) : searchParameters
+}
+
+export const appendLineRangeQueryParameter = (url: string, range: string | undefined): string => {
+    const newUrl = new URL(url, window.location.href)
+    const searchQuery = formatSearchParameters(addLineRangeQueryParameter(newUrl.searchParams, range))
+    return newUrl.pathname + `?${searchQuery}` + newUrl.hash
 }

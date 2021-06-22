@@ -31,7 +31,11 @@ const additionalProps = {
 
 add(
     'Code monitoring list page',
-    () => <EnterpriseWebStory>{props => <CodeMonitoringPage {...props} {...additionalProps} />}</EnterpriseWebStory>,
+    () => (
+        <EnterpriseWebStory initialEntries={['/code-monitoring']}>
+            {props => <CodeMonitoringPage {...props} {...additionalProps} />}
+        </EnterpriseWebStory>
+    ),
     {
         design: {
             type: 'figma',
@@ -42,25 +46,10 @@ add(
 )
 
 add(
-    'Code monitoring list page empty state',
+    'Code monitoring getting started page',
     () => (
-        <EnterpriseWebStory>
-            {props => (
-                <CodeMonitoringPage
-                    {...props}
-                    {...additionalProps}
-                    fetchUserCodeMonitors={({ id, first, after }: ListUserCodeMonitorsVariables) =>
-                        of({
-                            nodes: [],
-                            pageInfo: {
-                                endCursor: '',
-                                hasNextPage: false,
-                            },
-                            totalCount: 0,
-                        })
-                    }
-                />
-            )}
+        <EnterpriseWebStory initialEntries={['/code-monitoring/getting-started']}>
+            {props => <CodeMonitoringPage {...props} {...additionalProps} showGettingStarted={true} />}
         </EnterpriseWebStory>
     ),
     {

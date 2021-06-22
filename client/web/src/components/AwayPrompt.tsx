@@ -56,17 +56,15 @@ export const AwayPrompt: React.FunctionComponent<Props> = props => {
 
     return pendingLocation ? (
         <Dialog className="modal-body modal-body--top-third p-4 rounded border" aria-labelledby={header}>
-            <div className="web-content">
-                <h3 className="text-dark mb-4">{header}</h3>
-                <div className="form-group mb-4">{message}</div>
-                <div className="d-flex justify-content-end">
-                    <button type="button" className="btn btn-outline-secondary mr-2" onClick={() => closeModal(false)}>
-                        {button_cancel_text}
-                    </button>
-                    <button type="button" className="btn btn-primary" onClick={() => closeModal(true)}>
-                        {button_ok_text}
-                    </button>
-                </div>
+            <h3 className="text-dark mb-4">{header}</h3>
+            <div className="form-group mb-4">{message}</div>
+            <div className="d-flex justify-content-end">
+                <button type="button" className="btn btn-outline-secondary mr-2" onClick={() => closeModal(false)}>
+                    {button_cancel_text}
+                </button>
+                <button type="button" className="btn btn-primary" onClick={() => closeModal(true)}>
+                    {button_ok_text}
+                </button>
             </div>
         </Dialog>
     ) : null

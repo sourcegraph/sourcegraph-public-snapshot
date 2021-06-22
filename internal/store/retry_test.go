@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 )
 
 func TestGetZipFileWithRetry(t *testing.T) {

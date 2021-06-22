@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -147,7 +149,16 @@ func TestBitbucketCloudCloneURLs(t *testing.T) {
 	})
 }
 
-func TestGithubCloneURLs(t *testing.T) {
+func TestGitHubCloneURLs(t *testing.T) {
+	t.Run("empty repo.URL", func(t *testing.T) {
+		_, err := githubCloneURL(&github.Repository{}, &schema.GitHubConnection{})
+		got := fmt.Sprintf("%v", err)
+		want := "empty repo.URL"
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Fatalf("Mismatch (-want +got):\n%s", diff)
+		}
+	})
+
 	var repo github.Repository
 	repo.NameWithOwner = "foo/bar"
 
@@ -184,7 +195,7 @@ func TestGithubCloneURLs(t *testing.T) {
 	}
 }
 
-func TestGitlabCloneURLs(t *testing.T) {
+func TestGitLabCloneURLs(t *testing.T) {
 	repo := &gitlab.Project{
 		ProjectCommon: gitlab.ProjectCommon{
 			ID:                1,
@@ -197,17 +208,21 @@ func TestGitlabCloneURLs(t *testing.T) {
 	tests := []struct {
 		Token      string
 		GitURLType string
+		TokenType  string
 		Want       string
 	}{
-		{"", "", "https://gitlab.com/gitlab-org/gitaly.git"},
-		{"abcd", "", "https://git:abcd@gitlab.com/gitlab-org/gitaly.git"},
-		{"abcd", "ssh", "git@gitlab.com:gitlab-org/gitaly.git"},
+		{Want: "https://gitlab.com/gitlab-org/gitaly.git"},
+		{Token: "abcd", Want: "https://git:abcd@gitlab.com/gitlab-org/gitaly.git"},
+		{Token: "abcd", TokenType: "oauth", Want: "https://oauth2:abcd@gitlab.com/gitlab-org/gitaly.git"},
+		{Token: "abcd", GitURLType: "ssh", Want: "git@gitlab.com:gitlab-org/gitaly.git"},
+		{Token: "abcd", GitURLType: "ssh", Want: "git@gitlab.com:gitlab-org/gitaly.git"},
 	}
 
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("Token(%q) / URLType(%q)", test.Token, test.GitURLType), func(t *testing.T) {
 			cfg := schema.GitLabConnection{
 				Token:      test.Token,
+				TokenType:  test.TokenType,
 				GitURLType: test.GitURLType,
 			}
 

@@ -9,9 +9,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
-	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-lsp"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -268,13 +268,17 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		effectiveRepoFieldValues = effectiveRepoFieldValues[:i]
 
 		if len(effectiveRepoFieldValues) > 0 || hasSingleContextField {
-			resolved, err := r.resolveRepositories(ctx, effectiveRepoFieldValues)
+			resolved, err := r.resolveRepositories(ctx, resolveRepositoriesOpts{
+				effectiveRepoFieldValues: effectiveRepoFieldValues,
+				limit:                    maxSearchSuggestions,
+			})
 
 			resolvers := make([]SearchSuggestionResolver, 0, len(resolved.RepoRevs))
-			for _, rev := range resolved.RepoRevs {
+			for i, rev := range resolved.RepoRevs {
 				resolvers = append(resolvers, repositorySuggestionResolver{
-					repo:  NewRepositoryResolver(r.db, rev.Repo.ToRepo()),
-					score: math.MaxInt32,
+					repo: NewRepositoryResolver(r.db, rev.Repo.ToRepo()),
+					// Encode the returned order in score.
+					score: math.MaxInt32 - i,
 				})
 			}
 
@@ -374,7 +378,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			return mockShowSymbolMatches()
 		}
 
-		resolved, err := r.resolveRepositories(ctx, nil)
+		resolved, err := r.resolveRepositories(ctx, resolveRepositoriesOpts{})
 		if err != nil {
 			return nil, err
 		}
@@ -478,11 +482,11 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			}
 			var suggestions []SearchSuggestionResolver
 			if results != nil {
-				if len(results.SearchResults) > int(*args.First) {
-					results.SearchResults = results.SearchResults[:*args.First]
+				if len(results.Matches) > int(*args.First) {
+					results.Matches = results.Matches[:*args.First]
 				}
-				suggestions = make([]SearchSuggestionResolver, 0, len(results.SearchResults))
-				for i, res := range results.SearchResults {
+				suggestions = make([]SearchSuggestionResolver, 0, len(results.Matches))
+				for i, res := range results.Matches {
 					if fm, ok := res.(*result.FileMatch); ok {
 						fmResolver := &FileMatchResolver{
 							FileMatch:    *fm,
@@ -490,7 +494,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 						}
 						suggestions = append(suggestions, gitTreeSuggestionResolver{
 							gitTreeEntry: fmResolver.File(),
-							score:        len(results.SearchResults) - i,
+							score:        len(results.Matches) - i,
 						})
 					}
 				}

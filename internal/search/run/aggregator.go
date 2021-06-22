@@ -4,9 +4,9 @@ import (
 	"context"
 	"sync"
 
+	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
-	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
@@ -59,7 +59,9 @@ func (a *Aggregator) Send(event streaming.SearchEvent) {
 }
 
 func (a *Aggregator) Error(err error) {
-	multierror.Append(a.errors, err)
+	a.mu.Lock()
+	a.errors = multierror.Append(a.errors, err)
+	a.mu.Unlock()
 }
 
 func (a *Aggregator) DoRepoSearch(ctx context.Context, args *search.TextParameters, limit int32) (err error) {

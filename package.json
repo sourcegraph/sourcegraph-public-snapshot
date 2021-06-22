@@ -19,7 +19,6 @@
     "graphql-lint": "graphql-schema-linter",
     "build-web": "yarn workspace @sourcegraph/web run build",
     "watch-web": "yarn workspace @sourcegraph/web run watch",
-    "code-insights-demo": "yarn workspace @sourcegraph/code-insights-demo run serve",
     "generate": "gulp generate",
     "watch-generate": "gulp watchGenerate",
     "test": "jest --testPathIgnorePatterns end-to-end regression integration storybook",
@@ -299,6 +298,7 @@
   "dependencies": {
     "@hot-loader/react-dom": "^16.14.0",
     "@reach/accordion": "^0.10.2",
+    "@reach/combobox": "^0.15.1",
     "@reach/dialog": "^0.11.2",
     "@reach/listbox": "^0.10.1",
     "@reach/menu-button": "0.10.2",
@@ -350,6 +350,7 @@
     "monaco-editor": "^0.24.0",
     "nice-ticks": "^1.0.1",
     "open-color": "^1.8.0",
+    "postcss-inset": "^1.0.0",
     "pretty-bytes": "^5.3.0",
     "prop-types": "^15.7.2",
     "react": "^16.14.0",

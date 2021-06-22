@@ -12,9 +12,10 @@ import { AddExternalServiceOptions } from '../../../components/externalServices/
 import { PageTitle } from '../../../components/PageTitle'
 import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
 import { SourcegraphContext } from '../../../jscontext'
+import { useCodeHostScopeContext } from '../../../site/CodeHostScopeAlerts/CodeHostScopeProvider'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
-import { githubRepoScopeRequired } from '../cloud-ga'
+import { githubRepoScopeRequired, gitlabAPIScopeRequired } from '../cloud-ga'
 
 import { CodeHostItem } from './CodeHostItem'
 
@@ -64,7 +65,21 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     onUserExternalServicesOrRepositoriesUpdate,
 }) => {
     const [statusOrError, setStatusOrError] = useState<Status>()
-    const [updateAuthRequired, setUpdateAuthRequired] = useState(false)
+    const { scopes, setScope } = useCodeHostScopeContext()
+
+    // If we have a GitHub or GitLab services, check whether we need to prompt the user to
+    // update their scope
+    const isGitHubTokenUpdateRequired = scopes.github ? githubRepoScopeRequired(user.tags, scopes.github) : false
+    const isGitLabTokenUpdateRequired = scopes.gitlab ? gitlabAPIScopeRequired(user.tags, scopes.gitlab) : false
+
+    const isTokenUpdateRequired: Partial<Record<ExternalServiceKind, boolean | undefined>> = {
+        [ExternalServiceKind.GITHUB]: githubRepoScopeRequired(user.tags, scopes.github),
+        [ExternalServiceKind.GITLAB]: gitlabAPIScopeRequired(user.tags, scopes.gitlab),
+    }
+
+    useEffect(() => {
+        eventLogger.logViewEvent('UserSettingsCodeHostConnections')
+    }, [])
 
     const fetchExternalServices = useCallback(async () => {
         setStatusOrError('loading')
@@ -83,21 +98,22 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 
         setStatusOrError(services)
 
-        // If we have a GitHub service, check whether we need to prompt the user to
-        // update their scope
-        const gitHubService = services.GITHUB
-        if (gitHubService) {
-            const scopes = gitHubService.grantedScopes || []
-            setUpdateAuthRequired(githubRepoScopeRequired(user.tags, scopes))
-        }
-
         const repoCount = fetchedServices.reduce((sum, codeHost) => sum + codeHost.repoCount, 0)
         onUserExternalServicesOrRepositoriesUpdate(fetchedServices.length, repoCount)
-    }, [user.id, user.tags, onUserExternalServicesOrRepositoriesUpdate, setUpdateAuthRequired])
+    }, [user.id, onUserExternalServicesOrRepositoriesUpdate])
 
-    useEffect(() => {
-        eventLogger.logViewEvent('UserSettingsCodeHostConnections')
-    }, [])
+    const removeService = (kind: ExternalServiceKind) => (): void => {
+        if (
+            (kind === ExternalServiceKind.GITLAB || kind === ExternalServiceKind.GITHUB) &&
+            isTokenUpdateRequired[kind]
+        ) {
+            setScope(kind, null)
+        }
+
+        fetchExternalServices().catch(error => {
+            setStatusOrError(asError(error))
+        })
+    }
 
     useEffect(() => {
         fetchExternalServices().catch(error => {
@@ -107,8 +123,15 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 
     const getGitHubUpdateAuthBanner = (needsUpdate: boolean): JSX.Element | null =>
         needsUpdate ? (
-            <div className="alert alert-info mb-4" role="alert" key="add-repos">
+            <div className="alert alert-info mb-4" role="alert" key="update-github">
                 Update your GitHub code host connection to search private code with Sourcegraph.
+            </div>
+        ) : null
+
+    const getGitLabUpdateAuthBanner = (needsUpdate: boolean): JSX.Element | null =>
+        needsUpdate ? (
+            <div className="alert alert-info mb-4" role="alert" key="update-gitlab">
+                Update your GitLab code host connection to search private code with Sourcegraph.
             </div>
         ) : null
 
@@ -159,7 +182,8 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         return [
             ...servicesWithProblems.map(getServiceWarningFragment),
             getAddReposBanner(notYetSyncedServiceNames),
-            getGitHubUpdateAuthBanner(updateAuthRequired),
+            getGitHubUpdateAuthBanner(isGitHubTokenUpdateRequired),
+            getGitLabUpdateAuthBanner(isGitLabTokenUpdateRequired),
         ]
     }
 
@@ -242,13 +266,11 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                                         service={isServicesByKind(statusOrError) ? statusOrError[kind] : undefined}
                                         kind={kind}
                                         name={defaultDisplayName}
-                                        updateAuthRequired={
-                                            id && kind === ExternalServiceKind.GITHUB ? updateAuthRequired : false
-                                        }
+                                        isTokenUpdateRequired={isTokenUpdateRequired[kind]}
                                         navigateToAuthProvider={navigateToAuthProvider}
                                         icon={icon}
                                         onDidAdd={addNewService}
-                                        onDidRemove={fetchExternalServices}
+                                        onDidRemove={removeService(kind)}
                                         onDidError={handleError}
                                     />
                                 </li>

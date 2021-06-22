@@ -12,8 +12,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -68,7 +68,7 @@ func Search(ctx context.Context, searcherURLs *endpoint.Map, repo api.RepoName, 
 
 		"PathPatternsAreRegExps": []string{"true"},
 		"IndexerEndpoints":       indexerEndpoints,
-		"Select":                 []string{string(p.Select.Type)},
+		"Select":                 []string{p.Select.Root()},
 	}
 	if deadline, ok := ctx.Deadline(); ok {
 		t, err := deadline.MarshalText()

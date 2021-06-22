@@ -1,6 +1,7 @@
 /* eslint-disable no-template-curly-in-string */
-import { WebGraphQlOperations } from '../graphql-operations'
-import { SearchEvent } from '../search/stream'
+import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
+
+import { SymbolKind, WebGraphQlOperations } from '../graphql-operations'
 
 export const diffSearchStreamEvents: SearchEvent[] = [
     {
@@ -428,14 +429,14 @@ export const symbolSearchStreamEvents: SearchEvent[] = [
                             '/gitlab.sgdev.org/sourcegraph/about/-/blob/website/src/components/TestimonialCarousel.tsx#L22:18-22:29',
                         name: 'Testimonial',
                         containerName: '',
-                        kind: 'INTERFACE',
+                        kind: 'INTERFACE' as SymbolKind,
                     },
                     {
                         url:
                             '/gitlab.sgdev.org/sourcegraph/about/-/blob/website/src/components/TestimonialCarousel.tsx#L36:14-36:33',
                         name: 'TestimonialCarousel',
                         containerName: '',
-                        kind: 'VARIABLE',
+                        kind: 'VARIABLE' as SymbolKind,
                     },
                 ],
             },
@@ -450,14 +451,14 @@ export const symbolSearchStreamEvents: SearchEvent[] = [
                         url: '/gitlab.sgdev.org/sourcegraph/event-positions/-/blob/src/characters.test.ts#L43:9-43:18',
                         name: 'testcases',
                         containerName: '',
-                        kind: 'VARIABLE',
+                        kind: 'VARIABLE' as SymbolKind,
                     },
                     {
                         url:
                             '/gitlab.sgdev.org/sourcegraph/event-positions/-/blob/src/characters.test.ts#L153:15-153:20',
                         name: 'tests',
                         containerName: '',
-                        kind: 'CONSTANT',
+                        kind: 'CONSTANT' as SymbolKind,
                     },
                 ],
             },
@@ -473,7 +474,7 @@ export const symbolSearchStreamEvents: SearchEvent[] = [
                             '/gitlab.sgdev.org/sourcegraph/event-positions/-/blob/src/positions_events.test.ts#L15:9-15:18',
                         name: 'testcases',
                         containerName: '',
-                        kind: 'VARIABLE',
+                        kind: 'VARIABLE' as SymbolKind,
                     },
                 ],
             },
@@ -489,35 +490,35 @@ export const symbolSearchStreamEvents: SearchEvent[] = [
                             '/gitlab.sgdev.org/sourcegraph/sourcegraph-code-discussions/-/blob/src/typings/SourcegraphGQL.d.ts#L493:9-493:31',
                         name: 'lastIndexedRevOrLatest',
                         containerName: 'SourcegraphGQL.IRepository',
-                        kind: 'CLASS',
+                        kind: 'CLASS' as SymbolKind,
                     },
                     {
                         url:
                             '/gitlab.sgdev.org/sourcegraph/sourcegraph-code-discussions/-/blob/src/typings/SourcegraphGQL.d.ts#L1046:9-1046:23',
                         name: 'latestSettings',
                         containerName: 'SourcegraphGQL.IUser',
-                        kind: 'FUNCTION',
+                        kind: 'FUNCTION' as SymbolKind,
                     },
                     {
                         url:
                             '/gitlab.sgdev.org/sourcegraph/sourcegraph-code-discussions/-/blob/src/typings/SourcegraphGQL.d.ts#L1170:9-1170:23',
                         name: 'latestSettings',
                         containerName: 'SourcegraphGQL.IConfigurationSubject',
-                        kind: 'ENUM',
+                        kind: 'ENUM' as SymbolKind,
                     },
                     {
                         url:
                             '/gitlab.sgdev.org/sourcegraph/sourcegraph-code-discussions/-/blob/src/typings/SourcegraphGQL.d.ts#L1317:9-1317:23',
                         name: 'latestSettings',
                         containerName: 'SourcegraphGQL.IOrg',
-                        kind: 'PROPERTY',
+                        kind: 'PROPERTY' as SymbolKind,
                     },
                     {
                         url:
                             '/gitlab.sgdev.org/sourcegraph/sourcegraph-code-discussions/-/blob/src/typings/SourcegraphGQL.d.ts#L4633:9-4633:23',
                         name: 'latestSettings',
                         containerName: 'SourcegraphGQL.ISite',
-                        kind: 'PROPERTY',
+                        kind: 'PROPERTY' as SymbolKind,
                     },
                 ],
             },

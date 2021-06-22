@@ -19,6 +19,15 @@ index a29bdeb434d874c9b1d8969c40c42161b03fafdc..c0d0fb45c382919737f8d0c20aaf57cf
  line1
 +line2
 `
+
+	const sampleUnicodeDiff = `diff --git f f
+index a29bdeb434d874c9b1d8969c40c42161b03fafdc..c0d0fb45c382919737f8d0c20aaf57cf89b74af8 100644
+--- f
++++ f
+@@ -1,1 +1,2 @@
+ line1
++before › after
+`
 	tests := map[string]struct {
 		rawDiff        string
 		query          string
@@ -52,6 +61,19 @@ index a29bdeb434d874c9b1d8969c40c42161b03fafdc..c0d0fb45c382919737f8d0c20aaf57cf
 			query:          "line2",
 			want:           sampleRawDiff,
 			wantHighlights: []Highlight{{Line: 7, Character: 1, Length: 5}},
+		},
+		"multi-byte character before": {
+			rawDiff:        sampleUnicodeDiff,
+			query:          "before",
+			want:           sampleUnicodeDiff,
+			wantHighlights: []Highlight{{Line: 7, Character: 1, Length: 6}},
+		},
+		// https://github.com/sourcegraph/sourcegraph/issues/22066
+		"multi-byte character after": {
+			rawDiff:        sampleUnicodeDiff,
+			query:          "after",
+			want:           sampleUnicodeDiff,
+			wantHighlights: []Highlight{{Line: 7, Character: 10, Length: 5}},
 		},
 	}
 	for label, test := range tests {

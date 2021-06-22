@@ -176,7 +176,7 @@
 
     // Remove feedback icon for <select> and <textarea>
     select.form-control,
-    textarea.form-control {
+    textarea.form-control:not(.with-invalid-icon) {
         background-image: none;
     }
 }

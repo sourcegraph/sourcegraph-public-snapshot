@@ -8,11 +8,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/davecgh/go-spew/spew"
 	githublogin "github.com/dghubble/gologin/github"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-github/github"
-	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
@@ -291,7 +291,7 @@ func createCodeHostConnectionHelper(t *testing.T, serviceExists bool) {
 		return nil
 	}
 	database.Mocks.ExternalServices.List = func(opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-		if serviceExists {
+		if !serviceExists {
 			return nil, nil
 		}
 		return []*types.ExternalService{

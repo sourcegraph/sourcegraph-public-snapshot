@@ -24,7 +24,7 @@ export const CtaBanner: React.FunctionComponent<Props> = ({
     linkText,
     googleAnalytics,
 }) => (
-    <div className={classNames('web-content cta-banner shadow d-flex flex-row card py-4 pr-4 pl-3', className)}>
+    <div className={classNames('cta-banner shadow d-flex flex-row card py-4 pr-4 pl-3', className)}>
         <div className="mr-4 d-flex flex-column align-items-center">{icon}</div>
         <div>
             <HeadingX>{title}</HeadingX>

@@ -1,10 +1,7 @@
 import React from 'react'
 import { Redirect } from 'react-router'
 
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
-
 import { LayoutRouteProps, routes } from '../routes'
-import { Settings } from '../schema/settings.schema'
 import { lazyComponent } from '../util/lazyComponent'
 
 export const enterpriseRoutes: readonly LayoutRouteProps<{}>[] = [
@@ -36,13 +33,6 @@ export const enterpriseRoutes: readonly LayoutRouteProps<{}>[] = [
     {
         path: '/stats',
         render: lazyComponent(() => import('./search/stats/SearchStatsPage'), 'SearchStatsPage'),
-        condition: ({ settingsCascade }) => {
-            if (settingsCascade.final === null || isErrorLike(settingsCascade.final)) {
-                return false
-            }
-            const settings: Settings = settingsCascade.final
-            return Boolean(settings.experimentalFeatures?.searchStats)
-        },
     },
     {
         path: '/code-monitoring',

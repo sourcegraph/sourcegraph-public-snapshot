@@ -54,45 +54,43 @@ export const CreateCommentModal: React.FunctionComponent<CreateCommentModalProps
             onDismiss={onCancel}
             aria-labelledby={LABEL_ID}
         >
-            <div className="web-content">
-                <h3 id={LABEL_ID}>Post a bulk comment on changesets</h3>
-                <p className="mb-4">Use this feature to create a bulk comment on all the selected code hosts.</p>
-                {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
-                <Form onSubmit={onSubmit}>
-                    <div className="form-group">
-                        <label htmlFor="token">Comment text</label>
-                        <textarea
-                            id="token"
-                            name="token"
-                            className="form-control"
-                            placeholder={PLACEHOLDER_COMMENT}
-                            required={true}
-                            rows={8}
-                            minLength={1}
-                            value={commentBody}
-                            onChange={onChangeInput}
-                        />
-                    </div>
-                    <div className="d-flex justify-content-end">
-                        <button
-                            type="button"
-                            disabled={isLoading === true}
-                            className="btn btn-outline-secondary mr-2"
-                            onClick={onCancel}
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={isLoading === true || commentBody.length === 0}
-                            className="btn btn-primary"
-                        >
-                            {isLoading === true && <LoadingSpinner className="icon-inline" />}
-                            Post comments
-                        </button>
-                    </div>
-                </Form>
-            </div>
+            <h3 id={LABEL_ID}>Post a bulk comment on changesets</h3>
+            <p className="mb-4">Use this feature to create a bulk comment on all the selected code hosts.</p>
+            {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
+            <Form onSubmit={onSubmit}>
+                <div className="form-group">
+                    <label htmlFor="token">Comment text</label>
+                    <textarea
+                        id="token"
+                        name="token"
+                        className="form-control"
+                        placeholder={PLACEHOLDER_COMMENT}
+                        required={true}
+                        rows={8}
+                        minLength={1}
+                        value={commentBody}
+                        onChange={onChangeInput}
+                    />
+                </div>
+                <div className="d-flex justify-content-end">
+                    <button
+                        type="button"
+                        disabled={isLoading === true}
+                        className="btn btn-outline-secondary mr-2"
+                        onClick={onCancel}
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="submit"
+                        disabled={isLoading === true || commentBody.length === 0}
+                        className="btn btn-primary"
+                    >
+                        {isLoading === true && <LoadingSpinner className="icon-inline" />}
+                        Post comments
+                    </button>
+                </div>
+            </Form>
         </Dialog>
     )
 }

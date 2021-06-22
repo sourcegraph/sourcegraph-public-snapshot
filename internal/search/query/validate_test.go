@@ -93,7 +93,7 @@ func TestAndOrQuery_Validation(t *testing.T) {
 		},
 		{
 			input: "type:symbol select:symbol.timelime",
-			want:  "invalid field 'timelime' on select type 'symbol'",
+			want:  `invalid field "timelime" on select path "symbol.timelime"`,
 		},
 		{
 			input:      "nice try type:repo",

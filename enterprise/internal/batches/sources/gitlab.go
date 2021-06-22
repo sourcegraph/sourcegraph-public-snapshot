@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -203,7 +203,7 @@ func (s *GitLabSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
 
 	mr, err := s.client.GetMergeRequest(ctx, project, gitlab.ID(iid))
 	if err != nil {
-		if errors.Cause(err) == gitlab.ErrMergeRequestNotFound {
+		if errors.Is(err, gitlab.ErrMergeRequestNotFound) {
 			return ChangesetNotFoundError{Changeset: cs}
 		}
 		return errors.Wrapf(err, "retrieving merge request %d", iid)
@@ -422,4 +422,29 @@ func (s *GitLabSource) CreateComment(ctx context.Context, c *Changeset, text str
 	}
 
 	return s.client.CreateMergeRequestNote(ctx, project, mr, text)
+}
+
+// MergeChangeset merges a Changeset on the code host, if in a mergeable state.
+// If squash is true, a squash-then-merge merge will be performed.
+func (s *GitLabSource) MergeChangeset(ctx context.Context, c *Changeset, squash bool) error {
+	mr, ok := c.Changeset.Metadata.(*gitlab.MergeRequest)
+	if !ok {
+		return errors.New("Changeset is not a GitLab merge request")
+	}
+	project := c.Repo.Metadata.(*gitlab.Project)
+
+	updated, err := s.client.MergeMergeRequest(ctx, project, mr, squash)
+	if err != nil {
+		if errors.Is(err, gitlab.ErrNotMergeable) {
+			return ChangesetNotMergeableError{ErrorMsg: err.Error()}
+		}
+		return errors.Wrap(err, "merging GitLab merge request")
+	}
+
+	// These additional API calls can go away once we can use the GraphQL API.
+	if err := s.decorateMergeRequestData(ctx, project, mr); err != nil {
+		return errors.Wrapf(err, "retrieving additional data for merge request %d", mr.IID)
+	}
+
+	return c.Changeset.SetMetadata(updated)
 }

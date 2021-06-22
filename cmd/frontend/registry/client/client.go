@@ -9,8 +9,8 @@ import (
 	"path"
 	"strings"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/uuid"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
@@ -67,6 +67,14 @@ func getBy(ctx context.Context, registry *url.URL, op, field, value string) (*Ex
 		if e, ok := err.(*url.Error); ok && e.Err == httpError(http.StatusNotFound) {
 			err = &notFoundError{field: field, value: value}
 		}
+		return nil, err
+	}
+	return x, nil
+}
+
+func GetFeaturedExtensions(ctx context.Context, registry *url.URL) ([]*Extension, error) {
+	var x []*Extension
+	if err := httpGet(ctx, "registry.GetFeaturedExtensions", toURL(registry, "extensions/featured", nil), &x); err != nil {
 		return nil, err
 	}
 	return x, nil

@@ -48,6 +48,6 @@ export EXECUTOR_IMAGE_ARCHIVE_PATH=$HOME/.sourcegraph/images
 
 export WATCH_ADDITIONAL_GO_DIRS="enterprise/cmd enterprise/dev enterprise/internal"
 export ENTERPRISE_ONLY_COMMANDS=" precise-code-intel-worker executor-queue executor "
-export ENTERPRISE_COMMANDS="frontend repo-updater ${ENTERPRISE_ONLY_COMMANDS}"
+export ENTERPRISE_COMMANDS="frontend repo-updater worker ${ENTERPRISE_ONLY_COMMANDS}"
 export ENTERPRISE=1
 ./dev/start.sh "$@"
