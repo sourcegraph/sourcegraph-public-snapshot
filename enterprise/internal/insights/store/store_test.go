@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+
 	"github.com/hexops/autogold"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/dbtesting"
@@ -269,10 +271,21 @@ func TestRecordSeriesPoints(t *testing.T) {
 		t.Fatal(err)
 	}
 	autogold.Want("len(points)", int(4)).Equal(t, len(points))
-	autogold.Want("points[0].String()", want[0].String()).Equal(t, points[0].String())
-	autogold.Want("points[1].String()", want[1].String()).Equal(t, points[1].String())
-	autogold.Want("points[2].String()", want[2].String()).Equal(t, points[2].String())
-	autogold.Want("points[3].String()", want[3].String()).Equal(t, points[3].String())
+	if diff := cmp.Diff(4, len(points)); diff != "" {
+		t.Errorf("len(points): %v", diff)
+	}
+	if diff := cmp.Diff(want[0], points[0]); diff != "" {
+		t.Errorf("points[0].String(): %v", diff)
+	}
+	if diff := cmp.Diff(want[1], points[1]); diff != "" {
+		t.Errorf("points[1].String(): %v", diff)
+	}
+	if diff := cmp.Diff(want[2], points[2]); diff != "" {
+		t.Errorf("points[2].String(): %v", diff)
+	}
+	if diff := cmp.Diff(want[3], points[3]); diff != "" {
+		t.Errorf("points[3].String(): %v", diff)
+	}
 
 	// TODO: future: once querying by RepoName and/or OriginalRepoName is possible, test that here:
 	// // Confirm querying by repo name works as expected.
