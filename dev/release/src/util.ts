@@ -2,6 +2,7 @@ import * as path from 'path'
 import * as readline from 'readline'
 import { URL } from 'url'
 
+import execa from 'execa'
 import { readFile, writeFile, mkdir } from 'mz/fs'
 
 /* eslint-disable @typescript-eslint/consistent-type-assertions */
@@ -69,4 +70,8 @@ function hubSpotFeedbackFormURL(version: string): string {
     url.searchParams.set('update_version', version)
 
     return url.toString()
+}
+
+export async function ensureDocker(): Promise<execa.ExecaReturnValue<string>> {
+    return execa('docker', ['version'], { stdout: 'ignore' })
 }
