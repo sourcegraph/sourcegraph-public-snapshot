@@ -44,4 +44,8 @@
         display: block;
         flex-grow: 1;
     }
+
+    .nav .nav-item:last-child {
+        margin-right: 0 !important;
+    }
 }
