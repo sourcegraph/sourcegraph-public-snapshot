@@ -506,11 +506,9 @@ func (s *Syncer) insertIfNew(ctx context.Context, store *Store, sourcedRepo *typ
 	ctx, save := s.observe(ctx, "Syncer.InsertIfNew", string(sourcedRepo.Name))
 	defer save(&diff, &owner, &err)
 
-	// Note on why we set the publicOnly argument to false while invoking syncRepo:
-	// 1. insertIfNew is only invoked from makeNewRepoInserter
-	// 2. makeNewRepoInserter is only invoked if repo is not owned by the user
-	// 3. This implies that this repo is being synced by the site owner
-	// 4. TODO: Add clarification why the above means publicOnly = false.
+	// insertIfNew is only used for streaming inserter, which is currently only enabled on customer
+	// instances. Therefore we set publicOnly to false because customer instances do not have any
+	// limitation for private code.
 	diff, err = s.syncRepo(ctx, store, true, false, sourcedRepo)
 	return err
 }
