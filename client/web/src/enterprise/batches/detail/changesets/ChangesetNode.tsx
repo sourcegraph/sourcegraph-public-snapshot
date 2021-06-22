@@ -25,25 +25,28 @@ export interface ChangesetNodeProps extends ThemeProps {
     extensionInfo?: {
         hoverifier: Hoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>
     } & ExtensionsControllerProps
+    /**
+     * Element to precede the changeset so that it is separated from its neighbors when
+     * viewed in a list, defaults to a full-width light gray horizontal rule
+     */
+    separator?: React.ReactNode
     /** For testing purposes. */
     queryExternalChangesetWithFileDiffs?: typeof queryExternalChangesetWithFileDiffs
     /** For testing purposes. */
     expandByDefault?: boolean
 }
 
-export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({ node, ...props }) => {
-    if (node.__typename === 'ExternalChangeset') {
-        return (
-            <>
-                <span className={styles.changesetNodeSeparator} />
-                <ExternalChangesetNode node={node} {...props} />
-            </>
-        )
-    }
-    return (
-        <>
-            <span className={styles.changesetNodeSeparator} />
+export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
+    node,
+    separator = <span className={styles.changesetNodeSeparator} />,
+    ...props
+}) => (
+    <>
+        {separator}
+        {node.__typename === 'ExternalChangeset' ? (
+            <ExternalChangesetNode node={node} {...props} />
+        ) : (
             <HiddenExternalChangesetNode node={node} {...props} />
-        </>
-    )
-}
+        )}
+    </>
+)
