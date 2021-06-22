@@ -164,7 +164,6 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalSer
 		unauthorized     bool
 		accountSuspended bool
 		forbidden        bool
-		isUserOwned      bool
 	)
 
 	if s.Logger != nil {
@@ -190,7 +189,6 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalSer
 
 	if svc.NamespaceUserID > 0 {
 		owner = ownerUser
-		isUserOwned = true
 	} else {
 		owner = ownerSite
 	}
@@ -254,9 +252,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalSer
 	// Unless our site config explicitly allows private code or the user has the
 	// "AllowUserExternalServicePrivate" tag, user added external services should
 	// only sync public code.
-	//
-	// TODO: How does this flag indicate the conditions mentioned in the comment above hold true?
-	if isUserOwned {
+	if owner == ownerUser {
 		if mode, err := database.UsersWith(tx).UserAllowedExternalServices(ctx, svc.NamespaceUserID); err != nil {
 			return errors.Wrap(err, "checking if user can add private code")
 		} else if mode != conf.ExternalServiceModeAll {
