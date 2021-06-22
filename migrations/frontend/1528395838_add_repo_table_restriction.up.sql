@@ -14,9 +14,8 @@ GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO sgservice;
 -- updated by the specified role(s).
 --
 -- The USING clause requires two LOCAL variables to be set:
---
---        rls.user_id: the effective ID for the user making the request
---     rls.permission: the permission that the user needs (e.g. "write")
+--   rls.user_id: the effective ID for the user making the request
+--   rls.permission: the permission that the user needs (e.g. "write")
 ALTER TABLE repo ENABLE ROW LEVEL SECURITY;
 CREATE POLICY restricted_repo_policy
     ON repo
