@@ -868,7 +868,12 @@ func (s *Syncer) observe(ctx context.Context, family, title string) (context.Con
 	tr, ctx := trace.New(ctx, family, title)
 
 	return ctx, func(d *Diff, owner *externalServiceOwnerType, err *error) {
-		syncStarted.WithLabelValues(family, string(*owner)).Inc()
+		var ownerTag string
+		if owner != nil {
+			ownerTag = string(*owner)
+		}
+
+		syncStarted.WithLabelValues(family, ownerTag).Inc()
 
 		now := s.Now()
 		took := s.Now().Sub(began).Seconds()
@@ -902,7 +907,7 @@ func (s *Syncer) observe(ctx context.Context, family, title string) (context.Con
 
 		if !success {
 			tr.SetError(*err)
-			syncErrors.WithLabelValues(family, string(*owner)).Add(1)
+			syncErrors.WithLabelValues(family, ownerTag).Add(1)
 		}
 
 		tr.Finish()
