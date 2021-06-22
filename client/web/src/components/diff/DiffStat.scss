@@ -4,8 +4,12 @@
 
     &__total {
         padding-right: 0.125rem;
-        // stylelint-disable-next-line declaration-property-unit-whitelist
-        margin-bottom: -1px;
+        padding-bottom: 0.25rem;
+    }
+
+    &__squares {
+        display: flex;
+        flex-wrap: nowrap;
     }
 
     &__square {

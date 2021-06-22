@@ -94,8 +94,9 @@ export const DiffStat: React.FunctionComponent<Props> = React.memo(function Diff
             ) : (
                 <small className="diff-stat__total">{numberWithCommas(total + changed)}</small>
             )}
-            <div>
+            <div className="diff-stat__squares">
                 {squares.map((className, index) => (
+                    // eslint-disable-next-line react/no-array-index-key
                     <div key={index} className={`diff-stat__square ${className}`} />
                 ))}
             </div>
