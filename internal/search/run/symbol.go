@@ -367,16 +367,16 @@ func GetSymbolMatchAtLineCharacter(ctx context.Context, repo types.RepoName, com
 	// Should be large enough to include all symbols from a single file
 	first := int32(999999)
 	includePatterns := []string{regexp.QuoteMeta(filePath)}
-	result, err := ComputeSymbols(ctx, repo, commitID, nil, nil, &first, &includePatterns)
+	symbolMatches, err := ComputeSymbols(ctx, repo, commitID, nil, nil, &first, &includePatterns)
 
 	if err != nil {
 		return nil, err
 	}
 
-	for _, symbol := range result {
-		symbolRange := symbol.Symbol.Range()
+	for _, symbolMatch := range symbolMatches {
+		symbolRange := symbolMatch.Symbol.Range()
 		if symbolRange.Start.Line == line && symbolRange.Start.Character == character {
-			return symbol, nil
+			return symbolMatch, nil
 		}
 	}
 	return nil, nil
