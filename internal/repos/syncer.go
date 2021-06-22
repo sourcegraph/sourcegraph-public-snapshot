@@ -519,24 +519,24 @@ func (s *Syncer) syncRepo(ctx context.Context, store *Store, insertOnly bool, pu
 		return Diff{}, nil
 	}
 
-	var storedSubset types.Repos
+	var storedRepos types.Repos
 	args := database.ReposListOptions{
 		Names:         []string{string(sourcedRepo.Name)},
 		ExternalRepos: []api.ExternalRepoSpec{sourcedRepo.ExternalRepo},
 		UseOr:         true,
 	}
-	if storedSubset, err = store.RepoStore.List(ctx, args); err != nil {
+	if storedRepos, err = store.RepoStore.List(ctx, args); err != nil {
 		return Diff{}, errors.Wrap(err, "syncer.syncrepo.store.list-repos")
 	}
 
-	if insertOnly && len(storedSubset) > 0 {
+	if insertOnly && len(storedRepos) > 0 {
 		return Diff{}, nil
 	}
 
-	// sourcedRepo only knows about one source so we need to add in the remaining stored
-	// sources
-	if len(storedSubset) == 1 {
-		for k, v := range storedSubset[0].Sources {
+	// sourcedRepo only knows about one source so we need to add in the remaining
+	// stored sources
+	if len(storedRepos) == 1 {
+		for k, v := range storedRepos[0].Sources {
 			// Don't update the source from sourcedRepo
 			if _, ok := sourcedRepo.Sources[k]; ok {
 				continue
@@ -546,9 +546,9 @@ func (s *Syncer) syncRepo(ctx context.Context, store *Store, insertOnly bool, pu
 	}
 
 	// NewDiff modifies the stored slice so we clone it before passing it
-	storedCopy := storedSubset.Clone()
+	storedCopy := storedRepos.Clone()
 
-	diff = NewDiff([]*types.Repo{sourcedRepo}, storedSubset)
+	diff = NewDiff([]*types.Repo{sourcedRepo}, storedRepos)
 
 	// We trust that if we determine that a repo needs to be deleted it should be deleted
 	// from all external services. By setting sources to nil this is forced when we call
