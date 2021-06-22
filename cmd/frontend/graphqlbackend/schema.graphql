@@ -4280,6 +4280,10 @@ type GitBlob implements TreeEntry & File2 {
         query: String
     ): SymbolConnection!
     """
+    Symbol at line and char
+    """
+    symbol(line: Int!, character: Int!): Symbol
+    """
     Always false, since a blob is a file, not directory.
     """
     isSingleChild(

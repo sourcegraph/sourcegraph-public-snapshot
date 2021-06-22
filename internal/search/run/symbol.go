@@ -3,6 +3,7 @@ package run
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"regexp/syntax"
 	"sort"
 	"time"
@@ -360,6 +361,25 @@ func ComputeSymbols(ctx context.Context, repoName types.RepoName, commitID api.C
 		})
 	}
 	return matches, err
+}
+
+func GetSymbolMatchAtLineCharacter(ctx context.Context, repo types.RepoName, commitID api.CommitID, filePath string, line int, character int) (*result.SymbolMatch, error) {
+	// Should be large enough to include all symbols from a single file
+	first := int32(999999)
+	includePatterns := []string{regexp.QuoteMeta(filePath)}
+	result, err := ComputeSymbols(ctx, repo, commitID, nil, nil, &first, &includePatterns)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for _, symbol := range result {
+		symbolRange := symbol.Symbol.Range()
+		if symbolRange.Start.Line == line && symbolRange.Start.Character == character {
+			return symbol, nil
+		}
+	}
+	return nil, nil
 }
 
 const DefaultSymbolLimit = 100
