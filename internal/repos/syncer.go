@@ -228,10 +228,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalSer
 		// This is a site level external service. We have a channel to handle streaming inserts,
 		// therefore we should create an inserter. Note that it inserts outside of our transaction
 		// so that repos are visible to the rest of our system immediately.
-		//
-		// TODO: Why do we use isUserOwned as a value for the argument publicOnly to
-		// makeNewRepoInserter?
-		onSourced, err = s.makeNewRepoInserter(ctx, s.Store, isUserOwned, owner)
+		onSourced, err = s.makeNewRepoInserter(ctx, s.Store, owner)
 		if err != nil {
 			return errors.Wrap(err, "syncer.sync.streaming")
 		}
@@ -507,13 +504,18 @@ func (s *Syncer) SyncRepo(ctx context.Context, store *Store, sourcedRepo *types.
 
 // insertIfNew is a specialization of SyncRepo. It will insert sourcedRepo
 // if there are no related repositories, otherwise does nothing.
-func (s *Syncer) insertIfNew(ctx context.Context, store *Store, publicOnly bool, sourcedRepo *types.Repo, owner ownerType) (err error) {
+func (s *Syncer) insertIfNew(ctx context.Context, store *Store, sourcedRepo *types.Repo, owner ownerType) (err error) {
 	var diff Diff
 
 	ctx, save := s.observe(ctx, "Syncer.InsertIfNew", string(sourcedRepo.Name))
 	defer save(&diff, &owner, &err)
 
-	diff, err = s.syncRepo(ctx, store, true, publicOnly, sourcedRepo)
+	// Note on why we set the publicOnly argument to false while invoking syncRepo:
+	// 1. insertIfNew is only invoked from makeNewRepoInserter
+	// 2. makeNewRepoInserter is only invoked if repo is not owned by the user
+	// 3. This implies that this repo is being synced by the site owner
+	// 4. TODO: Add clarification why the above means publicOnly = false.
+	diff, err = s.syncRepo(ctx, store, true, false, sourcedRepo)
 	return err
 }
 
@@ -840,7 +842,7 @@ func (s *Syncer) sourced(ctx context.Context, svc *types.ExternalService, onSour
 
 // makeNewRepoInserter returns a function that will insert repos.
 // If publicOnly is set it will never insert a private repo.
-func (s *Syncer) makeNewRepoInserter(ctx context.Context, store *Store, publicOnly bool, owner ownerType) (func(*types.Repo) error, error) {
+func (s *Syncer) makeNewRepoInserter(ctx context.Context, store *Store, owner ownerType) (func(*types.Repo) error, error) {
 	// insertIfNew requires querying the store for related repositories, and
 	// will do nothing if `insertOnly` is set and there are any related repositories. Most
 	// repositories will already have related repos, so to avoid that cost we
@@ -857,7 +859,7 @@ func (s *Syncer) makeNewRepoInserter(ctx context.Context, store *Store, publicOn
 			return nil
 		}
 
-		err := s.insertIfNew(ctx, store, publicOnly, r, owner)
+		err := s.insertIfNew(ctx, store, r, owner)
 		if err != nil && s.Logger != nil {
 			// Best-effort, final syncer will handle this repo if this failed.
 			s.Logger.Warn("streaming insert failed", "external_id", r.ExternalRepo, "error", err)
