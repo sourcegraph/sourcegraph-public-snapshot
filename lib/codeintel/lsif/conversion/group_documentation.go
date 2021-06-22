@@ -5,6 +5,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
 )
 
@@ -24,12 +26,28 @@ func collectDocumentationPages(ctx context.Context, state *State) chan *semantic
 		state:                       state,
 		parentPathID:                "",
 		startingDocumentationResult: state.DocumentationResultRoot,
+		dupChecker:                  &duplicateChecker{pathIDs: make(map[string]struct{}, 16*1024)},
 	}
 	if state.DocumentationResultRoot != -1 {
 		pageCollector.startingDocumentationResult = state.DocumentationResultRoot
 		go pageCollector.collect(ctx, ch)
 	}
 	return ch
+}
+
+type duplicateChecker struct {
+	pathIDs                   map[string]struct{}
+	duplicates, nonDuplicates int
+}
+
+func (d *duplicateChecker) check(pathID string) bool {
+	if _, ok := d.pathIDs[pathID]; ok {
+		d.duplicates++
+		return true
+	}
+	d.nonDuplicates++
+	d.pathIDs[pathID] = struct{}{}
+	return false
 }
 
 // pageCollector collects all of the children for a single documentation page.
@@ -41,6 +59,7 @@ type pageCollector struct {
 	parentPathID                string
 	state                       *State
 	startingDocumentationResult int
+	dupChecker                  *duplicateChecker
 }
 
 func (p *pageCollector) collect(ctx context.Context, ch chan<- *semantic.DocumentationPageData) (remainingPages []*pageCollector) {
@@ -63,6 +82,10 @@ func (p *pageCollector) collect(ctx context.Context, ch chan<- *semantic.Documen
 			this.PathID = pathID + "/" + cleanPathIDElement(documentation.Identifier)
 		default:
 			this.PathID = pathID + "#" + cleanPathIDFragment(documentation.Identifier)
+		}
+		if p.dupChecker.check(this.PathID) {
+			log15.Warn("API docs: duplicate pathID forbidden", "pathID", this.PathID)
+			return
 		}
 		if parent != nil {
 			if this.Documentation.NewPage {
@@ -92,6 +115,10 @@ func (p *pageCollector) collect(ctx context.Context, ch chan<- *semantic.Documen
 		}
 		if documentationResult == p.startingDocumentationResult {
 			// collected a whole page
+			if p.dupChecker.duplicates > 0 {
+				log15.Error("API docs: upload failed due to duplicate pathIDs", "duplicates", p.dupChecker.duplicates, "nonDuplicates", p.dupChecker.nonDuplicates)
+				return
+			}
 			ch <- &semantic.DocumentationPageData{Tree: this}
 		}
 	}
