@@ -40,6 +40,13 @@ You can also read about [how Sourcegraph executors work](#how-executors-work).
 - Sourcegraph executor usage requires requires Sourcegraph version 3.XX.
 - As Sourcegraph executors run arbitrary user-submitted code, take care to place the executors within an appropriately secured part of your infrastructure. Network access to Sourcegraph is required, and your users will likely need read only access to internal resources required to run typical Batch Changes, such as internal package repositories and proxies. In general, you should trust Sourcegraph executors as much as you trust your Sourcegraph users to spawn and run services within your infrastructure.
 
+**Network requirements**
+Executors need network access to:
+- Sourcegraph
+- Docker Hub, or a proxy that can deliver the `sourcegraph/src-batch-change-volume-workspace` image
+- Any other Docker image source the actual batch spec needs. Also see [pulling from private container registries](https://docs.sourcegraph.com/batch_changes/references/faq#can-i-pull-containers-from-private-container-registries-in-a-batch-change).
+
+
 ## Deployment models
 
 Two deployment models are supported:
