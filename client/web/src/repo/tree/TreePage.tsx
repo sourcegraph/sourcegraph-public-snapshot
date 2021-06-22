@@ -39,6 +39,7 @@ import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { getFileDecorations } from '../../backend/features'
 import { queryGraphQL } from '../../backend/graphql'
+import { BatchChangesIcon } from '../../batches/icons'
 import { ErrorAlert } from '../../components/alerts'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { FilteredConnection } from '../../components/FilteredConnection'
@@ -374,11 +375,33 @@ export const TreePage: React.FunctionComponent<Props> = ({
                         <header className="mb-3">
                             {treeOrError.isRoot ? (
                                 <>
-                                    <PageHeader
-                                        path={[{ icon: SourceRepositoryIcon, text: displayRepoName(repo.name) }]}
-                                        className="mb-3 test-tree-page-title"
-                                    />
-                                    {repo.description && <p>{repo.description}</p>}
+                                    <div className="d-flex justify-content-between">
+                                        <PageHeader
+                                            path={[{ icon: SourceRepositoryIcon, text: displayRepoName(repo.name) }]}
+                                            className="mb-3 test-tree-page-title"
+                                        />
+                                        {repo.description && <p>{repo.description}</p>}
+                                        <Link
+                                            className="btn btn-sm btn-outline-secondary d-flex align-items-center mb-1 text-uppercase"
+                                            to={`/${encodeURIPathComponent(repo.name)}/-/batch-changes`}
+                                            aria-label="Batch Changes"
+                                        >
+                                            <BatchChangesIcon className="mr-2" />
+                                            Batch Changes
+                                            <span
+                                                className="badge badge-success batch-change-badge d-flex flex-column ml-2"
+                                                data-tooltip="10 open changesets"
+                                            >
+                                                10
+                                            </span>
+                                            <span
+                                                className="badge badge-merged batch-change-badge ml-2"
+                                                data-tooltip="12 merged changesets"
+                                            >
+                                                12
+                                            </span>
+                                        </Link>
+                                    </div>
                                     <div className="btn-group">
                                         {enableAPIDocs && (
                                             <Link
