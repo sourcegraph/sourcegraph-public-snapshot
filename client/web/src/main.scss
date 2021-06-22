@@ -1,6 +1,0 @@
-// Entry point for the web app
-
-@import './SourcegraphWebApp';
-
-// If you need to import any other stylesheet here, you should add the import statement to
-// SourcegraphWebApp.scss, not here, so that enterprise.scss also imports it.
