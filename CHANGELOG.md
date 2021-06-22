@@ -19,7 +19,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
--
+- Backend Code Insights only fills historical data frames that have changed to reduce the number of searches required. [#22298](https://github.com/sourcegraph/sourcegraph/pull/22298)
+- Backend Code Insights displays data points for a fixed 6 months period in 2 week intervals, and will carry observations forward that are missing. [#22298](https://github.com/sourcegraph/sourcegraph/pull/22298)
 
 ### Fixed
 
