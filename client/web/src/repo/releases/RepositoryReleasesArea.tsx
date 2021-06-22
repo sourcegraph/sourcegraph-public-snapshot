@@ -7,7 +7,6 @@ import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
 import { RepositoryFields } from '../../graphql-operations'
 import { RepoContainerContext } from '../RepoContainer'
-import { RepoHeaderBreadcrumbNavItem } from '../RepoHeaderBreadcrumbNavItem'
 
 import { RepositoryReleasesTagsPage } from './RepositoryReleasesTagsPage'
 
@@ -41,15 +40,7 @@ export interface RepositoryReleasesAreaPageProps {
  * Renders pages related to repository branches.
  */
 export const RepositoryReleasesArea: React.FunctionComponent<Props> = ({ useBreadcrumb, repo, routePrefix }) => {
-    useBreadcrumb(
-        useMemo(
-            () => ({
-                key: 'tags',
-                element: <RepoHeaderBreadcrumbNavItem key="tags">Tags</RepoHeaderBreadcrumbNavItem>,
-            }),
-            []
-        )
-    )
+    useBreadcrumb(useMemo(() => ({ key: 'tags', element: 'Tags' }), []))
 
     const transferProps: { repo: RepositoryFields } = {
         repo,
