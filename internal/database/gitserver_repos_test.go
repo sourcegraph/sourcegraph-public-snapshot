@@ -92,8 +92,9 @@ func TestIterateRepoGitserverStatus(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if noShardCount != 1 {
-		t.Fatalf("Want %d, got %d", 1, noShardCount)
+	wantNoShardCount := 1
+	if noShardCount != wantNoShardCount {
+		t.Fatalf("Want %d, got %d", wantNoShardCount, noShardCount)
 	}
 }
 
