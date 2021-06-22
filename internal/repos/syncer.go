@@ -39,8 +39,7 @@ type Syncer struct {
 	// SubsetSynced is non-nil)
 	//
 	// TODO: The name of this channel does not make it easy to understand its use case. This is
-	// triggered by an adhoc sync when a user tries to search a repo we don't have cloned on
-	// sourcegraph.com yet.
+	// triggered by the streaming inserter.
 	// https://sourcegraph.atlassian.net/browse/COREAPP-128
 	SubsetSynced chan Diff
 
