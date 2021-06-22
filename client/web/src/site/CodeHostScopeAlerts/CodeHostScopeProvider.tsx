@@ -3,15 +3,17 @@ import React, { FunctionComponent, useState, useEffect, useCallback, createConte
 import { queryExternalServicesScope } from '../../components/externalServices/backend'
 import { ExternalServiceKind } from '../../graphql-operations'
 
+type Scope = string[] | null
+
 interface Scopes {
-    github?: string[]
-    gitlab?: string[]
+    github?: Scope
+    gitlab?: Scope
 }
-type SetScopes = (scopes: Scopes) => void
+type SetScope = (kind: ExternalServiceKind.GITHUB | ExternalServiceKind.GITLAB, scope: Scope) => void
 
 interface CodeHostScopeContext {
     scopes: Scopes
-    setScopes: SetScopes
+    setScope: SetScope
 }
 
 const CodeHostScopeContext = createContext<CodeHostScopeContext | undefined>(undefined)
@@ -50,6 +52,13 @@ export const CodeHostScopeProvider: FunctionComponent<Props> = ({ children, auth
         }
     }, [authenticatedUser])
 
+    const setScope: SetScope = (kind, scope): void => {
+        setScopes(previousScope => ({
+            ...previousScope,
+            [kind.toLowerCase()]: scope,
+        }))
+    }
+
     useEffect(() => {
         fetchCodeHostScope().catch(() => {
             // there's no actionable information we can display here
@@ -58,7 +67,7 @@ export const CodeHostScopeProvider: FunctionComponent<Props> = ({ children, auth
 
     const { Provider } = CodeHostScopeContext
 
-    return <Provider value={{ scopes, setScopes }}>{children}</Provider>
+    return <Provider value={{ scopes, setScope }}>{children}</Provider>
 }
 
 export const useCodeHostScopeContext = (): CodeHostScopeContext => {

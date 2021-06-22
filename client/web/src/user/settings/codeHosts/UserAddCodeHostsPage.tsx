@@ -65,12 +65,17 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     onUserExternalServicesOrRepositoriesUpdate,
 }) => {
     const [statusOrError, setStatusOrError] = useState<Status>()
-    const { scopes: scopes, setScopes: setScopes } = useCodeHostScopeContext()
+    const { scopes, setScope } = useCodeHostScopeContext()
 
     // If we have a GitHub or GitLab services, check whether we need to prompt the user to
     // update their scope
     const isGitHubTokenUpdateRequired = scopes.github ? githubRepoScopeRequired(user.tags, scopes.github) : false
     const isGitLabTokenUpdateRequired = scopes.gitlab ? gitlabAPIScopeRequired(user.tags, scopes.gitlab) : false
+
+    const isTokenUpdateRequired: Partial<Record<ExternalServiceKind, boolean | undefined>> = {
+        [ExternalServiceKind.GITHUB]: githubRepoScopeRequired(user.tags, scopes.github),
+        [ExternalServiceKind.GITLAB]: gitlabAPIScopeRequired(user.tags, scopes.gitlab),
+    }
 
     useEffect(() => {
         eventLogger.logViewEvent('UserSettingsCodeHostConnections')
@@ -97,15 +102,18 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         onUserExternalServicesOrRepositoriesUpdate(fetchedServices.length, repoCount)
     }, [user.id, onUserExternalServicesOrRepositoriesUpdate])
 
-    const resetScopeAndFetchServices = useCallback((): void => {
-        // after the token is updated - we'll set GitHub's scopes to null and
-        // hide the global CTA banner
-        setScopes({})
+    const removeService = (kind: ExternalServiceKind) => (): void => {
+        if (
+            (kind === ExternalServiceKind.GITLAB || kind === ExternalServiceKind.GITHUB) &&
+            isTokenUpdateRequired[kind]
+        ) {
+            setScope(kind, null)
+        }
 
         fetchExternalServices().catch(error => {
             setStatusOrError(asError(error))
         })
-    }, [fetchExternalServices, setScopes])
+    }
 
     useEffect(() => {
         fetchExternalServices().catch(error => {
@@ -251,29 +259,23 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
             {codeHostExternalServices && isServicesByKind(statusOrError) ? (
                 <Container>
                     <ul className="list-group">
-                        {Object.entries(codeHostExternalServices).map(([id, { kind, defaultDisplayName, icon }]) => {
-                            const isTokenUpdateRequired =
-                                (kind === ExternalServiceKind.GITHUB && isGitHubTokenUpdateRequired) ||
-                                (kind === ExternalServiceKind.GITLAB && isGitLabTokenUpdateRequired)
-
-                            return authProvidersByKind[kind] ? (
+                        {Object.entries(codeHostExternalServices).map(([id, { kind, defaultDisplayName, icon }]) =>
+                            authProvidersByKind[kind] ? (
                                 <li key={id} className="list-group-item user-code-hosts-page__code-host-item">
                                     <CodeHostItem
                                         service={isServicesByKind(statusOrError) ? statusOrError[kind] : undefined}
                                         kind={kind}
                                         name={defaultDisplayName}
-                                        isTokenUpdateRequired={isTokenUpdateRequired}
+                                        isTokenUpdateRequired={isTokenUpdateRequired[kind]}
                                         navigateToAuthProvider={navigateToAuthProvider}
                                         icon={icon}
                                         onDidAdd={addNewService}
-                                        onDidRemove={
-                                            isTokenUpdateRequired ? resetScopeAndFetchServices : fetchExternalServices
-                                        }
+                                        onDidRemove={removeService(kind)}
                                         onDidError={handleError}
                                     />
                                 </li>
                             ) : null
-                        })}
+                        )}
                     </ul>
                 </Container>
             ) : (
