@@ -2387,6 +2387,28 @@ type Repository implements Node & GenericSearchResultInterface {
     The star count the repository has in the code host.
     """
     stars: Int!
+
+    """
+    A list of batch changes that have applied a changeset to this repository.
+    """
+    batchChanges(
+        """
+        Returns the first n batch changes from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+        """
+        Only return batch changes in this state.
+        """
+        state: BatchChangeState
+        """
+        Only include batch changes that the viewer can administer.
+        """
+        viewerCanAdminister: Boolean
+    ): BatchChangeConnection!
 }
 
 """

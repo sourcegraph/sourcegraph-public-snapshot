@@ -722,6 +722,14 @@ func (r *Resolver) BatchChanges(ctx context.Context, args *graphqlbackend.ListBa
 		}
 	}
 
+	if args.Repo != nil {
+		repoID, err := graphqlbackend.UnmarshalRepositoryID(*args.Repo)
+		if err != nil {
+			return nil, err
+		}
+		opts.RepoID = repoID
+	}
+
 	return &batchChangesConnectionResolver{
 		store: r.store,
 		opts:  opts,
@@ -880,6 +888,13 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, batchCha
 	}
 	if args.OnlyArchived {
 		opts.OnlyArchived = args.OnlyArchived
+	}
+	if args.Repo != nil {
+		repoID, err := graphqlbackend.UnmarshalRepositoryID(*args.Repo)
+		if err != nil {
+			return opts, false, errors.Wrap(err, "unmarshalling repo id")
+		}
+		opts.RepoID = repoID
 	}
 
 	return opts, safe, nil

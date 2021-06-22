@@ -121,6 +121,7 @@ type ListBatchChangesArgs struct {
 	ViewerCanAdminister *bool
 
 	Namespace *graphql.ID
+	Repo      *graphql.ID
 }
 
 type CloseBatchChangeArgs struct {
@@ -560,6 +561,7 @@ type ListChangesetsArgs struct {
 	Search                         *string
 
 	OnlyArchived bool
+	Repo         *graphql.ID
 }
 
 type BatchChangeResolver interface {
