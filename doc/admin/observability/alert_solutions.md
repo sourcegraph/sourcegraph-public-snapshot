@@ -3542,11 +3542,11 @@ with your code hosts connections or networking issues affecting communication wi
 
 ## repo-updater: syncer_sync_start
 
-<p class="subtitle">sync was started</p>
+<p class="subtitle">repo metadata sync was started</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> repo-updater: less than 0 sync was started for 9h0m0s
+- <span class="badge badge-warning">warning</span> repo-updater: less than 0 repo metadata sync was started for 9h0m0s
 
 **Possible solutions**
 

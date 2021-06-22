@@ -79,7 +79,7 @@ func RepoUpdater() *monitoring.Container {
 					{
 						{
 							Name:              "syncer_sync_start",
-							Description:       "sync was started",
+							Description:       "repo metadata sync was started",
 							Query:             `max by (family) (rate(src_repoupdater_syncer_start_sync[5m]))`,
 							Warning:           monitoring.Alert().LessOrEqual(0, nil).For(syncDurationThreshold),
 							Panel:             monitoring.Panel().LegendFormat("{{family}}").Unit(monitoring.Number),

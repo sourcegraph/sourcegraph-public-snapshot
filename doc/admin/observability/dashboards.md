@@ -2072,7 +2072,7 @@ This panel indicates site level external service sync error rate.
 
 #### repo-updater: syncer_sync_start
 
-This panel indicates sync was started.
+This panel indicates repo metadata sync was started.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-syncer-sync-start).
 
