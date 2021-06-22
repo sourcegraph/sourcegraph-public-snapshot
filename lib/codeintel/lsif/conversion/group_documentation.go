@@ -115,8 +115,8 @@ func (p *pageCollector) collect(ctx context.Context, ch chan<- *semantic.Documen
 						dupChecker:                  p.dupChecker,
 						walkedPages:                 p.walkedPages,
 					})
-					return
 				}
+				return
 			} else {
 				parent.Children = append(parent.Children, semantic.DocumentationNodeChild{
 					Node: this,
