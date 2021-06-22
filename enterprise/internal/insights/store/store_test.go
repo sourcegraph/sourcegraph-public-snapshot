@@ -205,13 +205,6 @@ func TestRecordSeriesPoints(t *testing.T) {
 	defer cleanup()
 	store := NewWithClock(timescale, clock)
 
-	//toTime := func(s string) time.Time {
-	//	v, err := time.Parse(time.RFC3339, s)
-	//	if err != nil {
-	//		t.Fatal(err)
-	//	}
-	//	return v
-	//}
 	optionalString := func(v string) *string { return &v }
 	optionalRepoID := func(v api.RepoID) *api.RepoID { return &v }
 

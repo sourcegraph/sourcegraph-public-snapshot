@@ -97,14 +97,16 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 	}
 
 	frameLength := func() time.Duration {
+		defaultLen := 30 * 24 * time.Hour
 		if s := conf.Get().InsightsHistoricalFrameLength; s != "" {
 			parsed, err := str2duration.ParseDuration(s)
 			if err != nil {
 				log15.Error("insights: failed to parse site config insights.historical.frameLength", "error", err)
+				return defaultLen
 			}
 			return parsed
 		}
-		return 30 * 24 * time.Hour // 6 one-month frames.
+		return defaultLen
 	}
 
 	maxTime := time.Now().Add(-time.Duration(framesToBackfill()) * frameLength())
@@ -334,12 +336,13 @@ func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[
 				})
 				if err != nil {
 					softErr = multierror.Append(softErr, err)
+					// In this case we will assume the point does not exist and query for it anyway.
 				} else if numDataPoints > 0 {
 					continue
 				}
 
 				// Build historical data for this unique timeframe+repo+series.
-				softErr, err = h.buildSeries(ctx, &buildSeriesContext{
+				hardErr, err := h.buildSeries(ctx, &buildSeriesContext{
 					from:            currentFrame.From,
 					to:              currentFrame.To,
 					repo:            repo,
@@ -347,12 +350,12 @@ func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[
 					seriesID:        seriesID,
 					series:          series,
 				})
-				if softErr != nil {
-					softErr = multierror.Append(softErr, softErr)
+				if err != nil {
+					softErr = multierror.Append(softErr, err)
 					continue
 				}
-				if err != nil {
-					return multierror.Append(softErr, err)
+				if hardErr != nil {
+					return multierror.Append(softErr, hardErr)
 				}
 			}
 
