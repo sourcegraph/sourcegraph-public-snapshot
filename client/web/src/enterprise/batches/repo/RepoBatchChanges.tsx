@@ -6,15 +6,15 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Container } from '@sourcegraph/wildcard'
 
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../components/FilteredConnection'
-import { AllChangesetIDsVariables, RepoBatchChange, RepositoryFields, Scalars } from '../../../graphql-operations'
-import { PreviewFilterRow, PreviewFilters } from '../preview/list/PreviewFilterRow'
+import { RepoBatchChange, RepositoryFields, Scalars } from '../../../graphql-operations'
+import { queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs } from '../detail/backend'
+import { ChangesetFilterRow, ChangesetFilters } from '../detail/changesets/ChangesetFilterRow'
 
 import { queryRepoBatchChanges as _queryRepoBatchChanges } from './backend'
 import { BatchChangeNode, BatchChangeNodeProps } from './BatchChangeNode'
 import styles from './RepoBatchChanges.module.scss'
 
 interface Props extends ThemeProps {
-    batchChangeID: Scalars['ID']
     viewerCanAdminister: boolean
     history: H.History
     location: H.Location
@@ -25,7 +25,7 @@ interface Props extends ThemeProps {
     /** For testing only. */
     queryRepoBatchChanges?: typeof _queryRepoBatchChanges
     /** For testing only. */
-    // queryExternalChangesetWithFileDiffs?: typeof _queryExternalChangesetWithFileDiffs
+    queryExternalChangesetWithFileDiffs?: typeof _queryExternalChangesetWithFileDiffs
     /** For testing only. */
     expandByDefault?: boolean
 }
@@ -34,7 +34,6 @@ interface Props extends ThemeProps {
  * A list of a batch change's changesets.
  */
 export const RepoBatchChanges: React.FunctionComponent<Props> = ({
-    batchChangeID,
     viewerCanAdminister,
     history,
     location,
@@ -42,7 +41,7 @@ export const RepoBatchChanges: React.FunctionComponent<Props> = ({
     isLightTheme,
     hideFilters = false,
     queryRepoBatchChanges = _queryRepoBatchChanges,
-    // queryExternalChangesetWithFileDiffs,
+    queryExternalChangesetWithFileDiffs = _queryExternalChangesetWithFileDiffs,
     expandByDefault,
 }) => {
     // Whether all the changesets are selected, beyond the scope of what's on screen right now.
@@ -51,47 +50,47 @@ export const RepoBatchChanges: React.FunctionComponent<Props> = ({
     // const [totalChangesetCount, setTotalChangesetCount] = useState<number>(0)
     // All changesets that are currently in view and can be selected. That currently
     // just means they are visible.
-    const [availableBatchChanges, setAvailableBatchChanges] = useState<Set<Scalars['ID']>>(new Set())
+    const [availableChangesets, setAvailableChangesets] = useState<Set<Scalars['ID']>>(new Set())
     // The list of all selected changesets. This list does not reflect the selection
     // when `allSelected` is true.
-    const [selectedBatchChanges, setSelectedBatchChanges] = useState<Set<Scalars['ID']>>(new Set())
+    const [selectedChangesets, setSelectedChangesets] = useState<Set<Scalars['ID']>>(new Set())
 
-    // const onSelect = useCallback((id: string, selected: boolean): void => {
-    //     if (selected) {
-    //         setSelectedChangesets(previous => {
-    //             const newSet = new Set(previous).add(id)
-    //             return newSet
-    //         })
-    //         return
-    //     }
-    //     setSelectedChangesets(previous => {
-    //         const newSet = new Set(previous)
-    //         newSet.delete(id)
-    //         return newSet
-    //     })
-    //     setAllSelected(false)
-    // }, [])
+    const onSelectChangeset = useCallback((id: string, selected: boolean): void => {
+        if (selected) {
+            setSelectedChangesets(previous => {
+                const newSet = new Set(previous).add(id)
+                return newSet
+            })
+            return
+        }
+        setSelectedChangesets(previous => {
+            const newSet = new Set(previous)
+            newSet.delete(id)
+            return newSet
+        })
+        setAllSelected(false)
+    }, [])
 
-    // /**
-    //  * Whether the given changeset is currently selected. Returns always true, if `allSelected` is true.
-    //  */
-    // const changesetSelected = useCallback((id: Scalars['ID']): boolean => allSelected || selectedChangesets.has(id), [
-    //     allSelected,
-    //     selectedChangesets,
-    // ])
+    /**
+     * Whether the given changeset is currently selected. Returns always true, if `allSelected` is true.
+     */
+    const changesetSelected = useCallback((id: Scalars['ID']): boolean => allSelected || selectedChangesets.has(id), [
+        allSelected,
+        selectedChangesets,
+    ])
 
     const deselectAll = useCallback((): void => {
-        setSelectedBatchChanges(new Set())
+        setSelectedChangesets(new Set())
         setAllSelected(false)
-    }, [setSelectedBatchChanges])
+    }, [setSelectedChangesets])
 
     const selectAll = useCallback((): void => {
-        setSelectedBatchChanges(availableBatchChanges)
-    }, [availableBatchChanges, setSelectedBatchChanges])
+        setSelectedChangesets(availableChangesets)
+    }, [availableChangesets, setSelectedChangesets])
 
     // True when all in the current list are selected. It ticks the header row
     // checkbox when true.
-    const allSelectedCheckboxChecked = allSelected || selectedBatchChanges.size === availableBatchChanges.size
+    const allSelectedCheckboxChecked = allSelected || selectedChangesets.size === availableChangesets.size
 
     const toggleSelectAll = useCallback((): void => {
         if (allSelectedCheckboxChecked) {
@@ -138,8 +137,15 @@ export const RepoBatchChanges: React.FunctionComponent<Props> = ({
                     if (!data) {
                         return
                     }
-                    // Available batch changes are all batch changes that the user can view.
-                    setAvailableBatchChanges(new Set(data.batchChanges.nodes.map(node => node.id)))
+                    // Available changesets are all changesets that the user can view.
+                    setAvailableChangesets(
+                        new Set(
+                            data.batchChanges.nodes.flatMap(batchChange =>
+                                batchChange.changesets.nodes.map(changeset => changeset.id)
+                            )
+                        )
+                    )
+                    // TODO:
                     // Remember the totalCount.
                     // setTotalChangesetCount(data.totalCount)
                 }),
@@ -154,8 +160,6 @@ export const RepoBatchChanges: React.FunctionComponent<Props> = ({
                             },
                         }
                     }
-                    // TODO:
-                    console.log({ data })
                     return data.batchChanges
                 })
             )
@@ -200,6 +204,9 @@ export const RepoBatchChanges: React.FunctionComponent<Props> = ({
                     history,
                     location,
                     expandByDefault,
+                    queryExternalChangesetWithFileDiffs,
+                    isChangesetSelected: changesetSelected,
+                    onSelectChangeset,
                 }}
                 queryConnection={query}
                 hideSearch={true}

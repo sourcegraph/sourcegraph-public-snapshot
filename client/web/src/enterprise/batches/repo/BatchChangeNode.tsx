@@ -1,13 +1,8 @@
 import * as H from 'history'
 import React, { useState, useEffect } from 'react'
 
-import { Hoverifier } from '@sourcegraph/codeintellify'
-import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { Link } from '@sourcegraph/shared/src/components/Link'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 
 import { Timestamp } from '../../../components/time/Timestamp'
 import { RepoBatchChange } from '../../../graphql-operations'
@@ -21,11 +16,8 @@ export interface BatchChangeNodeProps extends ThemeProps {
     viewerCanAdminister: boolean
     history: H.History
     location: H.Location
-    onSelect?: (id: string, selected: boolean) => void
-    isSelected?: (id: string) => boolean
-    extensionInfo?: {
-        hoverifier: Hoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>
-    } & ExtensionsControllerProps
+    onSelectChangeset: (id: string, selected: boolean) => void
+    isChangesetSelected: (id: string) => boolean
     /** For testing purposes. */
     queryExternalChangesetWithFileDiffs?: typeof _queryExternalChangesetWithFileDiffs
     /** For testing purposes. */
@@ -35,6 +27,8 @@ export interface BatchChangeNodeProps extends ThemeProps {
 }
 
 export const BatchChangeNode: React.FunctionComponent<BatchChangeNodeProps> = ({
+    isChangesetSelected,
+    onSelectChangeset,
     node: initialNode,
     now = () => new Date(),
     ...props
@@ -69,7 +63,14 @@ export const BatchChangeNode: React.FunctionComponent<BatchChangeNodeProps> = ({
                 </div>
             </div>
             {node.changesets.nodes.map(changeset => (
-                <ChangesetNode {...props} key={changeset.id} node={changeset} separator={null} />
+                <ChangesetNode
+                    {...props}
+                    isSelected={isChangesetSelected}
+                    onSelect={onSelectChangeset}
+                    key={changeset.id}
+                    node={changeset}
+                    separator={null}
+                />
             ))}
             <div className={styles.nodeBottomSpacer} />
         </>
