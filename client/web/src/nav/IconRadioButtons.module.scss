@@ -1,5 +1,3 @@
-@import 'branded/src/global-styles/colors.scss';
-
 .buttons {
     padding: 0 3.3rem;
     display: flex;
@@ -17,7 +15,11 @@
     transition: box-shadow 50ms ease-in;
 
     &:focus-within {
-        box-shadow: inset 0 0 0 3px rgba($primary, 0.75);
+        // This is just --primary with 75% opacity. Ideally this would use a
+        // semantic variable, but rgba(var(--primary), 0.75) is not valid.
+        // Hard coding it seems acceptable since the border around yellow
+        // emoji is a one-off design.
+        box-shadow: inset 0 0 0 3px rgba(11, 112, 219, 0.75);
         transition-delay: 0;
     }
 }
