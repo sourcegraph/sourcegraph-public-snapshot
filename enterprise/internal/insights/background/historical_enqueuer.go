@@ -66,7 +66,6 @@ import (
 // to backfill them by enqueueing work for executing searches with `before:` and `after:` filter
 // ranges.
 func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestore.Store, settingStore discovery.SettingStore, insightsStore *store.Store, observationContext *observation.Context) goroutine.BackgroundRoutine {
-	log15.Info("newInsightHistoricalEnqueuer")
 	metrics := metrics.NewOperationMetrics(
 		observationContext.Registerer,
 		"insights_historical_enqueuer",
@@ -294,10 +293,10 @@ func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[
 			}
 		}
 
-		log15.Info("starting frames", "starting_frames", frames)
+		log15.Info("insights: starting frames", "starting_frames", frames)
 
 		filtered := h.frameFilter.FilterFrames(ctx, frames, repo.ID)
-		log15.Info("sampling historical data frames", "repo_id", repo.ID, "frames", frames)
+		log15.Info("insights: sampling historical data frames", "repo_id", repo.ID, "frames", frames)
 
 		// Find the first commit made to the repository on the default branch.
 		firstHEADCommit, err := h.gitFirstEverCommit(ctx, api.RepoName(repoName))

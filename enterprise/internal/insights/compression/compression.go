@@ -35,9 +35,8 @@ func NewHistoricalFilter(enabled bool, maxHistorical time.Time, db dbutil.DB) Da
 			store:         NewCommitStore(db),
 			maxHistorical: maxHistorical,
 		}
-	} else {
-		return &NoopFilter{}
 	}
+	return &NoopFilter{}
 }
 
 func (n *NoopFilter) FilterFrames(ctx context.Context, frames []Frame, id api.RepoID) []Frame {
@@ -75,7 +74,7 @@ func (c *CommitFilter) FilterFrames(ctx context.Context, frames []Frame, id api.
 
 		commits, err := c.store.Get(ctx, id, frame.From, frame.To)
 		if err != nil {
-			log15.Error("compression.go/FilterFrames unable to retrieve commits\n", "repo_id", id, "From", frame.From, "to", frame.To)
+			log15.Error("insights: compression.go/FilterFrames unable to retrieve commits\n", "repo_id", id, "from", frame.From, "to", frame.To)
 			include = append(include, frame)
 			continue
 		}
