@@ -8,7 +8,7 @@ import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
 import { ChangesetCheckStatusCell } from './ChangesetCheckStatusCell'
 
 const { add } = storiesOf('web/batches/ChangesetCheckStatusCell', module).addDecorator(story => (
-    <div className="p-3 container web-content">{story()}</div>
+    <div className="p-3 container">{story()}</div>
 ))
 
 for (const state of Object.values(ChangesetCheckState)) {

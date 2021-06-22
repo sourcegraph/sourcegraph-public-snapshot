@@ -10,7 +10,7 @@ import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 import { CodeIntelUploadPage } from './CodeIntelUploadPage'
 
 const { add } = storiesOf('web/codeintel/detail/CodeIntelUploadPage', module)
-    .addDecorator(story => <div className="p-3 container web-content">{story()}</div>)
+    .addDecorator(story => <div className="p-3 container">{story()}</div>)
     .addParameters({
         chromatic: {
             viewports: [320, 576, 978, 1440],

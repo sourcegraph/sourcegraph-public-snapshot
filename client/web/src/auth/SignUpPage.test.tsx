@@ -3,7 +3,10 @@ import React from 'react'
 import { MemoryRouter } from 'react-router'
 import renderer from 'react-test-renderer'
 
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+
 import { AuthenticatedUser } from '../auth'
+import { FeatureFlagName } from '../featureFlags/featureFlags'
 import { SourcegraphContext } from '../jscontext'
 
 import { SignUpPage } from './SignUpPage'
@@ -16,6 +19,8 @@ describe('SignUpPage', () => {
     const commonProps = {
         history: createMemoryHistory(),
         location: createLocation('/'),
+        featureFlags: new Map<FeatureFlagName, boolean>(),
+        isLightTheme: true,
     }
     const authProviders: SourcegraphContext['authProviders'] = [
         {
@@ -45,6 +50,7 @@ describe('SignUpPage', () => {
                                 authProviders,
                                 xhrHeaders: {},
                             }}
+                            telemetryService={NOOP_TELEMETRY_SERVICE}
                         />
                     </MemoryRouter>
                 )
@@ -67,6 +73,7 @@ describe('SignUpPage', () => {
                                 authProviders,
                                 xhrHeaders: {},
                             }}
+                            telemetryService={NOOP_TELEMETRY_SERVICE}
                         />
                     </MemoryRouter>
                 )
@@ -97,6 +104,7 @@ describe('SignUpPage', () => {
                                 authProviders,
                                 xhrHeaders: {},
                             }}
+                            telemetryService={NOOP_TELEMETRY_SERVICE}
                         />
                     </MemoryRouter>
                 )

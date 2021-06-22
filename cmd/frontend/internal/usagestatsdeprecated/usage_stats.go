@@ -49,8 +49,9 @@ func GetByUserID(userID int32) (*types.UserUsageStatistics, error) {
 	key := keyPrefix + userIDStr
 
 	c := pool.Get()
+	defer c.Close()
+
 	values, err := redis.Values(c.Do("HMGET", key, fPageViews, fSearchQueries, fLastActive, fCodeIntelActions, fFindRefsActions, fLastActiveCodeHostIntegration))
-	c.Close()
 	if err != nil && err != redis.ErrNil {
 		return nil, err
 	}
@@ -158,26 +159,6 @@ func GetUsersActiveTodayCount(ctx context.Context) (int, error) {
 		err = nil
 	}
 	return count, err
-}
-
-func HasSearchOccurred() (bool, error) {
-	c := pool.Get()
-	defer c.Close()
-	s, err := redis.Bool(c.Do("GET", keyPrefix+fSearchOccurred))
-	if err != nil && err != redis.ErrNil {
-		return s, err
-	}
-	return s, nil
-}
-
-func HasFindRefsOccurred() (bool, error) {
-	c := pool.Get()
-	defer c.Close()
-	r, err := redis.Bool(c.Do("GET", keyPrefix+fFindRefsOccurred))
-	if err != nil && err != redis.ErrNil {
-		return r, err
-	}
-	return r, nil
 }
 
 // uniques calculates the list of unique users starting at 00:00:00 on a given UTC date over a
@@ -289,11 +270,6 @@ func daus(dayPeriods int) ([]*types.SiteActivityPeriod, error) {
 	return daus, nil
 }
 
-// ListUsersToday returns a list of users active since today at 00:00 UTC.
-func ListUsersToday() (*ActiveUsers, error) {
-	return uniques(timeNow().UTC(), &UsageDuration{Days: 1})
-}
-
 // waus returns a count of daily active users for the last weeksCount calendar weeks (including the current, partial week).
 func waus(weekPeriods int) ([]*types.SiteActivityPeriod, error) {
 	var waus []*types.SiteActivityPeriod
@@ -309,12 +285,6 @@ func waus(weekPeriods int) ([]*types.SiteActivityPeriod, error) {
 	return waus, nil
 }
 
-// ListUsersThisWeek returns a list of users active since the latest Monday at 00:00 UTC.
-func ListUsersThisWeek() (*ActiveUsers, error) {
-	weekStartDate := startOfWeek(0)
-	return uniques(weekStartDate, &UsageDuration{Days: 7})
-}
-
 // maus returns a count of daily active users for the last monthsCount calendar months (including the current, partial month).
 func maus(monthPeriods int) ([]*types.SiteActivityPeriod, error) {
 	var maus []*types.SiteActivityPeriod
@@ -328,44 +298,6 @@ func maus(monthPeriods int) ([]*types.SiteActivityPeriod, error) {
 		maus = append(maus, uniques)
 	}
 	return maus, nil
-}
-
-// ListUsersThisMonth returns a list of users active since the first day of the month at 00:00 UTC.
-func ListUsersThisMonth() (*ActiveUsers, error) {
-	monthStartDate := startOfMonth(0)
-	return uniques(monthStartDate, &UsageDuration{Months: 1})
-}
-
-//nolint:deadcode,unused // This package is deprecated and will likely be removed anyways, so no use getting rid of this now
-func usersSince(userList []string, dayStart time.Time, userField string) (map[string]bool, error) {
-	c := pool.Get()
-	defer c.Close()
-
-	userIDs := map[string]bool{}
-	for _, uid := range userList {
-		userKey := keyPrefix + uid
-		err := c.Send("HGET", userKey, userField)
-		if err != nil && err != redis.ErrNil {
-			return nil, err
-		}
-	}
-	c.Flush()
-	for _, uid := range userList {
-		lastEvent, err := redis.String(c.Receive())
-		if err != nil && err != redis.ErrNil {
-			return nil, err
-		}
-		if lastEvent != "" {
-			t, err := time.Parse(time.RFC3339, lastEvent)
-			if err != nil {
-				return nil, err
-			}
-			if t.After(dayStart) || t.Equal(dayStart) {
-				userIDs[uid] = true
-			}
-		}
-	}
-	return userIDs, nil
 }
 
 // gc expires active user sets after the max of daysOfHistory, weeksOfHistory, and monthsOfHistory have passed.

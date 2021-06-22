@@ -1,0 +1,71 @@
+{
+  "id": 146,
+  "version": 2,
+  "title": "file3.txt edited online with Bitbucket",
+  "description": "",
+  "state": "MERGED",
+  "open": false,
+  "closed": true,
+  "createdDate": 1623421327682,
+  "updatedDate": 1623421519622,
+  "fromRef": {
+   "id": "refs/heads/erik/file3txt-1623421319662",
+   "repository": {
+    "id": 10070,
+    "slug": "automation-testing",
+    "project": {
+     "key": "SOUR"
+    }
+   }
+  },
+  "toRef": {
+   "id": "refs/heads/master",
+   "repository": {
+    "id": 10070,
+    "slug": "automation-testing",
+    "project": {
+     "key": "SOUR"
+    }
+   }
+  },
+  "locked": false,
+  "author": {
+   "user": {
+    "name": "erik",
+    "emailAddress": "erik@sourcegraph.com",
+    "id": 152,
+    "displayName": "Erik Seliger",
+    "active": true,
+    "slug": "erik",
+    "type": "NORMAL"
+   },
+   "role": "AUTHOR",
+   "approved": false,
+   "status": "UNAPPROVED"
+  },
+  "reviewers": [
+   {
+    "user": {
+     "name": "thorsten",
+     "emailAddress": "thorsten@sourcegraph.com",
+     "id": 104,
+     "displayName": "thorsten",
+     "active": true,
+     "slug": "thorsten",
+     "type": "NORMAL"
+    },
+    "lastReviewedCommit": "",
+    "role": "REVIEWER",
+    "approved": false,
+    "status": "UNAPPROVED"
+   }
+  ],
+  "participants": [],
+  "links": {
+   "self": [
+    {
+     "href": "https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/pull-requests/146"
+    }
+   ]
+  }
+ }

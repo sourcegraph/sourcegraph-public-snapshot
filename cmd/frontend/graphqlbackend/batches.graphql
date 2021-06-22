@@ -2089,6 +2089,14 @@ extend type Mutation {
     Experimental: This API is likely to change in the future.
     """
     reenqueueChangesets(batchChange: ID!, changesets: [ID!]!): BulkOperation!
+
+    """
+    Merge multiple changesets. If squash is true, the commits will be squashed
+    into a single commit on code hosts that support squash-and-merge.
+
+    Experimental: This API is likely to change in the future.
+    """
+    mergeChangesets(batchChange: ID!, changesets: [ID!]!, squash: Boolean = false): BulkOperation!
 }
 
 extend type Query {
@@ -2367,6 +2375,10 @@ enum BulkOperationType {
     Bulk reenqueue failed changesets.
     """
     REENQUEUE
+    """
+    Bulk merge changesets.
+    """
+    MERGE
 }
 
 """

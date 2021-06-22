@@ -44,10 +44,12 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 	admin := ct.CreateTestUser(t, db, true)
 
 	rs, extSvc := ct.CreateTestRepos(t, ctx, db, 1)
+	repo := rs[0]
+	ct.CreateTestSiteCredential(t, cstore, repo)
 
 	state := ct.MockChangesetSyncState(&protocol.RepoInfo{
-		Name: rs[0].Name,
-		VCS:  protocol.VCSInfo{URL: rs[0].URI},
+		Name: repo.Name,
+		VCS:  protocol.VCSInfo{URL: repo.URI},
 	})
 	defer state.Unmock()
 
@@ -448,14 +450,14 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				// associations do.
 				specOpts := ct.TestSpecOpts{}
 				specOpts.User = admin.ID
-				specOpts.Repo = rs[0].ID
+				specOpts.Repo = repo.ID
 				specOpts.BatchSpec = batchSpec.ID
 				changesetSpec = ct.CreateChangesetSpec(t, ctx, cstore, specOpts)
 			}
 
 			// Create the changeset with correct associations.
 			changesetOpts := tc.changeset
-			changesetOpts.Repo = rs[0].ID
+			changesetOpts.Repo = repo.ID
 			if len(changesetOpts.BatchChanges) != 0 {
 				for i := range changesetOpts.BatchChanges {
 					changesetOpts.BatchChanges[i].BatchChangeID = batchChange.ID
@@ -555,7 +557,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 
 			// Assert that the changeset in the database looks like we want
 			assertions := tc.wantChangeset
-			assertions.Repo = rs[0].ID
+			assertions.Repo = repo.ID
 			assertions.OwnedByBatchChange = changesetOpts.OwnedByBatchChange
 			assertions.AttachedTo = []int64{batchChange.ID}
 			if changesetSpec != nil {
@@ -597,12 +599,13 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 	cstore := store.New(db, et.TestKey{})
 
 	rs, _ := ct.CreateTestRepos(t, ctx, db, 1)
+	repo := rs[0]
 
 	commonHeadRef := "refs/heads/collision"
 
 	// Create a published changeset.
 	ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
-		Repo:             rs[0].ID,
+		Repo:             repo.ID,
 		PublicationState: btypes.ChangesetPublicationStatePublished,
 		ExternalBranch:   commonHeadRef,
 		ExternalID:       "123",
@@ -614,11 +617,11 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 
 	// Build a changeset that would be pushed on the same HeadRef/ExternalBranch.
 	plan.ChangesetSpec = ct.BuildChangesetSpec(t, ct.TestSpecOpts{
-		Repo:      rs[0].ID,
+		Repo:      repo.ID,
 		HeadRef:   commonHeadRef,
 		Published: true,
 	})
-	plan.Changeset = ct.BuildChangeset(ct.TestChangesetOpts{Repo: rs[0].ID})
+	plan.Changeset = ct.BuildChangeset(ct.TestChangesetOpts{Repo: repo.ID})
 
 	err := executePlan(ctx, nil, sources.NewFakeSourcer(nil, &sources.FakeChangesetSource{}), true, cstore, plan)
 	if err == nil {
@@ -702,11 +705,8 @@ func TestLoadChangesetSource(t *testing.T) {
 		_, err := loadChangesetSource(ctx, cstore, sourcer, &btypes.Changeset{
 			OwnedByBatchChangeID: adminBatchChange.ID,
 		}, repo)
-		if err != nil {
-			t.Errorf("unexpected non-nil error: %v", err)
-		}
-		if fakeSource.CurrentAuthenticator != nil {
-			t.Errorf("unexpected non-nil authenticator: %v", fakeSource.CurrentAuthenticator)
+		if !errors.Is(err, errMissingCredentials{repo: string(repo.Name)}) {
+			t.Fatalf("unexpected error %v", err)
 		}
 	})
 
@@ -846,13 +846,11 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:   "github site-admin and no credentials",
-			extSvc: gitHubExtSvc,
-			repo:   gitHubRepo,
-			user:   admin,
-			wantPushConfig: &gitprotocol.PushConfig{
-				RemoteURL: "https://SECRETTOKEN@github.com/sourcegraph/" + string(gitHubRepo.Name),
-			},
+			name:    "github site-admin and no credentials",
+			extSvc:  gitHubExtSvc,
+			repo:    gitHubRepo,
+			user:    admin,
+			wantErr: true,
 		},
 		{
 			name:        "gitlab OAuthBearerToken",
@@ -872,13 +870,11 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:   "gitlab site-admin and no credentials",
-			user:   admin,
-			extSvc: gitLabExtSvc,
-			repo:   gitLabRepo,
-			wantPushConfig: &gitprotocol.PushConfig{
-				RemoteURL: "https://git:SECRETTOKEN@gitlab.com/sourcegraph/" + string(gitLabRepo.Name),
-			},
+			name:    "gitlab site-admin and no credentials",
+			user:    admin,
+			extSvc:  gitLabExtSvc,
+			repo:    gitLabRepo,
+			wantErr: true,
 		},
 		{
 			name:        "bitbucketServer BasicAuth",
@@ -898,13 +894,11 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:   "bitbucketServer site-admin and no credentials",
-			user:   admin,
-			extSvc: bbsExtSvc,
-			repo:   bbsRepo,
-			wantPushConfig: &gitprotocol.PushConfig{
-				RemoteURL: "https://bbs-user:bbs-token@bitbucket.sourcegraph.com/scm/" + string(bbsRepo.Name),
-			},
+			name:    "bitbucketServer site-admin and no credentials",
+			user:    admin,
+			extSvc:  bbsExtSvc,
+			repo:    bbsRepo,
+			wantErr: true,
 		},
 		{
 			name:    "ssh clone URL no credentials",
@@ -914,13 +908,11 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:   "ssh clone URL no credentials admin",
-			user:   admin,
-			extSvc: bbsSSHExtsvc,
-			repo:   bbsSSHRepo,
-			wantPushConfig: &gitprotocol.PushConfig{
-				RemoteURL: "ssh://git@bitbucket.sgdev.org:7999/" + string(bbsSSHRepo.Name),
-			},
+			name:    "ssh clone URL no credentials admin",
+			user:    admin,
+			extSvc:  bbsSSHExtsvc,
+			repo:    bbsSSHRepo,
+			wantErr: true,
 		},
 		{
 			name:   "ssh clone URL SSH credential",

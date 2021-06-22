@@ -7,7 +7,7 @@ import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 import { SupersedingBatchSpecAlert } from './SupersedingBatchSpecAlert'
 
 const { add } = storiesOf('web/batches/details/SupersedingBatchSpecAlert', module).addDecorator(story => (
-    <div className="p-3 container web-content">{story()}</div>
+    <div className="p-3 container">{story()}</div>
 ))
 
 add('None published', () => (

@@ -11,7 +11,7 @@ import { PageHeader } from '@sourcegraph/wildcard'
 
 import { FeedbackBadge } from '../../../components/FeedbackBadge'
 import { Page } from '../../../components/Page'
-import { InsightsIcon, InsightsViewGrid, InsightsViewGridProps } from '../../components'
+import { CodeInsightsIcon, InsightsViewGrid, InsightsViewGridProps } from '../../components'
 import { InsightsApiContext } from '../../core/backend/api-provider'
 
 import { useDeleteInsight } from './hooks/use-delete-insight'
@@ -52,7 +52,7 @@ export const InsightsPage: React.FunctionComponent<InsightsPageProps> = props =>
             <Page>
                 <PageHeader
                     annotation={<FeedbackBadge status="prototype" feedback={{ mailto: 'support@sourcegraph.com' }} />}
-                    path={[{ icon: InsightsIcon, text: 'Code insights' }]}
+                    path={[{ icon: CodeInsightsIcon, text: 'Code insights' }]}
                     actions={
                         <Link to="/insights/create" onClick={logAddMoreClick} className="btn btn-secondary mr-1">
                             <PlusIcon className="icon-inline" /> Create new insight

@@ -160,11 +160,18 @@ export const NavLinks: React.FunctionComponent<Props> = props => {
                         {link}
                     </li>
                 ))}
-            {/* show status messages if user is logged in and either: user added code is enabled, user is admin or opted-in with a user tag  */}
+            {/* show status messages if user is logged in and either: user added code is enabled, user is admin or opted-in with a user tag */}
             {authenticatedUser &&
                 (authenticatedUser.siteAdmin || userExternalServicesEnabledFromTags(authenticatedUser.tags)) && (
                     <li className="nav-item">
-                        <StatusMessagesNavItem isSiteAdmin={authenticatedUser.siteAdmin} history={history} />
+                        <StatusMessagesNavItem
+                            user={{
+                                id: authenticatedUser.id,
+                                username: authenticatedUser.username,
+                                isSiteAdmin: authenticatedUser.siteAdmin,
+                            }}
+                            history={history}
+                        />
                     </li>
                 )}
             {!minimalNavLinks && (

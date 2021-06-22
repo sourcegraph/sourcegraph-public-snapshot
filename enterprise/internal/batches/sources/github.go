@@ -251,3 +251,21 @@ func (s GithubSource) CreateComment(ctx context.Context, c *Changeset, text stri
 
 	return s.client.CreatePullRequestComment(ctx, pr, text)
 }
+
+// MergeChangeset merges a Changeset on the code host, if in a mergeable state.
+// If squash is true, a squash-then-merge merge will be performed.
+func (s GithubSource) MergeChangeset(ctx context.Context, c *Changeset, squash bool) error {
+	pr, ok := c.Changeset.Metadata.(*github.PullRequest)
+	if !ok {
+		return errors.New("Changeset is not a GitHub pull request")
+	}
+
+	if err := s.client.MergePullRequest(ctx, pr, squash); err != nil {
+		if github.IsNotMergeable(err) {
+			return ChangesetNotMergeableError{ErrorMsg: err.Error()}
+		}
+		return err
+	}
+
+	return c.Changeset.SetMetadata(pr)
+}

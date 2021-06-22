@@ -751,13 +751,13 @@ describe('e2e test suite', () => {
                     name: 'navigates to file on symbol click for Go',
                     repoPath: '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d',
                     filePath: '/tree/cmd',
-                    symbolPath: '/blob/cmd/go-diff/go-diff.go#L19:2-19:10',
+                    symbolPath: '/blob/cmd/go-diff/go-diff.go?L19:2-19:10',
                 },
                 {
                     name: 'navigates to file on symbol click for Java',
                     repoPath: '/github.com/sourcegraph/java-langserver@03efbe9558acc532e88f5288b4e6cfa155c6f2dc',
                     filePath: '/tree/src/main/java/com/sourcegraph/common',
-                    symbolPath: '/blob/src/main/java/com/sourcegraph/common/Config.java#L14:20-14:26',
+                    symbolPath: '/blob/src/main/java/com/sourcegraph/common/Config.java?L14:20-14:26',
                     skip: true,
                 },
                 {
@@ -765,14 +765,14 @@ describe('e2e test suite', () => {
                         'displays valid symbols at different file depths for Go (./examples/cmd/webapp-opentracing/main.go.go)',
                     repoPath: '/github.com/sourcegraph/appdash@ebfcffb1b5c00031ce797183546746715a3cfe87',
                     filePath: '/tree/examples',
-                    symbolPath: '/blob/examples/cmd/webapp-opentracing/main.go#L26:6-26:10',
+                    symbolPath: '/blob/examples/cmd/webapp-opentracing/main.go?L26:6-26:10',
                     skip: true,
                 },
                 {
                     name: 'displays valid symbols at different file depths for Go (./sqltrace/sql.go)',
                     repoPath: '/github.com/sourcegraph/appdash@ebfcffb1b5c00031ce797183546746715a3cfe87',
                     filePath: '/tree/sqltrace',
-                    symbolPath: '/blob/sqltrace/sql.go#L14:2-14:5',
+                    symbolPath: '/blob/sqltrace/sql.go?L14:2-14:5',
                     skip: true,
                 },
             ]
@@ -956,7 +956,7 @@ describe('e2e test suite', () => {
                     await driver.page.click(selector)
 
                     await driver.assertWindowLocation(
-                        '/github.com/gorilla/mux@15a353a636720571d19e37b34a14499c3afa9991/-/blob/mux.go#L24:19'
+                        '/github.com/gorilla/mux@15a353a636720571d19e37b34a14499c3afa9991/-/blob/mux.go?L24:19'
                     )
                     await getHoverContents() // verify there is a hover
                     await percySnapshot(driver.page, 'Code intel hover tooltip')
@@ -965,7 +965,7 @@ describe('e2e test suite', () => {
                 test('gets displayed when navigating to a URL with a token position', async () => {
                     await driver.page.goto(
                         sourcegraphBaseUrl +
-                            '/github.com/gorilla/mux@15a353a636720571d19e37b34a14499c3afa9991/-/blob/mux.go#L151:23'
+                            '/github.com/gorilla/mux@15a353a636720571d19e37b34a14499c3afa9991/-/blob/mux.go?L151:23'
                     )
                     await assertHoverContentContains(
                         'ErrMethodMismatch is returned when the method in the request does not match'
@@ -976,33 +976,33 @@ describe('e2e test suite', () => {
                     test('noops when on the definition', async () => {
                         await driver.page.goto(
                             sourcegraphBaseUrl +
-                                '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L29:6'
+                                '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go?L29:6'
                         )
                         await clickHoverJ2D()
                         await driver.assertWindowLocation(
-                            '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L29:6'
+                            '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go?L29:6'
                         )
                     })
 
                     test('does navigation (same repo, same file)', async () => {
                         await driver.page.goto(
                             sourcegraphBaseUrl +
-                                '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L25:10'
+                                '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go?L25:10'
                         )
                         await clickHoverJ2D()
                         await driver.assertWindowLocation(
-                            '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L29:6'
+                            '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go?L29:6'
                         )
                     })
 
                     test('does navigation (same repo, different file)', async () => {
                         await driver.page.goto(
                             sourcegraphBaseUrl +
-                                '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/print.go#L13:31'
+                                '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/print.go?L13:31'
                         )
                         await clickHoverJ2D()
                         await driver.assertWindowLocation(
-                            '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/diff.pb.go#L38:6'
+                            '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/diff.pb.go?L38:6'
                         )
                         // Verify file tree is highlighting the new path.
                         await driver.page.waitForSelector('.tree__row--active [data-tree-path="diff/diff.pb.go"]', {
@@ -1016,11 +1016,11 @@ describe('e2e test suite', () => {
                     test.skip('does navigation (external repo)', async () => {
                         await driver.page.goto(
                             sourcegraphBaseUrl +
-                                '/github.com/sourcegraph/vcsstore@267289226b15e5b03adedc9746317455be96e44c/-/blob/server/diff.go#L27:30'
+                                '/github.com/sourcegraph/vcsstore@267289226b15e5b03adedc9746317455be96e44c/-/blob/server/diff.go?L27:30'
                         )
                         await clickHoverJ2D()
                         await driver.assertWindowLocation(
-                            '/github.com/sourcegraph/go-vcs@aa7c38442c17a3387b8a21f566788d8555afedd0/-/blob/vcs/repository.go#L103:6'
+                            '/github.com/sourcegraph/go-vcs@aa7c38442c17a3387b8a21f566788d8555afedd0/-/blob/vcs/repository.go?L103:6'
                         )
                     })
                 })
@@ -1031,11 +1031,11 @@ describe('e2e test suite', () => {
 
                         await driver.page.goto(
                             sourcegraphBaseUrl +
-                                '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L29:6'
+                                '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go?L29:6'
                         )
                         await clickHoverFindReferences()
                         await driver.assertWindowLocation(
-                            '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L29:6&tab=references'
+                            '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go?L29:6#tab=references'
                         )
 
                         await driver.assertNonemptyLocalRefs()
@@ -1067,7 +1067,7 @@ describe('e2e test suite', () => {
                     test.skip('opens widget and fetches external references', async () => {
                         await driver.page.goto(
                             sourcegraphBaseUrl +
-                                '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L32:16&tab=references'
+                                '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go?L32:16#tab=references'
                         )
 
                         // verify some external refs are fetched (we cannot assert how many, but we can check that the matched results

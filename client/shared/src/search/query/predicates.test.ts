@@ -35,6 +35,12 @@ describe('scanPredicate', () => {
     test('scan invalid nonalphanumeric name', () => {
         expect(scanPredicate('repo', 'contains.yo?inks(stuff)')).toMatchInlineSnapshot('invalid')
     })
+
+    test('resolve field aliases for predicates', () => {
+        expect(scanPredicate('r', 'contains.file(stuff)')).toMatchInlineSnapshot(
+            '{"path":["contains","file"],"parameters":"(stuff)"}'
+        )
+    })
 })
 
 describe('resolveAccess', () => {

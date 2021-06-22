@@ -22,7 +22,7 @@ func TestDequeue(t *testing.T) {
 		expectedPath:     "/.executors/queue/test_queue/dequeue",
 		expectedUsername: "test",
 		expectedPassword: "hunter2",
-		expectedPayload:  `{"executorName": "deadbeef"}`,
+		expectedPayload:  `{"executorHostname": "", "executorName": "deadbeef"}`,
 		responseStatus:   http.StatusOK,
 		responsePayload:  `{"id": 42}`,
 	}
@@ -48,7 +48,7 @@ func TestDequeueNoRecord(t *testing.T) {
 		expectedPath:     "/.executors/queue/test_queue/dequeue",
 		expectedUsername: "test",
 		expectedPassword: "hunter2",
-		expectedPayload:  `{"executorName": "deadbeef"}`,
+		expectedPayload:  `{"executorHostname": "", "executorName": "deadbeef"}`,
 		responseStatus:   http.StatusNoContent,
 		responsePayload:  ``,
 	}
@@ -70,7 +70,7 @@ func TestDequeueBadResponse(t *testing.T) {
 		expectedPath:     "/.executors/queue/test_queue/dequeue",
 		expectedUsername: "test",
 		expectedPassword: "hunter2",
-		expectedPayload:  `{"executorName": "deadbeef"}`,
+		expectedPayload:  `{"executorHostname": "", "executorName": "deadbeef"}`,
 		responseStatus:   http.StatusInternalServerError,
 		responsePayload:  ``,
 	}

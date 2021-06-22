@@ -83,6 +83,8 @@ func TestNullIDResilience(t *testing.T) {
 		fmt.Sprintf(`mutation { createChangesetComments(batchChange: %q, changesets: [%q], body: "test") { id } }`, marshalBatchChangeID(1), marshalChangesetID(0)),
 		fmt.Sprintf(`mutation { reenqueueChangesets(batchChange: %q, changesets: []) { id } }`, marshalBatchChangeID(0)),
 		fmt.Sprintf(`mutation { reenqueueChangesets(batchChange: %q, changesets: [%q]) { id } }`, marshalBatchChangeID(1), marshalChangesetID(0)),
+		fmt.Sprintf(`mutation { mergeChangesets(batchChange: %q, changesets: []) { id } }`, marshalBatchChangeID(0)),
+		fmt.Sprintf(`mutation { mergeChangesets(batchChange: %q, changesets: [%q]) { id } }`, marshalBatchChangeID(1), marshalChangesetID(0)),
 	}
 
 	for _, m := range mutations {
@@ -1204,7 +1206,6 @@ func TestReenqueueChangesets(t *testing.T) {
 		return map[string]interface{}{
 			"batchChange": marshalBatchChangeID(batchChange.ID),
 			"changesets":  []string{string(marshalChangesetID(changeset.ID))},
-			"body":        "test-body",
 		}
 	}
 
@@ -1265,6 +1266,117 @@ func TestReenqueueChangesets(t *testing.T) {
 const mutationReenqueueChangesets = `
 mutation($batchChange: ID!, $changesets: [ID!]!) {
     reenqueueChangesets(batchChange: $batchChange, changesets: $changesets) { id }
+}
+`
+
+func TestMergeChangesets(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := context.Background()
+	db := dbtest.NewDB(t, "")
+	cstore := store.New(db, nil)
+
+	userID := ct.CreateTestUser(t, db, true).ID
+	batchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test-merge", userID)
+	otherBatchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test-merge-other", userID)
+	batchChange := ct.CreateBatchChange(t, ctx, cstore, "test-merge", userID, batchSpec.ID)
+	otherBatchChange := ct.CreateBatchChange(t, ctx, cstore, "test-merge-other", userID, otherBatchSpec.ID)
+	repos, _ := ct.CreateTestRepos(t, context.Background(), db, 1)
+	repo := repos[0]
+	changeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+		Repo:             repo.ID,
+		BatchChange:      batchChange.ID,
+		PublicationState: btypes.ChangesetPublicationStatePublished,
+		ReconcilerState:  btypes.ReconcilerStateCompleted,
+		ExternalState:    btypes.ChangesetExternalStateOpen,
+	})
+	otherChangeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+		Repo:             repo.ID,
+		BatchChange:      otherBatchChange.ID,
+		PublicationState: btypes.ChangesetPublicationStatePublished,
+		ReconcilerState:  btypes.ReconcilerStateCompleted,
+		ExternalState:    btypes.ChangesetExternalStateOpen,
+	})
+	mergedChangeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+		Repo:             repo.ID,
+		BatchChange:      otherBatchChange.ID,
+		PublicationState: btypes.ChangesetPublicationStatePublished,
+		ReconcilerState:  btypes.ReconcilerStateCompleted,
+		ExternalState:    btypes.ChangesetExternalStateMerged,
+	})
+
+	r := &Resolver{store: cstore}
+	s, err := graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	generateInput := func() map[string]interface{} {
+		return map[string]interface{}{
+			"batchChange": marshalBatchChangeID(batchChange.ID),
+			"changesets":  []string{string(marshalChangesetID(changeset.ID))},
+		}
+	}
+
+	var response struct {
+		MergeChangesets apitest.BulkOperation
+	}
+	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+
+	t.Run("0 changesets fails", func(t *testing.T) {
+		input := generateInput()
+		input["changesets"] = []string{}
+		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationMergeChangesets)
+
+		if len(errs) != 1 {
+			t.Fatalf("expected single errors, but got none")
+		}
+		if have, want := errs[0].Message, "specify at least one changeset"; have != want {
+			t.Fatalf("wrong error. want=%q, have=%q", want, have)
+		}
+	})
+
+	t.Run("changeset in different batch change fails", func(t *testing.T) {
+		input := generateInput()
+		input["changesets"] = []string{string(marshalChangesetID(otherChangeset.ID))}
+		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationMergeChangesets)
+
+		if len(errs) != 1 {
+			t.Fatalf("expected single errors, but got none")
+		}
+		if have, want := errs[0].Message, "some changesets could not be found"; have != want {
+			t.Fatalf("wrong error. want=%q, have=%q", want, have)
+		}
+	})
+
+	t.Run("merged changeset fails", func(t *testing.T) {
+		input := generateInput()
+		input["changesets"] = []string{string(marshalChangesetID(mergedChangeset.ID))}
+		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationMergeChangesets)
+
+		if len(errs) != 1 {
+			t.Fatalf("expected single errors, but got none")
+		}
+		if have, want := errs[0].Message, "some changesets could not be found"; have != want {
+			t.Fatalf("wrong error. want=%q, have=%q", want, have)
+		}
+	})
+
+	t.Run("runs successfully", func(t *testing.T) {
+		input := generateInput()
+		apitest.MustExec(actorCtx, t, s, input, &response, mutationMergeChangesets)
+
+		if response.MergeChangesets.ID == "" {
+			t.Fatalf("expected bulk operation to be created, but was not")
+		}
+	})
+}
+
+const mutationMergeChangesets = `
+mutation($batchChange: ID!, $changesets: [ID!]!, $squash: Boolean = false) {
+    mergeChangesets(batchChange: $batchChange, changesets: $changesets, squash: $squash) { id }
 }
 `
 

@@ -8,22 +8,22 @@ import { StatusMessagesResult, StatusMessageFields } from '../graphql-operations
 import { StatusMessagesNavItem } from './StatusMessagesNavItem'
 
 describe('StatusMessagesNavItem', () => {
+    const user = {
+        id: 'VXNlcjox',
+        username: 'user',
+        isSiteAdmin: false,
+    }
+
     test('no messages', () => {
         const fetchMessages = (): Observable<StatusMessagesResult['statusMessages']> => of([])
         expect(
-            mount(
-                <StatusMessagesNavItem
-                    fetchMessages={fetchMessages}
-                    isSiteAdmin={false}
-                    history={createMemoryHistory()}
-                />
-            )
+            mount(<StatusMessagesNavItem fetchMessages={fetchMessages} user={user} history={createMemoryHistory()} />)
         ).toMatchSnapshot()
     })
 
     describe('one CloningProgress message', () => {
         const message: StatusMessageFields = {
-            __typename: 'CloningProgress',
+            type: 'CloningProgress',
             message: 'Currently cloning repositories...',
         }
 
@@ -31,11 +31,7 @@ describe('StatusMessagesNavItem', () => {
         test('as non-site admin', () => {
             expect(
                 mount(
-                    <StatusMessagesNavItem
-                        fetchMessages={fetchMessages}
-                        isSiteAdmin={false}
-                        history={createMemoryHistory()}
-                    />
+                    <StatusMessagesNavItem fetchMessages={fetchMessages} user={user} history={createMemoryHistory()} />
                 )
             ).toMatchSnapshot()
         })
@@ -45,7 +41,7 @@ describe('StatusMessagesNavItem', () => {
                 mount(
                     <StatusMessagesNavItem
                         fetchMessages={fetchMessages}
-                        isSiteAdmin={true}
+                        user={{ ...user, isSiteAdmin: true }}
                         history={createMemoryHistory()}
                     />
                 )
@@ -55,7 +51,7 @@ describe('StatusMessagesNavItem', () => {
 
     describe('one ExternalServiceSyncError message', () => {
         const message: StatusMessageFields = {
-            __typename: 'ExternalServiceSyncError',
+            type: 'ExternalServiceSyncError',
             message: 'failed to list organization kubernetes repos: request returned status 404: Not Found',
             externalService: {
                 id: 'abcd',
@@ -67,11 +63,7 @@ describe('StatusMessagesNavItem', () => {
         test('as non-site admin', () => {
             expect(
                 mount(
-                    <StatusMessagesNavItem
-                        fetchMessages={fetchMessages}
-                        isSiteAdmin={false}
-                        history={createMemoryHistory()}
-                    />
+                    <StatusMessagesNavItem fetchMessages={fetchMessages} user={user} history={createMemoryHistory()} />
                 )
             ).toMatchSnapshot()
         })
@@ -81,7 +73,7 @@ describe('StatusMessagesNavItem', () => {
                 mount(
                     <StatusMessagesNavItem
                         fetchMessages={fetchMessages}
-                        isSiteAdmin={true}
+                        user={{ ...user, isSiteAdmin: true }}
                         history={createMemoryHistory()}
                     />
                 )
@@ -91,7 +83,7 @@ describe('StatusMessagesNavItem', () => {
 
     describe('one SyncError message', () => {
         const message: StatusMessageFields = {
-            __typename: 'SyncError',
+            type: 'SyncError',
             message: 'syncer.sync.store.upsert-repos: pg: unique constraint foobar',
         }
 
@@ -99,11 +91,7 @@ describe('StatusMessagesNavItem', () => {
         test('as non-site admin', () => {
             expect(
                 mount(
-                    <StatusMessagesNavItem
-                        fetchMessages={fetchMessages}
-                        isSiteAdmin={false}
-                        history={createMemoryHistory()}
-                    />
+                    <StatusMessagesNavItem fetchMessages={fetchMessages} user={user} history={createMemoryHistory()} />
                 )
             ).toMatchSnapshot()
         })
@@ -113,7 +101,7 @@ describe('StatusMessagesNavItem', () => {
                 mount(
                     <StatusMessagesNavItem
                         fetchMessages={fetchMessages}
-                        isSiteAdmin={true}
+                        user={{ ...user, isSiteAdmin: true }}
                         history={createMemoryHistory()}
                     />
                 )

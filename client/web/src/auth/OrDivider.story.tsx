@@ -5,9 +5,7 @@ import { WebStory } from '../components/WebStory'
 
 import { OrDivider } from './OrDivider'
 
-const { add } = storiesOf('web/OrDivider', module).addDecorator(story => (
-    <div className="p-3 container web-content">{story()}</div>
-))
+const { add } = storiesOf('web/OrDivider', module).addDecorator(story => <div className="p-3 container">{story()}</div>)
 
 add('Alone', () => (
     <WebStory>

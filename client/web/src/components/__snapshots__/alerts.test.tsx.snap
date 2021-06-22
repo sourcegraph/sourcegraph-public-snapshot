@@ -4,10 +4,6 @@ exports[`ErrorAlert should add a prefix if given 1`] = `
 <div
   className="alert alert-danger"
 >
-  <AlertCircleIcon
-    className="redesign-d-none icon icon-inline"
-  />
-   
   <strong>
     An error happened
     :
@@ -30,7 +26,6 @@ exports[`ErrorAlert should omit the icon if icon={false} 1`] = `
   className="alert alert-danger"
 >
    
-   
   <span
     className="markdown"
     dangerouslySetInnerHTML={
@@ -47,10 +42,6 @@ exports[`ErrorAlert should render a Go multierror nicely 1`] = `
 <div
   className="alert alert-danger"
 >
-  <AlertCircleIcon
-    className="redesign-d-none icon icon-inline"
-  />
-   
    
   <span
     className="markdown"
@@ -71,10 +62,6 @@ exports[`ErrorAlert should render an Error object as an alert 1`] = `
 <div
   className="alert alert-danger"
 >
-  <AlertCircleIcon
-    className="redesign-d-none icon icon-inline"
-  />
-   
    
   <span
     className="markdown"

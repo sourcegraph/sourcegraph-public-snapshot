@@ -68,7 +68,27 @@ type ChangesetSource interface {
 	ReopenChangeset(context.Context, *Changeset) error
 	// CreateComment posts a comment on the Changeset.
 	CreateComment(context.Context, *Changeset, string) error
+	// MergeChangeset merges a Changeset on the code host, if in a mergeable state.
+	// If squash is true, and the code host supports squash merges, the source
+	// must attempt a squash merge. Otherwise, it is expected to perform a regular
+	// merge. If the changeset cannot be merged, because it is in an unmergeable
+	// state, ChangesetNotMergeableError must be returned.
+	MergeChangeset(ctx context.Context, ch *Changeset, squash bool) error
 }
+
+// ChangesetNotMergeableError is returned by MergeChangeset if the changeset
+// could not be merged on the codehost, because some precondition is not met. This
+// is only returned, if the changeset is not mergeable. Other errors, such as
+// network or auth errors should NOT raise this error.
+type ChangesetNotMergeableError struct {
+	ErrorMsg string
+}
+
+func (e ChangesetNotMergeableError) Error() string {
+	return fmt.Sprintf("changeset cannot be merged:\n%s", e.ErrorMsg)
+}
+
+func (e ChangesetNotMergeableError) NonRetryable() bool { return true }
 
 // A Changeset of an existing Repo.
 type Changeset struct {

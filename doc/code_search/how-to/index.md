@@ -7,3 +7,4 @@
 - [Adding repositories to Sourcegraph Cloud](adding_repositories_to_cloud.md)
 - [Searching with search contexts on Sourcegraph Cloud](searching_with_search_contexts.md)
 - [Exhaustive search](exhaustive.md)
+- [How to create a search context with the GraphQL API](create_search_context_graphql.md)

@@ -9,7 +9,7 @@ import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
 import { eventLogger } from '../tracking/eventLogger'
 
-import { SearchType } from './results/streaming/StreamingSearchResults'
+import { SearchType } from './results/StreamingSearchResults'
 
 import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '.'
 
@@ -23,6 +23,12 @@ export interface SubmitSearchParameters
     query: string
     source: 'home' | 'nav' | 'repo' | 'tree' | 'filter' | 'type' | 'scopePage' | 'repogroupPage' | 'excludedResults'
     searchParameters?: { key: string; value: string }[]
+}
+
+const SUBMITTED_SEARCHES_COUNT_KEY = 'submitted-searches-count'
+
+export function getSubmittedSearchesCount(): number {
+    return parseInt(localStorage.getItem(SUBMITTED_SEARCHES_COUNT_KEY) || '0', 10)
 }
 
 /**
@@ -64,6 +70,7 @@ export function submitSearch({
         query: appendContextFilter(query, selectedSearchContextSpec, versionContext),
         source,
     })
+    localStorage.setItem(SUBMITTED_SEARCHES_COUNT_KEY, JSON.stringify(getSubmittedSearchesCount() + 1))
     history.push(path, { ...history.location.state, query })
     if (activation) {
         activation.update({ DidSearch: true })

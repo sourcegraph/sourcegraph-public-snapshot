@@ -315,9 +315,12 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                                 userExternalServicesEnabledFromTags(props.authenticatedUser.tags)) && (
                                 <NavAction>
                                     <StatusMessagesNavItem
-                                        isSiteAdmin={props.authenticatedUser?.siteAdmin || false}
+                                        user={{
+                                            id: props.authenticatedUser.id,
+                                            username: props.authenticatedUser.username,
+                                            isSiteAdmin: props.authenticatedUser?.siteAdmin || false,
+                                        }}
                                         history={history}
-                                        isRedesignEnabled={isRedesignEnabled}
                                     />
                                 </NavAction>
                             )}

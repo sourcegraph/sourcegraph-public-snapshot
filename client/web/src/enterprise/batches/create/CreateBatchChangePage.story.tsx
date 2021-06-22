@@ -6,7 +6,7 @@ import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 import { CreateBatchChangePage } from './CreateBatchChangePage'
 
 const { add } = storiesOf('web/batches/CreateBatchChangePage', module).addDecorator(story => (
-    <div className="p-3 container web-content">{story()}</div>
+    <div className="p-3 container">{story()}</div>
 ))
 
 add('Page', () => (

@@ -15,14 +15,40 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+-
+
+### Changed
+
+-
+
+### Fixed
+
+-
+
+### Removed
+
+-
+
+## 3.29.0
+
+### Added
+
 - Code Insights queries can now run concurrently up to a limit set by the `insights.query.worker.concurrency` site config. [#21219](https://github.com/sourcegraph/sourcegraph/pull/21219)
 - Code Insights workers now support a rate limit for query execution and historical data frame analysis using the `insights.query.worker.rateLimit` and `insights.historical.worker.rateLimit` site configurations. [#21533](https://github.com/sourcegraph/sourcegraph/pull/21533)
 - The GraphQL `Site` `SettingsSubject` type now has an `allowSiteSettingsEdits` field to allow clients to determine whether the instance uses the `GLOBAL_SETTINGS_FILE` environment variable. [#21827](https://github.com/sourcegraph/sourcegraph/pull/21827)
-- Code Insights creation UI now has auto-save logic and clear all fields functionality [#21744](https://github.com/sourcegraph/sourcegraph/pull/21744)
-- Code Insights creation UI now has a suggestions support for the repository fields [#21699](https://github.com/sourcegraph/sourcegraph/pull/21699)
+- The Code Insights creation UI now remembers previously filled-in field values when returning to the form after having navigated away. [#21744](https://github.com/sourcegraph/sourcegraph/pull/21744)
+- The Code Insights creation UI now shows autosuggestions for the repository field. [#21699](https://github.com/sourcegraph/sourcegraph/pull/21699)
 - A new bulk operation to retry many changesets at once has been added to Batch Changes. [#21173](https://github.com/sourcegraph/sourcegraph/pull/21173)
 - A `security_event_logs` database table has been added in support of upcoming security-related efforts. [#21949](https://github.com/sourcegraph/sourcegraph/pull/21949)
 - Added featured Sourcegraph extensions query to the GraphQL API, as well as a section in the extension registry to display featured extensions. [#21665](https://github.com/sourcegraph/sourcegraph/pull/21665)
+- The search page now has a `create insight` button to create search-based insight based on your search query [#21943](https://github.com/sourcegraph/sourcegraph/pull/21943)
+- Added support for Terraform syntax highlighting. [#22040](https://github.com/sourcegraph/sourcegraph/pull/22040)
+- A new bulk operation to merge many changesets at once has been added to Batch Changes. [#21959](https://github.com/sourcegraph/sourcegraph/pull/21959)
+- Pings include aggregated usage for the Code Insights creation UI, organization visible insight count per insight type, and insight step size in days. [#21671](https://github.com/sourcegraph/sourcegraph/pull/21671)
+- Search-based insight creation UI now supports `count:` filter in data series query input. [#22049](https://github.com/sourcegraph/sourcegraph/pull/22049)
+- Code Insights background workers will now index commits in a new table `commit_index` for future optimization efforts. [#21994](https://github.com/sourcegraph/sourcegraph/pull/21994)
+- The creation UI for search-based insights now supports the `count:` filter in the data series query input. [#22049](https://github.com/sourcegraph/sourcegraph/pull/22049)
+- A new service, `worker`, has been introduced to run background jobs that were previously run in the frontend. See the [deployment documentation](https://docs.sourcegraph.com/admin/workers) for additional details. [#21768](https://github.com/sourcegraph/sourcegraph/pull/21768)
 
 ### Changed
 
@@ -47,11 +73,15 @@ All notable changes to Sourcegraph are documented in this file.
 - Timing out on some branches but getting results on others will no longer give an alert that all repos timed out. [#20319](https://github.com/sourcegraph/sourcegraph/issues/20319)
 - Stricter validation of structural search queries. The `type:` parameter is not supported for structural searches and returns an appropriate alert. [#21487](https://github.com/sourcegraph/sourcegraph/pull/21487)
 - Batch changeset specs that are not attached to changesets will no longer prematurely expire before the batch specs that they are associated with. [#21678](https://github.com/sourcegraph/sourcegraph/pull/21678)
+- The Y-axis of Code Insights line charts no longer start at a negative value. [#22018](https://github.com/sourcegraph/sourcegraph/pull/22018)
+- Correctly handle field aliases in the query (like `r:` versus `repo:`) when used with `contains` predicates. [#22105](https://github.com/sourcegraph/sourcegraph/pull/22105)
+- Running a code insight over a timeframe when the repository didn't yet exist doesn't break the entire insight anymore. [#21288](https://github.com/sourcegraph/sourcegraph/pull/21288)
 
 ### Removed
 
 - The deprecated GraphQL `icon` field on CommitSearchResult and Repository was removed. [#21310](https://github.com/sourcegraph/sourcegraph/pull/21310)
 - The undocumented `index` filter was removed from search type-ahead suggestions. [#18806](https://github.com/sourcegraph/sourcegraph/issues/18806)
+- Code host connection tokens aren't used for creating changesets anymore when the user is site admin and no credential has been specified. [#16814](https://github.com/sourcegraph/sourcegraph/issues/16814)
 
 ## 3.28.0
 

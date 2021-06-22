@@ -15,7 +15,13 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { ErrorLike, isErrorLike, asError } from '@sourcegraph/shared/src/util/errors'
 import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
-import { AbsoluteRepoFile, makeRepoURI, ModeSpec, ParsedRepoURI, parseHash } from '@sourcegraph/shared/src/util/url'
+import {
+    AbsoluteRepoFile,
+    makeRepoURI,
+    ModeSpec,
+    ParsedRepoURI,
+    parseQueryAndHash,
+} from '@sourcegraph/shared/src/util/url'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { AuthenticatedUser } from '../../auth'
@@ -211,7 +217,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
             blobInfoOrError &&
             !isErrorLike(blobInfoOrError) &&
             blobInfoOrError.richHTML &&
-            !parseHash(props.location.hash).line
+            !parseQueryAndHash(props.location.search, props.location.hash).line
                 ? 'rendered'
                 : 'code'
     }

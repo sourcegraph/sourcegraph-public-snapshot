@@ -9,7 +9,7 @@ import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 import { BulkOperationsAlerts } from './BulkOperationsAlerts'
 
 const { add } = storiesOf('web/batches/details/BulkOperationsAlerts', module).addDecorator(story => (
-    <div className="p-3 container web-content">{story()}</div>
+    <div className="p-3 container">{story()}</div>
 ))
 
 add('Processing', () => {
