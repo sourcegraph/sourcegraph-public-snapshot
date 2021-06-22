@@ -46,7 +46,7 @@ export const InsightsRouter = withAuthenticatedUser<InsightsRouterProps>(props =
 
     const settings = !isErrorLike(outerProps.settingsCascade.final) ? outerProps.settingsCascade.final : {}
     const experimentalFeatures: SettingsExperimentalFeatures = settings?.experimentalFeatures ?? {}
-    const isDashboardsEnabled = !experimentalFeatures.codeInsightsDashboards
+    const isDashboardsEnabled = experimentalFeatures.codeInsightsDashboards
 
     return (
         <Switch>
