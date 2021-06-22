@@ -90,18 +90,27 @@ func (d *duplicateChecker) count() (duplicates, nonDupicates int) {
 }
 
 type duplicateChecker struct {
+	mu                        sync.RWMutex
 	pathIDs                   map[string]struct{}
 	duplicates, nonDuplicates int
 }
 
-func (d *duplicateChecker) check(pathID string) bool {
+func (d *duplicateChecker) add(pathID string) bool {
+	d.mu.Lock()
+	defer d.mu.Unlock()
 	if _, ok := d.pathIDs[pathID]; ok {
 		d.duplicates++
-		return true
+		return false
 	}
 	d.nonDuplicates++
 	d.pathIDs[pathID] = struct{}{}
-	return false
+	return true
+}
+
+func (d *duplicateChecker) count() (duplicates, nonDupicates int) {
+	d.mu.RLock()
+	defer d.mu.RUnlock()
+	return d.duplicates, d.nonDuplicates
 }
 
 // pageCollector collects all of the children for a single documentation page.
@@ -136,10 +145,10 @@ func (p *pageCollector) collect(ctx context.Context, ch chan<- *semantic.Documen
 			this.PathID = pathID + "/" + cleanPathIDElement(documentation.Identifier)
 		default:
 			this.PathID = pathID + "#" + cleanPathIDFragment(documentation.Identifier)
-		}
-		if p.dupChecker.check(this.PathID) {
-			log15.Warn("API docs: duplicate pathID forbidden", "pathID", this.PathID)
-			return
+			if !p.dupChecker.add(this.PathID) {
+				log15.Warn("API docs: duplicate pathID forbidden", "pathID", this.PathID)
+				return
+			}
 		}
 		if parent != nil {
 			if this.Documentation.NewPage {
@@ -150,13 +159,17 @@ func (p *pageCollector) collect(ctx context.Context, ch chan<- *semantic.Documen
 				parent.Children = append(parent.Children, semantic.DocumentationNodeChild{
 					PathID: this.PathID,
 				})
-				remainingPages = append(remainingPages, &pageCollector{
-					isChildPage:                 true,
-					parentPathID:                parent.PathID,
-					state:                       p.state,
-					startingDocumentationResult: documentationResult,
-					dupChecker:                  p.dupChecker,
-				})
+				if p.walkedPages.add(this.PathID) {
+					remainingPages = append(remainingPages, &pageCollector{
+						isChildPage:                 true,
+						parentPathID:                parent.PathID,
+						state:                       p.state,
+						startingDocumentationResult: documentationResult,
+						dupChecker:                  p.dupChecker,
+						walkedPages:                 p.walkedPages,
+					})
+					return
+				}
 			} else {
 				parent.Children = append(parent.Children, semantic.DocumentationNodeChild{
 					Node: this,
