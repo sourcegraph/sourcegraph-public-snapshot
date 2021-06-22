@@ -2062,7 +2062,7 @@ This panel indicates time since oldest sync.
 
 #### repo-updater: src_repoupdater_syncer_sync_errors_total
 
-This panel indicates sync error rate.
+This panel indicates site level external service sync error rate.
 
 > NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-src-repoupdater-syncer-sync-errors-total).
 
