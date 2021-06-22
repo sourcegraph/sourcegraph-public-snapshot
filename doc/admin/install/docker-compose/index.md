@@ -4,6 +4,8 @@ If you need scalability and high-availability beyond what a single-node [Docker 
 
 If you want to migrate from the single-container server (`sourcegraph/server`) to the Docker Compose deployment, refer to this [migration guide](./migrate.md).
 
+If you want to backup and/or restore your Docker Compose deployment, refer to this [backup and restore guide](./backup.md)
+
 ## Requirements
 
 - [Sourcegraph Enterprise license](configure.md#add-license-key). _You can run through these instructions without one, but you must obtain a license for instances of more than 10 users._
