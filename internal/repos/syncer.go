@@ -35,7 +35,12 @@ type Syncer struct {
 	// Synced is sent a collection of Repos that were synced by Sync (only if Synced is non-nil)
 	Synced chan Diff
 
-	// SubsetSynced is sent the result of a single repo sync that were synced by SyncRepo (only if SubsetSynced is non-nil)
+	// SubsetSynced is sent the result of a single repo sync that were synced by SyncRepo (only if
+	// SubsetSynced is non-nil)
+	//
+	// TODO: The name of this channel does not make it easy to understand its use case. This is
+	// triggered by the streaming inserter.
+	// https://sourcegraph.atlassian.net/browse/COREAPP-128
 	SubsetSynced chan Diff
 
 	// Logger if non-nil is logged to.
@@ -142,6 +147,14 @@ func (s *Syncer) TriggerExternalServiceSync(ctx context.Context, id int64) error
 	return s.Store.EnqueueSingleSyncJob(ctx, id)
 }
 
+type externalServiceOwnerType string
+
+const (
+	ownerUndefined externalServiceOwnerType = ""
+	ownerSite      externalServiceOwnerType = "site"
+	ownerUser      externalServiceOwnerType = "user"
+)
+
 // SyncExternalService syncs repos using the supplied external service.
 func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalServiceID int64, minSyncInterval time.Duration) (err error) {
 	var (
@@ -155,8 +168,9 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalSer
 		s.Logger.Debug("Syncing external service", "serviceID", externalServiceID)
 	}
 
+	owner := ownerUndefined
 	ctx, save := s.observe(ctx, "Syncer.SyncExternalService", "")
-	defer save(&diff, &err)
+	defer save(&diff, &owner, &err)
 
 	ids := []int64{externalServiceID}
 	// We don't use tx here as the sourcing process below can be slow and we don't
@@ -170,11 +184,16 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalSer
 		return errors.Errorf("want 1 external service but got %d", len(svcs))
 	}
 	svc := svcs[0]
-	isUserOwned := svc.NamespaceUserID > 0
+
+	if svc.NamespaceUserID > 0 {
+		owner = ownerUser
+	} else {
+		owner = ownerSite
+	}
 
 	onSourced := func(*types.Repo) error { return nil } //noop
 
-	if isUserOwned {
+	if owner == ownerUser {
 		// If we are over our limit for user added repos we abort the sync
 		totalAllowed := uint64(s.UserReposMaxPerSite)
 		if totalAllowed == 0 {
@@ -206,7 +225,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalSer
 		// This is a site level external service. We have a channel to handle streaming inserts,
 		// therefore we should create an inserter. Note that it inserts outside of our transaction
 		// so that repos are visible to the rest of our system immediately.
-		onSourced, err = s.makeNewRepoInserter(ctx, s.Store, isUserOwned)
+		onSourced, err = s.makeNewRepoInserter(ctx, s.Store, owner)
 		if err != nil {
 			return errors.Wrap(err, "syncer.sync.streaming")
 		}
@@ -231,7 +250,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalSer
 	// Unless our site config explicitly allows private code or the user has the
 	// "AllowUserExternalServicePrivate" tag, user added external services should
 	// only sync public code.
-	if isUserOwned {
+	if owner == ownerUser {
 		if mode, err := database.UsersWith(tx).UserAllowedExternalServices(ctx, svc.NamespaceUserID); err != nil {
 			return errors.Wrap(err, "checking if user can add private code")
 		} else if mode != conf.ExternalServiceModeAll {
@@ -462,8 +481,11 @@ func calcSyncInterval(now time.Time, lastSync time.Time, minSyncInterval time.Du
 func (s *Syncer) SyncRepo(ctx context.Context, store *Store, sourcedRepo *types.Repo) (err error) {
 	var diff Diff
 
+	// SyncRepo is only used for site level external services on sourcegraph.com
+	owner := ownerSite
+
 	ctx, save := s.observe(ctx, "Syncer.SyncRepo", string(sourcedRepo.Name))
-	defer save(&diff, &err)
+	defer save(&diff, &owner, &err)
 
 	var txs *Store
 	if txs, err = store.Transact(ctx); err != nil {
@@ -478,13 +500,16 @@ func (s *Syncer) SyncRepo(ctx context.Context, store *Store, sourcedRepo *types.
 
 // insertIfNew is a specialization of SyncRepo. It will insert sourcedRepo
 // if there are no related repositories, otherwise does nothing.
-func (s *Syncer) insertIfNew(ctx context.Context, store *Store, publicOnly bool, sourcedRepo *types.Repo) (err error) {
+func (s *Syncer) insertIfNew(ctx context.Context, store *Store, sourcedRepo *types.Repo, owner externalServiceOwnerType) (err error) {
 	var diff Diff
 
 	ctx, save := s.observe(ctx, "Syncer.InsertIfNew", string(sourcedRepo.Name))
-	defer save(&diff, &err)
+	defer save(&diff, &owner, &err)
 
-	diff, err = s.syncRepo(ctx, store, true, publicOnly, sourcedRepo)
+	// insertIfNew is only used for streaming inserter, which is currently only enabled on customer
+	// instances. Therefore we set publicOnly to false because customer instances do not have any
+	// limitation for private code.
+	diff, err = s.syncRepo(ctx, store, true, false, sourcedRepo)
 	return err
 }
 
@@ -811,7 +836,7 @@ func (s *Syncer) sourced(ctx context.Context, svc *types.ExternalService, onSour
 
 // makeNewRepoInserter returns a function that will insert repos.
 // If publicOnly is set it will never insert a private repo.
-func (s *Syncer) makeNewRepoInserter(ctx context.Context, store *Store, publicOnly bool) (func(*types.Repo) error, error) {
+func (s *Syncer) makeNewRepoInserter(ctx context.Context, store *Store, owner externalServiceOwnerType) (func(*types.Repo) error, error) {
 	// insertIfNew requires querying the store for related repositories, and
 	// will do nothing if `insertOnly` is set and there are any related repositories. Most
 	// repositories will already have related repos, so to avoid that cost we
@@ -828,21 +853,27 @@ func (s *Syncer) makeNewRepoInserter(ctx context.Context, store *Store, publicOn
 			return nil
 		}
 
-		err := s.insertIfNew(ctx, store, publicOnly, r)
+		err := s.insertIfNew(ctx, store, r, owner)
 		if err != nil && s.Logger != nil {
 			// Best-effort, final syncer will handle this repo if this failed.
 			s.Logger.Warn("streaming insert failed", "external_id", r.ExternalRepo, "error", err)
+			return err
 		}
 		return nil
 	}, nil
 }
 
-func (s *Syncer) observe(ctx context.Context, family, title string) (context.Context, func(*Diff, *error)) {
+func (s *Syncer) observe(ctx context.Context, family, title string) (context.Context, func(*Diff, *externalServiceOwnerType, *error)) {
 	began := s.Now()
 	tr, ctx := trace.New(ctx, family, title)
 
-	return ctx, func(d *Diff, err *error) {
-		syncStarted.WithLabelValues(family).Inc()
+	return ctx, func(d *Diff, owner *externalServiceOwnerType, err *error) {
+		var ownerTag string
+		if owner != nil {
+			ownerTag = string(*owner)
+		}
+
+		syncStarted.WithLabelValues(family, ownerTag).Inc()
 
 		now := s.Now()
 		took := s.Now().Sub(began).Seconds()
@@ -876,7 +907,7 @@ func (s *Syncer) observe(ctx context.Context, family, title string) (context.Con
 
 		if !success {
 			tr.SetError(*err)
-			syncErrors.WithLabelValues(family).Add(1)
+			syncErrors.WithLabelValues(family, ownerTag).Add(1)
 		}
 
 		tr.Finish()
