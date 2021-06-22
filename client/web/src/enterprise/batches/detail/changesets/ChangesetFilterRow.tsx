@@ -17,12 +17,14 @@ export interface ChangesetFilterRowProps {
     history: H.History
     location: H.Location
     onFiltersChange: (newFilters: ChangesetFilters) => void
+    searchPlaceholderText: string
 }
 
 export const ChangesetFilterRow: React.FunctionComponent<ChangesetFilterRowProps> = ({
     history,
     location,
     onFiltersChange,
+    searchPlaceholderText,
 }) => {
     const searchElement = useRef<HTMLInputElement | null>(null)
     const searchParameters = new URLSearchParams(location.search)
@@ -93,7 +95,7 @@ export const ChangesetFilterRow: React.FunctionComponent<ChangesetFilterRowProps
                             type="search"
                             ref={searchElement}
                             defaultValue={search}
-                            placeholder="Search title and repository name"
+                            placeholder={searchPlaceholderText}
                         />
                     </Form>
                 </div>

@@ -45,12 +45,6 @@ export const RepoBatchChanges: React.FunctionComponent<Props> = ({
     // queryExternalChangesetWithFileDiffs,
     expandByDefault,
 }) => {
-    const [filters, setFilters] = useState<PreviewFilters>({
-        search: null,
-        currentState: null,
-        action: null,
-    })
-
     // Whether all the changesets are selected, beyond the scope of what's on screen right now.
     const [allSelected, setAllSelected] = useState<boolean>(false)
     // // The overall amount of all changesets in the connection.
@@ -111,20 +105,20 @@ export const RepoBatchChanges: React.FunctionComponent<Props> = ({
     //     setAllSelected(true)
     // }, [])
 
-    // const [changesetFilters, setChangesetFilters] = useState<ChangesetFilters>({
-    //     checkState: null,
-    //     state: null,
-    //     reviewState: null,
-    //     search: null,
-    // })
+    const [changesetFilters, setChangesetFilters] = useState<ChangesetFilters>({
+        checkState: null,
+        state: null,
+        reviewState: null,
+        search: null,
+    })
 
-    // const setChangesetFiltersAndDeselectAll = useCallback(
-    //     (filters: ChangesetFilters) => {
-    //         deselectAll()
-    //         setChangesetFilters(filters)
-    //     },
-    //     [deselectAll, setChangesetFilters]
-    // )
+    const setChangesetFiltersAndDeselectAll = useCallback(
+        (filters: ChangesetFilters) => {
+            deselectAll()
+            setChangesetFilters(filters)
+        },
+        [deselectAll, setChangesetFilters]
+    )
 
     const query = useCallback(
         (args: FilteredConnectionQueryArguments) => {
@@ -133,9 +127,11 @@ export const RepoBatchChanges: React.FunctionComponent<Props> = ({
                 repoID: repo.id,
                 first: args.first ?? null,
                 after: args.after ?? null,
-                search: filters.search,
-                currentState: filters.currentState,
-                action: filters.action,
+                search: changesetFilters.search,
+                // TODO:
+                // state: changesetFilters.state,
+                // reviewState: changesetFilters.reviewState,
+                // checkState: changesetFilters.checkState,
             }
             return queryRepoBatchChanges(passedArguments).pipe(
                 tap(data => {
@@ -164,12 +160,36 @@ export const RepoBatchChanges: React.FunctionComponent<Props> = ({
                 })
             )
         },
-        [queryRepoBatchChanges, filters.search, filters.currentState, filters.action, repo.id, repo.name]
+        [queryRepoBatchChanges, changesetFilters.search, repo.id, repo.name]
     )
+
+    // TODO:
+    // const showSelectRow = viewerCanAdminister && selectedChangesets.size > 0
+    const showSelectRow = false
 
     return (
         <Container>
-            <PreviewFilterRow history={history} location={location} onFiltersChange={setFilters} />
+            {!hideFilters && !showSelectRow && (
+                <ChangesetFilterRow
+                    history={history}
+                    location={location}
+                    onFiltersChange={setChangesetFiltersAndDeselectAll}
+                    searchPlaceholderText="Search changeset title"
+                />
+            )}
+            {/* TODO: */}
+            {/* {showSelectRow && queryArguments && (
+                <ChangesetSelectRow
+                    batchChangeID={batchChangeID}
+                    selected={selectedChangesets}
+                    onSubmit={deselectAll}
+                    totalCount={totalChangesetCount}
+                    allVisibleSelected={allSelectedCheckboxChecked}
+                    allSelected={allSelected}
+                    setAllSelected={onSelectAll}
+                    queryArguments={queryArguments}
+                />
+            )} */}
             <FilteredConnection<RepoBatchChange, Omit<BatchChangeNodeProps, 'node'>, RepoBatchChangesHeaderProps>
                 history={history}
                 location={location}
