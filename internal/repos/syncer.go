@@ -148,12 +148,12 @@ func (s *Syncer) TriggerExternalServiceSync(ctx context.Context, id int64) error
 	return s.Store.EnqueueSingleSyncJob(ctx, id)
 }
 
-type ownerType string
+type externalServiceOwnerType string
 
 const (
-	ownerUndefined ownerType = ""
-	ownerSite      ownerType = "site"
-	ownerUser      ownerType = "user"
+	ownerUndefined externalServiceOwnerType = ""
+	ownerSite      externalServiceOwnerType = "site"
+	ownerUser      externalServiceOwnerType = "user"
 )
 
 // SyncExternalService syncs repos using the supplied external service.
@@ -500,7 +500,7 @@ func (s *Syncer) SyncRepo(ctx context.Context, store *Store, sourcedRepo *types.
 
 // insertIfNew is a specialization of SyncRepo. It will insert sourcedRepo
 // if there are no related repositories, otherwise does nothing.
-func (s *Syncer) insertIfNew(ctx context.Context, store *Store, sourcedRepo *types.Repo, owner ownerType) (err error) {
+func (s *Syncer) insertIfNew(ctx context.Context, store *Store, sourcedRepo *types.Repo, owner externalServiceOwnerType) (err error) {
 	var diff Diff
 
 	ctx, save := s.observe(ctx, "Syncer.InsertIfNew", string(sourcedRepo.Name))
@@ -836,7 +836,7 @@ func (s *Syncer) sourced(ctx context.Context, svc *types.ExternalService, onSour
 
 // makeNewRepoInserter returns a function that will insert repos.
 // If publicOnly is set it will never insert a private repo.
-func (s *Syncer) makeNewRepoInserter(ctx context.Context, store *Store, owner ownerType) (func(*types.Repo) error, error) {
+func (s *Syncer) makeNewRepoInserter(ctx context.Context, store *Store, owner externalServiceOwnerType) (func(*types.Repo) error, error) {
 	// insertIfNew requires querying the store for related repositories, and
 	// will do nothing if `insertOnly` is set and there are any related repositories. Most
 	// repositories will already have related repos, so to avoid that cost we
@@ -863,11 +863,11 @@ func (s *Syncer) makeNewRepoInserter(ctx context.Context, store *Store, owner ow
 	}, nil
 }
 
-func (s *Syncer) observe(ctx context.Context, family, title string) (context.Context, func(*Diff, *ownerType, *error)) {
+func (s *Syncer) observe(ctx context.Context, family, title string) (context.Context, func(*Diff, *externalServiceOwnerType, *error)) {
 	began := s.Now()
 	tr, ctx := trace.New(ctx, family, title)
 
-	return ctx, func(d *Diff, owner *ownerType, err *error) {
+	return ctx, func(d *Diff, owner *externalServiceOwnerType, err *error) {
 		syncStarted.WithLabelValues(family, string(*owner)).Inc()
 
 		now := s.Now()
