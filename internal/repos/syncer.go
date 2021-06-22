@@ -482,7 +482,8 @@ func calcSyncInterval(now time.Time, lastSync time.Time, minSyncInterval time.Du
 func (s *Syncer) SyncRepo(ctx context.Context, store *Store, sourcedRepo *types.Repo) (err error) {
 	var diff Diff
 
-	owner := ownerUndefined
+	// SyncRepo is only used for site level external services on sourcegraph.com
+	owner := ownerSite
 
 	ctx, save := s.observe(ctx, "Syncer.SyncRepo", string(sourcedRepo.Name))
 	defer save(&diff, &owner, &err)
