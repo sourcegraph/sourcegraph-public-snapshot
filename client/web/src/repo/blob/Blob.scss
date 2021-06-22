@@ -44,6 +44,10 @@
             transition: background 200ms ease-out;
             &.selected {
                 background: var(--color-bg-4);
+
+                .theme-dark & {
+                    background: var(--gray-12);
+                }
             }
         }
 
