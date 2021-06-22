@@ -151,7 +151,6 @@ func (s *Syncer) TriggerExternalServiceSync(ctx context.Context, id int64) error
 type ownerType string
 
 const (
-	// TODO: Verify if empty string does not tag the metric.
 	ownerUndefined ownerType = ""
 	ownerSite      ownerType = "site"
 	ownerUser      ownerType = "user"
