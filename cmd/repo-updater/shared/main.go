@@ -249,7 +249,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		// WARNING: This enables the streaming inserter which allows it to sync private repos. If
 		// this is ever enabled for sourcegraph.com, we want to be sure we are not unintentionally
 		// syncing private repos.
-		syncer.SubsetSynced = make(chan repos.Diff)
+		syncer.SingleRepoSynced = make(chan repos.Diff)
 	}
 
 	go watchSyncer(ctx, syncer, scheduler, gps)
@@ -434,7 +434,7 @@ func watchSyncer(ctx context.Context, syncer *repos.Syncer, sched scheduler, gps
 				}
 			}()
 
-		case diff := <-syncer.SubsetSynced:
+		case diff := <-syncer.SingleRepoSynced:
 			if !conf.Get().DisableAutoGitUpdates {
 				sched.UpdateFromDiff(diff)
 			}
