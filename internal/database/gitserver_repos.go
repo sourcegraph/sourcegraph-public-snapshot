@@ -95,7 +95,7 @@ FROM repo
     WHERE repo.deleted_at IS NULL
 `
 	if options.OnlyWithoutShard {
-		q = q + "AND shard_id = ''"
+		q = q + "AND (gr.shard_id = '' OR gr IS NULL)"
 	}
 
 	rows, err := s.Query(ctx, sqlf.Sprintf(q))

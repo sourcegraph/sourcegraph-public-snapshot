@@ -58,7 +58,7 @@ func TestIterateRepoGitserverStatus(t *testing.T) {
 	var statusCount int
 
 	// Iterate
-	err = GitserverRepos(db).IterateRepoGitserverStatus(ctx, func(repo types.RepoGitserverStatus) error {
+	err = GitserverRepos(db).IterateRepoGitserverStatus(ctx, IterateRepoGitserverStatusOptions{}, func(repo types.RepoGitserverStatus) error {
 		repoCount++
 		if repo.GitserverRepo != nil {
 			statusCount++
@@ -80,6 +80,20 @@ func TestIterateRepoGitserverStatus(t *testing.T) {
 	wantStatusCount := 1
 	if statusCount != wantStatusCount {
 		t.Fatalf("Expected %d statuses, got %d", wantStatusCount, statusCount)
+	}
+
+	var noShardCount int
+	// Iterate again against repos with no shard
+	err = GitserverRepos(db).IterateRepoGitserverStatus(ctx, IterateRepoGitserverStatusOptions{OnlyWithoutShard: true}, func(repo types.RepoGitserverStatus) error {
+		noShardCount++
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if noShardCount != 1 {
+		t.Fatalf("Want %d, got %d", 1, noShardCount)
 	}
 }
 
