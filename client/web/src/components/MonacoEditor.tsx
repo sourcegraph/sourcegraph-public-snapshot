@@ -20,19 +20,19 @@ const SOURCEGRAPH_DARK = 'sourcegraph-dark'
 const darkColors: monaco.editor.IColors = {
     background: '#181b26', // --color-bg-1
     'editor.background': '#181b26', // --color-bg-1
-    'textLink.activeBackground': '#1d212f', // --color-bg-2
+    'textLink.activeBackground': '#343a4d', // --color-bg-3
     'editor.foreground': '#dbe2f0', // --search-query-text-color
     'editorCursor.foreground': '#dbe2f0', // --search-query-text-color
     'editorSuggestWidget.background': '#181b26', // --color-bg-1
     'editorSuggestWidget.foreground': '#dbe2f0', // --search-query-text-color
     'editorSuggestWidget.highlightForeground': '#4393e7', // --search-filter-keyword-color
-    'editorSuggestWidget.selectedBackground': '#1d212f', // --color-bg-2
-    'list.hoverBackground': '#1d212f', // --color-bg-2
+    'editorSuggestWidget.selectedBackground': '#343a4d', // --color-bg-3
+    'list.hoverBackground': '#343a4d', // --color-bg-3
     'editorSuggestWidget.border': '#262b38', // --border-color
     'editorHoverWidget.background': '#181b26', // --color-bg-1
     'editorHoverWidget.foreground': '#dbe2f0', // --search-query-text-color
     'editorHoverWidget.border': '#262b38', // --border-color
-    'editor.hoverHighlightBackground': '#1d212f', // --color-bg-2
+    'editor.hoverHighlightBackground': '#343a4d', // --color-bg-3
 }
 
 const darkRules: monaco.editor.ITokenThemeRule[] = [
