@@ -13,6 +13,7 @@ import { FeedbackBadge } from '../../../components/FeedbackBadge'
 import { Page } from '../../../components/Page'
 import { CodeInsightsIcon, InsightsViewGrid, InsightsViewGridProps } from '../../components'
 import { InsightsApiContext } from '../../core/backend/api-provider'
+import { InsightDashboard } from '../../core/types';
 
 export interface DashboardsPageProps
     extends Omit<InsightsViewGridProps, 'views'>,
@@ -38,13 +39,14 @@ export const DashboardsPage: React.FunctionComponent<DashboardsPageProps> = prop
             return undefined
         }
 
-        const dashboardConfiguration = settingsCascade.final[`insightDashboard.${dashboardID}`]
+        const dashboardConfiguration: InsightDashboard = settingsCascade.final[`insightDashboard.${dashboardID}`]
 
+        // if dashboard doesn't exist in final settings we don't need load anything
         if (!dashboardConfiguration) {
             return []
         }
 
-        return dashboardConfiguration.ids
+        return dashboardConfiguration.insightsIds
     }, [dashboardID, settingsCascade])
 
     const views = useObservable(
