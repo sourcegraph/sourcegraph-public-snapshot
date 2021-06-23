@@ -23,7 +23,7 @@ type ObservablePanel struct {
 // with recommended defaults.
 func Panel() ObservablePanel {
 	return ObservablePanel{
-		panelType: "graph",
+		panelType: PanelTypeGraph,
 		options: []ObservablePanelOption{
 			PanelOptions.basicPanel(), // required basic values
 			PanelOptions.OpinionatedDefaults(),
@@ -36,7 +36,7 @@ func Panel() ObservablePanel {
 // with an extremely minimal heatmap panel.
 func PanelHeatmap() ObservablePanel {
 	return ObservablePanel{
-		panelType: "heatmap",
+		panelType: PanelTypeHeatmap,
 		options: []ObservablePanelOption{
 			PanelOptions.basicPanel(), // required basic values
 		},
