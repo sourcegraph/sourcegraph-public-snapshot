@@ -6,6 +6,7 @@ export type InsightDashboardVisibility = string
 
 export interface InsightDashboard {
     id: string
+    title: string
     visibility: InsightDashboardVisibility
     insightsIds: string[]
 }
