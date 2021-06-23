@@ -210,18 +210,62 @@ type Documentation struct {
 	SearchKey string `json:"searchKey"`
 
 	// Tags about the type of content this documentation contains.
-	Tags []DocumentationTag `json:"tags"`
+	Tags []Tag `json:"tags"`
 }
 
-type DocumentationTag string
+type Tag string
 
 const (
 	// The documentation describes a concept that is private/unexported, not a public/exported
 	// concept.
-	DocumentationPrivate DocumentationTag = "private"
+	TagPrivate Tag = "private"
 
 	// The documentation describes a concept that is deprecated.
-	DocumentationDeprecated DocumentationTag = "deprecated"
+	TagDeprecated Tag = "deprecated"
+
+	// The documentation describes e.g. a test function or concept related to testing.
+	TagTest Tag = "test"
+
+	// The documentation describes e.g. an example function or example code.
+	TagExample Tag = "example"
+
+	// The documentation describes license information.
+	TagLicense Tag = "license"
+
+	// The documentation describes owner information.
+	TagOwner Tag = "owner"
+
+	// The documentation describes package/library registry information, e.g. where a package is
+	// available for download.
+	TagRegistryInfo Tag = "owner"
+
+	// Tags derived from SymbolKind
+	TagFile          Tag = "file"
+	TagModule        Tag = "module"
+	TagNamespace     Tag = "namespace"
+	TagPackage       Tag = "package"
+	TagClass         Tag = "class"
+	TagMethod        Tag = "method"
+	TagProperty      Tag = "property"
+	TagField         Tag = "field"
+	TagConstructor   Tag = "constructor"
+	TagEnum          Tag = "enum"
+	TagInterface     Tag = "interface"
+	TagFunction      Tag = "function"
+	TagVariable      Tag = "variable"
+	TagConstant      Tag = "constant"
+	TagString        Tag = "string"
+	TagNumber        Tag = "number"
+	TagBoolean       Tag = "boolean"
+	TagArray         Tag = "array"
+	TagObject        Tag = "object"
+	TagKey           Tag = "key"
+	TagNull          Tag = "null"
+	TagEnumNumber    Tag = "enumNumber"
+	TagStruct        Tag = "struct"
+	TagEvent         Tag = "event"
+	TagOperator      Tag = "operator"
+	TagTypeParameter Tag = "typeParameter"
 )
 
 // A "documentationString" edge connects a "documentationResult" vertex to its label or detail
