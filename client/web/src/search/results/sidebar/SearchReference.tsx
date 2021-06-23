@@ -1,6 +1,7 @@
-import React, { ReactElement, useCallback, useState } from 'react'
+import React, { ReactElement, useCallback, useMemo, useState } from 'react'
 import classNames from 'classnames'
 import { Collapse } from 'reactstrap'
+import { Tab, TabList, TabPanel, TabPanelProps, TabPanels, Tabs, useTabsContext } from '@reach/tabs'
 
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 
@@ -16,59 +17,139 @@ import { Selection } from 'monaco-editor'
 import { debounceTime, distinctUntilChanged, map, tap } from 'rxjs/operators'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql/schema'
+import { Link } from '@sourcegraph/shared/src/components/Link'
+import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
+import { escapeRegExp } from 'lodash'
+
+const SEARCH_REFERENCE_TAB_KEY = 'SearchProduct.SearchReference.Tab'
 
 interface SearchReferenceInfo {
-    placeholder?: string
+    type: FilterType
+    placeholder: string
+    prefix?: string
+    suffix?: string
     value?: string
+    description?: string
+    showSuggestions?: boolean
+    common?: true
 }
 
-const searchReferenceInfo: Record<Exclude<FilterType, NegatableFilter>, SearchReferenceInfo> &
-    Record<NegatableFilter, SearchReferenceInfo> = {
-    [FilterType.after]: {
-        placeholder: '"string time"',
+const searchReferenceInfo: SearchReferenceInfo[] = [
+    {
+        type: FilterType.after,
+        placeholder: '"last week"',
+        description: `Only include results from diffs or commits which have a commit date after the specified time frame`,
+        common: true,
     },
-    [FilterType.before]: {
-        placeholder: 'May 01 2020',
+    {
+        type: FilterType.archived,
+        placeholder: 'yes or only',
+        description: `The "yes" option includes archived repositories. The "only" option filters results to only archived repositories. Results in archived repositories are excluded by default.`,
     },
-    [FilterType.timeout]: {
-        placeholder: '120s',
+    {
+        type: FilterType.case,
+        placeholder: 'yes',
     },
-    [FilterType.type]: {
-        placeholder: 'diff|commit',
+    {
+        type: FilterType.content,
+        placeholder: '"pattern"',
+        common: true,
     },
-    [FilterType.repohascommitafter]: {
-        placeholder: 'last week',
+    {
+        type: FilterType.count,
+        placeholder: 'N or all',
+        common: true,
     },
-    [FilterType.after]: {
-        placeholder: '"string time"',
+    {
+        type: FilterType.file,
+        placeholder: 'regexp-pattern',
+        common: true,
     },
+    {
+        type: FilterType.fork,
+        placeholder: 'yes or only',
+        common: true,
+    },
+    {
+        type: FilterType.lang,
+        placeholder: 'language-name',
+        common: true,
+    },
+    {
+        type: FilterType.repo,
+        placeholder: 'regexp-pattern',
+        common: true,
+    },
+    {
+        type: FilterType.repogroup,
+        placeholder: 'group-name',
+    },
+    {
+        type: FilterType.repo,
+        placeholder: 'time',
+        prefix: 'contains.commit.after(',
+        suffix: ')',
+        showSuggestions: false,
+    },
+    {
+        type: FilterType.repo,
+        placeholder: 'some content',
+        prefix: 'contains(',
+        suffix: ')',
+        showSuggestions: false,
+    },
+    {
+        type: FilterType.rev,
+        placeholder: 'revision',
+        common: true,
+    },
+    {
+        type: FilterType.select,
+        placeholder: 'result-types',
+        common: true,
+    },
+    {
+        type: FilterType.stable,
+        placeholder: 'yes',
+    },
+    {
+        type: FilterType.type,
+        placeholder: 'symbol',
+        common: true,
+    },
+    {
+        type: FilterType.timeout,
+        placeholder: 'golang-duration-value',
+    },
+    {
+        type: FilterType.visibility,
+        placeholder: 'any',
+    },
+]
+const commonFilters = searchReferenceInfo.filter(info => info.common)
+
+/**
+ * Returns true if the provided regular expressions all match the provided
+ * filter information (name, description, ...)
+ */
+function matches(searchTerms: RegExp[], info: SearchReferenceInfo): boolean {
+    return searchTerms.every(term => {
+        return term.test(info.type) || term.test(info.description || '')
+    })
 }
 
-export interface SearchTypeLinksProps
-    extends Omit<PatternTypeProps, 'setPatternType'>,
-        Omit<CaseSensitivityProps, 'setCaseSensitivity'>,
-        VersionContextProps,
-        Pick<SearchContextProps, 'selectedSearchContextSpec'> {
-    query: string
-    navbarSearchQueryState: QueryState
-    onNavbarQueryChange: (queryState: QueryState) => void
+function parseSearchInput(searchInput: string): RegExp[] {
+    const terms = searchInput.split(/\s+/)
+    return terms.map(term => new RegExp(`\\b${escapeRegExp(term)}\\b`))
 }
 
-interface SearchTypeLinkProps extends SearchTypeLinksProps {
-    filterType: FilterType
-    placeholder?: string
-    value?: string
-    children?: ReactElement | string
-    onClick: (filter: FilterType) => void
+interface SearchReferenceEntryProps {
+    searchReference: SearchReferenceInfo
+    onClick: (searchReference: SearchReferenceInfo) => void
 }
 
-const SearchReferenceEntry: React.FunctionComponent<SearchTypeLinkProps> = ({
-    filterType,
-    placeholder,
-    value,
-    children,
-    onClick,
-}) => {
+const SearchReferenceEntry: React.FunctionComponent<SearchReferenceEntryProps> = ({ searchReference, onClick }) => {
     const [collapsed, setCollapsed] = useState(true)
     const CollapseIcon = collapsed ? ChevronRightIcon : ChevronDownIcon
     return (
@@ -89,137 +170,135 @@ const SearchReferenceEntry: React.FunctionComponent<SearchTypeLinkProps> = ({
                 >
                     <CollapseIcon className="icon-inline" />
                 </button>
-                <button className="btn p-0" type="button" onClick={() => onClick(filterType)}>
+                <button className="btn p-0" type="button" onClick={() => onClick(searchReference)}>
                     <span className="text-monospace">
-                        <span className="search-filter-keyword">{filterType}:</span>
-                        {value ? value : <span className={styles.placeholder}>{placeholder}</span>}
+                        <span className="search-filter-keyword">
+                            {searchReference.type}:{searchReference.prefix ?? ''}
+                        </span>
+                        {searchReference.value ?? (
+                            <span className={styles.placeholder}>{searchReference.placeholder}</span>
+                        )}
                     </span>
+                    {searchReference.suffix ? (
+                        <span className="search-filter-keyword">{searchReference.suffix}</span>
+                    ) : null}
                 </button>
             </span>
             <Collapse isOpen={!collapsed}>
-                <div className={styles.description}>{children}</div>
+                <div className={styles.description}>{searchReference.description}</div>
             </Collapse>
         </li>
     )
 }
 
-export const SearchReference = (props: SearchTypeLinksProps): ReactElement => {
-    const filterTypes = filterTypeKeys.filter(type => type !== FilterType.patterntype)
-    const [searchInput, setSearchInput] = useState('')
-    const [selectedFilters, setSelectedFilters] = useState<FilterType[]>([])
+interface SearchReferenceListProps {
+    filters: SearchReferenceInfo[]
+    onClick: (info: SearchReferenceInfo) => void
+}
 
-    const [nextSearchValue] = useEventObservable<string, string>(
-        useCallback(
-            input =>
-                input.pipe(
-                    tap(input => setSearchInput(input)),
-                    debounceTime(150),
-                    distinctUntilChanged(),
-                    map(input => input.trim()),
-                    tap(searchValue => {
-                        setSelectedFilters(
-                            searchValue === ''
-                                ? []
-                                : filterTypeKeys.filter(filterType => filterType.indexOf(searchValue) > -1)
-                        )
-                    })
-                ),
-            [setSearchInput]
-        )
+const SearchReferenceList = ({ filters, onClick }: SearchReferenceListProps): ReactElement => {
+    return (
+        <ul className={styles.list}>
+            {filters.map((filterInfo, i) => {
+                return <SearchReferenceEntry searchReference={filterInfo} key={i} onClick={onClick} />
+            })}
+        </ul>
     )
+}
+
+export interface SearchReferenceProps
+    extends PatternTypeProps,
+        Omit<CaseSensitivityProps, 'setCaseSensitivity'>,
+        VersionContextProps,
+        Pick<SearchContextProps, 'selectedSearchContextSpec'> {
+    query: string
+    filter: string
+    navbarSearchQueryState: QueryState
+    onNavbarQueryChange: (queryState: QueryState) => void
+}
+
+const SearchReference = (props: SearchReferenceProps): ReactElement => {
+    const [selectedTab, setSelectedTab] = useLocalStorage(SEARCH_REFERENCE_TAB_KEY, 0)
+
+    const selectedFilters = useMemo(() => {
+        if (props.filter === '') {
+            return searchReferenceInfo
+        }
+        const searchTerms = parseSearchInput(props.filter)
+        return searchReferenceInfo.filter(info => matches(searchTerms, info))
+    }, [props.filter])
 
     const updateQuery = useCallback(
-        (filterType: FilterType) => {
+        (info: SearchReferenceInfo) => {
             // TODO: Do not just blindly append the filter. Possibly parse the
             // query and reuse existing filters if possible/necessary.
+
             const newQueryState: QueryState = {
-                query: `${props.navbarSearchQueryState.query} ${filterType}:`,
+                query: `${props.navbarSearchQueryState.query} ${info.type}:`,
                 changeSource: QueryChangeSource.searchReference,
             }
-            if (FILTERS[filterType].discreteValues) {
+
+            if (info.prefix) {
+                newQueryState.query += info.prefix
+            }
+
+            if (info.value != null) {
+                newQueryState.query += info.value
+            } else if (FILTERS[info.type].discreteValues && info.showSuggestions !== false) {
                 newQueryState.showSuggestions = true
             } else {
-                let placeholder = 'p'
-                const selectionStartPosition = newQueryState.query.length + 1
+                let placeholder = info.placeholder
+                let selectionStartPosition = newQueryState.query.length + 1
+                let selectionEndPosition = selectionStartPosition + placeholder.length
+
+                if (placeholder[0] === '"') {
+                    selectionStartPosition += 1
+                    selectionEndPosition -= 1
+                }
                 newQueryState.query += placeholder
-                newQueryState.selection = new Selection(1, selectionStartPosition, 1, newQueryState.query.length + 1)
+                newQueryState.selection = new Selection(1, selectionStartPosition, 1, selectionEndPosition)
             }
+
+            if (info.suffix) {
+                newQueryState.query += info.suffix
+            }
+
             props.onNavbarQueryChange(newQueryState)
         },
         [props.onNavbarQueryChange, props.navbarSearchQueryState]
     )
 
-    let body
-    if (selectedFilters.length > 0) {
-        body = (
-            <ul className={styles.list}>
-                {selectedFilters.map(filterType => {
-                    const description = FILTERS[filterType].description
-                    return (
-                        <SearchReferenceEntry
-                            {...props}
-                            filterType={filterType}
-                            key={filterType}
-                            placeholder={searchReferenceInfo[filterType]?.placeholder ?? 'p'}
-                            onClick={updateQuery}
-                        >
-                            {typeof description === 'function' ? description(false) : description}
-                        </SearchReferenceEntry>
-                    )
-                })}
-            </ul>
-        )
-    } else {
-        body = (
-            <>
-                <small className={styles.header}>Match types</small>
-                <ul className={styles.list}>
-                    {FILTERS[FilterType.patterntype].discreteValues?.(undefined).map(({ label }) => (
-                        // TODO: Use dedicated state change function to set global
-                        // patterntype
-                        <SearchReferenceEntry
-                            {...props}
-                            filterType={FilterType.patterntype}
-                            key={FilterType.patterntype + label}
-                            value={label}
-                            onClick={updateQuery}
-                        >
-                            {FILTERS[FilterType.patterntype].description}
-                        </SearchReferenceEntry>
-                    ))}
-                </ul>
-                <small className={styles.header}>All Filters</small>
-                <ul className={styles.list}>
-                    {filterTypes.map(filterType => {
-                        const description = FILTERS[filterType].description
-                        return (
-                            <SearchReferenceEntry
-                                {...props}
-                                filterType={filterType}
-                                key={filterType}
-                                placeholder={searchReferenceInfo[filterType]?.placeholder ?? 'p'}
-                                onClick={updateQuery}
-                            >
-                                {typeof description === 'function' ? description(false) : description}
-                            </SearchReferenceEntry>
-                        )
-                    })}
-                </ul>
-            </>
-        )
-    }
+    const filterList = <SearchReferenceList filters={selectedFilters} onClick={updateQuery} />
 
     return (
-        <>
-            <Form className={styles.filterForm} onSubmit={event => event.preventDefault()}>
-                <input
-                    className="form-control"
-                    onChange={event => nextSearchValue(event.target.value)}
-                    value={searchInput}
-                    placeholder="Filter..."
-                />
-            </Form>
-            {body}
-        </>
+        <div>
+            {props.filter ? (
+                filterList
+            ) : (
+                <Tabs index={selectedTab} onChange={setSelectedTab}>
+                    <TabList className={styles.tablist}>
+                        <Tab>All filters</Tab>
+                        <Tab>Common</Tab>
+                        <Tab>Operators</Tab>
+                    </TabList>
+                    <TabPanels>
+                        <TabPanel>{filterList}</TabPanel>
+                        <TabPanel>
+                            <SearchReferenceList filters={commonFilters} onClick={updateQuery} />
+                        </TabPanel>
+                        <TabPanel>TODO</TabPanel>
+                    </TabPanels>
+                </Tabs>
+            )}
+            <p className={styles.footer}>
+                <Link to="https://docs.sourcegraph.com/code_search/reference/queries">Search syntax</Link>
+            </p>
+        </div>
     )
+}
+
+export function getSearchReferenceFactory(
+    props: Omit<SearchReferenceProps, 'filter'>
+): (filter: string) => React.ReactElement {
+    return (filter: string) => <SearchReference {...props} filter={filter} />
 }
