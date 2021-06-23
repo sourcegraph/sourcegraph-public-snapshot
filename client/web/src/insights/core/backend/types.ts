@@ -49,7 +49,8 @@ export interface ApiService {
     ) => Observable<ViewInsightProviderResult[]>
 
     getInsightCombinedViews: (
-        extensionApi: Promise<Remote<FlatExtensionHostAPI>>
+        extensionApi: Promise<Remote<FlatExtensionHostAPI>>,
+        insightsIds?: string[]
     ) => Observable<ViewInsightProviderResult[]>
 
     getSubjectSettings: (id: string) => Observable<SubjectSettingsResult>

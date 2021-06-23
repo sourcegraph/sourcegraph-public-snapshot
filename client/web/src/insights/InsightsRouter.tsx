@@ -71,7 +71,14 @@ export const InsightsRouter = withAuthenticatedUser<InsightsRouterProps>(props =
                 )}
             />
 
-            {codeInsightsDashboards && <Route path={`${match.url}/dashboard`} render={() => <DashboardsLazyPage />} />}
+            {codeInsightsDashboards && (
+                <Route
+                    path={`${match.url}/dashboard/:id?`}
+                    render={(props: RouteComponentProps<{ id: string }>) => (
+                        <DashboardsLazyPage dashboardID={props.match.params.id} {...outerProps} />
+                    )}
+                />
+            )}
 
             <Route component={NotFoundPage} key="hardcoded-key" />
         </Switch>

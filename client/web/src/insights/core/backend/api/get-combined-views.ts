@@ -57,13 +57,14 @@ export const getCombinedViews = (
     ]).pipe(map(([extensionViews, backendInsights]) => [...backendInsights, ...extensionViews]))
 
 /**
- * Get insights views for insights page.
- * */
+ * Get insights views for the insights page.
+ */
 export const getInsightCombinedViews = (
-    extensionApi: Promise<Remote<FlatExtensionHostAPI>>
+    extensionApi: Promise<Remote<FlatExtensionHostAPI>>,
+    insightIds?: string[]
 ): Observable<ViewInsightProviderResult[]> =>
     getCombinedViews(() =>
         from(extensionApi).pipe(
-            switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getInsightsViews({})))
+            switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getInsightsViews({ insightIds })))
         )
     )
