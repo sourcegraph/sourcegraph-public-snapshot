@@ -67,11 +67,16 @@ INSERT INTO
 	return errors.Wrap(err, "creating GitserverRepo")
 }
 
+type IterateRepoGitserverStatusOptions struct {
+	// If set, will only iterate over repos that have not been assigned to a shard
+	OnlyWithoutShard bool
+}
+
 // IterateRepoGitserverStatus iterates over the status of all repos by joining
 // our repo and gitserver_repos table. It is possible for us not to have a
 // corresponding row in gitserver_repos yet. repoFn will be called once for each
 // row. If it returns an error we'll abort iteration.
-func (s *GitserverRepoStore) IterateRepoGitserverStatus(ctx context.Context, repoFn func(repo types.RepoGitserverStatus) error) error {
+func (s *GitserverRepoStore) IterateRepoGitserverStatus(ctx context.Context, options IterateRepoGitserverStatusOptions, repoFn func(repo types.RepoGitserverStatus) error) error {
 	if repoFn == nil {
 		return errors.New("nil repoFn")
 	}
@@ -89,6 +94,9 @@ FROM repo
     LEFT JOIN gitserver_repos gr ON gr.repo_id = repo.id
     WHERE repo.deleted_at IS NULL
 `
+	if options.OnlyWithoutShard {
+		q = q + "AND (gr.shard_id = '' OR gr IS NULL)"
+	}
 
 	rows, err := s.Query(ctx, sqlf.Sprintf(q))
 	if err != nil {
