@@ -15,12 +15,13 @@
     transition: box-shadow 50ms ease-in;
 
     &:focus-within {
-        // This is just --primary with 75% opacity. Ideally this would use a
-        // semantic variable, but rgba(var(--primary), 0.75) is not valid.
-        // Hard coding it seems acceptable since the border around yellow
-        // emoji is a one-off design.
-        box-shadow: inset 0 0 0 3px rgba(11, 112, 219, 0.75);
         transition-delay: 0;
+
+        & > .emoji {
+            box-shadow: var(--focus-box-shadow);
+            border: 1px solid transparent;
+            border-radius: 50%;
+        }
     }
 }
 
@@ -39,7 +40,9 @@
 
     &:hover {
         transform: scale(1.08);
-        border-color: var(--border-color);
+        :global(.theme-light) & {
+            border-color: var(--border-color);
+        }
     }
     &:active {
         cursor: pointer;
@@ -55,15 +58,11 @@
     transform-origin: center center;
 
     &--active {
-        border: none;
         animation: pop 150ms;
         transform: scale(1.285555);
     }
     &--inactive {
         filter: grayscale(1);
-        .theme-redesign & {
-            border: none;
-        }
     }
 }
 
