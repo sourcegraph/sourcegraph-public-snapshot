@@ -80,9 +80,9 @@ func RepoUpdater() *monitoring.Container {
 						{
 							Name:              "syncer_sync_start",
 							Description:       "repo metadata sync was started",
-							Query:             `max by (family) (rate(src_repoupdater_syncer_start_sync[5m]))`,
+							Query:             fmt.Sprintf(`max by (family, owner) (rate(src_repoupdater_syncer_start_sync[%s]))`, syncDurationThreshold.String()),
 							Warning:           monitoring.Alert().LessOrEqual(0, nil).For(syncDurationThreshold),
-							Panel:             monitoring.Panel().LegendFormat("{{family}}").Unit(monitoring.Number),
+							Panel:             monitoring.Panel().LegendFormat("Family: {{family}} Owner: {{owner}}").Unit(monitoring.Number),
 							Owner:             monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: "Check repo-updater logs for errors.",
 						},
