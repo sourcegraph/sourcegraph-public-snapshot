@@ -17,10 +17,6 @@ import { AuthenticatedUser } from '../../auth'
 import { ManageCodeMonitorPage } from './ManageCodeMonitorPage'
 import { mockCodeMonitor } from './testing/util'
 
-jest.mock('../../tracking/eventLogger', () => ({
-    eventLogger: { logViewEvent: () => undefined },
-}))
-
 describe('ManageCodeMonitorPage', () => {
     const mockUser = {
         id: 'userID',
