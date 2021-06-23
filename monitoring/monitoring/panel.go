@@ -32,19 +32,6 @@ func Panel() ObservablePanel {
 	}
 }
 
-// PanelMinimal provides a builder for customizing an Observable visualization starting
-// with an extremely minimal graph panel.
-//
-// In general, we advise using Panel() instead to start with recommended defaults.
-func PanelMinimal() ObservablePanel {
-	return ObservablePanel{
-		panelType: "graph",
-		options: []ObservablePanelOption{
-			PanelOptions.basicPanel(), // required basic values
-		},
-	}
-}
-
 // PanelHeatmap provides a builder for customizing an Observable visualization starting
 // with an extremely minimal heatmap panel.
 func PanelHeatmap() ObservablePanel {
