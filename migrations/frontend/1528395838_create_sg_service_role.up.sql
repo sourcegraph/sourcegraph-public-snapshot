@@ -14,7 +14,7 @@ EXCEPTION WHEN duplicate_object THEN
 END;
 $$;
 
-GRANT USAGE ON SCHEMA public TO sgservice;
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO sgservice;
+GRANT USAGE ON SCHEMA public TO sg_service;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO sg_service;
 
 COMMIT;

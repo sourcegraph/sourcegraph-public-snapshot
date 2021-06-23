@@ -12,7 +12,7 @@ ALTER TABLE repo ENABLE ROW LEVEL SECURITY;
 CREATE POLICY sg_repo_access_policy
     ON repo
     FOR ALL
-    TO sgservice
+    TO sg_service
     USING (
         repo.private IS false     -- Happy path of non-private repositories
         OR  EXISTS (              -- Each external service defines if repositories are unrestricted
