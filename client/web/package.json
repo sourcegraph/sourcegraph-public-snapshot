@@ -16,6 +16,7 @@
     "test:regression:onboarding": "yarn task:mocha ./src/regression/onboarding.test.ts",
     "test:regression:search": "yarn task:mocha ./src/regression/search.test.ts",
     "test-e2e-sgdev": "cross-env SOURCEGRAPH_BASE_URL=https://sourcegraph.sgdev.org OVERRIDE_AUTH_SECRET=${SGDEV_OVERRIDE_AUTH_SECRET} yarn task:mocha ./src/end-to-end/end-to-end.test.ts",
+    "storybook": "STORIES_GLOB=client/web/src/**/*.story.tsx yarn workspace @sourcegraph/storybook run start",
     "serve:dev": "ts-node-transpile-only --project ./dev/tsconfig.json ./dev/server/development.server.ts",
     "serve:prod": "ts-node-transpile-only --project ./dev/tsconfig.json ./dev/server/production.server.ts",
     "task:gulp": "cross-env NODE_OPTIONS=\"--max_old_space_size=4096\" gulp",
