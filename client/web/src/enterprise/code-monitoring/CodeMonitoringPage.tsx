@@ -6,6 +6,7 @@ import { catchError, map, startWith } from 'rxjs/operators'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { PageHeader } from '@sourcegraph/wildcard'
@@ -23,7 +24,7 @@ import {
 import { CodeMonitoringGettingStarted } from './CodeMonitoringGettingStarted'
 import { CodeMonitorList } from './CodeMonitorList'
 
-export interface CodeMonitoringPageProps extends SettingsCascadeProps<Settings> {
+export interface CodeMonitoringPageProps extends SettingsCascadeProps<Settings>, ThemeProps {
     authenticatedUser: AuthenticatedUser
     fetchUserCodeMonitors?: typeof _fetchUserCodeMonitors
     toggleCodeMonitorEnabled?: typeof _toggleCodeMonitorEnabled
@@ -36,6 +37,7 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
     fetchUserCodeMonitors = _fetchUserCodeMonitors,
     toggleCodeMonitorEnabled = _toggleCodeMonitorEnabled,
     showGettingStarted = false,
+    isLightTheme,
 }) => {
     useEffect(() => eventLogger.logViewEvent('CodeMonitoringPage'), [])
 
@@ -94,7 +96,7 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                     !isErrorLike(userHasCodeMonitors) && (
                         <>
                             Watch your code for changes and trigger actions to get notifications, send webhooks, and
-                            more. <a href="https://docs.sourcegraph.com/code_monitoring">Learn more.</a>
+                            more.
                         </>
                     )
                 }
@@ -133,7 +135,7 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                         </div>
                     </div>
 
-                    {showGettingStarted && <CodeMonitoringGettingStarted />}
+                    {showGettingStarted && <CodeMonitoringGettingStarted isLightTheme={isLightTheme} />}
 
                     {showList && (
                         <CodeMonitorList
