@@ -19,7 +19,7 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<{}> = () => (
         </div>
         <div className={classNames('container', styles.startingPointsContainer)}>
             <h3 className="mb-3">Starting points for your first monitor</h3>
-            <div className="row no-gutters code-monitoring-page__start-points-panel-container mb-3">
+            <div className="row no-gutters mb-3">
                 <div className={classNames('col-6', styles.startingPoint)}>
                     <div className="card">
                         <div className="card-body p-3">
