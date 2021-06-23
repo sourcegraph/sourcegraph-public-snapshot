@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/gorilla/mux"
@@ -233,8 +234,12 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 
 		var symbol *result.Symbol
 		if lineRange != nil && lineRange.StartLine != 0 && lineRange.StartLineCharacter != 0 {
+			// Do not slow down the page load if symbol data takes too long to retrieve.
+			ctx, cancel := context.WithTimeout(r.Context(), time.Second*1)
+			defer cancel()
+
 			if symbolMatch, _ := run.GetSymbolMatchAtLineCharacter(
-				r.Context(),
+				ctx,
 				types.RepoName{ID: common.Repo.ID, Name: common.Repo.Name},
 				common.CommitID,
 				strings.TrimLeft(blobPath, "/"),

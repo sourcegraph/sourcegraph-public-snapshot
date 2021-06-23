@@ -363,6 +363,8 @@ func ComputeSymbols(ctx context.Context, repoName types.RepoName, commitID api.C
 	return matches, err
 }
 
+// GetSymbolMatchAtLineCharacter retrieves the shortest matching symbol (if exists) defined
+// at a specific line number and character offset in the provided file.
 func GetSymbolMatchAtLineCharacter(ctx context.Context, repo types.RepoName, commitID api.CommitID, filePath string, line int, character int) (*result.SymbolMatch, error) {
 	// Should be large enough to include all symbols from a single file
 	first := int32(999999)
@@ -373,13 +375,15 @@ func GetSymbolMatchAtLineCharacter(ctx context.Context, repo types.RepoName, com
 		return nil, err
 	}
 
+	var match *result.SymbolMatch
 	for _, symbolMatch := range symbolMatches {
 		symbolRange := symbolMatch.Symbol.Range()
-		if symbolRange.Start.Line == line && symbolRange.Start.Character == character {
-			return symbolMatch, nil
+		hasMatchingStartRange := symbolRange.Start.Line == line && symbolRange.Start.Character == character
+		if hasMatchingStartRange && (match == nil || len(symbolMatch.Symbol.Name) < len(match.Symbol.Name)) {
+			match = symbolMatch
 		}
 	}
-	return nil, nil
+	return match, nil
 }
 
 const DefaultSymbolLimit = 100
