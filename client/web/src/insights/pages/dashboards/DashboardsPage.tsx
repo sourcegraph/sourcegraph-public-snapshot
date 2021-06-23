@@ -13,22 +13,20 @@ export interface DashboardsPageProps {}
 /**
  * Displays insights dashboard page - dashboard selector and grid of insights from the dashboard.
  */
-export const DashboardsPage: React.FunctionComponent<DashboardsPageProps> = () => {
-    return (
-        <div className="w-100">
-            <Page>
-                <PageHeader
-                    annotation={<FeedbackBadge status="prototype" feedback={{ mailto: 'support@sourcegraph.com' }} />}
-                    path={[{ icon: CodeInsightsIcon, text: 'Insights' }]}
-                    actions={
-                        <Link to="/insights/create" className="btn btn-secondary mr-1">
-                            <PlusIcon className="icon-inline" /> Create new insight
-                        </Link>
-                    }
-                    className="mb-3"
-                />
-                Dashboard content
-            </Page>
-        </div>
-    )
-}
+export const DashboardsPage: React.FunctionComponent<DashboardsPageProps> = () => (
+    <div className="w-100">
+        <Page>
+            <PageHeader
+                annotation={<FeedbackBadge status="prototype" feedback={{ mailto: 'support@sourcegraph.com' }} />}
+                path={[{ icon: CodeInsightsIcon, text: 'Insights' }]}
+                actions={
+                    <Link to="/insights/create" className="btn btn-secondary mr-1">
+                        <PlusIcon className="icon-inline" /> Create new insight
+                    </Link>
+                }
+                className="mb-3"
+            />
+            Dashboard content
+        </Page>
+    </div>
+)
