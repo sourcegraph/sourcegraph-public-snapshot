@@ -260,7 +260,6 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
         if (!props.authenticatedUser && !props.featureFlags.get('w0-signup-optimisation')) {
             return null
         }
-        console.log(props.location.pathname + props.location.search)
         return (
             <li className="nav-item mr-2">
                 <ExperimentalActionButton
