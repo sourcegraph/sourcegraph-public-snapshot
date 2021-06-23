@@ -1431,8 +1431,8 @@ Referenced by:
     TABLE "search_context_repos" CONSTRAINT "search_context_repos_repo_id_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "user_public_repos" CONSTRAINT "user_public_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
 Policies:
-    POLICY "restricted_repo_policy"
-      TO sgservice
+    POLICY "sg_repo_access_policy"
+      TO sg_service
       USING (((private IS FALSE) OR (EXISTS ( SELECT
    FROM (external_services es
      JOIN external_service_repos esr ON (((esr.external_service_id = es.id) AND (esr.repo_id = repo.id) AND (es.unrestricted = true) AND (es.deleted_at IS NULL))))
