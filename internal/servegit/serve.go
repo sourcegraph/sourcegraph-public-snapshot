@@ -12,8 +12,10 @@ import (
 	pathpkg "path"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/lib/gitservice"
 )
 
 type Serve struct {
@@ -98,11 +100,19 @@ func (s *Serve) handler() http.Handler {
 	})
 
 	fs := http.FileServer(http.Dir(s.Root))
-	svc := &gitServiceHandler{
+	svc := &gitservice.Handler{
 		Dir: func(name string) string {
 			return filepath.Join(s.Root, filepath.FromSlash(name))
 		},
-		Debug: s.Debug,
+		Trace: func(svc, repo, protocol string) func(error) {
+			start := time.Now()
+			return func(err error) {
+				s.Debug.Printf("git service svc=%s protocol=%s repo=%s duration=%v", svc, protocol, repo, time.Since(start))
+				if err != nil {
+					s.Debug.Println(err)
+				}
+			}
+		},
 	}
 	mux.Handle("/repos/", http.StripPrefix("/repos/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Use git service if git is trying to clone. Otherwise show http.FileServer for convenience

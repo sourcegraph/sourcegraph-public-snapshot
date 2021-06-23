@@ -1,6 +1,6 @@
 module github.com/sourcegraph/src-cli
 
-go 1.13
+go 1.16
 
 require (
 	github.com/Masterminds/semver v1.5.0
@@ -22,13 +22,12 @@ require (
 	github.com/sourcegraph/batch-change-utils v0.0.0-20210309183117-206c057cc03e
 	github.com/sourcegraph/go-diff v0.6.1
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
-	github.com/sourcegraph/sourcegraph/lib v0.0.0-20210520231824-520a2ae26af0
+	github.com/sourcegraph/sourcegraph/lib v0.0.0-20210622093026-6470ff817296
 	github.com/ssor/bom v0.0.0-20170718123548-6386211fdfcf // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
-	golang.org/x/net v0.0.0-20201021035429-f5854403a974
-	golang.org/x/sync v0.0.0-20201020160332-67f06af15bc9
-	golang.org/x/sys v0.0.0-20210426080607-c94f62235c83 // indirect
-	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
+	golang.org/x/net v0.0.0-20210614182718-04defd469f4e
+	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
+	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 	jaytaylor.com/html2text v0.0.0-20200412013138-3577fbdbcff7
 )
 
