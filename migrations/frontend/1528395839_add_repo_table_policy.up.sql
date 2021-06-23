@@ -1,23 +1,15 @@
 BEGIN;
 
--- The "sgservice" role is one that the frontend and other services
--- will assume on startup/init. It lowers the privilege of those services
--- such that we can apply security policies to the role and let Postgres
--- manage things that previously would need to be done in app-level code.
-CREATE ROLE sgservice;
-GRANT USAGE ON SCHEMA public TO sgservice;
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO sgservice;
-
 -- When row-level security is enabled, the table immediately "fails closed"
--- for all roles other than the table owner. The "restricted_repo_policy"
+-- for all roles other than the table owner. The "sg_repo_access_policy" then
 -- dictates the filtering mechanism used to decide what rows can be seen or
 -- updated by the specified role(s).
 --
 -- The USING clause requires two LOCAL variables to be set:
---   rls.user_id: the effective ID for the user making the request
---   rls.permission: the permission that the user needs (e.g. "write")
+--     1. rls.user_id: the effective ID for the user making the request
+--     2. rls.permission: the permission that the user needs (e.g. "write")
 ALTER TABLE repo ENABLE ROW LEVEL SECURITY;
-CREATE POLICY restricted_repo_policy
+CREATE POLICY sg_repo_access_policy
     ON repo
     FOR ALL
     TO sgservice
