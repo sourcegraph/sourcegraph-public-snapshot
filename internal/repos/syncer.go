@@ -35,13 +35,9 @@ type Syncer struct {
 	// Synced is sent a collection of Repos that were synced by Sync (only if Synced is non-nil)
 	Synced chan Diff
 
-	// SubsetSynced is sent the result of a single repo sync that were synced by SyncRepo (only if
-	// SubsetSynced is non-nil)
-	//
-	// TODO: The name of this channel does not make it easy to understand its use case. This is
-	// triggered by the streaming inserter.
-	// https://sourcegraph.atlassian.net/browse/COREAPP-128
-	SubsetSynced chan Diff
+	// SingleRepoSynced is sent the result of a single repo sync that were synced by SyncRepo (only if
+	// SingleRepoSynced is non-nil)
+	SingleRepoSynced chan Diff
 
 	// Logger if non-nil is logged to.
 	Logger log15.Logger
@@ -221,7 +217,7 @@ func (s *Syncer) SyncExternalService(ctx context.Context, tx *Store, externalSer
 			}
 			return nil
 		}
-	} else if s.SubsetSynced != nil {
+	} else if s.SingleRepoSynced != nil {
 		// This is a site level external service. We have a channel to handle streaming inserts,
 		// therefore we should create an inserter. Note that it inserts outside of our transaction
 		// so that repos are visible to the rest of our system immediately.
@@ -519,24 +515,24 @@ func (s *Syncer) syncRepo(ctx context.Context, store *Store, insertOnly bool, pu
 		return Diff{}, nil
 	}
 
-	var storedSubset types.Repos
+	var storedRepos types.Repos
 	args := database.ReposListOptions{
 		Names:         []string{string(sourcedRepo.Name)},
 		ExternalRepos: []api.ExternalRepoSpec{sourcedRepo.ExternalRepo},
 		UseOr:         true,
 	}
-	if storedSubset, err = store.RepoStore.List(ctx, args); err != nil {
+	if storedRepos, err = store.RepoStore.List(ctx, args); err != nil {
 		return Diff{}, errors.Wrap(err, "syncer.syncrepo.store.list-repos")
 	}
 
-	if insertOnly && len(storedSubset) > 0 {
+	if insertOnly && len(storedRepos) > 0 {
 		return Diff{}, nil
 	}
 
-	// sourcedRepo only knows about one source so we need to add in the remaining stored
-	// sources
-	if len(storedSubset) == 1 {
-		for k, v := range storedSubset[0].Sources {
+	// sourcedRepo only knows about one source so we need to add in the remaining
+	// stored sources
+	if len(storedRepos) == 1 {
+		for k, v := range storedRepos[0].Sources {
 			// Don't update the source from sourcedRepo
 			if _, ok := sourcedRepo.Sources[k]; ok {
 				continue
@@ -546,9 +542,9 @@ func (s *Syncer) syncRepo(ctx context.Context, store *Store, insertOnly bool, pu
 	}
 
 	// NewDiff modifies the stored slice so we clone it before passing it
-	storedCopy := storedSubset.Clone()
+	storedCopy := storedRepos.Clone()
 
-	diff = NewDiff([]*types.Repo{sourcedRepo}, storedSubset)
+	diff = NewDiff([]*types.Repo{sourcedRepo}, storedRepos)
 
 	// We trust that if we determine that a repo needs to be deleted it should be deleted
 	// from all external services. By setting sources to nil this is forced when we call
@@ -579,9 +575,9 @@ func (s *Syncer) syncRepo(ctx context.Context, store *Store, insertOnly bool, pu
 		return Diff{}, errors.Wrap(err, "syncer.syncrepo.store.upsert-sources")
 	}
 
-	if s.SubsetSynced != nil {
+	if s.SingleRepoSynced != nil {
 		select {
-		case s.SubsetSynced <- diff:
+		case s.SingleRepoSynced <- diff:
 		case <-ctx.Done():
 		}
 	}
