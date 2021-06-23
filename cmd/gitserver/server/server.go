@@ -14,7 +14,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -313,17 +312,19 @@ func (s *Server) Janitor(interval time.Duration) {
 // Otherwise, we only sync repos that have not yet been assigned a shard.
 func (s *Server) SyncRepoState(interval time.Duration, batchSize, perSecond int) {
 	fullSync := true
-	var previousAddrs []string
+	previousAddrs := ""
 	for {
 		addrs := conf.Get().ServiceConnections.GitServers
-		if !reflect.DeepEqual(addrs, previousAddrs) {
-			fullSync = true
-		}
-		// Copy addrs since we don't want to keep a pointer into the config struct
-		previousAddrs = append(previousAddrs[0:0], addrs...)
+		// We turn addrs into a string here for easy comparison and storage of previous
+		// addresses since we'd need to take a copy of the slice anyway.
+		addrsString := strings.Join(addrs, ",")
+		fullSync = addrsString != previousAddrs
+		previousAddrs = addrsString
+
 		if err := s.syncRepoState(addrs, batchSize, perSecond, fullSync); err != nil {
 			log15.Error("Syncing repo state", "error ", err)
 		}
+
 		fullSync = false
 		time.Sleep(interval)
 	}
