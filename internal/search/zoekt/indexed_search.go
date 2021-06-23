@@ -412,7 +412,6 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *Indexe
 		// The buffered backend.ZoektStreamFunc allows us to consume events from Zoekt
 		// while we wait for repo resolution.
 		bufSender, cleanup := bufferedSender(120, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
-
 			foundResults.CAS(false, event.FileCount != 0 || event.MatchCount != 0)
 
 			files := event.Files
@@ -541,7 +540,7 @@ func bufferedSender(cap int, sender zoekt.Sender) (zoekt.Sender, func()) {
 // only for the repos that contain matches for the query. This is a performance optimization,
 // and not required for proper function of select:repo.
 func zoektSearchReposOnly(ctx context.Context, client zoekt.Streamer, query zoektquery.Q, c streaming.Sender, getRepoRevMap func() map[string]*search.RepositoryRevisions) error {
-	repoList, err := client.List(ctx, query)
+	repoList, err := client.List(ctx, query, nil)
 	if err != nil {
 		return err
 	}
