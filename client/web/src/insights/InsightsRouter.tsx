@@ -2,18 +2,16 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React from 'react'
 import { RouteComponentProps, Switch, Route } from 'react-router'
 
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
-
 import { AuthenticatedUser } from '../auth'
 import { withAuthenticatedUser } from '../auth/withAuthenticatedUser'
 import { HeroPage } from '../components/HeroPage'
-import { SettingsExperimentalFeatures } from '../schema/settings.schema'
 import { lazyComponent } from '../util/lazyComponent'
 
 import { CreationRoutes } from './pages/creation/CreationRoutes'
 import { SearchInsightCreationPageProps } from './pages/creation/search-insight/SearchInsightCreationPage'
 import { EditInsightPageProps } from './pages/edit/EditInsightPage'
 import { InsightsPageProps } from './pages/insights/InsightsPage'
+import { getExperimentalFeatures } from './utils/get-experimental-features'
 
 const InsightsLazyPage = lazyComponent(() => import('./pages/insights/InsightsPage'), 'InsightsPage')
 const EditInsightLazyPage = lazyComponent(() => import('./pages/edit/EditInsightPage'), 'EditInsightPage')
@@ -43,10 +41,7 @@ export interface InsightsRouterProps
  */
 export const InsightsRouter = withAuthenticatedUser<InsightsRouterProps>(props => {
     const { match, ...outerProps } = props
-
-    const settings = !isErrorLike(outerProps.settingsCascade.final) ? outerProps.settingsCascade.final : {}
-    const experimentalFeatures: SettingsExperimentalFeatures = settings?.experimentalFeatures ?? {}
-    const isDashboardsEnabled = experimentalFeatures.codeInsightsDashboards
+    const { codeInsightsDashboards } = getExperimentalFeatures(outerProps.settingsCascade)
 
     return (
         <Switch>
@@ -76,7 +71,7 @@ export const InsightsRouter = withAuthenticatedUser<InsightsRouterProps>(props =
                 )}
             />
 
-            {isDashboardsEnabled && <Route path={`${match.url}/dashboard`} render={() => <DashboardsLazyPage />} />}
+            {codeInsightsDashboards && <Route path={`${match.url}/dashboard`} render={() => <DashboardsLazyPage />} />}
 
             <Route component={NotFoundPage} key="hardcoded-key" />
         </Switch>
