@@ -105,7 +105,7 @@ It is a moderately complex algorithm, to get an understanding for how it operate
 1. [what it does and general implementation thoughts](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@049b99763b10ddc7ef6f72c22b18f1fa5f4f7259/-/blob/enterprise/internal/insights/background/historical_enqueuer.go#L31-53)
 2. [overview of the algorithm](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/insights/background/historical_enqueuer.go?L185#L116-147)
 
-Naively the historical backfiller will likely take a long time on any reasonably sized Sourcegraph installation. As an optimization,
+Naively implemented, the historical backfiller would take a long time on any reasonably sized Sourcegraph installation. As an optimization,
 the backfiller will only query for data frames that have recorded changes in each repository. This is accomplished by looking
 at an index of commits and determining if that frame is eligible for removal. [code](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/insights/compression/compression.go?L46:1)
 
@@ -129,7 +129,7 @@ These queries can be executed concurrently by using the site setting `insights.q
 the desired concurrency factor. With `insights.query.worker.concurrency=1` queries will be executed in serial.
 
 There is a rate limit associated with the query worker. This limit is shared across all concurrent handlers and can be configured
-using the site setting `insights.query.worker.rateLimit`. This value to set will depend on the size and scale of your Sourcegraph
+using the site setting `insights.query.worker.rateLimit`. This value to set will depend on the size and scale of the Sourcegraph
 installations `Searcher` service.
 
 ## Debugging
