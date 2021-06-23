@@ -141,7 +141,7 @@ function matches(searchTerms: RegExp[], info: SearchReferenceInfo): boolean {
 
 function parseSearchInput(searchInput: string): RegExp[] {
     const terms = searchInput.split(/\s+/)
-    return terms.map(term => new RegExp(`\\b${escapeRegExp(term)}\\b`))
+    return terms.map(term => new RegExp(`\\b${escapeRegExp(term)}`))
 }
 
 interface SearchReferenceEntryProps {
