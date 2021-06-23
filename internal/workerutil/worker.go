@@ -10,6 +10,7 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -32,6 +33,11 @@ type WorkerOptions struct {
 	// supplied.
 	Name string
 
+	// WorkerHostname denotes the hostname of the instance/container the worker
+	// is running on. If not supplied, it will be derived from either the `HOSTNAME`
+	// env var, or else from os.Hostname()
+	WorkerHostname string
+
 	// NumHandlers is the maximum number of handlers that can be invoked
 	// concurrently. The underlying store will not be queried while the current
 	// number of handlers exceeds this value.
@@ -51,6 +57,10 @@ func NewWorker(ctx context.Context, store Store, handler Handler, options Worker
 func newWorker(ctx context.Context, store Store, handler Handler, options WorkerOptions, clock glock.Clock) *Worker {
 	if options.Name == "" {
 		panic("no name supplied to github.com/sourcegraph/sourcegraph/internal/workerutil:newWorker")
+	}
+
+	if options.WorkerHostname == "" {
+		options.WorkerHostname = hostname.Get()
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -147,7 +157,7 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 	}
 
 	// Select a queued record to process and the transaction that holds it
-	record, tx, dequeued, err := w.store.Dequeue(w.ctx, extraDequeueArguments)
+	record, tx, dequeued, err := w.store.Dequeue(w.ctx, w.options.WorkerHostname, extraDequeueArguments)
 	if err != nil {
 		return false, errors.Wrap(err, "store.Dequeue")
 	}

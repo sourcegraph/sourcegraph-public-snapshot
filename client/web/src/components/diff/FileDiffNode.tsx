@@ -26,15 +26,6 @@ export interface FileDiffNodeProps extends ThemeProps {
     location: H.Location
     history: H.History
 
-    // extensionInfo?: {
-    //     /** The base repository and revision. */
-    //     base: RepoSpec & RevisionSpec & ResolvedRevisionSpec & { repoID: Scalars['ID'] }
-
-    //     /** The head repository and revision. */
-    //     head: RepoSpec & RevisionSpec & ResolvedRevisionSpec & { repoID: Scalars['ID'] }
-
-    //     hoverifier: Hoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>
-    // } & ExtensionsControllerProps
     extensionInfo?: ExtensionInfo<{
         observeViewerId?: (uri: string) => Observable<ViewerId | undefined>
     }>

@@ -158,7 +158,7 @@ SELECT
 	u.id,
 	u.commit,
 	u.root,
-	EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip WHERE repository_id = u.repository_id AND upload_id = u.id) AS visible_at_tip,
+	EXISTS (` + visibleAtTipSubselectQuery + `) AS visible_at_tip,
 	u.uploaded_at,
 	u.state,
 	u.failure_message,
@@ -181,6 +181,8 @@ ON u.id = s.id
 JOIN repo ON repo.id = u.repository_id
 WHERE u.state != 'deleted' AND u.id = %s AND %s
 `
+
+const visibleAtTipSubselectQuery = `SELECT 1 FROM lsif_uploads_visible_at_tip uvt WHERE uvt.repository_id = u.repository_id AND uvt.upload_id = u.id`
 
 // GetUploadsByIDs returns an upload for each of the given identifiers. Not all given ids will necessarily
 // have a corresponding element in the returned list.
@@ -213,7 +215,7 @@ SELECT
 	u.id,
 	u.commit,
 	u.root,
-	EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip WHERE repository_id = u.repository_id AND upload_id = u.id) AS visible_at_tip,
+	EXISTS (` + visibleAtTipSubselectQuery + `) AS visible_at_tip,
 	u.uploaded_at,
 	u.state,
 	u.failure_message,
@@ -310,7 +312,7 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 		conds = append(conds, sqlf.Sprintf("u.state != 'deleted'"))
 	}
 	if opts.VisibleAtTip {
-		conds = append(conds, sqlf.Sprintf("EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip where repository_id = u.repository_id and upload_id = u.id)"))
+		conds = append(conds, sqlf.Sprintf("EXISTS ("+visibleAtTipSubselectQuery+")"))
 	}
 	if opts.UploadedBefore != nil {
 		conds = append(conds, sqlf.Sprintf("u.uploaded_at < %s", *opts.UploadedBefore))
@@ -365,7 +367,7 @@ SELECT
 	u.id,
 	u.commit,
 	u.root,
-	EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip where repository_id = u.repository_id and upload_id = u.id) AS visible_at_tip,
+	EXISTS (` + visibleAtTipSubselectQuery + `) AS visible_at_tip,
 	u.uploaded_at,
 	u.state,
 	u.failure_message,
@@ -515,7 +517,7 @@ var uploadColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf("u.id"),
 	sqlf.Sprintf("u.commit"),
 	sqlf.Sprintf("u.root"),
-	sqlf.Sprintf("EXISTS (SELECT 1 FROM lsif_uploads_visible_at_tip WHERE state != 'deleted' AND repository_id = u.repository_id AND upload_id = u.id) AS visible_at_tip"),
+	sqlf.Sprintf("EXISTS (" + visibleAtTipSubselectQuery + ") AS visible_at_tip"),
 	sqlf.Sprintf("u.uploaded_at"),
 	sqlf.Sprintf("u.state"),
 	sqlf.Sprintf("u.failure_message"),
@@ -690,7 +692,7 @@ WITH u AS (
 				%s - u.finished_at > (%s || ' second')::interval OR
 				(u.finished_at IS NULL AND %s - u.uploaded_at > (%s || ' second')::interval)
 			) AND
-				u.id NOT IN (SELECT uv.upload_id FROM lsif_uploads_visible_at_tip uv WHERE uv.repository_id = u.repository_id)
+				u.id NOT IN (SELECT uvt.upload_id FROM lsif_uploads_visible_at_tip uvt WHERE uvt.repository_id = u.repository_id)
 		RETURNING id, repository_id
 )
 SELECT u.repository_id, count(*) FROM u GROUP BY u.repository_id

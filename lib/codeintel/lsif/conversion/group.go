@@ -34,7 +34,7 @@ func groupBundleData(ctx context.Context, state *State) (*semantic.GroupedBundle
 	referenceRows := gatherMonikersLocations(ctx, state, state.ReferenceData, func(r Range) int { return r.ReferenceResultID })
 	documentationPagesRows := collectDocumentationPages(ctx, state)
 	packages := gatherPackages(state)
-	packageReferences, err := gatherPackageReferences(state)
+	packageReferences, err := gatherPackageReferences(state, packages)
 	if err != nil {
 		return nil, err
 	}
@@ -375,7 +375,7 @@ func gatherPackages(state *State) []semantic.Package {
 	return packages
 }
 
-func gatherPackageReferences(state *State) ([]semantic.PackageReference, error) {
+func gatherPackageReferences(state *State, packageDefinitions []semantic.Package) ([]semantic.PackageReference, error) {
 	type ExpandedPackageReference struct {
 		Scheme      string
 		Name        string
@@ -383,12 +383,25 @@ func gatherPackageReferences(state *State) ([]semantic.PackageReference, error) 
 		Identifiers []string
 	}
 
+	packageDefinitionKeySet := make(map[string]struct{}, len(packageDefinitions))
+	for _, pkg := range packageDefinitions {
+		packageDefinitionKeySet[makeKey(pkg.Scheme, pkg.Name, pkg.Version)] = struct{}{}
+	}
+
 	uniques := make(map[string]ExpandedPackageReference, state.ImportedMonikers.Len())
 	state.ImportedMonikers.Each(func(id int) {
 		source := state.MonikerData[id]
 		packageInfo := state.PackageInformationData[source.PackageInformationID]
-
 		key := makeKey(source.Scheme, packageInfo.Name, packageInfo.Version)
+
+		if _, ok := packageDefinitionKeySet[key]; ok {
+			// We use package definitions and references as a way to link an index
+			// to its remote dependency. storing self-references is a waste of space
+			// and complicates our data retention path when considering the set of
+			// indexes that are referred to only by relevant/visible remote indexes.
+			return
+		}
+
 		uniques[key] = ExpandedPackageReference{
 			Scheme:      source.Scheme,
 			Name:        packageInfo.Name,

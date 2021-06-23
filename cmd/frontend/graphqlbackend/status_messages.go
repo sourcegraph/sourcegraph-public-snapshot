@@ -57,6 +57,10 @@ func (r *statusMessageResolver) ToSyncError() (*statusMessageResolver, bool) {
 	return r, r.message.SyncError != nil
 }
 
+func (r *statusMessageResolver) ToIndexingError() (*statusMessageResolver, bool) {
+	return r, r.message.IndexingError != nil
+}
+
 func (r *statusMessageResolver) Message() (string, error) {
 	if r.message.Cloning != nil {
 		return r.message.Cloning.Message, nil
@@ -66,6 +70,9 @@ func (r *statusMessageResolver) Message() (string, error) {
 	}
 	if r.message.SyncError != nil {
 		return r.message.SyncError.Message, nil
+	}
+	if r.message.IndexingError != nil {
+		return r.message.IndexingError.Message, nil
 	}
 	return "", errors.New("status message is of unknown type")
 }

@@ -7,6 +7,7 @@ import { NEVER } from 'rxjs'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
 
+import { EMPTY_FEATURE_FLAGS } from '../../featureFlags/featureFlags'
 import { SearchPatternType } from '../../graphql-operations'
 
 import { SearchResultsInfoBar, SearchResultsInfoBarProps } from './SearchResultsInfoBar'
@@ -25,6 +26,7 @@ const COMMON_PROPS: Omit<SearchResultsInfoBarProps, 'enableCodeMonitoring'> = {
     telemetryService: NOOP_TELEMETRY_SERVICE,
     patternType: SearchPatternType.literal,
     caseSensitive: false,
+    featureFlags: EMPTY_FEATURE_FLAGS,
 }
 
 describe('SearchResultsInfoBar', () => {
@@ -59,6 +61,22 @@ describe('SearchResultsInfoBar', () => {
                         enableCodeMonitoring={true}
                         query="foo type:diff"
                         authenticatedUser={null}
+                    />
+                )
+                .toJSON()
+        ).toMatchSnapshot()
+    })
+
+    test('feature flag enabled, unauthenticated user', () => {
+        expect(
+            renderer
+                .create(
+                    <SearchResultsInfoBar
+                        {...COMMON_PROPS}
+                        enableCodeMonitoring={true}
+                        query="foo type:diff"
+                        authenticatedUser={null}
+                        featureFlags={new Map([['w0-signup-optimisation', true]])}
                     />
                 )
                 .toJSON()

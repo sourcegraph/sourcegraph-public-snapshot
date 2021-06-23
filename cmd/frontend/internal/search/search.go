@@ -88,6 +88,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	eventWriter.StatHook = eventStreamOTHook(tr.LogFields)
 
 	events, inputs, results := h.startSearch(ctx, args)
+	events = batchEvents(events, 50*time.Millisecond)
 
 	traceURL := ""
 	if span := opentracing.SpanFromContext(ctx); span != nil {
@@ -154,8 +155,6 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		_ = matchesBuf.Append(m)
 	}
 
-	repoCache := make(map[api.RepoID]*types.Repo, 10)
-
 	flushTicker := time.NewTicker(h.flushTickerInternal)
 	defer flushTicker.Stop()
 
@@ -184,19 +183,19 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		progress.Update(event)
 		filters.Update(event)
 
-		// Ensure that, for each result in the event, we have a copy of the full repo metadata.
-		if err := updateRepoCache(ctx, h.db, repoCache, event); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		for _, match := range event.Results {
+		// Truncate the event to the match limit before fetching repo metadata
+		for i, match := range event.Results {
 			if display <= 0 {
+				event.Results = event.Results[:i]
 				break
 			}
 
 			display = match.Limit(display)
-			matchesAppend(fromMatch(match, repoCache))
+		}
+
+		repoMetadata := h.getEventRepoMetadata(ctx, event)
+		for _, match := range event.Results {
+			matchesAppend(fromMatch(match, repoMetadata))
 		}
 
 		// Instantly send results if we have not sent any yet.
@@ -286,45 +285,23 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// updateRepoCache requests repo metadata for each repo referenced by results in the event. It only makes a database request if there
-// are new repos that do not already exist in the cache.
-func updateRepoCache(ctx context.Context, db dbutil.DB, repoCache map[api.RepoID]*types.Repo, event streaming.SearchEvent) error {
-	uncachedIDs := make(map[api.RepoID]struct{}, 10)
-	for _, r := range event.Results {
-		var id api.RepoID
-		switch v := r.(type) {
-		case *result.FileMatch:
-			id = v.Repo.ID
-		case *result.RepoMatch:
-			id = v.ID
-		case *result.CommitMatch:
-			id = v.RepoName.ID
-		default:
-			return fmt.Errorf("unknown match type %T", r)
-		}
-
-		if _, ok := repoCache[id]; !ok {
-			uncachedIDs[id] = struct{}{}
-		}
-	}
-
-	if len(uncachedIDs) == 0 {
+func (h *streamHandler) getEventRepoMetadata(ctx context.Context, event streaming.SearchEvent) map[api.RepoID]*types.Repo {
+	ids := repoIDs(event.Results)
+	if len(ids) == 0 {
+		// Return early if there are no repos in the event
 		return nil
 	}
 
-	uncachedIDSlice := make([]api.RepoID, 0, len(uncachedIDs))
-	for id := range uncachedIDs {
-		uncachedIDSlice = append(uncachedIDSlice, id)
-	}
+	repoMetadata := make(map[api.RepoID]*types.Repo, len(ids))
 
-	repos, err := database.Repos(db).GetReposSetByIDs(ctx, uncachedIDSlice...)
+	metadataList, err := database.Repos(h.db).GetByIDs(ctx, ids...)
 	if err != nil {
-		return err
+		log15.Error("streaming: failed to retrieve repo metadata", "error", err)
 	}
-	for id, repo := range repos {
-		repoCache[id] = repo
+	for _, repo := range metadataList {
+		repoMetadata[repo.ID] = repo
 	}
-	return nil
+	return repoMetadata
 }
 
 // startSearch will start a search. It returns the events channel which
@@ -444,7 +421,7 @@ func fromMatch(match result.Match, repoCache map[api.RepoID]*types.Repo) streamh
 
 func fromFileMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Repo) streamhttp.EventMatch {
 	if syms := fm.Symbols; len(syms) > 0 {
-		return fromSymbolMatch(fm)
+		return fromSymbolMatch(fm, repoCache)
 	}
 
 	lineMatches := make([]streamhttp.EventLineMatch, 0, len(fm.LineMatches))
@@ -477,7 +454,7 @@ func fromFileMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Repo) s
 	}
 }
 
-func fromSymbolMatch(fm *result.FileMatch) *streamhttp.EventSymbolMatch {
+func fromSymbolMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Repo) *streamhttp.EventSymbolMatch {
 	symbols := make([]streamhttp.Symbol, 0, len(fm.Symbols))
 	for _, sym := range fm.Symbols {
 		kind := sym.Symbol.LSPKind()
@@ -499,10 +476,16 @@ func fromSymbolMatch(fm *result.FileMatch) *streamhttp.EventSymbolMatch {
 		branches = []string{*fm.InputRev}
 	}
 
+	var stars int
+	if r, ok := repoCache[fm.Repo.ID]; ok {
+		stars = r.Stars
+	}
+
 	return &streamhttp.EventSymbolMatch{
 		Type:       streamhttp.SymbolMatchType,
 		Path:       fm.Path,
 		Repository: string(fm.Repo.Name),
+		RepoStars:  stars,
 		Branches:   branches,
 		Version:    string(fm.CommitID),
 		Symbols:    symbols,
@@ -541,7 +524,7 @@ func fromCommit(commit *result.CommitMatch, repoCache map[api.RepoID]*types.Repo
 	}
 
 	var stars int
-	if r, ok := repoCache[commit.RepoName.ID]; ok {
+	if r, ok := repoCache[commit.Repo.ID]; ok {
 		stars = r.Stars
 	}
 
@@ -550,7 +533,7 @@ func fromCommit(commit *result.CommitMatch, repoCache map[api.RepoID]*types.Repo
 		Label:      commit.Label(),
 		URL:        commit.URL().String(),
 		Detail:     commit.Detail(),
-		Repository: string(commit.RepoName.Name),
+		Repository: string(commit.Repo.Name),
 		RepoStars:  stars,
 		Content:    content,
 		Ranges:     ranges,
@@ -654,4 +637,63 @@ func GuessSource(r *http.Request) trace.SourceType {
 	}
 
 	return trace.SourceOther
+}
+
+// batchEvents takes an event stream and merges events that come through close in time into a single event.
+// This makes downstream database and network operations more efficient by enabling batch reads.
+func batchEvents(source <-chan streaming.SearchEvent, delay time.Duration) <-chan streaming.SearchEvent {
+	results := make(chan streaming.SearchEvent)
+	go func() {
+		defer close(results)
+
+		// Send the first event without a delay
+		firstEvent, ok := <-source
+		if !ok {
+			return
+		}
+		results <- firstEvent
+
+	OUTER:
+		for {
+			// Wait for a first event
+			event, ok := <-source
+			if !ok {
+				return
+			}
+
+			// Wait up to the delay for more events to come through,
+			// and merge any that do into the first event
+			timer := time.After(delay)
+			for {
+				select {
+				case newEvent, ok := <-source:
+					if !ok {
+						// Flush the buffered event and exit
+						results <- event
+						return
+					}
+					event.Results = append(event.Results, newEvent.Results...)
+					event.Stats.Update(&newEvent.Stats)
+				case <-timer:
+					results <- event
+					continue OUTER
+				}
+			}
+		}
+
+	}()
+	return results
+}
+
+func repoIDs(results []result.Match) []api.RepoID {
+	ids := make(map[api.RepoID]struct{}, 5)
+	for _, result := range results {
+		ids[result.RepoName().ID] = struct{}{}
+	}
+
+	res := make([]api.RepoID, 0, len(ids))
+	for id := range ids {
+		res = append(res, id)
+	}
+	return res
 }

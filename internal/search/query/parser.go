@@ -404,7 +404,7 @@ loop:
 // ScanPredicate scans for a predicate that exists in the predicate
 // registry. It takes the current field as context.
 func ScanPredicate(field string, buf []byte) (string, int, bool) {
-	fieldRegistry, ok := DefaultPredicateRegistry[field]
+	fieldRegistry, ok := DefaultPredicateRegistry[resolveFieldAlias(field)]
 	if !ok {
 		// This field has no registered predicates
 		return "", 0, false

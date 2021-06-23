@@ -11,6 +11,11 @@
         }
     }
 
+    &__status-bar {
+        background-color: var(--code-bg);
+        height: 2rem;
+    }
+
     &__header {
         display: flex;
         align-items: center;

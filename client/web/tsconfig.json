@@ -10,7 +10,12 @@
     "rootDir": ".",
     "outDir": "out",
   },
-  "references": [{ "path": "../shared" }, { "path": "../branded" }, { "path": "../../schema" }],
+  "references": [
+    { "path": "../shared" },
+    { "path": "../branded" },
+    { "path": "../../schema" },
+    { "path": "../storybook" },
+  ],
   "include": ["**/*", ".*", "./src/**/*.json"],
   "exclude": ["../../node_modules", "./node_modules", "./out", "src/end-to-end", "src/regression", "src/integration"],
 }

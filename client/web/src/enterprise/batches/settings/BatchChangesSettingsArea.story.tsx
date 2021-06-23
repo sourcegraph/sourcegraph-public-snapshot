@@ -8,7 +8,7 @@ import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 import { BatchChangesSettingsArea } from './BatchChangesSettingsArea'
 
 const { add } = storiesOf('web/batches/settings/BatchChangesSettingsArea', module).addDecorator(story => (
-    <div className="p-3 container web-content">{story()}</div>
+    <div className="p-3 container">{story()}</div>
 ))
 
 add('Overview', () => (

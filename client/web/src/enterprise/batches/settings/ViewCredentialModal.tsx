@@ -25,35 +25,33 @@ export const ViewCredentialModal: React.FunctionComponent<ViewCredentialModalPro
             onDismiss={onClose}
             aria-labelledby={labelId}
         >
-            <div className="web-content">
-                <ModalHeader
-                    id={labelId}
-                    externalServiceKind={codeHost.externalServiceKind}
-                    externalServiceURL={codeHost.externalServiceURL}
+            <ModalHeader
+                id={labelId}
+                externalServiceKind={codeHost.externalServiceKind}
+                externalServiceURL={codeHost.externalServiceURL}
+            />
+
+            <h4>Personal access token</h4>
+            <div className="form-group">
+                <input
+                    type="text"
+                    value="PATs cannot be viewed after entering."
+                    className="form-control"
+                    disabled={true}
                 />
+            </div>
 
-                <h4>Personal access token</h4>
-                <div className="form-group">
-                    <input
-                        type="text"
-                        value="PATs cannot be viewed after entering."
-                        className="form-control"
-                        disabled={true}
-                    />
-                </div>
+            <hr className="mb-3" />
 
-                <hr className="mb-3" />
+            <CodeHostSshPublicKey
+                externalServiceKind={codeHost.externalServiceKind}
+                sshPublicKey={credential.sshPublicKey!}
+            />
 
-                <CodeHostSshPublicKey
-                    externalServiceKind={codeHost.externalServiceKind}
-                    sshPublicKey={credential.sshPublicKey!}
-                />
-
-                <div className="d-flex justify-content-end">
-                    <button type="button" className="btn btn-outline-secondary" onClick={onClose}>
-                        Close
-                    </button>
-                </div>
+            <div className="d-flex justify-content-end">
+                <button type="button" className="btn btn-outline-secondary" onClick={onClose}>
+                    Close
+                </button>
             </div>
         </Dialog>
     )

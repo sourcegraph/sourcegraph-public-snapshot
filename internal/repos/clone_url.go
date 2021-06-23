@@ -164,7 +164,7 @@ func githubCloneURL(repo *github.Repository, cfg *schema.GitHubConnection) (stri
 	return u.String(), nil
 }
 
-// authenticatedRemoteURL returns the GitLab projects's Git remote URL with the
+// authenticatedRemoteURL returns the GitLab project's Git remote URL with the
 // configured GitLab personal access token inserted in the URL userinfo.
 func gitlabCloneURL(repo *gitlab.Project, cfg *schema.GitLabConnection) string {
 	if cfg.GitURLType == "ssh" {
@@ -178,8 +178,11 @@ func gitlabCloneURL(repo *gitlab.Project, cfg *schema.GitLabConnection) string {
 		log15.Warn("Error adding authentication to GitLab repository Git remote URL.", "url", repo.HTTPURLToRepo, "error", err)
 		return repo.HTTPURLToRepo
 	}
-	// Any username works; "git" is not special.
-	u.User = url.UserPassword("git", cfg.Token)
+	username := "git"
+	if cfg.TokenType == "oauth" {
+		username = "oauth2"
+	}
+	u.User = url.UserPassword(username, cfg.Token)
 	return u.String()
 }
 

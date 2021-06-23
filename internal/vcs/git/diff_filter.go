@@ -127,8 +127,8 @@ func filterAndHighlightDiff(rawDiff []byte, query *regexp.Regexp, onlyMatchingHu
 			for _, match := range query.FindAllIndex(lineWithoutStatus, maxMatchesPerLine) {
 				highlights = append(highlights, Highlight{
 					Line:      i + 1,
-					Character: match[0] + 1,
-					Length:    match[1] - match[0],
+					Character: utf8.RuneCount(line[:match[0]]) + 1,
+					Length:    utf8.RuneCount(line[match[0]:match[1]]),
 				})
 			}
 		}

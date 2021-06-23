@@ -98,10 +98,21 @@ func newOAuthFlowHandler(db dbutil.DB, serviceType string) http.Handler {
 	return mux
 }
 
+// serviceType -> scopes
+var extraScopes = map[string][]string{
+	// We need `repo` scopes for reading private repos
+	extsvc.TypeGitHub: {"repo"},
+	// We need full `api` scope for cloning private repos
+	extsvc.TypeGitLab: {"api"},
+}
+
 func getExtraScopes(ctx context.Context, db dbutil.DB, serviceType string) ([]string, error) {
-	// On Sourcegraph Cloud and for GitHub, check if the user is allowed to add
-	// private code and if so, ask the code host for additional scopes
-	if !envvar.SourcegraphDotComMode() || (serviceType != extsvc.TypeGitHub) {
+	// Extra scopes are only needed on Sourcegraph.com
+	if !envvar.SourcegraphDotComMode() {
+		return nil, nil
+	}
+	scopes, ok := extraScopes[serviceType]
+	if !ok {
 		return nil, nil
 	}
 
@@ -112,13 +123,7 @@ func getExtraScopes(ctx context.Context, db dbutil.DB, serviceType string) ([]st
 	if mode != conf.ExternalServiceModeAll {
 		return nil, nil
 	}
-
-	switch serviceType {
-	case extsvc.TypeGitHub:
-		return []string{"repo"}, nil
-	default:
-		return nil, errors.Errorf("unknown service type: %q", serviceType)
-	}
+	return scopes, nil
 }
 
 // withOAuthExternalHTTPClient updates client such that the

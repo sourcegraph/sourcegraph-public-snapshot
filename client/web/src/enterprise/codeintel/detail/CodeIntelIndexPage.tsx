@@ -85,7 +85,7 @@ export const CodeIntelIndexPage: FunctionComponent<CodeIntelIndexPageProps> = ({
     ) : isErrorLike(deletionOrError) ? (
         <ErrorAlert prefix="Error deleting LSIF index record" error={deletionOrError} />
     ) : (
-        <div className="site-admin-lsif-index-page w-100 web-content">
+        <div className="site-admin-lsif-index-page w-100">
             <PageTitle title="Code intelligence - auto-indexing" />
             {isErrorLike(indexOrError) ? (
                 <ErrorAlert prefix="Error loading LSIF index" error={indexOrError} />

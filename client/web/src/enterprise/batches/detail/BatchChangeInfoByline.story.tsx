@@ -7,7 +7,7 @@ import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 import { BatchChangeInfoByline } from './BatchChangeInfoByline'
 
 const { add } = storiesOf('web/batches/BatchChangeInfoByline', module).addDecorator(story => (
-    <div className="p-3 container web-content">{story()}</div>
+    <div className="p-3 container">{story()}</div>
 ))
 
 const THREE_DAYS_AGO = subDays(new Date(), 3).toISOString()

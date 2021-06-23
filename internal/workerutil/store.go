@@ -21,7 +21,7 @@ type Store interface {
 	// concrete persistence layer (e.g. additional SQL conditions for a database layer). This method returns a boolean
 	// flag indicating the existence of a processable record along with a refined store instance which should be used
 	// for all additional operations (MarkComplete, MarkErrored, and Done) while processing the given record.
-	Dequeue(ctx context.Context, extraArguments interface{}) (Record, Store, bool, error)
+	Dequeue(ctx context.Context, workerHostname string, extraArguments interface{}) (Record, Store, bool, error)
 
 	// AddExecutionLogEntry adds an executor log entry to the record.
 	AddExecutionLogEntry(ctx context.Context, id int, entry ExecutionLogEntry) error

@@ -67,34 +67,32 @@ export const RemoveCodeHostConnectionModal: React.FunctionComponent<{
             aria-describedby={`description--remove-${name}-code-host`}
             onDismiss={onDidCancel}
         >
-            <div className="web-content">
-                <h3 id={`heading--remove-${name}-code-host`} className="text-danger mb-4">
-                    Remove connection with {name}.com?
-                </h3>
-                <Form onSubmit={onConnectionRemove}>
-                    <div id={`description--remove-${name}-code-host`} className="form-group mb-4">
-                        {getWarningMessage(name, repoCount)}
-                    </div>
-                    <div className="d-flex justify-content-end">
-                        <button
-                            type="button"
-                            disabled={isLoading}
-                            className="btn btn-outline-secondary mr-2"
-                            onClick={onDidCancel}
-                        >
-                            Cancel
-                        </button>
-                        <LoaderButton
-                            type="submit"
-                            className="btn btn-danger"
-                            loading={isLoading}
-                            disabled={isLoading}
-                            label="Yes, remove connection"
-                            alwaysShowLabel={true}
-                        />
-                    </div>
-                </Form>
-            </div>
+            <h3 id={`heading--remove-${name}-code-host`} className="text-danger mb-4">
+                Remove connection with {name}.com?
+            </h3>
+            <Form onSubmit={onConnectionRemove}>
+                <div id={`description--remove-${name}-code-host`} className="form-group mb-4">
+                    {getWarningMessage(name, repoCount)}
+                </div>
+                <div className="d-flex justify-content-end">
+                    <button
+                        type="button"
+                        disabled={isLoading}
+                        className="btn btn-outline-secondary mr-2"
+                        onClick={onDidCancel}
+                    >
+                        Cancel
+                    </button>
+                    <LoaderButton
+                        type="submit"
+                        className="btn btn-danger"
+                        loading={isLoading}
+                        disabled={isLoading}
+                        label="Yes, remove connection"
+                        alwaysShowLabel={true}
+                    />
+                </div>
+            </Form>
         </Dialog>
     )
 }

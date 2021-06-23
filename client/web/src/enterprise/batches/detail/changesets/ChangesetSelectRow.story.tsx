@@ -6,7 +6,7 @@ import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
 import { ChangesetSelectRow } from './ChangesetSelectRow'
 
 const { add } = storiesOf('web/batches/ChangesetSelectRow', module).addDecorator(story => (
-    <div className="p-3 container web-content">{story()}</div>
+    <div className="p-3 container">{story()}</div>
 ))
 
 const onSubmit = (): void => {}

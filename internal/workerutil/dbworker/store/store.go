@@ -37,12 +37,12 @@ type Store interface {
 	// transaction.
 	//
 	// The supplied conditions may use the alias provided in `ViewName`, if one was supplied.
-	Dequeue(ctx context.Context, conditions []*sqlf.Query) (record workerutil.Record, tx Store, exists bool, err error)
+	Dequeue(ctx context.Context, workerHostname string, conditions []*sqlf.Query) (record workerutil.Record, tx Store, exists bool, err error)
 
 	// DequeueWithIndependentTransactionContext is like Dequeue, but will use a context.Background() for the underlying
 	// transaction context. This method allows the transaction to lexically outlive the code in which it was created. This
 	// is useful if a longer-running transaction is managed explicitly between multiple goroutines.
-	DequeueWithIndependentTransactionContext(ctx context.Context, conditions []*sqlf.Query) (workerutil.Record, Store, bool, error)
+	DequeueWithIndependentTransactionContext(ctx context.Context, workerHostname string, conditions []*sqlf.Query) (workerutil.Record, Store, bool, error)
 
 	// Requeue updates the state of the record with the given identifier to queued and adds a processing delay before
 	// the next dequeue of this record can be performed.
@@ -250,6 +250,7 @@ var columnNames = []string{
 	"num_resets",
 	"num_failures",
 	"execution_logs",
+	"worker_hostname",
 }
 
 // DefaultColumnExpressions returns a slice of expressions for the default column name we expect.
@@ -306,18 +307,18 @@ SELECT COUNT(*) FROM %s WHERE (
 // transaction.
 //
 // The supplied conditions may use the alias provided in `ViewName`, if one was supplied.
-func (s *store) Dequeue(ctx context.Context, conditions []*sqlf.Query) (record workerutil.Record, _ Store, exists bool, err error) {
-	return s.dequeue(ctx, conditions, false)
+func (s *store) Dequeue(ctx context.Context, workerHostname string, conditions []*sqlf.Query) (record workerutil.Record, _ Store, exists bool, err error) {
+	return s.dequeue(ctx, workerHostname, conditions, false)
 }
 
 // DequeueWithIndependentTransactionContext is like Dequeue, but will use a context.Background() for the underlying
 // transaction context. This method allows the transaction to lexically outlive the code in which it was created. This
 // is useful if a longer-running transaction is managed explicitly between multiple goroutines.
-func (s *store) DequeueWithIndependentTransactionContext(ctx context.Context, conditions []*sqlf.Query) (workerutil.Record, Store, bool, error) {
-	return s.dequeue(ctx, conditions, true)
+func (s *store) DequeueWithIndependentTransactionContext(ctx context.Context, workerHostname string, conditions []*sqlf.Query) (workerutil.Record, Store, bool, error) {
+	return s.dequeue(ctx, workerHostname, conditions, true)
 }
 
-func (s *store) dequeue(ctx context.Context, conditions []*sqlf.Query, independentTxCtx bool) (record workerutil.Record, _ Store, exists bool, err error) {
+func (s *store) dequeue(ctx context.Context, workerHostname string, conditions []*sqlf.Query, independentTxCtx bool) (record workerutil.Record, _ Store, exists bool, err error) {
 	ctx, traceLog, endObservation := s.operations.dequeue.WithAndLogger(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
@@ -339,6 +340,7 @@ func (s *store) dequeue(ctx context.Context, conditions []*sqlf.Query, independe
 		makeConditionSuffix(conditions),
 		s.options.OrderByExpression,
 		quote(s.options.TableName),
+		workerHostname,
 	)
 
 	for {
@@ -434,7 +436,8 @@ SET
 	{state} = 'processing',
 	{started_at} = NOW(),
 	{finished_at} = NULL,
-	{failure_message} = NULL
+	{failure_message} = NULL,
+	{worker_hostname} = %s
 WHERE {id} IN (SELECT {id} FROM candidate)
 RETURNING {id}
 `
