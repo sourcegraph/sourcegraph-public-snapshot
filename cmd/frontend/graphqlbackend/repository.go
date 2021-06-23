@@ -147,6 +147,11 @@ func (r *RepositoryResolver) BatchChanges(ctx context.Context, args *ListBatchCh
 	return EnterpriseResolvers.batchChangesResolver.BatchChanges(ctx, args)
 }
 
+func (r *RepositoryResolver) ChangesetsStats(ctx context.Context) (RepoChangesetsStatsResolver, error) {
+	id := r.ID()
+	return EnterpriseResolvers.batchChangesResolver.RepoChangesetsStats(ctx, &id)
+}
+
 type RepositoryCommitArgs struct {
 	Rev          string
 	InputRevspec *string

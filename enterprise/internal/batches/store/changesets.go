@@ -943,6 +943,27 @@ WHERE
 	%s
 `
 
+// GetRepoChangesetsStats returns statistics on all the changesets associated to the given repo.
+func (s *Store) GetRepoChangesetsStats(ctx context.Context, repoID api.RepoID) (stats btypes.RepoChangesetsStats, err error) {
+	q := getRepoChangesetsStatsQuery(int64(repoID))
+	err = s.query(ctx, q, func(sc scanner) error {
+		if err := sc.Scan(
+			&stats.Total,
+			&stats.Unpublished,
+			&stats.Closed,
+			&stats.Merged,
+			&stats.Open,
+		); err != nil {
+			return err
+		}
+		return err
+	})
+	if err != nil {
+		return stats, err
+	}
+	return stats, nil
+}
+
 func (s *Store) EnqueueNextScheduledChangeset(ctx context.Context) (*btypes.Changeset, error) {
 	q := sqlf.Sprintf(
 		enqueueNextScheduledChangesetFmtstr,
@@ -1049,3 +1070,22 @@ func getChangesetsStatsQuery(batchChangeID int64) *sqlf.Query {
 		sqlf.Join(preds, " AND "),
 	)
 }
+
+func getRepoChangesetsStatsQuery(repoID int64) *sqlf.Query {
+	return sqlf.Sprintf(
+		getRepoChangesetStatsFmtstr,
+		strconv.Itoa(int(repoID)),
+	)
+}
+
+const getRepoChangesetStatsFmtstr = `
+-- source: enterprise/internal/batches/store_changesets.go:GetRepoChangesetsStats
+SELECT
+	COUNT(*) AS total,
+	COUNT(*) FILTER (WHERE changesets.publication_state = 'UNPUBLISHED' AND changesets.reconciler_state = 'completed') AS unpublished,
+	COUNT(*) FILTER (WHERE changesets.external_state = 'CLOSED' ) AS closed,
+	COUNT(*) FILTER (WHERE changesets.external_state = 'MERGED' ) AS merged,
+	COUNT(*) FILTER (WHERE changesets.external_state = 'OPEN'   ) AS open
+FROM changesets
+WHERE changesets.repo_id = %s
+`

@@ -287,6 +287,7 @@ type BatchChangesResolver interface {
 	BatchChanges(cx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error)
 
 	BatchChangesCodeHosts(ctx context.Context, args *ListBatchChangesCodeHostsArgs) (BatchChangesCodeHostConnectionResolver, error)
+	RepoChangesetsStats(ctx context.Context, repo *graphql.ID) (RepoChangesetsStatsResolver, error)
 
 	NodeResolvers() map[string]NodeByIDFunc
 }
@@ -597,19 +598,23 @@ type BatchChangesConnectionResolver interface {
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
+type RepoChangesetsStatsResolver interface {
+	Unpublished() int32
+	Open() int32
+	Merged() int32
+	Closed() int32
+	Total() int32
+}
+
 type ChangesetsStatsResolver interface {
+	RepoChangesetsStatsResolver
 	Retrying() int32
 	Failed() int32
 	Scheduled() int32
 	Processing() int32
-	Unpublished() int32
 	Draft() int32
-	Open() int32
-	Merged() int32
-	Closed() int32
 	Deleted() int32
 	Archived() int32
-	Total() int32
 }
 
 type ChangesetsConnectionResolver interface {
