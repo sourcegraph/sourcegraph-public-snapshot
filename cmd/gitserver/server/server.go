@@ -307,25 +307,23 @@ func (s *Server) Janitor(interval time.Duration) {
 }
 
 // SyncRepoState syncs state on disk to the database for all repos and is
-// expected to run in a background goroutine. We perform a full sync the first
-// time or if the known gitserver addresses has changed since the last run.
-// Otherwise, we only sync repos that have not yet been assigned a shard.
+// expected to run in a background goroutine. We perform a full sync if the known
+// gitserver addresses has changed since the last run. Otherwise, we only sync
+// repos that have not yet been assigned a shard.
 func (s *Server) SyncRepoState(interval time.Duration, batchSize, perSecond int) {
-	fullSync := true
-	previousAddrs := ""
+	var previousAddrs string
 	for {
 		addrs := conf.Get().ServiceConnections.GitServers
 		// We turn addrs into a string here for easy comparison and storage of previous
 		// addresses since we'd need to take a copy of the slice anyway.
-		addrsString := strings.Join(addrs, ",")
-		fullSync = addrsString != previousAddrs
-		previousAddrs = addrsString
+		currentAddrs := strings.Join(addrs, ",")
+		fullSync := currentAddrs != previousAddrs
+		previousAddrs = currentAddrs
 
 		if err := s.syncRepoState(addrs, batchSize, perSecond, fullSync); err != nil {
 			log15.Error("Syncing repo state", "error ", err)
 		}
 
-		fullSync = false
 		time.Sleep(interval)
 	}
 }
