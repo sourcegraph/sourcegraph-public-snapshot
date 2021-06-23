@@ -12,8 +12,8 @@ import (
 type ObservablePanel struct {
 	options []ObservablePanelOption
 
-	// panelType is "graph" or "heatmap"
-	panelType string
+	// panelType defines the type of panel
+	panelType PanelType
 
 	// unitType is used by other parts of the generator
 	unitType UnitType

@@ -40,6 +40,7 @@ To learn more about the generator\, see the top\-level program: https://github.c
   - [func (p ObservablePanel) Unit(t UnitType) ObservablePanel](<#func-observablepanel-unit>)
   - [func (p ObservablePanel) With(ops ...ObservablePanelOption) ObservablePanel](<#func-observablepanel-with>)
 - [type ObservablePanelOption](<#type-observablepaneloption>)
+- [type PanelType](<#type-paneltype>)
 - [type Row](<#type-row>)
 - [type UnitType](<#type-unittype>)
 
@@ -472,6 +473,19 @@ Using a shared prefix helps with discoverability of available options\.
 type ObservablePanelOption func(Observable, *sdk.Panel)
 ```
 
+## type [PanelType](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/dashboards.go#L10>)
+
+```go
+type PanelType string
+```
+
+```go
+const (
+    PanelTypeGraph   PanelType = "graph"
+    PanelTypeHeatmap PanelType = "heatmap"
+)
+```
+
 ## type [Row](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L394>)
 
 Row of observable metrics\.
@@ -482,7 +496,7 @@ These correspond to a row of Grafana graphs\.
 type Row []Observable
 ```
 
-## type [UnitType](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/dashboards.go#L11>)
+## type [UnitType](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/dashboards.go#L18>)
 
 UnitType for controlling the unit type display on graphs\.
 

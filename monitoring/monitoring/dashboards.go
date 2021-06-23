@@ -7,6 +7,13 @@ import (
 	"github.com/grafana-tools/sdk"
 )
 
+type PanelType string
+
+const (
+	PanelTypeGraph   PanelType = "graph"
+	PanelTypeHeatmap PanelType = "heatmap"
+)
+
 // UnitType for controlling the unit type display on graphs.
 type UnitType string
 
