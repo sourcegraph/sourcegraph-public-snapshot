@@ -60,13 +60,13 @@ func RepoUpdater() *monitoring.Container {
 						},
 						{
 							Name:        "src_repoupdater_syncer_sync_errors_total",
-							Description: "sync error rate",
-							Query:       `max by (family) (rate(src_repoupdater_syncer_sync_errors_total[5m]))`,
+							Description: "site level external service sync error rate",
+							Query:       `max by (family) (rate(src_repoupdater_syncer_sync_errors_total{owner!="user"}[5m]))`,
 							Critical:    monitoring.Alert().Greater(0, nil).For(10 * time.Minute),
 							Panel:       monitoring.Panel().Unit(monitoring.Number),
 							Owner:       monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: `
-								An alert here indicates errors syncing repo metadata with code hosts. This indicates that there could be a configuration issue
+								An alert here indicates errors syncing site level repo metadata with code hosts. This indicates that there could be a configuration issue
 								with your code hosts connections or networking issues affecting communication with your code hosts.
 								- Check the code host status indicator (cloud icon in top right of Sourcegraph homepage) for errors.
 								- Make sure external services do not have invalid tokens by navigating to them in the web UI and clicking save. If there are no errors, they are valid.
@@ -79,10 +79,10 @@ func RepoUpdater() *monitoring.Container {
 					{
 						{
 							Name:              "syncer_sync_start",
-							Description:       "sync was started",
-							Query:             `max by (family) (rate(src_repoupdater_syncer_start_sync[5m]))`,
+							Description:       "repo metadata sync was started",
+							Query:             fmt.Sprintf(`max by (family, owner) (rate(src_repoupdater_syncer_start_sync[%s]))`, syncDurationThreshold.String()),
 							Warning:           monitoring.Alert().LessOrEqual(0, nil).For(syncDurationThreshold),
-							Panel:             monitoring.Panel().LegendFormat("{{family}}").Unit(monitoring.Number),
+							Panel:             monitoring.Panel().LegendFormat("Family: {{family}} Owner: {{owner}}").Unit(monitoring.Number),
 							Owner:             monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: "Check repo-updater logs for errors.",
 						},
