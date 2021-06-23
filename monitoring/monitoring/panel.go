@@ -64,7 +64,7 @@ func (p ObservablePanel) Min(min float64) ObservablePanel {
 	return p
 }
 
-// Min sets the minimum value of the Y axis on the panel to auto, instead of
+// MinAuto sets the minimum value of the Y axis on the panel to auto, instead of
 // the default zero.
 //
 // This is generally only useful if trying to show negative numbers.
