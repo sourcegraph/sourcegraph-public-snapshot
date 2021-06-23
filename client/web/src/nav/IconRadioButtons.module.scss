@@ -64,6 +64,12 @@
     &--inactive {
         filter: grayscale(1);
     }
+
+    & > svg {
+        // For some reason, the icons are slightly clipped on their right edge
+        // in Firefox. This prevents that from happening.
+        overflow: visible;
+    }
 }
 
 .input {
