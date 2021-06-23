@@ -5,7 +5,6 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
 import { RepositoryFields } from '../../graphql-operations'
-import { RepoHeaderBreadcrumbNavItem } from '../RepoHeaderBreadcrumbNavItem'
 
 import { RepositoryBranchesAllPage } from './RepositoryBranchesAllPage'
 import { RepositoryBranchesNavbar } from './RepositoryBranchesNavbar'
@@ -41,15 +40,7 @@ export const RepositoryBranchesArea: React.FunctionComponent<Props> = ({ useBrea
         repo,
     }
 
-    useBreadcrumb(
-        useMemo(
-            () => ({
-                key: 'branches',
-                element: <RepoHeaderBreadcrumbNavItem key="branches">Branches</RepoHeaderBreadcrumbNavItem>,
-            }),
-            []
-        )
-    )
+    useBreadcrumb(useMemo(() => ({ key: 'branches', element: 'Branches' }), []))
 
     return (
         <div className="repository-branches-area container">
