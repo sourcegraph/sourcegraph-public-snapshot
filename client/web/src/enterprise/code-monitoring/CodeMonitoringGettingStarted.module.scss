@@ -1,0 +1,19 @@
+.subheading {
+    font-size: 1rem;
+}
+
+.create-button {
+    width: fit-content;
+}
+
+.starting-points-container {
+    color: var(--body-color);
+    padding-right: 0;
+    padding-left: 0;
+}
+
+.starting-point {
+    &:not(:first-child) {
+        padding-left: 1.5rem;
+    }
+}
