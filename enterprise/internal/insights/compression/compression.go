@@ -29,7 +29,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
-
 type CommitFilter struct {
 	store         CommitStore
 	maxHistorical time.Time
