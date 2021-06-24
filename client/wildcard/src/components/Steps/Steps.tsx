@@ -1,4 +1,5 @@
 import classNames from 'classnames'
+import { upperFirst } from 'lodash'
 import React from 'react'
 
 import stepsStyles from './Steps.module.scss'
@@ -12,21 +13,18 @@ export interface StepProps {
 
 export interface StepsProps {
     current: number
-    initial: number
     numbered?: boolean
-    onChange: (current: number) => void
-    children?: React.ReactNode
+    // onChange: (current: number) => void
+    children?: React.ReactElement<StepProps> | React.ReactElement<StepProps>[]
 }
-
-const toCapitalCase = (word: string): string => word[0].toUpperCase() + word.slice(1)
 
 export const Step: React.FunctionComponent<StepProps> = ({ title, active, borderColor }) => (
     <li
-        className={classNames({
-            [stepsStyles.listItem]: true,
-            [stepsStyles[`color${toCapitalCase(borderColor)}`]]: !!borderColor,
-            [stepsStyles.active]: active,
-        })}
+        className={classNames(
+            stepsStyles.listItem,
+            active && stepsStyles.active,
+            borderColor && stepsStyles[`color${upperFirst(borderColor)}`]
+        )}
         aria-current={active}
     >
         {title}
@@ -35,17 +33,16 @@ export const Step: React.FunctionComponent<StepProps> = ({ title, active, border
 
 export const Steps: React.FunctionComponent<StepsProps> = ({ children, numbered, current = 1 }) => {
     if (!children) {
-        throw new Error('Steps must be include at least one child')
+        throw new Error('Steps must include at least one child')
     }
 
     if (current < 1 || current > React.Children.count(children)) {
         console.warn('current step is out of limits')
     }
 
-    const element = React.Children.map(children, (child, index) => {
-        const active = current === index + 1
-        return React.cloneElement(child as React.ReactElement, { active })
-    })
+    const element = React.Children.map(children, (child, index) =>
+        React.cloneElement(child as React.ReactElement, { active: current === index + 1 })
+    )
 
     return (
         <nav className={stepsStyles.stepsWrapper} aria-label="progress">
