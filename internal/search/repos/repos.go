@@ -46,9 +46,9 @@ func (r *Resolved) String() string {
 }
 
 type Resolver struct {
-	DB                 dbutil.DB
-	Zoekt              *searchbackend.Zoekt
-	IndexableReposFunc indexableReposFunc
+	DB                  dbutil.DB
+	Zoekt               *searchbackend.Zoekt
+	SearchableReposFunc searchableReposFunc
 }
 
 func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
@@ -125,7 +125,7 @@ func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 
 	if envvar.SourcegraphDotComMode() && len(includePatterns) == 0 && !query.HasTypeRepo(op.Query) && searchcontexts.IsGlobalSearchContext(searchContext) {
 		start := time.Now()
-		indexableRepos, err = indexableRepositories(ctx, r.IndexableReposFunc, r.Zoekt, excludePatterns)
+		indexableRepos, err = searchableRepositories(ctx, r.SearchableReposFunc, r.Zoekt, excludePatterns)
 		if err != nil {
 			return Resolved{}, errors.Wrap(err, "getting list of default repos")
 		}
@@ -611,34 +611,34 @@ func findPatternRevs(includePatterns []string) (includePatternRevs []patternRevs
 	return
 }
 
-type indexableReposFunc func(ctx context.Context) ([]types.RepoName, error)
+type searchableReposFunc func(ctx context.Context) ([]types.RepoName, error)
 
-// indexableRepositories returns the intersection of calling gettRawIndexableRepos
+// searchableRepositories returns the intersection of calling gettRawSearchableRepos
 // (db) and indexed repos (zoekt), minus repos matching excludePatterns.
-func indexableRepositories(ctx context.Context, getRawIndexableRepos indexableReposFunc, z *searchbackend.Zoekt, excludePatterns []string) (_ []types.RepoName, err error) {
-	tr, ctx := trace.New(ctx, "indexableRepositories", "")
+func searchableRepositories(ctx context.Context, getRawSearchableRepos searchableReposFunc, z *searchbackend.Zoekt, excludePatterns []string) (_ []types.RepoName, err error) {
+	tr, ctx := trace.New(ctx, "searchableRepositories", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
 	// Get the list of indexable repos from the database.
-	indexableRepos, err := getRawIndexableRepos(ctx)
+	searchableRepos, err := getRawSearchableRepos(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "querying database for indexable repos")
+		return nil, errors.Wrap(err, "querying database for searchable repos")
 	}
-	tr.LazyPrintf("getRawIndexableRepos - done")
+	tr.LazyPrintf("getRawSearchableRepos - done")
 
 	// Remove excluded repos.
 	if len(excludePatterns) > 0 {
 		patterns, _ := regexp.Compile(`(?i)` + UnionRegExps(excludePatterns))
-		filteredRepos := indexableRepos[:0]
-		for _, repo := range indexableRepos {
+		filteredRepos := searchableRepos[:0]
+		for _, repo := range searchableRepos {
 			if matched := patterns.MatchString(string(repo.Name)); !matched {
 				filteredRepos = append(filteredRepos, repo)
 			}
 		}
-		indexableRepos = filteredRepos
+		searchableRepos = filteredRepos
 		tr.LazyPrintf("remove excluded repos - done")
 	}
 
@@ -651,9 +651,9 @@ func indexableRepositories(ctx context.Context, getRawIndexableRepos indexableRe
 	}
 	tr.LazyPrintf("zoekt.ListAll - done")
 
-	// In place filtering of indexableRepos to only include names from set.
-	repos := indexableRepos[:0]
-	for _, r := range indexableRepos {
+	// In place filtering of searchableRepos to only include names from set.
+	repos := searchableRepos[:0]
+	for _, r := range searchableRepos {
 		if _, ok := set[string(r.Name)]; ok {
 			repos = append(repos, r)
 		}

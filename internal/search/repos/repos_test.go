@@ -370,7 +370,7 @@ func TestIndexableRepositories(t *testing.T) {
 			}
 
 			ctx := context.Background()
-			drs, err := indexableRepositories(ctx, getRawIndexableRepos, z, tc.excludePatterns)
+			drs, err := searchableRepositories(ctx, getRawIndexableRepos, z, tc.excludePatterns)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -435,7 +435,7 @@ func TestUseIndexableReposIfMissingOrGlobalSearchContext(t *testing.T) {
 				SearchContextSpec: tt.searchContextSpec,
 				Query:             queryInfo,
 			}
-			repositoryResolver := &Resolver{Zoekt: mockZoekt, IndexableReposFunc: mockIndexableReposFunc}
+			repositoryResolver := &Resolver{Zoekt: mockZoekt, SearchableReposFunc: mockIndexableReposFunc}
 			resolved, err := repositoryResolver.Resolve(context.Background(), op)
 			if err != nil {
 				t.Fatal(err)

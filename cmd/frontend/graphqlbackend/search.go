@@ -404,9 +404,9 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, opts resolveRe
 		Limit:              opts.limit,
 	}
 	repositoryResolver := &searchrepos.Resolver{
-		DB:                 r.db,
-		Zoekt:              r.zoekt,
-		IndexableReposFunc: backend.Repos.ListSearchable,
+		DB:                  r.db,
+		Zoekt:               r.zoekt,
+		SearchableReposFunc: backend.Repos.ListSearchable,
 	}
 
 	return repositoryResolver.Resolve(ctx, options)
