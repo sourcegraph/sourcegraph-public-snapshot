@@ -152,8 +152,8 @@ func commitParametersToDiffParameters(ctx context.Context, db dbutil.DB, op *sea
 	}, nil
 }
 
-// SearchCommitsInRepoStream searches for commits based on op.
-func SearchCommitsInRepoStream(ctx context.Context, db dbutil.DB, op search.CommitParameters, s streaming.Sender) (err error) {
+// searchCommitsInRepoStream searches for commits based on op.
+func searchCommitsInRepoStream(ctx context.Context, db dbutil.DB, op search.CommitParameters, s streaming.Sender) (err error) {
 	var timedOut, limitHit bool
 	resultCount := 0
 	tr, ctx := trace.New(ctx, "searchCommitsInRepo", fmt.Sprintf("repoRevs: %v, pattern %+v", op.RepoRevs, op.PatternInfo))
@@ -423,7 +423,7 @@ func SearchCommitsInRepos(ctx context.Context, db dbutil.DB, args *search.TextPa
 	repoSearch := func(ctx context.Context, repoRev *search.RepositoryRevisions) error {
 		commitParams := params.CommitParams
 		commitParams.RepoRevs = repoRev
-		return SearchCommitsInRepoStream(ctx, db, commitParams, params.ResultChannel)
+		return searchCommitsInRepoStream(ctx, db, commitParams, params.ResultChannel)
 	}
 
 	g, ctx := errgroup.WithContext(ctx)
