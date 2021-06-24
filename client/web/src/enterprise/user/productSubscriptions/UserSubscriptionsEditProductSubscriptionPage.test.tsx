@@ -14,10 +14,6 @@ jest.mock('./ProductSubscriptionForm', () => ({
     ProductSubscriptionForm: 'ProductSubscriptionForm',
 }))
 
-jest.mock('../../../tracking/eventLogger', () => ({
-    eventLogger: { logViewEvent: () => undefined },
-}))
-
 const history = H.createMemoryHistory()
 const location = H.createLocation('/')
 
