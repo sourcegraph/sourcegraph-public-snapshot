@@ -7,7 +7,10 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import styles from './CodeMonitoringGettingStarted.module.scss'
 
-export const CodeMonitoringGettingStarted: React.FunctionComponent<ThemeProps> = ({ isLightTheme }) => {
+export const CodeMonitoringGettingStarted: React.FunctionComponent<ThemeProps & { isSignedIn: boolean }> = ({
+    isLightTheme,
+    isSignedIn,
+}) => {
     const assetsRoot = window.context?.assetsRoot || ''
 
     return (
@@ -32,10 +35,19 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<ThemeProps> =
                         <li>Identify when bad patterns are commited </li>
                         <li>Identify use of depricated libraries</li>
                     </ul>
-                    <Link to="/code-monitoring/new" className={classNames('btn btn-primary', styles.createButton)}>
-                        <PlusIcon className="icon-inline mr-2" />
-                        Create a code monitor
-                    </Link>
+                    {isSignedIn ? (
+                        <Link to="/code-monitoring/new" className={classNames('btn btn-primary', styles.createButton)}>
+                            <PlusIcon className="icon-inline mr-2" />
+                            Create a code monitor
+                        </Link>
+                    ) : (
+                        <Link
+                            to={`/sign-up?returnTo=${encodeURIComponent('/code-monitoring/new')}`}
+                            className={classNames('btn btn-primary', styles.createButton)}
+                        >
+                            Sign up to create a code monitor
+                        </Link>
+                    )}
                 </div>
             </div>
             <div className={classNames('container', styles.startingPointsContainer)}>
@@ -120,17 +132,32 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<ThemeProps> =
                             </a>
                         </div>
                     </div>
-                    <div className="col-4">
-                        <div>
-                            <h4>Questions and feedback</h4>
-                            <p className="text-muted">
-                                Have a question or idea about code monitoring? We want to hear your feedback!
-                            </p>
-                            <a href="mailto:feedback@sourcegraph.com" className="link">
-                                Share your thoughts
-                            </a>
+                    {isSignedIn ? (
+                        <div className="col-4">
+                            <div>
+                                <h4>Questions and feedback</h4>
+                                <p className="text-muted">
+                                    Have a question or idea about code monitoring? We want to hear your feedback!
+                                </p>
+                                <a href="mailto:feedback@sourcegraph.com" className="link">
+                                    Share your thoughts
+                                </a>
+                            </div>
                         </div>
-                    </div>
+                    ) : (
+                        <div className="col-4">
+                            <div className={classNames('card', styles.signUpCard)}>
+                                <h4>Free for registered users</h4>
+                                <p className="text-muted">Sign up and build your first code monitor today.</p>
+                                <Link
+                                    to={`/sign-up?returnTo=${encodeURIComponent('/code-monitoring/new')}`}
+                                    className="btn btn-primary"
+                                >
+                                    Sign up now
+                                </Link>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
