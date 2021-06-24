@@ -1,23 +1,26 @@
+import classNames from 'classnames'
 import React from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
+
+import styles from './CodeMonitoringGettingStarted.module.scss'
 
 export const CodeMonitoringGettingStarted: React.FunctionComponent<{}> = () => (
     <div>
         <div className="d-flex flex-column mb-5">
             <h2>Get started with code monitoring</h2>
-            <p className="text-muted code-monitoring-page__start-subheading mb-4">
+            <p className={classNames('text-muted mb-4', styles.subheading)}>
                 Watch your code for changes and trigger actions to get notifications, send webhooks, and more.{' '}
                 <a href="https://docs.sourcegraph.com/code_monitoring">Learn more.</a>
             </p>
-            <Link to="/code-monitoring/new" className="code-monitoring-page__start-button btn btn-primary">
+            <Link to="/code-monitoring/new" className={classNames('btn btn-primary', styles.createButton)}>
                 Create your first code monitor →
             </Link>
         </div>
-        <div className="code-monitoring-page__start-points container">
+        <div className={classNames('container', styles.startingPointsContainer)}>
             <h3 className="mb-3">Starting points for your first monitor</h3>
-            <div className="row no-gutters code-monitoring-page__start-points-panel-container mb-3">
-                <div className="col-6">
+            <div className="row no-gutters mb-3">
+                <div className={classNames('col-6', styles.startingPoint)}>
                     <div className="card">
                         <div className="card-body p-3">
                             <h3>Watch for AWS secrets in commits</h3>
@@ -34,7 +37,7 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<{}> = () => (
                         </div>
                     </div>
                 </div>
-                <div className="col-6">
+                <div className={classNames('col-6', styles.startingPoint)}>
                     <div className="card">
                         <div className="card-body p-3">
                             <h3>Watch for new consumers of deprecated methods</h3>
@@ -56,7 +59,7 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<{}> = () => (
                 Find more starting points in the docs
             </a>
         </div>
-        <div className="code-monitoring-page__learn-more container mt-5">
+        <div className="container mt-5 px-0">
             <h3 className="mb-3">Learn more about code monitoring</h3>
             <div className="row">
                 <div className="col-4">
