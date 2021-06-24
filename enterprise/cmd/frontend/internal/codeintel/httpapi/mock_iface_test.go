@@ -4,9 +4,10 @@ package httpapi
 
 import (
 	"context"
+	"sync"
+
 	dbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"sync"
 )
 
 // MockDBStore is a mock implementation of the DBStore interface (from the
