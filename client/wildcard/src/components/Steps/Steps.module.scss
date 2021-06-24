@@ -1,0 +1,44 @@
+.steps-wrapper {
+    ul,
+    ol {
+        display: flex;
+        gap: 1rem;
+        padding: 0;
+        margin: 0;
+        justify-content: space-between;
+        list-style-position: inside;
+    }
+
+    ul {
+        list-style: none;
+    }
+}
+
+.list-item {
+    flex: 1;
+    border: 0;
+    border-top-width: 2px;
+    padding-top: 0.5rem;
+    border-style: solid;
+    color: var(--text-muted);
+}
+
+.active {
+    color: var(--body-color);
+}
+
+.border-reset {
+    border: 0;
+}
+
+.color-purple {
+    border-top-color: var(--logo-purple);
+}
+
+.color-blue {
+    border-top-color: var(--logo-blue);
+}
+
+.color-orange {
+    border-top-color: var(--logo-orange);
+}

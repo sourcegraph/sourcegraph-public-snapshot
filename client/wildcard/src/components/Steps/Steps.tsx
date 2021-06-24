@@ -1,9 +1,13 @@
+import classNames from 'classnames'
 import React from 'react'
+
+import stepsStyles from './Steps.module.scss'
 
 export interface StepProps {
     title: React.ReactNode
     description?: React.ReactNode
     active?: boolean
+    borderColor?: 'orange' | 'blue' | 'purple'
 }
 
 export interface StepsProps {
@@ -14,17 +18,28 @@ export interface StepsProps {
     children?: React.ReactNode
 }
 
-export const Step: React.FunctionComponent<StepProps> = ({ title, active }) => <li aria-current={active}>{title}</li>
+const toCapitalCase = (word: string): string => word[0].toUpperCase() + word.slice(1)
+
+export const Step: React.FunctionComponent<StepProps> = ({ title, active, borderColor }) => (
+    <li
+        className={classNames({
+            [stepsStyles.listItem]: true,
+            [stepsStyles[`color${toCapitalCase(borderColor)}`]]: !!borderColor,
+            [stepsStyles.active]: active,
+        })}
+        aria-current={active}
+    >
+        {title}
+    </li>
+)
 
 export const Steps: React.FunctionComponent<StepsProps> = ({ children, numbered, current = 1 }) => {
     if (!children) {
         throw new Error('Steps must be include at least one child')
     }
 
-    console.log(current, React.Children.count(children))
-
     if (current < 1 || current > React.Children.count(children)) {
-        console.warn('this is out of the limits')
+        console.warn('current step is out of limits')
     }
 
     const element = React.Children.map(children, (child, index) => {
@@ -32,23 +47,25 @@ export const Steps: React.FunctionComponent<StepsProps> = ({ children, numbered,
         return React.cloneElement(child as React.ReactElement, { active })
     })
 
-    return <nav aria-label="progress">{numbered ? <ol>{element}</ol> : <ul>{element}</ul>}</nav>
+    return (
+        <nav className={stepsStyles.stepsWrapper} aria-label="progress">
+            {numbered ? <ol>{element}</ol> : <ul>{element}</ul>}
+        </nav>
+    )
 }
+// A11y inspiration
 {
     /* <nav aria-label="progress">
   <ul class="progress-tracker progress-tracker--text progress-tracker--center">
     <li class="progress-step is-complete">
       ...
     </li>
-
     <li class="progress-step is-complete">
-        ...
-      </li>
-
+      ...
+    </li>
     <li class="progress-step is-active" aria-current="true">
-        ...
-      </li>
-
+      ...
+    </li>
     ...
   </ul>
 </nav> */
