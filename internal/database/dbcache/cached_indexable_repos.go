@@ -13,9 +13,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-// defaultReposMaxAge is how long we cache the list of default repos. The list
+// indexableReposMaxAge is how long we cache the list of default repos. The list
 // changes very rarely, so we can cache for a while.
-const defaultReposMaxAge = time.Minute
+const indexableReposMaxAge = time.Minute
 
 type cachedRepos struct {
 	repos   []types.RepoName
@@ -31,18 +31,18 @@ func (c *cachedRepos) Repos() ([]types.RepoName, bool) {
 	if c.repos == nil {
 		return nil, true
 	}
-	return append([]types.RepoName{}, c.repos...), time.Since(c.fetched) > defaultReposMaxAge
+	return append([]types.RepoName{}, c.repos...), time.Since(c.fetched) > indexableReposMaxAge
 }
 
-func NewDefaultRepoLister(store *database.RepoStore) *DefaultRepoLister {
-	return &DefaultRepoLister{
+func NewIndexableReposLister(store *database.RepoStore) *IndexableReposLister {
+	return &IndexableReposLister{
 		store: store,
 	}
 }
 
-// DefaultRepoLister holds the list of default repos which are cached for
-// defaultReposMaxAge.
-type DefaultRepoLister struct {
+// IndexableReposLister holds the list of default repos which are cached for
+// indexableReposMaxAge.
+type IndexableReposLister struct {
 	store *database.RepoStore
 
 	cacheAllRepos    atomic.Value
@@ -54,18 +54,18 @@ type DefaultRepoLister struct {
 // table, user added repos (both public and private) as well as any repos added
 // to the user_public_repos table.
 //
-// The values are cached for up to defaultReposMaxAge. If the cache has expired, we return
+// The values are cached for up to indexableReposMaxAge. If the cache has expired, we return
 // stale data and start a background refresh.
-func (s *DefaultRepoLister) List(ctx context.Context) (results []types.RepoName, err error) {
+func (s *IndexableReposLister) List(ctx context.Context) (results []types.RepoName, err error) {
 	return s.list(ctx, false)
 }
 
 // ListPublic is similar to List except that it only includes public repos.
-func (s *DefaultRepoLister) ListPublic(ctx context.Context) (results []types.RepoName, err error) {
+func (s *IndexableReposLister) ListPublic(ctx context.Context) (results []types.RepoName, err error) {
 	return s.list(ctx, true)
 }
 
-func (s *DefaultRepoLister) list(ctx context.Context, onlyPublic bool) (results []types.RepoName, err error) {
+func (s *IndexableReposLister) list(ctx context.Context, onlyPublic bool) (results []types.RepoName, err error) {
 	cache := &(s.cacheAllRepos)
 	if onlyPublic {
 		cache = &(s.cachePublicRepos)
@@ -95,7 +95,7 @@ func (s *DefaultRepoLister) list(ctx context.Context, onlyPublic bool) (results 
 	return repos, nil
 }
 
-func (s *DefaultRepoLister) refreshCache(ctx context.Context, onlyPublic bool) ([]types.RepoName, error) {
+func (s *IndexableReposLister) refreshCache(ctx context.Context, onlyPublic bool) ([]types.RepoName, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -111,11 +111,11 @@ func (s *DefaultRepoLister) refreshCache(ctx context.Context, onlyPublic bool) (
 		return repos, nil
 	}
 
-	opts := database.ListDefaultReposOptions{}
+	opts := database.ListIndexableReposOptions{}
 	if !onlyPublic {
 		opts.IncludePrivate = true
 	}
-	repos, err := s.store.ListDefaultRepos(ctx, opts)
+	repos, err := s.store.ListIndexableRepos(ctx, opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "querying for default repos")
 	}
