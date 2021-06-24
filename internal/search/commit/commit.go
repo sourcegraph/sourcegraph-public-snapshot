@@ -28,6 +28,64 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
+// SearchCommitDiffsInRepos searches a set of repos for matching commit diffs.
+func SearchCommitDiffsInRepos(ctx context.Context, db dbutil.DB, args *search.TextParametersForCommitParameters, resultChannel streaming.Sender) error {
+	return searchInRepos(ctx, db, args, searchCommitsInReposParameters{
+		TraceName:     "SearchCommitDiffsInRepos",
+		ResultChannel: resultChannel,
+		CommitParams: search.CommitParameters{
+			PatternInfo: args.PatternInfo,
+			Query:       args.Query,
+			Diff:        true,
+		},
+	})
+}
+
+// SearchCommitLogInRepos searches a set of repos for matching commits.
+func SearchCommitLogInRepos(ctx context.Context, db dbutil.DB, args *search.TextParametersForCommitParameters, resultChannel streaming.Sender) error {
+	var terms []string
+	if args.PatternInfo.Pattern != "" {
+		terms = append(terms, args.PatternInfo.Pattern)
+	}
+
+	return searchInRepos(ctx, db, args, searchCommitsInReposParameters{
+		TraceName:     "searchCommitLogsInRepos",
+		ResultChannel: resultChannel,
+		CommitParams: search.CommitParameters{
+			PatternInfo:        args.PatternInfo,
+			Query:              args.Query,
+			Diff:               false,
+			ExtraMessageValues: terms,
+		},
+	})
+}
+
+// ResolveCommitParameters creates parameters for commit search from tp. It
+// will wait for the list of repos to be resolved.
+func ResolveCommitParameters(ctx context.Context, tp *search.TextParameters) (*search.TextParametersForCommitParameters, error) {
+	old := tp.PatternInfo
+	patternInfo := &search.CommitPatternInfo{
+		Pattern:                      old.Pattern,
+		IsRegExp:                     old.IsRegExp,
+		IsCaseSensitive:              old.IsCaseSensitive,
+		FileMatchLimit:               old.FileMatchLimit,
+		IncludePatterns:              old.IncludePatterns,
+		ExcludePattern:               old.ExcludePattern,
+		PathPatternsAreRegExps:       true,
+		PathPatternsAreCaseSensitive: old.PathPatternsAreCaseSensitive,
+	}
+	repos, err := tp.RepoPromise.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &search.TextParametersForCommitParameters{
+		PatternInfo: patternInfo,
+		Repos:       repos,
+		Query:       tp.Query,
+	}, nil
+}
+
 func commitParametersToDiffParameters(ctx context.Context, db dbutil.DB, op *search.CommitParameters) (*search.DiffParameters, error) {
 	args := []string{
 		"--no-prefix",
@@ -376,33 +434,7 @@ func highlightMatches(pattern *regexp.Regexp, data []byte) *result.HighlightedSt
 	}
 }
 
-// ResolveCommitParameters creates parameters for commit search from tp. It
-// will wait for the list of repos to be resolved.
-func ResolveCommitParameters(ctx context.Context, tp *search.TextParameters) (*search.TextParametersForCommitParameters, error) {
-	old := tp.PatternInfo
-	patternInfo := &search.CommitPatternInfo{
-		Pattern:                      old.Pattern,
-		IsRegExp:                     old.IsRegExp,
-		IsCaseSensitive:              old.IsCaseSensitive,
-		FileMatchLimit:               old.FileMatchLimit,
-		IncludePatterns:              old.IncludePatterns,
-		ExcludePattern:               old.ExcludePattern,
-		PathPatternsAreRegExps:       true,
-		PathPatternsAreCaseSensitive: old.PathPatternsAreCaseSensitive,
-	}
-	repos, err := tp.RepoPromise.Get(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return &search.TextParametersForCommitParameters{
-		PatternInfo: patternInfo,
-		Repos:       repos,
-		Query:       tp.Query,
-	}, nil
-}
-
-type SearchCommitsInReposParameters struct {
+type searchCommitsInReposParameters struct {
 	TraceName string
 
 	// CommitParams are the base commit parameters passed to
@@ -413,7 +445,7 @@ type SearchCommitsInReposParameters struct {
 	ResultChannel streaming.Sender
 }
 
-func SearchCommitsInRepos(ctx context.Context, db dbutil.DB, args *search.TextParametersForCommitParameters, params SearchCommitsInReposParameters) (err error) {
+func searchInRepos(ctx context.Context, db dbutil.DB, args *search.TextParametersForCommitParameters, params searchCommitsInReposParameters) (err error) {
 	tr, ctx := trace.New(ctx, params.TraceName, fmt.Sprintf("query: %+v, numRepoRevs: %d", args.PatternInfo, len(args.Repos)))
 	defer func() {
 		tr.SetError(err)
@@ -443,38 +475,6 @@ func SearchCommitsInRepos(ctx context.Context, db dbutil.DB, args *search.TextPa
 		})
 	}
 	return g.Wait()
-}
-
-// SearchCommitDiffsInRepos searches a set of repos for matching commit diffs.
-func SearchCommitDiffsInRepos(ctx context.Context, db dbutil.DB, args *search.TextParametersForCommitParameters, resultChannel streaming.Sender) error {
-	return SearchCommitsInRepos(ctx, db, args, SearchCommitsInReposParameters{
-		TraceName:     "SearchCommitDiffsInRepos",
-		ResultChannel: resultChannel,
-		CommitParams: search.CommitParameters{
-			PatternInfo: args.PatternInfo,
-			Query:       args.Query,
-			Diff:        true,
-		},
-	})
-}
-
-// SearchCommitLogInRepos searches a set of repos for matching commits.
-func SearchCommitLogInRepos(ctx context.Context, db dbutil.DB, args *search.TextParametersForCommitParameters, resultChannel streaming.Sender) error {
-	var terms []string
-	if args.PatternInfo.Pattern != "" {
-		terms = append(terms, args.PatternInfo.Pattern)
-	}
-
-	return SearchCommitsInRepos(ctx, db, args, SearchCommitsInReposParameters{
-		TraceName:     "searchCommitLogsInRepos",
-		ResultChannel: resultChannel,
-		CommitParams: search.CommitParameters{
-			PatternInfo:        args.PatternInfo,
-			Query:              args.Query,
-			Diff:               false,
-			ExtraMessageValues: terms,
-		},
-	})
 }
 
 func commitMatchesToMatches(commitMatches []*result.CommitMatch) []result.Match {
