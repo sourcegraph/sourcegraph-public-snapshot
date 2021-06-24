@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -197,7 +198,7 @@ func SearchCommitsInRepoStream(ctx context.Context, db dbutil.DB, op search.Comm
 			tr.LogFields(otlog.String("repo", string(op.RepoRevs.Repo.Name)), otlog.String("searchErr", searchErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(searchErr)), otlog.Bool("temporary", errcode.IsTemporary(searchErr)))
 		}
 
-		stats, err := handleRepoSearchResult(op.RepoRevs, limitHit, !event.Complete, searchErr)
+		stats, err := repos.HandleRepoSearchResult(op.RepoRevs, limitHit, !event.Complete, searchErr)
 		if err != nil {
 			return errors.Wrapf(err, "failed to search commit %s %s", errorName(op.Diff), op.RepoRevs.String())
 		}

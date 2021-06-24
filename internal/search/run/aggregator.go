@@ -12,6 +12,7 @@ import (
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/search/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -84,7 +85,7 @@ func (a *Aggregator) DoSymbolSearch(ctx context.Context, args *search.TextParame
 		tr.Finish()
 	}()
 
-	err = SearchSymbols(ctx, args, limit, a)
+	err = symbols.SearchSymbols(ctx, args, limit, a)
 	return errors.Wrap(err, "symbol search failed")
 }
 
