@@ -6,6 +6,7 @@ import sinon from 'sinon'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 
 import { AuthenticatedUser } from '../../auth'
+import { EMPTY_FEATURE_FLAGS } from '../../featureFlags/featureFlags'
 import { ListUserCodeMonitorsVariables } from '../../graphql-operations'
 import { EnterpriseWebStory } from '../components/EnterpriseWebStory'
 
@@ -27,6 +28,7 @@ const additionalProps = {
         }),
     toggleCodeMonitorEnabled: sinon.fake(),
     settingsCascade: EMPTY_SETTINGS_CASCADE,
+    featureFlags: EMPTY_FEATURE_FLAGS,
 }
 
 add(
