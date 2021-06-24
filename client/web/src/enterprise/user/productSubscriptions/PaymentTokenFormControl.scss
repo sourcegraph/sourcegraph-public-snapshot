@@ -1,12 +1,13 @@
 /* stylelint-disable selector-class-pattern */
 .payment-token-form-control {
     &__card {
-        @extend .form-control;
         padding-top: 0.5rem;
 
         &.StripeElement--focus {
-            @extend .form-control, :focus;
+            box-shadow: var(--input-focus-box-shadow);
+            border-color: var(--input-focus-border-color);
         }
+
         &.StripeElement--webkit-autofill {
             background: transparent !important;
         }
