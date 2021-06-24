@@ -33,12 +33,14 @@ func GetRepo(ctx context.Context, db dbutil.DB, vars map[string]string) (*types.
 
 // getRepoRev resolves the repository and commit specified in the route vars.
 func getRepoRev(ctx context.Context, db dbutil.DB, vars map[string]string, repoID api.RepoID) (api.RepoID, api.CommitID, error) {
+	repos := backend.NewRepos(db)
+
 	repoRev := routevar.ToRepoRev(vars)
-	repo, err := backend.NewRepos(db).Get(ctx, repoID)
+	repo, err := repos.Get(ctx, repoID)
 	if err != nil {
 		return repoID, "", err
 	}
-	commitID, err := backend.NewRepos(db).ResolveRev(ctx, repo, repoRev.Rev)
+	commitID, err := repos.ResolveRev(ctx, repo, repoRev.Rev)
 	if err != nil {
 		return repoID, "", err
 	}

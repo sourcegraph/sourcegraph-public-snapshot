@@ -25,7 +25,10 @@ func editorRev(ctx context.Context, db dbutil.DB, repoName api.RepoName, rev str
 	if rev == "HEAD" {
 		return "", nil // Detached head state
 	}
-	repo, err := backend.NewRepos(db).GetByName(ctx, repoName)
+
+	repos := backend.NewRepos(db)
+
+	repo, err := repos.GetByName(ctx, repoName)
 	if err != nil {
 		// We weren't able to fetch the repo. This means it either doesn't
 		// exist (unlikely) or that the user is not logged in (most likely). In
@@ -37,11 +40,11 @@ func editorRev(ctx context.Context, db dbutil.DB, repoName api.RepoName, rev str
 	// If we are on the default branch we want to return a clean URL without a
 	// branch. If we fail its best to return the full URL and allow the
 	// front-end to inform them of anything that is wrong.
-	defaultBranchCommitID, err := backend.NewRepos(db).ResolveRev(ctx, repo, "")
+	defaultBranchCommitID, err := repos.ResolveRev(ctx, repo, "")
 	if err != nil {
 		return "@" + rev, nil
 	}
-	branchCommitID, err := backend.NewRepos(db).ResolveRev(ctx, repo, rev)
+	branchCommitID, err := repos.ResolveRev(ctx, repo, rev)
 	if err != nil {
 		return "@" + rev, nil
 	}

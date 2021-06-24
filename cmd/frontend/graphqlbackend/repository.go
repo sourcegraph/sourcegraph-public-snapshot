@@ -220,13 +220,15 @@ func (r *RepositoryResolver) Language(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	commitID, err := backend.NewRepos(r.db).ResolveRev(ctx, repo, "")
+	repos := backend.NewRepos(r.db)
+
+	commitID, err := repos.ResolveRev(ctx, repo, "")
 	if err != nil {
 		// Comment: Should we return a nil error?
 		return "", err
 	}
 
-	inventory, err := backend.NewRepos(r.db).GetInventory(ctx, repo, commitID, false)
+	inventory, err := repos.GetInventory(ctx, repo, commitID, false)
 	if err != nil {
 		return "", err
 	}
