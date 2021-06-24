@@ -4,13 +4,13 @@ The webapp and browser extension interact with our backend through a strongly ty
 We auto-generate TypeScript types for the schema and all queries, mutations and fragments to ensure the client uses the API correctly.
 
 ## GraphQL Client
-We use [Apollo Client](https://www.apollographql.com/docs/react/) to manage data-fetching and caching within our app. It provides a set of declarative interfaces which abstract away a lot of repeated code, whilst supporting a 'stale-while-revalidate' strategy though a normalized client cache of requested data.
+We use [Apollo Client](https://www.apollographql.com/docs/react/) to manage data-fetching and caching within our app. It provides a set of declarative interfaces which abstract away a lot of repeated code, whilst supporting a 'stale-while-revalidate' strategy through a normalized client cache of requested data.
 
 **Writing your query**
 
 We use `gql` template strings to declare our GraphQL queries.
 
-Each query must have a globally unique name as per the [GraphQL specification](https://spec.graphql.org/June2018/#sec-Operation-Name-Uniqueness). Typically we should name our queries similarly to how we might name a function, by describing what the query should do. This should also mean prefixing the name with an action, like `Get` or `Update`, this will help avoid collisions between queries and mutations.
+Each query must have a globally unique name as per the [GraphQL specification](https://spec.graphql.org/June2018/#sec-Operation-Name-Uniqueness). Typically we should name our queries similarly to how we might name a function, by describing what the query will return. For mutations, we should prefix the name with a verb like `Delete` or `Update`, this will help avoid collisions between queries and mutations.
 
 Using each unique query, we can generate specific types so you can receive autocompletion, syntax highlighting, hover tooltips and validation in your IDE.
 
@@ -18,8 +18,9 @@ We should also define our queries in `.graphql` files that are coupled with our 
 
 ```graphql
 # ./MyComponent.graphql
-query GetUserDisplayName($username: String!) {
+query UserDisplayName($username: String!) {
     user(username: $username) {
+        id
         displayName
     }
 }
@@ -37,7 +38,7 @@ import { useGetUserDisplayName } from '../../graphql-operations'
 
 const MyComponent = ({ username }: { username: string }) => {
   // useGetUserDisplayName is automatically typed with correct variables and response data
-  const { data, loading, error } = useGetUserDisplayName({ variables: { username }});
+  const { data, loading, error } = useGetUserDisplayName({ variables: { username } });
 
   if (loading) {
     // handle loading state
