@@ -2,7 +2,7 @@ import React from 'react'
 import { MemoryRouter, MemoryRouterProps } from 'react-router'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { useStyles } from '@sourcegraph/storybook/src/hooks/useStyles'
+import { usePrependStyles } from '@sourcegraph/storybook/src/hooks/usePrependStyles'
 import { useTheme } from '@sourcegraph/storybook/src/hooks/useTheme'
 
 import brandedStyles from '../global-styles/index.scss'
@@ -24,7 +24,7 @@ export const BrandedStory: React.FunctionComponent<BrandedProps> = ({
     ...memoryRouterProps
 }) => {
     const isLightTheme = useTheme()
-    useStyles(styles)
+    usePrependStyles('branded-story-styles', styles)
 
     return (
         <MemoryRouter {...memoryRouterProps}>

@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react'
 
-const createStyleTag = (id: string): HTMLStyleElement => {
+const prependStyleTag = (id: string): HTMLStyleElement => {
     const styleTag = document.createElement('style')
     styleTag.id = id
 
@@ -16,16 +16,17 @@ const createStyleTag = (id: string): HTMLStyleElement => {
  * @param css Stringified CSS to inject into a `<style>` tag
  * @returns The created `<style>` tag
  */
-export const useStyles = (css?: string): HTMLStyleElement | undefined => {
+export const usePrependStyles = (styleTagId: string, css?: string): HTMLStyleElement | undefined => {
     const styleTag = useMemo(() => {
         if (!css) {
             return undefined
         }
 
-        const styleTag = document.querySelector<HTMLStyleElement>('story-styles') || createStyleTag('story-styles')
+        const styleTag = document.querySelector<HTMLStyleElement>(styleTagId) || prependStyleTag(styleTagId)
         styleTag.textContent = css
+
         return styleTag
-    }, [css])
+    }, [styleTagId, css])
 
     useEffect(() => () => styleTag?.remove(), [styleTag])
 

@@ -4,7 +4,7 @@ import { MemoryRouter, MemoryRouterProps, RouteComponentProps, withRouter } from
 import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import { NOOP_TELEMETRY_SERVICE, TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { useStyles } from '@sourcegraph/storybook/src/hooks/useStyles'
+import { usePrependStyles } from '@sourcegraph/storybook/src/hooks/usePrependStyles'
 import { useTheme } from '@sourcegraph/storybook/src/hooks/useTheme'
 
 import webStyles from '../SourcegraphWebApp.scss'
@@ -31,8 +31,8 @@ export const WebStory: React.FunctionComponent<WebStoryProps> = ({
     const breadcrumbSetters = useBreadcrumbs()
     const Children = useMemo(() => withRouter(children), [children])
 
-    useStyles(webStyles)
-    useStyles(additionalWebStyles)
+    usePrependStyles('additional-web-styles', additionalWebStyles)
+    usePrependStyles('web-styles', webStyles)
 
     return (
         <MemoryRouter {...memoryRouterProps}>
