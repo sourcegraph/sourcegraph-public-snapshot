@@ -399,7 +399,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		fileMatches, _, err := streaming.CollectStream(func(stream streaming.Sender) error {
 			return run.SearchSymbols(ctx, &search.TextParameters{
 				PatternInfo:  p,
-				RepoPromise:  (&search.Promise{}).Resolve(resolved.RepoRevs),
+				RepoPromise:  (&search.RepoPromise{}).Resolve(resolved.RepoRevs),
 				Query:        r.Query,
 				Zoekt:        r.zoekt,
 				SearcherURLs: r.searcherURLs,
