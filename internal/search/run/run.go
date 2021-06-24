@@ -1,8 +1,6 @@
 package run
 
 import (
-	"context"
-	"fmt"
 	"math"
 
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -115,20 +113,6 @@ func handleRepoSearchResult(repoRev *search.RepositoryRevisions, limitHit, timed
 		Status:     search.RepoStatusSingleton(repoRev.Repo.ID, status),
 		IsLimitHit: limitHit,
 	}, fatalErr
-}
-
-// getRepos is a wrapper around p.Get. It returns an error if the promise
-// contains an underlying type other than []*search.RepositoryRevisions.
-func getRepos(ctx context.Context, p *search.Promise) ([]*search.RepositoryRevisions, error) {
-	v, err := p.Get(ctx)
-	if err != nil {
-		return nil, err
-	}
-	repoRevs, ok := v.([]*search.RepositoryRevisions)
-	if !ok {
-		return nil, fmt.Errorf("unexpected underlying type (%T) of promise", v)
-	}
-	return repoRevs, nil
 }
 
 func statsDeref(s *streaming.Stats) streaming.Stats {

@@ -44,7 +44,7 @@ func SearchSymbols(ctx context.Context, args *search.TextParameters, limit int, 
 		return err
 	}
 
-	repos, err := getRepos(ctx, args.RepoPromise)
+	repos, err := args.RepoPromise.Get(ctx)
 	if err != nil {
 		return err
 	}

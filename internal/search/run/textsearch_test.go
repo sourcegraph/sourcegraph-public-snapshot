@@ -85,7 +85,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 			FileMatchLimit: defaultMaxSearchResults,
 			Pattern:        "foo",
 		},
-		RepoPromise:  (&search.Promise{}).Resolve(repoRevs),
+		RepoPromise:  (&search.RepoPromise{}).Resolve(repoRevs),
 		Query:        q,
 		Zoekt:        zoekt,
 		SearcherURLs: endpoint.Static("test"),
@@ -115,7 +115,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 			FileMatchLimit: defaultMaxSearchResults,
 			Pattern:        "foo",
 		},
-		RepoPromise:  (&search.Promise{}).Resolve(makeRepositoryRevisions("foo/no-rev@dev")),
+		RepoPromise:  (&search.RepoPromise{}).Resolve(makeRepositoryRevisions("foo/no-rev@dev")),
 		Query:        q,
 		Zoekt:        zoekt,
 		SearcherURLs: endpoint.Static("test"),
@@ -172,7 +172,7 @@ func TestSearchFilesInReposStream(t *testing.T) {
 			FileMatchLimit: defaultMaxSearchResults,
 			Pattern:        "foo",
 		},
-		RepoPromise:  (&search.Promise{}).Resolve(makeRepositoryRevisions("foo/one", "foo/two", "foo/three")),
+		RepoPromise:  (&search.RepoPromise{}).Resolve(makeRepositoryRevisions("foo/one", "foo/two", "foo/three")),
 		Query:        q,
 		Zoekt:        zoekt,
 		SearcherURLs: endpoint.Static("test"),
@@ -238,12 +238,12 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 			FileMatchLimit: defaultMaxSearchResults,
 			Pattern:        "foo",
 		},
-		RepoPromise:  (&search.Promise{}).Resolve(makeRepositoryRevisions("foo@master:mybranch:*refs/heads/")),
+		RepoPromise:  (&search.RepoPromise{}).Resolve(makeRepositoryRevisions("foo@master:mybranch:*refs/heads/")),
 		Query:        q,
 		Zoekt:        zoekt,
 		SearcherURLs: endpoint.Static("test"),
 	}
-	repos, _ := getRepos(context.Background(), args.RepoPromise)
+	repos, _ := args.RepoPromise.Get(context.Background())
 	repos[0].ListRefs = func(context.Context, api.RepoName) ([]git.Ref, error) {
 		return []git.Ref{{Name: "refs/heads/branch3"}, {Name: "refs/heads/branch4"}}, nil
 	}

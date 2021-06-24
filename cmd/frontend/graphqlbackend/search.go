@@ -436,7 +436,7 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]Sea
 
 	args := search.TextParameters{
 		PatternInfo:     p,
-		RepoPromise:     (&search.Promise{}).Resolve(resolved.RepoRevs),
+		RepoPromise:     (&search.RepoPromise{}).Resolve(resolved.RepoRevs),
 		Query:           r.Query,
 		UseFullDeadline: r.searchTimeoutFieldSet(),
 		Zoekt:           r.zoekt,
@@ -481,18 +481,4 @@ func (e *badRequestError) Error() string {
 
 func (e *badRequestError) Cause() error {
 	return e.err
-}
-
-// getRepos is a wrapper around p.Get. It returns an error if the promise
-// contains an underlying type other than []*search.RepositoryRevisions.
-func getRepos(ctx context.Context, p *search.Promise) ([]*search.RepositoryRevisions, error) {
-	v, err := p.Get(ctx)
-	if err != nil {
-		return nil, err
-	}
-	repoRevs, ok := v.([]*search.RepositoryRevisions)
-	if !ok {
-		return nil, fmt.Errorf("unexpected underlying type (%T) of promise", v)
-	}
-	return repoRevs, nil
 }
