@@ -9,11 +9,12 @@ import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { PageHeader } from '@sourcegraph/wildcard/src'
 
+import { AuthenticatedUser } from '../../../auth'
 import { FeedbackBadge } from '../../../components/FeedbackBadge'
 import { Page } from '../../../components/Page'
 import { CodeInsightsIcon, InsightsViewGrid, InsightsViewGridProps } from '../../components'
 import { InsightsApiContext } from '../../core/backend/api-provider'
-import { InsightDashboard } from '../../core/types';
+import { InsightDashboard } from '../../core/types'
 
 export interface DashboardsPageProps
     extends Omit<InsightsViewGridProps, 'views'>,
@@ -21,10 +22,15 @@ export interface DashboardsPageProps
         ExtensionsControllerProps {
     /**
      * Possible dashboard id. All insights on the page will be get from
-     * dashboard's info from user/org by id. In case if id equals undefined
-     * we will get insights from final version of merged settings (all insights)
+     * dashboard's info from user/org by id. In case if id equals to undefined
+     * we get insights from the final version of merged settings (all insights)
      */
     dashboardID?: string
+
+    /**
+     * Authenticated user info, Used to get information about insight dashboards.
+     */
+    authenticatedUser: AuthenticatedUser
 }
 
 /**

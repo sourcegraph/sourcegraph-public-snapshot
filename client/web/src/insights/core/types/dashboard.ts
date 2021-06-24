@@ -10,3 +10,10 @@ export interface InsightDashboard {
     visibility: InsightDashboardVisibility
     insightsIds: string[]
 }
+
+export interface InsightDashboardConfiguration {
+    title: string
+    insightsIds: string[]
+}
+
+export const INSIGHT_DASHBOARD_PREFIX = 'insight.dashboard'
