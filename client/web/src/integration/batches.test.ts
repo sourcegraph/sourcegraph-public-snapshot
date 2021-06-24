@@ -239,7 +239,7 @@ function mockCommonGraphQLResponses(
                 viewerPendingInvitation: null,
             },
         }),
-        GetUserProfile: () => ({
+        UserAreaUserProfile: () => ({
             user: {
                 __typename: 'User',
                 id: 'user123',

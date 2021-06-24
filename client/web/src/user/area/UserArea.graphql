@@ -28,7 +28,7 @@ fragment UserAreaUserFields on User {
     tags # @include(if: $siteAdmin)
 }
 
-query GetUserProfile($username: String!, $siteAdmin: Boolean!) {
+query UserAreaUserProfile($username: String!, $siteAdmin: Boolean!) {
     user(username: $username) {
         ...UserAreaUserFields
     }

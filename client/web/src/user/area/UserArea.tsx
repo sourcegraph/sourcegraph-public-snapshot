@@ -15,7 +15,7 @@ import { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumb
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { Page } from '../../components/Page'
-import { useGetUserProfile, UserAreaUserFields } from '../../graphql-operations'
+import { useUserAreaUserProfile, UserAreaUserFields } from '../../graphql-operations'
 import { NamespaceProps } from '../../namespaces'
 import { PatternTypeProps, OnboardingTourProps } from '../../search'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../util'
@@ -103,7 +103,7 @@ export const UserArea: React.FunctionComponent<UserAreaProps> = ({
     },
     ...props
 }) => {
-    const { data } = useGetUserProfile({
+    const { data } = useUserAreaUserProfile({
         variables: { username, siteAdmin: Boolean(props.authenticatedUser?.siteAdmin) },
     })
     const user = data?.user

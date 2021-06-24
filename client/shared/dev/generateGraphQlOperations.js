@@ -55,6 +55,8 @@ async function generateGraphQlOperations() {
         operationResultSuffix: 'Result',
         omitOperationSuffix: true,
         skipTypename: true,
+        // Appends /*#__PURE__*/ before each export. This means Webpack can tree-shake out any generated code that we do not use.
+        pureMagicComment: true,
         namingConvention: {
           typeNames: 'keep',
           enumValues: 'keep',
@@ -84,7 +86,6 @@ async function generateGraphQlOperations() {
             noExport: false,
             enumValues: '@sourcegraph/shared/src/graphql-operations',
             interfaceNameForOperations: 'BrowserGraphQlOperations',
-            pureMagicComment: true,
           },
           plugins,
         },
@@ -96,7 +97,6 @@ async function generateGraphQlOperations() {
             noExport: false,
             enumValues: '@sourcegraph/shared/src/graphql-operations',
             interfaceNameForOperations: 'WebGraphQlOperations',
-            pureMagicComment: true,
           },
           plugins: [...plugins, 'typescript-react-apollo'],
         },
@@ -107,7 +107,6 @@ async function generateGraphQlOperations() {
             onlyOperationTypes: true,
             noExport: false,
             interfaceNameForOperations: 'SharedGraphQlOperations',
-            pureMagicComment: true,
           },
           plugins,
         },
