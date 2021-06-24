@@ -42,3 +42,8 @@
 .color-orange {
     border-top-color: var(--logo-orange);
 }
+
+.disabled {
+    color: var(--color-text-3);
+    border-top-color: var(--color-bg);
+}

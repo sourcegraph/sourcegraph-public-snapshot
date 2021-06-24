@@ -4,32 +4,40 @@ import React from 'react'
 
 import stepsStyles from './Steps.module.scss'
 
+type Color = 'orange' | 'blue' | 'purple'
+
 export interface StepProps {
     title: React.ReactNode
     description?: React.ReactNode
     active?: boolean
-    borderColor?: 'orange' | 'blue' | 'purple'
+    disabled?: boolean
+    borderColor?: Color
 }
 
 export interface StepsProps {
     current: number
     numbered?: boolean
     // onChange: (current: number) => void
-    children?: React.ReactElement<StepProps> | React.ReactElement<StepProps>[]
+    children: React.ReactElement<StepProps> | React.ReactElement<StepProps>[]
 }
 
-export const Step: React.FunctionComponent<StepProps> = ({ title, active, borderColor }) => (
-    <li
-        className={classNames(
-            stepsStyles.listItem,
-            active && stepsStyles.active,
-            borderColor && stepsStyles[`color${upperFirst(borderColor)}`]
-        )}
-        aria-current={active}
-    >
-        {title}
-    </li>
-)
+export const Step: React.FunctionComponent<StepProps> = ({ title, active, borderColor, disabled }) => {
+    const color = `color${upperFirst(borderColor)}`
+
+    return (
+        <li
+            className={classNames(
+                disabled && stepsStyles.disabled,
+                stepsStyles.listItem,
+                active && stepsStyles.active,
+                borderColor && stepsStyles[color]
+            )}
+            aria-current={active}
+        >
+            {title}
+        </li>
+    )
+}
 
 export const Steps: React.FunctionComponent<StepsProps> = ({ children, numbered, current = 1 }) => {
     if (!children) {
@@ -40,9 +48,16 @@ export const Steps: React.FunctionComponent<StepsProps> = ({ children, numbered,
         console.warn('current step is out of limits')
     }
 
-    const element = React.Children.map(children, (child, index) =>
-        React.cloneElement(child as React.ReactElement, { active: current === index + 1 })
-    )
+    const element = React.Children.map(children, (child: React.ReactElement<StepProps>, index) => {
+        if (child.type !== Step) {
+            throw new Error(`${child.type.toString()} element is not <Step> component`)
+        }
+
+        return React.cloneElement(child, {
+            disabled: current < index + 1,
+            active: current === index + 1,
+        })
+    })
 
     return (
         <nav className={stepsStyles.stepsWrapper} aria-label="progress">
