@@ -12,15 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
-type TypeParameters interface {
-	typeParametersValue()
-}
-
-func (CommitParameters) typeParametersValue()  {}
-func (DiffParameters) typeParametersValue()    {}
-func (SymbolsParameters) typeParametersValue() {}
-func (TextParameters) typeParametersValue()    {}
-
 type CommitParameters struct {
 	RepoRevs           *RepositoryRevisions
 	PatternInfo        *CommitPatternInfo
