@@ -304,46 +304,46 @@ func BenchmarkGetRevsForMatchedRepo(b *testing.B) {
 	})
 }
 
-func TestIndexableRepositories(t *testing.T) {
+func TestSearchableRepositories(t *testing.T) {
 	tcs := []struct {
-		name             string
-		defaultsInDb     []string
-		indexedRepoNames map[string]bool
-		want             []string
-		excludePatterns  []string
+		name                string
+		defaultsInDb        []string
+		searchableRepoNames map[string]bool
+		want                []string
+		excludePatterns     []string
 	}{
 		{
-			name:             "none in database => none returned",
-			defaultsInDb:     nil,
-			indexedRepoNames: nil,
-			want:             nil,
+			name:                "none in database => none returned",
+			defaultsInDb:        nil,
+			searchableRepoNames: nil,
+			want:                nil,
 		},
 		{
-			name:             "two in database, one indexed => indexed repo returned",
-			defaultsInDb:     []string{"unindexedrepo", "indexedrepo"},
-			indexedRepoNames: map[string]bool{"indexedrepo": true},
-			want:             []string{"indexedrepo"},
+			name:                "two in database, one indexed => indexed repo returned",
+			defaultsInDb:        []string{"unindexedrepo", "indexedrepo"},
+			searchableRepoNames: map[string]bool{"indexedrepo": true},
+			want:                []string{"indexedrepo"},
 		},
 		{
-			name:             "should not return excluded repo",
-			defaultsInDb:     []string{"unindexedrepo1", "indexedrepo1", "indexedrepo2", "indexedrepo3"},
-			indexedRepoNames: map[string]bool{"indexedrepo1": true, "indexedrepo2": true, "indexedrepo3": true},
-			excludePatterns:  []string{"indexedrepo3"},
-			want:             []string{"indexedrepo1", "indexedrepo2"},
+			name:                "should not return excluded repo",
+			defaultsInDb:        []string{"unindexedrepo1", "indexedrepo1", "indexedrepo2", "indexedrepo3"},
+			searchableRepoNames: map[string]bool{"indexedrepo1": true, "indexedrepo2": true, "indexedrepo3": true},
+			excludePatterns:     []string{"indexedrepo3"},
+			want:                []string{"indexedrepo1", "indexedrepo2"},
 		},
 		{
-			name:             "should not return excluded repo (case insensitive)",
-			defaultsInDb:     []string{"unindexedrepo1", "indexedrepo1", "indexedrepo2", "Indexedrepo3"},
-			indexedRepoNames: map[string]bool{"indexedrepo1": true, "indexedrepo2": true, "Indexedrepo3": true},
-			excludePatterns:  []string{"indexedrepo3"},
-			want:             []string{"indexedrepo1", "indexedrepo2"},
+			name:                "should not return excluded repo (case insensitive)",
+			defaultsInDb:        []string{"unindexedrepo1", "indexedrepo1", "indexedrepo2", "Indexedrepo3"},
+			searchableRepoNames: map[string]bool{"indexedrepo1": true, "indexedrepo2": true, "Indexedrepo3": true},
+			excludePatterns:     []string{"indexedrepo3"},
+			want:                []string{"indexedrepo1", "indexedrepo2"},
 		},
 		{
-			name:             "should not return excluded repos ending in `test`",
-			defaultsInDb:     []string{"repo1", "repo2", "repo-test", "repoTEST"},
-			indexedRepoNames: map[string]bool{"repo1": true, "repo2": true, "repo-test": true, "repoTEST": true},
-			excludePatterns:  []string{"test$"},
-			want:             []string{"repo1", "repo2"},
+			name:                "should not return excluded repos ending in `test`",
+			defaultsInDb:        []string{"repo1", "repo2", "repo-test", "repoTEST"},
+			searchableRepoNames: map[string]bool{"repo1": true, "repo2": true, "repo-test": true, "repoTEST": true},
+			excludePatterns:     []string{"test$"},
+			want:                []string{"repo1", "repo2"},
 		},
 	}
 	for _, tc := range tcs {
@@ -356,12 +356,12 @@ func TestIndexableRepositories(t *testing.T) {
 				}
 				drs = append(drs, r)
 			}
-			getRawIndexableRepos := func(ctx context.Context) ([]types.RepoName, error) {
+			getRawSearchableRepos := func(ctx context.Context) ([]types.RepoName, error) {
 				return drs, nil
 			}
 
 			var indexed []*zoekt.RepoListEntry
-			for name := range tc.indexedRepoNames {
+			for name := range tc.searchableRepoNames {
 				indexed = append(indexed, &zoekt.RepoListEntry{Repository: zoekt.Repository{Name: name}})
 			}
 			z := &searchbackend.Zoekt{
@@ -370,7 +370,7 @@ func TestIndexableRepositories(t *testing.T) {
 			}
 
 			ctx := context.Background()
-			drs, err := searchableRepositories(ctx, getRawIndexableRepos, z, tc.excludePatterns)
+			drs, err := searchableRepositories(ctx, getRawSearchableRepos, z, tc.excludePatterns)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -400,14 +400,14 @@ func TestUseIndexableReposIfMissingOrGlobalSearchContext(t *testing.T) {
 		"default/two",
 		"default/three",
 	}
-	indexableRepos := make([]types.RepoName, len(wantIndexableRepos))
+	searchableRepos := make([]types.RepoName, len(wantIndexableRepos))
 	zoektRepoListEntries := make([]*zoekt.RepoListEntry, len(wantIndexableRepos))
-	mockIndexableReposFunc := func(_ context.Context) ([]types.RepoName, error) {
-		return indexableRepos, nil
+	mockSearchableReposFunc := func(_ context.Context) ([]types.RepoName, error) {
+		return searchableRepos, nil
 	}
 
 	for idx, name := range wantIndexableRepos {
-		indexableRepos[idx] = types.RepoName{Name: api.RepoName(name)}
+		searchableRepos[idx] = types.RepoName{Name: api.RepoName(name)}
 		zoektRepoListEntries[idx] = &zoekt.RepoListEntry{
 			Repository: zoekt.Repository{
 				Name:     name,
@@ -435,7 +435,7 @@ func TestUseIndexableReposIfMissingOrGlobalSearchContext(t *testing.T) {
 				SearchContextSpec: tt.searchContextSpec,
 				Query:             queryInfo,
 			}
-			repositoryResolver := &Resolver{Zoekt: mockZoekt, SearchableReposFunc: mockIndexableReposFunc}
+			repositoryResolver := &Resolver{Zoekt: mockZoekt, SearchableReposFunc: mockSearchableReposFunc}
 			resolved, err := repositoryResolver.Resolve(context.Background(), op)
 			if err != nil {
 				t.Fatal(err)

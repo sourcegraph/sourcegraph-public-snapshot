@@ -121,26 +121,26 @@ func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 		return Resolved{}, err
 	}
 
-	var indexableRepos []types.RepoName
+	var searchableRepos []types.RepoName
 
 	if envvar.SourcegraphDotComMode() && len(includePatterns) == 0 && !query.HasTypeRepo(op.Query) && searchcontexts.IsGlobalSearchContext(searchContext) {
 		start := time.Now()
-		indexableRepos, err = searchableRepositories(ctx, r.SearchableReposFunc, r.Zoekt, excludePatterns)
+		searchableRepos, err = searchableRepositories(ctx, r.SearchableReposFunc, r.Zoekt, excludePatterns)
 		if err != nil {
 			return Resolved{}, errors.Wrap(err, "getting list of default repos")
 		}
-		tr.LazyPrintf("indexableRepos: took %s to add %d repos", time.Since(start), len(indexableRepos))
+		tr.LazyPrintf("searchableRepos: took %s to add %d repos", time.Since(start), len(searchableRepos))
 
 		// Search all default repos since indexed search is fast.
-		if len(indexableRepos) > limit {
-			limit = len(indexableRepos)
+		if len(searchableRepos) > limit {
+			limit = len(searchableRepos)
 		}
 	}
 
 	var repos []types.RepoName
 	var excluded ExcludedRepos
-	if len(indexableRepos) > 0 {
-		repos = indexableRepos
+	if len(searchableRepos) > 0 {
+		repos = searchableRepos
 		if len(repos) > limit {
 			repos = repos[:limit]
 		}
