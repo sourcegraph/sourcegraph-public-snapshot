@@ -31,13 +31,36 @@ export const PostSignUpPage: FunctionComponent<Props> = () => {
     // ((authenticatedUser && experimentalFeatures.enablePostSignupFlow) ||
     //     authenticatedUser?.tags.includes('AllowUserViewPostSignup')) ? (
 
-    const [current, setCurrent] = useState(1)
+    const [currentStep, setCurrentStep] = useState(1)
 
-    const content1 = <p>Content #1</p>
-    const content2 = <p>Content #2</p>
-    const content3 = <p>Content #3</p>
+    const connectCodeHosts = (
+        <>
+            <h3>Connect with code hosts</h3>
+            <p className="text-muted">
+                Connect with providers where your source code is hosted. Then, choose the repositories you’d like to
+                search with Sourcegraph.
+            </p>
+        </>
+    )
+    const addRepositories = (
+        <>
+            <h3>Add repositories</h3>
+            <p className="text-muted">
+                Choose repositories you own or collaborate on from your code hosts to search with Sourcegraph. We’ll
+                sync and index these repositories so you can search your code all in one place.
+            </p>
+        </>
+    )
+    const startSearching = (
+        <>
+            <h3>Start searching...</h3>
+            <p className="text-muted">
+                We’re cloning your repos to Sourcegraph. In just a few moments, you can make your first search!
+            </p>
+        </>
+    )
 
-    const content = [content1, content2, content3]
+    const steps = [connectCodeHosts, addRepositories, startSearching]
 
     return (
         <div className="signin-signup-page post-signup-page">
@@ -49,21 +72,25 @@ export const PostSignUpPage: FunctionComponent<Props> = () => {
                 body={
                     <div className="post-signup-page__container">
                         <h2>Get started with Sourcegraph</h2>
-                        <p>Three quick steps to add your repositories and get searching with Sourcegraph</p>
+                        <p className="text-muted">
+                            Three quick steps to add your repositories and get searching with Sourcegraph
+                        </p>
 
-                        <Steps current={current} numbered={false}>
-                            <Step title="Connect with code hosts" borderColor="purple" />
-                            <Step title="Add repositories" borderColor="blue" />
-                            <Step title="Start searching" borderColor="orange" />
-                        </Steps>
+                        <div className="pt-3 pb-4">
+                            <Steps current={currentStep} numbered={true}>
+                                <Step title="Connect with code hosts" borderColor="purple" />
+                                <Step title="Add repositories" borderColor="blue" />
+                                <Step title="Start searching" borderColor="orange" />
+                            </Steps>
+                        </div>
 
-                        <div>{content[current - 1]}</div>
+                        <div className="pt-2">{steps[currentStep - 1]}</div>
 
-                        <button type="button" onClick={() => setCurrent(current - 1)}>
+                        <button type="button" onClick={() => setCurrentStep(currentStep - 1)}>
                             prev
                         </button>
 
-                        <button type="button" onClick={() => setCurrent(current + 1)}>
+                        <button type="button" onClick={() => setCurrentStep(currentStep + 1)}>
                             next
                         </button>
                     </div>
