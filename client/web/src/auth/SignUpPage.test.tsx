@@ -11,10 +11,6 @@ import { SourcegraphContext } from '../jscontext'
 
 import { SignUpPage } from './SignUpPage'
 
-jest.mock('../tracking/eventLogger', () => ({
-    eventLogger: { logViewEvent: () => undefined },
-}))
-
 describe('SignUpPage', () => {
     const commonProps = {
         history: createMemoryHistory(),
