@@ -231,9 +231,9 @@ func (c *Container) renderDashboard() *sdk.Board {
 
 				var panel *sdk.Panel
 				switch o.Panel.panelType {
-				case "graph":
+				case PanelTypeGraph:
 					panel = sdk.NewGraph(panelTitle)
-				case "heatmap":
+				case PanelTypeHeatmap:
 					panel = sdk.NewHeatmap(panelTitle)
 				}
 
@@ -569,8 +569,8 @@ func (o Observable) validate() error {
 	if o.Owner == "" && !o.NoAlert {
 		return errors.New("Owner must be defined for observables with alerts")
 	}
-	if o.Panel.panelType != "graph" && o.Panel.panelType != "heatmap" {
-		return errors.New(`Panel.panelType must be "", "graph", or "heatmap"`)
+	if !o.Panel.panelType.Valid() {
+		return errors.New(`Panel.panelType must be "graph" or "heatmap"`)
 	}
 
 	allAlertsEmpty := o.Warning.isEmpty() && o.Critical.isEmpty()
