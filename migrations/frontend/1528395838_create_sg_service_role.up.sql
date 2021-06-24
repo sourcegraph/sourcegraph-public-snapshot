@@ -6,7 +6,7 @@ BEGIN;
 -- manage things that previously would need to be done in app-level code.
 DO $$
 BEGIN
-    CREATE ROLE sg_service;
+    CREATE ROLE sg_service INHERIT;
 EXCEPTION WHEN duplicate_object THEN
     -- Roles are cluster-wide, which makes them visible to both real and test
     -- code. The test runners may effectively execute this code multiple times,
@@ -16,5 +16,6 @@ $$;
 
 GRANT USAGE ON SCHEMA public TO sg_service;
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO sg_service;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO sg_service;
 
 COMMIT;
