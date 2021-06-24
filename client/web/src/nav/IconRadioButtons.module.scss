@@ -17,7 +17,7 @@
     &:focus-within {
         transition-delay: 0;
 
-        & > .emoji {
+        > .emoji {
             box-shadow: var(--focus-box-shadow);
             border: 1px solid transparent;
             border-radius: 50%;
@@ -65,7 +65,7 @@
         filter: grayscale(1);
     }
 
-    & > svg {
+    > svg {
         // For some reason, the icons are slightly clipped on their right edge
         // in Firefox. This prevents that from happening.
         overflow: visible;
