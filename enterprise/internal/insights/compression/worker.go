@@ -43,7 +43,7 @@ func NewCommitIndexer(background context.Context, base dbutil.DB, insights dbuti
 	commitStore := NewCommitStore(insights)
 
 	iterator := discovery.AllReposIterator{
-		DefaultRepoLister:     dbcache.NewDefaultRepoLister(repoStore),
+		IndexableReposLister:  dbcache.NewIndexableReposLister(repoStore),
 		RepoStore:             repoStore,
 		Clock:                 time.Now,
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),

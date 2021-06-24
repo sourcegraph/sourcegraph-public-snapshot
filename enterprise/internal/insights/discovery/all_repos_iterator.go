@@ -10,8 +10,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-// DefaultRepoLister is a subset of the API exposed by the backend.CachedDefaultRepoLister.
-type DefaultRepoLister interface {
+// IndexableReposLister is a subset of the API exposed by the backend.ListIndexable.
+type IndexableReposLister interface {
 	List(ctx context.Context) ([]types.RepoName, error)
 }
 
@@ -26,7 +26,7 @@ type RepoStore interface {
 // It caches multiple consecutive uses in order to ensure repository lists (which can be quite
 // large, e.g. 500,000+ repositories) are only fetched as frequently as needed.
 type AllReposIterator struct {
-	DefaultRepoLister     DefaultRepoLister
+	IndexableReposLister  IndexableReposLister
 	RepoStore             RepoStore
 	Clock                 func() time.Time
 	SourcegraphDotComMode bool // result of envvar.SourcegraphDotComMode()
@@ -63,9 +63,9 @@ func (a *AllReposIterator) ForEach(ctx context.Context, forEach func(repoName st
 			// We shouldn't try to fill historical data for ALL repos on Sourcegraph.com, it would take
 			// forever. Instead, we use the same list of default repositories used when you do a global
 			// search on Sourcegraph.com.
-			res, err := a.DefaultRepoLister.List(ctx)
+			res, err := a.IndexableReposLister.List(ctx)
 			if err != nil {
-				return errors.Wrap(err, "DefaultRepoLister.List")
+				return errors.Wrap(err, "IndexableReposLister.List")
 			}
 			for _, r := range res {
 				a.cachedRepoNames = append(a.cachedRepoNames, string(r.Name))

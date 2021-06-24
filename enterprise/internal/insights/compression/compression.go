@@ -1,14 +1,32 @@
+// Package compression handles compressing the number of data points that need to be searched for a code insight series.
+//
+// The purpose is to reduce the extremely large number of search queries that need to run to backfill a historical insight.
+//
+// An index of commits is used to understand which time frames actually contain changes in a given repository.
+// The commit index comes with metadata for each repository that understands the time at which the index was most recently updated.
+// It is relevant to understand whether the index can be considered up to date for a repository or not, otherwise
+// frames could be filtered out that simply are not yet indexed and otherwise should be queried.
+//
+// The commit indexer also has the concept of a horizon, that is to say the farthest date at which indices are stored. This horizon
+// does not necessarily correspond to the last commit in the repository (the repo could be much older) so the compression must also
+// understand this.
+//
+// At a high level, the algorithm is as follows:
+//
+// * Given a series of time frames [1....N]:
+// * Always include 1 (to establish a baseline at the max horizon so that last observations may be carried)
+// * Never include N (let the indexed search handle this)
+// * For each remaining frame, check if it has commit metadata that is up to date, and check if it has no commits. If so, throw out the frame
+// * Otherwise, keep the frame
 package compression
 
 import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-
 	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 type CommitFilter struct {

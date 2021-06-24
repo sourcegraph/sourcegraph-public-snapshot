@@ -8,7 +8,7 @@ import { PanelViewData } from '@sourcegraph/shared/src/api/extension/extensionHo
 import { pretendProxySubscribable, pretendRemote } from '@sourcegraph/shared/src/api/util'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
-import webStyles from '@sourcegraph/web/src/main.scss'
+import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
 import { BrandedStory } from '../BrandedStory'
 

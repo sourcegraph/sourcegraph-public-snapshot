@@ -11,3 +11,4 @@
 - [How to troubleshoot a Sourcegraph extension](troubleshoot-sg-extension.md)
 - [How to troubleshoot a repository that is not being updated](repo-not-updated.md)
 - [How to configure submodules](submodule-configuration.md)
+- [How to remove users with GraphQL API](remove-user-api.md)

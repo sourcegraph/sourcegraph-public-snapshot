@@ -2,8 +2,12 @@ import path from 'path'
 
 import { remove } from 'lodash'
 import MonacoWebpackPlugin from 'monaco-editor-webpack-plugin'
+import SpeedMeasurePlugin from 'speed-measure-webpack-plugin'
 import TerserPlugin from 'terser-webpack-plugin'
 import { Configuration, DefinePlugin, ProgressPlugin, RuleSetUseItem, RuleSetUse } from 'webpack'
+import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer'
+
+import { environment } from './environment-config'
 
 const rootPath = path.resolve(__dirname, '../../../')
 const monacoEditorPaths = [path.resolve(rootPath, 'node_modules', 'monaco-editor')]
@@ -26,9 +30,6 @@ const getStoriesGlob = (): string[] => {
 
     return [...storiesGlobs, chromaticStoriesGlob]
 }
-
-const shouldMinify = !!process.env.MINIFY
-const isDevelopment = !shouldMinify
 
 const getCSSLoaders = (...loaders: RuleSetUseItem[]): RuleSetUse => [
     ...loaders,
@@ -66,7 +67,7 @@ const config = {
     },
 
     webpackFinal: (config: Configuration) => {
-        config.mode = shouldMinify ? 'production' : 'development'
+        config.mode = environment.shouldMinify ? 'production' : 'development'
 
         // Check the default config is in an expected shape.
         if (!config.module) {
@@ -85,7 +86,7 @@ const config = {
             })
         )
 
-        if (shouldMinify) {
+        if (environment.shouldMinify) {
             if (!config.optimization) {
                 throw new Error('The structure of the config changed, expected config.optimization to be not-null')
             }
@@ -157,7 +158,7 @@ const config = {
             use: getCSSLoaders('style-loader', {
                 loader: 'css-loader',
                 options: {
-                    sourceMap: isDevelopment,
+                    sourceMap: !environment.shouldMinify,
                     modules: {
                         exportLocalsConvention: 'camelCase',
                         localIdentName: '[name]__[local]_[hash:base64:5]',
@@ -207,6 +208,20 @@ const config = {
             'editor.worker': 'monaco-editor/esm/vs/editor/editor.worker.js',
             'json.worker': 'monaco-editor/esm/vs/language/json/json.worker',
         })
+
+        if (environment.isBundleAnalyzerEnabled) {
+            config.plugins.push(new BundleAnalyzerPlugin())
+        }
+
+        if (environment.isSpeedAnalyzerEnabled) {
+            const speedMeasurePlugin = new SpeedMeasurePlugin({
+                outputFormat: 'human',
+            })
+
+            config.plugins.push(speedMeasurePlugin)
+
+            return speedMeasurePlugin.wrap(config)
+        }
 
         return config
     },

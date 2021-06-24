@@ -52,7 +52,7 @@ exports[`ProductSubscriptionForm edit existing subscription 1`] = `
           className="payment-token-form-control"
         >
           <CardElement
-            className="payment-token-form-control__card payment-token-form-control__card--disabled"
+            className="form-control payment-token-form-control__card payment-token-form-control__card--disabled"
             disabled={true}
             style={
               Object {
@@ -154,7 +154,7 @@ exports[`ProductSubscriptionForm new subscription for anonymous viewer (no accou
           className="payment-token-form-control"
         >
           <CardElement
-            className="payment-token-form-control__card payment-token-form-control__card--disabled"
+            className="form-control payment-token-form-control__card payment-token-form-control__card--disabled"
             disabled={true}
             style={
               Object {
@@ -232,7 +232,7 @@ exports[`ProductSubscriptionForm new subscription for existing account 1`] = `
           className="payment-token-form-control"
         >
           <CardElement
-            className="payment-token-form-control__card payment-token-form-control__card--disabled"
+            className="form-control payment-token-form-control__card payment-token-form-control__card--disabled"
             disabled={true}
             style={
               Object {
