@@ -368,6 +368,7 @@ func (s *GithubSource) listOrg(ctx context.Context, org string, results chan *gi
 					"rateLimitRemaining", remaining,
 					"rateLimitReset", reset,
 					"retryAfter", retry,
+					"type", tp,
 				)
 			}()
 
