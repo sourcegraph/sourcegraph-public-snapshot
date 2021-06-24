@@ -27,7 +27,7 @@ func SearchRepositories(ctx context.Context, args *search.TextParameters, limit 
 		results, stats, err := MockSearchRepositories(args)
 		stream.Send(streaming.SearchEvent{
 			Results: results,
-			Stats:   statsDeref(stats),
+			Stats:   stats.Deref(),
 		})
 		return err
 	}
