@@ -86,7 +86,7 @@ func (a *Aggregator) DoSymbolSearch(ctx context.Context, args *search.TextParame
 		tr.Finish()
 	}()
 
-	err = symbol.SearchSymbols(ctx, args, limit, a)
+	err = symbol.Search(ctx, args, limit, a)
 	return errors.Wrap(err, "symbol search failed")
 }
 

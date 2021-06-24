@@ -397,7 +397,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		defer cancel()
 
 		fileMatches, _, err := streaming.CollectStream(func(stream streaming.Sender) error {
-			return symbol.SearchSymbols(ctx, &search.TextParameters{
+			return symbol.Search(ctx, &search.TextParameters{
 				PatternInfo:  p,
 				RepoPromise:  (&search.RepoPromise{}).Resolve(resolved.RepoRevs),
 				Query:        r.Query,
