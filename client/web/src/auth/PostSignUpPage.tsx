@@ -17,11 +17,13 @@ interface Props {
     location: H.Location
 }
 
-export const PostSignUpPage: FunctionComponent<Props> = ({
-    authenticatedUser,
-    location,
-    context: { sourcegraphDotComMode, experimentalFeatures },
-}) => {
+// old props
+// {   authenticatedUser,
+//     location,
+//     context: { sourcegraphDotComMode, experimentalFeatures },
+// }
+
+export const PostSignUpPage: FunctionComponent<Props> = () => {
     // post sign-up flow is available only for .com and only in two cases, user:
     // 1. is authenticated and has AllowUserViewPostSignup tag
     // 2. is authenticated and enablePostSignupFlow experimental feature is ON
@@ -48,17 +50,21 @@ export const PostSignUpPage: FunctionComponent<Props> = ({
                     <div className="post-signup-page__container">
                         <h2>Get started with Sourcegraph</h2>
                         <p>Three quick steps to add your repositories and get searching with Sourcegraph</p>
-                        <Steps current={current} numbered={true}>
-                            <Step title="Connect with code hosts" />
-                            <Step title="Add repositories" />
-                            <Step title="Start searching" />
+
+                        <Steps current={current} numbered={false}>
+                            <Step title="Connect with code hosts" borderColor="purple" />
+                            <Step title="Add repositories" borderColor="blue" />
+                            <Step title="Start searching" borderColor="orange" />
                         </Steps>
+
                         <div>{content[current - 1]}</div>
-                        <button type="button" onClick={() => setCurrent(current + 1)}>
-                            next
-                        </button>
+
                         <button type="button" onClick={() => setCurrent(current - 1)}>
                             prev
+                        </button>
+
+                        <button type="button" onClick={() => setCurrent(current + 1)}>
+                            next
                         </button>
                     </div>
                 }
