@@ -1,6 +1,8 @@
 import classNames from 'classnames'
 import React, { useCallback } from 'react'
 
+import styles from './IconRadioButtons.module.scss'
+
 interface Icon {
     name: string
     value: number
@@ -25,10 +27,10 @@ export const IconRadioButtons: React.FunctionComponent<Props> = ({ name, icons, 
     )
 
     return (
-        <ul className="icon-radio-buttons">
+        <ul className={styles.buttons}>
             {Object.values(icons).map(({ icon: Icon, name: iconName, value }) => (
                 <li key={iconName} className="d-flex">
-                    <label className="icon-radio-buttons__label">
+                    <label className={styles.label}>
                         <input
                             disabled={disabled}
                             type="radio"
@@ -37,19 +39,19 @@ export const IconRadioButtons: React.FunctionComponent<Props> = ({ name, icons, 
                             value={value}
                             checked={value === selected}
                             aria-label={iconName}
-                            className="icon-radio-buttons__input"
+                            className={styles.input}
                         />
                         <span
-                            className={classNames('icon-radio-buttons__border', {
-                                'icon-radio-buttons__border--inactive': selected !== undefined && value !== selected,
-                                'icon-radio-buttons__border--active': value === selected,
+                            className={classNames(styles.border, {
+                                [styles.borderInactive]: selected !== undefined && value !== selected,
+                                [styles.borderActive]: value === selected,
                             })}
                             aria-hidden={true}
                         />
                         <span
-                            className={classNames('icon-radio-buttons__emoji', {
-                                'icon-radio-buttons__emoji--inactive': selected !== undefined && value !== selected,
-                                'icon-radio-buttons__emoji--active': value === selected,
+                            className={classNames(styles.emoji, {
+                                [styles.emojiInactive]: selected !== undefined && value !== selected,
+                                [styles.emojiActive]: value === selected,
                             })}
                         >
                             <Icon />
