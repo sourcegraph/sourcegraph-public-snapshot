@@ -21,23 +21,19 @@ export interface StepsProps {
     children: React.ReactElement<StepProps> | React.ReactElement<StepProps>[]
 }
 
-export const Step: React.FunctionComponent<StepProps> = ({ title, active, borderColor, disabled }) => {
-    const color = `color${upperFirst(borderColor)}`
-
-    return (
-        <li
-            className={classNames(
-                disabled && stepsStyles.disabled,
-                stepsStyles.listItem,
-                active && stepsStyles.active,
-                borderColor && stepsStyles[color]
-            )}
-            aria-current={active}
-        >
-            {title}
-        </li>
-    )
-}
+export const Step: React.FunctionComponent<StepProps> = ({ title, active, borderColor, disabled }) => (
+    <li
+        className={classNames(
+            disabled && stepsStyles.disabled,
+            stepsStyles.listItem,
+            active && stepsStyles.active,
+            borderColor && stepsStyles[`color${upperFirst(borderColor)}` as keyof typeof stepsStyles]
+        )}
+        aria-current={active}
+    >
+        {title}
+    </li>
+)
 
 export const Steps: React.FunctionComponent<StepsProps> = ({ children, numbered, current = 1 }) => {
     if (!children) {
