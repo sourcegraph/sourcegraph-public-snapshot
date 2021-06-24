@@ -14,9 +14,8 @@ const prependStyleTag = (id: string): HTMLStyleElement => {
  * Apply a CSS string to the document head
  *
  * @param css Stringified CSS to inject into a `<style>` tag
- * @returns The created `<style>` tag
  */
-export const usePrependStyles = (styleTagId: string, css?: string): HTMLStyleElement | undefined => {
+export const usePrependStyles = (styleTagId: string, css?: string): void => {
     const styleTag = useMemo(() => {
         if (!css) {
             return undefined
@@ -29,6 +28,4 @@ export const usePrependStyles = (styleTagId: string, css?: string): HTMLStyleEle
     }, [styleTagId, css])
 
     useEffect(() => () => styleTag?.remove(), [styleTag])
-
-    return styleTag
 }
