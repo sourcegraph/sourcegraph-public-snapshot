@@ -80,7 +80,7 @@ func RepoUpdater() *monitoring.Container {
 						{
 							Name:              "syncer_sync_start",
 							Description:       "repo metadata sync was started",
-							Query:             fmt.Sprintf(`max by (family, owner) (rate(src_repoupdater_syncer_start_sync[%s]))`, syncDurationThreshold.String()),
+							Query:             fmt.Sprintf(`max by (family) (rate(src_repoupdater_syncer_start_sync{family="Syncer.SyncExternalService"}[%s]))`, syncDurationThreshold.String()),
 							Warning:           monitoring.Alert().LessOrEqual(0, nil).For(syncDurationThreshold),
 							Panel:             monitoring.Panel().LegendFormat("Family: {{family}} Owner: {{owner}}").Unit(monitoring.Number),
 							Owner:             monitoring.ObservableOwnerCoreApplication,
