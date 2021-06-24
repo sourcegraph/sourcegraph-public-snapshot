@@ -847,7 +847,7 @@ type ListIndexableReposOptions struct {
 // ListIndexableRepos returns a list of repos to be indexed for search on sourcegraph.com.
 // This includes all repos with >= 20 stars as well as user added repos.
 func (s *RepoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableReposOptions) (results []types.RepoName, err error) {
-	tr, ctx := trace.New(ctx, "repos.ListSearchable", "")
+	tr, ctx := trace.New(ctx, "repos.ListIndexable", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
