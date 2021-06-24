@@ -226,6 +226,9 @@ const (
 	// The documentation describes e.g. a test function or concept related to testing.
 	TagTest Tag = "test"
 
+	// The documentation describes e.g. a benchmark function or concept related to benchmarking.
+	TagBenchmark Tag = "benchmark"
+
 	// The documentation describes e.g. an example function or example code.
 	TagExample Tag = "example"
 
