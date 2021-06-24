@@ -3,12 +3,11 @@ package run
 import (
 	"math"
 
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
-
-const defaultMaxSearchResults = 30
 
 // SearchInputs contains fields we set before kicking off search.
 type SearchInputs struct {
@@ -45,7 +44,7 @@ func (inputs SearchInputs) MaxResults() int {
 		return inputs.DefaultLimit
 	}
 
-	return defaultMaxSearchResults
+	return search.DefaultMaxSearchResults
 }
 
 // SearchPaginationInfo describes information around a paginated search

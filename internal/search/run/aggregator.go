@@ -9,6 +9,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/commits"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
@@ -98,7 +99,7 @@ func (a *Aggregator) DoFilePathSearch(ctx context.Context, args *search.TextPara
 		tr.Finish()
 	}()
 
-	isDefaultStructuralSearch := args.PatternInfo.IsStructuralPat && args.PatternInfo.FileMatchLimit == defaultMaxSearchResults
+	isDefaultStructuralSearch := args.PatternInfo.IsStructuralPat && args.PatternInfo.FileMatchLimit == search.DefaultMaxSearchResults
 
 	if !isDefaultStructuralSearch {
 		return SearchFilesInRepos(ctx, args, a)
@@ -150,13 +151,13 @@ func (a *Aggregator) DoDiffSearch(ctx context.Context, tp *search.TextParameters
 		return err
 	}
 
-	args, err := ResolveCommitParameters(ctx, tp)
+	args, err := commits.ResolveCommitParameters(ctx, tp)
 	if err != nil {
 		log15.Warn("doDiffSearch: error while resolving commit parameters", "error", err)
 		return nil
 	}
 
-	return SearchCommitDiffsInRepos(ctx, a.db, args, a)
+	return commits.SearchCommitDiffsInRepos(ctx, a.db, args, a)
 }
 
 func (a *Aggregator) DoCommitSearch(ctx context.Context, tp *search.TextParameters) (err error) {
@@ -171,13 +172,13 @@ func (a *Aggregator) DoCommitSearch(ctx context.Context, tp *search.TextParamete
 		return err
 	}
 
-	args, err := ResolveCommitParameters(ctx, tp)
+	args, err := commits.ResolveCommitParameters(ctx, tp)
 	if err != nil {
 		log15.Warn("doCommitSearch: error while resolving commit parameters", "error", err)
 		return nil
 	}
 
-	return SearchCommitLogInRepos(ctx, a.db, args, a)
+	return commits.SearchCommitLogInRepos(ctx, a.db, args, a)
 }
 
 func checkDiffCommitSearchLimits(ctx context.Context, args *search.TextParameters, resultType string) error {

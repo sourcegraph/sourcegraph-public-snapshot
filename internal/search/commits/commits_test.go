@@ -1,4 +1,4 @@
-package run
+package commits
 
 import (
 	"bytes"
@@ -37,7 +37,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 		}
 		if want := []string{
 			"--no-prefix",
-			"--max-count=" + strconv.Itoa(defaultMaxSearchResults+1),
+			"--max-count=" + strconv.Itoa(search.DefaultMaxSearchResults+1),
 			"--unified=0",
 			"--regexp-ignore-case",
 			"rev",
@@ -63,7 +63,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	}
 	results, limitHit, timedOut, err := searchCommitsInRepo(ctx, db, search.CommitParameters{
 		RepoRevs:    repoRevs,
-		PatternInfo: &search.CommitPatternInfo{Pattern: "p", FileMatchLimit: int32(defaultMaxSearchResults)},
+		PatternInfo: &search.CommitPatternInfo{Pattern: "p", FileMatchLimit: int32(search.DefaultMaxSearchResults)},
 		Query:       q,
 		Diff:        true,
 	})
@@ -343,5 +343,22 @@ func TestCommitSearchResult_Limit(t *testing.T) {
 				t.Error("small exhaustive check failed")
 			}
 		}
+	}
+}
+
+func TestOrderedFuzzyRegexp(t *testing.T) {
+	got := orderedFuzzyRegexp([]string{})
+	if want := ""; got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+
+	got = orderedFuzzyRegexp([]string{"a"})
+	if want := "a"; got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+
+	got = orderedFuzzyRegexp([]string{"a", "b|c"})
+	if want := "(a).*?(b|c)"; got != want {
+		t.Errorf("got %q, want %q", got, want)
 	}
 }
