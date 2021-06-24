@@ -321,6 +321,34 @@ func getBatchChangeDiffStatQuery(opts GetBatchChangeDiffStatOpts, authzConds *sq
 	return sqlf.Sprintf(getBatchChangeDiffStatQueryFmtstr, strconv.Itoa(int(opts.BatchChangeID)), authzConds)
 }
 
+func (s *Store) GetRepoDiffStat(ctx context.Context, repoID api.RepoID) (*diff.Stat, error) {
+	q := getRepoDiffStatQuery(int64(repoID))
+
+	var diffStat diff.Stat
+	err := s.query(ctx, q, func(sc scanner) error {
+		return sc.Scan(&diffStat.Added, &diffStat.Changed, &diffStat.Deleted)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &diffStat, nil
+}
+
+var getRepoDiffStatQueryFmtstr = `
+-- source: enterprise/internal/batches/store.go:GetRepoDiffStat
+SELECT
+	COALESCE(SUM(diff_stat_added), 0) AS added,
+	COALESCE(SUM(diff_stat_changed), 0) AS changed,
+	COALESCE(SUM(diff_stat_deleted), 0) AS deleted
+FROM changesets
+WHERE changesets.repo_id = %s
+`
+
+func getRepoDiffStatQuery(repoID int64) *sqlf.Query {
+	return sqlf.Sprintf(getRepoDiffStatQueryFmtstr, repoID)
+}
+
 // ListBatchChangesOpts captures the query options needed for
 // listing batches.
 type ListBatchChangesOpts struct {

@@ -2415,6 +2415,12 @@ type Repository implements Node & GenericSearchResultInterface {
         """
         viewerCanAdminister: Boolean
     ): BatchChangeConnection!
+
+    """
+    A diff stat for all the changesets that have been applied to this repository
+    by batch changes.
+    """
+    batchChangesDiffStat: DiffStat!
 }
 
 """
