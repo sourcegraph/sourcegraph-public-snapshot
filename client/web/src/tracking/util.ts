@@ -1,3 +1,5 @@
+import { formatISO, startOfWeek } from 'date-fns'
+
 /**
  * Strip provided URL parameters and update window history
  */
@@ -33,4 +35,13 @@ export function redactSensitiveInfoFromURL(url: string): string {
     }
 
     return sourceURL.href
+}
+
+/**
+ * Returns the Monday at or before the supplied date, in YYYY-MM-DD format.
+ * This is used to generate cohort IDs for users who
+ * started using the site on the same week.
+ */
+export function getPreviousMonday(date: Date): string {
+    return formatISO(startOfWeek(date, { weekStartsOn: 1 }), { representation: 'date' })
 }

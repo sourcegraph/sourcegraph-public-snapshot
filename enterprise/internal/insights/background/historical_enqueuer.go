@@ -8,9 +8,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
+
 	"golang.org/x/time/rate"
 
-	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/xhit/go-str2duration/v2"
@@ -87,6 +89,28 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 
 	repoStore := database.Repos(workerBaseStore.Handle().DB())
 
+	framesToBackfill := func() int {
+		if frames := conf.Get().InsightsHistoricalFrames; frames != 0 {
+			return frames
+		}
+		return 6 // 6 one-month frames.
+	}
+
+	frameLength := func() time.Duration {
+		defaultLen := 30 * 24 * time.Hour
+		if s := conf.Get().InsightsHistoricalFrameLength; s != "" {
+			parsed, err := str2duration.ParseDuration(s)
+			if err != nil {
+				log15.Error("insights: failed to parse site config insights.historical.frameLength", "error", err)
+				return defaultLen
+			}
+			return parsed
+		}
+		return defaultLen
+	}
+
+	maxTime := time.Now().Add(-time.Duration(framesToBackfill()) * frameLength())
+
 	historicalEnqueuer := &historicalEnqueuer{
 		now:           time.Now,
 		settingStore:  settingStore,
@@ -101,22 +125,10 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 		gitFindNearestCommit: git.FindNearestCommit,
 
 		// Fill e.g. the last 52 weeks of data, recording 1 point per week.
-		framesToBackfill: func() int {
-			if frames := conf.Get().InsightsHistoricalFrames; frames != 0 {
-				return frames
-			}
-			return 6 // 6 one-month frames.
-		},
-		frameLength: func() time.Duration {
-			if s := conf.Get().InsightsHistoricalFrameLength; s != "" {
-				parsed, err := str2duration.ParseDuration(s)
-				if err != nil {
-					log15.Error("insights: failed to parse site config insights.historical.frameLength", "error", err)
-				}
-				return parsed
-			}
-			return 30 * 24 * time.Hour // 6 one-month frames.
-		},
+		framesToBackfill: framesToBackfill,
+		frameLength:      frameLength,
+
+		frameFilter: compression.NewHistoricalFilter(true, maxTime, insightsStore.Handle().DB()),
 
 		allReposIterator: (&discovery.AllReposIterator{
 			DefaultRepoLister:     dbcache.NewDefaultRepoLister(repoStore),
@@ -134,7 +146,7 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 	// fast as possible without wasting CPU cycles, but in reality the handler itself can take
 	// minutes to hours to complete as it intentionally enqueues work slowly to avoid putting
 	// pressure on the system.
-	return goroutine.NewPeriodicGoroutineWithMetrics(ctx, 5*time.Second, goroutine.NewHandlerWithErrorMessage(
+	return goroutine.NewPeriodicGoroutineWithMetrics(ctx, 15*time.Minute, goroutine.NewHandlerWithErrorMessage(
 		"insights_historical_enqueuer",
 		historicalEnqueuer.Handler,
 	), operation)
@@ -172,17 +184,18 @@ type RepoStore interface {
 //
 // It works roughly like this:
 //
-// * For every timeframe we want to backfill (e.g. 1 point every week for the past 52 weeks):
 //   * For every repository on Sourcegraph (a subset on Sourcegraph.com):
-//     * Consider yielding/sleeping.
-//     * Find the oldest commit in the repository.
-//       * For every unique search insight series (i.e. search query):
-//         * Consider yielding/sleeping.
-//         * If the series has data for this timeframe+repo already, nothing to do.
-//         * If the timeframe we're generating data for is before the oldest commit in the repo, record a zero value.
-//         * Else, locate the commit nearest to the point in time we're trying to get data for and
-//           enqueue a queryrunner job to search that repository commit - recording historical data
-//           for it.
+//     * Build a list of time frames that we should consider
+//	   * Check the commit index to see if any timeframes can be discarded (if they didn't change)
+//     * For each frame:
+//       * Find the oldest commit in the repository.
+//         * For every unique search insight series (i.e. search query):
+//           * Consider yielding/sleeping.
+//           * If the series has data for this timeframe+repo already, nothing to do.
+//           * If the timeframe we're generating data for is before the oldest commit in the repo, record a zero value.
+//           * Else, locate the commit nearest to the point in time we're trying to get data for and
+//             enqueue a queryrunner job to search that repository commit - recording historical data
+//            for it.
 //
 // As you can no doubt see, there is much complexity and potential room for duplicative API calls
 // here (e.g. "for every timeframe we list every repository"). For this exact reason, we do two
@@ -202,6 +215,7 @@ type historicalEnqueuer struct {
 	enqueueQueryRunnerJob func(ctx context.Context, job *queryrunner.Job) error
 	gitFirstEverCommit    func(ctx context.Context, repoName api.RepoName) (*git.Commit, error)
 	gitFindNearestCommit  func(ctx context.Context, repoName api.RepoName, revSpec string, target time.Time) (*git.Commit, error)
+	frameFilter           compression.DataFrameFilter
 
 	// framesToBackfill describes the number of historical timeframes to backfill data for.
 	framesToBackfill func() int
@@ -250,8 +264,7 @@ func (h *historicalEnqueuer) Handler(ctx context.Context) error {
 }
 
 // buildFrames is invoked to build historical data for all past timeframes that we care about
-// backfilling data for. This is done in small chunks, e.g. 52 frames to backfill with each frame
-// being 7 days long, specifically so that we perform work incrementally.
+// backfilling data for. This is done in small chunks, specifically so that we perform work incrementally.
 //
 // It is only called if there is at least one insights series defined.
 //
@@ -261,54 +274,15 @@ func (h *historicalEnqueuer) buildFrames(ctx context.Context, uniqueSeries map[s
 		return nil // nothing to do.
 	}
 	var multi error
-	for frame := 0; frame < h.framesToBackfill(); frame++ {
-		// Determine the exact start and end time of this timeframe.
-		from := h.now().Add(-time.Duration(frame+1) * h.frameLength())
-		to := h.now().Add(-time.Duration(frame) * h.frameLength())
-		if h.now().After(h.now().Add(24 * time.Hour)) {
-			// We exclude today because it is the regular enqueuer's job to enqueue work for today.
-			to = to.Add(-24 * time.Hour)
-		}
 
-		// Build historical data for this timeframe.
-		softErr, hardErr := h.buildFrame(ctx, uniqueSeries, sortedSeriesIDs, from, to)
-		if softErr != nil {
-			multi = multierror.Append(multi, softErr)
-			continue
-		}
-		if hardErr != nil {
-			return multierror.Append(multi, hardErr)
-		}
-	}
-	return multi // return any soft errors we encountered
+	frames := Frames(h.framesToBackfill(), h.frameLength(), h.now())
+
+	hardErr := h.allReposIterator(ctx, h.buildForRepo(ctx, uniqueSeries, sortedSeriesIDs, frames, multi))
+	return hardErr
 }
 
-// buildFrame is invoked to build historical data for a specific past timeframe that we care about
-// backfilling data for.
-//
-// It is expected to backfill data for all unique series that are missing data, across all repos
-// (using h.allReposIterator.)
-//
-// It may return both hard errors (e.g. DB connection failure, future frames are unlikely to build)
-// and soft errors (e.g. user made a mistake or we did partial work, future frames will likely
-// succeed.)
-func (h *historicalEnqueuer) buildFrame(
-	ctx context.Context,
-	uniqueSeries map[string]*schema.InsightSeries,
-	sortedSeriesIDs []string,
-	from time.Time,
-	to time.Time,
-) (hardErr, softErr error) {
-	// We yield frequently for a small period of time for a few reasons:
-	//
-	// 1. To not call buildSeries too quickly and enqueue millions of jobs rapidly.
-	// 2. To avoid calling repoStore.GetByName() and git.FirstEverCommit() in a tight
-	//    loop for potentially 500,000+ repositories if there is actually no work to
-	//    perform (because all have had historical data built already.)
-	//
-
-	// For every repository that we want to potentially gather historical data for.
-	hardErr = h.allReposIterator(ctx, func(repoName string) error {
+func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[string]*schema.InsightSeries, sortedSeriesIDs []string, frames []compression.Frame, softErr error) func(repoName string) error {
+	return func(repoName string) error {
 		// Lookup the repository (we need its database ID)
 		repo, err := h.repoStore.GetByName(ctx, api.RepoName(repoName))
 		if err != nil {
@@ -316,8 +290,15 @@ func (h *historicalEnqueuer) buildFrame(
 			// deleted and allReposIterator had it cached.
 			if _, ok := err.(*database.RepoNotFoundErr); !ok {
 				return err // hard DB error
+			} else {
+				return nil
 			}
 		}
+
+		log15.Info("insights: starting frames", "starting_frames", frames)
+
+		filtered := h.frameFilter.FilterFrames(ctx, frames, repo.ID)
+		log15.Info("insights: sampling historical data frames", "repo_id", repo.ID, "frames", frames)
 
 		// Find the first commit made to the repository on the default branch.
 		firstHEADCommit, err := h.gitFirstEverCommit(ctx, api.RepoName(repoName))
@@ -336,46 +317,51 @@ func (h *historicalEnqueuer) buildFrame(
 		// For every series that we want to potentially gather historical data for, try.
 		for _, seriesID := range sortedSeriesIDs {
 			series := uniqueSeries[seriesID]
-			err := h.limiter.Wait(ctx)
-			if err != nil {
-				return err
+
+			for i := len(filtered) - 1; i >= 0; i-- {
+				currentFrame := filtered[i]
+
+				err := h.limiter.Wait(ctx)
+				if err != nil {
+					return err
+				}
+
+				// If we already have data for this frame+repo+series, then there's nothing to do.
+				var numDataPoints int
+				numDataPoints, err = h.insightsStore.CountData(ctx, store.CountDataOpts{
+					From:     &currentFrame.From,
+					To:       &currentFrame.To,
+					SeriesID: &seriesID,
+					RepoID:   &repo.ID,
+				})
+				if err != nil {
+					softErr = multierror.Append(softErr, err)
+					// In this case we will assume the point does not exist and query for it anyway.
+				} else if numDataPoints > 0 {
+					continue
+				}
+
+				// Build historical data for this unique timeframe+repo+series.
+				hardErr, err := h.buildSeries(ctx, &buildSeriesContext{
+					from:            currentFrame.From,
+					to:              currentFrame.To,
+					repo:            repo,
+					firstHEADCommit: firstHEADCommit,
+					seriesID:        seriesID,
+					series:          series,
+				})
+				if err != nil {
+					softErr = multierror.Append(softErr, err)
+					continue
+				}
+				if hardErr != nil {
+					return multierror.Append(softErr, hardErr)
+				}
 			}
 
-			// If we already have data for this frame+repo+series, then there's nothing to do.
-			var numDataPoints int
-			numDataPoints, hardErr = h.insightsStore.CountData(ctx, store.CountDataOpts{
-				From:     &from,
-				To:       &to,
-				SeriesID: &seriesID,
-				RepoID:   &repo.ID,
-			})
-			if err != nil {
-				return multierror.Append(softErr, hardErr)
-			}
-			if numDataPoints > 0 {
-				continue
-			}
-
-			// Build historical data for this unique timeframe+repo+series.
-			softErr, hardErr = h.buildSeries(ctx, &buildSeriesContext{
-				from:            from,
-				to:              to,
-				repo:            repo,
-				firstHEADCommit: firstHEADCommit,
-				seriesID:        seriesID,
-				series:          series,
-			})
-			if softErr != nil {
-				softErr = multierror.Append(softErr, softErr)
-				continue
-			}
-			if hardErr != nil {
-				return multierror.Append(softErr, hardErr)
-			}
 		}
 		return nil
-	})
-	return
+	}
 }
 
 // buildSeriesContext describes context/parameters for a call to buildSeries()
@@ -392,6 +378,22 @@ type buildSeriesContext struct {
 	// The series we're building historical data for.
 	seriesID string
 	series   *schema.InsightSeries
+}
+
+func Frames(numFrames int, frameLength time.Duration, current time.Time) []compression.Frame {
+	frames := make([]compression.Frame, 0)
+
+	for frame := 0; frame < numFrames; frame++ {
+		// Determine the exact start and end time of this timeframe.
+		from := current.Add(-time.Duration(frame+1) * frameLength)
+		to := current.Add(-time.Duration(frame) * frameLength)
+
+		frames = append([]compression.Frame{{
+			From: from,
+			To:   to,
+		}}, frames...)
+	}
+	return frames
 }
 
 // buildSeries is invoked to build historical data for every unique timeframe * repo * series that

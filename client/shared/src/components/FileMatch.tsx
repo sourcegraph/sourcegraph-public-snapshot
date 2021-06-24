@@ -156,6 +156,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
             expandedChildren,
             allExpanded: props.allExpanded,
             matchCountLabel,
+            repoStars: result.repoStars,
         }
     } else {
         const length = items.length - subsetMatches
@@ -183,6 +184,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
                 : `Show ${length} more ${pluralize('match', length, 'matches')}`,
             allExpanded: props.allExpanded,
             matchCountLabel,
+            repoStars: result.repoStars,
         }
     }
 

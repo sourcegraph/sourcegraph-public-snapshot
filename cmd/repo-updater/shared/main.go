@@ -245,7 +245,11 @@ func Main(enterpriseInit EnterpriseInit) {
 	var gps *repos.GitolitePhabricatorMetadataSyncer
 	if !envvar.SourcegraphDotComMode() {
 		gps = repos.NewGitolitePhabricatorMetadataSyncer(store)
-		syncer.SubsetSynced = make(chan repos.Diff)
+
+		// WARNING: This enables the streaming inserter which allows it to sync private repos. If
+		// this is ever enabled for sourcegraph.com, we want to be sure we are not unintentionally
+		// syncing private repos.
+		syncer.SingleRepoSynced = make(chan repos.Diff)
 	}
 
 	go watchSyncer(ctx, syncer, scheduler, gps)
@@ -430,7 +434,7 @@ func watchSyncer(ctx context.Context, syncer *repos.Syncer, sched scheduler, gps
 				}
 			}()
 
-		case diff := <-syncer.SubsetSynced:
+		case diff := <-syncer.SingleRepoSynced:
 			if !conf.Get().DisableAutoGitUpdates {
 				sched.UpdateFromDiff(diff)
 			}

@@ -9,10 +9,11 @@
     // without it. This should be removed once we can get rid of that child selector.
     border: none !important;
     border-radius: 0 !important;
-    padding-bottom: 2rem !important;
+    height: 100%;
 
     &__container {
         overflow-y: auto;
+        height: 100%;
         flex: 1;
         background-color: var(--code-bg);
     }

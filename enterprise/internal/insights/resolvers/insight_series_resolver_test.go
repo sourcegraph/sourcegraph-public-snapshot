@@ -115,6 +115,6 @@ func TestResolver_InsightSeries(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("insights[0][0].Points mocked", "[{p:{Time:{wall:0 ext:63271811045 loc:<nil>} Value:1 Metadata:[]}} {p:{Time:{wall:0 ext:63271811045 loc:<nil>} Value:2 Metadata:[]}} {p:{Time:{wall:0 ext:63271811045 loc:<nil>} Value:3 Metadata:[]}}]").Equal(t, fmt.Sprintf("%+v", points))
+		autogold.Want("insights[0][0].Points mocked", "[{p:{SeriesID: Time:{wall:0 ext:63271811045 loc:<nil>} Value:1 Metadata:[]}} {p:{SeriesID: Time:{wall:0 ext:63271811045 loc:<nil>} Value:2 Metadata:[]}} {p:{SeriesID: Time:{wall:0 ext:63271811045 loc:<nil>} Value:3 Metadata:[]}}]").Equal(t, fmt.Sprintf("%+v", points))
 	})
 }

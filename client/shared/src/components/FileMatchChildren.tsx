@@ -1,5 +1,5 @@
 import * as H from 'history'
-import * as React from 'react'
+import React from 'react'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
@@ -9,12 +9,16 @@ import { isSettingsValid, SettingsCascadeProps } from '../settings/settings'
 import { SymbolIcon } from '../symbols/SymbolIcon'
 import { ThemeProps } from '../theme'
 import { isErrorLike } from '../util/errors'
-import { toPositionOrRangeHash, appendSubtreeQueryParameter } from '../util/url'
+import {
+    appendLineRangeQueryParameter,
+    toPositionOrRangeQueryParameter,
+    appendSubtreeQueryParameter,
+} from '../util/url'
 
 import { CodeExcerpt, FetchFileParameters } from './CodeExcerpt'
 import { CodeExcerptUnhighlighted } from './CodeExcerptUnhighlighted'
 import { MatchItem } from './FileMatch'
-import { calculateMatchGroups } from './FileMatchContext'
+import { MatchGroup, calculateMatchGroups } from './FileMatchContext'
 import { Link } from './Link'
 
 export interface EventLogger {
@@ -115,6 +119,14 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
         [result, fetchHighlightedFileLineRanges, grouped, optimizeHighlighting, eventLogger, onFirstResultLoad]
     )
 
+    const createCodeExcerptLink = (group: MatchGroup): string => {
+        const positionOrRangeQueryParameter = toPositionOrRangeQueryParameter({ position: group.position })
+        return appendLineRangeQueryParameter(
+            appendSubtreeQueryParameter(getFileMatchUrl(result)),
+            positionOrRangeQueryParameter
+        )
+    }
+
     if (NO_SEARCH_HIGHLIGHTING) {
         return (
             <CodeExcerptUnhighlighted
@@ -159,9 +171,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                     className="file-match-children__item-code-wrapper test-file-match-children-item-wrapper"
                 >
                     <Link
-                        to={appendSubtreeQueryParameter(
-                            `${getFileMatchUrl(result)}${toPositionOrRangeHash({ position: group.position })}`
-                        )}
+                        to={createCodeExcerptLink(group)}
                         className="file-match-children__item file-match-children__item-clickable test-file-match-children-item"
                         onClick={props.onSelect}
                     >

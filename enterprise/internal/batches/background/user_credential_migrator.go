@@ -35,6 +35,7 @@ func (m *userCredentialMigrator) Progress(ctx context.Context) (float64, error) 
 			userCredentialMigratorProgressQuery,
 			database.UserCredentialDomainBatches,
 			database.UserCredentialPlaceholderEncryptionKeyID,
+			database.UserCredentialUnmigratedEncryptionKeyID,
 			database.UserCredentialDomainBatches,
 		)))
 	if err != nil {
@@ -47,7 +48,7 @@ func (m *userCredentialMigrator) Progress(ctx context.Context) (float64, error) 
 const userCredentialMigratorProgressQuery = `
 -- source: enterprise/internal/batches/user_credential_migrator.go:Progress
 SELECT CASE c2.count WHEN 0 THEN 1 ELSE CAST((c2.count - c1.count) AS float) / CAST(c2.count AS float) END FROM
-	(SELECT COUNT(*) as count FROM user_credentials WHERE domain = %s AND encryption_key_id IN ('', %s)) c1,
+	(SELECT COUNT(*) as count FROM user_credentials WHERE domain = %s AND encryption_key_id IN (%s, %s)) c1,
 	(SELECT COUNT(*) as count FROM user_credentials WHERE domain = %s) c2
 `
 
@@ -128,7 +129,7 @@ func (m *userCredentialMigrator) Down(ctx context.Context) error {
 			}
 
 			cred.EncryptedCredential = raw
-			cred.EncryptionKeyID = ""
+			cred.EncryptionKeyID = database.UserCredentialUnmigratedEncryptionKeyID
 			if err := tx.UserCredentials().Update(ctx, cred); err != nil {
 				return errors.Wrapf(err, "upserting user credential %d", cred.ID)
 			}

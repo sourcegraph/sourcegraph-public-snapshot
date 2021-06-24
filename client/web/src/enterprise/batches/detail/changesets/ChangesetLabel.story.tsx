@@ -6,7 +6,7 @@ import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
 import { ChangesetLabel } from './ChangesetLabel'
 
 const { add } = storiesOf('web/batches/ChangesetLabel', module).addDecorator(story => (
-    <div className="p-3 container web-content">{story()}</div>
+    <div className="p-3 container">{story()}</div>
 ))
 
 add('Various labels', () => (

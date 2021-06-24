@@ -7,7 +7,7 @@ import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 import { BatchSpecInfoByline } from './BatchSpecInfoByline'
 
 const { add } = storiesOf('web/batches/preview/BatchSpecInfoByline', module).addDecorator(story => (
-    <div className="p-3 container web-content">{story()}</div>
+    <div className="p-3 container">{story()}</div>
 ))
 
 add('Default', () => (

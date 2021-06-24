@@ -55,6 +55,29 @@ To install it, use the following command.
     yarn watch-generate
     ```
 
+### Storybook
+
+Storybook is used to work on the components in isolation. The latest version is deployed at http://storybook.sgdev.org/.
+
+To use it locally, use `yarn storybook` command to start the Storybook development server. This will load stories from all the workspaces that we have in the monorepo.
+
+To boost the build/recompilation performance of the Storybook, it's possible to load only a subset of stories needed for the current feature implementation. This is done via the environment variable `STORIES_GLOB`:
+
+```sh
+STORIES_GLOB=client/web/src/**/*.story.tsx yarn workspace @sourcegraph/storybook run start
+```
+
+It's common for a developer to work only in one client workspace, e.g., `web` or `browser`.
+The root `package.json` has commands to launch Storybook only for each individual workspace, which greatly increases the build performance.
+
+```sh
+yarn storybook:branded
+yarn storybook:browser
+yarn storybook:shared
+yarn storybook:web
+yarn storybook:wildcard
+```
+
 ## Naming files
 
 If the file only contains one main export (e.g. a component class + some interfaces), name the file like the main export.

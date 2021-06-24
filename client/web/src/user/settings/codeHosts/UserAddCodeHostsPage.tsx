@@ -12,10 +12,10 @@ import { AddExternalServiceOptions } from '../../../components/externalServices/
 import { PageTitle } from '../../../components/PageTitle'
 import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
 import { SourcegraphContext } from '../../../jscontext'
-import { useGitHubScopeContext } from '../../../site/GitHubCodeHostScopeAlert/GithubScopeProvider'
+import { useCodeHostScopeContext } from '../../../site/CodeHostScopeAlerts/CodeHostScopeProvider'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
-import { githubRepoScopeRequired } from '../cloud-ga'
+import { githubRepoScopeRequired, gitlabAPIScopeRequired } from '../cloud-ga'
 
 import { CodeHostItem } from './CodeHostItem'
 
@@ -65,11 +65,17 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     onUserExternalServicesOrRepositoriesUpdate,
 }) => {
     const [statusOrError, setStatusOrError] = useState<Status>()
-    const { scopes: gitHubScopes, setScopes: setGitHubScopes } = useGitHubScopeContext()
+    const { scopes, setScope } = useCodeHostScopeContext()
 
-    // If we have a GitHub service, check whether we need to prompt the user to
+    // If we have a GitHub or GitLab services, check whether we need to prompt the user to
     // update their scope
-    const isGitHubTokenUpdateRequired = gitHubScopes ? githubRepoScopeRequired(user.tags, gitHubScopes) : false
+    const isGitHubTokenUpdateRequired = scopes.github ? githubRepoScopeRequired(user.tags, scopes.github) : false
+    const isGitLabTokenUpdateRequired = scopes.gitlab ? gitlabAPIScopeRequired(user.tags, scopes.gitlab) : false
+
+    const isTokenUpdateRequired: Partial<Record<ExternalServiceKind, boolean | undefined>> = {
+        [ExternalServiceKind.GITHUB]: githubRepoScopeRequired(user.tags, scopes.github),
+        [ExternalServiceKind.GITLAB]: gitlabAPIScopeRequired(user.tags, scopes.gitlab),
+    }
 
     useEffect(() => {
         eventLogger.logViewEvent('UserSettingsCodeHostConnections')
@@ -96,15 +102,18 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         onUserExternalServicesOrRepositoriesUpdate(fetchedServices.length, repoCount)
     }, [user.id, onUserExternalServicesOrRepositoriesUpdate])
 
-    const resetScopeAndFetchServices = useCallback((): void => {
-        // after the token is updated - we'll set GitHub's scopes to null and
-        // hide the global CTA banner
-        setGitHubScopes(null)
+    const removeService = (kind: ExternalServiceKind) => (): void => {
+        if (
+            (kind === ExternalServiceKind.GITLAB || kind === ExternalServiceKind.GITHUB) &&
+            isTokenUpdateRequired[kind]
+        ) {
+            setScope(kind, null)
+        }
 
         fetchExternalServices().catch(error => {
             setStatusOrError(asError(error))
         })
-    }, [fetchExternalServices, setGitHubScopes])
+    }
 
     useEffect(() => {
         fetchExternalServices().catch(error => {
@@ -116,6 +125,13 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         needsUpdate ? (
             <div className="alert alert-info mb-4" role="alert" key="update-github">
                 Update your GitHub code host connection to search private code with Sourcegraph.
+            </div>
+        ) : null
+
+    const getGitLabUpdateAuthBanner = (needsUpdate: boolean): JSX.Element | null =>
+        needsUpdate ? (
+            <div className="alert alert-info mb-4" role="alert" key="update-gitlab">
+                Update your GitLab code host connection to search private code with Sourcegraph.
             </div>
         ) : null
 
@@ -167,6 +183,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
             ...servicesWithProblems.map(getServiceWarningFragment),
             getAddReposBanner(notYetSyncedServiceNames),
             getGitHubUpdateAuthBanner(isGitHubTokenUpdateRequired),
+            getGitLabUpdateAuthBanner(isGitLabTokenUpdateRequired),
         ]
     }
 
@@ -242,27 +259,23 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
             {codeHostExternalServices && isServicesByKind(statusOrError) ? (
                 <Container>
                     <ul className="list-group">
-                        {Object.entries(codeHostExternalServices).map(([id, { kind, defaultDisplayName, icon }]) => {
-                            const isTokenUpdateRequired = ExternalServiceKind.GITHUB && isGitHubTokenUpdateRequired
-
-                            return authProvidersByKind[kind] ? (
+                        {Object.entries(codeHostExternalServices).map(([id, { kind, defaultDisplayName, icon }]) =>
+                            authProvidersByKind[kind] ? (
                                 <li key={id} className="list-group-item user-code-hosts-page__code-host-item">
                                     <CodeHostItem
                                         service={isServicesByKind(statusOrError) ? statusOrError[kind] : undefined}
                                         kind={kind}
                                         name={defaultDisplayName}
-                                        isTokenUpdateRequired={isTokenUpdateRequired}
+                                        isTokenUpdateRequired={isTokenUpdateRequired[kind]}
                                         navigateToAuthProvider={navigateToAuthProvider}
                                         icon={icon}
                                         onDidAdd={addNewService}
-                                        onDidRemove={
-                                            isTokenUpdateRequired ? resetScopeAndFetchServices : fetchExternalServices
-                                        }
+                                        onDidRemove={removeService(kind)}
                                         onDidError={handleError}
                                     />
                                 </li>
                             ) : null
-                        })}
+                        )}
                     </ul>
                 </Container>
             ) : (

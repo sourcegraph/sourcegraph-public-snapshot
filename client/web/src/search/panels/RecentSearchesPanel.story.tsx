@@ -18,11 +18,7 @@ const { add } = storiesOf('web/search/panels/RecentSearchesPanel', module)
         },
         chromatic: { viewports: [800] },
     })
-    .addDecorator(story => (
-        <div style={{ width: '800px' }} className="web-content">
-            {story()}
-        </div>
-    ))
+    .addDecorator(story => <div style={{ width: '800px' }}>{story()}</div>)
 
 const emptyRecentSearches = {
     totalCount: 0,

@@ -54,7 +54,7 @@ func (r *locationResolver) CanonicalURL() string {
 func (r *locationResolver) urlPath(prefix string) string {
 	url := prefix
 	if r.lspRange != nil {
-		url += "#L" + r.Range().urlFragment()
+		url += "?L" + r.Range().urlFragment()
 	}
 	return url
 }

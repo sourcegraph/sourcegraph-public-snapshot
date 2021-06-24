@@ -2,6 +2,7 @@ package ui
 
 import (
 	"context"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -56,6 +57,9 @@ type Metadata struct {
 
 	// ShowPreview controls whether or not OpenGraph/Twitter card/etc metadata is rendered.
 	ShowPreview bool
+
+	// PreviewImage contains the URL of the preview image for relevant routes (e.g. blob).
+	PreviewImage string
 }
 
 type Common struct {
@@ -142,6 +146,16 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 		},
 
 		WebpackDevServer: webpackDevServer,
+	}
+
+	if blobPath, ok := mux.Vars(r)["Path"]; ok && envvar.OpenGraphPreviewServiceURL() != "" && envvar.SourcegraphDotComMode() {
+		repo := mux.Vars(r)["Repo"]
+		lineRange := findLineRangeInQueryParameters(r.URL.Query())
+
+		common.Metadata.ShowPreview = true
+		common.Metadata.PreviewImage = getBlobPreviewImageURL(envvar.OpenGraphPreviewServiceURL(), r.URL.Path, lineRange)
+		common.Metadata.Description = fmt.Sprintf("%s/%s", globals.ExternalURL(), repo)
+		common.Metadata.Title = getBlobPreviewTitle(blobPath, lineRange)
 	}
 
 	if _, ok := mux.Vars(r)["Repo"]; ok {

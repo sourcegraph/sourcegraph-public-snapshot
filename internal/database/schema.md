@@ -146,6 +146,7 @@ Foreign-key constraints:
  execution_logs  | json[]                   |           |          | 
  created_at      | timestamp with time zone |           | not null | now()
  updated_at      | timestamp with time zone |           | not null | now()
+ worker_hostname | text                     |           | not null | ''::text
 Indexes:
     "changeset_jobs_pkey" PRIMARY KEY, btree (id)
     "changeset_jobs_bulk_group_idx" btree (bulk_group)
@@ -232,6 +233,7 @@ Referenced by:
  execution_logs           | json[]                   |           |          | 
  syncer_error             | text                     |           |          | 
  external_title           | text                     |           |          | 
+ worker_hostname          | text                     |           | not null | ''::text
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
@@ -274,6 +276,7 @@ Referenced by:
  num_failures    | integer                  |           | not null | 0
  log_contents    | text                     |           |          | 
  trigger_event   | integer                  |           |          | 
+ worker_hostname | text                     |           | not null | ''::text
 Indexes:
     "cm_action_jobs_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -391,6 +394,7 @@ Foreign-key constraints:
  query_string    | text                     |           |          | 
  results         | boolean                  |           |          | 
  num_results     | integer                  |           |          | 
+ worker_hostname | text                     |           | not null | ''::text
 Indexes:
     "cm_trigger_jobs_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -534,6 +538,7 @@ Referenced by:
  version           | text                     |           | not null | 
  timestamp         | timestamp with time zone |           | not null | 
  feature_flags     | jsonb                    |           |          | 
+ cohort_id         | date                     |           |          | 
 Indexes:
     "event_logs_pkey" PRIMARY KEY, btree (id)
     "event_logs_anonymous_user_id" btree (anonymous_user_id)
@@ -585,6 +590,7 @@ Foreign-key constraints:
  num_failures        | integer                  |           | not null | 0
  log_contents        | text                     |           |          | 
  execution_logs      | json[]                   |           |          | 
+ worker_hostname     | text                     |           | not null | ''::text
 Indexes:
     "external_service_sync_jobs_state_idx" btree (state)
 Foreign-key constraints:
@@ -732,6 +738,7 @@ Indexes:
  num_failures    | integer                  |           | not null | 0
  execution_logs  | json[]                   |           |          | 
  record_time     | timestamp with time zone |           |          | 
+ worker_hostname | text                     |           | not null | ''::text
 Indexes:
     "insights_query_runner_jobs_pkey" PRIMARY KEY, btree (id)
     "insights_query_runner_jobs_state_btree" btree (state)
@@ -755,6 +762,7 @@ See [enterprise/internal/insights/background/queryrunner/worker.go:Job](https://
  num_failures    | integer                  |           | not null | 0
  execution_logs  | json[]                   |           |          | 
  upload_id       | integer                  |           |          | 
+ worker_hostname | text                     |           | not null | ''::text
 Indexes:
     "lsif_dependency_indexing_jobs_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -789,11 +797,12 @@ Stores whether or not the nearest upload data for a repository is out of date (w
 
 # Table "public.lsif_index_configuration"
 ```
-    Column     |  Type   | Collation | Nullable |                       Default                        
----------------+---------+-----------+----------+------------------------------------------------------
- id            | bigint  |           | not null | nextval('lsif_index_configuration_id_seq'::regclass)
- repository_id | integer |           | not null | 
- data          | bytea   |           | not null | 
+      Column       |  Type   | Collation | Nullable |                       Default                        
+-------------------+---------+-----------+----------+------------------------------------------------------
+ id                | bigint  |           | not null | nextval('lsif_index_configuration_id_seq'::regclass)
+ repository_id     | integer |           | not null | 
+ data              | bytea   |           | not null | 
+ autoindex_enabled | boolean |           | not null | true
 Indexes:
     "lsif_index_configuration_pkey" PRIMARY KEY, btree (id)
     "lsif_index_configuration_repository_id_key" UNIQUE CONSTRAINT, btree (repository_id)
@@ -803,6 +812,8 @@ Foreign-key constraints:
 ```
 
 Stores the configuration used for code intel index jobs for a repository.
+
+**autoindex_enabled**: Whether or not auto-indexing should be attempted on this repo. Index jobs may be inferred from the repository contents if data is empty.
 
 **data**: The raw user-supplied [configuration](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.23/-/blob/enterprise/internal/codeintel/autoindex/config/types.go#L3:6) (encoded in JSONC).
 
@@ -859,6 +870,7 @@ Stores the number of code intel events for repositories. Used for auto-index sch
  execution_logs         | json[]                   |           |          | 
  local_steps            | text[]                   |           | not null | 
  commit_last_checked_at | timestamp with time zone |           |          | 
+ worker_hostname        | text                     |           | not null | ''::text
 Indexes:
     "lsif_indexes_pkey" PRIMARY KEY, btree (id)
     "lsif_indexes_commit_last_checked_at" btree (commit_last_checked_at) WHERE state <> 'deleted'::text
@@ -1006,6 +1018,7 @@ Associates an upload with the set of packages they require within a given packag
  associated_index_id    | bigint                   |           |          | 
  committed_at           | timestamp with time zone |           |          | 
  commit_last_checked_at | timestamp with time zone |           |          | 
+ worker_hostname        | text                     |           | not null | ''::text
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::text

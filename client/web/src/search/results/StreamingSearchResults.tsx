@@ -5,6 +5,7 @@ import { Observable } from 'rxjs'
 import { debounceTime } from 'rxjs/operators'
 
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
+import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -27,9 +28,11 @@ import {
 import { AuthenticatedUser } from '../../auth'
 import { CodeMonitoringProps } from '../../code-monitoring'
 import { PageTitle } from '../../components/PageTitle'
+import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { isCodeInsightsEnabled } from '../../insights'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
-import { QueryState, submitSearch } from '../helpers'
+import { SearchStarRadialGradientIcon } from '../CtaIcons'
+import { getSubmittedSearchesCount, QueryState, submitSearch } from '../helpers'
 
 import { StreamingProgress } from './progress/StreamingProgress'
 import { SearchAlert } from './SearchAlert'
@@ -50,7 +53,8 @@ export interface StreamingSearchResultsProps
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         TelemetryProps,
         ThemeProps,
-        CodeMonitoringProps {
+        CodeMonitoringProps,
+        FeatureFlagProps {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
@@ -208,6 +212,19 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
     )
     const [showSidebar, setShowSidebar] = useState(false)
 
+    const onSignUpClick = (): void => {
+        telemetryService.log('SignUpPLGSearchCTA_1_Search')
+    }
+
+    const resultsFound = results ? results.results.length > 0 : false
+    const submittedSearchesCount = getSubmittedSearchesCount()
+    const isValidSignUpCtaCadence = submittedSearchesCount < 5 || submittedSearchesCount % 5 === 0
+    const showSignUpCta =
+        !authenticatedUser &&
+        resultsFound &&
+        isValidSignUpCtaCadence &&
+        props.featureFlags.get('w0-signup-optimisation')
+
     return (
         <div className={styles.streamingSearchResults}>
             <PageTitle key="page-title" title={query} />
@@ -226,7 +243,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                 {...props}
                 query={query}
                 enableCodeInsights={isCodeInsightsEnabled(props.settingsCascade)}
-                resultsFound={results ? results.results.length > 0 : false}
+                resultsFound={resultsFound}
                 className={classNames('flex-grow-1', styles.streamingSearchResultsInfobar)}
                 allExpanded={allExpanded}
                 onExpandAllResultsToggle={onExpandAllResultsToggle}
@@ -266,6 +283,30 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                         patternType={patternType}
                         versionContext={versionContext}
                     />
+                )}
+
+                {showSignUpCta && (
+                    <div className="card my-2 mr-3 d-flex p-3 flex-row align-items-center">
+                        <div className={classNames('mr-3', styles.streamingSearchResultsCtaIconWrapper)}>
+                            <SearchStarRadialGradientIcon />
+                        </div>
+                        <div className="flex-1">
+                            <div className={classNames('mb-2', styles.streamingSearchResultsCtaTitle)}>
+                                <strong>Search your public (and soon private) code</strong>
+                            </div>
+                            <div className={classNames('text-muted', styles.streamingSearchResultsCtaDescription)}>
+                                Create a free account to search all of your repos at once.{' '}
+                                <i>(It's like a developer's superpower.)</i>
+                            </div>
+                        </div>
+                        <Link
+                            className="btn btn-primary"
+                            to={`/sign-up?src=SearchCTA&returnTo=${encodeURIComponent('/user/settings/repositories')}`}
+                            onClick={onSignUpClick}
+                        >
+                            Sign up for Sourcegraph
+                        </Link>
+                    </div>
                 )}
 
                 <StreamingSearchResultsList {...props} results={results} allExpanded={allExpanded} />

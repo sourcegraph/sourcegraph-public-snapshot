@@ -10,6 +10,7 @@ import '../sentry'
 import React from 'react'
 import { render } from 'react-dom'
 
+import '../SourcegraphWebApp.scss'
 import '../enterprise.scss'
 import { KEYBOARD_SHORTCUTS } from '../keyboardShortcuts/keyboardShortcuts'
 import { SourcegraphWebApp } from '../SourcegraphWebApp'

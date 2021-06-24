@@ -3,13 +3,18 @@ import { Redirect, RouteComponentProps } from 'react-router'
 
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { isLegacyFragment, parseHash, toRepoURL } from '@sourcegraph/shared/src/util/url'
+import {
+    appendLineRangeQueryParameter,
+    isLegacyFragment,
+    parseQueryAndHash,
+    toRepoURL,
+} from '@sourcegraph/shared/src/util/url'
 
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { ActionItemsBar } from '../extensions/components/ActionItemsBar'
 import { Settings } from '../schema/settings.schema'
 import { lazyComponent } from '../util/lazyComponent'
-import { formatHash } from '../util/url'
+import { formatHash, formatLineOrPositionOrRange } from '../util/url'
 
 import { RepoContainerRoute } from './RepoContainer'
 import { RepoRevisionContainerContext, RepoRevisionContainerRoute } from './RepoRevisionContainer'
@@ -149,12 +154,17 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
             // For blob pages with legacy URL fragment hashes like "#L17:19-21:23$foo:bar"
             // redirect to the modern URL fragment hashes like "#L17:19-21:23&tab=foo:bar"
             if (!hideRepoRevisionContent && objectType === 'blob' && isLegacyFragment(window.location.hash)) {
-                const hash = parseHash(window.location.hash)
-                const newHash = new URLSearchParams()
-                if (hash.viewState) {
-                    newHash.set('tab', hash.viewState)
+                const parsedQuery = parseQueryAndHash(window.location.search, window.location.hash)
+                const hashParameters = new URLSearchParams()
+                if (parsedQuery.viewState) {
+                    hashParameters.set('tab', parsedQuery.viewState)
                 }
-                return <Redirect to={window.location.pathname + window.location.search + formatHash(hash, newHash)} />
+                const range = formatLineOrPositionOrRange(parsedQuery)
+                const url = appendLineRangeQueryParameter(
+                    window.location.pathname + window.location.search,
+                    range ? `L${range}` : undefined
+                )
+                return <Redirect to={url + formatHash(hashParameters)} />
             }
 
             const repoRevisionProps = {

@@ -96,7 +96,7 @@ export const getDynamicFilterLinks = (
             <FilterLink {...filter} key={`${filter.label}-${filter.value}`} onFilterChosen={onFilterChosen} />
         ))
 
-export const getSearchScopeLinks = (
+export const getSearchSnippetLinks = (
     settingsCascade: SettingsCascadeProps['settingsCascade'],
     onFilterChosen: (value: string) => void
 ): React.ReactElement[] => {

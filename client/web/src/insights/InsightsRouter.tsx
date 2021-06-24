@@ -9,11 +9,13 @@ import { lazyComponent } from '../util/lazyComponent'
 
 import { CreationRoutes } from './pages/creation/CreationRoutes'
 import { SearchInsightCreationPageProps } from './pages/creation/search-insight/SearchInsightCreationPage'
-import { InsightsPageProps } from './pages/dashboard/InsightsPage'
 import { EditInsightPageProps } from './pages/edit/EditInsightPage'
+import { InsightsPageProps } from './pages/insights/InsightsPage'
+import { getExperimentalFeatures } from './utils/get-experimental-features'
 
-const InsightsLazyPage = lazyComponent(() => import('./pages/dashboard/InsightsPage'), 'InsightsPage')
+const InsightsLazyPage = lazyComponent(() => import('./pages/insights/InsightsPage'), 'InsightsPage')
 const EditInsightLazyPage = lazyComponent(() => import('./pages/edit/EditInsightPage'), 'EditInsightPage')
+const DashboardsLazyPage = lazyComponent(() => import('./pages/dashboards/DashboardsPage'), 'DashboardsPage')
 
 const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
@@ -39,6 +41,7 @@ export interface InsightsRouterProps
  */
 export const InsightsRouter = withAuthenticatedUser<InsightsRouterProps>(props => {
     const { match, ...outerProps } = props
+    const { codeInsightsDashboards } = getExperimentalFeatures(outerProps.settingsCascade)
 
     return (
         <Switch>
@@ -67,6 +70,8 @@ export const InsightsRouter = withAuthenticatedUser<InsightsRouterProps>(props =
                     />
                 )}
             />
+
+            {codeInsightsDashboards && <Route path={`${match.url}/dashboard`} render={() => <DashboardsLazyPage />} />}
 
             <Route component={NotFoundPage} key="hardcoded-key" />
         </Switch>

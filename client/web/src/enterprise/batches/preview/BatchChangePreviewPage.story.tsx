@@ -18,7 +18,7 @@ import { hiddenChangesetApplyPreviewStories } from './list/HiddenChangesetApplyP
 import { visibleChangesetApplyPreviewNodeStories } from './list/VisibleChangesetApplyPreviewNode.story'
 
 const { add } = storiesOf('web/batches/preview/BatchChangePreviewPage', module)
-    .addDecorator(story => <div className="p-3 container web-content">{story()}</div>)
+    .addDecorator(story => <div className="p-3 container">{story()}</div>)
     .addParameters({
         chromatic: {
             viewports: [320, 576, 978, 1440],

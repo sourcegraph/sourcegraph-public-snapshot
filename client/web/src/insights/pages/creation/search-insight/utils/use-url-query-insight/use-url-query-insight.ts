@@ -1,46 +1,36 @@
-import { memoize } from 'lodash'
+import { useContext, useEffect, useState } from 'react'
 
 import { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { isRepoFilter } from '@sourcegraph/shared/src/search/query/validate'
+import { ErrorLike, asError } from '@sourcegraph/shared/src/util/errors'
 import { dedupeWhitespace } from '@sourcegraph/shared/src/util/strings'
 
+import { InsightsApiContext } from '../../../../../core/backend/api-provider'
 import { createDefaultEditSeries } from '../../components/search-insight-creation-content/hooks/use-editable-series'
 import { INITIAL_INSIGHT_VALUES } from '../../components/search-insight-creation-content/initial-insight-values'
 import { CreateInsightFormFields } from '../../types'
 
-/**
- * Generate repositories string value without special reg exp
- * characters and extra whitespaces.
- */
-const getSanitizedRepositoriesString = (repositories: string[]): string =>
-    repositories
-        .map(repo =>
-            repo
-                // Remove special regexp characters like ^\$
-                .replace(/(\^)|(\$)|(\\)/gi, '')
-                // Remove whitespaces at the start and end
-                .trim()
-        )
-        .join(', ')
-
 export interface InsightData {
-    repositories: string
+    repositories: string[]
     seriesQuery: string
 }
 
 /**
  * Return serialized value of repositories and query from the URL query params.
  *
- * @param query -- query param with possible value for the creation UI
+ * @param searchQuery -- query param with possible value for the creation UI
  *
  * Exported for testing only.
  */
-export function getInsightDataFromQuery(query: string | null): InsightData | null {
-    const sequence = scanSearchQuery(query ?? '')
+export function getInsightDataFromQuery(searchQuery: string): InsightData {
+    const sequence = scanSearchQuery(searchQuery ?? '')
 
-    if (!query || sequence.type === 'error') {
-        return null
+    if (!searchQuery || sequence.type === 'error') {
+        return {
+            seriesQuery: '',
+            repositories: [],
+        }
     }
 
     const tokens = Array.isArray(sequence.term) ? sequence.term : [sequence.term]
@@ -52,9 +42,7 @@ export function getInsightDataFromQuery(query: string | null): InsightData | nul
             const repoValue = token.value?.value
 
             if (repoValue) {
-                // Split repo value in order to support case with multiple repo values
-                // in repo: filter. Example repo:^github\.com/org/repo-1$ | ^github\.com/org/repo-2$
-                repositories.push(...repoValue.split('|'))
+                repositories.push(repoValue)
             }
         }
     }
@@ -66,22 +54,11 @@ export function getInsightDataFromQuery(query: string | null): InsightData | nul
 
     return {
         seriesQuery: dedupeWhitespace(humanReadableQueryString),
-        repositories: getSanitizedRepositoriesString(repositories),
+        repositories,
     }
 }
 
-/**
- * Returns initial values for the search insight from query param 'insight-query'.
- */
-export const getUrlQueryInsight = memoize((queryParameters: string): CreateInsightFormFields | null => {
-    const queryParametersString = new URLSearchParams(queryParameters).get('query')
-
-    const insightData = getInsightDataFromQuery(queryParametersString)
-
-    if (insightData === null) {
-        return null
-    }
-
+function createInsightFormFields(seriesQuery: string, repositories: string[] = []): CreateInsightFormFields {
     return {
         ...INITIAL_INSIGHT_VALUES,
         series: [
@@ -89,9 +66,54 @@ export const getUrlQueryInsight = memoize((queryParameters: string): CreateInsig
                 edit: true,
                 valid: true,
                 name: 'Search series #1',
-                query: insightData.seriesQuery,
+                query: seriesQuery ?? '',
             }),
         ],
-        repositories: insightData.repositories,
+        repositories: repositories.join(', '),
     }
-})
+}
+
+export interface UseURLQueryInsightResult {
+    /**
+     * Insight data. undefined in case if we are in a loading state or
+     * URL doesn't have query param.
+     * */
+    data: CreateInsightFormFields | ErrorLike | undefined
+
+    /** Whether the search query  param is presented in URL. */
+    hasQueryInsight: boolean
+}
+
+/**
+ * Returns initial values for the search insight from query param.
+ */
+export function useURLQueryInsight(queryParameters: string): UseURLQueryInsightResult {
+    const { getResolvedSearchRepositories } = useContext(InsightsApiContext)
+    const [insightFormFields, setInsightFormFields] = useState<CreateInsightFormFields | ErrorLike | undefined>()
+
+    const query = new URLSearchParams(queryParameters).get('query')
+
+    useEffect(() => {
+        if (query === null) {
+            return
+        }
+
+        const { seriesQuery, repositories } = getInsightDataFromQuery(query)
+
+        // If search query doesn't have repo we should run async repositories resolve
+        // step to avoid case then run search with query without repo: filter we get
+        // all indexed repositories.
+        if (repositories.length > 0) {
+            getResolvedSearchRepositories(query)
+                .then(repositories => setInsightFormFields(createInsightFormFields(seriesQuery, repositories)))
+                .catch(error => setInsightFormFields(asError(error)))
+        } else {
+            setInsightFormFields(createInsightFormFields(seriesQuery, repositories))
+        }
+    }, [getResolvedSearchRepositories, query])
+
+    return {
+        hasQueryInsight: query !== null,
+        data: query !== null ? insightFormFields : undefined,
+    }
+}

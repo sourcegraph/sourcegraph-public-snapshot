@@ -107,7 +107,7 @@ export const CodeIntelIndexConfigurationPage: FunctionComponent<CodeIntelIndexCo
     return fetchError ? (
         <ErrorAlert prefix="Error fetching index configuration" error={fetchError} />
     ) : (
-        <div className="code-intel-index-configuration web-content">
+        <div className="code-intel-index-configuration">
             <PageTitle title="Precise code intelligence index configuration" />
             <h2>Precise code intelligence index configuration</h2>
             <p>

@@ -49,24 +49,22 @@ export const DetachChangesetsModal: React.FunctionComponent<DetachChangesetsModa
             onDismiss={onCancel}
             aria-labelledby={labelId}
         >
-            <div className="web-content">
-                <h3 id={labelId}>Detach changesets</h3>
-                <p className="mb-4">Are you sure you want to detach the selected changesets?</p>
-                {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
-                <div className="d-flex justify-content-end">
-                    <button
-                        type="button"
-                        disabled={isLoading === true}
-                        className="btn btn-outline-secondary mr-2"
-                        onClick={onCancel}
-                    >
-                        Cancel
-                    </button>
-                    <button type="button" onClick={onSubmit} disabled={isLoading === true} className="btn btn-primary">
-                        {isLoading === true && <LoadingSpinner className="icon-inline" />}
-                        Detach
-                    </button>
-                </div>
+            <h3 id={labelId}>Detach changesets</h3>
+            <p className="mb-4">Are you sure you want to detach the selected changesets?</p>
+            {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
+            <div className="d-flex justify-content-end">
+                <button
+                    type="button"
+                    disabled={isLoading === true}
+                    className="btn btn-outline-secondary mr-2"
+                    onClick={onCancel}
+                >
+                    Cancel
+                </button>
+                <button type="button" onClick={onSubmit} disabled={isLoading === true} className="btn btn-primary">
+                    {isLoading === true && <LoadingSpinner className="icon-inline" />}
+                    Detach
+                </button>
             </div>
         </Dialog>
     )

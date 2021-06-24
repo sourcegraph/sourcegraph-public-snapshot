@@ -67,6 +67,11 @@ export const AuthenticatedCodeMonitoringArea = withAuthenticatedUser<Authenticat
                         exact={true}
                     />
                     <Route
+                        render={props => <CodeMonitoringPage {...outerProps} {...props} showGettingStarted={true} />}
+                        path={`${match.url}/getting-started`}
+                        exact={true}
+                    />
+                    <Route
                         path={`${match.url}/new`}
                         render={props => <CreateCodeMonitorPage {...outerProps} {...props} />}
                         exact={true}

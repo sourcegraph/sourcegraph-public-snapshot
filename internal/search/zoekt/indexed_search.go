@@ -352,7 +352,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *Indexe
 	// Resolve repositories.
 	g.Go(func() error {
 		defer close(reposResolved)
-		if args.Mode == search.ZoektGlobalSearch || args.PatternInfo.Select.Type == filter.Repository {
+		if args.Mode == search.ZoektGlobalSearch || args.PatternInfo.Select.Root() == filter.Repository {
 			repos, err := getRepos(ctx, args.RepoPromise)
 			if err != nil {
 				return err
@@ -398,7 +398,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *Indexe
 
 		// PERF: if we are going to be selecting to repo results only anyways, we can just ask
 		// zoekt for only results of type repo.
-		if args.PatternInfo.Select.Type == filter.Repository {
+		if args.PatternInfo.Select.Root() == filter.Repository {
 			return zoektSearchReposOnly(ctx, args.Zoekt.Client, finalQuery, c, func() map[string]*search.RepositoryRevisions {
 				<-reposResolved
 				// getRepoInputRev is nil only if we encountered an error during repo resolution.
@@ -431,7 +431,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *Indexe
 				return
 			}
 
-			matches := make([]*result.FileMatch, 0, len(files))
+			matches := make([]result.Match, 0, len(files))
 			for _, file := range files {
 				fileLimitHit := false
 				mu.Lock()
@@ -469,7 +469,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *Indexe
 			}
 
 			c.Send(streaming.SearchEvent{
-				Results: fileMatchesToMatches(matches),
+				Results: matches,
 				Stats: streaming.Stats{
 					IsLimitHit: limitHit,
 				},
@@ -497,15 +497,6 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *Indexe
 		return nil
 	}
 	return nil
-}
-
-func fileMatchesToMatches(fms []*result.FileMatch) []result.Match {
-	matches := make([]result.Match, 0, len(fms))
-	for _, fm := range fms {
-		newFm := fm
-		matches = append(matches, newFm)
-	}
-	return matches
 }
 
 // getRepos is a wrapper around p.Get. It returns an error if the promise

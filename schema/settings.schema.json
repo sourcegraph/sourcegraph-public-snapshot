@@ -20,6 +20,14 @@
             "pointer": true
           }
         },
+        "codeInsightsDashboards": {
+          "description": "Enables code insights dashboards separation for the code insight page.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
         "codeMonitoring": {
           "description": "Enables code monitoring.",
           "type": "boolean",
@@ -163,6 +171,14 @@
           "!go": {
             "pointer": true
           }
+        },
+        "acceptSearchSuggestionOnEnter": {
+          "description": "Whether the search bar should select completion suggestions when pressing enter",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
         }
       },
       "group": "Experimental"
@@ -211,7 +227,7 @@
       }
     },
     "search.scopes": {
-      "description": "Predefined search scopes",
+      "description": "Predefined search snippets that can be appended to any search (also known as search scopes)",
       "type": "array",
       "items": {
         "$ref": "#/definitions/SearchScope"

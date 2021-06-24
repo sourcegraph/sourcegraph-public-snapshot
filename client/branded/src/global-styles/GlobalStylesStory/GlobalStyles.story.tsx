@@ -13,6 +13,7 @@ import React, { useState } from 'react'
 import 'storybook-addon-designs'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
+import { registerHighlightContributions } from '@sourcegraph/shared/src/highlight/contributions'
 import { highlightCodeSafe } from '@sourcegraph/shared/src/util/markdown'
 
 import { BrandedStory } from '../../components/BrandedStory'
@@ -29,6 +30,8 @@ import { FormFieldVariants } from './FormFieldVariants'
 import { TextStory } from './TextStory'
 import { preventDefault } from './utils'
 
+registerHighlightContributions()
+
 const { add } = storiesOf('branded/Global styles', module).addDecorator(story => (
     <BrandedStory>{() => <div className="p-3 container">{story()}</div>}</BrandedStory>
 ))
@@ -41,30 +44,6 @@ add(
 
             <TextStory />
         </>
-    ),
-    {
-        design: {
-            name: 'Figma',
-            type: 'figma',
-            url:
-                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=998%3A1515',
-        },
-    }
-)
-
-add(
-    'Web content',
-    () => (
-        <div className="web-content">
-            <h1>Web content</h1>
-            <p>
-                The <code>web-content</code> class changes the text styles of all descendants for content that more
-                closely matches rich web sites as opposed to our high-information-density, application-like code content
-                areas.
-            </p>
-
-            <TextStory />
-        </div>
     ),
     {
         design: {

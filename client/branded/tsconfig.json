@@ -13,5 +13,5 @@
   },
   "include": ["**/*", ".*", "./src/**/*.json"],
   "exclude": ["../../node_modules", "./node_modules", "./out"],
-  "references": [{ "path": "../shared" }],
+  "references": [{ "path": "../shared" }, { "path": "../storybook" }],
 }

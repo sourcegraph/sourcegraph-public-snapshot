@@ -338,35 +338,81 @@ func (s *GithubSource) paginate(ctx context.Context, results chan *githubResult,
 //
 // It returns an error if the request fails on the first page.
 func (s *GithubSource) listOrg(ctx context.Context, org string, results chan *githubResult) {
-	var oerr error
-	s.paginate(ctx, results, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
-		defer func() {
-			// Catch 404 to handle
-			if page == 1 {
-				if apiErr, ok := err.(*github.APIError); ok && apiErr.Code == 404 {
-					oerr = fmt.Errorf("organisation %q not found", org)
-					err = nil
+	dedupC := make(chan *githubResult)
+
+	// Currently, the Github API doesn't return internal repos
+	// when calling it with the "all" type.
+	// We need to call it twice, once with the "all" type and
+	// once with the "internal" type.
+	// However, since we don't have any guarantee that this behavior
+	// will always remain the same and that Github will never fix this issue,
+	// we need to deduplicate the results before sending them to the results channel.
+
+	getReposByType := func(tp string) error {
+		var oerr error
+
+		s.paginate(ctx, dedupC, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
+			defer func() {
+				if page == 1 {
+					if apiErr, ok := err.(*github.APIError); ok && apiErr.Code == 404 {
+						oerr = fmt.Errorf("organisation %q not found", org)
+						err = nil
+					}
+				}
+
+				remaining, reset, retry, _ := s.v3Client.RateLimitMonitor().Get()
+				log15.Debug(
+					"github sync: ListOrgRepositories",
+					"repos", len(repos),
+					"rateLimitCost", cost,
+					"rateLimitRemaining", remaining,
+					"rateLimitReset", reset,
+					"retryAfter", retry,
+					"type", tp,
+				)
+			}()
+
+			return s.v3Client.ListOrgRepositories(ctx, org, page, tp)
+		})
+
+		return oerr
+	}
+
+	go func() {
+		defer close(dedupC)
+
+		err := getReposByType("all")
+		// Handle 404 from org repos endpoint by trying user repos endpoint
+		if err != nil {
+			if s.listUser(ctx, org, dedupC) != nil {
+				dedupC <- &githubResult{
+					err: err,
 				}
 			}
-
-			remaining, reset, retry, _ := s.v3Client.RateLimitMonitor().Get()
-			log15.Debug(
-				"github sync: ListOrgRepositories",
-				"repos", len(repos),
-				"rateLimitCost", cost,
-				"rateLimitRemaining", remaining,
-				"rateLimitReset", reset,
-				"retryAfter", retry,
-			)
-		}()
-		return s.v3Client.ListOrgRepositories(ctx, org, page)
-	})
-
-	// Handle 404 from org repos endpoint by trying user repos endpoint
-	if oerr != nil && s.listUser(ctx, org, results) != nil {
-		results <- &githubResult{
-			err: oerr,
+			return
 		}
+
+		// if the first call succeeded,
+		// call the same endpoint with the "internal" type
+		if err = getReposByType("internal"); err != nil {
+			dedupC <- &githubResult{
+				err: err,
+			}
+		}
+	}()
+
+	seen := make(map[string]bool)
+
+	for res := range dedupC {
+		if res.err == nil {
+			if seen[res.repo.ID] {
+				continue
+			}
+
+			seen[res.repo.ID] = true
+		}
+
+		results <- res
 	}
 }
 

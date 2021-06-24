@@ -16,6 +16,7 @@ import {
 
 import { AuthenticatedUser } from '../../auth'
 import { WebStory } from '../../components/WebStory'
+import { EMPTY_FEATURE_FLAGS } from '../../featureFlags/featureFlags'
 
 import { StreamingSearchResults, StreamingSearchResultsProps } from './StreamingSearchResults'
 
@@ -61,6 +62,7 @@ const defaultProps: StreamingSearchResultsProps = {
 
     fetchHighlightedFileLineRanges: () => of(HIGHLIGHTED_FILE_LINES_LONG),
     enableCodeMonitoring: false,
+    featureFlags: EMPTY_FEATURE_FLAGS,
 }
 
 const { add } = storiesOf('web/search/results/StreamingSearchResults', module).addParameters({
@@ -309,4 +311,29 @@ add('limit hit with some results', () => {
     }
 
     return <WebStory>{() => <StreamingSearchResults {...defaultProps} streamSearch={() => of(result)} />}</WebStory>
+})
+
+add('results with signup CTA', () => {
+    const result: AggregateStreamingSearchResults = {
+        state: 'complete',
+        results: MULTIPLE_SEARCH_RESULT.results,
+        filters: MULTIPLE_SEARCH_RESULT.filters,
+        progress: {
+            durationMs: 500,
+            matchCount: MULTIPLE_SEARCH_RESULT.progress.matchCount,
+            skipped: [],
+        },
+    }
+
+    return (
+        <WebStory>
+            {() => (
+                <StreamingSearchResults
+                    {...defaultProps}
+                    featureFlags={new Map([['w0-signup-optimisation', true]])}
+                    streamSearch={() => of(result)}
+                />
+            )}
+        </WebStory>
+    )
 })

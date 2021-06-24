@@ -1,6 +1,5 @@
 import classNames from 'classnames'
 import { isEqual } from 'lodash'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { FormEvent, useCallback, useEffect, useState, useRef } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Subscription } from 'rxjs'
@@ -107,15 +106,13 @@ type affiliateRepoProblemType = undefined | string | ErrorLike | ErrorLike[]
 
 const displayWarning = (warning: string, hint?: JSX.Element): JSX.Element => (
     <div key={warning} className="alert alert-warning mt-3 mb-0" role="alert">
-        <AlertCircleIcon className="redesign-d-none icon icon-inline" /> {warning}. {hint}{' '}
-        {hint ? 'for more details' : null}
+        {warning}. {hint} {hint ? 'for more details' : null}
     </div>
 )
 
 const displayError = (error: ErrorLike, hint?: JSX.Element): JSX.Element => (
     <div key={error.message} className="alert alert-danger mt-3 mb-0" role="alert">
-        <AlertCircleIcon className="redesign-d-none icon icon-inline" /> {error.message}. {hint}{' '}
-        {hint ? 'for more details' : null}
+        {error.message}. {hint} {hint ? 'for more details' : null}
     </div>
 )
 

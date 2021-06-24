@@ -13,6 +13,7 @@ import (
 
 const (
 	tagFamily  = "family"
+	tagOwner   = "owner"
 	tagID      = "id"
 	tagState   = "state"
 	tagSuccess = "success"
@@ -32,7 +33,7 @@ var (
 	syncStarted = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_repoupdater_syncer_start_sync",
 		Help: "A sync was started",
-	}, []string{tagFamily})
+	}, []string{tagFamily, tagOwner})
 
 	syncedTotal = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_repoupdater_syncer_synced_repos_total",
@@ -42,7 +43,7 @@ var (
 	syncErrors = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_repoupdater_syncer_sync_errors_total",
 		Help: "Total number of sync errors",
-	}, []string{tagFamily})
+	}, []string{tagFamily, tagOwner})
 
 	syncDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Name: "src_repoupdater_syncer_sync_duration_seconds",

@@ -186,10 +186,17 @@ ORDER BY external_service_type ASC, external_service_id ASC
 func listSiteCredentialsQuery(opts ListSiteCredentialsOpts) *sqlf.Query {
 	preds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if opts.RequiresMigration {
-		preds = append(preds, sqlf.Sprintf("encryption_key_id IN ('', %s)", btypes.SiteCredentialPlaceholderEncryptionKeyID))
+		preds = append(preds, sqlf.Sprintf(
+			"encryption_key_id IN (%s, %s)",
+			btypes.SiteCredentialPlaceholderEncryptionKeyID,
+			btypes.SiteCredentialUnmigratedEncryptionKeyID,
+		))
 	}
 	if opts.OnlyEncrypted {
-		preds = append(preds, sqlf.Sprintf("encryption_key_id <> ''"))
+		preds = append(preds, sqlf.Sprintf(
+			"encryption_key_id NOT IN ('', %s)",
+			btypes.SiteCredentialUnmigratedEncryptionKeyID,
+		))
 	}
 
 	forUpdate := &sqlf.Query{}

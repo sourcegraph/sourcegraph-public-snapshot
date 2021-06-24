@@ -22,6 +22,7 @@ export interface FileLineMatch {
     type: 'file'
     name: string
     repository: string
+    repoStars?: number
     branches?: string[]
     version?: string
     lineMatches: LineMatch[]
@@ -37,6 +38,7 @@ export interface FileSymbolMatch {
     type: 'symbol'
     name: string
     repository: string
+    repoStars?: number
     branches?: string[]
     version?: string
     symbols: SymbolMatch[]
@@ -63,6 +65,7 @@ export interface CommitMatch {
     url: string
     detail: MarkdownText
     repository: string
+    repoStars?: number
 
     content: MarkdownText
     ranges: number[][]
@@ -71,6 +74,10 @@ export interface CommitMatch {
 export interface RepositoryMatch {
     type: 'repo'
     repository: string
+    repoStars?: number
+    description?: string
+    fork?: boolean
+    archived?: boolean
     branches?: string[]
 }
 

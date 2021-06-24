@@ -3,6 +3,7 @@ package result
 import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // Match is *FileMatch | *RepoMatch | *CommitMatch. We have a private method
@@ -11,6 +12,7 @@ type Match interface {
 	ResultCount() int
 	Limit(int) int
 	Select(filter.SelectPath) Match
+	RepoName() types.RepoName
 
 	// Key returns a key which uniquely identifies this match.
 	Key() Key

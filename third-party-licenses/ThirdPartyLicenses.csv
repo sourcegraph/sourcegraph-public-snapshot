@@ -37,7 +37,6 @@ Yarn,@sindresorhus/is,3.0.0,MIT,https://sindresorhus.com,Approved
 Yarn,@slimsag/react-shortcuts,1.2.1,MIT,https://github.com/shopify/quilt/packages/react-shortcuts/README.md,Approved
 Yarn,@sourcegraph/branded,1.0.0,Apache 2.0,Unknown,Approved
 Yarn,@sourcegraph/browser,1.0.0,Apache 2.0,Unknown,Approved
-Yarn,@sourcegraph/code-insights-demo,0.0.1,Apache 2.0,Unknown,Approved
 Yarn,@sourcegraph/codeintellify,7.2.2,MIT,Unknown,Approved
 Yarn,@sourcegraph/eslint-plugin-sourcegraph,1.0.0,Apache 2.0,Unknown,Approved
 Yarn,@sourcegraph/event-positions,1.0.4,MIT,Unknown,Approved
@@ -419,8 +418,8 @@ Go,github.com/sourcegraph/zoekt,v0.0.0-20210609160913-6048478c91a4,Apache 2.0,""
 Go,github.com/src-d/gcfg,v1.4.0,New BSD,"",Approved
 Go,github.com/stripe/stripe-go,v70.15.0,MIT,"",Approved
 Go,github.com/throttled/throttled/v2,v2.7.1,New BSD,"",Approved
-Go,github.com/tidwall/gjson,v1.6.1,MIT,"",Approved
-Go,github.com/tidwall/match,v1.0.1,MIT,"",Approved
+Go,github.com/tidwall/gjson,v1.6.8,MIT,"",Approved
+Go,github.com/tidwall/match,v1.0.3,MIT,"",Approved
 Go,github.com/tidwall/pretty,v1.0.2,MIT,"",Approved
 Go,github.com/tinylib/msgp,v1.1.2,MIT,"",Approved
 Go,github.com/tomnomnom/linkheader,v0.0.0-20180905144013-02ca5825eb80,MIT,"",Approved
@@ -442,9 +441,9 @@ Go,go.uber.org/atomic,v1.7.0,MIT,"",Approved
 Go,go.uber.org/automaxprocs,v1.3.0,MIT,"",Approved
 Go,go.uber.org/ratelimit,v0.2.0,MIT,"",Approved
 Go,golang.org/x/crypto,v0.0.0-20200820211705-5c72a883971a,New BSD,"",Approved
-Go,golang.org/x/net,v0.0.0-20210510120150-4163338589ed,New BSD,"",Approved
+Go,golang.org/x/net,v0.0.0-20210614182718-04defd469f4e,New BSD,"",Approved
 Go,golang.org/x/sync,v0.0.0-20210220032951-036812b2e83c,New BSD,"",Approved
-Go,golang.org/x/sys,v0.0.0-20210525143221-35b2ab0089ea,New BSD,"",Approved
+Go,golang.org/x/sys,v0.0.0-20210611083646-a4fc73990273,New BSD,"",Approved
 Go,golang.org/x/text,v0.3.6,New BSD,"",Approved
 Go,golang.org/x/time,v0.0.0-20200630173020-3af7569d3a1e,New BSD,"",Approved
 Go,golang.org/x/tools,v0.1.3,New BSD,"",Approved
@@ -461,7 +460,7 @@ Go,gopkg.in/src-d/go-billy.v4,v4.3.2,Apache 2.0,"",Approved
 Go,gopkg.in/src-d/go-git.v4,v4.13.1,Apache 2.0,"",Approved
 Go,gopkg.in/warnings.v0,v0.1.2,Simplified BSD,"",Approved
 Go,gopkg.in/yaml.v2,v2.4.0,"Apache 2.0,MIT","",Approved
-Go,gopkg.in/yaml.v3,v3.0.0-20200615113413-eeeca48fe776,MIT,"",Approved
+Go,gopkg.in/yaml.v3,v3.0.0-20210107192922-496545a6307b,MIT,"",Approved
 Yarn,got,11.5.2,MIT,Unknown,Approved
 Yarn,graphiql,1.3.2,MIT,http://github.com/graphql/graphiql/tree/master/packages/graphiql#readme,Approved
 Yarn,graphql-language-service,3.1.2,MIT,https://github.com/graphql/graphiql/tree/main/packages/graphql-language-service#readme,Approved

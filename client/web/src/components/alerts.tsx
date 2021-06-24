@@ -1,6 +1,5 @@
 import classNames from 'classnames'
 import { upperFirst } from 'lodash'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { HTMLAttributes } from 'react'
 
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
@@ -50,7 +49,6 @@ export const ErrorAlert: React.FunctionComponent<
     prefix = prefix?.trim().replace(/:+$/, '')
     return (
         <div className={classNames('alert', 'alert-danger', className)} {...rest}>
-            {icon && <AlertCircleIcon className="redesign-d-none icon icon-inline" />}{' '}
             {prefix && <strong>{prefix}:</strong>} <ErrorMessage error={error} />
         </div>
     )

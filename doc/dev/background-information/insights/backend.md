@@ -103,7 +103,15 @@ Similar to the _insight enqueuer_, the _historical insight enqueuer_ is a backgr
 It is a moderately complex algorithm, to get an understanding for how it operates see these two explanations:
 
 1. [what it does and general implementation thoughts](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@049b99763b10ddc7ef6f72c22b18f1fa5f4f7259/-/blob/enterprise/internal/insights/background/historical_enqueuer.go#L31-53)
-2. [overview of the algorithm](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@049b99763b10ddc7ef6f72c22b18f1fa5f4f7259/-/blob/enterprise/internal/insights/background/historical_enqueuer.go#L116-147)
+2. [overview of the algorithm](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/insights/background/historical_enqueuer.go?L185#L116-147)
+
+Naively implemented, the historical backfiller would take a long time on any reasonably sized Sourcegraph installation. As an optimization,
+the backfiller will only query for data frames that have recorded changes in each repository. This is accomplished by looking
+at an index of commits and determining if that frame is eligible for removal. [code](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/insights/compression/compression.go?L46:1)
+
+There is a rate limit associated with analyzing historical data frames. This limit can be configured using the site setting
+`insights.historical.worker.rateLimit`. As a rule of thumb, this limit should be set as high as possible without performance
+impact to `gitserver`. A likely safe starting point on most Sourcegraph installations is `insights.historical.worker.rateLimit=20`.
 
 ### (5) Query-time and rendering!
 
@@ -116,6 +124,13 @@ The webapp frontend invokes a GraphQL API which is served by the Sourcegraph `fr
 Note: There are other better developer docs which explain the general reasoning for why we have a "store" abstraction. Insights usage of it is pretty minimal, we mostly follow it to separate SQL operations from GraphQL resolver code and to remain consistent with the rest of Sourcegraph's architecture.
 
 Once the web client gets data points back, it renders them! Contact @felixfbecker for details on where/how that happens.
+
+These queries can be executed concurrently by using the site setting `insights.query.worker.concurrency` and providing
+the desired concurrency factor. With `insights.query.worker.concurrency=1` queries will be executed in serial.
+
+There is a rate limit associated with the query worker. This limit is shared across all concurrent handlers and can be configured
+using the site setting `insights.query.worker.rateLimit`. This value to set will depend on the size and scale of the Sourcegraph
+installations `Searcher` service.
 
 ## Debugging
 
@@ -216,33 +231,32 @@ See https://www.postgresql.org/docs/9.6/functions-json.html for more metadata `j
 ##### Query data the way we do for the frontend, but for every series in the last 6mo
 
 ```sql
-SELECT sub.time_bucket,
-	SUM(sub.max),
-    sub.series_id,
-	sub.metadata
-FROM (
-	SELECT time_bucket(INTERVAL '15 days', time) AS time_bucket,
-		MAX(value),
-		m.metadata,
-		series_id,
-		repo_id
-	FROM series_points p
-	LEFT JOIN metadata m ON p.metadata_id = m.id
-    WHERE time > NOW() - INTERVAL '6 months'
-	GROUP BY time_bucket, metadata, series_id, repo_id
-	ORDER BY time_bucket DESC
-) sub
-GROUP BY time_bucket, series_id, metadata
-ORDER BY series_id, time_bucket DESC;
+SELECT sub.series_id, sub.interval_time, SUM(value) AS value, NULL AS metadata
+FROM (WITH target_times AS (SELECT *
+                            FROM GENERATE_SERIES(CURRENT_TIMESTAMP::DATE - INTERVAL '6 months', CURRENT_TIMESTAMP::DATE,
+                                                 '2 weeks') AS interval_time)
+      SELECT sub.series_id, sub.repo_id, sub.value, interval_time
+      FROM (SELECT DISTINCT repo_id, series_id FROM series_points) AS r
+             CROSS JOIN target_times tt
+             JOIN LATERAL (
+        SELECT sp.*
+        FROM series_points AS sp
+        WHERE sp.repo_id = r.repo_id
+          AND sp.time <= tt.interval_time
+          AND sp.series_id = r.series_id
+        ORDER BY time DESC
+        LIMIT 1
+        ) sub ON sub.repo_id = r.repo_id AND r.series_id = sub.series_id
+      ORDER BY interval_time, repo_id) AS sub
+GROUP BY sub.series_id, sub.interval_time
+ORDER BY interval_time DESC
 ```
-
-To get an explanation of what is going on above, see [the detailed docstring here](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:insights+file:store+seriesPointsQueryFmtstr&patternType=literal).
 
 #### Inserting data
 
 ##### Upserting repository names
 
-The `repoa_names` table contains a mapping of repository names to small numeric identifiers. You can upsert one into the database using e.g.:
+The `repo_names` table contains a mapping of repository names to small numeric identifiers. You can upsert one into the database using e.g.:
 
 ```sql
 WITH e AS(
