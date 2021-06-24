@@ -16,14 +16,18 @@ const createStyleTag = (id: string): HTMLStyleElement => {
  * @param css Stringified CSS to inject into a `<style>` tag
  * @returns The created `<style>` tag
  */
-export const useStyles = (css: string): HTMLStyleElement => {
+export const useStyles = (css?: string): HTMLStyleElement | undefined => {
     const styleTag = useMemo(() => {
+        if (!css) {
+            return undefined
+        }
+
         const styleTag = document.querySelector<HTMLStyleElement>('story-styles') || createStyleTag('story-styles')
         styleTag.textContent = css
         return styleTag
     }, [css])
 
-    useEffect(() => () => styleTag.remove(), [styleTag])
+    useEffect(() => () => styleTag?.remove(), [styleTag])
 
     return styleTag
 }
