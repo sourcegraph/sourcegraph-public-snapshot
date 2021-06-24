@@ -353,7 +353,6 @@ func (s *GithubSource) listOrg(ctx context.Context, org string, results chan *gi
 
 		s.paginate(ctx, dedupC, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
 			defer func() {
-				// Catch 404 to handle
 				if page == 1 {
 					if apiErr, ok := err.(*github.APIError); ok && apiErr.Code == 404 {
 						oerr = fmt.Errorf("organisation %q not found", org)
