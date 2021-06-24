@@ -129,7 +129,7 @@ func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 		if err != nil {
 			return Resolved{}, errors.Wrap(err, "getting list of default repos")
 		}
-		tr.LazyPrintf("defaultrepos: took %s to add %d repos", time.Since(start), len(indexableRepos))
+		tr.LazyPrintf("indexableRepos: took %s to add %d repos", time.Since(start), len(indexableRepos))
 
 		// Search all default repos since indexed search is fast.
 		if len(indexableRepos) > limit {

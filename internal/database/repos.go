@@ -902,7 +902,7 @@ func (s *RepoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableRe
 
 const listIndexableReposQuery = `
 WITH s AS (
-	SELECT id
+	SELECT id as repo_id
 	FROM repo
 	WHERE stars >= 20
 

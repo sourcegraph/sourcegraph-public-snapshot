@@ -164,7 +164,6 @@ func TestRevisionValidation(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.repoFilters[0], func(t *testing.T) {
-
 			op := Options{RepoFilters: tt.repoFilters}
 			repositoryResolver := &Resolver{}
 			resolved, err := repositoryResolver.Resolve(context.Background(), op)
@@ -305,7 +304,7 @@ func BenchmarkGetRevsForMatchedRepo(b *testing.B) {
 	})
 }
 
-func TestDefaultRepositories(t *testing.T) {
+func TestIndexableRepositories(t *testing.T) {
 	tcs := []struct {
 		name             string
 		defaultsInDb     []string
@@ -348,8 +347,7 @@ func TestDefaultRepositories(t *testing.T) {
 		},
 	}
 	for _, tc := range tcs {
-		t.Run(tc.name, func(t *testing.T) {``
-
+		t.Run(tc.name, func(t *testing.T) {
 			var drs []types.RepoName
 			for i, name := range tc.defaultsInDb {
 				r := types.RepoName{
@@ -387,7 +385,7 @@ func TestDefaultRepositories(t *testing.T) {
 	}
 }
 
-func TestUseDefaultReposIfMissingOrGlobalSearchContext(t *testing.T) {
+func TestUseIndexableReposIfMissingOrGlobalSearchContext(t *testing.T) {
 	orig := envvar.SourcegraphDotComMode()
 	envvar.MockSourcegraphDotComMode(true)
 	defer envvar.MockSourcegraphDotComMode(orig)
@@ -397,19 +395,19 @@ func TestUseDefaultReposIfMissingOrGlobalSearchContext(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	wantDefaultRepoNames := []string{
+	wantIndexableRepos := []string{
 		"default/one",
 		"default/two",
 		"default/three",
 	}
-	defaultRepos := make([]types.RepoName, len(wantDefaultRepoNames))
-	zoektRepoListEntries := make([]*zoekt.RepoListEntry, len(wantDefaultRepoNames))
-	mockDefaultReposFunc := func(_ context.Context) ([]types.RepoName, error) {
-		return defaultRepos, nil
+	indexableRepos := make([]types.RepoName, len(wantIndexableRepos))
+	zoektRepoListEntries := make([]*zoekt.RepoListEntry, len(wantIndexableRepos))
+	mockIndexableReposFunc := func(_ context.Context) ([]types.RepoName, error) {
+		return indexableRepos, nil
 	}
 
-	for idx, name := range wantDefaultRepoNames {
-		defaultRepos[idx] = types.RepoName{Name: api.RepoName(name)}
+	for idx, name := range wantIndexableRepos {
+		indexableRepos[idx] = types.RepoName{Name: api.RepoName(name)}
 		zoektRepoListEntries[idx] = &zoekt.RepoListEntry{
 			Repository: zoekt.Repository{
 				Name:     name,
@@ -437,7 +435,7 @@ func TestUseDefaultReposIfMissingOrGlobalSearchContext(t *testing.T) {
 				SearchContextSpec: tt.searchContextSpec,
 				Query:             queryInfo,
 			}
-			repositoryResolver := &Resolver{Zoekt: mockZoekt, IndexableReposFunc: mockDefaultReposFunc}
+			repositoryResolver := &Resolver{Zoekt: mockZoekt, IndexableReposFunc: mockIndexableReposFunc}
 			resolved, err := repositoryResolver.Resolve(context.Background(), op)
 			if err != nil {
 				t.Fatal(err)
@@ -446,8 +444,8 @@ func TestUseDefaultReposIfMissingOrGlobalSearchContext(t *testing.T) {
 			for _, repoRev := range resolved.RepoRevs {
 				repoNames = append(repoNames, string(repoRev.Repo.Name))
 			}
-			if !reflect.DeepEqual(repoNames, wantDefaultRepoNames) {
-				t.Errorf("names of default repos = %v, want %v", repoNames, wantDefaultRepoNames)
+			if !reflect.DeepEqual(repoNames, wantIndexableRepos) {
+				t.Errorf("names of default repos = %v, want %v", repoNames, wantIndexableRepos)
 			}
 		})
 	}
