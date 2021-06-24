@@ -1,6 +1,4 @@
-// Entry point for the web app
-
-@import './SourcegraphWebApp';
+@import 'wildcard/src/global-styles/breakpoints';
 
 // Enterprise styles
 @import './enterprise/extensions/registry/RegistryArea';
