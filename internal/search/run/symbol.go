@@ -28,7 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
-var MockSearchSymbols func(ctx context.Context, args *search.TextParameters, limit int) (res []*result.FileMatch, stats *streaming.Stats, err error)
+var MockSearchSymbols func(ctx context.Context, args *search.TextParameters, limit int) (res []result.Match, stats *streaming.Stats, err error)
 
 // SearchSymbols searches the given repos in parallel for symbols matching the given search query
 // it can be used for both search suggestions and search results
@@ -38,7 +38,7 @@ func SearchSymbols(ctx context.Context, args *search.TextParameters, limit int, 
 	if MockSearchSymbols != nil {
 		results, stats, err := MockSearchSymbols(ctx, args, limit)
 		stream.Send(streaming.SearchEvent{
-			Results: fileMatchesToMatches(results),
+			Results: results,
 			Stats:   statsDeref(stats),
 		})
 		return err
@@ -99,7 +99,7 @@ func SearchSymbols(ctx context.Context, args *search.TextParameters, limit int, 
 			matches, err := searchSymbolsInRepo(ctx, repoRevs, args.PatternInfo, limit)
 			stats, err := handleRepoSearchResult(repoRevs, len(matches) > limit, false, err)
 			stream.Send(streaming.SearchEvent{
-				Results: fileMatchesToMatches(matches),
+				Results: matches,
 				Stats:   stats,
 			})
 			if err != nil {
@@ -116,7 +116,7 @@ func SearchSymbols(ctx context.Context, args *search.TextParameters, limit int, 
 	return run.Wait()
 }
 
-func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, limit int) (res []*result.FileMatch, err error) {
+func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, limit int) (res []result.Match, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Search symbols in repo")
 	defer func() {
 		if err != nil {
@@ -152,7 +152,7 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 	})
 
 	// All symbols are from the same repo, so we can just partition them by path
-	// to build fileMatches
+	// to build file matches
 	symbolsByPath := make(map[string][]*result.Symbol)
 	for _, symbol := range symbols {
 		cur := symbolsByPath[symbol.Path]
@@ -160,7 +160,7 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 	}
 
 	// Create file matches from partitioned symbols
-	fileMatches := make([]*result.FileMatch, 0, len(symbolsByPath))
+	matches := make([]result.Match, 0, len(symbolsByPath))
 	for path, symbols := range symbolsByPath {
 		file := result.File{
 			Path:     path,
@@ -177,17 +177,15 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 			})
 		}
 
-		fileMatches = append(fileMatches, &result.FileMatch{
+		matches = append(matches, &result.FileMatch{
 			Symbols: symbolMatches,
 			File:    file,
 		})
 	}
 
 	// Make the results deterministic
-	sort.Slice(fileMatches, func(i, j int) bool {
-		return fileMatches[i].Path < fileMatches[j].Path
-	})
-	return fileMatches, err
+	sort.Sort(result.Matches(matches))
+	return matches, err
 }
 
 // indexedSymbols checks to see if Zoekt has indexed symbols information for a
