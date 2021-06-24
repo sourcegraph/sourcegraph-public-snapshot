@@ -41,6 +41,7 @@ To learn more about the generator\, see the top\-level program: https://github.c
   - [func (p ObservablePanel) With(ops ...ObservablePanelOption) ObservablePanel](<#func-observablepanel-with>)
 - [type ObservablePanelOption](<#type-observablepaneloption>)
 - [type PanelType](<#type-paneltype>)
+  - [func (pt PanelType) Valid() bool](<#func-paneltype-valid>)
 - [type Row](<#type-row>)
 - [type UnitType](<#type-unittype>)
 
@@ -486,6 +487,12 @@ const (
 )
 ```
 
+### func \(PanelType\) [Valid](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/dashboards.go#L17>)
+
+```go
+func (pt PanelType) Valid() bool
+```
+
 ## type [Row](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L394>)
 
 Row of observable metrics\.
@@ -496,7 +503,7 @@ These correspond to a row of Grafana graphs\.
 type Row []Observable
 ```
 
-## type [UnitType](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/dashboards.go#L18>)
+## type [UnitType](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/dashboards.go#L27>)
 
 UnitType for controlling the unit type display on graphs\.
 
