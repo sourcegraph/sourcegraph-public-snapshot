@@ -1,4 +1,4 @@
-package commits
+package commit
 
 import (
 	"bytes"

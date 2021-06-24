@@ -9,7 +9,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/commits"
+	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
@@ -151,13 +151,13 @@ func (a *Aggregator) DoDiffSearch(ctx context.Context, tp *search.TextParameters
 		return err
 	}
 
-	args, err := commits.ResolveCommitParameters(ctx, tp)
+	args, err := commit.ResolveCommitParameters(ctx, tp)
 	if err != nil {
 		log15.Warn("doDiffSearch: error while resolving commit parameters", "error", err)
 		return nil
 	}
 
-	return commits.SearchCommitDiffsInRepos(ctx, a.db, args, a)
+	return commit.SearchCommitDiffsInRepos(ctx, a.db, args, a)
 }
 
 func (a *Aggregator) DoCommitSearch(ctx context.Context, tp *search.TextParameters) (err error) {
@@ -172,13 +172,13 @@ func (a *Aggregator) DoCommitSearch(ctx context.Context, tp *search.TextParamete
 		return err
 	}
 
-	args, err := commits.ResolveCommitParameters(ctx, tp)
+	args, err := commit.ResolveCommitParameters(ctx, tp)
 	if err != nil {
 		log15.Warn("doCommitSearch: error while resolving commit parameters", "error", err)
 		return nil
 	}
 
-	return commits.SearchCommitLogInRepos(ctx, a.db, args, a)
+	return commit.SearchCommitLogInRepos(ctx, a.db, args, a)
 }
 
 func checkDiffCommitSearchLimits(ctx context.Context, args *search.TextParameters, resultType string) error {
