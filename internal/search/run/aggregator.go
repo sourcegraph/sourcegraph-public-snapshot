@@ -180,7 +180,7 @@ func (a *Aggregator) DoCommitSearch(ctx context.Context, tp *search.TextParamete
 }
 
 func checkDiffCommitSearchLimits(ctx context.Context, args *search.TextParameters, resultType string) error {
-	repos, err := getRepos(ctx, args.RepoPromise)
+	repos, err := args.RepoPromise.Get(ctx)
 	if err != nil {
 		return err
 	}
