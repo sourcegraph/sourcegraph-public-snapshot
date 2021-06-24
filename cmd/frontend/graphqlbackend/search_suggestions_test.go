@@ -50,7 +50,7 @@ func TestSearchSuggestions(t *testing.T) {
 		}
 	}
 
-	run.MockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []*result.FileMatch, common *streaming.Stats, err error) {
+	run.MockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []result.Match, common *streaming.Stats, err error) {
 		// TODO test symbol suggestions
 		return nil, nil, nil
 	}
