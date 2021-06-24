@@ -30,7 +30,7 @@ export interface DashboardsPageProps
  * Displays insights dashboard page - dashboard selector and grid of insights from the dashboard.
  */
 export const DashboardsPage: React.FunctionComponent<DashboardsPageProps> = props => {
-    const { dashboardID, settingsCascade } = props
+    const { dashboardID, settingsCascade, extensionsController } = props
     const { getInsightCombinedViews } = useContext(InsightsApiContext)
 
     const insightIds = useMemo(() => {
@@ -48,8 +48,8 @@ export const DashboardsPage: React.FunctionComponent<DashboardsPageProps> = prop
     }, [dashboardID, settingsCascade])
 
     const views = useObservable(
-        useMemo(() => getInsightCombinedViews(props.extensionsController?.extHostAPI, insightIds), [
-            props.extensionsController,
+        useMemo(() => getInsightCombinedViews(extensionsController?.extHostAPI, insightIds), [
+            extensionsController,
             insightIds,
             getInsightCombinedViews,
         ])

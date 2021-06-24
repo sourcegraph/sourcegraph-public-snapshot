@@ -68,6 +68,6 @@ export const getInsightCombinedViews = (
 ): Observable<ViewInsightProviderResult[]> =>
     getCombinedViews(() =>
         from(extensionApi).pipe(
-            switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getInsightsViews({ insightIds })))
+            switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getInsightsViews({}, insightIds)))
         )
     )

@@ -15,18 +15,21 @@ type InsightsPageContext = ViewContexts[InsightsPageViewContextType]
  *
  * @param context - Insights page context meta data.
  * @param providers - List of all insights providers.
+ * @param insightIds - list of insights ids to resolve from the providers.
  */
 export function getInsightsViews(
     context: InsightsPageContext,
-    providers: Observable<readonly RegisteredViewProvider<InsightsPageViewContextType>[]>
+    providers: Observable<readonly RegisteredViewProvider<InsightsPageViewContextType>[]>,
+    insightIds?: string[]
 ): ProxySubscribable<ViewProviderResult[]> {
+    const insightsIdSet = new Set(insightIds)
     const dashboardInsights = providers.pipe(
         map(providers =>
             providers.filter(provider => {
                 // If insight ids was specified we should resolve only
                 // insights from this list
-                if (context.insightIds) {
-                    return context.insightIds.includes(provider.id)
+                if (insightIds) {
+                    return insightsIdSet.has(provider.id)
                 }
 
                 // Otherwise we are in all insights mode and have to resolve

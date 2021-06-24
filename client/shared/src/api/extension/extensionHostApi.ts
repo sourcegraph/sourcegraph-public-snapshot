@@ -425,7 +425,8 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
                 )
             ),
 
-        getInsightsViews: context => getInsightsViews(context, state.insightsPageViewProviders),
+        getInsightsViews: (context, insightIds) =>
+            getInsightsViews(context, state.insightsPageViewProviders, insightIds),
         getHomepageViews: context => proxySubscribable(callViewProviders(context, state.homepageViewProviders)),
         getGlobalPageViews: context => proxySubscribable(callViewProviders(context, state.globalPageViewProviders)),
         getDirectoryViews: context =>
@@ -639,11 +640,7 @@ function mergeLinkPreviews(
 export interface ViewContexts {
     [ContributableViewContainer.Panel]: never
     [ContributableViewContainer.Homepage]: {}
-    [ContributableViewContainer.InsightsPage]: {
-        // Resolve only insights that were included in that
-        // ids list. Used for the insights dashboard functionality.
-        insightIds?: string[]
-    }
+    [ContributableViewContainer.InsightsPage]: {}
     [ContributableViewContainer.GlobalPage]: Record<string, string>
     [ContributableViewContainer.Directory]: sourcegraph.DirectoryViewContext
 }
