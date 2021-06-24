@@ -93,7 +93,8 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                 actions={
                     userHasCodeMonitors &&
                     userHasCodeMonitors !== 'loading' &&
-                    !isErrorLike(userHasCodeMonitors) && (
+                    !isErrorLike(userHasCodeMonitors) &&
+                    authenticatedUser && (
                         <Link to="/code-monitoring/new" className="btn btn-primary">
                             <PlusIcon className="icon-inline" />
                             Create
@@ -145,7 +146,9 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                         </div>
                     </div>
 
-                    {showGettingStarted && <CodeMonitoringGettingStarted isLightTheme={isLightTheme} />}
+                    {showGettingStarted && (
+                        <CodeMonitoringGettingStarted isLightTheme={isLightTheme} isSignedIn={!!authenticatedUser} />
+                    )}
 
                     {showList && authenticatedUser && (
                         <CodeMonitorList
