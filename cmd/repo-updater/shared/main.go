@@ -195,7 +195,6 @@ func Main(enterpriseInit EnterpriseInit) {
 			OnlyCloudDefault: true,
 			Kinds:            []string{extsvc.KindGitHub, extsvc.KindGitLab},
 		})
-
 		if err != nil {
 			log.Fatalf("failed to list external services: %v", err)
 		}
@@ -456,11 +455,11 @@ func syncScheduler(ctx context.Context, sched scheduler, gitserverClient *gitser
 
 		// Fetch ALL default repos that are NOT cloned so that we can add them to the
 		// scheduler
-		opts := database.ListDefaultReposOptions{
+		opts := database.ListIndexableReposOptions{
 			OnlyUncloned:   true,
 			IncludePrivate: true,
 		}
-		if u, err := baseRepoStore.ListDefaultRepos(ctx, opts); err != nil {
+		if u, err := baseRepoStore.ListIndexableRepos(ctx, opts); err != nil {
 			log15.Error("Listing default repos", "error", err)
 			return
 		} else {

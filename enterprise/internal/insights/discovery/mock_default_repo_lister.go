@@ -9,21 +9,21 @@ import (
 	types "github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-// MockDefaultRepoLister is a mock implementation of the DefaultRepoLister
+// MockIndexableReposLister is a mock implementation of the IndexableReposLister
 // interface (from the package
 // github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery)
 // used for unit testing.
-type MockDefaultRepoLister struct {
+type MockIndexableReposLister struct {
 	// ListFunc is an instance of a mock function object controlling the
 	// behavior of the method List.
 	ListFunc *DefaultRepoListerListFunc
 }
 
-// NewMockDefaultRepoLister creates a new mock of the DefaultRepoLister
+// NewMockIndexableReposLister creates a new mock of the IndexableReposLister
 // interface. All methods return zero values for all results, unless
 // overwritten.
-func NewMockDefaultRepoLister() *MockDefaultRepoLister {
-	return &MockDefaultRepoLister{
+func NewMockIndexableReposLister() *MockIndexableReposLister {
+	return &MockIndexableReposLister{
 		ListFunc: &DefaultRepoListerListFunc{
 			defaultHook: func(context.Context) ([]types.RepoName, error) {
 				return nil, nil
@@ -33,10 +33,10 @@ func NewMockDefaultRepoLister() *MockDefaultRepoLister {
 }
 
 // NewMockDefaultRepoListerFrom creates a new mock of the
-// MockDefaultRepoLister interface. All methods delegate to the given
+// MockIndexableReposLister interface. All methods delegate to the given
 // implementation, unless overwritten.
-func NewMockDefaultRepoListerFrom(i DefaultRepoLister) *MockDefaultRepoLister {
-	return &MockDefaultRepoLister{
+func NewMockDefaultRepoListerFrom(i IndexableReposLister) *MockIndexableReposLister {
+	return &MockIndexableReposLister{
 		ListFunc: &DefaultRepoListerListFunc{
 			defaultHook: i.List,
 		},
@@ -44,7 +44,7 @@ func NewMockDefaultRepoListerFrom(i DefaultRepoLister) *MockDefaultRepoLister {
 }
 
 // DefaultRepoListerListFunc describes the behavior when the List method of
-// the parent MockDefaultRepoLister instance is invoked.
+// the parent MockIndexableReposLister instance is invoked.
 type DefaultRepoListerListFunc struct {
 	defaultHook func(context.Context) ([]types.RepoName, error)
 	hooks       []func(context.Context) ([]types.RepoName, error)
@@ -54,21 +54,21 @@ type DefaultRepoListerListFunc struct {
 
 // List delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockDefaultRepoLister) List(v0 context.Context) ([]types.RepoName, error) {
+func (m *MockIndexableReposLister) List(v0 context.Context) ([]types.RepoName, error) {
 	r0, r1 := m.ListFunc.nextHook()(v0)
 	m.ListFunc.appendCall(DefaultRepoListerListFuncCall{v0, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the List method of the
-// parent MockDefaultRepoLister instance is invoked and the hook queue is
+// parent MockIndexableReposLister instance is invoked and the hook queue is
 // empty.
 func (f *DefaultRepoListerListFunc) SetDefaultHook(hook func(context.Context) ([]types.RepoName, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// List method of the parent MockDefaultRepoLister instance invokes the hook
+// List method of the parent MockIndexableReposLister instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
 func (f *DefaultRepoListerListFunc) PushHook(hook func(context.Context) ([]types.RepoName, error)) {
@@ -124,7 +124,7 @@ func (f *DefaultRepoListerListFunc) History() []DefaultRepoListerListFuncCall {
 }
 
 // DefaultRepoListerListFuncCall is an object that describes an invocation
-// of method List on an instance of MockDefaultRepoLister.
+// of method List on an instance of MockIndexableReposLister.
 type DefaultRepoListerListFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.

@@ -46,9 +46,9 @@ func (r *Resolved) String() string {
 }
 
 type Resolver struct {
-	DB               dbutil.DB
-	Zoekt            *searchbackend.Zoekt
-	DefaultReposFunc defaultReposFunc
+	DB                 dbutil.DB
+	Zoekt              *searchbackend.Zoekt
+	IndexableReposFunc indexableReposFunc
 }
 
 func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
@@ -121,26 +121,26 @@ func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 		return Resolved{}, err
 	}
 
-	var defaultRepos []types.RepoName
+	var indexableRepos []types.RepoName
 
 	if envvar.SourcegraphDotComMode() && len(includePatterns) == 0 && !query.HasTypeRepo(op.Query) && searchcontexts.IsGlobalSearchContext(searchContext) {
 		start := time.Now()
-		defaultRepos, err = defaultRepositories(ctx, r.DefaultReposFunc, r.Zoekt, excludePatterns)
+		indexableRepos, err = indexableRepositories(ctx, r.IndexableReposFunc, r.Zoekt, excludePatterns)
 		if err != nil {
 			return Resolved{}, errors.Wrap(err, "getting list of default repos")
 		}
-		tr.LazyPrintf("defaultrepos: took %s to add %d repos", time.Since(start), len(defaultRepos))
+		tr.LazyPrintf("defaultrepos: took %s to add %d repos", time.Since(start), len(indexableRepos))
 
 		// Search all default repos since indexed search is fast.
-		if len(defaultRepos) > limit {
-			limit = len(defaultRepos)
+		if len(indexableRepos) > limit {
+			limit = len(indexableRepos)
 		}
 	}
 
 	var repos []types.RepoName
 	var excluded ExcludedRepos
-	if len(defaultRepos) > 0 {
-		repos = defaultRepos
+	if len(indexableRepos) > 0 {
+		repos = indexableRepos
 		if len(repos) > limit {
 			repos = repos[:limit]
 		}
@@ -611,34 +611,34 @@ func findPatternRevs(includePatterns []string) (includePatternRevs []patternRevs
 	return
 }
 
-type defaultReposFunc func(ctx context.Context) ([]types.RepoName, error)
+type indexableReposFunc func(ctx context.Context) ([]types.RepoName, error)
 
-// defaultRepositories returns the intersection of calling getRawDefaultRepos
+// indexableRepositories returns the intersection of calling gettRawIndexableRepos
 // (db) and indexed repos (zoekt), minus repos matching excludePatterns.
-func defaultRepositories(ctx context.Context, getRawDefaultRepos defaultReposFunc, z *searchbackend.Zoekt, excludePatterns []string) (_ []types.RepoName, err error) {
-	tr, ctx := trace.New(ctx, "defaultRepositories", "")
+func indexableRepositories(ctx context.Context, getRawIndexableRepos indexableReposFunc, z *searchbackend.Zoekt, excludePatterns []string) (_ []types.RepoName, err error) {
+	tr, ctx := trace.New(ctx, "indexableRepositories", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	// Get the list of default repos from the database.
-	defaultRepos, err := getRawDefaultRepos(ctx)
+	// Get the list of indexable repos from the database.
+	indexableRepos, err := getRawIndexableRepos(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "querying database for default repos")
+		return nil, errors.Wrap(err, "querying database for indexable repos")
 	}
-	tr.LazyPrintf("getRawDefaultRepos - done")
+	tr.LazyPrintf("getRawIndexableRepos - done")
 
 	// Remove excluded repos.
 	if len(excludePatterns) > 0 {
 		patterns, _ := regexp.Compile(`(?i)` + UnionRegExps(excludePatterns))
-		filteredRepos := defaultRepos[:0]
-		for _, repo := range defaultRepos {
+		filteredRepos := indexableRepos[:0]
+		for _, repo := range indexableRepos {
 			if matched := patterns.MatchString(string(repo.Name)); !matched {
 				filteredRepos = append(filteredRepos, repo)
 			}
 		}
-		defaultRepos = filteredRepos
+		indexableRepos = filteredRepos
 		tr.LazyPrintf("remove excluded repos - done")
 	}
 
@@ -651,9 +651,9 @@ func defaultRepositories(ctx context.Context, getRawDefaultRepos defaultReposFun
 	}
 	tr.LazyPrintf("zoekt.ListAll - done")
 
-	// In place filtering of defaultRepos to only include names from set.
-	repos := defaultRepos[:0]
-	for _, r := range defaultRepos {
+	// In place filtering of indexableRepos to only include names from set.
+	repos := indexableRepos[:0]
+	for _, r := range indexableRepos {
 		if _, ok := set[string(r.Name)]; ok {
 			repos = append(repos, r)
 		}

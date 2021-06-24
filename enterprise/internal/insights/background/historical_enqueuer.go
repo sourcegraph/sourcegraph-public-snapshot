@@ -131,7 +131,7 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 		frameFilter: compression.NewHistoricalFilter(true, maxTime, insightsStore.Handle().DB()),
 
 		allReposIterator: (&discovery.AllReposIterator{
-			DefaultRepoLister:     dbcache.NewDefaultRepoLister(repoStore),
+			IndexableReposLister:  dbcache.NewIndexableReposLister(repoStore),
 			RepoStore:             repoStore,
 			Clock:                 time.Now,
 			SourcegraphDotComMode: envvar.SourcegraphDotComMode(),

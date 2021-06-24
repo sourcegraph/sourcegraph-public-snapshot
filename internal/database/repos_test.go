@@ -376,7 +376,7 @@ func TestRepos_Create(t *testing.T) {
 	})
 }
 
-func TestListDefaultReposUncloned(t *testing.T) {
+func TestListIndexableRepos(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -428,7 +428,7 @@ func TestListDefaultReposUncloned(t *testing.T) {
 		}
 	}
 
-	repos, err := Repos(db).ListDefaultRepos(ctx, ListDefaultReposOptions{
+	repos, err := Repos(db).ListIndexableRepos(ctx, ListIndexableReposOptions{
 		OnlyUncloned: true,
 	})
 	if err != nil {

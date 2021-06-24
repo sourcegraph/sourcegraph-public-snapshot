@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func TestListDefaultRepos(t *testing.T) {
+func TestListIndexableRepos(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -93,7 +93,7 @@ func TestListDefaultRepos(t *testing.T) {
 				}
 			}
 
-			repos, err := NewDefaultRepoLister(database.Repos(db)).List(ctx)
+			repos, err := NewIndexableReposLister(database.Repos(db)).List(ctx)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -146,7 +146,7 @@ func TestListDefaultRepos(t *testing.T) {
 		}
 
 		t.Run("List ALL repos", func(t *testing.T) {
-			repos, err := NewDefaultRepoLister(database.Repos(db)).List(ctx)
+			repos, err := NewIndexableReposLister(database.Repos(db)).List(ctx)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -174,7 +174,7 @@ func TestListDefaultRepos(t *testing.T) {
 		})
 
 		t.Run("List only public default repos", func(t *testing.T) {
-			repos, err := NewDefaultRepoLister(database.Repos(db)).ListPublic(ctx)
+			repos, err := NewIndexableReposLister(database.Repos(db)).ListPublic(ctx)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -210,7 +210,7 @@ func BenchmarkDefaultRepos_List_Empty(b *testing.B) {
 	}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		_, err := NewDefaultRepoLister(database.Repos(db)).List(ctx)
+		_, err := NewIndexableReposLister(database.Repos(db)).List(ctx)
 		if err != nil {
 			b.Fatal(err)
 		}

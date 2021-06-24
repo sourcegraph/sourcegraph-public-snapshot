@@ -348,7 +348,7 @@ func TestDefaultRepositories(t *testing.T) {
 		},
 	}
 	for _, tc := range tcs {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.name, func(t *testing.T) {``
 
 			var drs []types.RepoName
 			for i, name := range tc.defaultsInDb {
@@ -358,7 +358,7 @@ func TestDefaultRepositories(t *testing.T) {
 				}
 				drs = append(drs, r)
 			}
-			getRawDefaultRepos := func(ctx context.Context) ([]types.RepoName, error) {
+			getRawIndexableRepos := func(ctx context.Context) ([]types.RepoName, error) {
 				return drs, nil
 			}
 
@@ -372,7 +372,7 @@ func TestDefaultRepositories(t *testing.T) {
 			}
 
 			ctx := context.Background()
-			drs, err := defaultRepositories(ctx, getRawDefaultRepos, z, tc.excludePatterns)
+			drs, err := indexableRepositories(ctx, getRawIndexableRepos, z, tc.excludePatterns)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -437,7 +437,7 @@ func TestUseDefaultReposIfMissingOrGlobalSearchContext(t *testing.T) {
 				SearchContextSpec: tt.searchContextSpec,
 				Query:             queryInfo,
 			}
-			repositoryResolver := &Resolver{Zoekt: mockZoekt, DefaultReposFunc: mockDefaultReposFunc}
+			repositoryResolver := &Resolver{Zoekt: mockZoekt, IndexableReposFunc: mockDefaultReposFunc}
 			resolved, err := repositoryResolver.Resolve(context.Background(), op)
 			if err != nil {
 				t.Fatal(err)
