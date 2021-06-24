@@ -20,9 +20,9 @@ storage.
 The set of evaluated feature flags is appended to each event log so they can be queried against
 for analytics.
 
-## Lifecycle of a feature flag (for A/B testing)
+## Example lifecycle of a feature flag (for frontend A/B testing)
 
-The standard use of a feature flag for A/B testing will look like the following:
+The standard use of a feature flag for A/B testing a frontend feature will look like the following:
 
 1) Implement the feature that you want to be behind a feature flag
 2) Deploy to sourcegraph.com
@@ -30,6 +30,9 @@ The standard use of a feature flag for A/B testing will look like the following:
 4) Measure the effect of the feature flag
 5) Disable or delete the feature flag
 6) Remove the code that references the feature flag
+
+Feature flags can also be used in the backend through `featureflag.FromContext()`, but this
+example specifically applies to frontend flags.
 
 
 ### Implement the feature flag
