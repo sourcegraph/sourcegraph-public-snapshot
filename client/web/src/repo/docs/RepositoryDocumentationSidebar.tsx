@@ -80,7 +80,14 @@ export const RepositoryDocumentationSidebar: React.FunctionComponent<Props> = ({
                         </Button>
                     </div>
                     <div aria-hidden={true} className="d-flex explorer overflow-auto px-3">
-                        <DocumentationIndexNode {...props} node={props.node} pagePathID={props.pagePathID} depth={0} />
+                        <DocumentationIndexNode
+                            {...props}
+                            node={props.node}
+                            pagePathID={props.pagePathID}
+                            depth={0}
+                            subpagesOnly={false}
+                            contentOnly={false}
+                        />
                     </div>
                 </div>
             }
