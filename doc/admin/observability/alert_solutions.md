@@ -4050,13 +4050,13 @@ with your code hosts connections or networking issues affecting communication wi
 
 <br />
 
-## repo-updater: repoupdater_errored_sync_jobs_total
+## repo-updater: repoupdater_errored_sync_jobs_percentage
 
-<p class="subtitle">the total number of errored sync jobs</p>
+<p class="subtitle">the percentage of external services that have failed their most recent sync</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> repo-updater: 100+ the total number of errored sync jobs for 1h0m0s
+- <span class="badge badge-warning">warning</span> repo-updater: 10%+ the percentage of external services that have failed their most recent sync for 1h0m0s
 
 **Possible solutions**
 
@@ -4065,7 +4065,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 ```json
 "observability.silenceAlerts": [
-  "warning_repo-updater_repoupdater_errored_sync_jobs_total"
+  "warning_repo-updater_repoupdater_errored_sync_jobs_percentage"
 ]
 ```
 

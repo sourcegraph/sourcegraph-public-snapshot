@@ -2305,11 +2305,11 @@ This panel indicates the total number of completed sync jobs.
 
 <br />
 
-#### repo-updater: repoupdater_errored_sync_jobs_total
+#### repo-updater: repoupdater_errored_sync_jobs_percentage
 
-This panel indicates the total number of errored sync jobs.
+This panel indicates the percentage of external services that have failed their most recent sync.
 
-> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-repoupdater-errored-sync-jobs-total).
+> NOTE: Alerts related to this panel are documented in the [alert solutions reference](./alert_solutions.md#repo-updater-repoupdater-errored-sync-jobs-percentage).
 
 <sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
