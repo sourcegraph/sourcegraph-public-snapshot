@@ -8,9 +8,10 @@ import (
 )
 
 type DBStore interface {
+	basestore.ShareableStore
+
 	Transact(ctx context.Context) (DBStore, error)
 	Done(err error) error
-	Handle() *basestore.TransactableHandle
 
 	GetUploadByID(ctx context.Context, uploadID int) (dbstore.Upload, bool, error)
 	InsertUpload(ctx context.Context, upload dbstore.Upload) (int, error)

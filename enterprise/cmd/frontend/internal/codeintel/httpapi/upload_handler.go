@@ -388,7 +388,9 @@ func ensureRepoAndCommitExist(ctx context.Context, db dbutil.DB, w http.Response
 	// This function won't be able to see all repositories without bypassing authz.
 	ctx = actor.WithInternalActor(ctx)
 
-	repo, err := backend.NewRepos(db).GetByName(ctx, api.RepoName(repoName))
+	repos := backend.NewRepos(db)
+
+	repo, err := repos.GetByName(ctx, api.RepoName(repoName))
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			http.Error(w, fmt.Sprintf("unknown repository %q", repoName), http.StatusNotFound)
@@ -399,7 +401,7 @@ func ensureRepoAndCommitExist(ctx context.Context, db dbutil.DB, w http.Response
 		return nil, false
 	}
 
-	if _, err := backend.NewRepos(db).ResolveRev(ctx, repo, commit); err != nil {
+	if _, err := repos.ResolveRev(ctx, repo, commit); err != nil {
 		if gitserver.IsRevisionNotFound(err) {
 			http.Error(w, fmt.Sprintf("unknown commit %q", commit), http.StatusNotFound)
 			return nil, false

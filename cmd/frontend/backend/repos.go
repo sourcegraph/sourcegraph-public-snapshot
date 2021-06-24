@@ -40,11 +40,6 @@ func (e ErrRepoSeeOther) Error() string {
 	return fmt.Sprintf("repo not found at this location, but might exist at %s", e.RedirectURL)
 }
 
-// var Repos = &repos{
-// 	store: database.GlobalRepos,
-// 	cache: dbcache.NewDefaultRepoLister(database.GlobalRepos),
-// }
-
 func NewRepos(db dbutil.DB) *Repos {
 	rstore := database.Repos(db)
 	return &Repos{
