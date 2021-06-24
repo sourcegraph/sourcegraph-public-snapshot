@@ -14,7 +14,7 @@ import { CodeMonitoringPageProps } from './CodeMonitoringPage'
 type CodeMonitorFilter = 'all' | 'user'
 
 export const CodeMonitorList: React.FunctionComponent<
-    Omit<Required<CodeMonitoringPageProps>, 'showGettingStarted'>
+    Omit<Required<CodeMonitoringPageProps>, 'showGettingStarted' | 'isLightTheme'>
 > = ({ authenticatedUser, settingsCascade, fetchUserCodeMonitors, toggleCodeMonitorEnabled }) => {
     const location = useLocation()
     const history = useHistory()

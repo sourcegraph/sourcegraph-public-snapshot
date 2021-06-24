@@ -20,6 +20,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
         }
       }
       fetchUserCodeMonitors={[Function]}
+      isLightTheme={false}
       settingsCascade={
         Object {
           "final": Object {},
@@ -49,12 +50,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
           className="mb-3"
           description={
             <React.Fragment>
-              Watch your code for changes and trigger actions to get notifications, send webhooks, and more. 
-              <a
-                href="https://docs.sourcegraph.com/code_monitoring"
-              >
-                Learn more.
-              </a>
+              Watch your code for changes and trigger actions to get notifications, send webhooks, and more.
             </React.Fragment>
           }
           path={
@@ -108,12 +104,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
               <p
                 className="description"
               >
-                Watch your code for changes and trigger actions to get notifications, send webhooks, and more. 
-                <a
-                  href="https://docs.sourcegraph.com/code_monitoring"
-                >
-                  Learn more.
-                </a>
+                Watch your code for changes and trigger actions to get notifications, send webhooks, and more.
               </p>
             </div>
             <div
@@ -2103,6 +2094,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
         }
       }
       fetchUserCodeMonitors={[Function]}
+      isLightTheme={false}
       settingsCascade={
         Object {
           "final": Object {},
@@ -2132,12 +2124,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
           className="mb-3"
           description={
             <React.Fragment>
-              Watch your code for changes and trigger actions to get notifications, send webhooks, and more. 
-              <a
-                href="https://docs.sourcegraph.com/code_monitoring"
-              >
-                Learn more.
-              </a>
+              Watch your code for changes and trigger actions to get notifications, send webhooks, and more.
             </React.Fragment>
           }
           path={
@@ -2191,12 +2178,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
               <p
                 className="description"
               >
-                Watch your code for changes and trigger actions to get notifications, send webhooks, and more. 
-                <a
-                  href="https://docs.sourcegraph.com/code_monitoring"
-                >
-                  Learn more.
-                </a>
+                Watch your code for changes and trigger actions to get notifications, send webhooks, and more.
               </p>
             </div>
             <div
@@ -3017,6 +2999,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
         }
       }
       fetchUserCodeMonitors={[Function]}
+      isLightTheme={false}
       settingsCascade={
         Object {
           "final": Object {},
@@ -3046,12 +3029,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
           className="mb-3"
           description={
             <React.Fragment>
-              Watch your code for changes and trigger actions to get notifications, send webhooks, and more. 
-              <a
-                href="https://docs.sourcegraph.com/code_monitoring"
-              >
-                Learn more.
-              </a>
+              Watch your code for changes and trigger actions to get notifications, send webhooks, and more.
             </React.Fragment>
           }
           path={
@@ -3105,12 +3083,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
               <p
                 className="description"
               >
-                Watch your code for changes and trigger actions to get notifications, send webhooks, and more. 
-                <a
-                  href="https://docs.sourcegraph.com/code_monitoring"
-                >
-                  Learn more.
-                </a>
+                Watch your code for changes and trigger actions to get notifications, send webhooks, and more.
               </p>
             </div>
             <div
