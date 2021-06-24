@@ -1,6 +1,7 @@
 import PlusIcon from 'mdi-react/PlusIcon'
 import React, { useMemo, useEffect } from 'react'
 import { NavLink, Redirect } from 'react-router-dom'
+import { of } from 'rxjs'
 import { catchError, map, startWith } from 'rxjs/operators'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
@@ -14,6 +15,7 @@ import { PageHeader } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../../auth'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
 import { PageTitle } from '../../components/PageTitle'
+import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { Settings } from '../../schema/settings.schema'
 import { eventLogger } from '../../tracking/eventLogger'
 
@@ -24,8 +26,8 @@ import {
 import { CodeMonitoringGettingStarted } from './CodeMonitoringGettingStarted'
 import { CodeMonitorList } from './CodeMonitorList'
 
-export interface CodeMonitoringPageProps extends SettingsCascadeProps<Settings>, ThemeProps {
-    authenticatedUser: AuthenticatedUser
+export interface CodeMonitoringPageProps extends SettingsCascadeProps<Settings>, ThemeProps, FeatureFlagProps {
+    authenticatedUser: AuthenticatedUser | null
     fetchUserCodeMonitors?: typeof _fetchUserCodeMonitors
     toggleCodeMonitorEnabled?: typeof _toggleCodeMonitorEnabled
     showGettingStarted?: boolean
@@ -38,6 +40,7 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
     toggleCodeMonitorEnabled = _toggleCodeMonitorEnabled,
     showGettingStarted = false,
     isLightTheme,
+    featureFlags,
 }) => {
     useEffect(() => eventLogger.logViewEvent('CodeMonitoringPage'), [])
 
@@ -46,18 +49,25 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
     const userHasCodeMonitors = useObservable(
         useMemo(
             () =>
-                fetchUserCodeMonitors({
-                    id: authenticatedUser.id,
-                    first: 1,
-                    after: null,
-                }).pipe(
-                    map(monitors => monitors.nodes.length > 0),
-                    startWith(LOADING),
-                    catchError(error => [asError(error)])
-                ),
-            [authenticatedUser.id, fetchUserCodeMonitors]
+                authenticatedUser
+                    ? fetchUserCodeMonitors({
+                          id: authenticatedUser.id,
+                          first: 1,
+                          after: null,
+                      }).pipe(
+                          map(monitors => monitors.nodes.length > 0),
+                          startWith(LOADING),
+                          catchError(error => [asError(error)])
+                      )
+                    : of(false),
+            [authenticatedUser, fetchUserCodeMonitors]
         )
     )
+
+    // If feature flag is not on, make unauthenticated users sign in
+    if (!authenticatedUser && !featureFlags.get('w1-signup-optimisation')) {
+        return <Redirect to="/sign-in" />
+    }
 
     // If user has no code monitors, redirect to the getting started page
     if (!showGettingStarted && userHasCodeMonitors === false) {
@@ -83,7 +93,8 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                 actions={
                     userHasCodeMonitors &&
                     userHasCodeMonitors !== 'loading' &&
-                    !isErrorLike(userHasCodeMonitors) && (
+                    !isErrorLike(userHasCodeMonitors) &&
+                    authenticatedUser && (
                         <Link to="/code-monitoring/new" className="btn btn-primary">
                             <PlusIcon className="icon-inline" />
                             Create
@@ -135,9 +146,11 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                         </div>
                     </div>
 
-                    {showGettingStarted && <CodeMonitoringGettingStarted isLightTheme={isLightTheme} />}
+                    {showGettingStarted && (
+                        <CodeMonitoringGettingStarted isLightTheme={isLightTheme} isSignedIn={!!authenticatedUser} />
+                    )}
 
-                    {showList && (
+                    {showList && authenticatedUser && (
                         <CodeMonitorList
                             settingsCascade={settingsCascade}
                             authenticatedUser={authenticatedUser}
