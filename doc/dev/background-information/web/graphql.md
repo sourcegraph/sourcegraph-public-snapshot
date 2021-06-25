@@ -6,7 +6,7 @@ We auto-generate TypeScript types for the schema and all queries, mutations and 
 ## GraphQL Client
 We use [Apollo Client](https://www.apollographql.com/docs/react/) to manage data-fetching and caching within our app. It provides a set of declarative interfaces which abstract away a lot of repeated code, whilst supporting a 'stale-while-revalidate' strategy through a normalized client cache of requested data.
 
-**Writing your query**
+**Writing and running your query**
 
 We use `gql` template strings to declare our GraphQL queries.
 
@@ -14,31 +14,27 @@ Each query must have a globally unique name as per the [GraphQL specification](h
 
 Using each unique query, we can generate specific types so you can receive autocompletion, syntax highlighting, hover tooltips and validation in your IDE.
 
-We should also define our queries in `.graphql` files that are coupled with our components. This provides better IDE support and makes it easier to quickly scan the codebase for different queries.
+Once you have built your query, `graphql-codegen` will generate the correct request and response types. This process should happen automatically through local development, you can also manually trigger this by running `yarn generate` or `yarn watch-generate`.
 
-```graphql
-# ./MyComponent.graphql
-query UserDisplayName($username: String!) {
-    user(username: $username) {
-        id
-        displayName
-    }
-}
-```
-
-**Running your query**
-
-Once you have built your query, `graphql-codegen` will generate the correct request and response types, it will also create typed React hooks. This process should happen automatically through local development, you can also manually trigger this by running `yarn generate` or `yarn watch-generate`.
-
-Using a newly-generated hook, we can easily fire a request and handle the response correctly.
+Using a `useQuery` hook, we can easily fire a request and handle the response correctly.
 
 ```ts
 // ./MyComponent.tsx
-import { useGetUserDisplayName } from '../../graphql-operations'
+import { useQuery } from '@apollo/client'
+
+import { UserDisplayNameResult, UserDisplayNameVariables } from '../../graphql-operations'
+
+export const USER_DISPLAY_NAME = gql`
+  query UserDisplayName($username: String!) {
+      user(username: $username) {
+          id
+          displayName
+      }
+  }
+`
 
 const MyComponent = ({ username }: { username: string }) => {
-  // useGetUserDisplayName is automatically typed with correct variables and response data
-  const { data, loading, error } = useGetUserDisplayName({ variables: { username } });
+  const { data, loading, error } = useQuery<UserDisplayNameResult, UserDisplayNameVariables>(USER_DISPLAY_NAME, { variables: { username } });
 
   if (loading) {
     // handle loading state
@@ -57,8 +53,8 @@ const MyComponent = ({ username }: { username: string }) => {
 Equally, it is possible to create our own wrapper hooks, when we want to modify data accordingly.
 
 ```ts
-const useFullName = (variables: GetUserNameVariables): ApolloQueryResult<{ fullName: string }> => {
-    const response = useGetUserDisplayName({ variables })
+const useFullName = (variables: UserDisplayNameVariables): ApolloQueryResult<{ fullName: string }> => {
+    const response = useQuery<UserDisplayNameResult, UserDisplayNameVariables>({ variables })
 
     if (response.error) {
         // Handle error
@@ -105,13 +101,12 @@ Apollo lets us easily mock queries in our tests without having to actually mock 
 import { MockedProvider } from '@apollo/client/testing'
 import { render } from '@testing-library/react'
 
-import { GetUserDisplayNameDocument } from './graphql-operations'
-import { MyComponent } from './MyComponent'
+import { MyComponent, USER_DISPLAY_NAME } from './MyComponent'
 
 const mocks = [
     {
         request: {
-            query: GetUserDisplayNameDocument,
+            query: USER_DISPLAY_NAME,
             variables: {
                 username: 'mock_username',
             },
@@ -139,19 +134,18 @@ describe('My Test', () => {
 ```
 
 ### How can I run a query outside of React?
-Most queries should be requested in the context of our UI and should use hooks. If there is a scenario where this is not possible, it is still possible to realise the benefits of Apollo without relying this approach. We can imperatively trigger any query using `client.query`. Note that we also generate typed `Result` and `Variables` objects for each query, which is useful for scenarios like this.
+Most queries should be requested in the context of our UI and should use hooks. If there is a scenario where this is not possible, it is still possible to realise the benefits of Apollo without relying this approach. We can imperatively trigger any query using `client.query`.
 
 ```ts
 import { client } from './backend/graphql'
 import {
-    GetUserDisplayNameDocument,
-    GetUserDisplayNameResult,
-    GetUserDisplayNameVariables,
+    UserDisplayNameResult,
+    UserDisplayNameVariables,
 } from './graphql-operations'
 
-const getUserDisplayName = async (username: string): Promise<GetUserDisplayNameResult> => {
-    const { data, error } = await client.query<GetUserDisplayNameResult, GetUserDisplayNameVariables>({
-        query: GetUserDisplayNameDocument,
+const getUserDisplayName = async (username: string): Promise<UserDisplayNameResult> => {
+    const { data, error } = await client.query<UserDisplayNameResult, UserDisplayNameVariables>({
+        query: UserDisplayName,
         variables: { username },
     })
 
@@ -181,32 +175,35 @@ Our goal is to migrate more code to use Apollo. This should make our components 
 React components are often structured to display a subfield of a query.
 The best way to declare this input type is to define a _GraphQL fragment_ with the component, then using the auto-generated type for that fragment.
 This ensures the parent component don't forget to query a required field and it makes it easy to hard-code stub results in tests.
-```graphql
-# ./Greeting.graphql
-fragment PersonFields on Person {
-    name
-}
-```
 
 ```tsx
-// ./Greeting.tsx
-import type { PersonFields } from '../graphql-operations'
+import { PersonFields } from '../graphql-operations'
 
-export const Greeting: React.FunctionComponent<{ person: PersonFields }> = ({ person }) =>
+export const personFields = gql`
+    fragment PersonFields on Person {
+        name
+    }
+`
+
+export const Greeting: React.FunctionComponent<{ person: PersionFields }> = ({ person }) =>
     <div>Hello, {person.name}!</div>
 ```
 
-Fragments can easily be used in other queries to include the needed data:
+Since the fragment is exported, parent components can use it in their queries to include the needed data:
 
-```graphql
-# ./People.graphql
-query People {
-    people {
-        nodes {
-            ...PersonFields
+```ts
+import { personFields } from './greeting',
+
+export const PEOPLE = gql`
+    query People {
+        people {
+            nodes {
+                ...PersonFields
+            }
         }
     }
-}
+    ${personFields}
+`
 ```
 
 **Note**: A lot of older components still use all-fields types generated from the whole schema (as opposed to from a fragment), usually referenced from the namespace `GQL.*`.

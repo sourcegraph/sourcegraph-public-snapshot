@@ -1,3 +1,4 @@
+import { useQuery, gql } from '@apollo/client'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useMemo } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
@@ -15,15 +16,56 @@ import { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumb
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { Page } from '../../components/Page'
-import { useUserAreaUserProfile, UserAreaUserFields } from '../../graphql-operations'
+import { UserAreaUserFields, UserAreaUserProfileResult, UserAreaUserProfileVariables } from '../../graphql-operations'
 import { NamespaceProps } from '../../namespaces'
 import { PatternTypeProps, OnboardingTourProps } from '../../search'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../util'
 import { RouteDescriptor } from '../../util/contributions'
+import { EditUserProfilePageGQLFragment } from '../settings/profile/UserSettingsProfilePage'
 import { UserSettingsAreaRoute } from '../settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from '../settings/UserSettingsSidebar'
 
 import { UserAreaHeader, UserAreaHeaderNavItem } from './UserAreaHeader'
+
+/** GraphQL fragment for the User fields needed by UserArea. */
+export const UserAreaGQLFragment = gql`
+    fragment UserAreaUserFields on User {
+        __typename
+        id
+        username
+        displayName
+        url
+        settingsURL
+        avatarURL
+        viewerCanAdminister
+        siteAdmin @include(if: $siteAdmin)
+        builtinAuth
+        createdAt
+        emails @include(if: $siteAdmin) {
+            email
+            verified
+        }
+        organizations {
+            nodes {
+                id
+                displayName
+                name
+            }
+        }
+        tags @include(if: $siteAdmin)
+        ...EditUserProfilePage
+    }
+    ${EditUserProfilePageGQLFragment}
+`
+
+export const USER_AREA_USER_PROFILE = gql`
+    query UserAreaUserProfile($username: String!, $siteAdmin: Boolean!) {
+        user(username: $username) {
+            ...UserAreaUserFields
+        }
+    }
+    ${UserAreaGQLFragment}
+`
 
 export interface UserAreaRoute extends RouteDescriptor<UserAreaRouteContext> {}
 
@@ -103,26 +145,38 @@ export const UserArea: React.FunctionComponent<UserAreaProps> = ({
     },
     ...props
 }) => {
-    const { data } = useUserAreaUserProfile({
-        variables: { username, siteAdmin: Boolean(props.authenticatedUser?.siteAdmin) },
-    })
-    const user = data?.user
+    const { data, error, loading } = useQuery<UserAreaUserProfileResult, UserAreaUserProfileVariables>(
+        USER_AREA_USER_PROFILE,
+        {
+            variables: { username, siteAdmin: Boolean(props.authenticatedUser?.siteAdmin) },
+        }
+    )
 
     const childBreadcrumbSetters = useBreadcrumb(
         useMemo(
             () =>
-                user
+                data?.user
                     ? {
                           key: 'UserArea',
-                          link: { to: user.url, label: user.username },
+                          link: { to: data.user.url, label: data.user.username },
                       }
                     : null,
-            [user]
+            [data]
         )
     )
 
+    if (loading) {
+        return null
+    }
+
+    if (error) {
+        throw new Error(error.message)
+    }
+
+    const user = data?.user
+
     if (!user) {
-        return null // loading
+        throw new Error(`User not found: ${JSON.stringify(username)}`)
     }
 
     const context: UserAreaRouteContext = {

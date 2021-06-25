@@ -1,3 +1,4 @@
+import { gql } from '@apollo/client'
 import React, { useEffect } from 'react'
 
 import { percentageDone } from '@sourcegraph/shared/src/components/activation/Activation'
@@ -6,12 +7,26 @@ import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../components/PageTitle'
 import { Timestamp } from '../../../components/time/Timestamp'
+import { EditUserProfilePage as EditUserProfilePageFragment } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { UserSettingsAreaRouteContext } from '../UserSettingsArea'
 
 import { EditUserProfileForm } from './EditUserProfileForm'
 
-interface Props extends Pick<UserSettingsAreaRouteContext, 'user' | 'activation'> {}
+export const EditUserProfilePageGQLFragment = gql`
+    fragment EditUserProfilePage on User {
+        id
+        username
+        displayName
+        avatarURL
+        viewerCanChangeUsername
+        createdAt
+    }
+`
+
+interface Props extends Pick<UserSettingsAreaRouteContext, 'activation'> {
+    user: EditUserProfilePageFragment
+}
 
 export const UserSettingsProfilePage: React.FunctionComponent<Props> = ({ user, ...props }) => {
     useEffect(() => eventLogger.logViewEvent('UserProfile'), [])
