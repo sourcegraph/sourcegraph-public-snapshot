@@ -46,7 +46,7 @@ if [ "$(id -u)" = '0' ]; then
   fi
 
   # TODO@davejrt is this fix what you meant?
-  exec gosu postgres "${BASH_SOURCE[0]}" "$@"
+  su-exec postgres "${BASH_SOURCE[0]}" "$@"
 fi
 
 mkdir -p "$PGDATA"

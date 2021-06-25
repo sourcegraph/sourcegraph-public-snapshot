@@ -11,5 +11,5 @@ cp /conf/postgresql.conf "$PGDATA/postgresql.conf"
 
 # allow the container to be started with `--user`
 if [ "$(id -u)" = '0' ]; then
-  chown postgres "$PGDATA/postgresql.conf"
+  chown postgres:postgres "$PGDATA/postgresql.conf"
 fi

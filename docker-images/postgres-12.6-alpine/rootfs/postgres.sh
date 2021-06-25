@@ -10,7 +10,7 @@ if [ "$(id -u)" = '0' ]; then
   mkdir -p "$PGDATA"
   chown -R postgres:postgres "$(dirname "$PGDATA")"
   chmod 750 "$(dirname "$PGDATA")" "$PGDATA"
-  exec gosu postgres "${BASH_SOURCE[0]}" "$@"
+  su-exec postgres "${BASH_SOURCE[0]}" "$@"
 fi
 
 if [ ! -s "$PGDATA/PG_VERSION" ]; then
