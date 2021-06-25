@@ -421,10 +421,12 @@
     "insights.dashboards": {
       "description": "EXPERIMENTAL: Code Insights Dashboards",
       "type": "object",
-      "patternProperties": {
-        "": {
-          "$ref": "#/definitions/InsightDashboard"
-        }
+      "propertyNames": {
+        "type": "string",
+        "description": "A valid dashboards ID."
+      },
+      "additionalProperties": {
+        "$ref": "#/definitions/InsightDashboard"
       }
     }
   },

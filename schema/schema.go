@@ -853,6 +853,13 @@ type Insight struct {
 	// Title description: The short title of this insight
 	Title string `json:"title"`
 }
+type InsightDashboard struct {
+	Id string `json:"id"`
+	// InsightIds description: Insights ids that will be included in the dashboard.
+	InsightIds []string `json:"insightIds"`
+	// Title description: Title of the dashboard.
+	Title string `json:"title"`
+}
 type InsightSeries struct {
 	// Label description: The label to use for the series in the graph.
 	Label string `json:"label"`
@@ -862,11 +869,6 @@ type InsightSeries struct {
 	Search string `json:"search,omitempty"`
 	// Webhook description: (not yet supported) Fetch data from a webhook URL.
 	Webhook string `json:"webhook,omitempty"`
-}
-type InsightsDashboard struct {
-	Id          string   `json:"id"`
-	Title       string   `json:"title"`
-	InsightsIds []string `json:"insightsIds"`
 }
 
 // Log description: Configuration for logging and alerting, including to external services.
@@ -1267,11 +1269,12 @@ type Settings struct {
 	// ExtensionsActiveLoggers description: The Sourcegraph extensions, by ID (e.g. `my/extension`), whose logs should be visible in the console.
 	ExtensionsActiveLoggers []string `json:"extensions.activeLoggers,omitempty"`
 	// Insights description: EXPERIMENTAL: Code Insights
-	Insights                            []*Insight                    `json:"insights,omitempty"`
-	InsightsDisplayLocationDirectory    *bool                         `json:"insights.displayLocation.directory,omitempty"`
-	InsightsDisplayLocationHomepage     *bool                         `json:"insights.displayLocation.homepage,omitempty"`
-	InsightsDisplayLocationInsightsPage *bool                         `json:"insights.displayLocation.insightsPage,omitempty"`
-	InsightsDashboards                  map[string]*InsightsDashboard `json:"insights.dashboards,omitempty"`
+	Insights []*Insight `json:"insights,omitempty"`
+	// InsightsDashboards description: EXPERIMENTAL: Code Insights Dashboards
+	InsightsDashboards                  map[string]InsightDashboard `json:"insights.dashboards,omitempty"`
+	InsightsDisplayLocationDirectory    *bool                       `json:"insights.displayLocation.directory,omitempty"`
+	InsightsDisplayLocationHomepage     *bool                       `json:"insights.displayLocation.homepage,omitempty"`
+	InsightsDisplayLocationInsightsPage *bool                       `json:"insights.displayLocation.insightsPage,omitempty"`
 	// Motd description: DEPRECATED: Use `notices` instead.
 	//
 	// An array (often with just one element) of messages to display at the top of all pages, including for unauthenticated users. Users may dismiss a message (and any message with the same string value will remain dismissed for the user).
