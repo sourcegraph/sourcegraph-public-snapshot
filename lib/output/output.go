@@ -89,7 +89,7 @@ func NewOutput(w io.Writer, opts OutputOpts) *Output {
 		block.Write("")
 		block.Write("Execution will continue, but please report this, along with your operating")
 		block.Write("system, terminal, and any other details, to:")
-		block.Write("  https://github.com/sourcegraph/sourcegraph")
+		block.Write("  https://github.com/sourcegraph/sourcegraph/issues/new")
 		block.Close()
 	}
 
