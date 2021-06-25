@@ -786,6 +786,16 @@ A high value signals load.
 
 <br />
 
+#### gitserver: git_commands_received
+
+This panel indicates rate of git commands received across all instances.
+
+per second rate per command across all instances
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
 #### gitserver: repository_clone_queue_size
 
 This panel indicates repository clone queue size.

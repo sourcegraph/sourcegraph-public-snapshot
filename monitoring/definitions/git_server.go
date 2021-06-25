@@ -199,6 +199,17 @@ func GitServer() *monitoring.Container {
 								- **Kubernetes and Docker Compose:** Check that you are running a similar number of git server replicas and that their CPU/memory limits are allocated according to what is shown in the [Sourcegraph resource estimator](../install/resource_estimator.md).
 							`,
 						},
+						{
+							Name:           "git_commands_received",
+							Description:    "rate of git commands received across all instances",
+							Query:          "sum by (cmd) (rate(src_gitserver_exec_duration_seconds_count[5m]))",
+							NoAlert:        true,
+							Interpretation: "per second rate per command across all instances",
+							Panel: monitoring.Panel().LegendFormat("{{cmd}}").With(func(o monitoring.Observable, p *sdk.Panel) {
+								p.GraphPanel.Legend.RightSide = true
+							}),
+							Owner: monitoring.ObservableOwnerCoreApplication,
+						},
 					}, {
 						{
 							Name:        "repository_clone_queue_size",
