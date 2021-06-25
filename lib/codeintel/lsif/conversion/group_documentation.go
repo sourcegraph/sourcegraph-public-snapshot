@@ -102,7 +102,6 @@ type pageCollector struct {
 }
 
 func (p *pageCollector) collect(ctx context.Context, ch chan<- *semantic.DocumentationPageData) (remainingPages []*pageCollector) {
-	var remainingPagesMu sync.RWMutex
 	var walk func(parent *semantic.DocumentationNode, documentationResult int, pathID string)
 	walk = func(parent *semantic.DocumentationNode, documentationResult int, pathID string) {
 		labelID := p.state.DocumentationStringLabel[documentationResult]
@@ -137,7 +136,6 @@ func (p *pageCollector) collect(ctx context.Context, ch chan<- *semantic.Documen
 					PathID: this.PathID,
 				})
 				if p.walkedPages.add(this.PathID) {
-					remainingPagesMu.Lock()
 					remainingPages = append(remainingPages, &pageCollector{
 						isChildPage:                 true,
 						parentPathID:                parent.PathID,
@@ -146,7 +144,6 @@ func (p *pageCollector) collect(ctx context.Context, ch chan<- *semantic.Documen
 						dupChecker:                  p.dupChecker,
 						walkedPages:                 p.walkedPages,
 					})
-					remainingPagesMu.Unlock()
 				}
 				return
 			} else {
@@ -172,28 +169,28 @@ func (p *pageCollector) collect(ctx context.Context, ch chan<- *semantic.Documen
 	}
 	walk(nil, p.startingDocumentationResult, p.parentPathID)
 	if p.isChildPage {
-		remainingPagesMu.RLock()
-		defer remainingPagesMu.RUnlock()
 		return remainingPages
 	}
 
 	// We are the root project page! Collect all the remaining pages.
+	var (
+		remainingWorkMu sync.RWMutex
+		remainingWork   = remainingPages
+	)
 	wg := &sync.WaitGroup{}
-	remainingPagesMu.RLock()
-	wg.Add(len(remainingPages))
-	remainingPagesMu.RUnlock()
+	wg.Add(len(remainingWork))
 	for i := 0; i <= p.numWorkers; i++ {
 		go func() {
 			for {
 				// Get a remaining page to process.
-				remainingPagesMu.Lock()
-				if len(remainingPages) == 0 { // HERE
-					remainingPagesMu.Unlock()
+				remainingWorkMu.Lock()
+				if len(remainingWork) == 0 {
+					remainingWorkMu.Unlock()
 					return // no more work
 				}
-				work := remainingPages[0]
-				remainingPages = remainingPages[1:]
-				remainingPagesMu.Unlock()
+				work := remainingWork[0]
+				remainingWork = remainingWork[1:]
+				remainingWorkMu.Unlock()
 
 				// Perform work.
 				newRemainingPages := work.collect(ctx, ch)
@@ -201,9 +198,9 @@ func (p *pageCollector) collect(ctx context.Context, ch chan<- *semantic.Documen
 				// Add new work, if needed.
 				if len(newRemainingPages) > 0 {
 					wg.Add(len(newRemainingPages))
-					remainingPagesMu.Lock()
-					remainingPages = append(remainingPages, newRemainingPages...)
-					remainingPagesMu.Unlock()
+					remainingWorkMu.Lock()
+					remainingWork = append(remainingWork, newRemainingPages...)
+					remainingWorkMu.Unlock()
 				}
 				wg.Done()
 			}
