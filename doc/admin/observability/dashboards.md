@@ -832,6 +832,38 @@ This panel indicates frontend-internal API error responses every 5m by route.
 
 <br />
 
+### Git Server: Gitserver cleanup jobs
+
+#### gitserver: janitor_running
+
+This panel indicates if the janitor process is running.
+
+1, if the janitor process is currently running
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### gitserver: janitor_job_duration
+
+This panel indicates 95th percentile job run duration.
+
+95th percentile job run duration
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
+#### gitserver: repos_removed
+
+This panel indicates repositories removed due to disk pressure.
+
+Repositories removed due to disk pressure
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
 ### Git Server: Container monitoring (not available on server)
 
 #### gitserver: container_cpu_usage
