@@ -2043,7 +2043,7 @@ This panel indicates frontend-internal API error responses every 5m by route.
 
 This panel indicates time since last sync.
 
-A high value here indicates issues synchronizing repository permissions.
+A high value here indicates issues synchronizing repo metadata.
 If the value is persistently high, make sure all external services have valid tokens.
 
 <sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>

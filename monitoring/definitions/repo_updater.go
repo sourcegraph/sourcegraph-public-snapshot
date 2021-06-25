@@ -37,7 +37,7 @@ func RepoUpdater() *monitoring.Container {
 							Panel:       monitoring.Panel().Unit(monitoring.Seconds),
 							Owner:       monitoring.ObservableOwnerCoreApplication,
 							Interpretation: `
-								A high value here indicates issues synchronizing repository permissions.
+								A high value here indicates issues synchronizing repo metadata.
 								If the value is persistently high, make sure all external services have valid tokens.
 							`,
 						},
