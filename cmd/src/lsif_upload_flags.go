@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/upload"
+	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/codeintel"
 )
 
@@ -32,9 +33,16 @@ var lsifUploadFlags struct {
 	verbosity            int
 	json                 bool
 	open                 bool
+	apiFlags             *api.Flags
 }
 
-var lsifUploadFlagSet = flag.NewFlagSet("upload", flag.ExitOnError)
+var (
+	lsifUploadFlagSet = flag.NewFlagSet("upload", flag.ExitOnError)
+	apiClientFlagSet  = flag.NewFlagSet("upload client", flag.ExitOnError)
+	// Used to include the insecure-skip-verify flag in the help output, as we don't use any of the
+	// other api.Client methods, so only the insecureSkipVerify flag is relevant here.
+	dummyflag bool
+)
 
 func init() {
 	lsifUploadFlagSet.StringVar(&lsifUploadFlags.file, "file", "./dump.lsif", `The path to the LSIF dump file.`)
@@ -57,6 +65,7 @@ func init() {
 	lsifUploadFlagSet.IntVar(&lsifUploadFlags.verbosity, "trace", 0, "-trace=0 shows no logs; -trace=1 shows requests and response metadata; -trace=2 shows headers, -trace=3 shows response body")
 	lsifUploadFlagSet.BoolVar(&lsifUploadFlags.json, "json", false, `Output relevant state in JSON on success.`)
 	lsifUploadFlagSet.BoolVar(&lsifUploadFlags.open, "open", false, `Open the LSIF upload page in your browser.`)
+	lsifUploadFlagSet.BoolVar(&dummyflag, "insecure-skip-verify", false, "Skip validation of TLS certificates against trusted chains")
 }
 
 // parseAndValidateLSIFUploadFlags calls lsifUploadFlagSet.Parse, then infers values for
@@ -67,6 +76,22 @@ func init() {
 // error is returned on failure.
 func parseAndValidateLSIFUploadFlags(args []string) error {
 	if err := lsifUploadFlagSet.Parse(args); err != nil {
+		return err
+	}
+
+	// extract only the -insecure-skip-verify flag so we dont get 'flag provided but not defined'
+	var insecureSkipVerifyFlag []string
+	for _, s := range args {
+		if strings.HasPrefix(s, "-insecure-skip-verify") {
+			insecureSkipVerifyFlag = append(insecureSkipVerifyFlag, s)
+		}
+	}
+
+	// parse the api client flags separately and then populate the lsifUploadFlags struct with the result
+	// we could just use insecureSkipVerify but I'm including everything here because it costs nothing
+	// and maybe we'll use some in the future
+	lsifUploadFlags.apiFlags = api.NewFlags(apiClientFlagSet)
+	if err := apiClientFlagSet.Parse(insecureSkipVerifyFlag); err != nil {
 		return err
 	}
 
