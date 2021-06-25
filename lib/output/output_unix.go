@@ -32,7 +32,9 @@ func init() {
 	newCapabilityWatcher = func() chan capabilities {
 		// Lazily initialise the required global state if we haven't already.
 		once.Do(func() {
+			mu.Lock()
 			chans = make([]chan capabilities, 0, 1)
+			mu.Unlock()
 
 			// Install the signal handler. To avoid race conditions, we should
 			// do this synchronously before spawning the goroutine that will
