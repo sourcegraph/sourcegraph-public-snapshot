@@ -112,9 +112,11 @@ export async function getSearchInsightContent(insight: SearchInsightSettings): P
                 // easier to read (else the date component may be off by one day)
                 const after = formatISO(sub(date, step))
                 const before = formatISO(date)
-                const repoFilters = repos.map(repo => `repo:^${escapeRegExp(repo)}$`).join(' ')
-                const diffQuery = `${repoFilters} type:diff after:${after} before:${before} ${series.query}`
+                const repoFilter = `repo:^(${repos.map(escapeRegExp).join('|')})$`
+                const diffQuery = `${repoFilter} type:diff after:${after} before:${before} ${series.query}`
+
                 url.searchParams.set('q', diffQuery)
+
                 return url.href
             }),
         })),
