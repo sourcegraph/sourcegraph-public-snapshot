@@ -16,4 +16,4 @@ export interface InsightDashboardConfiguration {
     insightsIds: string[]
 }
 
-export const INSIGHT_DASHBOARD_PREFIX = 'insight.dashboard'
+export const INSIGHT_DASHBOARD_PREFIX = 'insights.dashboard'

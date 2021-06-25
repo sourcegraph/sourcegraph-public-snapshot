@@ -419,6 +419,28 @@
       }
     }
   },
+  "patternProperties": {
+    "^insights\\.dashboard\\.": {
+      "type": "object",
+      "required": ["id", "title", "insightIds"],
+      "properties": {
+        "title": {
+          "description": "Title of the dashboard.",
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "insightIds": {
+          "description": "Insights ids that will be included in the dashboard.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
   "definitions": {
     "Insight": {
       "type": "object",

@@ -14,11 +14,11 @@ describe('getInsightsDashboards', () => {
                             viewerCanAdminister: true,
                         },
                         settings: {
-                            'insight.dashboard.testDashboard': {
+                            'insights.dashboard.testDashboard': {
                                 title: 'Test Dashboard',
                                 insightIds: ['insightID1', 'insightID2'],
                             },
-                            'insight.dashboard.anotherTestDashboard': {
+                            'insights.dashboard.anotherTestDashboard': {
                                 title: 'Another Test Dashboard',
                                 insightIds: ['insightID3', 'insightID4'],
                             },
@@ -28,7 +28,7 @@ describe('getInsightsDashboards', () => {
                 ])
             ).toStrictEqual([
                 {
-                    id: 'insight.dashboard.testDashboard',
+                    id: 'insights.dashboard.testDashboard',
                     title: 'Test Dashboard',
                     insightIds: ['insightID1', 'insightID2'],
                     visibility: '101',
@@ -38,7 +38,7 @@ describe('getInsightsDashboards', () => {
                     },
                 },
                 {
-                    id: 'insight.dashboard.anotherTestDashboard',
+                    id: 'insights.dashboard.anotherTestDashboard',
                     title: 'Another Test Dashboard',
                     insightIds: ['insightID3', 'insightID4'],
                     visibility: '101',
@@ -62,7 +62,7 @@ describe('getInsightsDashboards', () => {
                             viewerCanAdminister: true,
                         },
                         settings: {
-                            'insight.dashboard.testDashboard': {
+                            'insights.dashboard.testDashboard': {
                                 title: 'Test Dashboard',
                                 insightIds: ['insightID1', 'insightID2'],
                             },
@@ -78,7 +78,7 @@ describe('getInsightsDashboards', () => {
                             viewerCanAdminister: true,
                         },
                         settings: {
-                            'insight.dashboard.anotherTestDashboard': {
+                            'insights.dashboard.anotherTestDashboard': {
                                 title: 'Another Test Dashboard',
                                 insightIds: ['insightID3', 'insightID4'],
                             },
@@ -88,7 +88,7 @@ describe('getInsightsDashboards', () => {
                 ])
             ).toStrictEqual([
                 {
-                    id: 'insight.dashboard.testDashboard',
+                    id: 'insights.dashboard.testDashboard',
                     title: 'Test Dashboard',
                     insightIds: ['insightID1', 'insightID2'],
                     visibility: '102',
@@ -98,7 +98,7 @@ describe('getInsightsDashboards', () => {
                     },
                 },
                 {
-                    id: 'insight.dashboard.anotherTestDashboard',
+                    id: 'insights.dashboard.anotherTestDashboard',
                     title: 'Another Test Dashboard',
                     insightIds: ['insightID3', 'insightID4'],
                     visibility: '101',
