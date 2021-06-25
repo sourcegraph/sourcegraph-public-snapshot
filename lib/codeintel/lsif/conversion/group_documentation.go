@@ -54,8 +54,8 @@ func collectDocumentationPages(ctx context.Context, state *State) (chan *semanti
 
 			pages <- page
 			pathInfo <- &semantic.DocumentationPathInfoData{
-				PathID: page.Tree.PathID,
-				IsIndex: isIndex,
+				PathID:   page.Tree.PathID,
+				IsIndex:  isIndex,
 				Children: collectChildrenPages(page.Tree),
 			}
 		}
@@ -102,6 +102,7 @@ type pageCollector struct {
 }
 
 func (p *pageCollector) collect(ctx context.Context, ch chan<- *semantic.DocumentationPageData) (remainingPages []*pageCollector) {
+	var remainingPagesMu sync.RWMutex
 	var walk func(parent *semantic.DocumentationNode, documentationResult int, pathID string)
 	walk = func(parent *semantic.DocumentationNode, documentationResult int, pathID string) {
 		labelID := p.state.DocumentationStringLabel[documentationResult]
@@ -136,6 +137,7 @@ func (p *pageCollector) collect(ctx context.Context, ch chan<- *semantic.Documen
 					PathID: this.PathID,
 				})
 				if p.walkedPages.add(this.PathID) {
+					remainingPagesMu.Lock()
 					remainingPages = append(remainingPages, &pageCollector{
 						isChildPage:                 true,
 						parentPathID:                parent.PathID,
@@ -144,6 +146,7 @@ func (p *pageCollector) collect(ctx context.Context, ch chan<- *semantic.Documen
 						dupChecker:                  p.dupChecker,
 						walkedPages:                 p.walkedPages,
 					})
+					remainingPagesMu.Unlock()
 				}
 				return
 			} else {
@@ -173,17 +176,14 @@ func (p *pageCollector) collect(ctx context.Context, ch chan<- *semantic.Documen
 	}
 
 	// We are the root project page! Collect all the remaining pages.
-	var (
-		remainingPagesMu sync.RWMutex
-		wg               = &sync.WaitGroup{}
-	)
+	wg := &sync.WaitGroup{}
 	wg.Add(len(remainingPages))
 	for i := 0; i <= p.numWorkers; i++ {
 		go func() {
 			for {
 				// Get a remaining page to process.
 				remainingPagesMu.Lock()
-				if len(remainingPages) == 0 {
+				if len(remainingPages) == 0 { // HERE
 					remainingPagesMu.Unlock()
 					return // no more work
 				}
