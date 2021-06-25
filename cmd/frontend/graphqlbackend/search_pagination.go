@@ -22,6 +22,7 @@ import (
 	searchresult "github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/search/unindexed"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -233,7 +234,7 @@ func paginatedSearchFilesInRepos(ctx context.Context, db dbutil.DB, args *search
 	return plan.execute(ctx, database.Repos(db), func(batch []*search.RepositoryRevisions) ([]result.Match, *streaming.Stats, error) {
 		batchArgs := *args
 		batchArgs.RepoPromise = (&search.RepoPromise{}).Resolve(batch)
-		fileMatches, fileCommon, err := run.SearchFilesInReposBatch(ctx, &batchArgs)
+		fileMatches, fileCommon, err := unindexed.SearchFilesInReposBatch(ctx, &batchArgs)
 		// Timeouts are reported through Stats so don't report an error for them
 		if err != nil && !(err == context.DeadlineExceeded || err == context.Canceled) {
 			return nil, nil, err
