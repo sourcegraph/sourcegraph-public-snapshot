@@ -7,8 +7,8 @@ import (
 )
 
 func TestPromiseGet(t *testing.T) {
-	in := "anything"
-	p := (&Promise{}).Resolve(in)
+	in := []*RepositoryRevisions{nil}
+	p := (&RepoPromise{}).Resolve(in)
 	out, err := p.Get(context.Background())
 	if err != nil {
 		t.Fatal("error should have been nil, because we supplied a context.Background()")
@@ -19,7 +19,7 @@ func TestPromiseGet(t *testing.T) {
 }
 
 func TestPromiseGetWithCancel(t *testing.T) {
-	rp := Promise{}
+	rp := RepoPromise{}
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	_, err := rp.Get(ctx)
@@ -30,8 +30,8 @@ func TestPromiseGetWithCancel(t *testing.T) {
 
 func TestPromiseGetConcurrent(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
-	in := "anything"
-	p := Promise{}
+	in := []*RepositoryRevisions{nil}
+	p := RepoPromise{}
 	go func() {
 		p.Resolve(in)
 	}()

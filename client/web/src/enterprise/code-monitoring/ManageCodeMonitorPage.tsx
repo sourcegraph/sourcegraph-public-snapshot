@@ -11,6 +11,7 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
+import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
 import { PageTitle } from '../../components/PageTitle'
 import { CodeMonitorFields, MonitorEmailPriority } from '../../graphql-operations'
@@ -23,7 +24,7 @@ import {
 } from './backend'
 import { CodeMonitorForm } from './components/CodeMonitorForm'
 
-export interface ManageCodeMonitorPageProps extends RouteComponentProps<{ id: Scalars['ID'] }> {
+interface ManageCodeMonitorPageProps extends RouteComponentProps<{ id: Scalars['ID'] }> {
     authenticatedUser: AuthenticatedUser
     location: H.Location
     history: H.History
@@ -33,7 +34,7 @@ export interface ManageCodeMonitorPageProps extends RouteComponentProps<{ id: Sc
     deleteCodeMonitor?: typeof _deleteCodeMonitor
 }
 
-export const ManageCodeMonitorPage: React.FunctionComponent<ManageCodeMonitorPageProps> = ({
+const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<ManageCodeMonitorPageProps> = ({
     authenticatedUser,
     history,
     location,
@@ -129,3 +130,5 @@ export const ManageCodeMonitorPage: React.FunctionComponent<ManageCodeMonitorPag
         </div>
     )
 }
+
+export const ManageCodeMonitorPage = withAuthenticatedUser(AuthenticatedManageCodeMonitorPage)

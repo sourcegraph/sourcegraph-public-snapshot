@@ -2,7 +2,6 @@ package dbcache
 
 import (
 	"context"
-	"sort"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -12,46 +11,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func TestListDefaultRepos(t *testing.T) {
+func TestListIndexableRepos(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
-	}
-	tcs := []struct {
-		name  string
-		repos []types.RepoName
-	}{
-		{
-			name:  "empty case",
-			repos: nil,
-		},
-		{
-			name: "one repo",
-			repos: []types.RepoName{
-				{
-					ID:   api.RepoID(1),
-					Name: "github.com/foo/bar",
-				},
-			},
-		},
-		{
-			name: "two repos",
-			repos: []types.RepoName{
-				{
-					ID:   api.RepoID(1),
-					Name: "github.com/foo/bar",
-				},
-				{
-					ID:   api.RepoID(2),
-					Name: "github.com/baz/qux",
-				},
-			},
-		},
 	}
 
 	createExternalService := func(ctx context.Context, db dbutil.DB) *types.ExternalService {
@@ -70,42 +37,6 @@ func TestListDefaultRepos(t *testing.T) {
 		return es
 	}
 
-	for _, tc := range tcs {
-		t.Run(tc.name, func(t *testing.T) {
-			db := dbtesting.GetDB(t)
-			ctx := context.Background()
-
-			es := createExternalService(ctx, db)
-
-			for _, r := range tc.repos {
-				if _, err := db.ExecContext(ctx, `INSERT INTO repo(id, name) VALUES ($1, $2)`, r.ID, r.Name); err != nil {
-					t.Fatal(err)
-				}
-				if _, err := db.ExecContext(ctx, `INSERT INTO default_repos(repo_id) VALUES ($1)`, r.ID); err != nil {
-					t.Fatal(err)
-				}
-				if _, err := db.ExecContext(ctx, `INSERT INTO external_service_repos(repo_id, external_service_id, clone_url) VALUES ($1, $2, 'example.com')`, r.ID, es.ID); err != nil {
-					t.Fatal(err)
-				}
-
-				if _, err := db.ExecContext(ctx, `INSERT INTO gitserver_repos(repo_id, clone_status, shard_id) VALUES ($1, $2, 'test');`, r.ID, types.CloneStatusCloned); err != nil {
-					t.Fatal(err)
-				}
-			}
-
-			repos, err := NewDefaultRepoLister(database.Repos(db)).List(ctx)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			sort.Sort(types.RepoNames(repos))
-			sort.Sort(types.RepoNames(tc.repos))
-			if diff := cmp.Diff(tc.repos, repos, cmpopts.EquateEmpty()); diff != "" {
-				t.Errorf("mismatch (-want +got):\n%s", diff)
-			}
-		})
-	}
-
 	t.Run("user-added repos", func(t *testing.T) {
 		db := dbtest.NewDB(t, "")
 		ctx := context.Background()
@@ -122,9 +53,8 @@ func TestListDefaultRepos(t *testing.T) {
 			INSERT INTO external_services(id, kind, display_name, config, namespace_user_id) VALUES (100, 'github', 'github', '{}', 1);
 			INSERT INTO external_service_repos(repo_id, external_service_id, clone_url, user_id) VALUES (10, 100, '', 1);
 
-			-- insert one repo referenced in the default repo table
-			INSERT INTO repo(id, name, stars) VALUES (11, 'github.com/foo/bar11', 4);
-			INSERT INTO default_repos(repo_id) VALUES(11);
+			-- insert one repo with more than 20 stars in the repo table
+			INSERT INTO repo(id, name, stars) VALUES (11, 'github.com/foo/bar11', 25);
 			INSERT INTO external_service_repos(repo_id, external_service_id, clone_url, user_id) VALUES (11, 1, '', NULL);
 
 			-- insert a repo only referenced by a cloud_default external service
@@ -146,18 +76,18 @@ func TestListDefaultRepos(t *testing.T) {
 		}
 
 		t.Run("List ALL repos", func(t *testing.T) {
-			repos, err := NewDefaultRepoLister(database.Repos(db)).List(ctx)
+			repos, err := NewIndexableReposLister(database.Repos(db)).List(ctx)
 			if err != nil {
 				t.Fatal(err)
 			}
 			want := []types.RepoName{
 				{
-					ID:   api.RepoID(10),
-					Name: "github.com/foo/bar10",
-				},
-				{
 					ID:   api.RepoID(11),
 					Name: "github.com/foo/bar11",
+				},
+				{
+					ID:   api.RepoID(10),
+					Name: "github.com/foo/bar10",
 				},
 				{
 					ID:   api.RepoID(14),
@@ -174,18 +104,18 @@ func TestListDefaultRepos(t *testing.T) {
 		})
 
 		t.Run("List only public default repos", func(t *testing.T) {
-			repos, err := NewDefaultRepoLister(database.Repos(db)).ListPublic(ctx)
+			repos, err := NewIndexableReposLister(database.Repos(db)).ListPublic(ctx)
 			if err != nil {
 				t.Fatal(err)
 			}
 			want := []types.RepoName{
 				{
-					ID:   api.RepoID(10),
-					Name: "github.com/foo/bar10",
-				},
-				{
 					ID:   api.RepoID(11),
 					Name: "github.com/foo/bar11",
+				},
+				{
+					ID:   api.RepoID(10),
+					Name: "github.com/foo/bar10",
 				},
 				{
 					ID:   api.RepoID(14),
@@ -199,7 +129,7 @@ func TestListDefaultRepos(t *testing.T) {
 	})
 }
 
-func BenchmarkDefaultRepos_List_Empty(b *testing.B) {
+func BenchmarkIndexableRepos_List_Empty(b *testing.B) {
 	db := dbtest.NewDB(b, "")
 
 	ctx := context.Background()
@@ -210,7 +140,7 @@ func BenchmarkDefaultRepos_List_Empty(b *testing.B) {
 	}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		_, err := NewDefaultRepoLister(database.Repos(db)).List(ctx)
+		_, err := NewIndexableReposLister(database.Repos(db)).List(ctx)
 		if err != nil {
 			b.Fatal(err)
 		}

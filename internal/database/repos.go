@@ -837,17 +837,17 @@ const userPublicReposQuery = `
 SELECT repo_id as id FROM user_public_repos WHERE user_id = %d
 `
 
-type ListDefaultReposOptions struct {
+type ListIndexableReposOptions struct {
 	// If true, will only include uncloned default repos
 	OnlyUncloned bool
 	// If true, we include user added private repos
 	IncludePrivate bool
 }
 
-// ListDefaultRepos returns a list of default repos. Default repos are a union of
-// repos in our default_repos table and repos owned by users.
-func (s *RepoStore) ListDefaultRepos(ctx context.Context, opts ListDefaultReposOptions) (results []types.RepoName, err error) {
-	tr, ctx := trace.New(ctx, "repos.ListDefaultRepos", "")
+// ListIndexableRepos returns a list of repos to be indexed for search on sourcegraph.com.
+// This includes all repos with >= 20 stars as well as user added repos.
+func (s *RepoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableReposOptions) (results []types.RepoName, err error) {
+	tr, ctx := trace.New(ctx, "repos.ListIndexable", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -875,7 +875,7 @@ func (s *RepoStore) ListDefaultRepos(ctx context.Context, opts ListDefaultReposO
 	}
 
 	q := sqlf.Sprintf(
-		listDefaultReposQuery,
+		listIndexableReposQuery,
 		sqlf.Join(joins, "\n"),
 		sqlf.Join(where, "\nAND "),
 	)
@@ -900,10 +900,11 @@ func (s *RepoStore) ListDefaultRepos(ctx context.Context, opts ListDefaultReposO
 	return results, nil
 }
 
-const listDefaultReposQuery = `
+const listIndexableReposQuery = `
 WITH s AS (
-	SELECT repo_id
-	FROM default_repos
+	SELECT id as repo_id
+	FROM repo
+	WHERE stars >= 20
 
 	UNION ALL
 
