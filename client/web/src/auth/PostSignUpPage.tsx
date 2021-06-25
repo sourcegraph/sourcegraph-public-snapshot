@@ -1,29 +1,26 @@
-import * as H from 'history'
 import React, { FunctionComponent, useState } from 'react'
-// import { Redirect } from 'react-router-dom'
+import { Redirect } from 'react-router-dom'
 
 import { Steps, Step } from '@sourcegraph/wildcard/src/components/Steps'
 
 import { AuthenticatedUser } from '../auth'
+import { codeHostExternalServices } from '../components/externalServices/externalServices'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
+import { UserAreaUserFields } from '../graphql-operations'
 import { SourcegraphContext } from '../jscontext'
+import { UserAddCodeHostsPage } from '../user/settings/codeHosts/UserAddCodeHostsPage'
 
 // import { getReturnTo } from './SignInSignUpCommon'
 
 interface Props {
-    authenticatedUser?: AuthenticatedUser | null
-    context: Pick<SourcegraphContext, 'allowSignup' | 'sourcegraphDotComMode' | 'experimentalFeatures'>
-    location: H.Location
+    authenticatedUser: AuthenticatedUser
+    context: Pick<SourcegraphContext, 'authProviders'>
+    user: UserAreaUserFields
+    routingPrefix: string
 }
 
-// old props
-// {   authenticatedUser,
-//     location,
-//     context: { sourcegraphDotComMode, experimentalFeatures },
-// }
-
-export const PostSignUpPage: FunctionComponent<Props> = () => {
+export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser, routingPrefix, context }) => {
     // post sign-up flow is available only for .com and only in two cases, user:
     // 1. is authenticated and has AllowUserViewPostSignup tag
     // 2. is authenticated and enablePostSignupFlow experimental feature is ON
@@ -35,11 +32,25 @@ export const PostSignUpPage: FunctionComponent<Props> = () => {
 
     const connectCodeHosts = (
         <>
-            <h3>Connect with code hosts</h3>
-            <p className="text-muted">
-                Connect with providers where your source code is hosted. Then, choose the repositories you’d like to
-                search with Sourcegraph.
-            </p>
+            <div className="mb-4">
+                <h3>Connect with code hosts</h3>
+                <p className="text-muted">
+                    Connect with providers where your source code is hosted. Then, choose the repositories you’d like to
+                    search with Sourcegraph.
+                </p>
+            </div>
+
+            <UserAddCodeHostsPage
+                user={{ id: authenticatedUser.id, tags: authenticatedUser.tags }}
+                context={context}
+                routingPrefix={routingPrefix}
+                codeHostExternalServices={{
+                    github: codeHostExternalServices.github,
+                    gitlabcom: codeHostExternalServices.gitlabcom,
+                }}
+                showHeader={false}
+                onUserExternalServicesOrRepositoriesUpdate={() => {}}
+            />
         </>
     )
     const addRepositories = (
@@ -75,22 +86,28 @@ export const PostSignUpPage: FunctionComponent<Props> = () => {
                         <p className="text-muted">
                             Three quick steps to add your repositories and get searching with Sourcegraph
                         </p>
-
-                        <div className="pt-3 pb-4">
+                        <div className="mt-3 pb-3">
                             <Steps current={currentStep} numbered={true}>
                                 <Step title="Connect with code hosts" borderColor="purple" />
                                 <Step title="Add repositories" borderColor="blue" />
                                 <Step title="Start searching" borderColor="orange" />
                             </Steps>
                         </div>
-
-                        <div className="pt-2">{steps[currentStep - 1]}</div>
-
-                        <button type="button" onClick={() => setCurrentStep(currentStep - 1)}>
-                            prev
+                        <div className="mt-4">{steps[currentStep - 1]}</div>
+                        <br />
+                        <button
+                            type="button"
+                            disabled={currentStep === 1}
+                            onClick={() => setCurrentStep(currentStep - 1)}
+                        >
+                            previous
                         </button>
-
-                        <button type="button" onClick={() => setCurrentStep(currentStep + 1)}>
+                        &nbsp;
+                        <button
+                            type="button"
+                            disabled={currentStep === steps.length}
+                            onClick={() => setCurrentStep(currentStep + 1)}
+                        >
                             next
                         </button>
                     </div>
