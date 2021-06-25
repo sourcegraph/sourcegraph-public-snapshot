@@ -185,7 +185,7 @@ export const personFields = gql`
     }
 `
 
-export const Greeting: React.FunctionComponent<{ person: PersionFields }> = ({ person }) =>
+export const Greeting: React.FunctionComponent<{ person: PersonFields }> = ({ person }) =>
     <div>Hello, {person.name}!</div>
 ```
 
