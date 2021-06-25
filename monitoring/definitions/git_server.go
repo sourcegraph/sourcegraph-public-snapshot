@@ -182,7 +182,7 @@ func GitServer() *monitoring.Container {
 					{
 						{
 							Name:        "running_git_commands",
-							Description: "git commands sent to each gitserver instance",
+							Description: "git commands running on each gitserver instance",
 							Query:       "sum by (instance, cmd) (src_gitserver_exec_running{instance=~\"${shard:regex}\"})",
 							Warning:     monitoring.Alert().GreaterOrEqual(50, nil).For(2 * time.Minute),
 							Critical:    monitoring.Alert().GreaterOrEqual(100, nil).For(5 * time.Minute),
@@ -198,6 +198,17 @@ func GitServer() *monitoring.Container {
 								- **Single container deployments:** Consider upgrading to a [Docker Compose deployment](../install/docker-compose/migrate.md) which offers better scalability and resource isolation.
 								- **Kubernetes and Docker Compose:** Check that you are running a similar number of git server replicas and that their CPU/memory limits are allocated according to what is shown in the [Sourcegraph resource estimator](../install/resource_estimator.md).
 							`,
+						},
+						{
+							Name:           "git_commands_received",
+							Description:    "rate of git commands received across all instances",
+							Query:          "sum by (cmd) (rate(src_gitserver_exec_duration_seconds_count[5m]))",
+							NoAlert:        true,
+							Interpretation: "per second rate per command across all instances",
+							Panel: monitoring.Panel().LegendFormat("{{cmd}}").With(func(o monitoring.Observable, p *sdk.Panel) {
+								p.GraphPanel.Legend.RightSide = true
+							}),
+							Owner: monitoring.ObservableOwnerCoreApplication,
 						},
 					}, {
 						{
