@@ -42,7 +42,7 @@ func Search(ctx context.Context, args *search.TextParameters, limit int, stream 
 		results, stats, err := MockSearchSymbols(ctx, args, limit)
 		stream.Send(streaming.SearchEvent{
 			Results: results,
-			Stats:   statsDeref(stats),
+			Stats:   stats.Deref(),
 		})
 		return err
 	}
@@ -368,11 +368,4 @@ func limitOrDefault(first *int32) int {
 		return DefaultSymbolLimit
 	}
 	return int(*first)
-}
-
-func statsDeref(s *streaming.Stats) streaming.Stats {
-	if s == nil {
-		return streaming.Stats{}
-	}
-	return *s
 }

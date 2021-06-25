@@ -5,7 +5,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -73,11 +72,4 @@ type SearchCursor struct {
 	// Finished tells if there are more results for the query or if we've
 	// consumed them all.
 	Finished bool
-}
-
-func statsDeref(s *streaming.Stats) streaming.Stats {
-	if s == nil {
-		return streaming.Stats{}
-	}
-	return *s
 }
