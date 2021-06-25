@@ -3,13 +3,8 @@ import { fireEvent, render, RenderResult, act } from '@testing-library/react'
 import React from 'react'
 import { MemoryRouter } from 'react-router'
 
-import { UserAreaUserFields, UpdateUserDocument } from '../../../graphql-operations'
-
+import { UPDATE_USER } from './EditUserProfileForm'
 import { UserSettingsProfilePage } from './UserSettingsProfilePage'
-
-jest.mock('../../../tracking/eventLogger', () => ({
-    eventLogger: { log: () => undefined, logViewEvent: () => undefined },
-}))
 
 const mockUser = {
     id: 'x',
@@ -18,7 +13,7 @@ const mockUser = {
     avatarURL: 'https://example.com/image.jpg',
     viewerCanChangeUsername: true,
     createdAt: new Date().toISOString(),
-} as UserAreaUserFields
+}
 
 const newUserValues = {
     username: 'new-username',
@@ -29,7 +24,7 @@ const newUserValues = {
 const mocks: readonly MockedResponse[] = [
     {
         request: {
-            query: UpdateUserDocument,
+            query: UPDATE_USER,
             variables: {
                 user: 'x',
                 ...newUserValues,

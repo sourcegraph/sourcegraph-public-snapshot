@@ -6,6 +6,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { Container } from '@sourcegraph/wildcard'
 
+import { refreshAuthenticatedUser } from '../../../auth'
 import { UpdateUserResult, UpdateUserVariables } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 
@@ -35,8 +36,17 @@ export const EditUserProfileForm: React.FunctionComponent<Props> = ({ user, init
     const history = useHistory()
     const [updateUser, { data, loading, error }] = useMutation<UpdateUserResult, UpdateUserVariables>(UPDATE_USER, {
         onCompleted: ({ updateUser }) => {
+            eventLogger.log('UserProfileUpdated')
             history.replace(`/users/${updateUser.username}/settings/profile`)
+
+            // In case the edited user is the current user, immediately reflect the changes in the
+            // UI.
+            // TODO: Migrate this to use the Apollo cache
+            refreshAuthenticatedUser()
+                .toPromise()
+                .finally(() => {})
         },
+        onError: () => eventLogger.log('UpdateUserFailed'),
     })
 
     const [userFields, setUserFields] = useState<UserProfileFormFieldsValue>(initialValue)
