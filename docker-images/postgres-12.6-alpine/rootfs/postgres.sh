@@ -8,7 +8,7 @@ cd /var/lib/postgresql
 # of the parent volume directory to be owned entirely by the postgres user.
 if [ "$(id -u)" = '0' ]; then
   mkdir -p "$PGDATA"
-  chown -R postgres "$(dirname "$PGDATA")"
+  chown -R postgres:postgres "$(dirname "$PGDATA")"
   chmod 700 "$(dirname "$PGDATA")" "$PGDATA"
   exec gosu postgres "${BASH_SOURCE[0]}" "$@"
 fi
