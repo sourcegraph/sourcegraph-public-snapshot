@@ -3,7 +3,7 @@ FROM postgres:12.6-alpine@sha256:faf54a67a58ecf4d21e3e68b9a3b33f81a11e8a78653004
 RUN apk add --no-cache nss su-exec &&\
     mkdir -p /data/pgdata-12 && chown -R postgres:postgres /data
 
-ENV POSTGRES_PASSWORD=sg \
+ENV POSTGRES_PASSWORD='' \
     POSTGRES_USER=sg \
     POSTGRES_DB=sg \
     PGDATA=/data/pgdata-12
