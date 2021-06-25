@@ -5,8 +5,8 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { InsightsApiContext } from '../../../core/backend/api-provider'
-import { InsightTypePrefix } from '../../../core/types'
 import { removeInsightFromSettings } from '../../../core/settings-action/insights'
+import { InsightTypePrefix } from '../../../core/types'
 
 export interface UseDeleteInsightProps extends SettingsCascadeProps, PlatformContextProps<'updateSettings'> {}
 
