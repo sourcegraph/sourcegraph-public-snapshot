@@ -24,16 +24,11 @@ svg.icon-inline,
 div.icon-inline,
 img.icon-inline,
 .icon-inline svg {
-    width: $icon-inline-size;
-    height: $icon-inline-size;
+    width: $icon-inline-redesign-size;
+    height: $icon-inline-redesign-size;
     // Match color of the text
     fill: currentColor;
-
-    :where(.theme-redesign) & {
-        width: $icon-inline-redesign-size;
-        height: $icon-inline-redesign-size;
-        vertical-align: text-bottom;
-    }
+    vertical-align: text-bottom;
 }
 
 .icon-inline-md {
