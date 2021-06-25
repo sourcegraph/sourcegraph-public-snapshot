@@ -1,7 +1,11 @@
 FROM postgres:12.6-alpine@sha256:faf54a67a58ecf4d21e3e68b9a3b33f81a11e8a786530044c4ee80d51b148e05
 
-RUN apk add --no-cache nss su-exec &&\
-    mkdir -p /data/pgdata-12 && chown -R postgres:postgres /data
+RUN apk add --no-cache nss su-exec shadow &&\
+    usermod -u 999 postgres &&\
+    groupmod -g 999 postgres &&\
+    mkdir -p /data/pgdata-12 && chown -R postgres:postgres /data &&\
+    chown -R /var/lib/postgresql &&\
+    chown -R /var/run/postgresql
 
 ENV POSTGRES_PASSWORD='' \
     POSTGRES_USER=sg \
