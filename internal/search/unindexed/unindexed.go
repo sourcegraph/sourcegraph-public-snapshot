@@ -174,7 +174,7 @@ func SearchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 		matches, mockStats, err := MockSearchFilesInRepos(args)
 		stream.Send(streaming.SearchEvent{
 			Results: matches,
-			Stats:   statsDeref(mockStats),
+			Stats:   mockStats.Deref(),
 		})
 		return err
 	}
