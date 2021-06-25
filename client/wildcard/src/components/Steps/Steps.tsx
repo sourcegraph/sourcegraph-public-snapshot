@@ -17,7 +17,6 @@ export interface StepProps {
 export interface StepsProps {
     current: number
     numbered?: boolean
-    // onChange: (current: number) => void
     children: React.ReactElement<StepProps> | React.ReactElement<StepProps>[]
 }
 
@@ -60,21 +59,4 @@ export const Steps: React.FunctionComponent<StepsProps> = ({ children, numbered,
             {numbered ? <ol>{element}</ol> : <ul>{element}</ul>}
         </nav>
     )
-}
-// A11y inspiration
-{
-    /* <nav aria-label="progress">
-  <ul class="progress-tracker progress-tracker--text progress-tracker--center">
-    <li class="progress-step is-complete">
-      ...
-    </li>
-    <li class="progress-step is-complete">
-      ...
-    </li>
-    <li class="progress-step is-active" aria-current="true">
-      ...
-    </li>
-    ...
-  </ul>
-</nav> */
 }
