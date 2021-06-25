@@ -17,11 +17,6 @@ type capabilities struct {
 }
 
 func detectCapabilities() (capabilities, error) {
-	// There's a pretty obvious flaw here in that we only check the terminal
-	// size once. We may want to consider adding a background goroutine that
-	// updates the capabilities struct every second or two, or at least listen
-	// for SIGWINCH on platforms that support it.
-
 	atty := isatty.IsTerminal(os.Stdout.Fd())
 	w, h := 80, 25
 	var err error

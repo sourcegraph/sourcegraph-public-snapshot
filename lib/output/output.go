@@ -93,6 +93,8 @@ func NewOutput(w io.Writer, opts OutputOpts) *Output {
 		block.Close()
 	}
 
+	// Set up a watcher so we can adjust the size of the output if the terminal
+	// is resized.
 	if c := newCapabilityWatcher(); c != nil {
 		go func() {
 			for {

@@ -1,6 +1,8 @@
 package output
 
 import (
+	"time"
+
 	"github.com/hashicorp/go-multierror"
 	"golang.org/x/sys/windows"
 )
@@ -17,6 +19,28 @@ func init() {
 		}
 
 		return errs.ErrorOrNil()
+	}
+
+	// Windows doesn't have a particularly good way of notifying console
+	// applications that a resize has occurred. (Historically, you could hook
+	// the console window, but it turns out that's a security nightmare.) So
+	// we'll just poll every five seconds and update the capabilities from
+	// there.
+	newCapabilityWatcher = func() chan capabilities {
+		c := make(chan capabilities)
+
+		go func() {
+			ticker := time.NewTicker(5 * time.Second)
+			defer ticker.Stop()
+			for {
+				<-ticker.C
+				if caps, err := detectCapabilities(); err == nil {
+					c <- caps
+				}
+			}
+		}()
+
+		return c
 	}
 }
 
