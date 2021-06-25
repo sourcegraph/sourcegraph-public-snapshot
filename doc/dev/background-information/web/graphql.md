@@ -20,7 +20,7 @@ Using a `useQuery` hook, we can easily fire a request and handle the response co
 
 ```ts
 // ./MyComponent.tsx
-import { useQuery } from '@apollo/client'
+import { useQuery, gql } from '@sourcegraph/shared/src/graphql/graphql'
 
 import { UserDisplayNameResult, UserDisplayNameVariables } from '../../graphql-operations'
 
@@ -54,7 +54,7 @@ Equally, it is possible to create our own wrapper hooks, when we want to modify 
 
 ```ts
 const useFullName = (variables: UserDisplayNameVariables): ApolloQueryResult<{ fullName: string }> => {
-    const response = useQuery<UserDisplayNameResult, UserDisplayNameVariables>({ variables })
+    const response = useQuery<UserDisplayNameResult, UserDisplayNameVariables>(USER_DISPLAY_NAME, { variables })
 
     if (response.error) {
         // Handle error
@@ -101,12 +101,14 @@ Apollo lets us easily mock queries in our tests without having to actually mock 
 import { MockedProvider } from '@apollo/client/testing'
 import { render } from '@testing-library/react'
 
+import { getDocumentNode } from '@sourcegraph/shared/src/graphql/graphql'
+
 import { MyComponent, USER_DISPLAY_NAME } from './MyComponent'
 
 const mocks = [
     {
         request: {
-            query: USER_DISPLAY_NAME,
+            query: getDocumentNode(USER_DISPLAY_NAME),
             variables: {
                 username: 'mock_username',
             },
@@ -137,6 +139,8 @@ describe('My Test', () => {
 Most queries should be requested in the context of our UI and should use hooks. If there is a scenario where this is not possible, it is still possible to realise the benefits of Apollo without relying this approach. We can imperatively trigger any query using `client.query`.
 
 ```ts
+import { getDocumentNode } from '@sourcegraph/shared/src/graphql/graphql'
+
 import { client } from './backend/graphql'
 import {
     UserDisplayNameResult,
@@ -145,7 +149,7 @@ import {
 
 const getUserDisplayName = async (username: string): Promise<UserDisplayNameResult> => {
     const { data, error } = await client.query<UserDisplayNameResult, UserDisplayNameVariables>({
-        query: UserDisplayName,
+        query: getDocumentNode(UserDisplayName),
         variables: { username },
     })
 

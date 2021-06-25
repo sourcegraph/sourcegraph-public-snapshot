@@ -1,8 +1,8 @@
-import { gql, useMutation } from '@apollo/client'
 import React, { useCallback, useState } from 'react'
 import { useHistory } from 'react-router'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
+import { gql, useMutation } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { Container } from '@sourcegraph/wildcard'
 
