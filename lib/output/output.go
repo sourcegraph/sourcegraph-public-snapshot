@@ -97,8 +97,7 @@ func NewOutput(w io.Writer, opts OutputOpts) *Output {
 	// is resized.
 	if c := newCapabilityWatcher(); c != nil {
 		go func() {
-			for {
-				caps := <-c
+			for caps := range c {
 				o.caps = overrideCapabilitiesFromOptions(caps, o.opts)
 			}
 		}()
