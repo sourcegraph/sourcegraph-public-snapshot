@@ -4,10 +4,7 @@ package output
 import (
 	"fmt"
 	"io"
-	"os"
-	"os/signal"
 	"sync"
-	"syscall"
 
 	"github.com/mattn/go-runewidth"
 )
@@ -104,19 +101,6 @@ func NewOutput(w io.Writer, opts OutputOpts) *Output {
 			}
 		}()
 	}
-
-	go func() {
-		c := make(chan os.Signal, 1)
-		signal.Notify(c, syscall.SIGWINCH)
-		for {
-			<-c
-			os.Stderr.WriteString("WINCH\n")
-			caps, err := detectCapabilities()
-			if err == nil {
-				o.caps = caps
-			}
-		}
-	}()
 
 	return o
 }
