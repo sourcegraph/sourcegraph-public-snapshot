@@ -73,7 +73,7 @@ func (s *Store) scanFirstDocumentationPageData(rows *sql.Rows, queryErr error) (
 
 // DocumentationPathInfo returns info describing what is at the given pathID.
 func (s *Store) DocumentationPathInfo(ctx context.Context, bundleID int, pathID string) (_ *semantic.DocumentationPathInfoData, err error) {
-	ctx, _, endObservation := s.operations.documentationPage.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.documentationPathInfo.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.String("pathID", pathID),
 	}})
