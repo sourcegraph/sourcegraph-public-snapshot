@@ -1753,6 +1753,10 @@ type MockLSIFStore struct {
 	// WriteDocumentationPagesFunc is an instance of a mock function object
 	// controlling the behavior of the method WriteDocumentationPages.
 	WriteDocumentationPagesFunc *LSIFStoreWriteDocumentationPagesFunc
+	// WriteDocumentationPathInfoFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// WriteDocumentationPathInfo.
+	WriteDocumentationPathInfoFunc *LSIFStoreWriteDocumentationPathInfoFunc
 	// WriteDocumentsFunc is an instance of a mock function object
 	// controlling the behavior of the method WriteDocuments.
 	WriteDocumentsFunc *LSIFStoreWriteDocumentsFunc
@@ -1788,6 +1792,11 @@ func NewMockLSIFStore() *MockLSIFStore {
 		},
 		WriteDocumentationPagesFunc: &LSIFStoreWriteDocumentationPagesFunc{
 			defaultHook: func(context.Context, int, chan *semantic.DocumentationPageData) error {
+				return nil
+			},
+		},
+		WriteDocumentationPathInfoFunc: &LSIFStoreWriteDocumentationPathInfoFunc{
+			defaultHook: func(context.Context, int, chan *semantic.DocumentationPathInfoData) error {
 				return nil
 			},
 		},
@@ -1829,6 +1838,9 @@ func NewMockLSIFStoreFrom(i LSIFStore) *MockLSIFStore {
 		},
 		WriteDocumentationPagesFunc: &LSIFStoreWriteDocumentationPagesFunc{
 			defaultHook: i.WriteDocumentationPages,
+		},
+		WriteDocumentationPathInfoFunc: &LSIFStoreWriteDocumentationPathInfoFunc{
+			defaultHook: i.WriteDocumentationPathInfo,
 		},
 		WriteDocumentsFunc: &LSIFStoreWriteDocumentsFunc{
 			defaultHook: i.WriteDocuments,
@@ -2270,6 +2282,118 @@ func (c LSIFStoreWriteDocumentationPagesFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c LSIFStoreWriteDocumentationPagesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// LSIFStoreWriteDocumentationPathInfoFunc describes the behavior when the
+// WriteDocumentationPathInfo method of the parent MockLSIFStore instance is
+// invoked.
+type LSIFStoreWriteDocumentationPathInfoFunc struct {
+	defaultHook func(context.Context, int, chan *semantic.DocumentationPathInfoData) error
+	hooks       []func(context.Context, int, chan *semantic.DocumentationPathInfoData) error
+	history     []LSIFStoreWriteDocumentationPathInfoFuncCall
+	mutex       sync.Mutex
+}
+
+// WriteDocumentationPathInfo delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockLSIFStore) WriteDocumentationPathInfo(v0 context.Context, v1 int, v2 chan *semantic.DocumentationPathInfoData) error {
+	r0 := m.WriteDocumentationPathInfoFunc.nextHook()(v0, v1, v2)
+	m.WriteDocumentationPathInfoFunc.appendCall(LSIFStoreWriteDocumentationPathInfoFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// WriteDocumentationPathInfo method of the parent MockLSIFStore instance is
+// invoked and the hook queue is empty.
+func (f *LSIFStoreWriteDocumentationPathInfoFunc) SetDefaultHook(hook func(context.Context, int, chan *semantic.DocumentationPathInfoData) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// WriteDocumentationPathInfo method of the parent MockLSIFStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *LSIFStoreWriteDocumentationPathInfoFunc) PushHook(hook func(context.Context, int, chan *semantic.DocumentationPathInfoData) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *LSIFStoreWriteDocumentationPathInfoFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int, chan *semantic.DocumentationPathInfoData) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *LSIFStoreWriteDocumentationPathInfoFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int, chan *semantic.DocumentationPathInfoData) error {
+		return r0
+	})
+}
+
+func (f *LSIFStoreWriteDocumentationPathInfoFunc) nextHook() func(context.Context, int, chan *semantic.DocumentationPathInfoData) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *LSIFStoreWriteDocumentationPathInfoFunc) appendCall(r0 LSIFStoreWriteDocumentationPathInfoFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of LSIFStoreWriteDocumentationPathInfoFuncCall
+// objects describing the invocations of this function.
+func (f *LSIFStoreWriteDocumentationPathInfoFunc) History() []LSIFStoreWriteDocumentationPathInfoFuncCall {
+	f.mutex.Lock()
+	history := make([]LSIFStoreWriteDocumentationPathInfoFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// LSIFStoreWriteDocumentationPathInfoFuncCall is an object that describes
+// an invocation of method WriteDocumentationPathInfo on an instance of
+// MockLSIFStore.
+type LSIFStoreWriteDocumentationPathInfoFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 chan *semantic.DocumentationPathInfoData
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c LSIFStoreWriteDocumentationPathInfoFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c LSIFStoreWriteDocumentationPathInfoFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

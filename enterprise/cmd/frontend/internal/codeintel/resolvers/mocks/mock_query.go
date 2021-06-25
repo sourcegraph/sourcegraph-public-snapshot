@@ -25,6 +25,9 @@ type MockQueryResolver struct {
 	// DocumentationPageFunc is an instance of a mock function object
 	// controlling the behavior of the method DocumentationPage.
 	DocumentationPageFunc *QueryResolverDocumentationPageFunc
+	// DocumentationPathInfoFunc is an instance of a mock function object
+	// controlling the behavior of the method DocumentationPathInfo.
+	DocumentationPathInfoFunc *QueryResolverDocumentationPathInfoFunc
 	// HoverFunc is an instance of a mock function object controlling the
 	// behavior of the method Hover.
 	HoverFunc *QueryResolverHoverFunc
@@ -52,6 +55,11 @@ func NewMockQueryResolver() *MockQueryResolver {
 		},
 		DocumentationPageFunc: &QueryResolverDocumentationPageFunc{
 			defaultHook: func(context.Context, string) (*semantic.DocumentationPageData, error) {
+				return nil, nil
+			},
+		},
+		DocumentationPathInfoFunc: &QueryResolverDocumentationPathInfoFunc{
+			defaultHook: func(context.Context, string) (*semantic.DocumentationPathInfoData, error) {
 				return nil, nil
 			},
 		},
@@ -86,6 +94,9 @@ func NewMockQueryResolverFrom(i resolvers.QueryResolver) *MockQueryResolver {
 		},
 		DocumentationPageFunc: &QueryResolverDocumentationPageFunc{
 			defaultHook: i.DocumentationPage,
+		},
+		DocumentationPathInfoFunc: &QueryResolverDocumentationPathInfoFunc{
+			defaultHook: i.DocumentationPathInfo,
 		},
 		HoverFunc: &QueryResolverHoverFunc{
 			defaultHook: i.Hover,
@@ -431,6 +442,118 @@ func (c QueryResolverDocumentationPageFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c QueryResolverDocumentationPageFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// QueryResolverDocumentationPathInfoFunc describes the behavior when the
+// DocumentationPathInfo method of the parent MockQueryResolver instance is
+// invoked.
+type QueryResolverDocumentationPathInfoFunc struct {
+	defaultHook func(context.Context, string) (*semantic.DocumentationPathInfoData, error)
+	hooks       []func(context.Context, string) (*semantic.DocumentationPathInfoData, error)
+	history     []QueryResolverDocumentationPathInfoFuncCall
+	mutex       sync.Mutex
+}
+
+// DocumentationPathInfo delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockQueryResolver) DocumentationPathInfo(v0 context.Context, v1 string) (*semantic.DocumentationPathInfoData, error) {
+	r0, r1 := m.DocumentationPathInfoFunc.nextHook()(v0, v1)
+	m.DocumentationPathInfoFunc.appendCall(QueryResolverDocumentationPathInfoFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// DocumentationPathInfo method of the parent MockQueryResolver instance is
+// invoked and the hook queue is empty.
+func (f *QueryResolverDocumentationPathInfoFunc) SetDefaultHook(hook func(context.Context, string) (*semantic.DocumentationPathInfoData, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DocumentationPathInfo method of the parent MockQueryResolver instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *QueryResolverDocumentationPathInfoFunc) PushHook(hook func(context.Context, string) (*semantic.DocumentationPathInfoData, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *QueryResolverDocumentationPathInfoFunc) SetDefaultReturn(r0 *semantic.DocumentationPathInfoData, r1 error) {
+	f.SetDefaultHook(func(context.Context, string) (*semantic.DocumentationPathInfoData, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *QueryResolverDocumentationPathInfoFunc) PushReturn(r0 *semantic.DocumentationPathInfoData, r1 error) {
+	f.PushHook(func(context.Context, string) (*semantic.DocumentationPathInfoData, error) {
+		return r0, r1
+	})
+}
+
+func (f *QueryResolverDocumentationPathInfoFunc) nextHook() func(context.Context, string) (*semantic.DocumentationPathInfoData, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *QueryResolverDocumentationPathInfoFunc) appendCall(r0 QueryResolverDocumentationPathInfoFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of QueryResolverDocumentationPathInfoFuncCall
+// objects describing the invocations of this function.
+func (f *QueryResolverDocumentationPathInfoFunc) History() []QueryResolverDocumentationPathInfoFuncCall {
+	f.mutex.Lock()
+	history := make([]QueryResolverDocumentationPathInfoFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// QueryResolverDocumentationPathInfoFuncCall is an object that describes an
+// invocation of method DocumentationPathInfo on an instance of
+// MockQueryResolver.
+type QueryResolverDocumentationPathInfoFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *semantic.DocumentationPathInfoData
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c QueryResolverDocumentationPathInfoFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c QueryResolverDocumentationPathInfoFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

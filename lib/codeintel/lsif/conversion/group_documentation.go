@@ -13,11 +13,13 @@ import (
 // TODO(slimsag): future: today we do not consume state.DocumentationResultsByResultSet which will
 // become important for e.g. letting one documentationResult link to another.
 
-func collectDocumentationPages(ctx context.Context, state *State) chan *semantic.DocumentationPageData {
-	ch := make(chan *semantic.DocumentationPageData)
+func collectDocumentationPages(ctx context.Context, state *State) (chan *semantic.DocumentationPageData, chan *semantic.DocumentationPathInfoData) {
+	pages := make(chan *semantic.DocumentationPageData, 1024)
+	pathInfo := make(chan *semantic.DocumentationPathInfoData, 1024)
 	if state.DocumentationResultRoot == -1 {
-		close(ch)
-		return ch
+		close(pages)
+		close(pathInfo)
+		return pages, pathInfo
 	}
 
 	pageCollector := &pageCollector{
@@ -29,11 +31,38 @@ func collectDocumentationPages(ctx context.Context, state *State) chan *semantic
 		dupChecker:                  &duplicateChecker{pathIDs: make(map[string]struct{}, 16*1024)},
 		walkedPages:                 &duplicateChecker{pathIDs: make(map[string]struct{}, 128)},
 	}
-	if state.DocumentationResultRoot != -1 {
-		pageCollector.startingDocumentationResult = state.DocumentationResultRoot
-		go pageCollector.collect(ctx, ch)
-	}
-	return ch
+
+	tmpPages := make(chan *semantic.DocumentationPageData)
+	go pageCollector.collect(ctx, tmpPages)
+
+	go func() {
+		// Emit path info for each page as a post-processing step once we've collected pages.
+		for page := range tmpPages {
+			var collectChildrenPages func(node *semantic.DocumentationNode) []string
+			collectChildrenPages = func(node *semantic.DocumentationNode) []string {
+				var children []string
+				for _, child := range node.Children {
+					if child.PathID != "" {
+						children = append(children, child.PathID)
+					} else if child.Node != nil {
+						children = append(children, collectChildrenPages(child.Node)...)
+					}
+				}
+				return children
+			}
+			isIndex := page.Tree.Label.Value == "" && page.Tree.Detail.Value == ""
+
+			pages <- page
+			pathInfo <- &semantic.DocumentationPathInfoData{
+				PathID:   page.Tree.PathID,
+				IsIndex:  isIndex,
+				Children: collectChildrenPages(page.Tree),
+			}
+		}
+		close(pages)
+		close(pathInfo)
+	}()
+	return pages, pathInfo
 }
 
 type duplicateChecker struct {
@@ -73,6 +102,7 @@ type pageCollector struct {
 }
 
 func (p *pageCollector) collect(ctx context.Context, ch chan<- *semantic.DocumentationPageData) (remainingPages []*pageCollector) {
+	var remainingPagesMu sync.RWMutex
 	var walk func(parent *semantic.DocumentationNode, documentationResult int, pathID string)
 	walk = func(parent *semantic.DocumentationNode, documentationResult int, pathID string) {
 		labelID := p.state.DocumentationStringLabel[documentationResult]
@@ -107,6 +137,7 @@ func (p *pageCollector) collect(ctx context.Context, ch chan<- *semantic.Documen
 					PathID: this.PathID,
 				})
 				if p.walkedPages.add(this.PathID) {
+					remainingPagesMu.Lock()
 					remainingPages = append(remainingPages, &pageCollector{
 						isChildPage:                 true,
 						parentPathID:                parent.PathID,
@@ -115,6 +146,7 @@ func (p *pageCollector) collect(ctx context.Context, ch chan<- *semantic.Documen
 						dupChecker:                  p.dupChecker,
 						walkedPages:                 p.walkedPages,
 					})
+					remainingPagesMu.Unlock()
 				}
 				return
 			} else {
@@ -140,21 +172,22 @@ func (p *pageCollector) collect(ctx context.Context, ch chan<- *semantic.Documen
 	}
 	walk(nil, p.startingDocumentationResult, p.parentPathID)
 	if p.isChildPage {
+		remainingPagesMu.RLock()
+		defer remainingPagesMu.RUnlock()
 		return remainingPages
 	}
 
 	// We are the root project page! Collect all the remaining pages.
-	var (
-		remainingPagesMu sync.RWMutex
-		wg               = &sync.WaitGroup{}
-	)
+	wg := &sync.WaitGroup{}
+	remainingPagesMu.RLock()
 	wg.Add(len(remainingPages))
+	remainingPagesMu.RUnlock()
 	for i := 0; i <= p.numWorkers; i++ {
 		go func() {
 			for {
 				// Get a remaining page to process.
 				remainingPagesMu.Lock()
-				if len(remainingPages) == 0 {
+				if len(remainingPages) == 0 { // HERE
 					remainingPagesMu.Unlock()
 					return // no more work
 				}
