@@ -863,6 +863,11 @@ type InsightSeries struct {
 	// Webhook description: (not yet supported) Fetch data from a webhook URL.
 	Webhook string `json:"webhook,omitempty"`
 }
+type InsightsDashboard struct {
+	Id          string   `json:"id"`
+	Title       string   `json:"title"`
+	InsightsIds []string `json:"insightsIds"`
+}
 
 // Log description: Configuration for logging and alerting, including to external services.
 type Log struct {
@@ -1262,10 +1267,11 @@ type Settings struct {
 	// ExtensionsActiveLoggers description: The Sourcegraph extensions, by ID (e.g. `my/extension`), whose logs should be visible in the console.
 	ExtensionsActiveLoggers []string `json:"extensions.activeLoggers,omitempty"`
 	// Insights description: EXPERIMENTAL: Code Insights
-	Insights                            []*Insight `json:"insights,omitempty"`
-	InsightsDisplayLocationDirectory    *bool      `json:"insights.displayLocation.directory,omitempty"`
-	InsightsDisplayLocationHomepage     *bool      `json:"insights.displayLocation.homepage,omitempty"`
-	InsightsDisplayLocationInsightsPage *bool      `json:"insights.displayLocation.insightsPage,omitempty"`
+	Insights                            []*Insight                    `json:"insights,omitempty"`
+	InsightsDisplayLocationDirectory    *bool                         `json:"insights.displayLocation.directory,omitempty"`
+	InsightsDisplayLocationHomepage     *bool                         `json:"insights.displayLocation.homepage,omitempty"`
+	InsightsDisplayLocationInsightsPage *bool                         `json:"insights.displayLocation.insightsPage,omitempty"`
+	InsightsDashboards                  map[string]*InsightsDashboard `json:"insights.dashboards,omitempty"`
 	// Motd description: DEPRECATED: Use `notices` instead.
 	//
 	// An array (often with just one element) of messages to display at the top of all pages, including for unauthenticated users. Users may dismiss a message (and any message with the same string value will remain dismissed for the user).
