@@ -20,8 +20,8 @@ require (
 	github.com/klauspost/pgzip v1.2.5
 	github.com/mattn/go-isatty v0.0.12
 	github.com/mattn/go-runewidth v0.0.12
-	github.com/nsf/termbox-go v0.0.0-20200418040025-38ba6e5628f1
+	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
-	golang.org/x/sys v0.0.0-20210611083646-a4fc73990273
+	golang.org/x/sys v0.0.0-20210616094352-59db8d763f22
 	gopkg.in/yaml.v2 v2.4.0
 )
