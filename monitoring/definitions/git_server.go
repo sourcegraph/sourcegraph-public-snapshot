@@ -182,7 +182,7 @@ func GitServer() *monitoring.Container {
 					{
 						{
 							Name:        "running_git_commands",
-							Description: "git commands sent to each gitserver instance",
+							Description: "git commands running on each gitserver instance",
 							Query:       "sum by (instance, cmd) (src_gitserver_exec_running{instance=~\"${shard:regex}\"})",
 							Warning:     monitoring.Alert().GreaterOrEqual(50, nil).For(2 * time.Minute),
 							Critical:    monitoring.Alert().GreaterOrEqual(100, nil).For(5 * time.Minute),

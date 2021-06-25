@@ -776,7 +776,7 @@ This panel indicates i/o write throughput.
 
 #### gitserver: running_git_commands
 
-This panel indicates git commands sent to each gitserver instance.
+This panel indicates git commands running on each gitserver instance.
 
 A high value signals load.
 
