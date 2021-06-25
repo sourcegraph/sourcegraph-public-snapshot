@@ -140,7 +140,6 @@ var deeplyMergedSettingsFields = map[string]int{
 	"search.scopes":           1,
 	"search.savedQueries":     1,
 	"search.repositoryGroups": 1,
-	"search.repositoryGroups": 1,
 	"insights.dashboards": 	   1,
 	"quicklinks":              1,
 	"motd":                    1,
