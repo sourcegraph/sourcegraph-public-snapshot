@@ -149,7 +149,12 @@ export interface FlatExtensionHostAPI {
 
     // Views
     getPanelViews: () => ProxySubscribable<PanelViewData[]>
-    getInsightsViews: (context: ViewContexts['insightsPage']) => ProxySubscribable<ViewProviderResult[]>
+    getInsightsViews: (
+        context: ViewContexts['insightsPage'],
+        // Resolve only insights that were included in that
+        // ids list. Used for the insights dashboard functionality.
+        insightIds?: string[]
+    ) => ProxySubscribable<ViewProviderResult[]>
     getHomepageViews: (context: ViewContexts['homepage']) => ProxySubscribable<ViewProviderResult[]>
     getGlobalPageViews: (context: ViewContexts['global/page']) => ProxySubscribable<ViewProviderResult[]>
     getDirectoryViews: (
