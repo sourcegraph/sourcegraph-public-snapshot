@@ -1,5 +1,5 @@
 import * as H from 'history'
-import React from 'react'
+import React, { ReactElement } from 'react'
 
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -9,6 +9,7 @@ import { BatchChangesIcon } from '../../../batches/icons'
 import { Page } from '../../../components/Page'
 import { PageTitle } from '../../../components/PageTitle'
 import { RepositoryFields } from '../../../graphql-operations'
+import { queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs } from '../detail/backend'
 import { BatchChangeStatsTotalAction } from '../detail/BatchChangeStatsCard'
 import {
     ChangesetStatusUnpublished,
@@ -19,7 +20,6 @@ import {
 
 import { queryRepoBatchChanges as _queryRepoBatchChanges } from './backend'
 import { RepoBatchChanges } from './RepoBatchChanges'
-// import { PreviewActionImport } from './preview/list/PreviewActions'
 
 interface BatchChangeRepoPageProps extends ThemeProps {
     history: H.History
@@ -27,6 +27,8 @@ interface BatchChangeRepoPageProps extends ThemeProps {
     repo: RepositoryFields
     /** For testing only. */
     queryRepoBatchChanges?: typeof _queryRepoBatchChanges
+    /** For testing only. */
+    queryExternalChangesetWithFileDiffs?: typeof _queryExternalChangesetWithFileDiffs
 }
 
 export const BatchChangeRepoPage: React.FunctionComponent<BatchChangeRepoPageProps> = ({ repo, ...context }) => {
@@ -42,25 +44,22 @@ export const BatchChangeRepoPage: React.FunctionComponent<BatchChangeRepoPagePro
                 <StatsBar />
             </div>
             <p>Batch changes has created 78 changesets on {repoDisplayName}</p>
-            <RepoBatchChanges
-                batchChangeID="QmF0Y2hDaGFuZ2U6Mw=="
-                viewerCanAdminister={true}
-                repo={repo}
-                {...context}
-            />
+            <RepoBatchChanges viewerCanAdminister={true} repo={repo} {...context} />
         </Page>
     )
 }
 
 const ACTION_CLASSNAMES = 'd-flex flex-column text-muted justify-content-center align-items-center mx-2'
 
+// TODO: Generalize icon label type to accept strings
+const element = (string: string): ReactElement => <span>{string}</span>
+
 const StatsBar: React.FunctionComponent<{}> = () => (
     <div className="d-flex flex-wrap align-items-center">
         <BatchChangeStatsTotalAction count={78} />
-        <ChangesetStatusOpen className={ACTION_CLASSNAMES} label={`${3} Open`} />
-        <ChangesetStatusUnpublished className={ACTION_CLASSNAMES} label={`${1} Unpublished`} />
-        <ChangesetStatusClosed className={ACTION_CLASSNAMES} label={`${5} Closed`} />
-        <ChangesetStatusMerged className={ACTION_CLASSNAMES} label={`${67} Merged`} />
-        {/* <PreviewActionImport className={ACTION_CLASSNAMES} label={`${21} Import`} /> */}
+        <ChangesetStatusOpen className={ACTION_CLASSNAMES} label={element(`${3} Open`)} />
+        <ChangesetStatusUnpublished className={ACTION_CLASSNAMES} label={element(`${1} Unpublished`)} />
+        <ChangesetStatusClosed className={ACTION_CLASSNAMES} label={element(`${5} Closed`)} />
+        <ChangesetStatusMerged className={ACTION_CLASSNAMES} label={element(`${67} Merged`)} />
     </div>
 )
