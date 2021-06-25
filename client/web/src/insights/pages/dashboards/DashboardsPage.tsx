@@ -9,12 +9,13 @@ import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { PageHeader } from '@sourcegraph/wildcard/src'
 
-import { AuthenticatedUser } from '../../../auth'
 import { FeedbackBadge } from '../../../components/FeedbackBadge'
 import { Page } from '../../../components/Page'
 import { CodeInsightsIcon, InsightsViewGrid, InsightsViewGridProps } from '../../components'
 import { InsightsApiContext } from '../../core/backend/api-provider'
 import { InsightDashboard } from '../../core/types'
+
+import { useDashboards } from './hooks/use-dashboards/use-dashboards'
 
 export interface DashboardsPageProps
     extends Omit<InsightsViewGridProps, 'views'>,
@@ -26,11 +27,6 @@ export interface DashboardsPageProps
      * we get insights from the final version of merged settings (all insights)
      */
     dashboardID?: string
-
-    /**
-     * Authenticated user info, Used to get information about insight dashboards.
-     */
-    authenticatedUser: AuthenticatedUser
 }
 
 /**
@@ -62,6 +58,11 @@ export const DashboardsPage: React.FunctionComponent<DashboardsPageProps> = prop
             getInsightCombinedViews,
         ])
     )
+
+    const dashboards = useDashboards(settingsCascade)
+
+    // TODO use this dashboard data in https://github.com/sourcegraph/sourcegraph/issues/22225
+    console.log('Code insights dashboards', { dashboards })
 
     return (
         <Page>
