@@ -11,15 +11,15 @@ import { PageHeader } from '@sourcegraph/wildcard/src'
 
 import { FeedbackBadge } from '../../../components/FeedbackBadge'
 import { Page } from '../../../components/Page'
+import { Settings } from '../../../schema/settings.schema'
 import { CodeInsightsIcon, InsightsViewGrid, InsightsViewGridProps } from '../../components'
 import { InsightsApiContext } from '../../core/backend/api-provider'
-import { InsightDashboard } from '../../core/types'
 
 import { useDashboards } from './hooks/use-dashboards/use-dashboards'
 
 export interface DashboardsPageProps
-    extends Omit<InsightsViewGridProps, 'views'>,
-        SettingsCascadeProps,
+    extends Omit<InsightsViewGridProps, 'views' | 'settingsCascade'>,
+        SettingsCascadeProps<Settings>,
         ExtensionsControllerProps {
     /**
      * Possible dashboard id. All insights on the page will be get from
@@ -41,14 +41,14 @@ export const DashboardsPage: React.FunctionComponent<DashboardsPageProps> = prop
             return undefined
         }
 
-        const dashboardConfiguration: InsightDashboard = settingsCascade.final[`insightDashboard.${dashboardID}`]
+        const dashboardConfiguration = settingsCascade.final['insights.dashboards']?.[dashboardID]
 
         // if dashboard doesn't exist in final settings we don't need load anything
         if (!dashboardConfiguration) {
             return []
         }
 
-        return dashboardConfiguration.insightsIds
+        return dashboardConfiguration.insightIds
     }, [dashboardID, settingsCascade])
 
     const views = useObservable(

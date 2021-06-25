@@ -1,19 +1,20 @@
+import { InsightDashboard as InsightDashboardConfiguration } from '../../../schema/settings.schema'
+
 /**
  * Visibility setting which responsible for where dashboard will appear.
  * possible value 'personal' | '<org id 1> ... | ... <org id N>'
  */
 export type InsightDashboardVisibility = string
 
-export interface InsightDashboard {
-    id: string
-    title: string
-    visibility: InsightDashboardVisibility
-    insightsIds: string[]
+export interface InsightDashboard extends InsightDashboardConfiguration {
+    /**
+     * Subject that has particular dashboard, it can be personal setting
+     * or organization setting subject.
+     */
+    owner: InsightDashboardOwner
 }
 
-export interface InsightDashboardConfiguration {
-    title: string
-    insightsIds: string[]
+export interface InsightDashboardOwner {
+    id: string | null
+    name: string
 }
-
-export const INSIGHT_DASHBOARD_PREFIX = 'insights.dashboard'
