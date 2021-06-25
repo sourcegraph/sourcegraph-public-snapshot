@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
+set -euxo pipefail
 
 # This script checks to see if postgres is alive. It uses the ready check, but
 # additionally ignores upgrades to give the container enough time to

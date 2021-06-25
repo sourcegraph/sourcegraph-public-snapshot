@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
+set -euxo pipefail
 
 # This script checks to see if postgres is alive. It is expected to be used by
 # a Kubernetes ready probe.

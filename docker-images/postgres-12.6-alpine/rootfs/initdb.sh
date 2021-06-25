@@ -3,7 +3,7 @@
 # Adapted from https://github.com/docker-library/postgres/blob/master/11/docker-entrypoint.sh
 # to support running this separately from starting postgres. See postgres.sh for usage.
 
-set -Eeo pipefail
+set -Eexo pipefail
 # TODO swap to -Eeuo pipefail above (after handling all potentially-unset variables)
 
 # usage: file_env VAR [DEFAULT]
