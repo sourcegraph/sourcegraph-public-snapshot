@@ -13,7 +13,7 @@ import (
 // instance. If the upload file is large, it may be split into multiple segments and
 // uploaded over multiple requests. The identifier of the upload is returned after a
 // successful upload.
-func UploadIndex(filename string, opts UploadOptions) (int, error) {
+func UploadIndex(filename string, httpClient Client, opts UploadOptions) (int, error) {
 	originalReader, originalSize, err := openFileAndGetSize(filename)
 	if err != nil {
 		return 0, err
@@ -61,16 +61,16 @@ func UploadIndex(filename string, opts UploadOptions) (int, error) {
 	}
 
 	if compressedSize <= opts.MaxPayloadSizeBytes {
-		return uploadIndex(opts, compressedReader, compressedSize)
+		return uploadIndex(httpClient, opts, compressedReader, compressedSize)
 	}
 
-	return uploadMultipartIndex(opts, compressedReader, compressedSize)
+	return uploadMultipartIndex(httpClient, opts, compressedReader, compressedSize)
 }
 
 // uploadIndex uploads the index file described by the given options to a Sourcegraph
 // instance via a single HTTP POST request. The identifier of the upload is returned
 // after a successful upload.
-func uploadIndex(opts UploadOptions, r io.ReaderAt, readerLen int64) (id int, err error) {
+func uploadIndex(httpClient Client, opts UploadOptions, r io.ReaderAt, readerLen int64) (id int, err error) {
 	bars := []output.ProgressBar{{Label: "Upload", Max: 1.0}}
 	progress, complete := logProgress(
 		opts.Output,
@@ -87,7 +87,7 @@ func uploadIndex(opts UploadOptions, r io.ReaderAt, readerLen int64) (id int, er
 		UploadOptions: opts,
 		Target:        &id,
 	}
-	err = uploadIndexFile(opts, readerFactory, readerLen, requestOptions, progress, 0)
+	err = uploadIndexFile(httpClient, opts, readerFactory, readerLen, requestOptions, progress, 0)
 
 	if progress != nil {
 		// Mark complete in case we debounced our last updates
@@ -99,7 +99,7 @@ func uploadIndex(opts UploadOptions, r io.ReaderAt, readerLen int64) (id int, er
 
 // uploadIndexFile uploads the contents available via the given reader factory to a
 // Sourcegraph instance with the given request options.
-func uploadIndexFile(uploadOptions UploadOptions, readerFactory func() io.Reader, readerLen int64, requestOptions uploadRequestOptions, progress output.Progress, barIndex int) error {
+func uploadIndexFile(httpClient Client, uploadOptions UploadOptions, readerFactory func() io.Reader, readerLen int64, requestOptions uploadRequestOptions, progress output.Progress, barIndex int) error {
 	return makeRetry(uploadOptions.MaxRetries, uploadOptions.RetryInterval)(func() (_ bool, err error) {
 		// Create fresh reader on each attempt
 		reader := readerFactory()
@@ -108,32 +108,32 @@ func uploadIndexFile(uploadOptions UploadOptions, readerFactory func() io.Reader
 		requestOptions.Payload = newProgressCallbackReader(reader, readerLen, progress, barIndex)
 
 		// Perform upload
-		return performUploadRequest(requestOptions)
+		return performUploadRequest(httpClient, requestOptions)
 	})
 }
 
 // uploadMultipartIndex uploads the index file described by the given options to a
 // Sourcegraph instance over multiple HTTP POST requests. The identifier of the upload
 // is returned after a successful upload.
-func uploadMultipartIndex(opts UploadOptions, r io.ReaderAt, readerLen int64) (_ int, err error) {
+func uploadMultipartIndex(httpClient Client, opts UploadOptions, r io.ReaderAt, readerLen int64) (_ int, err error) {
 	// Create a slice of functions that can re-create our reader for an
 	// upload part for retries. This allows us to both read concurrently
 	// from the same reader, but also retry reads from arbitrary offsets.
 	readerFactories := splitReader(r, readerLen, opts.MaxPayloadSizeBytes)
 
 	// Perform initial request that gives us our upload identifier
-	id, err := uploadMultipartIndexInit(opts, len(readerFactories))
+	id, err := uploadMultipartIndexInit(httpClient, opts, len(readerFactories))
 	if err != nil {
 		return 0, err
 	}
 
 	// Upload each payload of the multipart index
-	if err := uploadMultipartIndexParts(opts, readerFactories, id, readerLen); err != nil {
+	if err := uploadMultipartIndexParts(httpClient, opts, readerFactories, id, readerLen); err != nil {
 		return 0, err
 	}
 
 	// Finalize the upload and mark it as ready for processing
-	if err := uploadMultipartIndexFinalize(opts, id); err != nil {
+	if err := uploadMultipartIndexFinalize(httpClient, opts, id); err != nil {
 		return 0, err
 	}
 
@@ -144,7 +144,7 @@ func uploadMultipartIndex(opts UploadOptions, r io.ReaderAt, readerLen int64) (_
 // parts via additional HTTP requests. This upload will be in a pending state until all upload
 // parts are received and the multipart upload is finalized, or until the record is deleted by
 // a background process after an expiry period.
-func uploadMultipartIndexInit(opts UploadOptions, numParts int) (id int, err error) {
+func uploadMultipartIndexInit(httpClient Client, opts UploadOptions, numParts int) (id int, err error) {
 	complete := logPending(
 		opts.Output,
 		"Preparing multipart upload",
@@ -154,7 +154,7 @@ func uploadMultipartIndexInit(opts UploadOptions, numParts int) (id int, err err
 	defer func() { complete(err) }()
 
 	err = makeRetry(opts.MaxRetries, opts.RetryInterval)(func() (bool, error) {
-		return performUploadRequest(uploadRequestOptions{
+		return performUploadRequest(httpClient, uploadRequestOptions{
 			UploadOptions: opts,
 			Target:        &id,
 			MultiPart:     true,
@@ -168,7 +168,7 @@ func uploadMultipartIndexInit(opts UploadOptions, numParts int) (id int, err err
 // uploadMultipartIndexParts uploads the contents available via each of the given reader
 // factories to a Sourcegraph instance as part of the same multipart upload as indiciated
 // by the given identifier.
-func uploadMultipartIndexParts(opts UploadOptions, readerFactories []func() io.Reader, id int, readerLen int64) (err error) {
+func uploadMultipartIndexParts(httpClient Client, opts UploadOptions, readerFactories []func() io.Reader, id int, readerLen int64) (err error) {
 	var bars []output.ProgressBar
 	for i := range readerFactories {
 		label := fmt.Sprintf("Upload part %d of %d", i+1, len(readerFactories))
@@ -204,7 +204,7 @@ func uploadMultipartIndexParts(opts UploadOptions, readerFactories []func() io.R
 				Index:         i,
 			}
 
-			if err := uploadIndexFile(opts, readerFactory, partReaderLen, requestOptions, progress, i); err != nil {
+			if err := uploadIndexFile(httpClient, opts, readerFactory, partReaderLen, requestOptions, progress, i); err != nil {
 				errs <- err
 			} else if progress != nil {
 				// Mark complete in case we debounced our last updates
@@ -227,7 +227,7 @@ func uploadMultipartIndexParts(opts UploadOptions, readerFactories []func() io.R
 
 // uploadMultipartIndexFinalize performs the request to stitch the uploaded parts together and
 // mark it ready as processing in the backend.
-func uploadMultipartIndexFinalize(opts UploadOptions, id int) (err error) {
+func uploadMultipartIndexFinalize(httpClient Client, opts UploadOptions, id int) (err error) {
 	complete := logPending(
 		opts.Output,
 		"Finalizing multipart upload",
@@ -237,7 +237,7 @@ func uploadMultipartIndexFinalize(opts UploadOptions, id int) (err error) {
 	defer func() { complete(err) }()
 
 	return makeRetry(opts.MaxRetries, opts.RetryInterval)(func() (bool, error) {
-		return performUploadRequest(uploadRequestOptions{
+		return performUploadRequest(httpClient, uploadRequestOptions{
 			UploadOptions: opts,
 			UploadID:      id,
 			Done:          true,
