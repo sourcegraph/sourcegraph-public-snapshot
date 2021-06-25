@@ -4724,6 +4724,9 @@ type MockLSIFStore struct {
 	// DocumentationPageFunc is an instance of a mock function object
 	// controlling the behavior of the method DocumentationPage.
 	DocumentationPageFunc *LSIFStoreDocumentationPageFunc
+	// DocumentationPathInfoFunc is an instance of a mock function object
+	// controlling the behavior of the method DocumentationPathInfo.
+	DocumentationPathInfoFunc *LSIFStoreDocumentationPathInfoFunc
 	// ExistsFunc is an instance of a mock function object controlling the
 	// behavior of the method Exists.
 	ExistsFunc *LSIFStoreExistsFunc
@@ -4765,6 +4768,11 @@ func NewMockLSIFStore() *MockLSIFStore {
 		},
 		DocumentationPageFunc: &LSIFStoreDocumentationPageFunc{
 			defaultHook: func(context.Context, int, string) (*semantic.DocumentationPageData, error) {
+				return nil, nil
+			},
+		},
+		DocumentationPathInfoFunc: &LSIFStoreDocumentationPathInfoFunc{
+			defaultHook: func(context.Context, int, string) (*semantic.DocumentationPathInfoData, error) {
 				return nil, nil
 			},
 		},
@@ -4816,6 +4824,9 @@ func NewMockLSIFStoreFrom(i LSIFStore) *MockLSIFStore {
 		},
 		DocumentationPageFunc: &LSIFStoreDocumentationPageFunc{
 			defaultHook: i.DocumentationPage,
+		},
+		DocumentationPathInfoFunc: &LSIFStoreDocumentationPathInfoFunc{
+			defaultHook: i.DocumentationPathInfo,
 		},
 		ExistsFunc: &LSIFStoreExistsFunc{
 			defaultHook: i.Exists,
@@ -5320,6 +5331,120 @@ func (c LSIFStoreDocumentationPageFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c LSIFStoreDocumentationPageFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// LSIFStoreDocumentationPathInfoFunc describes the behavior when the
+// DocumentationPathInfo method of the parent MockLSIFStore instance is
+// invoked.
+type LSIFStoreDocumentationPathInfoFunc struct {
+	defaultHook func(context.Context, int, string) (*semantic.DocumentationPathInfoData, error)
+	hooks       []func(context.Context, int, string) (*semantic.DocumentationPathInfoData, error)
+	history     []LSIFStoreDocumentationPathInfoFuncCall
+	mutex       sync.Mutex
+}
+
+// DocumentationPathInfo delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockLSIFStore) DocumentationPathInfo(v0 context.Context, v1 int, v2 string) (*semantic.DocumentationPathInfoData, error) {
+	r0, r1 := m.DocumentationPathInfoFunc.nextHook()(v0, v1, v2)
+	m.DocumentationPathInfoFunc.appendCall(LSIFStoreDocumentationPathInfoFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// DocumentationPathInfo method of the parent MockLSIFStore instance is
+// invoked and the hook queue is empty.
+func (f *LSIFStoreDocumentationPathInfoFunc) SetDefaultHook(hook func(context.Context, int, string) (*semantic.DocumentationPathInfoData, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DocumentationPathInfo method of the parent MockLSIFStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *LSIFStoreDocumentationPathInfoFunc) PushHook(hook func(context.Context, int, string) (*semantic.DocumentationPathInfoData, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *LSIFStoreDocumentationPathInfoFunc) SetDefaultReturn(r0 *semantic.DocumentationPathInfoData, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string) (*semantic.DocumentationPathInfoData, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *LSIFStoreDocumentationPathInfoFunc) PushReturn(r0 *semantic.DocumentationPathInfoData, r1 error) {
+	f.PushHook(func(context.Context, int, string) (*semantic.DocumentationPathInfoData, error) {
+		return r0, r1
+	})
+}
+
+func (f *LSIFStoreDocumentationPathInfoFunc) nextHook() func(context.Context, int, string) (*semantic.DocumentationPathInfoData, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *LSIFStoreDocumentationPathInfoFunc) appendCall(r0 LSIFStoreDocumentationPathInfoFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of LSIFStoreDocumentationPathInfoFuncCall
+// objects describing the invocations of this function.
+func (f *LSIFStoreDocumentationPathInfoFunc) History() []LSIFStoreDocumentationPathInfoFuncCall {
+	f.mutex.Lock()
+	history := make([]LSIFStoreDocumentationPathInfoFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// LSIFStoreDocumentationPathInfoFuncCall is an object that describes an
+// invocation of method DocumentationPathInfo on an instance of
+// MockLSIFStore.
+type LSIFStoreDocumentationPathInfoFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *semantic.DocumentationPathInfoData
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c LSIFStoreDocumentationPathInfoFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c LSIFStoreDocumentationPathInfoFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
