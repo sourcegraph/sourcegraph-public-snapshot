@@ -9,7 +9,7 @@ cd /var/lib/postgresql
 if [ "$(id -u)" = '0' ]; then
   mkdir -p "$PGDATA"
   chown -R postgres:postgres "$(dirname "$PGDATA")"
-  chmod 700 "$(dirname "$PGDATA")" "$PGDATA"
+  chmod 750 "$(dirname "$PGDATA")" "$PGDATA"
   exec gosu postgres "${BASH_SOURCE[0]}" "$@"
 fi
 
