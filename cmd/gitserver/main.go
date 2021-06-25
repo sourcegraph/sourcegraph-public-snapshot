@@ -146,12 +146,10 @@ func main() {
 
 	if tmpDir, err := gitserver.SetupAndClearTmp(); err != nil {
 		log.Fatalf("failed to setup temporary directory: %s", err)
-	} else {
+	} else if err := os.Setenv("TMP_DIR", tmpDir); err != nil {
 		// Additionally set TMP_DIR so other temporary files we may accidentally
 		// create are on the faster RepoDir mount.
-		if err := os.Setenv("TMP_DIR", tmpDir); err != nil {
-			log.Fatalf("Setting TMP_DIR: %s", err)
-		}
+		log.Fatalf("Setting TMP_DIR: %s", err)
 	}
 
 	// Create Handler now since it also initializes state
