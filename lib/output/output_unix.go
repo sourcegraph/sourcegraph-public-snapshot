@@ -50,19 +50,12 @@ func init() {
 					if err == nil {
 						mu.RLock()
 						for _, out := range chans {
-							// Technically, if the listener of this channel is
-							// no longer listening, sending caps to out will
-							// hang forever. To mitigate this, we'll run in a
-							// goroutine.
-							//
-							// Practically, there's only ever one Output
-							// instance in all our uses of this package, and it
-							// lives for the lifetime of the process. So the
-							// potential for a goroutine leak here is
-							// practically zero.
-							go func(caps capabilities, out chan capabilities) {
-								out <- caps
-							}(caps, out)
+							select {
+							case out <- caps:
+							// success
+							default:
+								continue
+							}
 						}
 						mu.RUnlock()
 					}
