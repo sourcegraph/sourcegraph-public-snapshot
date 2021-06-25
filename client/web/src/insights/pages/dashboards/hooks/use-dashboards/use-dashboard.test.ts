@@ -14,13 +14,17 @@ describe('getInsightsDashboards', () => {
                             viewerCanAdminister: true,
                         },
                         settings: {
-                            'insights.dashboard.testDashboard': {
-                                title: 'Test Dashboard',
-                                insightIds: ['insightID1', 'insightID2'],
-                            },
-                            'insights.dashboard.anotherTestDashboard': {
-                                title: 'Another Test Dashboard',
-                                insightIds: ['insightID3', 'insightID4'],
+                            'insights.dashboards': {
+                                'insights.dashboard.testDashboard': {
+                                    id: '001',
+                                    title: 'Test Dashboard',
+                                    insightIds: ['insightID1', 'insightID2'],
+                                },
+                                'insights.dashboard.anotherTestDashboard': {
+                                    id: '002',
+                                    title: 'Another Test Dashboard',
+                                    insightIds: ['insightID3', 'insightID4'],
+                                },
                             },
                         },
                         lastID: null,
@@ -28,20 +32,18 @@ describe('getInsightsDashboards', () => {
                 ])
             ).toStrictEqual([
                 {
-                    id: 'insights.dashboard.testDashboard',
+                    id: '001',
                     title: 'Test Dashboard',
                     insightIds: ['insightID1', 'insightID2'],
-                    visibility: '101',
                     owner: {
                         id: '101',
                         name: 'Emir Kusturica',
                     },
                 },
                 {
-                    id: 'insights.dashboard.anotherTestDashboard',
+                    id: '002',
                     title: 'Another Test Dashboard',
                     insightIds: ['insightID3', 'insightID4'],
-                    visibility: '101',
                     owner: {
                         id: '101',
                         name: 'Emir Kusturica',
@@ -62,9 +64,12 @@ describe('getInsightsDashboards', () => {
                             viewerCanAdminister: true,
                         },
                         settings: {
-                            'insights.dashboard.testDashboard': {
-                                title: 'Test Dashboard',
-                                insightIds: ['insightID1', 'insightID2'],
+                            'insights.dashboards': {
+                                'insights.dashboard.testDashboard': {
+                                    id: '001',
+                                    title: 'Test Dashboard',
+                                    insightIds: ['insightID1', 'insightID2'],
+                                },
                             },
                         },
                         lastID: null,
@@ -78,9 +83,12 @@ describe('getInsightsDashboards', () => {
                             viewerCanAdminister: true,
                         },
                         settings: {
-                            'insights.dashboard.anotherTestDashboard': {
-                                title: 'Another Test Dashboard',
-                                insightIds: ['insightID3', 'insightID4'],
+                            'insights.dashboards': {
+                                'insights.dashboard.anotherTestDashboard': {
+                                    id: '002',
+                                    title: 'Another Test Dashboard',
+                                    insightIds: ['insightID3', 'insightID4'],
+                                },
                             },
                         },
                         lastID: null,
@@ -88,20 +96,18 @@ describe('getInsightsDashboards', () => {
                 ])
             ).toStrictEqual([
                 {
-                    id: 'insights.dashboard.testDashboard',
+                    id: '001',
                     title: 'Test Dashboard',
                     insightIds: ['insightID1', 'insightID2'],
-                    visibility: '102',
                     owner: {
                         id: '102',
                         name: 'Sourcegraph',
                     },
                 },
                 {
-                    id: 'insights.dashboard.anotherTestDashboard',
+                    id: '002',
                     title: 'Another Test Dashboard',
                     insightIds: ['insightID3', 'insightID4'],
-                    visibility: '101',
                     owner: {
                         id: '101',
                         name: 'Emir Kusturica',
