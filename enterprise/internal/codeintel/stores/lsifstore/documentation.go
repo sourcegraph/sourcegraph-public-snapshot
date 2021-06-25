@@ -70,3 +70,62 @@ func (s *Store) scanFirstDocumentationPageData(rows *sql.Rows, queryErr error) (
 	}
 	return record, nil
 }
+
+// DocumentationPathInfo returns info describing what is at the given pathID.
+func (s *Store) DocumentationPathInfo(ctx context.Context, bundleID int, pathID string) (_ *semantic.DocumentationPathInfoData, err error) {
+	ctx, _, endObservation := s.operations.documentationPage.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("bundleID", bundleID),
+		log.String("pathID", pathID),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	page, err := s.scanFirstDocumentationPathInfoData(s.Store.Query(ctx, sqlf.Sprintf(documentationPathInfoDataQuery, bundleID, pathID)))
+	if err != nil {
+		return nil, err
+	}
+	return page, nil
+}
+
+const documentationPathInfoDataQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/documentation.go:DocumentationPathInfo
+SELECT
+	dump_id,
+	path_id,
+	data
+FROM
+	lsif_data_documentation_path_info
+WHERE
+	dump_id = %s AND
+	path_id = %s
+`
+
+// scanFirstDocumentationPathInfoData reads the first DocumentationPathInfoData row. If no rows match the
+// query, a nil is returned.
+func (s *Store) scanFirstDocumentationPathInfoData(rows *sql.Rows, queryErr error) (_ *semantic.DocumentationPathInfoData, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	if !rows.Next() {
+		return nil, nil
+	}
+
+	var (
+		rawData  []byte
+		uploadID int
+		pathID   string
+	)
+	if err := rows.Scan(
+		&uploadID,
+		&pathID,
+		&rawData,
+	); err != nil {
+		return nil, err
+	}
+	record, err := s.serializer.UnmarshalDocumentationPathInfoData(rawData)
+	if err != nil {
+		return nil, err
+	}
+	return record, nil
+}
