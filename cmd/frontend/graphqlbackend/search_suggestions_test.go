@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -50,11 +51,11 @@ func TestSearchSuggestions(t *testing.T) {
 		}
 	}
 
-	run.MockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []result.Match, common *streaming.Stats, err error) {
+	symbol.MockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []result.Match, common *streaming.Stats, err error) {
 		// TODO test symbol suggestions
 		return nil, nil, nil
 	}
-	defer func() { run.MockSearchSymbols = nil }()
+	defer func() { symbol.MockSearchSymbols = nil }()
 
 	mockDecodedViewerFinalSettings = &schema.Settings{}
 	defer func() { mockDecodedViewerFinalSettings = nil }()

@@ -3,16 +3,11 @@ package run
 import (
 	"math"
 
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
-
-const defaultMaxSearchResults = 30
 
 // SearchInputs contains fields we set before kicking off search.
 type SearchInputs struct {
@@ -49,7 +44,7 @@ func (inputs SearchInputs) MaxResults() int {
 		return inputs.DefaultLimit
 	}
 
-	return defaultMaxSearchResults
+	return search.DefaultMaxSearchResults
 }
 
 // SearchPaginationInfo describes information around a paginated search
@@ -78,41 +73,6 @@ type SearchCursor struct {
 	// Finished tells if there are more results for the query or if we've
 	// consumed them all.
 	Finished bool
-}
-
-// handleRepoSearchResult handles the limitHit and searchErr returned by a search function,
-// returning common as to reflect that new information. If searchErr is a fatal error,
-// it returns a non-nil error; otherwise, if searchErr == nil or a non-fatal error, it returns a
-// nil error.
-func handleRepoSearchResult(repoRev *search.RepositoryRevisions, limitHit, timedOut bool, searchErr error) (_ streaming.Stats, fatalErr error) {
-	var status search.RepoStatus
-	if limitHit {
-		status |= search.RepoStatusLimitHit
-	}
-
-	if vcs.IsRepoNotExist(searchErr) {
-		if vcs.IsCloneInProgress(searchErr) {
-			status |= search.RepoStatusCloning
-		} else {
-			status |= search.RepoStatusMissing
-		}
-	} else if gitserver.IsRevisionNotFound(searchErr) {
-		if len(repoRev.Revs) == 0 || len(repoRev.Revs) == 1 && repoRev.Revs[0].RevSpec == "" {
-			// If we didn't specify an input revision, then the repo is empty and can be ignored.
-		} else {
-			fatalErr = searchErr
-		}
-	} else if errcode.IsNotFound(searchErr) {
-		status |= search.RepoStatusMissing
-	} else if errcode.IsTimeout(searchErr) || errcode.IsTemporary(searchErr) || timedOut {
-		status |= search.RepoStatusTimedout
-	} else if searchErr != nil {
-		fatalErr = searchErr
-	}
-	return streaming.Stats{
-		Status:     search.RepoStatusSingleton(repoRev.Repo.ID, status),
-		IsLimitHit: limitHit,
-	}, fatalErr
 }
 
 func statsDeref(s *streaming.Stats) streaming.Stats {

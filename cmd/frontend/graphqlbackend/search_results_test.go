@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -155,7 +156,7 @@ func TestSearchResults(t *testing.T) {
 		defer func() { run.MockSearchRepositories = nil }()
 
 		calledSearchSymbols := false
-		run.MockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []result.Match, common *streaming.Stats, err error) {
+		symbol.MockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []result.Match, common *streaming.Stats, err error) {
 			calledSearchSymbols = true
 			if want := `(foo\d).*?(bar\*)`; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
@@ -163,7 +164,7 @@ func TestSearchResults(t *testing.T) {
 			// TODO return mock results here and assert that they are output as results
 			return nil, nil, nil
 		}
-		defer func() { run.MockSearchSymbols = nil }()
+		defer func() { symbol.MockSearchSymbols = nil }()
 
 		calledSearchFilesInRepos := atomic.NewBool(false)
 		run.MockSearchFilesInRepos = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
@@ -220,7 +221,7 @@ func TestSearchResults(t *testing.T) {
 		defer func() { run.MockSearchRepositories = nil }()
 
 		calledSearchSymbols := false
-		run.MockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []result.Match, common *streaming.Stats, err error) {
+		symbol.MockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []result.Match, common *streaming.Stats, err error) {
 			calledSearchSymbols = true
 			if want := `"foo\\d \"bar*\""`; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
@@ -228,7 +229,7 @@ func TestSearchResults(t *testing.T) {
 			// TODO return mock results here and assert that they are output as results
 			return nil, nil, nil
 		}
-		defer func() { run.MockSearchSymbols = nil }()
+		defer func() { symbol.MockSearchSymbols = nil }()
 
 		calledSearchFilesInRepos := atomic.NewBool(false)
 		run.MockSearchFilesInRepos = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
