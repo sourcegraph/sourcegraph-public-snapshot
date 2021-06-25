@@ -37,6 +37,7 @@ Using a newly-generated hook, we can easily fire a request and handle the respon
 import { useGetUserDisplayName } from '../../graphql-operations'
 
 const MyComponent = ({ username }: { username: string }) => {
+  
   // useGetUserDisplayName is automatically typed with correct variables and response data
   const { data, loading, error } = useGetUserDisplayName({ variables: { username } });
 
