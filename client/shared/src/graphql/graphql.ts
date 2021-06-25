@@ -1,3 +1,5 @@
+// eslint-disable-next-line rxjs/no-internal
+import 'rxjs/internal/Observable'
 import {
     gql as apolloGql,
     useQuery as useApolloQuery,
