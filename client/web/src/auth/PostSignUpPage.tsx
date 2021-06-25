@@ -83,10 +83,10 @@ export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser, ro
                 body={
                     <div className="post-signup-page__container">
                         <h2>Get started with Sourcegraph</h2>
-                        <p className="text-muted">
+                        <p className="text-muted pb-3">
                             Three quick steps to add your repositories and get searching with Sourcegraph
                         </p>
-                        <div className="mt-3 pb-3">
+                        <div className="mt-4 pb-3">
                             <Steps current={currentStep} numbered={true}>
                                 <Step title="Connect with code hosts" borderColor="purple" />
                                 <Step title="Add repositories" borderColor="blue" />
