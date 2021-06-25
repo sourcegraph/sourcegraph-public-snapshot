@@ -15,10 +15,8 @@ fi
 
 PGHOST="$(hostname)"
 export PGHOST
-export PGUSER="$PGUSERNEW"
-export PGDATABASE="$PGDATABASENEW"
 export PGCONNECT_TIMEOUT=10
 
 # Check if we can run a simple query. If it fails the reason will be printed
 # to stderr and we will have a non-zero exit code.
-"$PGBINNEW/psql" --no-password --tuples-only --no-align -c 'select 1;' >/dev/null
+psql --no-password --tuples-only --no-align -c 'select 1;' >/dev/null

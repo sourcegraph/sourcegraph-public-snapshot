@@ -9,7 +9,7 @@ set -euo pipefail
 # Ensure we are in the same dir ready.sh
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
-if [ -s "$PGDATAOLD/PG_VERSION" ] && [ ! -s "$PGDATAOLD.upgraded" ]; then
+if [ -s "$PGDATA/PG_VERSION" ] && [ ! -s "$PGDATA.upgraded" ]; then
   echo "[INFO] Postgres is upgrading"
   exit 0
 fi

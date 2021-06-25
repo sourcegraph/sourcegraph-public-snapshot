@@ -8,6 +8,6 @@ ENV POSTGRES_PASSWORD=sg \
     POSTGRES_DB=sg \
     PGDATA=/data/pgdata-12
 
-# COPY rootfs /
-# USER postgres
-# ENTRYPOINT ["/postgres.sh"]
+COPY rootfs /
+USER postgres
+ENTRYPOINT ["/postgres.sh"]
