@@ -44,10 +44,6 @@ const RepositoryReleasesArea = lazyComponent(
 const RepoSettingsArea = lazyComponent(() => import('./settings/RepoSettingsArea'), 'RepoSettingsArea')
 const RepositoryCompareArea = lazyComponent(() => import('./compare/RepositoryCompareArea'), 'RepositoryCompareArea')
 const RepositoryStatsArea = lazyComponent(() => import('./stats/RepositoryStatsArea'), 'RepositoryStatsArea')
-const RepositoryBatchChangesArea = lazyComponent(
-    () => import('../enterprise/batches/repo/RepositoryBatchChangesArea'),
-    'RepositoryBatchChangesArea'
-)
 
 export const repoContainerRoutes: readonly RepoContainerRoute[] = [
     {
@@ -65,14 +61,6 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
                     telemetryService={context.telemetryService}
                 />
             </div>
-        ),
-    },
-    {
-        path: '/-/batch-changes',
-        render: context => (
-            <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
-                <RepositoryBatchChangesArea {...context} />
-            </RepositoryGitDataContainer>
         ),
     },
     {
