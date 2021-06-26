@@ -2743,6 +2743,42 @@ extend type User {
     ): BatchChangesCodeHostConnection!
 }
 
+extend type Repository {
+    """
+    Stats on all the changesets that have been applied to this repository by batch
+    changes.
+    """
+    changesetsStats: RepoChangesetsStats!
+
+    """
+    A list of batch changes that have applied a changeset to this repository.
+    """
+    batchChanges(
+        """
+        Returns the first n batch changes from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+        """
+        Only return batch changes in this state.
+        """
+        state: BatchChangeState
+        """
+        Only include batch changes that the viewer can administer.
+        """
+        viewerCanAdminister: Boolean
+    ): BatchChangeConnection!
+
+    """
+    A diff stat for all the changesets that have been applied to this repository
+    by batch changes.
+    """
+    batchChangesDiffStat: DiffStat!
+}
+
 """
 A connection of all code hosts usable with batch changes and accessible by the user
 this is requested on.
