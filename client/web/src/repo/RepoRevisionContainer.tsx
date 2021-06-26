@@ -69,6 +69,8 @@ export interface RepoRevisionContainerContext
     routePrefix: string
 
     globbing: boolean
+
+    showBatchChanges: boolean
 }
 
 /** A sub-route of {@link RepoRevisionContainer}. */
@@ -107,6 +109,8 @@ interface RepoRevisionContainerProps
     history: H.History
 
     globbing: boolean
+
+    showBatchChanges: boolean
 }
 
 interface RepoRevisionBreadcrumbProps

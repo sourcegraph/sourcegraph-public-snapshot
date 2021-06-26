@@ -92,6 +92,8 @@ export interface RepoContainerContext
     onDidUpdateExternalLinks: (externalLinks: ExternalLinkFields[] | undefined) => void
 
     globbing: boolean
+
+    showBatchChanges: boolean
 }
 
 /** A sub-route of {@link RepoContainer}. */
@@ -125,6 +127,7 @@ interface RepoContainerProps
     onNavbarQueryChange: (state: QueryState) => void
     history: H.History
     globbing: boolean
+    showBatchChanges: boolean
 }
 
 export const HOVER_COUNT_KEY = 'hover-count'

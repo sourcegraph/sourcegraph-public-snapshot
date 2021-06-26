@@ -124,6 +124,7 @@ interface Props
     location: H.Location
     history: H.History
     globbing: boolean
+    showBatchChanges: boolean
 }
 
 export const treePageRepositoryFragment = gql`
@@ -144,6 +145,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
     caseSensitive,
     settingsCascade,
     useBreadcrumb,
+    showBatchChanges,
     ...props
 }) => {
     useEffect(() => {
@@ -353,6 +355,27 @@ export const TreePage: React.FunctionComponent<Props> = ({
             )}
         </div>
     )
+
+    const batchChangesBadge = showBatchChanges ? (
+        <Link
+            className="btn btn-sm btn-outline-secondary d-flex align-items-center mb-1 text-uppercase"
+            to={`/${encodeURIPathComponent(repo.name)}/-/batch-changes`}
+            aria-label="Batch Changes"
+        >
+            <BatchChangesIcon className="mr-2" />
+            Batch Changes
+            <span
+                className="badge badge-success batch-change-badge d-flex flex-column ml-2"
+                data-tooltip="10 open changesets"
+            >
+                10
+            </span>
+            <span className="badge badge-merged batch-change-badge ml-2" data-tooltip="12 merged changesets">
+                12
+            </span>
+        </Link>
+    ) : null
+
     return (
         <div className="tree-page">
             <Container className="tree-page__container">
@@ -381,26 +404,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                             className="mb-3 test-tree-page-title"
                                         />
                                         {repo.description && <p>{repo.description}</p>}
-                                        <Link
-                                            className="btn btn-sm btn-outline-secondary d-flex align-items-center mb-1 text-uppercase"
-                                            to={`/${encodeURIPathComponent(repo.name)}/-/batch-changes`}
-                                            aria-label="Batch Changes"
-                                        >
-                                            <BatchChangesIcon className="mr-2" />
-                                            Batch Changes
-                                            <span
-                                                className="badge badge-success batch-change-badge d-flex flex-column ml-2"
-                                                data-tooltip="10 open changesets"
-                                            >
-                                                10
-                                            </span>
-                                            <span
-                                                className="badge badge-merged batch-change-badge ml-2"
-                                                data-tooltip="12 merged changesets"
-                                            >
-                                                12
-                                            </span>
-                                        </Link>
+                                        {batchChangesBadge}
                                     </div>
                                     <div className="btn-group">
                                         {enableAPIDocs && (
