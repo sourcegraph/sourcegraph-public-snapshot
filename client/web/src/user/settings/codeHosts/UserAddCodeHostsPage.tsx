@@ -22,7 +22,8 @@ import { CodeHostItem } from './CodeHostItem'
 type AuthProvider = SourcegraphContext['authProviders'][0]
 type AuthProvidersByKind = Partial<Record<ExternalServiceKind, AuthProvider>>
 
-export interface UserAddCodeHostsPageProps extends UserExternalServicesOrRepositoriesUpdateProps {
+export interface UserAddCodeHostsPageProps
+    extends Pick<UserExternalServicesOrRepositoriesUpdateProps, 'onUserExternalServicesOrRepositoriesUpdate'> {
     user: { id: Scalars['ID']; tags: string[] }
     codeHostExternalServices: Record<string, AddExternalServiceOptions>
     routingPrefix: string
