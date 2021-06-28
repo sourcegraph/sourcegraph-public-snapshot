@@ -45,8 +45,8 @@ export interface DataSeries {
 
 export interface ApiService {
     /**
-     * Base method to get backend and extension based insights together.
-     * Used by insights page and other non-insights specific consumers
+     * Basic method to get backend and extension based insights together.
+     * Used by the insights page and other non-insights specific consumers
      * homepage, directory pages.
      *
      * @param getExtensionsInsights - extensions based insights getter via extension API.
@@ -56,7 +56,7 @@ export interface ApiService {
     ) => Observable<ViewInsightProviderResult[]>
 
     /**
-     * Returns insights list (backend and extension based) for insights page.
+     * Returns insights list (backend and extension based) for the insights page.
      *
      * @param extensionApi - extension API for getting extension insights.
      * @param insightsIds - specific insight ids for loading. Used by dashboard
@@ -68,14 +68,15 @@ export interface ApiService {
     ) => Observable<ViewInsightProviderResult[]>
 
     /**
-     * Finds and returns subject settings by subject id.
+     * Finds and returns the subject settings by the subject id.
      *
      * @param id - subject id
      */
     getSubjectSettings: (id: string) => Observable<SubjectSettingsResult>
 
     /**
-     * Update subject settings by subject id (rehydrate local settings and call fql mutation)
+     * Updates the subject settings by the subject id.
+     * Rehydrate local settings and call gql mutation
      *
      * @param context - global context object with updateSettings method
      * @param subjectId - subject id
@@ -88,29 +89,29 @@ export interface ApiService {
     ) => Observable<void>
 
     /**
-     * Returns content for search based insight live preview chart.
+     * Returns content for the search based insight live preview chart.
      *
      * @param insight - An insight configuration (title, repos, data series settings)
      */
     getSearchInsightContent: (insight: SearchInsightSettings) => Promise<sourcegraph.LineChartContent<any, string>>
 
     /**
-     * Returns content for code stats insight live preview chart.
+     * Returns content for the code stats insight live preview chart.
      *
      * @param insight - An insight configuration (title, repos, data series settings)
      */
     getLangStatsInsightContent: (insight: LangStatsInsightsSettings) => Promise<sourcegraph.PieChartContent<any>>
 
     /**
-     * Returns list of suggestions for repositories field in insight creation UI.
+     * Returns a list of suggestions for the repositories field in the insight creation UI.
      *
      * @param query - A string with a possible value for the repository name
      */
     getRepositorySuggestions: (query: string) => Promise<RepositorySuggestion[]>
 
     /**
-     * Returns list of resolved repositories from the search page query via search API.
-     * Used by 1-click insight creation flow. Since users can have repo: filters in their
+     * Returns a list of resolved repositories from the search page query via search API.
+     * Used by 1-click insight creation flow. Since users can have a repo: filter in their
      * query we have to resolve these filters by our search API.
      *
      * @param query - search page query value

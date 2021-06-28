@@ -23,8 +23,9 @@ export interface DashboardsPageProps
         ExtensionsControllerProps {
     /**
      * Possible dashboard id. All insights on the page will be get from
-     * dashboard's info from user/org by id. In case if id equals to undefined
-     * we get insights from the final version of merged settings (all insights)
+     * dashboard's info from the user or org settings by the dashboard id.
+     * In case the if id is undefined we get insights from the final
+     * version of merged settings (all insights)
      */
     dashboardID?: string
 }
@@ -43,7 +44,7 @@ export const DashboardsPage: React.FunctionComponent<DashboardsPageProps> = prop
 
         const dashboardConfiguration = settingsCascade.final['insights.dashboards']?.[dashboardID]
 
-        // if dashboard doesn't exist in final settings we don't need load anything
+        // if dashboard doesn't exist in the final settings we don't need to load anything
         if (!dashboardConfiguration) {
             return []
         }

@@ -8,7 +8,7 @@ export type InsightDashboardVisibility = string
 
 export interface InsightDashboard extends InsightDashboardConfiguration {
     /**
-     * Subject that has particular dashboard, it can be personal setting
+     * Subject that has a particular dashboard, it can be personal setting
      * or organization setting subject.
      */
     owner: InsightDashboardOwner

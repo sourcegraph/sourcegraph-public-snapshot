@@ -21,7 +21,7 @@ export function useDashboards(settingsCascade: SettingsCascadeOrError): InsightD
 }
 
 /**
- * Returns all valid and reachable for the user insight dashboards.
+ * Returns all valid and reachable for a user insight-dashboards.
  */
 export function getInsightsDashboards(subjects: ConfiguredSubjectOrError<Settings>[] | null): InsightDashboard[] {
     if (subjects === null) {
