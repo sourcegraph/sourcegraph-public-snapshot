@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -83,6 +84,9 @@ type SeriesPointsOpts struct {
 
 	// RepoID, if non-nil, indicates to filter results to only points recorded with this repo ID.
 	RepoID *api.RepoID
+
+	excluded []api.RepoID
+	included []api.RepoID
 
 	// TODO(slimsag): Add ability to filter based on repo name, original name.
 	// TODO(slimsag): Add ability to do limited filtering based on metadata.
@@ -173,6 +177,14 @@ func seriesPointsQuery(opts SeriesPointsOpts) *sqlf.Query {
 	if opts.Limit > 0 {
 		limitClause = fmt.Sprintf("LIMIT %d", opts.Limit)
 	}
+	if len(opts.included) > 0 {
+		s := fmt.Sprintf("repo_id = any(%v)", values(opts.included))
+		preds = append(preds, sqlf.Sprintf(s))
+	}
+	if len(opts.excluded) > 0 {
+		s := fmt.Sprintf("repo_id != all(%v)", values(opts.excluded))
+		preds = append(preds, sqlf.Sprintf(s))
+	}
 
 	if len(preds) == 0 {
 		preds = append(preds, sqlf.Sprintf("TRUE"))
@@ -181,6 +193,25 @@ func seriesPointsQuery(opts SeriesPointsOpts) *sqlf.Query {
 		lastObservationCarriedPointsSql+limitClause,
 		sqlf.Join(preds, "\n AND "),
 	)
+}
+
+//values constructs a SQL values statement out of an array of repository ids
+func values(ids []api.RepoID) string {
+	if len(ids) <= 0 {
+		return ""
+	}
+
+	var b strings.Builder
+	b.WriteString("VALUES ")
+	for _, repoID := range ids {
+		_, err := fmt.Fprintf(&b, "(%v),", repoID)
+		if err != nil {
+			return ""
+		}
+	}
+	query := b.String()
+	query = query[:b.Len()-1] // remove the trailing comma
+	return query
 }
 
 type CountDataOpts struct {

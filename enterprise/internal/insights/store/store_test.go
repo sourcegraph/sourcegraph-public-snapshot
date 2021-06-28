@@ -101,6 +101,25 @@ SELECT time,
 		autogold.Want("SeriesPoints(4).len", int(3)).Equal(t, len(points))
 	})
 
+	t.Run("include list", func(t *testing.T) {
+		points, err = store.SeriesPoints(ctx, SeriesPointsOpts{included: []api.RepoID{2}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if diff := cmp.Diff(14, len(points)); diff != "" {
+			t.Errorf("unexpected results from include list: %v", diff)
+		}
+	})
+	t.Run("exclude list", func(t *testing.T) {
+		points, err = store.SeriesPoints(ctx, SeriesPointsOpts{excluded: []api.RepoID{2}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if diff := cmp.Diff(0, len(points)); diff != "" {
+			t.Errorf("unexpected results from include list: %v", diff)
+		}
+	})
+
 }
 
 func TestCountData(t *testing.T) {
@@ -303,4 +322,14 @@ func TestRecordSeriesPoints(t *testing.T) {
 	// }
 	// autogold.Want("len(forOriginalRepoNamePoints)", nil).Equal(t, len(forOriginalRepoNamePoints))
 	// autogold.Want("forOriginalRepoNamePoints[0].String()", nil).Equal(t, forOriginalRepoNamePoints[0].String())
+}
+
+func TestValues(t *testing.T) {
+	ids := []api.RepoID{1, 2, 3, 4, 5, 6}
+	got := values(ids)
+	want := "VALUES (1),(2),(3),(4),(5),(6)"
+
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("unexpected values string: %v", diff)
+	}
 }
