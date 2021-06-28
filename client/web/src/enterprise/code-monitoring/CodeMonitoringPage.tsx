@@ -9,8 +9,9 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { PageHeader } from '@sourcegraph/wildcard'
+import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
@@ -23,7 +24,7 @@ import {
     fetchUserCodeMonitors as _fetchUserCodeMonitors,
     toggleCodeMonitorEnabled as _toggleCodeMonitorEnabled,
 } from './backend'
-import { CodeMonitoringGettingStarted } from './CodeMonitoringGettingStarted'
+import { CodeMonitoringGettingStarted, HAS_SEEN_CODE_MONITORING_GETTING_STARTED } from './CodeMonitoringGettingStarted'
 import { CodeMonitorList } from './CodeMonitorList'
 
 export interface CodeMonitoringPageProps extends SettingsCascadeProps<Settings>, ThemeProps, FeatureFlagProps {
@@ -64,13 +65,18 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
         )
     )
 
+    const [hasSeenGettingStarted, setHasSeenGettingStarted] = useLocalStorage(
+        HAS_SEEN_CODE_MONITORING_GETTING_STARTED,
+        false
+    )
+
     // If feature flag is not on, make unauthenticated users sign in
     if (!authenticatedUser && !featureFlags.get('w1-signup-optimisation')) {
         return <Redirect to="/sign-in" />
     }
 
     // If user has no code monitors, redirect to the getting started page
-    if (!showGettingStarted && userHasCodeMonitors === false) {
+    if (!showGettingStarted && userHasCodeMonitors === false && !hasSeenGettingStarted) {
         return <Redirect to="/code-monitoring/getting-started" />
     }
 
@@ -115,51 +121,67 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
             />
             {userHasCodeMonitors === 'loading' && <LoadingSpinner />}
 
-            {(showGettingStarted || showList) && (
-                <div className="d-flex flex-column">
-                    <div className="code-monitoring-page-tabs mb-4">
-                        <div className="nav nav-tabs">
-                            <div className="nav-item">
-                                <NavLink
-                                    to="/code-monitoring"
-                                    className="nav-link"
-                                    activeClassName="active"
-                                    exact={true}
-                                >
-                                    <span className="text-content" data-tab-content="Code monitors">
-                                        Code monitors
-                                    </span>
-                                </NavLink>
-                            </div>
-                            <div className="nav-item">
-                                <NavLink
-                                    to="/code-monitoring/getting-started"
-                                    className="nav-link"
-                                    activeClassName="active"
-                                    exact={true}
-                                >
-                                    <span className="text-content" data-tab-content="Getting started">
-                                        Getting started
-                                    </span>
-                                </NavLink>
-                            </div>
+            <div className="d-flex flex-column">
+                <div className="code-monitoring-page-tabs mb-4">
+                    <div className="nav nav-tabs">
+                        <div className="nav-item">
+                            <NavLink to="/code-monitoring" className="nav-link" activeClassName="active" exact={true}>
+                                <span className="text-content" data-tab-content="Code monitors">
+                                    All Code Monitors
+                                </span>
+                            </NavLink>
+                        </div>
+                        <div className="nav-item">
+                            <NavLink
+                                to="/code-monitoring/getting-started"
+                                className="nav-link"
+                                activeClassName="active"
+                                exact={true}
+                            >
+                                <span className="text-content" data-tab-content="Getting started">
+                                    Getting started
+                                </span>
+                            </NavLink>
                         </div>
                     </div>
-
-                    {showGettingStarted && (
-                        <CodeMonitoringGettingStarted isLightTheme={isLightTheme} isSignedIn={!!authenticatedUser} />
-                    )}
-
-                    {showList && authenticatedUser && (
-                        <CodeMonitorList
-                            settingsCascade={settingsCascade}
-                            authenticatedUser={authenticatedUser}
-                            fetchUserCodeMonitors={fetchUserCodeMonitors}
-                            toggleCodeMonitorEnabled={toggleCodeMonitorEnabled}
-                        />
-                    )}
                 </div>
-            )}
+
+                {showGettingStarted && (
+                    <CodeMonitoringGettingStarted
+                        isLightTheme={isLightTheme}
+                        isSignedIn={!!authenticatedUser}
+                        setHasSeenGettingStarted={setHasSeenGettingStarted}
+                    />
+                )}
+
+                {showList && authenticatedUser && (
+                    <CodeMonitorList
+                        settingsCascade={settingsCascade}
+                        authenticatedUser={authenticatedUser}
+                        fetchUserCodeMonitors={fetchUserCodeMonitors}
+                        toggleCodeMonitorEnabled={toggleCodeMonitorEnabled}
+                    />
+                )}
+
+                {!showGettingStarted && userHasCodeMonitors === false && (
+                    <Container className="text-center">
+                        <h2 className="text-muted mb-2">No code monitors have been created.</h2>
+                        {authenticatedUser ? (
+                            <Link to="/code-monitoring/new" className="btn btn-primary">
+                                <PlusIcon className="icon-inline" />
+                                Create a code monitor
+                            </Link>
+                        ) : (
+                            <Link
+                                to={`/sign-up?returnTo=${encodeURIComponent('/code-monitoring/new')}`}
+                                className="btn btn-primary"
+                            >
+                                Sign up to create a code monitor
+                            </Link>
+                        )}
+                    </Container>
+                )}
+            </div>
         </div>
     )
 }

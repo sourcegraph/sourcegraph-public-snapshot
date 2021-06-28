@@ -1,17 +1,29 @@
 import classNames from 'classnames'
 import PlusIcon from 'mdi-react/PlusIcon'
-import React from 'react'
+import React, { useEffect } from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import styles from './CodeMonitoringGettingStarted.module.scss'
 
-export const CodeMonitoringGettingStarted: React.FunctionComponent<ThemeProps & { isSignedIn: boolean }> = ({
+export const HAS_SEEN_CODE_MONITORING_GETTING_STARTED = 'has-seen-code-monitoring-getting-started'
+
+interface CodeMonitoringGettingStartedProps extends ThemeProps {
+    isSignedIn: boolean
+    setHasSeenGettingStarted: (value: boolean) => void
+}
+
+export const CodeMonitoringGettingStarted: React.FunctionComponent<CodeMonitoringGettingStartedProps> = ({
     isLightTheme,
     isSignedIn,
+    setHasSeenGettingStarted,
 }) => {
     const assetsRoot = window.context?.assetsRoot || ''
+
+    useEffect(() => {
+        setHasSeenGettingStarted(true)
+    }, [setHasSeenGettingStarted])
 
     return (
         <div>
