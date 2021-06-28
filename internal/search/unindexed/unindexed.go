@@ -1,4 +1,4 @@
-package run
+package unindexed
 
 import (
 	"context"
@@ -31,9 +31,101 @@ import (
 // A global limiter on number of concurrent searcher searches.
 var textSearchLimiter = mutablelimiter.New(32)
 
+var MockSearchFilesInRepos func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error)
+
+// SearchFilesInRepos searches a set of repos for a pattern.
+func SearchFilesInRepos(ctx context.Context, args *search.TextParameters, stream streaming.Sender) (err error) {
+	if MockSearchFilesInRepos != nil {
+		matches, mockStats, err := MockSearchFilesInRepos(args)
+		stream.Send(streaming.SearchEvent{
+			Results: matches,
+			Stats:   mockStats.Deref(),
+		})
+		return err
+	}
+
+	ctx, stream, cleanup := streaming.WithLimit(ctx, stream, int(args.PatternInfo.FileMatchLimit))
+	defer cleanup()
+
+	tr, ctx := trace.New(ctx, "searchFilesInRepos", fmt.Sprintf("query: %s", args.PatternInfo.Pattern))
+	defer func() {
+		tr.SetErrorIfNotContext(err)
+		tr.Finish()
+	}()
+	tr.LogFields(
+		trace.Stringer("query", args.Query),
+		trace.Stringer("info", args.PatternInfo),
+		trace.Stringer("global_search_mode", args.Mode),
+	)
+
+	// performance: for global searches, we avoid calling NewIndexedSearchRequest
+	// because zoekt will anyway have to search all its shards.
+	var indexed *zoektutil.IndexedSearchRequest
+	if args.Mode == search.ZoektGlobalSearch {
+		indexed = &zoektutil.IndexedSearchRequest{
+			Args:     args,
+			Typ:      zoektutil.TextRequest,
+			RepoRevs: &zoektutil.IndexedRepoRevs{},
+		}
+	} else {
+		indexed, err = zoektutil.NewIndexedSearchRequest(ctx, args, zoektutil.TextRequest, stream)
+		if err != nil {
+			return err
+		}
+	}
+
+	if args.PatternInfo.IsEmpty() {
+		// Empty query isn't an error, but it has no results.
+		return nil
+	}
+
+	g, ctx := errgroup.WithContext(ctx)
+
+	if args.Mode != search.SearcherOnly {
+		// Run searches on indexed repositories.
+
+		if !args.PatternInfo.IsStructuralPat {
+			// Run literal and regexp searches.
+			g.Go(func() error {
+				return indexed.Search(ctx, stream)
+			})
+		} else {
+			// Run structural search (fulfilled via searcher).
+			g.Go(func() error {
+				repos := make([]*search.RepositoryRevisions, 0, len(indexed.Repos()))
+				for _, repo := range indexed.Repos() {
+					repos = append(repos, repo)
+				}
+				return callSearcherOverRepos(ctx, args, stream, repos, true)
+			})
+		}
+	}
+
+	// Concurrently run searcher for all unindexed repos regardless whether text, regexp, or structural search.
+	g.Go(func() error {
+		return callSearcherOverRepos(ctx, args, stream, indexed.Unindexed, false)
+	})
+
+	return g.Wait()
+}
+
+// SearchFilesInRepoBatch is a convenience function around searchFilesInRepos
+// which collects the results from the stream.
+func SearchFilesInReposBatch(ctx context.Context, args *search.TextParameters) ([]*result.FileMatch, streaming.Stats, error) {
+	matches, stats, err := streaming.CollectStream(func(stream streaming.Sender) error {
+		return SearchFilesInRepos(ctx, args, stream)
+	})
+
+	fms, fmErr := matchesToFileMatches(matches)
+	if fmErr != nil && err == nil {
+		err = errors.Wrap(fmErr, "searchFilesInReposBatch failed to convert results")
+	}
+	return fms, stats, err
+}
+
 var mockSearchFilesInRepo func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []result.Match, limitHit bool, err error)
 
-func SearchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo types.RepoName, gitserverRepo api.RepoName, rev string, index bool, info *search.TextPatternInfo, fetchTimeout time.Duration) ([]result.Match, bool, error) {
+func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo types.RepoName, gitserverRepo api.RepoName, rev string, index bool, info *search.TextPatternInfo, fetchTimeout time.Duration) ([]result.Match, bool, error) {
 	if mockSearchFilesInRepo != nil {
 		return mockSearchFilesInRepo(ctx, repo, gitserverRepo, rev, info, fetchTimeout)
 	}
@@ -152,98 +244,6 @@ func matchesToFileMatches(matches []result.Match) ([]*result.FileMatch, error) {
 	return fms, nil
 }
 
-// SearchFilesInRepoBatch is a convenience function around searchFilesInRepos
-// which collects the results from the stream.
-func SearchFilesInReposBatch(ctx context.Context, args *search.TextParameters) ([]*result.FileMatch, streaming.Stats, error) {
-	matches, stats, err := streaming.CollectStream(func(stream streaming.Sender) error {
-		return SearchFilesInRepos(ctx, args, stream)
-	})
-
-	fms, fmErr := matchesToFileMatches(matches)
-	if fmErr != nil && err == nil {
-		err = errors.Wrap(fmErr, "searchFilesInReposBatch failed to convert results")
-	}
-	return fms, stats, err
-}
-
-var MockSearchFilesInRepos func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error)
-
-// SearchFilesInRepos searches a set of repos for a pattern.
-func SearchFilesInRepos(ctx context.Context, args *search.TextParameters, stream streaming.Sender) (err error) {
-	if MockSearchFilesInRepos != nil {
-		matches, mockStats, err := MockSearchFilesInRepos(args)
-		stream.Send(streaming.SearchEvent{
-			Results: matches,
-			Stats:   mockStats.Deref(),
-		})
-		return err
-	}
-
-	ctx, stream, cleanup := streaming.WithLimit(ctx, stream, int(args.PatternInfo.FileMatchLimit))
-	defer cleanup()
-
-	tr, ctx := trace.New(ctx, "searchFilesInRepos", fmt.Sprintf("query: %s", args.PatternInfo.Pattern))
-	defer func() {
-		tr.SetErrorIfNotContext(err)
-		tr.Finish()
-	}()
-	tr.LogFields(
-		trace.Stringer("query", args.Query),
-		trace.Stringer("info", args.PatternInfo),
-		trace.Stringer("global_search_mode", args.Mode),
-	)
-
-	// performance: for global searches, we avoid calling NewIndexedSearchRequest
-	// because zoekt will anyway have to search all its shards.
-	var indexed *zoektutil.IndexedSearchRequest
-	if args.Mode == search.ZoektGlobalSearch {
-		indexed = &zoektutil.IndexedSearchRequest{
-			Args:     args,
-			Typ:      zoektutil.TextRequest,
-			RepoRevs: &zoektutil.IndexedRepoRevs{},
-		}
-	} else {
-		indexed, err = zoektutil.NewIndexedSearchRequest(ctx, args, zoektutil.TextRequest, stream)
-		if err != nil {
-			return err
-		}
-	}
-
-	if args.PatternInfo.IsEmpty() {
-		// Empty query isn't an error, but it has no results.
-		return nil
-	}
-
-	g, ctx := errgroup.WithContext(ctx)
-
-	if args.Mode != search.SearcherOnly {
-		// Run searches on indexed repositories.
-
-		if !args.PatternInfo.IsStructuralPat {
-			// Run literal and regexp searches.
-			g.Go(func() error {
-				return indexed.Search(ctx, stream)
-			})
-		} else {
-			// Run structural search (fulfilled via searcher).
-			g.Go(func() error {
-				repos := make([]*search.RepositoryRevisions, 0, len(indexed.Repos()))
-				for _, repo := range indexed.Repos() {
-					repos = append(repos, repo)
-				}
-				return callSearcherOverRepos(ctx, args, stream, repos, true)
-			})
-		}
-	}
-
-	// Concurrently run searcher for all unindexed repos regardless whether text, regexp, or structural search.
-	g.Go(func() error {
-		return callSearcherOverRepos(ctx, args, stream, indexed.Unindexed, false)
-	})
-
-	return g.Wait()
-}
-
 // callSearcherOverRepos calls searcher on searcherRepos.
 func callSearcherOverRepos(
 	ctx context.Context,
@@ -316,7 +316,7 @@ func callSearcherOverRepos(
 					ctx, done := limitCtx, limitDone
 					defer done()
 
-					matches, repoLimitHit, err := SearchFilesInRepo(ctx, args.SearcherURLs, repoRev.Repo, repoRev.GitserverRepo(), repoRev.RevSpecs()[0], index, args.PatternInfo, fetchTimeout)
+					matches, repoLimitHit, err := searchFilesInRepo(ctx, args.SearcherURLs, repoRev.Repo, repoRev.GitserverRepo(), repoRev.RevSpecs()[0], index, args.PatternInfo, fetchTimeout)
 					if err != nil {
 						tr.LogFields(otlog.String("repo", string(repoRev.Repo.Name)), otlog.Error(err), otlog.Bool("timeout", errcode.IsTimeout(err)), otlog.Bool("temporary", errcode.IsTemporary(err)))
 						log15.Warn("searchFilesInRepo failed", "error", err, "repo", repoRev.Repo.Name)
