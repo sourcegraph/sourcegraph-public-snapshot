@@ -33,13 +33,11 @@ from __future__ import annotations
 
 import argparse
 import itertools
-import json
 import os
 import subprocess
 
-from ssl import SSLContext
-from typing import BinaryIO, Optional, Sequence, TextIO
-from urllib.request import urlopen, Request
+from typing import BinaryIO, Optional, Sequence
+from urllib.request import urlopen
 
 
 def calculate_tags(ref: str) -> Sequence[str]:
@@ -97,47 +95,6 @@ def docker_cli_login(username: str, password: str):
     )
 
 
-class DockerHub:
-    context: SSLContext
-    token: str
-
-    @staticmethod
-    def login(username: str, password: str) -> DockerHub:
-        context = SSLContext()
-        context.load_default_certs()
-
-        with urlopen(
-            Request(
-                "https://hub.docker.com/v2/users/login",
-                method="POST",
-                data=json.dumps({"username": username, "password": password}).encode(
-                    "utf-8"
-                ),
-                headers={"Content-Type": "application/json; charset=utf-8"},
-            ),
-            context=context,
-        ) as resp:
-            hub = DockerHub()
-            hub.context = context
-            hub.token = json.load(resp)["token"]
-
-            return hub
-
-    def update_description(self, image: str, file: TextIO) -> None:
-        urlopen(
-            Request(
-                f"https://hub.docker.com/v2/repositories/{image}/",
-                method="PATCH",
-                data=json.dumps({"full_description": file.read()}).encode("utf-8"),
-                headers={
-                    "Content-Type": "application/json; charset=utf-8",
-                    "Authorization": f"JWT {self.token}",
-                },
-            ),
-            context=self.context,
-        )
-
-
 def run(args: Sequence[str], /, **kwargs) -> subprocess.CompletedProcess:
     print(f"+ {' '.join(args)}")
     return subprocess.run(args, check=True, **kwargs)
@@ -179,12 +136,6 @@ def main():
 
     print("building and pushing image")
     docker_cli_build(open(args.dockerfile, "rb"), args.platform, args.image, tags)
-
-    print("acquiring token to update description")
-    hub = DockerHub.login(os.environ["DOCKER_USERNAME"], os.environ["DOCKER_PASSWORD"])
-
-    print("updating description")
-    hub.update_description(args.image, open(args.readme, "r"))
 
     print("success!")
 
