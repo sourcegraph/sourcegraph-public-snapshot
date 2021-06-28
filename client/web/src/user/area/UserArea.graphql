@@ -1,0 +1,35 @@
+# GraphQL fragment for the User fields needed by UserArea.
+fragment UserAreaUserFields on User {
+    __typename
+    id
+    username
+    displayName
+    url
+    settingsURL
+    avatarURL
+    viewerCanAdminister
+    viewerCanChangeUsername
+    createdAt
+    siteAdmin @include(if: $siteAdmin)
+    builtinAuth
+    createdAt
+    emails @include(if: $siteAdmin) {
+        email
+        verified
+    }
+    organizations {
+        nodes {
+            id
+            displayName
+            name
+        }
+    }
+    # TODO: Re-enable when directive types are fixed in GraphQL code generator: https://github.com/sourcegraph/sourcegraph/issues/22338
+    tags # @include(if: $siteAdmin)
+}
+
+query UserAreaUserProfile($username: String!, $siteAdmin: Boolean!) {
+    user(username: $username) {
+        ...UserAreaUserFields
+    }
+}

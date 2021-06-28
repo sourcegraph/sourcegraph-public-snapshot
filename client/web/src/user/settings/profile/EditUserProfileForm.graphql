@@ -1,0 +1,8 @@
+mutation UpdateUser($user: ID!, $username: String!, $displayName: String, $avatarURL: String) {
+    updateUser(user: $user, username: $username, displayName: $displayName, avatarURL: $avatarURL) {
+        id
+        username
+        displayName
+        avatarURL
+    }
+}

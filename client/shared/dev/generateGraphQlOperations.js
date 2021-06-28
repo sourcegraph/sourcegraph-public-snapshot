@@ -11,22 +11,27 @@ const BROWSER_FOLDER = path.resolve(ROOT_FOLDER, './client/browser')
 const SHARED_FOLDER = path.resolve(ROOT_FOLDER, './client/shared')
 const SCHEMA_PATH = path.join(ROOT_FOLDER, './cmd/frontend/graphqlbackend/*.graphql')
 
+const IGNORED_FILES = [`!${ROOT_FOLDER}/**/graphql-operations.ts`]
+
 const SHARED_DOCUMENTS_GLOB = [
-  `${SHARED_FOLDER}/src/**/*.{ts,tsx}`,
+  `${SHARED_FOLDER}/src/**/*.{ts,tsx,graphql}`,
   `!${SHARED_FOLDER}/src/testing/**/*.*`,
   `!${SHARED_FOLDER}/src/graphql/schema.ts`,
+  ...IGNORED_FILES,
 ]
 
 const WEB_DOCUMENTS_GLOB = [
-  `${WEB_FOLDER}/src/**/*.{ts,tsx}`,
+  `${WEB_FOLDER}/src/**/*.{ts,tsx,graphql}`,
   `!${WEB_FOLDER}/src/regression/**/*.*`,
   `!${WEB_FOLDER}/src/end-to-end/**/*.*`,
+  ...IGNORED_FILES,
 ]
 
 const BROWSER_DOCUMENTS_GLOB = [
-  `${BROWSER_FOLDER}/src/**/*.{ts,tsx}`,
+  `${BROWSER_FOLDER}/src/**/*.{ts,tsx,graphql}`,
   `!${BROWSER_FOLDER}/src/end-to-end/**/*.*`,
   '!**/*.d.ts',
+  ...IGNORED_FILES,
 ]
 
 // Define ALL_DOCUMENTS_GLOB as the union of the previous glob arrays.
@@ -50,6 +55,8 @@ async function generateGraphQlOperations() {
         operationResultSuffix: 'Result',
         omitOperationSuffix: true,
         skipTypename: true,
+        // Appends /*#__PURE__*/ before each export. This means Webpack can tree-shake out any generated code that we do not use.
+        pureMagicComment: true,
         namingConvention: {
           typeNames: 'keep',
           enumValues: 'keep',
@@ -91,7 +98,7 @@ async function generateGraphQlOperations() {
             enumValues: '@sourcegraph/shared/src/graphql-operations',
             interfaceNameForOperations: 'WebGraphQlOperations',
           },
-          plugins,
+          plugins: [...plugins, 'typescript-react-apollo'],
         },
 
         [path.join(SHARED_FOLDER, './src/graphql-operations.ts')]: {

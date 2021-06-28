@@ -1,3 +1,4 @@
+import { ApolloClient, InMemoryCache, createHttpLink, NormalizedCacheObject } from '@apollo/client'
 import { Observable } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
 import { Omit } from 'utility-types'
@@ -54,6 +55,8 @@ export interface GraphQLRequestOptions extends Omit<RequestInit, 'method' | 'bod
     baseUrl?: string
 }
 
+const GRAPHQL_URI = '/.api/graphql'
+
 /**
  * This function should not be called directly as it does not
  * add the necessary headers to authorize the GraphQL API call.
@@ -69,7 +72,7 @@ export function requestGraphQLCommon<T, V = object>({
     variables?: V
 }): Observable<GraphQLResult<T>> {
     const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
-    const apiURL = `/.api/graphql${nameMatch ? '?' + nameMatch[1] : ''}`
+    const apiURL = `${GRAPHQL_URI}${nameMatch ? '?' + nameMatch[1] : ''}`
     return fromFetch(baseUrl ? new URL(apiURL, baseUrl).href : apiURL, {
         ...options,
         method: 'POST',
@@ -77,3 +80,13 @@ export function requestGraphQLCommon<T, V = object>({
         selector: response => checkOk(response).json(),
     })
 }
+
+export const graphQLClient = ({ headers }: { headers: RequestInit['headers'] }): ApolloClient<NormalizedCacheObject> =>
+    new ApolloClient({
+        uri: GRAPHQL_URI,
+        cache: new InMemoryCache(),
+        link: createHttpLink({
+            uri: ({ operationName }) => `${GRAPHQL_URI}?${operationName}`,
+            headers,
+        }),
+    })
