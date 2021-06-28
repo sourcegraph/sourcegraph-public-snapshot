@@ -32,6 +32,7 @@ Guides to help with troubleshooting, configuring test instances, debugging, and 
 ### New features
 
 - [How to add support for a language](how-to/add_support_for_a_language.md)
+- [How to use feature flags](how-to/use_feature_flags.md)
 
 ### [Troubleshooting](how-to/troubleshooting_local_development.md)
 
