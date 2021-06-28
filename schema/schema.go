@@ -1316,6 +1316,8 @@ type SettingsExperimentalFeatures struct {
 	ApiDocs *bool `json:"apiDocs,omitempty"`
 	// CodeInsights description: Enables code insights on directory pages.
 	CodeInsights *bool `json:"codeInsights,omitempty"`
+	// CodeInsightsDashboards description: Enables code insights dashboards separation for the code insight page.
+	CodeInsightsDashboards *bool `json:"codeInsightsDashboards,omitempty"`
 	// CodeMonitoring description: Enables code monitoring.
 	CodeMonitoring *bool `json:"codeMonitoring,omitempty"`
 	// CopyQueryButton description: DEPRECATED: This feature is now permanently enabled. Enables displaying the copy query button in the search bar when hovering over the global navigation bar.

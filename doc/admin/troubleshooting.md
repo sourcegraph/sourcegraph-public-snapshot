@@ -34,7 +34,7 @@ To create a metrics dump from a docker-compose deployment, follow these steps:
 * Open a shell to the running `prometheus` container:
 
 ```sh
-docker exec -it prometheus /bin/bash
+docker exec -it prometheus /bin/sh
 ```
 
 * Inside the container bash shell trigger the creation of a Prometheus snapshot:  

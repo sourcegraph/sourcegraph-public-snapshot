@@ -16,10 +16,6 @@ jest.mock('./SiteAdminProductLicenseNode', () => ({ SiteAdminProductLicenseNode:
 
 jest.mock('../../../dotcom/productSubscriptions/AccountName', () => ({ AccountName: 'AccountName' }))
 
-jest.mock('../../../../tracking/eventLogger', () => ({
-    eventLogger: { logViewEvent: () => undefined },
-}))
-
 const history = H.createMemoryHistory()
 const location = H.createLocation('/')
 

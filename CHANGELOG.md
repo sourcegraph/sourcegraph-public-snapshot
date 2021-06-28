@@ -19,11 +19,13 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
--
+- Backend Code Insights only fills historical data frames that have changed to reduce the number of searches required. [#22298](https://github.com/sourcegraph/sourcegraph/pull/22298)
+- Backend Code Insights displays data points for a fixed 6 months period in 2 week intervals, and will carry observations forward that are missing. [#22298](https://github.com/sourcegraph/sourcegraph/pull/22298)
 
 ### Fixed
 
--
+- The Batch Changes user and site credential encryption migrators added in Sourcegraph 3.28 could report zero progress when encryption was disabled, even though they had nothing to do. This has been fixed, and progress will now be correctly reported. [#22277](https://github.com/sourcegraph/sourcegraph/issues/22277)
+- Listing Github Entreprise org repos now returns internal repos as well. [#22339](https://github.com/sourcegraph/sourcegraph/pull/22339)
 
 ### Removed
 

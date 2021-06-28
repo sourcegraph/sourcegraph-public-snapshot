@@ -112,3 +112,11 @@ func (c *Stats) Equal(other *Stats) bool {
 func (c *Stats) AllReposTimedOut() bool {
 	return c.Status.All(search.RepoStatusTimedout) && c.Status.Len() == len(c.Repos)
 }
+
+// Deref returns the zero-valued stats if its receiver is nil
+func (c *Stats) Deref() Stats {
+	if c != nil {
+		return *c
+	}
+	return Stats{}
+}

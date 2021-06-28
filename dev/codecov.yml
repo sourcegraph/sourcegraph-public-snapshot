@@ -42,6 +42,7 @@ coverage:
           - go
     patch:
       default:
+        informational: true
         only_pulls: true
         target: 5%
 comment: false

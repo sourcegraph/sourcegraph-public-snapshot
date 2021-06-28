@@ -1,4 +1,4 @@
-package run
+package symbol
 
 import (
 	"context"
@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
@@ -28,23 +29,25 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
-var MockSearchSymbols func(ctx context.Context, args *search.TextParameters, limit int) (res []*result.FileMatch, stats *streaming.Stats, err error)
+const DefaultSymbolLimit = 100
 
-// SearchSymbols searches the given repos in parallel for symbols matching the given search query
+var MockSearchSymbols func(ctx context.Context, args *search.TextParameters, limit int) (res []result.Match, stats *streaming.Stats, err error)
+
+// Search searches the given repos in parallel for symbols matching the given search query
 // it can be used for both search suggestions and search results
 //
 // May return partial results and an error
-func SearchSymbols(ctx context.Context, args *search.TextParameters, limit int, stream streaming.Sender) (err error) {
+func Search(ctx context.Context, args *search.TextParameters, limit int, stream streaming.Sender) (err error) {
 	if MockSearchSymbols != nil {
 		results, stats, err := MockSearchSymbols(ctx, args, limit)
 		stream.Send(streaming.SearchEvent{
-			Results: fileMatchesToMatches(results),
-			Stats:   statsDeref(stats),
+			Results: results,
+			Stats:   stats.Deref(),
 		})
 		return err
 	}
 
-	repos, err := getRepos(ctx, args.RepoPromise)
+	repos, err := args.RepoPromise.Get(ctx)
 	if err != nil {
 		return err
 	}
@@ -96,10 +99,10 @@ func SearchSymbols(ctx context.Context, args *search.TextParameters, limit int, 
 		goroutine.Go(func() {
 			defer run.Release()
 
-			matches, err := searchSymbolsInRepo(ctx, repoRevs, args.PatternInfo, limit)
-			stats, err := handleRepoSearchResult(repoRevs, len(matches) > limit, false, err)
+			matches, err := searchInRepo(ctx, repoRevs, args.PatternInfo, limit)
+			stats, err := searchrepos.HandleRepoSearchResult(repoRevs, len(matches) > limit, false, err)
 			stream.Send(streaming.SearchEvent{
-				Results: fileMatchesToMatches(matches),
+				Results: matches,
 				Stats:   stats,
 			})
 			if err != nil {
@@ -116,7 +119,7 @@ func SearchSymbols(ctx context.Context, args *search.TextParameters, limit int, 
 	return run.Wait()
 }
 
-func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, limit int) (res []*result.FileMatch, err error) {
+func searchInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, limit int) (res []result.Match, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Search symbols in repo")
 	defer func() {
 		if err != nil {
@@ -152,7 +155,7 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 	})
 
 	// All symbols are from the same repo, so we can just partition them by path
-	// to build fileMatches
+	// to build file matches
 	symbolsByPath := make(map[string][]*result.Symbol)
 	for _, symbol := range symbols {
 		cur := symbolsByPath[symbol.Path]
@@ -160,7 +163,7 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 	}
 
 	// Create file matches from partitioned symbols
-	fileMatches := make([]*result.FileMatch, 0, len(symbolsByPath))
+	matches := make([]result.Match, 0, len(symbolsByPath))
 	for path, symbols := range symbolsByPath {
 		file := result.File{
 			Path:     path,
@@ -177,17 +180,15 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 			})
 		}
 
-		fileMatches = append(fileMatches, &result.FileMatch{
+		matches = append(matches, &result.FileMatch{
 			Symbols: symbolMatches,
 			File:    file,
 		})
 	}
 
 	// Make the results deterministic
-	sort.Slice(fileMatches, func(i, j int) bool {
-		return fileMatches[i].Path < fileMatches[j].Path
-	})
-	return fileMatches, err
+	sort.Sort(result.Matches(matches))
+	return matches, err
 }
 
 // indexedSymbols checks to see if Zoekt has indexed symbols information for a
@@ -220,7 +221,7 @@ func indexedSymbolsBranch(ctx context.Context, repository, commit string) string
 	return ""
 }
 
-func searchZoektSymbols(ctx context.Context, repoName types.RepoName, commitID api.CommitID, inputRev *string, branch string, queryString *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
+func searchZoekt(ctx context.Context, repoName types.RepoName, commitID api.CommitID, inputRev *string, branch string, queryString *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
 	raw := *queryString
 	if raw == "" {
 		raw = ".*"
@@ -309,11 +310,11 @@ func searchZoektSymbols(ctx context.Context, repoName types.RepoName, commitID a
 	return
 }
 
-func ComputeSymbols(ctx context.Context, repoName types.RepoName, commitID api.CommitID, inputRev *string, query *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
+func Compute(ctx context.Context, repoName types.RepoName, commitID api.CommitID, inputRev *string, query *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
 	// TODO(keegancsmith) we should be able to use indexedSearchRequest here
 	// and remove indexedSymbolsBranch.
 	if branch := indexedSymbolsBranch(ctx, string(repoName.Name), string(commitID)); branch != "" {
-		return searchZoektSymbols(ctx, repoName, commitID, inputRev, branch, query, first, includePatterns)
+		return searchZoekt(ctx, repoName, commitID, inputRev, branch, query, first, includePatterns)
 	}
 
 	ctx, done := context.WithTimeout(ctx, 5*time.Second)
@@ -361,8 +362,6 @@ func ComputeSymbols(ctx context.Context, repoName types.RepoName, commitID api.C
 	}
 	return matches, err
 }
-
-const DefaultSymbolLimit = 100
 
 func limitOrDefault(first *int32) int {
 	if first == nil {

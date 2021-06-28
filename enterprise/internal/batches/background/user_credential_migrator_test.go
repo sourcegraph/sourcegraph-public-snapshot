@@ -195,8 +195,9 @@ func createUnencryptedUserCredential(
 	if err := store.Exec(
 		ctx,
 		sqlf.Sprintf(
-			"UPDATE user_credentials SET credential = %s, encryption_key_id = '' WHERE id = %s",
+			"UPDATE user_credentials SET credential = %s, encryption_key_id = %s WHERE id = %s",
 			raw,
+			database.UserCredentialUnmigratedEncryptionKeyID,
 			cred.ID,
 		),
 	); err != nil {

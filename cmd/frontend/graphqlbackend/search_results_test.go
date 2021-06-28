@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -113,7 +114,7 @@ func TestSearchResults(t *testing.T) {
 		database.Mocks.Repos.MockGet(t, 1)
 		database.Mocks.Repos.Count = mockCount
 
-		run.MockSearchFilesInRepos = func(args *search.TextParameters) ([]*result.FileMatch, *streaming.Stats, error) {
+		run.MockSearchFilesInRepos = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
 			return nil, &streaming.Stats{}, nil
 		}
 		defer func() { run.MockSearchFilesInRepos = nil }()
@@ -155,7 +156,7 @@ func TestSearchResults(t *testing.T) {
 		defer func() { run.MockSearchRepositories = nil }()
 
 		calledSearchSymbols := false
-		run.MockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []*result.FileMatch, common *streaming.Stats, err error) {
+		symbol.MockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []result.Match, common *streaming.Stats, err error) {
 			calledSearchSymbols = true
 			if want := `(foo\d).*?(bar\*)`; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
@@ -163,17 +164,17 @@ func TestSearchResults(t *testing.T) {
 			// TODO return mock results here and assert that they are output as results
 			return nil, nil, nil
 		}
-		defer func() { run.MockSearchSymbols = nil }()
+		defer func() { symbol.MockSearchSymbols = nil }()
 
 		calledSearchFilesInRepos := atomic.NewBool(false)
-		run.MockSearchFilesInRepos = func(args *search.TextParameters) ([]*result.FileMatch, *streaming.Stats, error) {
+		run.MockSearchFilesInRepos = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
 			calledSearchFilesInRepos.Store(true)
 			if want := `(foo\d).*?(bar\*)`; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
 			}
 			repo := types.RepoName{ID: 1, Name: "repo"}
 			fm := mkFileMatch(repo, "dir/file", 123)
-			return []*result.FileMatch{fm}, &streaming.Stats{}, nil
+			return []result.Match{fm}, &streaming.Stats{}, nil
 		}
 		defer func() { run.MockSearchFilesInRepos = nil }()
 
@@ -220,7 +221,7 @@ func TestSearchResults(t *testing.T) {
 		defer func() { run.MockSearchRepositories = nil }()
 
 		calledSearchSymbols := false
-		run.MockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []*result.FileMatch, common *streaming.Stats, err error) {
+		symbol.MockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []result.Match, common *streaming.Stats, err error) {
 			calledSearchSymbols = true
 			if want := `"foo\\d \"bar*\""`; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
@@ -228,17 +229,17 @@ func TestSearchResults(t *testing.T) {
 			// TODO return mock results here and assert that they are output as results
 			return nil, nil, nil
 		}
-		defer func() { run.MockSearchSymbols = nil }()
+		defer func() { symbol.MockSearchSymbols = nil }()
 
 		calledSearchFilesInRepos := atomic.NewBool(false)
-		run.MockSearchFilesInRepos = func(args *search.TextParameters) ([]*result.FileMatch, *streaming.Stats, error) {
+		run.MockSearchFilesInRepos = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
 			calledSearchFilesInRepos.Store(true)
 			if want := `foo\\d "bar\*"`; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
 			}
 			repo := types.RepoName{ID: 1, Name: "repo"}
 			fm := mkFileMatch(repo, "dir/file", 123)
-			return []*result.FileMatch{fm}, &streaming.Stats{}, nil
+			return []result.Match{fm}, &streaming.Stats{}, nil
 		}
 		defer func() { run.MockSearchFilesInRepos = nil }()
 

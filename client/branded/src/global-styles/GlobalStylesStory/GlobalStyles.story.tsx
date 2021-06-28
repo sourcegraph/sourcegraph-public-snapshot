@@ -13,6 +13,7 @@ import React, { useState } from 'react'
 import 'storybook-addon-designs'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
+import { registerHighlightContributions } from '@sourcegraph/shared/src/highlight/contributions'
 import { highlightCodeSafe } from '@sourcegraph/shared/src/util/markdown'
 
 import { BrandedStory } from '../../components/BrandedStory'
@@ -28,6 +29,8 @@ import { SEMANTIC_COLORS } from './constants'
 import { FormFieldVariants } from './FormFieldVariants'
 import { TextStory } from './TextStory'
 import { preventDefault } from './utils'
+
+registerHighlightContributions()
 
 const { add } = storiesOf('branded/Global styles', module).addDecorator(story => (
     <BrandedStory>{() => <div className="p-3 container">{story()}</div>}</BrandedStory>

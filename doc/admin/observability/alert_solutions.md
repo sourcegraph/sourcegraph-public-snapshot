@@ -1350,12 +1350,12 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 ## gitserver: running_git_commands
 
-<p class="subtitle">git commands sent to each gitserver instance</p>
+<p class="subtitle">git commands running on each gitserver instance</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> gitserver: 50+ git commands sent to each gitserver instance for 2m0s
-- <span class="badge badge-critical">critical</span> gitserver: 100+ git commands sent to each gitserver instance for 5m0s
+- <span class="badge badge-warning">warning</span> gitserver: 50+ git commands running on each gitserver instance for 2m0s
+- <span class="badge badge-critical">critical</span> gitserver: 100+ git commands running on each gitserver instance for 5m0s
 
 **Possible solutions**
 
@@ -3513,15 +3513,15 @@ with your code hosts connections or networking issues affecting communication wi
 
 ## repo-updater: src_repoupdater_syncer_sync_errors_total
 
-<p class="subtitle">sync error rate</p>
+<p class="subtitle">site level external service sync error rate</p>
 
 **Descriptions**
 
-- <span class="badge badge-critical">critical</span> repo-updater: 0+ sync error rate for 10m0s
+- <span class="badge badge-critical">critical</span> repo-updater: 0+ site level external service sync error rate for 10m0s
 
 **Possible solutions**
 
-- An alert here indicates errors syncing repo metadata with code hosts. This indicates that there could be a configuration issue
+- An alert here indicates errors syncing site level repo metadata with code hosts. This indicates that there could be a configuration issue
 with your code hosts connections or networking issues affecting communication with your code hosts.
 - Check the code host status indicator (cloud icon in top right of Sourcegraph homepage) for errors.
 - Make sure external services do not have invalid tokens by navigating to them in the web UI and clicking save. If there are no errors, they are valid.
@@ -3542,11 +3542,11 @@ with your code hosts connections or networking issues affecting communication wi
 
 ## repo-updater: syncer_sync_start
 
-<p class="subtitle">sync was started</p>
+<p class="subtitle">repo metadata sync was started</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> repo-updater: less than 0 sync was started for 9h0m0s
+- <span class="badge badge-warning">warning</span> repo-updater: less than 0 repo metadata sync was started for 9h0m0s
 
 **Possible solutions**
 
@@ -4050,13 +4050,13 @@ with your code hosts connections or networking issues affecting communication wi
 
 <br />
 
-## repo-updater: repoupdater_errored_sync_jobs_total
+## repo-updater: repoupdater_errored_sync_jobs_percentage
 
-<p class="subtitle">the total number of errored sync jobs</p>
+<p class="subtitle">the percentage of external services that have failed their most recent sync</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> repo-updater: 100+ the total number of errored sync jobs for 1h0m0s
+- <span class="badge badge-warning">warning</span> repo-updater: 10%+ the percentage of external services that have failed their most recent sync for 1h0m0s
 
 **Possible solutions**
 
@@ -4065,7 +4065,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 ```json
 "observability.silenceAlerts": [
-  "warning_repo-updater_repoupdater_errored_sync_jobs_total"
+  "warning_repo-updater_repoupdater_errored_sync_jobs_percentage"
 ]
 ```
 

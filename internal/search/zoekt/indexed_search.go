@@ -215,7 +215,7 @@ func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	repos, err := getRepos(ctx, args.RepoPromise)
+	repos, err := args.RepoPromise.Get(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -353,7 +353,7 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *Indexe
 	g.Go(func() error {
 		defer close(reposResolved)
 		if args.Mode == search.ZoektGlobalSearch || args.PatternInfo.Select.Root() == filter.Repository {
-			repos, err := getRepos(ctx, args.RepoPromise)
+			repos, err := args.RepoPromise.Get(ctx)
 			if err != nil {
 				return err
 			}
@@ -497,20 +497,6 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *Indexe
 		return nil
 	}
 	return nil
-}
-
-// getRepos is a wrapper around p.Get. It returns an error if the promise
-// contains an underlying type other than []*search.RepositoryRevisions.
-func getRepos(ctx context.Context, p *search.Promise) ([]*search.RepositoryRevisions, error) {
-	v, err := p.Get(ctx)
-	if err != nil {
-		return nil, err
-	}
-	repoRevs, ok := v.([]*search.RepositoryRevisions)
-	if !ok {
-		return nil, fmt.Errorf("unexpected underlying type (%T) of promise", v)
-	}
-	return repoRevs, nil
 }
 
 // bufferedSender returns a buffered Sender with capacity cap, and a cleanup

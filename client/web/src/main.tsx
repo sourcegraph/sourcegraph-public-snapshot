@@ -14,7 +14,7 @@ import { extensionAreaHeaderNavItems } from './extensions/extension/extensionAre
 import { extensionAreaRoutes } from './extensions/extension/routes'
 import { extensionsAreaHeaderActionButtons } from './extensions/extensionsAreaHeaderActionButtons'
 import { extensionsAreaRoutes } from './extensions/routes'
-import './main.scss'
+import './SourcegraphWebApp.scss'
 import { KEYBOARD_SHORTCUTS } from './keyboardShortcuts/keyboardShortcuts'
 import { orgAreaHeaderNavItems } from './org/area/navitems'
 import { orgAreaRoutes } from './org/area/routes'

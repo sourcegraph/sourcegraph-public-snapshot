@@ -184,7 +184,7 @@ require (
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/sys v0.0.0-20210611083646-a4fc73990273
 	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e
-	golang.org/x/tools v0.1.3
+	golang.org/x/tools v0.1.4
 	google.golang.org/api v0.46.0
 	google.golang.org/genproto v0.0.0-20210517163617-5e0236093d7a
 	google.golang.org/protobuf v1.26.0
@@ -206,7 +206,7 @@ require (
 // or intentional forks.
 replace (
 	// We maintain our own fork of Zoekt. Update with ./dev/zoekt/update
-	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20210621220134-2602014e1faf
+	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20210622031536-099907aa573a
 	// We use a fork of Alertmanager to allow prom-wrapper to better manipulate Alertmanager configuration.
 	// See https://docs.sourcegraph.com/dev/background-information/observability/prometheus
 	github.com/prometheus/alertmanager => github.com/sourcegraph/alertmanager v0.21.1-0.20200727091526-3e856a90b534

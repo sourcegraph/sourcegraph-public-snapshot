@@ -61,8 +61,8 @@ func (mockAddrForRepo) AddrForRepo(name api.RepoName) string {
 }
 
 func TestReposIndex(t *testing.T) {
-	defaultRepos := []string{"github.com/popular/foo", "github.com/popular/bar"}
-	allRepos := append(defaultRepos, "github.com/alice/foo", "github.com/alice/bar")
+	indexableRepos := []string{"github.com/popular/foo", "github.com/popular/bar"}
+	allRepos := append(indexableRepos, "github.com/alice/foo", "github.com/alice/bar")
 
 	cases := []struct {
 		name string
@@ -73,8 +73,8 @@ func TestReposIndex(t *testing.T) {
 		name: "indexers",
 		srv: &reposListServer{
 			Repos: &mockRepos{
-				defaultRepos: defaultRepos,
-				repos:        allRepos,
+				indexableRepos: indexableRepos,
+				repos:          allRepos,
 			},
 			Indexers: suffixIndexers(true),
 		},
@@ -84,8 +84,8 @@ func TestReposIndex(t *testing.T) {
 		name: "indexers",
 		srv: &reposListServer{
 			Repos: &mockRepos{
-				defaultRepos: defaultRepos,
-				repos:        allRepos,
+				indexableRepos: indexableRepos,
+				repos:          allRepos,
 			},
 			Indexers: suffixIndexers(true),
 		},
@@ -96,8 +96,8 @@ func TestReposIndex(t *testing.T) {
 		srv: &reposListServer{
 			SourcegraphDotComMode: true,
 			Repos: &mockRepos{
-				defaultRepos: defaultRepos,
-				repos:        allRepos,
+				indexableRepos: indexableRepos,
+				repos:          allRepos,
 			},
 			Indexers: suffixIndexers(true),
 		},
@@ -107,8 +107,8 @@ func TestReposIndex(t *testing.T) {
 		name: "none",
 		srv: &reposListServer{
 			Repos: &mockRepos{
-				defaultRepos: defaultRepos,
-				repos:        allRepos,
+				indexableRepos: indexableRepos,
+				repos:          allRepos,
 			},
 			Indexers: suffixIndexers(true),
 		},
@@ -146,13 +146,13 @@ func TestReposIndex(t *testing.T) {
 }
 
 type mockRepos struct {
-	defaultRepos []string
-	repos        []string
+	indexableRepos []string
+	repos          []string
 }
 
 func (r *mockRepos) ListIndexable(context.Context) ([]types.RepoName, error) {
 	var repos []types.RepoName
-	for _, name := range r.defaultRepos {
+	for _, name := range r.indexableRepos {
 		repos = append(repos, types.RepoName{
 			Name: api.RepoName(name),
 		})

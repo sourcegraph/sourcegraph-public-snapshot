@@ -18,7 +18,7 @@ interface CodeHostItemProps {
     name: string
     icon: React.ComponentType<{ className?: string }>
     navigateToAuthProvider: (kind: ExternalServiceKind) => void
-    isTokenUpdateRequired: boolean
+    isTokenUpdateRequired: boolean | undefined
     // optional service object fields when the code host connection is active
     service?: ListExternalServiceFields
 

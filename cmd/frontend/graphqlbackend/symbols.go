@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/run"
+	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
 )
 
 type symbolsArgs struct {
@@ -18,7 +18,7 @@ type symbolsArgs struct {
 }
 
 func (r *GitTreeEntryResolver) Symbols(ctx context.Context, args *symbolsArgs) (*symbolConnectionResolver, error) {
-	symbols, err := run.ComputeSymbols(ctx, r.commit.repoResolver.RepoMatch.RepoName(), api.CommitID(r.commit.oid), r.commit.inputRev, args.Query, args.First, args.IncludePatterns)
+	symbols, err := symbol.Compute(ctx, r.commit.repoResolver.RepoMatch.RepoName(), api.CommitID(r.commit.oid), r.commit.inputRev, args.Query, args.First, args.IncludePatterns)
 	if err != nil && len(symbols) == 0 {
 		return nil, err
 	}
@@ -29,7 +29,7 @@ func (r *GitTreeEntryResolver) Symbols(ctx context.Context, args *symbolsArgs) (
 }
 
 func (r *GitCommitResolver) Symbols(ctx context.Context, args *symbolsArgs) (*symbolConnectionResolver, error) {
-	symbols, err := run.ComputeSymbols(ctx, r.repoResolver.RepoMatch.RepoName(), api.CommitID(r.oid), r.inputRev, args.Query, args.First, args.IncludePatterns)
+	symbols, err := symbol.Compute(ctx, r.repoResolver.RepoMatch.RepoName(), api.CommitID(r.oid), r.inputRev, args.Query, args.First, args.IncludePatterns)
 	if err != nil && len(symbols) == 0 {
 		return nil, err
 	}
@@ -62,7 +62,7 @@ type symbolConnectionResolver struct {
 
 func limitOrDefault(first *int32) int {
 	if first == nil {
-		return run.DefaultSymbolLimit
+		return symbol.DefaultSymbolLimit
 	}
 	return int(*first)
 }

@@ -48,7 +48,7 @@ func TestSiteCredentialMigrator(t *testing.T) {
 		}
 
 		cred.EncryptedCredential = enc
-		cred.EncryptionKeyID = ""
+		cred.EncryptionKeyID = btypes.SiteCredentialUnmigratedEncryptionKeyID
 		if err := cstore.UpdateSiteCredential(ctx, cred); err != nil {
 			t.Fatal(err)
 		}

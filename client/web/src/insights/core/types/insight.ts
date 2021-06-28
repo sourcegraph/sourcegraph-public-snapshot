@@ -1,6 +1,6 @@
 import { Duration } from 'date-fns'
 
-import { DataSeries } from './backend/types'
+import { DataSeries } from '../backend/types'
 
 export enum InsightTypePrefix {
     search = 'searchInsights.insight',

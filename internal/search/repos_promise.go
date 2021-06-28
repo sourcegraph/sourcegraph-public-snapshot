@@ -5,20 +5,20 @@ import (
 	"sync"
 )
 
-type Promise struct {
+type RepoPromise struct {
 	initOnce sync.Once
 	done     chan struct{}
 
 	valueOnce sync.Once
-	value     interface{}
+	value     []*RepositoryRevisions
 }
 
-func (p *Promise) init() {
+func (p *RepoPromise) init() {
 	p.initOnce.Do(func() { p.done = make(chan struct{}) })
 }
 
 // Resolve returns a promise that is resolved with a given value.
-func (p *Promise) Resolve(v interface{}) *Promise {
+func (p *RepoPromise) Resolve(v []*RepositoryRevisions) *RepoPromise {
 	p.valueOnce.Do(func() {
 		p.init()
 		p.value = v
@@ -27,9 +27,9 @@ func (p *Promise) Resolve(v interface{}) *Promise {
 	return p
 }
 
-// Get returns the value. It blocks until the promise resolves or the context is
-// canceled.
-func (p *Promise) Get(ctx context.Context) (interface{}, error) {
+// Get returns the resolved revisions. It blocks until the promise resolves or
+// the context is canceled.
+func (p *RepoPromise) Get(ctx context.Context) ([]*RepositoryRevisions, error) {
 	p.init()
 	select {
 	case <-ctx.Done():

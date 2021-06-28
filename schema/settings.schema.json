@@ -20,6 +20,14 @@
             "pointer": true
           }
         },
+        "codeInsightsDashboards": {
+          "description": "Enables code insights dashboards separation for the code insight page.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
         "codeMonitoring": {
           "description": "Enables code monitoring.",
           "type": "boolean",
