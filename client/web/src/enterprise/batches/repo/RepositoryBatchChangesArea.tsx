@@ -11,13 +11,7 @@ import { PatternTypeProps } from '../../../search'
 
 import { BatchChangeRepoPage } from './BatchChangeRepoPage'
 
-const NotFoundPage: React.FunctionComponent = () => (
-    <HeroPage
-        icon={MapSearchIcon}
-        title="404: Not Found"
-        subtitle="Sorry, the requested repository stats page was not found."
-    />
-)
+const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
 /**
  * Properties passed to all page components in the repository batch changes area.
