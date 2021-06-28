@@ -13,7 +13,7 @@ import { Page } from '../../../components/Page'
 import { PageTitle } from '../../../components/PageTitle'
 import { FORM_ERROR, SubmissionErrors } from '../../components/form/hooks/useForm'
 import { InsightsApiContext } from '../../core/backend/api-provider'
-import { addInsightToCascadeSetting, removeInsightFromSetting } from '../../core/jsonc-operation'
+import { addInsightToSettings, removeInsightFromSettings } from '../../core/settings-action/insights'
 import { Insight, isLangStatsInsight, isSearchBasedInsight } from '../../core/types'
 
 import { EditLangStatsInsight } from './components/EditLangStatsInsight'
@@ -103,25 +103,31 @@ export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = pr
             // subject settings (user or org) and create new insight to new setting file.
             if (insight.visibility !== newInsight.visibility) {
                 const settings = await getSubjectSettings(originSubjectID).toPromise()
-                const editedSettings = removeInsightFromSetting(settings.contents, insight.id)
+                const editedSettings = removeInsightFromSettings({
+                    originSettings: settings.contents,
+                    insightID: insight.id,
+                })
 
                 await updateSubjectSettings(platformContext, originSubjectID, editedSettings).toPromise()
             }
 
             const { id: userID } = authenticatedUser
-
             const subjectID = newInsight.visibility === 'personal' ? userID : newInsight.visibility
 
             const settings = await getSubjectSettings(subjectID).toPromise()
+
             let settingsContent = settings.contents
 
             // Since id of insight is based on insight title if title was changed
             // we need remove old insight object from settings by insight old id
             if (insight.title !== newInsight.title) {
-                settingsContent = removeInsightFromSetting(settingsContent, insight.id)
+                settingsContent = removeInsightFromSettings({
+                    originSettings: settingsContent,
+                    insightID: insight.id,
+                })
             }
 
-            settingsContent = addInsightToCascadeSetting(settingsContent, newInsight)
+            settingsContent = addInsightToSettings(settingsContent, newInsight)
 
             await updateSubjectSettings(platformContext, subjectID, settingsContent).toPromise()
 
