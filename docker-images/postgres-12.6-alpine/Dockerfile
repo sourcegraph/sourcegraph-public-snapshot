@@ -1,5 +1,6 @@
 FROM postgres:12.6-alpine@sha256:faf54a67a58ecf4d21e3e68b9a3b33f81a11e8a786530044c4ee80d51b148e05
 
+# hadolint ignore=DL3018
 RUN apk add --no-cache nss su-exec shadow &&\
     groupmod -g 99 ping &&\
     usermod -u 999 postgres &&\
@@ -14,8 +15,6 @@ ENV POSTGRES_PASSWORD='' \
     PGDATA=/data/pgdata-12
 
 COPY rootfs /
-
 USER postgres
-
 ENTRYPOINT ["/postgres.sh"]
 
