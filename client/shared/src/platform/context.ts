@@ -1,3 +1,4 @@
+import { TypedDocumentNode } from '@apollo/client'
 import { Endpoint } from 'comlink'
 import { isObject } from 'lodash'
 import { NextObserver, Observable, Subscribable, Subscription } from 'rxjs'
@@ -103,7 +104,7 @@ export interface PlatformContext {
         /**
          * The GraphQL request (query or mutation)
          */
-        request: string
+        request: string | TypedDocumentNode<R, V>
         /**
          * An object whose properties are GraphQL query name-value variable pairs
          */

@@ -12,6 +12,7 @@ import {
     QueryResult,
     MutationHookOptions,
     MutationTuple,
+    TypedDocumentNode,
 } from '@apollo/client'
 import { useMemo } from 'react'
 import { Observable } from 'rxjs'
@@ -106,7 +107,7 @@ export const graphQLClient = ({ headers }: { headers: RequestInit['headers'] }):
         }),
     })
 
-type RequestDocument = string | DocumentNode
+type RequestDocument = string | DocumentNode | TypedDocumentNode
 
 /**
  * Returns a `DocumentNode` value to support integrations with GraphQL clients that require this.
@@ -133,7 +134,7 @@ const useDocumentNode = (document: RequestDocument): DocumentNode =>
  * @returns GraphQL response
  */
 export function useQuery<TData = any, TVariables = OperationVariables>(
-    query: RequestDocument,
+    query: TypedDocumentNode<TData, TVariables>,
     options: QueryHookOptions<TData, TVariables>
 ): QueryResult<TData, TVariables> {
     const documentNode = useDocumentNode(query)
@@ -149,7 +150,7 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
  * @returns GraphQL response
  */
 export function useMutation<TData = any, TVariables = OperationVariables>(
-    mutation: RequestDocument,
+    mutation: TypedDocumentNode<TData, TVariables>,
     options?: MutationHookOptions<TData, TVariables>
 ): MutationTuple<TData, TVariables> {
     const documentNode = useDocumentNode(mutation)
