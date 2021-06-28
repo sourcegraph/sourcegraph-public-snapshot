@@ -82,3 +82,7 @@ export function isSearchBasedInsight(insight: Insight): insight is SearchBasedIn
 export function isLangStatsInsight(insight: Insight): insight is LangStatsInsight {
     return insight.id.startsWith(InsightTypePrefix.langStats)
 }
+
+export function isInsightSettingKey(key: string): boolean {
+    return key.startsWith(InsightTypePrefix.search) || key.startsWith(InsightTypePrefix.langStats)
+}

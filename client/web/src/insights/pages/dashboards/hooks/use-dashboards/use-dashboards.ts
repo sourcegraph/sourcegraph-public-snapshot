@@ -9,7 +9,14 @@ import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { isDefined } from '@sourcegraph/shared/src/util/types'
 
 import { Settings } from '../../../../../schema/settings.schema'
-import { InsightDashboard, InsightDashboardOwner } from '../../../../core/types'
+import {
+    InsightDashboard,
+    InsightBuiltInDashboard,
+    InsightCustomDashboard,
+    InsightDashboardOwner,
+    InsightsDashboardType,
+    isInsightSettingKey,
+} from '../../../../core/types'
 
 /**
  * React hook that returns all valid and available insights dashboards.
@@ -28,7 +35,49 @@ export function getInsightsDashboards(subjects: ConfiguredSubjectOrError<Setting
         return []
     }
 
-    return subjects.reduce<InsightDashboard[]>((dashboards, subject) => {
+    const builtInDashboards = getBuiltInDashboards(subjects)
+    const customDashboards = getCustomDashboards(subjects)
+
+    return [...builtInDashboards, ...customDashboards]
+}
+
+/**
+ * Returns built in types of insights dashboards (all, personal, org level dashboards).
+ */
+function getBuiltInDashboards(subjects: ConfiguredSubjectOrError<Settings>[]): InsightBuiltInDashboard[] {
+    const allInsightDashboard: InsightBuiltInDashboard = {
+        title: 'All',
+        type: InsightsDashboardType.BuiltIn,
+    }
+
+    const subjectDashboards = subjects.reduce<InsightBuiltInDashboard[]>((dashboards, subject) => {
+        const settings = subject.settings
+
+        if (isErrorLike(settings) || settings === null) {
+            return dashboards
+        }
+
+        const dashboardOwner = getDashboardOwner(subject.subject)
+        const subjectInsightIds = Object.keys(settings).filter(isInsightSettingKey)
+
+        const subjectDashboard: InsightBuiltInDashboard = {
+            type: InsightsDashboardType.BuiltIn,
+            owner: dashboardOwner,
+            insightIds: subjectInsightIds,
+        }
+
+        return [...dashboards, subjectDashboard]
+    }, [])
+
+    return [allInsightDashboard, ...subjectDashboards]
+}
+
+/**
+ * Returns list of custom insights dashboards generated from settings cascade subjects.
+ *
+ */
+function getCustomDashboards(subjects: ConfiguredSubjectOrError<Settings>[]): InsightCustomDashboard[] {
+    return subjects.reduce<InsightCustomDashboard[]>((dashboards, subject) => {
         const settings = subject.settings
 
         if (isErrorLike(settings) || settings === null) {
@@ -36,7 +85,7 @@ export function getInsightsDashboards(subjects: ConfiguredSubjectOrError<Setting
         }
 
         const subjectDashboards = Object.keys(settings['insights.dashboards'] ?? {})
-            .map<InsightDashboard | undefined>(dashboardKey => {
+            .map<InsightCustomDashboard | undefined>(dashboardKey => {
                 // Select dashboard configuration from the subject settings
                 const dashboardSettings = settings['insights.dashboards']?.[dashboardKey]
 
@@ -46,6 +95,7 @@ export function getInsightsDashboards(subjects: ConfiguredSubjectOrError<Setting
 
                 // Extend settings dashboard configuration with owner info
                 return {
+                    type: InsightsDashboardType.Custom,
                     owner: getDashboardOwner(subject.subject),
                     ...dashboardSettings,
                 }
