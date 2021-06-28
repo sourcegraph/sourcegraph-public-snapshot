@@ -713,7 +713,7 @@ The name is relative to the root of the repository.
 
 The branch that should be used for this additional changeset. This **overwrites the [`changesetTemplate.branch`](#changesettemplate-branch)** when creating the additional changeset.
 
-**Important**: the branch can _not_ be nested under the [`changesetTemplate.branch`](#changesettemplate-branch), i.e. if the `changesetTemplate.branch` is `my-batch-change` then this can _not_ be `my-batch-change/my-subdirectory` since [git doesn't allow that](https://stackoverflow.com/a/22630664).
+**Important**: the branch can _not_ be nested under the [`changesetTemplate.branch`](#changesettemplate-branch), i.e. if the `changesetTemplate.branch` is `my-batch-change` then this can _not_ be `my-batch-change/my-subdirectory` since [git doesn't allow that](https://stackoverflow.com/a/22630664). Additionally branch names must be unique and cannot be used as arguments for multiple `directory` fields.
 
 ## [`transformChanges.group.repository`](#transformchanges-repository)
 
