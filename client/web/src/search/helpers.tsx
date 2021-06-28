@@ -174,6 +174,10 @@ export const isSearchResults = (value: any): value is GQL.ISearchResults =>
     value && typeof value === 'object' && value.__typename === 'SearchResults'
 
 export enum QueryChangeSource {
+    /**
+     * When the user has typed in the query or selected a suggestion.
+     * Prevents fetching/showing suggestions on every component update.
+     */
     userInput,
     searchReference,
 }
@@ -185,18 +189,13 @@ export enum QueryChangeSource {
  */
 export interface QueryState {
     query: string
-    /**
-     * Used to know how search was changed.
-     *
-     *   userInput: When the user has typed in the query or selected a suggestion.
-     *              Prevents fetching/showing suggestions on every component update.
-     *
-     *   searchReference: Select placeholder and show suggestions
-     */
+    /** Used to know how search was changed and how to update the search input */
     changeSource?: QueryChangeSource
     /** Whether or not to trigger the completion popover */
-    showSuggestions?: true
-    /** If set, the query input will apply this selection */
+    showSuggestions?: boolean
+    /** Which column to move the cursor to */
+    cursorPosition?: number
+    /** If set, the query input will apply these selections */
     selection?: IRange
 }
 

@@ -300,11 +300,10 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
         }
         const position = {
             // +2 as Monaco is 1-indexed.
-            column: editor.getValue().length + 2,
+            column: queryState.cursorPosition ?? editor.getValue().length + 2,
             lineNumber: 1,
         }
         editor.setPosition(position)
-        editor.revealPosition(position)
 
         if (queryState.changeSource === QueryChangeSource.searchReference) {
             if (queryState.selection) {
@@ -315,6 +314,11 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
             }
             editor.focus()
         }
+
+        // It seems that revealPosition has to happen _after_ potentially
+        // triggering the suggestions popover, otherwise the filter might not be
+        // completely visible
+        editor.revealPosition(position)
     }, [editor, queryState])
 
     // Prevent newline insertion in model, and surface query changes with stripped newlines.

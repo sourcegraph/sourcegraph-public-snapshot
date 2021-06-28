@@ -17,14 +17,14 @@ import { Selection } from 'monaco-editor'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 import { escapeRegExp } from 'lodash'
-import { updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
+import { updateFilter, appendFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/validate'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 
 const SEARCH_REFERENCE_TAB_KEY = 'SearchProduct.SearchReference.Tab'
 
-interface SearchReferenceInfo {
+export interface SearchReferenceInfo {
     type: FilterType
     placeholder: Placeholder
     description: string
@@ -99,43 +99,61 @@ const searchReferenceInfo: SearchReferenceInfo[] = [
     {
         type: FilterType.repogroup,
         placeholder: parsePlaceholder('{group-name}'),
+        description:
+            'Only include results from the named group of repositories (defined by the server admin). Same as using a repo: keyword that matches all of the group’s repositories. Use repo: unless you know that the group exists.',
     },
     {
         type: FilterType.repo,
         placeholder: parsePlaceholder('contains.commit.after({time})'),
         showSuggestions: false,
+        description:
+            'Search only inside repositories that contain a a commit after some specified time. See [git date formats](https://github.com/git/git/blob/master/Documentation/date-formats.txt) for accepted formats. Use this to filter out stale repositories that don’t contain commits past the specified time frame. This parameter is experimental.',
     },
     {
         type: FilterType.repo,
         placeholder: parsePlaceholder('contains({file:foo content:bar})'),
         showSuggestions: false,
+        description:
+            'Search only inside repositories that contain a file matching the `file:` with `content:` filters.',
     },
     {
         type: FilterType.rev,
         placeholder: parsePlaceholder('{revision}'),
         commonRank: 20,
+        description:
+            'Search a revision instead of the default branch. `rev:` can only be used in conjunction with `repo:` and may not be used more than once. See our [revision syntax documentation](https://docs.sourcegraph.com/code_search/reference/queries#repository-revisions) to learn more.',
     },
     {
         type: FilterType.select,
         placeholder: parsePlaceholder('{result-types}'),
         commonRank: 50,
+        description:
+            'Shows only query results for a given type. For example, `select:repo` displays only distinct reopsitory paths from search results. See [language definition](https://docs.sourcegraph.com/code_search/reference/language#select) for possible values.',
     },
     {
         type: FilterType.stable,
         placeholder: parsePlaceholder('{yes}'),
+        description:
+            'Ensures a deterministic result order. Applies only to file contents. Limited to at max `count:5000` results. Note this field should be removed if you’re using the pagination API, which already ensures deterministic results.',
     },
     {
         type: FilterType.type,
         placeholder: parsePlaceholder('{symbol}'),
         commonRank: 90,
+        description:
+            'Specifies the type of search. By default, searches are executed on all code at a given point in time (a branch or a commit). Specify the `type:` if you want to search over changes to code or commit messages instead (diffs or commits).',
     },
     {
         type: FilterType.timeout,
         placeholder: parsePlaceholder('{golang-duration-value}'),
+        description:
+            'Customizes the timeout for searches. The value of the parameter is a string that can be parsed by the [Go time package’s `ParseDuration`](https://golang.org/pkg/time/#ParseDuration) (e.g. 10s, 100ms). By default, the timeout is set to 10 seconds, and the search will optimize for returning results as soon as possible. The timeout value cannot be set longer than 1 minute. When provided, the search is given the full timeout to complete.',
     },
     {
         type: FilterType.visibility,
         placeholder: parsePlaceholder('{any}'),
+        description:
+            'Filter results to only public or private repositories. The default is to include both private and public repositories.',
     },
 ]
 
@@ -169,58 +187,81 @@ function parseSearchInput(searchInput: string): RegExp[] {
 function selectionsForPlaceholder(placeholder: Placeholder, offset: number = 0): Selection[] {
     return placeholder.tokens
         .filter(token => token.type === 'value')
-        .map(token => new Selection(1, offset + token.start, 1, offset + token.end - 1))
+        .map(token => new Selection(1, offset + token.start + 1, 1, offset + token.end))
 }
 
 /**
  * Whether or not to trigger the suggestion popover when adding this filter to
  * the query.
  */
-function showSuggestions(searchReference: SearchReferenceInfo): boolean {
+function shouldShowSuggestions(searchReference: SearchReferenceInfo): boolean {
     return Boolean(searchReference.showSuggestions !== false && FILTERS[searchReference.type].discreteValues)
 }
 
 /**
  * This helper function will update the current query with the provided filter,
  * updating existing filters if necessary.
+ * exported only for test purposes
  */
-function updateQueryWithFilter(currentQueryState: QueryState, searchReference: SearchReferenceInfo): QueryState {
-    // If a filter has suggestions, we will always add or replace it with an
-    // empty value and trigger the suggestion popover
-    if (showSuggestions(searchReference)) {
-        return {
-            query: updateFilter(currentQueryState.query, searchReference.type, ''),
-            showSuggestions: true,
-            changeSource: QueryChangeSource.searchReference,
-        }
-    }
+export function updateQueryWithFilter(
+    currentQueryState: QueryState,
+    searchReference: SearchReferenceInfo,
+    allFilters: typeof FILTERS
+): QueryState {
+    const { singular } = allFilters[searchReference.type]
+    let { query } = currentQueryState
+    let showSuggestions = shouldShowSuggestions(searchReference)
+    let cursorPosition
+    let selection
 
-    const existingFilter = findFilter(currentQueryState.query, searchReference.type, FilterKind.Global)
-
-    // If the filter doesn't exist yet we simply append it with a placeholder
-    // value and select that value
-    if (!existingFilter) {
-        const query = updateFilter(currentQueryState.query, searchReference.type, searchReference.placeholder.text)
-        return {
-            query,
-            changeSource: QueryChangeSource.searchReference,
-            selection: selectionsForPlaceholder(
+    if (!singular) {
+        // Always append to the query
+        query = appendFilter(query, searchReference.type, showSuggestions ? '' : searchReference.placeholder.text)
+        // There is no need to update the cursor position in this case
+        if (!showSuggestions) {
+            selection = selectionsForPlaceholder(
                 searchReference.placeholder,
-                query.length - searchReference.placeholder.text.length + 1
-            )[0],
+                query.length - searchReference.placeholder.text.length
+            )[0]
+        }
+    } else {
+        // Filter can only appear once
+        // If we should show suggestions, update (or add) the filter with an
+        // empty value.
+        // If we should select the filter value, select the existing one or
+        // append the filter and select the placeholder
+
+        const existingFilter = findFilter(query, searchReference.type, FilterKind.Global)
+
+        if (showSuggestions) {
+            query = updateFilter(query, searchReference.type, '')
+        } else if (!existingFilter) {
+            query = updateFilter(query, searchReference.type, searchReference.placeholder.text)
+            selection = selectionsForPlaceholder(
+                searchReference.placeholder,
+                query.length - searchReference.placeholder.text.length
+            )[0]
+        } else {
+            selection = new Selection(
+                1,
+                (existingFilter.value?.range.start || existingFilter.field.range.end) + 1,
+                1,
+                existingFilter.range.end + 1
+            )
+        }
+
+        // The cursor position has to be adjusted accordingly
+        if (existingFilter) {
+            cursorPosition = (showSuggestions ? existingFilter.field.range.end + 1 : existingFilter.range.end) + 1
         }
     }
 
-    // Otherwise we just select the existing value
     return {
-        query: currentQueryState.query,
         changeSource: QueryChangeSource.searchReference,
-        selection: new Selection(
-            1,
-            (existingFilter.value?.range.start || existingFilter.field.range.end) + 1,
-            1,
-            existingFilter.range.end + 1
-        ),
+        query,
+        selection,
+        cursorPosition,
+        showSuggestions,
     }
 }
 
@@ -229,7 +270,7 @@ interface Placeholder {
     text: string
 }
 
-function parsePlaceholder(placeholder: string): Placeholder {
+export function parsePlaceholder(placeholder: string): Placeholder {
     const valuePattern = /\{([^}]+)\}/g
     let currentIndex = 0
     let parsedPlaceholder: Placeholder = { tokens: [], text: '' }
@@ -240,14 +281,14 @@ function parsePlaceholder(placeholder: string): Placeholder {
                 type: 'text',
                 content: placeholder.slice(currentIndex, match.index),
                 start: currentIndex,
-                end: match.index,
+                end: match.index - 1,
             })
         }
         parsedPlaceholder.tokens.push({
             type: 'value',
             content: match[1],
             start: match.index,
-            end: match[0].length,
+            end: match.index + match[0].length - 1,
         })
         currentIndex = match.index + match[0].length
     }
@@ -257,7 +298,7 @@ function parsePlaceholder(placeholder: string): Placeholder {
             type: 'text',
             content: placeholder.slice(currentIndex),
             start: currentIndex,
-            end: placeholder.length,
+            end: placeholder.length - 1,
         })
     }
     parsedPlaceholder.text = parsedPlaceholder.tokens.map(token => token.content).join('')
@@ -363,7 +404,7 @@ const SearchReference = (props: SearchReferenceProps): ReactElement => {
 
     const updateQuery = useCallback(
         (searchReference: SearchReferenceInfo) => {
-            props.onNavbarQueryChange(updateQueryWithFilter(props.navbarSearchQueryState, searchReference))
+            props.onNavbarQueryChange(updateQueryWithFilter(props.navbarSearchQueryState, searchReference, FILTERS))
         },
         [props.onNavbarQueryChange, props.navbarSearchQueryState]
     )
