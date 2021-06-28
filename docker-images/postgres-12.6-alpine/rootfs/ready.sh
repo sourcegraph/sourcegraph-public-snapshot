@@ -15,6 +15,8 @@ fi
 
 PGHOST="$(hostname)"
 export PGHOST
+export PGUSER="$POSTGRES_USER"
+export PGDATABASE="$POSTGRES_DB"
 export PGCONNECT_TIMEOUT=10
 
 # Check if we can run a simple query. If it fails the reason will be printed
