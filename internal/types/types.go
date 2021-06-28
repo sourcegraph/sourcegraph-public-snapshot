@@ -3,6 +3,7 @@ package types
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"sort"
@@ -64,6 +65,42 @@ type Repo struct {
 	Sources map[string]*SourceInfo
 	// Metadata contains the raw source code host JSON metadata.
 	Metadata interface{}
+	// Blocked contains the reason this repository was blocked and the timestamp of when it happened.
+	Blocked *RepoBlock
+}
+
+// RepoBlock contains data about a repo that has been blocked. Blocked repos aren't returned by store methods by default.
+type RepoBlock struct {
+	At     time.Time
+	Reason string
+}
+
+func (b *RepoBlock) UnmarshalJSON(data []byte) error {
+	var v struct {
+		At     int64
+		Reason string
+	}
+
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+
+	b.At = time.Unix(v.At, 0)
+	b.Reason = v.Reason
+
+	return nil
+}
+
+func (b RepoBlock) MarshalJSON() ([]byte, error) {
+	var v struct {
+		At     int64
+		Reason string
+	}
+
+	v.At = b.At.UTC().Unix()
+	v.Reason = b.Reason
+
+	return json.Marshal(v)
 }
 
 // CloneURLs returns all the clone URLs this repo is clonable from.
@@ -88,6 +125,14 @@ func (r *Repo) ExternalServiceIDs() []int64 {
 		ids = append(ids, src.ExternalServiceID())
 	}
 	return ids
+}
+
+// IsBlocked returns a non nil error if the repo has been blocked.
+func (r *Repo) IsBlocked() error {
+	if r.Blocked != nil {
+		return fmt.Errorf("%s has been blocked. reason: %s", r.Name, r.Blocked.Reason)
+	}
+	return nil
 }
 
 // Update updates Repo r with the fields from the given newer Repo n,

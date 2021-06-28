@@ -113,8 +113,9 @@ func (s *RepoStore) Get(ctx context.Context, id api.RepoID) (_ *types.Repo, err 
 	}()
 
 	repos, err := s.listRepos(ctx, tr, ReposListOptions{
-		IDs:         []api.RepoID{id},
-		LimitOffset: &LimitOffset{Limit: 1},
+		IDs:            []api.RepoID{id},
+		LimitOffset:    &LimitOffset{Limit: 1},
+		IncludeBlocked: true,
 	})
 	if err != nil {
 		return nil, err
@@ -123,7 +124,8 @@ func (s *RepoStore) Get(ctx context.Context, id api.RepoID) (_ *types.Repo, err 
 	if len(repos) == 0 {
 		return nil, &RepoNotFoundErr{ID: id}
 	}
-	return repos[0], nil
+
+	return repos[0], repos[0].IsBlocked()
 }
 
 // GetByName returns the repository with the given nameOrUri from the
@@ -146,14 +148,18 @@ func (s *RepoStore) GetByName(ctx context.Context, nameOrURI api.RepoName) (_ *t
 	}()
 
 	repos, err := s.listRepos(ctx, tr, ReposListOptions{
-		Names:       []string{string(nameOrURI)},
-		LimitOffset: &LimitOffset{Limit: 1},
+		Names:          []string{string(nameOrURI)},
+		LimitOffset:    &LimitOffset{Limit: 1},
+		IncludeBlocked: true,
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	if len(repos) == 1 {
+		if err := repos[0].IsBlocked(); err != nil {
+			return nil, err
+		}
 		return repos[0], nil
 	}
 
@@ -161,8 +167,9 @@ func (s *RepoStore) GetByName(ctx context.Context, nameOrURI api.RepoName) (_ *t
 	// conflict with a name. We prefer returning the matching name if it
 	// exists.
 	repos, err = s.listRepos(ctx, tr, ReposListOptions{
-		URIs:        []string{string(nameOrURI)},
-		LimitOffset: &LimitOffset{Limit: 1},
+		URIs:           []string{string(nameOrURI)},
+		LimitOffset:    &LimitOffset{Limit: 1},
+		IncludeBlocked: true,
 	})
 	if err != nil {
 		return nil, err
@@ -172,7 +179,7 @@ func (s *RepoStore) GetByName(ctx context.Context, nameOrURI api.RepoName) (_ *t
 		return nil, &RepoNotFoundErr{Name: nameOrURI}
 	}
 
-	return repos[0], nil
+	return repos[0], repos[0].IsBlocked()
 }
 
 // GetByIDs returns a list of repositories by given IDs. The number of results list could be less
@@ -279,6 +286,7 @@ var repoColumns = []string{
 	"repo.updated_at",
 	"repo.deleted_at",
 	"repo.metadata",
+	"repo.blocked",
 	getSourcesByRepoQueryStr,
 }
 
@@ -289,6 +297,7 @@ func minimalColumns(columns []string) []string {
 func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 	var sources dbutil.NullJSONRawMessage
 	var metadata json.RawMessage
+	var blocked dbutil.NullJSONRawMessage
 
 	err = rows.Scan(
 		&r.ID,
@@ -306,10 +315,18 @@ func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 		&dbutil.NullTime{Time: &r.UpdatedAt},
 		&dbutil.NullTime{Time: &r.DeletedAt},
 		&metadata,
+		&blocked,
 		&sources,
 	)
 	if err != nil {
 		return err
+	}
+
+	if blocked.Raw != nil {
+		r.Blocked = &types.RepoBlock{}
+		if err = json.Unmarshal(blocked.Raw, r.Blocked); err != nil {
+			return err
+		}
 	}
 
 	type sourceInfo struct {
@@ -483,6 +500,10 @@ type ReposListOptions struct {
 	// when last attempted. Specifically, this means that they have a non-null
 	// last_error value in the gitserver_repos table.
 	FailedFetch bool
+
+	// IncludeBlocked, if true, will include blocked repositories in the result set. Repos can be blocked
+	// automatically or manually for different reasons, like being too big or having copyright issues.
+	IncludeBlocked bool
 
 	*LimitOffset
 }
@@ -758,6 +779,10 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		where = append(where, sqlf.Sprintf("uri = ANY (%s)", pq.Array(opt.URIs)))
 	}
 
+	if !opt.IncludeBlocked {
+		where = append(where, sqlf.Sprintf("blocked IS NULL"))
+	}
+
 	if opt.Index != nil {
 		// We don't currently have an index column, but when we want the
 		// indexable repositories to be a subset it will live in the database
@@ -923,6 +948,7 @@ FROM repo
 JOIN s ON s.repo_id = repo.id
 %s
 WHERE deleted_at IS NULL
+AND blocked IS NULL
 AND %s
 ORDER BY stars DESC NULLS LAST
 `
@@ -1222,6 +1248,39 @@ SET
 FROM repo_ids
 WHERE deleted_at IS NULL
 AND repo.id = repo_ids.id::int
+`
+
+// Block blocks the given repositories with the provided reason.
+func (s *RepoStore) Block(ctx context.Context, reason string, ids ...api.RepoID) error {
+	if len(ids) == 0 {
+		return nil
+	}
+	s.ensureStore()
+
+	encodedIds, err := json.Marshal(ids)
+	if err != nil {
+		return err
+	}
+
+	q := sqlf.Sprintf(blockReposQuery, string(encodedIds), reason)
+
+	err = s.Exec(ctx, q)
+	if err != nil {
+		return errors.Wrap(err, "block")
+	}
+
+	return nil
+}
+
+const blockReposQuery = `
+WITH repo_ids AS (
+  SELECT jsonb_array_elements_text(%s)::int AS id
+)
+UPDATE repo
+SET blocked = repo_block(%s, now())
+FROM repo_ids
+WHERE blocked IS NULL
+AND repo.id = repo_ids.id
 `
 
 // ListEnabledNames returns a list of all enabled repo names. This is commonly
