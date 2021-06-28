@@ -73,7 +73,7 @@ This batch spec will produce up to 4 changesets in the `github.com/sourcegraph/s
 1. a changeset with the changes in `monitoring`
 1. a changeset with the changes in the other directories.
 
-Since code hosts and git don't allow creating multiple, _different_ changesets on the same branch, it is **required** to specify the `branch` that will be used for the additional changesets. That `branch` will overwrite the default branch specified in `changesetTemplate`.
+Since code hosts and git don't allow creating multiple, _different_ changesets on the same branch, it is **required** to specify a unique `branch` for each `directory` that will be used for the additional changesets. That `branch` will overwrite the default branch specified in `changesetTemplate`.
 
 In case no changes have been made in a `directory` specified in a `group`, no additional changeset will be produced.
 
