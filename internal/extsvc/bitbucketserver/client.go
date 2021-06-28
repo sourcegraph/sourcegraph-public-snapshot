@@ -1544,3 +1544,17 @@ func (c *Client) MergePullRequest(ctx context.Context, pr *PullRequest) error {
 	}
 	return nil
 }
+
+func (c *Client) GetVersion(ctx context.Context) (string, error) {
+	type version struct {
+		Version     string
+		BuildNumber string
+		BuildDate   string
+		DisplayName string
+	}
+
+	var v version
+
+	_, err := c.send(ctx, "GET", "/rest/api/1.0/application-properties", nil, nil, &v)
+	return v.Version, err
+}
