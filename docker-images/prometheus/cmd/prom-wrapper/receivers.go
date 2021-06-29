@@ -225,6 +225,9 @@ For more details, please refer to the service dashboard: %s`, firingBodyTemplate
 					Username: resp.Username,
 				}
 			}
+
+			tags := notifier.Opsgenie.Tags
+
 			receiver.OpsGenieConfigs = append(receiver.OpsGenieConfigs, &amconfig.OpsGenieConfig{
 				APIKey: apiKEY,
 				APIURL: apiURL,
@@ -234,6 +237,7 @@ For more details, please refer to the service dashboard: %s`, firingBodyTemplate
 				Priority:    notifier.Opsgenie.Priority,
 				Responders:  responders,
 				Source:      dashboardURLTemplate,
+				Tags:        tags,
 				Details: map[string]string{
 					"Solutions": alertSolutionsURLTemplate,
 				},
