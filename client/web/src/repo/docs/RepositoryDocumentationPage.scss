@@ -18,6 +18,16 @@
         &-content {
             width: 60rem;
         }
+        &-feedback {
+            display: flex;
+            position: absolute;
+            top: 0;
+            right: 1rem;
+            padding: 1rem;
+            .btn {
+                background-color: var(--color-bg-1);
+            }
+        }
     }
     a.h1,
     a.h2,
