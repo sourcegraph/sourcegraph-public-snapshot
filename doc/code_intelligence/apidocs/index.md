@@ -32,7 +32,7 @@ We're working hard to improve it rapidly, so your feedback will influence the fu
 
 | Language | LSIF indexer                              | Tutorial                                                 |
 |----------|-------------------------------------------|----------------------------------------------------------|
-| Go       | [lsif-go](github.com/sourcegraph/lsif-go) | [Index a Go repository](../how-to/index_a_go_repository.md) |
+| Go       | [lsif-go](https://github.com/sourcegraph/lsif-go) | [Index a Go repository](../how-to/index_a_go_repository.md) |
 
 
 ## ⏱️ Coming soon
