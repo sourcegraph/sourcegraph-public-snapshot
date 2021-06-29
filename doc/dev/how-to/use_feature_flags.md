@@ -37,16 +37,27 @@ example specifically applies to frontend flags.
 
 ### Implement the feature flag
 
-In the frontend, evaluated feature flags for the current user are available on 
-the SourcegraphWebAppState. These can be prop-drilled into the components that need access to them.
+In the frontend, evaluated feature flags map for the current user is available on 
+the SourcegraphWebAppState. The map can be prop-drilled into the components that need access to the feature flags.
 
 Ensure that a default value is set for feature flags so that 
 (i) code can be deployed before creating the feature flag, (ii) deleting the feature flag is safe before removing referenced code, (iii) enterprise deployments continue to work as
 expected. 
 
-For example:
+You can add a new feature flag by adding the name as a new case to the `FeatureFlagName` type:
 ```typescript
-let myFeatureFlagValue = this.state.featureFlags.myFeatureFlag || false
+export type FeatureFlagName = ... | 'my-feature-flag'
+```
+
+Feature flags are stored in a map with the type `Map<FeatureFlagName, boolean>`. Using `FeatureFlagName` as the map key ensures
+that we can only access feature flags defined in the type. Deleting a flag name from `FeatureFlagName` type will also result in a compiler
+error if the flag is still referenced somewhere.
+
+Example usage:
+```typescript
+const evaluatedFeatureFlagValue = featureFlags.get('my-feature-flag') ?? false
+
+featureFlags.get('unknown-feature-flag') // compiler error
 ```
 
 ### Create the feature flag through the GraphQL API
