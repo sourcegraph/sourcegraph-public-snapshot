@@ -1,3 +1,4 @@
+import { TypedDocumentNode } from '@apollo/client'
 import { Observable } from 'rxjs'
 
 import { graphQLClient, GraphQLResult, requestGraphQLCommon } from '@sourcegraph/shared/src/graphql/graphql'
@@ -20,7 +21,7 @@ const getHeaders = (): { [header: string]: string } => ({
  * @template TVariables The type of the query input variables (import from our auto-generated types).
  */
 export const requestGraphQL = <TResult, TVariables = object>(
-    request: string,
+    request: string | TypedDocumentNode<TResult, TVariables>,
     variables?: TVariables
 ): Observable<GraphQLResult<TResult>> =>
     requestGraphQLCommon({

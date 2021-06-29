@@ -84,10 +84,10 @@ export function requestGraphQLCommon<T, V = object>({
     variables,
     ...options
 }: GraphQLRequestOptions & {
-    request: string
+    request: string | TypedDocumentNode<T, V>
     variables?: V
 }): Observable<GraphQLResult<T>> {
-    const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
+    const nameMatch = typeof request === 'string' && request.match(/^\s*(?:query|mutation)\s+(\w+)/)
     const apiURL = `${GRAPHQL_URI}${nameMatch ? '?' + nameMatch[1] : ''}`
     return fromFetch(baseUrl ? new URL(apiURL, baseUrl).href : apiURL, {
         ...options,

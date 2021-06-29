@@ -1,0 +1,107 @@
+fragment ExternalServiceFields on ExternalService {
+    id
+    kind
+    displayName
+    config
+    warning
+    lastSyncError
+    repoCount
+    webhookURL
+    lastSyncAt
+    nextSyncAt
+    updatedAt
+    createdAt
+    namespace {
+        id
+        namespaceName
+        url
+    }
+}
+
+mutation AddExternalService($input: AddExternalServiceInput!) {
+    addExternalService(input: $input) {
+        ...ExternalServiceFields
+    }
+}
+
+mutation UpdateExternalService($input: UpdateExternalServiceInput!) {
+    updateExternalService(input: $input) {
+        ...ExternalServiceFields
+    }
+}
+
+mutation SetExternalServiceRepos($id: ID!, $allRepos: Boolean!, $repos: [String!]) {
+    setExternalServiceRepos(id: $id, allRepos: $allRepos, repos: $repos) {
+        alwaysNil
+    }
+}
+
+query ExternalService($id: ID!) {
+    node(id: $id) {
+        __typename
+        ...ExternalServiceFields
+    }
+}
+
+query AffiliatedRepositories($user: ID!, $codeHost: ID, $query: String) {
+    affiliatedRepositories(user: $user, codeHost: $codeHost, query: $query) {
+        nodes {
+            name
+            codeHost {
+                kind
+                id
+                displayName
+            }
+            private
+        }
+    }
+}
+
+mutation DeleteExternalService($externalService: ID!) {
+    deleteExternalService(externalService: $externalService) {
+        alwaysNil
+    }
+}
+
+fragment ListExternalServiceFields on ExternalService {
+    id
+    kind
+    displayName
+    config
+    warning
+    lastSyncError
+    repoCount
+    lastSyncAt
+    nextSyncAt
+    updatedAt
+    createdAt
+    namespace {
+        id
+        namespaceName
+        url
+    }
+    grantedScopes
+}
+
+query ExternalServices($first: Int, $after: String, $namespace: ID) {
+    externalServices(first: $first, after: $after, namespace: $namespace) {
+        nodes {
+            ...ListExternalServiceFields
+        }
+        totalCount
+        pageInfo {
+            endCursor
+            hasNextPage
+        }
+    }
+}
+
+query ExternalServicesScopes($namespace: ID!) {
+    externalServices(first: null, after: null, namespace: $namespace) {
+        nodes {
+            id
+            kind
+            grantedScopes
+        }
+    }
+}
