@@ -44,7 +44,6 @@ const defaultProps = (
     setVersionContext: () => Promise.resolve(undefined),
     availableVersionContexts: [],
     globbing: false,
-    enableSmartQuery: false,
     parsedSearchQuery: 'r:golang/oauth2 test f:travis',
     patternType: SearchPatternType.literal,
     setPatternType: () => undefined,
