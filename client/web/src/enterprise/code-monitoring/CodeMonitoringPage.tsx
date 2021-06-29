@@ -11,7 +11,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
@@ -80,11 +80,7 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
         return <Redirect to="/code-monitoring/getting-started" />
     }
 
-    const showList =
-        userHasCodeMonitors &&
-        userHasCodeMonitors !== 'loading' &&
-        !isErrorLike(userHasCodeMonitors) &&
-        !showGettingStarted
+    const showList = userHasCodeMonitors !== 'loading' && !isErrorLike(userHasCodeMonitors) && !showGettingStarted
 
     return (
         <div className="code-monitoring-page">
@@ -154,32 +150,13 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                     />
                 )}
 
-                {showList && authenticatedUser && (
+                {showList && (
                     <CodeMonitorList
                         settingsCascade={settingsCascade}
                         authenticatedUser={authenticatedUser}
                         fetchUserCodeMonitors={fetchUserCodeMonitors}
                         toggleCodeMonitorEnabled={toggleCodeMonitorEnabled}
                     />
-                )}
-
-                {!showGettingStarted && userHasCodeMonitors === false && (
-                    <Container className="text-center">
-                        <h2 className="text-muted mb-2">No code monitors have been created.</h2>
-                        {authenticatedUser ? (
-                            <Link to="/code-monitoring/new" className="btn btn-primary">
-                                <PlusIcon className="icon-inline" />
-                                Create a code monitor
-                            </Link>
-                        ) : (
-                            <Link
-                                to={`/sign-up?returnTo=${encodeURIComponent('/code-monitoring/new')}`}
-                                className="btn btn-primary"
-                            >
-                                Sign up to create a code monitor
-                            </Link>
-                        )}
-                    </Container>
                 )}
             </div>
         </div>

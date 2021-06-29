@@ -9,7 +9,6 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ErrorLike, isErrorLike, asError } from '@sourcegraph/shared/src/util/errors'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
 
-import { AuthenticatedUser } from '../../auth'
 import { CodeMonitorFields, ToggleCodeMonitorEnabledResult } from '../../graphql-operations'
 
 import { sendTestEmail, toggleCodeMonitorEnabled as _toggleCodeMonitorEnabled } from './backend'
@@ -17,7 +16,7 @@ import { sendTestEmail, toggleCodeMonitorEnabled as _toggleCodeMonitorEnabled } 
 export interface CodeMonitorNodeProps {
     node: CodeMonitorFields
     location: H.Location
-    authenticatedUser: AuthenticatedUser
+    isSiteAdminUser: boolean
     showCodeMonitoringTestEmailButton: boolean
 
     toggleCodeMonitorEnabled?: typeof _toggleCodeMonitorEnabled
@@ -28,7 +27,7 @@ const LOADING = 'LOADING' as const
 export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
     location,
     node,
-    authenticatedUser,
+    isSiteAdminUser,
     showCodeMonitoringTestEmailButton,
     toggleCodeMonitorEnabled = _toggleCodeMonitorEnabled,
 }: CodeMonitorNodeProps) => {
@@ -92,18 +91,15 @@ export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
                     {node.actions.nodes.length > 0 && (
                         <div className="d-flex text-muted">
                             New search result → Sends email notifications{' '}
-                            {showCodeMonitoringTestEmailButton &&
-                                authenticatedUser.siteAdmin &&
-                                hasEnabledAction &&
-                                node.enabled && (
-                                    <button
-                                        type="button"
-                                        className="btn btn-link p-0 border-0 ml-2 test-send-test-email"
-                                        onClick={sendEmailRequest}
-                                    >
-                                        Send test email
-                                    </button>
-                                )}
+                            {showCodeMonitoringTestEmailButton && isSiteAdminUser && hasEnabledAction && node.enabled && (
+                                <button
+                                    type="button"
+                                    className="btn btn-link p-0 border-0 ml-2 test-send-test-email"
+                                    onClick={sendEmailRequest}
+                                >
+                                    Send test email
+                                </button>
+                            )}
                         </div>
                     )}
                 </div>
