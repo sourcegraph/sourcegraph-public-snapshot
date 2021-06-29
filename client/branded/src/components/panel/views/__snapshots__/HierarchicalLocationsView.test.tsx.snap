@@ -191,7 +191,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
           >
             <span
               className="locationName"
-              title="github.com/foo/bar"
+              title="file1.txt"
             >
               <span
                 className="locationNameText"
@@ -200,9 +200,8 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                   className=""
                 >
                    
-                  foo/
                   <span>
-                    bar
+                    file1.txt
                   </span>
                 </span>
               </span>
@@ -210,7 +209,36 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
             <span
               className="locationBadge ml-1"
             >
-              5
+              2
+            </span>
+          </button>
+          <button
+            className="list-group-item list-group-item-action locationButton"
+            data-testid="hierarchical-locations-view-button"
+            onClick={[Function]}
+            type="button"
+          >
+            <span
+              className="locationName"
+              title="file2.txt"
+            >
+              <span
+                className="locationNameText"
+              >
+                <span
+                  className=""
+                >
+                   
+                  <span>
+                    file2.txt
+                  </span>
+                </span>
+              </span>
+            </span>
+            <span
+              className="locationBadge ml-1"
+            >
+              3
             </span>
           </button>
         </div>
