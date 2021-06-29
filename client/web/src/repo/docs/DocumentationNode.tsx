@@ -59,8 +59,11 @@ export const DocumentationNode: React.FunctionComponent<Props> = ({ useBreadcrum
         repoName: props.repo.name,
         revision: props.revision || '',
     }
-    const hash = node.pathID.slice(props.pagePathID.length + '/'.length).replace(/\//g, '-')
-    const thisPage = toDocumentationURL({ ...repoRevision, pathID: props.pagePathID }) + (hash ? '#' + hash : '')
+    const hashIndex = node.pathID.indexOf('#')
+    const hash = hashIndex !== -1 ? node.pathID.slice(hashIndex + '#'.length) : ''
+    const path = node.pathID.slice('/'.length, hashIndex)
+    const thisPage = toDocumentationURL({ ...repoRevision, pathID: path + '#' + hash })
+
     useBreadcrumb(
         useMemo(
             () =>

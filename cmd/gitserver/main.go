@@ -146,10 +146,10 @@ func main() {
 
 	if tmpDir, err := gitserver.SetupAndClearTmp(); err != nil {
 		log.Fatalf("failed to setup temporary directory: %s", err)
-	} else {
+	} else if err := os.Setenv("TMP_DIR", tmpDir); err != nil {
 		// Additionally set TMP_DIR so other temporary files we may accidentally
 		// create are on the faster RepoDir mount.
-		os.Setenv("TMP_DIR", tmpDir)
+		log.Fatalf("Setting TMP_DIR: %s", err)
 	}
 
 	// Create Handler now since it also initializes state
@@ -192,7 +192,9 @@ func main() {
 	}()
 
 	// Stop accepting requests. In the future we should use graceful shutdown.
-	srv.Close()
+	if err := srv.Close(); err != nil {
+		log15.Error("closing http server", "error", err)
+	}
 
 	// The most important thing this does is kill all our clones. If we just
 	// shutdown they will be orphaned and continue running.

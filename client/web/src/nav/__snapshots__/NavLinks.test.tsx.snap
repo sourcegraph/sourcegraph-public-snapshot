@@ -273,27 +273,27 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
             placeholder="What’s going well? What could be better?"
           />
           <ul
-            class="icon-radio-buttons"
+            class="buttons"
           >
             <li
               class="d-flex"
             >
               <label
-                class="icon-radio-buttons__label"
+                class="label"
               >
                 <input
                   aria-label="Very sad"
-                  class="icon-radio-buttons__input"
+                  class="input"
                   name="emoji-selector"
                   type="radio"
                   value="1"
                 />
                 <span
                   aria-hidden="true"
-                  class="icon-radio-buttons__border"
+                  class="border"
                 />
                 <span
-                  class="icon-radio-buttons__emoji"
+                  class="emoji"
                 >
                   <svg
                     fill="none"
@@ -318,21 +318,21 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
               class="d-flex"
             >
               <label
-                class="icon-radio-buttons__label"
+                class="label"
               >
                 <input
                   aria-label="Sad"
-                  class="icon-radio-buttons__input"
+                  class="input"
                   name="emoji-selector"
                   type="radio"
                   value="2"
                 />
                 <span
                   aria-hidden="true"
-                  class="icon-radio-buttons__border"
+                  class="border"
                 />
                 <span
-                  class="icon-radio-buttons__emoji"
+                  class="emoji"
                 >
                   <svg
                     fill="none"
@@ -365,21 +365,21 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
               class="d-flex"
             >
               <label
-                class="icon-radio-buttons__label"
+                class="label"
               >
                 <input
                   aria-label="Happy"
-                  class="icon-radio-buttons__input"
+                  class="input"
                   name="emoji-selector"
                   type="radio"
                   value="3"
                 />
                 <span
                   aria-hidden="true"
-                  class="icon-radio-buttons__border"
+                  class="border"
                 />
                 <span
-                  class="icon-radio-buttons__emoji"
+                  class="emoji"
                 >
                   <svg
                     fill="none"
@@ -412,21 +412,21 @@ exports[`NavLinks authed Sourcegraph.com /foo 1`] = `
               class="d-flex"
             >
               <label
-                class="icon-radio-buttons__label"
+                class="label"
               >
                 <input
                   aria-label="Very Happy"
-                  class="icon-radio-buttons__input"
+                  class="input"
                   name="emoji-selector"
                   type="radio"
                   value="4"
                 />
                 <span
                   aria-hidden="true"
-                  class="icon-radio-buttons__border"
+                  class="border"
                 />
                 <span
-                  class="icon-radio-buttons__emoji"
+                  class="emoji"
                 >
                   <svg
                     fill="none"
@@ -1084,27 +1084,27 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
             placeholder="What’s going well? What could be better?"
           />
           <ul
-            class="icon-radio-buttons"
+            class="buttons"
           >
             <li
               class="d-flex"
             >
               <label
-                class="icon-radio-buttons__label"
+                class="label"
               >
                 <input
                   aria-label="Very sad"
-                  class="icon-radio-buttons__input"
+                  class="input"
                   name="emoji-selector"
                   type="radio"
                   value="1"
                 />
                 <span
                   aria-hidden="true"
-                  class="icon-radio-buttons__border"
+                  class="border"
                 />
                 <span
-                  class="icon-radio-buttons__emoji"
+                  class="emoji"
                 >
                   <svg
                     fill="none"
@@ -1129,21 +1129,21 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
               class="d-flex"
             >
               <label
-                class="icon-radio-buttons__label"
+                class="label"
               >
                 <input
                   aria-label="Sad"
-                  class="icon-radio-buttons__input"
+                  class="input"
                   name="emoji-selector"
                   type="radio"
                   value="2"
                 />
                 <span
                   aria-hidden="true"
-                  class="icon-radio-buttons__border"
+                  class="border"
                 />
                 <span
-                  class="icon-radio-buttons__emoji"
+                  class="emoji"
                 >
                   <svg
                     fill="none"
@@ -1176,21 +1176,21 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
               class="d-flex"
             >
               <label
-                class="icon-radio-buttons__label"
+                class="label"
               >
                 <input
                   aria-label="Happy"
-                  class="icon-radio-buttons__input"
+                  class="input"
                   name="emoji-selector"
                   type="radio"
                   value="3"
                 />
                 <span
                   aria-hidden="true"
-                  class="icon-radio-buttons__border"
+                  class="border"
                 />
                 <span
-                  class="icon-radio-buttons__emoji"
+                  class="emoji"
                 >
                   <svg
                     fill="none"
@@ -1223,21 +1223,21 @@ exports[`NavLinks authed Sourcegraph.com /search 1`] = `
               class="d-flex"
             >
               <label
-                class="icon-radio-buttons__label"
+                class="label"
               >
                 <input
                   aria-label="Very Happy"
-                  class="icon-radio-buttons__input"
+                  class="input"
                   name="emoji-selector"
                   type="radio"
                   value="4"
                 />
                 <span
                   aria-hidden="true"
-                  class="icon-radio-buttons__border"
+                  class="border"
                 />
                 <span
-                  class="icon-radio-buttons__emoji"
+                  class="emoji"
                 >
                   <svg
                     fill="none"
@@ -1905,27 +1905,27 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
             placeholder="What’s going well? What could be better?"
           />
           <ul
-            class="icon-radio-buttons"
+            class="buttons"
           >
             <li
               class="d-flex"
             >
               <label
-                class="icon-radio-buttons__label"
+                class="label"
               >
                 <input
                   aria-label="Very sad"
-                  class="icon-radio-buttons__input"
+                  class="input"
                   name="emoji-selector"
                   type="radio"
                   value="1"
                 />
                 <span
                   aria-hidden="true"
-                  class="icon-radio-buttons__border"
+                  class="border"
                 />
                 <span
-                  class="icon-radio-buttons__emoji"
+                  class="emoji"
                 >
                   <svg
                     fill="none"
@@ -1950,21 +1950,21 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
               class="d-flex"
             >
               <label
-                class="icon-radio-buttons__label"
+                class="label"
               >
                 <input
                   aria-label="Sad"
-                  class="icon-radio-buttons__input"
+                  class="input"
                   name="emoji-selector"
                   type="radio"
                   value="2"
                 />
                 <span
                   aria-hidden="true"
-                  class="icon-radio-buttons__border"
+                  class="border"
                 />
                 <span
-                  class="icon-radio-buttons__emoji"
+                  class="emoji"
                 >
                   <svg
                     fill="none"
@@ -1997,21 +1997,21 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
               class="d-flex"
             >
               <label
-                class="icon-radio-buttons__label"
+                class="label"
               >
                 <input
                   aria-label="Happy"
-                  class="icon-radio-buttons__input"
+                  class="input"
                   name="emoji-selector"
                   type="radio"
                   value="3"
                 />
                 <span
                   aria-hidden="true"
-                  class="icon-radio-buttons__border"
+                  class="border"
                 />
                 <span
-                  class="icon-radio-buttons__emoji"
+                  class="emoji"
                 >
                   <svg
                     fill="none"
@@ -2044,21 +2044,21 @@ exports[`NavLinks authed self-hosted /foo 1`] = `
               class="d-flex"
             >
               <label
-                class="icon-radio-buttons__label"
+                class="label"
               >
                 <input
                   aria-label="Very Happy"
-                  class="icon-radio-buttons__input"
+                  class="input"
                   name="emoji-selector"
                   type="radio"
                   value="4"
                 />
                 <span
                   aria-hidden="true"
-                  class="icon-radio-buttons__border"
+                  class="border"
                 />
                 <span
-                  class="icon-radio-buttons__emoji"
+                  class="emoji"
                 >
                   <svg
                     fill="none"
@@ -2697,27 +2697,27 @@ exports[`NavLinks authed self-hosted /search 1`] = `
             placeholder="What’s going well? What could be better?"
           />
           <ul
-            class="icon-radio-buttons"
+            class="buttons"
           >
             <li
               class="d-flex"
             >
               <label
-                class="icon-radio-buttons__label"
+                class="label"
               >
                 <input
                   aria-label="Very sad"
-                  class="icon-radio-buttons__input"
+                  class="input"
                   name="emoji-selector"
                   type="radio"
                   value="1"
                 />
                 <span
                   aria-hidden="true"
-                  class="icon-radio-buttons__border"
+                  class="border"
                 />
                 <span
-                  class="icon-radio-buttons__emoji"
+                  class="emoji"
                 >
                   <svg
                     fill="none"
@@ -2742,21 +2742,21 @@ exports[`NavLinks authed self-hosted /search 1`] = `
               class="d-flex"
             >
               <label
-                class="icon-radio-buttons__label"
+                class="label"
               >
                 <input
                   aria-label="Sad"
-                  class="icon-radio-buttons__input"
+                  class="input"
                   name="emoji-selector"
                   type="radio"
                   value="2"
                 />
                 <span
                   aria-hidden="true"
-                  class="icon-radio-buttons__border"
+                  class="border"
                 />
                 <span
-                  class="icon-radio-buttons__emoji"
+                  class="emoji"
                 >
                   <svg
                     fill="none"
@@ -2789,21 +2789,21 @@ exports[`NavLinks authed self-hosted /search 1`] = `
               class="d-flex"
             >
               <label
-                class="icon-radio-buttons__label"
+                class="label"
               >
                 <input
                   aria-label="Happy"
-                  class="icon-radio-buttons__input"
+                  class="input"
                   name="emoji-selector"
                   type="radio"
                   value="3"
                 />
                 <span
                   aria-hidden="true"
-                  class="icon-radio-buttons__border"
+                  class="border"
                 />
                 <span
-                  class="icon-radio-buttons__emoji"
+                  class="emoji"
                 >
                   <svg
                     fill="none"
@@ -2836,21 +2836,21 @@ exports[`NavLinks authed self-hosted /search 1`] = `
               class="d-flex"
             >
               <label
-                class="icon-radio-buttons__label"
+                class="label"
               >
                 <input
                   aria-label="Very Happy"
-                  class="icon-radio-buttons__input"
+                  class="input"
                   name="emoji-selector"
                   type="radio"
                   value="4"
                 />
                 <span
                   aria-hidden="true"
-                  class="icon-radio-buttons__border"
+                  class="border"
                 />
                 <span
-                  class="icon-radio-buttons__emoji"
+                  class="emoji"
                 >
                   <svg
                     fill="none"

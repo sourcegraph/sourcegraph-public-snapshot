@@ -21,7 +21,7 @@ export const PaymentTokenFormControl: React.FunctionComponent<Props> = props => 
     return (
         <div className="payment-token-form-control">
             <PatchedCardElement
-                className={`payment-token-form-control__card payment-token-form-control__card--${
+                className={`form-control payment-token-form-control__card payment-token-form-control__card--${
                     props.disabled ? 'disabled' : ''
                 }`}
                 disabled={props.disabled}

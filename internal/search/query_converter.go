@@ -62,9 +62,6 @@ func IncludeExcludeValues(q query.Basic, field string) (include, exclude []strin
 	return include, exclude
 }
 
-const defaultMaxSearchResults = 30
-const defaultMaxSearchResultsStreaming = 500
-
 func count(q query.Basic, p Protocol) int {
 	if count := q.GetCount(); count != "" {
 		v, _ := strconv.Atoi(count) // Invariant: count is validated.
@@ -72,14 +69,14 @@ func count(q query.Basic, p Protocol) int {
 	}
 
 	if q.IsStructural() {
-		return defaultMaxSearchResults
+		return DefaultMaxSearchResults
 	}
 
 	switch p {
 	case Batch:
-		return defaultMaxSearchResults
+		return DefaultMaxSearchResults
 	case Streaming:
-		return defaultMaxSearchResultsStreaming
+		return DefaultMaxSearchResultsStreaming
 	case Pagination:
 		return math.MaxInt32
 	}

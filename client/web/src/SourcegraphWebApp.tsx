@@ -80,7 +80,7 @@ import { QueryState } from './search/helpers'
 import { listUserRepositories } from './site-admin/backend'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
-import { GitHubServiceScopeProvider } from './site/GitHubCodeHostScopeAlert/GithubScopeProvider'
+import { CodeHostScopeProvider } from './site/CodeHostScopeAlerts/CodeHostScopeProvider'
 import { ThemePreference } from './theme'
 import { eventLogger } from './tracking/eventLogger'
 import { withActivation } from './tracking/withActivation'
@@ -184,6 +184,7 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     selectedSearchContextSpec?: string
     defaultSearchContextSpec: string
     hasUserAddedRepositories: boolean
+    hasUserSyncedPublicRepositories: boolean
     hasUserAddedExternalServices: boolean
 
     /**
@@ -307,6 +308,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             showSearchContextManagement: false,
             defaultSearchContextSpec: 'global', // global is default for now, user will be able to change this at some point
             hasUserAddedRepositories: false,
+            hasUserSyncedPublicRepositories: false,
             hasUserAddedExternalServices: false,
             showEnterpriseHomePanels: false,
             globbing: false,
@@ -508,7 +510,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                         <Route
                             path="/"
                             render={routeComponentProps => (
-                                <GitHubServiceScopeProvider authenticatedUser={authenticatedUser}>
+                                <CodeHostScopeProvider authenticatedUser={authenticatedUser}>
                                     <LayoutWithActivation
                                         {...props}
                                         {...routeComponentProps}
@@ -542,7 +544,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                         showRepogroupHomepage={this.state.showRepogroupHomepage}
                                         showOnboardingTour={this.state.showOnboardingTour}
                                         showSearchContext={this.state.showSearchContext}
-                                        hasUserAddedRepositories={this.state.hasUserAddedRepositories}
+                                        hasUserAddedRepositories={this.hasUserAddedRepositories()}
                                         hasUserAddedExternalServices={this.state.hasUserAddedExternalServices}
                                         showSearchContextManagement={this.state.showSearchContextManagement}
                                         selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
@@ -570,9 +572,10 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                         onUserExternalServicesOrRepositoriesUpdate={
                                             this.onUserExternalServicesOrRepositoriesUpdate
                                         }
+                                        onSyncedPublicRepositoriesUpdate={this.onSyncedPublicRepositoriesUpdate}
                                         featureFlags={this.state.featureFlags}
                                     />
-                                </GitHubServiceScopeProvider>
+                                </CodeHostScopeProvider>
                             )}
                         />
                     </BrowserRouter>
@@ -637,6 +640,15 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             hasUserAddedRepositories: userRepoCount > 0,
         })
     }
+
+    private onSyncedPublicRepositoriesUpdate = (publicReposCount: number): void => {
+        this.setState({
+            hasUserSyncedPublicRepositories: publicReposCount > 0,
+        })
+    }
+
+    private hasUserAddedRepositories = (): boolean =>
+        this.state.hasUserAddedRepositories || this.state.hasUserSyncedPublicRepositories
 
     private getSelectedSearchContextSpec = (): string | undefined =>
         this.state.showSearchContext ? this.state.selectedSearchContextSpec : undefined

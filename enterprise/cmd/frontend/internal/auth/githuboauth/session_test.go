@@ -291,7 +291,7 @@ func createCodeHostConnectionHelper(t *testing.T, serviceExists bool) {
 		return nil
 	}
 	database.Mocks.ExternalServices.List = func(opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-		if serviceExists {
+		if !serviceExists {
 			return nil, nil
 		}
 		return []*types.ExternalService{

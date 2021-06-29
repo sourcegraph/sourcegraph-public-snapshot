@@ -25,7 +25,7 @@ export const SearchAlert: React.FunctionComponent<SearchAlertProps> = ({
     searchContextSpec,
     children,
 }) => (
-    <div className="alert alert-info m-2" data-testid="alert-container">
+    <div className="alert alert-info my-2 mr-3" data-testid="alert-container">
         <h3>{alert.title}</h3>
 
         {alert.description && (

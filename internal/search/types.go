@@ -128,7 +128,7 @@ type TextParameters struct {
 
 	// Performance optimization: For global queries, resolving repositories and
 	// querying zoekt happens concurrently.
-	RepoPromise *Promise
+	RepoPromise *RepoPromise
 	Mode        GlobalSearchMode
 
 	// Query is the parsed query from the user. You should be using Pattern

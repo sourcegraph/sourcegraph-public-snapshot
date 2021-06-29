@@ -7,8 +7,8 @@
   "license": "Apache-2.0",
   "scripts": {
     "eslint": "eslint --cache 'src/**/*.[jt]s?(x)'",
-    "start": "start-storybook -p 9001 -c ./src -s ./assets",
-    "build": "build-storybook -c ./src -s ./assets",
+    "start": "TS_NODE_TRANSPILE_ONLY=true start-storybook -p 9001 -c ./src -s ./assets",
+    "build": "TS_NODE_TRANSPILE_ONLY=true build-storybook -c ./src -s ./assets",
     "test": "jest"
   }
 }

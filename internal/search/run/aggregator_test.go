@@ -71,7 +71,7 @@ func TestCheckDiffCommitSearchLimits(t *testing.T) {
 		haveErr := checkDiffCommitSearchLimits(
 			context.Background(),
 			&search.TextParameters{
-				RepoPromise: (&search.Promise{}).Resolve(repoRevs),
+				RepoPromise: (&search.RepoPromise{}).Resolve(repoRevs),
 				Query:       test.fields,
 			},
 			test.resultType)

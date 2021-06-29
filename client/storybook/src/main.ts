@@ -2,25 +2,34 @@ import path from 'path'
 
 import { remove } from 'lodash'
 import MonacoWebpackPlugin from 'monaco-editor-webpack-plugin'
+import SpeedMeasurePlugin from 'speed-measure-webpack-plugin'
 import TerserPlugin from 'terser-webpack-plugin'
 import { Configuration, DefinePlugin, ProgressPlugin, RuleSetUseItem, RuleSetUse } from 'webpack'
+import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer'
+
+import { environment } from './environment-config'
 
 const rootPath = path.resolve(__dirname, '../../../')
 const monacoEditorPaths = [path.resolve(rootPath, 'node_modules', 'monaco-editor')]
 
-// Stories in this file are guarded by the `isChromatic()` check. It will result in noop in all other environments.
-const chromaticStoriesGlob = path.resolve(rootPath, 'client/storybook/src/chromatic-story/Chromatic.story.tsx')
+const getStoriesGlob = (): string[] => {
+    if (process.env.STORIES_GLOB) {
+        return [path.resolve(rootPath, process.env.STORIES_GLOB)]
+    }
 
-// Due to an issue with constant recompiling (https://github.com/storybookjs/storybook/issues/14342)
-// we need to make the globs more specific (`(web|shared..)` also doesn't work). Once the above issue
-// is fixed, this can be removed and watched for `client/**/*.story.tsx` again.
-const directoriesWithStories = ['branded', 'browser', 'shared', 'web', 'wildcard']
-const storiesGlobs = directoriesWithStories.map(packageDirectory =>
-    path.resolve(rootPath, `client/${packageDirectory}/src/**/*.story.tsx`)
-)
+    // Stories in `Chromatic.story.tsx` are guarded by the `isChromatic()` check. It will result in noop in all other environments.
+    const chromaticStoriesGlob = path.resolve(rootPath, 'client/storybook/src/chromatic-story/Chromatic.story.tsx')
 
-const shouldMinify = !!process.env.MINIFY
-const isDevelopment = !shouldMinify
+    // Due to an issue with constant recompiling (https://github.com/storybookjs/storybook/issues/14342)
+    // we need to make the globs more specific (`(web|shared..)` also doesn't work). Once the above issue
+    // is fixed, this can be removed and watched for `client/**/*.story.tsx` again.
+    const directoriesWithStories = ['branded', 'browser', 'shared', 'web', 'wildcard']
+    const storiesGlobs = directoriesWithStories.map(packageDirectory =>
+        path.resolve(rootPath, `client/${packageDirectory}/src/**/*.story.tsx`)
+    )
+
+    return [...storiesGlobs, chromaticStoriesGlob]
+}
 
 const getCSSLoaders = (...loaders: RuleSetUseItem[]): RuleSetUse => [
     ...loaders,
@@ -36,7 +45,7 @@ const getCSSLoaders = (...loaders: RuleSetUseItem[]): RuleSetUse => [
 ]
 
 const config = {
-    stories: [...storiesGlobs, chromaticStoriesGlob],
+    stories: getStoriesGlob(),
     addons: [
         '@storybook/addon-knobs',
         '@storybook/addon-actions',
@@ -58,7 +67,7 @@ const config = {
     },
 
     webpackFinal: (config: Configuration) => {
-        config.mode = shouldMinify ? 'production' : 'development'
+        config.mode = environment.shouldMinify ? 'production' : 'development'
 
         // Check the default config is in an expected shape.
         if (!config.module) {
@@ -77,7 +86,7 @@ const config = {
             })
         )
 
-        if (shouldMinify) {
+        if (environment.shouldMinify) {
             if (!config.optimization) {
                 throw new Error('The structure of the config changed, expected config.optimization to be not-null')
             }
@@ -149,7 +158,7 @@ const config = {
             use: getCSSLoaders('style-loader', {
                 loader: 'css-loader',
                 options: {
-                    sourceMap: isDevelopment,
+                    sourceMap: !environment.shouldMinify,
                     modules: {
                         exportLocalsConvention: 'camelCase',
                         localIdentName: '[name]__[local]_[hash:base64:5]',
@@ -199,6 +208,20 @@ const config = {
             'editor.worker': 'monaco-editor/esm/vs/editor/editor.worker.js',
             'json.worker': 'monaco-editor/esm/vs/language/json/json.worker',
         })
+
+        if (environment.isBundleAnalyzerEnabled) {
+            config.plugins.push(new BundleAnalyzerPlugin())
+        }
+
+        if (environment.isSpeedAnalyzerEnabled) {
+            const speedMeasurePlugin = new SpeedMeasurePlugin({
+                outputFormat: 'human',
+            })
+
+            config.plugins.push(speedMeasurePlugin)
+
+            return speedMeasurePlugin.wrap(config)
+        }
 
         return config
     },

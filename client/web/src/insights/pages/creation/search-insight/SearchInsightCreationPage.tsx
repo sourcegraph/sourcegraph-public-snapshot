@@ -13,7 +13,7 @@ import { Page } from '../../../../components/Page'
 import { PageTitle } from '../../../../components/PageTitle'
 import { FORM_ERROR, FormChangeEvent } from '../../../components/form/hooks/useForm'
 import { InsightsApiContext } from '../../../core/backend/api-provider'
-import { addInsightToCascadeSetting } from '../../../core/jsonc-operation'
+import { addInsightToSettings } from '../../../core/settings-action/insights'
 
 import {
     SearchInsightCreationContent,
@@ -65,7 +65,7 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
             try {
                 const settings = await getSubjectSettings(subjectID).toPromise()
                 const insight = getSanitizedSearchInsight(values)
-                const editedSettings = addInsightToCascadeSetting(settings.contents, insight)
+                const editedSettings = addInsightToSettings(settings.contents, insight)
 
                 await updateSubjectSettings(platformContext, subjectID, editedSettings).toPromise()
 
