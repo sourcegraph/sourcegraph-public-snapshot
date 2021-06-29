@@ -112,7 +112,7 @@ Returns results for files containing matches on the left _and_ right side of the
 | --- | --- |
 | `or`, `OR` | [`conf.Get( or log15.Error(`](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+conf.Get%28+or+log15.Error%28&patternType=regexp), [<code>conf.Get( or log15.Error( or after   </code>](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+conf.Get%28+or+log15.Error%28+or+after&patternType=regexp)|
 
-Returns file content matching either on the left or right side, or both (set union). The number of results reports the number of matches of both strings.
+Returns file content matching either on the left or right side, or both (set union). The number of results reports the number of matches of both strings. Note the regex or operator `|` may not work as expected with certain operatiors for example `file:(internal/repos)|(internal/gitserver)`, to recieve the expected results use [subexpressions](../tutorials/search_subexpressions.md), `(file:internal/repos or file:internal/gitserver)`
 
 | Operator | Example |
 | --- | --- |

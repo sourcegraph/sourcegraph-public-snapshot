@@ -5,7 +5,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { InsightsApiContext } from '../../../core/backend/api-provider'
-import { modify } from '../../../core/jsonc-operation'
+import { removeInsightFromSettings } from '../../../core/settings-action/insights'
 import { InsightTypePrefix } from '../../../core/types'
 
 export interface UseDeleteInsightProps extends SettingsCascadeProps, PlatformContextProps<'updateSettings'> {}
@@ -52,7 +52,7 @@ export function useDeleteInsight(props: UseDeleteInsightProps): UseDeleteInsight
                 // Fetch the settings of particular subject which the insight belongs to
                 const settings = await getSubjectSettings(subjectID).toPromise()
 
-                const editedSettings = getEditedSettings({
+                const editedSettings = removeInsightFromSettings({
                     originSettings: settings.contents,
                     insightID,
                     isOldCodeStatsInsight,
@@ -69,41 +69,4 @@ export function useDeleteInsight(props: UseDeleteInsightProps): UseDeleteInsight
     )
 
     return { handleDelete }
-}
-
-interface GetEditedSettingsProps {
-    originSettings: string
-    isOldCodeStatsInsight: boolean
-    insightID: string
-}
-
-/**
- * Return edited settings without deleted insight settings section
- */
-function getEditedSettings(props: GetEditedSettingsProps): string {
-    const { originSettings, isOldCodeStatsInsight, insightID } = props
-
-    if (isOldCodeStatsInsight) {
-        const editedSettings = modify(
-            originSettings,
-            // According to our naming convention <type>.insight.<name>
-            ['codeStatsInsights.query'],
-            undefined
-        )
-
-        return modify(
-            editedSettings,
-            // According to our naming convention <type>.insight.<name>
-            ['codeStatsInsights.otherThreshold'],
-            undefined
-        )
-    }
-
-    // Remove insight settings from subject (user/org settings)
-    return modify(
-        originSettings,
-        // According to our naming convention <type>.insight.<name>
-        [insightID],
-        undefined
-    )
 }

@@ -417,6 +417,17 @@
       "items": {
         "$ref": "#/definitions/Insight"
       }
+    },
+    "insights.dashboards": {
+      "description": "EXPERIMENTAL: Code Insights Dashboards",
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "description": "A valid dashboards ID."
+      },
+      "additionalProperties": {
+        "$ref": "#/definitions/InsightDashboard"
+      }
     }
   },
   "definitions": {
@@ -462,6 +473,26 @@
         "webhook": {
           "type": "string",
           "description": "(not yet supported) Fetch data from a webhook URL."
+        }
+      }
+    },
+    "InsightDashboard": {
+      "type": "object",
+      "required": ["id", "title", "insightIds"],
+      "properties": {
+        "title": {
+          "description": "Title of the dashboard.",
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "insightIds": {
+          "description": "Insights ids that will be included in the dashboard.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },

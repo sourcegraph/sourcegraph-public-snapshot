@@ -7,13 +7,14 @@ import (
 	"runtime"
 
 	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/search/unindexed"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 var MockSearchRepositories func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error)
@@ -219,7 +220,7 @@ func reposToAdd(ctx context.Context, args *search.TextParameters, repos []*searc
 			newArgs.RepoPromise = (&search.RepoPromise{}).Resolve(repos)
 			newArgs.Query = q
 			newArgs.UseFullDeadline = true
-			matches, _, err := SearchFilesInReposBatch(ctx, &newArgs)
+			matches, _, err := unindexed.SearchFilesInReposBatch(ctx, &newArgs)
 			if err != nil {
 				return nil, err
 			}
@@ -255,7 +256,7 @@ func reposToAdd(ctx context.Context, args *search.TextParameters, repos []*searc
 			newArgs.RepoPromise = rp
 			newArgs.Query = q
 			newArgs.UseFullDeadline = true
-			matches, _, err := SearchFilesInReposBatch(ctx, &newArgs)
+			matches, _, err := unindexed.SearchFilesInReposBatch(ctx, &newArgs)
 			if err != nil {
 				return nil, err
 			}

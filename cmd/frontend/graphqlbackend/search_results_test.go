@@ -29,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
+	"github.com/sourcegraph/sourcegraph/internal/search/unindexed"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -114,10 +115,10 @@ func TestSearchResults(t *testing.T) {
 		database.Mocks.Repos.MockGet(t, 1)
 		database.Mocks.Repos.Count = mockCount
 
-		run.MockSearchFilesInRepos = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
+		unindexed.MockSearchFilesInRepos = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
 			return nil, &streaming.Stats{}, nil
 		}
-		defer func() { run.MockSearchFilesInRepos = nil }()
+		defer func() { unindexed.MockSearchFilesInRepos = nil }()
 
 		for _, v := range searchVersions {
 			testCallResults(t, `repo:r repo:p`, v, []string{"repo:repo"})
@@ -167,7 +168,7 @@ func TestSearchResults(t *testing.T) {
 		defer func() { symbol.MockSearchSymbols = nil }()
 
 		calledSearchFilesInRepos := atomic.NewBool(false)
-		run.MockSearchFilesInRepos = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
+		unindexed.MockSearchFilesInRepos = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
 			calledSearchFilesInRepos.Store(true)
 			if want := `(foo\d).*?(bar\*)`; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
@@ -176,7 +177,7 @@ func TestSearchResults(t *testing.T) {
 			fm := mkFileMatch(repo, "dir/file", 123)
 			return []result.Match{fm}, &streaming.Stats{}, nil
 		}
-		defer func() { run.MockSearchFilesInRepos = nil }()
+		defer func() { unindexed.MockSearchFilesInRepos = nil }()
 
 		testCallResults(t, `foo\d "bar*"`, "V1", []string{"dir/file:123"})
 		if !calledReposListRepoNames {
@@ -232,7 +233,7 @@ func TestSearchResults(t *testing.T) {
 		defer func() { symbol.MockSearchSymbols = nil }()
 
 		calledSearchFilesInRepos := atomic.NewBool(false)
-		run.MockSearchFilesInRepos = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
+		unindexed.MockSearchFilesInRepos = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
 			calledSearchFilesInRepos.Store(true)
 			if want := `foo\\d "bar\*"`; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
@@ -241,7 +242,7 @@ func TestSearchResults(t *testing.T) {
 			fm := mkFileMatch(repo, "dir/file", 123)
 			return []result.Match{fm}, &streaming.Stats{}, nil
 		}
-		defer func() { run.MockSearchFilesInRepos = nil }()
+		defer func() { unindexed.MockSearchFilesInRepos = nil }()
 
 		testCallResults(t, `foo\d "bar*"`, "V2", []string{"dir/file:123"})
 		if !calledReposListRepoNames {
