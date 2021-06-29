@@ -16,6 +16,7 @@ import { CodeInsightsIcon, InsightsViewGrid, InsightsViewGridProps } from '../..
 import { InsightsApiContext } from '../../core/backend/api-provider'
 
 import { useDashboards } from './hooks/use-dashboards/use-dashboards'
+import { DashboardSelect } from './components/dashboard-select/DashboardSelect'
 
 export interface DashboardsPageProps
     extends Omit<InsightsViewGridProps, 'views' | 'settingsCascade'>,
@@ -77,6 +78,8 @@ export const DashboardsPage: React.FunctionComponent<DashboardsPageProps> = prop
                 }
                 className="mb-3"
             />
+
+            <DashboardSelect />
             {views === undefined ? (
                 <div className="d-flex w-100">
                     <LoadingSpinner className="my-4" />

@@ -7,28 +7,43 @@ export type InsightDashboard = InsightBuiltInDashboard | InsightCustomDashboard
  */
 export enum InsightsDashboardType {
     /**
-     * A built in dashboard that all users have as a default and non-removable
-     * dashboards like "all insights", "personal", "org level dashboard".
+     * A dashboard that includes all insights from the personal and organization
+     * level dashboards.
      */
-    BuiltIn = 'built-in',
+    All = 'all',
 
     /**
-     * A Custom dashboard that a user created by dashboard creation UI.
-     * These dashboard types can be deleted or moved from user personal settings
-     * to org setting scope and vice versa.
+     * A dashboard that includes insights from personal settings or from
+     * dashboards that are stored in personal settings (personal dashboard)
      */
-    Custom = 'custom',
+    Personal = 'personal',
+
+    /**
+     * A dashboard that includes insights from organization settings or from
+     * dashboards that are stored in organization settings (org dashboard)
+     */
+    Organization = 'organization',
 }
 
 /**
- * An extended custom insights dashboard configuration.
+ * An Owner of dashboard. It can be user subject (a personal dashboard), org subject
+ * (an org level dashboard)
+ */
+export interface InsightDashboardOwner {
+    id: string | null
+    name: string
+}
+
+/**
+ * An extended custom insights dashboard. A user can have they own dashboards created
+ * by insights dashboard creation UI.
  */
 export interface InsightCustomDashboard extends InsightDashboardConfiguration {
     /**
-     * All dashboards that were created in users settings explicitly are
+     * All dashboards that were created in users or org settings explicitly are
      * custom dashboards.
      */
-    type: InsightsDashboardType.Custom
+    type: InsightsDashboardType.Personal | InsightsDashboardType.Organization
 
     /**
      * Subject that has a particular dashboard, it can be personal setting
@@ -37,16 +52,13 @@ export interface InsightCustomDashboard extends InsightDashboardConfiguration {
     owner: InsightDashboardOwner
 }
 
-export interface InsightDashboardOwner {
-    id: string | null
-    name: string
-}
-
 /**
- * A built in insights dashboard.
+ * A built-in insights dashboard. Currently we have 3 type of built-in dashboards.
+ * All users have "All Insights" dashboard and "Personal Insights" dashboard
+ * Also users who were included in org have built-in org level dashboard by default.
  */
 export interface InsightBuiltInDashboard {
-    type: InsightsDashboardType.BuiltIn
+    type: InsightsDashboardType
 
     /**
      * Title of insights dashboards ("All insights", "Personal", ...)
@@ -68,5 +80,10 @@ export interface InsightBuiltInDashboard {
  */
 export const ALL_INSIGHTS_DASHBOARD: InsightBuiltInDashboard = {
     title: 'All',
-    type: InsightsDashboardType.BuiltIn,
+    type: InsightsDashboardType.All,
 }
+
+/**
+ * The key for accessing  insights dashboards in the subject settings.
+ */
+export const INSIGHTS_DASHBOARDS_SETTINGS_KEY = 'insights.dashboards'
