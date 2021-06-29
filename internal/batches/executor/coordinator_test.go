@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/sourcegraph/batch-change-utils/overridable"
 	"github.com/sourcegraph/src-cli/internal/batches"
 	"github.com/sourcegraph/src-cli/internal/batches/git"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
@@ -16,6 +17,7 @@ import (
 )
 
 func TestCoordinator_Execute(t *testing.T) {
+	publishedFalse := overridable.FromBoolOrString(false)
 	srcCLITask := &Task{Repository: testRepo1}
 	sourcegraphTask := &Task{Repository: testRepo2}
 
@@ -75,6 +77,7 @@ func TestCoordinator_Execute(t *testing.T) {
 					{task: sourcegraphTask, result: executionResult{Diff: `dummydiff2`}},
 				},
 			},
+			opts: NewCoordinatorOpts{Features: featuresAllEnabled()},
 
 			wantCacheEntries: 2,
 			wantSpecs: []*batches.ChangesetSpec{
@@ -116,6 +119,7 @@ func TestCoordinator_Execute(t *testing.T) {
 							Email: "output1=${{ outputs.output1}}",
 						},
 					},
+					Published: &publishedFalse,
 				},
 			},
 
@@ -141,6 +145,7 @@ func TestCoordinator_Execute(t *testing.T) {
 					},
 				},
 			},
+			opts: NewCoordinatorOpts{Features: featuresAllEnabled()},
 
 			wantCacheEntries: 1,
 			wantSpecs: []*batches.ChangesetSpec{
@@ -191,6 +196,7 @@ func TestCoordinator_Execute(t *testing.T) {
 					{task: sourcegraphTask, result: executionResult{Diff: nestedChangesDiff}},
 				},
 			},
+			opts: NewCoordinatorOpts{Features: featuresAllEnabled()},
 
 			// We have 4 ChangesetSpecs, but we only want 2 cache entries,
 			// since we cache per Task, not per resulting changeset spec.
@@ -216,7 +222,7 @@ func TestCoordinator_Execute(t *testing.T) {
 		},
 		{
 			name: "skip errors",
-			opts: NewCoordinatorOpts{SkipErrors: true},
+			opts: NewCoordinatorOpts{Features: featuresAllEnabled(), SkipErrors: true},
 
 			tasks: []*Task{srcCLITask, sourcegraphTask},
 

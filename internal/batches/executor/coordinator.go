@@ -48,7 +48,7 @@ type NewCoordinatorOpts struct {
 	SkipErrors bool
 
 	// Used by createChangesetSpecs
-	AutoAuthorDetails bool
+	Features batches.FeatureFlags
 
 	CleanArchives bool
 	Parallelism   int
@@ -66,7 +66,7 @@ func NewCoordinator(opts NewCoordinatorOpts) *Coordinator {
 		Creator: opts.Creator,
 		Logger:  logManager,
 
-		AutoAuthorDetails: opts.AutoAuthorDetails,
+		AutoAuthorDetails: opts.Features.IncludeAutoAuthorDetails,
 		Parallelism:       opts.Parallelism,
 		Timeout:           opts.Timeout,
 		TempDir:           opts.TempDir,
@@ -131,7 +131,7 @@ func (c *Coordinator) checkCacheForTask(ctx context.Context, task *Task) (specs 
 		return specs, true, nil
 	}
 
-	specs, err = createChangesetSpecs(task, result, c.opts.AutoAuthorDetails)
+	specs, err = createChangesetSpecs(task, result, c.opts.Features)
 	if err != nil {
 		return specs, false, err
 	}
@@ -199,7 +199,7 @@ func (c *Coordinator) cacheAndBuildSpec(ctx context.Context, taskResult taskResu
 	}
 
 	// Build the changeset specs.
-	specs, err = createChangesetSpecs(taskResult.task, taskResult.result, c.opts.AutoAuthorDetails)
+	specs, err = createChangesetSpecs(taskResult.task, taskResult.result, c.opts.Features)
 	if err != nil {
 		return specs, err
 	}

@@ -9,7 +9,9 @@ import (
 	"github.com/sourcegraph/src-cli/internal/batches"
 )
 
-func createChangesetSpecs(task *Task, result executionResult, autoAuthorDetails bool) ([]*batches.ChangesetSpec, error) {
+var errOptionalPublishedUnsupported = errors.New(`This Sourcegraph version requires the "published" field to be specified in the batch spec; upgrade to version 3.30.0 or later to be able to omit the published field and control publication from the UI.`)
+
+func createChangesetSpecs(task *Task, result executionResult, features batches.FeatureFlags) ([]*batches.ChangesetSpec, error) {
 	repo := task.Repository.Name
 
 	tmplCtx := &ChangesetTemplateContext{
@@ -26,7 +28,7 @@ func createChangesetSpecs(task *Task, result executionResult, autoAuthorDetails 
 	var authorEmail string
 
 	if task.Template.Commit.Author == nil {
-		if autoAuthorDetails {
+		if features.IncludeAutoAuthorDetails {
 			// user did not provide author info, so use defaults
 			authorName = "Sourcegraph"
 			authorEmail = "batch-changes@sourcegraph.com"
@@ -66,7 +68,14 @@ func createChangesetSpecs(task *Task, result executionResult, autoAuthorDetails 
 		return nil, err
 	}
 
-	newSpec := func(branch, diff string) *batches.ChangesetSpec {
+	newSpec := func(branch, diff string) (*batches.ChangesetSpec, error) {
+		var published interface{} = nil
+		if task.Template.Published != nil {
+			published = task.Template.Published.ValueWithSuffix(repo, branch)
+		} else if !features.AllowOptionalPublished {
+			return nil, errOptionalPublishedUnsupported
+		}
+
 		return &batches.ChangesetSpec{
 			BaseRepository: task.Repository.ID,
 			CreatedChangeset: &batches.CreatedChangeset{
@@ -84,9 +93,9 @@ func createChangesetSpecs(task *Task, result executionResult, autoAuthorDetails 
 						Diff:        diff,
 					},
 				},
-				Published: task.Template.Published.ValueWithSuffix(repo, branch),
+				Published: published,
 			},
-		}
+		}, nil
 	}
 
 	var specs []*batches.ChangesetSpec
@@ -105,10 +114,18 @@ func createChangesetSpecs(task *Task, result executionResult, autoAuthorDetails 
 		}
 
 		for branch, diff := range diffsByBranch {
-			specs = append(specs, newSpec(branch, diff))
+			spec, err := newSpec(branch, diff)
+			if err != nil {
+				return nil, err
+			}
+			specs = append(specs, spec)
 		}
 	} else {
-		specs = append(specs, newSpec(defaultBranch, result.Diff))
+		spec, err := newSpec(defaultBranch, result.Diff)
+		if err != nil {
+			return nil, err
+		}
+		specs = append(specs, spec)
 	}
 
 	return specs, nil

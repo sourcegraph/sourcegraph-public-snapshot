@@ -463,5 +463,6 @@ func featuresAllEnabled() batches.FeatureFlags {
 		AllowTransformChanges:    true,
 		AllowWorkspaces:          true,
 		AllowConditionalExec:     true,
+		AllowOptionalPublished:   true,
 	}
 }

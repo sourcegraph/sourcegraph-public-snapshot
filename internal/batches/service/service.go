@@ -191,7 +191,7 @@ func (svc *Service) BuildTasks(ctx context.Context, repos []*graphql.Repository,
 func (svc *Service) NewCoordinator(opts executor.NewCoordinatorOpts) *executor.Coordinator {
 	opts.ResolveRepoName = svc.resolveRepositoryName
 	opts.Client = svc.client
-	opts.AutoAuthorDetails = svc.features.IncludeAutoAuthorDetails
+	opts.Features = svc.features
 
 	return executor.NewCoordinator(opts)
 }

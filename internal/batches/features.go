@@ -15,6 +15,7 @@ type FeatureFlags struct {
 	AllowWorkspaces          bool
 	BatchChanges             bool
 	AllowConditionalExec     bool
+	AllowOptionalPublished   bool
 }
 
 func (ff *FeatureFlags) SetFromVersion(version string) error {
@@ -30,6 +31,7 @@ func (ff *FeatureFlags) SetFromVersion(version string) error {
 		{&ff.AllowWorkspaces, ">= 3.25.0", "2021-01-29"},
 		{&ff.BatchChanges, ">= 3.26.0", "2021-03-07"},
 		{&ff.AllowConditionalExec, ">= 3.28.0", "2021-05-05"},
+		{&ff.AllowOptionalPublished, ">= 3.30.0", "2021-06-21"},
 	} {
 		value, err := api.CheckSourcegraphVersion(version, feature.constraint, feature.minDate)
 		if err != nil {

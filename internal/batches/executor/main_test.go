@@ -25,6 +25,8 @@ var testRepo2 = &graphql.Repository{
 	},
 }
 
+var testPublished = overridable.FromBoolOrString(false)
+
 var testChangesetTemplate = &batches.ChangesetTemplate{
 	Title:  "commit title",
 	Body:   "commit body",
@@ -36,5 +38,5 @@ var testChangesetTemplate = &batches.ChangesetTemplate{
 			Email: "tester@example.com",
 		},
 	},
-	Published: overridable.FromBoolOrString(false),
+	Published: &testPublished,
 }

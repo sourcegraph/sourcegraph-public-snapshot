@@ -74,12 +74,21 @@ const BatchSpecJSON = `{
           "rootAtLocationOf": {
             "type": "string",
             "description": "The name of the file that sits at the root of the desired workspace.",
-            "examples": ["package.json", "go.mod", "Gemfile", "Cargo.toml", "README.md"]
+            "examples": [
+              "package.json",
+              "go.mod",
+              "Gemfile",
+              "Cargo.toml",
+              "README.md"
+            ]
           },
           "in": {
             "type": "string",
             "description": "The repositories in which to apply the workspace configuration. Supports globbing.",
-            "examples": ["github.com/sourcegraph/src-cli", "github.com/sourcegraph/*"]
+            "examples": [
+              "github.com/sourcegraph/src-cli",
+              "github.com/sourcegraph/*"
+            ]
           },
           "onlyFetchWorkspace": {
             "type": "boolean",
@@ -118,7 +127,11 @@ const BatchSpecJSON = `{
                 "value": {
                   "type": "string",
                   "description": "The value of the output, which can be a template string.",
-                  "examples": ["hello world", "${{ step.stdout }}", "${{ repository.name }}"]
+                  "examples": [
+                    "hello world",
+                    "${{ step.stdout }}",
+                    "${{ repository.name }}"
+                  ]
                 },
                 "format": {
                   "type": "string",
@@ -245,7 +258,7 @@ const BatchSpecJSON = `{
       "type": "object",
       "description": "A template describing how to create (and update) changesets with the file changes produced by the command steps.",
       "additionalProperties": false,
-      "required": ["title", "branch", "commit", "published"],
+      "required": ["title", "branch", "commit"],
       "properties": {
         "title": {
           "type": "string",
@@ -291,7 +304,7 @@ const BatchSpecJSON = `{
           }
         },
         "published": {
-          "description": "Whether to publish the changeset. An unpublished changeset can be previewed on Sourcegraph by any person who can view the batch change, but its commit, branch, and pull request aren't created on the code host. A published changeset results in a commit, branch, and pull request being created on the code host.",
+          "description": "Whether to publish the changeset. An unpublished changeset can be previewed on Sourcegraph by any person who can view the batch change, but its commit, branch, and pull request aren't created on the code host. A published changeset results in a commit, branch, and pull request being created on the code host. If omitted, the publication state is controlled from the Batch Changes UI.",
           "oneOf": [
             {
               "oneOf": [

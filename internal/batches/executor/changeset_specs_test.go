@@ -80,18 +80,23 @@ func TestCreateChangesetSpecs(t *testing.T) {
 		Outputs: map[string]interface{}{},
 	}
 
+	featuresWithoutOptionalPublished := featuresAllEnabled()
+	featuresWithoutOptionalPublished.AllowOptionalPublished = false
+
 	tests := []struct {
-		name   string
-		task   *Task
-		result executionResult
+		name     string
+		task     *Task
+		features batches.FeatureFlags
+		result   executionResult
 
 		want    []*batches.ChangesetSpec
 		wantErr string
 	}{
 		{
-			name:   "success",
-			task:   defaultTask,
-			result: defaultResult,
+			name:     "success",
+			task:     defaultTask,
+			features: featuresAllEnabled(),
+			result:   defaultResult,
 			want: []*batches.ChangesetSpec{
 				defaultChangesetSpec,
 			},
@@ -103,7 +108,8 @@ func TestCreateChangesetSpecs(t *testing.T) {
 				published := `[{"github.com/sourcegraph/*@my-branch": true}]`
 				task.Template.Published = parsePublishedFieldString(t, published)
 			}),
-			result: defaultResult,
+			features: featuresAllEnabled(),
+			result:   defaultResult,
 			want: []*batches.ChangesetSpec{
 				specWith(defaultChangesetSpec, func(s *batches.ChangesetSpec) {
 					s.Published = true
@@ -117,7 +123,8 @@ func TestCreateChangesetSpecs(t *testing.T) {
 				published := `[{"github.com/sourcegraph/*@another-branch-name": true}]`
 				task.Template.Published = parsePublishedFieldString(t, published)
 			}),
-			result: defaultResult,
+			features: featuresAllEnabled(),
+			result:   defaultResult,
 			want: []*batches.ChangesetSpec{
 				specWith(defaultChangesetSpec, func(s *batches.ChangesetSpec) {
 					s.Published = false
@@ -125,11 +132,35 @@ func TestCreateChangesetSpecs(t *testing.T) {
 			},
 			wantErr: "",
 		},
+		{
+			name: "publish in UI on a supported version",
+			task: taskWith(defaultTask, func(task *Task) {
+				task.Template.Published = nil
+			}),
+			features: featuresAllEnabled(),
+			result:   defaultResult,
+			want: []*batches.ChangesetSpec{
+				specWith(defaultChangesetSpec, func(s *batches.ChangesetSpec) {
+					s.Published = nil
+				}),
+			},
+			wantErr: "",
+		},
+		{
+			name: "publish in UI on an unsupported version",
+			task: taskWith(defaultTask, func(task *Task) {
+				task.Template.Published = nil
+			}),
+			features: featuresWithoutOptionalPublished,
+			result:   defaultResult,
+			want:     nil,
+			wantErr:  errOptionalPublishedUnsupported.Error(),
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			have, err := createChangesetSpecs(tt.task, tt.result, true)
+			have, err := createChangesetSpecs(tt.task, tt.result, tt.features)
 			if err != nil {
 				if tt.wantErr != "" {
 					if err.Error() != tt.wantErr {
@@ -308,12 +339,12 @@ func TestValidateGroups(t *testing.T) {
 	}
 }
 
-func parsePublishedFieldString(t *testing.T, input string) overridable.BoolOrString {
+func parsePublishedFieldString(t *testing.T, input string) *overridable.BoolOrString {
 	t.Helper()
 
 	var result overridable.BoolOrString
 	if err := json.Unmarshal([]byte(input), &result); err != nil {
 		t.Fatalf("failed to parse %q as overridable.BoolOrString: %s", input, err)
 	}
-	return result
+	return &result
 }

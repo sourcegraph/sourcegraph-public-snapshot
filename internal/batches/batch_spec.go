@@ -47,7 +47,7 @@ type ChangesetTemplate struct {
 	Body      string                       `json:"body,omitempty" yaml:"body"`
 	Branch    string                       `json:"branch,omitempty" yaml:"branch"`
 	Commit    ExpandedGitCommitDescription `json:"commit,omitempty" yaml:"commit"`
-	Published overridable.BoolOrString     `json:"published" yaml:"published"`
+	Published *overridable.BoolOrString    `json:"published" yaml:"published"`
 }
 
 type GitCommitAuthor struct {
