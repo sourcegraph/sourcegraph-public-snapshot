@@ -38,6 +38,9 @@
 
 .post-signup-page {
     margin-top: 7rem;
+    &__link-disabled {
+        color: var(--hl-gray-5);
+    }
     &__container {
         width: 37.25rem;
     }

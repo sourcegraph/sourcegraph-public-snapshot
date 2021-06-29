@@ -1,17 +1,20 @@
-import React, { FunctionComponent, useState } from 'react'
-import { Redirect } from 'react-router-dom'
+import React, { FunctionComponent, useState, useCallback, useEffect } from 'react'
+import { useLocation, useHistory } from 'react-router'
 
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Steps, Step } from '@sourcegraph/wildcard/src/components/Steps'
 
 import { AuthenticatedUser } from '../auth'
-import { codeHostExternalServices } from '../components/externalServices/externalServices'
+import { queryExternalServices } from '../components/externalServices/backend'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
-import { UserAreaUserFields } from '../graphql-operations'
+import { UserAreaUserFields, ListExternalServiceFields } from '../graphql-operations'
 import { SourcegraphContext } from '../jscontext'
-import { UserAddCodeHostsPage } from '../user/settings/codeHosts/UserAddCodeHostsPage'
+import { UserCodeHosts } from '../user/settings/codeHosts/UserCodeHosts'
 
-// import { getReturnTo } from './SignInSignUpCommon'
+import { getReturnTo } from './SignInSignUpCommon'
+
+// import { Redirect } from 'react-router-dom'
 
 interface Props {
     authenticatedUser: AuthenticatedUser
@@ -20,7 +23,7 @@ interface Props {
     routingPrefix: string
 }
 
-export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser, routingPrefix, context }) => {
+export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser: user, routingPrefix, context }) => {
     // post sign-up flow is available only for .com and only in two cases, user:
     // 1. is authenticated and has AllowUserViewPostSignup tag
     // 2. is authenticated and enablePostSignupFlow experimental feature is ON
@@ -28,50 +31,98 @@ export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser, ro
     // ((authenticatedUser && experimentalFeatures.enablePostSignupFlow) ||
     //     authenticatedUser?.tags.includes('AllowUserViewPostSignup')) ? (
 
-    const [currentStep, setCurrentStep] = useState(1)
+    const [currentStepNumber, setCurrentStepNumber] = useState(1)
+    const [externalServices, setExternalServices] = useState<ListExternalServiceFields[]>()
+    const location = useLocation()
+    const history = useHistory()
 
-    const connectCodeHosts = (
-        <>
-            <div className="mb-4">
-                <h3>Connect with code hosts</h3>
+    console.log(user)
+
+    const fetchExternalServices = useCallback(async (): Promise<void> => {
+        const { nodes: fetchedServices } = await queryExternalServices({
+            namespace: user.id,
+            first: null,
+            after: null,
+        }).toPromise()
+
+        setExternalServices(fetchedServices)
+    }, [user.id])
+
+    useEffect(() => {
+        fetchExternalServices().catch(error => console.log(error))
+    }, [fetchExternalServices])
+
+    const connectCodeHosts = {
+        content: (
+            <>
+                <div className="mb-4">
+                    <h3>Connect with code hosts</h3>
+                    <p className="text-muted">
+                        Connect with providers where your source code is hosted. Then, choose the repositories you’d
+                        like to search with Sourcegraph.
+                    </p>
+                </div>
+
+                {externalServices ? (
+                    <UserCodeHosts
+                        user={user}
+                        externalServices={externalServices}
+                        context={context}
+                        onDidError={error => console.warn('<UserCodeHosts .../>', error)}
+                        onDidRemove={() => fetchExternalServices()}
+                    />
+                ) : (
+                    <div className="d-flex justify-content-center">
+                        <LoadingSpinner className="icon-inline" />
+                    </div>
+                )}
+            </>
+        ),
+        // step is considered done when user has at least one external service
+        isDone: (): boolean => Array.isArray(externalServices) && externalServices.length > 0,
+    }
+
+    const addRepositories = {
+        content: (
+            <>
+                <h3>Add repositories</h3>
                 <p className="text-muted">
-                    Connect with providers where your source code is hosted. Then, choose the repositories you’d like to
-                    search with Sourcegraph.
+                    Choose repositories you own or collaborate on from your code hosts to search with Sourcegraph. We’ll
+                    sync and index these repositories so you can search your code all in one place.
                 </p>
-            </div>
+            </>
+        ),
+        isDone: () => false,
+    }
 
-            <UserAddCodeHostsPage
-                user={{ id: authenticatedUser.id, tags: authenticatedUser.tags }}
-                context={context}
-                routingPrefix={routingPrefix}
-                codeHostExternalServices={{
-                    github: codeHostExternalServices.github,
-                    gitlabcom: codeHostExternalServices.gitlabcom,
-                }}
-                showHeader={false}
-                onUserExternalServicesOrRepositoriesUpdate={() => {}}
-            />
-        </>
-    )
-    const addRepositories = (
-        <>
-            <h3>Add repositories</h3>
-            <p className="text-muted">
-                Choose repositories you own or collaborate on from your code hosts to search with Sourcegraph. We’ll
-                sync and index these repositories so you can search your code all in one place.
-            </p>
-        </>
-    )
-    const startSearching = (
-        <>
-            <h3>Start searching...</h3>
-            <p className="text-muted">
-                We’re cloning your repos to Sourcegraph. In just a few moments, you can make your first search!
-            </p>
-        </>
-    )
+    const startSearching = {
+        content: (
+            <>
+                <h3>Start searching...</h3>
+                <p className="text-muted">
+                    We’re cloning your repos to Sourcegraph. In just a few moments, you can make your first search!
+                </p>
+            </>
+        ),
+        isDone: () => false,
+    }
 
     const steps = [connectCodeHosts, addRepositories, startSearching]
+
+    const isLastStep = currentStepNumber === steps.length
+    const currentStep = steps[currentStepNumber - 1]
+
+    const goToNextTab = (): void => setCurrentStepNumber(currentStepNumber + 1)
+    const goToSearch = (): void => history.push(getReturnTo(location))
+
+    const isCurrentStepDone = (): boolean => currentStep?.isDone()
+
+    const onStepTabClick = (clickedStepTabIndex: number): void => {
+        // TODO: check this again
+        if (clickedStepTabIndex < currentStepNumber) {
+            setCurrentStepNumber(clickedStepTabIndex)
+        }
+    }
 
     return (
         <div className="signin-signup-page post-signup-page">
@@ -87,29 +138,58 @@ export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser, ro
                             Three quick steps to add your repositories and get searching with Sourcegraph
                         </p>
                         <div className="mt-4 pb-3">
-                            <Steps current={currentStep} numbered={true}>
+                            <Steps current={currentStepNumber} numbered={true} onTabClick={onStepTabClick}>
                                 <Step title="Connect with code hosts" borderColor="purple" />
                                 <Step title="Add repositories" borderColor="blue" />
                                 <Step title="Start searching" borderColor="orange" />
                             </Steps>
                         </div>
-                        <div className="mt-4">{steps[currentStep - 1]}</div>
-                        <br />
-                        <button
-                            type="button"
-                            disabled={currentStep === 1}
-                            onClick={() => setCurrentStep(currentStep - 1)}
-                        >
-                            previous
-                        </button>
-                        &nbsp;
-                        <button
-                            type="button"
-                            disabled={currentStep === steps.length}
-                            onClick={() => setCurrentStep(currentStep + 1)}
-                        >
-                            next
-                        </button>
+                        <div className="mt-4 pb-3">{currentStep.content}</div>
+
+                        <div className="mt-4">
+                            <button
+                                type="button"
+                                className="btn btn-primary float-right ml-2"
+                                disabled={!isCurrentStepDone()}
+                                onClick={isLastStep ? goToSearch : goToNextTab}
+                            >
+                                {isLastStep ? 'Start searching' : 'Continue'}
+                            </button>
+
+                            {!isLastStep && (
+                                <button
+                                    type="button"
+                                    className="btn btn-link font-weight-normal text-secondary float-right"
+                                    onClick={() => history.push(getReturnTo(location))}
+                                >
+                                    Not right now
+                                </button>
+                            )}
+                        </div>
+
+                        {/* debugging */}
+                        <div className="pt-5">
+                            <hr />
+                            <br />
+                            <p>🚧 Debugging buttons 🚧</p>
+                            <button
+                                type="button"
+                                className="btn btn-secondary"
+                                disabled={currentStepNumber === 1}
+                                onClick={() => setCurrentStepNumber(currentStepNumber - 1)}
+                            >
+                                previous tab
+                            </button>
+                            &nbsp;
+                            <button
+                                type="button"
+                                className="btn btn-secondary"
+                                disabled={currentStepNumber === steps.length}
+                                onClick={goToNextTab}
+                            >
+                                next tab
+                            </button>
+                        </div>
                     </div>
                 }
             />
