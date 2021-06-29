@@ -331,19 +331,14 @@ func compareChangesetSpecs(previous, current *btypes.ChangesetSpec, uiPublicatio
 }
 
 type ChangesetSpecDelta struct {
-	// General metadata changes.
 	TitleChanged         bool
 	BodyChanged          bool
+	Undraft              bool
 	BaseRefChanged       bool
 	DiffChanged          bool
 	CommitMessageChanged bool
 	AuthorNameChanged    bool
 	AuthorEmailChanged   bool
-
-	// Publication state changes.
-	Undraft      bool
-	Publish      bool
-	PublishDraft bool
 }
 
 func (d *ChangesetSpecDelta) String() string { return fmt.Sprintf("%#v", d) }
