@@ -127,7 +127,7 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                         <div className="nav-item">
                             <NavLink to="/code-monitoring" className="nav-link" activeClassName="active" exact={true}>
                                 <span className="text-content" data-tab-content="Code monitors">
-                                    All Code Monitors
+                                    Code Monitors
                                 </span>
                             </NavLink>
                         </div>
