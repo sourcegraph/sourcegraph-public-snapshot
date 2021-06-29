@@ -44,7 +44,6 @@ describe('SearchPage', () => {
         setVersionContext: () => Promise.resolve(),
         availableVersionContexts: [],
         globbing: false,
-        enableSmartQuery: false,
         parsedSearchQuery: 'r:golang/oauth2 test f:travis',
         patternType: SearchPatternType.literal,
         setPatternType: () => undefined,

@@ -32,7 +32,6 @@ interface Props
     isSourcegraphDotCom: boolean
     onChange: (newValue: QueryState) => void
     globbing: boolean
-    enableSmartQuery: boolean
     isSearchAutoFocusRequired?: boolean
     setVersionContext: (versionContext: string | undefined) => Promise<void>
     availableVersionContexts: VersionContext[] | undefined

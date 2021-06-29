@@ -49,7 +49,6 @@ export function getProviders(
     options: {
         patternType: SearchPatternType
         globbing: boolean
-        enableSmartQuery: boolean
         interpretComments?: boolean
         isSourcegraphDotCom?: boolean
     }
@@ -72,7 +71,7 @@ export function getProviders(
                 const result = scanSearchQuery(line, options.interpretComments ?? false, options.patternType)
                 if (result.type === 'success') {
                     return {
-                        tokens: getMonacoTokens(result.term, options.enableSmartQuery),
+                        tokens: getMonacoTokens(result.term),
                         endState: SCANNER_STATE,
                     }
                 }
@@ -84,11 +83,7 @@ export function getProviders(
                 scannedQueries
                     .pipe(
                         first(),
-                        map(({ scanned }) =>
-                            scanned.type === 'error'
-                                ? null
-                                : getHoverResult(scanned.term, position, options.enableSmartQuery)
-                        ),
+                        map(({ scanned }) => (scanned.type === 'error' ? null : getHoverResult(scanned.term))),
                         takeUntil(fromEventPattern(handler => token.onCancellationRequested(handler)))
                     )
                     .toPromise(),

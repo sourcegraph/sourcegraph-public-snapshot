@@ -66,9 +66,6 @@ export interface SearchPageProps
 
     // Whether globbing is enabled for filters.
     globbing: boolean
-
-    // Whether to additionally highlight or provide hovers for tokens, e.g., regexp character sets.
-    enableSmartQuery: boolean
 }
 
 /**

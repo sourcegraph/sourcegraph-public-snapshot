@@ -31,7 +31,6 @@ const defaultProps: SearchBoxProps = {
     globbing: false,
     queryState: { query: 'hello repo:test' },
     isSourcegraphDotCom: false,
-    enableSmartQuery: false,
     patternType: SearchPatternType.literal,
     setPatternType: () => {},
     caseSensitive: false,

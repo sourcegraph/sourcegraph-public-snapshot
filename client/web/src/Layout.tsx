@@ -128,7 +128,6 @@ export interface LayoutProps
     globbing: boolean
     showMultilineSearchConsole: boolean
     showQueryBuilder: boolean
-    enableSmartQuery: boolean
     isSourcegraphDotCom: boolean
     showBatchChanges: boolean
     fetchSavedSearches: () => Observable<GQL.ISavedSearch[]>
