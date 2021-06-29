@@ -12,29 +12,33 @@ export interface StepProps {
     active?: boolean
     disabled?: boolean
     borderColor?: Color
+    onClick?: () => void
 }
 
 export interface StepsProps {
     current: number
-    numbered?: boolean
     children: React.ReactElement<StepProps> | React.ReactElement<StepProps>[]
+    numbered?: boolean
+    onTabClick?: (index: number) => void
 }
 
-export const Step: React.FunctionComponent<StepProps> = ({ title, active, borderColor, disabled }) => (
+export const Step: React.FunctionComponent<StepProps> = ({ title, active, borderColor, disabled, onClick }) => (
     <li
+        role="presentation"
         className={classNames(
             disabled && stepsStyles.disabled,
             stepsStyles.listItem,
             active && stepsStyles.active,
             borderColor && stepsStyles[`color${upperFirst(borderColor)}` as keyof typeof stepsStyles]
         )}
+        onClick={onClick}
         aria-current={active}
     >
         {title}
     </li>
 )
 
-export const Steps: React.FunctionComponent<StepsProps> = ({ children, numbered, current = 1 }) => {
+export const Steps: React.FunctionComponent<StepsProps> = ({ current = 1, numbered, onTabClick, children }) => {
     if (!children) {
         throw new Error('Steps must include at least one child')
     }
@@ -51,6 +55,8 @@ export const Steps: React.FunctionComponent<StepsProps> = ({ children, numbered,
         return React.cloneElement(child, {
             disabled: current < index + 1,
             active: current === index + 1,
+            // TODO: check this again
+            onClick: () => (onTabClick ? onTabClick(index + 1) : undefined),
         })
     })
 
