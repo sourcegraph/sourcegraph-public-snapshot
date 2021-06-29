@@ -1,6 +1,6 @@
 # Storybook configuration
 
-Checkout the [Storybook section](https://docs.sourcegraph.com/dev/background-information/web/web_app#storybook) in the [Developing the Sourcegraph web app](https://docs.sourcegraph.com/dev/background-information/web/web_app) docs.
+Check out the [Storybook section](https://docs.sourcegraph.com/dev/background-information/web/web_app#storybook) in the [Developing the Sourcegraph web app](https://docs.sourcegraph.com/dev/background-information/web/web_app) docs.
 
 ## Usage
 
@@ -37,7 +37,7 @@ MINIFY=true yarn build
 
 ## DLL Plugin
 
-The [DLL Plugin](https://webpack.js.org/plugins/dll-plugin/) is used to move most third-party dependencies into a separate pre-built bundle to speed up development build.
+The [DLL Plugin](https://webpack.js.org/plugins/dll-plugin/) is used to move most third-party dependencies into a separate pre-built bundle to speed up development build. To start Storybook development server with DLL Plugin enabled run: `yarn start:dll` from the Storybook workspace or `yarn storybook:dll` from the root folder.
 
 ### How `yarn start:dll` works
 
