@@ -191,7 +191,7 @@ func filteredStructuralSearch(ctx context.Context, zipPath string, zipFile *stor
 		return nil, false, err
 	}
 
-	fileMatches, _, err := regexSearch(ctx, rg, zipFile, p.FileMatchLimit, true, false, false)
+	fileMatches, _, err := regexSearchBatch(ctx, rg, zipFile, p.FileMatchLimit, true, false, false)
 	if err != nil {
 		return nil, false, err
 	}

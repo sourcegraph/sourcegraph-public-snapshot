@@ -251,8 +251,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 		sender.Send(matches)
 		return limitHit, false, err
 	} else {
-		matches, limitHit, err := regexSearch(ctx, rg, zf, p.FileMatchLimit, p.PatternMatchesContent, p.PatternMatchesPath, p.IsNegated)
-		sender.Send(matches)
+		limitHit, err := regexSearch(ctx, rg, zf, p.FileMatchLimit, p.PatternMatchesContent, p.PatternMatchesPath, p.IsNegated, sender)
 		return limitHit, false, err
 	}
 }

@@ -293,8 +293,19 @@ func (rg *readerGrep) FindZip(zf *store.ZipFile, f *store.SrcFile) (protocol.Fil
 	}, err
 }
 
+func regexSearchBatch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMatchLimit int, patternMatchesContent, patternMatchesPaths bool, isPatternNegated bool) ([]protocol.FileMatch, bool, error) {
+	sender := newMatchSender(100)
+	matches := make(chan []protocol.FileMatch, 1)
+	go func() {
+		matches <- sender.Collect()
+	}()
+	limitHit, err := regexSearch(ctx, rg, zf, fileMatchLimit, patternMatchesContent, patternMatchesPaths, isPatternNegated, sender)
+	sender.Close()
+	return <-matches, limitHit, err
+}
+
 // regexSearch concurrently searches files in zr looking for matches using rg.
-func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMatchLimit int, patternMatchesContent, patternMatchesPaths bool, isPatternNegated bool) (fm []protocol.FileMatch, limitHit bool, err error) {
+func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMatchLimit int, patternMatchesContent, patternMatchesPaths bool, isPatternNegated bool, sender matchSender) (limitHit bool, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "RegexSearch")
 	ext.Component.Set(span, "regex_search")
 	if rg.re != nil {
@@ -330,15 +341,14 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMat
 	defer cancel()
 
 	var (
-		filesmu   sync.Mutex // protects files
-		files     = zf.Files
-		matchesmu sync.Mutex // protects matches, limitHit
-		matches   = []protocol.FileMatch{}
+		filesmu sync.Mutex // protects files
+		files   = zf.Files
 	)
 
 	if rg.re == nil || (patternMatchesPaths && !patternMatchesContent) {
 		// Fast path for only matching file paths (or with a nil pattern, which matches all files,
 		// so is effectively matching only on file paths).
+		var matches []protocol.FileMatch
 		for _, f := range files {
 			if match := rg.matchPath.MatchPath(f.Name) && rg.matchString(f.Name); match == !isPatternNegated {
 				if len(matches) < fileMatchLimit {
@@ -349,7 +359,8 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMat
 				}
 			}
 		}
-		return matches, limitHit, nil
+		sender.Send(matches)
+		return limitHit, nil
 	}
 
 	var (
@@ -411,14 +422,12 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMat
 					}
 				}
 				if match == !isPatternNegated {
-					matchesmu.Lock()
-					if len(matches) < fileMatchLimit {
-						matches = append(matches, fm)
+					if sender.SentCount() < fileMatchLimit {
+						sender.Send([]protocol.FileMatch{fm})
 					} else {
 						limitHit = true
 						cancel()
 					}
-					matchesmu.Unlock()
 				}
 			}
 		}(rg.Copy())
@@ -437,7 +446,7 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMat
 		otlog.Int("filesSearched", int(atomic.LoadUint32(&filesSearched))),
 	)
 
-	return matches, limitHit, err
+	return limitHit, err
 }
 
 // lowerRegexpASCII lowers rune literals and expands char classes to include
