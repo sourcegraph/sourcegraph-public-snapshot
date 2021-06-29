@@ -1,3 +1,5 @@
+import { ALL_INSIGHTS_DASHBOARD } from '../../../../core/types'
+
 import { getInsightsDashboards } from './use-dashboards'
 
 describe('getInsightsDashboards', () => {
@@ -24,10 +26,7 @@ describe('getInsightsDashboards', () => {
             ).toStrictEqual([
                 // Even with empty or errored value of user settings we still have
                 // generic built in insights dashboard - "All"
-                {
-                    type: 'built-in',
-                    title: 'All',
-                },
+                ALL_INSIGHTS_DASHBOARD,
             ])
         })
     })
@@ -60,10 +59,7 @@ describe('getInsightsDashboards', () => {
                     },
                 ])
             ).toStrictEqual([
-                {
-                    type: 'built-in',
-                    title: 'All',
-                },
+                ALL_INSIGHTS_DASHBOARD,
                 {
                     type: 'built-in',
                     insightIds: [],
@@ -112,10 +108,7 @@ describe('getInsightsDashboards', () => {
                     },
                 ])
             ).toStrictEqual([
-                {
-                    type: 'built-in',
-                    title: 'All',
-                },
+                ALL_INSIGHTS_DASHBOARD,
                 {
                     type: 'built-in',
                     insightIds: [],
@@ -190,10 +183,7 @@ describe('getInsightsDashboards', () => {
                     },
                 ])
             ).toStrictEqual([
-                {
-                    type: 'built-in',
-                    title: 'All',
-                },
+                ALL_INSIGHTS_DASHBOARD,
                 {
                     type: 'built-in',
                     insightIds: [],

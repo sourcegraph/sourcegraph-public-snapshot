@@ -16,6 +16,7 @@ import {
     InsightDashboardOwner,
     InsightsDashboardType,
     isInsightSettingKey,
+    ALL_INSIGHTS_DASHBOARD,
 } from '../../../../core/types'
 
 /**
@@ -45,19 +46,14 @@ export function getInsightsDashboards(subjects: ConfiguredSubjectOrError<Setting
  * Returns built in types of insights dashboards (all, personal, org level dashboards).
  */
 function getBuiltInDashboards(subjects: ConfiguredSubjectOrError<Settings>[]): InsightBuiltInDashboard[] {
-    const allInsightDashboard: InsightBuiltInDashboard = {
-        title: 'All',
-        type: InsightsDashboardType.BuiltIn,
-    }
-
-    const subjectDashboards = subjects.reduce<InsightBuiltInDashboard[]>((dashboards, subject) => {
-        const settings = subject.settings
+    const subjectDashboards = subjects.reduce<InsightBuiltInDashboard[]>((dashboards, configuredSubject) => {
+        const { settings, subject } = configuredSubject
 
         if (isErrorLike(settings) || settings === null) {
             return dashboards
         }
 
-        const dashboardOwner = getDashboardOwner(subject.subject)
+        const dashboardOwner = getDashboardOwner(subject)
         const subjectInsightIds = Object.keys(settings).filter(isInsightSettingKey)
 
         const subjectDashboard: InsightBuiltInDashboard = {
@@ -69,16 +65,15 @@ function getBuiltInDashboards(subjects: ConfiguredSubjectOrError<Settings>[]): I
         return [...dashboards, subjectDashboard]
     }, [])
 
-    return [allInsightDashboard, ...subjectDashboards]
+    return [ALL_INSIGHTS_DASHBOARD, ...subjectDashboards]
 }
 
 /**
  * Returns list of custom insights dashboards generated from settings cascade subjects.
- *
  */
 function getCustomDashboards(subjects: ConfiguredSubjectOrError<Settings>[]): InsightCustomDashboard[] {
-    return subjects.reduce<InsightCustomDashboard[]>((dashboards, subject) => {
-        const settings = subject.settings
+    return subjects.reduce<InsightCustomDashboard[]>((dashboards, configuredSubject) => {
+        const { settings, subject } = configuredSubject
 
         if (isErrorLike(settings) || settings === null) {
             return dashboards
@@ -96,7 +91,7 @@ function getCustomDashboards(subjects: ConfiguredSubjectOrError<Settings>[]): In
                 // Extend settings dashboard configuration with owner info
                 return {
                     type: InsightsDashboardType.Custom,
-                    owner: getDashboardOwner(subject.subject),
+                    owner: getDashboardOwner(subject),
                     ...dashboardSettings,
                 }
             })

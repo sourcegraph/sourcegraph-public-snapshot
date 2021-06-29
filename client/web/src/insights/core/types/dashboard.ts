@@ -61,3 +61,12 @@ export interface InsightBuiltInDashboard {
 
     insightIds?: string[]
 }
+
+/**
+ * A built-in type of dashboard that contains all insights from all settings level
+ * like organizations level and personal settings.
+ */
+export const ALL_INSIGHTS_DASHBOARD: InsightBuiltInDashboard = {
+    title: 'All',
+    type: InsightsDashboardType.BuiltIn,
+}
