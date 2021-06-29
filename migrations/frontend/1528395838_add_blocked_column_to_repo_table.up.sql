@@ -10,6 +10,7 @@ SELECT jsonb_build_object(
 );
 $$ LANGUAGE SQL STRICT IMMUTABLE;
 
-CREATE INDEX repo_is_blocked_idx ON repo USING BTREE ((blocked IS NOT NULL));
+CREATE INDEX repo_blocked_idx ON repo USING BTREE ((blocked IS NOT NULL));
+CREATE INDEX repo_is_not_blocked_idx ON repo USING BTREE ((blocked IS NULL));
 
 COMMIT;
