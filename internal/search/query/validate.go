@@ -327,9 +327,6 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 		FieldCount:
 		return satisfies(isSingular, isNumber, isNotNegated)
 	case
-		FieldStable:
-		return satisfies(isSingular, isBoolean, isNotNegated)
-	case
 		FieldCombyRule:
 		return satisfies(isSingular, isNotNegated)
 	case
