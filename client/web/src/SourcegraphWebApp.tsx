@@ -560,7 +560,6 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                             globbing={this.state.globbing}
                                             showMultilineSearchConsole={this.state.showMultilineSearchConsole}
                                             showQueryBuilder={this.state.showQueryBuilder}
-                                            enableSmartQuery={this.state.enableSmartQuery}
                                             enableCodeMonitoring={this.state.enableCodeMonitoring}
                                             fetchSavedSearches={fetchSavedSearches}
                                             fetchRecentSearches={fetchRecentSearches}
