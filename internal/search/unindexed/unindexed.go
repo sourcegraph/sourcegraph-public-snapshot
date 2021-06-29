@@ -1,4 +1,4 @@
-package run
+package unindexed
 
 import (
 	"context"
@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
@@ -30,159 +31,15 @@ import (
 // A global limiter on number of concurrent searcher searches.
 var textSearchLimiter = mutablelimiter.New(32)
 
-var mockSearchFilesInRepo func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*result.FileMatch, limitHit bool, err error)
-
-func SearchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo types.RepoName, gitserverRepo api.RepoName, rev string, index bool, info *search.TextPatternInfo, fetchTimeout time.Duration) ([]*result.FileMatch, bool, error) {
-	if mockSearchFilesInRepo != nil {
-		return mockSearchFilesInRepo(ctx, repo, gitserverRepo, rev, info, fetchTimeout)
-	}
-
-	// Do not trigger a repo-updater lookup (e.g.,
-	// backend.{GitRepo,Repos.ResolveRev}) because that would slow this operation
-	// down by a lot (if we're looping over many repos). This means that it'll fail if a
-	// repo is not on gitserver.
-	commit, err := git.ResolveRevision(ctx, gitserverRepo, rev, git.ResolveRevisionOptions{NoEnsureRevision: true})
-	if err != nil {
-		return nil, false, err
-	}
-
-	shouldBeSearched, err := repoShouldBeSearched(ctx, searcherURLs, info, gitserverRepo, commit, fetchTimeout)
-	if err != nil {
-		return nil, false, err
-	}
-	if !shouldBeSearched {
-		return nil, false, err
-	}
-
-	var indexerEndpoints []string
-	if info.IsStructuralPat {
-		endpoints, err := search.Indexers().Map.Endpoints()
-		for key := range endpoints {
-			indexerEndpoints = append(indexerEndpoints, key)
-		}
-		if err != nil {
-			return nil, false, err
-		}
-	}
-	matches, limitHit, err := searcher.Search(ctx, searcherURLs, gitserverRepo, rev, commit, index, info, fetchTimeout, indexerEndpoints)
-	if err != nil {
-		return nil, false, err
-	}
-
-	fileMatches := make([]*result.FileMatch, 0, len(matches))
-	for _, fm := range matches {
-		lineMatches := make([]*result.LineMatch, 0, len(fm.LineMatches))
-		for _, lm := range fm.LineMatches {
-			ranges := make([][2]int32, 0, len(lm.OffsetAndLengths))
-			for _, ol := range lm.OffsetAndLengths {
-				ranges = append(ranges, [2]int32{int32(ol[0]), int32(ol[1])})
-			}
-			lineMatches = append(lineMatches, &result.LineMatch{
-				Preview:          lm.Preview,
-				OffsetAndLengths: ranges,
-				LineNumber:       int32(lm.LineNumber),
-			})
-		}
-
-		fileMatches = append(fileMatches, &result.FileMatch{
-			File: result.File{
-				Path:     fm.Path,
-				Repo:     repo,
-				CommitID: commit,
-				InputRev: &rev,
-			},
-			LineMatches: lineMatches,
-			LimitHit:    fm.LimitHit,
-		})
-	}
-
-	return fileMatches, limitHit, err
-}
-
-// repoShouldBeSearched determines whether a repository should be searched in, based on whether the repository
-// fits in the subset of repositories specified in the query's `repohasfile` and `-repohasfile` flags if they exist.
-func repoShouldBeSearched(ctx context.Context, searcherURLs *endpoint.Map, searchPattern *search.TextPatternInfo, gitserverRepo api.RepoName, commit api.CommitID, fetchTimeout time.Duration) (shouldBeSearched bool, err error) {
-	shouldBeSearched = true
-	flagInQuery := len(searchPattern.FilePatternsReposMustInclude) > 0
-	if flagInQuery {
-		shouldBeSearched, err = repoHasFilesWithNamesMatching(ctx, searcherURLs, true, searchPattern.FilePatternsReposMustInclude, gitserverRepo, commit, fetchTimeout)
-		if err != nil {
-			return shouldBeSearched, err
-		}
-	}
-	negFlagInQuery := len(searchPattern.FilePatternsReposMustExclude) > 0
-	if negFlagInQuery {
-		shouldBeSearched, err = repoHasFilesWithNamesMatching(ctx, searcherURLs, false, searchPattern.FilePatternsReposMustExclude, gitserverRepo, commit, fetchTimeout)
-		if err != nil {
-			return shouldBeSearched, err
-		}
-	}
-	return shouldBeSearched, nil
-}
-
-// repoHasFilesWithNamesMatching searches in a repository for matches for the patterns in the `repohasfile` or `-repohasfile` flags, and returns
-// whether or not the repoShouldBeSearched in or not, based on whether matches were returned.
-func repoHasFilesWithNamesMatching(ctx context.Context, searcherURLs *endpoint.Map, include bool, repoHasFileFlag []string, gitserverRepo api.RepoName, commit api.CommitID, fetchTimeout time.Duration) (bool, error) {
-	for _, pattern := range repoHasFileFlag {
-		p := search.TextPatternInfo{IsRegExp: true, FileMatchLimit: 1, IncludePatterns: []string{pattern}, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
-		matches, _, err := searcher.Search(ctx, searcherURLs, gitserverRepo, "", commit, false, &p, fetchTimeout, []string{})
-		if err != nil {
-			return false, err
-		}
-		if include && len(matches) == 0 || !include && len(matches) > 0 {
-			// repo shouldn't be searched if it does not have matches for the patterns in `repohasfile`
-			// or if it has file matches for the patterns in `-repohasfile`.
-			return false, nil
-		}
-	}
-
-	return true, nil
-}
-
-func fileMatchesToMatches(fms []*result.FileMatch) []result.Match {
-	matches := make([]result.Match, 0, len(fms))
-	for _, fm := range fms {
-		newFm := fm
-		matches = append(matches, newFm)
-	}
-	return matches
-}
-
-func matchesToFileMatches(matches []result.Match) ([]*result.FileMatch, error) {
-	fms := make([]*result.FileMatch, 0, len(matches))
-	for _, match := range matches {
-		fm, ok := match.(*result.FileMatch)
-		if !ok {
-			return nil, fmt.Errorf("expected only file match results")
-		}
-		fms = append(fms, fm)
-	}
-	return fms, nil
-}
-
-// SearchFilesInRepoBatch is a convenience function around searchFilesInRepos
-// which collects the results from the stream.
-func SearchFilesInReposBatch(ctx context.Context, args *search.TextParameters) ([]*result.FileMatch, streaming.Stats, error) {
-	matches, stats, err := streaming.CollectStream(func(stream streaming.Sender) error {
-		return SearchFilesInRepos(ctx, args, stream)
-	})
-
-	fms, fmErr := matchesToFileMatches(matches)
-	if fmErr != nil && err == nil {
-		err = errors.Wrap(fmErr, "searchFilesInReposBatch failed to convert results")
-	}
-	return fms, stats, err
-}
-
-var MockSearchFilesInRepos func(args *search.TextParameters) ([]*result.FileMatch, *streaming.Stats, error)
+var MockSearchFilesInRepos func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error)
 
 // SearchFilesInRepos searches a set of repos for a pattern.
 func SearchFilesInRepos(ctx context.Context, args *search.TextParameters, stream streaming.Sender) (err error) {
 	if MockSearchFilesInRepos != nil {
 		matches, mockStats, err := MockSearchFilesInRepos(args)
 		stream.Send(streaming.SearchEvent{
-			Results: fileMatchesToMatches(matches),
-			Stats:   statsDeref(mockStats),
+			Results: matches,
+			Stats:   mockStats.Deref(),
 		})
 		return err
 	}
@@ -250,6 +107,141 @@ func SearchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 	})
 
 	return g.Wait()
+}
+
+// SearchFilesInRepoBatch is a convenience function around searchFilesInRepos
+// which collects the results from the stream.
+func SearchFilesInReposBatch(ctx context.Context, args *search.TextParameters) ([]*result.FileMatch, streaming.Stats, error) {
+	matches, stats, err := streaming.CollectStream(func(stream streaming.Sender) error {
+		return SearchFilesInRepos(ctx, args, stream)
+	})
+
+	fms, fmErr := matchesToFileMatches(matches)
+	if fmErr != nil && err == nil {
+		err = errors.Wrap(fmErr, "searchFilesInReposBatch failed to convert results")
+	}
+	return fms, stats, err
+}
+
+var mockSearchFilesInRepo func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []result.Match, limitHit bool, err error)
+
+func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo types.RepoName, gitserverRepo api.RepoName, rev string, index bool, info *search.TextPatternInfo, fetchTimeout time.Duration) ([]result.Match, bool, error) {
+	if mockSearchFilesInRepo != nil {
+		return mockSearchFilesInRepo(ctx, repo, gitserverRepo, rev, info, fetchTimeout)
+	}
+
+	// Do not trigger a repo-updater lookup (e.g.,
+	// backend.{GitRepo,Repos.ResolveRev}) because that would slow this operation
+	// down by a lot (if we're looping over many repos). This means that it'll fail if a
+	// repo is not on gitserver.
+	commit, err := git.ResolveRevision(ctx, gitserverRepo, rev, git.ResolveRevisionOptions{NoEnsureRevision: true})
+	if err != nil {
+		return nil, false, err
+	}
+
+	shouldBeSearched, err := repoShouldBeSearched(ctx, searcherURLs, info, gitserverRepo, commit, fetchTimeout)
+	if err != nil {
+		return nil, false, err
+	}
+	if !shouldBeSearched {
+		return nil, false, err
+	}
+
+	var indexerEndpoints []string
+	if info.IsStructuralPat {
+		endpoints, err := search.Indexers().Map.Endpoints()
+		for key := range endpoints {
+			indexerEndpoints = append(indexerEndpoints, key)
+		}
+		if err != nil {
+			return nil, false, err
+		}
+	}
+	searcherMatches, limitHit, err := searcher.Search(ctx, searcherURLs, gitserverRepo, rev, commit, index, info, fetchTimeout, indexerEndpoints)
+	if err != nil {
+		return nil, false, err
+	}
+
+	matches := make([]result.Match, 0, len(searcherMatches))
+	for _, fm := range searcherMatches {
+		lineMatches := make([]*result.LineMatch, 0, len(fm.LineMatches))
+		for _, lm := range fm.LineMatches {
+			ranges := make([][2]int32, 0, len(lm.OffsetAndLengths))
+			for _, ol := range lm.OffsetAndLengths {
+				ranges = append(ranges, [2]int32{int32(ol[0]), int32(ol[1])})
+			}
+			lineMatches = append(lineMatches, &result.LineMatch{
+				Preview:          lm.Preview,
+				OffsetAndLengths: ranges,
+				LineNumber:       int32(lm.LineNumber),
+			})
+		}
+
+		matches = append(matches, &result.FileMatch{
+			File: result.File{
+				Path:     fm.Path,
+				Repo:     repo,
+				CommitID: commit,
+				InputRev: &rev,
+			},
+			LineMatches: lineMatches,
+			LimitHit:    fm.LimitHit,
+		})
+	}
+
+	return matches, limitHit, err
+}
+
+// repoShouldBeSearched determines whether a repository should be searched in, based on whether the repository
+// fits in the subset of repositories specified in the query's `repohasfile` and `-repohasfile` flags if they exist.
+func repoShouldBeSearched(ctx context.Context, searcherURLs *endpoint.Map, searchPattern *search.TextPatternInfo, gitserverRepo api.RepoName, commit api.CommitID, fetchTimeout time.Duration) (shouldBeSearched bool, err error) {
+	shouldBeSearched = true
+	flagInQuery := len(searchPattern.FilePatternsReposMustInclude) > 0
+	if flagInQuery {
+		shouldBeSearched, err = repoHasFilesWithNamesMatching(ctx, searcherURLs, true, searchPattern.FilePatternsReposMustInclude, gitserverRepo, commit, fetchTimeout)
+		if err != nil {
+			return shouldBeSearched, err
+		}
+	}
+	negFlagInQuery := len(searchPattern.FilePatternsReposMustExclude) > 0
+	if negFlagInQuery {
+		shouldBeSearched, err = repoHasFilesWithNamesMatching(ctx, searcherURLs, false, searchPattern.FilePatternsReposMustExclude, gitserverRepo, commit, fetchTimeout)
+		if err != nil {
+			return shouldBeSearched, err
+		}
+	}
+	return shouldBeSearched, nil
+}
+
+// repoHasFilesWithNamesMatching searches in a repository for matches for the patterns in the `repohasfile` or `-repohasfile` flags, and returns
+// whether or not the repoShouldBeSearched in or not, based on whether matches were returned.
+func repoHasFilesWithNamesMatching(ctx context.Context, searcherURLs *endpoint.Map, include bool, repoHasFileFlag []string, gitserverRepo api.RepoName, commit api.CommitID, fetchTimeout time.Duration) (bool, error) {
+	for _, pattern := range repoHasFileFlag {
+		p := search.TextPatternInfo{IsRegExp: true, FileMatchLimit: 1, IncludePatterns: []string{pattern}, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
+		matches, _, err := searcher.Search(ctx, searcherURLs, gitserverRepo, "", commit, false, &p, fetchTimeout, []string{})
+		if err != nil {
+			return false, err
+		}
+		if include && len(matches) == 0 || !include && len(matches) > 0 {
+			// repo shouldn't be searched if it does not have matches for the patterns in `repohasfile`
+			// or if it has file matches for the patterns in `-repohasfile`.
+			return false, nil
+		}
+	}
+
+	return true, nil
+}
+
+func matchesToFileMatches(matches []result.Match) ([]*result.FileMatch, error) {
+	fms := make([]*result.FileMatch, 0, len(matches))
+	for _, match := range matches {
+		fm, ok := match.(*result.FileMatch)
+		if !ok {
+			return nil, fmt.Errorf("expected only file match results")
+		}
+		fms = append(fms, fm)
+	}
+	return fms, nil
 }
 
 // callSearcherOverRepos calls searcher on searcherRepos.
@@ -324,15 +316,15 @@ func callSearcherOverRepos(
 					ctx, done := limitCtx, limitDone
 					defer done()
 
-					matches, repoLimitHit, err := SearchFilesInRepo(ctx, args.SearcherURLs, repoRev.Repo, repoRev.GitserverRepo(), repoRev.RevSpecs()[0], index, args.PatternInfo, fetchTimeout)
+					matches, repoLimitHit, err := searchFilesInRepo(ctx, args.SearcherURLs, repoRev.Repo, repoRev.GitserverRepo(), repoRev.RevSpecs()[0], index, args.PatternInfo, fetchTimeout)
 					if err != nil {
 						tr.LogFields(otlog.String("repo", string(repoRev.Repo.Name)), otlog.Error(err), otlog.Bool("timeout", errcode.IsTimeout(err)), otlog.Bool("temporary", errcode.IsTemporary(err)))
 						log15.Warn("searchFilesInRepo failed", "error", err, "repo", repoRev.Repo.Name)
 					}
 					// non-diff search reports timeout through err, so pass false for timedOut
-					stats, err := handleRepoSearchResult(repoRev, repoLimitHit, false, err)
+					stats, err := repos.HandleRepoSearchResult(repoRev, repoLimitHit, false, err)
 					stream.Send(streaming.SearchEvent{
-						Results: fileMatchesToMatches(matches),
+						Results: matches,
 						Stats:   stats,
 					})
 					return err

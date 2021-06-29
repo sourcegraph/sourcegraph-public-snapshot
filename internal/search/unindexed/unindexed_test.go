@@ -1,4 +1,4 @@
-package run
+package unindexed
 
 import (
 	"context"
@@ -33,11 +33,11 @@ import (
 )
 
 func TestSearchFilesInRepos(t *testing.T) {
-	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*result.FileMatch, limitHit bool, err error) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []result.Match, limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo/one":
-			return []*result.FileMatch{{
+			return []result.Match{&result.FileMatch{
 				File: result.File{
 					Repo:     repo,
 					InputRev: &rev,
@@ -45,7 +45,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 				},
 			}}, false, nil
 		case "foo/two":
-			return []*result.FileMatch{{
+			return []result.Match{&result.FileMatch{
 				File: result.File{
 					Repo:     repo,
 					InputRev: &rev,
@@ -82,10 +82,10 @@ func TestSearchFilesInRepos(t *testing.T) {
 	repoRevs := makeRepositoryRevisions("foo/one", "foo/two", "foo/empty", "foo/cloning", "foo/missing", "foo/missing-database", "foo/timedout", "foo/no-rev")
 	args := &search.TextParameters{
 		PatternInfo: &search.TextPatternInfo{
-			FileMatchLimit: defaultMaxSearchResults,
+			FileMatchLimit: search.DefaultMaxSearchResults,
 			Pattern:        "foo",
 		},
-		RepoPromise:  (&search.Promise{}).Resolve(repoRevs),
+		RepoPromise:  (&search.RepoPromise{}).Resolve(repoRevs),
 		Query:        q,
 		Zoekt:        zoekt,
 		SearcherURLs: endpoint.Static("test"),
@@ -112,10 +112,10 @@ func TestSearchFilesInRepos(t *testing.T) {
 	// that should be checked earlier.
 	args = &search.TextParameters{
 		PatternInfo: &search.TextPatternInfo{
-			FileMatchLimit: defaultMaxSearchResults,
+			FileMatchLimit: search.DefaultMaxSearchResults,
 			Pattern:        "foo",
 		},
-		RepoPromise:  (&search.Promise{}).Resolve(makeRepositoryRevisions("foo/no-rev@dev")),
+		RepoPromise:  (&search.RepoPromise{}).Resolve(makeRepositoryRevisions("foo/no-rev@dev")),
 		Query:        q,
 		Zoekt:        zoekt,
 		SearcherURLs: endpoint.Static("test"),
@@ -128,11 +128,11 @@ func TestSearchFilesInRepos(t *testing.T) {
 }
 
 func TestSearchFilesInReposStream(t *testing.T) {
-	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*result.FileMatch, limitHit bool, err error) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []result.Match, limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo/one":
-			return []*result.FileMatch{{
+			return []result.Match{&result.FileMatch{
 				File: result.File{
 					Repo:     repo,
 					InputRev: &rev,
@@ -140,7 +140,7 @@ func TestSearchFilesInReposStream(t *testing.T) {
 				},
 			}}, false, nil
 		case "foo/two":
-			return []*result.FileMatch{{
+			return []result.Match{&result.FileMatch{
 				File: result.File{
 					Repo:     repo,
 					InputRev: &rev,
@@ -148,7 +148,7 @@ func TestSearchFilesInReposStream(t *testing.T) {
 				},
 			}}, false, nil
 		case "foo/three":
-			return []*result.FileMatch{{
+			return []result.Match{&result.FileMatch{
 				File: result.File{
 					Repo:     repo,
 					InputRev: &rev,
@@ -169,10 +169,10 @@ func TestSearchFilesInReposStream(t *testing.T) {
 	}
 	args := &search.TextParameters{
 		PatternInfo: &search.TextPatternInfo{
-			FileMatchLimit: defaultMaxSearchResults,
+			FileMatchLimit: search.DefaultMaxSearchResults,
 			Pattern:        "foo",
 		},
-		RepoPromise:  (&search.Promise{}).Resolve(makeRepositoryRevisions("foo/one", "foo/two", "foo/three")),
+		RepoPromise:  (&search.RepoPromise{}).Resolve(makeRepositoryRevisions("foo/one", "foo/two", "foo/three")),
 		Query:        q,
 		Zoekt:        zoekt,
 		SearcherURLs: endpoint.Static("test"),
@@ -204,11 +204,11 @@ func assertReposStatus(t *testing.T, repoNames map[api.RepoID]string, got search
 }
 
 func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
-	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*result.FileMatch, limitHit bool, err error) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []result.Match, limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo":
-			return []*result.FileMatch{{
+			return []result.Match{&result.FileMatch{
 				File: result.File{
 					Repo:     repo,
 					CommitID: api.CommitID(rev),
@@ -235,15 +235,15 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 	}
 	args := &search.TextParameters{
 		PatternInfo: &search.TextPatternInfo{
-			FileMatchLimit: defaultMaxSearchResults,
+			FileMatchLimit: search.DefaultMaxSearchResults,
 			Pattern:        "foo",
 		},
-		RepoPromise:  (&search.Promise{}).Resolve(makeRepositoryRevisions("foo@master:mybranch:*refs/heads/")),
+		RepoPromise:  (&search.RepoPromise{}).Resolve(makeRepositoryRevisions("foo@master:mybranch:*refs/heads/")),
 		Query:        q,
 		Zoekt:        zoekt,
 		SearcherURLs: endpoint.Static("test"),
 	}
-	repos, _ := getRepos(context.Background(), args.RepoPromise)
+	repos, _ := args.RepoPromise.Get(context.Background())
 	repos[0].ListRefs = func(context.Context, api.RepoName) ([]git.Ref, error) {
 		return []git.Ref{{Name: "refs/heads/branch3"}, {Name: "refs/heads/branch4"}}, nil
 	}
@@ -283,7 +283,7 @@ func TestRepoShouldBeSearched(t *testing.T) {
 	}
 	defer func() { searcher.MockSearch = nil }()
 	info := &search.TextPatternInfo{
-		FileMatchLimit:               defaultMaxSearchResults,
+		FileMatchLimit:               search.DefaultMaxSearchResults,
 		Pattern:                      "foo",
 		FilePatternsReposMustInclude: []string{"main"},
 	}

@@ -1388,7 +1388,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceResultTypes result.
 
 		Zoekt:        r.zoekt,
 		SearcherURLs: r.searcherURLs,
-		RepoPromise:  &search.Promise{},
+		RepoPromise:  &search.RepoPromise{},
 	}
 	if err := args.PatternInfo.Validate(); err != nil {
 		return nil, &badRequestError{err}

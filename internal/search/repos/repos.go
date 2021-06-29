@@ -21,12 +21,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
@@ -46,9 +48,9 @@ func (r *Resolved) String() string {
 }
 
 type Resolver struct {
-	DB               dbutil.DB
-	Zoekt            *searchbackend.Zoekt
-	DefaultReposFunc defaultReposFunc
+	DB                  dbutil.DB
+	Zoekt               *searchbackend.Zoekt
+	SearchableReposFunc searchableReposFunc
 }
 
 func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
@@ -121,26 +123,26 @@ func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 		return Resolved{}, err
 	}
 
-	var defaultRepos []types.RepoName
+	var searchableRepos []types.RepoName
 
 	if envvar.SourcegraphDotComMode() && len(includePatterns) == 0 && !query.HasTypeRepo(op.Query) && searchcontexts.IsGlobalSearchContext(searchContext) {
 		start := time.Now()
-		defaultRepos, err = defaultRepositories(ctx, r.DefaultReposFunc, r.Zoekt, excludePatterns)
+		searchableRepos, err = searchableRepositories(ctx, r.SearchableReposFunc, r.Zoekt, excludePatterns)
 		if err != nil {
 			return Resolved{}, errors.Wrap(err, "getting list of default repos")
 		}
-		tr.LazyPrintf("defaultrepos: took %s to add %d repos", time.Since(start), len(defaultRepos))
+		tr.LazyPrintf("searchableRepos: took %s to add %d repos", time.Since(start), len(searchableRepos))
 
 		// Search all default repos since indexed search is fast.
-		if len(defaultRepos) > limit {
-			limit = len(defaultRepos)
+		if len(searchableRepos) > limit {
+			limit = len(searchableRepos)
 		}
 	}
 
 	var repos []types.RepoName
 	var excluded ExcludedRepos
-	if len(defaultRepos) > 0 {
-		repos = defaultRepos
+	if len(searchableRepos) > 0 {
+		repos = searchableRepos
 		if len(repos) > limit {
 			repos = repos[:limit]
 		}
@@ -611,34 +613,34 @@ func findPatternRevs(includePatterns []string) (includePatternRevs []patternRevs
 	return
 }
 
-type defaultReposFunc func(ctx context.Context) ([]types.RepoName, error)
+type searchableReposFunc func(ctx context.Context) ([]types.RepoName, error)
 
-// defaultRepositories returns the intersection of calling getRawDefaultRepos
+// searchableRepositories returns the intersection of calling gettRawSearchableRepos
 // (db) and indexed repos (zoekt), minus repos matching excludePatterns.
-func defaultRepositories(ctx context.Context, getRawDefaultRepos defaultReposFunc, z *searchbackend.Zoekt, excludePatterns []string) (_ []types.RepoName, err error) {
-	tr, ctx := trace.New(ctx, "defaultRepositories", "")
+func searchableRepositories(ctx context.Context, getRawSearchableRepos searchableReposFunc, z *searchbackend.Zoekt, excludePatterns []string) (_ []types.RepoName, err error) {
+	tr, ctx := trace.New(ctx, "searchableRepositories", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	// Get the list of default repos from the database.
-	defaultRepos, err := getRawDefaultRepos(ctx)
+	// Get the list of indexable repos from the database.
+	searchableRepos, err := getRawSearchableRepos(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "querying database for default repos")
+		return nil, errors.Wrap(err, "querying database for searchable repos")
 	}
-	tr.LazyPrintf("getRawDefaultRepos - done")
+	tr.LazyPrintf("getRawSearchableRepos - done")
 
 	// Remove excluded repos.
 	if len(excludePatterns) > 0 {
 		patterns, _ := regexp.Compile(`(?i)` + UnionRegExps(excludePatterns))
-		filteredRepos := defaultRepos[:0]
-		for _, repo := range defaultRepos {
+		filteredRepos := searchableRepos[:0]
+		for _, repo := range searchableRepos {
 			if matched := patterns.MatchString(string(repo.Name)); !matched {
 				filteredRepos = append(filteredRepos, repo)
 			}
 		}
-		defaultRepos = filteredRepos
+		searchableRepos = filteredRepos
 		tr.LazyPrintf("remove excluded repos - done")
 	}
 
@@ -651,9 +653,9 @@ func defaultRepositories(ctx context.Context, getRawDefaultRepos defaultReposFun
 	}
 	tr.LazyPrintf("zoekt.ListAll - done")
 
-	// In place filtering of defaultRepos to only include names from set.
-	repos := defaultRepos[:0]
-	for _, r := range defaultRepos {
+	// In place filtering of searchableRepos to only include names from set.
+	repos := searchableRepos[:0]
+	for _, r := range searchableRepos {
 		if _, ok := set[string(r.Name)]; ok {
 			repos = append(repos, r)
 		}
@@ -736,4 +738,39 @@ func (e *badRequestError) Error() string {
 
 func (e *badRequestError) Cause() error {
 	return e.err
+}
+
+// HandleRepoSearchResult handles the limitHit and searchErr returned by a search function,
+// returning common as to reflect that new information. If searchErr is a fatal error,
+// it returns a non-nil error; otherwise, if searchErr == nil or a non-fatal error, it returns a
+// nil error.
+func HandleRepoSearchResult(repoRev *search.RepositoryRevisions, limitHit, timedOut bool, searchErr error) (_ streaming.Stats, fatalErr error) {
+	var status search.RepoStatus
+	if limitHit {
+		status |= search.RepoStatusLimitHit
+	}
+
+	if vcs.IsRepoNotExist(searchErr) {
+		if vcs.IsCloneInProgress(searchErr) {
+			status |= search.RepoStatusCloning
+		} else {
+			status |= search.RepoStatusMissing
+		}
+	} else if gitserver.IsRevisionNotFound(searchErr) {
+		if len(repoRev.Revs) == 0 || len(repoRev.Revs) == 1 && repoRev.Revs[0].RevSpec == "" {
+			// If we didn't specify an input revision, then the repo is empty and can be ignored.
+		} else {
+			fatalErr = searchErr
+		}
+	} else if errcode.IsNotFound(searchErr) {
+		status |= search.RepoStatusMissing
+	} else if errcode.IsTimeout(searchErr) || errcode.IsTemporary(searchErr) || timedOut {
+		status |= search.RepoStatusTimedout
+	} else if searchErr != nil {
+		fatalErr = searchErr
+	}
+	return streaming.Stats{
+		Status:     search.RepoStatusSingleton(repoRev.Repo.ID, status),
+		IsLimitHit: limitHit,
+	}, fatalErr
 }

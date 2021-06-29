@@ -44,7 +44,10 @@ interface authenticatedUser {
     tags: string[]
 }
 
-interface Props extends RouteComponentProps, TelemetryProps, UserExternalServicesOrRepositoriesUpdateProps {
+interface Props
+    extends RouteComponentProps,
+        TelemetryProps,
+        Pick<UserExternalServicesOrRepositoriesUpdateProps, 'onSyncedPublicRepositoriesUpdate'> {
     authenticatedUser: authenticatedUser
     routingPrefix: string
 }
@@ -143,6 +146,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     authenticatedUser,
     routingPrefix,
     telemetryService,
+    onSyncedPublicRepositoriesUpdate,
 }) => {
     useEffect(() => {
         telemetryService.logViewEvent('UserSettingsRepositories')
@@ -450,6 +454,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             }
 
             setFetchingRepos('loading')
+            onSyncedPublicRepositoriesUpdate(publicRepos.length)
 
             try {
                 await setUserPublicRepositories(authenticatedUser.id, publicRepos).toPromise()
@@ -504,6 +509,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             selectionState.repos,
             history,
             routingPrefix,
+            onSyncedPublicRepositoriesUpdate,
         ]
     )
 

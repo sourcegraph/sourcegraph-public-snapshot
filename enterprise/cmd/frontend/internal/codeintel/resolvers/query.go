@@ -47,6 +47,7 @@ type QueryResolver interface {
 	Hover(ctx context.Context, line, character int) (string, lsifstore.Range, bool, error)
 	Diagnostics(ctx context.Context, limit int) ([]AdjustedDiagnostic, int, error)
 	DocumentationPage(ctx context.Context, pathID string) (*semantic.DocumentationPageData, error)
+	DocumentationPathInfo(ctx context.Context, pathID string) (*semantic.DocumentationPathInfoData, error)
 }
 
 type queryResolver struct {

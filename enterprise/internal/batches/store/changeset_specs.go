@@ -588,6 +588,7 @@ func getRewirerMappingsQuery(opts GetRewirerMappingsOpts) (*sqlf.Query, error) {
 		opts.BatchChangeID,
 		opts.BatchSpecID,
 		strconv.Itoa(int(opts.BatchChangeID)),
+		strconv.Itoa(int(opts.BatchChangeID)),
 		detachTextSearch,
 		currentState,
 		opts.LimitOffset.SQL(),
@@ -727,6 +728,8 @@ SELECT mappings.changeset_spec_id, mappings.changeset_id, mappings.repo_id FROM 
 				GROUP BY changeset_spec_id, repo_id
 		) AND
 		changesets.batch_change_ids ? %s
+		AND
+		NOT COALESCE((changesets.batch_change_ids->%s->>'isArchived')::bool, false)
 		%s -- text search query, if provided
 		%s -- current state, if provided
 ) AS mappings

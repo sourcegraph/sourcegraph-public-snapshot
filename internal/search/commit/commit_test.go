@@ -1,4 +1,4 @@
-package run
+package commit
 
 import (
 	"bytes"
@@ -37,7 +37,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 		}
 		if want := []string{
 			"--no-prefix",
-			"--max-count=" + strconv.Itoa(defaultMaxSearchResults+1),
+			"--max-count=" + strconv.Itoa(search.DefaultMaxSearchResults+1),
 			"--unified=0",
 			"--regexp-ignore-case",
 			"rev",
@@ -63,7 +63,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	}
 	results, limitHit, timedOut, err := searchCommitsInRepo(ctx, db, search.CommitParameters{
 		RepoRevs:    repoRevs,
-		PatternInfo: &search.CommitPatternInfo{Pattern: "p", FileMatchLimit: int32(defaultMaxSearchResults)},
+		PatternInfo: &search.CommitPatternInfo{Pattern: "p", FileMatchLimit: int32(search.DefaultMaxSearchResults)},
 		Query:       q,
 		Diff:        true,
 	})
@@ -299,7 +299,7 @@ func Benchmark_highlightMatches(b *testing.B) {
 // searchCommitsInRepo is a blocking version of searchCommitsInRepoStream.
 func searchCommitsInRepo(ctx context.Context, db dbutil.DB, op search.CommitParameters) (results []*result.CommitMatch, limitHit, timedOut bool, err error) {
 	var matches []result.Match
-	err = SearchCommitsInRepoStream(ctx, db, op, streaming.StreamFunc(func(event streaming.SearchEvent) {
+	err = searchCommitsInRepoStream(ctx, db, op, streaming.StreamFunc(func(event streaming.SearchEvent) {
 		matches = append(matches, event.Results...)
 		timedOut = timedOut || event.Stats.Status.Any(search.RepoStatusTimedout)
 		limitHit = limitHit || event.Stats.Status.Any(search.RepoStatusLimitHit)
@@ -343,5 +343,22 @@ func TestCommitSearchResult_Limit(t *testing.T) {
 				t.Error("small exhaustive check failed")
 			}
 		}
+	}
+}
+
+func TestOrderedFuzzyRegexp(t *testing.T) {
+	got := orderedFuzzyRegexp([]string{})
+	if want := ""; got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+
+	got = orderedFuzzyRegexp([]string{"a"})
+	if want := "a"; got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+
+	got = orderedFuzzyRegexp([]string{"a", "b|c"})
+	if want := "(a).*?(b|c)"; got != want {
+		t.Errorf("got %q, want %q", got, want)
 	}
 }

@@ -11,7 +11,11 @@ import (
 // InitDatabase initializes and returns a connection to the frontend database.
 func InitDatabase() (*sql.DB, error) {
 	conn, err := initDatabaseMemo.Init()
-	return conn.(*sql.DB), err
+	if err != nil {
+		return nil, err
+	}
+
+	return conn.(*sql.DB), nil
 }
 
 var initDatabaseMemo = NewMemoizedConstructor(func() (interface{}, error) {
