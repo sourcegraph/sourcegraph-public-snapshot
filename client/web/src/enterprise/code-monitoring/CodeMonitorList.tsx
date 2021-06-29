@@ -1,7 +1,10 @@
 import classnames from 'classnames'
+import PlusIcon from 'mdi-react/PlusIcon'
 import React, { useCallback, useState } from 'react'
 import { useHistory, useLocation } from 'react-router'
+import { of } from 'rxjs'
 
+import { Link } from '@sourcegraph/shared/src/components/Link'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { Container } from '@sourcegraph/wildcard'
@@ -13,14 +16,31 @@ import { Settings } from '../../schema/settings.schema'
 
 import { CodeMonitorNode, CodeMonitorNodeProps } from './CodeMonitoringNode'
 import { CodeMonitoringPageProps } from './CodeMonitoringPage'
+import { CodeMonitorSignUpLink } from './CodeMonitoringSignUpLink'
 
 type CodeMonitorFilter = 'all' | 'user'
 
 interface CodeMonitorListProps
     extends Required<Pick<CodeMonitoringPageProps, 'fetchUserCodeMonitors' | 'toggleCodeMonitorEnabled'>>,
         SettingsCascadeProps<Settings> {
-    authenticatedUser: AuthenticatedUser
+    authenticatedUser: AuthenticatedUser | null
 }
+
+const CodeMonitorEmptyList: React.FunctionComponent<{ authenticatedUser: AuthenticatedUser | null }> = ({
+    authenticatedUser,
+}) => (
+    <div className="text-center">
+        <h2 className="text-muted mb-2">No code monitors have been created.</h2>
+        {authenticatedUser ? (
+            <Link to="/code-monitoring/new" className="btn btn-primary">
+                <PlusIcon className="icon-inline" />
+                Create a code monitor
+            </Link>
+        ) : (
+            <CodeMonitorSignUpLink eventName="SignUpPLGMonitor_EmptyList" text="Sign up to create a code monitor" />
+        )}
+    </div>
+)
 
 export const CodeMonitorList: React.FunctionComponent<CodeMonitorListProps> = ({
     authenticatedUser,
@@ -33,12 +53,21 @@ export const CodeMonitorList: React.FunctionComponent<CodeMonitorListProps> = ({
     const [monitorListFilter, setMonitorListFilter] = useState<CodeMonitorFilter>('all')
 
     const queryConnection = useCallback(
-        (args: Partial<ListUserCodeMonitorsVariables>) =>
-            fetchUserCodeMonitors({
+        (args: Partial<ListUserCodeMonitorsVariables>) => {
+            if (!authenticatedUser) {
+                return of({
+                    totalCount: 0,
+                    nodes: [],
+                    pageInfo: { endCursor: null, hasNextPage: false },
+                })
+            }
+
+            return fetchUserCodeMonitors({
                 id: authenticatedUser.id,
                 first: args.first ?? null,
                 after: args.after ?? null,
-            }),
+            })
+        },
         [authenticatedUser, fetchUserCodeMonitors]
     )
 
@@ -83,7 +112,7 @@ export const CodeMonitorList: React.FunctionComponent<CodeMonitorListProps> = ({
                             hideSearch={true}
                             nodeComponent={CodeMonitorNode}
                             nodeComponentProps={{
-                                authenticatedUser,
+                                isSiteAdminUser: authenticatedUser?.siteAdmin ?? false,
                                 location,
                                 showCodeMonitoringTestEmailButton:
                                     (!isErrorLike(settingsCascade.final) &&
@@ -97,6 +126,7 @@ export const CodeMonitorList: React.FunctionComponent<CodeMonitorListProps> = ({
                             noSummaryIfAllNodesVisible={true}
                             cursorPaging={true}
                             className="filtered-connection__centered-summary"
+                            emptyElement={<CodeMonitorEmptyList authenticatedUser={authenticatedUser} />}
                         />
                     </Container>
                 </div>

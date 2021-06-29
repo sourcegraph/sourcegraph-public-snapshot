@@ -178,7 +178,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                           className="text-content"
                           data-tab-content="Code monitors"
                         >
-                          Code monitors
+                          Code Monitors
                         </span>
                       </a>
                     </LinkAnchor>
@@ -289,6 +289,17 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                       className="filtered-connection__centered-summary"
                       cursorPaging={true}
                       defaultFirst={10}
+                      emptyElement={
+                        <CodeMonitorEmptyList
+                          authenticatedUser={
+                            Object {
+                              "email": "alice@alice.com",
+                              "id": "foobar",
+                              "username": "alice",
+                            }
+                          }
+                        />
+                      }
                       hideSearch={true}
                       history="[History]"
                       location="[Location path=/code-monitoring]"
@@ -296,11 +307,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                       nodeComponent={[Function]}
                       nodeComponentProps={
                         Object {
-                          "authenticatedUser": Object {
-                            "email": "alice@alice.com",
-                            "id": "foobar",
-                            "username": "alice",
-                          },
+                          "isSiteAdminUser": false,
                           "location": "[Location path=/code-monitoring]",
                           "showCodeMonitoringTestEmailButton": false,
                           "toggleCodeMonitorEnabled": [Function],
@@ -587,6 +594,17 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             }
                           }
                           connectionQuery=""
+                          emptyElement={
+                            <CodeMonitorEmptyList
+                              authenticatedUser={
+                                Object {
+                                  "email": "alice@alice.com",
+                                  "id": "foobar",
+                                  "username": "alice",
+                                }
+                              }
+                            />
+                          }
                           first={10}
                           loading={false}
                           location="[Location path=/code-monitoring]"
@@ -594,11 +612,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                           nodeComponent={[Function]}
                           nodeComponentProps={
                             Object {
-                              "authenticatedUser": Object {
-                                "email": "alice@alice.com",
-                                "id": "foobar",
-                                "username": "alice",
-                              },
+                              "isSiteAdminUser": false,
                               "location": "[Location path=/code-monitoring]",
                               "showCodeMonitoringTestEmailButton": false,
                               "toggleCodeMonitorEnabled": [Function],
@@ -617,13 +631,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             data-testid="nodes"
                           >
                             <CodeMonitorNode
-                              authenticatedUser={
-                                Object {
-                                  "email": "alice@alice.com",
-                                  "id": "foobar",
-                                  "username": "alice",
-                                }
-                              }
+                              isSiteAdminUser={false}
                               key="foo0"
                               location="[Location path=/code-monitoring]"
                               node={
@@ -732,13 +740,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                               </div>
                             </CodeMonitorNode>
                             <CodeMonitorNode
-                              authenticatedUser={
-                                Object {
-                                  "email": "alice@alice.com",
-                                  "id": "foobar",
-                                  "username": "alice",
-                                }
-                              }
+                              isSiteAdminUser={false}
                               key="foo1"
                               location="[Location path=/code-monitoring]"
                               node={
@@ -847,13 +849,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                               </div>
                             </CodeMonitorNode>
                             <CodeMonitorNode
-                              authenticatedUser={
-                                Object {
-                                  "email": "alice@alice.com",
-                                  "id": "foobar",
-                                  "username": "alice",
-                                }
-                              }
+                              isSiteAdminUser={false}
                               key="foo2"
                               location="[Location path=/code-monitoring]"
                               node={
@@ -962,13 +958,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                               </div>
                             </CodeMonitorNode>
                             <CodeMonitorNode
-                              authenticatedUser={
-                                Object {
-                                  "email": "alice@alice.com",
-                                  "id": "foobar",
-                                  "username": "alice",
-                                }
-                              }
+                              isSiteAdminUser={false}
                               key="foo3"
                               location="[Location path=/code-monitoring]"
                               node={
@@ -1077,13 +1067,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                               </div>
                             </CodeMonitorNode>
                             <CodeMonitorNode
-                              authenticatedUser={
-                                Object {
-                                  "email": "alice@alice.com",
-                                  "id": "foobar",
-                                  "username": "alice",
-                                }
-                              }
+                              isSiteAdminUser={false}
                               key="foo4"
                               location="[Location path=/code-monitoring]"
                               node={
@@ -1192,13 +1176,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                               </div>
                             </CodeMonitorNode>
                             <CodeMonitorNode
-                              authenticatedUser={
-                                Object {
-                                  "email": "alice@alice.com",
-                                  "id": "foobar",
-                                  "username": "alice",
-                                }
-                              }
+                              isSiteAdminUser={false}
                               key="foo5"
                               location="[Location path=/code-monitoring]"
                               node={
@@ -1307,13 +1285,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                               </div>
                             </CodeMonitorNode>
                             <CodeMonitorNode
-                              authenticatedUser={
-                                Object {
-                                  "email": "alice@alice.com",
-                                  "id": "foobar",
-                                  "username": "alice",
-                                }
-                              }
+                              isSiteAdminUser={false}
                               key="foo6"
                               location="[Location path=/code-monitoring]"
                               node={
@@ -1422,13 +1394,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                               </div>
                             </CodeMonitorNode>
                             <CodeMonitorNode
-                              authenticatedUser={
-                                Object {
-                                  "email": "alice@alice.com",
-                                  "id": "foobar",
-                                  "username": "alice",
-                                }
-                              }
+                              isSiteAdminUser={false}
                               key="foo7"
                               location="[Location path=/code-monitoring]"
                               node={
@@ -1537,13 +1503,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                               </div>
                             </CodeMonitorNode>
                             <CodeMonitorNode
-                              authenticatedUser={
-                                Object {
-                                  "email": "alice@alice.com",
-                                  "id": "foobar",
-                                  "username": "alice",
-                                }
-                              }
+                              isSiteAdminUser={false}
                               key="foo9"
                               location="[Location path=/code-monitoring]"
                               node={
@@ -1652,13 +1612,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                               </div>
                             </CodeMonitorNode>
                             <CodeMonitorNode
-                              authenticatedUser={
-                                Object {
-                                  "email": "alice@alice.com",
-                                  "id": "foobar",
-                                  "username": "alice",
-                                }
-                              }
+                              isSiteAdminUser={false}
                               key="foo10"
                               location="[Location path=/code-monitoring]"
                               node={
@@ -2043,6 +1997,17 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                 }
                               }
                               connectionQuery=""
+                              emptyElement={
+                                <CodeMonitorEmptyList
+                                  authenticatedUser={
+                                    Object {
+                                      "email": "alice@alice.com",
+                                      "id": "foobar",
+                                      "username": "alice",
+                                    }
+                                  }
+                                />
+                              }
                               hasNextPage={false}
                               noSummaryIfAllNodesVisible={true}
                               noun="code monitor"
@@ -2253,7 +2218,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                           className="text-content"
                           data-tab-content="Code monitors"
                         >
-                          Code monitors
+                          Code Monitors
                         </span>
                       </a>
                     </LinkAnchor>
@@ -2364,6 +2329,17 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                       className="filtered-connection__centered-summary"
                       cursorPaging={true}
                       defaultFirst={10}
+                      emptyElement={
+                        <CodeMonitorEmptyList
+                          authenticatedUser={
+                            Object {
+                              "email": "alice@alice.com",
+                              "id": "foobar",
+                              "username": "alice",
+                            }
+                          }
+                        />
+                      }
                       hideSearch={true}
                       history="[History]"
                       location="[Location path=/code-monitoring?visible=3]"
@@ -2371,11 +2347,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                       nodeComponent={[Function]}
                       nodeComponentProps={
                         Object {
-                          "authenticatedUser": Object {
-                            "email": "alice@alice.com",
-                            "id": "foobar",
-                            "username": "alice",
-                          },
+                          "isSiteAdminUser": false,
                           "location": "[Location path=/code-monitoring?visible=3]",
                           "showCodeMonitoringTestEmailButton": false,
                           "toggleCodeMonitorEnabled": [Function],
@@ -2480,6 +2452,17 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                             }
                           }
                           connectionQuery=""
+                          emptyElement={
+                            <CodeMonitorEmptyList
+                              authenticatedUser={
+                                Object {
+                                  "email": "alice@alice.com",
+                                  "id": "foobar",
+                                  "username": "alice",
+                                }
+                              }
+                            />
+                          }
                           first={10}
                           loading={false}
                           location="[Location path=/code-monitoring?visible=3]"
@@ -2487,11 +2470,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                           nodeComponent={[Function]}
                           nodeComponentProps={
                             Object {
-                              "authenticatedUser": Object {
-                                "email": "alice@alice.com",
-                                "id": "foobar",
-                                "username": "alice",
-                              },
+                              "isSiteAdminUser": false,
                               "location": "[Location path=/code-monitoring?visible=3]",
                               "showCodeMonitoringTestEmailButton": false,
                               "toggleCodeMonitorEnabled": [Function],
@@ -2510,13 +2489,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                             data-testid="nodes"
                           >
                             <CodeMonitorNode
-                              authenticatedUser={
-                                Object {
-                                  "email": "alice@alice.com",
-                                  "id": "foobar",
-                                  "username": "alice",
-                                }
-                              }
+                              isSiteAdminUser={false}
                               key="foo0"
                               location="[Location path=/code-monitoring?visible=3]"
                               node={
@@ -2625,13 +2598,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                               </div>
                             </CodeMonitorNode>
                             <CodeMonitorNode
-                              authenticatedUser={
-                                Object {
-                                  "email": "alice@alice.com",
-                                  "id": "foobar",
-                                  "username": "alice",
-                                }
-                              }
+                              isSiteAdminUser={false}
                               key="foo1"
                               location="[Location path=/code-monitoring?visible=3]"
                               node={
@@ -2740,13 +2707,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                               </div>
                             </CodeMonitorNode>
                             <CodeMonitorNode
-                              authenticatedUser={
-                                Object {
-                                  "email": "alice@alice.com",
-                                  "id": "foobar",
-                                  "username": "alice",
-                                }
-                              }
+                              isSiteAdminUser={false}
                               key="foo2"
                               location="[Location path=/code-monitoring?visible=3]"
                               node={
@@ -2949,6 +2910,17 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                                 }
                               }
                               connectionQuery=""
+                              emptyElement={
+                                <CodeMonitorEmptyList
+                                  authenticatedUser={
+                                    Object {
+                                      "email": "alice@alice.com",
+                                      "id": "foobar",
+                                      "username": "alice",
+                                    }
+                                  }
+                                />
+                              }
                               hasNextPage={false}
                               noSummaryIfAllNodesVisible={true}
                               noun="code monitor"
@@ -3159,7 +3131,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                           className="text-content"
                           data-tab-content="Code monitors"
                         >
-                          Code monitors
+                          Code Monitors
                         </span>
                       </a>
                     </LinkAnchor>
@@ -3270,6 +3242,17 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                       className="filtered-connection__centered-summary"
                       cursorPaging={true}
                       defaultFirst={10}
+                      emptyElement={
+                        <CodeMonitorEmptyList
+                          authenticatedUser={
+                            Object {
+                              "email": "alice@alice.com",
+                              "id": "foobar",
+                              "username": "alice",
+                            }
+                          }
+                        />
+                      }
                       hideSearch={true}
                       history="[History]"
                       location="[Location path=/code-monitoring?visible=12]"
@@ -3277,11 +3260,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                       nodeComponent={[Function]}
                       nodeComponentProps={
                         Object {
-                          "authenticatedUser": Object {
-                            "email": "alice@alice.com",
-                            "id": "foobar",
-                            "username": "alice",
-                          },
+                          "isSiteAdminUser": false,
                           "location": "[Location path=/code-monitoring?visible=12]",
                           "showCodeMonitoringTestEmailButton": false,
                           "toggleCodeMonitorEnabled": [Function],
@@ -3620,6 +3599,17 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             }
                           }
                           connectionQuery=""
+                          emptyElement={
+                            <CodeMonitorEmptyList
+                              authenticatedUser={
+                                Object {
+                                  "email": "alice@alice.com",
+                                  "id": "foobar",
+                                  "username": "alice",
+                                }
+                              }
+                            />
+                          }
                           first={10}
                           loading={false}
                           location="[Location path=/code-monitoring?visible=12]"
@@ -3627,11 +3617,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                           nodeComponent={[Function]}
                           nodeComponentProps={
                             Object {
-                              "authenticatedUser": Object {
-                                "email": "alice@alice.com",
-                                "id": "foobar",
-                                "username": "alice",
-                              },
+                              "isSiteAdminUser": false,
                               "location": "[Location path=/code-monitoring?visible=12]",
                               "showCodeMonitoringTestEmailButton": false,
                               "toggleCodeMonitorEnabled": [Function],
@@ -3650,13 +3636,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             data-testid="nodes"
                           >
                             <CodeMonitorNode
-                              authenticatedUser={
-                                Object {
-                                  "email": "alice@alice.com",
-                                  "id": "foobar",
-                                  "username": "alice",
-                                }
-                              }
+                              isSiteAdminUser={false}
                               key="foo0"
                               location="[Location path=/code-monitoring?visible=12]"
                               node={
@@ -3765,13 +3745,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                               </div>
                             </CodeMonitorNode>
                             <CodeMonitorNode
-                              authenticatedUser={
-                                Object {
-                                  "email": "alice@alice.com",
-                                  "id": "foobar",
-                                  "username": "alice",
-                                }
-                              }
+                              isSiteAdminUser={false}
                               key="foo1"
                               location="[Location path=/code-monitoring?visible=12]"
                               node={
@@ -3880,13 +3854,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                               </div>
                             </CodeMonitorNode>
                             <CodeMonitorNode
-                              authenticatedUser={
-                                Object {
-                                  "email": "alice@alice.com",
-                                  "id": "foobar",
-                                  "username": "alice",
-                                }
-                              }
+                              isSiteAdminUser={false}
                               key="foo2"
                               location="[Location path=/code-monitoring?visible=12]"
                               node={
@@ -3995,13 +3963,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                               </div>
                             </CodeMonitorNode>
                             <CodeMonitorNode
-                              authenticatedUser={
-                                Object {
-                                  "email": "alice@alice.com",
-                                  "id": "foobar",
-                                  "username": "alice",
-                                }
-                              }
+                              isSiteAdminUser={false}
                               key="foo3"
                               location="[Location path=/code-monitoring?visible=12]"
                               node={
@@ -4110,13 +4072,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                               </div>
                             </CodeMonitorNode>
                             <CodeMonitorNode
-                              authenticatedUser={
-                                Object {
-                                  "email": "alice@alice.com",
-                                  "id": "foobar",
-                                  "username": "alice",
-                                }
-                              }
+                              isSiteAdminUser={false}
                               key="foo4"
                               location="[Location path=/code-monitoring?visible=12]"
                               node={
@@ -4225,13 +4181,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                               </div>
                             </CodeMonitorNode>
                             <CodeMonitorNode
-                              authenticatedUser={
-                                Object {
-                                  "email": "alice@alice.com",
-                                  "id": "foobar",
-                                  "username": "alice",
-                                }
-                              }
+                              isSiteAdminUser={false}
                               key="foo5"
                               location="[Location path=/code-monitoring?visible=12]"
                               node={
@@ -4340,13 +4290,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                               </div>
                             </CodeMonitorNode>
                             <CodeMonitorNode
-                              authenticatedUser={
-                                Object {
-                                  "email": "alice@alice.com",
-                                  "id": "foobar",
-                                  "username": "alice",
-                                }
-                              }
+                              isSiteAdminUser={false}
                               key="foo6"
                               location="[Location path=/code-monitoring?visible=12]"
                               node={
@@ -4455,13 +4399,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                               </div>
                             </CodeMonitorNode>
                             <CodeMonitorNode
-                              authenticatedUser={
-                                Object {
-                                  "email": "alice@alice.com",
-                                  "id": "foobar",
-                                  "username": "alice",
-                                }
-                              }
+                              isSiteAdminUser={false}
                               key="foo7"
                               location="[Location path=/code-monitoring?visible=12]"
                               node={
@@ -4570,13 +4508,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                               </div>
                             </CodeMonitorNode>
                             <CodeMonitorNode
-                              authenticatedUser={
-                                Object {
-                                  "email": "alice@alice.com",
-                                  "id": "foobar",
-                                  "username": "alice",
-                                }
-                              }
+                              isSiteAdminUser={false}
                               key="foo9"
                               location="[Location path=/code-monitoring?visible=12]"
                               node={
@@ -4685,13 +4617,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                               </div>
                             </CodeMonitorNode>
                             <CodeMonitorNode
-                              authenticatedUser={
-                                Object {
-                                  "email": "alice@alice.com",
-                                  "id": "foobar",
-                                  "username": "alice",
-                                }
-                              }
+                              isSiteAdminUser={false}
                               key="foo10"
                               location="[Location path=/code-monitoring?visible=12]"
                               node={
@@ -4800,13 +4726,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                               </div>
                             </CodeMonitorNode>
                             <CodeMonitorNode
-                              authenticatedUser={
-                                Object {
-                                  "email": "alice@alice.com",
-                                  "id": "foobar",
-                                  "username": "alice",
-                                }
-                              }
+                              isSiteAdminUser={false}
                               key="foo11"
                               location="[Location path=/code-monitoring?visible=12]"
                               node={
@@ -4915,13 +4835,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                               </div>
                             </CodeMonitorNode>
                             <CodeMonitorNode
-                              authenticatedUser={
-                                Object {
-                                  "email": "alice@alice.com",
-                                  "id": "foobar",
-                                  "username": "alice",
-                                }
-                              }
+                              isSiteAdminUser={false}
                               key="foo12"
                               location="[Location path=/code-monitoring?visible=12]"
                               node={
@@ -5358,6 +5272,17 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                 }
                               }
                               connectionQuery=""
+                              emptyElement={
+                                <CodeMonitorEmptyList
+                                  authenticatedUser={
+                                    Object {
+                                      "email": "alice@alice.com",
+                                      "id": "foobar",
+                                      "username": "alice",
+                                    }
+                                  }
+                                />
+                              }
                               hasNextPage={true}
                               noSummaryIfAllNodesVisible={true}
                               noun="code monitor"
