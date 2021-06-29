@@ -988,7 +988,9 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 		}
 
 		if newResult != nil {
-			newResult.Matches = selectResults(newResult.Matches, q)
+			if r.stream == nil {
+				newResult.Matches = selectResults(newResult.Matches, q)
+			}
 			sr = union(sr, newResult)
 			if len(sr.Matches) > wantCount {
 				sr.Matches = sr.Matches[:wantCount]
