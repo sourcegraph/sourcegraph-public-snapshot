@@ -85,8 +85,8 @@ type SeriesPointsOpts struct {
 	// RepoID, if non-nil, indicates to filter results to only points recorded with this repo ID.
 	RepoID *api.RepoID
 
-	excluded []api.RepoID
-	included []api.RepoID
+	Excluded []api.RepoID
+	Included []api.RepoID
 
 	// TODO(slimsag): Add ability to filter based on repo name, original name.
 	// TODO(slimsag): Add ability to do limited filtering based on metadata.
@@ -177,12 +177,12 @@ func seriesPointsQuery(opts SeriesPointsOpts) *sqlf.Query {
 	if opts.Limit > 0 {
 		limitClause = fmt.Sprintf("LIMIT %d", opts.Limit)
 	}
-	if len(opts.included) > 0 {
-		s := fmt.Sprintf("repo_id = any(%v)", values(opts.included))
+	if len(opts.Included) > 0 {
+		s := fmt.Sprintf("repo_id = any(%v)", values(opts.Included))
 		preds = append(preds, sqlf.Sprintf(s))
 	}
-	if len(opts.excluded) > 0 {
-		s := fmt.Sprintf("repo_id != all(%v)", values(opts.excluded))
+	if len(opts.Excluded) > 0 {
+		s := fmt.Sprintf("repo_id != all(%v)", values(opts.Excluded))
 		preds = append(preds, sqlf.Sprintf(s))
 	}
 

@@ -102,7 +102,7 @@ SELECT time,
 	})
 
 	t.Run("include list", func(t *testing.T) {
-		points, err = store.SeriesPoints(ctx, SeriesPointsOpts{included: []api.RepoID{2}})
+		points, err = store.SeriesPoints(ctx, SeriesPointsOpts{Included: []api.RepoID{2}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -111,7 +111,7 @@ SELECT time,
 		}
 	})
 	t.Run("exclude list", func(t *testing.T) {
-		points, err = store.SeriesPoints(ctx, SeriesPointsOpts{excluded: []api.RepoID{2}})
+		points, err = store.SeriesPoints(ctx, SeriesPointsOpts{Excluded: []api.RepoID{2}})
 		if err != nil {
 			t.Fatal(err)
 		}

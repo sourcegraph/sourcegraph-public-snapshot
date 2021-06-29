@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -88,6 +89,7 @@ func (r *insightResolver) Series() []graphqlbackend.InsightSeriesResolver {
 			insightsStore:   r.insightsStore,
 			workerBaseStore: r.workerBaseStore,
 			series:          series,
+			repoStore:       database.Repos(r.workerBaseStore.Handle().DB()),
 		})
 	}
 	return resolvers
