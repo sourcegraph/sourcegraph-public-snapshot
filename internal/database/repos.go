@@ -779,10 +779,6 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		where = append(where, sqlf.Sprintf("uri = ANY (%s)", pq.Array(opt.URIs)))
 	}
 
-	if !opt.IncludeBlocked {
-		where = append(where, sqlf.Sprintf("blocked IS NULL"))
-	}
-
 	if opt.Index != nil {
 		// We don't currently have an index column, but when we want the
 		// indexable repositories to be a subset it will live in the database
@@ -816,16 +812,21 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 
 	fromClause := sqlf.Sprintf("repo %s", sqlf.Join(from, " "))
 
-	queryConds := sqlf.Sprintf("TRUE")
+	baseConds := sqlf.Sprintf("TRUE")
+	if !opt.IncludeBlocked {
+		baseConds = sqlf.Sprintf("blocked IS NULL")
+	}
+
+	whereConds := sqlf.Sprintf("TRUE")
 	if len(where) > 0 {
 		if opt.UseOr {
-			queryConds = sqlf.Join(where, "\n OR ")
+			whereConds = sqlf.Join(where, "\n OR ")
 		} else {
-			queryConds = sqlf.Join(where, "\n AND ")
+			whereConds = sqlf.Join(where, "\n AND ")
 		}
 	}
 
-	queryConds = sqlf.Sprintf("(%s)", queryConds)
+	queryConds := sqlf.Sprintf("%s AND (%s)", baseConds, whereConds)
 
 	queryPrefix := sqlf.Sprintf("")
 	if len(ctes) > 0 {
