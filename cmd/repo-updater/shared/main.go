@@ -195,7 +195,6 @@ func Main(enterpriseInit EnterpriseInit) {
 			OnlyCloudDefault: true,
 			Kinds:            []string{extsvc.KindGitHub, extsvc.KindGitLab},
 		})
-
 		if err != nil {
 			log.Fatalf("failed to list external services: %v", err)
 		}
@@ -245,7 +244,11 @@ func Main(enterpriseInit EnterpriseInit) {
 	var gps *repos.GitolitePhabricatorMetadataSyncer
 	if !envvar.SourcegraphDotComMode() {
 		gps = repos.NewGitolitePhabricatorMetadataSyncer(store)
-		syncer.SubsetSynced = make(chan repos.Diff)
+
+		// WARNING: This enables the streaming inserter which allows it to sync private repos. If
+		// this is ever enabled for sourcegraph.com, we want to be sure we are not unintentionally
+		// syncing private repos.
+		syncer.SingleRepoSynced = make(chan repos.Diff)
 	}
 
 	go watchSyncer(ctx, syncer, scheduler, gps)
@@ -430,7 +433,7 @@ func watchSyncer(ctx context.Context, syncer *repos.Syncer, sched scheduler, gps
 				}
 			}()
 
-		case diff := <-syncer.SubsetSynced:
+		case diff := <-syncer.SingleRepoSynced:
 			if !conf.Get().DisableAutoGitUpdates {
 				sched.UpdateFromDiff(diff)
 			}
@@ -452,11 +455,11 @@ func syncScheduler(ctx context.Context, sched scheduler, gitserverClient *gitser
 
 		// Fetch ALL default repos that are NOT cloned so that we can add them to the
 		// scheduler
-		opts := database.ListDefaultReposOptions{
+		opts := database.ListIndexableReposOptions{
 			OnlyUncloned:   true,
 			IncludePrivate: true,
 		}
-		if u, err := baseRepoStore.ListDefaultRepos(ctx, opts); err != nil {
+		if u, err := baseRepoStore.ListIndexableRepos(ctx, opts); err != nil {
 			log15.Error("Listing default repos", "error", err)
 			return
 		} else {

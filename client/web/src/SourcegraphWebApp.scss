@@ -1,6 +1,6 @@
 /*
-This is the main entry point for all styles
-It should import all component stylesheets
+This is the main entry point for all styles for the web app.
+It should import all component stylesheets.
 */
 
 // Use duplicate selectors for the light-theme
@@ -97,7 +97,6 @@ body,
 @import './tree/Tree';
 @import './nav/GlobalNavbar';
 @import './nav/NavLinks';
-@import './nav/IconRadioButtons.scss';
 @import './auth/ResetPasswordPage';
 @import './auth/SignInPage';
 @import './auth/SignUpPage';
@@ -122,7 +121,7 @@ body,
 @import './user/UserAvatar';
 @import './user/area/UserArea';
 @import './org/OrgsArea';
-@import './insights/pages/dashboard/InsightsPage';
+@import './insights/pages/insights/InsightsPage';
 @import './components/Badge';
 @import './components/Collapsible';
 @import './components/Timeline';

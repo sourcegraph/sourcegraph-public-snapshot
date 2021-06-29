@@ -53,9 +53,9 @@ For instructions on adding and managing your code host access tokens, please ref
 
 See these code host specific pages for which permissions and scopes the tokens require:
 
-- [GitHub](../../../admin/external_service/github.md#github-api-token-and-access)
-- [GitLab](../../../admin/external_service/gitlab.md#access-token-scopes)
-- [Bitbucket Server](../../../admin/external_service/gitlab.md#access-token-permissions)
+- [GitHub](../../../admin/external_service/github.md#github-api-token-and-access) (requires `repo`, `read:org`, `user:email`, and `read:discussion`scope)
+- [GitLab](../../../admin/external_service/gitlab.md#access-token-scopes) (requires `api`, `read_repository`, and `write_repository` scope)
+- [Bitbucket Server](../../../admin/external_service/bitbucket_server.md#access-token-permissions) (requires write permissions on the project and repository level)
 
 ### Site admins
 

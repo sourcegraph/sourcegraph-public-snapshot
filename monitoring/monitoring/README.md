@@ -32,7 +32,6 @@ To learn more about the generator\, see the top\-level program: https://github.c
 - [type ObservablePanel](<#type-observablepanel>)
   - [func Panel() ObservablePanel](<#func-panel>)
   - [func PanelHeatmap() ObservablePanel](<#func-panelheatmap>)
-  - [func PanelMinimal() ObservablePanel](<#func-panelminimal>)
   - [func (p ObservablePanel) Interval(ms int) ObservablePanel](<#func-observablepanel-interval>)
   - [func (p ObservablePanel) LegendFormat(format string) ObservablePanel](<#func-observablepanel-legendformat>)
   - [func (p ObservablePanel) Max(max float64) ObservablePanel](<#func-observablepanel-max>)
@@ -41,6 +40,8 @@ To learn more about the generator\, see the top\-level program: https://github.c
   - [func (p ObservablePanel) Unit(t UnitType) ObservablePanel](<#func-observablepanel-unit>)
   - [func (p ObservablePanel) With(ops ...ObservablePanelOption) ObservablePanel](<#func-observablepanel-with>)
 - [type ObservablePanelOption](<#type-observablepaneloption>)
+- [type PanelType](<#type-paneltype>)
+  - [func (pt PanelType) Valid() bool](<#func-paneltype-valid>)
 - [type Row](<#type-row>)
 - [type UnitType](<#type-unittype>)
 
@@ -371,7 +372,7 @@ func Panel() ObservablePanel
 
 Panel provides a builder for customizing an Observable visualization\, starting with recommended defaults\.
 
-### func [PanelHeatmap](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/panel.go#L50>)
+### func [PanelHeatmap](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/panel.go#L37>)
 
 ```go
 func PanelHeatmap() ObservablePanel
@@ -379,17 +380,7 @@ func PanelHeatmap() ObservablePanel
 
 PanelHeatmap provides a builder for customizing an Observable visualization starting with an extremely minimal heatmap panel\.
 
-### func [PanelMinimal](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/panel.go#L39>)
-
-```go
-func PanelMinimal() ObservablePanel
-```
-
-PanelMinimal provides a builder for customizing an Observable visualization starting with an extremely minimal graph panel\.
-
-In general\, we advise using Panel\(\) instead to start with recommended defaults\.
-
-### func \(ObservablePanel\) [Interval](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/panel.go#L105>)
+### func \(ObservablePanel\) [Interval](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/panel.go#L92>)
 
 ```go
 func (p ObservablePanel) Interval(ms int) ObservablePanel
@@ -397,7 +388,7 @@ func (p ObservablePanel) Interval(ms int) ObservablePanel
 
 Interval declares the panel's interval in milliseconds\.
 
-### func \(ObservablePanel\) [LegendFormat](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/panel.go#L88>)
+### func \(ObservablePanel\) [LegendFormat](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/panel.go#L75>)
 
 ```go
 func (p ObservablePanel) LegendFormat(format string) ObservablePanel
@@ -405,7 +396,7 @@ func (p ObservablePanel) LegendFormat(format string) ObservablePanel
 
 LegendFormat sets the panel's legend format\, which may use Go template strings to select labels from the Prometheus query\.
 
-### func \(ObservablePanel\) [Max](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/panel.go#L79>)
+### func \(ObservablePanel\) [Max](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/panel.go#L66>)
 
 ```go
 func (p ObservablePanel) Max(max float64) ObservablePanel
@@ -413,7 +404,7 @@ func (p ObservablePanel) Max(max float64) ObservablePanel
 
 Max sets the maximum value of the Y axis on the panel\. The default is auto\.
 
-### func \(ObservablePanel\) [Min](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/panel.go#L60>)
+### func \(ObservablePanel\) [Min](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/panel.go#L47>)
 
 ```go
 func (p ObservablePanel) Min(min float64) ObservablePanel
@@ -421,17 +412,17 @@ func (p ObservablePanel) Min(min float64) ObservablePanel
 
 Min sets the minimum value of the Y axis on the panel\. The default is zero\.
 
-### func \(ObservablePanel\) [MinAuto](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/panel.go#L71>)
+### func \(ObservablePanel\) [MinAuto](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/panel.go#L58>)
 
 ```go
 func (p ObservablePanel) MinAuto() ObservablePanel
 ```
 
-Min sets the minimum value of the Y axis on the panel to auto\, instead of the default zero\.
+MinAuto sets the minimum value of the Y axis on the panel to auto\, instead of the default zero\.
 
 This is generally only useful if trying to show negative numbers\.
 
-### func \(ObservablePanel\) [Unit](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/panel.go#L96>)
+### func \(ObservablePanel\) [Unit](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/panel.go#L83>)
 
 ```go
 func (p ObservablePanel) Unit(t UnitType) ObservablePanel
@@ -439,7 +430,7 @@ func (p ObservablePanel) Unit(t UnitType) ObservablePanel
 
 Unit sets the panel's Y axis unit type\.
 
-### func \(ObservablePanel\) [With](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/panel.go#L120>)
+### func \(ObservablePanel\) [With](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/panel.go#L107>)
 
 ```go
 func (p ObservablePanel) With(ops ...ObservablePanelOption) ObservablePanel
@@ -483,6 +474,25 @@ Using a shared prefix helps with discoverability of available options\.
 type ObservablePanelOption func(Observable, *sdk.Panel)
 ```
 
+## type [PanelType](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/dashboards.go#L10>)
+
+```go
+type PanelType string
+```
+
+```go
+const (
+    PanelTypeGraph   PanelType = "graph"
+    PanelTypeHeatmap PanelType = "heatmap"
+)
+```
+
+### func \(PanelType\) [Valid](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/dashboards.go#L17>)
+
+```go
+func (pt PanelType) Valid() bool
+```
+
 ## type [Row](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/monitoring.go#L394>)
 
 Row of observable metrics\.
@@ -493,7 +503,7 @@ These correspond to a row of Grafana graphs\.
 type Row []Observable
 ```
 
-## type [UnitType](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/dashboards.go#L11>)
+## type [UnitType](<https://github.com/sourcegraph/sourcegraph/blob/main/monitoring/monitoring/dashboards.go#L27>)
 
 UnitType for controlling the unit type display on graphs\.
 

@@ -1,6 +1,7 @@
 /* eslint-disable id-length */
 import { Observable, fromEvent, Subscription, OperatorFunction, pipe, Subscriber, Notification } from 'rxjs'
 import { defaultIfEmpty, map, materialize, scan } from 'rxjs/operators'
+import { AggregableBadge } from 'sourcegraph'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
@@ -32,6 +33,7 @@ interface LineMatch {
     line: string
     lineNumber: number
     offsetAndLengths: number[][]
+    aggregableBadges?: AggregableBadge[]
 }
 
 export interface FileSymbolMatch {

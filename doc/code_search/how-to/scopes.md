@@ -1,24 +1,26 @@
-# Search scopes
+# Search snippets
 
-Every project and team has a different set of repositories they commonly work with and search over. Custom search scopes enable users and organizations to quickly filter their searches to predefined subsets of files and repositories.
+Every project and team has a different set of repositories they commonly work with and queries they perform regularly. Custom search snippets enable users and organizations to quickly filter existing search results with search fragments matching those use cases.
 
-A search scope is any valid query. For example, a search scope that defines all repositories in the "example" organization would be `repo:^github\.com/example/`. In the UI, search scopes appear as suggested filters below the search bar when you view search results.
+A search snippet is any valid query. For example, a search snippet that defines all repositories in the "example" organization would be `repo:^github\.com/example/`. After adding this snippet to your settings, it would appear in the search snippet panel in the search sidebar under a label of your choosing (as of v3.29).
+
+_NOTE: Search snippets are temporarily named search.scopes in site configuration files._
 
 ---
 
-## Creating custom search scopes
+## Creating custom search snippets
 
-Custom search scopes can be specified at 3 different levels:
+Custom search snippets can be specified at 3 different levels:
 
 - By site admins for all users: in the **Global settings** in the site admin area.
 - By organization admins for all organization members: in the organization profile **Settings** section
 - By users for themselves only: in the user profile **Settings** section
 
-You can configure search scopes by setting the `search.scopes` to a JSON array of `{name, value}` objects.
+You can configure search snippets by setting the `search.scopes` to a JSON array of `{name, value}` objects.
 
-The `value` of a search scope can be any valid query and can include any [search token](../reference/queries.md) (such as `repo:`, `file:`, etc.).
+The `value` of a search snippet can be any valid query and can include any [search token](../reference/queries.md) (such as `repo:`, `file:`, etc.).
 
-For example, this JSON will create two search scopes:
+For example, this JSON will create two search snippets:
 
 ```json
 {
@@ -37,6 +39,6 @@ For example, this JSON will create two search scopes:
 }
 ```
 
-After editing and saving the configuration settings JSON in the profile page, your search scopes will be shown as suggested filters on search results pages.
+After editing and saving the configuration settings JSON in the profile page, your search snippets will be shown as suggested filters on search results pages.
 
-![Scopes are below the search bar](../img/view-scopes-in-filter.png)
+![Snippets are in the search side panel](../img/search-snippets.png)

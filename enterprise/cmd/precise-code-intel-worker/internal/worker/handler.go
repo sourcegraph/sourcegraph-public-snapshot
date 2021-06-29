@@ -268,6 +268,9 @@ func writeData(ctx context.Context, lsifStore LSIFStore, id int, groupedBundleDa
 	if err := tx.WriteDocumentationPages(ctx, id, groupedBundleData.DocumentationPages); err != nil {
 		return errors.Wrap(err, "store.WriteDocumentationPages")
 	}
+	if err := tx.WriteDocumentationPathInfo(ctx, id, groupedBundleData.DocumentationPathInfo); err != nil {
+		return errors.Wrap(err, "store.WriteDocumentationPathInfo")
+	}
 
 	return nil
 }

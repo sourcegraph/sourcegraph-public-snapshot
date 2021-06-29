@@ -61,17 +61,22 @@ func TestUserCredential_Authenticator(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		uc := &UserCredential{
-			EncryptionKeyID:     "",
-			EncryptedCredential: enc,
-			key:                 et.TestKey{},
-		}
 
-		have, err := uc.Authenticator(ctx)
-		if err != nil {
-			t.Errorf("unexpected error: %v", err)
-		} else if diff := cmp.Diff(have, a); diff != "" {
-			t.Errorf("unexpected authenticator (-have +want):\n%s", diff)
+		for _, keyID := range []string{"", UserCredentialUnmigratedEncryptionKeyID} {
+			t.Run(keyID, func(t *testing.T) {
+				uc := &UserCredential{
+					EncryptionKeyID:     keyID,
+					EncryptedCredential: enc,
+					key:                 et.TestKey{},
+				}
+
+				have, err := uc.Authenticator(ctx)
+				if err != nil {
+					t.Errorf("unexpected error: %v", err)
+				} else if diff := cmp.Diff(have, a); diff != "" {
+					t.Errorf("unexpected authenticator (-have +want):\n%s", diff)
+				}
+			})
 		}
 	})
 

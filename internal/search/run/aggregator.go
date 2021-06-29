@@ -9,9 +9,12 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
+	"github.com/sourcegraph/sourcegraph/internal/search/unindexed"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -84,7 +87,7 @@ func (a *Aggregator) DoSymbolSearch(ctx context.Context, args *search.TextParame
 		tr.Finish()
 	}()
 
-	err = SearchSymbols(ctx, args, limit, a)
+	err = symbol.Search(ctx, args, limit, a)
 	return errors.Wrap(err, "symbol search failed")
 }
 
@@ -97,15 +100,15 @@ func (a *Aggregator) DoFilePathSearch(ctx context.Context, args *search.TextPara
 		tr.Finish()
 	}()
 
-	isDefaultStructuralSearch := args.PatternInfo.IsStructuralPat && args.PatternInfo.FileMatchLimit == defaultMaxSearchResults
+	isDefaultStructuralSearch := args.PatternInfo.IsStructuralPat && args.PatternInfo.FileMatchLimit == search.DefaultMaxSearchResults
 
 	if !isDefaultStructuralSearch {
-		return SearchFilesInRepos(ctx, args, a)
+		return unindexed.SearchFilesInRepos(ctx, args, a)
 	}
 
 	// For structural search with default limits we retry if we get no results.
 
-	fileMatches, stats, err := SearchFilesInReposBatch(ctx, args)
+	fileMatches, stats, err := unindexed.SearchFilesInReposBatch(ctx, args)
 
 	if len(fileMatches) == 0 && err == nil {
 		// No results for structural search? Automatically search again and force Zoekt
@@ -116,7 +119,7 @@ func (a *Aggregator) DoFilePathSearch(ctx context.Context, args *search.TextPara
 		argsCopy.PatternInfo = &patternCopy
 		args = &argsCopy
 
-		fileMatches, stats, err = SearchFilesInReposBatch(ctx, args)
+		fileMatches, stats, err = unindexed.SearchFilesInReposBatch(ctx, args)
 
 		if len(fileMatches) == 0 {
 			// Still no results? Give up.
@@ -149,13 +152,13 @@ func (a *Aggregator) DoDiffSearch(ctx context.Context, tp *search.TextParameters
 		return err
 	}
 
-	args, err := ResolveCommitParameters(ctx, tp)
+	args, err := commit.ResolveCommitParameters(ctx, tp)
 	if err != nil {
 		log15.Warn("doDiffSearch: error while resolving commit parameters", "error", err)
 		return nil
 	}
 
-	return SearchCommitDiffsInRepos(ctx, a.db, args, a)
+	return commit.SearchCommitDiffsInRepos(ctx, a.db, args, a)
 }
 
 func (a *Aggregator) DoCommitSearch(ctx context.Context, tp *search.TextParameters) (err error) {
@@ -170,17 +173,17 @@ func (a *Aggregator) DoCommitSearch(ctx context.Context, tp *search.TextParamete
 		return err
 	}
 
-	args, err := ResolveCommitParameters(ctx, tp)
+	args, err := commit.ResolveCommitParameters(ctx, tp)
 	if err != nil {
 		log15.Warn("doCommitSearch: error while resolving commit parameters", "error", err)
 		return nil
 	}
 
-	return SearchCommitLogInRepos(ctx, a.db, args, a)
+	return commit.SearchCommitLogInRepos(ctx, a.db, args, a)
 }
 
 func checkDiffCommitSearchLimits(ctx context.Context, args *search.TextParameters, resultType string) error {
-	repos, err := getRepos(ctx, args.RepoPromise)
+	repos, err := args.RepoPromise.Get(ctx)
 	if err != nil {
 		return err
 	}

@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"sync"
 
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -54,6 +55,7 @@ func (t *externalTransport) update() *http.Transport {
 		if effective.TLSClientConfig.RootCAs == nil {
 			pool, err := x509.SystemCertPool() // safe to mutate, a clone is returned
 			if err != nil {
+				log15.Warn("httpcli external transport failed to load SystemCertPool. Communication with external HTTPS APIs may fail", "error", err)
 				pool = x509.NewCertPool()
 			}
 			effective.TLSClientConfig.RootCAs = pool

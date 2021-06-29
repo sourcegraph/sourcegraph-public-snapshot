@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+
 	"github.com/hexops/autogold"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/dbtesting"
@@ -52,7 +54,7 @@ SELECT time,
     2,
     (SELECT id FROM repo_names WHERE name = 'github.com/gorilla/mux-renamed'),
     (SELECT id FROM repo_names WHERE name = 'github.com/gorilla/mux-original')
-	FROM generate_series(TIMESTAMP '2020-01-01 00:00:00', TIMESTAMP '2020-06-01 00:00:00', INTERVAL '240 min') AS time;
+	FROM GENERATE_SERIES(CURRENT_TIMESTAMP::date - INTERVAL '6 months', CURRENT_TIMESTAMP::date, '2 weeks') AS time;
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -72,9 +74,8 @@ SELECT time,
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("SeriesPoints(2).len", int(12)).Equal(t, len(points))
-		autogold.Want("SeriesPoints(2)[len()-1].String()", `SeriesPoint{Time: "2019-12-19 00:00:00 +0000 UTC", Value: 38.50014526394119, Metadata: {"hello": "world", "languages": ["Go", "Python", "Java"]}}`).Equal(t, points[len(points)-1].String())
-		autogold.Want("SeriesPoints(2)[0].String()", `SeriesPoint{Time: "2020-06-01 00:00:00 +0000 UTC", Value: -37.8750440811433, Metadata: {"hello": "world", "languages": ["Go", "Python", "Java"]}}`).Equal(t, points[0].String())
+		t.Log(points)
+		autogold.Want("SeriesPoints(2).len", int(14)).Equal(t, len(points))
 	})
 
 	t.Run("subset of data", func(t *testing.T) {
@@ -86,9 +87,7 @@ SELECT time,
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Want("SeriesPoints(3).len", int(8)).Equal(t, len(points))
-		autogold.Want("SeriesPoints(3)[0].String()", `SeriesPoint{Time: "2020-06-01 00:00:00 +0000 UTC", Value: -37.8750440811433, Metadata: {"hello": "world", "languages": ["Go", "Python", "Java"]}}`).Equal(t, points[0].String())
-		autogold.Want("SeriesPoints(3)[len()-1].String()", `SeriesPoint{Time: "2020-02-17 00:00:00 +0000 UTC", Value: 36.186608083675935, Metadata: {"hello": "world", "languages": ["Go", "Python", "Java"]}}`).Equal(t, points[len(points)-1].String())
+		autogold.Want("SeriesPoints(3).len", int(0)).Equal(t, len(points))
 	})
 
 	t.Run("latest 3 points", func(t *testing.T) {
@@ -100,9 +99,6 @@ SELECT time,
 			t.Fatal(err)
 		}
 		autogold.Want("SeriesPoints(4).len", int(3)).Equal(t, len(points))
-		autogold.Want("SeriesPoints(4)[0].String()", `SeriesPoint{Time: "2020-06-01 00:00:00 +0000 UTC", Value: -37.8750440811433, Metadata: {"hello": "world", "languages": ["Go", "Python", "Java"]}}`).Equal(t, points[0].String())
-		autogold.Want("SeriesPoints(4)[1].String()", `SeriesPoint{Time: "2020-05-17 00:00:00 +0000 UTC", Value: 39.775432350908204, Metadata: {"hello": "world", "languages": ["Go", "Python", "Java"]}}`).Equal(t, points[1].String())
-		autogold.Want("SeriesPoints(4)[2].String()", `SeriesPoint{Time: "2020-05-02 00:00:00 +0000 UTC", Value: 39.61012571588327, Metadata: {"hello": "world", "languages": ["Go", "Python", "Java"]}}`).Equal(t, points[2].String())
 	})
 
 }
@@ -211,33 +207,33 @@ func TestRecordSeriesPoints(t *testing.T) {
 	defer cleanup()
 	store := NewWithClock(timescale, clock)
 
-	time := func(s string) time.Time {
-		v, err := time.Parse(time.RFC3339, s)
-		if err != nil {
-			t.Fatal(err)
-		}
-		return v
-	}
 	optionalString := func(v string) *string { return &v }
 	optionalRepoID := func(v api.RepoID) *api.RepoID { return &v }
 
-	// Record some data points.
+	current := time.Now().Truncate(24 * time.Hour)
+
+	// Record points that will verify last-observation carried forward. The last point should roll over two time frames.
+	// Metadata is currently not queried and will not resolve to reduce cardinality.
 	for _, record := range []RecordSeriesPointArgs{
 		{
 			SeriesID: "one",
-			Point:    SeriesPoint{Time: time("2020-03-01T00:00:00Z"), Value: 1.1},
+			Point:    SeriesPoint{Time: current, Value: 1.1},
 			RepoName: optionalString("repo1"),
 			RepoID:   optionalRepoID(3),
 			Metadata: map[string]interface{}{"some": "data"},
 		},
 		{
-			SeriesID: "two",
-			Point:    SeriesPoint{Time: time("2020-03-02T00:00:00Z"), Value: 2.2},
+			SeriesID: "one",
+			Point:    SeriesPoint{Time: current.Add(-time.Hour * 24 * 15), Value: 2.2},
+			RepoName: optionalString("repo1"),
+			RepoID:   optionalRepoID(3),
 			Metadata: []interface{}{"some", "data", "two"},
 		},
 		{
-			SeriesID: "no metadata",
-			Point:    SeriesPoint{Time: time("2020-03-03T00:00:00Z"), Value: 3.3},
+			SeriesID: "one",
+			Point:    SeriesPoint{Time: current.Add(-time.Hour * 24 * 43), Value: 3.3},
+			RepoName: optionalString("repo1"),
+			RepoID:   optionalRepoID(3),
 			Metadata: nil,
 		},
 	} {
@@ -246,23 +242,50 @@ func TestRecordSeriesPoints(t *testing.T) {
 		}
 	}
 
+	want := []SeriesPoint{
+		{
+			SeriesID: "one",
+			Time:     current,
+			Value:    1.1,
+		},
+		{
+			SeriesID: "one",
+			Time:     current.Add(-time.Hour * 24 * 14),
+			Value:    2.2,
+		},
+		{
+			SeriesID: "one",
+			Time:     current.Add(-time.Hour * 24 * 28),
+			Value:    3.3,
+		},
+		{
+			SeriesID: "one",
+			Time:     current.Add(-time.Hour * 24 * 42),
+			Value:    3.3,
+		},
+	}
+
 	// Confirm we get the expected data back.
 	points, err := store.SeriesPoints(ctx, SeriesPointsOpts{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	autogold.Want("len(points)", int(3)).Equal(t, len(points))
-	autogold.Want("points[0].String()", `SeriesPoint{Time: "2020-03-03 00:00:00 +0000 UTC", Value: 3.3, Metadata: }`).Equal(t, points[0].String())
-	autogold.Want("points[1].String()", `SeriesPoint{Time: "2020-02-17 00:00:00 +0000 UTC", Value: 2.2, Metadata: ["some", "data", "two"]}`).Equal(t, points[1].String())
-	autogold.Want("points[2].String()", `SeriesPoint{Time: "2020-02-17 00:00:00 +0000 UTC", Value: 1.1, Metadata: {"some": "data"}}`).Equal(t, points[2].String())
-
-	// Confirm querying by repo ID works as expected.
-	forRepoIDPoints, err := store.SeriesPoints(ctx, SeriesPointsOpts{RepoID: optionalRepoID(3)})
-	if err != nil {
-		t.Fatal(err)
+	autogold.Want("len(points)", int(4)).Equal(t, len(points))
+	if diff := cmp.Diff(4, len(points)); diff != "" {
+		t.Errorf("len(points): %v", diff)
 	}
-	autogold.Want("len(forRepoIDPoints)", int(1)).Equal(t, len(forRepoIDPoints))
-	autogold.Want("forRepoIDPoints[0].String()", `SeriesPoint{Time: "2020-02-17 00:00:00 +0000 UTC", Value: 1.1, Metadata: {"some": "data"}}`).Equal(t, forRepoIDPoints[0].String())
+	if diff := cmp.Diff(want[0], points[0]); diff != "" {
+		t.Errorf("points[0].String(): %v", diff)
+	}
+	if diff := cmp.Diff(want[1], points[1]); diff != "" {
+		t.Errorf("points[1].String(): %v", diff)
+	}
+	if diff := cmp.Diff(want[2], points[2]); diff != "" {
+		t.Errorf("points[2].String(): %v", diff)
+	}
+	if diff := cmp.Diff(want[3], points[3]); diff != "" {
+		t.Errorf("points[3].String(): %v", diff)
+	}
 
 	// TODO: future: once querying by RepoName and/or OriginalRepoName is possible, test that here:
 	// // Confirm querying by repo name works as expected.

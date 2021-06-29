@@ -32,13 +32,13 @@ var ErrUnauthorized = errors.New("unauthorized upload")
 // If target is a non-nil pointer, it will be assigned the value of the upload identifier present
 // in the response body. This function returns an error as well as a boolean flag indicating if the
 // function can be retried.
-func performUploadRequest(opts uploadRequestOptions) (bool, error) {
+func performUploadRequest(httpClient Client, opts uploadRequestOptions) (bool, error) {
 	req, err := makeUploadRequest(opts)
 	if err != nil {
 		return false, err
 	}
 
-	resp, body, err := performRequest(req, opts.OutputOptions.Logger)
+	resp, body, err := performRequest(req, httpClient, opts.OutputOptions.Logger)
 	if err != nil {
 		return false, err
 	}
@@ -62,6 +62,7 @@ func makeUploadRequest(opts uploadRequestOptions) (*http.Request, error) {
 	if opts.SourcegraphInstanceOptions.AccessToken != "" {
 		req.Header.Set("Authorization", fmt.Sprintf("token %s", opts.SourcegraphInstanceOptions.AccessToken))
 	}
+
 	for k, v := range opts.SourcegraphInstanceOptions.AdditionalHeaders {
 		req.Header.Set(k, v)
 	}
@@ -72,13 +73,13 @@ func makeUploadRequest(opts uploadRequestOptions) (*http.Request, error) {
 // performRequest performs an HTTP request and returns the HTTP response as well as the entire
 // body as a byte slice. If a logger is supplied, the request, response, and response body will
 // be logged.
-func performRequest(req *http.Request, logger RequestLogger) (*http.Response, []byte, error) {
+func performRequest(req *http.Request, httpClient Client, logger RequestLogger) (*http.Response, []byte, error) {
 	started := time.Now()
 	if logger != nil {
 		logger.LogRequest(req)
 	}
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, nil, err
 	}

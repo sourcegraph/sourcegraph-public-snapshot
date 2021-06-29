@@ -34,9 +34,9 @@ func condensedFormat(r *log15.Record) []byte {
 	text := logLabels[r.Lvl]
 	var msg bytes.Buffer
 	if colorAttr != 0 {
-		fmt.Print(color.New(colorAttr).Sprint(text) + " " + r.Msg)
+		fmt.Fprint(&msg, color.New(colorAttr).Sprint(text)+" "+r.Msg)
 	} else {
-		fmt.Print(&msg, r.Msg)
+		fmt.Fprint(&msg, r.Msg)
 	}
 	if len(r.Ctx) > 0 {
 		for i := 0; i < len(r.Ctx); i += 2 {
