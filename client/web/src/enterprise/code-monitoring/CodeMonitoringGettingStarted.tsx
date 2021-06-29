@@ -161,7 +161,11 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<CodeMonitorin
                             <div className={classNames('card', styles.signUpCard)}>
                                 <h4>Free for registered users</h4>
                                 <p className="text-muted">Sign up and build your first code monitor today.</p>
-                                <CodeMonitorSignUpLink eventName="SignUpPLGMonitor_GettingStarted" text="Sign up now" />
+                                <CodeMonitorSignUpLink
+                                    className={styles.createButton}
+                                    eventName="SignUpPLGMonitor_GettingStarted"
+                                    text="Sign up now"
+                                />
                             </div>
                         </div>
                     )}
