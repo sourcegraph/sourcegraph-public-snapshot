@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
-	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
@@ -116,12 +115,6 @@ func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (
 	if searchType == query.SearchTypeStructural {
 		// Set a lower max result count until structural search supports true streaming.
 		defaultLimit = defaultMaxSearchResults
-	}
-
-	if sp, _ := plan.ToParseTree().StringValue(query.FieldSelect); sp != "" && args.Stream != nil {
-		// Invariant: error already checked
-		selectPath, _ := filter.SelectPathFromString(sp)
-		args.Stream = streaming.WithSelect(args.Stream, selectPath)
 	}
 
 	return &searchResolver{
