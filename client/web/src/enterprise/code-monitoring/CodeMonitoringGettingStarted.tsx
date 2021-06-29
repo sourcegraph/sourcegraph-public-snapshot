@@ -5,19 +5,14 @@ import React, { useEffect } from 'react'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import { eventLogger } from '../../tracking/eventLogger'
-
 import styles from './CodeMonitoringGettingStarted.module.scss'
+import { CodeMonitorSignUpLink } from './CodeMonitoringSignUpLink'
 
 export const HAS_SEEN_CODE_MONITORING_GETTING_STARTED = 'has-seen-code-monitoring-getting-started'
 
 interface CodeMonitoringGettingStartedProps extends ThemeProps {
     isSignedIn: boolean
     setHasSeenGettingStarted: (value: boolean) => void
-}
-
-const onSignUpClick = (): void => {
-    eventLogger.log('SignUpPLGMonitor_GettingStarted')
 }
 
 export const CodeMonitoringGettingStarted: React.FunctionComponent<CodeMonitoringGettingStartedProps> = ({
@@ -59,13 +54,11 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<CodeMonitorin
                             Create a code monitor
                         </Link>
                     ) : (
-                        <Link
-                            onClick={onSignUpClick}
-                            to={`/sign-up?returnTo=${encodeURIComponent('/code-monitoring/new')}&src=Monitor`}
-                            className={classNames('btn btn-primary', styles.createButton)}
-                        >
-                            Sign up to create a code monitor
-                        </Link>
+                        <CodeMonitorSignUpLink
+                            className={styles.createButton}
+                            eventName="SignUpPLGMonitor_GettingStarted"
+                            text="Sign up to create a code monitor"
+                        />
                     )}
                 </div>
             </div>
@@ -168,13 +161,7 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<CodeMonitorin
                             <div className={classNames('card', styles.signUpCard)}>
                                 <h4>Free for registered users</h4>
                                 <p className="text-muted">Sign up and build your first code monitor today.</p>
-                                <Link
-                                    onClick={onSignUpClick}
-                                    to={`/sign-up?returnTo=${encodeURIComponent('/code-monitoring/new')}&src=Monitor`}
-                                    className="btn btn-primary"
-                                >
-                                    Sign up now
-                                </Link>
+                                <CodeMonitorSignUpLink eventName="SignUpPLGMonitor_GettingStarted" text="Sign up now" />
                             </div>
                         </div>
                     )}

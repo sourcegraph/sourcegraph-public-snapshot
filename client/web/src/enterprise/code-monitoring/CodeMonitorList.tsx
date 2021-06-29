@@ -13,10 +13,10 @@ import { AuthenticatedUser } from '../../auth'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { CodeMonitorFields, ListUserCodeMonitorsResult, ListUserCodeMonitorsVariables } from '../../graphql-operations'
 import { Settings } from '../../schema/settings.schema'
-import { eventLogger } from '../../tracking/eventLogger'
 
 import { CodeMonitorNode, CodeMonitorNodeProps } from './CodeMonitoringNode'
 import { CodeMonitoringPageProps } from './CodeMonitoringPage'
+import { CodeMonitorSignUpLink } from './CodeMonitoringSignUpLink'
 
 type CodeMonitorFilter = 'all' | 'user'
 
@@ -37,15 +37,7 @@ const CodeMonitorEmptyList: React.FunctionComponent<{ authenticatedUser: Authent
                 Create a code monitor
             </Link>
         ) : (
-            <Link
-                onClick={() => {
-                    eventLogger.log('SignUpPLGMonitor_EmptyList')
-                }}
-                to={`/sign-up?returnTo=${encodeURIComponent('/code-monitoring/new')}&src=Monitor`}
-                className="btn btn-primary"
-            >
-                Sign up to create a code monitor
-            </Link>
+            <CodeMonitorSignUpLink eventName="SignUpPLGMonitor_EmptyList" text="Sign up to create a code monitor" />
         )}
     </div>
 )
