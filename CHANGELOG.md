@@ -13,21 +13,11 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## Unreleased
 
+## 3.29.1
+
 ### Added
 
--
-
-### Changed
-
--
-
-### Fixed
-
--
-
-### Removed
-
--
+- Call github API twice for organisation repos. [#22339](https://github.com/sourcegraph/sourcegraph/pull/22339)
 
 ## 3.29.0
 
