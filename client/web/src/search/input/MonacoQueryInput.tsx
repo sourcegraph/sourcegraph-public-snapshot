@@ -8,7 +8,6 @@ import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { toMonacoRange } from '@sourcegraph/shared/src/search/query/decoratedToken'
 import { getProviders } from '@sourcegraph/shared/src/search/query/providers'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
-import { Token } from '@sourcegraph/shared/src/search/query/token'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { SearchSuggestion } from '@sourcegraph/shared/src/search/suggestions'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
@@ -24,6 +23,8 @@ import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '../../keyboardShortcuts/keybo
 import { observeResize } from '../../util/dom'
 import { fetchSuggestions } from '../backend'
 import { QueryState } from '../helpers'
+
+import styles from './MonacoQueryInput.module.scss'
 
 export interface MonacoQueryInputProps
     extends ThemeProps,
@@ -384,50 +385,32 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
             return
         }
 
-        const FILTER_DECORATION_CLASS = 'monaco-filter-decoration'
-
-        const inside = (column: number, { range }: Pick<Token, 'range'>): boolean =>
-            range.start + 1 <= column && range.end + 1 >= column
-
-        const removeDecoration = (
-            model: Monaco.editor.ITextModel,
-            decoration: Monaco.editor.IModelDecoration | undefined
-        ): void => {
-            if (decoration) {
-                model.deltaDecorations([decoration.id], [])
-            }
-        }
-
-        const disposable = editor.onDidChangeCursorPosition(() => {
+        const disposable = editor.onDidChangeModelContent(() => {
             const model = editor.getModel()
             if (!model) {
                 return
             }
 
-            const existingDecoration = model
+            const existingDecorations = model
                 .getAllDecorations()
-                .find(decoration => decoration.options.className === FILTER_DECORATION_CLASS)
-
-            const position = editor.getPosition()
-            if (!position) {
-                removeDecoration(model, existingDecoration)
-                return
-            }
+                .filter(decoration => decoration.options.className === styles.filterDecoration)
 
             const scanResult = scanSearchQuery(model.getValue(), interpretComments, patternType)
-            const filterWithCursor =
-                scanResult.type === 'success'
-                    ? scanResult.term.find(token => token.type === 'filter' && inside(position.column, token))
-                    : undefined
+            const filters =
+                scanResult.type === 'success' ? scanResult.term.filter(token => token.type === 'filter') : []
 
-            if (!filterWithCursor) {
-                removeDecoration(model, existingDecoration)
-                return
-            }
+            model.deltaDecorations(
+                existingDecorations.map(decoration => decoration.id),
+                []
+            )
 
-            const filterMonacoRange = toMonacoRange(filterWithCursor.range)
-            removeDecoration(model, existingDecoration)
-            model.deltaDecorations([], [{ range: filterMonacoRange, options: { className: FILTER_DECORATION_CLASS } }])
+            model.deltaDecorations(
+                [],
+                filters.map(filter => ({
+                    range: toMonacoRange(filter.range),
+                    options: { className: styles.filterDecoration },
+                }))
+            )
         })
 
         return () => disposable.dispose()
