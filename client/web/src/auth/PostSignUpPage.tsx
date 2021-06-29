@@ -23,7 +23,7 @@ interface Props {
     routingPrefix: string
 }
 
-export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser: user, routingPrefix, context }) => {
+export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser: user, context }) => {
     // post sign-up flow is available only for .com and only in two cases, user:
     // 1. is authenticated and has AllowUserViewPostSignup tag
     // 2. is authenticated and enablePostSignupFlow experimental feature is ON
@@ -32,11 +32,10 @@ export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser: us
     //     authenticatedUser?.tags.includes('AllowUserViewPostSignup')) ? (
 
     const [currentStepNumber, setCurrentStepNumber] = useState(1)
-    const [externalServices, setExternalServices] = useState<ListExternalServiceFields[]>()
     const location = useLocation()
     const history = useHistory()
 
-    console.log(user)
+    const [externalServices, setExternalServices] = useState<ListExternalServiceFields[]>()
 
     const fetchExternalServices = useCallback(async (): Promise<void> => {
         const { nodes: fetchedServices } = await queryExternalServices({
@@ -78,8 +77,8 @@ export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser: us
                 )}
             </>
         ),
-        // step is considered done when user has at least one external service
-        isDone: (): boolean => Array.isArray(externalServices) && externalServices.length > 0,
+        // step is considered complete when user has at least one external service
+        isComplete: (): boolean => Array.isArray(externalServices) && externalServices.length > 0,
     }
 
     const addRepositories = {
@@ -92,7 +91,7 @@ export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser: us
                 </p>
             </>
         ),
-        isDone: () => false,
+        isComplete: () => false,
     }
 
     const startSearching = {
@@ -104,22 +103,31 @@ export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser: us
                 </p>
             </>
         ),
-        isDone: () => false,
+        isComplete: () => false,
     }
 
     const steps = [connectCodeHosts, addRepositories, startSearching]
 
+    // Steps helpers
     const isLastStep = currentStepNumber === steps.length
     const currentStep = steps[currentStepNumber - 1]
 
     const goToNextTab = (): void => setCurrentStepNumber(currentStepNumber + 1)
     const goToSearch = (): void => history.push(getReturnTo(location))
-
-    const isCurrentStepDone = (): boolean => currentStep?.isDone()
+    const isCurrentStepComplete = (): boolean => currentStep?.isComplete()
 
     const onStepTabClick = (clickedStepTabIndex: number): void => {
-        // TODO: check this again
-        if (clickedStepTabIndex < currentStepNumber) {
+        /**
+         * User can navigate through the steps by clicking the step's tab when:
+         * 1. navigating back and the navigated to step is complete
+         * 2. navigating forward and the current step is complete
+         */
+
+        const isValidNavigationBack =
+            clickedStepTabIndex < currentStepNumber && steps[clickedStepTabIndex - 1].isComplete()
+        const isValidNavigationForward = clickedStepTabIndex > currentStepNumber && isCurrentStepComplete()
+
+        if (isValidNavigationBack || isValidNavigationForward) {
             setCurrentStepNumber(clickedStepTabIndex)
         }
     }
@@ -150,7 +158,7 @@ export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser: us
                             <button
                                 type="button"
                                 className="btn btn-primary float-right ml-2"
-                                disabled={!isCurrentStepDone()}
+                                disabled={!isCurrentStepComplete()}
                                 onClick={isLastStep ? goToSearch : goToNextTab}
                             >
                                 {isLastStep ? 'Start searching' : 'Continue'}
