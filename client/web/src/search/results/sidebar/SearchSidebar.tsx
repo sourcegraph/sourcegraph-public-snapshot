@@ -89,32 +89,36 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
     const showSnippetsCtaLink = !props.authenticatedUser && props.featureFlags.get('w0-signup-optimisation')
 
     const persistToggleState = useCallback(
-      (id: SectionID, open: boolean) => {
-        setOpenSections(openSections => ({ ...openSections, [id]: open }))
-      },
-      [setOpenSections],
-    );
+        (id: SectionID, open: boolean) => {
+            setOpenSections(openSections => ({ ...openSections, [id]: open }))
+        },
+        [setOpenSections]
+    )
 
     return (
         <div className={classNames(styles.searchSidebar, props.className)}>
             <StickyBox className={styles.searchSidebarStickyBox}>
-                <SearchSidebarSection
-                    className={styles.searchSidebarItem}
-                    header="Search reference"
-                    showSearch
-                    open={openSections[SectionID.SEARCH_REFERENCE] ?? true}
-                    onToggle={open => persistToggleState(SectionID.SEARCH_REFERENCE, open)}
-                >
-                    {getSearchReferenceFactory(props)}
-                </SearchSidebarSection>
-                <SearchSidebarSection
-                    className={styles.searchSidebarItem}
-                    header="Search types"
-                    open={openSections[SectionID.SEARCH_TYPES] ?? true}
-                    onToggle={open => persistToggleState(SectionID.SEARCH_TYPES, open)}
-                >
-                    {getSearchTypeLinks(props)}
-                </SearchSidebarSection>
+                {props.featureFlags.get('search-reference') && (
+                    <SearchSidebarSection
+                        className={styles.searchSidebarItem}
+                        header="Search reference"
+                        showSearch
+                        open={openSections[SectionID.SEARCH_REFERENCE] ?? true}
+                        onToggle={open => persistToggleState(SectionID.SEARCH_REFERENCE, open)}
+                    >
+                        {getSearchReferenceFactory(props)}
+                    </SearchSidebarSection>
+                )}
+                {!props.featureFlags.get('search-reference') && (
+                    <SearchSidebarSection
+                        className={styles.searchSidebarItem}
+                        header="Search types"
+                        open={openSections[SectionID.SEARCH_TYPES] ?? true}
+                        onToggle={open => persistToggleState(SectionID.SEARCH_TYPES, open)}
+                    >
+                        {getSearchTypeLinks(props)}
+                    </SearchSidebarSection>
+                )}
                 <SearchSidebarSection
                     className={styles.searchSidebarItem}
                     header="Dynamic filters"
