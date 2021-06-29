@@ -1,26 +1,22 @@
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useMemo, useState } from 'react'
+import React, { useMemo } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import { Observable } from 'rxjs'
-import { map, tap } from 'rxjs/operators'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
+import { gql, useQuery } from '@sourcegraph/shared/src/graphql/graphql'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { AuthenticatedUser } from '../../auth'
-import { requestGraphQL } from '../../backend/graphql'
 import { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { Page } from '../../components/Page'
-import { UserAreaUserFields, UserAreaResult, UserAreaVariables } from '../../graphql-operations'
+import { UserAreaUserFields, UserAreaUserProfileResult, UserAreaUserProfileVariables } from '../../graphql-operations'
 import { NamespaceProps } from '../../namespaces'
 import { PatternTypeProps, OnboardingTourProps } from '../../search'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../util'
@@ -62,27 +58,14 @@ export const UserAreaGQLFragment = gql`
     ${EditUserProfilePageGQLFragment}
 `
 
-const fetchUser = (args: UserAreaVariables): Observable<UserAreaUserFields> =>
-    requestGraphQL<UserAreaResult, UserAreaVariables>(
-        gql`
-            query UserArea($username: String!, $siteAdmin: Boolean!) {
-                user(username: $username) {
-                    ...UserAreaUserFields
-                    ...EditUserProfilePage
-                }
-            }
-            ${UserAreaGQLFragment}
-        `,
-        args
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => {
-            if (!data.user) {
-                throw new Error(`User not found: ${JSON.stringify(args.username)}`)
-            }
-            return data.user
-        })
-    )
+export const USER_AREA_USER_PROFILE = gql`
+    query UserAreaUserProfile($username: String!, $siteAdmin: Boolean!) {
+        user(username: $username) {
+            ...UserAreaUserFields
+        }
+    }
+    ${UserAreaGQLFragment}
+`
 
 export interface UserAreaRoute extends RouteDescriptor<UserAreaRouteContext> {}
 
@@ -137,9 +120,6 @@ export interface UserAreaRouteContext
      */
     user: UserAreaUserFields
 
-    /** Called when the user is updated, with the full new user data. */
-    onUserUpdate: (newUser: UserAreaUserFields) => void
-
     /**
      * The currently authenticated user, NOT (necessarily) the user who is the subject of the page.
      *
@@ -165,43 +145,44 @@ export const UserArea: React.FunctionComponent<UserAreaProps> = ({
     },
     ...props
 }) => {
-    // When onUserUpdate is called (e.g., when updating a user's profile), we want to immediately
-    // use the newly updated user data instead of re-querying it. Therefore, we store the user in
-    // state. The initial GraphQL query populates it, and onUserUpdate calls update it.
-    const [user, setUser] = useState<UserAreaUserFields>()
-    useObservable(
-        useMemo(
-            () =>
-                fetchUser({
-                    username,
-                    siteAdmin: Boolean(props.authenticatedUser?.siteAdmin),
-                }).pipe(tap(setUser)),
-            [props.authenticatedUser?.siteAdmin, username]
-        )
+    const { data, error, loading } = useQuery<UserAreaUserProfileResult, UserAreaUserProfileVariables>(
+        USER_AREA_USER_PROFILE,
+        {
+            variables: { username, siteAdmin: Boolean(props.authenticatedUser?.siteAdmin) },
+        }
     )
 
     const childBreadcrumbSetters = useBreadcrumb(
         useMemo(
             () =>
-                user
+                data?.user
                     ? {
                           key: 'UserArea',
-                          link: { to: user.url, label: user.username },
+                          link: { to: data.user.url, label: data.user.username },
                       }
                     : null,
-            [user]
+            [data]
         )
     )
 
-    if (user === undefined) {
-        return null // loading
+    if (loading) {
+        return null
+    }
+
+    if (error) {
+        throw new Error(error.message)
+    }
+
+    const user = data?.user
+
+    if (!user) {
+        throw new Error(`User not found: ${JSON.stringify(username)}`)
     }
 
     const context: UserAreaRouteContext = {
         ...props,
         url,
         user,
-        onUserUpdate: setUser,
         namespace: user,
         ...childBreadcrumbSetters,
     }

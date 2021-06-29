@@ -1,4 +1,3 @@
-import * as H from 'history'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import React, { useEffect, useMemo } from 'react'
 import { Observable, of } from 'rxjs'
@@ -24,7 +23,6 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { UsageChart } from '../SiteAdminUsageStatisticsPage'
 
 interface Props extends ActivationProps, ThemeProps {
-    history: H.History
     overviewComponents: readonly React.ComponentType[]
 
     /** For testing only */
@@ -112,7 +110,6 @@ const fetchWeeklyActiveUsers = (): Observable<GQL.ISiteUsageStatistics> =>
  * A page displaying an overview of site admin information.
  */
 export const SiteAdminOverviewPage: React.FunctionComponent<Props> = ({
-    history,
     isLightTheme,
     activation,
     overviewComponents,
@@ -170,7 +167,6 @@ export const SiteAdminOverviewPage: React.FunctionComponent<Props> = ({
                     >
                         {activation.completed && (
                             <ActivationChecklist
-                                history={history}
                                 steps={activation.steps}
                                 completed={activation.completed}
                                 buttonClassName="h5 mb-0 font-weight-normal"
