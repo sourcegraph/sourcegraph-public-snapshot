@@ -66,7 +66,7 @@ type Repo struct {
 	// Metadata contains the raw source code host JSON metadata.
 	Metadata interface{}
 	// Blocked contains the reason this repository was blocked and the timestamp of when it happened.
-	Blocked *RepoBlock
+	Blocked *RepoBlock `json:",omitempty"`
 }
 
 // RepoBlock contains data about a repo that has been blocked. Blocked repos aren't returned by store methods by default.
