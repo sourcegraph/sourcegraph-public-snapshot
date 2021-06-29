@@ -3,7 +3,7 @@
 <p class="subtitle">API documentation generated for all your code</p>
 
 <p class="lead">
-Sourcegraph uses <a href="../">LSIF code intelligence</a> to generate API documentation for all your code, giving you the ability to navigate and explore the APIs provided by repositories.
+Sourcegraph uses <a href="../../code_intelligence">LSIF code intelligence</a> to generate API documentation for all your code, giving you the ability to navigate and explore the APIs provided by repositories.
 </p>
 
 ## 🚀 Try it out
