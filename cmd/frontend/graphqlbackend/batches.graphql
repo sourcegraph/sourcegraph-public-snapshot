@@ -1625,7 +1625,7 @@ type GitBranchChangesetDescription {
     can be previewed.
 
     Another ChangesetSpec with the same description, but "published: true",
-    can later be applied publish the changeset.
+    can later be applied to publish the changeset.
     """
     published: PublishedValue
 }
