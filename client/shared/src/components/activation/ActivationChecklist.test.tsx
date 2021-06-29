@@ -1,4 +1,3 @@
-import * as H from 'history'
 import React from 'react'
 import renderer from 'react-test-renderer'
 
@@ -8,11 +7,8 @@ jest.mock('mdi-react/CheckboxBlankCircleIcon', () => 'CheckboxBlankCircleIcon')
 jest.mock('mdi-react/CheckIcon', () => 'CheckIcon')
 
 describe('ActivationChecklist', () => {
-    const history = H.createMemoryHistory({ keyLength: 0 })
     test('render loading', () => {
-        const component = renderer.create(
-            <ActivationChecklist steps={[]} history={H.createMemoryHistory({ keyLength: 0 })} />
-        )
+        const component = renderer.create(<ActivationChecklist steps={[]} />)
         expect(component.toJSON()).toMatchSnapshot()
     })
     test('render 0/1 complete', () => {
@@ -27,7 +23,6 @@ describe('ActivationChecklist', () => {
                         },
                     ]}
                     completed={{}}
-                    history={history}
                 />
             )
             expect(component.toJSON()).toMatchSnapshot()
@@ -43,7 +38,6 @@ describe('ActivationChecklist', () => {
                         },
                     ]}
                     completed={{ EnabledRepository: true }} // another item
-                    history={history}
                 />
             )
             expect(component.toJSON()).toMatchSnapshot()
@@ -60,7 +54,6 @@ describe('ActivationChecklist', () => {
                     },
                 ]}
                 completed={{ ConnectedCodeHost: true }} // same item as in steps
-                history={H.createMemoryHistory({ keyLength: 0 })}
             />
         )
         expect(component.toJSON()).toMatchSnapshot()

@@ -45,7 +45,7 @@ describe('User profile page', () => {
         }
         testContext.overrideGraphQL({
             ...commonWebGraphQlResults,
-            UserArea: () => ({
+            UserAreaUserProfile: () => ({
                 user: USER,
             }),
             UpdateUser: () => ({ updateUser: { ...USER, displayName: 'Test2' } }),

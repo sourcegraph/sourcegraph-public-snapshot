@@ -36,7 +36,7 @@ module.exports = api => {
             'web.url-search-params',
             // Commonly needed by extensions (used by vscode-jsonrpc)
             'web.immediate',
-            // Avoids issues with RxJS interop
+            // Always define Symbol.observable before libraries are loaded, ensuring interopability between different libraries.
             'esnext.symbol.observable',
             // Webpack v4 chokes on optional chaining and nullish coalescing syntax, fix will be released with webpack v5.
             '@babel/plugin-proposal-optional-chaining',

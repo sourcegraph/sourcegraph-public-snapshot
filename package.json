@@ -304,6 +304,7 @@
     "yarn-deduplicate": "^3.1.0"
   },
   "dependencies": {
+    "@apollo/client": "^3.3.20",
     "@hot-loader/react-dom": "^16.14.0",
     "@reach/accordion": "^0.10.2",
     "@reach/combobox": "^0.15.1",

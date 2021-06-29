@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs'
 
-import { GraphQLResult, requestGraphQLCommon } from '@sourcegraph/shared/src/graphql/graphql'
+import { graphQLClient, GraphQLResult, requestGraphQLCommon } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 
 const getHeaders = (): { [header: string]: string } => ({
@@ -60,3 +60,5 @@ export const mutateGraphQL = (request: string, variables?: {}): Observable<Graph
         variables,
         headers: getHeaders(),
     })
+
+export const client = graphQLClient({ headers: getHeaders() })
