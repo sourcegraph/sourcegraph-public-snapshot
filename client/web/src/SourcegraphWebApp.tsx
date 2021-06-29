@@ -205,11 +205,6 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     showQueryBuilder: boolean
 
     /**
-     * Wether to enable enable contextual syntax highlighting and hovers for search queries
-     */
-    enableSmartQuery: boolean
-
-    /**
      * Whether the code monitoring feature flag is enabled.
      */
     enableCodeMonitoring: boolean
@@ -316,7 +311,6 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             globbing: false,
             showMultilineSearchConsole: false,
             showQueryBuilder: false,
-            enableSmartQuery: false,
             enableCodeMonitoring: false,
             // Disabling linter here as otherwise the application fails to compile. Bad lint?
             // See 7a137b201330eb2118c746f8cc5acddf63c1f039
@@ -566,7 +560,6 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                             globbing={this.state.globbing}
                                             showMultilineSearchConsole={this.state.showMultilineSearchConsole}
                                             showQueryBuilder={this.state.showQueryBuilder}
-                                            enableSmartQuery={this.state.enableSmartQuery}
                                             enableCodeMonitoring={this.state.enableCodeMonitoring}
                                             fetchSavedSearches={fetchSavedSearches}
                                             fetchRecentSearches={fetchRecentSearches}

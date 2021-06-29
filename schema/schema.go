@@ -1335,7 +1335,7 @@ type SettingsExperimentalFeatures struct {
 	DesignRefreshToggleEnabled *bool `json:"designRefreshToggleEnabled,omitempty"`
 	// EnableFastResultLoading description: Enables optimized search result loading (syntax highlighting / file contents fetching)
 	EnableFastResultLoading *bool `json:"enableFastResultLoading,omitempty"`
-	// EnableSmartQuery description: Enables contextual syntax highlighting and hovers for search queries in the web app
+	// EnableSmartQuery description: REMOVED. Previously, added more syntax highlighting and hovers for queries in the web app. This behavior is active by default now.
 	EnableSmartQuery *bool `json:"enableSmartQuery,omitempty"`
 	// FuzzyFinder description: Enables fuzzy finder with keyboard shortcut `t`.
 	FuzzyFinder *bool `json:"fuzzyFinder,omitempty"`

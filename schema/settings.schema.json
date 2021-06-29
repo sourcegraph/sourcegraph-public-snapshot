@@ -133,7 +133,7 @@
           }
         },
         "enableSmartQuery": {
-          "description": "Enables contextual syntax highlighting and hovers for search queries in the web app",
+          "description": "REMOVED. Previously, added more syntax highlighting and hovers for queries in the web app. This behavior is active by default now.",
           "type": "boolean",
           "default": true,
           "!go": {
