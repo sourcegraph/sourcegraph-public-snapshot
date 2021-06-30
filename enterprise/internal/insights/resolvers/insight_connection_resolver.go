@@ -70,8 +70,8 @@ func (r *insightConnectionResolver) compute(ctx context.Context) ([]*schema.Insi
 	r.once.Do(func() {
 		var multi error
 		insights, err := discovery.Discover(ctx, r.settingStore)
-		if r.err != nil {
-			multi = multierror.Append(multi, r.err)
+		if err != nil {
+			multi = multierror.Append(multi, err)
 		}
 		r.insights = insights
 
