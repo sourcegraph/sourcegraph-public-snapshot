@@ -1,7 +1,7 @@
 import * as React from 'react'
 
 import { DocumentationIcon } from './DocumentationIcon'
-import { Tag } from './DocumentationNode'
+import { Tag } from './graphql'
 
 /**
  * Picks the tags to use for rendering icons for documentation. This includes any

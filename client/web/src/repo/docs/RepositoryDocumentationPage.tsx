@@ -4,77 +4,28 @@ import BookOpenVariantIcon from 'mdi-react/BookOpenVariantIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useEffect, useCallback, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Observable } from 'rxjs'
 import { catchError, map, startWith } from 'rxjs/operators'
 
 import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { asError, createAggregateError, ErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { asError, ErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { RevisionSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { Container } from '@sourcegraph/wildcard'
 
-import { requestGraphQL } from '../../backend/graphql'
 import { Badge } from '../../components/Badge'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
-import { RepositoryFields, Scalars } from '../../graphql-operations'
+import { RepositoryFields } from '../../graphql-operations'
 import { FeedbackPrompt } from '../../nav/Feedback/FeedbackPrompt'
 import { routes } from '../../routes'
 import { eventLogger } from '../../tracking/eventLogger'
 import { toDocumentationURL } from '../../util/url'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 
-import { DocumentationNode, GQLDocumentationNode } from './DocumentationNode'
+import { DocumentationNode } from './DocumentationNode'
 import { DocumentationWelcomeAlert } from './DocumentationWelcomeAlert'
 import { RepositoryDocumentationSidebar, getSidebarVisibility } from './RepositoryDocumentationSidebar'
-
-interface DocumentationPageResults {
-    node: GQL.IRepository
-}
-interface DocumentationPageVariables {
-    repo: Scalars['ID']
-    revspec: string
-    pathID: string
-}
-
-const fetchDocumentationPage = (args: DocumentationPageVariables): Observable<GQL.IDocumentationPage> =>
-    requestGraphQL<DocumentationPageResults, DocumentationPageVariables>(
-        gql`
-            query DocumentationPage($repo: ID!, $revspec: String!, $pathID: String!) {
-                node(id: $repo) {
-                    ... on Repository {
-                        commit(rev: $revspec) {
-                            tree(path: "/") {
-                                lsif {
-                                    documentationPage(pathID: $pathID) {
-                                        tree
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        `,
-        args
-    ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.node) {
-                throw createAggregateError(errors)
-            }
-            const repo = data.node
-            if (!repo.commit || !repo.commit.tree || !repo.commit.tree.lsif) {
-                throw new Error('no LSIF data')
-            }
-            if (!repo.commit.tree.lsif.documentationPage || !repo.commit.tree.lsif.documentationPage.tree) {
-                throw new Error('no LSIF documentation')
-            }
-            return repo.commit.tree.lsif.documentationPage
-        })
-    )
 
 const PageError: React.FunctionComponent<{ error: ErrorLike }> = ({ error }) => (
     <div className="repository-docs-page__error alert alert-danger m-2">Error: {upperFirst(error.message)}</div>
