@@ -4,7 +4,7 @@ import {
     graphQLClient,
     GraphQLResult,
     requestGraphQLCommon,
-    requestGraphQLCommonApollo,
+    watchQueryCommon,
 } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 
@@ -34,11 +34,11 @@ export const requestGraphQL = <TResult, TVariables = object>(
         headers: getHeaders(),
     })
 
-export const requestGraphQLApollo = <TResult, TVariables = object>(
+export const watchQuery = <TResult, TVariables = object>(
     request: string,
     variables?: TVariables
 ): Observable<GraphQLResult<TResult>> =>
-    requestGraphQLCommonApollo({
+    watchQueryCommon({
         request,
         variables,
         client,

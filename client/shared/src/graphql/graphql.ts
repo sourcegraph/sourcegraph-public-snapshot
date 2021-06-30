@@ -106,7 +106,7 @@ export function requestGraphQLCommon<T, V = object>({
     })
 }
 
-export function requestGraphQLCommonApollo<T, V = object>({
+export function watchQueryCommon<T, V = object>({
     request,
     variables,
     client,
@@ -116,21 +116,9 @@ export function requestGraphQLCommonApollo<T, V = object>({
     client: ApolloClient<NormalizedCacheObject>
 }): Observable<GraphQLResult<T>> {
     const document = getDocumentNode(request)
-    const operation = getOperationType(document)
-
-    if (operation === 'query') {
-        return from(
-            fixObservable(client.watchQuery({ query: document, variables, fetchPolicy: 'cache-and-network' }))
-        ).pipe(map(apolloToGraphQLResult))
-    }
-
-    if (operation === 'mutation') {
-        return from(client.mutate({ mutation: document, variables })).pipe(map(apolloToGraphQLResult))
-    }
-
-    // We don't support the GraphQL subscription operation.
-    // If we have a use-case for this in the future, we should use useSubscription from Apollo
-    throw new Error(`Unsupported GraphQL operation: ${operation}`)
+    return from(
+        fixObservable(client.watchQuery({ query: document, variables, fetchPolicy: 'cache-and-network' }))
+    ).pipe(map(apolloToGraphQLResult))
 }
 
 export const graphQLClient = ({ headers }: { headers: RequestInit['headers'] }): ApolloClient<NormalizedCacheObject> =>
