@@ -259,6 +259,45 @@ func GitServer() *monitoring.Container {
 				},
 			},
 			{
+				Title:  "Gitserver cleanup jobs",
+				Hidden: true,
+				Rows: []monitoring.Row{
+					{
+						{
+							Name:           "janitor_running",
+							Description:    "if the janitor process is running",
+							Query:          "src_gitserver_janitor_running",
+							NoAlert:        true,
+							Panel:          monitoring.Panel().LegendFormat("janitor process running").Unit(monitoring.Number),
+							Owner:          monitoring.ObservableOwnerCoreApplication,
+							Interpretation: "1, if the janitor process is currently running",
+						},
+					},
+					{
+						{
+							Name:           "janitor_job_duration",
+							Description:    "95th percentile job run duration",
+							Query:          "histogram_quantile(0.95, sum(rate(src_gitserver_janitor_job_duration_seconds_bucket[5m])) by (le, job_name))",
+							NoAlert:        true,
+							Panel:          monitoring.Panel().LegendFormat("{{job_name}}").Unit(monitoring.Seconds),
+							Owner:          monitoring.ObservableOwnerCoreApplication,
+							Interpretation: "95th percentile job run duration",
+						},
+					},
+					{
+						{
+							Name:           "repos_removed",
+							Description:    "repositories removed due to disk pressure",
+							Query:          "sum by (instance) (rate(src_gitserver_repos_removed_disk_pressure[5m]))",
+							NoAlert:        true,
+							Panel:          monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Number),
+							Owner:          monitoring.ObservableOwnerCoreApplication,
+							Interpretation: "Repositories removed due to disk pressure",
+						},
+					},
+				},
+			},
+			{
 				Title:  shared.TitleContainerMonitoring,
 				Hidden: true,
 				Rows: []monitoring.Row{
