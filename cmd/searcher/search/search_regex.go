@@ -362,7 +362,6 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMat
 	}
 
 	var (
-		done          = ctx.Done()
 		wg            sync.WaitGroup
 		wgErrOnce     sync.Once
 		wgErr         error
@@ -380,7 +379,7 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMat
 			for {
 				// check whether we've been cancelled
 				select {
-				case <-done:
+				case <-ctx.Done():
 					return
 				default:
 				}
