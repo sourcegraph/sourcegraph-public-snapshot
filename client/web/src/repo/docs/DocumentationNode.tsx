@@ -31,12 +31,45 @@ export interface MarkupContent {
 export type MarkupKind = 'plaintext' | 'markdown'
 
 export interface Documentation {
-    slug: string
+    identifier: string
     newPage: boolean
-    tags: DocumentationTag[]
+    searchKey: string
+    tags: Tag[]
 }
 
-export type DocumentationTag = 'exported' | 'unexported' | 'deprecated'
+export type Tag = 'private'
+    | 'deprecated'
+    | 'test'
+    | 'benchmark'
+    | 'example'
+    | 'license'
+    | 'owner'
+    | 'file'
+    | 'module'
+    | 'namespace'
+    | 'package'
+    | 'class'
+    | 'method'
+    | 'property'
+    | 'field'
+    | 'constructor'
+    | 'enum'
+    | 'interface'
+    | 'function'
+    | 'variable'
+    | 'constant'
+    | 'string'
+    | 'number'
+    | 'boolean'
+    | 'array'
+    | 'object'
+    | 'key'
+    | 'null'
+    | 'enumNumber'
+    | 'struct'
+    | 'event'
+    | 'operator'
+    | 'typeParameter'
 
 export interface DocumentationNodeChild {
     node?: GQLDocumentationNode
@@ -48,8 +81,14 @@ interface Props extends Partial<RevisionSpec>, ResolvedRevisionSpec, BreadcrumbS
 
     history: H.History
     location: H.Location
+
+    /** The documentation node to render */
     node: GQLDocumentationNode
+
+    /** How far deep we are in the tree of documentation nodes */
     depth: number
+
+    /** The pathID of the page containing this documentation node */
     pagePathID: string
 }
 
