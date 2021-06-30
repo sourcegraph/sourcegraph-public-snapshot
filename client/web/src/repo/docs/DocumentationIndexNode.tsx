@@ -69,6 +69,12 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = ({ node, d
         )
     }
     if (props.contentOnly) {
+        if (node.detail.value === '') {
+            const children = node.children.filter(child => !child.node ? false : !isExcluded(child.node, props.excludingTags))
+            if (children.length == 0) {
+                return null
+            }
+        }
         return (
             <div className="documentation-index-node">
                 <Link id={'index-' + hash} to={thisPage} className="text-nowrap">
