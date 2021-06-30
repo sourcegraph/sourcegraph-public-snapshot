@@ -179,6 +179,9 @@ func DeterminePlan(previousSpec, currentSpec *btypes.ChangesetSpec, ch *btypes.C
 			pl.SetOp(btypes.ReconcilerOperationPublishDraft)
 			pl.AddOp(btypes.ReconcilerOperationPush)
 		}
+		// TODO: test for Published.Nil() and then plan based on the UI
+		// publication state. For now, we'll let it fall through and treat it
+		// the same as being unpublished.
 
 	case btypes.ChangesetPublicationStatePublished:
 		// Don't take any actions for merged changesets.
