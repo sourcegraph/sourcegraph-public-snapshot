@@ -1,7 +1,7 @@
 import React from 'react'
+import BookOpenVariantIcon from 'mdi-react/BookOpenVariantIcon'
 
 import { DismissibleAlert } from '@sourcegraph/web/src/components/DismissibleAlert'
-import BookOpenVariantIcon from 'mdi-react/BookOpenVariantIcon'
 
 export const DocumentationWelcomeAlert: React.FunctionComponent = () => (
     <DismissibleAlert className="documentation-welcome-alert mt-3" partialStorageKey="apidocs-welcome">
