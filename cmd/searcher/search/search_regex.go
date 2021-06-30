@@ -8,7 +8,6 @@ import (
 	"regexp"
 	"regexp/syntax"
 	"strings"
-	"sync"
 	"time"
 	"unicode"
 	"unicode/utf8"
@@ -340,8 +339,7 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMat
 	defer cancel()
 
 	var (
-		filesmu sync.Mutex // protects files
-		files   = zf.Files
+		files = zf.Files
 	)
 
 	if rg.re == nil || (patternMatchesPaths && !patternMatchesContent) {
@@ -371,28 +369,26 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMat
 
 	g, ctx := errgroup.WithContext(ctx)
 
-	// Start workers. They read from files and write to matches.
+	// Feed files to workers
+	fileFeeder := make(chan *store.SrcFile)
+	g.Go(func() error {
+		defer close(fileFeeder)
+		for _, file := range files {
+			f := file // capture loop variable
+			select {
+			case <-ctx.Done():
+				return nil
+			case fileFeeder <- &f:
+			}
+		}
+		return nil
+	})
+
+	// Start workers. They read from fileFeeder and write to the sender
 	for i := 0; i < numWorkers; i++ {
 		rg := rg.Copy()
 		g.Go(func() error {
-			for {
-				// check whether we've been cancelled
-				select {
-				case <-ctx.Done():
-					return nil
-				default:
-				}
-
-				// grab a file to work on
-				filesmu.Lock()
-				if len(files) == 0 {
-					filesmu.Unlock()
-					return nil
-				}
-				f := &files[0]
-				files = files[1:]
-				filesmu.Unlock()
-
+			for f := range fileFeeder {
 				// decide whether to process, record that decision
 				if !rg.matchPath.MatchPath(f.Name) {
 					filesSkipped.Add(1)
@@ -423,6 +419,7 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMat
 					}
 				}
 			}
+			return nil
 		})
 	}
 
