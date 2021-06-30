@@ -10,6 +10,7 @@ import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { useScrollToLocationHash } from '../../components/useScrollToLocationHash'
 import { RepositoryFields } from '../../graphql-operations'
 import { toDocumentationURL } from '../../util/url'
+import { DocumentationIcons } from './DocumentationIcons'
 
 // Mirrors the same type on the backend:
 //
@@ -121,7 +122,7 @@ export const DocumentationNode: React.FunctionComponent<Props> = ({ useBreadcrum
     return (
         <div className="documentation-node">
             <Link className={`h${depth + 1 < 4 ? depth + 1 : 4}`} id={hash} to={thisPage}>
-                {node.label.value}
+                <DocumentationIcons tags={node.documentation.tags} /> {node.label.value}
             </Link>
             {node.detail.value !== '' && (
                 <div className="px-2 pt-2">
