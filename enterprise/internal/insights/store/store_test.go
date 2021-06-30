@@ -20,7 +20,6 @@ func TestSeriesPoints(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
 
 	ctx := context.Background()
 	clock := timeutil.Now
@@ -131,7 +130,6 @@ func TestCountData(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
 
 	ctx := context.Background()
 	clock := timeutil.Now
@@ -225,7 +223,6 @@ func TestRecordSeriesPoints(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
 
 	ctx := context.Background()
 	clock := timeutil.Now
