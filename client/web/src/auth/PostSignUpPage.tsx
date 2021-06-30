@@ -2,14 +2,15 @@ import React, { FunctionComponent, useState, useCallback, useEffect } from 'reac
 import { useLocation, useHistory } from 'react-router'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { useQuery } from '@sourcegraph/shared/src/graphql/graphql'
 import { Steps, Step } from '@sourcegraph/wildcard/src/components/Steps'
 import { Terminal } from '@sourcegraph/wildcard/src/components/Terminal'
 
 import { AuthenticatedUser } from '../auth'
-import { queryExternalServices } from '../components/externalServices/backend'
+import { EXTERNAL_SERVICES } from '../components/externalServices/backend'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
-import { UserAreaUserFields, ListExternalServiceFields } from '../graphql-operations'
+import { UserAreaUserFields, ExternalServicesVariables, ExternalServicesResult } from '../graphql-operations'
 import { SourcegraphContext } from '../jscontext'
 import { UserCodeHosts } from '../user/settings/codeHosts/UserCodeHosts'
 
@@ -36,21 +37,44 @@ export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser: us
     const location = useLocation()
     const history = useHistory()
 
-    const [externalServices, setExternalServices] = useState<ListExternalServiceFields[]>()
+    // const [externalServices, setExternalServices] = useState<ListExternalServiceFields[]>()
 
-    const fetchExternalServices = useCallback(async (): Promise<void> => {
-        const { nodes: fetchedServices } = await queryExternalServices({
+    const { data, loading, error } = useQuery<ExternalServicesResult, ExternalServicesVariables>(EXTERNAL_SERVICES, {
+        variables: {
             namespace: user.id,
             first: null,
             after: null,
-        }).toPromise()
+        },
+    })
 
-        setExternalServices(fetchedServices)
-    }, [user.id])
+    if (data) {
+        console.log(data)
+    }
 
-    useEffect(() => {
-        fetchExternalServices().catch(error => console.log(error))
-    }, [fetchExternalServices])
+    if (loading) {
+        return (
+            <div className="d-flex justify-content-center">
+                <LoadingSpinner className="icon-inline" />
+            </div>
+        )
+    }
+
+    if (error) {
+        console.log(error)
+    }
+    // const fetchExternalServices = useCallback(async (): Promise<void> => {
+    //     const { nodes: fetchedServices } = await queryExternalServices({
+    //         namespace: user.id,
+    //         first: null,
+    //         after: null,
+    //     }).toPromise()
+
+    //     setExternalServices(fetchedServices)
+    // }, [user.id])
+
+    // useEffect(() => {
+    //     fetchExternalServices().catch(error => console.log(error))
+    // }, [fetchExternalServices])
 
     const connectCodeHosts = {
         content: (
@@ -62,8 +86,17 @@ export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser: us
                         like to search with Sourcegraph.
                     </p>
                 </div>
+                {data?.externalServices?.nodes && (
+                    <UserCodeHosts
+                        user={user}
+                        externalServices={data.externalServices.nodes}
+                        context={context}
+                        onDidError={error => console.warn('<UserCodeHosts .../>', error)}
+                        onDidRemove={() => null}
+                    />
+                )}
 
-                {externalServices ? (
+                {/* {externalServices ? (
                     <UserCodeHosts
                         user={user}
                         externalServices={externalServices}
@@ -75,11 +108,11 @@ export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser: us
                     <div className="d-flex justify-content-center">
                         <LoadingSpinner className="icon-inline" />
                     </div>
-                )}
+                )} */}
             </>
         ),
         // step is considered complete when user has at least one external service
-        isComplete: (): boolean => Array.isArray(externalServices) && externalServices.length > 0,
+        isComplete: (): boolean => true, // Array.isArray(externalServices) && externalServices.length > 0,
     }
 
     const addRepositories = {
