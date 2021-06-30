@@ -1,5 +1,6 @@
 import * as H from 'history'
 import { upperFirst } from 'lodash'
+import BookOpenVariantIcon from 'mdi-react/BookOpenVariantIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useEffect, useCallback, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -13,16 +14,21 @@ import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { asError, createAggregateError, ErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { RevisionSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Container } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../backend/graphql'
+import { Badge } from '../../components/Badge'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
 import { RepositoryFields, Scalars } from '../../graphql-operations'
+import { FeedbackPrompt } from '../../nav/Feedback/FeedbackPrompt'
+import { routes } from '../../routes'
 import { eventLogger } from '../../tracking/eventLogger'
 import { toDocumentationURL } from '../../util/url'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 
 import { DocumentationNode, GQLDocumentationNode } from './DocumentationNode'
+import { DocumentationWelcomeAlert } from './DocumentationWelcomeAlert'
 import { RepositoryDocumentationSidebar, getSidebarVisibility } from './RepositoryDocumentationSidebar'
 
 interface DocumentationPageResults {
@@ -139,38 +145,88 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = ({ us
             <PageTitle title="API docs" />
             {page === LOADING ? <LoadingSpinner className="icon-inline m-1" /> : null}
             {isErrorLike(page) && page.message === 'page not found' ? <PageNotFound /> : null}
-            {isErrorLike(page) && page.message === 'no LSIF data' ? (
-                <p>This repository does not have LSIF data.</p>
+            {isErrorLike(page) && (page.message === 'no LSIF data' || page.message === 'no LSIF documentation') ? (
+                <div className="repository-docs-page__container">
+                    <div className="repository-docs-page__container-content">
+                        <div className="d-flex float-right">
+                            <a
+                                // eslint-disable-next-line react/jsx-no-target-blank
+                                target="_blank"
+                                rel="noopener"
+                                href="https://docs.sourcegraph.com/code_intelligence/apidocs"
+                                className="mr-1 btn btn-sm text-decoration-none btn-link btn-outline-secondary"
+                            >
+                                Learn more
+                            </a>
+                            <FeedbackPrompt routes={routes} />
+                        </div>
+                        <h1>
+                            <BookOpenVariantIcon className="icon-inline mr-1" />
+                            API docs
+                            <Badge status="experimental" className="text-uppercase ml-2" />
+                        </h1>
+                        <p>API documentation generated for all your code</p>
+                        <Container>
+                            <h2 className="text-muted mb-2">This repository has no LSIF documentation data.</h2>
+                            <h3>
+                                <a
+                                    // eslint-disable-next-line react/jsx-no-target-blank
+                                    target="_blank"
+                                    rel="noopener"
+                                    href="https://docs.sourcegraph.com/code_intelligence/apidocs"
+                                >
+                                    Learn more
+                                </a>
+                            </h3>
+                        </Container>
+                    </div>
+                </div>
             ) : null}
-            {isErrorLike(page) && page.message === 'no LSIF documentation' ? (
-                <p>This repository does not have LSIF documentation data. Currently, only lsif-go is supported.</p>
-            ) : null}
-            {isErrorLike(page) && page.message !== 'page not found' && page.message !== 'no LSIF documentation' ? (
+            {isErrorLike(page) &&
+            page.message !== 'page not found' &&
+            page.message !== 'no LSIF data' &&
+            page.message !== 'no LSIF documentation' ? (
                 <PageError error={page} />
             ) : null}
             {page !== LOADING && !isErrorLike(page) ? (
                 <>
                     <RepositoryDocumentationSidebar
                         {...props}
-                        className="repository-docs-page__sidebar"
                         onToggle={handleSidebarVisible}
                         node={page.tree}
                         pagePathID={pagePathID}
                         depth={0}
                     />
-                    <div
-                        className={`repository-docs-page__container${
-                            sidebarVisible ? ' repository-docs-page__container--sidebar-visible' : ''
-                        }`}
-                    >
-                        <div className="repository-docs-page__container-content">
+                    <div className="repository-docs-page__container">
+                        <div
+                            className={`repository-docs-page__container-content${
+                                sidebarVisible ? ' repository-docs-page__container-content--sidebar-visible' : ''
+                            }`}
+                        >
+                            <DocumentationWelcomeAlert />
                             <DocumentationNode
                                 {...props}
                                 useBreadcrumb={useBreadcrumb}
                                 node={page.tree}
                                 pagePathID={pagePathID}
                                 depth={0}
+                                excludingTags={['private']}
                             />
+                        </div>
+                    </div>
+                    <div className="repository-docs-page__feedback-container">
+                        <div className="repository-docs-page__feedback-container-content">
+                            <Badge status="experimental" className="text-uppercase mr-2" />
+                            <a
+                                // eslint-disable-next-line react/jsx-no-target-blank
+                                target="_blank"
+                                rel="noopener"
+                                href="https://docs.sourcegraph.com/code_intelligence/apidocs"
+                                className="mr-1 btn btn-sm text-decoration-none btn-link btn-outline-secondary"
+                            >
+                                Learn more
+                            </a>
+                            <FeedbackPrompt routes={routes} />
                         </div>
                     </div>
                 </>

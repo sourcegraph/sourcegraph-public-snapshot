@@ -193,18 +193,11 @@ const toHover = (token: DecoratedToken): string => {
     return ''
 }
 
-const inside = (column: number) => ({ range }: Pick<Token | DecoratedToken, 'range'>): boolean =>
-    range.start + 1 <= column && range.end >= column
-
 /**
  * Returns the hover result for a hovered search token in the Monaco query input.
  */
-export const getHoverResult = (
-    tokens: Token[],
-    { column }: Pick<Monaco.Position, 'column'>,
-    smartQuery = false
-): Monaco.languages.Hover | null => {
-    const tokensAtCursor = (smartQuery ? tokens.flatMap(decorate) : tokens).filter(inside(column))
+export const getHoverResult = (tokens: Token[]): Monaco.languages.Hover | null => {
+    const tokensAtCursor = tokens.flatMap(decorate)
     if (tokensAtCursor.length === 0) {
         return null
     }
@@ -212,21 +205,6 @@ export const getHoverResult = (
     let range: Monaco.IRange | undefined
     tokensAtCursor.map(token => {
         switch (token.type) {
-            case 'filter': {
-                // This 'filter' branch only exists to preserve previous behavior when smmartQuery is false.
-                // When smartQuery is true, 'filter' tokens are handled by the 'field' case and its values in
-                // the rest of this switch statement.
-                const resolvedFilter = resolveFilter(token.field.value)
-                if (resolvedFilter) {
-                    values.push(
-                        'negated' in resolvedFilter
-                            ? resolvedFilter.definition.description(resolvedFilter.negated)
-                            : resolvedFilter.definition.description
-                    )
-                    range = toMonacoRange(token.range)
-                }
-                break
-            }
             case 'field': {
                 const resolvedFilter = resolveFilter(token.value)
                 if (resolvedFilter) {

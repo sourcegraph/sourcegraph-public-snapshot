@@ -22,6 +22,26 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 2,
+                "scopes": "metaRegexpAssertion"
+              },
+              {
+                "startIndex": 3,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 9,
+                "scopes": "metaRegexpCharacterSet"
+              },
+              {
+                "startIndex": 10,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 13,
+                "scopes": "metaPathSeparator"
+              },
+              {
+                "startIndex": 14,
                 "scopes": "identifier"
               },
               {
@@ -65,7 +85,7 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 4,
-                "scopes": "identifier"
+                "scopes": "openingParen"
               },
               {
                 "startIndex": 5,
@@ -93,14 +113,14 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 14,
-                "scopes": "identifier"
+                "scopes": "closingParen"
               }
             ]
         `)
     })
 
     test('no decoration for literal', () => {
-        expect(getMonacoTokens(toSuccess(scanSearchQuery('(a\\sb)', false, SearchPatternType.literal)), true))
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('(a\\sb)', false, SearchPatternType.literal))))
             .toMatchInlineSnapshot(`
             [
               {
@@ -112,7 +132,7 @@ describe('getMonacoTokens()', () => {
     })
 
     test('decorate regexp character set and group', () => {
-        expect(getMonacoTokens(toSuccess(scanSearchQuery('(a\\sb)', false, SearchPatternType.regexp)), true))
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('(a\\sb)', false, SearchPatternType.regexp))))
             .toMatchInlineSnapshot(`
             [
               {
@@ -140,7 +160,7 @@ describe('getMonacoTokens()', () => {
     })
 
     test('decorate regexp assertion', () => {
-        expect(getMonacoTokens(toSuccess(scanSearchQuery('^oh\\.hai$', false, SearchPatternType.regexp)), true))
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('^oh\\.hai$', false, SearchPatternType.regexp))))
             .toMatchInlineSnapshot(`
             [
               {
@@ -168,7 +188,7 @@ describe('getMonacoTokens()', () => {
     })
 
     test('decorate regexp quantifiers', () => {
-        expect(getMonacoTokens(toSuccess(scanSearchQuery('a*?(b)+', false, SearchPatternType.regexp)), true))
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('a*?(b)+', false, SearchPatternType.regexp))))
             .toMatchInlineSnapshot(`
             [
               {
@@ -204,7 +224,7 @@ describe('getMonacoTokens()', () => {
     })
 
     test('decorate range quantifier', () => {
-        expect(getMonacoTokens(toSuccess(scanSearchQuery('b{1} c{1,2} d{3,}?', false, SearchPatternType.regexp)), true))
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('b{1} c{1,2} d{3,}?', false, SearchPatternType.regexp))))
             .toMatchInlineSnapshot(`
             [
               {
@@ -248,7 +268,7 @@ describe('getMonacoTokens()', () => {
     })
 
     test('decorate paren groups', () => {
-        expect(getMonacoTokens(toSuccess(scanSearchQuery('((a) or b)', false, SearchPatternType.regexp)), true))
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('((a) or b)', false, SearchPatternType.regexp))))
             .toMatchInlineSnapshot(`
             [
               {
@@ -292,7 +312,7 @@ describe('getMonacoTokens()', () => {
     })
 
     test('decorate non-capturing paren groups', () => {
-        expect(getMonacoTokens(toSuccess(scanSearchQuery('(?:a(?:b))', false, SearchPatternType.regexp)), true))
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('(?:a(?:b))', false, SearchPatternType.regexp))))
             .toMatchInlineSnapshot(`
             [
               {
@@ -324,7 +344,7 @@ describe('getMonacoTokens()', () => {
     })
 
     test('decorate character classes', () => {
-        expect(getMonacoTokens(toSuccess(scanSearchQuery('([a-z])', false, SearchPatternType.regexp)), true))
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('([a-z])', false, SearchPatternType.regexp))))
             .toMatchInlineSnapshot(`
             [
               {
@@ -360,7 +380,7 @@ describe('getMonacoTokens()', () => {
     })
 
     test('decorate character classes', () => {
-        expect(getMonacoTokens(toSuccess(scanSearchQuery('[a-z][--z][--z]', false, SearchPatternType.regexp)), true))
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('[a-z][--z][--z]', false, SearchPatternType.regexp))))
             .toMatchInlineSnapshot(`
             [
               {
@@ -430,8 +450,7 @@ describe('getMonacoTokens()', () => {
     test('decorate regexp field values', () => {
         expect(
             getMonacoTokens(
-                toSuccess(scanSearchQuery('repo:^foo$ count:10 file:.* fork:yes', false, SearchPatternType.regexp)),
-                true
+                toSuccess(scanSearchQuery('repo:^foo$ count:10 file:.* fork:yes', false, SearchPatternType.regexp))
             )
         ).toMatchInlineSnapshot(`
             [
@@ -496,7 +515,7 @@ describe('getMonacoTokens()', () => {
     })
 
     test('decorate regexp | operator, single pattern', () => {
-        expect(getMonacoTokens(toSuccess(scanSearchQuery('[|]\\|((a|b)|d)|e', false, SearchPatternType.regexp)), true))
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('[|]\\|((a|b)|d)|e', false, SearchPatternType.regexp))))
             .toMatchInlineSnapshot(`
             [
               {
@@ -564,9 +583,8 @@ describe('getMonacoTokens()', () => {
     })
 
     test('decorate regexp | operator, multiple patterns', () => {
-        expect(
-            getMonacoTokens(toSuccess(scanSearchQuery('repo:(a|b) (c|d) (e|f)', false, SearchPatternType.regexp)), true)
-        ).toMatchInlineSnapshot(`
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:(a|b) (c|d) (e|f)', false, SearchPatternType.regexp))))
+            .toMatchInlineSnapshot(`
             [
               {
                 "startIndex": 0,
@@ -646,10 +664,7 @@ describe('getMonacoTokens()', () => {
 
     test('decorate escaped characters', () => {
         expect(
-            getMonacoTokens(
-                toSuccess(scanSearchQuery('[--\\\\abc] \\|\\.|\\(\\)', false, SearchPatternType.regexp)),
-                true
-            )
+            getMonacoTokens(toSuccess(scanSearchQuery('[--\\\\abc] \\|\\.|\\(\\)', false, SearchPatternType.regexp)))
         ).toMatchInlineSnapshot(`
             [
               {
@@ -719,8 +734,7 @@ describe('getMonacoTokens()', () => {
     test('decorate structural holes', () => {
         expect(
             getMonacoTokens(
-                toSuccess(scanSearchQuery('r:foo Search(thing::[x], :[y])', false, SearchPatternType.structural)),
-                true
+                toSuccess(scanSearchQuery('r:foo Search(thing::[x], :[y])', false, SearchPatternType.structural))
             )
         ).toMatchInlineSnapshot(`
             [
@@ -761,9 +775,8 @@ describe('getMonacoTokens()', () => {
     })
 
     test('decorate structural holes with valid inlined regexp', () => {
-        expect(
-            getMonacoTokens(toSuccess(scanSearchQuery('r:foo a:[x~[\\]]]b', false, SearchPatternType.structural)), true)
-        ).toMatchInlineSnapshot(`
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('r:foo a:[x~[\\]]]b', false, SearchPatternType.structural))))
+            .toMatchInlineSnapshot(`
             [
               {
                 "startIndex": 0,
@@ -818,9 +831,8 @@ describe('getMonacoTokens()', () => {
     })
 
     test('decorate structural holes with valid inlined regexp, no variable', () => {
-        expect(
-            getMonacoTokens(toSuccess(scanSearchQuery('repo:foo :[~a?|b*]', false, SearchPatternType.structural)), true)
-        ).toMatchInlineSnapshot(`
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:foo :[~a?|b*]', false, SearchPatternType.structural))))
+            .toMatchInlineSnapshot(`
             [
               {
                 "startIndex": 0,
@@ -879,12 +891,8 @@ describe('getMonacoTokens()', () => {
     })
 
     test('decorate structural hole ... alias', () => {
-        expect(
-            getMonacoTokens(
-                toSuccess(scanSearchQuery('r:foo a...b...c....', false, SearchPatternType.structural)),
-                true
-            )
-        ).toMatchInlineSnapshot(`
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('r:foo a...b...c....', false, SearchPatternType.structural))))
+            .toMatchInlineSnapshot(`
             [
               {
                 "startIndex": 0,
@@ -931,7 +939,7 @@ describe('getMonacoTokens()', () => {
     })
 
     test('decorate structural hole ... alias', () => {
-        expect(getMonacoTokens(toSuccess(scanSearchQuery('r:foo ...:...', false, SearchPatternType.structural)), true))
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('r:foo ...:...', false, SearchPatternType.structural))))
             .toMatchInlineSnapshot(`
             [
               {
@@ -963,7 +971,7 @@ describe('getMonacoTokens()', () => {
     })
 
     test('decorate repo revision syntax, separate revisions', () => {
-        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:foo@HEAD:v1.2:3')), true)).toMatchInlineSnapshot(`
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:foo@HEAD:v1.2:3')))).toMatchInlineSnapshot(`
             [
               {
                 "startIndex": 0,
@@ -1002,7 +1010,7 @@ describe('getMonacoTokens()', () => {
     })
 
     test('decorate revision field syntax, separate revisions', () => {
-        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:foo rev:HEAD:v1.2:3')), true)).toMatchInlineSnapshot(`
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:foo rev:HEAD:v1.2:3')))).toMatchInlineSnapshot(`
             [
               {
                 "startIndex": 0,
@@ -1045,7 +1053,7 @@ describe('getMonacoTokens()', () => {
     })
 
     test('do not decorate regex syntax when filter value is quoted', () => {
-        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:"^do-not-attempt$" file:\'.*\'')), true))
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:"^do-not-attempt$" file:\'.*\''))))
             .toMatchInlineSnapshot(`
             [
               {
@@ -1073,7 +1081,7 @@ describe('getMonacoTokens()', () => {
     })
 
     test('decorate repo revision syntax, path with wildcard and negation', () => {
-        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:foo@*refs/heads/*:*!refs/heads/release*')), true))
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:foo@*refs/heads/*:*!refs/heads/release*'))))
             .toMatchInlineSnapshot(`
             [
               {
@@ -1137,7 +1145,7 @@ describe('getMonacoTokens()', () => {
     })
 
     test('decorate search context value', () => {
-        expect(getMonacoTokens(toSuccess(scanSearchQuery('context:@user')), true)).toMatchInlineSnapshot(`
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('context:@user')))).toMatchInlineSnapshot(`
             [
               {
                 "startIndex": 0,
@@ -1156,7 +1164,7 @@ describe('getMonacoTokens()', () => {
     })
 
     test('returns path separator tokens for regexp values', () => {
-        expect(getMonacoTokens(toSuccess(scanSearchQuery('r:^github.com/sourcegraph@HEAD f:a/b/')), true))
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('r:^github.com/sourcegraph@HEAD f:a/b/'))))
             .toMatchInlineSnapshot(`
             [
               {
@@ -1224,7 +1232,7 @@ describe('getMonacoTokens()', () => {
     })
 
     test('returns regexp highlighting if path separators cannot be parsed', () => {
-        expect(getMonacoTokens(toSuccess(scanSearchQuery('r:^github.com(/)sourcegraph')), true)).toMatchInlineSnapshot(`
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('r:^github.com(/)sourcegraph')))).toMatchInlineSnapshot(`
             [
               {
                 "startIndex": 0,
@@ -1267,8 +1275,7 @@ describe('getMonacoTokens()', () => {
     })
 
     test('highlight recognized predicate with body as regexp', () => {
-        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:contains.file(README.md)')), true))
-            .toMatchInlineSnapshot(`
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:contains.file(README.md)')))).toMatchInlineSnapshot(`
             [
               {
                 "startIndex": 0,
@@ -1311,7 +1318,7 @@ describe('getMonacoTokens()', () => {
     })
 
     test('highlight recognized predicate with multiple fields', () => {
-        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:contains(file:README.md content:^fix$)')), true))
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:contains(file:README.md content:^fix$)'))))
             .toMatchInlineSnapshot(`
             [
               {
