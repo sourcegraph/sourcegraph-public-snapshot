@@ -2,4 +2,12 @@
     &-scroller:last-child {
         padding-bottom: 3rem;
     }
+    &__show-more-button > button {
+        &:focus {
+            box-shadow: none;
+        }
+        & > svg {
+            display: none;
+        }
+    }
 }

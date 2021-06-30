@@ -26,9 +26,6 @@ interface Props extends Partial<RevisionSpec>, ResolvedRevisionSpec {
     /** The pathID of the page containing this documentation node */
     pagePathID: string
 
-    /** If true, render subpage index only */
-    subpagesOnly: boolean
-
     /** If true, render content index only */
     contentOnly: boolean
 
@@ -51,23 +48,6 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = ({ node, d
     if (excluded) {
         return null
     }
-    if (props.subpagesOnly) {
-        return (
-            <div className="documentation-index-node">
-                <ul className="pl-3">
-                    {node.children?.map((child, index) =>
-                        child.pathID ? (
-                            <div key={`${depth}-${index}`} className="text-nowrap">
-                                <Link to={toDocumentationURL({ ...repoRevision, pathID: child.pathID })}>
-                                    {child.pathID.slice('/'.length) + '/'}
-                                </Link>
-                            </div>
-                        ) : null
-                    )}
-                </ul>
-            </div>
-        )
-    }
     if (props.contentOnly) {
         if (node.detail.value === '') {
             const children = node.children.filter(child => !child.node ? false : !isExcluded(child.node, props.excludingTags))
@@ -88,7 +68,6 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = ({ node, d
                                 {...props}
                                 node={child.node!}
                                 depth={depth + 1}
-                                subpagesOnly={false}
                                 contentOnly={true}
                             />
                         )
@@ -100,23 +79,11 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = ({ node, d
 
     return (
         <div className="documentation-index-node">
-            <Link id="index-subpages" to={thisPage} className="text-nowrap">
-                Subpages
-            </Link>
-            <DocumentationIndexNode
-                key={`${depth}-subpages`}
-                {...props}
-                node={node}
-                depth={depth + 1}
-                subpagesOnly={true}
-                contentOnly={false}
-            />
             <DocumentationIndexNode
                 key={`${depth}-content`}
                 {...props}
                 node={node}
                 depth={depth + 1}
-                subpagesOnly={false}
                 contentOnly={true}
             />
         </div>

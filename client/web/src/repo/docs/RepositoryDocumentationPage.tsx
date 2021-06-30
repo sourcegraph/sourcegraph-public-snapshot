@@ -25,7 +25,7 @@ import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 
 import { DocumentationNode } from './DocumentationNode'
 import { DocumentationWelcomeAlert } from './DocumentationWelcomeAlert'
-import { fetchDocumentationPage, GQLDocumentationNode } from './graphql'
+import { fetchDocumentationPage, fetchDocumentationPathInfo, GQLDocumentationNode } from './graphql'
 import { RepositoryDocumentationSidebar, getSidebarVisibility } from './RepositoryDocumentationSidebar'
 
 const PageError: React.FunctionComponent<{ error: ErrorLike }> = ({ error }) => (
@@ -88,15 +88,36 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = ({ us
             )
         ) || LOADING
 
+    const pathInfo =
+        useObservable(
+            useMemo(
+                () =>
+                    fetchDocumentationPathInfo({
+                        repo: props.repo.id,
+                        revspec: props.commitID,
+                        pathID: pagePathID,
+                        ignoreIndex: true,
+                        maxDepth: 1,
+                    }).pipe(
+                        catchError(error => [asError(error)]),
+                        startWith(LOADING)
+                    ),
+                [props.repo.id, props.commitID, pagePathID]
+            )
+        ) || LOADING
+
     const [sidebarVisible, setSidebarVisible] = useState(getSidebarVisibility())
     const handleSidebarVisible = useCallback((visible: boolean) => setSidebarVisible(visible), [])
+
+    const loading = page === LOADING || pathInfo === LOADING
+    const error = isErrorLike(page) ? page : (isErrorLike(pathInfo) ? pathInfo : null);
 
     return (
         <div className="repository-docs-page">
             <PageTitle title="API docs" />
-            {page === LOADING ? <LoadingSpinner className="icon-inline m-1" /> : null}
-            {isErrorLike(page) && page.message === 'page not found' ? <PageNotFound /> : null}
-            {isErrorLike(page) && (page.message === 'no LSIF data' || page.message === 'no LSIF documentation') ? (
+            {loading ? <LoadingSpinner className="icon-inline m-1" /> : null}
+            {error && error.message === 'page not found' ? <PageNotFound /> : null}
+            {error && (error.message === 'no LSIF data' || error.message === 'no LSIF documentation') ? (
                 <div className="repository-docs-page__container">
                     <div className="repository-docs-page__container-content">
                         <div className="d-flex float-right">
@@ -133,18 +154,19 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = ({ us
                     </div>
                 </div>
             ) : null}
-            {isErrorLike(page) &&
-            page.message !== 'page not found' &&
-            page.message !== 'no LSIF data' &&
-            page.message !== 'no LSIF documentation' ? (
-                <PageError error={page} />
+            {isErrorLike(error) &&
+            error.message !== 'page not found' &&
+            error.message !== 'no LSIF data' &&
+            error.message !== 'no LSIF documentation' ? (
+                <PageError error={error} />
             ) : null}
-            {page !== LOADING && !isErrorLike(page) ? (
+            {page !== LOADING && !isErrorLike(page) && pathInfo !== LOADING && !isErrorLike(pathInfo) ? (
                 <>
                     <RepositoryDocumentationSidebar
                         {...props}
                         onToggle={handleSidebarVisible}
                         node={page.tree}
+                        pathInfo={pathInfo}
                         pagePathID={pagePathID}
                         depth={0}
                     />
