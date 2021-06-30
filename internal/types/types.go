@@ -3,7 +3,6 @@ package types
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"reflect"
 	"sort"
@@ -71,36 +70,8 @@ type Repo struct {
 
 // RepoBlock contains data about a repo that has been blocked. Blocked repos aren't returned by store methods by default.
 type RepoBlock struct {
-	At     time.Time
+	At     int64 // Unix timestamp
 	Reason string
-}
-
-func (b *RepoBlock) UnmarshalJSON(data []byte) error {
-	var v struct {
-		At     int64
-		Reason string
-	}
-
-	if err := json.Unmarshal(data, &v); err != nil {
-		return err
-	}
-
-	b.At = time.Unix(v.At, 0)
-	b.Reason = v.Reason
-
-	return nil
-}
-
-func (b RepoBlock) MarshalJSON() ([]byte, error) {
-	var v struct {
-		At     int64
-		Reason string
-	}
-
-	v.At = b.At.UTC().Unix()
-	v.Reason = b.Reason
-
-	return json.Marshal(v)
 }
 
 // CloneURLs returns all the clone URLs this repo is clonable from.

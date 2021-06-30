@@ -95,11 +95,8 @@ func (s *RepoStore) ensureStore() {
 	})
 }
 
-// Get returns metadata for the request repository ID. It fetches data
-// only from the database and NOT from any external sources. If the
-// caller is concerned the copy of the data in the database might be
-// stale, the caller is responsible for fetching data from any
-// external services.
+// Get finds and returns the repo with the given repository ID from the database.
+// When a repo isn't found or has been blocked, an error is returned.
 func (s *RepoStore) Get(ctx context.Context, id api.RepoID) (_ *types.Repo, err error) {
 	if Mocks.Repos.Get != nil {
 		return Mocks.Repos.Get(ctx, id)
@@ -135,6 +132,8 @@ func (s *RepoStore) Get(ctx context.Context, id api.RepoID) (_ *types.Repo, err 
 // Name is the name for this repository (e.g., "github.com/user/repo"). It is
 // the same as URI, unless the user configures a non-default
 // repositoryPathPattern.
+//
+// When a repo isn't found or has been blocked, an error is returned.
 func (s *RepoStore) GetByName(ctx context.Context, nameOrURI api.RepoName) (_ *types.Repo, err error) {
 	if Mocks.Repos.GetByName != nil {
 		return Mocks.Repos.GetByName(ctx, nameOrURI)
@@ -157,10 +156,7 @@ func (s *RepoStore) GetByName(ctx context.Context, nameOrURI api.RepoName) (_ *t
 	}
 
 	if len(repos) == 1 {
-		if err := repos[0].IsBlocked(); err != nil {
-			return nil, err
-		}
-		return repos[0], nil
+		return repos[0], repos[0].IsBlocked()
 	}
 
 	// We don't fetch in the same SQL query since uri is not unique and could
@@ -558,7 +554,6 @@ const (
 // List lists repositories in the Sourcegraph repository
 //
 // This will not return any repositories from external services that are not present in the Sourcegraph repository.
-// The result list is unsorted and has a fixed maximum limit of 1000 items.
 // Matching is done with fuzzy matching, i.e. "query" will match any repo name that matches the regexp `q.*u.*e.*r.*y`
 func (s *RepoStore) List(ctx context.Context, opt ReposListOptions) (results []*types.Repo, err error) {
 	tr, ctx := trace.New(ctx, "repos.List", "")

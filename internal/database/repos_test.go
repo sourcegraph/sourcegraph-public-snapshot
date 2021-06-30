@@ -413,7 +413,7 @@ func TestListIndexableRepos(t *testing.T) {
 			Name:  "github.com/foo/bar5",
 			Stars: 400,
 			Blocked: &types.RepoBlock{
-				At:     time.Now().UTC(),
+				At:     time.Now().UTC().Unix(),
 				Reason: "Failed to index too many times.",
 			},
 		},
