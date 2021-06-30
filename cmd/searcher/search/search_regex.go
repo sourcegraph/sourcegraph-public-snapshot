@@ -16,6 +16,7 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"go.uber.org/atomic"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/pathmatch"
@@ -363,25 +364,22 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMat
 	}
 
 	var (
-		wg            sync.WaitGroup
-		wgErrOnce     sync.Once
-		wgErr         error
 		filesSkipped  atomic.Uint32
 		filesSearched atomic.Uint32
 		limitHit      atomic.Bool
 	)
 
+	g, ctx := errgroup.WithContext(ctx)
+
 	// Start workers. They read from files and write to matches.
 	for i := 0; i < numWorkers; i++ {
-		wg.Add(1)
-		go func(rg *readerGrep) {
-			defer wg.Done()
-
+		rg := rg.Copy()
+		g.Go(func() error {
 			for {
 				// check whether we've been cancelled
 				select {
 				case <-ctx.Done():
-					return
+					return nil
 				default:
 				}
 
@@ -389,7 +387,7 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMat
 				filesmu.Lock()
 				if len(files) == 0 {
 					filesmu.Unlock()
-					return
+					return nil
 				}
 				f := &files[0]
 				files = files[1:]
@@ -406,11 +404,7 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMat
 				var fm protocol.FileMatch
 				fm, err := rg.FindZip(zf, f)
 				if err != nil {
-					wgErrOnce.Do(func() {
-						wgErr = err
-						cancel()
-					})
-					return
+					return err
 				}
 				match := len(fm.LineMatches) > 0
 				if !match && patternMatchesPaths {
@@ -429,12 +423,10 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMat
 					}
 				}
 			}
-		}(rg.Copy())
+		})
 	}
 
-	wg.Wait()
-
-	err = wgErr
+	err = g.Wait()
 	if err == nil && ctx.Err() == context.DeadlineExceeded {
 		// We stopped early because we were about to hit the deadline.
 		err = ctx.Err()
