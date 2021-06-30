@@ -1,5 +1,4 @@
 import {
-    gql as apolloGql,
     useQuery as useApolloQuery,
     useMutation as useApolloMutation,
     DocumentNode,
@@ -14,14 +13,16 @@ import {
     MutationTuple,
 } from '@apollo/client'
 import { useMemo } from 'react'
-import { Observable } from 'rxjs'
+import { Observable, from } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
+import { map } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 
 import { checkOk } from '../backend/fetch'
 import { createAggregateError } from '../util/errors'
 
 import * as GQL from './schema'
+import { fixObservable, getDocumentNode, getOperationType, apolloToGraphQLResult } from './utils'
 
 /**
  * Use this template string tag for all GraphQL queries.
@@ -33,12 +34,21 @@ export interface SuccessGraphQLResult<T> {
     data: T
     errors: undefined
 }
+
+// TODO: Use implements?
+interface GraphQLResponseError extends Omit<GQL.IGraphQLResponseError, 'locations'> {
+    message: string
+    locations?: readonly GQL.IGraphQLResponseErrorLocation[]
+}
+
 export interface ErrorGraphQLResult {
     data: undefined
-    errors: GQL.IGraphQLResponseError[]
+    errors: readonly GraphQLResponseError[]
 }
 
 export type GraphQLResult<T> = SuccessGraphQLResult<T> | ErrorGraphQLResult
+
+export type GraphQLRequestDocument = string | DocumentNode
 
 /**
  * Guarantees that the GraphQL query resulted in an error.
@@ -96,6 +106,33 @@ export function requestGraphQLCommon<T, V = object>({
     })
 }
 
+export function requestGraphQLCommonApollo<T, V = object>({
+    request,
+    variables,
+    client,
+}: {
+    request: string
+    variables?: V
+    client: ApolloClient<NormalizedCacheObject>
+}): Observable<GraphQLResult<T>> {
+    const document = getDocumentNode(request)
+    const operation = getOperationType(document)
+
+    if (operation === 'query') {
+        return from(
+            fixObservable(client.watchQuery({ query: document, variables, fetchPolicy: 'cache-and-network' }))
+        ).pipe(map(apolloToGraphQLResult))
+    }
+
+    if (operation === 'mutation') {
+        return from(client.mutate({ mutation: document, variables })).pipe(map(apolloToGraphQLResult))
+    }
+
+    // We don't support the GraphQL subscription operation.
+    // If we have a use-case for this in the future, we should use useSubscription from Apollo
+    throw new Error(`Unsupported GraphQL operation: ${operation}`)
+}
+
 export const graphQLClient = ({ headers }: { headers: RequestInit['headers'] }): ApolloClient<NormalizedCacheObject> =>
     new ApolloClient({
         uri: GRAPHQL_URI,
@@ -106,22 +143,7 @@ export const graphQLClient = ({ headers }: { headers: RequestInit['headers'] }):
         }),
     })
 
-type RequestDocument = string | DocumentNode
-
-/**
- * Returns a `DocumentNode` value to support integrations with GraphQL clients that require this.
- *
- * @param document The GraphQL operation payload
- * @returns The created `DocumentNode`
- */
-export const getDocumentNode = (document: RequestDocument): DocumentNode => {
-    if (typeof document === 'string') {
-        return apolloGql(document)
-    }
-    return document
-}
-
-const useDocumentNode = (document: RequestDocument): DocumentNode =>
+const useDocumentNode = (document: GraphQLRequestDocument): DocumentNode =>
     useMemo(() => getDocumentNode(document), [document])
 
 /**
@@ -133,7 +155,7 @@ const useDocumentNode = (document: RequestDocument): DocumentNode =>
  * @returns GraphQL response
  */
 export function useQuery<TData = any, TVariables = OperationVariables>(
-    query: RequestDocument,
+    query: GraphQLRequestDocument,
     options: QueryHookOptions<TData, TVariables>
 ): QueryResult<TData, TVariables> {
     const documentNode = useDocumentNode(query)
@@ -149,7 +171,7 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
  * @returns GraphQL response
  */
 export function useMutation<TData = any, TVariables = OperationVariables>(
-    mutation: RequestDocument,
+    mutation: GraphQLRequestDocument,
     options?: MutationHookOptions<TData, TVariables>
 ): MutationTuple<TData, TVariables> {
     const documentNode = useDocumentNode(mutation)
