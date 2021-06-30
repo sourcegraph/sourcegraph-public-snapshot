@@ -40,7 +40,8 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = ({ node, d
     }
     const hashIndex = node.pathID.indexOf('#')
     const hash = hashIndex !== -1 ? node.pathID.slice(hashIndex + '#'.length) : ''
-    const path = node.pathID.slice('/'.length, hashIndex)
+    let path = hashIndex !== -1 ? node.pathID.slice(0, hashIndex) : node.pathID
+    path = path === '/' ? '' : path
     const thisPage = toDocumentationURL({ ...repoRevision, pathID: path + '#' + hash })
 
     if (props.subpagesOnly) {
