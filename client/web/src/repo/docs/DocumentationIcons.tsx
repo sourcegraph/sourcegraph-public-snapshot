@@ -11,14 +11,14 @@ import { Tag } from './DocumentationNode'
  * @param tags of the documentation node
  */
 function pickIconTags(tags: Tag[]): Tag[] {
-    const genericTags = new Set(['private', 'deprecated', 'test', 'benchmark', 'example', 'license', 'owner']);
-    const generics = tags.filter(tag => genericTags.has(tag));
-    const symbols = tags.filter(tag => !genericTags.has(tag));
+    const genericTags = new Set(['private', 'deprecated', 'test', 'benchmark', 'example', 'license', 'owner'])
+    const generics = tags.filter(tag => genericTags.has(tag))
+    const symbols = tags.filter(tag => !genericTags.has(tag))
     if (symbols.length > 0) {
-        generics.push(symbols[0]);
-        return generics;
+        generics.push(symbols[0])
+        return generics
     }
-    return generics;
+    return generics
 }
 
 interface Props {
@@ -29,7 +29,11 @@ interface Props {
  * Renders icons for the given documentation tags on a single node.
  */
 export const DocumentationIcons: React.FunctionComponent<Props> = ({ tags }) => {
-    return <>
-        {pickIconTags(tags).map(tag => <DocumentationIcon key={tag} tag={tag} />)}
-    </>
+    return (
+        <>
+            {pickIconTags(tags).map(tag => (
+                <DocumentationIcon key={tag} tag={tag} />
+            ))}
+        </>
+    )
 }

@@ -122,10 +122,5 @@ interface Props {
  */
 export const DocumentationIcon: React.FunctionComponent<Props> = ({ tag, className = '' }) => {
     const Icon = getDocumentationIconComponent(tag)
-    return (
-        <Icon
-            className={`documentation-icon documentation-icon--tag-${tag} ${className}`}
-            data-tooltip={tag}
-        />
-    )
+    return <Icon className={`documentation-icon documentation-icon--tag-${tag} ${className}`} data-tooltip={tag} />
 }
