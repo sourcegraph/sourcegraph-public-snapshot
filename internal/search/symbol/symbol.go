@@ -3,6 +3,7 @@ package symbol
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"regexp/syntax"
 	"sort"
 	"time"
@@ -361,6 +362,30 @@ func Compute(ctx context.Context, repoName types.RepoName, commitID api.CommitID
 		})
 	}
 	return matches, err
+}
+
+// GetMatchAtLineCharacter retrieves the shortest matching symbol (if exists) defined
+// at a specific line number and character offset in the provided file.
+func GetMatchAtLineCharacter(ctx context.Context, repo types.RepoName, commitID api.CommitID, filePath string, line int, character int) (*result.SymbolMatch, error) {
+	// Should be large enough to include all symbols from a single file
+	first := int32(999999)
+	emptyString := ""
+	includePatterns := []string{regexp.QuoteMeta(filePath)}
+	symbolMatches, err := Compute(ctx, repo, commitID, &emptyString, &emptyString, &first, &includePatterns)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var match *result.SymbolMatch
+	for _, symbolMatch := range symbolMatches {
+		symbolRange := symbolMatch.Symbol.Range()
+		hasMatchingStartRange := symbolRange.Start.Line == line && symbolRange.Start.Character == character
+		if hasMatchingStartRange && (match == nil || len(symbolMatch.Symbol.Name) < len(match.Symbol.Name)) {
+			match = symbolMatch
+		}
+	}
+	return match, nil
 }
 
 func limitOrDefault(first *int32) int {

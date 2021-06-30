@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/gorilla/mux"
@@ -33,6 +34,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -148,16 +151,6 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 		WebpackDevServer: webpackDevServer,
 	}
 
-	if blobPath, ok := mux.Vars(r)["Path"]; ok && envvar.OpenGraphPreviewServiceURL() != "" && envvar.SourcegraphDotComMode() {
-		repo := mux.Vars(r)["Repo"]
-		lineRange := findLineRangeInQueryParameters(r.URL.Query())
-
-		common.Metadata.ShowPreview = true
-		common.Metadata.PreviewImage = getBlobPreviewImageURL(envvar.OpenGraphPreviewServiceURL(), r.URL.Path, lineRange)
-		common.Metadata.Description = fmt.Sprintf("%s/%s", globals.ExternalURL(), repo)
-		common.Metadata.Title = getBlobPreviewTitle(blobPath, lineRange)
-	}
-
 	if _, ok := mux.Vars(r)["Repo"]; ok {
 		// Common repo pages (blob, tree, etc).
 		var err error
@@ -234,6 +227,35 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 			}
 		}()
 	}
+
+	// common.Repo and common.CommitID are populated in the above if statement
+	if blobPath, ok := mux.Vars(r)["Path"]; ok && envvar.OpenGraphPreviewServiceURL() != "" && envvar.SourcegraphDotComMode() {
+		lineRange := findLineRangeInQueryParameters(r.URL.Query())
+
+		var symbolResult *result.Symbol
+		if lineRange != nil && lineRange.StartLine != 0 && lineRange.StartLineCharacter != 0 {
+			// Do not slow down the page load if symbol data takes too long to retrieve.
+			ctx, cancel := context.WithTimeout(r.Context(), time.Second*1)
+			defer cancel()
+
+			if symbolMatch, _ := symbol.GetMatchAtLineCharacter(
+				ctx,
+				types.RepoName{ID: common.Repo.ID, Name: common.Repo.Name},
+				common.CommitID,
+				strings.TrimLeft(blobPath, "/"),
+				lineRange.StartLine-1,
+				lineRange.StartLineCharacter-1,
+			); symbolMatch != nil {
+				symbolResult = &symbolMatch.Symbol
+			}
+		}
+
+		common.Metadata.ShowPreview = true
+		common.Metadata.PreviewImage = getBlobPreviewImageURL(envvar.OpenGraphPreviewServiceURL(), r.URL.Path, lineRange, symbolResult)
+		common.Metadata.Description = fmt.Sprintf("%s/%s", globals.ExternalURL(), mux.Vars(r)["Repo"])
+		common.Metadata.Title = getBlobPreviewTitle(blobPath, lineRange, symbolResult)
+	}
+
 	return common, nil
 }
 
