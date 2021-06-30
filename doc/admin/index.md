@@ -71,3 +71,4 @@ Site administrators are the admins responsible for deploying, managing, and conf
 - [How to troubleshoot a Sourcegraph extension](how-to/troubleshoot-sg-extension.md)
 - [How to troubleshoot a repository that is not being updated](how-to/repo-not-updated.md)
 - [How to configure submodules](how-to/submodule-configuration.md)
+- [How to setup HTTPS connection with Ingress controller](how-to/setup-https.md)
