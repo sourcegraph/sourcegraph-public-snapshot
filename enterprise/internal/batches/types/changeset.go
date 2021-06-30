@@ -82,6 +82,25 @@ func (s ChangesetPublicationState) Unpublished() bool {
 	return s == ChangesetPublicationStateUnpublished
 }
 
+type ChangesetUiPublicationState string
+
+const (
+	ChangesetUiPublicationStateUnpublished ChangesetUiPublicationState = "UNPUBLISHED"
+	ChangesetUiPublicationStateDraft       ChangesetUiPublicationState = "DRAFT"
+	ChangesetUiPublicationStatePublished   ChangesetUiPublicationState = "PUBLISHED"
+)
+
+func (s ChangesetUiPublicationState) Valid() bool {
+	switch s {
+	case ChangesetUiPublicationStateUnpublished,
+		ChangesetUiPublicationStateDraft,
+		ChangesetUiPublicationStatePublished:
+		return true
+	default:
+		return false
+	}
+}
+
 // ReconcilerState defines the possible states of a Reconciler.
 type ReconcilerState string
 
@@ -237,7 +256,8 @@ type Changeset struct {
 	CurrentSpecID  int64
 	PreviousSpecID int64
 
-	PublicationState ChangesetPublicationState // "unpublished", "published"
+	PublicationState   ChangesetPublicationState // "unpublished", "published"
+	UiPublicationState *ChangesetUiPublicationState
 
 	// All of the following fields are used by workerutil.Worker.
 	ReconcilerState  ReconcilerState

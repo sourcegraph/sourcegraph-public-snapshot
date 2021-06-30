@@ -6,8 +6,13 @@ BEGIN;
 DROP VIEW IF EXISTS
     reconciler_changesets;
 
-DROP INDEX IF EXISTS changesets_external_title_idx;
-ALTER TABLE changesets DROP COLUMN IF EXISTS external_title;
+ALTER TABLE
+    changesets
+DROP COLUMN IF EXISTS
+    ui_publication_state;
+
+DROP TYPE IF EXISTS
+    batch_changes_changeset_ui_publication_state;
 
 CREATE VIEW reconciler_changesets AS
     SELECT c.* FROM changesets c

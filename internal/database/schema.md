@@ -197,43 +197,44 @@ Referenced by:
 
 # Table "public.changesets"
 ```
-          Column          |           Type           | Collation | Nullable |                Default                 
---------------------------+--------------------------+-----------+----------+----------------------------------------
- id                       | bigint                   |           | not null | nextval('changesets_id_seq'::regclass)
- batch_change_ids         | jsonb                    |           | not null | '{}'::jsonb
- repo_id                  | integer                  |           | not null | 
- created_at               | timestamp with time zone |           | not null | now()
- updated_at               | timestamp with time zone |           | not null | now()
- metadata                 | jsonb                    |           |          | '{}'::jsonb
- external_id              | text                     |           |          | 
- external_service_type    | text                     |           | not null | 
- external_deleted_at      | timestamp with time zone |           |          | 
- external_branch          | text                     |           |          | 
- external_updated_at      | timestamp with time zone |           |          | 
- external_state           | text                     |           |          | 
- external_review_state    | text                     |           |          | 
- external_check_state     | text                     |           |          | 
- diff_stat_added          | integer                  |           |          | 
- diff_stat_changed        | integer                  |           |          | 
- diff_stat_deleted        | integer                  |           |          | 
- sync_state               | jsonb                    |           | not null | '{}'::jsonb
- current_spec_id          | bigint                   |           |          | 
- previous_spec_id         | bigint                   |           |          | 
- publication_state        | text                     |           |          | 'UNPUBLISHED'::text
- owned_by_batch_change_id | bigint                   |           |          | 
- reconciler_state         | text                     |           |          | 'queued'::text
- failure_message          | text                     |           |          | 
- started_at               | timestamp with time zone |           |          | 
- finished_at              | timestamp with time zone |           |          | 
- process_after            | timestamp with time zone |           |          | 
- num_resets               | integer                  |           | not null | 0
- closing                  | boolean                  |           | not null | false
- num_failures             | integer                  |           | not null | 0
- log_contents             | text                     |           |          | 
- execution_logs           | json[]                   |           |          | 
- syncer_error             | text                     |           |          | 
- external_title           | text                     |           |          | 
- worker_hostname          | text                     |           | not null | ''::text
+          Column          |                     Type                     | Collation | Nullable |                Default                 
+--------------------------+----------------------------------------------+-----------+----------+----------------------------------------
+ id                       | bigint                                       |           | not null | nextval('changesets_id_seq'::regclass)
+ batch_change_ids         | jsonb                                        |           | not null | '{}'::jsonb
+ repo_id                  | integer                                      |           | not null | 
+ created_at               | timestamp with time zone                     |           | not null | now()
+ updated_at               | timestamp with time zone                     |           | not null | now()
+ metadata                 | jsonb                                        |           |          | '{}'::jsonb
+ external_id              | text                                         |           |          | 
+ external_service_type    | text                                         |           | not null | 
+ external_deleted_at      | timestamp with time zone                     |           |          | 
+ external_branch          | text                                         |           |          | 
+ external_updated_at      | timestamp with time zone                     |           |          | 
+ external_state           | text                                         |           |          | 
+ external_review_state    | text                                         |           |          | 
+ external_check_state     | text                                         |           |          | 
+ diff_stat_added          | integer                                      |           |          | 
+ diff_stat_changed        | integer                                      |           |          | 
+ diff_stat_deleted        | integer                                      |           |          | 
+ sync_state               | jsonb                                        |           | not null | '{}'::jsonb
+ current_spec_id          | bigint                                       |           |          | 
+ previous_spec_id         | bigint                                       |           |          | 
+ publication_state        | text                                         |           |          | 'UNPUBLISHED'::text
+ owned_by_batch_change_id | bigint                                       |           |          | 
+ reconciler_state         | text                                         |           |          | 'queued'::text
+ failure_message          | text                                         |           |          | 
+ started_at               | timestamp with time zone                     |           |          | 
+ finished_at              | timestamp with time zone                     |           |          | 
+ process_after            | timestamp with time zone                     |           |          | 
+ num_resets               | integer                                      |           | not null | 0
+ closing                  | boolean                                      |           | not null | false
+ num_failures             | integer                                      |           | not null | 0
+ log_contents             | text                                         |           |          | 
+ execution_logs           | json[]                                       |           |          | 
+ syncer_error             | text                                         |           |          | 
+ external_title           | text                                         |           |          | 
+ worker_hostname          | text                                         |           | not null | ''::text
+ ui_publication_state     | batch_changes_changeset_ui_publication_state |           |          | 
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
@@ -2132,41 +2133,44 @@ Triggers:
 
 # View "public.reconciler_changesets"
 ```
-          Column          |           Type           | Collation | Nullable | Default 
---------------------------+--------------------------+-----------+----------+---------
- id                       | bigint                   |           |          | 
- batch_change_ids         | jsonb                    |           |          | 
- repo_id                  | integer                  |           |          | 
- created_at               | timestamp with time zone |           |          | 
- updated_at               | timestamp with time zone |           |          | 
- metadata                 | jsonb                    |           |          | 
- external_id              | text                     |           |          | 
- external_service_type    | text                     |           |          | 
- external_deleted_at      | timestamp with time zone |           |          | 
- external_branch          | text                     |           |          | 
- external_updated_at      | timestamp with time zone |           |          | 
- external_state           | text                     |           |          | 
- external_review_state    | text                     |           |          | 
- external_check_state     | text                     |           |          | 
- diff_stat_added          | integer                  |           |          | 
- diff_stat_changed        | integer                  |           |          | 
- diff_stat_deleted        | integer                  |           |          | 
- sync_state               | jsonb                    |           |          | 
- current_spec_id          | bigint                   |           |          | 
- previous_spec_id         | bigint                   |           |          | 
- publication_state        | text                     |           |          | 
- owned_by_batch_change_id | bigint                   |           |          | 
- reconciler_state         | text                     |           |          | 
- failure_message          | text                     |           |          | 
- started_at               | timestamp with time zone |           |          | 
- finished_at              | timestamp with time zone |           |          | 
- process_after            | timestamp with time zone |           |          | 
- num_resets               | integer                  |           |          | 
- closing                  | boolean                  |           |          | 
- num_failures             | integer                  |           |          | 
- log_contents             | text                     |           |          | 
- execution_logs           | json[]                   |           |          | 
- syncer_error             | text                     |           |          | 
+          Column          |                     Type                     | Collation | Nullable | Default 
+--------------------------+----------------------------------------------+-----------+----------+---------
+ id                       | bigint                                       |           |          | 
+ batch_change_ids         | jsonb                                        |           |          | 
+ repo_id                  | integer                                      |           |          | 
+ created_at               | timestamp with time zone                     |           |          | 
+ updated_at               | timestamp with time zone                     |           |          | 
+ metadata                 | jsonb                                        |           |          | 
+ external_id              | text                                         |           |          | 
+ external_service_type    | text                                         |           |          | 
+ external_deleted_at      | timestamp with time zone                     |           |          | 
+ external_branch          | text                                         |           |          | 
+ external_updated_at      | timestamp with time zone                     |           |          | 
+ external_state           | text                                         |           |          | 
+ external_review_state    | text                                         |           |          | 
+ external_check_state     | text                                         |           |          | 
+ diff_stat_added          | integer                                      |           |          | 
+ diff_stat_changed        | integer                                      |           |          | 
+ diff_stat_deleted        | integer                                      |           |          | 
+ sync_state               | jsonb                                        |           |          | 
+ current_spec_id          | bigint                                       |           |          | 
+ previous_spec_id         | bigint                                       |           |          | 
+ publication_state        | text                                         |           |          | 
+ owned_by_batch_change_id | bigint                                       |           |          | 
+ reconciler_state         | text                                         |           |          | 
+ failure_message          | text                                         |           |          | 
+ started_at               | timestamp with time zone                     |           |          | 
+ finished_at              | timestamp with time zone                     |           |          | 
+ process_after            | timestamp with time zone                     |           |          | 
+ num_resets               | integer                                      |           |          | 
+ closing                  | boolean                                      |           |          | 
+ num_failures             | integer                                      |           |          | 
+ log_contents             | text                                         |           |          | 
+ execution_logs           | json[]                                       |           |          | 
+ syncer_error             | text                                         |           |          | 
+ external_title           | text                                         |           |          | 
+ worker_hostname          | text                                         |           |          | 
+ ui_publication_state     | batch_changes_changeset_ui_publication_state |           |          | 
 
 ```
 
@@ -2205,7 +2209,10 @@ Triggers:
     c.num_failures,
     c.log_contents,
     c.execution_logs,
-    c.syncer_error
+    c.syncer_error,
+    c.external_title,
+    c.worker_hostname,
+    c.ui_publication_state
    FROM (changesets c
      JOIN repo r ON ((r.id = c.repo_id)))
   WHERE ((r.deleted_at IS NULL) AND (EXISTS ( SELECT 1
@@ -2265,6 +2272,12 @@ Triggers:
      JOIN repo ON ((changeset_specs.repo_id = repo.id)))
   WHERE ((changeset_specs.external_id IS NOT NULL) AND (repo.deleted_at IS NULL));
 ```
+
+# Type batch_changes_changeset_ui_publication_state
+
+- UNPUBLISHED
+- DRAFT
+- PUBLISHED
 
 # Type cm_email_priority
 

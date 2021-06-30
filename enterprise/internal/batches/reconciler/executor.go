@@ -30,7 +30,6 @@ func executePlan(ctx context.Context, gitserverClient GitserverClient, sourcer s
 		tx:                tx,
 		ch:                plan.Changeset,
 		spec:              plan.ChangesetSpec,
-		delta:             plan.Delta,
 	}
 
 	return e.Run(ctx, plan)
@@ -43,7 +42,6 @@ type executor struct {
 	tx                *store.Store
 	ch                *btypes.Changeset
 	spec              *btypes.ChangesetSpec
-	delta             *ChangesetSpecDelta
 
 	css  sources.ChangesetSource
 	repo *types.Repo

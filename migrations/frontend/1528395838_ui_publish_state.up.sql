@@ -1,13 +1,23 @@
 BEGIN;
 
+CREATE TYPE
+    batch_changes_changeset_ui_publication_state
+AS ENUM (
+    'UNPUBLISHED',
+    'DRAFT',
+    'PUBLISHED'
+);
+
 -- Note that we have to regenerate the reconciler_changesets view, as the SELECT
 -- c.* in the view definition isn't refreshed when the fields change within the
 -- changesets table.
 DROP VIEW IF EXISTS
     reconciler_changesets;
 
-DROP INDEX IF EXISTS changesets_external_title_idx;
-ALTER TABLE changesets DROP COLUMN IF EXISTS external_title;
+ALTER TABLE
+    changesets
+ADD COLUMN IF NOT EXISTS
+    ui_publication_state batch_changes_changeset_ui_publication_state NULL DEFAULT NULL;
 
 CREATE VIEW reconciler_changesets AS
     SELECT c.* FROM changesets c
