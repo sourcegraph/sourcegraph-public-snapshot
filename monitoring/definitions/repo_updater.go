@@ -434,7 +434,7 @@ func RepoUpdater() *monitoring.Container {
 						shared.ContainerCPUUsage("repo-updater", monitoring.ObservableOwnerCoreApplication).Observable(),
 						shared.ContainerMemoryUsage("repo-updater", monitoring.ObservableOwnerCoreApplication).
 							WithWarning(nil).
-							WithCritical(monitoring.Alert().GreaterOrEqual(90, nil)).
+							WithCritical(monitoring.Alert().GreaterOrEqual(90, nil).For(10 * time.Minute)).
 							Observable(),
 					},
 					{
