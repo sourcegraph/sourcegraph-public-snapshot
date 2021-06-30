@@ -64,6 +64,14 @@ type Repo struct {
 	Sources map[string]*SourceInfo
 	// Metadata contains the raw source code host JSON metadata.
 	Metadata interface{}
+	// Blocked contains the reason this repository was blocked and the timestamp of when it happened.
+	Blocked *RepoBlock `json:",omitempty"`
+}
+
+// RepoBlock contains data about a repo that has been blocked. Blocked repos aren't returned by store methods by default.
+type RepoBlock struct {
+	At     int64 // Unix timestamp
+	Reason string
 }
 
 // CloneURLs returns all the clone URLs this repo is clonable from.
@@ -88,6 +96,14 @@ func (r *Repo) ExternalServiceIDs() []int64 {
 		ids = append(ids, src.ExternalServiceID())
 	}
 	return ids
+}
+
+// IsBlocked returns a non nil error if the repo has been blocked.
+func (r *Repo) IsBlocked() error {
+	if r.Blocked != nil {
+		return fmt.Errorf("%s has been blocked. reason: %s", r.Name, r.Blocked.Reason)
+	}
+	return nil
 }
 
 // Update updates Repo r with the fields from the given newer Repo n,
