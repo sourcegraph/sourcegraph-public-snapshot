@@ -1,31 +1,34 @@
+@import './RepositoryDocumentationSidebar';
+
 .repository-docs-page {
     width: 100%;
     display: flex;
     overflow: hidden;
-    &__sidebar {
-        padding: 1rem;
-    }
     &__container {
-        display: flex;
-        flex-direction: row;
-        justify-content: center;
         overflow: auto;
         width: 100%;
-        padding: 1rem;
-        &--sidebar-visible {
-            justify-content: unset;
-        }
         &-content {
             width: 60rem;
+            padding-left: 2rem;
+            padding-bottom: 3rem;
+            margin: auto;
+            &--sidebar-visible {
+                margin: unset;
+            }
         }
-        &-feedback {
-            display: flex;
-            position: absolute;
-            top: 0;
-            right: 1rem;
-            padding: 1rem;
+    }
+    &__feedback-container {
+        width: 0;
+        height: 0;
+        &-content {
+            display: block;
+            width: 19rem;
+            float: right;
             .btn {
                 background-color: var(--color-bg-1);
+            }
+            .feedback-prompt {
+                display: inline-block;
             }
         }
     }

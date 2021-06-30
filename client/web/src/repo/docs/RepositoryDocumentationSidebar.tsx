@@ -15,7 +15,6 @@ import { GQLDocumentationNode } from './DocumentationNode'
 
 interface Props extends Partial<RevisionSpec>, ResolvedRevisionSpec {
     repo: RepositoryFields
-    className: string
     history: H.History
     location: H.Location
     onToggle: (visible: boolean) => void
@@ -65,9 +64,8 @@ export const RepositoryDocumentationSidebar: React.FunctionComponent<Props> = ({
             defaultSize={384}
             handlePosition="right"
             storageKey={SIZE_STORAGE_KEY}
-            className={props.className}
             element={
-                <div className="d-flex flex-column w-100 border-right">
+                <div className="repository-documentation-sidebar d-flex flex-column w-100 border-right">
                     <div className="d-flex flex-0 mx-3">
                         <Button
                             onClick={handleSidebarToggle}
@@ -79,7 +77,7 @@ export const RepositoryDocumentationSidebar: React.FunctionComponent<Props> = ({
                             <ChevronDoubleLeftIcon className="icon-inline" />
                         </Button>
                     </div>
-                    <div aria-hidden={true} className="d-flex explorer overflow-auto px-3">
+                    <div aria-hidden={true} className="repository-documentation-sidebar-scroller overflow-auto px-3">
                         <DocumentationIndexNode
                             {...props}
                             node={props.node}
