@@ -1,5 +1,5 @@
-import React from 'react'
 import BookOpenVariantIcon from 'mdi-react/BookOpenVariantIcon'
+import React from 'react'
 
 import { DismissibleAlert } from '@sourcegraph/web/src/components/DismissibleAlert'
 
