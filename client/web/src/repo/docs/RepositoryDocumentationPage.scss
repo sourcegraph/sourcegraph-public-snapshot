@@ -1,4 +1,5 @@
 @import './RepositoryDocumentationSidebar';
+@import './DocumentationWelcomeAlert';
 
 .repository-docs-page {
     width: 100%;
@@ -23,6 +24,7 @@
         &-content {
             display: block;
             width: 19rem;
+            margin-top: 1rem;
             float: right;
             .btn {
                 background-color: var(--color-bg-1);

@@ -28,6 +28,7 @@ import { toDocumentationURL } from '../../util/url'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 
 import { DocumentationNode, GQLDocumentationNode } from './DocumentationNode'
+import { DocumentationWelcomeAlert } from './DocumentationWelcomeAlert'
 import { RepositoryDocumentationSidebar, getSidebarVisibility } from './RepositoryDocumentationSidebar'
 
 interface DocumentationPageResults {
@@ -202,6 +203,7 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = ({ us
                                 sidebarVisible ? ' repository-docs-page__container-content--sidebar-visible' : ''
                             }`}
                         >
+                            <DocumentationWelcomeAlert />
                             <DocumentationNode
                                 {...props}
                                 useBreadcrumb={useBreadcrumb}
