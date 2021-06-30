@@ -30,7 +30,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
--
+- The experimental paginated search feature (the `stable:` keyword) has been removed, to be replaced with streaming search. [#22428](https://github.com/sourcegraph/sourcegraph/pull/22428)
 
 ### API docs (experimental)
 
