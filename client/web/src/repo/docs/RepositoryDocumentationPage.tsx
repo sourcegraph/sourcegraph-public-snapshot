@@ -155,18 +155,17 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = ({ us
                 <>
                     <RepositoryDocumentationSidebar
                         {...props}
-                        className="repository-docs-page__sidebar"
                         onToggle={handleSidebarVisible}
                         node={page.tree}
                         pagePathID={pagePathID}
                         depth={0}
                     />
-                    <div
-                        className={`repository-docs-page__container${
-                            sidebarVisible ? ' repository-docs-page__container--sidebar-visible' : ''
-                        }`}
-                    >
-                        <div className="repository-docs-page__container-content">
+                    <div className="repository-docs-page__container">
+                        <div
+                            className={`repository-docs-page__container-content${
+                                sidebarVisible ? ' repository-docs-page__container-content--sidebar-visible' : ''
+                            }`}
+                        >
                             <DocumentationNode
                                 {...props}
                                 useBreadcrumb={useBreadcrumb}
@@ -175,7 +174,9 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = ({ us
                                 depth={0}
                             />
                         </div>
-                        <div className="repository-docs-page__container-feedback">
+                    </div>
+                    <div className="repository-docs-page__feedback-container">
+                        <div className="repository-docs-page__feedback-container-content">
                             <Badge status="experimental" className="text-uppercase mr-2" />
                             <a
                                 // eslint-disable-next-line react/jsx-no-target-blank
