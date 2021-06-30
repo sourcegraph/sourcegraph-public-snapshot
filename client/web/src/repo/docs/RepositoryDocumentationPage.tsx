@@ -27,6 +27,8 @@ import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 
 import { DocumentationNode, GQLDocumentationNode } from './DocumentationNode'
 import { RepositoryDocumentationSidebar, getSidebarVisibility } from './RepositoryDocumentationSidebar'
+import BookOpenVariantIcon from 'mdi-react/BookOpenVariantIcon'
+import { Container } from '@sourcegraph/wildcard'
 
 interface DocumentationPageResults {
     node: GQL.IRepository
@@ -142,13 +144,47 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = ({ us
             <PageTitle title="API docs" />
             {page === LOADING ? <LoadingSpinner className="icon-inline m-1" /> : null}
             {isErrorLike(page) && page.message === 'page not found' ? <PageNotFound /> : null}
-            {isErrorLike(page) && page.message === 'no LSIF data' ? (
-                <p>This repository does not have LSIF data.</p>
+            {isErrorLike(page) && (page.message === 'no LSIF data' || page.message === 'no LSIF documentation') ? (
+                <div className="repository-docs-page__container">
+                    <div className="repository-docs-page__container-content">
+                        <div className="d-flex float-right">
+                            <a
+                                // eslint-disable-next-line react/jsx-no-target-blank
+                                target="_blank"
+                                rel="noopener"
+                                href="https://docs.sourcegraph.com/code_intelligence/apidocs"
+                                className="mr-1 btn btn-sm text-decoration-none btn-link btn-outline-secondary"
+                            >
+                                Learn more
+                            </a>
+                            <FeedbackPrompt routes={routes} />
+                        </div>
+                        <h1>
+                            <BookOpenVariantIcon className="icon-inline mr-1" />
+                            API docs
+                            <Badge status="experimental" className="text-uppercase ml-2" />
+                        </h1>
+                        <p>API documentation generated for all your code</p>
+                        <Container>
+                            <h2 className="text-muted mb-2">This repository has no LSIF documentation data.</h2>
+                            <h3>
+                                <a
+                                    // eslint-disable-next-line react/jsx-no-target-blank
+                                    target="_blank"
+                                    rel="noopener"
+                                    href="https://docs.sourcegraph.com/code_intelligence/apidocs"
+                                >
+                                    Learn more
+                                </a>
+                            </h3>
+                        </Container>
+                    </div>
+                </div>
             ) : null}
-            {isErrorLike(page) && page.message === 'no LSIF documentation' ? (
-                <p>This repository does not have LSIF documentation data. Currently, only lsif-go is supported.</p>
-            ) : null}
-            {isErrorLike(page) && page.message !== 'page not found' && page.message !== 'no LSIF documentation' ? (
+            {isErrorLike(page) &&
+            page.message !== 'page not found' &&
+            page.message !== 'no LSIF data' &&
+            page.message !== 'no LSIF documentation' ? (
                 <PageError error={page} />
             ) : null}
             {page !== LOADING && !isErrorLike(page) ? (
