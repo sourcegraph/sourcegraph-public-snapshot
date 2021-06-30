@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	database2 "github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
@@ -20,7 +20,7 @@ type insightSeriesResolver struct {
 	insightsStore   store.Interface
 	workerBaseStore *basestore.Store
 	series          *schema.InsightSeries
-	repoStore       *database2.RepoStore
+	denylist        []api.RepoID
 }
 
 func (r *insightSeriesResolver) Label() string { return r.series.Label }
@@ -47,15 +47,7 @@ func (r *insightSeriesResolver) Points(ctx context.Context, args *graphqlbackend
 	}
 	// TODO(slimsag): future: Pass through opts.Limit
 
-	// 🚨 SECURITY: This is a double-negative repo permission enforcement. The list of authorized repos is generally expected to be very large, and nearly the full
-	// set of repos installed on Sourcegraph. To make this faster, we query Postgres for a list of repos the current user cannot see, and then exclude those from the
-	// time series results. 🚨
-	exclude, err := FetchUnauthorizedRepos(ctx, r.repoStore.Handle().DB())
-	if err != nil {
-		return nil, err
-	}
-	opts.Excluded = exclude
-
+	opts.Excluded = r.denylist
 	points, err := r.insightsStore.SeriesPoints(ctx, opts)
 	if err != nil {
 		return nil, err

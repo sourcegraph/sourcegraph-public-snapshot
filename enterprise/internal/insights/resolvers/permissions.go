@@ -3,8 +3,6 @@ package resolvers
 import (
 	"context"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 
 	"github.com/keegancsmith/sqlf"
@@ -26,8 +24,6 @@ func FetchUnauthorizedRepos(ctx context.Context, db dbutil.DB) (results []api.Re
 	}
 
 	q := sqlf.Join([]*sqlf.Query{sqlf.Sprintf(fetchUnauthorizedReposSql), conds}, " ")
-
-	log15.Info("unauth_query", "query", q.Query(sqlf.PostgresBindVar), "args", q.Args())
 
 	rows, err := store.Query(ctx, q)
 	if err != nil {
