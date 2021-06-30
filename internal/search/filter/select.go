@@ -38,8 +38,11 @@ var validSelectors = object{
 			"removed": nil,
 		},
 	},
-	Content:    nil,
-	File:       nil,
+	Content: nil,
+	File: {
+		"directory": nil,
+		"path":      nil,
+	},
 	Repository: nil,
 	Symbol: object{
 		/* cf. SymbolKind https://microsoft.github.io/language-server-protocol/specification */

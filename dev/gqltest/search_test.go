@@ -1110,6 +1110,11 @@ func testSearchClient(t *testing.T, client searchClient) {
 				counts: counts{File: 1},
 			},
 			{
+				name:   `select file.directory`,
+				query:  `repo:go-diff HunkNoChunksize or diffFile *os.File select:file.directory`,
+				counts: counts{File: 2},
+			},
+			{
 				name:   `select content`,
 				query:  `repo:go-diff patterntype:literal HunkNoChunksize select:content`,
 				counts: counts{Content: 1},
