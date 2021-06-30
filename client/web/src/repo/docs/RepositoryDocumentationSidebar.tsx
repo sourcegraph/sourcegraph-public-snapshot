@@ -11,7 +11,7 @@ import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 import { RepositoryFields } from '../../graphql-operations'
 
 import { DocumentationIndexNode } from './DocumentationIndexNode'
-import { GQLDocumentationNode } from './DocumentationNode'
+import { GQLDocumentationNode } from './graphql'
 
 interface Props extends Partial<RevisionSpec>, ResolvedRevisionSpec {
     repo: RepositoryFields

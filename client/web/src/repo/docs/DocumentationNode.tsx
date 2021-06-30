@@ -12,7 +12,7 @@ import { RepositoryFields } from '../../graphql-operations'
 import { toDocumentationURL } from '../../util/url'
 
 import { DocumentationIcons } from './DocumentationIcons'
-import { GQLDocumentationNode, Tag } from './graphql'
+import { GQLDocumentationNode, Tag, isExcluded } from './graphql'
 
 interface Props extends Partial<RevisionSpec>, ResolvedRevisionSpec, BreadcrumbSetters {
     repo: RepositoryFields

@@ -8,6 +8,13 @@ import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
 import { requestGraphQL } from '../../backend/graphql'
 import { Scalars } from '../../graphql-operations'
 
+export interface GQLDocumentationPage {
+    /**
+     * The tree of documentation nodes describing this page's hierarchy.
+     */
+    tree: GQLDocumentationNode
+}
+
 // Mirrors the same type on the backend:
 //
 // https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+type+DocumentationNode+struct&patternType=literal
@@ -85,7 +92,7 @@ export interface DocumentationPageVariables {
     pathID: string
 }
 
-export const fetchDocumentationPage = (args: DocumentationPageVariables): Observable<GQL.IDocumentationPage> =>
+export const fetchDocumentationPage = (args: DocumentationPageVariables): Observable<GQLDocumentationPage> =>
     requestGraphQL<DocumentationPageResults, DocumentationPageVariables>(
         gql`
             query DocumentationPage($repo: ID!, $revspec: String!, $pathID: String!) {
@@ -117,6 +124,61 @@ export const fetchDocumentationPage = (args: DocumentationPageVariables): Observ
             if (!repo.commit.tree.lsif.documentationPage || !repo.commit.tree.lsif.documentationPage.tree) {
                 throw new Error('no LSIF documentation')
             }
-            return repo.commit.tree.lsif.documentationPage
+            const page = repo.commit.tree.lsif.documentationPage;
+            return ({ ...page, tree: JSON.parse(page.tree) as GQLDocumentationNode })
+        })
+    )
+
+// Mirrors the same type on the backend:
+//
+// https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+type+DocumentationPathInfoResult+struct&patternType=literal
+export interface GQLDocumentationPathInfo {
+    pathID: string
+    isIndex: boolean
+    children: GQLDocumentationPathInfo[]
+}
+
+export interface DocumentationPathInfoResults {
+    node: GQL.IRepository
+}
+export interface DocumentationPathInfoVariables {
+    repo: Scalars['ID']
+    revspec: string
+    pathID: string
+    maxDepth: number
+    ignoreIndex: boolean
+}
+
+export const fetchDocumentationPathInfo = (args: DocumentationPathInfoVariables): Observable<GQLDocumentationPathInfo> =>
+    requestGraphQL<DocumentationPathInfoResults, DocumentationPathInfoVariables>(
+        gql`
+            query DocumentationPathInfo($repo: ID!, $revspec: String!, $pathID: String!, $maxDepth: Int!, $ignoreIndex: Boolean!) {
+                node(id: $repo) {
+                    ... on Repository {
+                        commit(rev: $revspec) {
+                            tree(path: "/") {
+                                lsif {
+                                    documentationPathInfo(pathID:$pathID, maxDepth:$maxDepth, ignoreIndex:$ignoreIndex)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        `,
+        args
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || !data.node) {
+                throw createAggregateError(errors)
+            }
+            const repo = data.node
+            if (!repo.commit || !repo.commit.tree || !repo.commit.tree.lsif) {
+                throw new Error('no LSIF data')
+            }
+            if (!repo.commit.tree.lsif.documentationPathInfo) {
+                throw new Error('no LSIF documentation')
+            }
+            return JSON.parse(repo.commit.tree.lsif.documentationPathInfo) as GQLDocumentationPathInfo
         })
     )

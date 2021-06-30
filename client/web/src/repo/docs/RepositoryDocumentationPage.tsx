@@ -25,6 +25,7 @@ import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 
 import { DocumentationNode } from './DocumentationNode'
 import { DocumentationWelcomeAlert } from './DocumentationWelcomeAlert'
+import { fetchDocumentationPage, GQLDocumentationNode } from './graphql'
 import { RepositoryDocumentationSidebar, getSidebarVisibility } from './RepositoryDocumentationSidebar'
 
 const PageError: React.FunctionComponent<{ error: ErrorLike }> = ({ error }) => (
@@ -80,7 +81,6 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = ({ us
                         revspec: props.commitID,
                         pathID: pagePathID,
                     }).pipe(
-                        map(page => ({ ...page, tree: JSON.parse(page.tree) as GQLDocumentationNode })),
                         catchError(error => [asError(error)]),
                         startWith(LOADING)
                     ),
