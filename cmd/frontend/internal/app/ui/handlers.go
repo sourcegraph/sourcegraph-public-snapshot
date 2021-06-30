@@ -202,7 +202,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 				serveError(w, r, err, http.StatusNotFound)
 				return nil, nil
 			}
-			if errcode.IsNotFound(err) {
+			if errcode.IsNotFound(err) || errcode.IsBlocked(err) {
 				// Repo does not exist.
 				serveError(w, r, err, http.StatusNotFound)
 				return nil, nil
