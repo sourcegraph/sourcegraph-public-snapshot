@@ -119,16 +119,10 @@ export const DocumentationNode: React.FunctionComponent<Props> = ({ useBreadcrum
         )
     )
 
-    const tagIcons = {
-        exported: null,
-        unexported: <LockIcon className="icon-inline" data-tooltip="Unexported" />,
-        deprecated: <CancelIcon className="icon-inline" data-tooltip="Deprecated" />,
-    }
     return (
         <div className="documentation-node">
             <Link className={`h${depth + 1 < 4 ? depth + 1 : 4}`} id={hash} to={thisPage}>
                 {node.label.value}
-                {node.documentation.tags?.map(tag => tagIcons[tag])}
             </Link>
             {node.detail.value !== '' && (
                 <div className="px-2 pt-2">
