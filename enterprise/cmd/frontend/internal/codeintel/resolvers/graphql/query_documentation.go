@@ -55,7 +55,7 @@ func (r *QueryResolver) DocumentationPathInfo(ctx context.Context, args *gql.LSI
 		if pathInfo == nil {
 			return nil, nil
 		}
-		var children []DocumentationPathInfoResult
+		children := []DocumentationPathInfoResult{}
 		if depth < maxDepth {
 			if !ignoreIndex || ignoreIndex && !pathInfo.IsIndex {
 				depth++
@@ -101,5 +101,5 @@ type DocumentationPathInfoResult struct {
 	IsIndex bool `json:"isIndex"`
 
 	// Children is a list of the children page paths immediately below this one.
-	Children []DocumentationPathInfoResult `json:"children,omitempty"`
+	Children []DocumentationPathInfoResult `json:"children"`
 }
