@@ -320,18 +320,18 @@ type matchSender struct {
 	sentCount atomic.Int64
 }
 
-func (m matchSender) Send(matches []protocol.FileMatch) {
+func (m *matchSender) Send(matches []protocol.FileMatch) {
 	m.sentCount.Add(int64(len(matches)))
 	m.c <- matches
 }
 
-func (m matchSender) SentCount() int {
+func (m *matchSender) SentCount() int {
 	return int(m.sentCount.Load())
 }
 
 // CollectTo reads from the sender's channel and collects the results into a single
 // slice, sending it down the channel passed to it
-func (m matchSender) CollectTo(dst chan<- []protocol.FileMatch) {
+func (m *matchSender) CollectTo(dst chan<- []protocol.FileMatch) {
 	collected := make([]protocol.FileMatch, 0)
 	for matches := range m.c {
 		collected = append(collected, matches...)
@@ -340,7 +340,7 @@ func (m matchSender) CollectTo(dst chan<- []protocol.FileMatch) {
 }
 
 // Close indicates that the sender will receive no more results, closing its channel.
-func (m matchSender) Close() {
+func (m *matchSender) Close() {
 	close(m.c)
 }
 

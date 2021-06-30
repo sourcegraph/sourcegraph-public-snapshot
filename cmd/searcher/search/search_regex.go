@@ -368,6 +368,7 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMat
 		wgErr         error
 		filesSkipped  uint32 // accessed atomically
 		filesSearched uint32 // accessed atomically
+		limitMu       sync.Mutex
 	)
 
 	// Start workers. They read from files and write to matches.
@@ -423,7 +424,9 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMat
 					if sender.SentCount() < fileMatchLimit {
 						sender.Send([]protocol.FileMatch{fm})
 					} else {
+						limitMu.Lock()
 						limitHit = true
+						limitMu.Unlock()
 						cancel()
 					}
 				}
