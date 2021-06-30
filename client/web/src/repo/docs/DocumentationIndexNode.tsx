@@ -8,7 +8,7 @@ import { useScrollToLocationHash } from '../../components/useScrollToLocationHas
 import { RepositoryFields } from '../../graphql-operations'
 import { toDocumentationURL } from '../../util/url'
 
-import { GQLDocumentationNode } from './DocumentationNode'
+import { GQLDocumentationNode, isExcluded, Tag } from './DocumentationNode'
 
 interface Props extends Partial<RevisionSpec>, ResolvedRevisionSpec {
     repo: RepositoryFields
@@ -30,6 +30,9 @@ interface Props extends Partial<RevisionSpec>, ResolvedRevisionSpec {
 
     /** If true, render content index only */
     contentOnly: boolean
+
+    /** A list of documentation tags, a section will not be rendered if it matches one of these. */
+    excludingTags: Tag[]
 }
 
 export const DocumentationIndexNode: React.FunctionComponent<Props> = ({ node, depth, ...props }) => {
@@ -43,7 +46,10 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = ({ node, d
     let path = hashIndex !== -1 ? node.pathID.slice(0, hashIndex) : node.pathID
     path = path === '/' ? '' : path
     const thisPage = toDocumentationURL({ ...repoRevision, pathID: path + '#' + hash })
-
+    const excluded = isExcluded(node, props.excludingTags)
+    if (excluded) {
+        return null
+    }
     if (props.subpagesOnly) {
         return (
             <div className="documentation-index-node">
