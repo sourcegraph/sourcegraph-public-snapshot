@@ -197,7 +197,7 @@ func seriesPointsQuery(opts SeriesPointsOpts) *sqlf.Query {
 
 //values constructs a SQL values statement out of an array of repository ids
 func values(ids []api.RepoID) string {
-	if len(ids) <= 0 {
+	if len(ids) == 0 {
 		return ""
 	}
 

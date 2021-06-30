@@ -70,19 +70,19 @@ func (r *insightConnectionResolver) compute(ctx context.Context) ([]*schema.Insi
 	r.once.Do(func() {
 		var multi error
 		insights, err := discovery.Discover(ctx, r.settingStore)
-		r.insights = insights
 		if r.err != nil {
 			multi = multierror.Append(multi, r.err)
 		}
+		r.insights = insights
 
 		// 🚨 SECURITY: This is a double-negative repo permission enforcement. The list of authorized repos is generally expected to be very large, and nearly the full
 		// set of repos installed on Sourcegraph. To make this faster, we query Postgres for a list of repos the current user cannot see, and then exclude those from the
 		// time series results. 🚨
 		denylist, err := FetchUnauthorizedRepos(ctx, r.workerBaseStore.Handle().DB())
-		r.denylist = denylist
 		if err != nil {
 			multi = multierror.Append(multi, err)
 		}
+		r.denylist = denylist
 		r.err = multi
 	})
 	return r.insights, r.denylist, r.next, r.err
