@@ -11,7 +11,7 @@ jobs:
       - name: Generate LSIF data
         run: lsif-go
       - name: Upload LSIF data to .com
-        run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
+        run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }} -trace 3
       - name: Upload LSIF data to dogfood
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
         env:
