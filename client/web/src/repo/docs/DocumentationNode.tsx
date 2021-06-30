@@ -61,7 +61,8 @@ export const DocumentationNode: React.FunctionComponent<Props> = ({ useBreadcrum
     }
     const hashIndex = node.pathID.indexOf('#')
     const hash = hashIndex !== -1 ? node.pathID.slice(hashIndex + '#'.length) : ''
-    const path = node.pathID.slice('/'.length, hashIndex)
+    let path = hashIndex !== -1 ? node.pathID.slice(0, hashIndex) : node.pathID
+    path = path === '/' ? '' : path
     const thisPage = toDocumentationURL({ ...repoRevision, pathID: path + '#' + hash })
 
     useBreadcrumb(
@@ -95,7 +96,7 @@ export const DocumentationNode: React.FunctionComponent<Props> = ({ useBreadcrum
                         <DocumentationNode
                             key={`${depth}-${index}`}
                             {...props}
-                            node={child.node!}
+                            node={child.node}
                             depth={depth + 1}
                             useBreadcrumb={useBreadcrumb}
                         />
