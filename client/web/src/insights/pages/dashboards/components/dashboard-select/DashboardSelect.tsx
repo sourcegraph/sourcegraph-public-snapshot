@@ -25,9 +25,11 @@ export interface DashboardSelectProps {
 export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = props => {
     const { dashboards } = props
 
-    const [value, setValue] = useState()
+    const [value, setValue] = useState<string>()
 
-    const handleChange = (value: string) => {}
+    const handleChange = (value: string): void => {
+        setValue(value)
+    }
 
     const organizationGroups = useMemo(() => getDashboardOrganizationsGroups(dashboards), [dashboards])
 

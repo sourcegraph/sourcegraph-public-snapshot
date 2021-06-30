@@ -1,5 +1,6 @@
-.listbox-option {
+.listbox-option[data-reach-listbox-option] {
     display: flex;
+    align-items: baseline;
     padding: 0.5rem 0.75rem;
     justify-content: space-between;
 
