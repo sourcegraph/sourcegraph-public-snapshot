@@ -1,5 +1,6 @@
 import * as H from 'history'
 import { upperFirst } from 'lodash'
+import BookOpenVariantIcon from 'mdi-react/BookOpenVariantIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useEffect, useCallback, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -13,6 +14,7 @@ import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { asError, createAggregateError, ErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { RevisionSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Container } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../backend/graphql'
 import { Badge } from '../../components/Badge'
@@ -27,8 +29,6 @@ import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 
 import { DocumentationNode, GQLDocumentationNode } from './DocumentationNode'
 import { RepositoryDocumentationSidebar, getSidebarVisibility } from './RepositoryDocumentationSidebar'
-import BookOpenVariantIcon from 'mdi-react/BookOpenVariantIcon'
-import { Container } from '@sourcegraph/wildcard'
 
 interface DocumentationPageResults {
     node: GQL.IRepository
