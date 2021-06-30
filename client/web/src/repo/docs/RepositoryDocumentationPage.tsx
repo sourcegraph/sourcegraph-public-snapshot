@@ -161,9 +161,11 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = ({ us
                         depth={0}
                     />
                     <div className="repository-docs-page__container">
-                        <div className={`repository-docs-page__container-content${
-                            sidebarVisible ? ' repository-docs-page__container-content--sidebar-visible' : ''
-                        }`}>
+                        <div
+                            className={`repository-docs-page__container-content${
+                                sidebarVisible ? ' repository-docs-page__container-content--sidebar-visible' : ''
+                            }`}
+                        >
                             <DocumentationNode
                                 {...props}
                                 useBreadcrumb={useBreadcrumb}
