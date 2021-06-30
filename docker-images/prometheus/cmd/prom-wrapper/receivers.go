@@ -226,6 +226,7 @@ For more details, please refer to the service dashboard: %s`, firingBodyTemplate
 				}
 			}
 
+			priority := notifier.Opsgenie.Priority
 			tags := notifier.Opsgenie.Tags
 
 			receiver.OpsGenieConfigs = append(receiver.OpsGenieConfigs, &amconfig.OpsGenieConfig{
@@ -234,10 +235,10 @@ For more details, please refer to the service dashboard: %s`, firingBodyTemplate
 
 				Message:     notificationTitleTemplate,
 				Description: notificationBodyTemplateWithoutLinks,
-				Priority:    notifier.Opsgenie.Priority,
+				Priority:    priority,
+				Tags:        tags,
 				Responders:  responders,
 				Source:      dashboardURLTemplate,
-				Tags:        tags,
 				Details: map[string]string{
 					"Solutions": alertSolutionsURLTemplate,
 				},
