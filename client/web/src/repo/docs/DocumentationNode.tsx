@@ -76,6 +76,10 @@ export interface DocumentationNodeChild {
     pathID?: string
 }
 
+export function isExcluded(node: GQLDocumentationNode, excludingTags: Tag[]): boolean {
+    return node.documentation.tags.filter(tag => excludingTags.includes(tag)).length > 0;
+}
+
 interface Props extends Partial<RevisionSpec>, ResolvedRevisionSpec, BreadcrumbSetters {
     repo: RepositoryFields
 
@@ -90,6 +94,9 @@ interface Props extends Partial<RevisionSpec>, ResolvedRevisionSpec, BreadcrumbS
 
     /** The pathID of the page containing this documentation node */
     pagePathID: string
+
+    /** A list of documentation tags, a section will not be rendered if it matches one of these. */
+    excludingTags: Tag[]
 }
 
 export const DocumentationNode: React.FunctionComponent<Props> = ({ useBreadcrumb, node, depth, ...props }) => {
@@ -131,7 +138,7 @@ export const DocumentationNode: React.FunctionComponent<Props> = ({ useBreadcrum
 
             {node.children?.map(
                 (child, index) =>
-                    child.node && (
+                    child.node && !isExcluded(child.node, props.excludingTags) && (
                         <DocumentationNode
                             key={`${depth}-${index}`}
                             {...props}
