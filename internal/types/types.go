@@ -98,10 +98,23 @@ func (r *Repo) ExternalServiceIDs() []int64 {
 	return ids
 }
 
+// BlockedRepoError is returned by a Repo IsBlocked method.
+type BlockedRepoError struct {
+	Name   api.RepoName
+	Reason string
+}
+
+func (e BlockedRepoError) Error() string {
+	return fmt.Sprintf("repository %s has been blocked. reason: %s", e.Name, e.Reason)
+}
+
+// Blocked implements the blocker interface in the errcode package.
+func (e BlockedRepoError) Blocked() bool { return true }
+
 // IsBlocked returns a non nil error if the repo has been blocked.
 func (r *Repo) IsBlocked() error {
 	if r.Blocked != nil {
-		return fmt.Errorf("%s has been blocked. reason: %s", r.Name, r.Blocked.Reason)
+		return &BlockedRepoError{Name: r.Name, Reason: r.Blocked.Reason}
 	}
 	return nil
 }
