@@ -58,13 +58,15 @@ const MenuButtonContent: React.FunctionComponent<MenuButtonContentProps> = props
     return (
         <>
             <span className={styles.listboxButtonText}>
-                <TruncatedText>{title}</TruncatedText>
+                <TruncatedText title={title}>{title}</TruncatedText>
                 {badge && <Badge value={badge} className={classnames('ml-1 mr-1', styles.listboxButtonBadge)} />}
             </span>
 
-            {isExpanded
-                ? <ChevronUpIcon className={styles.listboxButtonIcon} />
-                : <ChevronDownIcon className={styles.listboxButtonIcon}  />}
+            {isExpanded ? (
+                <ChevronUpIcon className={styles.listboxButtonIcon} />
+            ) : (
+                <ChevronDownIcon className={styles.listboxButtonIcon} />
+            )}
         </>
     )
 }

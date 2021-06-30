@@ -22,6 +22,9 @@ export interface DashboardSelectProps {
     dashboards: InsightDashboard[]
 }
 
+/**
+ * Renders dashboard select component for code insights dashboard page selection UI.
+ */
 export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = props => {
     const { dashboards } = props
 
@@ -42,7 +45,10 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
 
                 <ListboxPopover className={classnames(styles.listboxPopover)} portal={true}>
                     <ListboxList className={classnames(styles.listboxList, 'dropdown-menu')}>
-                        <ListboxOption className={styles.listboxOption} value={InsightsDashboardType.All}>
+                        <ListboxOption
+                            className={classnames(styles.listboxOption, styles.listboxOptionSimpleText)}
+                            value={InsightsDashboardType.All}
+                        >
                             All Insights
                         </ListboxOption>
 
@@ -54,7 +60,11 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
                             {dashboards
                                 .filter(dashboard => dashboard.type === InsightsDashboardType.Personal)
                                 .map(dashboard => (
-                                    <SelectOption key={dashboard.id} dashboard={dashboard} />
+                                    <SelectOption
+                                        key={dashboard.id}
+                                        dashboard={dashboard}
+                                        className={styles.listboxOption}
+                                    />
                                 ))}
                         </ListboxGroup>
 
@@ -65,7 +75,11 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
                                 </ListboxGroupLabel>
 
                                 {group.dashboards.map(dashboard => (
-                                    <SelectOption key={dashboard.id} dashboard={dashboard} />
+                                    <SelectOption
+                                        key={dashboard.id}
+                                        dashboard={dashboard}
+                                        className={styles.listboxOption}
+                                    />
                                 ))}
                             </ListboxGroup>
                         ))}

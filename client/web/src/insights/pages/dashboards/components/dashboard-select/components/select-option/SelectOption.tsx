@@ -1,4 +1,5 @@
 import { ListboxOption } from '@reach/listbox'
+import classnames from 'classnames'
 import React from 'react'
 
 import { InsightDashboard } from '../../../../../../core/types'
@@ -10,14 +11,19 @@ import styles from './SelectOption.module.scss'
 
 interface SelectOptionProps {
     dashboard: InsightDashboard
+    className?: string
 }
 
 export const SelectOption: React.FunctionComponent<SelectOptionProps> = props => {
-    const { dashboard } = props
+    const { dashboard, className } = props
+
+    const optionText = getDashboardTitle(dashboard)
 
     return (
-        <ListboxOption className={styles.listboxOption} value={dashboard.id}>
-            <TruncatedText className={styles.listboxOptionText}>{getDashboardTitle(dashboard)}</TruncatedText>
+        <ListboxOption className={classnames(styles.listboxOption, className)} value={dashboard.id}>
+            <TruncatedText title={optionText} className={styles.listboxOptionText}>
+                {optionText}
+            </TruncatedText>
             <Badge value={getDashboardOwnerName(dashboard)} className={styles.listboxOptionBadge} />
         </ListboxOption>
     )

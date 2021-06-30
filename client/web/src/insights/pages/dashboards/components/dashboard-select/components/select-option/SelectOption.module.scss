@@ -1,19 +1,20 @@
-.listbox-option[data-reach-listbox-option] {
-    display: flex;
-    align-items: baseline;
-    padding: 0.5rem 0.75rem;
-    justify-content: space-between;
-
-    & + & {
-        margin-top: -0.25rem;
+.listbox-option {
+    // A special selector to increase the specificity in order to override reach ui styles
+    // for the list-box button element.
+    &[data-reach-listbox-option] {
+        display: flex;
+        align-items: baseline;
+        padding: 0.5rem 0.75rem;
+        justify-content: space-between;
+        cursor: pointer;
     }
-}
 
-.listbox-option-text {
-    padding-right: 0.5rem;
-}
+    &__text {
+        padding-right: 0.5rem;
+    }
 
-.listbox-option-badge {
-    max-width: 8rem;
-    flex-shrink: 0;
+    &__badge {
+        max-width: 8rem;
+        flex-shrink: 0;
+    }
 }

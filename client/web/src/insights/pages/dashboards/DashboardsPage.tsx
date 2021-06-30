@@ -15,8 +15,8 @@ import { Settings } from '../../../schema/settings.schema'
 import { CodeInsightsIcon, InsightsViewGrid, InsightsViewGridProps } from '../../components'
 import { InsightsApiContext } from '../../core/backend/api-provider'
 
-import { useDashboards } from './hooks/use-dashboards/use-dashboards'
 import { DashboardSelect } from './components/dashboard-select/DashboardSelect'
+import { useDashboards } from './hooks/use-dashboards/use-dashboards'
 
 export interface DashboardsPageProps
     extends Omit<InsightsViewGridProps, 'views' | 'settingsCascade'>,
