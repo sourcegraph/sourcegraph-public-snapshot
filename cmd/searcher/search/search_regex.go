@@ -9,18 +9,18 @@ import (
 	"regexp/syntax"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 	"unicode"
 	"unicode/utf8"
+
+	"github.com/opentracing/opentracing-go/ext"
+	otlog "github.com/opentracing/opentracing-go/log"
+	"go.uber.org/atomic"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/pathmatch"
 	"github.com/sourcegraph/sourcegraph/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
-
-	"github.com/opentracing/opentracing-go/ext"
-	otlog "github.com/opentracing/opentracing-go/log"
 )
 
 // readerGrep is responsible for finding LineMatches. It is not concurrency
@@ -303,7 +303,7 @@ func regexSearchBatch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fi
 }
 
 // regexSearch concurrently searches files in zr looking for matches using rg.
-func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMatchLimit int, patternMatchesContent, patternMatchesPaths bool, isPatternNegated bool, sender matchSender) (limitHit bool, err error) {
+func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMatchLimit int, patternMatchesContent, patternMatchesPaths bool, isPatternNegated bool, sender matchSender) (_ bool, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "RegexSearch")
 	ext.Component.Set(span, "regex_search")
 	if rg.re != nil {
@@ -347,6 +347,7 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMat
 		// Fast path for only matching file paths (or with a nil pattern, which matches all files,
 		// so is effectively matching only on file paths).
 		var matches []protocol.FileMatch
+		limitHit := false
 		for _, f := range files {
 			if match := rg.matchPath.MatchPath(f.Name) && rg.matchString(f.Name); match == !isPatternNegated {
 				if len(matches) < fileMatchLimit {
@@ -365,9 +366,9 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMat
 		wg            sync.WaitGroup
 		wgErrOnce     sync.Once
 		wgErr         error
-		filesSkipped  uint32 // accessed atomically
-		filesSearched uint32 // accessed atomically
-		limitMu       sync.Mutex
+		filesSkipped  atomic.Uint32
+		filesSearched atomic.Uint32
+		limitHit      atomic.Bool
 	)
 
 	// Start workers. They read from files and write to matches.
@@ -396,10 +397,10 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMat
 
 				// decide whether to process, record that decision
 				if !rg.matchPath.MatchPath(f.Name) {
-					atomic.AddUint32(&filesSkipped, 1)
+					filesSkipped.Add(1)
 					continue
 				}
-				atomic.AddUint32(&filesSearched, 1)
+				filesSearched.Add(1)
 
 				// process
 				var fm protocol.FileMatch
@@ -423,9 +424,7 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMat
 					if sender.SentCount() < fileMatchLimit {
 						sender.Send([]protocol.FileMatch{fm})
 					} else {
-						limitMu.Lock()
-						limitHit = true
-						limitMu.Unlock()
+						limitHit.Store(true)
 						cancel()
 					}
 				}
@@ -442,11 +441,11 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMat
 	}
 
 	span.LogFields(
-		otlog.Int("filesSkipped", int(atomic.LoadUint32(&filesSkipped))),
-		otlog.Int("filesSearched", int(atomic.LoadUint32(&filesSearched))),
+		otlog.Int("filesSkipped", int(filesSkipped.Load())),
+		otlog.Int("filesSearched", int(filesSearched.Load())),
 	)
 
-	return limitHit, err
+	return limitHit.Load(), err
 }
 
 // lowerRegexpASCII lowers rune literals and expands char classes to include
