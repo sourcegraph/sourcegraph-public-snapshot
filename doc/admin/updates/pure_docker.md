@@ -16,10 +16,11 @@ A new version of Sourcegraph is released every month (with patch releases in bet
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
-## 3.28 -> 3.29
+
+## 3.28 -> 3.29.1
 
 To upgrade, please perform the changes in the following diff:
-[https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/1cfbc5f2b6e6ac27156e5a57e66e815ca3ff03d1](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/1cfbc5f2b6e6ac27156e5a57e66e815ca3ff03d1)
+[https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/940100429fdd59f930436d47e226f5a7116bf6d9](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/940100429fdd59f930436d47e226f5a7116bf6d9)
 
 This upgrade adds a new `worker` service that runs a number of background jobs that were previously run in the `frontend` service. See [notes on deploying workers](../workers.md#deploying-workers) for additional details. Good initial values for CPU and memory resources allocated to this new service should match the `frontend` service.
 
