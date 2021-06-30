@@ -38,6 +38,7 @@ li {
 .download-status {
     color: var(--oc-lime-7);
     flex: 0;
+    min-width: 6.25rem;
 }
 
 .download-progress {
