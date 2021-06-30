@@ -380,8 +380,8 @@ func GetMatchAtLineCharacter(ctx context.Context, repo types.RepoName, commitID 
 	var match *result.SymbolMatch
 	for _, symbolMatch := range symbolMatches {
 		symbolRange := symbolMatch.Symbol.Range()
-		hasMatchingStartRange := symbolRange.Start.Line == line && symbolRange.Start.Character == character
-		if hasMatchingStartRange && (match == nil || len(symbolMatch.Symbol.Name) < len(match.Symbol.Name)) {
+		isWithinRange := line >= symbolRange.Start.Line && character >= symbolRange.Start.Character && line <= symbolRange.End.Line && character <= symbolRange.End.Character
+		if isWithinRange && (match == nil || len(symbolMatch.Symbol.Name) < len(match.Symbol.Name)) {
 			match = symbolMatch
 		}
 	}
