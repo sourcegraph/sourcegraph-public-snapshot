@@ -26,13 +26,14 @@ export const Step: React.FunctionComponent<StepProps> = ({ title, active, border
     <li
         role="presentation"
         className={classNames(
+            stepsStyles.cursorPointer,
             disabled && stepsStyles.disabled,
             stepsStyles.listItem,
             active && stepsStyles.active,
             borderColor && stepsStyles[`color${upperFirst(borderColor)}` as keyof typeof stepsStyles]
         )}
-        onClick={onClick}
         aria-current={active}
+        onClick={onClick}
     >
         {title}
     </li>
@@ -62,7 +63,7 @@ export const Steps: React.FunctionComponent<StepsProps> = ({ current = 1, number
 
     return (
         <nav className={stepsStyles.stepsWrapper} aria-label="progress">
-            {numbered ? <ol>{element}</ol> : <ul>{element}</ul>}
+            {numbered ? <ol role="tablist">{element}</ol> : <ul role="tablist">{element}</ul>}
         </nav>
     )
 }
