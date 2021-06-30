@@ -103,10 +103,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sender := newMatchSender(100)
-	matches := make(chan []protocol.FileMatch, 1) // size of 1 to avoid blocking goroutine
-	go func() {
-		matches <- sender.Collect()
-	}()
+	matches := sender.Collect()
 
 	limitHit, deadlineHit, err := s.search(ctx, &p, sender)
 	if err != nil {
@@ -121,6 +118,8 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), code)
 		return
 	}
+	// after returning from s.search(), we know no more results
+	// will be sent to the sender
 	sender.Close()
 
 	w.Header().Set("Content-Type", "application/json")
@@ -329,14 +328,22 @@ func (m matchSender) SentCount() int {
 	return int(m.sentCount.Load())
 }
 
-func (m matchSender) Collect() []protocol.FileMatch {
-	res := make([]protocol.FileMatch, 0)
-	for matches := range m.c {
-		res = append(res, matches...)
-	}
+// Collect reads from the sender's channel and collects the results into a single
+// slice. It returns a channel that will return a result when matchSender.Close() is
+// called.
+func (m matchSender) Collect() <-chan []protocol.FileMatch {
+	res := make(chan []protocol.FileMatch, 1)
+	go func() {
+		collected := make([]protocol.FileMatch, 0)
+		for matches := range m.c {
+			collected = append(collected, matches...)
+		}
+		res <- collected
+	}()
 	return res
 }
 
+// Close indicates that the sender will receive no more results, closing its channel.
 func (m matchSender) Close() {
 	close(m.c)
 }

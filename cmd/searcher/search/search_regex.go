@@ -295,10 +295,7 @@ func (rg *readerGrep) FindZip(zf *store.ZipFile, f *store.SrcFile) (protocol.Fil
 
 func regexSearchBatch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMatchLimit int, patternMatchesContent, patternMatchesPaths bool, isPatternNegated bool) ([]protocol.FileMatch, bool, error) {
 	sender := newMatchSender(100)
-	matches := make(chan []protocol.FileMatch, 1)
-	go func() {
-		matches <- sender.Collect()
-	}()
+	matches := sender.Collect()
 	limitHit, err := regexSearch(ctx, rg, zf, fileMatchLimit, patternMatchesContent, patternMatchesPaths, isPatternNegated, sender)
 	sender.Close()
 	return <-matches, limitHit, err
