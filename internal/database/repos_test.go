@@ -541,7 +541,7 @@ func TestRepoStore_Blocking(t *testing.T) {
 		}
 
 		_, err = rs.GetByName(ctx, repos[1].Name)
-		if have, want := fmt.Sprint(err), `bar has been blocked. reason: too big`; have != want {
+		if have, want := fmt.Sprint(err), `repository bar has been blocked. reason: too big`; have != want {
 			t.Errorf("error, have: %q, want: %q", have, want)
 		}
 	})
@@ -553,7 +553,7 @@ func TestRepoStore_Blocking(t *testing.T) {
 		}
 
 		_, err = rs.GetByName(ctx, api.RepoName(repos[1].URI))
-		if have, want := fmt.Sprint(err), `bar has been blocked. reason: too big`; have != want {
+		if have, want := fmt.Sprint(err), `repository bar has been blocked. reason: too big`; have != want {
 			t.Errorf("error, have: %q, want: %q", have, want)
 		}
 	})
