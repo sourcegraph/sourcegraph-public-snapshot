@@ -1399,14 +1399,17 @@ Referenced by:
  private               | boolean                  |           | not null | false
  cloned                | boolean                  |           | not null | false
  stars                 | integer                  |           |          | 
+ blocked               | jsonb                    |           |          | 
 Indexes:
     "repo_pkey" PRIMARY KEY, btree (id)
     "repo_external_unique_idx" UNIQUE, btree (external_service_type, external_service_id, external_id)
     "repo_name_unique" UNIQUE CONSTRAINT, btree (name) DEFERRABLE
     "repo_archived" btree (archived)
+    "repo_blocked_idx" btree ((blocked IS NOT NULL))
     "repo_cloned" btree (cloned)
     "repo_created_at" btree (created_at)
     "repo_fork" btree (fork)
+    "repo_is_not_blocked_idx" btree ((blocked IS NULL))
     "repo_metadata_gin_idx" gin (metadata)
     "repo_name_idx" btree (lower(name::text) COLLATE "C")
     "repo_name_trgm" gin (lower(name::text) gin_trgm_ops)
