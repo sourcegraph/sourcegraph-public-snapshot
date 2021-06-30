@@ -251,7 +251,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 		}
 
 		common.Metadata.ShowPreview = true
-		common.Metadata.PreviewImage = getBlobPreviewImageURL(envvar.OpenGraphPreviewServiceURL(), r.URL.Path, lineRange, symbolResult)
+		common.Metadata.PreviewImage = getBlobPreviewImageURL(envvar.OpenGraphPreviewServiceURL(), r.URL.Path, lineRange)
 		common.Metadata.Description = fmt.Sprintf("%s/%s", globals.ExternalURL(), mux.Vars(r)["Repo"])
 		common.Metadata.Title = getBlobPreviewTitle(blobPath, lineRange, symbolResult)
 	}

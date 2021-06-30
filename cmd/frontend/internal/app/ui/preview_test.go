@@ -37,19 +37,17 @@ func TestGetBlobPreviewImageURL(t *testing.T) {
 	previewServiceURL := "https://preview.sourcegraph.com"
 	blobURLPath := "/github.com/sourcegraph/sourcegraph/-/blob/client/browser/src/end-to-end/github.test.ts"
 	tests := []struct {
-		name         string
-		lineRange    *lineRange
-		symbolResult *result.Symbol
-		wantURL      string
+		name      string
+		lineRange *lineRange
+		wantURL   string
 	}{
 		{name: "empty line range", lineRange: nil, wantURL: fmt.Sprintf("%s%s", previewServiceURL, blobURLPath)},
 		{name: "single line", lineRange: &lineRange{StartLine: 123}, wantURL: fmt.Sprintf("%s%s?range=L123", previewServiceURL, blobURLPath)},
 		{name: "line range", lineRange: &lineRange{StartLine: 123, EndLine: 125}, wantURL: fmt.Sprintf("%s%s?range=L123-125", previewServiceURL, blobURLPath)},
-		{name: "line range with symbol", lineRange: &lineRange{StartLine: 123, EndLine: 125}, symbolResult: &result.Symbol{}, wantURL: fmt.Sprintf("%s%s?range=L123-125&type=symbol", previewServiceURL, blobURLPath)},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got := getBlobPreviewImageURL(previewServiceURL, blobURLPath, test.lineRange, test.symbolResult)
+			got := getBlobPreviewImageURL(previewServiceURL, blobURLPath, test.lineRange)
 			if !reflect.DeepEqual(test.wantURL, got) {
 				t.Errorf("got %v, want %v", got, test.wantURL)
 			}
