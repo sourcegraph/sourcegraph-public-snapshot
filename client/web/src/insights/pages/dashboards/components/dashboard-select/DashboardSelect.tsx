@@ -1,49 +1,46 @@
 import {
-    ListboxOption,
-    ListboxInput,
-    ListboxButton,
-    ListboxPopover,
-    ListboxList,
     ListboxGroup,
     ListboxGroupLabel,
+    ListboxInput,
+    ListboxList,
+    ListboxOption,
+    ListboxPopover,
 } from '@reach/listbox'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classnames from 'classnames'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 
+import { InsightDashboard, InsightsDashboardType } from '../../../../core/types'
+
+import { MenuButton } from './components/menu-button/MenuButton'
+import { SelectOption } from './components/select-option/SelectOption'
 import styles from './DashboardSelect.module.scss'
 
 const LABEL_ID = 'insights-dashboards--select'
 
-export interface DashboardSelectProps {}
+export interface DashboardSelectProps {
+    dashboards: InsightDashboard[]
+}
 
-export const DashboardSelect: React.FunctionComponent = props => {
-    const {} = props
+export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = props => {
+    const { dashboards } = props
 
     const [value, setValue] = useState()
 
     const handleChange = (value: string) => {}
+
+    const organizationGroups = useMemo(() => getDashboardOrganizationsGroups(dashboards), [dashboards])
 
     return (
         <div>
             <VisuallyHidden id={LABEL_ID}>Choose a dashboard</VisuallyHidden>
 
             <ListboxInput value={value} onChange={handleChange}>
-                <ListboxButton className={styles.listboxButton}>
-                    {({ value, label, isExpanded }) => (
-                        <>
-                            <span>{value} </span>
-
-                            {isExpanded ? <ChevronUpIcon /> : <ChevronDownIcon />}
-                        </>
-                    )}
-                </ListboxButton>
+                <MenuButton dashboards={dashboards} />
 
                 <ListboxPopover className={classnames(styles.listboxPopover)} portal={true}>
                     <ListboxList className={classnames(styles.listboxList, 'dropdown-menu')}>
-                        <ListboxOption className={styles.listboxOption} value="all">
+                        <ListboxOption className={styles.listboxOption} value={InsightsDashboardType.All}>
                             All Insights
                         </ListboxOption>
 
@@ -51,54 +48,57 @@ export const DashboardSelect: React.FunctionComponent = props => {
                             <ListboxGroupLabel className={classnames(styles.listboxGroupLabel, 'text-muted')}>
                                 Private
                             </ListboxGroupLabel>
-                            <ListboxOption className={styles.listboxOption} value="vova">
-                                Vova Kulikov Insights
-                            </ListboxOption>
-                            <ListboxOption className={styles.listboxOption} value="okr">
-                                OKRs 2022
-                            </ListboxOption>
+
+                            {dashboards
+                                .filter(dashboard => dashboard.type === InsightsDashboardType.Personal)
+                                .map(dashboard => (
+                                    <SelectOption key={dashboard.id} dashboard={dashboard} />
+                                ))}
                         </ListboxGroup>
 
-                        <ListboxGroup>
-                            <ListboxGroupLabel className={classnames(styles.listboxGroupLabel, 'text-muted')}>
-                                Org 1
-                            </ListboxGroupLabel>
-                            <ListboxOption className={styles.listboxOption} value="org1">
-                                Org 1 Insights
-                            </ListboxOption>
-                            <ListboxOption className={styles.listboxOption} value="migration">
-                                Migrations
-                            </ListboxOption>
-                        </ListboxGroup>
+                        {organizationGroups.map(group => (
+                            <ListboxGroup key={group.id}>
+                                <ListboxGroupLabel className={classnames(styles.listboxGroupLabel, 'text-muted')}>
+                                    {group.name}
+                                </ListboxGroupLabel>
 
-                        <ListboxGroup>
-                            <ListboxGroupLabel className={classnames(styles.listboxGroupLabel, 'text-muted')}>
-                                Sourcegraph
-                            </ListboxGroupLabel>
-                            <ListboxOption className={styles.listboxOption} value="sg">
-                                Sourcegraph Insights
-                                <span className={classnames('badge badge-secondary', styles.listboxBadge)}>
-                                    Sourcegraph
-                                </span>
-                            </ListboxOption>
-                            <ListboxOption className={styles.listboxOption} value="code-search">
-                                Code Search
-                            </ListboxOption>
-                            <ListboxOption className={styles.listboxOption} value="long">
-                                <span className={styles.listboxOptionText}>
-                                    Very looooooong insight dashboard name that doesn't fit
-                                </span>
-                                <span className={classnames('badge badge-secondary', styles.listboxBadge)}>
-                                    Sourcegraph
-                                </span>
-                            </ListboxOption>
-                            <ListboxOption className={styles.listboxOption} value="ext">
-                                Extensibility
-                            </ListboxOption>
-                        </ListboxGroup>
+                                {group.dashboards.map(dashboard => (
+                                    <SelectOption key={dashboard.id} dashboard={dashboard} />
+                                ))}
+                            </ListboxGroup>
+                        ))}
                     </ListboxList>
                 </ListboxPopover>
             </ListboxInput>
         </div>
     )
+}
+
+interface DashboardOrganizationGroup {
+    id: string
+    name: string
+    dashboards: InsightDashboard[]
+}
+
+/**
+ * Returns organization dashboards grouped by dashboard owner id
+ */
+const getDashboardOrganizationsGroups = (dashboards: InsightDashboard[]): DashboardOrganizationGroup[] => {
+    const groupsDictionary = dashboards
+        .filter(dashboard => dashboard.type === InsightsDashboardType.Organization)
+        .reduce<Record<string, DashboardOrganizationGroup>>((store, dashboard) => {
+            if (!store[dashboard.owner.id]) {
+                store[dashboard.owner.id] = {
+                    id: dashboard.owner.id,
+                    name: dashboard.owner.name,
+                    dashboards: [],
+                }
+            }
+
+            store[dashboard.owner.id].dashboards.push(dashboard)
+
+            return store
+        }, {})
+
+    return Object.values(groupsDictionary)
 }

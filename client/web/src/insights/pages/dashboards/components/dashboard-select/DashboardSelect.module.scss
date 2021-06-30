@@ -46,20 +46,5 @@
 
 .listbox-option {
     display: flex;
-    text-overflow: ellipsis;
-    overflow: hidden;
     padding: 0.5rem 0.75rem;
-
-    & + & {
-        margin-top: -0.25rem;
-    }
-}
-
-.listbox-option-text {
-    text-overflow: ellipsis;
-    overflow: hidden;
-}
-
-.listbox-badge {
-    margin-left: 0.5rem;
 }

@@ -79,7 +79,7 @@ export const DashboardsPage: React.FunctionComponent<DashboardsPageProps> = prop
                 className="mb-3"
             />
 
-            <DashboardSelect />
+            <DashboardSelect dashboards={dashboards} />
             {views === undefined ? (
                 <div className="d-flex w-100">
                     <LoadingSpinner className="my-4" />
