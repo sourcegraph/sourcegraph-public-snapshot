@@ -125,7 +125,9 @@ export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser: us
 
         const isValidNavigationBack =
             clickedStepTabIndex < currentStepNumber && steps[clickedStepTabIndex - 1].isComplete()
-        const isValidNavigationForward = clickedStepTabIndex > currentStepNumber && isCurrentStepComplete()
+
+        const isValidNavigationForward =
+            clickedStepTabIndex > currentStepNumber && steps[clickedStepTabIndex - 1].isComplete()
 
         if (isValidNavigationBack || isValidNavigationForward) {
             setCurrentStepNumber(clickedStepTabIndex)
