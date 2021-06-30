@@ -8,6 +8,7 @@ import { useScrollToLocationHash } from '../../components/useScrollToLocationHas
 import { RepositoryFields } from '../../graphql-operations'
 import { toDocumentationURL } from '../../util/url'
 
+import { DocumentationIcons } from './DocumentationIcons'
 import { GQLDocumentationNode, isExcluded, Tag } from './DocumentationNode'
 
 interface Props extends Partial<RevisionSpec>, ResolvedRevisionSpec {
@@ -71,7 +72,7 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = ({ node, d
         return (
             <div className="documentation-index-node">
                 <Link id={'index-' + hash} to={thisPage} className="text-nowrap">
-                    {node.label.value}
+                    <DocumentationIcons tags={node.documentation.tags} /> {node.label.value}
                 </Link>
                 <ul className="pl-3">
                     {node.children?.map((child, index) =>
