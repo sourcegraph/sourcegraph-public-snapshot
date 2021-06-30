@@ -3,6 +3,7 @@ import { useLocation, useHistory } from 'react-router'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Steps, Step } from '@sourcegraph/wildcard/src/components/Steps'
+import { Terminal } from '@sourcegraph/wildcard/src/components/Terminal'
 
 import { AuthenticatedUser } from '../auth'
 import { queryExternalServices } from '../components/externalServices/backend'
@@ -101,6 +102,7 @@ export const PostSignUpPage: FunctionComponent<Props> = ({ authenticatedUser: us
                 <p className="text-muted">
                     We’re cloning your repos to Sourcegraph. In just a few moments, you can make your first search!
                 </p>
+                <Terminal />
             </>
         ),
         isComplete: () => false,
