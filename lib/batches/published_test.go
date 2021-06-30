@@ -14,11 +14,13 @@ func TestPublishedValue(t *testing.T) {
 		True    bool
 		False   bool
 		Draft   bool
+		Nil     bool
 		Invalid bool
 	}{
 		{name: "True", val: true, True: true},
 		{name: "False", val: false, False: true},
 		{name: "Draft", val: "draft", Draft: true},
+		{name: "Nil", val: nil, Nil: true},
 		{name: "Invalid", val: "invalid", Invalid: true},
 	}
 	for _, tc := range tests {
@@ -32,6 +34,9 @@ func TestPublishedValue(t *testing.T) {
 			}
 			if have, want := p.Draft(), tc.Draft; have != want {
 				t.Fatalf("invalid `draft` value: want=%t have=%t", want, have)
+			}
+			if have, want := p.Nil(), tc.Nil; have != want {
+				t.Fatalf("invalid `nil` value: want=%t have=%t", want, have)
 			}
 			if have, want := p.Valid(), !tc.Invalid; have != want {
 				t.Fatalf("invalid `valid` value: want=%t have=%t", want, have)
@@ -47,6 +52,7 @@ func TestPublishedValue(t *testing.T) {
 			{name: "true", val: true, expected: "true"},
 			{name: "false", val: false, expected: "false"},
 			{name: "draft", val: "draft", expected: `"draft"`},
+			{name: "nil", val: nil, expected: "null"},
 		}
 		for _, tc := range tests {
 			t.Run(tc.name, func(t *testing.T) {
@@ -70,6 +76,7 @@ func TestPublishedValue(t *testing.T) {
 			{name: "true", val: "true", expected: true},
 			{name: "false", val: "false", expected: false},
 			{name: "draft", val: `"draft"`, expected: "draft"},
+			{name: "nil", val: "null", expected: nil},
 		}
 		for _, tc := range tests {
 			t.Run(tc.name, func(t *testing.T) {
@@ -95,6 +102,7 @@ func TestPublishedValue(t *testing.T) {
 			{name: "false", val: "no", expected: false},
 			{name: "draft", val: "draft", expected: "draft"},
 			{name: "draft", val: `"draft"`, expected: "draft"},
+			{name: "nil", val: "null", expected: nil},
 		}
 		for _, tc := range tests {
 			t.Run(tc.name, func(t *testing.T) {
