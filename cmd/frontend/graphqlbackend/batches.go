@@ -483,7 +483,7 @@ type GitBranchChangesetDescriptionResolver interface {
 
 	Commits() []GitCommitDescriptionResolver
 
-	Published() batches.PublishedValue
+	Published() *batches.PublishedValue
 }
 
 type GitCommitDescriptionResolver interface {

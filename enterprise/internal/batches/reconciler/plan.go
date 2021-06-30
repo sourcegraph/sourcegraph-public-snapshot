@@ -162,7 +162,7 @@ func DeterminePlan(previousSpec, currentSpec *btypes.ChangesetSpec, ch *btypes.C
 		return pl, nil
 	}
 
-	delta, err := compareChangesetSpecs(previousSpec, currentSpec)
+	delta, err := compareChangesetSpecs(previousSpec, currentSpec, ch.UiPublicationState)
 	if err != nil {
 		return pl, nil
 	}
@@ -170,10 +170,11 @@ func DeterminePlan(previousSpec, currentSpec *btypes.ChangesetSpec, ch *btypes.C
 
 	switch ch.PublicationState {
 	case btypes.ChangesetPublicationStateUnpublished:
-		if currentSpec.Spec.Published.True() {
+		calc := calculatePublicationState(currentSpec.Spec.Published, ch.UiPublicationState)
+		if calc.IsPublished() {
 			pl.SetOp(btypes.ReconcilerOperationPublish)
 			pl.AddOp(btypes.ReconcilerOperationPush)
-		} else if currentSpec.Spec.Published.Draft() && ch.SupportsDraft() {
+		} else if calc.IsDraft() && ch.SupportsDraft() {
 			// If configured to be opened as draft, and the changeset supports
 			// draft mode, publish as draft. Otherwise, take no action.
 			pl.SetOp(btypes.ReconcilerOperationPublishDraft)
@@ -252,7 +253,7 @@ func reopenAfterDetach(ch *btypes.Changeset) bool {
 	return ch.AttachedTo(ch.OwnedByBatchChangeID)
 }
 
-func compareChangesetSpecs(previous, current *btypes.ChangesetSpec) (*ChangesetSpecDelta, error) {
+func compareChangesetSpecs(previous, current *btypes.ChangesetSpec, uiPublicationState *btypes.ChangesetUiPublicationState) (*ChangesetSpecDelta, error) {
 	delta := &ChangesetSpecDelta{}
 
 	if previous == nil {
@@ -271,7 +272,9 @@ func compareChangesetSpecs(previous, current *btypes.ChangesetSpec) (*ChangesetS
 
 	// If was set to "draft" and now "true", need to undraft the changeset.
 	// We currently ignore going from "true" to "draft".
-	if previous.Spec.Published.Draft() && current.Spec.Published.True() {
+	previousCalc := calculatePublicationState(previous.Spec.Published, uiPublicationState)
+	currentCalc := calculatePublicationState(current.Spec.Published, uiPublicationState)
+	if previousCalc.IsDraft() && currentCalc.IsPublished() {
 		delta.Undraft = true
 	}
 

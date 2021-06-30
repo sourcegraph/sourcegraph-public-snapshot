@@ -13,14 +13,14 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 
 	tcs := []struct {
 		name           string
-		previousSpec   ct.TestSpecOpts
-		currentSpec    ct.TestSpecOpts
+		previousSpec   *ct.TestSpecOpts
+		currentSpec    *ct.TestSpecOpts
 		changeset      ct.TestChangesetOpts
 		wantOperations Operations
 	}{
 		{
 			name:        "publish true",
-			currentSpec: ct.TestSpecOpts{Published: true},
+			currentSpec: &ct.TestSpecOpts{Published: true},
 			changeset: ct.TestChangesetOpts{
 				PublicationState: btypes.ChangesetPublicationStateUnpublished,
 			},
@@ -31,7 +31,7 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 		},
 		{
 			name:        "publish as draft",
-			currentSpec: ct.TestSpecOpts{Published: "draft"},
+			currentSpec: &ct.TestSpecOpts{Published: "draft"},
 			changeset: ct.TestChangesetOpts{
 				PublicationState: btypes.ChangesetPublicationStateUnpublished,
 			},
@@ -39,7 +39,7 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 		},
 		{
 			name:        "publish false",
-			currentSpec: ct.TestSpecOpts{Published: false},
+			currentSpec: &ct.TestSpecOpts{Published: false},
 			changeset: ct.TestChangesetOpts{
 				PublicationState: btypes.ChangesetPublicationStateUnpublished,
 			},
@@ -47,7 +47,7 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 		},
 		{
 			name:        "draft but unsupported",
-			currentSpec: ct.TestSpecOpts{Published: "draft"},
+			currentSpec: &ct.TestSpecOpts{Published: "draft"},
 			changeset: ct.TestChangesetOpts{
 				ExternalServiceType: extsvc.TypeBitbucketServer,
 				PublicationState:    btypes.ChangesetPublicationStateUnpublished,
@@ -57,8 +57,8 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 		},
 		{
 			name:         "draft to publish true",
-			previousSpec: ct.TestSpecOpts{Published: "draft"},
-			currentSpec:  ct.TestSpecOpts{Published: true},
+			previousSpec: &ct.TestSpecOpts{Published: "draft"},
+			currentSpec:  &ct.TestSpecOpts{Published: true},
 			changeset: ct.TestChangesetOpts{
 				PublicationState: btypes.ChangesetPublicationStatePublished,
 			},
@@ -66,17 +66,120 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 		},
 		{
 			name:         "draft to publish true on unpublished changeset",
-			previousSpec: ct.TestSpecOpts{Published: "draft"},
-			currentSpec:  ct.TestSpecOpts{Published: true},
+			previousSpec: &ct.TestSpecOpts{Published: "draft"},
+			currentSpec:  &ct.TestSpecOpts{Published: true},
 			changeset: ct.TestChangesetOpts{
 				PublicationState: btypes.ChangesetPublicationStateUnpublished,
 			},
 			wantOperations: Operations{btypes.ReconcilerOperationPush, btypes.ReconcilerOperationPublish},
 		},
 		{
+			name:        "publish nil; no ui state",
+			currentSpec: &ct.TestSpecOpts{Published: nil},
+			changeset: ct.TestChangesetOpts{
+				PublicationState: btypes.ChangesetPublicationStateUnpublished,
+			},
+			wantOperations: Operations{},
+		},
+		{
+			name:        "publish nil; unpublished ui state",
+			currentSpec: &ct.TestSpecOpts{Published: nil},
+			changeset: ct.TestChangesetOpts{
+				PublicationState:   btypes.ChangesetPublicationStateUnpublished,
+				UiPublicationState: uiPublicationStatePtr(btypes.ChangesetUiPublicationStateUnpublished),
+			},
+			wantOperations: Operations{},
+		},
+		{
+			name:        "publish nil; draft ui state",
+			currentSpec: &ct.TestSpecOpts{Published: nil},
+			changeset: ct.TestChangesetOpts{
+				PublicationState:   btypes.ChangesetPublicationStateUnpublished,
+				UiPublicationState: uiPublicationStatePtr(btypes.ChangesetUiPublicationStateDraft),
+			},
+			wantOperations: Operations{btypes.ReconcilerOperationPush, btypes.ReconcilerOperationPublishDraft},
+		},
+		{
+			name:        "publish nil; draft ui state; unsupported code host",
+			currentSpec: &ct.TestSpecOpts{Published: nil},
+			changeset: ct.TestChangesetOpts{
+				ExternalServiceType: extsvc.TypeBitbucketServer,
+				PublicationState:    btypes.ChangesetPublicationStateUnpublished,
+				UiPublicationState:  uiPublicationStatePtr(btypes.ChangesetUiPublicationStateDraft),
+			},
+			// Cannot draft on an unsupported code host, so this is a no-op.
+			wantOperations: Operations{},
+		},
+		{
+			name:        "publish nil; published ui state",
+			currentSpec: &ct.TestSpecOpts{Published: nil},
+			changeset: ct.TestChangesetOpts{
+				PublicationState:   btypes.ChangesetPublicationStateUnpublished,
+				UiPublicationState: uiPublicationStatePtr(btypes.ChangesetUiPublicationStatePublished),
+			},
+			wantOperations: Operations{btypes.ReconcilerOperationPush, btypes.ReconcilerOperationPublish},
+		},
+		{
+			name:         "publish draft to publish nil; ui state published",
+			previousSpec: &ct.TestSpecOpts{Published: "draft"},
+			currentSpec:  &ct.TestSpecOpts{Published: nil},
+			changeset: ct.TestChangesetOpts{
+				PublicationState:   btypes.ChangesetPublicationStatePublished,
+				UiPublicationState: uiPublicationStatePtr(btypes.ChangesetUiPublicationStatePublished),
+			},
+			wantOperations: Operations{btypes.ReconcilerOperationUndraft},
+		},
+		{
+			name:         "publish draft to publish nil; ui state draft",
+			previousSpec: &ct.TestSpecOpts{Published: "draft"},
+			currentSpec:  &ct.TestSpecOpts{Published: nil},
+			changeset: ct.TestChangesetOpts{
+				PublicationState:   btypes.ChangesetPublicationStatePublished,
+				UiPublicationState: uiPublicationStatePtr(btypes.ChangesetUiPublicationStateDraft),
+			},
+			// No change to the actual state, so this is a no-op.
+			wantOperations: Operations{},
+		},
+		{
+			name:         "publish draft to publish nil; ui state unpublished",
+			previousSpec: &ct.TestSpecOpts{Published: "draft"},
+			currentSpec:  &ct.TestSpecOpts{Published: nil},
+			changeset: ct.TestChangesetOpts{
+				PublicationState:   btypes.ChangesetPublicationStatePublished,
+				UiPublicationState: uiPublicationStatePtr(btypes.ChangesetUiPublicationStateUnpublished),
+			},
+			// We can't unscramble an egg, nor can we unpublish a published
+			// changeset, so this is a no-op.
+			wantOperations: Operations{},
+		},
+		{
+			name:         "publish draft to publish nil; ui state nil",
+			previousSpec: &ct.TestSpecOpts{Published: "draft"},
+			currentSpec:  &ct.TestSpecOpts{Published: nil},
+			changeset: ct.TestChangesetOpts{
+				PublicationState:   btypes.ChangesetPublicationStatePublished,
+				UiPublicationState: nil,
+			},
+			// We can't unscramble an egg, nor can we unpublish a published
+			// changeset, so this is a no-op.
+			wantOperations: Operations{},
+		},
+		{
+			name:         "published to publish nil; ui state nil",
+			previousSpec: &ct.TestSpecOpts{Published: true},
+			currentSpec:  &ct.TestSpecOpts{Published: nil},
+			changeset: ct.TestChangesetOpts{
+				PublicationState:   btypes.ChangesetPublicationStatePublished,
+				UiPublicationState: nil,
+			},
+			// We can't unscramble an egg, nor can we unpublish a published
+			// changeset, so this is a no-op.
+			wantOperations: Operations{},
+		},
+		{
 			name:         "title changed on published changeset",
-			previousSpec: ct.TestSpecOpts{Published: true, Title: "Before"},
-			currentSpec:  ct.TestSpecOpts{Published: true, Title: "After"},
+			previousSpec: &ct.TestSpecOpts{Published: true, Title: "Before"},
+			currentSpec:  &ct.TestSpecOpts{Published: true, Title: "After"},
 			changeset: ct.TestChangesetOpts{
 				PublicationState: btypes.ChangesetPublicationStatePublished,
 			},
@@ -84,8 +187,8 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 		},
 		{
 			name:         "commit diff changed on published changeset",
-			previousSpec: ct.TestSpecOpts{Published: true, CommitDiff: "testDiff"},
-			currentSpec:  ct.TestSpecOpts{Published: true, CommitDiff: "newTestDiff"},
+			previousSpec: &ct.TestSpecOpts{Published: true, CommitDiff: "testDiff"},
+			currentSpec:  &ct.TestSpecOpts{Published: true, CommitDiff: "newTestDiff"},
 			changeset: ct.TestChangesetOpts{
 				PublicationState: btypes.ChangesetPublicationStatePublished,
 			},
@@ -97,8 +200,8 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 		},
 		{
 			name:         "commit message changed on published changeset",
-			previousSpec: ct.TestSpecOpts{Published: true, CommitMessage: "old message"},
-			currentSpec:  ct.TestSpecOpts{Published: true, CommitMessage: "new message"},
+			previousSpec: &ct.TestSpecOpts{Published: true, CommitMessage: "old message"},
+			currentSpec:  &ct.TestSpecOpts{Published: true, CommitMessage: "new message"},
 			changeset: ct.TestChangesetOpts{
 				PublicationState: btypes.ChangesetPublicationStatePublished,
 			},
@@ -110,8 +213,8 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 		},
 		{
 			name:         "commit diff changed on merge changeset",
-			previousSpec: ct.TestSpecOpts{Published: true, CommitDiff: "testDiff"},
-			currentSpec:  ct.TestSpecOpts{Published: true, CommitDiff: "newTestDiff"},
+			previousSpec: &ct.TestSpecOpts{Published: true, CommitDiff: "testDiff"},
+			currentSpec:  &ct.TestSpecOpts{Published: true, CommitDiff: "newTestDiff"},
 			changeset: ct.TestChangesetOpts{
 				PublicationState: btypes.ChangesetPublicationStatePublished,
 				ExternalState:    btypes.ChangesetExternalStateMerged,
@@ -121,8 +224,8 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 		},
 		{
 			name:         "changeset closed-and-detached will reopen",
-			previousSpec: ct.TestSpecOpts{Published: true},
-			currentSpec:  ct.TestSpecOpts{Published: true},
+			previousSpec: &ct.TestSpecOpts{Published: true},
+			currentSpec:  &ct.TestSpecOpts{Published: true},
 			changeset: ct.TestChangesetOpts{
 				PublicationState:   btypes.ChangesetPublicationStatePublished,
 				ExternalState:      btypes.ChangesetExternalStateClosed,
@@ -135,8 +238,8 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 		},
 		{
 			name:         "closing",
-			previousSpec: ct.TestSpecOpts{Published: true},
-			currentSpec:  ct.TestSpecOpts{Published: true},
+			previousSpec: &ct.TestSpecOpts{Published: true},
+			currentSpec:  &ct.TestSpecOpts{Published: true},
 			changeset: ct.TestChangesetOpts{
 				PublicationState:   btypes.ChangesetPublicationStatePublished,
 				ExternalState:      btypes.ChangesetExternalStateOpen,
@@ -151,8 +254,8 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 		},
 		{
 			name:         "closing already-closed changeset",
-			previousSpec: ct.TestSpecOpts{Published: true},
-			currentSpec:  ct.TestSpecOpts{Published: true},
+			previousSpec: &ct.TestSpecOpts{Published: true},
+			currentSpec:  &ct.TestSpecOpts{Published: true},
 			changeset: ct.TestChangesetOpts{
 				PublicationState:   btypes.ChangesetPublicationStatePublished,
 				ExternalState:      btypes.ChangesetExternalStateClosed,
@@ -168,8 +271,8 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 		},
 		{
 			name:         "detaching",
-			previousSpec: ct.TestSpecOpts{Published: true},
-			currentSpec:  ct.TestSpecOpts{Published: true},
+			previousSpec: &ct.TestSpecOpts{Published: true},
+			currentSpec:  &ct.TestSpecOpts{Published: true},
 			changeset: ct.TestChangesetOpts{
 				PublicationState:   btypes.ChangesetPublicationStatePublished,
 				ExternalState:      btypes.ChangesetExternalStateOpen,
@@ -182,8 +285,8 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 		},
 		{
 			name:         "detaching already-detached changeset",
-			previousSpec: ct.TestSpecOpts{Published: true},
-			currentSpec:  ct.TestSpecOpts{Published: true},
+			previousSpec: &ct.TestSpecOpts{Published: true},
+			currentSpec:  &ct.TestSpecOpts{Published: true},
 			changeset: ct.TestChangesetOpts{
 				PublicationState:   btypes.ChangesetPublicationStatePublished,
 				ExternalState:      btypes.ChangesetExternalStateClosed,
@@ -196,7 +299,7 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 		},
 		{
 			name:        "detaching a failed publish changeset",
-			currentSpec: ct.TestSpecOpts{Published: true},
+			currentSpec: &ct.TestSpecOpts{Published: true},
 			changeset: ct.TestChangesetOpts{
 				PublicationState:   btypes.ChangesetPublicationStateUnpublished,
 				ReconcilerState:    btypes.ReconcilerStateFailed,
@@ -275,12 +378,12 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
 			var previousSpec, currentSpec *btypes.ChangesetSpec
-			if tc.previousSpec != (ct.TestSpecOpts{}) {
-				previousSpec = ct.BuildChangesetSpec(t, tc.previousSpec)
+			if tc.previousSpec != nil {
+				previousSpec = ct.BuildChangesetSpec(t, *tc.previousSpec)
 			}
 
-			if tc.currentSpec != (ct.TestSpecOpts{}) {
-				currentSpec = ct.BuildChangesetSpec(t, tc.currentSpec)
+			if tc.currentSpec != nil {
+				currentSpec = ct.BuildChangesetSpec(t, *tc.currentSpec)
 			}
 
 			cs := ct.BuildChangeset(tc.changeset)
@@ -294,4 +397,8 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			}
 		})
 	}
+}
+
+func uiPublicationStatePtr(state btypes.ChangesetUiPublicationState) *btypes.ChangesetUiPublicationState {
+	return &state
 }
