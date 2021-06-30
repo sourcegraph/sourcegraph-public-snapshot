@@ -4280,7 +4280,7 @@ type GitBlob implements TreeEntry & File2 {
         query: String
     ): SymbolConnection!
     """
-    Symbol defined in this blob at the specfic line number and character offset.
+    (Experimental) Symbol defined in this blob at the specfic line number and character offset.
     """
     symbol(
         """

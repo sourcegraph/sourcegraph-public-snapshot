@@ -35,7 +35,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/run"
+	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -232,13 +232,13 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 	if blobPath, ok := mux.Vars(r)["Path"]; ok && envvar.OpenGraphPreviewServiceURL() != "" && envvar.SourcegraphDotComMode() {
 		lineRange := findLineRangeInQueryParameters(r.URL.Query())
 
-		var symbol *result.Symbol
+		var symbolResult *result.Symbol
 		if lineRange != nil && lineRange.StartLine != 0 && lineRange.StartLineCharacter != 0 {
 			// Do not slow down the page load if symbol data takes too long to retrieve.
 			ctx, cancel := context.WithTimeout(r.Context(), time.Second*1)
 			defer cancel()
 
-			if symbolMatch, _ := run.GetSymbolMatchAtLineCharacter(
+			if symbolMatch, _ := symbol.GetMatchAtLineCharacter(
 				ctx,
 				types.RepoName{ID: common.Repo.ID, Name: common.Repo.Name},
 				common.CommitID,
@@ -246,18 +246,14 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 				lineRange.StartLine-1,
 				lineRange.StartLineCharacter-1,
 			); symbolMatch != nil {
-				symbol = &symbolMatch.Symbol
+				symbolResult = &symbolMatch.Symbol
 			}
 		}
 
 		common.Metadata.ShowPreview = true
-		common.Metadata.PreviewImage = getBlobPreviewImageURL(envvar.OpenGraphPreviewServiceURL(), r.URL.Path, lineRange)
+		common.Metadata.PreviewImage = getBlobPreviewImageURL(envvar.OpenGraphPreviewServiceURL(), r.URL.Path, lineRange, symbolResult)
 		common.Metadata.Description = fmt.Sprintf("%s/%s", globals.ExternalURL(), mux.Vars(r)["Repo"])
-		if symbol != nil {
-			common.Metadata.Title = fmt.Sprintf("%s %s %s", symbol.Language, symbol.LSPKind().String(), symbol.Name)
-		} else {
-			common.Metadata.Title = getBlobPreviewTitle(blobPath, lineRange)
-		}
+		common.Metadata.Title = getBlobPreviewTitle(blobPath, lineRange, symbolResult)
 	}
 
 	return common, nil

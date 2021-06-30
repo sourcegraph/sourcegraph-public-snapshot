@@ -2,11 +2,13 @@ package ui
 
 import (
 	"fmt"
+	"net/url"
 	"path"
 	"strconv"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
 var (
@@ -75,20 +77,34 @@ func formatLineRange(lineRange *lineRange) string {
 	return formattedLineRange
 }
 
-func getBlobPreviewImageURL(previewServiceURL string, blobURLPath string, lineRange *lineRange) string {
+func getBlobPreviewImageURL(previewServiceURL string, blobURLPath string, lineRange *lineRange, symbolResult *result.Symbol) string {
 	blobPreviewImageURL := previewServiceURL + blobURLPath
 	formattedLineRange := formatLineRange(lineRange)
+
+	queryValues := url.Values{}
 	if formattedLineRange != "" {
-		blobPreviewImageURL += "?range=" + formattedLineRange
+		queryValues.Add("range", formattedLineRange)
 	}
-	return blobPreviewImageURL
+	if symbolResult != nil {
+		queryValues.Add("type", "symbol")
+	}
+
+	encodedQueryValues := queryValues.Encode()
+	if encodedQueryValues != "" {
+		encodedQueryValues = "?" + encodedQueryValues
+	}
+
+	return blobPreviewImageURL + encodedQueryValues
 }
 
-func getBlobPreviewTitle(blobFilePath string, lineRange *lineRange) string {
-	blobPreviewTitle := path.Base(blobFilePath)
+func getBlobPreviewTitle(blobFilePath string, lineRange *lineRange, symbolResult *result.Symbol) string {
 	formattedLineRange := formatLineRange(lineRange)
+	formattedBlob := path.Base(blobFilePath)
 	if formattedLineRange != "" {
-		blobPreviewTitle += "#" + formattedLineRange
+		formattedBlob += "?" + formattedLineRange
 	}
-	return blobPreviewTitle
+	if symbolResult != nil {
+		return fmt.Sprintf("%s %s (%s)", symbolResult.LSPKind().String(), symbolResult.Name, formattedBlob)
+	}
+	return formattedBlob
 }

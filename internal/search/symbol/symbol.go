@@ -364,13 +364,14 @@ func Compute(ctx context.Context, repoName types.RepoName, commitID api.CommitID
 	return matches, err
 }
 
-// GetSymbolMatchAtLineCharacter retrieves the shortest matching symbol (if exists) defined
+// GetMatchAtLineCharacter retrieves the shortest matching symbol (if exists) defined
 // at a specific line number and character offset in the provided file.
-func GetSymbolMatchAtLineCharacter(ctx context.Context, repo types.RepoName, commitID api.CommitID, filePath string, line int, character int) (*result.SymbolMatch, error) {
+func GetMatchAtLineCharacter(ctx context.Context, repo types.RepoName, commitID api.CommitID, filePath string, line int, character int) (*result.SymbolMatch, error) {
 	// Should be large enough to include all symbols from a single file
 	first := int32(999999)
+	emptyString := ""
 	includePatterns := []string{regexp.QuoteMeta(filePath)}
-	symbolMatches, err := Compute(ctx, repo, commitID, nil, nil, &first, &includePatterns)
+	symbolMatches, err := Compute(ctx, repo, commitID, &emptyString, &emptyString, &first, &includePatterns)
 
 	if err != nil {
 		return nil, err
