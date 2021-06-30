@@ -1,6 +1,6 @@
 import * as React from 'react'
-import { DocumentationIcon } from './DocumentationIcon'
 
+import { DocumentationIcon } from './DocumentationIcon'
 import { Tag } from './DocumentationNode'
 
 /**
@@ -11,9 +11,9 @@ import { Tag } from './DocumentationNode'
  * @param tags of the documentation node
  */
 function pickIconTags(tags: Tag[]): Tag[] {
-    const genericTags = ['private', 'deprecated', 'test', 'benchmark', 'example', 'license', 'owner'];
-    const generics = tags.filter(tag => genericTags.includes(tag));
-    const symbols = tags.filter(tag => !genericTags.includes(tag));
+    const genericTags = new Set(['private', 'deprecated', 'test', 'benchmark', 'example', 'license', 'owner']);
+    const generics = tags.filter(tag => genericTags.has(tag));
+    const symbols = tags.filter(tag => !genericTags.has(tag));
     if (symbols.length > 0) {
         generics.push(symbols[0]);
         return generics;

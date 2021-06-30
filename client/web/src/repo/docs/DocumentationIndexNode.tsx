@@ -8,8 +8,8 @@ import { useScrollToLocationHash } from '../../components/useScrollToLocationHas
 import { RepositoryFields } from '../../graphql-operations'
 import { toDocumentationURL } from '../../util/url'
 
-import { GQLDocumentationNode, isExcluded, Tag } from './DocumentationNode'
 import { DocumentationIcons } from './DocumentationIcons'
+import { GQLDocumentationNode, isExcluded, Tag } from './DocumentationNode'
 
 interface Props extends Partial<RevisionSpec>, ResolvedRevisionSpec {
     repo: RepositoryFields

@@ -10,6 +10,7 @@ import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { useScrollToLocationHash } from '../../components/useScrollToLocationHash'
 import { RepositoryFields } from '../../graphql-operations'
 import { toDocumentationURL } from '../../util/url'
+
 import { DocumentationIcons } from './DocumentationIcons'
 
 // Mirrors the same type on the backend:
