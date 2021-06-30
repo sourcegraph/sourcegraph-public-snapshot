@@ -46,7 +46,7 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = ({ node, d
     let path = hashIndex !== -1 ? node.pathID.slice(0, hashIndex) : node.pathID
     path = path === '/' ? '' : path
     const thisPage = toDocumentationURL({ ...repoRevision, pathID: path + '#' + hash })
-    const excluded = isExcluded(node, props.excludingTags);
+    const excluded = isExcluded(node, props.excludingTags)
     if (excluded) {
         return null
     }

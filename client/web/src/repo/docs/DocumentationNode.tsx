@@ -1,6 +1,4 @@
 import * as H from 'history'
-import CancelIcon from 'mdi-react/CancelIcon'
-import LockIcon from 'mdi-react/LockIcon'
 import React, { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 
@@ -37,7 +35,8 @@ export interface Documentation {
     tags: Tag[]
 }
 
-export type Tag = 'private'
+export type Tag =
+    | 'private'
     | 'deprecated'
     | 'test'
     | 'benchmark'
@@ -77,7 +76,7 @@ export interface DocumentationNodeChild {
 }
 
 export function isExcluded(node: GQLDocumentationNode, excludingTags: Tag[]): boolean {
-    return node.documentation.tags.filter(tag => excludingTags.includes(tag)).length > 0;
+    return node.documentation.tags.filter(tag => excludingTags.includes(tag)).length > 0
 }
 
 interface Props extends Partial<RevisionSpec>, ResolvedRevisionSpec, BreadcrumbSetters {
@@ -132,7 +131,8 @@ export const DocumentationNode: React.FunctionComponent<Props> = ({ useBreadcrum
 
             {node.children?.map(
                 (child, index) =>
-                    child.node && !isExcluded(child.node, props.excludingTags) && (
+                    child.node &&
+                    !isExcluded(child.node, props.excludingTags) && (
                         <DocumentationNode
                             key={`${depth}-${index}`}
                             {...props}
