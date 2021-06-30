@@ -1,7 +1,5 @@
 import { InsightDashboard as InsightDashboardConfiguration } from '../../../schema/settings.schema'
 
-export type InsightDashboard = InsightBuiltInDashboard | InsightCustomDashboard
-
 /**
  * All insights dashboards are separated on two categories.
  */
@@ -26,19 +24,10 @@ export enum InsightsDashboardType {
 }
 
 /**
- * An Owner of dashboard. It can be user subject (a personal dashboard), org subject
- * (an org level dashboard)
- */
-export interface InsightDashboardOwner {
-    id: string | null
-    name: string
-}
-
-/**
  * An extended custom insights dashboard. A user can have they own dashboards created
  * by insights dashboard creation UI.
  */
-export interface InsightCustomDashboard extends InsightDashboardConfiguration {
+export interface InsightDashboard extends InsightDashboardConfiguration {
     /**
      * All dashboards that were created in users or org settings explicitly are
      * custom dashboards.
@@ -50,37 +39,28 @@ export interface InsightCustomDashboard extends InsightDashboardConfiguration {
      * or organization setting subject.
      */
     owner: InsightDashboardOwner
+
+    /**
+     * Property to distinguish between real user-created dashboard and virtual
+     * built-in dashboard. Currently we support 3 types of built-in dashboard.
+     *
+     * "All" - all insights that dashboard have all users by default
+     *
+     * "Personal" - all personal insights from personal settings (also all users
+     * it have by default)
+     *
+     * "Organizations level" - all organizations act as insights dashboard
+     */
+    builtIn?: boolean
 }
 
 /**
- * A built-in insights dashboard. Currently we have 3 type of built-in dashboards.
- * All users have "All Insights" dashboard and "Personal Insights" dashboard
- * Also users who were included in org have built-in org level dashboard by default.
+ * An Owner of dashboard. It can be user subject (a personal dashboard), org subject
+ * (an org level dashboard)
  */
-export interface InsightBuiltInDashboard {
-    type: InsightsDashboardType
-
-    /**
-     * Title of insights dashboards ("All insights", "Personal", ...)
-     */
-    title?: string
-
-    /**
-     * Possible owner of dashboard. That might be equal to undefined when
-     * this dashboard is "all insights" dashboard.
-     */
-    owner?: InsightDashboardOwner
-
-    insightIds?: string[]
-}
-
-/**
- * A built-in type of dashboard that contains all insights from all settings level
- * like organizations level and personal settings.
- */
-export const ALL_INSIGHTS_DASHBOARD: InsightBuiltInDashboard = {
-    title: 'All',
-    type: InsightsDashboardType.All,
+export interface InsightDashboardOwner {
+    id: string
+    name: string
 }
 
 /**

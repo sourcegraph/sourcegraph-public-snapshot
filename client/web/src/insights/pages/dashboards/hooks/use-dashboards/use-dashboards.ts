@@ -11,9 +11,6 @@ import { isDefined } from '@sourcegraph/shared/src/util/types'
 
 import { Settings } from '../../../../../schema/settings.schema'
 import {
-    ALL_INSIGHTS_DASHBOARD,
-    InsightBuiltInDashboard,
-    InsightCustomDashboard,
     InsightDashboard,
     InsightDashboardOwner,
     INSIGHTS_DASHBOARDS_SETTINGS_KEY,
@@ -47,16 +44,6 @@ export function getInsightsDashboards(subjects: ConfiguredSubjectOrError<Setting
         return []
     }
 
-    return [ALL_INSIGHTS_DASHBOARD, ...getSubjectsDashboards(subjects)]
-}
-
-/**
- * Returns all reachable insights dashboards from all available subjects
- * Basically we have insights only in organization based subject or personal subject
- *
- * @param subjects - array of all subject from settings cascade
- */
-function getSubjectsDashboards(subjects: ConfiguredSubjectOrError<Settings>[]): InsightDashboard[] {
     return subjects.flatMap(configuredSubject => {
         const { settings, subject } = configuredSubject
 
@@ -75,15 +62,18 @@ function getSubjectsDashboards(subjects: ConfiguredSubjectOrError<Settings>[]): 
 function getSubjectDashboards(subject: SupportedSubject, settings: Settings): InsightDashboard[] {
     const { dashboardType, ...owner } = getDashboardOwnerInfo(subject)
 
-    const subjectBuiltInDashboard: InsightBuiltInDashboard = {
+    const subjectBuiltInDashboard: InsightDashboard = {
         owner,
+        id: owner.id,
+        builtIn: true,
+        title: owner.name,
         type: dashboardType,
         insightIds: Object.keys(settings).filter(isInsightSettingKey),
     }
 
     // Find all personal insights dashboards
     const subjectDashboards = Object.keys(settings[INSIGHTS_DASHBOARDS_SETTINGS_KEY] ?? {})
-        .map<InsightCustomDashboard | undefined>(dashboardKey => {
+        .map<InsightDashboard | undefined>(dashboardKey => {
             // Select dashboard configuration from the subject settings
             const dashboardSettings = settings[INSIGHTS_DASHBOARDS_SETTINGS_KEY]?.[dashboardKey]
 
