@@ -4,8 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
@@ -20,7 +18,6 @@ type insightSeriesResolver struct {
 	insightsStore   store.Interface
 	workerBaseStore *basestore.Store
 	series          *schema.InsightSeries
-	denylist        []api.RepoID
 }
 
 func (r *insightSeriesResolver) Label() string { return r.series.Label }
@@ -47,7 +44,6 @@ func (r *insightSeriesResolver) Points(ctx context.Context, args *graphqlbackend
 	}
 	// TODO(slimsag): future: Pass through opts.Limit
 
-	opts.Excluded = r.denylist
 	points, err := r.insightsStore.SeriesPoints(ctx, opts)
 	if err != nil {
 		return nil, err

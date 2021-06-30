@@ -5,11 +5,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/hexops/autogold"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/dbtesting"
+	insightsdbtesting "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
@@ -22,9 +24,12 @@ func TestSeriesPoints(t *testing.T) {
 
 	ctx := context.Background()
 	clock := timeutil.Now
-	timescale, cleanup := dbtesting.TimescaleDB(t)
+	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
 	defer cleanup()
-	store := NewWithClock(timescale, clock)
+
+	postgres := dbtesting.GetDB(t)
+	permStore := NewInsightPermissionStore(postgres)
+	store := NewWithClock(timescale, permStore, clock)
 
 	// Confirm we get no results initially.
 	points, err := store.SeriesPoints(ctx, SeriesPointsOpts{})
@@ -130,9 +135,11 @@ func TestCountData(t *testing.T) {
 
 	ctx := context.Background()
 	clock := timeutil.Now
-	timescale, cleanup := dbtesting.TimescaleDB(t)
+	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
 	defer cleanup()
-	store := NewWithClock(timescale, clock)
+	postgres := dbtesting.GetDB(t)
+	permStore := NewInsightPermissionStore(postgres)
+	store := NewWithClock(timescale, permStore, clock)
 
 	timeValue := func(s string) time.Time {
 		v, err := time.Parse(time.RFC3339, s)
@@ -222,9 +229,11 @@ func TestRecordSeriesPoints(t *testing.T) {
 
 	ctx := context.Background()
 	clock := timeutil.Now
-	timescale, cleanup := dbtesting.TimescaleDB(t)
+	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
 	defer cleanup()
-	store := NewWithClock(timescale, clock)
+	postgres := dbtesting.GetDB(t)
+	permStore := NewInsightPermissionStore(postgres)
+	store := NewWithClock(timescale, permStore, clock)
 
 	optionalString := func(v string) *string { return &v }
 	optionalRepoID := func(v api.RepoID) *api.RepoID { return &v }

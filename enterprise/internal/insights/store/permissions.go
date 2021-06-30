@@ -1,7 +1,8 @@
-package resolvers
+package store
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 
@@ -12,11 +13,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
-// FetchUnauthorizedRepos returns a list of repo IDs that the current user does *not* have access to. The primary
+type InsightPermStore struct {
+	*basestore.Store
+}
+
+// GetUnauthorizedRepoIDs returns a list of repo IDs that the current user does *not* have access to. The primary
 // purpose of this is to quickly resolve permissions at query time from the primary postgres database and filter
 // code insights in the timeseries database. This approach makes the assumption that most users have access to most
 // repos - which is highly likely given the public / private model that repos use today.
-func FetchUnauthorizedRepos(ctx context.Context, db dbutil.DB) (results []api.RepoID, err error) {
+func (i *InsightPermStore) GetUnauthorizedRepoIDs(ctx context.Context) (results []api.RepoID, err error) {
+	db := i.Store.Handle().DB()
 	store := database.Repos(db)
 	conds, err := database.AuthzQueryConds(ctx, db)
 	if err != nil {
@@ -45,3 +51,13 @@ func FetchUnauthorizedRepos(ctx context.Context, db dbutil.DB) (results []api.Re
 const fetchUnauthorizedReposSql = `
 -- source: enterprise/internal/insights/resolver/permissions.go:FetchUnauthorizedRepos
 	SELECT id FROM repo WHERE NOT`
+
+func NewInsightPermissionStore(db dbutil.DB) *InsightPermStore {
+	return &InsightPermStore{
+		Store: basestore.NewWithDB(db, sql.TxOptions{}),
+	}
+}
+
+type InsightPermissionStore interface {
+	GetUnauthorizedRepoIDs(ctx context.Context) (results []api.RepoID, err error)
+}

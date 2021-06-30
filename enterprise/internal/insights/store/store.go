@@ -31,18 +31,19 @@ var _ Interface = &Store{}
 // persistent storage.
 type Store struct {
 	*basestore.Store
-	now func() time.Time
+	now       func() time.Time
+	permStore InsightPermissionStore
 }
 
 // New returns a new Store backed by the given Timescale db.
-func New(db dbutil.DB) *Store {
-	return NewWithClock(db, timeutil.Now)
+func New(db dbutil.DB, permStore InsightPermissionStore) *Store {
+	return NewWithClock(db, permStore, timeutil.Now)
 }
 
 // NewWithClock returns a new Store backed by the given db and
 // clock for timestamps.
-func NewWithClock(db dbutil.DB, clock func() time.Time) *Store {
-	return &Store{Store: basestore.NewWithDB(db, sql.TxOptions{}), now: clock}
+func NewWithClock(db dbutil.DB, permStore InsightPermissionStore, clock func() time.Time) *Store {
+	return &Store{Store: basestore.NewWithDB(db, sql.TxOptions{}), now: clock, permStore: permStore}
 }
 
 var _ basestore.ShareableStore = &Store{}
@@ -102,8 +103,17 @@ type SeriesPointsOpts struct {
 func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]SeriesPoint, error) {
 	points := make([]SeriesPoint, 0, opts.Limit)
 
+	// 🚨 SECURITY: This is a double-negative repo permission enforcement. The list of authorized repos is generally expected to be very large, and nearly the full
+	// set of repos installed on Sourcegraph. To make this faster, we query Postgres for a list of repos the current user cannot see, and then exclude those from the
+	// time series results. 🚨
+	denylist, err := s.permStore.GetUnauthorizedRepoIDs(ctx)
+	if err != nil {
+		return []SeriesPoint{}, err
+	}
+	opts.Excluded = append(opts.Excluded, denylist...)
+
 	q := seriesPointsQuery(opts)
-	err := s.query(ctx, q, func(sc scanner) error {
+	err = s.query(ctx, q, func(sc scanner) error {
 		var point SeriesPoint
 		err := sc.Scan(
 			&point.SeriesID,
