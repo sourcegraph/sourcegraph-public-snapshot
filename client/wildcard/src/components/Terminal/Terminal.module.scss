@@ -1,0 +1,61 @@
+ul,
+li,
+h3 {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex: 1;
+}
+
+ul {
+    flex-direction: column;
+}
+
+li {
+    flex: 0 0 100%;
+    code {
+        display: flex;
+        flex: 1;
+    }
+}
+
+.wrapper {
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+}
+
+.repositories-info {
+    padding: 1.5rem;
+    background-color: #214863;
+    color: var(--light-text);
+}
+
+.header-title {
+    padding: 1.5rem;
+}
+
+.download-status {
+    color: var(--oc-lime-7);
+    flex: 0;
+}
+
+.download-progress {
+    span {
+        max-width: 400px;
+        white-space: nowrap;
+    }
+    display: flex;
+    flex: 1;
+    margin: 0 0.5rem;
+    max-width: 320px;
+    &::before {
+        content: '[';
+    }
+    &::after {
+        content: ']';
+        display: flex;
+        flex: 1;
+        justify-content: flex-end;
+    }
+}
