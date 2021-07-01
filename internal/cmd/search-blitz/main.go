@@ -77,7 +77,7 @@ func run(ctx context.Context, wg *sync.WaitGroup) {
 			if err != nil {
 				log.Error(err.Error())
 			} else {
-				log.Info("metrics", "trace", m.trace, "duration_ms", m.took)
+				log.Info("metrics", "trace", m.trace, "duration_ms", m.took, "first_result_ms", m.firstResultMs, "match_count", m.matchCount)
 				durationSearchHistogram.WithLabelValues(group, qc.Name, c.clientType()).Observe(float64(m.took))
 			}
 
