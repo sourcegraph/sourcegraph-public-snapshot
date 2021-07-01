@@ -45,7 +45,7 @@ func TestBuildConfig(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cfg, err := buildConfig(tt.dataSource, "")
+			cfg, err := buildConfig(tt.dataSource)
 			if tt.fails {
 				if err == nil {
 					t.Fatal("error expected")
