@@ -59,7 +59,7 @@ func run(ctx context.Context, wg *sync.WaitGroup) {
 		ticker := time.NewTicker(qc.Interval)
 		defer ticker.Stop()
 
-		log := log15.New("group", group, "query", qc.Query)
+		log := log15.New("group", group, "name", qc.Name, "query", qc.Query, "type", c.clientType())
 
 		// Randomize start to a random time in the initial interval so our
 		// queries aren't all scheduled at the same time.
@@ -77,7 +77,7 @@ func run(ctx context.Context, wg *sync.WaitGroup) {
 				log.Error(err.Error())
 			} else {
 				log.Info("metrics", "trace", m.trace, "duration_ms", m.took)
-				durationSearchHistogram.WithLabelValues(group, c.clientType()).Observe(float64(m.took))
+				durationSearchHistogram.WithLabelValues(group, qc.Name, c.clientType()).Observe(float64(m.took))
 			}
 
 			select {
