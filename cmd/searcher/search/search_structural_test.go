@@ -75,12 +75,13 @@ func foo(go string) {}
 					Languages:       tt.Languages,
 				}
 
-				matches, _, err := structuralSearch(context.Background(), zf, Subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo_foo")
+				sender := &collectingSender{}
+				_, err := structuralSearch(context.Background(), zf, Subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", sender)
 				if err != nil {
 					t.Fatal(err)
 				}
 				var got []string
-				for _, fileMatches := range matches {
+				for _, fileMatches := range sender.collected {
 					for _, m := range fileMatches.LineMatches {
 						got = append(got, m.Preview)
 					}
@@ -134,12 +135,13 @@ func foo(go.txt) {}
 		}
 
 		extensionHint := filepath.Ext(filename)
-		matches, _, err := structuralSearch(context.Background(), zf, All, extensionHint, "foo(:[args])", "", languages, "repo_foo")
+		sender := &collectingSender{}
+		_, err := structuralSearch(context.Background(), zf, All, extensionHint, "foo(:[args])", "", languages, "repo_foo", sender)
 		if err != nil {
 			return "ERROR: " + err.Error()
 		}
 		var got []string
-		for _, fileMatches := range matches {
+		for _, fileMatches := range sender.collected {
 			for _, m := range fileMatches.LineMatches {
 				got = append(got, m.Preview)
 			}
@@ -226,11 +228,12 @@ func foo(real string) {}
 		Pattern:        pattern,
 		FileMatchLimit: 30,
 	}
-	m, _, err := filteredStructuralSearch(context.Background(), zPath, zFile, p, "foo")
+	sender := &collectingSender{}
+	_, err = filteredStructuralSearch(context.Background(), zPath, zFile, p, "foo", sender)
 	if err != nil {
 		t.Fatal(err)
 	}
-	got := m[0].LineMatches[0].Preview
+	got := sender.collected[0].LineMatches[0].Preview
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -331,10 +334,12 @@ func TestIncludePatterns(t *testing.T) {
 		Pattern:         "",
 		IncludePatterns: includePatterns,
 	}
-	fileMatches, _, err := structuralSearch(context.Background(), zf, Subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "foo")
+	sender := &collectingSender{}
+	_, err = structuralSearch(context.Background(), zf, Subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "foo", sender)
 	if err != nil {
 		t.Fatal(err)
 	}
+	fileMatches := sender.collected
 
 	got := make([]string, len(fileMatches))
 	for i, fm := range fileMatches {
@@ -372,10 +377,12 @@ func TestRule(t *testing.T) {
 		CombyRule:       `where :[args] == "success"`,
 	}
 
-	got, _, err := structuralSearch(context.Background(), zf, Subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo")
+	sender := &collectingSender{}
+	_, err = structuralSearch(context.Background(), zf, Subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo", sender)
 	if err != nil {
 		t.Fatal(err)
 	}
+	got := sender.collected
 
 	want := []protocol.FileMatch{
 		{
@@ -526,10 +533,12 @@ func bar() {
 	defer cleanup()
 
 	t.Run("Strutural search match count", func(t *testing.T) {
-		matches, _, err := structuralSearch(context.Background(), zf, Subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo_foo")
+		sender := &collectingSender{}
+		_, err := structuralSearch(context.Background(), zf, Subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", sender)
 		if err != nil {
 			t.Fatal(err)
 		}
+		matches := sender.collected
 		var gotMatchCount int
 		for _, fileMatches := range matches {
 			gotMatchCount += fileMatches.MatchCount

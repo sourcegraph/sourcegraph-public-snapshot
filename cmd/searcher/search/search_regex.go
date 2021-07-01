@@ -295,16 +295,13 @@ func (rg *readerGrep) FindZip(zf *store.ZipFile, f *store.SrcFile) (protocol.Fil
 }
 
 func regexSearchBatch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMatchLimit int, patternMatchesContent, patternMatchesPaths bool, isPatternNegated bool) ([]protocol.FileMatch, bool, error) {
-	sender := newMatchSender(100)
-	matches := make(chan []protocol.FileMatch, 1)
-	go sender.CollectTo(matches)
+	sender := &collectingSender{}
 	limitHit, err := regexSearch(ctx, rg, zf, fileMatchLimit, patternMatchesContent, patternMatchesPaths, isPatternNegated, sender)
-	sender.Close()
-	return <-matches, limitHit, err
+	return sender.collected, limitHit, err
 }
 
 // regexSearch concurrently searches files in zr looking for matches using rg.
-func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMatchLimit int, patternMatchesContent, patternMatchesPaths bool, isPatternNegated bool, sender matchSender) (bool, error) {
+func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMatchLimit int, patternMatchesContent, patternMatchesPaths bool, isPatternNegated bool, sender MatchSender) (bool, error) {
 	var err error
 	span, ctx := ot.StartSpanFromContext(ctx, "RegexSearch")
 	ext.Component.Set(span, "regex_search")
@@ -348,19 +345,19 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMat
 	if rg.re == nil || (patternMatchesPaths && !patternMatchesContent) {
 		// Fast path for only matching file paths (or with a nil pattern, which matches all files,
 		// so is effectively matching only on file paths).
-		var matches []protocol.FileMatch
 		limitHit := false
+		sentCount := 0
 		for _, f := range files {
 			if match := rg.matchPath.MatchPath(f.Name) && rg.matchString(f.Name); match == !isPatternNegated {
-				if len(matches) < fileMatchLimit {
-					matches = append(matches, protocol.FileMatch{Path: f.Name})
+				if sentCount < fileMatchLimit {
+					sender.Send(protocol.FileMatch{Path: f.Name})
+					sentCount += 1
 				} else {
 					limitHit = true
 					break
 				}
 			}
 		}
-		sender.Send(matches)
 		return limitHit, nil
 	}
 
@@ -410,7 +407,7 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMat
 				}
 				if match == !isPatternNegated {
 					if sender.SentCount() < fileMatchLimit {
-						sender.Send([]protocol.FileMatch{fm})
+						sender.Send(fm)
 					} else {
 						limitHit.Store(true)
 						cancel()
