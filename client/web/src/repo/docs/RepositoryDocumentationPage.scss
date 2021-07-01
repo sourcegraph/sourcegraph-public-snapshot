@@ -1,6 +1,4 @@
 @import './RepositoryDocumentationSidebar';
-@import './DocumentationWelcomeAlert';
-@import './DocumentationIcon';
 
 .repository-docs-page {
     width: 100%;
@@ -22,27 +20,15 @@
     &__feedback-container {
         width: 0;
         height: 0;
-        z-index: 1;
         &-content {
             display: block;
             width: 19rem;
-            margin-top: 1rem;
             float: right;
             .btn {
                 background-color: var(--color-bg-1);
             }
             .feedback-prompt {
                 display: inline-block;
-            }
-        }
-        &-feedback {
-            display: flex;
-            position: absolute;
-            top: 0;
-            right: 1rem;
-            padding: 1rem;
-            .btn {
-                background-color: var(--color-bg-1);
             }
         }
     }

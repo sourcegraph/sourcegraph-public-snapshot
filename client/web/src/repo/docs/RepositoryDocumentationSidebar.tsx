@@ -143,7 +143,7 @@ export const RepositoryDocumentationSidebar: React.FunctionComponent<Props> = ({
                             <ChevronDoubleLeftIcon className="icon-inline" />
                         </Button>
                     </div>
-                    <div aria-hidden={true} className="d-flex explorer overflow-auto px-3">
+                    <div aria-hidden={true} className="repository-documentation-sidebar-scroller overflow-auto px-3">
                         <DocumentationIndexNode
                             {...props}
                             node={props.node}
