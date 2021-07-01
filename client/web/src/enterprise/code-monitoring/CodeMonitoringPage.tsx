@@ -27,8 +27,8 @@ import {
 import { CodeMonitoringGettingStarted, HAS_SEEN_CODE_MONITORING_GETTING_STARTED } from './CodeMonitoringGettingStarted'
 import { CodeMonitorList } from './CodeMonitorList'
 
-export interface CodeMonitoringPageProps extends SettingsCascadeProps<Settings>, ThemeProps {
-    authenticatedUser: AuthenticatedUser
+export interface CodeMonitoringPageProps extends SettingsCascadeProps<Settings>, ThemeProps, FeatureFlagProps {
+    authenticatedUser: AuthenticatedUser | null
     fetchUserCodeMonitors?: typeof _fetchUserCodeMonitors
     toggleCodeMonitorEnabled?: typeof _toggleCodeMonitorEnabled
     showGettingStarted?: boolean
@@ -41,6 +41,7 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
     toggleCodeMonitorEnabled = _toggleCodeMonitorEnabled,
     showGettingStarted = false,
     isLightTheme,
+    featureFlags,
 }) => {
     useEffect(() => eventLogger.logViewEvent('CodeMonitoringPage'), [])
 
@@ -64,11 +65,14 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
         )
     )
 
+<<<<<<< HEAD
     const [hasSeenGettingStarted, setHasSeenGettingStarted] = useLocalStorage(
         HAS_SEEN_CODE_MONITORING_GETTING_STARTED,
         false
     )
 
+=======
+>>>>>>> 740a1811b5 (code monitoring: unauthenticated users can see getting started page if feature flag is on (#22356))
     // If feature flag is not on, make unauthenticated users sign in
     if (!authenticatedUser && !featureFlags.get('w1-signup-optimisation')) {
         return <Redirect to="/sign-in" />
@@ -141,6 +145,7 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                     </div>
                 </div>
 
+<<<<<<< HEAD
                 {showGettingStarted && <CodeMonitoringGettingStarted isLightTheme={isLightTheme} />}
 
                 {showList && (
@@ -152,6 +157,22 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                     />
                 )}
             </div>
+=======
+                    {showGettingStarted && (
+                        <CodeMonitoringGettingStarted isLightTheme={isLightTheme} isSignedIn={!!authenticatedUser} />
+                    )}
+
+                    {showList && authenticatedUser && (
+                        <CodeMonitorList
+                            settingsCascade={settingsCascade}
+                            authenticatedUser={authenticatedUser}
+                            fetchUserCodeMonitors={fetchUserCodeMonitors}
+                            toggleCodeMonitorEnabled={toggleCodeMonitorEnabled}
+                        />
+                    )}
+                </div>
+            )}
+>>>>>>> 740a1811b5 (code monitoring: unauthenticated users can see getting started page if feature flag is on (#22356))
         </div>
     )
 }

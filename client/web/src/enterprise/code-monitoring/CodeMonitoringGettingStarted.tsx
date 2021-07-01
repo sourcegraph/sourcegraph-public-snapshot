@@ -119,8 +119,6 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<ThemeProps> =
                                 Explore starting points
                             </a>
                         </div>
-<<<<<<< HEAD
-=======
                     </div>
                     <div className="col-4">
                         <div>
@@ -132,7 +130,6 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<ThemeProps> =
                                 Share your thoughts
                             </a>
                         </div>
->>>>>>> 67bb61a118 (code monitoring: new getting started page design (#22331))
                     </div>
                     {isSignedIn ? (
                         <div className="col-4">

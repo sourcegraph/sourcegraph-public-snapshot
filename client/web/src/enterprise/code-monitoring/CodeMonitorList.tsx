@@ -4,7 +4,6 @@ import React, { useCallback, useState } from 'react'
 import { useHistory, useLocation } from 'react-router'
 import { of } from 'rxjs'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { Container } from '@sourcegraph/wildcard'
@@ -20,9 +19,18 @@ import { CodeMonitorSignUpLink } from './CodeMonitoringSignUpLink'
 
 type CodeMonitorFilter = 'all' | 'user'
 
-export const CodeMonitorList: React.FunctionComponent<
-    Omit<Required<CodeMonitoringPageProps>, 'showGettingStarted' | 'isLightTheme'>
-> = ({ authenticatedUser, settingsCascade, fetchUserCodeMonitors, toggleCodeMonitorEnabled }) => {
+interface CodeMonitorListProps
+    extends Required<Pick<CodeMonitoringPageProps, 'fetchUserCodeMonitors' | 'toggleCodeMonitorEnabled'>>,
+        SettingsCascadeProps<Settings> {
+    authenticatedUser: AuthenticatedUser
+}
+
+export const CodeMonitorList: React.FunctionComponent<CodeMonitorListProps> = ({
+    authenticatedUser,
+    settingsCascade,
+    fetchUserCodeMonitors,
+    toggleCodeMonitorEnabled,
+}) => {
     const location = useLocation()
     const history = useHistory()
     const [monitorListFilter, setMonitorListFilter] = useState<CodeMonitorFilter>('all')
