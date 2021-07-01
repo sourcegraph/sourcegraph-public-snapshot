@@ -16,6 +16,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - Added support for `select:file.directory` in search queries, which returns unique directory paths for results that satisfy the query. [#22449](https://github.com/sourcegraph/sourcegraph/pull/22449)
+- An `sg_service` Postgres role has been introduced, as well as an `sg_repo_access_policy` policy on the `repo` table that restricts access to that role. The role that owns the `repo` table will continue to get unrestricted access. [#22303](https://github.com/sourcegraph/sourcegraph/pull/22303)
 
 ### Changed
 

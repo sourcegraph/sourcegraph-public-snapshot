@@ -1430,6 +1430,17 @@ Referenced by:
     TABLE "lsif_index_configuration" CONSTRAINT "lsif_index_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "search_context_repos" CONSTRAINT "search_context_repos_repo_id_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "user_public_repos" CONSTRAINT "user_public_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
+Policies:
+    POLICY "sg_repo_access_policy"
+      TO sg_service
+      USING ((((NOT (current_setting('rls.use_permissions_user_mapping'::text))::boolean) AND ((private IS FALSE) OR (EXISTS ( SELECT
+   FROM (external_services es
+     JOIN external_service_repos esr ON (((esr.external_service_id = es.id) AND (esr.repo_id = repo.id) AND (es.unrestricted = true) AND (es.deleted_at IS NULL))))
+ LIMIT 1)))) OR (EXISTS ( SELECT 1
+   FROM external_service_repos
+  WHERE ((external_service_repos.repo_id = repo.id) AND (external_service_repos.user_id = (current_setting('rls.user_id'::text))::integer)))) OR ( SELECT (user_permissions.object_ids_ints @> intset(repo.id))
+   FROM user_permissions
+  WHERE ((user_permissions.user_id = (current_setting('rls.user_id'::text))::integer) AND (user_permissions.permission = current_setting('rls.permission'::text)) AND (user_permissions.object_type = 'repos'::text)))))
 Triggers:
     trig_delete_repo_ref_on_external_service_repos AFTER UPDATE OF deleted_at ON repo FOR EACH ROW EXECUTE FUNCTION delete_repo_ref_on_external_service_repos()
 

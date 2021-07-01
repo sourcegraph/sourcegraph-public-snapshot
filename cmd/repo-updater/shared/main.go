@@ -406,10 +406,13 @@ type scheduler interface {
 	// UpdateFromDiff updates the scheduled and queued repos from the given sync diff.
 	UpdateFromDiff(repos.Diff)
 
-	// SetCloned ensures uncloned repos are given priority in the scheduler.
-	SetCloned([]string)
+	// PrioritiseUncloned ensures uncloned repos are given priority in the scheduler.
+	PrioritiseUncloned([]string)
 
-	// EnsureScheduled ensures that all the repos provided are known to the scheduler
+	// ListRepos lists all the repos managed by the scheduler.
+	ListRepos() []string
+
+	// EnsureScheduled ensures that all the repos provided are known to the scheduler.
 	EnsureScheduled([]types.RepoName)
 }
 
@@ -453,7 +456,7 @@ func syncScheduler(ctx context.Context, sched scheduler, gitserverClient *gitser
 			return
 		}
 
-		// Fetch ALL default repos that are NOT cloned so that we can add them to the
+		// Fetch ALL indexable repos that are NOT cloned so that we can add them to the
 		// scheduler
 		opts := database.ListIndexableReposOptions{
 			OnlyUncloned:   true,
@@ -463,21 +466,25 @@ func syncScheduler(ctx context.Context, sched scheduler, gitserverClient *gitser
 			log15.Error("Listing default repos", "error", err)
 			return
 		} else {
-			// Ensure that uncloned repos are known to the scheduler
+			// Ensure that uncloned indexable repos are known to the scheduler
 			sched.EnsureScheduled(u)
 		}
 
-		// TODO: Now that we store sync state in the DB maybe we should query from there
-		// instead of gitserver?
-		cloned, err := gitserverClient.ListCloned(ctx)
+		// Next, move any repos managed by the scheduler that are uncloned to the front
+		// of the queue
+		managed := sched.ListRepos()
+
+		uncloned, err := baseRepoStore.ListRepoNames(ctx, database.ReposListOptions{Names: managed, NoCloned: true})
 		if err != nil {
-			log15.Warn("failed to fetch list of cloned repositories", "error", err)
+			log15.Warn("failed to fetch list of uncloned repositories", "error", err)
 			return
 		}
+		names := make([]string, len(uncloned))
+		for i := range uncloned {
+			names[i] = string(uncloned[i].Name)
+		}
 
-		// Ensure that any uncloned repos are moved to the front of the schedule
-		// TODO: Could we change this to send through only the uncloned repos?
-		sched.SetCloned(cloned)
+		sched.PrioritiseUncloned(names)
 	}
 
 	for ctx.Err() == nil {
