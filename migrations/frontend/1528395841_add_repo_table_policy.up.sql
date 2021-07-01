@@ -14,7 +14,7 @@ CREATE POLICY sg_repo_access_policy
     FOR ALL
     TO sg_service
     USING (
-        NOT current_setting('rls.use_permissions_user_mapping') -- Disregard unrestricted state when permissions user mapping is enabled
+        NOT current_setting('rls.use_permissions_user_mapping')::BOOLEAN -- Disregard unrestricted state when permissions user mapping is enabled
         AND (
             repo.private IS false     -- Happy path of non-private repositories
             OR  EXISTS (              -- Each external service defines if repositories are unrestricted
