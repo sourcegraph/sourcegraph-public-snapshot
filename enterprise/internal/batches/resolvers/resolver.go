@@ -746,7 +746,7 @@ func (r *Resolver) RepoChangesetsStats(ctx context.Context, repo *graphql.ID) (g
 	if err != nil {
 		return nil, err
 	}
-	return &repoChangesetsStatsResolver{stats: stats}, nil
+	return &repoChangesetsStatsResolver{stats: *stats}, nil
 }
 
 func (r *Resolver) RepoDiffStat(ctx context.Context, repo *graphql.ID) (*graphqlbackend.DiffStat, error) {
