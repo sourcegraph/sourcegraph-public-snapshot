@@ -40,11 +40,8 @@ export const DocumentationNode: React.FunctionComponent<Props> = ({ useBreadcrum
         revision: props.revision || '',
     }
     const hashIndex = node.pathID.indexOf('#')
-    const hash = hashIndex !== -1 ? node.pathID.slice(hashIndex + '#'.length) : ''
-    let path = hashIndex !== -1 ? node.pathID.slice(0, hashIndex) : node.pathID
-    path = path === '/' ? '' : path
-    const thisPage = toDocumentationURL({ ...repoRevision, pathID: path + '#' + hash })
-
+    const hash = hashIndex ? node.pathID.slice(hashIndex + '#'.length) : ''
+    const thisPage = toDocumentationURL({ ...repoRevision, pathID: node.pathID })
     useBreadcrumb(
         useMemo(
             () =>
@@ -77,7 +74,7 @@ export const DocumentationNode: React.FunctionComponent<Props> = ({ useBreadcrum
                     child.node &&
                     !isExcluded(child.node, props.excludingTags) && (
                         <DocumentationNode
-                            key={`${depth}-${child.node!.pathID}`}
+                            key={`${depth}-${child.node.pathID}`}
                             {...props}
                             node={child.node}
                             depth={depth + 1}

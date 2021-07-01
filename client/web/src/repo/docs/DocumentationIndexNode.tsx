@@ -40,44 +40,8 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = ({ node, d
         revision: props.revision || '',
     }
     const hashIndex = node.pathID.indexOf('#')
-    const hash = hashIndex !== -1 ? node.pathID.slice(hashIndex + '#'.length) : ''
-    let path = hashIndex !== -1 ? node.pathID.slice(0, hashIndex) : node.pathID
-    path = path === '/' ? '' : path
-    const thisPage = toDocumentationURL({ ...repoRevision, pathID: path + '#' + hash })
-    const excluded = isExcluded(node, props.excludingTags)
-    if (excluded) {
-        return null
-    }
-    if (props.contentOnly) {
-        if (node.detail.value === '') {
-            const children = node.children.filter(child =>
-                !child.node ? false : !isExcluded(child.node, props.excludingTags)
-            )
-            if (children.length === 0) {
-                return null
-            }
-        }
-        return (
-            <div className="documentation-index-node">
-                <Link id={'index-' + hash} to={thisPage} className="text-nowrap">
-                    <DocumentationIcons tags={node.documentation.tags} /> {node.label.value}
-                </Link>
-                <ul className="pl-3">
-                    {node.children?.map(child =>
-                        child.pathID ? null : (
-                            <DocumentationIndexNode
-                                key={`${depth}-${child.node!.pathID}`}
-                                {...props}
-                                node={child.node!}
-                                depth={depth + 1}
-                                contentOnly={true}
-                            />
-                        )
-                    )}
-                </ul>
-            </div>
-        )
-    }
+    const hash = hashIndex ? node.pathID.slice(hashIndex + '#'.length) : ''
+    const thisPage = toDocumentationURL({ ...repoRevision, pathID: node.pathID })
 
     return (
         <div className="documentation-index-node">
