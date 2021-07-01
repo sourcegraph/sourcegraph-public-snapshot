@@ -81,7 +81,7 @@ const SubpagesList: React.FunctionComponent<Props> = ({ ...props }) => {
                     titleAtStart={true}
                     buttonClassName="repository-documentation-sidebar__show-more-button"
                 >
-                    {firstFew.map(pathID => {
+                    {remaining.map(pathID => {
                         const url = toDocumentationURL({
                             repoName: props.repo.name,
                             revision: props.revision || '',
