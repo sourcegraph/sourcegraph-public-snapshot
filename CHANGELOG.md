@@ -31,6 +31,30 @@ All notable changes to Sourcegraph are documented in this file.
 
 -
 
+### API docs (experimental)
+
+API docs is a new experimental feature of Sourcegraph ([learn more](https://docs.sourcegraph.com/code_intelligence/apidocs)). It is enabled by default in Sourcegraph 3.30.0.
+
+- API docs is enabled by default in Sourcegraph 3.30.0. It can be disabled by adding `"apiDocs": false` to the `experimentalFeatures` section of user settings.
+- The API docs landing page now indicates what API docs are and provide more info.
+- The API docs landing page now represents the code in the repository root, instead of an empty page.
+- Pages now correctly indicate it is an experimental feature, and include a feedback widget.
+- Subpages linked via the sidebar are now rendered much better, and have an expandable section.
+- Symbols in documentation now have distinct icons for e.g. functions/vars/consts/etc.
+- Symbols are now sorted in exported-first, alphabetical order.
+- Repositories without LSIF documentation data now show a friendly error page indicating what languages are supported, how to set it up, etc.
+- API docs can now distinguish between different types of symbols, tests, examples, benchmarks, etc. and whether symbols are public/private - to support filtering in the future.
+- Only public/exported symbols are included by default for now.
+- URL paths for Go packages are now friendlier, e.g. `/-/docs/cmd/frontend/auth` instead of `/-/docs/cmd-frontend-auth`.
+- URLs are now formatted by the language indexer, in a way that makes sense for the language, e.g. `#Mocks.CreateUserAndSave` instead of `#ypeMocksCreateUserAndSave` for a Go method `CreateUserAndSave` on type `Mocks`.
+- Go blank identifier assignments `var _ = ...` are no longer incorrectly included.
+- Go symbols defined within functions, e.g. a `var` inside a `func` scope are no longer incorrectly included.
+- `Functions`, `Variables`, and other top-level sections are no longer rendered empty if there are none in that section.
+- A new test suite for LSIF indexers implementing the Sourcegraph documentation extension to LSIF [is available](https://github.com/sourcegraph/lsif-static-doc).
+- We now emit the LSIF data needed to in the future support "Jump to API docs" from code views, "View code" from API docs, usage examples in API docs, and search indexing.
+- Various UI style issues, color contrast issues, etc. have been fixed.
+- Major improvements to the GraphQL APIs for API documentation.
+
 ## 3.29.0
 
 ### Added
