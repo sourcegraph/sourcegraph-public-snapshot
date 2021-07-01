@@ -18,11 +18,11 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"go.uber.org/atomic"
 
 	nettrace "golang.org/x/net/trace"
 
@@ -102,10 +102,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sender := newMatchSender(100)
-	matches := make(chan []protocol.FileMatch, 1)
-	go sender.CollectTo(matches)
-
+	sender := &collectingSender{}
 	limitHit, deadlineHit, err := s.search(ctx, &p, sender)
 	if err != nil {
 		code := http.StatusInternalServerError
@@ -119,13 +116,10 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), code)
 		return
 	}
-	// after returning from s.search(), we know no more results
-	// will be sent to the sender
-	sender.Close()
 
 	w.Header().Set("Content-Type", "application/json")
 	resp := protocol.Response{
-		Matches:     <-matches,
+		Matches:     sender.collected,
 		LimitHit:    limitHit,
 		DeadlineHit: deadlineHit,
 	}
@@ -138,7 +132,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 const maxFileMatchLimit = 100
 
-func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchSender) (limitHit, deadlineHit bool, err error) {
+func (s *Service) search(ctx context.Context, p *protocol.Request, sender MatchSender) (limitHit, deadlineHit bool, err error) {
 	tr := nettrace.New("search", fmt.Sprintf("%s@%s", p.Repo, p.Commit))
 	tr.LazyPrintf("%s", p.Pattern)
 
@@ -247,8 +241,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 	archiveSize.Observe(float64(bytes))
 
 	if p.IsStructuralPat {
-		matches, limitHit, err := filteredStructuralSearch(ctx, zipPath, zf, &p.PatternInfo, p.Repo)
-		sender.Send(matches)
+		limitHit, err := filteredStructuralSearch(ctx, zipPath, zf, &p.PatternInfo, p.Repo, sender)
 		return limitHit, false, err
 	} else {
 		limitHit, err := regexSearch(ctx, rg, zf, p.FileMatchLimit, p.PatternMatchesContent, p.PatternMatchesPath, p.IsNegated, sender)
@@ -315,37 +308,24 @@ func isTemporary(err error) bool {
 	return ok && e.Temporary()
 }
 
-type matchSender struct {
-	c         chan []protocol.FileMatch
-	sentCount atomic.Int64
+type MatchSender interface {
+	Send(protocol.FileMatch)
+	SentCount() int
 }
 
-func (m *matchSender) Send(matches []protocol.FileMatch) {
-	m.sentCount.Add(int64(len(matches)))
-	m.c <- matches
+type collectingSender struct {
+	mux       sync.Mutex
+	collected []protocol.FileMatch
 }
 
-func (m *matchSender) SentCount() int {
-	return int(m.sentCount.Load())
+func (m *collectingSender) Send(match protocol.FileMatch) {
+	m.mux.Lock()
+	m.collected = append(m.collected, match)
+	m.mux.Unlock()
 }
 
-// CollectTo reads from the sender's channel and collects the results into a single
-// slice, sending it down the channel passed to it
-func (m *matchSender) CollectTo(dst chan<- []protocol.FileMatch) {
-	collected := make([]protocol.FileMatch, 0)
-	for matches := range m.c {
-		collected = append(collected, matches...)
-	}
-	dst <- collected
-}
-
-// Close indicates that the sender will receive no more results, closing its channel.
-func (m *matchSender) Close() {
-	close(m.c)
-}
-
-func newMatchSender(capacity int) matchSender {
-	return matchSender{
-		c: make(chan []protocol.FileMatch, capacity),
-	}
+func (m *collectingSender) SentCount() int {
+	m.mux.Lock()
+	defer m.mux.Unlock()
+	return len(m.collected)
 }
