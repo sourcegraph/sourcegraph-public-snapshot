@@ -300,13 +300,13 @@ func (s *updateScheduler) UpdateFromDiff(diff Diff) {
 	}
 }
 
-// SetUncloned will treat any repos listed in names as uncloned, which in effect
+// PrioritiseUncloned will treat any repos listed in names as uncloned, which in effect
 // will move them to the front of he queue for updating ASAP.
 //
 // This method should be called periodically with the list of all repositories
 // managed by the scheduler that are not cloned on gitserver.
-func (s *updateScheduler) SetUncloned(names []string) {
-	s.schedule.setUncloned(names)
+func (s *updateScheduler) PrioritiseUncloned(names []string) {
+	s.schedule.prioritiseUncloned(names)
 }
 
 // EnsureScheduled ensures that all repos in repos exist in the scheduler.
@@ -690,7 +690,7 @@ func (s *schedule) upsert(repo configuredRepo) (updated bool) {
 	return false
 }
 
-func (s *schedule) setUncloned(names []string) {
+func (s *schedule) prioritiseUncloned(names []string) {
 	// Set of names created outside of lock for fast checking.
 	uncloned := make(map[string]struct{}, len(names))
 	for _, n := range names {

@@ -406,8 +406,8 @@ type scheduler interface {
 	// UpdateFromDiff updates the scheduled and queued repos from the given sync diff.
 	UpdateFromDiff(repos.Diff)
 
-	// SetUncloned ensures uncloned repos are given priority in the scheduler.
-	SetUncloned([]string)
+	// PrioritiseUncloned ensures uncloned repos are given priority in the scheduler.
+	PrioritiseUncloned([]string)
 
 	// ListRepos lists all the repos managed by the scheduler.
 	ListRepos() []string
@@ -484,7 +484,7 @@ func syncScheduler(ctx context.Context, sched scheduler, gitserverClient *gitser
 			names[i] = string(uncloned[i].Name)
 		}
 
-		sched.SetUncloned(names)
+		sched.PrioritiseUncloned(names)
 	}
 
 	for ctx.Err() == nil {

@@ -802,7 +802,7 @@ func TestSchedule_upsert(t *testing.T) {
 	}
 }
 
-func TestUpdateQueue_SetUncloned(t *testing.T) {
+func TestUpdateQueue_PrioritiseUncloned(t *testing.T) {
 	cloned1 := configuredRepo{ID: 1, Name: "cloned1"}
 	cloned2 := configuredRepo{ID: 2, Name: "CLONED2"}
 	notcloned := configuredRepo{ID: 3, Name: "notcloned"}
@@ -828,10 +828,10 @@ func TestUpdateQueue_SetUncloned(t *testing.T) {
 
 	assertFront(cloned1.Name)
 
-	// Reset the time to now and do setUncloned. We then verify that notcloned
+	// Reset the time to now and do prioritiseUncloned. We then verify that notcloned
 	// is now at the front of the queue.
 	mockTime(defaultTime)
-	s.schedule.setUncloned([]string{"notcloned"})
+	s.schedule.prioritiseUncloned([]string{"notcloned"})
 
 	assertFront(notcloned.Name)
 }
