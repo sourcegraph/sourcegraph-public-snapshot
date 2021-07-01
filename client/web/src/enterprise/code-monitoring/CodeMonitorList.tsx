@@ -4,6 +4,7 @@ import React, { useCallback, useState } from 'react'
 import { useHistory, useLocation } from 'react-router'
 import { of } from 'rxjs'
 
+import { Link } from '@sourcegraph/shared/src/components/Link'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { Container } from '@sourcegraph/wildcard'
@@ -22,8 +23,24 @@ type CodeMonitorFilter = 'all' | 'user'
 interface CodeMonitorListProps
     extends Required<Pick<CodeMonitoringPageProps, 'fetchUserCodeMonitors' | 'toggleCodeMonitorEnabled'>>,
         SettingsCascadeProps<Settings> {
-    authenticatedUser: AuthenticatedUser
+    authenticatedUser: AuthenticatedUser | null
 }
+
+const CodeMonitorEmptyList: React.FunctionComponent<{ authenticatedUser: AuthenticatedUser | null }> = ({
+    authenticatedUser,
+}) => (
+    <div className="text-center">
+        <h2 className="text-muted mb-2">No code monitors have been created.</h2>
+        {authenticatedUser ? (
+            <Link to="/code-monitoring/new" className="btn btn-primary">
+                <PlusIcon className="icon-inline" />
+                Create a code monitor
+            </Link>
+        ) : (
+            <CodeMonitorSignUpLink eventName="SignUpPLGMonitor_EmptyList" text="Sign up to create a code monitor" />
+        )}
+    </div>
+)
 
 export const CodeMonitorList: React.FunctionComponent<CodeMonitorListProps> = ({
     authenticatedUser,

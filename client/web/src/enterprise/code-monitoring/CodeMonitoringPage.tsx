@@ -66,13 +66,19 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
     )
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 69c1c18e32 (code monitoring: add empty list view (#22408))
     const [hasSeenGettingStarted, setHasSeenGettingStarted] = useLocalStorage(
         HAS_SEEN_CODE_MONITORING_GETTING_STARTED,
         false
     )
 
+<<<<<<< HEAD
 =======
 >>>>>>> 740a1811b5 (code monitoring: unauthenticated users can see getting started page if feature flag is on (#22356))
+=======
+>>>>>>> 69c1c18e32 (code monitoring: add empty list view (#22408))
     // If feature flag is not on, make unauthenticated users sign in
     if (!authenticatedUser && !featureFlags.get('w1-signup-optimisation')) {
         return <Redirect to="/sign-in" />
@@ -144,6 +150,7 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                         </div>
                     </div>
                 </div>
+<<<<<<< HEAD
 
 <<<<<<< HEAD
                 {showGettingStarted && <CodeMonitoringGettingStarted isLightTheme={isLightTheme} />}
@@ -173,6 +180,26 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                 </div>
             )}
 >>>>>>> 740a1811b5 (code monitoring: unauthenticated users can see getting started page if feature flag is on (#22356))
+=======
+
+                {showGettingStarted && (
+                    <CodeMonitoringGettingStarted
+                        isLightTheme={isLightTheme}
+                        isSignedIn={!!authenticatedUser}
+                        setHasSeenGettingStarted={setHasSeenGettingStarted}
+                    />
+                )}
+
+                {showList && (
+                    <CodeMonitorList
+                        settingsCascade={settingsCascade}
+                        authenticatedUser={authenticatedUser}
+                        fetchUserCodeMonitors={fetchUserCodeMonitors}
+                        toggleCodeMonitorEnabled={toggleCodeMonitorEnabled}
+                    />
+                )}
+            </div>
+>>>>>>> 69c1c18e32 (code monitoring: add empty list view (#22408))
         </div>
     )
 }

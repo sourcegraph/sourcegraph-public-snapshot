@@ -1,14 +1,30 @@
 import classNames from 'classnames'
 import PlusIcon from 'mdi-react/PlusIcon'
-import React from 'react'
+import React, { useEffect } from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import styles from './CodeMonitoringGettingStarted.module.scss'
+import { CodeMonitorSignUpLink } from './CodeMonitoringSignUpLink'
 
-export const CodeMonitoringGettingStarted: React.FunctionComponent<ThemeProps> = ({ isLightTheme }) => {
+export const HAS_SEEN_CODE_MONITORING_GETTING_STARTED = 'has-seen-code-monitoring-getting-started'
+
+interface CodeMonitoringGettingStartedProps extends ThemeProps {
+    isSignedIn: boolean
+    setHasSeenGettingStarted: (value: boolean) => void
+}
+
+export const CodeMonitoringGettingStarted: React.FunctionComponent<CodeMonitoringGettingStartedProps> = ({
+    isLightTheme,
+    isSignedIn,
+    setHasSeenGettingStarted,
+}) => {
     const assetsRoot = window.context?.assetsRoot || ''
+
+    useEffect(() => {
+        setHasSeenGettingStarted(true)
+    }, [setHasSeenGettingStarted])
 
     return (
         <div>
@@ -32,10 +48,18 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<ThemeProps> =
                         <li>Identify when bad patterns are commited </li>
                         <li>Identify use of depricated libraries</li>
                     </ul>
-                    <Link to="/code-monitoring/new" className={classNames('btn btn-primary', styles.createButton)}>
-                        <PlusIcon className="icon-inline mr-2" />
-                        Create a code monitor
-                    </Link>
+                    {isSignedIn ? (
+                        <Link to="/code-monitoring/new" className={classNames('btn btn-primary', styles.createButton)}>
+                            <PlusIcon className="icon-inline mr-2" />
+                            Create a code monitor
+                        </Link>
+                    ) : (
+                        <CodeMonitorSignUpLink
+                            className={styles.createButton}
+                            eventName="SignUpPLGMonitor_GettingStarted"
+                            text="Sign up to create a code monitor"
+                        />
+                    )}
                 </div>
             </div>
             <div className={classNames('container', styles.startingPointsContainer)}>
